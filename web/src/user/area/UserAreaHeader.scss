@@ -1,5 +1,3 @@
-@import '../../components/AreaHeader';
-
 .user-area-header {
     &__title {
         display: flex;
@@ -17,7 +15,7 @@
     &__avatar {
         width: 6rem;
         margin-right: 1rem;
-        .avatar-icon {
+        .user-avatar {
             // Scale proportionally.
             width: 100%;
             height: auto;

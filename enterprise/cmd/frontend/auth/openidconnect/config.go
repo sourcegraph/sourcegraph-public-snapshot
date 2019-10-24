@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -21,7 +21,7 @@ func getProvider(id string) *provider {
 	if mockGetProviderValue != nil {
 		return mockGetProviderValue
 	}
-	p, _ := auth.GetProviderByConfigID(auth.ProviderConfigID{Type: providerType, ID: id}).(*provider)
+	p, _ := providers.GetProviderByConfigID(providers.ConfigID{Type: providerType, ID: id}).(*provider)
 	return p
 }
 
@@ -51,11 +51,11 @@ func init() {
 	conf.ContributeValidator(validateConfig)
 }
 
-func validateConfig(c conf.Unified) (problems []string) {
+func validateConfig(c conf.Unified) (problems conf.Problems) {
 	var loggedNeedsExternalURL bool
 	for _, p := range c.Critical.AuthProviders {
 		if p.Openidconnect != nil && c.Critical.ExternalURL == "" && !loggedNeedsExternalURL {
-			problems = append(problems, `openidconnect auth provider requires externalURL to be set to the external URL of your site (example: https://sourcegraph.example.com)`)
+			problems = append(problems, conf.NewCriticalProblem("openidconnect auth provider requires `externalURL` to be set to the external URL of your site (example: https://sourcegraph.example.com)"))
 			loggedNeedsExternalURL = true
 		}
 	}
@@ -64,7 +64,7 @@ func validateConfig(c conf.Unified) (problems []string) {
 	for i, p := range c.Critical.AuthProviders {
 		if p.Openidconnect != nil {
 			if j, ok := seen[*p.Openidconnect]; ok {
-				problems = append(problems, fmt.Sprintf("OpenID Connect auth provider at index %d is duplicate of index %d, ignoring", i, j))
+				problems = append(problems, conf.NewCriticalProblem(fmt.Sprintf("OpenID Connect auth provider at index %d is duplicate of index %d, ignoring", i, j)))
 			} else {
 				seen[*p.Openidconnect] = i
 			}

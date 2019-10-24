@@ -17,4 +17,4 @@ Enabling federation has the following benefits:
 
 ### Configuration
 
-The [`disablePublicRepoRedirects`](../site_config/all.md#disablepublicreporedirects-boolean) site configuration option disables redirection.
+The `disablePublicRepoRedirects` [site configuration](../config/site_config.md) option disables redirection.

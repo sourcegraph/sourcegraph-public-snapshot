@@ -108,7 +108,7 @@ export class AccessTokenNode extends React.PureComponent<AccessTokenNodeProps, A
         const note = this.props.node.note || '(no description)'
         const loading = this.state.deletionOrError === undefined
         return (
-            <li className="list-group-item p-3 d-block">
+            <li className="list-group-item p-3 d-block" data-e2e-access-token-description={this.props.node.note}>
                 <div className="d-flex w-100 justify-content-between">
                     <div className="mr-2">
                         {this.props.showSubject ? (
@@ -147,7 +147,12 @@ export class AccessTokenNode extends React.PureComponent<AccessTokenNodeProps, A
                         </small>
                     </div>
                     <div>
-                        <button className="btn btn-danger" onClick={this.deleteAccessToken} disabled={loading}>
+                        <button
+                            type="button"
+                            className="btn btn-danger e2e-access-token-delete"
+                            onClick={this.deleteAccessToken}
+                            disabled={loading}
+                        >
                             Delete
                         </button>
                         {isErrorLike(this.state.deletionOrError) && (

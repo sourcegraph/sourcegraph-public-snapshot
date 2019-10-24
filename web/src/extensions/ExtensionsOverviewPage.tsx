@@ -10,7 +10,7 @@ import { ExtensionsList } from './ExtensionsList'
 
 interface Props
     extends Pick<ExtensionsAreaRouteContext, 'authenticatedUser' | 'subject'>,
-        PlatformContextProps<'settings' | 'updateSettings' | 'queryGraphQL'>,
+        PlatformContextProps<'settings' | 'updateSettings' | 'requestGraphQL'>,
         SettingsCascadeProps {
     location: H.Location
     history: H.History

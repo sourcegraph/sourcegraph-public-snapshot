@@ -4,16 +4,17 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { ActionItemProps } from '../../../../shared/src/actions/ActionItem'
+import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
+import { ThemeProps } from '../../theme'
 import { DiffStat } from './DiffStat'
 import { FileDiffHunks } from './FileDiffHunks'
 
-export interface FileDiffNodeProps extends PlatformContextProps, ExtensionsControllerProps {
+export interface FileDiffNodeProps extends PlatformContextProps, ExtensionsControllerProps, ThemeProps {
     node: GQL.IFileDiff
 
     /** The base repository and revision. */
@@ -26,7 +27,7 @@ export interface FileDiffNodeProps extends PlatformContextProps, ExtensionsContr
     className?: string
     location: H.Location
     history: H.History
-    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemProps>
+    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
 }
 
 interface State {
@@ -53,7 +54,7 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
             // By process of elimination (that TypeScript is unfortunately unable to infer, except
             // by reorganizing this code in a way that's much more complex to humans), node.oldPath
             // is non-null.
-            path = <span title={node.oldPath!}>{node.oldPath!}</span>
+            path = <span title={node.oldPath!}>{node.oldPath}</span>
         }
 
         const anchor = `diff-${node.internalID}`
@@ -93,6 +94,7 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                     </div>
                     {this.state.expanded && (
                         <FileDiffHunks
+                            {...this.props}
                             className="file-diff-node__hunks"
                             fileDiffAnchor={anchor}
                             base={{
@@ -106,8 +108,6 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                             hunks={node.hunks}
                             lineNumbers={this.props.lineNumbers}
                             platformContext={this.props.platformContext}
-                            history={this.props.history}
-                            location={this.props.location}
                             hoverifier={this.props.hoverifier}
                         />
                     )}

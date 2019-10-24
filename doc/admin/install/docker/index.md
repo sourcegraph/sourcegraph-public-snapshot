@@ -1,41 +1,41 @@
 # Install Sourcegraph with Docker
 
-## Prerequisites
-
-[Docker](https://docs.docker.com/engine/installation/) is required.
-
-## Step 1: Run Sourcegraph
+It takes less than 5 minutes to run and install Sourcegraph using Docker:
 
 <!--
   DO NOT CHANGE THIS TO A CODEBLOCK.
   We want line breaks for readability, but backslashes to escape them do not work cross-platform.
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
-<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 2633:2633 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.0.0-beta</code></pre>
 
-When Sourcegraph is ready, continue at http://localhost:7080.
+<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 2633:2633 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.9.1</code></pre>
 
-## Step 2: Add repositories
+Once the server is ready (logo is displayed in the terminal), navigate to the hostname or IP address on port `7080`.  Create the admin account, then you'll be guided through setting up Sourcegraph for code searching and navigation.
 
-After creating an account, go to the **Configuration** page in the site admin area.
+<!--
+TODO(ryan): Replace with updated screencast
+<p class="container">
+  <div style="padding:56.25% 0 0 0;position:relative;">
+    <iframe src="https://player.vimeo.com/video/314926561?color=0CB6F4&title=0&byline=0&portrait=0" style="position:absolute;top:0;left:0;width:100%;height:100%;" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
+  </div>
+</p>
+-->
 
-Click **Add GitHub.com repositories** to add all repositories associated with your GitHub.com account, or see [how to add repositories from other code hosts](../../repo/add.md).
+For next steps and further configuration options, visit the [site administration documentation](../../index.md).
 
-## Step 3: Start searching your code
+> NOTE: If you get stuck or need help, [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide), [tweet (@srcgraph)](https://twitter.com/srcgraph) or [email](mailto:support@sourcegraph.com?subject=Sourcegraph%20quickstart%20guide).
 
-**Done!** You're ready to search your code.
+## Cloud installation guides
 
-## Next steps
+Cloud specific Sourcegraph installation guides for AWS, Google Cloud and Digital Ocean.
 
-- [Configure your Sourcegraph instance](../../site_config/index.md)
-- [Configure code intelligence](../../../user/code_intelligence/index.md)
-- [Deploy Sourcegraph on AWS](../../install/docker/aws.md)
-- [Deploy Sourcegraph on Google Cloud Platform](../../install/docker/google_cloud.md)
-- [Deploy Sourcegraph on Digital Ocean](../../install/docker/digitalocean.md)
+- [Install Sourcegraph with Docker on AWS](../../install/docker/aws.md)
+- [Install Sourcegraph with Docker on Google Cloud](../../install/docker/google_cloud.md)
+- [Install Sourcegraph with Docker on DigitalOcean](../../install/docker/digitalocean.md)
 
 ## File system performance on Docker for Mac
 
-There is a [known issue](https://github.com/docker/for-mac/issues/77) in Docker for Mac that causes slower than expected file system performance on volume mounts, which impacts the performace of search and cloning.
+There is a [known issue](https://github.com/docker/for-mac/issues/77) in Docker for Mac that causes slower than expected file system performance on volume mounts, which impacts the performance of search and cloning.
 
 To achieve better performance, you can do any of the following:
 
@@ -44,4 +44,22 @@ To achieve better performance, you can do any of the following:
   ```
   --volume ~/.sourcegraph/data:/var/opt/sourcegraph:delegated
   ```
-- Run Sourcegraph Server on Linux, or use the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph) for even larger scale.
+
+## Insiders build
+
+To test new development builds of Sourcegraph (triggered by commits to master), change the tag to `insiders` in the `docker run` command.
+
+> WARNING: `insiders` builds may be unstable, so back up Sourcegraph's data and config (usually `~/.sourcegraph`) beforehand.
+
+```
+docker run --publish 7080:7080 --publish 2633:2633 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:insiders
+```
+
+To keep this up to date, run `docker pull sourcegraph/server:insiders` to pull in the latest image, and restart the container to access new changes.
+
+## Next steps
+
+- [Configuring Sourcegraph](../../config/index.md)
+- [Upgrading Sourcegraph](../../updates.md)
+- [Management console](../../management_console.md)
+- [Site administration documentation](../../index.md)

@@ -1,0 +1,71 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`withActivation no user 1`] = `
+<div>
+  activation JSON: 
+  undefined
+</div>
+`;
+
+exports[`withActivation user, admin 1`] = `
+<div>
+  activation JSON: 
+  {
+  "steps": [
+    {
+      "id": "ConnectedCodeHost",
+      "title": "Connect your code host",
+      "detail": "Configure Sourcegraph to talk to your code host and fetch a list of your repositories.",
+      "link": {
+        "to": "/site-admin/external-services"
+      }
+    },
+    {
+      "id": "DidSearch",
+      "title": "Search your code",
+      "detail": "Perform a search query on your code.",
+      "link": {
+        "to": "/search"
+      }
+    },
+    {
+      "id": "FoundReferences",
+      "title": "Find some references",
+      "detail": "To find references of a token, navigate to a code file in one of your repositories, hover over a token to activate the tooltip, and then click \\"Find references\\"."
+    },
+    {
+      "id": "EnabledSharing",
+      "title": "Configure SSO or share with teammates",
+      "detail": "Configure a single-sign on (SSO) provider or have at least one other teammate sign up.",
+      "link": {
+        "to": "https://docs.sourcegraph.com/admin/auth",
+        "target": "_blank"
+      }
+    }
+  ]
+}
+</div>
+`;
+
+exports[`withActivation user, non-admin 1`] = `
+<div>
+  activation JSON: 
+  {
+  "steps": [
+    {
+      "id": "DidSearch",
+      "title": "Search your code",
+      "detail": "Perform a search query on your code.",
+      "link": {
+        "to": "/search"
+      }
+    },
+    {
+      "id": "FoundReferences",
+      "title": "Find some references",
+      "detail": "To find references of a token, navigate to a code file in one of your repositories, hover over a token to activate the tooltip, and then click \\"Find references\\"."
+    }
+  ]
+}
+</div>
+`;

@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/pkg/license"
 )
 
 func TestEnforcementPreCreateUser(t *testing.T) {
 	tests := []struct {
 		license         *license.Info
-		activeUserCount uint
+		activeUserCount int
 		wantErr         bool
 	}{
 		// See the impl for why we treat UserCount == 0 as unlimited.
@@ -72,15 +71,17 @@ func TestEnforcementPreCreateUser(t *testing.T) {
 				return test.license, "test-signature", nil
 			}
 			defer func() { MockGetConfiguredProductLicenseInfo = nil }()
-			db.Mocks.Users.Count = func(context.Context, *db.UsersListOptions) (int, error) {
-				return int(test.activeUserCount), nil
-			}
-			defer func() { db.Mocks = db.MockStores{} }()
-
-			err := db.Users.PreCreateUser(context.Background())
+			store := fakeStore{count: test.activeUserCount}
+			err := NewPreCreateUserHook(store)(context.Background())
 			if gotErr := (err != nil); gotErr != test.wantErr {
 				t.Errorf("got error %v, want %v", gotErr, test.wantErr)
 			}
 		})
 	}
+}
+
+type fakeStore struct{ count int }
+
+func (s fakeStore) Count(context.Context) (int, error) {
+	return s.count, nil
 }

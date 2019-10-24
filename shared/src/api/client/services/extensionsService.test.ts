@@ -2,33 +2,33 @@ import { from, of, Subscribable, throwError } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { ConfiguredExtension } from '../../../extensions/extension'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../settings/settings'
-import { Model } from '../model'
 import { ExecutableExtension, ExtensionsService } from './extensionsService'
 import { SettingsService } from './settings'
+import { ModelService } from './modelService'
 
-const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
+const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 class TestExtensionsService extends ExtensionsService {
     constructor(
         mockConfiguredExtensions: ConfiguredExtension[],
-        model: Subscribable<Pick<Model, 'visibleViewComponents'>>,
+        modelService: Pick<ModelService, 'activeLanguages'>,
         settingsService: Pick<SettingsService, 'data'>,
         extensionActivationFilter: (
             enabledExtensions: ConfiguredExtension[],
-            model: Pick<Model, 'visibleViewComponents'>
+            activeLanguages: ReadonlySet<string>
         ) => ConfiguredExtension[],
         sideloadedExtensionURL: Subscribable<string | null>,
         fetchSideloadedExtension: (baseUrl: string) => Subscribable<ConfiguredExtension | null>
     ) {
         super(
             {
-                queryGraphQL: () => {
+                requestGraphQL: () => {
                     throw new Error('not implemented')
                 },
                 getScriptURLForExtension: scriptURL => scriptURL,
                 sideloadedExtensionURL,
             },
-            model,
+            modelService,
             settingsService,
             extensionActivationFilter,
             fetchSideloadedExtension
@@ -44,9 +44,11 @@ describe('activeExtensions', () => {
                 from(
                     new TestExtensionsService(
                         [],
-                        cold<Pick<Model, 'visibleViewComponents'>>('-a-|', {
-                            a: { visibleViewComponents: [] },
-                        }),
+                        {
+                            activeLanguages: cold<ReadonlySet<string>>('-a-|', {
+                                a: new Set(),
+                            }),
+                        },
                         { data: cold<SettingsCascadeOrError>('-a-|', { a: EMPTY_SETTINGS_CASCADE }) },
                         enabledExtensions => enabledExtensions,
                         cold('-a-|', { a: '' }),
@@ -65,38 +67,20 @@ describe('activeExtensions', () => {
                 from(
                     new TestExtensionsService(
                         [{ id: 'x', manifest, rawManifest: null }, { id: 'y', manifest, rawManifest: null }],
-                        cold<Pick<Model, 'visibleViewComponents'>>('-a-b-|', {
-                            a: {
-                                visibleViewComponents: [
-                                    {
-                                        type: 'textEditor',
-                                        item: { languageId: 'x', text: '', uri: '' },
-                                        selections: [],
-                                        isActive: true,
-                                    },
-                                ],
-                            },
-                            b: {
-                                visibleViewComponents: [
-                                    {
-                                        type: 'textEditor',
-                                        item: { languageId: 'y', text: '', uri: '' },
-                                        selections: [],
-                                        isActive: true,
-                                    },
-                                ],
-                            },
-                        }),
+                        {
+                            activeLanguages: cold<ReadonlySet<string>>('-a-b-|', {
+                                a: new Set(['x']),
+                                b: new Set(['y']),
+                            }),
+                        },
                         {
                             data: cold<SettingsCascadeOrError>('-a-b-|', {
                                 a: { final: { extensions: { x: true } }, subjects: [] },
                                 b: { final: { extensions: { x: true, y: true } }, subjects: [] },
                             }),
                         },
-                        (enabledExtensions, { visibleViewComponents }) =>
-                            enabledExtensions.filter(x =>
-                                (visibleViewComponents || []).some(({ item: { languageId } }) => x.id === languageId)
-                            ),
+                        (enabledExtensions, activeLanguages) =>
+                            enabledExtensions.filter(x => activeLanguages.has(x.id)),
                         cold('-a--|', { a: '' }),
                         () => of(null)
                     ).activeExtensions
@@ -113,9 +97,11 @@ describe('activeExtensions', () => {
                 from(
                     new TestExtensionsService(
                         [{ id: 'foo', manifest, rawManifest: null }],
-                        cold<Pick<Model, 'visibleViewComponents'>>('a-|', {
-                            a: { visibleViewComponents: [] },
-                        }),
+                        {
+                            activeLanguages: cold<ReadonlySet<string>>('a-|', {
+                                a: new Set([]),
+                            }),
+                        },
                         {
                             data: cold<SettingsCascadeOrError>('a-|', {
                                 a: {
@@ -156,9 +142,11 @@ describe('activeExtensions', () => {
                 from(
                     new TestExtensionsService(
                         [{ id: 'foo', manifest, rawManifest: null }],
-                        cold<Pick<Model, 'visibleViewComponents'>>('a-|', {
-                            a: { visibleViewComponents: [] },
-                        }),
+                        {
+                            activeLanguages: cold<ReadonlySet<string>>('a-|', {
+                                a: new Set([]),
+                            }),
+                        },
                         {
                             data: cold<SettingsCascadeOrError>('a-|', {
                                 a: {
@@ -173,7 +161,7 @@ describe('activeExtensions', () => {
                         },
                         enabledExtensions => enabledExtensions,
                         cold('a-|', { a: 'bar' }),
-                        () => throwError('baz')
+                        () => throwError(new Error('baz'))
                     ).activeExtensions
                 )
             ).toBe('a-|', {

@@ -1,10 +1,8 @@
 .bin/
 *.bundle.*
 client/phabricator/scripts/loader.js
-client/browser/build
+browser/build
 **/package.json
-**/*.safariextension
-!**/*.safariextension/background.safari.html
 **/coverage
 cmd/frontend/db/schema.md
 cmd/xlang-python/python-langserver/
@@ -21,10 +19,9 @@ ts-node-*
 testdata
 .github/*
 doc/
-shared/src/types/abort-controller/index.d.ts
-client/browser/src/extension/*.json
-schema/
 cmd/management-console/assets/
 **/.cache
 shared/dev/**/*.js
 **/__snapshots__
+**/*.html
+client/contrib/GH2SG.bookmarklet.js

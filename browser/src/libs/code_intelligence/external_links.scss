@@ -1,0 +1,7 @@
+.open-on-sourcegraph {
+    &__icon {
+        &--muted {
+            filter: grayscale(100%);
+        }
+    }
+}

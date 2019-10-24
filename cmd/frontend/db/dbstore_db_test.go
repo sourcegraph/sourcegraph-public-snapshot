@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
 func TestMigrations(t *testing.T) {
@@ -13,10 +13,10 @@ func TestMigrations(t *testing.T) {
 		t.Skip()
 	}
 
-	// get testing context to ensure we can connect to the DB
-	_ = dbtesting.TestContext(t)
+	// Setup a global test database
+	dbtesting.SetupGlobalTestDB(t)
 
-	m := dbconn.NewMigrate(dbconn.Global)
+	m := dbconn.NewMigrate(dbconn.Global, "")
 	// Run all down migrations then up migrations again to ensure there are no SQL errors.
 	if err := m.Down(); err != nil {
 		t.Errorf("error running down migrations: %s", err)

@@ -6,69 +6,40 @@ import (
 )
 
 var (
-	githubUpdateTime = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "time_last_github_sync",
-		Help:      "The last time a comprehensive GitHub sync finished",
-	}, []string{"id"})
-	gitlabUpdateTime = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "time_last_gitlab_sync",
-		Help:      "The last time a comprehensive GitLab sync finished",
-	}, []string{"id"})
-	awsCodeCommitUpdateTime = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "time_last_awscodecommit_sync",
-		Help:      "The last time a comprehensive AWS Code Commit sync finished",
-	}, []string{"id"})
 	phabricatorUpdateTime = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
 		Name:      "time_last_phabricator_sync",
 		Help:      "The last time a comprehensive Phabricator sync finished",
 	}, []string{"id"})
-	bitbucketServerUpdateTime = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "time_last_bitbucketserver_sync",
-		Help:      "The last time a comprehensive Bitbucket Server sync finished",
-	}, []string{"id"})
 
-	// gitoliteUpdateTime is an ugly duckling as repo-updater just
-	// hits a HTTP endpoint on the frontend that returns after
-	// updating all Gitolite connections. As as result, we cannot
-	// apply an "id" label to differentiate update times for different
-	// Gitolite connections, so this is a Gauge instead of a GaugeVec.
-	gitoliteUpdateTime = promauto.NewGauge(prometheus.GaugeOpts{
+	lastSync = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
-		Name:      "time_last_gitolite_sync",
-		Help:      "The last time a comprehensive Gitolite sync finished",
-	})
+		Name:      "syncer_sync_last_time",
+		Help:      "The last time a sync finished",
+	}, []string{})
 
-	otherExternalServicesLastSync = promauto.NewGaugeVec(prometheus.GaugeOpts{
+	syncedTotal = promauto.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
-		Name:      "other_external_services_sync_last_time",
-		Help:      "The last time a sync of OTHER external services finished",
-	}, []string{"id"})
+		Name:      "syncer_synced_repos_total",
+		Help:      "Total number of synced repositories",
+	}, []string{"state"})
 
-	otherExternalServicesSyncedReposTotal = promauto.NewCounterVec(prometheus.CounterOpts{
+	syncErrors = promauto.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
-		Name:      "other_external_services_synced_repos_total",
-		Help:      "Total number of synced repositories of OTHER external services",
-	}, []string{"id", "success"})
+		Name:      "syncer_sync_errors_total",
+		Help:      "Total number of sync errors",
+	}, []string{})
 
-	otherExternalServicesSyncDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+	syncDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
-		Name:      "other_external_services_sync_duration",
-		Help:      "Time spent syncing a single external service of kind OTHER",
-	}, []string{"id"})
+		Name:      "syncer_sync_duration_seconds",
+		Help:      "Time spent syncing",
+	}, []string{"success"})
 
 	purgeSuccess = promauto.NewCounter(prometheus.CounterOpts{
 		Namespace: "src",
@@ -81,12 +52,6 @@ var (
 		Subsystem: "repoupdater",
 		Name:      "purge_failed",
 		Help:      "Incremented each time we try and fail to remove a repository clone.",
-	})
-	purgeSkipped = promauto.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "purge_skipped",
-		Help:      "Incremented each time we skip a repository clone to remove.",
 	})
 
 	schedError = promauto.NewCounter(prometheus.CounterOpts{
@@ -117,12 +82,6 @@ var (
 		Namespace: "src",
 		Subsystem: "repoupdater",
 		Name:      "sched_known_repos",
-		Help:      "The number of unique repositories that have been managed by the scheduler.",
-	})
-	schedScale = promauto.NewGauge(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "sched_scale",
-		Help:      "The scheduler interval scale.",
+		Help:      "The number of repositories that are managed by the scheduler.",
 	})
 )

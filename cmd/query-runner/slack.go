@@ -6,8 +6,8 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/slack"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/slack"
 )
 
 func (n *notifier) slackNotify(ctx context.Context) {
@@ -23,11 +23,12 @@ func (n *notifier) slackNotify(ctx context.Context) {
 		n.query.Description,
 	)
 	for _, recipient := range n.recipients {
-		if err := slackNotify(ctx, recipient, text); err != nil {
+		if err := slackNotify(ctx, recipient, text, n.query.SlackWebhookURL); err != nil {
 			log15.Error("Failed to post Slack notification message.", "recipient", recipient, "text", text, "error", err)
 		}
 	}
-	logEvent("", "SavedSearchSlackNotificationSent", "results")
+	// TODO(Dan): find all users in the recipient list and log events for all of them
+	logEvent(0, "", "SavedSearchSlackNotificationSent", "results")
 }
 
 func slackNotifySubscribed(ctx context.Context, recipient *recipient, query api.SavedQuerySpecAndConfig) error {
@@ -35,10 +36,11 @@ func slackNotifySubscribed(ctx context.Context, recipient *recipient, query api.
 		searchURL(query.Config.Query, utmSourceSlack),
 		query.Config.Description,
 	)
-	if err := slackNotify(ctx, recipient, text); err != nil {
+	if err := slackNotify(ctx, recipient, text, query.Config.SlackWebhookURL); err != nil {
 		return err
 	}
-	logEvent("", "SavedSearchSlackNotificationSent", "enabled")
+	// TODO(Dan): find all users in the recipient list and log events for all of them
+	logEvent(0, "", "SavedSearchSlackNotificationSent", "enabled")
 	return nil
 }
 
@@ -47,23 +49,20 @@ func slackNotifyUnsubscribed(ctx context.Context, recipient *recipient, query ap
 		searchURL(query.Config.Query, utmSourceSlack),
 		query.Config.Description,
 	)
-	if err := slackNotify(ctx, recipient, text); err != nil {
+	if err := slackNotify(ctx, recipient, text, query.Config.SlackWebhookURL); err != nil {
 		return err
 	}
-	logEvent("", "SavedSearchSlackNotificationSent", "disabled")
+	// TODO(Dan): find all users in the recipient list and log events for all of them
+	logEvent(0, "", "SavedSearchSlackNotificationSent", "disabled")
 	return nil
 }
 
-func slackNotify(ctx context.Context, recipient *recipient, text string) error {
+func slackNotify(ctx context.Context, recipient *recipient, text string, slackWebhookURL *string) error {
 	if !recipient.slack {
 		return nil
 	}
 
-	settings, _, err := api.InternalClient.SettingsGetForSubject(ctx, recipient.subject())
-	if err != nil {
-		return err
-	}
-	if settings.NotificationsSlack == nil || settings.NotificationsSlack.WebhookURL == "" {
+	if slackWebhookURL == nil || *slackWebhookURL == "" {
 		return fmt.Errorf("unable to send Slack notification because recipient (%s) has no Slack webhook URL configured", recipient.spec)
 	}
 
@@ -74,6 +73,6 @@ func slackNotify(ctx context.Context, recipient *recipient, text string) error {
 		UnfurlMedia: false,
 		Text:        text,
 	}
-	client := slack.New(settings.NotificationsSlack.WebhookURL, true)
+	client := slack.New(*slackWebhookURL, true)
 	return slack.Post(payload, client.WebhookURL)
 }

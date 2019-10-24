@@ -3,8 +3,7 @@ This template is used only for `docsite check` (broken link checking), not for a
 docs. It should emit roughly the same Markdown and links as the actual templates, to ensure that the
 broken link checker checks the links that are produced by the actual templates.
 
-- https://docs.sourcegraph.com is rendered using https://github.com/sourcegraph/docs.sourcegraph.com.
-- The /help pages on a Sourcegraph instance are rendered by DocSitePage.tsx.
+https://docs.sourcegraph.com is rendered using https://github.com/sourcegraph/docs.sourcegraph.com.
 */}}
 {{define "root"}}
 {{with .Content}}{{template "index" .}}{{end}}
@@ -19,7 +18,7 @@ broken link checker checks the links that are produced by the actual templates.
 {{end}}
 
 {{define "index"}}
-	{{with (or (and (eq (len .Doc.Tree) 1) (index .Doc.Tree 0).Children) .Doc.Tree)}}
+	{{with .Doc.Tree}}
 		<h4 class="visible-sm">{{$.Doc.Title}}</h4>
 		<ul>{{template "doc_nav" .}}</ul>
 	{{end}}

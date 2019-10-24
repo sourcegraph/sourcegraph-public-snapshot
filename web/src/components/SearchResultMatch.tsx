@@ -1,7 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { decode } from 'he'
-import { isEqual } from 'lodash'
-import { range } from 'lodash'
+import { escapeRegExp, isEqual, range } from 'lodash'
 import React from 'react'
 import { Link } from 'react-router-dom'
 import VisibilitySensor from 'react-visibility-sensor'
@@ -13,12 +12,12 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { highlightNode } from '../../../shared/src/util/dom'
 import { renderMarkdown } from '../discussions/backend'
 import { highlightCode } from '../search/backend'
+import { ThemeProps } from '../theme'
 import { HighlightRange } from './SearchResult'
 
-interface SearchResultMatchProps {
+interface SearchResultMatchProps extends ThemeProps {
     item: GQL.ISearchResultMatch
     highlightRanges: HighlightRange[]
-    isLightTheme: boolean
 }
 
 interface SearchResultMatchState {
@@ -46,9 +45,8 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
         return this.props.item.body.text.startsWith('```') && this.props.item.body.text.endsWith('```')
     }
 
-    public constructor(props: SearchResultMatchProps) {
+    constructor(props: SearchResultMatchProps) {
         super(props)
-
         // Render the match body as markdown, and syntax highlight the response if it's a code block.
         // This is a lot of network requests right now, but once extensions can run on the backend we can
         // run results through the renderer and syntax highlighter without network requests.
@@ -63,23 +61,25 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                             : renderMarkdown({ markdown: props.item.body.text })
                     ),
                     switchMap(markdownHTML => {
-                        if (this.bodyIsCode() && markdownHTML.includes('<code') && markdownHTML.includes('</code>')) {
+                        if (this.bodyIsCode()) {
                             const lang = this.getLanguage() || 'txt'
                             const parser = new DOMParser()
-                            // Get content between the outermost code tags.
-                            const codeContent = parser
-                                .parseFromString(markdownHTML, 'text/html')
-                                .querySelector('code')!
-                                .innerHTML.toString()
+                            // Extract the text content of the result.
+                            const codeContent = parser.parseFromString(markdownHTML, 'text/html').body.innerText.trim()
+                            // Match the code content and any trailing newlines if any.
+                            const codeContentAndAnyNewLines = new RegExp(escapeRegExp(codeContent) + '\\n*')
                             if (codeContent) {
                                 return highlightCode({
-                                    code: decode(codeContent),
+                                    code: codeContent,
                                     fuzzyLanguage: lang,
                                     disableTimeout: false,
                                     isLightTheme: this.props.isLightTheme,
                                 }).pipe(
                                     switchMap(highlightedStr => {
-                                        const highlightedMarkdown = markdownHTML.replace(codeContent, highlightedStr)
+                                        const highlightedMarkdown = decode(markdownHTML).replace(
+                                            codeContentAndAnyNewLines,
+                                            highlightedStr
+                                        )
                                         return of(highlightedMarkdown)
                                     }),
                                     // Return the rendered markdown if highlighting fails.
@@ -162,18 +162,25 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                 offset={this.visibilitySensorOffset}
             >
                 <>
-                    {this.state.HTML && (
+                    {this.state.HTML !== undefined ? (
                         <Link key={this.props.item.url} to={this.props.item.url} className="search-result-match">
-                            <Markdown
-                                refFn={this.setTableContainerElement}
-                                className={`search-result-match__markdown ${
-                                    this.bodyIsCode() ? 'search-result-match__code-excerpt' : ''
-                                }`}
-                                dangerousInnerHTML={this.state.HTML}
-                            />
+                            {this.bodyIsCode ? (
+                                <code>
+                                    <Markdown
+                                        refFn={this.setTableContainerElement}
+                                        className={`search-result-match__markdown ${'search-result-match__code-excerpt'}`}
+                                        dangerousInnerHTML={this.state.HTML}
+                                    />
+                                </code>
+                            ) : (
+                                <Markdown
+                                    refFn={this.setTableContainerElement}
+                                    className="search-result-match__markdown"
+                                    dangerousInnerHTML={this.state.HTML}
+                                />
+                            )}
                         </Link>
-                    )}
-                    {!this.state.HTML && (
+                    ) : (
                         <>
                             <LoadingSpinner className="icon-inline search-result-match__loader" />
                             <table>

@@ -5,8 +5,7 @@ import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { from as fromPromise, Subject, Subscription } from 'rxjs'
-import { catchError } from 'rxjs/operators'
-import { debounceTime } from 'rxjs/operators'
+import { catchError, debounceTime } from 'rxjs/operators'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -157,41 +156,29 @@ export class APIConsole extends React.PureComponent<Props, State> {
                     onEditOperationName={this.onEditOperationName}
                     fetcher={fetcher}
                     defaultQuery={defaultQuery}
-                    editorTheme={'sourcegraph'}
+                    editorTheme="sourcegraph"
                     ref={this.setGraphiQLRef}
                 >
-                    <GraphiQL.Logo>GraphQL API Console</GraphiQL.Logo>
+                    <GraphiQL.Logo>GraphQL API console</GraphiQL.Logo>
                     <GraphiQL.Toolbar>
-                        <GraphiQL.Button
-                            onClick={this.handlePrettifyQuery}
-                            title="Prettify Query (Shift-Ctrl-P)"
-                            label="Prettify"
-                        />
-                        <GraphiQL.Button onClick={this.handleToggleHistory} title="Show History" label="History" />
-                        <div className="api-console__alert alert alert-warning">
-                            The API console uses your <strong>real production data.</strong>
+                        <div className="d-flex align-items-center">
+                            <GraphiQL.Button
+                                onClick={this.handlePrettifyQuery}
+                                title="Prettify Query (Shift-Ctrl-P)"
+                                label="Prettify"
+                            />
+                            <GraphiQL.Button onClick={this.handleToggleHistory} title="Show History" label="History" />
+                            <Link className="btn btn-link" to="/help/api/graphql">
+                                Docs
+                            </Link>
+                            <div className="alert alert-warning py-1 px-3 mb-0 ml-2 text-nowrap">
+                                <small>
+                                    The API console uses <strong>real production data.</strong>
+                                </small>
+                            </div>
                         </div>
                     </GraphiQL.Toolbar>
                 </GraphiQL>
-                <div className="api-console__footer">
-                    <span className="api-console__footer-section api-console__footer-section--docs">
-                        <Link to="/help/api/graphql">General API documentation</Link>
-                        <span className="api-console__footer-section-spacer">·</span>
-                        <Link to="/help/api/graphql/examples">example queries</Link>
-                    </span>
-                    <span className="api-console__footer-section">
-                        Powered by{' '}
-                        <a
-                            className="api-console__footer-link"
-                            href="https://github.com/graphql/graphiql"
-                            target="_blank"
-                        >
-                            Graph<em>i</em>QL
-                        </a>
-                        .
-                    </span>
-                    <span className="api-console__footer-section" />
-                </div>
             </>
         )
     }

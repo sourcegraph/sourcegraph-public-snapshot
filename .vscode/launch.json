@@ -3,15 +3,37 @@
   "configurations": [
     {
       "type": "node",
+      "name": "vscode-jest-tests",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/jest/bin/jest",
+      "args": [
+        "--color",
+        "--runInBand",
+        // "path/to/test/file",
+        // "-t",
+        // "test name",
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": [
+        "**/async_hooks.js",
+        "**/inspector_async_hook.js",
+        // "**/node_modules/rxjs",
+      ],
+      "smartStep": false,
+    },
+    {
+      "type": "node",
       "request": "launch",
       "name": "Gulp",
       "cwd": "${workspaceFolder}",
       "program": "${workspaceFolder}/node_modules/gulp/bin/gulp.js",
       "args": ["webpack"],
       "env": {
-        "TS_NODE_COMPILER_OPTIONS": "{\"module\":\"commonjs\"}"
+        "TS_NODE_COMPILER_OPTIONS": '{"module":"commonjs"}',
       },
-      "internalConsoleOptions": "openOnSessionStart"
+      "internalConsoleOptions": "openOnSessionStart",
     },
     {
       "name": "Webapp Chrome",
@@ -20,7 +42,7 @@
       "port": 9222,
       "webRoot": "${workspaceRoot}/web",
       "url": "http://localhost:3080/*",
-      "sourceMaps": true
+      "sourceMaps": true,
     },
     {
       "name": "Attach to gitserver",
@@ -32,7 +54,7 @@
       "host": "127.0.0.1",
       "program": "${workspaceRoot}",
       "env": {},
-      "args": []
+      "args": [],
     },
     {
       "name": "Attach to indexer",
@@ -44,7 +66,7 @@
       "host": "127.0.0.1",
       "program": "${workspaceRoot}",
       "env": {},
-      "args": []
+      "args": [],
     },
     {
       "name": "Attach to query-runner",
@@ -56,7 +78,7 @@
       "host": "127.0.0.1",
       "program": "${workspaceRoot}",
       "env": {},
-      "args": []
+      "args": [],
     },
     {
       "name": "Attach to repo-updater",
@@ -68,7 +90,7 @@
       "host": "127.0.0.1",
       "program": "${workspaceRoot}",
       "env": {},
-      "args": []
+      "args": [],
     },
     {
       "name": "Attach to searcher",
@@ -80,7 +102,7 @@
       "host": "127.0.0.1",
       "program": "${workspaceRoot}",
       "env": {},
-      "args": []
+      "args": [],
     },
     {
       "name": "Attach to symbols",
@@ -92,7 +114,7 @@
       "host": "127.0.0.1",
       "program": "${workspaceRoot}",
       "env": {},
-      "args": []
+      "args": [],
     },
     {
       "name": "Attach to github-proxy",
@@ -104,7 +126,7 @@
       "host": "127.0.0.1",
       "program": "${workspaceRoot}",
       "env": {},
-      "args": []
+      "args": [],
     },
     {
       "name": "Attach to frontend",
@@ -116,7 +138,7 @@
       "host": "127.0.0.1",
       "program": "${workspaceRoot}",
       "env": {},
-      "args": []
+      "args": [],
     },
     {
       "name": "Attach to management-console",
@@ -128,7 +150,7 @@
       "host": "127.0.0.1",
       "program": "${workspaceRoot}",
       "env": {},
-      "args": []
-    }
-  ]
+      "args": [],
+    },
+  ],
 }

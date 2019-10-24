@@ -1,14 +1,9 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/json"
-	"fmt"
-	"io"
 	"net/http"
-	"strconv"
-	"strings"
-
-	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -16,12 +11,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
-	"github.com/sourcegraph/sourcegraph/pkg/txemail"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/txemail"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 func serveReposGetByName(w http.ResponseWriter, r *http.Request) error {
@@ -147,59 +143,18 @@ func serveExternalServicesList(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+
+	if len(req.Kinds) == 0 {
+		req.Kinds = append(req.Kinds, req.Kind)
+	}
+
 	services, err := db.ExternalServices.List(r.Context(), db.ExternalServicesListOptions{
-		Kinds: []string{req.Kind},
+		Kinds: req.Kinds,
 	})
 	if err != nil {
 		return err
 	}
 	return json.NewEncoder(w).Encode(services)
-}
-
-func serveReposInventoryUncached(w http.ResponseWriter, r *http.Request) error {
-	var req api.ReposGetInventoryUncachedRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		return err
-	}
-	repo, err := backend.Repos.Get(r.Context(), req.Repo)
-	if err != nil {
-		return err
-	}
-	inv, err := backend.Repos.GetInventoryUncached(r.Context(), repo, req.CommitID)
-	if err != nil {
-		return err
-	}
-	data, err := json.Marshal(inv)
-	if err != nil {
-		return err
-	}
-	w.WriteHeader(http.StatusOK)
-	w.Write(data)
-	return nil
-}
-
-func serveReposInventory(w http.ResponseWriter, r *http.Request) error {
-	var req api.ReposGetInventoryRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		return err
-	}
-	repo, err := backend.Repos.Get(r.Context(), req.Repo)
-	if err != nil {
-		return err
-	}
-	inv, err := backend.Repos.GetInventory(r.Context(), repo, req.CommitID)
-	if err != nil {
-		return err
-	}
-	data, err := json.Marshal(inv)
-	if err != nil {
-		return err
-	}
-	w.WriteHeader(http.StatusOK)
-	w.Write(data)
-	return nil
 }
 
 func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
@@ -214,37 +169,79 @@ func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func serveReposList(w http.ResponseWriter, r *http.Request) error {
-	var opt db.ReposListOptions
-	err := json.NewDecoder(r.Body).Decode(&opt)
-	if err != nil {
-		return err
+// serveSearchConfiguration is _only_ used by the zoekt index server. Zoekt does
+// not depend on frontend and therefore does not have access to `conf.Watch`.
+// Additionally, it only cares about certain search specific settings so this
+// search specific endpoint is used rather than serving the entire site settings
+// from /.internal/configuration.
+func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
+	opts := struct {
+		LargeFiles []string
+		Symbols    bool
+	}{
+		LargeFiles: conf.Get().SearchLargeFiles,
+		Symbols:    conf.SymbolIndexEnabled(),
 	}
-	res, err := backend.Repos.List(r.Context(), opt)
+	err := json.NewEncoder(w).Encode(opts)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "encode")
 	}
+	return nil
+}
 
-	// BACKCOMPAT: Add a "URI" field because zoekt-sourcegraph-indexserver expects one to exist
-	// (with the repository name). This is a legacy of the rename from "repo URI" to "repo name".
-	type repoWithBackcompatURIField struct {
-		URI string
-		*types.Repo
+type reposListServer struct {
+	SourcegraphDotComMode bool
+
+	Repos interface {
+		ListDefault(context.Context) ([]*types.Repo, error)
+		List(context.Context, db.ReposListOptions) ([]*types.Repo, error)
 	}
-	res2 := make([]*repoWithBackcompatURIField, len(res))
-	for i, repo := range res {
-		res2[i] = &repoWithBackcompatURIField{
-			URI:  string(repo.Name),
-			Repo: repo,
+}
+
+func (h *reposListServer) serve(w http.ResponseWriter, r *http.Request) error {
+	var names []string
+	if h.SourcegraphDotComMode {
+		res, err := h.Repos.ListDefault(r.Context())
+		if err != nil {
+			return errors.Wrap(err, "listing repos")
+		}
+		names = make([]string, len(res))
+		for i, r := range res {
+			names[i] = string(r.Name)
+		}
+	} else {
+		var opt db.ReposListOptions
+		if err := json.NewDecoder(r.Body).Decode(&opt); err != nil {
+			return err
+		}
+		res, err := h.Repos.List(r.Context(), opt)
+		if err != nil {
+			return errors.Wrap(err, "listing repos")
+		}
+		names = make([]string, len(res))
+		for i, r := range res {
+			names[i] = string(r.Name)
 		}
 	}
 
-	data, err := json.Marshal(res2)
+	// BACKCOMPAT: Add a Name field that serializes to `URI` because
+	// zoekt-sourcegraph-indexserver expects one to exist (with the
+	// repository name). This is a legacy of the rename from "repo URI" to
+	// "repo name".
+	type repoWithBackcompatURIField struct {
+		Name string `json:"URI"`
+	}
+	res := make([]repoWithBackcompatURIField, len(names))
+	for i, name := range names {
+		res[i].Name = name
+	}
+
+	data, err := json.Marshal(res)
 	if err != nil {
 		return err
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write(data)
+	_, _ = w.Write(data)
 	return nil
 }
 
@@ -258,29 +255,30 @@ func serveReposListEnabled(w http.ResponseWriter, r *http.Request) error {
 
 func serveSavedQueriesListAll(w http.ResponseWriter, r *http.Request) error {
 	// List settings for all users, orgs, etc.
-	settings, err := db.Settings.ListAll(r.Context())
+	settings, err := db.SavedSearches.ListAll(r.Context())
 	if err != nil {
-		return errors.Wrap(err, "db.Settings.ListAll")
+		return errors.Wrap(err, "db.SavedSearches.ListAll")
 	}
 
 	queries := make([]api.SavedQuerySpecAndConfig, 0, len(settings))
-	for _, settings := range settings {
-		var config api.PartialConfigSavedQueries
-		if err := jsonc.Unmarshal(settings.Contents, &config); err != nil {
-			return err
+	for _, s := range settings {
+		var spec api.SavedQueryIDSpec
+		if s.Config.UserID != nil {
+			spec = api.SavedQueryIDSpec{Subject: api.SettingsSubject{User: s.Config.UserID}, Key: s.Config.Key}
+		} else if s.Config.OrgID != nil {
+			spec = api.SavedQueryIDSpec{Subject: api.SettingsSubject{Org: s.Config.OrgID}, Key: s.Config.Key}
 		}
-		for _, query := range config.SavedQueries {
-			spec := api.SavedQueryIDSpec{Subject: settings.Subject, Key: query.Key}
-			queries = append(queries, api.SavedQuerySpecAndConfig{
-				Spec:   spec,
-				Config: query,
-			})
-		}
+
+		queries = append(queries, api.SavedQuerySpecAndConfig{
+			Spec:   spec,
+			Config: s.Config,
+		})
 	}
 
 	if err := json.NewEncoder(w).Encode(queries); err != nil {
 		return errors.Wrap(err, "Encode")
 	}
+
 	return nil
 }
 
@@ -290,7 +288,7 @@ func serveSavedQueriesGetInfo(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return errors.Wrap(err, "Decode")
 	}
-	info, err := db.SavedQueries.Get(r.Context(), query)
+	info, err := db.QueryRunnerState.Get(r.Context(), query)
 	if err != nil {
 		return errors.Wrap(err, "SavedQueries.Get")
 	}
@@ -306,7 +304,7 @@ func serveSavedQueriesSetInfo(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return errors.Wrap(err, "Decode")
 	}
-	err = db.SavedQueries.Set(r.Context(), &db.SavedQueryInfo{
+	err = db.QueryRunnerState.Set(r.Context(), &db.SavedQueryInfo{
 		Query:        info.Query,
 		LastExecuted: info.LastExecuted,
 		LatestResult: info.LatestResult,
@@ -326,7 +324,7 @@ func serveSavedQueriesDeleteInfo(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return errors.Wrap(err, "Decode")
 	}
-	err = db.SavedQueries.Delete(r.Context(), query)
+	err = db.QueryRunnerState.Delete(r.Context(), query)
 	if err != nil {
 		return errors.Wrap(err, "SavedQueries.Delete")
 	}
@@ -419,14 +417,7 @@ func serveUserEmailsGetEmail(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveExternalURL(w http.ResponseWriter, r *http.Request) error {
-	if err := json.NewEncoder(w).Encode(globals.ExternalURL.String()); err != nil {
-		return errors.Wrap(err, "Encode")
-	}
-	return nil
-}
-
-func serveGitServerAddrs(w http.ResponseWriter, r *http.Request) error {
-	if err := json.NewEncoder(w).Encode(conf.SrcGitServers); err != nil {
+	if err := json.NewEncoder(w).Encode(globals.ExternalURL().String()); err != nil {
 		return errors.Wrap(err, "Encode")
 	}
 	return nil
@@ -478,67 +469,38 @@ func serveGitTar(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	src, err := git.Archive(r.Context(), repo, git.ArchiveOptions{Treeish: string(commit), Format: "tar"})
-	if err != nil {
-		return err
-	}
-	defer src.Close()
-
-	w.Header().Set("Content-Type", "application/x-tar")
-	w.WriteHeader(http.StatusOK)
-	_, err = io.Copy(w, src)
-	return err
-}
-
-func serveGitInfoRefs(w http.ResponseWriter, r *http.Request) error {
-	service := r.URL.Query().Get("service")
-	if service != "git-upload-pack" {
-		return errors.New("only support service git-upload-pack")
+	opts := gitserver.ArchiveOptions{
+		Treeish: string(commit),
+		Format:  "tar",
 	}
 
-	repoName := api.RepoName(mux.Vars(r)["RepoName"])
-	repo, err := backend.Repos.GetByName(r.Context(), repoName)
-	if err != nil {
-		return err
-	}
+	location := gitserver.DefaultClient.ArchiveURL(r.Context(), repo, opts)
 
-	if !repo.Enabled {
-		return errors.Errorf("repo is not enabled: %s", repo.Name)
-	}
+	w.Header().Set("Location", location.String())
+	w.WriteHeader(http.StatusFound)
 
-	cmd := gitserver.DefaultClient.Command("git", "upload-pack", "--stateless-rpc", "--advertise-refs", ".")
-	cmd.Repo = gitserver.Repo{Name: repo.Name}
-	refs, err := cmd.Output(r.Context())
-	if err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", fmt.Sprintf("application/x-git-upload-pack-advertisement"))
-	w.WriteHeader(http.StatusOK)
-	w.Write(packetWrite("# service=git-upload-pack\n"))
-	w.Write([]byte("0000"))
-	w.Write(refs)
 	return nil
-}
-
-func serveGitUploadPack(w http.ResponseWriter, r *http.Request) error {
-	repoName := api.RepoName(mux.Vars(r)["RepoName"])
-	repo, err := backend.Repos.GetByName(r.Context(), repoName)
-	if err != nil {
-		return err
-	}
-
-	gitserver.DefaultClient.UploadPack(repo.Name, w, r)
-	return nil
-}
-
-func packetWrite(str string) []byte {
-	s := strconv.FormatInt(int64(len(str)+4), 16)
-	if len(s)%4 != 0 {
-		s = strings.Repeat("0", 4-len(s)%4) + s
-	}
-	return []byte(s + str)
 }
 
 func handlePing(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("pong"))
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "could not parse form: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	for _, service := range r.Form["service"] {
+		switch service {
+		case "gitserver":
+			if err := gitserver.DefaultClient.WaitForGitServers(r.Context()); err != nil {
+				http.Error(w, "wait for gitservers failed: "+err.Error(), http.StatusBadGateway)
+				return
+			}
+
+		default:
+			http.Error(w, "unknown service: "+service, http.StatusBadRequest)
+			return
+		}
+	}
+
+	_, _ = w.Write([]byte("pong"))
 }

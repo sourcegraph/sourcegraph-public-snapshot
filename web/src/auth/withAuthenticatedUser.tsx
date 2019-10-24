@@ -20,5 +20,5 @@ export const withAuthenticatedUser = <P extends object & { authenticatedUser: GQ
         newUrl.searchParams.set('returnTo', window.location.href)
         return <Redirect to={newUrl.pathname + newUrl.search} />
     }
-    return <Component {...{ ...props, authenticatedUser } as P} />
+    return <Component {...({ ...props, authenticatedUser } as P)} />
 }

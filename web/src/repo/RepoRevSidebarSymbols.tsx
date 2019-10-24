@@ -1,8 +1,9 @@
 import * as H from 'history'
-import { isEqual } from 'lodash'
+import { escapeRegExp, isEqual } from 'lodash'
 import * as React from 'react'
 import { NavLink } from 'react-router-dom'
-import { Observable } from 'rxjs'
+import { Observable, Subject } from 'rxjs'
+import { distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SymbolIcon } from '../../../shared/src/symbols/SymbolIcon'
 import { FilteredConnection } from '../components/FilteredConnection'
@@ -20,8 +21,8 @@ function symbolIsActive(symbolLocation: string, currentLocation: H.Location): bo
     )
 }
 
-const symbolIsActiveTrue = () => true
-const symbolIsActiveFalse = () => false
+const symbolIsActiveTrue = (): boolean => true
+const symbolIsActiveFalse = (): boolean => false
 
 interface SymbolNodeProps {
     node: GQL.ISymbol
@@ -35,11 +36,11 @@ const SymbolNode: React.FunctionComponent<SymbolNodeProps> = ({ node, location }
             <NavLink
                 to={node.url}
                 isActive={isActiveFunc}
-                className="repo-rev-sidebar-symbols-node__link"
+                className="repo-rev-sidebar-symbols-node__link e2e-symbol-link"
                 activeClassName="repo-rev-sidebar-symbols-node__link--active"
             >
-                <SymbolIcon kind={node.kind} className="icon-inline mr-1" />
-                <span className="repo-rev-sidebar-symbols-node__name">{node.name}</span>
+                <SymbolIcon kind={node.kind} className="icon-inline mr-1 e2e-symbol-icon" />
+                <span className="repo-rev-sidebar-symbols-node__name e2e-symbol-name">{node.name}</span>
                 {node.containerName && (
                     <span className="repo-rev-sidebar-symbols-node__container-name">
                         <small>{node.containerName}</small>
@@ -60,9 +61,17 @@ interface Props {
     rev: string | undefined
     history: H.History
     location: H.Location
+    /** The path of the file or directory currently shown in the content area */
+    activePath: string
 }
 
 export class RepoRevSidebarSymbols extends React.PureComponent<Props> {
+    private componentUpdates = new Subject<Props>()
+
+    public componentDidUpdate(prevProps: Props): void {
+        this.componentUpdates.next(this.props)
+    }
+
     public render(): JSX.Element | null {
         return (
             <FilteredSymbolsConnection
@@ -82,5 +91,17 @@ export class RepoRevSidebarSymbols extends React.PureComponent<Props> {
     }
 
     private fetchSymbols = (args: { first?: number; query?: string }): Observable<GQL.ISymbolConnection> =>
-        fetchSymbols(this.props.repoID, this.props.rev || '', args)
+        this.componentUpdates.pipe(
+            startWith(this.props),
+            map(props => ({ repoID: props.repoID, rev: props.rev, activePath: props.activePath })),
+            distinctUntilChanged((a, b) => isEqual(a, b)),
+            switchMap(props =>
+                fetchSymbols(props.repoID, props.rev || '', {
+                    ...args,
+                    // `includePatterns` expects regexes, so first escape the
+                    // path.
+                    includePatterns: [escapeRegExp(props.activePath)],
+                })
+            )
+        )
 }

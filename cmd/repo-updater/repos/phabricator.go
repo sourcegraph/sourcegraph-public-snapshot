@@ -2,162 +2,242 @@ package repos
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"net/url"
-	"strings"
+	"sync"
 	"time"
 
-	"golang.org/x/net/context/ctxhttp"
-
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/goware/urlx"
+	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-type phabRepo struct {
-	Fields *struct {
-		// e.g. "git"
-		VCS string `json:"vcs"`
-		// phab unique short name
-		Callsign string `json:"callsign"`
-		// "active" || "inactive"
-		Status string `json:"status"`
-	} `json:"fields"`
-	Attachments *struct {
-		URIs *struct {
-			URIs []*struct {
-				Fields *struct {
-					URI *struct {
-						Raw        string `json:"raw"`
-						Normalized string `json:"normalized"`
-					} `json:"uri"`
-					Builtin *struct {
-						Protocol   *string `json:"protocol"`
-						Identifier *string `json:"identifier"`
-					} `json:"builtin"`
-				} `json:"fields"`
-			} `json:"uris"`
-		} `json:"uris"`
-	} `json:"attachments"`
+// A PhabricatorSource yields repositories from a single Phabricator connection configured
+// in Sourcegraph via the external services configuration.
+type PhabricatorSource struct {
+	svc  *ExternalService
+	conn *schema.PhabricatorConnection
+	cf   *httpcli.Factory
+
+	mu  sync.Mutex
+	cli *phabricator.Client
 }
 
-type phabRepoLookupResponse struct {
-	Data   []*phabRepo `json:"data"`
-	Cursor *struct {
-		Limit  int     `json:"limit"`
-		After  *string `json:"after"`
-		Before *string `json:"before"`
-	} `json:"cursor"`
+// NewPhabricatorSource returns a new PhabricatorSource from the given external service.
+func NewPhabricatorSource(svc *ExternalService, cf *httpcli.Factory) (*PhabricatorSource, error) {
+	var c schema.PhabricatorConnection
+	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
+	}
+	return &PhabricatorSource{svc: svc, conn: &c, cf: cf}, nil
 }
 
-type phabAPIResponse struct {
-	Result    *phabRepoLookupResponse `json:"result"`
-	Error     *string                 `json:"error_code"`
-	ErrorInfo *string                 `json:"error_info"`
+// ListRepos returns all Phabricator repositories accessible to all connections configured
+// in Sourcegraph via the external services configuration.
+func (s *PhabricatorSource) ListRepos(ctx context.Context, results chan SourceResult) {
+	cli, err := s.client(ctx)
+	if err != nil {
+		results <- SourceResult{Source: s, Err: err}
+		return
+	}
+
+	cursor := &phabricator.Cursor{Limit: 100, Order: "oldest"}
+	for {
+		var page []*phabricator.Repo
+		page, cursor, err = cli.ListRepos(ctx, phabricator.ListReposArgs{Cursor: cursor})
+		if err != nil {
+			results <- SourceResult{Source: s, Err: err}
+			return
+		}
+
+		for _, r := range page {
+			if r.VCS != "git" || r.Status == "inactive" {
+				continue
+			}
+
+			repo, err := s.makeRepo(r)
+			if err != nil {
+				results <- SourceResult{Source: s, Err: err}
+				return
+			}
+			results <- SourceResult{Source: s, Repo: repo}
+		}
+
+		if cursor.After == "" {
+			break
+		}
+	}
+}
+
+// ExternalServices returns a singleton slice containing the external service.
+func (s *PhabricatorSource) ExternalServices() ExternalServices {
+	return ExternalServices{s.svc}
+}
+
+func (s *PhabricatorSource) makeRepo(repo *phabricator.Repo) (*Repo, error) {
+	var external []*phabricator.URI
+	builtin := make(map[string]*phabricator.URI)
+
+	for _, u := range repo.URIs {
+		if u.Disabled || u.Normalized == "" {
+			continue
+		} else if u.BuiltinIdentifier != "" {
+			builtin[u.BuiltinProtocol+"+"+u.BuiltinIdentifier] = u
+		} else {
+			external = append(external, u)
+		}
+	}
+
+	var name string
+	if len(external) > 0 {
+		name = external[0].Normalized
+	}
+
+	var cloneURL string
+	for _, alt := range [...]struct {
+		protocol, identifier string
+	}{ // Ordered by priority.
+		{"https", "shortname"},
+		{"https", "callsign"},
+		{"https", "id"},
+		{"ssh", "shortname"},
+		{"ssh", "callsign"},
+		{"ssh", "id"},
+	} {
+		if u, ok := builtin[alt.protocol+"+"+alt.identifier]; ok {
+			cloneURL = u.Effective
+			// TODO(tsenart): Authenticate the cloneURL with the user's
+			// VCS password once we have that setting in the config. The
+			// Conduit token can't be used for cloning.
+			// cloneURL = setUserinfoBestEffort(cloneURL, conn.VCSPassword, "")
+
+			if name == "" {
+				name = u.Normalized
+			}
+		}
+	}
+
+	if cloneURL == "" {
+		log15.Warn("unable to construct clone URL for repo", "name", name, "phabricator_id", repo.PHID)
+	}
+
+	if name == "" {
+		return nil, errors.Errorf("no canonical name available for repo with id=%v", repo.PHID)
+	}
+
+	serviceID, err := urlx.NormalizeString(s.conn.Url)
+	if err != nil {
+		// Should never happen. URL must be validated on input.
+		panic(err)
+	}
+
+	urn := s.svc.URN()
+	return &Repo{
+		Name: name,
+		URI:  name,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          repo.PHID,
+			ServiceType: "phabricator",
+			ServiceID:   serviceID,
+		},
+		Enabled: true,
+		Sources: map[string]*SourceInfo{
+			urn: {
+				ID:       urn,
+				CloneURL: cloneURL,
+				// TODO(tsenart): We need a way for admins to specify which URI to
+				// use as a CloneURL. Do they want to use https + shortname, git + callsign
+				// an external URI that's mirrored or observed, etc.
+				// This must be figured out when starting to integrate the new Syncer with this
+				// source.
+			},
+		},
+		Metadata: repo,
+	}, nil
+}
+
+// client initialises the phabricator.Client if it isn't initialised yet.
+// This is done lazily instead of in NewPhabricatorSource so that we have
+// access to the context.Context passed in via ListRepos.
+func (s *PhabricatorSource) client(ctx context.Context) (*phabricator.Client, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.cli != nil {
+		return s.cli, nil
+	}
+
+	hc, err := s.cf.Doer()
+	if err != nil {
+		return nil, err
+	}
+
+	s.cli, err = phabricator.NewClient(ctx, s.conn.Url, s.conn.Token, hc)
+	return s.cli, err
 }
 
 // RunPhabricatorRepositorySyncWorker runs the worker that syncs repositories from Phabricator to Sourcegraph
-func RunPhabricatorRepositorySyncWorker(ctx context.Context) {
+func RunPhabricatorRepositorySyncWorker(ctx context.Context, s Store) {
+	cf := NewHTTPClientFactory()
+
 	for {
-		phabs, err := conf.PhabricatorConfigs(ctx)
+		phabs, err := s.ListExternalServices(ctx, StoreListExternalServicesArgs{
+			Kinds: []string{"PHABRICATOR"},
+		})
 		if err != nil {
 			log15.Error("unable to fetch Phabricator connections", "err", err)
 		}
 
-		for i, c := range phabs {
-			if c.Token == "" {
+		for _, phab := range phabs {
+			src, err := NewPhabricatorSource(phab, cf)
+			if err != nil {
+				log15.Error("failed to instantiate PhabricatorSource", "err", err)
 				continue
 			}
 
-			after := ""
-			for {
-				log15.Info("RunPhabricatorRepositorySyncWorker:fetchPhabRepos", "ith", i, "total", len(phabs))
-				res, err := fetchPhabRepos(ctx, c, after)
-				if err != nil {
-					log15.Error("Error fetching Phabricator repos", "err", err)
-					break
-				}
-				err = updatePhabRepos(ctx, c, res.Data)
-				if err != nil {
-					log15.Error("Error updating Phabricator repos", "err", err)
-				}
-				phabricatorUpdateTime.WithLabelValues(c.Url).Set(float64(time.Now().Unix()))
-
-				if res.Cursor.After == nil {
-					break
-				}
-				after = *res.Cursor.After
+			repos, err := listAll(ctx, src)
+			if err != nil {
+				log15.Error("Error fetching Phabricator repos", "err", err)
+				continue
 			}
 
+			err = updatePhabRepos(ctx, repos)
+			if err != nil {
+				log15.Error("Error updating Phabricator repos", "err", err)
+				continue
+			}
+
+			cfg, err := phab.Configuration()
+			if err != nil {
+				log15.Error("failed to parse Phabricator config", "err", err)
+				continue
+			}
+
+			phabricatorUpdateTime.WithLabelValues(
+				cfg.(*schema.PhabricatorConnection).Url,
+			).Set(float64(time.Now().Unix()))
 		}
+
 		time.Sleep(GetUpdateInterval())
 	}
 }
 
-func fetchPhabRepos(ctx context.Context, cfg *schema.PhabricatorConnection, after string) (*phabRepoLookupResponse, error) {
-	form := url.Values{}
-	form.Add("output", "json")
-	form.Add("params[__conduit__]", `{"token": "`+cfg.Token+`"}`)
-	form.Add("params[attachments]", `{"uris": true}`)
-	if after != "" {
-		form.Add("params[after]", after)
-	}
-	resp, err := ctxhttp.PostForm(ctx, nil, strings.TrimSuffix(cfg.Url, "/")+"/api/diffusion.repository.search", form)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	respBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	res := phabAPIResponse{}
-	err = json.Unmarshal(respBody, &res)
-	if err != nil {
-		return nil, err
-	}
-
-	if res.Error != nil {
-		return nil, fmt.Errorf("phab error %s: %s", *res.Error, *res.ErrorInfo)
-	}
-	return res.Result, nil
-}
-
 // updatePhabRepos ensures that all provided repositories exist in the phabricator_repos table.
-func updatePhabRepos(ctx context.Context, cfg *schema.PhabricatorConnection, repos []*phabRepo) error {
-	for _, repo := range repos {
-		if repo.Fields.VCS != "git" {
-			continue
-		}
-		if repo.Fields.Status == "inactive" {
-			continue
-		}
-		var repoName string
-		for _, u := range repo.Attachments.URIs.URIs {
-			// Phabricator may list multiple URIs for a repo, some of which are internal Phabricator resources.
-			// We select the first URI which doesn't have `builtin` fields (as those only come from internal Phab
-			// resources).
-			if u.Fields.Builtin != nil && u.Fields.Builtin.Identifier != nil {
-				continue
-			}
-			repoName = u.Fields.URI.Normalized
-			break
-		}
-		if repoName == "" {
-			// some repos have no attachments
-			return nil
-		}
-
-		err := api.InternalClient.PhabricatorRepoCreate(ctx, api.RepoName(repoName), repo.Fields.Callsign, cfg.Url)
+func updatePhabRepos(ctx context.Context, repos []*Repo) error {
+	for _, r := range repos {
+		repo := r.Metadata.(*phabricator.Repo)
+		err := api.InternalClient.PhabricatorRepoCreate(
+			ctx,
+			api.RepoName(r.Name),
+			repo.Callsign,
+			r.ExternalRepo.ServiceID,
+		)
 		if err != nil {
 			return err
 		}
 	}
-
 	return nil
 }

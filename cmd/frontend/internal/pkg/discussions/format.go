@@ -5,12 +5,12 @@ import (
 	"context"
 	"fmt"
 	"html/template"
-	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/highlight"
+	"github.com/sourcegraph/sourcegraph/internal/highlight"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 func formatTargetRepoLinesText(tr *types.DiscussionThreadTargetRepo) string {
@@ -35,7 +35,7 @@ func formatTargetRepoLinesText(tr *types.DiscussionThreadTargetRepo) string {
 	return b.String()
 }
 
-var dataLineMatch = regexp.MustCompile(`\<tr\>\<td class\=\"line\" data\-line\=\"(\d+)\"\>`)
+var dataLineMatch = lazyregexp.New(`\<tr\>\<td class\=\"line\" data\-line\=\"(\d+)\"\>`)
 
 func formatTargetRepoLinesHTML(ctx context.Context, tr *types.DiscussionThreadTargetRepo) (template.HTML, error) {
 	if !tr.HasSelection() || tr.Path == nil {
@@ -78,7 +78,12 @@ func formatTargetRepoLinesHTML(ctx context.Context, tr *types.DiscussionThreadTa
 		// contents along here.
 		isLightTheme := false
 		disableTimeout := false
-		html, _, err := highlight.Code(ctx, []byte(code), *tr.Path, disableTimeout, isLightTheme)
+		html, _, err := highlight.Code(ctx, highlight.Params{
+			Content:        []byte(code),
+			Filepath:       *tr.Path,
+			DisableTimeout: disableTimeout,
+			IsLightTheme:   isLightTheme,
+		})
 		if err != nil {
 			return err
 		}

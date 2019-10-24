@@ -1,13 +1,18 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { Suspense } from 'react'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
+import { Observable } from 'rxjs'
+import { ActivationProps } from '../../shared/src/components/activation/Activation'
+import { FetchFileCtx } from '../../shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '../../shared/src/extensions/controller'
 import * as GQL from '../../shared/src/graphql/schema'
 import { ResizablePanel } from '../../shared/src/panel/Panel'
 import { PlatformContextProps } from '../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../shared/src/settings/settings'
+import { ErrorLike } from '../../shared/src/util/errors'
 import { parseHash } from '../../shared/src/util/url'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { useScrollToLocationHash } from './components/useScrollToLocationHash'
 import { GlobalContributions } from './contributions'
 import { ExploreSectionDescriptor } from './explore/ExploreArea'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
@@ -16,43 +21,58 @@ import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
-import { KeybindingsProps } from './keybindings'
+import { KEYBOARD_SHORTCUT_SHOW_HELP, KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
+import { KeyboardShortcutsHelp } from './keyboardShortcuts/KeyboardShortcutsHelp'
 import { IntegrationsToast } from './marketing/IntegrationsToast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
+import { OrgAreaRoute } from './org/area/OrgArea'
+import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
 import { fetchHighlightedFileLines } from './repo/backend'
+import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevContainerRoute } from './repo/RepoRevContainer'
 import { LayoutRouteProps } from './routes'
-import { parseSearchURLQuery } from './search'
+import { parseSearchURLQuery, PatternTypeProps } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import { UserAccountAreaRoute } from './user/account/UserAccountArea'
-import { UserAccountSidebarItems } from './user/account/UserAccountSidebar'
+import { ThemePreferenceProps, ThemeProps } from './theme'
+import { EventLogger, EventLoggerProps } from './tracking/eventLogger'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
+import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
+import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { parseBrowserRepoURL } from './util/url'
+import LiteralSearchToast from './marketing/LiteralSearchToast'
 
 export interface LayoutProps
     extends RouteComponentProps<any>,
         SettingsCascadeProps,
         PlatformContextProps,
         ExtensionsControllerProps,
-        KeybindingsProps {
-    exploreSections: ReadonlyArray<ExploreSectionDescriptor>
-    extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
-    extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
-    extensionsAreaRoutes: ReadonlyArray<ExtensionsAreaRoute>
-    extensionsAreaHeaderActionButtons: ReadonlyArray<ExtensionsAreaHeaderActionButton>
-    siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute>
+        KeyboardShortcutsProps,
+        ThemeProps,
+        EventLoggerProps,
+        ThemePreferenceProps,
+        ActivationProps,
+        PatternTypeProps {
+    exploreSections: readonly ExploreSectionDescriptor[]
+    extensionAreaRoutes: readonly ExtensionAreaRoute[]
+    extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
+    extensionsAreaRoutes: readonly ExtensionsAreaRoute[]
+    extensionsAreaHeaderActionButtons: readonly ExtensionsAreaHeaderActionButton[]
+    siteAdminAreaRoutes: readonly SiteAdminAreaRoute[]
     siteAdminSideBarGroups: SiteAdminSideBarGroups
-    siteAdminOverviewComponents: ReadonlyArray<React.ComponentType>
-    userAreaHeaderNavItems: ReadonlyArray<UserAreaHeaderNavItem>
-    userAreaRoutes: ReadonlyArray<UserAreaRoute>
-    userAccountSideBarItems: UserAccountSidebarItems
-    userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute>
-    repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>
-    repoHeaderActionButtons: ReadonlyArray<RepoHeaderActionButton>
-    routes: ReadonlyArray<LayoutRouteProps>
+    siteAdminOverviewComponents: readonly React.ComponentType[]
+    userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
+    userAreaRoutes: readonly UserAreaRoute[]
+    userSettingsSideBarItems: UserSettingsSidebarItems
+    userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
+    orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
+    orgAreaRoutes: readonly OrgAreaRoute[]
+    repoContainerRoutes: readonly RepoContainerRoute[]
+    repoRevContainerRoutes: readonly RepoRevContainerRoute[]
+    repoHeaderActionButtons: readonly RepoHeaderActionButton[]
+    routes: readonly LayoutRouteProps[]
 
     authenticatedUser: GQL.IUser | null
 
@@ -62,13 +82,20 @@ export interface LayoutProps
      */
     viewerSubject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
 
-    isLightTheme: boolean
-    onThemeChange: () => void
-    onMainPage: (mainPage: boolean) => void
-    isMainPage: boolean
+    telemetryService: EventLogger
+
+    // Search
     navbarSearchQuery: string
     onNavbarQueryChange: (query: string) => void
-
+    fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
+    searchRequest: (
+        query: string,
+        version: string,
+        patternType: GQL.SearchPatternType,
+        { extensionsController }: ExtensionsControllerProps<'services'>
+    ) => Observable<GQL.ISearchResults | ErrorLike>
+    isSourcegraphDotCom: boolean
+    showCampaigns: boolean
     children?: never
 }
 
@@ -78,11 +105,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const needsSiteInit = window.context.showOnboarding
     const isSiteInit = props.location.pathname === '/site-admin/init'
 
-    // Force light theme on site init page.
-    if (isSiteInit && !props.isLightTheme) {
-        props.onThemeChange()
-    }
-
+    useScrollToLocationHash(props.location)
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
         return <Redirect to={{ ...props.location, pathname: props.location.pathname.slice(0, -1) }} />
@@ -90,6 +113,10 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     return (
         <div className="layout">
+            <KeyboardShortcutsHelp
+                keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_HELP}
+                keyboardShortcuts={props.keyboardShortcuts}
+            />
             <GlobalAlerts
                 isSiteAdmin={!!props.authenticatedUser && props.authenticatedUser.siteAdmin}
                 settingsCascade={props.settingsCascade}
@@ -97,46 +124,45 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             {!needsSiteInit && !isSiteInit && !!props.authenticatedUser && (
                 <IntegrationsToast history={props.history} />
             )}
+            {!isSiteInit && <LiteralSearchToast isSourcegraphDotCom={props.isSourcegraphDotCom} />}
             {!isSiteInit && <GlobalNavbar {...props} lowProfile={isSearchHomepage} />}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
             <ErrorBoundary location={props.location}>
                 <Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                     <Switch>
-                        {props.routes.map(route => {
+                        {/* eslint-disable react/jsx-no-bind */}
+                        {props.routes.map(({ render, condition = () => true, ...route }) => {
                             const isFullWidth = !route.forceNarrowWidth
                             return (
-                                <Route
-                                    {...route}
-                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                    component={undefined}
-                                    // tslint:disable-next-line:jsx-no-lambda
-                                    render={routeComponentProps => (
-                                        <div
-                                            className={[
-                                                'layout__app-router-container',
-                                                `layout__app-router-container--${
-                                                    isFullWidth ? 'full-width' : 'restricted'
-                                                }`,
-                                            ].join(' ')}
-                                        >
-                                            {route.render({ ...props, ...routeComponentProps })}
-                                        </div>
-                                    )}
-                                />
+                                condition(props) && (
+                                    <Route
+                                        {...route}
+                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                        component={undefined}
+                                        render={routeComponentProps => (
+                                            <div
+                                                className={[
+                                                    'layout__app-router-container',
+                                                    `layout__app-router-container--${
+                                                        isFullWidth ? 'full-width' : 'restricted'
+                                                    }`,
+                                                ].join(' ')}
+                                            >
+                                                {render({ ...props, ...routeComponentProps })}
+                                            </div>
+                                        )}
+                                    />
+                                )
                             )
                         })}
+                        {/* eslint-enable react/jsx-no-bind */}
                     </Switch>
                 </Suspense>
             </ErrorBoundary>
             {parseHash(props.location.hash).viewState && props.location.pathname !== '/sign-in' && (
                 <ResizablePanel
+                    {...props}
                     repoName={`git://${parseBrowserRepoURL(props.location.pathname).repoName}`}
-                    history={props.history}
-                    location={props.location}
-                    extensionsController={props.extensionsController}
-                    platformContext={props.platformContext}
-                    settingsCascade={props.settingsCascade}
-                    isLightTheme={props.isLightTheme}
                     fetchHighlightedFileLines={fetchHighlightedFileLines}
                 />
             )}

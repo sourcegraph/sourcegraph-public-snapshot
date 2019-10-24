@@ -1,15 +1,19 @@
-import { Observable, Subject } from 'rxjs'
+import { ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { Subject } from 'rxjs'
 import { TextDocument } from 'sourcegraph'
-import { TextDocumentItem } from '../../client/types/textDocument'
+import { TextModelUpdate } from '../../client/services/modelService'
+import { ExtDocument } from './textDocument'
 
 /** @internal */
-export interface ExtDocumentsAPI {
-    $acceptDocumentData(doc: TextDocumentItem[]): void
+export interface ExtDocumentsAPI extends ProxyValue {
+    $acceptDocumentData(modelUpdates: readonly TextModelUpdate[]): void
 }
 
 /** @internal */
-export class ExtDocuments implements ExtDocumentsAPI {
-    private documents = new Map<string, TextDocumentItem>()
+export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
+    public readonly [proxyValueSymbol] = true
+
+    private documents = new Map<string, ExtDocument>()
 
     constructor(private sync: () => Promise<void>) {}
 
@@ -18,7 +22,7 @@ export class ExtDocuments implements ExtDocumentsAPI {
      *
      * @internal
      */
-    public get(resource: string): TextDocument {
+    public get(resource: string): ExtDocument {
         const doc = this.documents.get(resource)
         if (!doc) {
             throw new Error(`document not found: ${resource}`)
@@ -33,7 +37,7 @@ export class ExtDocuments implements ExtDocumentsAPI {
      * @todo This is necessary because hovers can be sent before the document is loaded, and it will cause a
      * "document not found" error.
      */
-    public async getSync(resource: string): Promise<TextDocument> {
+    public async getSync(resource: string): Promise<ExtDocument> {
         const doc = this.documents.get(resource)
         if (doc) {
             return doc
@@ -47,23 +51,30 @@ export class ExtDocuments implements ExtDocumentsAPI {
      *
      * @internal
      */
-    public getAll(): TextDocument[] {
+    public getAll(): ExtDocument[] {
         return Array.from(this.documents.values())
     }
 
-    private textDocumentAdds = new Subject<TextDocument>()
-    public readonly onDidOpenTextDocument: Observable<TextDocument> = this.textDocumentAdds
+    public openedTextDocuments = new Subject<TextDocument>()
 
-    public $acceptDocumentData(docs: TextDocumentItem[] | null): void {
-        if (!docs) {
-            // We don't ever (yet) communicate to the extension when docs are closed.
-            return
-        }
-        for (const doc of docs) {
-            const isNew = !this.documents.has(doc.uri)
-            this.documents.set(doc.uri, doc)
-            if (isNew) {
-                this.textDocumentAdds.next(doc)
+    public $acceptDocumentData(modelUpdates: readonly TextModelUpdate[]): void {
+        for (const update of modelUpdates) {
+            switch (update.type) {
+                case 'added': {
+                    const { uri, languageId, text } = update
+                    const doc = new ExtDocument({ uri, languageId, text })
+                    this.documents.set(update.uri, doc)
+                    this.openedTextDocuments.next(doc)
+                    break
+                }
+                case 'updated': {
+                    const doc = this.get(update.uri)
+                    doc.update(update)
+                    break
+                }
+                case 'deleted':
+                    this.documents.delete(update.uri)
+                    break
             }
         }
     }

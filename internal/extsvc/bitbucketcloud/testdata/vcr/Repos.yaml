@@ -1,0 +1,155 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.bitbucket.org/2.0/repositories/sglocal?pagelen=1
+    method: GET
+  response:
+    body: '{"pagelen": 1, "size": 3, "values": [{"scm": "git", "website": "", "has_wiki":
+      false, "uuid": "{e1e75436-05e6-4c38-8543-9c36ec26fad1}", "links": {"watchers":
+      {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/mux/watchers"},
+      "branches": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/mux/refs/branches"},
+      "tags": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/mux/refs/tags"},
+      "commits": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/mux/commits"},
+      "clone": [{"href": "https://Unknwon@bitbucket.org/sglocal/mux.git", "name":
+      "https"}, {"href": "git@bitbucket.org:sglocal/mux.git", "name": "ssh"}], "self":
+      {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/mux"}, "source":
+      {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/mux/src"}, "html":
+      {"href": "https://bitbucket.org/sglocal/mux"}, "avatar": {"href": "https://bytebucket.org/ravatar/%7Be1e75436-05e6-4c38-8543-9c36ec26fad1%7D?ts=default"},
+      "hooks": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/mux/hooks"},
+      "forks": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/mux/forks"},
+      "downloads": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/mux/downloads"},
+      "pullrequests": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/mux/pullrequests"}},
+      "fork_policy": "allow_forks", "name": "mux", "project": {"key": "GOR", "type":
+      "project", "uuid": "{7f7a2f46-b5af-407e-a353-4a1689b8817d}", "links": {"self":
+      {"href": "https://api.bitbucket.org/2.0/teams/sglocal/projects/GOR"}, "html":
+      {"href": "https://bitbucket.org/account/user/sglocal/projects/GOR"}, "avatar":
+      {"href": "https://bitbucket.org/account/user/sglocal/projects/GOR/avatar/32"}},
+      "name": "gorilla"}, "language": "", "created_on": "2019-07-08T21:38:31.061442+00:00",
+      "mainbranch": {"type": "branch", "name": "master"}, "full_name": "sglocal/mux",
+      "has_issues": false, "owner": {"username": "sglocal", "display_name": "sglocal",
+      "type": "team", "uuid": "{9e738e10-faae-489f-a19a-b01daa807596}", "links": {"self":
+      {"href": "https://api.bitbucket.org/2.0/teams/%7B9e738e10-faae-489f-a19a-b01daa807596%7D"},
+      "html": {"href": "https://bitbucket.org/%7B9e738e10-faae-489f-a19a-b01daa807596%7D/"},
+      "avatar": {"href": "https://bitbucket.org/account/sglocal/avatar/"}}}, "updated_on":
+      "2019-07-10T21:19:51.119139+00:00", "size": 473453, "type": "repository", "slug":
+      "mux", "is_private": true, "description": ""}], "page": 1, "next": "https://api.bitbucket.org/2.0/repositories/sglocal?pagelen=1&page=2"}'
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 10 Jul 2019 22:50:51 GMT
+      Etag:
+      - '"gz[439279c9cfa8dc30e47c8e9d8b2602c1]"'
+      Server:
+      - nginx
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Vary:
+      - Authorization
+      - Accept-Encoding
+      X-Accepted-Oauth-Scopes:
+      - repository
+      X-Content-Type-Options:
+      - nosniff
+      X-Credential-Type:
+      - apppassword
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Oauth-Scopes:
+      - repository, team
+      X-Render-Time:
+      - "0.134613990784"
+      X-Request-Count:
+      - "424"
+      X-Served-By:
+      - app-144
+      X-Static-Version:
+      - dcb82209cd01
+      X-Version:
+      - dcb82209cd01
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.bitbucket.org/2.0/repositories/sglocal?pagelen=1&page=3
+    method: GET
+  response:
+    body: '{"pagelen": 1, "previous": "https://api.bitbucket.org/2.0/repositories/sglocal?pagelen=1&page=2",
+      "values": [{"scm": "git", "website": "", "has_wiki": false, "uuid": "{421b93e9-1f00-4054-8156-4d821d4a768b}",
+      "links": {"watchers": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/python-langserver/watchers"},
+      "branches": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/python-langserver/refs/branches"},
+      "tags": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/python-langserver/refs/tags"},
+      "commits": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/python-langserver/commits"},
+      "clone": [{"href": "https://Unknwon@bitbucket.org/sglocal/python-langserver.git",
+      "name": "https"}, {"href": "git@bitbucket.org:sglocal/python-langserver.git",
+      "name": "ssh"}], "self": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/python-langserver"},
+      "source": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/python-langserver/src"},
+      "html": {"href": "https://bitbucket.org/sglocal/python-langserver"}, "avatar":
+      {"href": "https://bytebucket.org/ravatar/%7B421b93e9-1f00-4054-8156-4d821d4a768b%7D?ts=default"},
+      "hooks": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/python-langserver/hooks"},
+      "forks": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/python-langserver/forks"},
+      "downloads": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/python-langserver/downloads"},
+      "pullrequests": {"href": "https://api.bitbucket.org/2.0/repositories/sglocal/python-langserver/pullrequests"}},
+      "fork_policy": "allow_forks", "name": "python-langserver", "project": {"key":
+      "TEST", "type": "project", "uuid": "{4f269052-faf4-4e35-8f6b-b3127c46cee5}",
+      "links": {"self": {"href": "https://api.bitbucket.org/2.0/teams/sglocal/projects/TEST"},
+      "html": {"href": "https://bitbucket.org/account/user/sglocal/projects/TEST"},
+      "avatar": {"href": "https://bitbucket.org/account/user/sglocal/projects/TEST/avatar/32"}},
+      "name": "test"}, "language": "", "created_on": "2019-07-10T22:39:58.181685+00:00",
+      "mainbranch": {"type": "branch", "name": "master"}, "full_name": "sglocal/python-langserver",
+      "has_issues": false, "owner": {"username": "sglocal", "display_name": "sglocal",
+      "type": "team", "uuid": "{9e738e10-faae-489f-a19a-b01daa807596}", "links": {"self":
+      {"href": "https://api.bitbucket.org/2.0/teams/%7B9e738e10-faae-489f-a19a-b01daa807596%7D"},
+      "html": {"href": "https://bitbucket.org/%7B9e738e10-faae-489f-a19a-b01daa807596%7D/"},
+      "avatar": {"href": "https://bitbucket.org/account/sglocal/avatar/"}}}, "updated_on":
+      "2019-07-10T22:39:58.395470+00:00", "size": 885899, "type": "repository", "slug":
+      "python-langserver", "is_private": false, "description": ""}], "page": 3, "size":
+      3}'
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 10 Jul 2019 22:50:51 GMT
+      Etag:
+      - '"gz[aa19b58315cd3226d435312f8c7c83e3]"'
+      Server:
+      - nginx
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Vary:
+      - Authorization
+      - Accept-Encoding
+      X-Accepted-Oauth-Scopes:
+      - repository
+      X-Content-Type-Options:
+      - nosniff
+      X-Credential-Type:
+      - apppassword
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Oauth-Scopes:
+      - repository, team
+      X-Render-Time:
+      - "0.0523390769958"
+      X-Request-Count:
+      - "369"
+      X-Served-By:
+      - app-146
+      X-Static-Version:
+      - dcb82209cd01
+      X-Version:
+      - dcb82209cd01
+    status: 200 OK
+    code: 200
+    duration: ""

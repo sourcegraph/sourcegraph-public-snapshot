@@ -36,7 +36,26 @@ func (a searchAlert) ProposedQueries() *[]*searchQueryDescription {
 	if len(a.proposedQueries) == 0 {
 		return nil
 	}
+	// TODO: we need to append patternType:regexp to all proposed queries to avoid
+	// invalid suggestions. There are many where places we assume the original query is regexp,
+	// so more work is required to create a nice solution for this.
+	for _, proposedQuery := range a.proposedQueries {
+		if proposedQuery.description != "Remove quotes" {
+			proposedQuery.query = proposedQuery.query + " patternType:regexp"
+		}
+	}
 	return &a.proposedQueries
+}
+
+func (r *searchResolver) alertForQuotesInQueryInLiteralMode(ctx context.Context) (*searchAlert, error) {
+	return &searchAlert{
+		title:       "No results. Did you mean to use quotes?",
+		description: "Your search is interpreted literally and contains quotes. Did you mean to search for quotes?",
+		proposedQueries: []*searchQueryDescription{{
+			description: "Remove quotes",
+			query:       syntax.ExprString(omitQuotes(r.query)),
+		}},
+	}, nil
 }
 
 func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAlert, error) {
@@ -80,7 +99,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 		a.title = "Expand your repository filters to see results"
 		a.description = fmt.Sprintf("No repositories in repogroup:%s satisfied all of your repo: filters.", repoGroupFilters[0])
 
-		repos1, _, _, _, err := resolveRepositories(ctx, resolveRepoOp{repoFilters: repoFilters, minusRepoFilters: minusRepoFilters, onlyForks: onlyForks, noForks: noForks})
+		repos1, _, _, err := resolveRepositories(ctx, resolveRepoOp{repoFilters: repoFilters, minusRepoFilters: minusRepoFilters, onlyForks: onlyForks, noForks: noForks})
 		if err != nil {
 			return nil, err
 		}
@@ -92,7 +111,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 		}
 
 		unionRepoFilter := unionRegExps(repoFilters)
-		repos2, _, _, _, err := resolveRepositories(ctx, resolveRepoOp{repoFilters: []string{unionRepoFilter}, minusRepoFilters: minusRepoFilters, repoGroupFilters: repoGroupFilters, onlyForks: onlyForks, noForks: noForks})
+		repos2, _, _, err := resolveRepositories(ctx, resolveRepoOp{repoFilters: []string{unionRepoFilter}, minusRepoFilters: minusRepoFilters, repoGroupFilters: repoGroupFilters, onlyForks: onlyForks, noForks: noForks})
 		if err != nil {
 			return nil, err
 		}
@@ -115,7 +134,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 		a.title = "Expand your repository filters to see results"
 		a.description = fmt.Sprintf("No repositories in repogroup:%s satisfied your repo: filter.", repoGroupFilters[0])
 
-		repos1, _, _, _, err := resolveRepositories(ctx, resolveRepoOp{repoFilters: repoFilters, minusRepoFilters: minusRepoFilters, noForks: noForks, onlyForks: onlyForks})
+		repos1, _, _, err := resolveRepositories(ctx, resolveRepoOp{repoFilters: repoFilters, minusRepoFilters: minusRepoFilters, noForks: noForks, onlyForks: onlyForks})
 		if err != nil {
 			return nil, err
 		}
@@ -136,7 +155,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 		a.description = fmt.Sprintf("No repositories satisfied all of your repo: filters.")
 
 		unionRepoFilter := unionRegExps(repoFilters)
-		repos2, _, _, _, err := resolveRepositories(ctx, resolveRepoOp{repoFilters: []string{unionRepoFilter}, minusRepoFilters: minusRepoFilters, repoGroupFilters: repoGroupFilters, noForks: noForks, onlyForks: onlyForks})
+		repos2, _, _, err := resolveRepositories(ctx, resolveRepoOp{repoFilters: []string{unionRepoFilter}, minusRepoFilters: minusRepoFilters, repoGroupFilters: repoGroupFilters, noForks: noForks, onlyForks: onlyForks})
 		if err != nil {
 			return nil, err
 		}
@@ -158,27 +177,14 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 		isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
 		proposeQueries := true
 		if !envvar.SourcegraphDotComMode() {
-			if noRepositoriesEnabled, err := noRepositoriesEnabled(ctx); err == nil && noRepositoriesEnabled {
+			if needsRepoConfig, err := needsRepositoryConfiguration(ctx); err == nil && needsRepoConfig {
 				proposeQueries = false
-				ok, err := needsRepositoryConfiguration(ctx)
-				if err != nil {
-					return nil, err
-				}
-				if ok {
-					a.title = "No repositories or code hosts configured"
-					a.description = "To start searching code, "
-					if isSiteAdmin {
-						a.description += "first go to site admin to configure repositories and code hosts."
-					} else {
-						a.description = "ask the site admin to configure and enable repositories."
-					}
+				a.title = "No repositories or code hosts configured"
+				a.description = "To start searching code, "
+				if isSiteAdmin {
+					a.description += "first go to site admin to configure repositories and code hosts."
 				} else {
-					a.title = "No repositories enabled"
-					if isSiteAdmin {
-						a.description = "Go to site admin to enable repositories to search."
-					} else {
-						a.description = "Ask the site admin to enable repositories to search."
-					}
+					a.description = "ask the site admin to configure and enable repositories."
 				}
 			}
 		}
@@ -245,7 +251,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAler
 	//
 	// TODO(sqs): this logic can be significantly improved, but it's better than
 	// nothing for now.
-	repos, _, _, _, err := r.resolveRepositories(ctx, nil)
+	repos, _, _, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -278,7 +284,7 @@ outer:
 		repoFieldValues = append(repoFieldValues, repoParentPattern)
 		ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
 		defer cancel()
-		_, _, _, overLimit, err := r.resolveRepositories(ctx, repoFieldValues)
+		_, _, overLimit, err := r.resolveRepositories(ctx, repoFieldValues)
 		if ctx.Err() != nil {
 			continue
 		} else if err != nil {
@@ -348,15 +354,28 @@ func omitQueryFields(r *searchResolver, field string) string {
 	return syntax.ExprString(omitQueryExprWithField(r.query, field))
 }
 
-func omitQueryExprWithField(query *query.Query, field string) []*syntax.Expr {
-	expr2 := make([]*syntax.Expr, 0, len(query.Syntax.Expr))
-	for _, e := range query.Syntax.Expr {
+func omitQueryExprWithField(query *query.Query, field string) syntax.ParseTree {
+	expr2 := make(syntax.ParseTree, 0, len(query.ParseTree))
+	for _, e := range query.ParseTree {
 		if e.Field == field {
 			continue
 		}
 		expr2 = append(expr2, e)
 	}
 	return expr2
+}
+
+func omitQuotes(query *query.Query) syntax.ParseTree {
+	result := make(syntax.ParseTree, 0, len(query.ParseTree))
+	for _, e := range query.ParseTree {
+		cpy := *e
+		e = &cpy
+		if e.Field == "" && strings.HasPrefix(e.Value, `"\"`) && strings.HasSuffix(e.Value, `\""`) {
+			e.Value = strings.TrimSuffix(strings.TrimPrefix(e.Value, `"\"`), `\""`)
+		}
+		result = append(result, e)
+	}
+	return result
 }
 
 // pathParentsByFrequency returns the most common path parents of the given paths.
@@ -388,10 +407,10 @@ func pathParentsByFrequency(paths []string) []string {
 // a query like "x:foo", if given a field "x" with pattern "foobar" to add,
 // it will return a query "x:foobar" instead of "x:foo x:foobar". It is not
 // guaranteed to always return the simplest query.
-func addQueryRegexpField(query *query.Query, field, pattern string) []*syntax.Expr {
+func addQueryRegexpField(query *query.Query, field, pattern string) syntax.ParseTree {
 	// Copy query expressions.
-	expr := make([]*syntax.Expr, len(query.Syntax.Expr))
-	for i, e := range query.Syntax.Expr {
+	expr := make(syntax.ParseTree, len(query.ParseTree))
+	for i, e := range query.ParseTree {
 		tmp := *e
 		expr[i] = &tmp
 	}

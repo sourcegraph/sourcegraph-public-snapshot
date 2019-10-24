@@ -2,8 +2,11 @@
 package protocol
 
 import (
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"fmt"
+	"strings"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 // Request represents a request to searcher
@@ -42,7 +45,7 @@ type Request struct {
 }
 
 // GitserverRepo returns the repository information necessary to perform gitserver requests.
-func (r Request) GitserverRepo() gitserver.Repo { return gitserver.Repo{Name: r.Repo, URL: r.URL} }
+func (r Request) GitserverRepo() gitserver.Repo { return gitserver.Repo{Name: r.Repo} }
 
 // PatternInfo describes a search request on a repo. Most of the fields
 // are based on PatternInfo used in vscode.
@@ -53,6 +56,9 @@ type PatternInfo struct {
 
 	// IsRegExp if true will treat the Pattern as a regular expression.
 	IsRegExp bool
+
+	// IsStructuralPat if true will treat the pattern as a Comby structural search pattern.
+	IsStructuralPat bool
 
 	// IsWordMatch if true will only match the pattern at word boundaries.
 	IsWordMatch bool
@@ -83,10 +89,6 @@ type PatternInfo struct {
 	// and IncludePatterns are case sensitive.
 	PathPatternsAreCaseSensitive bool
 
-	// IncludePattern, if specified, will be appended to IncludePatterns.
-	// Deprecated: Use IncludePatterns instead.
-	IncludePattern string
-
 	// FileMatchLimit limits the number of files with matches that are returned.
 	FileMatchLimit int
 
@@ -99,19 +101,44 @@ type PatternInfo struct {
 	PatternMatchesPath bool
 }
 
-// AllIncludePatterns returns all include patterns (including the deprecated
-// single p.IncludePattern).
-func (p PatternInfo) AllIncludePatterns() []string {
-	if p.IncludePattern == "" {
-		return p.IncludePatterns
+func (p *PatternInfo) String() string {
+	args := []string{fmt.Sprintf("%q", p.Pattern)}
+	if p.IsRegExp {
+		args = append(args, "re")
 	}
-	if len(p.IncludePatterns) == 0 {
-		return []string{p.IncludePattern}
+	if p.IsWordMatch {
+		args = append(args, "word")
 	}
-	all := make([]string, 1+len(p.IncludePatterns))
-	copy(all, p.IncludePatterns)
-	all[len(all)-1] = p.IncludePattern
-	return all
+	if p.IsCaseSensitive {
+		args = append(args, "case")
+	}
+	if !p.PatternMatchesContent {
+		args = append(args, "nocontent")
+	}
+	if !p.PatternMatchesPath {
+		args = append(args, "nopath")
+	}
+	if p.FileMatchLimit > 0 {
+		args = append(args, fmt.Sprintf("filematchlimit:%d", p.FileMatchLimit))
+	}
+
+	path := "glob"
+	if p.PathPatternsAreRegExps {
+		path = "f"
+	}
+	if p.PathPatternsAreCaseSensitive {
+		path = "F"
+	}
+	if p.ExcludePattern != "" {
+		args = append(args, fmt.Sprintf("-%s:%q", path, p.ExcludePattern))
+	}
+	if incs := p.IncludePatterns; len(incs) > 0 {
+		for _, inc := range incs {
+			args = append(args, fmt.Sprintf("%s:%q", path, inc))
+		}
+	}
+
+	return fmt.Sprintf("PatternInfo{%s}", strings.Join(args, ","))
 }
 
 // Response represents the response from a Search request.

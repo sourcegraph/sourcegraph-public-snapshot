@@ -1,5 +1,6 @@
 /**
  * Returns the sum of the number of matches of the patterns in the string.
+ *
  * @param patterns Patterns to match in the string.
  */
 export function count(str: string, ...patterns: RegExp[]): number {
@@ -22,4 +23,11 @@ export function numberWithCommas(x: any): string {
 
 export function pluralize(str: string, n: number, plural = str + 's'): string {
     return n === 1 ? str : plural
+}
+
+/**
+ * Replaces all non alphabetic characters with `-` and lowercases the result.
+ */
+export function sanitizeClass(value: string): string {
+    return value.replace(/[^A-Za-z]/g, '-').toLowerCase()
 }

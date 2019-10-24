@@ -77,10 +77,13 @@
 
     &__code-excerpt {
         padding-top: 0;
-        padding-bottom: 1rem;
+        padding-bottom: 0;
         padding-left: 0;
         padding-right: 0;
 
+        table {
+            margin-bottom: 0 !important; // Override docsite Markdown table CSS. A currently open PR removes that CSS and lets us remove this override.
+        }
         td.line {
             display: none;
         }

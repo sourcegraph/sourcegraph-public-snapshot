@@ -1,4 +1,4 @@
-import { evaluate, evaluateTemplate } from './evaluator'
+import { parse, parseTemplate } from './evaluator'
 
 const FIXTURE_CONTEXT = new Map<string, any>(
     Object.entries({
@@ -10,8 +10,8 @@ const FIXTURE_CONTEXT = new Map<string, any>(
     })
 )
 
-describe('evaluate', () => {
-    // tslint:disable:no-invalid-template-strings
+describe('Expression', () => {
+    /* eslint-disable no-template-curly-in-string */
     const TESTS = {
         a: 1,
         'a + b': 2,
@@ -40,17 +40,17 @@ describe('evaluate', () => {
         '`_${`-${x}-`}_`': '_-y-_',
         'a || isnotdefined': 1, // short-circuit (if not, the use of an undefined ident would cause an error)
     }
-    // tslint:enable:no-invalid-template-strings
+    /* eslint-enable no-template-curly-in-string */
     for (const [expr, want] of Object.entries(TESTS)) {
         test(expr, () => {
-            const value = evaluate(expr, FIXTURE_CONTEXT)
+            const value = parse<unknown>(expr).exec(FIXTURE_CONTEXT)
             expect(value).toBe(want)
         })
     }
 })
 
-describe('evaluateTemplate', () => {
-    // tslint:disable:no-invalid-template-strings
+describe('TemplateExpression', () => {
+    /* eslint-disable no-template-curly-in-string */
     const TESTS = {
         a: 'a',
         '${x}': 'y',
@@ -58,10 +58,10 @@ describe('evaluateTemplate', () => {
         '_${x}_${a}_${a+b}': '_y_1_2',
         '_${`-${x}-`}_': '_-y-_',
     }
-    // tslint:enable:no-invalid-template-strings
+    /* eslint-enable no-template-curly-in-string */
     for (const [template, want] of Object.entries(TESTS)) {
         test(template, () => {
-            const value = evaluateTemplate(template, FIXTURE_CONTEXT)
+            const value = parseTemplate(template).exec(FIXTURE_CONTEXT)
             expect(value).toBe(want)
         })
     }

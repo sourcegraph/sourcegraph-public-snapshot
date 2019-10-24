@@ -8,7 +8,7 @@ import (
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -201,10 +201,6 @@ func (*orgs) Create(ctx context.Context, name string, displayName *string) (*typ
 }
 
 func (o *orgs) Update(ctx context.Context, id int32, displayName *string) (*types.Org, error) {
-	if displayName == nil {
-		return nil, errors.New("no update values provided")
-	}
-
 	org, err := o.GetByID(ctx, id)
 	if err != nil {
 		return nil, err

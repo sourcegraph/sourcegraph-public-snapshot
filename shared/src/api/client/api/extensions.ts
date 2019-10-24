@@ -1,15 +1,13 @@
-import { isEqual } from 'lodash'
+import { ExecutableExtension, ExtensionsService } from '../services/extensionsService'
+import { ProxyResult } from '@sourcegraph/comlink'
 import { from, Subscription } from 'rxjs'
 import { bufferCount, startWith } from 'rxjs/operators'
-import { createProxyAndHandleRequests } from '../../common/proxy'
 import { ExtExtensionsAPI } from '../../extension/api/extensions'
-import { Connection } from '../../protocol/jsonrpc2/connection'
-import { ExecutableExtension, ExtensionsService } from '../services/extensionsService'
+import { TelemetryService } from '../../../telemetry/telemetryService'
 
 /** @internal */
 export class ClientExtensions {
     private subscriptions = new Subscription()
-    private proxy: ExtExtensionsAPI
 
     /**
      * Implements the client side of the extensions API.
@@ -18,8 +16,21 @@ export class ClientExtensions {
      * @param extensions An observable that emits the set of extensions that should be activated
      * upon subscription and whenever it changes.
      */
-    constructor(connection: Connection, extensionRegistry: ExtensionsService) {
-        this.proxy = createProxyAndHandleRequests('extensions', connection, this)
+    constructor(
+        private proxy: ProxyResult<ExtExtensionsAPI>,
+        extensionRegistry: ExtensionsService,
+        telemetryService?: TelemetryService
+    ) {
+        // Anonymously log which external extensions are active on sourcegraph.com.
+        // TODO: Send these logs to the backend to anonymously log active extensions from private instances.
+        if (telemetryService) {
+            this.subscriptions.add(
+                extensionRegistry.activeExtensions.subscribe(extensions => {
+                    const activeExtensions = extensions.map(activeExtension => activeExtension.id)
+                    telemetryService.log('activeExtensions', { activeExtensions })
+                })
+            )
+        }
 
         this.subscriptions.add(
             from(extensionRegistry.activeExtensions)
@@ -34,7 +45,7 @@ export class ClientExtensions {
                     const next: ExecutableExtension[] = []
                     if (oldExtensions) {
                         for (const x of oldExtensions) {
-                            const newIndex = toActivate.findIndex(({ id }) => isEqual(x.id, id))
+                            const newIndex = toActivate.findIndex(({ id }) => x.id === id)
                             if (newIndex === -1) {
                                 // Extension is no longer activated
                                 toDeactivate.push(x)

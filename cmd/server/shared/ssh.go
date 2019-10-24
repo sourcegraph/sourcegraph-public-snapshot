@@ -44,6 +44,9 @@ func copySSH() error {
 type execer struct {
 	// Out if set will write the command, stdout and stderr to it
 	Out io.Writer
+	// Working directory of the command.
+	Dir string
+
 	err error
 }
 
@@ -52,10 +55,14 @@ func (e *execer) Command(name string, arg ...string) {
 	if e.err != nil {
 		return
 	}
+
 	cmd := exec.Command(name, arg...)
+	cmd.Dir = e.Dir
+
 	if verbose {
 		log.Printf("$ %s %s", name, strings.Join(arg, " "))
 	}
+
 	if e.Out != nil {
 		e.Out.Write([]byte(fmt.Sprintf("\n$ %s %s\n", name, strings.Join(arg, " "))))
 		cmd.Stdout = e.Out
@@ -64,6 +71,7 @@ func (e *execer) Command(name string, arg ...string) {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 	}
+
 	e.err = cmd.Run()
 }
 

@@ -1,7 +1,12 @@
 .critical-config-editor {
+    width: 50rem;
+    margin-bottom: 10rem;
+
     &__monaco-reserved-space {
-        width: 45rem;
-        height: 32rem;
+        height: 35rem;
+        overflow: hidden;
+        resize: both;
+
         padding-top: 1rem;
         padding-bottom: 1rem;
         margin-bottom: 0.75rem;
@@ -20,5 +25,23 @@
         &--error {
             color: red;
         }
+    }
+
+    &__action-groups {
+        margin-bottom: 0.75rem;
+    }
+
+    &__action-group-header {
+        font-weight: bold;
+    }
+
+    &__actions {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    &__action {
+        margin: 0.25rem 0.5rem 0.25rem 0;
+        flex: 0 auto;
     }
 }

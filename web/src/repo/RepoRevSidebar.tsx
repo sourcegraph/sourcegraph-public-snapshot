@@ -78,11 +78,13 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
             )
         }
 
+        const STORAGE_KEY = 'repo-rev-sidebar'
+
         return (
             <Resizable
                 className="repo-rev-container__sidebar-resizable"
                 handlePosition="right"
-                storageKey="repo-rev-sidebar"
+                storageKey={STORAGE_KEY}
                 defaultSize={256 /* px */}
                 element={
                     <TabsWithLocalStorageViewStatePersistence
@@ -92,6 +94,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                             <>
                                 <Spacer />
                                 <button
+                                    type="button"
                                     onClick={this.onSidebarToggle}
                                     className={`btn btn-icon tab_bar__close-button ${TabBorderClassName}`}
                                     title="Close sidebar (Alt+S/Opt+S)"
@@ -117,11 +120,13 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                             scrollRootSelector="#explorer"
                             activePath={this.props.filePath}
                             activePathIsDir={this.props.isDir}
+                            sizeKey={`Resizable:${STORAGE_KEY}`}
                         />
                         <RepoRevSidebarSymbols
                             key="symbols"
                             repoID={this.props.repoID}
                             rev={this.props.rev}
+                            activePath={this.props.filePath}
                             history={this.props.history}
                             location={this.props.location}
                         />

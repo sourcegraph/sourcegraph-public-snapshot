@@ -1,27 +1,42 @@
 import * as H from 'history'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
-import { ActionsNavItems } from '../../../shared/src/actions/ActionsNavItems'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
-import { CommandListPopoverButton } from '../../../shared/src/commandPalette/CommandList'
+import { ActivationProps } from '../../../shared/src/components/activation/Activation'
+import { ActivationDropdown } from '../../../shared/src/components/activation/ActivationDropdown'
+import { Link } from '../../../shared/src/components/Link'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
+import { WebActionsNavItems, WebCommandListPopoverButton } from '../components/shared'
 import { isDiscussionsEnabled } from '../discussions'
-import { KeybindingsProps } from '../keybindings'
-import { eventLogger } from '../tracking/eventLogger'
-import { showDotComMarketing } from '../util/features'
+import {
+    KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE,
+    KEYBOARD_SHORTCUT_SWITCH_THEME,
+    KeyboardShortcutsProps,
+} from '../keyboardShortcuts/keyboardShortcuts'
+import { ThemePreferenceProps, ThemeProps } from '../theme'
+import { EventLoggerProps } from '../tracking/eventLogger'
+import { fetchAllStatusMessages, StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { UserNavItem } from './UserNavItem'
+import { CampaignsNavItem } from '../enterprise/campaigns/global/nav/CampaignsNavItem'
 
-interface Props extends SettingsCascadeProps, PlatformContextProps, ExtensionsControllerProps, KeybindingsProps {
+interface Props
+    extends SettingsCascadeProps,
+        KeyboardShortcutsProps,
+        ExtensionsControllerProps<'executeCommand' | 'services'>,
+        PlatformContextProps<'forceUpdateTooltip'>,
+        ThemeProps,
+        ThemePreferenceProps,
+        EventLoggerProps,
+        ActivationProps {
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null
-    isLightTheme: boolean
-    onThemeChange: () => void
-    isMainPage?: boolean
+    showDotComMarketing: boolean
+    showCampaigns: boolean
+    isSourcegraphDotCom: boolean
 }
 
 export class NavLinks extends React.PureComponent<Props> {
@@ -31,39 +46,28 @@ export class NavLinks extends React.PureComponent<Props> {
         this.subscriptions.unsubscribe()
     }
 
-    private onClickInstall = (): void => {
-        eventLogger.log('InstallSourcegraphServerCTAClicked', {
-            location_on_page: 'Navbar',
-        })
-    }
-
     public render(): JSX.Element | null {
         return (
             <ul className="nav-links nav align-items-center pl-2 pr-1">
-                {showDotComMarketing && (
-                    <li className="nav-item">
-                        <a
-                            href="https://docs.sourcegraph.com/#quickstart"
-                            className="nav-link text-truncate"
-                            onClick={this.onClickInstall}
-                            title="Install self-hosted Sourcegraph to search your own (private) code"
-                        >
-                            Install Sourcegraph
-                        </a>
+                {/* Show "Search" link on small screens when GlobalNavbar hides the SearchNavbarItem. */}
+                {this.props.location.pathname !== '/search' && (
+                    <li className="nav-item d-sm-none">
+                        <Link className="nav-link" to="/search">
+                            Search
+                        </Link>
                     </li>
                 )}
-                <ActionsNavItems
-                    menu={ContributableMenu.GlobalNav}
-                    actionItemClass="nav-link"
-                    extensionsController={this.props.extensionsController}
-                    platformContext={this.props.platformContext}
-                    location={this.props.location}
-                />
-                <li className="nav-item">
-                    <Link to="/explore" className="nav-link">
-                        Explore
-                    </Link>
-                </li>
+                <WebActionsNavItems {...this.props} menu={ContributableMenu.GlobalNav} />
+                {this.props.activation && (
+                    <li className="nav-item">
+                        <ActivationDropdown activation={this.props.activation} history={this.props.history} />
+                    </li>
+                )}
+                {this.props.showCampaigns && (
+                    <li className="nav-item">
+                        <CampaignsNavItem />
+                    </li>
+                )}
                 {!this.props.authenticatedUser && (
                     <>
                         <li className="nav-item">
@@ -78,7 +82,7 @@ export class NavLinks extends React.PureComponent<Props> {
                                 </Link>
                             </li>
                         )}
-                        {showDotComMarketing && (
+                        {this.props.showDotComMarketing && (
                             <li className="nav-item">
                                 <a href="https://about.sourcegraph.com" className="nav-link">
                                     About
@@ -92,20 +96,32 @@ export class NavLinks extends React.PureComponent<Props> {
                         </li>
                     </>
                 )}
-                <CommandListPopoverButton
-                    menu={ContributableMenu.CommandPalette}
-                    extensionsController={this.props.extensionsController}
-                    platformContext={this.props.platformContext}
-                    toggleVisibilityKeybinding={this.props.keybindings.commandPalette}
-                    location={this.props.location}
-                />
+                {!this.props.isSourcegraphDotCom &&
+                    this.props.authenticatedUser &&
+                    this.props.authenticatedUser.siteAdmin && (
+                        <li className="nav-item">
+                            <StatusMessagesNavItem
+                                fetchMessages={fetchAllStatusMessages}
+                                isSiteAdmin={this.props.authenticatedUser.siteAdmin}
+                            />
+                        </li>
+                    )}
+                <li className="nav-item">
+                    <WebCommandListPopoverButton
+                        {...this.props}
+                        buttonClassName="nav-link btn btn-link"
+                        menu={ContributableMenu.CommandPalette}
+                        keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE}
+                    />
+                </li>
                 {this.props.authenticatedUser && (
                     <li className="nav-item">
                         <UserNavItem
                             {...this.props}
                             authenticatedUser={this.props.authenticatedUser}
-                            showAbout={showDotComMarketing}
+                            showDotComMarketing={this.props.showDotComMarketing}
                             showDiscussions={isDiscussionsEnabled(this.props.settingsCascade)}
+                            keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
                         />
                     </li>
                 )}

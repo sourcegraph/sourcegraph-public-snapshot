@@ -10,12 +10,10 @@ export const ExtensionConfigurationState: React.FunctionComponent<{
 
     className?: string
 }> = ({ isAdded, isEnabled, enabledIconOnly, className = '' }) =>
-    isAdded ? (
-        isEnabled ? (
-            <span className={`text-success ${className}`}>
-                <CheckIcon className="icon-inline" /> {!enabledIconOnly && 'Enabled'}
-            </span>
-        ) : (
-            <span className={`text-muted ${className}`}>Disabled</span>
-        )
-    ) : null
+    isAdded && isEnabled ? (
+        <span className={`text-success ${className}`}>
+            <CheckIcon className="icon-inline" /> {!enabledIconOnly && 'Enabled'}
+        </span>
+    ) : (
+        <span className={`text-muted ${className}`}>Disabled</span>
+    )

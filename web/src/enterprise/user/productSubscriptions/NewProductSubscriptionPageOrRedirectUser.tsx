@@ -1,12 +1,11 @@
 import React from 'react'
-import { RouteComponentProps } from 'react-router'
+import { Redirect, RouteComponentProps } from 'react-router'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { RedirectToUserPage } from '../../../user/account/RedirectToUserPage'
+import { ThemeProps } from '../../../theme'
 import { UserSubscriptionsNewProductSubscriptionPage } from './UserSubscriptionsNewProductSubscriptionPage'
 
-interface Props extends RouteComponentProps<{}> {
+interface Props extends RouteComponentProps<{}>, ThemeProps {
     authenticatedUser: GQL.IUser | null
-    isLightTheme: boolean
 }
 
 /**
@@ -20,7 +19,7 @@ interface Props extends RouteComponentProps<{}> {
  */
 export const NewProductSubscriptionPageOrRedirectUser: React.FunctionComponent<Props> = props =>
     props.authenticatedUser ? (
-        <RedirectToUserPage {...props} />
+        <Redirect to={`${props.authenticatedUser.settingsURL!}/subscriptions/new`} />
     ) : (
         <div className="container w-75 mt-4">
             <UserSubscriptionsNewProductSubscriptionPage {...props} user={null} />

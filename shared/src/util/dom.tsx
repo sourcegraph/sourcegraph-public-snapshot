@@ -134,10 +134,9 @@ function highlightNodeHelper(
                 )
                 if (res.highlightingCompleted) {
                     return res
-                } else {
-                    currOffset += res.charsConsumed
-                    charsHighlighted += res.charsHighlighted
                 }
+                currOffset += res.charsConsumed
+                charsHighlighted += res.charsHighlighted
                 break
             }
         }

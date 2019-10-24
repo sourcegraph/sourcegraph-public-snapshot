@@ -1,20 +1,22 @@
+import 'focus-visible'
+
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import ServerIcon from 'mdi-react/ServerIcon'
 import * as React from 'react'
+import { hot } from 'react-hot-loader/root'
 import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
-import { combineLatest, from, Subscription } from 'rxjs'
+import { combineLatest, from, fromEventPattern, Subscription } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 import { setLinkComponent } from '../../shared/src/components/Link'
 import {
+    Controller as ExtensionsController,
     createController as createExtensionsController,
-    ExtensionsControllerProps,
 } from '../../shared/src/extensions/controller'
 import * as GQL from '../../shared/src/graphql/schema'
 import { Notifications } from '../../shared/src/notifications/Notifications'
-import { PlatformContextProps } from '../../shared/src/platform/context'
+import { PlatformContext } from '../../shared/src/platform/context'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '../../shared/src/settings/settings'
-import { TelemetryContext } from '../../shared/src/telemetry/telemetryContext'
 import { isErrorLike } from '../../shared/src/util/errors'
 import { authenticatedUser } from './auth'
 import { ErrorBoundary } from './components/ErrorBoundary'
@@ -27,40 +29,52 @@ import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
-import { KeybindingsProps } from './keybindings'
+import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { Layout, LayoutProps } from './Layout'
 import { updateUserSessionStores } from './marketing/util'
+import { OrgAreaRoute } from './org/area/OrgArea'
+import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
 import { createPlatformContext } from './platform/context'
+import { fetchHighlightedFileLines } from './repo/backend'
+import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevContainerRoute } from './repo/RepoRevContainer'
 import { LayoutRouteProps } from './routes'
+import { search } from './search/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
+import { ThemePreference } from './theme'
 import { eventLogger } from './tracking/eventLogger'
-import { UserAccountAreaRoute } from './user/account/UserAccountArea'
-import { UserAccountSidebarItems } from './user/account/UserAccountSidebar'
+import { withActivation } from './tracking/withActivation'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
+import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
+import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
+import { parseSearchURLPatternType } from './search'
 
-export interface SourcegraphWebAppProps extends KeybindingsProps {
-    exploreSections: ReadonlyArray<ExploreSectionDescriptor>
-    extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
-    extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
-    extensionsAreaRoutes: ReadonlyArray<ExtensionsAreaRoute>
-    extensionsAreaHeaderActionButtons: ReadonlyArray<ExtensionsAreaHeaderActionButton>
-    siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute>
+export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
+    exploreSections: readonly ExploreSectionDescriptor[]
+    extensionAreaRoutes: readonly ExtensionAreaRoute[]
+    extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
+    extensionsAreaRoutes: readonly ExtensionsAreaRoute[]
+    extensionsAreaHeaderActionButtons: readonly ExtensionsAreaHeaderActionButton[]
+    siteAdminAreaRoutes: readonly SiteAdminAreaRoute[]
     siteAdminSideBarGroups: SiteAdminSideBarGroups
-    siteAdminOverviewComponents: ReadonlyArray<React.ComponentType>
-    userAreaHeaderNavItems: ReadonlyArray<UserAreaHeaderNavItem>
-    userAreaRoutes: ReadonlyArray<UserAreaRoute>
-    userAccountSideBarItems: UserAccountSidebarItems
-    userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute>
-    repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>
-    repoHeaderActionButtons: ReadonlyArray<RepoHeaderActionButton>
-    routes: ReadonlyArray<LayoutRouteProps>
+    siteAdminOverviewComponents: readonly React.ComponentType[]
+    userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
+    userAreaRoutes: readonly UserAreaRoute[]
+    userSettingsSideBarItems: UserSettingsSidebarItems
+    userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
+    orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
+    orgAreaRoutes: readonly OrgAreaRoute[]
+    repoContainerRoutes: readonly RepoContainerRoute[]
+    repoRevContainerRoutes: readonly RepoRevContainerRoute[]
+    repoHeaderActionButtons: readonly RepoHeaderActionButton[]
+    routes: readonly LayoutRouteProps[]
+    showCampaigns: boolean
 }
 
-interface SourcegraphWebAppState extends PlatformContextProps, SettingsCascadeProps, ExtensionsControllerProps {
+interface SourcegraphWebAppState extends SettingsCascadeProps {
     error?: Error
 
     /** The currently authenticated user (or null if the viewer is anonymous). */
@@ -68,23 +82,41 @@ interface SourcegraphWebAppState extends PlatformContextProps, SettingsCascadePr
 
     viewerSubject: LayoutProps['viewerSubject']
 
-    /**
-     * Whether the light theme is enabled or not
-     */
-    isLightTheme: boolean
+    /** The user's preference for the theme (light, dark or following system theme) */
+    themePreference: ThemePreference
 
     /**
-     * Whether the user is on MainPage and therefore not logged in
+     * Whether the OS uses light theme, synced from a media query.
+     * If the browser/OS does not this, will default to true.
      */
-    isMainPage: boolean
+    systemIsLightTheme: boolean
 
     /**
      * The current search query in the navbar.
      */
     navbarSearchQuery: string
+    /**
+     * The current search pattern type.
+     */
+    searchPatternType: GQL.SearchPatternType
 }
 
 const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
+/** Reads the stored theme preference from localStorage */
+const readStoredThemePreference = (): ThemePreference => {
+    const value = localStorage.getItem(LIGHT_THEME_LOCAL_STORAGE_KEY)
+    // Handle both old and new preference values
+    switch (value) {
+        case 'true':
+        case 'light':
+            return ThemePreference.Light
+        case 'false':
+        case 'dark':
+            return ThemePreference.Dark
+        default:
+            return ThemePreference.System
+    }
+}
 
 /** A fallback settings subject that can be constructed synchronously at initialization time. */
 const SITE_SUBJECT_NO_ADMIN: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'> = {
@@ -94,25 +126,44 @@ const SITE_SUBJECT_NO_ADMIN: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminis
 
 setLinkComponent(RouterLinkOrAnchor)
 
+const LayoutWithActivation = window.context.sourcegraphDotComMode ? Layout : withActivation(Layout)
+
 /**
- * The root component
+ * The root component.
+ *
+ * This is the non-hot-reload component. It is wrapped in `hot(...)` below to make it
+ * hot-reloadable in development.
  */
-export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, SourcegraphWebAppState> {
+class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, SourcegraphWebAppState> {
+    private readonly subscriptions = new Subscription()
+    private readonly darkThemeMediaList = window.matchMedia('(prefers-color-scheme: dark)')
+    private readonly platformContext: PlatformContext = createPlatformContext()
+    private readonly extensionsController: ExtensionsController = createExtensionsController(this.platformContext)
+
     constructor(props: SourcegraphWebAppProps) {
         super(props)
-        const platformContext = createPlatformContext()
+        this.subscriptions.add(this.extensionsController)
+
+        // The patternType in the URL query parameter. If none is provided, default to literal.
+        // This will be updated with the default in settings when the web app mounts.
+        const urlPatternType = parseSearchURLPatternType(window.location.search) || GQL.SearchPatternType.literal
+
         this.state = {
-            isLightTheme: localStorage.getItem(LIGHT_THEME_LOCAL_STORAGE_KEY) !== 'false',
+            themePreference: readStoredThemePreference(),
+            systemIsLightTheme: !this.darkThemeMediaList.matches,
             navbarSearchQuery: '',
-            platformContext,
-            extensionsController: createExtensionsController(platformContext),
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: SITE_SUBJECT_NO_ADMIN,
-            isMainPage: false,
+            searchPatternType: urlPatternType,
         }
     }
 
-    private subscriptions = new Subscription()
+    /** Returns whether Sourcegraph should be in light theme */
+    private isLightTheme(): boolean {
+        return this.state.themePreference === 'system'
+            ? this.state.systemIsLightTheme
+            : this.state.themePreference === 'light'
+    }
 
     public componentDidMount(): void {
         updateUserSessionStores()
@@ -126,30 +177,51 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         )
 
         this.subscriptions.add(
-            combineLatest(from(this.state.platformContext.settings), authenticatedUser.pipe(startWith(null))).subscribe(
+            combineLatest([from(this.platformContext.settings), authenticatedUser.pipe(startWith(null))]).subscribe(
                 ([cascade, authenticatedUser]) => {
                     this.setState(() => {
                         if (authenticatedUser) {
                             return { viewerSubject: authenticatedUser }
-                        } else if (
-                            cascade &&
-                            !isErrorLike(cascade) &&
-                            cascade.subjects &&
-                            cascade.subjects.length > 0
-                        ) {
-                            return { viewerSubject: cascade.subjects[0].subject }
-                        } else {
-                            return { viewerSubject: SITE_SUBJECT_NO_ADMIN }
                         }
+                        if (cascade && !isErrorLike(cascade) && cascade.subjects && cascade.subjects.length > 0) {
+                            return { viewerSubject: cascade.subjects[0].subject }
+                        }
+                        return { viewerSubject: SITE_SUBJECT_NO_ADMIN }
                     })
                 }
             )
         )
 
-        this.subscriptions.add(this.state.extensionsController)
+        this.subscriptions.add(
+            from(this.platformContext.settings).subscribe(settingsCascade => this.setState({ settingsCascade }))
+        )
 
         this.subscriptions.add(
-            from(this.state.platformContext.settings).subscribe(settingsCascade => this.setState({ settingsCascade }))
+            from(this.platformContext.settings).subscribe(settingsCascade => {
+                if (!parseSearchURLPatternType(window.location.search)) {
+                    // When the web app mounts, if there is no patternType parameter in the URL,
+                    // set the search pattern type to the default based on settings, if it is set.
+                    // Otherwise, default to literal.
+                    const defaultPatternType =
+                        settingsCascade.final &&
+                        !isErrorLike(settingsCascade.final) &&
+                        settingsCascade.final['search.defaultPatternType']
+
+                    const searchPatternType = defaultPatternType || 'literal'
+
+                    this.setState({ searchPatternType })
+                }
+            })
+        )
+        // React to OS theme change
+        this.subscriptions.add(
+            fromEventPattern<MediaQueryListEvent>(
+                // Need to use addListener() because addEventListener() is not supported yet in Safari
+                handler => this.darkThemeMediaList.addListener(handler),
+                handler => this.darkThemeMediaList.removeListener(handler)
+            ).subscribe(event => {
+                this.setState({ systemIsLightTheme: !event.matches })
+            })
         )
     }
 
@@ -161,15 +233,9 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
     }
 
     public componentDidUpdate(): void {
-        // Always show MainPage in dark theme look
-        if (this.state.isMainPage && this.state.isLightTheme) {
-            document.body.classList.remove('theme-light')
-            document.body.classList.add('theme-dark')
-        } else {
-            localStorage.setItem(LIGHT_THEME_LOCAL_STORAGE_KEY, this.state.isLightTheme + '')
-            document.body.classList.toggle('theme-light', this.state.isLightTheme)
-            document.body.classList.toggle('theme-dark', !this.state.isLightTheme)
-        }
+        localStorage.setItem(LIGHT_THEME_LOCAL_STORAGE_KEY, this.state.themePreference)
+        document.body.classList.toggle('theme-light', this.isLightTheme())
+        document.body.classList.toggle('theme-dark', !this.isLightTheme())
     }
 
     public render(): React.ReactFragment | null {
@@ -187,7 +253,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                 subtitle = (
                     <div className="app__error">
                         {subtitle}
-                        {subtitle && <hr />}
+                        {subtitle && <hr className="my-3" />}
                         <pre>{errorMessage}</pre>
                     </div>
                 )
@@ -207,50 +273,69 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         return (
             <ErrorBoundary location={null}>
                 <ShortcutProvider>
-                    <TelemetryContext.Provider value={eventLogger}>
-                        <BrowserRouter key={0}>
-                            <Route
-                                path="/"
-                                // tslint:disable-next-line:jsx-no-lambda RouteProps.render is an exception
-                                render={routeComponentProps => (
-                                    <Layout
-                                        {...props}
-                                        {...routeComponentProps}
-                                        authenticatedUser={authenticatedUser}
-                                        viewerSubject={this.state.viewerSubject}
-                                        settingsCascade={this.state.settingsCascade}
-                                        // Theme
-                                        isLightTheme={this.state.isLightTheme}
-                                        onThemeChange={this.onThemeChange}
-                                        isMainPage={this.state.isMainPage}
-                                        onMainPage={this.onMainPage}
-                                        // Search query
-                                        navbarSearchQuery={this.state.navbarSearchQuery}
-                                        onNavbarQueryChange={this.onNavbarQueryChange}
-                                        // Extensions
-                                        platformContext={this.state.platformContext}
-                                        extensionsController={this.state.extensionsController}
-                                    />
-                                )}
-                            />
-                        </BrowserRouter>
-                        <Tooltip key={1} />
-                        <Notifications key={2} extensionsController={this.state.extensionsController} />
-                    </TelemetryContext.Provider>
+                    <BrowserRouter key={0}>
+                        {/* eslint-disable react/jsx-no-bind */}
+                        <Route
+                            path="/"
+                            render={routeComponentProps => (
+                                <LayoutWithActivation
+                                    {...props}
+                                    {...routeComponentProps}
+                                    authenticatedUser={authenticatedUser}
+                                    viewerSubject={this.state.viewerSubject}
+                                    settingsCascade={this.state.settingsCascade}
+                                    showCampaigns={
+                                        this.props.showCampaigns &&
+                                        window.context.experimentalFeatures.automation === 'enabled' &&
+                                        !window.context.sourcegraphDotComMode &&
+                                        !!authenticatedUser &&
+                                        authenticatedUser.siteAdmin
+                                    }
+                                    // Theme
+                                    isLightTheme={this.isLightTheme()}
+                                    themePreference={this.state.themePreference}
+                                    onThemePreferenceChange={this.onThemePreferenceChange}
+                                    // Search query
+                                    navbarSearchQuery={this.state.navbarSearchQuery}
+                                    onNavbarQueryChange={this.onNavbarQueryChange}
+                                    fetchHighlightedFileLines={fetchHighlightedFileLines}
+                                    searchRequest={search}
+                                    // Extensions
+                                    platformContext={this.platformContext}
+                                    extensionsController={this.extensionsController}
+                                    telemetryService={eventLogger}
+                                    isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                                    patternType={this.state.searchPatternType}
+                                    togglePatternType={this.togglePatternType}
+                                />
+                            )}
+                        />
+                        {/* eslint-enable react/jsx-no-bind */}
+                    </BrowserRouter>
+                    <Tooltip key={1} />
+                    <Notifications key={2} extensionsController={this.extensionsController} />
                 </ShortcutProvider>
             </ErrorBoundary>
         )
     }
 
-    private onThemeChange = () => {
-        this.setState(state => ({ isLightTheme: !state.isLightTheme }))
-    }
-
-    private onMainPage = (mainPage: boolean) => {
-        this.setState(() => ({ isMainPage: mainPage }))
+    private onThemePreferenceChange = (themePreference: ThemePreference) => {
+        this.setState({ themePreference })
     }
 
     private onNavbarQueryChange = (navbarSearchQuery: string) => {
         this.setState({ navbarSearchQuery })
     }
+
+    private togglePatternType = () => {
+        const currentPatternType = this.state.searchPatternType
+        this.setState({
+            searchPatternType:
+                currentPatternType === GQL.SearchPatternType.regexp
+                    ? GQL.SearchPatternType.literal
+                    : GQL.SearchPatternType.regexp,
+        })
+    }
 }
+
+export const SourcegraphWebApp = hot(ColdSourcegraphWebApp)

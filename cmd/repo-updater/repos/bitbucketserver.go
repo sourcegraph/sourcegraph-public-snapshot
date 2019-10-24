@@ -3,104 +3,140 @@ package repos
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"net/url"
-	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
-	"time"
+	"sync"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/atomicvalue"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"golang.org/x/time/rate"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-var bitbucketServerConnections = func() *atomicvalue.Value {
-	c := atomicvalue.New()
-	c.Set(func() interface{} {
-		return []*bitbucketServerConnection{}
-	})
-	return c
-}()
+// A BitbucketServerSource yields repositories from a single BitbucketServer connection configured
+// in Sourcegraph via the external services configuration.
+type BitbucketServerSource struct {
+	svc             *ExternalService
+	config          *schema.BitbucketServerConnection
+	exclude         map[string]bool
+	excludePatterns []*regexp.Regexp
+	client          *bitbucketserver.Client
+}
 
-// SyncBitbucketServerConnections periodically syncs connections from
-// the Frontend API.
-func SyncBitbucketServerConnections(ctx context.Context) {
-	t := time.NewTicker(configWatchInterval)
-	var lastConfig []*schema.BitbucketServerConnection
-	for range t.C {
-		config, err := conf.BitbucketServerConfigs(ctx)
+// NewBitbucketServerSource returns a new BitbucketServerSource from the given external service.
+func NewBitbucketServerSource(svc *ExternalService, cf *httpcli.Factory) (*BitbucketServerSource, error) {
+	var c schema.BitbucketServerConnection
+	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
+	return newBitbucketServerSource(svc, &c, cf)
+}
+
+func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerConnection, cf *httpcli.Factory) (*BitbucketServerSource, error) {
+	baseURL, err := url.Parse(c.Url)
+	if err != nil {
+		return nil, err
+	}
+	baseURL = NormalizeBaseURL(baseURL)
+
+	if cf == nil {
+		cf = NewHTTPClientFactory()
+	}
+
+	var opts []httpcli.Opt
+	if c.Certificate != "" {
+		pool, err := newCertPool(c.Certificate)
 		if err != nil {
-			log15.Error("unable to fetch Bitbucket Server configs", "err", err)
-			continue
+			return nil, err
+		}
+		opts = append(opts, httpcli.NewCertPoolOpt(pool))
+	}
+
+	cli, err := cf.Doer(opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	exclude := make(map[string]bool, len(c.Exclude))
+	var excludePatterns []*regexp.Regexp
+	for _, r := range c.Exclude {
+		if r.Name != "" {
+			exclude[strings.ToLower(r.Name)] = true
 		}
 
-		if reflect.DeepEqual(config, lastConfig) {
-			continue
+		if r.Id != 0 {
+			exclude[strconv.Itoa(r.Id)] = true
 		}
-		lastConfig = config
 
-		var conns []*bitbucketServerConnection
-		for _, c := range config {
-			conn, err := newBitbucketServerConnection(c)
+		if r.Pattern != "" {
+			re, err := regexp.Compile(r.Pattern)
 			if err != nil {
-				log15.Error("Error processing configured Bitbucket Server connection. Skipping it.", "url", c.Url, "error", err)
-				continue
+				return nil, err
 			}
-			conns = append(conns, conn)
+			excludePatterns = append(excludePatterns, re)
 		}
-
-		bitbucketServerConnections.Set(func() interface{} {
-			return conns
-		})
-
-		bitbucketServerWorker.restart()
 	}
+
+	client := bitbucketserver.NewClient(baseURL, cli)
+	client.Token = c.Token
+	client.Username = c.Username
+	client.Password = c.Password
+
+	return &BitbucketServerSource{
+		svc:             svc,
+		config:          c,
+		exclude:         exclude,
+		excludePatterns: excludePatterns,
+		client:          client,
+	}, nil
 }
 
-// getBitbucketServerConnection returns the BitbucketServer connection (config + API client) that is responsible for
-// the repository specified by the args.
-func getBitbucketServerConnection(args protocol.RepoLookupArgs) (*bitbucketServerConnection, error) {
-	conns := bitbucketServerConnections.Get().([]*bitbucketServerConnection)
-
-	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == bitbucketserver.ServiceType {
-		// Look up by external repository spec.
-		for _, conn := range conns {
-			if args.ExternalRepo.ServiceID == conn.client.URL.String() {
-				return conn, nil
-			}
-		}
-		return nil, errors.Errorf("no configured Bitbucket Server connection with URL: %q", args.ExternalRepo.ServiceID)
-	}
-
-	if args.Repo != "" {
-		// Look up by repository name.
-		repo := strings.ToLower(string(args.Repo))
-		for _, conn := range conns {
-			// TODO should this be based on RepositoryPathPattern?
-			if strings.HasPrefix(repo, conn.client.URL.Hostname()+"/") {
-				return conn, nil
-			}
-		}
-	}
-
-	return nil, nil
+// ListRepos returns all BitbucketServer repositories accessible to all connections configured
+// in Sourcegraph via the external services configuration.
+func (s BitbucketServerSource) ListRepos(ctx context.Context, results chan SourceResult) {
+	s.listAllRepos(ctx, results)
 }
 
-func bitbucketServerRepoInfo(config *schema.BitbucketServerConnection, repo *bitbucketserver.Repo) *protocol.RepoInfo {
-	host, err := url.Parse(config.Url)
+// LoadChangesets loads the latest state of the given Changesets from the codehost.
+func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Changeset) error {
+	for i := range cs {
+		repo := cs[i].Repo.Metadata.(*bitbucketserver.Repo)
+		number, err := strconv.Atoi(cs[i].ExternalID)
+		if err != nil {
+			return err
+		}
+
+		pr := &bitbucketserver.PullRequest{ID: number}
+		pr.ToRef.Repository.Slug = repo.Slug
+		pr.ToRef.Repository.Project.Key = repo.Project.Key
+
+		err = s.client.LoadPullRequest(ctx, pr)
+		if err != nil {
+			return err
+		}
+
+		cs[i].Changeset.Metadata = pr
+	}
+
+	return nil
+}
+
+// ExternalServices returns a singleton slice containing the external service.
+func (s BitbucketServerSource) ExternalServices() ExternalServices {
+	return ExternalServices{s.svc}
+}
+
+func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo) *Repo {
+	host, err := url.Parse(s.config.Url)
 	if err != nil {
 		// This should never happen
-		log15.Error("malformed bitbucket config, invalid URL", "url", config.Url, "error", err)
-		return nil
+		panic(errors.Errorf("malformed bitbucket config, invalid URL: %q, error: %s", s.config.Url, err))
 	}
 	host = NormalizeBaseURL(host)
 
@@ -109,280 +145,177 @@ func bitbucketServerRepoInfo(config *schema.BitbucketServerConnection, repo *bit
 	if repo.Project != nil {
 		project = repo.Project.Key
 	}
-	repoName := reposource.BitbucketServerRepoName(config.RepositoryPathPattern, host.Hostname(), project, repo.Slug)
 
 	// Clone URL
 	var cloneURL string
 	for _, l := range repo.Links.Clone {
-		if l.Name == "ssh" && config.GitURLType == "ssh" {
+		if l.Name == "ssh" && s.config.GitURLType == "ssh" {
 			cloneURL = l.Href
 			break
 		}
 		if l.Name == "http" {
 			var password string
-			if config.Token != "" {
-				password = config.Token // prefer personal access token
+			if s.config.Token != "" {
+				password = s.config.Token // prefer personal access token
 			} else {
-				password = config.Password
+				password = s.config.Password
 			}
-			cloneURL = setUserinfoBestEffort(l.Href, config.Username, password)
+			cloneURL = setUserinfoBestEffort(l.Href, s.config.Username, password)
 			// No break, so that we fallback to http in case of ssh missing
 			// with GitURLType == "ssh"
 		}
 	}
 
 	// Repo Links
-	var links *protocol.RepoLinks
-	for _, l := range repo.Links.Self {
-		root := strings.TrimSuffix(l.Href, "/browse")
-		links = &protocol.RepoLinks{
-			Root:   l.Href,
-			Tree:   root + "/browse/{path}?at={rev}",
-			Blob:   root + "/browse/{path}?at={rev}",
-			Commit: root + "/commits/{commit}",
-		}
-		break
-	}
+	// var links *protocol.RepoLinks
+	// for _, l := range repo.Links.Self {
+	// 	root := strings.TrimSuffix(l.Href, "/browse")
+	// 	links = &protocol.RepoLinks{
+	// 		Root:   l.Href,
+	// 		Tree:   root + "/browse/{path}?at={rev}",
+	// 		Blob:   root + "/browse/{path}?at={rev}",
+	// 		Commit: root + "/commits/{commit}",
+	// 	}
+	// 	break
+	// }
 
-	return &protocol.RepoInfo{
-		Name: repoName,
-		ExternalRepo: &api.ExternalRepoSpec{
-			ID:          project + "/" + repo.Slug,
+	urn := s.svc.URN()
+
+	return &Repo{
+		Name: string(reposource.BitbucketServerRepoName(
+			s.config.RepositoryPathPattern,
+			host.Hostname(),
+			project,
+			repo.Slug,
+		)),
+		URI: string(reposource.BitbucketServerRepoName(
+			"",
+			host.Hostname(),
+			project,
+			repo.Slug,
+		)),
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          strconv.Itoa(repo.ID),
 			ServiceType: bitbucketserver.ServiceType,
 			ServiceID:   host.String(),
 		},
 		Description: repo.Name,
 		Fork:        repo.Origin != nil,
-		VCS: protocol.VCSInfo{
-			URL: cloneURL,
-		},
-		Links: links,
-	}
-}
-
-// bitbucketServerRepoInfoSuffix matches out {projectKey}/{repoSlug} at the
-// end of a string.
-var bitbucketServerRepoInfoSuffix = regexp.MustCompile(`([^/]+)/([^/]+)/?$`)
-
-// GetBitbucketServerRepository queries a configured BitbucketServer connection endpoint for information about the
-// specified repository (a.k.a. project in BitbucketServer's naming scheme).
-//
-// If args.Repo refers to a repository that is not known to be on a configured BitbucketServer connection's
-// host, it returns authoritative == false.
-func GetBitbucketServerRepository(ctx context.Context, args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error) {
-	conn, err := getBitbucketServerConnection(args)
-	if err != nil {
-		return nil, true, err // refers to a BitbucketServer repo but the host is not configured
-	}
-	if conn == nil {
-		return nil, false, nil // refers to a non-BitbucketServer repo
-	}
-
-	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == bitbucketserver.ServiceType {
-		// Look up by external repository spec. Expect {projectKey}/{repoSlug}
-		i := strings.Index(args.ExternalRepo.ID, "/")
-		if i < 0 || i == len(args.ExternalRepo.ID)-1 {
-			return nil, true, errors.Errorf("malformed bitbucket server ID: %q", args.ExternalRepo.ID)
-		}
-		projectKey, repoSlug := args.ExternalRepo.ID[:i], args.ExternalRepo.ID[i+1:]
-		repo, err := conn.client.Repo(ctx, projectKey, repoSlug)
-		if err != nil {
-			return nil, true, err
-		}
-		if conn.config.ExcludePersonalRepositories && repo.IsPersonalRepository() {
-			return nil, true, &vcs.RepoNotExistError{Repo: api.RepoName(repoSlug)}
-		}
-		return bitbucketServerRepoInfo(conn.config, repo), true, nil
-	}
-
-	if args.Repo != "" {
-		// Look up by repository name. Expect suffix {projectKey}/{repoSlug}
-		// TODO shouldn't we use RepositoryPathPattern?
-		match := bitbucketServerRepoInfoSuffix.FindStringSubmatch(string(args.Repo))
-		if len(match) == 0 {
-			return nil, true, errors.Errorf("malformed bitbucket server repo URL: %q", args.Repo)
-		}
-		projectKey, repoSlug := match[0], match[1]
-		repo, err := conn.client.Repo(ctx, projectKey, repoSlug)
-		if err != nil {
-			return nil, true, err
-		}
-		if conn.config.ExcludePersonalRepositories && repo.IsPersonalRepository() {
-			return nil, true, &vcs.RepoNotExistError{Repo: args.Repo}
-		}
-		return bitbucketServerRepoInfo(conn.config, repo), true, nil
-	}
-
-	return nil, true, fmt.Errorf("unable to look up Bitbucket Server repository (%+v)", args)
-}
-
-var bitbucketServerWorker = &worker{
-	work: func(ctx context.Context, shutdown chan struct{}) {
-		for _, c := range bitbucketServerConnections.Get().([]*bitbucketServerConnection) {
-			go func(c *bitbucketServerConnection) {
-				for {
-					reservationTime := time.Now()
-					r := c.client.RateLimit.ReserveN(reservationTime, rateLimitReservationSize)
-					if !r.OK() {
-						log15.Error("Bitbucket worker cannot reserve requests. Is the maximum burst size lower than the reservation size?", "reservation_size", rateLimitReservationSize, "max_burst_size", rateLimitMaxBurstRequests)
-					}
-					delay := r.Delay()
-					// Since we're not actually planning to use the reservation, cancel it now.
-					// We only wanted to know the delay / availability of the reservation.
-					r.CancelAt(reservationTime)
-					if delay > time.Second {
-						log15.Warn("Bitbucket self-enforced API rate limit is almost exhausted. Waiting before doing more work", "delay", r.Delay())
-					}
-					time.Sleep(delay)
-
-					updateBitbucketServerRepos(ctx, c)
-					bitbucketServerUpdateTime.WithLabelValues(c.config.Url).Set(float64(time.Now().Unix()))
-					select {
-					case <-shutdown:
-						return
-					case <-time.After(GetUpdateInterval()):
-					}
-				}
-			}(c)
-		}
-	},
-}
-
-// RunBitbucketServerRepositorySyncWorker runs the worker that syncs projects from configured BitbucketServer instances to
-// Sourcegraph.
-func RunBitbucketServerRepositorySyncWorker(ctx context.Context) {
-	bitbucketServerWorker.start(ctx)
-}
-
-// updateBitbucketServerRepos ensures that all provided repositories exist in the repository table.
-func updateBitbucketServerRepos(ctx context.Context, conn *bitbucketServerConnection) {
-	repoChan := make(chan repoCreateOrUpdateRequest)
-	defer close(repoChan)
-	sourceID := conn.config.Token
-	if sourceID == "" {
-		sourceID = conn.config.Username
-	}
-	go createEnableUpdateRepos(ctx, fmt.Sprintf("bitbucket:%s", sourceID), repoChan)
-	for r := range conn.listAllRepos(ctx) {
-		if r.State != "AVAILABLE" {
-			continue
-		}
-
-		ri := bitbucketServerRepoInfo(conn.config, r)
-		if ri.VCS.URL == "" {
-			continue
-		}
-
-		repoChan <- repoCreateOrUpdateRequest{
-			RepoCreateOrUpdateRequest: api.RepoCreateOrUpdateRequest{
-				RepoName:     ri.Name,
-				ExternalRepo: ri.ExternalRepo,
-				Description:  ri.Description,
-				Fork:         ri.Fork,
-				Enabled:      conn.config.InitialRepositoryEnablement,
+		Enabled:     true,
+		Sources: map[string]*SourceInfo{
+			urn: {
+				ID:       urn,
+				CloneURL: cloneURL,
 			},
-			URL: ri.VCS.URL,
+		},
+		Metadata: repo,
+	}
+}
+
+func (s *BitbucketServerSource) excludes(r *bitbucketserver.Repo) bool {
+	name := r.Slug
+	if r.Project != nil {
+		name = r.Project.Key + "/" + name
+	}
+	if r.State != "AVAILABLE" ||
+		s.exclude[strings.ToLower(name)] ||
+		s.exclude[strconv.Itoa(r.ID)] ||
+		(s.config.ExcludePersonalRepositories && r.IsPersonalRepository()) {
+		return true
+	}
+
+	for _, re := range s.excludePatterns {
+		if re.MatchString(name) {
+			return true
 		}
 	}
+	return false
 }
 
-// These fields define the self-imposed Bitbucket rate limit (since Bitbucket Server does
-// not have a concept of rate limiting in HTTP response headers).
-//
-// See https://godoc.org/golang.org/x/time/rate#Limiter for an explanation of these fields.
-//
-// The limits chosen here are based on the following logic: Bitbucket Cloud restricts
-// "List all repositories" requests (which are a good portion of our requests) to 1,000/hr,
-// and they restrict "List a user or team's repositories" requests (which are roughly equal
-// to our repository lookup requests) to 1,000/hr. We peform a list repositories request
-// for every 100 repositories on Bitbucket every 1m by default, so for someone with 20,000
-// Bitbucket repositories we need 20,000/100 requests per minute (1200/hr) + overhead for
-// repository lookup requests by users. So we use a generous 7,200/hr here until we hear
-// from someone that these values do not work well for them.
-const (
-	rateLimitRequestsPerSecond = 2 // 120/min or 7200/hr
-	rateLimitMaxBurstRequests  = 500
-
-	// rateLimitReservationSize is the minimum number of requests (tokens in the bucket)
-	// that must be available for us to perform work without waiting first.
-	//
-	// We choose this number because each reservation lets us list 100 repositories, so
-	// having at least 250 lets us list 20,000 repositories and still have 50 API requests
-	// left-over to serve users.
-	rateLimitReservationSize = 250
-)
-
-func newBitbucketServerConnection(config *schema.BitbucketServerConnection) (*bitbucketServerConnection, error) {
-	baseURL, err := url.Parse(config.Url)
-	if err != nil {
-		return nil, err
-	}
-	baseURL = NormalizeBaseURL(baseURL)
-
-	transport, err := cachedTransportWithCertTrusted(config.Certificate)
-	if err != nil {
-		return nil, err
+func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan SourceResult) {
+	type batch struct {
+		repos []*bitbucketserver.Repo
+		err   error
 	}
 
-	return &bitbucketServerConnection{
-		config: config,
-		client: &bitbucketserver.Client{
-			URL:      baseURL,
-			Token:    config.Token,
-			Username: config.Username,
-			Password: config.Password,
-			HTTPClient: &http.Client{
-				Transport: bitbucketserver.WithRequestCounter(transport),
-			},
-			RateLimit: rate.NewLimiter(rateLimitRequestsPerSecond, rateLimitMaxBurstRequests),
-		},
-	}, nil
-}
+	ch := make(chan batch)
 
-type bitbucketServerConnection struct {
-	config *schema.BitbucketServerConnection
-	client *bitbucketserver.Client
-}
+	var wg sync.WaitGroup
 
-func (c *bitbucketServerConnection) listAllRepos(ctx context.Context) <-chan *bitbucketserver.Repo {
-	perPage := 100
-	ch := make(chan *bitbucketserver.Repo, perPage)
+	wg.Add(1)
 	go func() {
-		defer close(ch)
+		defer wg.Done()
 
-		// First we list one page of recent repos, so that we clone them first
-		repos, _, err := c.client.RecentRepos(ctx, &bitbucketserver.PageToken{Limit: perPage})
-		if err != nil {
-			log15.Warn("failed to list recent repos for Bitbucket Server", "url", c.client.URL, "error", err)
-		}
-		recent := map[int]bool{}
-		for _, r := range repos {
-			if c.config.ExcludePersonalRepositories && r.IsPersonalRepository() {
+		// Admins normally add to end of lists, so end of list most likely has
+		// new repos => stream them first.
+		for i := len(s.config.Repos) - 1; i >= 0; i-- {
+			name := s.config.Repos[i]
+			ps := strings.SplitN(name, "/", 2)
+			if len(ps) != 2 {
+				ch <- batch{err: errors.Errorf("bitbucketserver.repos: name=%q", name)}
 				continue
 			}
-			recent[r.ID] = true
-			ch <- r
-		}
 
-		// Then we list all repos, taking care not to repeat repos we have
-		// already sent via recent.
-		page := &bitbucketserver.PageToken{Limit: perPage}
-		for page.HasMore() {
-			repos, page, err = c.client.Repos(ctx, page)
+			projectKey, repoSlug := ps[0], ps[1]
+			repo, err := s.client.Repo(ctx, projectKey, repoSlug)
 			if err != nil {
-				log15.Error("failed when listing Bitbucket Server repos", "url", c.client.URL, "error", err)
-				return
-			}
-			for _, r := range repos {
-				if c.config.ExcludePersonalRepositories && r.IsPersonalRepository() {
+				// TODO(tsenart): When implementing dry-run, reconsider alternatives to return
+				// 404 errors on external service config validation.
+				if bitbucketserver.IsNotFound(err) {
+					log15.Warn("skipping missing bitbucketserver.repos entry:", "name", name, "err", err)
 					continue
 				}
-				if !recent[r.ID] {
-					ch <- r
-				}
+				ch <- batch{err: errors.Wrapf(err, "bitbucketserver.repos: name: %q", name)}
+			} else {
+				ch <- batch{repos: []*bitbucketserver.Repo{repo}}
 			}
 		}
 	}()
 
-	return ch
+	for _, q := range s.config.RepositoryQuery {
+		switch q {
+		case "none":
+			continue
+		case "all":
+			q = "" // No filters.
+		}
+
+		wg.Add(1)
+		go func(q string) {
+			defer wg.Done()
+
+			next := &bitbucketserver.PageToken{Limit: 1000}
+			for next.HasMore() {
+				repos, page, err := s.client.Repos(ctx, next, q)
+				if err != nil {
+					ch <- batch{err: errors.Wrapf(err, "bitbucketserver.repositoryQuery: query=%q, page=%+v", q, next)}
+					break
+				}
+
+				ch <- batch{repos: repos}
+				next = page
+			}
+		}(q)
+	}
+
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
+
+	seen := make(map[int]bool)
+	for r := range ch {
+		if r.err != nil {
+			results <- SourceResult{Source: s, Err: r.err}
+			continue
+		}
+
+		for _, repo := range r.repos {
+			if !seen[repo.ID] && !s.excludes(repo) {
+				results <- SourceResult{Source: s, Repo: s.makeRepo(repo)}
+				seen[repo.ID] = true
+			}
+		}
+
+	}
 }

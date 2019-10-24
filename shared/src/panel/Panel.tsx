@@ -3,23 +3,31 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 import { Observable, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { PanelViewWithComponent, ViewProviderRegistrationOptions } from '../../../shared/src/api/client/services/view'
-import { ContributableMenu, ContributableViewContainer } from '../../../shared/src/api/protocol/contribution'
-import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
+import { PanelViewWithComponent, ViewProviderRegistrationOptions } from '../api/client/services/view'
+import { ContributableMenu, ContributableViewContainer } from '../api/protocol/contribution'
+import { ExtensionsControllerProps } from '../extensions/controller'
+import { ThemeProps } from '../../../web/src/theme'
 import { ActionsNavItems } from '../actions/ActionsNavItems'
+import { ActivationProps } from '../components/activation/Activation'
 import { FetchFileCtx } from '../components/CodeExcerpt'
 import { Resizable } from '../components/Resizable'
 import { Spacer, Tab, TabsWithURLViewStatePersistence } from '../components/Tabs'
 import { PlatformContextProps } from '../platform/context'
 import { SettingsCascadeProps } from '../settings/settings'
+import { TelemetryProps } from '../telemetry/telemetryService'
 import { EmptyPanelView } from './views/EmptyPanelView'
 import { PanelView } from './views/PanelView'
 
-interface Props extends ExtensionsControllerProps, PlatformContextProps, SettingsCascadeProps {
+interface Props
+    extends ExtensionsControllerProps,
+        PlatformContextProps,
+        SettingsCascadeProps,
+        ActivationProps,
+        TelemetryProps,
+        ThemeProps {
     location: H.Location
     history: H.History
     repoName?: string
-    isLightTheme: boolean
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
 }
 
@@ -40,6 +48,13 @@ interface PanelItem extends Tab<string> {
 
     /** The content element to display when the tab is active. */
     element: React.ReactElement<any>
+
+    /**
+     * Whether this panel contains a list of locations (from a location provider). This value is
+     * exposed to contributions as `panel.activeView.hasLocations`. It is true if there is a
+     * location provider (even if the result set is empty).
+     */
+    hasLocations?: boolean
 }
 
 /**
@@ -70,30 +85,20 @@ export class Panel extends React.PureComponent<Props, State> {
         const items = this.state.panelViews
             ? this.state.panelViews
                   .map(
-                      panelView =>
-                          ({
-                              label: panelView.title,
-                              id: panelView.id,
-                              priority: panelView.priority,
-                              element: (
-                                  <PanelView
-                                      panelView={panelView}
-                                      repoName={this.props.repoName}
-                                      history={this.props.history}
-                                      location={this.props.location}
-                                      isLightTheme={this.props.isLightTheme}
-                                      extensionsController={this.props.extensionsController}
-                                      settingsCascade={this.props.settingsCascade}
-                                      fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
-                                  />
-                              ),
-                          } as PanelItem)
+                      (panelView): PanelItem => ({
+                          label: panelView.title,
+                          id: panelView.id,
+                          priority: panelView.priority,
+                          element: <PanelView {...this.props} panelView={panelView} />,
+                          hasLocations: !!panelView.locationProvider,
+                      })
                   )
                   .sort(byPriority)
             : []
 
         const hasTabs = items.length > 0
         const activePanelViewID = TabsWithURLViewStatePersistence.readFromURL(this.props.location, items)
+        const activePanelView = items.find(item => item.id === activePanelViewID)
 
         return (
             <div className="panel">
@@ -104,6 +109,7 @@ export class Panel extends React.PureComponent<Props, State> {
                             <>
                                 <Spacer />
                                 <button
+                                    type="button"
                                     onClick={this.onDismiss}
                                     className="btn btn-icon tab-bar__end-fragment-other-element"
                                     data-tooltip="Close"
@@ -114,17 +120,19 @@ export class Panel extends React.PureComponent<Props, State> {
                         }
                         toolbarFragment={
                             <ActionsNavItems
-                                listClass="w-100 justify-content-end"
+                                {...this.props}
+                                // TODO remove references to Bootstrap from shared, get class name from prop
+                                // This is okay for now because the Panel is currently only used in the webapp
+                                listClass="nav w-100 justify-content-end"
                                 actionItemClass="nav-link"
+                                actionItemIconClass="icon-inline"
                                 menu={ContributableMenu.PanelToolbar}
-                                extensionsController={this.props.extensionsController}
-                                platformContext={this.props.platformContext}
-                                location={this.props.location}
                                 scope={
                                     activePanelViewID !== undefined
                                         ? {
                                               type: 'panelView',
                                               id: activePanelViewID,
+                                              hasLocations: Boolean(activePanelView && activePanelView.hasLocations),
                                           }
                                         : undefined
                                 }

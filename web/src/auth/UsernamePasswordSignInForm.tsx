@@ -35,7 +35,7 @@ export class UsernamePasswordSignInForm extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <Form className="signin-signup-form signin-form" onSubmit={this.handleSubmit}>
+            <Form className="signin-signup-form signin-form e2e-signin-form" onSubmit={this.handleSubmit}>
                 {window.context.allowSignup ? (
                     <Link className="signin-signup-form__mode" to={`/sign-up${this.props.location.search}`}>
                         Don't have an account? Sign up.
@@ -48,13 +48,14 @@ export class UsernamePasswordSignInForm extends React.Component<Props, State> {
                 )}
                 <div className="form-group">
                     <input
-                        className={`form-control signin-signup-form__input`}
+                        className="form-control signin-signup-form__input"
                         type="text"
                         placeholder="Username or email"
                         onChange={this.onEmailFieldChange}
                         required={true}
                         value={this.state.email}
                         disabled={this.state.loading}
+                        autoCapitalize="off"
                         autoFocus={true}
                         autoComplete="username email"
                     />

@@ -9,12 +9,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func (r *gitTreeEntryResolver) IsRoot() bool {
-	path := path.Clean(r.path)
+	path := path.Clean(r.Path())
 	return path == "/" || path == "." || path == ""
 }
 
@@ -43,7 +43,7 @@ func (r *gitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 	if err != nil {
 		return nil, err
 	}
-	entries, err := git.ReadDir(ctx, *cachedRepo, api.CommitID(r.commit.oid), r.path, r.isRecursive || args.Recursive)
+	entries, err := git.ReadDir(ctx, *cachedRepo, api.CommitID(r.commit.OID()), r.Path(), r.isRecursive || args.Recursive)
 	if err != nil {
 		if strings.Contains(err.Error(), "file does not exist") { // TODO proper error value
 			// empty tree is not an error
@@ -58,17 +58,11 @@ func (r *gitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 		entries = entries[:int(*args.First)]
 	}
 
-	var prefix string
-	if r.path != "" {
-		prefix = r.path + "/"
-	}
-
 	var l []*gitTreeEntryResolver
 	for _, entry := range entries {
 		if filter == nil || filter(entry) {
 			l = append(l, &gitTreeEntryResolver{
 				commit: r.commit,
-				path:   prefix + entry.Name(), // relies on git paths being cleaned already
 				stat:   entry,
 			})
 		}

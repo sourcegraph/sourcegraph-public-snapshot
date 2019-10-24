@@ -3,6 +3,7 @@ import InformationVariantIcon from 'mdi-react/InformationVariantIcon'
 import * as React from 'react'
 import { throwError } from 'rxjs'
 import { catchError, map, tap } from 'rxjs/operators'
+import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { asError } from '../../../../../shared/src/util/errors'
 import { parseHash } from '../../../../../shared/src/util/url'
@@ -11,7 +12,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { DiscussionsInput, TitleMode } from './DiscussionsInput'
 import { DiscussionsNavbar } from './DiscussionsNavbar'
 
-interface Props {
+interface Props extends ExtensionsControllerProps {
     repoID: GQL.ID
     repoName: string
     commitID: string
@@ -98,12 +99,12 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
                 const location = this.props.location
                 const hash = new URLSearchParams(location.hash.slice('#'.length))
                 hash.set('tab', 'discussions')
-                hash.set('threadID', thread.id)
+                hash.set('threadID', thread.idWithoutKind)
                 // TODO(slimsag:discussions): ASAP: focus the new thread's range
                 this.props.history.push(location.pathname + location.search + '#' + hash.toString())
             }),
             map(thread => undefined),
-            catchError(e => throwError('Error creating thread: ' + asError(e).message))
+            catchError(e => throwError(new Error('Error creating thread: ' + asError(e).message)))
         )
     }
 

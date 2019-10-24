@@ -1,11 +1,21 @@
 /**
+ * Props interface that can be extended by React components depending on the TelemetryService.
+ */
+export interface TelemetryProps {
+    /**
+     * A telemetry service implementation to log events.
+     */
+    telemetryService: TelemetryService
+}
+
+/**
  * The telemetry service logs events.
  */
 export interface TelemetryService {
     /**
      * Log an event (by sending it to the server).
      */
-    log(eventName: string): void
+    log(eventName: string, eventProperties?: any): void
 }
 
 /**

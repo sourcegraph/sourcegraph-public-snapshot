@@ -11,13 +11,20 @@ import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
-import { AbsoluteRepoFile, makeRepoURI, ModeSpec, ParsedRepoURI, parseHash } from '../../../../shared/src/util/url'
+import {
+    AbsoluteRepoFile,
+    lprToRange,
+    makeRepoURI,
+    ModeSpec,
+    ParsedRepoURI,
+    parseHash,
+} from '../../../../shared/src/util/url'
 import { queryGraphQL } from '../../backend/graphql'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
 import { isDiscussionsEnabled } from '../../discussions'
-import { eventLogger } from '../../tracking/eventLogger'
-import { lprToRange } from '../../util/url'
+import { ThemeProps } from '../../theme'
+import { eventLogger, EventLoggerProps } from '../../tracking/eventLogger'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { ToggleDiscussionsPanel } from './actions/ToggleDiscussions'
@@ -87,10 +94,11 @@ interface Props
         RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
         PlatformContextProps,
-        ExtensionsControllerProps {
+        EventLoggerProps,
+        ExtensionsControllerProps,
+        ThemeProps {
     location: H.Location
     history: H.History
-    isLightTheme: boolean
     repoID: GQL.ID
     authenticatedUser: GQL.IUser | null
 }
@@ -105,6 +113,7 @@ interface State {
     blobOrError?: GQL.IGitBlob | ErrorLike
 }
 
+// eslint-disable-next-line react/no-unsafe
 export class BlobPage extends React.PureComponent<Props, State> {
     private propsUpdates = new Subject<Props>()
     private extendHighlightingTimeoutClicks = new Subject<void>()
@@ -127,7 +136,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
 
         // Fetch repository revision.
         this.subscriptions.add(
-            combineLatest(
+            combineLatest([
                 this.propsUpdates.pipe(
                     map(props => pick(props, 'repoName', 'commitID', 'filePath', 'isLightTheme')),
                     distinctUntilChanged((a, b) => isEqual(a, b))
@@ -135,8 +144,8 @@ export class BlobPage extends React.PureComponent<Props, State> {
                 this.extendHighlightingTimeoutClicks.pipe(
                     mapTo(true),
                     startWith(false)
-                )
-            )
+                ),
+            ])
                 .pipe(
                     tap(() => this.setState({ blobOrError: undefined })),
                     switchMap(([{ repoName, commitID, filePath, isLightTheme }, extendHighlightingTimeout]) =>
@@ -158,24 +167,21 @@ export class BlobPage extends React.PureComponent<Props, State> {
         )
 
         // Clear the Sourcegraph extensions model's component when the blob is no longer shown.
-        this.subscriptions.add(() =>
-            this.props.extensionsController.services.model.model.next({
-                ...this.props.extensionsController.services.model.model.value,
-                visibleViewComponents: null,
-            })
-        )
+        this.subscriptions.add(() => this.props.extensionsController.services.editor.removeAllEditors())
 
         this.propsUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(newProps: Props): void {
-        this.propsUpdates.next(newProps)
+    // Use UNSAFE_componentWillReceiveProps to avoid this.state.blobOrError being out of sync
+    // with props (see https://github.com/sourcegraph/sourcegraph/issues/5575).
+    public UNSAFE_componentWillReceiveProps(nextProps: Props): void {
+        this.propsUpdates.next(nextProps)
         if (
-            newProps.repoName !== this.props.repoName ||
-            newProps.commitID !== this.props.commitID ||
-            newProps.filePath !== this.props.filePath ||
-            ToggleRenderedFileMode.getModeFromURL(newProps.location) !==
-                ToggleRenderedFileMode.getModeFromURL(this.props.location)
+            this.props.repoName !== nextProps.repoName ||
+            this.props.commitID !== nextProps.commitID ||
+            this.props.filePath !== nextProps.filePath ||
+            ToggleRenderedFileMode.getModeFromURL(this.props.location) !==
+                ToggleRenderedFileMode.getModeFromURL(nextProps.location)
         ) {
             this.logViewEvent()
         }
@@ -269,49 +275,38 @@ export class BlobPage extends React.PureComponent<Props, State> {
                 {this.state.blobOrError.richHTML && renderMode === 'rendered' && (
                     <RenderedFile dangerousInnerHTML={this.state.blobOrError.richHTML} location={this.props.location} />
                 )}
-                {renderMode === 'code' && !this.state.blobOrError.highlight.aborted && (
-                    <Blob
-                        className="blob-page__blob"
-                        repoName={this.props.repoName}
-                        commitID={this.props.commitID}
-                        filePath={this.props.filePath}
-                        content={this.state.blobOrError.content}
-                        html={this.state.blobOrError.highlight.html}
-                        rev={this.props.rev}
-                        mode={this.props.mode}
-                        settingsCascade={this.props.settingsCascade}
-                        platformContext={this.props.platformContext}
-                        extensionsController={this.props.extensionsController}
-                        wrapCode={this.state.wrapCode}
-                        renderMode={renderMode}
-                        location={this.props.location}
-                        history={this.props.history}
-                        isLightTheme={this.props.isLightTheme}
-                    />
-                )}
                 {!this.state.blobOrError.richHTML && this.state.blobOrError.highlight.aborted && (
                     <div className="blob-page__aborted">
                         <div className="alert alert-info">
                             Syntax-highlighting this file took too long. &nbsp;
-                            <button onClick={this.onExtendHighlightingTimeoutClick} className="btn btn-sm btn-primary">
+                            <button
+                                type="button"
+                                onClick={this.onExtendHighlightingTimeoutClick}
+                                className="btn btn-sm btn-primary"
+                            >
                                 Try again
                             </button>
                         </div>
                     </div>
                 )}
+                {/* Render the (unhighlighted) blob also in the case highlighting timed out */}
+                {renderMode === 'code' && (
+                    <Blob
+                        {...this.props}
+                        className="blob-page__blob e2e-repo-blob"
+                        content={this.state.blobOrError.content}
+                        html={this.state.blobOrError.highlight.html}
+                        wrapCode={this.state.wrapCode}
+                        renderMode={renderMode}
+                    />
+                )}
                 <BlobPanel
                     {...this.props}
-                    repoID={this.props.repoID}
-                    repoName={this.props.repoName}
-                    commitID={this.props.commitID}
-                    platformContext={this.props.platformContext}
-                    extensionsController={this.props.extensionsController}
                     position={
                         lprToRange(parseHash(this.props.location.hash))
                             ? lprToRange(parseHash(this.props.location.hash))!.start
                             : undefined
                     }
-                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
             </>
         )

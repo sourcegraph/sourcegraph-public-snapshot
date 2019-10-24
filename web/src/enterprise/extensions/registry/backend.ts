@@ -1,11 +1,9 @@
 import { Observable, of } from 'rxjs'
 import { map, mapTo, switchMap } from 'rxjs/operators'
 import { gql } from '../../../../../shared/src/graphql/graphql'
-import { RegistryPublisher } from '../../../../../shared/src/graphql/schema'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../../../shared/src/util/errors'
-import { queryGraphQL } from '../../../backend/graphql'
-import { mutateGraphQL } from '../../../backend/graphql'
+import { mutateGraphQL, queryGraphQL } from '../../../backend/graphql'
 
 export function deleteRegistryExtensionWithConfirmation(extension: GQL.ID): Observable<boolean> {
     return of(window.confirm('Really delete this extension from the extension registry?')).pipe(
@@ -41,7 +39,7 @@ export function deleteRegistryExtensionWithConfirmation(extension: GQL.ID): Obse
     )
 }
 
-export function queryViewerRegistryPublishers(): Observable<RegistryPublisher[]> {
+export function queryViewerRegistryPublishers(): Observable<GQL.RegistryPublisher[]> {
     return queryGraphQL(gql`
         query ViewerRegistryPublishers {
             extensionRegistry {

@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { SignUpArgs, SignUpForm } from '../auth/SignUpPage'
+import { SignUpArgs, SignUpForm } from '../auth/SignUpForm'
 import { submitTrialRequest } from '../marketing/backend'
 
 interface Props extends RouteComponentProps<{}> {

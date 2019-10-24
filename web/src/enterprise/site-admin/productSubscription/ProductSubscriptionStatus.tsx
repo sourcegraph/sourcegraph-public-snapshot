@@ -1,3 +1,4 @@
+import { parseISO } from 'date-fns'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subscription } from 'rxjs'
@@ -68,7 +69,7 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
             productNameWithBrand,
             actualUserCount,
             actualUserCountDate,
-            maximumAllowedUserCount,
+            noLicenseWarningUserCount,
             license,
         } = this.state.statusOrError
 
@@ -84,7 +85,7 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
                             <>
                                 {formatUserCount(license.userCount, true)} license,{' '}
                                 <ExpirationDate
-                                    date={license.expiresAt}
+                                    date={parseISO(license.expiresAt)}
                                     showRelative={true}
                                     lowercase={true}
                                     showPrefix={true}
@@ -103,6 +104,7 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
                                     <a
                                         href="https://about.sourcegraph.com/pricing"
                                         className="btn btn-primary btn-sm"
+                                        // eslint-disable-next-line react/jsx-no-target-blank
                                         target="_blank"
                                     >
                                         Upgrade
@@ -112,14 +114,15 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
                                 <>
                                     <div className="mr-2">
                                         Add a license key to activate Sourcegraph Enterprise features{' '}
-                                        {typeof maximumAllowedUserCount === 'number'
-                                            ? `or to exceed ${maximumAllowedUserCount} users`
+                                        {typeof noLicenseWarningUserCount === 'number'
+                                            ? `or to exceed ${noLicenseWarningUserCount} users`
                                             : ''}
                                     </div>
                                     <div className="text-nowrap flex-wrap-reverse">
                                         <a
-                                            href="http://sourcegraph.com/user/subscriptions/new"
+                                            href="http://sourcegraph.com/subscriptions/new"
                                             className="btn btn-primary btn-sm"
+                                            // eslint-disable-next-line react/jsx-no-target-blank
                                             target="_blank"
                                             data-tooltip="Buy a Sourcegraph Enterprise subscription to get a license key"
                                         >
@@ -144,6 +147,7 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
                             <div className="alert alert-warning">
                                 You have exceeded your licensed users.{' '}
                                 <Link to="/site-admin/license">View your license details</Link> or{' '}
+                                {/* eslint-disable-next-line react/jsx-no-target-blank */}
                                 <a href="https://about.sourcegraph.com/pricing" target="_blank">
                                     upgrade your license
                                 </a>{' '}
@@ -163,7 +167,7 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
                         productNameWithBrand
                         actualUserCount
                         actualUserCountDate
-                        maximumAllowedUserCount
+                        noLicenseWarningUserCount
                         license {
                             tags
                             userCount

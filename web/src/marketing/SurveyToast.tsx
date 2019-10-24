@@ -24,17 +24,18 @@ export class SurveyCTA extends React.PureComponent<SurveyCTAProps> {
                     .map((_, i) => {
                         const pressed = i === this.props.score
                         return (
+                            /* eslint-disable react/jsx-no-bind */
                             <Link
                                 key={i}
                                 className={`btn btn-primary toast__rating-btn ${pressed ? 'active' : ''}`}
                                 aria-pressed={pressed || undefined}
-                                // tslint:disable-next-line:jsx-no-lambda
                                 onClick={() => this.onClick(i)}
                                 to={`/survey/${i}`}
                                 target={this.props.openSurveyInNewTab ? '_blank' : undefined}
                             >
                                 {i}
                             </Link>
+                            /* eslint-enable react/jsx-no-bind */
                         )
                     })}
             </div>
@@ -84,7 +85,7 @@ export class SurveyToast extends React.Component<Props, State> {
         )
     }
 
-    private onClickScore = (score: number): void => this.onDismiss()
+    private onClickScore = (): void => this.onDismiss()
 
     private onDismiss = (): void => {
         localStorage.setItem(HAS_DISMISSED_TOAST_KEY, 'true')

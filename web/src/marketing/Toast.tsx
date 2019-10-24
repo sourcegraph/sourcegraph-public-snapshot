@@ -9,20 +9,23 @@ interface Props {
     onDismiss: () => void
 }
 
-export class Toast extends React.Component<Props, {}> {
-    public render(): JSX.Element | null {
-        return (
-            <div className="toast light">
-                <div className="toast__logo">{this.props.icon}</div>
-                <div className="toast__contents">
-                    <h2 className="toast__contents-title">{this.props.title}</h2>
-                    {this.props.subtitle}
-                    {this.props.cta && <div className="toast__contents-cta">{this.props.cta}</div>}
-                </div>
-                <button onClick={this.props.onDismiss} className="toast__close-button btn btn-icon">
-                    <CloseIcon className="icon-inline" />
-                </button>
+export const Toast: React.FunctionComponent<Props> = props => (
+    <div className="toast">
+        <div className="toast__contents">
+            <div className="d-flex">
+                <span className="toast__logo icon-inline">{props.icon}</span>
+                <h2 className="toast__contents-title">{props.title}</h2>
             </div>
-        )
-    }
-}
+            {props.subtitle}
+            {props.cta && <div className="toast__contents-cta">{props.cta}</div>}
+        </div>
+        <button
+            type="button"
+            onClick={props.onDismiss}
+            className="toast__close-button btn btn-icon e2e-close-toast"
+            aria-label="Close"
+        >
+            <CloseIcon className="icon-inline" />
+        </button>
+    </div>
+)

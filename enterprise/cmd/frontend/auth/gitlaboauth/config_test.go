@@ -6,10 +6,10 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/sergi/go-diff/diffmatchpatch"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/oauth2"
 )
@@ -25,13 +25,13 @@ func Test_parseConfig(t *testing.T) {
 	tests := []struct {
 		name          string
 		args          args
-		wantProviders map[schema.GitLabAuthProvider]auth.Provider
+		wantProviders map[schema.GitLabAuthProvider]providers.Provider
 		wantProblems  []string
 	}{
 		{
 			name:          "No configs",
 			args:          args{cfg: &conf.Unified{}},
-			wantProviders: map[schema.GitLabAuthProvider]auth.Provider{},
+			wantProviders: map[schema.GitLabAuthProvider]providers.Provider{},
 		},
 		{
 			name: "1 GitLab.com config",
@@ -47,7 +47,7 @@ func Test_parseConfig(t *testing.T) {
 					},
 				}},
 			}}},
-			wantProviders: map[schema.GitLabAuthProvider]auth.Provider{
+			wantProviders: map[schema.GitLabAuthProvider]providers.Provider{
 				{
 					ClientID:     "my-client-id",
 					ClientSecret: "my-client-secret",
@@ -88,7 +88,7 @@ func Test_parseConfig(t *testing.T) {
 					},
 				}},
 			}}},
-			wantProviders: map[schema.GitLabAuthProvider]auth.Provider{
+			wantProviders: map[schema.GitLabAuthProvider]providers.Provider{
 				{
 					ClientID:     "my-client-id",
 					ClientSecret: "my-client-secret",
@@ -146,7 +146,7 @@ func Test_parseConfig(t *testing.T) {
 					dmp.DiffPrettyText(dmp.DiffMain(spew.Sdump(tt.wantProviders), spew.Sdump(gotProviders), false)),
 				)
 			}
-			if !reflect.DeepEqual(gotProblems, tt.wantProblems) {
+			if !reflect.DeepEqual(gotProblems.Messages(), tt.wantProblems) {
 				t.Errorf("parseConfig() gotProblems = %v, want %v", gotProblems, tt.wantProblems)
 			}
 		})

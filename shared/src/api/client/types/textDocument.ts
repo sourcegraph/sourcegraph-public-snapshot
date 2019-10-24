@@ -1,5 +1,17 @@
+import { Position } from '@sourcegraph/extension-api-types'
 import minimatch from 'minimatch'
-import { DocumentFilter, DocumentSelector } from 'sourcegraph'
+import { DocumentFilter, DocumentSelector, TextDocument } from 'sourcegraph'
+
+/**
+ * The URI scheme for the resources that hold the body of comments (such as comments on a GitHub
+ * issue).
+ */
+export const COMMENT_URI_SCHEME = 'comment'
+
+/**
+ * The URI scheme for the resources that hold the body of snippets.
+ */
+export const SNIPPET_URI_SCHEME = 'snippet'
 
 /**
  * A literal to identify a text document in the client.
@@ -12,28 +24,11 @@ export interface TextDocumentIdentifier {
 }
 
 /**
- * An item to transfer a text document from the client to the server.
- */
-export interface TextDocumentItem extends TextDocumentIdentifier {
-    /**
-     * The ID of the document's language. This is a well-defined string identifier such as "python".
-     *
-     * @todo Document the known language IDs.
-     */
-    languageId: string
-
-    /**
-     * The document's text contents.
-     */
-    text: string
-}
-
-/**
  * Returns whether any of the document selectors match (or "select") the document.
  */
 export function match(
     selectors: DocumentSelector | IterableIterator<DocumentSelector>,
-    document: Pick<TextDocumentItem, 'uri' | 'languageId'>
+    document: Pick<TextDocument, 'uri' | 'languageId'>
 ): boolean {
     for (const selector of isSingleDocumentSelector(selectors) ? [selectors] : selectors) {
         if (match1(selector, document)) {
@@ -62,7 +57,7 @@ function isDocumentFilter(value: any): value is DocumentFilter {
     )
 }
 
-function match1(selector: DocumentSelector, document: Pick<TextDocumentItem, 'uri' | 'languageId'>): boolean {
+function match1(selector: DocumentSelector, document: Pick<TextDocument, 'uri' | 'languageId'>): boolean {
     return score(selector, document.uri, document.languageId) !== 0
 }
 
@@ -97,11 +92,11 @@ function score1(selector: DocumentSelector[0], candidateUri: string, candidateLa
         // Shorthand notation: "mylang" -> {language: "mylang"}, "*" -> {language: "*""}.
         if (selector === '*') {
             return 5
-        } else if (selector === candidateLanguage) {
-            return 10
-        } else {
-            return 0
         }
+        if (selector === candidateLanguage) {
+            return 10
+        }
+        return 0
     }
 
     const { language, scheme, pattern } = selector
@@ -131,11 +126,44 @@ function score1(selector: DocumentSelector[0], candidateUri: string, candidateLa
     if (pattern) {
         if (pattern === candidateUri || candidateUri.endsWith(pattern) || minimatch(candidateUri, pattern)) {
             ret = 10
-        } else if (minimatch(candidateUri, '**/' + pattern)) {
+        } else if (minimatch(candidateUri, '**/' + pattern, { dot: true })) {
             ret = 5
         } else {
             return 0
         }
     }
     return ret
+}
+
+/**
+ * Convert a character offset in text to the equivalent position.
+ */
+export function offsetToPosition(text: string, offset: number): Position {
+    if (offset <= 0) {
+        return { line: 0, character: 0 }
+    }
+    const before = text.slice(0, offset)
+    const newLines = before.match(/\n/g)
+    const line = newLines ? newLines.length : 0
+    const pre = before.match(/(^|\n).*$/g)
+    return { line, character: pre ? pre[0].length + (line === 0 ? 0 : -1) : 0 }
+}
+
+/**
+ * Convert a position in text to the equivalent character offset.
+ */
+export function positionToOffset(text: string, pos: Position): number {
+    if (pos.line === 0) {
+        return pos.character
+    }
+    let line = 0
+    let lastNewLineOffset = -1
+    do {
+        if (pos.line === line) {
+            return lastNewLineOffset + 1 + pos.character
+        }
+        lastNewLineOffset = text.indexOf('\n', lastNewLineOffset + 1)
+        line++
+    } while (lastNewLineOffset >= 0)
+    return text.length
 }

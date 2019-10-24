@@ -6,30 +6,29 @@ import (
 	"strings"
 	"time"
 
-	lsp "github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gituri"
-	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gituri"
+	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 )
 
 type symbolsArgs struct {
 	graphqlutil.ConnectionArgs
-	Query *string
+	Query           *string
+	IncludePatterns *[]string
 }
 
 func (r *gitTreeEntryResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
-	symbols, err := computeSymbols(ctx, r.commit, args.Query, args.First)
+	symbols, err := computeSymbols(ctx, r.commit, args.Query, args.First, args.IncludePatterns)
 	if err != nil && len(symbols) == 0 {
 		return nil, err
 	}
 	return &symbolConnectionResolver{symbols: symbols, first: args.First}, nil
 }
 
-func (r *gitCommitResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
-	symbols, err := computeSymbols(ctx, r, args.Query, args.First)
+func (r *GitCommitResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
+	symbols, err := computeSymbols(ctx, r, args.Query, args.First, args.IncludePatterns)
 	if err != nil && len(symbols) == 0 {
 		return nil, err
 	}
@@ -48,7 +47,7 @@ func limitOrDefault(first *int32) int {
 	return int(*first)
 }
 
-func computeSymbols(ctx context.Context, commit *gitCommitResolver, query *string, first *int32) (res []*symbolResolver, err error) {
+func computeSymbols(ctx context.Context, commit *GitCommitResolver, query *string, first *int32, includePatterns *[]string) (res []*symbolResolver, err error) {
 	ctx, done := context.WithTimeout(ctx, 5*time.Second)
 	defer done()
 	defer func() {
@@ -56,10 +55,15 @@ func computeSymbols(ctx context.Context, commit *gitCommitResolver, query *strin
 			err = errors.New("processing symbols is taking longer than expected. Try again in a while")
 		}
 	}()
+	var includePatternsSlice []string
+	if includePatterns != nil {
+		includePatternsSlice = *includePatterns
+	}
 	searchArgs := protocol.SearchArgs{
-		CommitID: api.CommitID(commit.oid),
-		First:    limitOrDefault(first) + 1, // add 1 so we can determine PageInfo.hasNextPage
-		Repo:     commit.repo.repo.Name,
+		CommitID:        api.CommitID(commit.oid),
+		First:           limitOrDefault(first) + 1, // add 1 so we can determine PageInfo.hasNextPage
+		Repo:            commit.repo.repo.Name,
+		IncludePatterns: includePatternsSlice,
 	}
 	if query != nil {
 		searchArgs.Query = *query
@@ -74,7 +78,7 @@ func computeSymbols(ctx context.Context, commit *gitCommitResolver, query *strin
 	}
 	resolvers := make([]*symbolResolver, 0, len(symbols))
 	for _, symbol := range symbols {
-		resolver := toSymbolResolver(symbolToLSPSymbolInformation(symbol, baseURI), strings.ToLower(symbol.Language), commit)
+		resolver := toSymbolResolver(symbol, baseURI, strings.ToLower(symbol.Language), commit)
 		if resolver == nil {
 			continue
 		}
@@ -83,22 +87,17 @@ func computeSymbols(ctx context.Context, commit *gitCommitResolver, query *strin
 	return resolvers, err
 }
 
-func toSymbolResolver(symbol lsp.SymbolInformation, lang string, commitResolver *gitCommitResolver) *symbolResolver {
+func toSymbolResolver(symbol protocol.Symbol, baseURI *gituri.URI, lang string, commitResolver *GitCommitResolver) *symbolResolver {
 	resolver := &symbolResolver{
 		symbol:   symbol,
 		language: lang,
+		uri:      baseURI.WithFilePath(symbol.Path),
 	}
-	uri, err := gituri.Parse(string(symbol.Location.URI))
-	if err != nil {
-		log15.Warn("Omitting symbol with invalid URI from results.", "uri", symbol.Location.URI, "error", err)
-		return nil
-	}
-	symbolRange := symbol.Location.Range // copy
+	symbolRange := symbolRange(symbol)
 	resolver.location = &locationResolver{
 		resource: &gitTreeEntryResolver{
 			commit: commitResolver,
-			path:   uri.Fragment,
-			stat:   createFileInfo(uri.Fragment, false), // assume the path refers to a file (not dir)
+			stat:   createFileInfo(resolver.uri.Fragment, false), // assume the path refers to a file (not dir)
 		},
 		lspRange: &symbolRange,
 	}
@@ -118,28 +117,35 @@ func (r *symbolConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.P
 }
 
 type symbolResolver struct {
-	symbol   lsp.SymbolInformation
+	symbol   protocol.Symbol
 	language string
 	location *locationResolver
+	uri      *gituri.URI
 }
 
 func (r *symbolResolver) Name() string { return r.symbol.Name }
 
 func (r *symbolResolver) ContainerName() *string {
-	if r.symbol.ContainerName == "" {
+	if r.symbol.Parent == "" {
 		return nil
 	}
-	return &r.symbol.ContainerName
+	return &r.symbol.Parent
 }
 
 func (r *symbolResolver) Kind() string /* enum SymbolKind */ {
-	return strings.ToUpper(r.symbol.Kind.String())
+	kind := ctagsKindToLSPSymbolKind(r.symbol.Kind)
+	if kind == 0 {
+		return "UNKNOWN"
+	}
+	return strings.ToUpper(kind.String())
 }
 
 func (r *symbolResolver) Language() string { return r.language }
 
 func (r *symbolResolver) Location() *locationResolver { return r.location }
 
-func (r *symbolResolver) URL(ctx context.Context) string { return r.location.URL(ctx) }
+func (r *symbolResolver) URL(ctx context.Context) (string, error) { return r.location.URL(ctx) }
 
-func (r *symbolResolver) CanonicalURL() string { return r.location.CanonicalURL() }
+func (r *symbolResolver) CanonicalURL() (string, error) { return r.location.CanonicalURL() }
+
+func (r *symbolResolver) FileLocal() bool { return r.symbol.FileLimited }

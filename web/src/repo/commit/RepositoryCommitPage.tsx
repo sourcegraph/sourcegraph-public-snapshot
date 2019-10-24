@@ -5,13 +5,13 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, switchMap, tap, withLatestFrom } from 'rxjs/operators'
-import { ActionItemProps } from '../../../../shared/src/actions/ActionItem'
+import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { getHoverActions } from '../../../../shared/src/hover/actions'
-import { HoverContext, HoverOverlay } from '../../../../shared/src/hover/HoverOverlay'
+import { HoverContext } from '../../../../shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
@@ -21,7 +21,9 @@ import { FileSpec, ModeSpec, PositionSpec, RepoSpec, ResolvedRevSpec, RevSpec } 
 import { getHover } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
-import { eventLogger } from '../../tracking/eventLogger'
+import { WebHoverOverlay } from '../../components/shared'
+import { ThemeProps } from '../../theme'
+import { eventLogger, EventLoggerProps } from '../../tracking/eventLogger'
 import { GitCommitNode } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { FileDiffConnection } from '../compare/FileDiffConnection'
@@ -60,13 +62,18 @@ const queryCommit = memoizeObservable(
     args => `${args.repo}:${args.revspec}`
 )
 
-interface Props extends RouteComponentProps<{ revspec: string }>, PlatformContextProps, ExtensionsControllerProps {
+interface Props
+    extends RouteComponentProps<{ revspec: string }>,
+        EventLoggerProps,
+        PlatformContextProps,
+        ExtensionsControllerProps,
+        ThemeProps {
     repo: GQL.IRepository
 
     onDidUpdateExternalLinks: (externalLinks: GQL.IExternalLink[] | undefined) => void
 }
 
-interface State extends HoverState<HoverContext, HoverMerged, ActionItemProps> {
+interface State extends HoverState<HoverContext, HoverMerged, ActionItemAction> {
     /** The commit, undefined while loading, or an error. */
     commitOrError?: GQL.IGitCommit | ErrorLike
 }
@@ -89,14 +96,14 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
     private nextCloseButtonClick = (event: MouseEvent) => this.closeButtonClicks.next(event)
 
     private subscriptions = new Subscription()
-    private hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemProps>
+    private hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
 
     constructor(props: Props) {
         super(props)
         this.hoverifier = createHoverifier<
             RepoSpec & RevSpec & FileSpec & ResolvedRevSpec,
             HoverMerged,
-            ActionItemProps
+            ActionItemAction
         >({
             closeButtonClicks: this.closeButtonClicks,
             hoverOverlayElements: this.hoverOverlayElements,
@@ -112,6 +119,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
             ),
             getHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
             getActions: context => getHoverActions(this.props, context),
+            pinningEnabled: true,
         })
         this.subscriptions.add(this.hoverifier)
         this.state = this.hoverifier.hoverState
@@ -181,7 +189,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="repository-commit-page area" ref={this.nextRepositoryCommitPageElement}>
+            <div className="repository-commit-page container mt-3" ref={this.nextRepositoryCommitPageElement}>
                 <PageTitle
                     title={
                         this.state.commitOrError && !isErrorLike(this.state.commitOrError)
@@ -189,70 +197,61 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                             : `Commit ${this.props.match.params.revspec}`
                     }
                 />
-                <div className="area__content">
-                    {this.state.commitOrError === undefined ? (
-                        <LoadingSpinner className="icon-inline mt-2" />
-                    ) : isErrorLike(this.state.commitOrError) ? (
-                        <div className="alert alert-danger mt-2">
-                            Error: {upperFirst(this.state.commitOrError.message)}
-                        </div>
-                    ) : (
-                        <>
-                            <div className="card repository-commit-page__card">
-                                <div className="card-body">
-                                    <GitCommitNode
-                                        node={this.state.commitOrError}
-                                        repoName={this.props.repo.name}
-                                        expandCommitMessageBody={true}
-                                        showSHAAndParentsRow={true}
-                                    />
-                                </div>
+                {this.state.commitOrError === undefined ? (
+                    <LoadingSpinner className="icon-inline mt-2" />
+                ) : isErrorLike(this.state.commitOrError) ? (
+                    <div className="alert alert-danger mt-2">Error: {upperFirst(this.state.commitOrError.message)}</div>
+                ) : (
+                    <>
+                        <div className="card repository-commit-page__card">
+                            <div className="card-body">
+                                <GitCommitNode
+                                    node={this.state.commitOrError}
+                                    expandCommitMessageBody={true}
+                                    showSHAAndParentsRow={true}
+                                />
                             </div>
-                            <div className="mb-3" />
-                            <FileDiffConnection
-                                listClassName="list-group list-group-flush"
-                                noun="changed file"
-                                pluralNoun="changed files"
-                                queryConnection={this.queryDiffs}
-                                nodeComponent={FileDiffNode}
-                                nodeComponentProps={{
-                                    base: {
-                                        repoName: this.props.repo.name,
-                                        repoID: this.props.repo.id,
-                                        rev: commitParentOrEmpty(this.state.commitOrError),
-                                        commitID: commitParentOrEmpty(this.state.commitOrError),
-                                    },
-                                    head: {
-                                        repoName: this.props.repo.name,
-                                        repoID: this.props.repo.id,
-                                        rev: this.state.commitOrError.oid,
-                                        commitID: this.state.commitOrError.oid,
-                                    },
-                                    lineNumbers: true,
-                                    platformContext: this.props.platformContext,
-                                    location: this.props.location,
-                                    history: this.props.history,
-                                    hoverifier: this.hoverifier,
-                                    extensionsController: this.props.extensionsController,
-                                }}
-                                updateOnChange={`${this.props.repo.id}:${this.state.commitOrError.oid}`}
-                                defaultFirst={25}
-                                hideSearch={true}
-                                noSummaryIfAllNodesVisible={true}
-                                history={this.props.history}
-                                location={this.props.location}
-                                extensionsController={this.props.extensionsController}
-                            />
-                        </>
-                    )}
-                </div>
+                        </div>
+                        <div className="mb-3" />
+                        <FileDiffConnection
+                            listClassName="list-group list-group-flush"
+                            noun="changed file"
+                            pluralNoun="changed files"
+                            queryConnection={this.queryDiffs}
+                            nodeComponent={FileDiffNode}
+                            nodeComponentProps={{
+                                ...this.props,
+                                base: {
+                                    repoName: this.props.repo.name,
+                                    repoID: this.props.repo.id,
+                                    rev: commitParentOrEmpty(this.state.commitOrError),
+                                    commitID: commitParentOrEmpty(this.state.commitOrError),
+                                },
+                                head: {
+                                    repoName: this.props.repo.name,
+                                    repoID: this.props.repo.id,
+                                    rev: this.state.commitOrError.oid,
+                                    commitID: this.state.commitOrError.oid,
+                                },
+                                lineNumbers: true,
+                                hoverifier: this.hoverifier,
+                            }}
+                            updateOnChange={`${this.props.repo.id}:${this.state.commitOrError.oid}`}
+                            defaultFirst={25}
+                            hideSearch={true}
+                            noSummaryIfAllNodesVisible={true}
+                            history={this.props.history}
+                            location={this.props.location}
+                            extensionsController={this.props.extensionsController}
+                        />
+                    </>
+                )}
                 {this.state.hoverOverlayProps && (
-                    <HoverOverlay
+                    <WebHoverOverlay
+                        {...this.props}
                         {...this.state.hoverOverlayProps}
+                        telemetryService={this.props.telemetryService}
                         hoverRef={this.nextOverlayElement}
-                        extensionsController={this.props.extensionsController}
-                        platformContext={this.props.platformContext}
-                        location={this.props.location}
                         onCloseButtonClick={this.nextCloseButtonClick}
                     />
                 )}

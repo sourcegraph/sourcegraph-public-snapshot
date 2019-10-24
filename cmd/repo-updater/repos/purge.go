@@ -9,9 +9,9 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
 
 // RunRepositoryPurgeWorker is a worker which deletes repos which are present
@@ -26,9 +26,16 @@ func RunRepositoryPurgeWorker(ctx context.Context) {
 	}
 
 	for {
-		err := purge(ctx, log)
-		if err != nil {
-			log.Error("failed to run repository clone purge", "error", err)
+		// We only run in a 1 hour period on the weekend. During normal
+		// working hours a migration or admin could accidently remove all
+		// repositories. Recloning all of them is slow, so we drastically
+		// reduce the chance of this happening by only purging at a weird time
+		// to be configuring Sourcegraph.
+		if isSaturdayNight(time.Now()) {
+			err := purge(ctx, log)
+			if err != nil {
+				log.Error("failed to run repository clone purge", "error", err)
+			}
 		}
 		randSleep(10*time.Minute, time.Minute)
 	}
@@ -60,7 +67,6 @@ func purge(ctx context.Context, log log15.Logger) error {
 
 	success := 0
 	failed := 0
-	skipped := 0
 
 	// remove repositories that are in cloned but not in enabled
 	for _, repoStr := range cloned {
@@ -69,28 +75,10 @@ func purge(ctx context.Context, log log15.Logger) error {
 			continue
 		}
 
-		// We skip repositories that have been cloned in the last 12
-		// hours. This is to give time for a user to enable a repository they
-		// manually placed directly into gitserver's repository directory.
-		if info, err := gitserver.DefaultClient.RepoInfo(ctx, repo); err != nil {
-			// Do not fail at this point, just log so we can remove other
-			// repos.
-			log.Error("failed to get RepoInfo of cloned repository", "repo", repo, "error", err)
-			purgeFailed.Inc()
-			failed++
-			continue
-		} else if info.CloneTime != nil && time.Since(*info.CloneTime) < 12*time.Hour {
-			log.Info("skipping repository since it was cloned less than 12 hours ago", "repo", repo, "age", time.Since(*info.CloneTime))
-			purgeSkipped.Inc()
-			skipped++
-			continue
-		}
-
 		// Race condition: A repo can be re-enabled between our listing and
 		// now. This should be very rare, so we ignore it since it will get
 		// cloned again.
-		err := gitserver.DefaultClient.Remove(ctx, repo)
-		if err != nil {
+		if err = gitserver.DefaultClient.Remove(ctx, repo); err != nil {
 			// Do not fail at this point, just log so we can remove other
 			// repos.
 			log.Error("failed to remove disabled repository", "repo", repo, "error", err)
@@ -108,9 +96,15 @@ func purge(ctx context.Context, log log15.Logger) error {
 	if success > 0 || failed > 0 {
 		statusLogger = log.Info
 	}
-	statusLogger("repository cloned purge finished", "enabled", len(enabled), "cloned", len(cloned)-success, "removed", success, "failed", failed, "skipped", skipped)
+	statusLogger("repository cloned purge finished", "enabled", len(enabled), "cloned", len(cloned)-success, "removed", success, "failed", failed)
 
 	return nil
+}
+
+func isSaturdayNight(t time.Time) bool {
+	// According to The Cure, 10:15 Saturday Night you should be sitting in your
+	// kitchen sink, not adjusting your external service configuration.
+	return t.Format("Mon 15") == "Sat 22"
 }
 
 // randSleep will sleep for an expected d duration with a jitter in [-jitter /

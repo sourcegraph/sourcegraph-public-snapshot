@@ -4,26 +4,24 @@ import CommentCheckIcon from 'mdi-react/CommentCheckIcon'
 import CommentRemoveIcon from 'mdi-react/CommentRemoveIcon'
 import FlagVariantIcon from 'mdi-react/FlagVariantIcon'
 import LinkIcon from 'mdi-react/LinkIcon'
-import SecurityLockIcon from 'mdi-react/SecurityLockIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
+import { WithLinkPreviews } from '../../../shared/src/components/linkPreviews/WithLinkPreviews'
 import { Markdown } from '../../../shared/src/components/Markdown'
+import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError } from '../../../shared/src/util/errors'
+import { LINK_PREVIEW_CLASS } from '../components/linkPreviews/styles'
 import { Timestamp } from '../components/time/Timestamp'
+import { setElementTooltip } from '../components/tooltip/Tooltip'
 import { eventLogger } from '../tracking/eventLogger'
 import { UserAvatar } from '../user/UserAvatar'
 
-interface Props {
+interface Props extends ExtensionsControllerProps {
     comment: GQL.IDiscussionComment
     threadID: GQL.ID
     location: H.Location
-
-    /**
-     * Whether or not the user is a site administrator.
-     */
-    isSiteAdmin: boolean
 
     /**
      * When specified, a report icon will be displayed inline and this function
@@ -62,8 +60,8 @@ export class DiscussionsComment extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element | null {
-        const { location, comment, isSiteAdmin, onReport, onClearReports, onDelete } = this.props
-        const isTargeted = new URLSearchParams(location.hash).get('commentID') === comment.id
+        const { location, comment, onReport, onClearReports, onDelete } = this.props
+        const isTargeted = new URLSearchParams(location.hash).get('commentID') === comment.idWithoutKind
 
         // TODO(slimsag:discussions): ASAP: markdown links, headings, etc lead to #
 
@@ -102,6 +100,7 @@ export class DiscussionsComment extends React.PureComponent<Props> {
 
                         {comment.canReport && onReport && (
                             <button
+                                type="button"
                                 className="btn btn-link btn-sm discussions-comment__report"
                                 data-tooltip="Report this comment"
                                 onClick={this.onReportClick}
@@ -109,43 +108,47 @@ export class DiscussionsComment extends React.PureComponent<Props> {
                                 <FlagVariantIcon className="icon-inline" />
                             </button>
                         )}
-                        {isSiteAdmin && (
-                            <span className="discussions-comment__admin">
-                                <SecurityLockIcon className="icon-inline icon-sm" data-tooltip="Admin area" />
-                                {comment.reports.length > 0 && (
-                                    <>
-                                        <span
-                                            className="ml-1 mr-1 discussions-comment__reports"
-                                            data-tooltip={comment.reports.join('\n\n')}
-                                        >
-                                            {comment.reports.length} reports
-                                        </span>
-                                        {comment.canClearReports && onClearReports && (
-                                            <button
-                                                className="btn btn-link btn-sm discussions-comment__toolbar-btn"
-                                                data-tooltip="Clear reports / mark as good message"
-                                                onClick={this.onClearReportsClick}
-                                            >
-                                                <CommentCheckIcon className="icon-inline" />
-                                            </button>
-                                        )}
-                                    </>
-                                )}
-                                {comment.canDelete && onDelete && (
+                        {comment.reports.length > 0 && (
+                            <>
+                                <span
+                                    className="ml-1 mr-1 discussions-comment__reports"
+                                    data-tooltip={comment.reports.join('\n\n')}
+                                >
+                                    {comment.reports.length} reports
+                                </span>
+                                {comment.canClearReports && onClearReports && (
                                     <button
+                                        type="button"
                                         className="btn btn-link btn-sm discussions-comment__toolbar-btn"
-                                        data-tooltip="Delete comment forever"
-                                        onClick={this.onDeleteClick}
+                                        data-tooltip="Clear reports / mark as good message"
+                                        onClick={this.onClearReportsClick}
                                     >
-                                        <CommentRemoveIcon className="icon-inline" />
+                                        <CommentCheckIcon className="icon-inline" />
                                     </button>
                                 )}
-                            </span>
+                            </>
+                        )}
+                        {comment.canDelete && onDelete && (
+                            <button
+                                type="button"
+                                className="btn btn-link btn-sm discussions-comment__toolbar-btn"
+                                data-tooltip="Delete comment forever"
+                                onClick={this.onDeleteClick}
+                            >
+                                <CommentRemoveIcon className="icon-inline" />
+                            </button>
                         )}
                     </span>
                 </div>
                 <div className="discussions-comment__content">
-                    <Markdown dangerousInnerHTML={comment.html} />
+                    <WithLinkPreviews
+                        dangerousInnerHTML={comment.html}
+                        extensionsController={this.props.extensionsController}
+                        setElementTooltip={setElementTooltip}
+                        linkPreviewContentClass={LINK_PREVIEW_CLASS}
+                    >
+                        {props => <Markdown {...props} />}
+                    </WithLinkPreviews>
                 </div>
             </div>
         )
@@ -156,8 +159,7 @@ export class DiscussionsComment extends React.PureComponent<Props> {
             return
         }
         eventLogger.log('ShareCommentButtonClicked')
-        event.preventDefault()
-        copy(this.props.comment.inlineURL!) // ! because this method is only called when inlineURL exists
+        copy(window.context.externalURL + this.props.comment.inlineURL!) // ! because this method is only called when inlineURL exists
         this.setState({ copiedLink: true })
         setTimeout(() => {
             this.setState({ copiedLink: false })

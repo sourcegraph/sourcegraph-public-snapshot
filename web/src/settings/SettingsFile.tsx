@@ -7,23 +7,18 @@ import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SaveToolbar } from '../components/SaveToolbar'
 import { settingsActions } from '../site-admin/configHelpers'
+import { ThemeProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
-import * as _monacoSettingsEditorModule from './MonacoSettingsEditor' // type only
 
-interface Props {
+interface Props extends ThemeProps {
     history: H.History
 
     settings: GQL.ISettings | null
 
     /**
-     * The id of the JSON schema for the document.
+     * JSON Schema of the document.
      */
-    jsonSchemaId: string
-
-    /**
-     * Extra schemas that are transitively referenced by jsonSchemaId.
-     */
-    extraSchemas?: { $id: string }[]
+    jsonSchema?: { $id: string }
 
     /**
      * Called when the user saves changes to the settings file's contents.
@@ -40,8 +35,6 @@ interface Props {
      * if any.
      */
     commitError?: Error
-
-    isLightTheme: boolean
 }
 
 interface State {
@@ -61,7 +54,7 @@ const emptySettings = '{\n  // add settings here (Ctrl+Space to see hints)\n}'
 const disposableToFn = (disposable: _monaco.IDisposable) => () => disposable.dispose()
 
 const MonacoSettingsEditor = React.lazy(async () => ({
-    default: (await import('../settings/MonacoSettingsEditor')).MonacoSettingsEditor,
+    default: (await import('./MonacoSettingsEditor')).MonacoSettingsEditor,
 }))
 
 export class SettingsFile extends React.PureComponent<Props, State> {
@@ -76,17 +69,19 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         this.state = { saving: false }
 
         // Reset state upon navigation to a different subject.
-        this.componentUpdates
-            .pipe(
-                startWith(props),
-                map(({ settings }) => settings),
-                distinctUntilChanged()
-            )
-            .subscribe(() => {
-                if (this.state.contents !== undefined) {
-                    this.setState({ contents: undefined })
-                }
-            })
+        this.subscriptions.add(
+            this.componentUpdates
+                .pipe(
+                    startWith(props),
+                    map(({ settings }) => settings),
+                    distinctUntilChanged()
+                )
+                .subscribe(() => {
+                    if (this.state.contents !== undefined) {
+                        this.setState({ contents: undefined })
+                    }
+                })
+        )
 
         // Saving ended (in failure) if we get a commitError.
         this.subscriptions.add(
@@ -146,8 +141,8 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         )
     }
 
-    public componentWillReceiveProps(newProps: Props): void {
-        this.componentUpdates.next(newProps)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -164,16 +159,16 @@ export class SettingsFile extends React.PureComponent<Props, State> {
             this.state.contents === undefined ? this.getPropsSettingsContentsOrEmpty() : this.state.contents
 
         return (
-            <div className="settings-file d-flex flex-column">
+            <div className="settings-file e2e-settings-file d-flex flex-grow-1 flex-column">
                 <div className="site-admin-configuration-page__action-groups">
                     <div className="site-admin-configuration-page__action-groups">
                         <div className="site-admin-configuration-page__action-group-header">Quick configure:</div>
                         <div className="site-admin-configuration-page__actions">
                             {settingsActions.map(({ id, label }) => (
                                 <button
+                                    type="button"
                                     key={id}
                                     className="btn btn-secondary btn-sm site-admin-configuration-page__action"
-                                    // tslint:disable-next-line:jsx-no-lambda
                                     onClick={() => this.runAction(id)}
                                 >
                                     {label}
@@ -193,8 +188,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                 <React.Suspense fallback={<LoadingSpinner className="icon-inline mt-2" />}>
                     <MonacoSettingsEditor
                         value={contents}
-                        jsonSchemaId={this.props.jsonSchemaId}
-                        extraSchemas={this.props.extraSchemas}
+                        jsonSchema={this.props.jsonSchema}
                         onChange={this.onEditorChange}
                         readOnly={this.state.saving}
                         monacoRef={this.monacoRef}
@@ -208,10 +202,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
 
     private monacoRef = (monacoValue: typeof _monaco | null) => {
         this.monaco = monacoValue
-        // This function can only be called if the lazy MonacoSettingsEditor component was loaded,
-        // so we know its #_result property is set by now.
-        const monacoSettingsEditor = MonacoSettingsEditor._result
-        if (this.monaco && monacoSettingsEditor) {
+        if (this.monaco) {
             this.subscriptions.add(
                 disposableToFn(
                     this.monaco.editor.onDidCreateEditor(editor => {
@@ -221,10 +212,14 @@ export class SettingsFile extends React.PureComponent<Props, State> {
             )
             this.subscriptions.add(
                 disposableToFn(
-                    this.monaco.editor.onDidCreateModel(model => {
-                        if (this.editor && monacoSettingsEditor.isStandaloneCodeEditor(this.editor)) {
+                    this.monaco.editor.onDidCreateModel(async model => {
+                        // This function can only be called if the lazy MonacoSettingsEditor component was loaded,
+                        // so this import call will not incur another load.
+                        const { MonacoSettingsEditor } = await import('./MonacoSettingsEditor')
+
+                        if (this.editor && MonacoSettingsEditor.isStandaloneCodeEditor(this.editor)) {
                             for (const { id, label, run } of settingsActions) {
-                                monacoSettingsEditor.addEditorAction(this.editor, model, label, id, run)
+                                MonacoSettingsEditor.addEditorAction(this.editor, model, label, id, run)
                             }
                         }
                     })
@@ -236,7 +231,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
     private runAction(id: string): void {
         if (this.editor) {
             const action = this.editor.getAction(id)
-            action.run().then(() => void 0, (err: any) => console.error(err))
+            action.run().then(() => undefined, (err: any) => console.error(err))
         } else {
             alert('Wait for editor to load before running action.')
         }

@@ -12,7 +12,6 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        cursor: pointer;
 
         &:last-of-type {
             border-bottom: 1px solid $border-color;
@@ -23,34 +22,9 @@
             background-color: $color-bg-2;
         }
 
-        &-top-line,
-        &-bottom-line {
-            display: flex;
-            align-items: baseline;
-        }
-        &-id {
-            margin-left: 0.25rem;
-            color: $color-light-text-2;
-            .theme-dark & {
-                color: #566e9f;
-            }
-        }
-        &-spacer {
-            flex: 1;
-        }
         &-title {
             overflow: hidden;
             text-overflow: ellipsis;
-            color: $color-text-2;
-            margin-bottom: 0;
-        }
-        &:hover &-title {
-            text-decoration: underline;
-        }
-        &-comments-count {
-            color: var(--link-color);
-            text-decoration: none;
-            text-align: right;
         }
     }
 }

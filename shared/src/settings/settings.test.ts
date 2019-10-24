@@ -1,4 +1,4 @@
-import { createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
+import { createAggregateError, isErrorLike } from '../util/errors'
 import {
     CustomMergeFunctions,
     gqlToCascade,
@@ -15,7 +15,6 @@ const FIXTURE_ORG: SettingsSubject & SubjectSettingsContents = {
     name: 'n',
     displayName: 'n',
     id: 'a',
-    settingsURL: 'u',
     viewerCanAdminister: true,
     latestSettings: { id: 1, contents: '{"a":1}' },
 }
@@ -25,7 +24,6 @@ const FIXTURE_USER: SettingsSubject & SubjectSettingsContents = {
     username: 'n',
     displayName: 'n',
     id: 'b',
-    settingsURL: 'u',
     viewerCanAdminister: true,
     latestSettings: { id: 2, contents: '{"b":2}' },
 }
@@ -39,18 +37,20 @@ const FIXTURE_USER_WITH_SETTINGS_ERROR: SettingsSubject & SubjectSettingsContent
 const SETTINGS_ERROR_FOR_FIXTURE_USER = createAggregateError([new Error('parse error (code: 0, offset: 0, length: 1)')])
 
 describe('gqlToCascade', () => {
-    test('converts a value', () =>
-        expect(
-            gqlToCascade({
-                subjects: [FIXTURE_ORG, FIXTURE_USER],
-            })
-        ).toEqual({
+    test('converts a value', () => {
+        const expected: SettingsCascade = {
             subjects: [
                 { subject: FIXTURE_ORG, settings: { a: 1 }, lastID: 1 },
                 { subject: FIXTURE_USER, settings: { b: 2 }, lastID: 2 },
             ],
             final: { a: 1, b: 2 },
-        } as SettingsCascade))
+        }
+        expect(
+            gqlToCascade({
+                subjects: [FIXTURE_ORG, FIXTURE_USER],
+            })
+        ).toEqual(expected)
+    })
     test('preserves errors', () => {
         const value = gqlToCascade({
             subjects: [FIXTURE_ORG, FIXTURE_USER_WITH_SETTINGS_ERROR, FIXTURE_USER],
@@ -60,7 +60,7 @@ describe('gqlToCascade', () => {
             value.subjects &&
                 !isErrorLike(value.subjects) &&
                 isErrorLike(value.subjects[1].settings) &&
-                (value.subjects[1].settings as ErrorLike).message
+                value.subjects[1].settings.message
         ).toBe(SETTINGS_ERROR_FOR_FIXTURE_USER.message)
     })
 })
@@ -71,6 +71,194 @@ describe('mergeSettings', () => {
         expect(mergeSettings<{ a?: number; b?: number } & Settings>([{ a: 1 }, { b: 2 }, { a: 3 }])).toEqual({
             a: 3,
             b: 2,
+        }))
+    test('deeply merges extensions property', () =>
+        expect(
+            mergeSettings<{ a?: { [key: string]: boolean }; b?: { [key: string]: boolean } } & Settings>([
+                { extensions: { 'sourcegraph/cpp': true, 'sourcegraph/go': true, 'sourcegraph/typescript': true } },
+                { extensions: { 'sourcegraph/cpp': false, 'sourcegraph/go': true, 'sourcegraph/typescript': true } },
+                { extensions: { 'sourcegraph/go': false, 'sourcegraph/typescript': true } },
+            ])
+        ).toEqual({
+            extensions: { 'sourcegraph/cpp': false, 'sourcegraph/go': false, 'sourcegraph/typescript': true },
+        }))
+    test('merges search.scopes property', () =>
+        expect(
+            mergeSettings<
+                {
+                    a?: { [key: string]: { [key: string]: string }[] }
+                    b?: { [key: string]: { [key: string]: string }[] }
+                } & Settings
+            >([
+                { 'search.scopes': [{ name: 'sample repos', value: 'repogroup:sample' }] },
+                { 'search.scopes': [{ name: 'test repos', value: 'repogroup:test' }] },
+                { 'search.scopes': [{ name: 'sourcegraph repos', value: 'repogroup:sourcegraph' }] },
+            ])
+        ).toEqual({
+            'search.scopes': [
+                { name: 'sample repos', value: 'repogroup:sample' },
+                { name: 'test repos', value: 'repogroup:test' },
+                { name: 'sourcegraph repos', value: 'repogroup:sourcegraph' },
+            ],
+        }))
+    test('merges quicklinks property', () =>
+        expect(
+            mergeSettings<
+                {
+                    a?: { [key: string]: { [key: string]: string }[] }
+                    b?: { [key: string]: { [key: string]: string }[] }
+                } & Settings
+            >([
+                { quicklinks: [{ name: 'main repo', value: '/github.com/org/main-repo' }] },
+                { quicklinks: [{ name: 'About Sourcegraph', value: 'https://docs.internal/about-sourcegraph' }] },
+                {
+                    quicklinks: [
+                        { name: 'mycorp extensions', value: 'https://sourcegraph.com/extensions?query=mycorp%2F' },
+                    ],
+                },
+            ])
+        ).toEqual({
+            quicklinks: [
+                { name: 'main repo', value: '/github.com/org/main-repo' },
+                { name: 'About Sourcegraph', value: 'https://docs.internal/about-sourcegraph' },
+                { name: 'mycorp extensions', value: 'https://sourcegraph.com/extensions?query=mycorp%2F' },
+            ],
+        }))
+    test('merges search.repositoryGroups property', () =>
+        expect(
+            mergeSettings<{ a?: { [key: string]: string }; b?: { [key: string]: string } } & Settings>([
+                {
+                    'search.repositoryGroups': {
+                        sourcegraph: ['github.com/sourcegraph/sourcegraph', 'github.com/sourcegraph/codeintellify'],
+                    },
+                },
+                {
+                    'search.repositoryGroups': {
+                        k8s: ['github.com/kubernetes/kubernetes'],
+                    },
+                },
+                {
+                    'search.repositoryGroups': {
+                        docker: ['github.com/docker/docker'],
+                        sourcegraph: [
+                            'github.com/sourcegraph/sourcegraph',
+                            'github.com/sourcegraph/codeintellify',
+                            'github.com/sourcegraph/sourcegraph-typescript',
+                        ],
+                    },
+                },
+            ])
+        ).toEqual({
+            'search.repositoryGroups': {
+                k8s: ['github.com/kubernetes/kubernetes'],
+                docker: ['github.com/docker/docker'],
+                sourcegraph: [
+                    'github.com/sourcegraph/sourcegraph',
+                    'github.com/sourcegraph/codeintellify',
+                    'github.com/sourcegraph/sourcegraph-typescript',
+                ],
+            },
+        }))
+    test('merges notices property', () =>
+        expect(
+            mergeSettings<{ a?: { [key: string]: string }; b?: { [key: string]: string } } & Settings>([
+                {
+                    notices: [
+                        {
+                            dismissible: false,
+                            location: 'home',
+                            message: 'global notice',
+                        },
+                    ],
+                },
+                {
+                    notices: [
+                        {
+                            dismissible: false,
+                            location: 'top',
+                            message: 'org notice',
+                        },
+                    ],
+                },
+                {
+                    notices: [
+                        {
+                            dismissible: false,
+                            location: 'top',
+                            message: 'user notice',
+                        },
+                    ],
+                },
+            ])
+        ).toEqual({
+            notices: [
+                {
+                    dismissible: false,
+                    location: 'home',
+                    message: 'global notice',
+                },
+                {
+                    dismissible: false,
+                    location: 'top',
+                    message: 'org notice',
+                },
+
+                {
+                    dismissible: false,
+                    location: 'top',
+                    message: 'user notice',
+                },
+            ],
+        }))
+    test('merges search.savedQueries property', () =>
+        expect(
+            mergeSettings<{ a?: { [key: string]: string }; b?: { [key: string]: string } } & Settings>([
+                {
+                    'search.savedQueries': [
+                        {
+                            description: 'global saved query',
+                            query: 'type:diff global',
+                            notify: true,
+                        },
+                    ],
+                },
+                {
+                    'search.savedQueries': [
+                        {
+                            description: 'org saved query',
+                            query: 'type:diff org',
+                            notify: true,
+                        },
+                    ],
+                },
+                {
+                    'search.savedQueries': [
+                        {
+                            description: 'user saved query',
+                            query: 'type:diff user',
+                            notify: true,
+                        },
+                    ],
+                },
+            ])
+        ).toEqual({
+            'search.savedQueries': [
+                {
+                    description: 'global saved query',
+                    query: 'type:diff global',
+                    notify: true,
+                },
+                {
+                    description: 'org saved query',
+                    query: 'type:diff org',
+                    notify: true,
+                },
+                {
+                    description: 'user saved query',
+                    query: 'type:diff user',
+                    notify: true,
+                },
+            ],
         }))
 })
 
@@ -85,7 +273,7 @@ describe('merge', () => {
         assertMerged({}, { a: 1 }, { a: 1 })
     })
     test('merges top-level objects deeply', () => assertMerged({ a: 1 }, { b: 2 }, { a: 1, b: 2 }))
-    test('merges nested objects deeply', () => assertMerged({ a: { b: 1 } }, { a: { c: 2 } }, { a: { b: 1, c: 2 } }))
+    test('does not merge nested objects deeply', () => assertMerged({ a: { b: 1 } }, { a: { c: 2 } }, { a: { c: 2 } }))
     test('overwrites arrays', () => assertMerged({ a: [1] }, { a: [2] }, { a: [2] }))
     test('uses custom merge functions', () =>
         assertMerged({ a: [1] }, { a: [2] }, { a: [1, 2] }, { a: (base, add) => [...base, ...add] }))

@@ -1,10 +1,9 @@
-@import '../node_modules/@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
+@import '~@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
 
 .hover-overlay {
     position: absolute;
     min-width: 6rem;
     max-width: 32rem;
-    max-height: 15rem;
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -24,12 +23,6 @@
         border: none;
         opacity: 0;
         transition: opacity $animation-duration ease-in-out;
-        &:focus {
-            outline: none; // override GitHub style
-        }
-        &:active {
-            box-shadow: none; // override GitHub style
-        }
     }
     &:hover &__close-button {
         opacity: 1;
@@ -42,19 +35,6 @@
         &:not(:first-child) {
             border-top: 1px solid var(--border-color);
         }
-        hr {
-            margin: 0.5rem -0.5rem;
-            background: var(--border-color);
-        }
-        p,
-        pre {
-            &:not(:last-child) {
-                margin-bottom: 0.5rem;
-            }
-            &:last-child {
-                margin-bottom: 0;
-            }
-        }
     }
 
     &__contents {
@@ -62,13 +42,46 @@
         overflow-y: auto;
     }
 
+    &__alert {
+        padding: 0.5rem;
+    }
+
+    &__alert-close {
+        float: right;
+    }
+
+    // __content elements are a subset of the __row elements
+    // (the ones that contain markdown or code, but not errors or the actions)
     &__content {
+        max-height: 15rem;
         padding: 0.5rem;
         overflow-x: auto;
         word-wrap: normal;
-        p:last-child {
-            margin-bottom: 0;
+
+        // Descendant selectors are needed here to style rendered markdown
+        // stylelint-disable selector-max-compound-selectors
+
+        // <hr>s must looks the same as using the using multiple deprecated MarkedStrings
+        hr {
+            margin: 0.5rem -0.5rem;
+            background: var(--border-color);
+            border: none;
+            // The <hr> acts like a border, which should always be exactly 1px
+            // stylelint-disable-next-line declaration-property-unit-whitelist
+            height: 1px;
         }
+        p,
+        pre {
+            margin-bottom: 0.5rem;
+            overflow: auto;
+            &:last-child {
+                margin-bottom: 0;
+            }
+        }
+        code {
+            white-space: pre;
+        }
+        // stylelint-enable selector-max-compound-selectors
     }
 
     &__actions {
@@ -105,9 +118,5 @@
     &__alert-below {
         margin: 0;
         overflow-y: auto;
-    }
-
-    code {
-        white-space: pre;
     }
 }

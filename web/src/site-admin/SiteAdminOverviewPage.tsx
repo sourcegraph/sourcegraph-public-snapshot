@@ -1,28 +1,26 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import H from 'history'
 import { upperFirst } from 'lodash'
-import ChartLineIcon from 'mdi-react/ChartLineIcon'
-import CityIcon from 'mdi-react/CityIcon'
-import EmoticonIcon from 'mdi-react/EmoticonIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
-import PackageVariantIcon from 'mdi-react/PackageVariantIcon'
-import UserIcon from 'mdi-react/UserIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { RepositoryIcon } from '../../../shared/src/components/icons' // TODO: Switch to mdi icon
+import { ActivationProps, percentageDone } from '../../../shared/src/components/activation/Activation'
+import { ActivationChecklist } from '../../../shared/src/components/activation/ActivationChecklist'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { numberWithCommas, pluralize } from '../../../shared/src/util/strings'
 import { queryGraphQL } from '../backend/graphql'
-import { OverviewItem, OverviewList } from '../components/Overview'
+import { Collapsible } from '../components/Collapsible'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { SiteAdminManagementConsolePassword } from './SiteAdminManagementConsolePassword'
 import { UsageChart } from './SiteAdminUsageStatisticsPage'
 
-interface Props {
-    overviewComponents: ReadonlyArray<React.ComponentType>
+interface Props extends ActivationProps {
+    history: H.History
+    overviewComponents: readonly React.ComponentType[]
     isLightTheme: boolean
 }
 
@@ -100,8 +98,12 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
+        let setupPercentage = 0
+        if (this.props.activation) {
+            setupPercentage = percentageDone(this.props.activation.completed)
+        }
         return (
-            <div className="site-admin-overview-page pt-3">
+            <div className="site-admin-overview-page py-3">
                 <PageTitle title="Overview - Admin" />
                 <div className="mb-3">
                     <SiteAdminManagementConsolePassword />
@@ -114,126 +116,101 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                     </div>
                 )}
                 {!this.state.info && <LoadingSpinner className="icon-inline" />}
-                <OverviewList>
+                <div className="list-group">
                     {this.state.info && (
                         <>
-                            <OverviewItem
-                                link="/explore"
-                                icon={PackageVariantIcon}
-                                actions={
-                                    <Link to="/explore" className="btn btn-secondary btn-sm">
-                                        <OpenInNewIcon className="icon-inline" /> Explore
-                                    </Link>
-                                }
-                                title="Explore"
-                                isBlock={true}
-                            />
-                            <OverviewItem
-                                link="/site-admin/repositories"
-                                icon={RepositoryIcon}
-                                actions={
-                                    <>
-                                        <Link to="/site-admin/repositories" className="btn btn-secondary btn-sm">
-                                            <OpenInNewIcon className="icon-inline" /> View all
-                                        </Link>
-                                        <Link to="/site-admin/external-services" className="pr-2">
-                                            Configure external services
-                                        </Link>
-                                    </>
-                                }
-                                title={`${numberWithCommas(this.state.info.repositories)} ${
-                                    this.state.info.repositories !== null
-                                        ? pluralize('repository', this.state.info.repositories, 'repositories')
-                                        : '?'
-                                }`}
-                            />
-                            <OverviewItem
-                                link="/site-admin/users"
-                                icon={UserIcon}
-                                actions={
-                                    <>
-                                        <Link to="/site-admin/users" className="btn btn-secondary btn-sm">
-                                            <OpenInNewIcon className="icon-inline" /> View all
-                                        </Link>
-                                        <Link to="/site-admin/users/new" className="pr-2">
-                                            Create user account
-                                        </Link>
-                                    </>
-                                }
-                                title={`${numberWithCommas(this.state.info.users)} ${pluralize(
-                                    'user',
-                                    this.state.info.users
-                                )}`}
-                            />
-                            <OverviewItem
-                                link="/site-admin/organizations"
-                                icon={CityIcon}
-                                actions={
-                                    <>
-                                        <Link to="/site-admin/organizations" className="btn btn-secondary btn-sm">
-                                            <OpenInNewIcon className="icon-inline" /> View all
-                                        </Link>
-                                        <Link to="/organizations/new" className="pr-2">
-                                            Create organization
-                                        </Link>
-                                    </>
-                                }
-                                title={`${numberWithCommas(this.state.info.orgs)} ${pluralize(
-                                    'organization',
-                                    this.state.info.orgs
-                                )}`}
-                            />
-                            <OverviewItem
-                                link="/site-admin/surveys"
-                                icon={EmoticonIcon}
-                                actions={
-                                    <Link to="/site-admin/surveys" className="btn btn-secondary btn-sm">
-                                        <OpenInNewIcon className="icon-inline" /> View all
-                                    </Link>
-                                }
-                                title={`${numberWithCommas(this.state.info.surveyResponses.totalCount)} ${pluralize(
-                                    'user survey response',
-                                    this.state.info.surveyResponses.totalCount
-                                )}`}
-                            />
+                            {this.props.activation && this.props.activation.completed && (
+                                <Collapsible
+                                    title={`${setupPercentage < 100 ? 'Set up Sourcegraph' : 'Status'}`}
+                                    defaultExpanded={setupPercentage < 100}
+                                    className="list-group-item"
+                                    titleClassName="h5 mb-0 font-weight-normal p-2"
+                                >
+                                    {this.props.activation.completed && (
+                                        <ActivationChecklist
+                                            history={this.props.history}
+                                            steps={this.props.activation.steps}
+                                            completed={this.props.activation.completed}
+                                            className="border-top"
+                                        />
+                                    )}
+                                </Collapsible>
+                            )}
+                            {this.state.info.repositories !== null && (
+                                <Link
+                                    to="/site-admin/repositories"
+                                    className="list-group-item list-group-item-action h5 font-weight-normal py-2 px-3"
+                                >
+                                    {numberWithCommas(this.state.info.repositories)}{' '}
+                                    {pluralize('repository', this.state.info.repositories, 'repositories')}
+                                </Link>
+                            )}
+                            {this.state.info.users > 1 && (
+                                <Link
+                                    to="/site-admin/users"
+                                    className="list-group-item list-group-item-action h5 font-weight-normal py-2 px-3"
+                                >
+                                    {numberWithCommas(this.state.info.users)} {pluralize('user', this.state.info.users)}
+                                </Link>
+                            )}
+                            {this.state.info.orgs > 1 && (
+                                <Link
+                                    to="/site-admin/organizations"
+                                    className="list-group-item list-group-item-action h5 font-weight-normal py-2 px-3"
+                                >
+                                    {numberWithCommas(this.state.info.orgs)}{' '}
+                                    {pluralize('organization', this.state.info.orgs)}
+                                </Link>
+                            )}
+                            {this.state.info.users > 1 && (
+                                <Link
+                                    to="/site-admin/surveys"
+                                    className="list-group-item list-group-item-action h5 font-weight-normal py-2 px-3"
+                                >
+                                    {numberWithCommas(this.state.info.surveyResponses.totalCount)}{' '}
+                                    {pluralize('user survey response', this.state.info.surveyResponses.totalCount)}
+                                </Link>
+                            )}
+                            {this.state.info.users > 1 && this.state.stats && (
+                                <Collapsible
+                                    title={`${this.state.stats.waus[1].userCount} ${pluralize(
+                                        'active user',
+                                        this.state.stats.waus[1].userCount
+                                    )} last week`}
+                                    defaultExpanded={true}
+                                    className="list-group-item"
+                                    titleClassName="h5 mb-0 font-weight-normal p-2"
+                                >
+                                    {this.state.error && (
+                                        <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>
+                                    )}
+                                    {this.state.stats && (
+                                        <UsageChart
+                                            {...this.props}
+                                            stats={this.state.stats}
+                                            chartID="waus"
+                                            showLegend={false}
+                                            header={
+                                                <div className="site-admin-overview-page__detail-header">
+                                                    <h2>Weekly unique users</h2>
+                                                    <h3>
+                                                        <Link
+                                                            to="/site-admin/usage-statistics"
+                                                            className="btn btn-secondary"
+                                                        >
+                                                            View all usage statistics{' '}
+                                                            <OpenInNewIcon className="icon-inline" />
+                                                        </Link>
+                                                    </h3>
+                                                </div>
+                                            }
+                                        />
+                                    )}
+                                </Collapsible>
+                            )}
                         </>
                     )}
-                    {this.state.stats && (
-                        <OverviewItem
-                            icon={ChartLineIcon}
-                            title={`${this.state.stats.waus[1].userCount} ${pluralize(
-                                'active user',
-                                this.state.stats.waus[1].userCount
-                            )} last week`}
-                            defaultExpanded={true}
-                        >
-                            {this.state.error && (
-                                <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>
-                            )}
-                            {this.state.stats && (
-                                <UsageChart
-                                    {...this.props}
-                                    stats={this.state.stats}
-                                    chartID="waus"
-                                    showLegend={false}
-                                    header={
-                                        <div className="site-admin-overview-page__detail-header">
-                                            <h2>Weekly unique users</h2>
-                                            <h3>
-                                                <Link
-                                                    to="/site-admin/usage-statistics"
-                                                    className="btn btn-secondary btn-sm"
-                                                >
-                                                    <OpenInNewIcon className="icon-inline" /> View all usage statistics
-                                                </Link>
-                                            </h3>
-                                        </div>
-                                    }
-                                />
-                            )}
-                        </OverviewItem>
-                    )}
-                </OverviewList>
+                </div>
             </div>
         )
     }

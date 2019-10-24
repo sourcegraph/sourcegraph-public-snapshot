@@ -3,6 +3,8 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"os"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -12,29 +14,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 )
 
-var externalServiceKinds = map[string]struct {
-	// True if the external service can host repositories.
-	codeHost bool
-}{
-	"AWSCODECOMMIT":   {codeHost: true},
-	"BITBUCKETSERVER": {codeHost: true},
-	"GITHUB":          {codeHost: true},
-	"GITLAB":          {codeHost: true},
-	"GITOLITE":        {codeHost: true},
-	"PHABRICATOR":     {codeHost: true},
-	"OTHER":           {codeHost: true},
-}
-
-func validateKind(kind string) error {
-	if _, ok := externalServiceKinds[kind]; !ok {
-		return fmt.Errorf("invalid external service kind: %s", kind)
-	}
-	return nil
-}
+var extsvcConfigAllowEdits, _ = strconv.ParseBool(env.Get("EXTSVC_CONFIG_ALLOW_EDITS", "false", "When EXTSVC_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
 
 func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 	Input *struct {
@@ -47,9 +33,8 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
-
-	if err := validateKind(args.Input.Kind); err != nil {
-		return nil, err
+	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
+		return nil, errors.New("adding external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
 
 	externalService := &types.ExternalService{
@@ -58,15 +43,16 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 		Config:      args.Input.Config,
 	}
 
-	if err := db.ExternalServices.Create(ctx, externalService); err != nil {
+	if err := db.ExternalServices.Create(ctx, conf.Get, externalService); err != nil {
 		return nil, err
 	}
 
+	res := &externalServiceResolver{externalService: externalService}
 	if err := syncExternalService(ctx, externalService); err != nil {
-		return nil, errors.Wrap(err, "external service created, but sync request failed")
+		res.warning = fmt.Sprintf("External service created, but we encountered a problem while validating the external service: %s", err)
 	}
 
-	return &externalServiceResolver{externalService: externalService}, nil
+	return res, nil
 }
 
 func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
@@ -85,16 +71,20 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
+	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
+		return nil, errors.New("updating external service not allowed when using EXTSVC_CONFIG_FILE")
+	}
 
 	if args.Input.Config != nil && strings.TrimSpace(*args.Input.Config) == "" {
 		return nil, fmt.Errorf("blank external service configuration is invalid (must be valid JSONC)")
 	}
 
+	ps := conf.Get().Critical.AuthProviders
 	update := &db.ExternalServiceUpdate{
 		DisplayName: args.Input.DisplayName,
 		Config:      args.Input.Config,
 	}
-	if err := db.ExternalServices.Update(ctx, externalServiceID, update); err != nil {
+	if err := db.ExternalServices.Update(ctx, ps, externalServiceID, update); err != nil {
 		return nil, err
 	}
 
@@ -103,16 +93,17 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 		return nil, err
 	}
 
+	res := &externalServiceResolver{externalService: externalService}
 	if err = syncExternalService(ctx, externalService); err != nil {
-		return nil, errors.Wrap(err, "external service updated, but sync request failed")
+		res.warning = fmt.Sprintf("External service updated, but we encountered a problem while validating the external service: %s", err)
 	}
 
-	return &externalServiceResolver{externalService: externalService}, nil
+	return res, nil
 }
 
 // Eagerly trigger a repo-updater sync.
 func syncExternalService(ctx context.Context, svc *types.ExternalService) error {
-	return repoupdater.DefaultClient.SyncExternalService(ctx, api.ExternalService{
+	_, err := repoupdater.DefaultClient.SyncExternalService(ctx, api.ExternalService{
 		ID:          svc.ID,
 		Kind:        svc.Kind,
 		DisplayName: svc.DisplayName,
@@ -121,6 +112,11 @@ func syncExternalService(ctx context.Context, svc *types.ExternalService) error 
 		UpdatedAt:   svc.UpdatedAt,
 		DeletedAt:   svc.DeletedAt,
 	})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {
@@ -130,8 +126,16 @@ func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
+	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
+		return nil, errors.New("deleting external service not allowed when using EXTSVC_CONFIG_FILE")
+	}
 
 	id, err := unmarshalExternalServiceID(args.ExternalService)
+	if err != nil {
+		return nil, err
+	}
+
+	externalService, err := db.ExternalServices.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -139,6 +143,11 @@ func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {
 	if err := db.ExternalServices.Delete(ctx, id); err != nil {
 		return nil, err
 	}
+
+	if err = syncExternalService(ctx, externalService); err != nil {
+		return nil, errors.Wrap(err, "warning: external service deleted, but sync request failed")
+	}
+
 	return &EmptyResponse{}, nil
 }
 
@@ -193,4 +202,29 @@ func (r *externalServiceConnectionResolver) PageInfo(ctx context.Context) (*grap
 		return nil, err
 	}
 	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && len(externalServices) >= r.opt.Limit), nil
+}
+
+type computedExternalServiceConnectionResolver struct {
+	args             graphqlutil.ConnectionArgs
+	externalServices []*types.ExternalService
+}
+
+func (r *computedExternalServiceConnectionResolver) Nodes(ctx context.Context) []*externalServiceResolver {
+	svcs := r.externalServices
+	if r.args.First != nil && int(*r.args.First) < len(svcs) {
+		svcs = svcs[:*r.args.First]
+	}
+	resolvers := make([]*externalServiceResolver, 0, len(svcs))
+	for _, svc := range svcs {
+		resolvers = append(resolvers, &externalServiceResolver{externalService: svc})
+	}
+	return resolvers
+}
+
+func (r *computedExternalServiceConnectionResolver) TotalCount(ctx context.Context) int32 {
+	return int32(len(r.externalServices))
+}
+
+func (r *computedExternalServiceConnectionResolver) PageInfo(ctx context.Context) *graphqlutil.PageInfo {
+	return graphqlutil.HasNextPage(r.args.First != nil && len(r.externalServices) >= int(*r.args.First))
 }

@@ -1,112 +1,45 @@
 # Sourcegraph roadmap
 
-<aside class="note visible-product"><p>View the <strong><a href="https://docs.sourcegraph.com/dev/roadmap">latest roadmap on docs.sourcegraph.com</a></strong>.</p></aside>
+We want Sourcegraph to be:
 
-We want Sourcegraph to be the best way to answer questions while writing, reviewing, or planning code. This roadmap shows what's planned for upcoming Sourcegraph releases. See the [Sourcegraph master plan](https://about.sourcegraph.com/plan) for our high-level product vision.
+- **For developers:** the best way to answer questions and get unblocked while writing, reviewing, or reading code.
+- **For organizations** (engineering leaders and internal tools teams): the infrastructure for developer tools and data.
 
-A new Sourcegraph release ships in the first week of each month. The plans and timeframes are subject to change.
+This roadmap is an overview of what’s coming in the next 3-6 months.  More details are in the [project roadmap](https://docs.google.com/document/d/1cBsE9801DcBF9chZyMnxRdolqM_1c2pPyGQz15QAvYI/edit?usp=sharing). Our high-level vision is outlined in the [Sourcegraph master plan](https://about.sourcegraph.com/plan).
 
-We welcome suggestions! Share feedback by using [code discussions](https://about.sourcegraph.com/blog/discuss-code-and-docs-in-repositories) on this document or the linked documents and issues.
+We ship a release on the [20th day of each month](../releases.md#releases-are-monthly).
 
-## Future releases
+Want to help us achieve these goals? [We're hiring!](https://github.com/sourcegraph/careers/blob/master/job-descriptions/software-engineer.md)
 
-### 3.0
+## Overview
 
-Release date: week of 2019-02-04. (See [3.0 beta announcement](https://about.sourcegraph.com/blog/sourcegraph-3.0-beta-is-now-available) on 2019-01-14.)
+We're continually improving Sourcegraph's core features for developers:
 
-- [Go language support via extension](https://github.com/sourcegraph/sourcegraph/issues/958)
-- [JavaScript/TypeScript language support via extension](https://github.com/sourcegraph/sourcegraph/issues/960)
-- [Python language support via extension](https://github.com/sourcegraph/sourcegraph/issues/959)
-- [Basic code intel](https://github.com/sourcegraph/sourcegraph/pull/1313)
-- [Datadog metrics extension](https://github.com/sourcegraph/sourcegraph/issues/655)
-- [In-product site configuration](https://github.com/sourcegraph/sourcegraph/issues/965)
-- [External services UI](https://github.com/sourcegraph/sourcegraph/pull/1103)
-- [GitHub user authentication](https://github.com/sourcegraph/sourcegraph/issues/964)
-- [Align internal deployment processes with customers'](https://github.com/sourcegraph/sourcegraph/issues/976)
-- [Use nginx as HTTP proxy](https://github.com/sourcegraph/sourcegraph/pull/929)
-- [Simpler browser extension options menu](https://github.com/sourcegraph/sourcegraph/issues/961)
-- [Upgrade to PostgreSQL 11](https://github.com/sourcegraph/sourcegraph/issues/1404)
+- Code search and navigation (with code intelligence)
+- Integration into code review
+- Automation of large-scale code changes
 
-<small>[Draft announcement](https://github.com/sourcegraph/about/pull/68) --- [All 3.0 issues](https://github.com/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+archived%3Afalse+sort%3Aupdated-desc+org%3Asourcegraph+milestone%3A3.0)</small>
+Our current product priorities are:
 
----
+- Usability: Sourcegraph is intuitive to use for anyone looking for answers about their code, and easy for admins to configure and maintain.
+- Scalability: Sourcegraph performs reliably at scale for our largest customers.
+- Automation: clean up tech debt and make other large-scale code changes across your entire code base.
 
-### 3.1
+## In 3-6 months, Sourcegraph will have
 
-Release date: 2019-02-20
+### Improved usability
 
-- [Improved repository handling](https://github.com/sourcegraph/sourcegraph/issues/2025)
-- [Sub-query searches](https://github.com/sourcegraph/sourcegraph/issues/1005)
-- [Onboarding flow for site admins](https://github.com/sourcegraph/sourcegraph/issues/975)
-- [Search GitHub issues](https://github.com/sourcegraph/sourcegraph/issues/962)
-- Extension API improvements (T.B.D.)
-- Extensions: Datadog, LightStep, Git extras (T.B.D.)
-- Browser extension improvements (T.B.D.)
-- Deployment improvements (T.B.D.)
-- [Docs improvements](https://github.com/sourcegraph/sourcegraph/issues/2023)
-- [Health/feature indicators in pings](https://github.com/sourcegraph/sourcegraph/issues/2024)
+Sourcegraph is intuitive to use for a wide range of roles, from developers to PMs, engineering managers, data analysts, and more. It adds value to this wide range of roles by making more information about code available, such as language statistics and dependency graphs. [Search has an improved UI](https://docs.google.com/document/d/1Vo7HlwO_HgrK8O-VEIZ9wHuSyHdEA0zk9qucNCoF0jg/edit?usp=sharing) that makes it more accessible, easier to use, and faster to drill down on what you're looking for.
 
+Improving upon on our [basic code intelligence](../../user/code_intelligence.md) that works for every language, Sourcegraph provides precise code intelligence for a subset of common languages including Go, TypeScript, C/C++, Java, and C#.
 
-<small>[All 3.1 issues](https://github.com/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+archived%3Afalse+sort%3Aupdated-desc+org%3Asourcegraph+milestone%3A3.1)</small>
+### Enhanced scalablity, reliability, and security
 
----
+Sourcegraph performs at the scale of our largest customers under a wide variety of configurations and deployment infrastructure. [Code search is fast at large scale](https://docs.google.com/document/d/18w8T_KzYxQye8wg1g01QpMOX4_ERTtbOxMBRYaOEkmk/edit?usp=sharing) (~80k repositories), and the API can support enterprise level usage. Sourcegraph enforces repository permissions using ACLs from Bitbucket Server, GitHub, and GitLab. Admins understand the health of their instances and are alerted proactively if things fail.
 
-### Future
+### Large-scale code change automation
 
-Search
-
-- [Multi-line searches](https://github.com/sourcegraph/sourcegraph/issues/35)
-- Improvements to saved searches
-
-Code intelligence and navigation
-
-- [Java language support via extension](https://github.com/sourcegraph/sourcegraph/issues/1400)
-- [Python dependency fetching and cross repository references](https://github.com/sourcegraph/sourcegraph/issues/1401)
-- [Swift language support via extension](https://github.com/sourcegraph/sourcegraph/issues/979) (likely includes Objective-C, C, and C++)
-- [Thrift code intelligence](https://github.com/sourcegraph/sourcegraph/issues/669)
-- [Cross-language API/IDL support](https://github.com/sourcegraph/sourcegraph/issues/981) (followup from 3.0)
-- [Flow (JavaScript) language support](https://github.com/sourcegraph/sourcegraph/issues/982)
-- [Scoped symbols sidebar](https://github.com/sourcegraph/sourcegraph/issues/1967)
-- PHP language support via extension
-
-Sourcegraph extensions
-
-- [Extension registry discovery and statistics](https://github.com/sourcegraph/sourcegraph/issues/980)
-- Codecov extension
-- More 3rd-party extensions: Sentry, FOSSA, SonarQube, [LaunchDarkly](https://github.com/sourcegraph/sourcegraph/issues/1249), Figma
-- [Configuration data search extension](https://github.com/sourcegraph/sourcegraph/issues/670)
-- Improved code host support for Sourcegraph extensions
-- [Using Sourcegraph extensions in the editor](https://github.com/sourcegraph/sourcegraph/issues/978)
-- [Sourcegraph extension testing](https://github.com/sourcegraph/sourcegraph/issues/733)
-
-Other
-
-- [Handle renames and deletions of mirrored repositories](https://github.com/sourcegraph/sourcegraph/issues/914)
-- [Direct UI integration and deployment bundling with GitLab](https://github.com/sourcegraph/sourcegraph/issues/1000)
-- [Checklist-based repository reviews](https://github.com/sourcegraph/sourcegraph/issues/1526)
-- [Browser authorization flow for clients](https://github.com/sourcegraph/sourcegraph/pull/528)
-- Enhanced notification preferences
-- API access logging
-
----
-
-## Themes
-
-We want Sourcegraph to be the best way to answer questions while writing, reviewing, or planning code. See the [Sourcegraph master plan](https://about.sourcegraph.com/plan) for our high-level product vision.
-
-Our work generally falls into the following categories:
-
-- **Search and browsing:** quickly showing you the code you're looking for and making it easy to navigate around
-- **Code intelligence:** go-to-definition, hover tooltips, references, symbols, etc., for code in many languages, including real-time and cross-repository support
-- **Integrations:** making Sourcegraph work well with code hosts, review tools, editors, and other tools in your dev workflow (e.g., repository syncing from your code host, browser extensions, and editor extensions)
-- **Extensibility:** supporting Sourcegraph extensions that add code intelligence and other information (e.g., tracing, logging, and security annotations from 3rd-party tools) to Sourcegraph and external tools that Sourcegraph integrates with
-- **Deployment:** making it easy to run and maintain a self-hosted Sourcegraph instance
-- **Enterprise:** features that larger companies need (e.g., scaling, authentication, authorization, auditing, etc.)
-
-## [Previous releases](previous_releases.md)
-
-See [previous Sourcegraph releases](previous_releases.md).
-
+Use Sourcegraph to [automate large-scale code changes](https://about.sourcegraph.com/product/automation) to remove legacy code, fix critical security issues, and pay down tech debt. You can create campaigns across thousands of repositories and code owners. Sourcegraph automatically creates and updates all of the branches and pull requests, and you can track progress and activity in one place.
 
 <!--
 
@@ -114,5 +47,6 @@ Prior art:
 
 https://about.gitlab.com/direction
 https://docs.microsoft.com/en-us/visualstudio/productinfo/vs-roadmap
+https://github.com/Microsoft/vscode/wiki/Roadmap
 
 -->

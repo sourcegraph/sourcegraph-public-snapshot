@@ -1,35 +1,33 @@
-import { from, Subject, Subscription } from 'rxjs'
-import { distinctUntilChanged, map } from 'rxjs/operators'
-import { ContextValues, Progress, ProgressOptions } from 'sourcegraph'
-import { Connection } from '../protocol/jsonrpc2/connection'
-import { Tracer } from '../protocol/jsonrpc2/trace'
+import * as comlink from '@sourcegraph/comlink'
+import { from, merge, Subject, Subscription, of } from 'rxjs'
+import { concatMap } from 'rxjs/operators'
+import { ContextValues, Progress, ProgressOptions, Unsubscribable } from 'sourcegraph'
+import { EndpointPair } from '../../platform/context'
+import { ExtensionHostAPIFactory } from '../extension/api/api'
+import { InitData } from '../extension/extensionHost'
+import { ClientAPI } from './api/api'
 import { ClientCodeEditor } from './api/codeEditor'
 import { ClientCommands } from './api/commands'
 import { ClientConfiguration } from './api/configuration'
+import { createClientContent } from './api/content'
 import { ClientContext } from './api/context'
-import { ClientDocuments } from './api/documents'
 import { ClientExtensions } from './api/extensions'
 import { ClientLanguageFeatures } from './api/languageFeatures'
 import { ClientRoots } from './api/roots'
-import { Search } from './api/search'
+import { ClientSearch } from './api/search'
 import { ClientViews } from './api/views'
 import { ClientWindows } from './api/windows'
-import { applyContextUpdate } from './context/context'
 import { Services } from './services'
 import {
     MessageActionItem,
     ShowInputParams,
-    ShowMessageParams,
     ShowMessageRequestParams,
+    ShowNotificationParams,
 } from './services/notifications'
+import { TextModelUpdate } from './services/modelService'
+import { EditorUpdate } from './services/editorService'
 
 export interface ExtensionHostClientConnection {
-    /**
-     * Sets or unsets the tracer to use for logging all of this client's messages to/from the
-     * extension host.
-     */
-    setTracer(tracer: Tracer | null): void
-
     /**
      * Closes the connection to and terminates the extension host.
      */
@@ -51,85 +49,107 @@ export interface ActivatedExtension {
     deactivate(): void | Promise<void>
 }
 
-export function createExtensionHostClientConnection(
-    connection: Connection,
-    services: Services
-): ExtensionHostClientConnection {
+/**
+ * @param endpoint The Worker object to communicate with
+ */
+export async function createExtensionHostClientConnection(
+    endpoints: EndpointPair,
+    services: Services,
+    initData: InitData
+): Promise<Unsubscribable> {
     const subscription = new Subscription()
 
-    connection.onRequest('ping', () => 'pong')
+    // MAIN THREAD
 
-    subscription.add(new ClientConfiguration<any>(connection, services.settings))
+    /** Proxy to the exposed extension host API */
+    const initializeExtensionHost = comlink.proxy<ExtensionHostAPIFactory>(endpoints.proxy)
+    const proxy = await initializeExtensionHost(initData)
+
+    const clientConfiguration = new ClientConfiguration<any>(proxy.configuration, services.settings)
+    subscription.add(clientConfiguration)
+
+    const clientContext = new ClientContext((updates: ContextValues) => services.context.updateContext(updates))
+    subscription.add(clientContext)
+
+    // Sync models and editors to the extension host
     subscription.add(
-        new ClientContext(connection, (updates: ContextValues) =>
-            services.context.data.next(applyContextUpdate(services.context.data.value, updates))
-        )
-    )
-    subscription.add(
-        new ClientWindows(
-            connection,
-            from(services.model.model).pipe(
-                map(({ visibleViewComponents }) => visibleViewComponents),
-                distinctUntilChanged()
+        merge(
+            of(
+                [...services.model.models.entries()].map(
+                    ([uri, model]): TextModelUpdate => ({ type: 'added', uri, ...model })
+                )
             ),
-            (params: ShowMessageParams) => services.notifications.showMessages.next({ ...params }),
-            (params: ShowMessageRequestParams) =>
-                new Promise<MessageActionItem | null>(resolve => {
-                    services.notifications.showMessageRequests.next({ ...params, resolve })
-                }),
-            (params: ShowInputParams) =>
-                new Promise<string | null>(resolve => {
-                    services.notifications.showInputs.next({ ...params, resolve })
-                }),
-            ({ title }: ProgressOptions) => {
-                const reporter = new Subject<Progress>()
-                services.notifications.progresses.next({ title, progress: reporter.asObservable() })
-                return reporter
-            }
+            from(services.model.modelUpdates)
         )
-    )
-    subscription.add(new ClientViews(connection, services.views, services.textDocumentLocations))
-    subscription.add(new ClientCodeEditor(connection, services.textDocumentDecoration))
-    subscription.add(
-        new ClientDocuments(
-            connection,
-            from(services.model.model).pipe(
-                map(
-                    ({ visibleViewComponents }) =>
-                        visibleViewComponents && visibleViewComponents.map(({ item }) => item)
-                ),
-                distinctUntilChanged()
-            )
-        )
+            .pipe(concatMap(modelUpdates => proxy.documents.$acceptDocumentData(modelUpdates)))
+            .subscribe()
     )
     subscription.add(
-        new ClientLanguageFeatures(
-            connection,
-            services.textDocumentHover,
-            services.textDocumentDefinition,
-            services.textDocumentTypeDefinition,
-            services.textDocumentImplementation,
-            services.textDocumentReferences,
-            services.textDocumentLocations
+        merge(
+            of(
+                [...services.editor.editors.entries()].map(
+                    ([editorId, editorData]): EditorUpdate => ({
+                        type: 'added',
+                        editorId,
+                        editorData,
+                    })
+                )
+            ),
+            from(services.editor.editorUpdates)
         )
+            .pipe(concatMap(editorUpdates => proxy.windows.$acceptWindowData(editorUpdates)))
+            .subscribe()
     )
-    subscription.add(new Search(connection, services.queryTransformer))
-    subscription.add(new ClientCommands(connection, services.commands))
-    subscription.add(
-        new ClientRoots(
-            connection,
-            from(services.model.model).pipe(
-                map(({ roots }) => roots),
-                distinctUntilChanged()
-            )
-        )
-    )
-    subscription.add(new ClientExtensions(connection, services.extensions))
 
-    return {
-        setTracer: tracer => {
-            connection.trace(tracer)
-        },
-        unsubscribe: () => subscription.unsubscribe(),
+    const clientWindows = new ClientWindows(
+        (params: ShowNotificationParams) => services.notifications.showMessages.next({ ...params }),
+        (params: ShowMessageRequestParams) =>
+            new Promise<MessageActionItem | null>(resolve => {
+                services.notifications.showMessageRequests.next({ ...params, resolve })
+            }),
+        (params: ShowInputParams) =>
+            new Promise<string | null>(resolve => {
+                services.notifications.showInputs.next({ ...params, resolve })
+            }),
+        ({ title }: ProgressOptions) => {
+            const reporter = new Subject<Progress>()
+            services.notifications.progresses.next({ title, progress: reporter.asObservable() })
+            return reporter
+        }
+    )
+
+    const clientViews = new ClientViews(services.views, services.textDocumentLocations, services.editor)
+
+    const clientCodeEditor = new ClientCodeEditor(services.textDocumentDecoration)
+    subscription.add(clientCodeEditor)
+
+    const clientLanguageFeatures = new ClientLanguageFeatures(
+        services.textDocumentHover,
+        services.textDocumentDefinition,
+        services.textDocumentReferences,
+        services.textDocumentLocations,
+        services.completionItems
+    )
+    const clientSearch = new ClientSearch(services.queryTransformer)
+    const clientCommands = new ClientCommands(services.commands)
+    subscription.add(new ClientRoots(proxy.roots, services.workspace))
+    subscription.add(new ClientExtensions(proxy.extensions, services.extensions, services.telemetryService))
+
+    const clientContent = createClientContent(services.linkPreviews)
+
+    const clientAPI: ClientAPI = {
+        ping: () => 'pong',
+        context: clientContext,
+        search: clientSearch,
+        configuration: clientConfiguration,
+        languageFeatures: clientLanguageFeatures,
+        commands: clientCommands,
+        windows: clientWindows,
+        codeEditor: clientCodeEditor,
+        views: clientViews,
+        content: clientContent,
     }
+    comlink.expose(clientAPI, endpoints.expose)
+
+    return subscription
 }

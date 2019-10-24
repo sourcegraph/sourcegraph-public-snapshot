@@ -9,61 +9,10 @@ import { pluralize } from '../../../../shared/src/util/strings'
 import { Timestamp } from '../../components/time/Timestamp'
 import { Tooltip } from '../../components/tooltip/Tooltip'
 import { eventLogger } from '../../tracking/eventLogger'
-import { UserAvatar } from '../../user/UserAvatar'
-
-const GitCommitNodeByline: React.FunctionComponent<{
-    author: GQL.ISignature
-    committer: GQL.ISignature | null
-    className: string
-    compact: boolean
-}> = ({ author, committer, className, compact }) => {
-    if (
-        committer &&
-        committer.person.email !== author.person.email &&
-        ((!committer.person.name && !author.person.name) || committer.person.name !== author.person.name)
-    ) {
-        // The author and committer both exist and are different people.
-        return (
-            <small className={`git-commit-node-byline git-commit-node-byline--has-committer ${className}`}>
-                <UserAvatar
-                    className="icon-inline"
-                    user={author.person}
-                    data-tooltip={`${author.person.displayName} (author)`}
-                />{' '}
-                <UserAvatar
-                    className="icon-inline mr-1"
-                    user={committer.person}
-                    data-tooltip={`${committer.person.displayName} (committer)`}
-                />{' '}
-                <strong>{author.person.displayName}</strong> {!compact && 'authored'} and{' '}
-                <strong>{committer.person.displayName}</strong>{' '}
-                {!compact && (
-                    <>
-                        committed <Timestamp date={committer.date} />
-                    </>
-                )}
-            </small>
-        )
-    }
-
-    return (
-        <small className={`git-commit-node-byline git-commit-node-byline--no-committer ${className}`}>
-            <UserAvatar className="icon-inline mr-1" user={author.person} data-tooltip={author.person.displayName} />{' '}
-            <strong>{author.person.displayName}</strong>{' '}
-            {!compact && (
-                <>
-                    committed <Timestamp date={author.date} />
-                </>
-            )}
-        </small>
-    )
-}
+import { GitCommitNodeByline } from './GitCommitNodeByline'
 
 export interface GitCommitNodeProps {
     node: GQL.IGitCommit
-
-    /** The repository that contains this commit. */
-    repoName: string
 
     /** An optional additional CSS class name to apply to this element. */
     className?: string
@@ -138,7 +87,6 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
             </div>
         )
         const oidElement = <code className="git-commit-node__oid">{this.props.node.abbreviatedOID}</code>
-
         return (
             <div
                 key={this.props.node.id}
@@ -170,7 +118,7 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                                                 this.state.flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'
                                             }
                                         >
-                                            <ContentCopyIcon className="icon-inline" />
+                                            <ContentCopyIcon className="icon-inline small" />
                                         </button>
                                     </div>
                                 )}
@@ -180,7 +128,7 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                                         to={this.props.node.tree.canonicalURL}
                                         data-tooltip="View files at this commit"
                                     >
-                                        <FileDocumentIcon className="icon-inline" />
+                                        <FileDocumentIcon className="icon-inline small" />
                                     </Link>
                                 )}
                             </div>
@@ -228,7 +176,7 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                                         <Link
                                             key={i}
                                             className="git-ref-tag-2 git-commit-node__sha-and-parents-parent"
-                                            to={`/${this.props.repoName}/-/commit/${parent.oid}`}
+                                            to={parent.url}
                                         >
                                             <code>{parent.abbreviatedOID}</code>
                                         </Link>

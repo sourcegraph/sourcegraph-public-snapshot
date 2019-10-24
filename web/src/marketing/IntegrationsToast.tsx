@@ -79,7 +79,7 @@ export class IntegrationsToast extends React.Component<Props, State> {
         }
 
         if (this.state.siteFlags) {
-            if (this.state.siteFlags.needsRepositoryConfiguration || this.state.siteFlags.noRepositoriesEnabled) {
+            if (this.state.siteFlags.needsRepositoryConfiguration) {
                 return null
             }
         }

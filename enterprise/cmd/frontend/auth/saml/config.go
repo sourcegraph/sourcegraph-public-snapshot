@@ -12,9 +12,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -27,13 +27,13 @@ func getProvider(pcID string) *provider {
 		return mockGetProviderValue
 	}
 
-	p, _ := auth.GetProviderByConfigID(auth.ProviderConfigID{Type: providerType, ID: pcID}).(*provider)
+	p, _ := providers.GetProviderByConfigID(providers.ConfigID{Type: providerType, ID: pcID}).(*provider)
 	if p != nil {
 		return p
 	}
 
 	// Special case: if there is only a single SAML auth provider, return it regardless of the pcID.
-	for _, ap := range auth.Providers() {
+	for _, ap := range providers.Providers() {
 		if ap.Config().Saml != nil {
 			if p != nil {
 				return nil // multiple SAML providers, can't use this special case
@@ -50,13 +50,13 @@ func handleGetProvider(ctx context.Context, w http.ResponseWriter, pcID string) 
 
 	p = getProvider(pcID)
 	if p == nil {
-		log15.Error("No SAML auth provider found with ID.", "id", pcID)
+		log15.Error("No SAML auth provider found with ID", "id", pcID)
 		http.Error(w, "Misconfigured SAML auth provider.", http.StatusInternalServerError)
 		return nil, true
 	}
 	if err := p.Refresh(ctx); err != nil {
-		log15.Error("Error refreshing SAML auth provider.", "id", p.ConfigID(), "error", err)
-		http.Error(w, "Unexpected error refreshing SAML authentication provider.", http.StatusInternalServerError)
+		log15.Error("Error getting SAML auth provider", "id", p.ConfigID(), "error", err)
+		http.Error(w, "Unexpected error getting SAML authentication provider. This may indicate that the SAML IdP does not exist. Ask a site admin to check the server \"frontend\" logs for \"Error getting SAML auth provider\".", http.StatusInternalServerError)
 		return nil, true
 	}
 	return p, false
@@ -66,11 +66,11 @@ func init() {
 	conf.ContributeValidator(validateConfig)
 }
 
-func validateConfig(c conf.Unified) (problems []string) {
+func validateConfig(c conf.Unified) (problems conf.Problems) {
 	var loggedNeedsExternalURL bool
 	for _, p := range c.Critical.AuthProviders {
 		if p.Saml != nil && c.Critical.ExternalURL == "" && !loggedNeedsExternalURL {
-			problems = append(problems, `saml auth provider requires externalURL to be set to the external URL of your site (example: https://sourcegraph.example.com)`)
+			problems = append(problems, conf.NewCriticalProblem("saml auth provider requires `externalURL` to be set to the external URL of your site (example: https://sourcegraph.example.com)"))
 			loggedNeedsExternalURL = true
 		}
 	}
@@ -79,7 +79,7 @@ func validateConfig(c conf.Unified) (problems []string) {
 	for i, p := range c.Critical.AuthProviders {
 		if p.Saml != nil {
 			if j, ok := seen[*p.Saml]; ok {
-				problems = append(problems, fmt.Sprintf("SAML auth provider at index %d is duplicate of index %d, ignoring", i, j))
+				problems = append(problems, conf.NewCriticalProblem(fmt.Sprintf("SAML auth provider at index %d is duplicate of index %d, ignoring", i, j)))
 			} else {
 				seen[*p.Saml] = i
 			}

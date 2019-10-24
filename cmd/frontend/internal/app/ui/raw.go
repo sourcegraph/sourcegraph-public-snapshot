@@ -8,15 +8,17 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
 	"github.com/golang/gddo/httputil"
 	"github.com/gorilla/mux"
-	"github.com/sourcegraph/sourcegraph/pkg/vfsutil"
+	"github.com/sourcegraph/sourcegraph/internal/vfsutil"
 )
 
 // Examples:
@@ -66,7 +68,7 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 		// - Gitserver content updating
 		// - Consistent error handling (permissions, revision not found, repo not found, etc).
 		//
-		common, err = newCommon(w, r, "Sourcegraph", serveError)
+		common, err = newCommon(w, r, conf.BrandName(), serveError)
 		if err != nil {
 			return err
 		}
@@ -149,6 +151,12 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 			return err
 		}
 		defer f.Close()
+		fi, err := f.Stat()
+		if err != nil {
+			return err
+		}
+		w.Header().Set("Content-Length", strconv.FormatInt(fi.Size(), 10))
+
 		_, err = io.Copy(w, f)
 		return err
 
@@ -211,7 +219,11 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 			}
 			var names []string
 			for _, info := range infos {
-				names = append(names, info.Name())
+				name := info.Name()
+				if info.IsDir() {
+					name = name + "/"
+				}
+				names = append(names, name)
 			}
 			result := strings.Join(names, "\n")
 			fmt.Fprintf(w, "%s", template.HTMLEscapeString(result))

@@ -13,9 +13,9 @@ import (
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
-	githubsvc "github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"golang.org/x/oauth2"
 )
 
@@ -27,7 +27,7 @@ func init() {
 
 func TestGetOrCreateUser(t *testing.T) {
 	ghURL, _ := url.Parse("https://github.com")
-	codeHost := githubsvc.NewCodeHost(ghURL)
+	codeHost := extsvc.NewCodeHost(ghURL, githubsvc.ServiceType)
 	clientID := "client-id"
 
 	// Top-level mock data

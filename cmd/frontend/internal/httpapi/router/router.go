@@ -3,17 +3,21 @@ package router
 
 import (
 	"github.com/gorilla/mux"
-	"github.com/sourcegraph/sourcegraph/pkg/routevar"
+	"github.com/sourcegraph/sourcegraph/internal/routevar"
 )
 
 const (
-	GraphQL = "graphql"
+	LSIF       = "lsif"
+	LSIFUpload = "lsif.upload"
+	GraphQL    = "graphql"
 
 	Registry = "registry"
 
 	RepoShield  = "repo.shield"
 	RepoRefresh = "repo.refresh"
 	Telemetry   = "telemetry"
+
+	GitHubWebhooks = "github.webhooks"
 
 	SavedQueriesListAll    = "internal.saved-queries.list-all"
 	SavedQueriesGetInfo    = "internal.saved-queries.get-info"
@@ -25,14 +29,11 @@ const (
 	UsersGetByUsername     = "internal.users.get-by-username"
 	UserEmailsGetEmail     = "internal.user-emails.get-email"
 	ExternalURL            = "internal.app-url"
-	GitServerAddrs         = "internal.git-server-addrs"
 	CanSendEmail           = "internal.can-send-email"
 	SendEmail              = "internal.send-email"
 	Extension              = "internal.extension"
-	GitInfoRefs            = "internal.git.info-refs"
 	GitResolveRevision     = "internal.git.resolve-revision"
 	GitTar                 = "internal.git.tar"
-	GitUploadPack          = "internal.git.upload-pack"
 	PhabricatorRepoCreate  = "internal.phabricator.repo.create"
 	ReposCreateIfNotExists = "internal.repos.create-if-not-exists"
 	ReposGetByName         = "internal.repos.get-by-name"
@@ -42,6 +43,7 @@ const (
 	ReposListEnabled       = "internal.repos.list-enabled"
 	ReposUpdateMetadata    = "internal.repos.update-metadata"
 	Configuration          = "internal.configuration"
+	SearchConfiguration    = "internal.search-configuration"
 	ExternalServiceConfigs = "internal.external-services.configs"
 	ExternalServicesList   = "internal.external-services.list"
 )
@@ -58,6 +60,9 @@ func New(base *mux.Router) *mux.Router {
 	addRegistryRoute(base)
 	addGraphQLRoute(base)
 	addTelemetryRoute(base)
+	base.Path("/github-webhooks").Methods("POST").Name(GitHubWebhooks)
+	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
+	base.Path("/lsif/{rest:.*}").Methods("POST").Name(LSIF)
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo
@@ -89,14 +94,11 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/users/get-by-username").Methods("POST").Name(UsersGetByUsername)
 	base.Path("/user-emails/get-email").Methods("POST").Name(UserEmailsGetEmail)
 	base.Path("/app-url").Methods("POST").Name(ExternalURL)
-	base.Path("/git-server-addrs").Methods("POST").Name(GitServerAddrs)
 	base.Path("/can-send-email").Methods("POST").Name(CanSendEmail)
 	base.Path("/send-email").Methods("POST").Name(SendEmail)
 	base.Path("/extension").Methods("POST").Name(Extension)
-	base.Path("/git/{RepoName:.*}/info/refs").Methods("GET").Name(GitInfoRefs)
 	base.Path("/git/{RepoName:.*}/resolve-revision/{Spec}").Methods("GET").Name(GitResolveRevision)
 	base.Path("/git/{RepoName:.*}/tar/{Commit}").Methods("GET").Name(GitTar)
-	base.Path("/git/{RepoName:.*}/git-upload-pack").Methods("POST").Name(GitUploadPack)
 	base.Path("/phabricator/repo-create").Methods("POST").Name(PhabricatorRepoCreate)
 	base.Path("/external-services/configs").Methods("POST").Name(ExternalServiceConfigs)
 	base.Path("/external-services/list").Methods("POST").Name(ExternalServicesList)
@@ -108,6 +110,7 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/repos/update-metadata").Methods("POST").Name(ReposUpdateMetadata)
 	base.Path("/repos/{RepoName:.*}").Methods("POST").Name(ReposGetByName)
 	base.Path("/configuration").Methods("POST").Name(Configuration)
+	base.Path("/search/configuration").Methods("GET").Name(SearchConfiguration)
 	addRegistryRoute(base)
 	addGraphQLRoute(base)
 	addTelemetryRoute(base)

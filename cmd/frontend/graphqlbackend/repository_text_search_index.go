@@ -4,29 +4,33 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 )
 
-func (r *repositoryResolver) TextSearchIndex() *repositoryTextSearchIndexResolver {
-	if !Search().Index.Enabled() {
+func (r *RepositoryResolver) TextSearchIndex() *repositoryTextSearchIndexResolver {
+	if !search.Indexed().Enabled() {
 		return nil
 	}
 	return &repositoryTextSearchIndexResolver{
 		repo:   r,
-		client: Search().Index.Client,
+		client: search.Indexed().Client,
 	}
 }
 
 type repositoryTextSearchIndexResolver struct {
-	repo   *repositoryResolver
-	client zoekt.Searcher
+	repo   *RepositoryResolver
+	client repoLister
 
 	once  sync.Once
 	entry *zoekt.RepoListEntry
 	err   error
+}
+
+type repoLister interface {
+	List(ctx context.Context, q zoektquery.Q) (*zoekt.RepoList, error)
 }
 
 func (r *repositoryTextSearchIndexResolver) resolve(ctx context.Context) (*zoekt.RepoListEntry, error) {
@@ -47,7 +51,7 @@ func (r *repositoryTextSearchIndexResolver) resolve(ctx context.Context) (*zoekt
 	return r.entry, r.err
 }
 
-func (r *repositoryTextSearchIndexResolver) Repository() *repositoryResolver { return r.repo }
+func (r *repositoryTextSearchIndexResolver) Repository() *RepositoryResolver { return r.repo }
 
 func (r *repositoryTextSearchIndexResolver) Status(ctx context.Context) (*repositoryTextSearchIndexStatus, error) {
 	entry, err := r.resolve(ctx)
@@ -64,18 +68,22 @@ type repositoryTextSearchIndexStatus struct {
 	entry zoekt.RepoListEntry
 }
 
-func (r *repositoryTextSearchIndexStatus) UpdatedAt() string {
-	return r.entry.IndexMetadata.IndexTime.Format(time.RFC3339)
+func (r *repositoryTextSearchIndexStatus) UpdatedAt() DateTime {
+	return DateTime{Time: r.entry.IndexMetadata.IndexTime}
 }
+
 func (r *repositoryTextSearchIndexStatus) ContentByteSize() int32 {
 	return int32(r.entry.Stats.ContentBytes)
 }
+
 func (r *repositoryTextSearchIndexStatus) ContentFilesCount() int32 {
 	return int32(r.entry.Stats.Documents)
 }
+
 func (r *repositoryTextSearchIndexStatus) IndexByteSize() int32 {
 	return int32(r.entry.Stats.IndexBytes)
 }
+
 func (r *repositoryTextSearchIndexStatus) IndexShardsCount() int32 {
 	return int32(r.entry.Stats.Shards + 1)
 }
@@ -95,7 +103,7 @@ func (r *repositoryTextSearchIndexResolver) Refs(ctx context.Context) ([]*reposi
 
 	refs := make([]*repositoryTextSearchIndexedRef, len(refNames))
 	for i, refName := range refNames {
-		refs[i] = &repositoryTextSearchIndexedRef{ref: &gitRefResolver{name: refName, repo: r.repo}}
+		refs[i] = &repositoryTextSearchIndexedRef{ref: &GitRefResolver{name: refName, repo: r.repo}}
 	}
 	refByName := func(refName string) *repositoryTextSearchIndexedRef {
 		for _, ref := range refs {
@@ -105,7 +113,7 @@ func (r *repositoryTextSearchIndexResolver) Refs(ctx context.Context) ([]*reposi
 		}
 
 		// If Zoekt reports it has another indexed branch, include that.
-		newRef := &repositoryTextSearchIndexedRef{ref: &gitRefResolver{name: refName, repo: r.repo}}
+		newRef := &repositoryTextSearchIndexedRef{ref: &GitRefResolver{name: refName, repo: r.repo}}
 		refs = append(refs, newRef)
 		return newRef
 	}
@@ -121,18 +129,18 @@ func (r *repositoryTextSearchIndexResolver) Refs(ctx context.Context) ([]*reposi
 				name = defaultBranchRef.name
 			}
 			ref := refByName(name)
-			ref.indexedCommit = gitObjectID(branch.Version)
+			ref.indexedCommit = GitObjectID(branch.Version)
 		}
 	}
 	return refs, nil
 }
 
 type repositoryTextSearchIndexedRef struct {
-	ref           *gitRefResolver
-	indexedCommit gitObjectID
+	ref           *GitRefResolver
+	indexedCommit GitObjectID
 }
 
-func (r *repositoryTextSearchIndexedRef) Ref() *gitRefResolver { return r.ref }
+func (r *repositoryTextSearchIndexedRef) Ref() *GitRefResolver { return r.ref }
 func (r *repositoryTextSearchIndexedRef) Indexed() bool        { return r.indexedCommit != "" }
 
 func (r *repositoryTextSearchIndexedRef) Current(ctx context.Context) (bool, error) {

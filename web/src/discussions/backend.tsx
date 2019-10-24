@@ -9,6 +9,7 @@ import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 const discussionCommentFieldsFragment = gql`
     fragment DiscussionCommentFields on DiscussionComment {
         id
+        idWithoutKind
         author {
             ...UserFields
         }
@@ -26,6 +27,7 @@ const discussionCommentFieldsFragment = gql`
 const discussionThreadFieldsFragment = gql`
     fragment DiscussionThreadFields on DiscussionThread {
         id
+        idWithoutKind
         author {
             ...UserFields
         }
@@ -70,7 +72,7 @@ const discussionThreadFieldsFragment = gql`
 /**
  * Creates a new discussion thread.
  *
- * @return Observable that emits the new discussion thread.
+ * @returns Observable that emits the new discussion thread.
  */
 export function createThread(input: GQL.IDiscussionThreadCreateInput): Observable<GQL.IDiscussionThread> {
     return mutateGraphQL(
@@ -90,7 +92,7 @@ export function createThread(input: GQL.IDiscussionThreadCreateInput): Observabl
         { input }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.discussions || !data.discussions.createThread) {
+            if (!data || !data.discussions || !data.discussions.createThread || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
             return data.discussions.createThread
@@ -150,7 +152,7 @@ export function fetchDiscussionThreads(opts: {
         opts
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.discussionThreads) {
+            if (!data || !data.discussionThreads || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
             return data.discussionThreads
@@ -161,19 +163,16 @@ export function fetchDiscussionThreads(opts: {
 /**
  * Fetches a discussion thread and its comments.
  */
-export function fetchDiscussionThreadAndComments(threadID: GQL.ID): Observable<GQL.IDiscussionThread> {
+export function fetchDiscussionThreadAndComments(threadIDWithoutKind: string): Observable<GQL.IDiscussionThread> {
     return queryGraphQL(
         gql`
-            query DiscussionThreadComments($threadID: ID!) {
-                discussionThreads(threadID: $threadID) {
-                    totalCount
-                    nodes {
-                        ...DiscussionThreadFields
-                        comments {
-                            totalCount
-                            nodes {
-                                ...DiscussionCommentFields
-                            }
+            query DiscussionThreadComments($threadIDWithoutKind: String!) {
+                discussionThread(idWithoutKind: $threadIDWithoutKind) {
+                    ...DiscussionThreadFields
+                    comments {
+                        totalCount
+                        nodes {
+                            ...DiscussionCommentFields
                         }
                     }
                 }
@@ -181,18 +180,13 @@ export function fetchDiscussionThreadAndComments(threadID: GQL.ID): Observable<G
             ${discussionThreadFieldsFragment}
             ${discussionCommentFieldsFragment}
         `,
-        { threadID }
+        { threadIDWithoutKind }
     ).pipe(
         map(({ data, errors }) => {
-            if (
-                !data ||
-                !data.discussionThreads ||
-                !data.discussionThreads.nodes ||
-                data.discussionThreads.nodes.length !== 1
-            ) {
+            if (!data || !data.discussionThread || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
-            return data.discussionThreads.nodes[0]
+            return data.discussionThread
         })
     )
 }
@@ -200,7 +194,7 @@ export function fetchDiscussionThreadAndComments(threadID: GQL.ID): Observable<G
 /**
  * Adds a comment to an existing discussion thread.
  *
- * @return Observable that emits the updated discussion thread and its comments.
+ * @returns Observable that emits the updated discussion thread and its comments.
  */
 export function addCommentToThread(threadID: GQL.ID, contents: string): Observable<GQL.IDiscussionThread> {
     return mutateGraphQL(
@@ -224,7 +218,7 @@ export function addCommentToThread(threadID: GQL.ID, contents: string): Observab
         { threadID, contents }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.discussions || !data.discussions.addCommentToThread) {
+            if (!data || !data.discussions || !data.discussions.addCommentToThread || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
             return data.discussions.addCommentToThread
@@ -235,7 +229,7 @@ export function addCommentToThread(threadID: GQL.ID, contents: string): Observab
 /**
  * Updates an existing comment in a discussion thread.
  *
- * @return Observable that emits the updated discussion thread and its comments.
+ * @returns Observable that emits the updated discussion thread and its comments.
  */
 export function updateComment(input: GQL.IDiscussionCommentUpdateInput): Observable<GQL.IDiscussionThread> {
     return mutateGraphQL(
@@ -259,7 +253,7 @@ export function updateComment(input: GQL.IDiscussionCommentUpdateInput): Observa
         { input }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.discussions || !data.discussions.updateComment) {
+            if (!data || !data.discussions || !data.discussions.updateComment || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
             return data.discussions.updateComment
@@ -270,7 +264,7 @@ export function updateComment(input: GQL.IDiscussionCommentUpdateInput): Observa
 /**
  * Renders Markdown to HTML.
  *
- * @return Observable that emits the HTML string, which is already sanitized and escaped and thus is always safe to render.
+ * @returns Observable that emits the HTML string, which is already sanitized and escaped and thus is always safe to render.
  */
 export const renderMarkdown = memoizeObservable(
     (ctx: { markdown: string; options?: GQL.IMarkdownOptions }): Observable<string> =>
@@ -283,7 +277,7 @@ export const renderMarkdown = memoizeObservable(
             ctx
         ).pipe(
             map(({ data, errors }) => {
-                if (!data || !data.renderMarkdown) {
+                if (!data || (errors && errors.length > 0)) {
                     throw createAggregateError(errors)
                 }
                 return data.renderMarkdown

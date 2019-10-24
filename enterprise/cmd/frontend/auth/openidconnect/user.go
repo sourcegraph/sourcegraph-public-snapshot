@@ -8,8 +8,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 // getOrCreateUser gets or creates a user account based on the OpenID Connect token. It returns the
@@ -35,7 +35,7 @@ func getOrCreateUser(ctx context.Context, p *provider, idToken *oidc.IDToken, us
 		login = userInfo.Email
 	}
 	email := userInfo.Email
-	var displayName = claims.GivenName
+	displayName := claims.GivenName
 	if displayName == "" {
 		if claims.Name == "" {
 			displayName = claims.Name

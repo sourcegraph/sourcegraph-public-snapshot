@@ -41,7 +41,7 @@ export class RepositoryCompareHeader extends React.PureComponent<Props, State> {
         const specIsEmpty = this.props.base === null && this.props.head === null
 
         return (
-            <div className={`repository-compare-header area-header ${this.props.className}`}>
+            <div className={`repository-compare-header ${this.props.className}`}>
                 <div className={`${this.props.className}-inner`}>
                     <Form className="form-inline mb-2" onSubmit={this.onSubmit}>
                         <label htmlFor={RepositoryCompareHeader.BASE_INPUT_ID} className="sr-only">

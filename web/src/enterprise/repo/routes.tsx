@@ -1,4 +1,7 @@
+import { RepoContainerRoute } from '../../repo/RepoContainer'
 import { RepoRevContainerRoute } from '../../repo/RepoRevContainer'
-import { repoRevContainerRoutes } from '../../repo/routes'
+import { repoContainerRoutes, repoRevContainerRoutes } from '../../repo/routes'
 
-export const enterpriseRepoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = repoRevContainerRoutes
+export const enterpriseRepoContainerRoutes: readonly RepoContainerRoute[] = repoContainerRoutes
+
+export const enterpriseRepoRevContainerRoutes: readonly RepoRevContainerRoute[] = repoRevContainerRoutes

@@ -1,10 +1,10 @@
 # Management console
 
-The management console is a separate service used to edit critical Sourcegraph configuration.
+The management console is a separate service used to edit Sourcegraph's [critical configuration](config/critical_config.md).
 
-Critical configuration includes things like authentication providers, the application URL, and the license key. This configuration is separate from the regular site configuration, because an error here could make Sourcegraph inaccessible, except through the management console.
+Critical configuration includes things like authentication providers, the external URL, and the license key. This configuration is separate from the regular [site configuration](config/site_config.md), because an error here could make Sourcegraph inaccessible, except through the management console.
 
-# Accessing the management console
+## Accessing the management console
 
 ### When running Sourcegraph in a single Docker container
 
@@ -13,7 +13,7 @@ The management console is built-in to the same Docker image and published on por
 ```
 $ docker ps
 CONTAINER ID        IMAGE                              PORTS
-394ff36a8c3c        sourcegraph/server:3.0.0           0.0.0.0:2633->2633/tcp, 0.0.0.0:7080->7080/tcp
+394ff36a8c3c        sourcegraph/server:3.9.1           0.0.0.0:2633->2633/tcp, 0.0.0.0:7080->7080/tcp
 ```
 
 Usually, you can access it through the public internet via https://my.server.ip:2633, or https://localhost:2633 when testing locally.
@@ -28,7 +28,7 @@ $ kubectl port-forward svc/management-console 2633:2633
 
 Then visit https://localhost:2633 to access the management console.
 
-# Troubleshooting
+## Troubleshooting
 
 ### I am getting "The server sent an invalid response" errors from my browser, why?
 
@@ -78,9 +78,17 @@ Second, bcrypt your password on any machine:
 2. `pip install bcrypt`
 3. Encrypt your password:
 
-```bash
-PASSWORD='abc123' python -c "import bcrypt; import os; print(bcrypt.hashpw(os.environ['PASSWORD'], bcrypt.gensalt(15)))"
-```
+    a. (**If you have Python 2**):
+
+    ```bash
+    PASSWORD='abc123' python -c "import bcrypt; import os; print(bcrypt.hashpw(os.environ['PASSWORD'], bcrypt.gensalt(15)))"
+    ```
+
+    b. (**If you have Python 3**): 
+
+    ```bash
+    PASSWORD='abc123' python -c "import bcrypt; import os; print(bcrypt.hashpw(os.environ['PASSWORD'].encode('utf-8'), bcrypt.gensalt(15)))"
+    ```
 
 Finally, open a `psql` prompt on your Sourcegraph instance (see ["How do I access my Sourcegraph database?"](faq.md#how-do-i-access-the-sourcegraph-database)) and run:
 
@@ -92,4 +100,23 @@ You may now sign into the management console using your plaintext password `abc1
 
 ### How can I use my own TLS certificates with the management console?
 
-This section coming soon. Please contact support@sourcegraph.com for further information.
+The management console looks for TLS certificates in the following location inside the Docker container:
+
+- `/etc/sourcegraph/management/cert.pem`
+- `/etc/sourcegraph/management/key.pem`
+
+If you are using `sourcegraph/server` and the regular Docker flag:
+
+```
+--volume ~/.sourcegraph/config:/etc/sourcegraph
+```
+
+This means you can simply place them in `~/.sourcegraph/config/management/`  on the host.
+
+Restart the container once you have copied the files there for the changes to take effect.
+
+### Can I disable HTTPS on the management console?
+
+It is **unsafe** to do so as anyone who can MITM your traffic to the management console can steal the admin password and act on your behalf.
+
+If you understand the risks and still wish to, you can set the environment variable `UNSAFE_NO_HTTPS` to `true` on the Docker container. This will entirely disable HTTPS (the port will remain the same).

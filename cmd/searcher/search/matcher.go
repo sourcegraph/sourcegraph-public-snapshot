@@ -1,7 +1,6 @@
 package search
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"errors"
@@ -16,7 +15,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/pathmatch"
+	"github.com/sourcegraph/sourcegraph/internal/pathmatch"
+	"github.com/sourcegraph/sourcegraph/internal/store"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -24,24 +24,12 @@ import (
 )
 
 const (
-	// maxFileSize is the limit on file size in bytes. Only files smaller
-	// than this are searched.
-	maxFileSize = 1 << 20 // 1MB; match https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/zoekt%24+%22-file_limit%22
-
-	// maxLineSize is the maximum length of a line in bytes.
-	// Lines larger than this are not scanned for results.
-	// (e.g. minified javascript files that are all on one line).
-	maxLineSize = 500
-
 	// maxFileMatches is the limit on number of matching files we return.
 	maxFileMatches = 1000
 
 	// maxLineMatches is the limit on number of matches to return in a
 	// file.
 	maxLineMatches = 100
-
-	// maxOffsets is the limit on number of matches to return on a line.
-	maxOffsets = 10
 
 	// numWorkers is how many concurrent readerGreps run per
 	// concurrentFind
@@ -61,7 +49,7 @@ const (
 // files is done by the store.
 //
 // If there is no more low-hanging fruit and perf is not acceptable, we could
-// consider an using ripgrep directly (modify it to search zip archives).
+// consider using ripgrep directly (modify it to search zip archives).
 //
 // TODO(keegan) return search statistics
 type readerGrep struct {
@@ -141,7 +129,7 @@ func compile(p *protocol.PatternInfo) (*readerGrep, error) {
 		RegExp:        p.PathPatternsAreRegExps,
 		CaseSensitive: p.PathPatternsAreCaseSensitive,
 	}
-	matchPath, err := pathmatch.CompilePathPatterns(p.AllIncludePatterns(), p.ExcludePattern, pathOptions)
+	matchPath, err := pathmatch.CompilePathPatterns(p.IncludePatterns, p.ExcludePattern, pathOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -157,14 +145,10 @@ func compile(p *protocol.PatternInfo) (*readerGrep, error) {
 // Copy returns a copied version of rg that is safe to use from another
 // goroutine.
 func (rg *readerGrep) Copy() *readerGrep {
-	var reCopy *regexp.Regexp
-	if rg.re != nil {
-		reCopy = rg.re.Copy()
-	}
 	return &readerGrep{
-		re:               reCopy,
+		re:               rg.re,
 		ignoreCase:       rg.ignoreCase,
-		matchPath:        rg.matchPath.Copy(),
+		matchPath:        rg.matchPath,
 		literalSubstring: rg.literalSubstring,
 	}
 }
@@ -184,11 +168,7 @@ func (rg *readerGrep) matchString(s string) bool {
 // Find returns a LineMatch for each line that matches rg in reader.
 // LimitHit is true if some matches may not have been included in the result.
 // NOTE: This is not safe to use concurrently.
-func (rg *readerGrep) Find(zf *zipFile, f *srcFile) (matches []protocol.LineMatch, limitHit bool, err error) {
-	if rg.ignoreCase && rg.transformBuf == nil {
-		rg.transformBuf = make([]byte, zf.MaxLen)
-	}
-
+func (rg *readerGrep) Find(zf *store.ZipFile, f *store.SrcFile) (matches []protocol.LineMatch, limitHit bool, err error) {
 	// fileMatchBuf is what we run match on, fileBuf is the original
 	// data (for Preview).
 	fileBuf := zf.DataFor(f)
@@ -200,6 +180,9 @@ func (rg *readerGrep) Find(zf *zipFile, f *srcFile) (matches []protocol.LineMatc
 	// trade some correctness for perf by using a non-utf8 aware
 	// lowercase function.
 	if rg.ignoreCase {
+		if rg.transformBuf == nil {
+			rg.transformBuf = make([]byte, zf.MaxLen)
+		}
 		fileMatchBuf = rg.transformBuf[:len(fileBuf)]
 		bytesToLowerASCII(fileMatchBuf, fileBuf)
 	}
@@ -214,72 +197,107 @@ func (rg *readerGrep) Find(zf *zipFile, f *srcFile) (matches []protocol.LineMatc
 	if !bytes.Contains(fileMatchBuf, rg.literalSubstring) {
 		return nil, false, nil
 	}
-	first := rg.re.FindIndex(fileMatchBuf)
-	if first == nil {
-		return nil, false, nil
-	}
 
-	idx := 0
-	for i := 0; len(matches) < maxLineMatches; i++ {
-		advance, lineBuf, err := bufio.ScanLines(fileBuf, true)
-		if err != nil {
-			// ScanLines should never return an err
-			return nil, false, err
+	locs := rg.re.FindAllIndex(fileMatchBuf, maxLineMatches+1)
+	lastStart := 0
+	lastLineNumber := 0
+	lastMatchIndex := 0
+	lastLineStartIndex := 0
+
+	for _, match := range locs {
+		start, end := match[0], match[1]
+		lineStart := lastLineStartIndex
+		if idx := bytes.LastIndex(fileMatchBuf[lastStart:start], []byte{'\n'}); idx >= 0 {
+			lineStart = lastStart + idx + 1
 		}
-		if advance == 0 { // EOF
+		lastLineStartIndex = lineStart
+		lastStart = start
+
+		// lineEnd is the index of the next \n. If the last character of our
+		// match is already a newline, then lineEnd instead points end to
+		// include the newline in the match preview.
+		var lineEnd int
+		if end > 0 && fileMatchBuf[end-1] == '\n' {
+			lineEnd = end // Note: fileMatchBuf[lineEnd] may not be a \n
+		} else if idx := bytes.Index(fileMatchBuf[end:], []byte{'\n'}); idx >= 0 {
+			lineEnd = end + idx
+		} else {
+			lineEnd = len(fileMatchBuf)
+		}
+
+		lineNumber, matchIndex := hydrateLineNumbers(fileMatchBuf, lastLineNumber, lastMatchIndex, lineStart, match)
+
+		lastMatchIndex = matchIndex
+		lastLineNumber = lineNumber
+		matches = appendMatches(matches, fileBuf[lineStart:lineEnd], fileMatchBuf[lineStart:lineEnd], lineNumber, start-lineStart, end-lineStart)
+
+		if len(matches) > maxLineMatches {
+			matches = matches[:maxLineMatches]
+			limitHit = true
 			break
 		}
-
-		// matchBuf is what we actually match on. We have already done
-		// the transform of fileBuf in fileMatchBuf. lineBuf is a
-		// prefix of fileBuf, so matchBuf is the corresponding prefix.
-		matchBuf := fileMatchBuf[:len(lineBuf)]
-
-		// Advance file bufs in sync
-		fileBuf = fileBuf[advance:]
-		fileMatchBuf = fileMatchBuf[advance:]
-
-		// Check whether we're before the first match.
-		idx += advance
-		if idx < first[0] {
-			continue
-		}
-
-		// Skip lines that are too long.
-		if len(matchBuf) > maxLineSize {
-			continue
-		}
-
-		locs := rg.re.FindAllIndex(matchBuf, maxOffsets)
-		if len(locs) > 0 {
-			lineLimitHit := len(locs) == maxOffsets
-			offsetAndLengths := make([][2]int, len(locs))
-			for i, match := range locs {
-				start, end := match[0], match[1]
-				offset := utf8.RuneCount(lineBuf[:start])
-				length := utf8.RuneCount(lineBuf[start:end])
-				offsetAndLengths[i] = [2]int{offset, length}
-			}
-			matches = append(matches, protocol.LineMatch{
-				// making a copy of lineBuf is intentional.
-				// we are not allowed to use the fileBuf data after the zipFile has been Closed,
-				// which currently occurs before Preview has been serialized.
-				// TODO: consider moving the call to Close until after we are
-				// done with Preview, and stop making a copy here.
-				// Special care must be taken to call Close on all possible paths, including error paths.
-				Preview:          string(lineBuf),
-				LineNumber:       i,
-				OffsetAndLengths: offsetAndLengths,
-				LimitHit:         lineLimitHit,
-			})
-		}
 	}
-	limitHit = len(matches) == maxLineMatches
 	return matches, limitHit, nil
 }
 
+func hydrateLineNumbers(fileBuf []byte, lastLineNumber, lastMatchIndex, lineStart int, match []int) (lineNumber, matchIndex int) {
+	lineNumber = lastLineNumber + bytes.Count(fileBuf[lastMatchIndex:match[0]], []byte{'\n'})
+	return lineNumber, lineStart
+}
+
+// matchLineBuf is a byte slice that contains the full line(s) that the match appears on.
+func appendMatches(matches []protocol.LineMatch, fileBuf []byte, matchLineBuf []byte, lineNumber, start, end int) []protocol.LineMatch {
+	// If any newlines appear between start and end, we need to append multiple LineMatch.
+	// We assume there are no newlines before start.
+	for len(matchLineBuf) > 0 {
+		var line []byte
+		var eol int
+		if eol = bytes.Index(matchLineBuf[start:], []byte{'\n'}); eol < 0 {
+			line = matchLineBuf
+			matchLineBuf = []byte{}
+		} else {
+			eol += start
+			// start is 0 indexed, so add 1 to include the new line at the end of the line
+			line = matchLineBuf[:eol+1]
+			matchLineBuf = matchLineBuf[eol+1:]
+		}
+
+		e := end
+		if e > len(line) {
+			e = len(line)
+		}
+
+		offset := utf8.RuneCount(line[:start])
+		length := utf8.RuneCount(line[start:e])
+		limit := eol
+		if limit < 0 {
+			limit = len(fileBuf)
+		}
+		matches = append(matches, protocol.LineMatch{
+			// we are not allowed to use the fileBuf data after the ZipFile has been Closed,
+			// which currently occurs before Preview has been serialized.
+			// TODO: consider moving the call to Close until after we are
+			// done with Preview, and stop making a copy here.
+			// Special care must be taken to call Close on all possible paths, including error paths.
+			Preview:          string(fileBuf[:limit]),
+			LineNumber:       lineNumber,
+			OffsetAndLengths: [][2]int{{offset, length}},
+			LimitHit:         false, // We will always return false for this field since we no longer limit the number of offsets per line.
+		})
+
+		if eol >= 0 {
+			fileBuf = fileBuf[eol+1:]
+		}
+
+		lineNumber++
+		start = 0
+		end -= e
+	}
+	return matches
+}
+
 // FindZip is a convenience function to run Find on f.
-func (rg *readerGrep) FindZip(zf *zipFile, f *srcFile) (protocol.FileMatch, error) {
+func (rg *readerGrep) FindZip(zf *store.ZipFile, f *store.SrcFile) (protocol.FileMatch, error) {
 	lm, limitHit, err := rg.Find(zf, f)
 	return protocol.FileMatch{
 		Path:        f.Name,
@@ -289,7 +307,7 @@ func (rg *readerGrep) FindZip(zf *zipFile, f *srcFile) (protocol.FileMatch, erro
 }
 
 // concurrentFind searches files in zr looking for matches using rg.
-func concurrentFind(ctx context.Context, rg *readerGrep, zf *zipFile, fileMatchLimit int, patternMatchesContent, patternMatchesPaths bool) (fm []protocol.FileMatch, limitHit bool, err error) {
+func concurrentFind(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMatchLimit int, patternMatchesContent, patternMatchesPaths bool) (fm []protocol.FileMatch, limitHit bool, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "ConcurrentFind")
 	ext.Component.Set(span, "matcher")
 	if rg.re != nil {
@@ -331,7 +349,7 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zf *zipFile, fileMatchL
 		matches   = []protocol.FileMatch{}
 	)
 
-	if patternMatchesPaths && (!patternMatchesContent || rg.re == nil) {
+	if rg.re == nil || (patternMatchesPaths && !patternMatchesContent) {
 		// Fast path for only matching file paths (or with a nil pattern, which matches all files,
 		// so is effectively matching only on file paths).
 		for _, f := range files {

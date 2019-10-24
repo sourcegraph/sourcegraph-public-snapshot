@@ -1,8 +1,0 @@
-#!/bin/bash
-
-set -euf -o pipefail
-
-# Sleep to allow frontend to start :'(
-[ "$1" != "zoekt-sourcegraph-indexserver" ] || sleep 5
-
-exec $@

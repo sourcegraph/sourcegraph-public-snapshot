@@ -2,6 +2,7 @@
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
 generate_graphql=false
+generate_dashboards=false
 generate_schema=false
 cmdlist=""
 all_cmds=false
@@ -12,9 +13,16 @@ for i; do
 	"cmd/frontend/graphqlbackend/schema.graphql")
 		generate_graphql=true
 		;;
+    docker-images/grafana/jsonnet/*.jsonnet)
+        generate_dashboards=true
+        ;;
 	schema/*.json)
 		generate_schema=true
 		;;
+    cmd/symbols/*)
+        [ -n "$GOREMAN" ] && $GOREMAN run restart symbols
+        exit
+        ;;
 	cmd/*)
 		cmd=${i#cmd/}
 		cmd=${cmd%%/*}
@@ -33,7 +41,9 @@ for i; do
 done
 
 $generate_graphql && { go generate github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend || failed=true; }
+$generate_dashboards && { docker-images/grafana/jsonnet/build.sh || failed=true; }
 $generate_schema && { go generate github.com/sourcegraph/sourcegraph/schema || failed=true; }
+
 if $all_cmds; then
 	rebuilt=$(./dev/go-install.sh -v | tr '\012' ' ')
 	[ $? == 0 ] || failed=true

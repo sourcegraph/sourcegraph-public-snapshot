@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 )
 
 // 🚨 SECURITY: This tests that users can't create tokens for users they aren't allowed to do so for.
@@ -42,7 +42,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
-				Schema:  GraphQLSchema,
+				Schema:  mustParseGraphQLSchema(t, nil),
 				Query: `
 				mutation {
 					createAccessToken(user: "` + uid1GQLID + `", scopes: ["user:all"], note: "n") {
@@ -108,7 +108,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
-				Schema:  GraphQLSchema,
+				Schema:  mustParseGraphQLSchema(t, nil),
 				Query: `
 				mutation {
 					createAccessToken(user: "` + uid1GQLID + `", scopes: ["user:all", "site-admin:sudo"], note: "n") {
@@ -141,7 +141,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: differentSiteAdminUID}),
-				Schema:  GraphQLSchema,
+				Schema:  mustParseGraphQLSchema(t, nil),
 				Query: `
 				mutation {
 					createAccessToken(user: "` + uid1GQLID + `", scopes: ["user:all"], note: "n") {
@@ -167,7 +167,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) { return nil, db.ErrNoCurrentUser }
 		defer func() { db.Mocks.Users.GetByCurrentAuthUser = nil }()
 		db.Mocks.Users.GetByID = func(_ context.Context, userID int32) (*types.User, error) {
-			return &types.User{ID: 0, Username: "username"}, nil
+			return &types.User{Username: "username"}, nil
 		}
 		defer func() { db.Mocks.Users.GetByID = nil }()
 
@@ -187,7 +187,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) { return &types.User{ID: differentNonSiteAdminUID}, nil }
 		defer func() { db.Mocks.Users.GetByCurrentAuthUser = nil }()
 		db.Mocks.Users.GetByID = func(_ context.Context, userID int32) (*types.User, error) {
-			return &types.User{ID: 0, Username: "username"}, nil
+			return &types.User{Username: "username"}, nil
 		}
 		defer func() { db.Mocks.Users.GetByID = nil }()
 
@@ -230,7 +230,7 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
-				Schema:  GraphQLSchema,
+				Schema:  mustParseGraphQLSchema(t, nil),
 				Query: `
 				mutation {
 					deleteAccessToken(byID: "` + string(token1GQLID) + `") {
@@ -261,7 +261,7 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: differentSiteAdminUID}),
-				Schema:  GraphQLSchema,
+				Schema:  mustParseGraphQLSchema(t, nil),
 				Query: `
 				mutation {
 					deleteAccessToken(byID: "` + string(token1GQLID) + `") {
@@ -286,7 +286,7 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) { return nil, db.ErrNoCurrentUser }
 		defer func() { db.Mocks.Users.GetByCurrentAuthUser = nil }()
 		db.Mocks.Users.GetByID = func(_ context.Context, userID int32) (*types.User, error) {
-			return &types.User{ID: 0, Username: "username"}, nil
+			return &types.User{Username: "username"}, nil
 		}
 		defer func() { db.Mocks.Users.GetByID = nil }()
 
@@ -307,7 +307,7 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) { return &types.User{ID: differentNonSiteAdminUID}, nil }
 		defer func() { db.Mocks.Users.GetByCurrentAuthUser = nil }()
 		db.Mocks.Users.GetByID = func(_ context.Context, userID int32) (*types.User, error) {
-			return &types.User{ID: 0, Username: "username"}, nil
+			return &types.User{Username: "username"}, nil
 		}
 		defer func() { db.Mocks.Users.GetByID = nil }()
 

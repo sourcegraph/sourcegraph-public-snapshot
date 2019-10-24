@@ -37,7 +37,7 @@ Their purpose is to reexport symbols from a number of other files to make import
 - Only use descendent/child selectors where unavoidable. Prefer BEM-style class names that are nested in SCSS through the `&` operator
 - Create utility classes for styles that should be shared horizontally between components
 - Always use `rem` units (when converting designs, `1rem` = `16px`). This allows us to scale the whole UI by modifying the root font size.
-- Avoid hardcoding colors, use SCSS variables if they are available / the color makese sense to share.
+- Avoid hardcoding colors, use SCSS variables if they are available / the color makes sense to share.
 - Try to _minimize_ the usage of advanced SCSS features. They can lead to bugs and complicate styles.
   - Encouraged features are nesting and imports (which is the intersection of Less', SCSS' and PostCSS' feature set)
 - Think about mobile at least so much that no feature breaks when the browser window is resized
@@ -88,17 +88,4 @@ You can run unit tests via `yarn test` (to run all) or `yarn test --watch` (to r
 
 ### E2E tests
 
-_🚨  Until the follow up work in https://github.com/sourcegraph/sourcegraph/issues/976 is completed, our E2E tests will be disabled in CI. **Before merging your PR, you should manually run e2e tests against a local instancing by running `./dev/enterprise/start.sh` in one terminal tab and `yarn run test-e2e` in another one**. Additionally, some E2E tests depend on the Go language server. Currently, that language server is in a transition state and can't be run on its own. Until @chrismwendt finishes up his work on that project, all tests that rely on Go code intelligence are skipped.🚨_
-
-E2E tests are for the whole app: JS, CSS, and backend.
-
-These tests require hitting a backend like https://sourcegraph.com or https://sourcegraph.sgdev.org (default `SOURCEGRAPH_BASE_URL=http://localhost:3080`). E2E tests send messages to a chrome debugger port (9222), telling chrome to do things like "go to this URL" and "click on this selector" and "execute this JavaScript in the page".
-
-You can run E2E tests via `cd web && yarn run test-e2e`. This command will automatically start a headless chrome process; to prevent that, set the environment variable `SKIP_LAUNCH_CHROME=t`. See "[Testing](testing.md)" for more information.
-
-#### E2E caveats
-
-- don't overdo them; they are the tip of the testing pyramid and the mass of tests should be at lower layers
-- avoid coupling your tests too tightly to the implementation (e.g. with strict selectors that are coupled to the DOM structure), or we will have many test failures
-  - for example, mark your E2E element targets with a class like `.e2e-j2d-button`
-- if you change a lot about the UI you should run e2e tetss before committing b/c you will likely break something.
+See [testing.md](testing.md).

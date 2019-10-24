@@ -6,8 +6,9 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 )
 
 func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
@@ -15,5 +16,15 @@ func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	return repoupdater.DefaultClient.EnqueueRepoUpdate(context.Background(), gitserver.Repo{Name: repo.Name})
+	repoMeta, err := repoupdater.DefaultClient.RepoLookup(context.Background(), protocol.RepoLookupArgs{
+		Repo: repo.Name,
+	})
+	if err != nil {
+		return err
+	}
+	_, err = repoupdater.DefaultClient.EnqueueRepoUpdate(context.Background(), gitserver.Repo{
+		Name: repo.Name,
+		URL:  repoMeta.Repo.VCS.URL,
+	})
+	return err
 }

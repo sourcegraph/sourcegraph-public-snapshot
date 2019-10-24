@@ -3,7 +3,7 @@ import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 import { Path } from '../../../../shared/src/components/Path'
 import { isExtensionEnabled } from '../../../../shared/src/extensions/extension'
-import { ExtensionManifest } from '../../../../shared/src/schema/extension.schema'
+import { ExtensionManifest } from '../../../../shared/src/schema/extensionSchema'
 import { isErrorLike } from '../../../../shared/src/util/errors'
 import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { ExtensionToggle } from '../ExtensionToggle'
@@ -13,7 +13,8 @@ import { ExtensionConfigurationState } from './ExtensionConfigurationState'
 import { WorkInProgressBadge } from './WorkInProgressBadge'
 
 interface ExtensionAreaHeaderProps extends ExtensionAreaRouteContext, RouteComponentProps<{}> {
-    navItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
+    navItems: readonly ExtensionAreaHeaderNavItem[]
+    className: string
 }
 
 export type ExtensionAreaHeaderContext = Pick<ExtensionAreaHeaderProps, 'extension'>
@@ -40,7 +41,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
     const isWorkInProgress = props.extension.registryExtension && props.extension.registryExtension.isWorkInProgress
 
     return (
-        <div className="extension-area-header border-bottom simple-area-header">
+        <div className={`extension-area-header ${props.className || ''}`}>
             <div className="container">
                 {props.extension && (
                     <>
@@ -85,13 +86,12 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                         </div>
                         <div className="d-flex align-items-center mt-3 mb-2">
                             {props.authenticatedUser && (
-                                <div className="mr-2">
-                                    <ExtensionToggle
-                                        extension={props.extension}
-                                        settingsCascade={props.settingsCascade}
-                                        platformContext={props.platformContext}
-                                    />
-                                </div>
+                                <ExtensionToggle
+                                    extension={props.extension}
+                                    settingsCascade={props.settingsCascade}
+                                    platformContext={props.platformContext}
+                                    className="mr-2"
+                                />
                             )}
                             <ExtensionConfigurationState
                                 className="mr-2"
@@ -116,23 +116,24 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                 </div>
                             )}
                         </div>
-                        <div className="area-header__nav mt-3">
-                            <div className="area-header__nav-links">
+                        <div className="mt-3">
+                            <ul className="nav nav-tabs border-bottom-0">
                                 {props.navItems.map(
                                     ({ to, label, exact, icon: Icon, condition = () => true }) =>
                                         condition(props) && (
-                                            <NavLink
-                                                key={label}
-                                                to={props.url + to}
-                                                className="btn area-header__nav-link"
-                                                activeClassName="area-header__nav-link--active"
-                                                exact={exact}
-                                            >
-                                                {Icon && <Icon className="icon-inline" />} {label}
-                                            </NavLink>
+                                            <li key={label} className="nav-item">
+                                                <NavLink
+                                                    to={props.url + to}
+                                                    className="nav-link"
+                                                    activeClassName="active"
+                                                    exact={exact}
+                                                >
+                                                    {Icon && <Icon className="icon-inline" />} {label}
+                                                </NavLink>
+                                            </li>
                                         )
                                 )}
-                            </div>
+                            </ul>
                         </div>
                     </>
                 )}

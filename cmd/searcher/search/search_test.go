@@ -14,7 +14,6 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"regexp/syntax"
 	"sort"
 	"strconv"
 	"strings"
@@ -22,10 +21,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/search"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	searchapi "github.com/sourcegraph/sourcegraph/pkg/search"
-	"github.com/sourcegraph/sourcegraph/pkg/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/store"
 )
 
 func TestSearch(t *testing.T) {
@@ -99,7 +97,7 @@ main.go:6:	fmt.Println("Hello world")
 		{protocol.PatternInfo{Pattern: "world", ExcludePattern: "README.md"}, `
 main.go:6:	fmt.Println("Hello world")
 `},
-		{protocol.PatternInfo{Pattern: "world", IncludePattern: "*.md"}, `
+		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{"*.md"}}, `
 README.md:1:# Hello World
 README.md:3:Hello world example in go
 `},
@@ -111,7 +109,7 @@ abc.txt:1:w
 		{protocol.PatternInfo{Pattern: "world", ExcludePattern: "README\\.md", PathPatternsAreRegExps: true}, `
 main.go:6:	fmt.Println("Hello world")
 `},
-		{protocol.PatternInfo{Pattern: "world", IncludePattern: "\\.md", PathPatternsAreRegExps: true}, `
+		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{"\\.md"}, PathPatternsAreRegExps: true}, `
 README.md:1:# Hello World
 README.md:3:Hello world example in go
 `},
@@ -121,10 +119,10 @@ README.md:1:# Hello World
 README.md:3:Hello world example in go
 `},
 
-		{protocol.PatternInfo{Pattern: "world", IncludePattern: "*.{MD,go}", PathPatternsAreCaseSensitive: true}, `
+		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{"*.{MD,go}"}, PathPatternsAreCaseSensitive: true}, `
 main.go:6:	fmt.Println("Hello world")
 `},
-		{protocol.PatternInfo{Pattern: "world", IncludePattern: `\.(MD|go)`, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: true}, `
+		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{`\.(MD|go)`}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: true}, `
 main.go:6:	fmt.Println("Hello world")
 `},
 
@@ -132,6 +130,56 @@ main.go:6:	fmt.Println("Hello world")
 		{protocol.PatternInfo{Pattern: "", IsRegExp: false, IncludePatterns: []string{"\\.png"}, PathPatternsAreRegExps: true, PatternMatchesPath: true}, `
 milton.png
 `},
+		{protocol.PatternInfo{Pattern: "package main\n\nimport \"fmt\"", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+main.go:1:package main
+main.go:2:
+main.go:3:import "fmt"
+`},
+		{protocol.PatternInfo{Pattern: "package main\n\\s*import \"fmt\"", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+main.go:1:package main
+main.go:2:
+main.go:3:import "fmt"
+`},
+		{protocol.PatternInfo{Pattern: "package main\n", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+main.go:1:package main
+`},
+		{protocol.PatternInfo{Pattern: "package main\n\\s*", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+main.go:1:package main
+main.go:2:
+`},
+		{protocol.PatternInfo{Pattern: "package main\n\\s*", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+main.go:1:package main
+main.go:2:
+`},
+		{protocol.PatternInfo{Pattern: "\nfunc", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+main.go:4:
+main.go:5:func main() {
+`},
+		{protocol.PatternInfo{Pattern: "\n\\s*func", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+main.go:3:import "fmt"
+main.go:4:
+main.go:5:func main() {
+`},
+		{protocol.PatternInfo{Pattern: "package main\n\nimport \"fmt\"\n\nfunc main\\(\\) {", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+main.go:1:package main
+main.go:2:
+main.go:3:import "fmt"
+main.go:4:
+main.go:5:func main() {
+`},
+		{protocol.PatternInfo{Pattern: "\n", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+README.md:1:# Hello World
+README.md:2:
+main.go:1:package main
+main.go:2:
+main.go:3:import "fmt"
+main.go:4:
+main.go:5:func main() {
+main.go:6:	fmt.Println("Hello world")
+main.go:7:}
+`},
+
+		{protocol.PatternInfo{Pattern: "^$", IsRegExp: true}, ``},
 	}
 
 	store, cleanup, err := newStore(files)
@@ -142,74 +190,38 @@ milton.png
 	ts := httptest.NewServer(&search.Service{Store: store})
 	defer ts.Close()
 
-	s := &search.StoreSearcher{Store: store}
-	defer s.Close()
-
 	for i, test := range cases {
-		test.arg.PatternMatchesContent = true
-		req := protocol.Request{
-			Repo:         "foo",
-			URL:          "u",
-			Commit:       "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-			PatternInfo:  test.arg,
-			FetchTimeout: "500ms",
-		}
-		m, err := doSearch(ts.URL, &req)
-		if err != nil {
-			t.Errorf("%v failed: %s", test.arg, err)
-			continue
-		}
-		sort.Sort(sortByPath(m))
-		got := toString(m)
-		err = sanityCheckSorted(m)
-		if err != nil {
-			t.Errorf("%v malformed response: %s\n%s", test.arg, err, got)
-		}
-		// We have an extra newline to make expected readable
-		if len(test.want) > 0 {
-			test.want = test.want[1:]
-		}
-		if got != test.want {
-			d, err := diff(test.want, got)
-			if err != nil {
-				t.Fatal(err)
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			test.arg.PatternMatchesContent = true
+			req := protocol.Request{
+				Repo:         "foo",
+				URL:          "u",
+				Commit:       "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+				PatternInfo:  test.arg,
+				FetchTimeout: "500ms",
 			}
-			t.Errorf("%v unexpected response:\n%s", test.arg, d)
-			continue
-		}
-
-		// we do not support those in query
-		if !test.arg.PathPatternsAreRegExps && (len(test.arg.IncludePatterns) > 0 || test.arg.IncludePattern != "" || test.arg.ExcludePattern != "") {
-			continue
-		}
-		if test.arg.IsWordMatch {
-			continue
-		}
-
-		q, err := patternToQuery(&test.arg)
-		if err != nil {
-			t.Errorf("%v failed to convert query: %s", test.arg, err)
-			continue
-		}
-		q = query.Simplify(query.NewAnd(&query.Ref{Pattern: string(req.Commit)}, q))
-
-		sr, err := s.Search(context.Background(), q, &searchapi.Options{Repositories: []api.RepoName{"foo"}})
-		if err != nil {
-			t.Errorf("%v failed to search: %s", q, err)
-			continue
-		}
-
-		sort.Slice(sr.Files, func(i, j int) bool {
-			return sr.Files[i].Path < sr.Files[j].Path
+			m, err := doSearch(ts.URL, &req)
+			if err != nil {
+				t.Fatalf("%v failed: %s", test.arg, err)
+			}
+			sort.Sort(sortByPath(m))
+			got := toString(m)
+			err = sanityCheckSorted(m)
+			if err != nil {
+				t.Fatalf("%v malformed response: %s\n%s", test.arg, err, got)
+			}
+			// We have an extra newline to make expected readable
+			if len(test.want) > 0 {
+				test.want = test.want[1:]
+			}
+			if got != test.want {
+				d, err := diff(test.want, got)
+				if err != nil {
+					t.Fatal(err)
+				}
+				t.Fatalf("%s unexpected response:\n%s", test.arg.String(), d)
+			}
 		})
-		got = toStringNew(sr)
-		if got != test.want {
-			d, err := diff(test.want, got)
-			if err != nil {
-				t.Fatal(err)
-			}
-			t.Errorf("%d %v unexpected response:\n%s", i, q, d)
-		}
 	}
 }
 
@@ -271,8 +283,8 @@ func TestSearch_badrequest(t *testing.T) {
 			URL:    "u",
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			PatternInfo: protocol.PatternInfo{
-				Pattern:        "test",
-				IncludePattern: "[c-a]",
+				Pattern:         "test",
+				IncludePatterns: []string{"[c-a]"},
 			},
 		},
 
@@ -294,7 +306,7 @@ func TestSearch_badrequest(t *testing.T) {
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			PatternInfo: protocol.PatternInfo{
 				Pattern:                "test",
-				IncludePattern:         "**",
+				IncludePatterns:        []string{"**"},
 				PathPatternsAreRegExps: true,
 			},
 		},
@@ -339,7 +351,6 @@ func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
 		"Commit":          []string{string(p.Commit)},
 		"Pattern":         []string{p.Pattern},
 		"IncludePatterns": p.IncludePatterns,
-		"IncludePattern":  []string{p.IncludePattern},
 		"ExcludePattern":  []string{p.ExcludePattern},
 	}
 	if p.IsRegExp {
@@ -384,7 +395,7 @@ func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
 	return r.Matches, err
 }
 
-func newStore(files map[string]string) (*search.Store, func(), error) {
+func newStore(files map[string]string) (*store.Store, func(), error) {
 	buf := new(bytes.Buffer)
 	w := tar.NewWriter(buf)
 	for name, body := range files {
@@ -415,7 +426,7 @@ func newStore(files map[string]string) (*search.Store, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	return &search.Store{
+	return &store.Store{
 		FetchTar: func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error) {
 			return ioutil.NopCloser(bytes.NewReader(buf.Bytes())), nil
 		},
@@ -436,26 +447,6 @@ func toString(m []protocol.FileMatch) string {
 			buf.WriteString(strconv.Itoa(l.LineNumber + 1))
 			buf.WriteByte(':')
 			buf.WriteString(l.Preview)
-			buf.WriteByte('\n')
-		}
-
-	}
-	return buf.String()
-}
-
-func toStringNew(sr *searchapi.Result) string {
-	buf := new(bytes.Buffer)
-	for _, f := range sr.Files {
-		if len(f.LineMatches) == 0 {
-			buf.WriteString(f.Path)
-			buf.WriteByte('\n')
-		}
-		for _, l := range f.LineMatches {
-			buf.WriteString(f.Path)
-			buf.WriteByte(':')
-			buf.WriteString(strconv.Itoa(l.LineNumber))
-			buf.WriteByte(':')
-			buf.Write(l.Line)
 			buf.WriteByte('\n')
 		}
 
@@ -499,8 +490,12 @@ func diff(b1, b2 string) (string, error) {
 	defer os.Remove(f2.Name())
 	defer f2.Close()
 
-	f1.WriteString(b1)
-	f2.WriteString(b2)
+	if _, err := f1.WriteString(b1); err != nil {
+		return "", err
+	}
+	if _, err := f2.WriteString(b2); err != nil {
+		return "", err
+	}
 
 	data, err := exec.Command("diff", "-u", "--label=want", f1.Name(), "--label=got", f2.Name()).CombinedOutput()
 	if len(data) > 0 {
@@ -520,87 +515,3 @@ type sortByLineNumber []protocol.LineMatch
 func (m sortByLineNumber) Len() int           { return len(m) }
 func (m sortByLineNumber) Less(i, j int) bool { return m[i].LineNumber < m[j].LineNumber }
 func (m sortByLineNumber) Swap(i, j int)      { m[i], m[j] = m[j], m[i] }
-
-func noOpAnyChar(re *syntax.Regexp) {
-	if re.Op == syntax.OpAnyChar {
-		re.Op = syntax.OpAnyCharNotNL
-	}
-	for _, s := range re.Sub {
-		noOpAnyChar(s)
-	}
-}
-
-func patternToQuery(p *protocol.PatternInfo) (query.Q, error) {
-	var and []query.Q
-
-	parseRe := func(pattern string, filenameOnly bool) (query.Q, error) {
-		// these are the flags used by zoekt, which differ to searcher.
-		re, err := syntax.Parse(pattern, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
-		if err != nil {
-			return nil, err
-		}
-		noOpAnyChar(re)
-		// zoekt decides to use its literal optimization at the query parser
-		// level, so we check if our regex can just be a literal.
-		if re.Op == syntax.OpLiteral {
-			return &query.Substring{
-				Pattern:       string(re.Rune),
-				CaseSensitive: (!filenameOnly && p.IsCaseSensitive) || (filenameOnly && p.PathPatternsAreCaseSensitive),
-
-				FileName: filenameOnly,
-			}, nil
-		}
-		return &query.Regexp{
-			Regexp:        re,
-			CaseSensitive: (!filenameOnly && p.IsCaseSensitive) || (filenameOnly && p.PathPatternsAreCaseSensitive),
-
-			FileName: filenameOnly,
-		}, nil
-	}
-	fileRe := func(pattern string) (query.Q, error) {
-		return parseRe(pattern, true)
-	}
-
-	if p.IsRegExp {
-		q, err := parseRe(p.Pattern, false)
-		if err != nil {
-			return nil, err
-		}
-		and = append(and, q)
-	} else {
-		and = append(and, query.ExpandFileContent(&query.Substring{
-			Pattern:       p.Pattern,
-			CaseSensitive: p.IsCaseSensitive,
-		}))
-	}
-
-	if p.IsWordMatch {
-		return nil, errors.New("query does not support word match")
-	}
-	if !p.PathPatternsAreRegExps && (len(p.IncludePatterns) > 0 || p.IncludePattern != "" || p.ExcludePattern != "") {
-		return nil, errors.New("query only supports regex path patterns")
-	}
-	for _, p := range p.IncludePatterns {
-		q, err := fileRe(p)
-		if err != nil {
-			return nil, err
-		}
-		and = append(and, q)
-	}
-	if p.IncludePattern != "" {
-		q, err := fileRe(p.IncludePattern)
-		if err != nil {
-			return nil, err
-		}
-		and = append(and, q)
-	}
-	if p.ExcludePattern != "" {
-		q, err := fileRe(p.ExcludePattern)
-		if err != nil {
-			return nil, err
-		}
-		and = append(and, &query.Not{Child: q})
-	}
-
-	return query.Map(query.Simplify(query.NewAnd(and...)), nil, query.ExpandFileContent), nil
-}

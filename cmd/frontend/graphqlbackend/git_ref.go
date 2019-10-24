@@ -59,7 +59,7 @@ func gitRefDisplayName(ref string) string {
 	return strings.TrimPrefix(ref, prefix)
 }
 
-func gitRefByID(ctx context.Context, id graphql.ID) (*gitRefResolver, error) {
+func gitRefByID(ctx context.Context, id graphql.ID) (*GitRefResolver, error) {
 	repoID, rev, err := unmarshalGitRefID(id)
 	if err != nil {
 		return nil, err
@@ -68,17 +68,21 @@ func gitRefByID(ctx context.Context, id graphql.ID) (*gitRefResolver, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &gitRefResolver{
+	return &GitRefResolver{
 		repo: repo,
 		name: rev,
 	}, nil
 }
 
-type gitRefResolver struct {
-	repo *repositoryResolver
+func NewGitRefResolver(repo *RepositoryResolver, name string, target GitObjectID) *GitRefResolver {
+	return &GitRefResolver{repo: repo, name: name, target: target}
+}
+
+type GitRefResolver struct {
+	repo *RepositoryResolver
 	name string
 
-	target gitObjectID // the target's OID, if known (otherwise computed on demand)
+	target GitObjectID // the target's OID, if known (otherwise computed on demand)
 }
 
 // gitRefGQLID is a type used for marshaling and unmarshaling a Git ref's
@@ -98,18 +102,18 @@ func unmarshalGitRefID(id graphql.ID) (repoID graphql.ID, rev string, err error)
 	return spec.Repository, spec.Rev, err
 }
 
-func (r *gitRefResolver) ID() graphql.ID      { return marshalGitRefID(r.repo.ID(), r.name) }
-func (r *gitRefResolver) Name() string        { return r.name }
-func (r *gitRefResolver) AbbrevName() string  { return strings.TrimPrefix(r.name, gitRefPrefix(r.name)) }
-func (r *gitRefResolver) DisplayName() string { return gitRefDisplayName(r.name) }
-func (r *gitRefResolver) Prefix() string      { return gitRefPrefix(r.name) }
-func (r *gitRefResolver) Type() string        { return gitRefType(r.name) }
-func (r *gitRefResolver) Target() interface {
-	OID(context.Context) (gitObjectID, error)
+func (r *GitRefResolver) ID() graphql.ID      { return marshalGitRefID(r.repo.ID(), r.name) }
+func (r *GitRefResolver) Name() string        { return r.name }
+func (r *GitRefResolver) AbbrevName() string  { return strings.TrimPrefix(r.name, gitRefPrefix(r.name)) }
+func (r *GitRefResolver) DisplayName() string { return gitRefDisplayName(r.name) }
+func (r *GitRefResolver) Prefix() string      { return gitRefPrefix(r.name) }
+func (r *GitRefResolver) Type() string        { return gitRefType(r.name) }
+func (r *GitRefResolver) Target() interface {
+	OID(context.Context) (GitObjectID, error)
 	//lint:ignore U1000 is used by graphql via reflection
 	AbbreviatedOID(context.Context) (string, error)
 	//lint:ignore U1000 is used by graphql via reflection
-	Commit(context.Context) (*gitCommitResolver, error)
+	Commit(context.Context) (*GitCommitResolver, error)
 	//lint:ignore U1000 is used by graphql via reflection
 	Type(context.Context) (gitObjectType, error)
 } {
@@ -118,6 +122,6 @@ func (r *gitRefResolver) Target() interface {
 	}
 	return &gitObjectResolver{repo: r.repo, revspec: r.name}
 }
-func (r *gitRefResolver) Repository() *repositoryResolver { return r.repo }
+func (r *GitRefResolver) Repository() *RepositoryResolver { return r.repo }
 
-func (r *gitRefResolver) URL() string { return r.repo.URL() + "@" + escapeRevspecForURL(r.AbbrevName()) }
+func (r *GitRefResolver) URL() string { return r.repo.URL() + "@" + escapeRevspecForURL(r.AbbrevName()) }

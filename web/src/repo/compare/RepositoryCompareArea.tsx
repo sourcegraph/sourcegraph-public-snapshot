@@ -6,12 +6,12 @@ import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { filter, map, withLatestFrom } from 'rxjs/operators'
-import { ActionItemProps } from '../../../../shared/src/actions/ActionItem'
+import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { getHoverActions } from '../../../../shared/src/hover/actions'
-import { HoverContext, HoverOverlay } from '../../../../shared/src/hover/HoverOverlay'
+import { HoverContext } from '../../../../shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { propertyIsDefined } from '../../../../shared/src/util/types'
@@ -26,13 +26,16 @@ import {
 } from '../../../../shared/src/util/url'
 import { getHover } from '../../backend/features'
 import { HeroPage } from '../../components/HeroPage'
+import { WebHoverOverlay } from '../../components/shared'
+import { ThemeProps } from '../../theme'
+import { EventLoggerProps } from '../../tracking/eventLogger'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { RepositoryCompareHeader } from './RepositoryCompareHeader'
 import { RepositoryCompareOverviewPage } from './RepositoryCompareOverviewPage'
 
-const NotFoundPage = () => (
+const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
         icon={MapSearchIcon}
         title="404: Not Found"
@@ -40,15 +43,17 @@ const NotFoundPage = () => (
     />
 )
 
-interface Props
+interface RepositoryCompareAreaProps
     extends RouteComponentProps<{ spec: string }>,
         RepoHeaderContributionsLifecycleProps,
         PlatformContextProps,
-        ExtensionsControllerProps {
+        EventLoggerProps,
+        ExtensionsControllerProps,
+        ThemeProps {
     repo: GQL.IRepository
 }
 
-interface State extends HoverState<HoverContext, HoverMerged, ActionItemProps> {
+interface State extends HoverState<HoverContext, HoverMerged, ActionItemAction> {
     error?: string
 }
 
@@ -72,8 +77,8 @@ export interface RepositoryCompareAreaPageProps extends PlatformContextProps {
 /**
  * Renders pages related to a repository comparison.
  */
-export class RepositoryCompareArea extends React.Component<Props, State> {
-    private componentUpdates = new Subject<Props>()
+export class RepositoryCompareArea extends React.Component<RepositoryCompareAreaProps, State> {
+    private componentUpdates = new Subject<RepositoryCompareAreaProps>()
 
     /** Emits whenever the ref callback for the hover element is called */
     private hoverOverlayElements = new Subject<HTMLElement | null>()
@@ -89,14 +94,14 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
     private nextCloseButtonClick = (event: MouseEvent) => this.closeButtonClicks.next(event)
 
     private subscriptions = new Subscription()
-    private hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemProps>
+    private hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
 
-    constructor(props: Props) {
+    constructor(props: RepositoryCompareAreaProps) {
         super(props)
         this.hoverifier = createHoverifier<
             RepoSpec & RevSpec & FileSpec & ResolvedRevSpec,
             HoverMerged,
-            ActionItemProps
+            ActionItemAction
         >({
             closeButtonClicks: this.closeButtonClicks,
             hoverOverlayElements: this.hoverOverlayElements,
@@ -112,6 +117,7 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
             ),
             getHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
             getActions: context => getHoverActions(this.props, context),
+            pinningEnabled: true,
         })
         this.subscriptions.add(this.hoverifier)
         this.state = this.hoverifier.hoverState
@@ -135,7 +141,7 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
         this.componentUpdates.next(this.props)
     }
 
-    public shouldComponentUpdate(nextProps: Readonly<Props>, nextState: Readonly<State>): boolean {
+    public shouldComponentUpdate(nextProps: Readonly<RepositoryCompareAreaProps>, nextState: Readonly<State>): boolean {
         return !isEqual(this.props, nextProps) || !isEqual(this.state, nextState)
     }
 
@@ -154,7 +160,7 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
 
         let spec: { base: string | null; head: string | null } | null | undefined
         if (this.props.match.params.spec) {
-            spec = parseComparisonSpec(this.props.match.params.spec)
+            spec = parseComparisonSpec(decodeURIComponent(this.props.match.params.spec))
         }
 
         const commonProps: RepositoryCompareAreaPageProps = {
@@ -166,49 +172,46 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
         }
 
         return (
-            <div className="repository-compare-area area--vertical" ref={this.nextRepositoryCompareAreaElement}>
+            <div className="repository-compare-area container" ref={this.nextRepositoryCompareAreaElement}>
                 <RepoHeaderContributionPortal
                     position="nav"
                     element={<RepoHeaderBreadcrumbNavItem key="compare">Compare</RepoHeaderBreadcrumbNavItem>}
                     repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
                 <RepositoryCompareHeader
-                    className="area--vertical__header"
+                    className="my-3"
                     {...commonProps}
                     onUpdateComparisonSpec={this.onUpdateComparisonSpec}
                 />
-                <div className="area--vertical__content">
-                    <div className="area--vertical__content-inner">
-                        {spec === null ? (
-                            <div className="alert alert-danger">Invalid comparison specifier</div>
-                        ) : (
-                            <Switch>
-                                <Route
-                                    path={`${this.props.match.url}`}
-                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                    exact={true}
-                                    // tslint:disable-next-line:jsx-no-lambda
-                                    render={routeComponentProps => (
-                                        <RepositoryCompareOverviewPage
-                                            {...routeComponentProps}
-                                            {...commonProps}
-                                            hoverifier={this.hoverifier}
-                                            extensionsController={this.props.extensionsController}
-                                        />
-                                    )}
+                {spec === null ? (
+                    <div className="alert alert-danger">Invalid comparison specifier</div>
+                ) : (
+                    <Switch>
+                        {/* eslint-disable react/jsx-no-bind */}
+                        <Route
+                            path={`${this.props.match.url}`}
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            exact={true}
+                            render={routeComponentProps => (
+                                <RepositoryCompareOverviewPage
+                                    {...routeComponentProps}
+                                    {...commonProps}
+                                    hoverifier={this.hoverifier}
+                                    isLightTheme={this.props.isLightTheme}
+                                    extensionsController={this.props.extensionsController}
                                 />
-                                <Route key="hardcoded-key" component={NotFoundPage} />
-                            </Switch>
-                        )}
-                    </div>
-                </div>
+                            )}
+                        />
+                        <Route key="hardcoded-key" component={NotFoundPage} />
+                        {/* eslint-enable react/jsx-no-bind */}
+                    </Switch>
+                )}
                 {this.state.hoverOverlayProps && (
-                    <HoverOverlay
+                    <WebHoverOverlay
+                        {...this.props}
                         {...this.state.hoverOverlayProps}
+                        telemetryService={this.props.telemetryService}
                         hoverRef={this.nextOverlayElement}
-                        extensionsController={this.props.extensionsController}
-                        platformContext={this.props.platformContext}
-                        location={this.props.location}
                         onCloseButtonClick={this.nextCloseButtonClick}
                     />
                 )}

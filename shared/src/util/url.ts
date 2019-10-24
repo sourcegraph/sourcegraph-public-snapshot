@@ -1,11 +1,24 @@
-import { Position, Range } from '@sourcegraph/extension-api-types'
-import { WorkspaceRootWithMetadata } from '../api/client/model'
+import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
+import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
+import { SearchPatternType } from '../graphql/schema'
 
 export interface RepoSpec {
     /**
-     * Example: github.com/gorilla/mux
+     * The name of this repository on a Sourcegraph instance,
+     * as affected by `repositoryPathPattern`.
+     *
+     * Example: `sourcegraph/sourcegraph`
      */
     repoName: string
+}
+
+export interface RawRepoSpec {
+    /**
+     * The name of this repository, unaffected by `repositoryPathPattern`.
+     *
+     * Example: `github.com/sourcegraph/sourcegraph`
+     */
+    rawRepoName: string
 }
 
 export interface RevSpec {
@@ -135,7 +148,10 @@ export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
     if (rev && rev.match(/[0-9a-fA-f]{40}/)) {
         commitID = rev
     }
-    const fragmentSplit = parsed.hash.substr('#'.length).split(':')
+    const fragmentSplit = parsed.hash
+        .substr('#'.length)
+        .split(':')
+        .map(decodeURIComponent)
     let filePath: string | undefined
     let position: Position | undefined
     let range: Range | undefined
@@ -226,7 +242,10 @@ export interface AbsoluteRepoFileRange
         Partial<RenderModeSpec> {}
 
 /**
- * @param ctx 1-indexed partial position or range spec
+ * Provide one.
+ *
+ * @param position either 1-indexed partial position
+ * @param range or 1-indexed partial range spec
  */
 export function toPositionOrRangeHash(ctx: {
     position?: { line: number; character?: number }
@@ -267,6 +286,39 @@ export type LineOrPositionOrRange =
     | { line: number; character?: number; endLine?: undefined; endCharacter?: undefined }
     | { line: number; character?: undefined; endLine?: number; endCharacter?: undefined }
     | { line: number; character: number; endLine: number; endCharacter: number }
+
+export function lprToRange(lpr: LineOrPositionOrRange): Range | undefined {
+    if (lpr.line === undefined) {
+        return undefined
+    }
+    return {
+        start: { line: lpr.line, character: lpr.character || 0 },
+        end: {
+            line: lpr.endLine || lpr.line,
+            character: lpr.endCharacter || lpr.character || 0,
+        },
+    }
+}
+
+export function lprToSelectionsZeroIndexed(lpr: LineOrPositionOrRange): Selection[] {
+    const range = lprToRange(lpr)
+    if (range === undefined) {
+        return []
+    }
+    // `lprToRange` sets character to 0 if it's undefined. Only - 1 the character if it's not 0.
+    const characterZeroIndexed = (character: number): number => (character === 0 ? character : character - 1)
+    const start: Position = { line: range.start.line - 1, character: characterZeroIndexed(range.start.character) }
+    const end: Position = { line: range.end.line - 1, character: characterZeroIndexed(range.end.character) }
+    return [
+        {
+            start,
+            end,
+            anchor: start,
+            active: end,
+            isReversed: false,
+        },
+    ]
+}
 
 /**
  * Tells if the given fragment component is a legacy blob hash component or not.
@@ -331,7 +383,7 @@ export function parseHash<V extends string>(hash: string): LineOrPositionOrRange
  * Parses a string like "L1-2:3", a range from a line to a position.
  */
 function parseLineOrPositionOrRange(lineChar: string): LineOrPositionOrRange {
-    if (!/^(L[0-9]+(:[0-9]+)?(-[0-9]+(:[0-9]+)?)?)?$/.test(lineChar)) {
+    if (!/^(L[0-9]+(:[0-9]+)?(-L?[0-9]+(:[0-9]+)?)?)?$/.test(lineChar)) {
         return {} // invalid
     }
 
@@ -394,6 +446,9 @@ function findLineInSearchParams(searchParams: URLSearchParams): LineOrPositionOr
 function parseLineOrPosition(
     str: string
 ): { line: undefined; character: undefined } | { line: number; character?: number } {
+    if (str.startsWith('L')) {
+        str = str.slice(1)
+    }
     const parts = str.split(':', 2)
     let line: number | undefined
     let character: number | undefined
@@ -437,7 +492,7 @@ export function toViewStateHashComponent(viewState: string | undefined): string 
     return viewState ? `&tab=${viewState}` : ''
 }
 
-const positionStr = (pos: Position) => pos.line + '' + (pos.character ? ',' + pos.character : '')
+const positionStr = (pos: Position): string => pos.line + '' + (pos.character ? ',' + pos.character : '')
 
 /**
  * The inverse of parseRepoURI, this generates a string from parsed values.
@@ -453,7 +508,7 @@ export function makeRepoURI(parsed: ParsedRepoURI): RepoURI {
     return uri
 }
 
-export const toRootURI = (ctx: RepoSpec & ResolvedRevSpec) => `git://${ctx.repoName}?${ctx.commitID}`
+export const toRootURI = (ctx: RepoSpec & ResolvedRevSpec): string => `git://${ctx.repoName}?${ctx.commitID}`
 export function toURIWithPath(ctx: RepoSpec & ResolvedRevSpec & FileSpec): string {
     return `git://${ctx.repoName}?${ctx.commitID}#${ctx.filePath}`
 }
@@ -467,7 +522,7 @@ export function toURIWithPath(ctx: RepoSpec & ResolvedRevSpec & FileSpec): strin
  * is `git://r?a9cb9d#f`, it would be translated to `git://r?mybranch#f`.
  */
 export function withWorkspaceRootInputRevision(
-    workspaceRoots: WorkspaceRootWithMetadata[],
+    workspaceRoots: readonly WorkspaceRootWithMetadata[],
     uri: ParsedRepoURI
 ): ParsedRepoURI {
     const inWorkspaceRoot = workspaceRoots.find(root => {
@@ -482,12 +537,36 @@ export function withWorkspaceRootInputRevision(
 
 /**
  * Builds a URL query for the given query (without leading `?`).
+ *
+ * @param query the search query
+ * @param patternType the pattern type this query should be interpreted in.
+ * Having a `patternType:` filter in the query overrides this argument.
  */
-export function buildSearchURLQuery(query: string): string {
+export function buildSearchURLQuery(query: string, patternType: SearchPatternType): string {
     const searchParams = new URLSearchParams()
-    searchParams.set('q', query)
+    const patternTypeInQuery = parsePatternTypeFromQuery(query)
+    if (patternTypeInQuery) {
+        const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal)\b/i
+        const newQuery = query.replace(patternTypeRegexp, '')
+        searchParams.set('q', newQuery)
+        searchParams.set('patternType', patternTypeInQuery.toLowerCase())
+    } else {
+        searchParams.set('q', query)
+        searchParams.set('patternType', patternType)
+    }
+
     return searchParams
         .toString()
         .replace(/%2F/g, '/')
         .replace(/%3A/g, ':')
+}
+
+function parsePatternTypeFromQuery(query: string): SearchPatternType | undefined {
+    const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal)\b/i
+    const matches = query.match(patternTypeRegexp)
+    if (matches && matches.groups && matches.groups.type) {
+        return matches.groups.type as SearchPatternType
+    }
+
+    return undefined
 }

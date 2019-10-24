@@ -1,4 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { parseISO } from 'date-fns'
 import formatDistanceStrict from 'date-fns/formatDistanceStrict'
 import { isEqual } from 'lodash'
 import ErrorIcon from 'mdi-react/ErrorIcon'
@@ -168,7 +169,7 @@ export class NewProductSubscriptionPaymentSection extends React.PureComponent<
                         <>
                             Total: ${numberWithCommas(this.state.previewInvoiceOrError.price / 100)} for{' '}
                             {formatDistanceStrict(
-                                this.state.previewInvoiceOrError.afterInvoiceItem.expiresAt,
+                                parseISO(this.state.previewInvoiceOrError.afterInvoiceItem.expiresAt),
                                 Date.now()
                             )}{' '}
                             ({formatUserCount(this.props.productSubscription.userCount)})

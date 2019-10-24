@@ -15,7 +15,7 @@ The Sourcegraph GraphQL API supports the following types of queries:
 Generate an access token on your Sourcegraph instance at:
 
 ```none
-https://sourcegraph.example.com/user/account/tokens
+https://sourcegraph.example.com/user/settings/tokens
 ```
 
 Then run this query to echo your username back:
@@ -46,6 +46,10 @@ If you have not yet set up a Sourcegraph server, you can also test out the API o
 ### Documentation
 
 Sourcegraph's GraphQL API documentation is available directly in the API console itself. To access the documentation, click **Docs** on the right-hand side of the API console page.
+
+### Search
+
+See [additional documentation about search GraphQL API](search.md).
 
 ### Sudo access tokens
 

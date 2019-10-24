@@ -86,8 +86,8 @@ export const OrgInvitationPage = withAuthenticatedUser(
             this.componentUpdates.next(this.props)
         }
 
-        public componentWillReceiveProps(props: Props): void {
-            this.componentUpdates.next(props)
+        public componentDidUpdate(): void {
+            this.componentUpdates.next(this.props)
         }
 
         public componentWillUnmount(): void {
@@ -139,12 +139,13 @@ export const OrgInvitationPage = withAuthenticatedUser(
                                     >
                                         Join {this.props.org.name}
                                     </button>
-                                    <Link className="btn btn-outline-link" to={orgURL(this.props.org.name)}>
+                                    <Link className="btn btn-link" to={orgURL(this.props.org.name)}>
                                         Go to {this.props.org.name}'s profile
                                     </Link>
                                 </div>
                                 <div>
                                     <button
+                                        type="button"
                                         className="btn btn-link btn-sm"
                                         disabled={this.state.submissionOrError === 'loading'}
                                         onClick={this.onDeclineInvitation}

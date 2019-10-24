@@ -5,16 +5,17 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestFilteringExtensionIDs(t *testing.T) {
 	t.Run("filterStripLocalExtensionIDs on localhost", func(t *testing.T) {
-		conf.Mock(&conf.Unified{Critical: schema.CriticalConfiguration{ExternalURL: "http://localhost:3080"}})
-		defer conf.Mock(nil)
+		before := globals.ExternalURL()
+		globals.SetExternalURL(&url.URL{Scheme: "http", Host: "localhost:3080"})
+		defer globals.SetExternalURL(before)
+
 		input := []string{"localhost:3080/owner1/name1", "owner2/name2"}
 		want := []string{"owner1/name1"}
 		got := filterStripLocalExtensionIDs(input)
@@ -23,9 +24,10 @@ func TestFilteringExtensionIDs(t *testing.T) {
 		}
 	})
 	t.Run("filterStripLocalExtensionIDs on Sourcegraph.com", func(t *testing.T) {
-		oldExternalURL := globals.ExternalURL
-		globals.ExternalURL = &url.URL{Scheme: "https", Host: "sourcegraph.com"}
-		defer func() { globals.ExternalURL = oldExternalURL }()
+		orig := envvar.SourcegraphDotComMode()
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(orig) // reset
+
 		input := []string{"localhost:3080/owner1/name1", "owner2/name2"}
 		want := []string{"owner2/name2"}
 		got := filterStripLocalExtensionIDs(input)

@@ -9,9 +9,9 @@ import (
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/jsonx"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 type settings struct{}
@@ -81,9 +81,16 @@ func (o *settings) GetLatest(ctx context.Context, subject api.SettingsSubject) (
 
 // ListAll lists ALL settings (across all users, orgs, etc).
 //
+// If impreciseSubstring is given, only settings whose raw JSONC string contains the substring are
+// returned. This is only intended for use by migration code that needs to update settings, where
+// limiting to matching settings can significantly narrow the amount of work necessary. For example,
+// a migration to rename a settings property `foo` to `bar` would narrow the search space by only
+// processing settings that contain the string `foo` (which will yield false positives, but that's
+// acceptable because the migration shouldn't modify those results anyway).
+//
 // 🚨 SECURITY: This method does NOT verify the user is an admin. The caller is
 // responsible for ensuring this or that the response never makes it to a user.
-func (o *settings) ListAll(ctx context.Context) (_ []*api.Settings, err error) {
+func (o *settings) ListAll(ctx context.Context, impreciseSubstring string) (_ []*api.Settings, err error) {
 	tr, ctx := trace.New(ctx, "db.Settings.ListAll", "")
 	defer func() {
 		tr.SetError(err)
@@ -101,8 +108,9 @@ func (o *settings) ListAll(ctx context.Context) (_ []*api.Settings, err error) {
 		SELECT q.id, q.org_id, q.user_id, CASE WHEN users.deleted_at IS NULL THEN q.author_user_id ELSE NULL END, q.contents, q.created_at
 		FROM q
 		LEFT JOIN users ON users.id=q.author_user_id
+		WHERE contents LIKE %s
 		ORDER BY q.org_id, q.user_id, q.author_user_id, q.id DESC
-	`)
+	`, "%"+impreciseSubstring+"%")
 	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
@@ -138,6 +146,15 @@ func (o *settings) getLatest(ctx context.Context, queryTarget queryable, subject
 	if len(settings) != 1 {
 		// No configuration has been set for this subject yet.
 		return nil, nil
+	}
+	if settings[0].Contents == "" {
+		// On some instances user, org, and global settings are an invalid
+		// empty string / null.
+		//
+		// This happens particularly on instances that ran old versions of
+		// Sourcegraph where we didn't enforce that settings contents had to be
+		// non-empty for correctness.
+		settings[0].Contents = "{}"
 	}
 	return settings[0], nil
 }

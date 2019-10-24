@@ -1,4 +1,3 @@
-// tslint:disable:no-submodule-imports Avoid loading grammars for unused languages.
 import { registerLanguage } from 'highlight.js/lib/highlight'
 
 let registered = false
@@ -16,6 +15,7 @@ export function registerHighlightContributions(): void {
         return
     }
     registered = true
+    /* eslint-disable @typescript-eslint/no-require-imports */
     registerLanguage('go', require('highlight.js/lib/languages/go'))
     registerLanguage('javascript', require('highlight.js/lib/languages/javascript'))
     registerLanguage('typescript', require('highlight.js/lib/languages/typescript'))
@@ -41,4 +41,7 @@ export function registerHighlightContributions(): void {
     registerLanguage('diff', require('highlight.js/lib/languages/diff'))
     registerLanguage('json', require('highlight.js/lib/languages/json'))
     registerLanguage('yaml', require('highlight.js/lib/languages/yaml'))
+    registerLanguage('kotlin', require('highlight.js/lib/languages/kotlin'))
+    registerLanguage('dart', require('highlight.js/lib/languages/dart'))
+    /* eslint-enable @typescript-eslint/no-require-imports */
 }

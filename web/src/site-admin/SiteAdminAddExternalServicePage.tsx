@@ -1,20 +1,24 @@
 import * as H from 'history'
-import * as React from 'react'
+import React from 'react'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, map, switchMap, tap } from 'rxjs/operators'
+import { Markdown } from '../../../shared/src/components/Markdown'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
+import { renderMarkdown } from '../../../shared/src/util/markdown'
 import { mutateGraphQL } from '../backend/graphql'
 import { PageTitle } from '../components/PageTitle'
 import { refreshSiteFlags } from '../site/backend'
-import { ALL_EXTERNAL_SERVICES, ExternalServiceMetadata, GITHUB_EXTERNAL_SERVICE } from './externalServices'
+import { ThemeProps } from '../theme'
+import { ExternalServiceCard } from '../components/ExternalServiceCard'
+import { ExternalServiceVariant, getExternalService } from './externalServices'
 import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
 
-interface Props {
+interface Props extends ThemeProps {
     history: H.History
-    location: H.Location
-    isLightTheme: boolean
+    kind: GQL.ExternalServiceKind
+    variant?: ExternalServiceVariant
     eventLogger: {
         logViewEvent: (event: 'AddExternalService') => void
         log: (event: 'AddExternalServiceFailed' | 'AddExternalServiceSucceeded', eventProperties?: any) => void
@@ -34,41 +38,29 @@ interface State {
      * True if the form is currently being submitted
      */
     loading: boolean
+
+    /**
+     * Holds the externalService if creation was successful but produced a warning
+     */
+    externalService?: GQL.IExternalService
 }
 
+/**
+ * Page for adding a single external service
+ */
 export class SiteAdminAddExternalServicePage extends React.Component<Props, State> {
-    public state: State = {
-        loading: false,
-        displayName: '',
-        config: this.getExternalServiceMetadata().defaultConfig,
+    constructor(props: Props) {
+        super(props)
+        const serviceKindMetadata = getExternalService(this.props.kind, this.props.variant)
+        this.state = {
+            loading: false,
+            displayName: serviceKindMetadata.defaultDisplayName,
+            config: serviceKindMetadata.defaultConfig,
+        }
     }
 
     private submits = new Subject<GQL.IAddExternalServiceInput>()
     private subscriptions = new Subscription()
-
-    private getExternalServiceMetadata(kind?: string | GQL.ExternalServiceKind): ExternalServiceMetadata {
-        if (!kind) {
-            const params = new URLSearchParams(this.props.history.location.search)
-            kind = params.get('kind') || undefined
-        }
-
-        if (kind) {
-            const k = kind
-            const service = ALL_EXTERNAL_SERVICES.find(s => s.kind === k.toUpperCase())
-            if (service) {
-                return service
-            }
-        }
-        return GITHUB_EXTERNAL_SERVICE
-    }
-
-    private getExternalServiceInput(): GQL.IAddExternalServiceInput {
-        return {
-            displayName: this.state.displayName,
-            config: this.state.config,
-            kind: this.getExternalServiceMetadata().kind,
-        }
-    }
 
     public componentDidMount(): void {
         this.props.eventLogger.logViewEvent('AddExternalService')
@@ -78,14 +70,6 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                     tap(() => this.setState({ loading: true })),
                     switchMap(input =>
                         addExternalService(input, this.props.eventLogger).pipe(
-                            map(() => {
-                                // Refresh site flags so that global site alerts
-                                // reflect the latest configuration.
-                                refreshSiteFlags().subscribe(undefined, err => console.error(err))
-
-                                this.setState({ loading: false })
-                                this.props.history.push(`/site-admin/external-services`)
-                            }),
                             catchError(error => {
                                 console.error(error)
                                 this.setState({ error, loading: false })
@@ -94,7 +78,18 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                         )
                     )
                 )
-                .subscribe()
+                .subscribe(externalService => {
+                    if (externalService.warning) {
+                        this.setState({ externalService, error: undefined, loading: false })
+                    } else {
+                        // Refresh site flags so that global site alerts
+                        // reflect the latest configuration.
+                        // tslint:disable-next-line: rxjs-no-nested-subscribe
+                        refreshSiteFlags().subscribe({ error: err => console.error(err) })
+                        this.setState({ loading: false })
+                        this.props.history.push('/site-admin/external-services')
+                    }
+                })
         )
     }
 
@@ -103,47 +98,63 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
     }
 
     public render(): JSX.Element | null {
+        const kindMetadata = getExternalService(this.props.kind, this.props.variant)
+        const createdExternalService = this.state.externalService
         return (
-            <div className="add-external-service-page">
+            <div className="add-external-service-page mt-3">
                 <PageTitle title="Add external service" />
-                <h1>Add a new external service</h1>
-                <p>Sourcegraph can synchronize data (e.g. code) from external services.</p>
-                <SiteAdminExternalServiceForm
-                    error={this.state.error}
-                    input={this.getExternalServiceInput()}
-                    history={this.props.history}
-                    isLightTheme={this.props.isLightTheme}
-                    mode="create"
-                    loading={this.state.loading}
-                    onSubmit={this.onSubmit}
-                    onChange={this.onChange}
-                />
+                <h1>Add external service</h1>
+                {createdExternalService && createdExternalService.warning ? (
+                    <div>
+                        <div className="mb-3">
+                            <ExternalServiceCard
+                                {...kindMetadata}
+                                kind={this.props.kind}
+                                title={createdExternalService.displayName}
+                                shortDescription="Update this external service configuration to manage repository mirroring."
+                                to={`/site-admin/external-services/${createdExternalService.id}`}
+                            />
+                        </div>
+                        <div className="alert alert-warning">
+                            <h4>Warning</h4>
+                            <Markdown dangerousInnerHTML={renderMarkdown(createdExternalService.warning)} />
+                        </div>
+                    </div>
+                ) : (
+                    <div>
+                        <div className="mb-3">
+                            <ExternalServiceCard {...kindMetadata} kind={this.props.kind} />
+                        </div>
+                        <div className="mb-4">{kindMetadata.longDescription}</div>
+                        <SiteAdminExternalServiceForm
+                            {...this.props}
+                            error={this.state.error}
+                            input={this.getExternalServiceInput()}
+                            editorActions={kindMetadata.editorActions}
+                            jsonSchema={kindMetadata.jsonSchema}
+                            mode="create"
+                            onSubmit={this.onSubmit}
+                            onChange={this.onChange}
+                            loading={this.state.loading}
+                        />
+                    </div>
+                )}
             </div>
         )
     }
 
-    private onChange = (input: GQL.IAddExternalServiceInput) => {
-        if (input.kind.toLowerCase() === this.getExternalServiceMetadata().kind.toLowerCase()) {
-            this.setState({
-                displayName: input.displayName,
-                config: input.config,
-            })
-            return
+    private getExternalServiceInput(): GQL.IAddExternalServiceInput {
+        return {
+            displayName: this.state.displayName,
+            config: this.state.config,
+            kind: this.props.kind,
         }
+    }
 
+    private onChange = (input: GQL.IAddExternalServiceInput) => {
         this.setState({
             displayName: input.displayName,
-            config: this.getExternalServiceMetadata(input.kind).defaultConfig,
-        })
-
-        const { search, ...loc } = this.props.location
-
-        const params = new URLSearchParams(search)
-        params.set('kind', input.kind.toLowerCase())
-
-        this.props.history.replace({
-            ...loc,
-            search: params.toString(),
+            config: input.config,
         })
     }
 
@@ -164,6 +175,9 @@ function addExternalService(
             mutation addExternalService($input: AddExternalServiceInput!) {
                 addExternalService(input: $input) {
                     id
+                    kind
+                    displayName
+                    warning
                 }
             }
         `,

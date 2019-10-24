@@ -12,7 +12,7 @@ interface FileProps extends TreeLayerProps {
     linkRowClick: (e: React.MouseEvent<HTMLAnchorElement>) => void
 }
 
-export const File: React.FunctionComponent<FileProps> = (props: FileProps) => (
+export const File: React.FunctionComponent<FileProps> = props => (
     <tr key={props.entryInfo.path} className={props.className}>
         <td className="tree__cell">
             {props.entryInfo.submodule ? (
@@ -27,10 +27,11 @@ export const File: React.FunctionComponent<FileProps> = (props: FileProps) => (
                     >
                         <div className="tree__row-contents-text">
                             <span
+                                // needed because of dynamic styling
+                                // eslint-disable-next-line react/forbid-dom-props
+                                style={treePadding(props.depth, true)}
                                 className="tree__row-icon"
                                 onClick={props.noopRowClick}
-                                // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
-                                style={treePadding(props.depth, true)}
                                 tabIndex={-1}
                             >
                                 <RepositoryIcon className="icon-inline" />
@@ -45,7 +46,8 @@ export const File: React.FunctionComponent<FileProps> = (props: FileProps) => (
                         <div className="tree__row-contents-text">
                             <span
                                 className="tree__row-icon"
-                                // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
+                                // needed because of dynamic styling
+                                // eslint-disable-next-line react/forbid-dom-props
                                 style={treePadding(props.depth, true)}
                             >
                                 <RepositoryIcon className="icon-inline" />
@@ -64,7 +66,7 @@ export const File: React.FunctionComponent<FileProps> = (props: FileProps) => (
                     data-tree-path={props.entryInfo.path}
                     draggable={false}
                     title={props.entryInfo.path}
-                    // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
+                    // eslint-disable-next-line react/forbid-dom-props (needed because of dynamic styling)
                     style={treePadding(props.depth, false)}
                     tabIndex={-1}
                 >
@@ -74,7 +76,8 @@ export const File: React.FunctionComponent<FileProps> = (props: FileProps) => (
             {props.index === maxEntries - 1 && (
                 <div
                     className="tree__row-alert alert alert-warning"
-                    // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
+                    // needed because of dynamic styling
+                    // eslint-disable-next-line react/forbid-dom-props
                     style={treePadding(props.depth, true)}
                 >
                     Too many entries. Use search to find a specific file.

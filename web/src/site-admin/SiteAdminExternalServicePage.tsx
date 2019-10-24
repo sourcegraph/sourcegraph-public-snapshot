@@ -2,14 +2,16 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Observable, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
+import { concat, Observable, of, Subject, Subscription } from 'rxjs'
+import { catchError, delay, distinctUntilChanged, map, mergeMap, startWith, switchMap } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
-import { queryGraphQL } from '../backend/graphql'
+import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
+import { ExternalServiceCard } from '../components/ExternalServiceCard'
+import { getExternalService } from './externalServices'
 import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
 
 interface Props extends RouteComponentProps<{ id: GQL.ID }> {
@@ -25,15 +27,15 @@ interface State {
      * The result of updating the external service: null when complete or not started yet,
      * loading, or an error.
      */
-    updateOrError: null | typeof LOADING | ErrorLike
-    updated: boolean
+    updatedOrError: null | true | typeof LOADING | ErrorLike
+
+    warning?: string
 }
 
 export class SiteAdminExternalServicePage extends React.Component<Props, State> {
     public state: State = {
         externalServiceOrError: LOADING,
-        updateOrError: null,
-        updated: false,
+        updatedOrError: null,
     }
 
     private componentUpdates = new Subject<Props>()
@@ -63,18 +65,25 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
             this.submits
                 .pipe(
                     switchMap(input =>
-                        updateExternalService(input).pipe(
-                            mapTo(null),
-                            startWith(LOADING),
-                            catchError(err => [asError(err)]),
-                            // Flash updated text if not an error
-                            map(u => ({ updateOrError: u, updated: !isErrorLike(u) })),
-                            // Remove updated text after 500ms
-                            tap(() => setTimeout(() => this.setState({ updated: false }), 500))
+                        concat(
+                            [{ updatedOrError: LOADING, warning: null }],
+                            updateExternalService(input).pipe(
+                                mergeMap(({ warning }) =>
+                                    warning
+                                        ? of({ warning, updatedOrError: null })
+                                        : concat(
+                                              // Flash "updated" text
+                                              of({ updatedOrError: true }),
+                                              // Hide "updated" text again after 1s
+                                              of({ updatedOrError: null }).pipe(delay(1000))
+                                          )
+                                ),
+                                catchError((error: Error) => [{ updatedOrError: asError(error) }])
+                            )
                         )
                     )
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate))
+                .subscribe(stateUpdate => this.setState(stateUpdate as State))
         )
 
         this.componentUpdates.next(this.props)
@@ -90,8 +99,8 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
 
     public render(): JSX.Element | null {
         let error: ErrorLike | undefined
-        if (isErrorLike(this.state.updateOrError)) {
-            error = this.state.updateOrError
+        if (isErrorLike(this.state.updatedOrError)) {
+            error = this.state.updatedOrError
         }
 
         const externalService =
@@ -100,31 +109,44 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                 this.state.externalServiceOrError) ||
             undefined
 
+        const externalServiceCategory = externalService && getExternalService(externalService.kind)
+
         return (
-            <div className="site-admin-configuration-page">
+            <div className="site-admin-configuration-page mt-3">
                 {externalService ? (
                     <PageTitle title={`External service - ${externalService.displayName}`} />
                 ) : (
                     <PageTitle title="External service" />
                 )}
-                <h2>External service</h2>
+                <h2>Update external service</h2>
                 {this.state.externalServiceOrError === LOADING && <LoadingSpinner className="icon-inline" />}
                 {isErrorLike(this.state.externalServiceOrError) && (
                     <p className="alert alert-danger">{upperFirst(this.state.externalServiceOrError.message)}</p>
                 )}
                 {externalService && (
+                    <div className="mb-3">
+                        <ExternalServiceCard
+                            {...getExternalService(externalService.kind)}
+                            kind={externalService.kind}
+                        />
+                    </div>
+                )}
+                {externalService && externalServiceCategory && (
                     <SiteAdminExternalServiceForm
                         input={externalService}
+                        editorActions={externalServiceCategory.editorActions}
+                        jsonSchema={externalServiceCategory.jsonSchema}
                         error={error}
+                        warning={this.state.warning}
                         mode="edit"
-                        loading={this.state.updateOrError === LOADING}
+                        loading={this.state.updatedOrError === LOADING}
                         onSubmit={this.onSubmit}
                         onChange={this.onChange}
                         history={this.props.history}
                         isLightTheme={this.props.isLightTheme}
                     />
                 )}
-                {this.state.updated && (
+                {this.state.updatedOrError === true && (
                     <p className="alert alert-success user-settings-profile-page__alert">Updated!</p>
                 )}
             </div>
@@ -156,22 +178,21 @@ function isExternalService(
     return externalServiceOrError !== LOADING && !isErrorLike(externalServiceOrError)
 }
 
-function updateExternalService(input: GQL.IUpdateExternalServiceInput): Observable<GQL.IExternalService> {
-    return queryGraphQL(
+function updateExternalService(
+    input: GQL.IUpdateExternalServiceInput
+): Observable<Pick<GQL.IExternalService, 'warning'>> {
+    return mutateGraphQL(
         gql`
             mutation UpdateExternalService($input: UpdateExternalServiceInput!) {
                 updateExternalService(input: $input) {
-                    id
-                    kind
-                    displayName
-                    config
+                    warning
                 }
             }
         `,
         { input }
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.node as GQL.IExternalService)
+        map(data => data.updateExternalService)
     )
 }
 

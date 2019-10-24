@@ -1,11 +1,13 @@
 import {
     buildSearchURLQuery,
+    lprToSelectionsZeroIndexed,
     makeRepoURI,
     parseHash,
     parseRepoURI,
     toPrettyBlobURL,
     withWorkspaceRootInputRevision,
 } from './url'
+import { SearchPatternType } from '../graphql/schema'
 
 /**
  * Asserts deep object equality using node's assert.deepEqual, except it (1) ignores differences in the
@@ -94,6 +96,15 @@ describe('parseRepoURI', () => {
                     character: 9,
                 },
             },
+        })
+    })
+
+    test('should parse a file with special characters', () => {
+        const parsed = parseRepoURI('git://github.com/gorilla/mux?branch#space%20here.go')
+        assertDeepStrictEqual(parsed, {
+            repoName: 'github.com/gorilla/mux',
+            rev: 'branch',
+            filePath: 'space here.go',
         })
     })
 })
@@ -205,6 +216,8 @@ describe('util/url', () => {
         test('parses hash with range', () => {
             expect(parseHash('L1-2')).toEqual({ line: 1, endLine: 2 })
             expect(parseHash('L1:2-3:4')).toEqual({ line: 1, character: 2, endLine: 3, endCharacter: 4 })
+            expect(parseHash('L47-L55')).toEqual({ line: 47, endLine: 55 })
+            expect(parseHash('L34:2-L38:3')).toEqual({ line: 34, character: 2, endLine: 38, endCharacter: 3 })
         })
 
         test('parses hash with references', () => {
@@ -273,9 +286,141 @@ describe('withWorkspaceRootInputRevision', () => {
 })
 
 describe('buildSearchURLQuery', () => {
-    it('builds the URL query for a search', () => expect(buildSearchURLQuery('foo')).toBe('q=foo'))
-    it('handles an empty query', () => expect(buildSearchURLQuery('')).toBe('q='))
+    it('builds the URL query for a regular expression search', () =>
+        expect(buildSearchURLQuery('foo', SearchPatternType.regexp)).toBe('q=foo&patternType=regexp'))
+    it('builds the URL query for a literal search', () =>
+        expect(buildSearchURLQuery('foo', SearchPatternType.literal)).toBe('q=foo&patternType=literal'))
+    it('handles an empty query', () =>
+        expect(buildSearchURLQuery('', SearchPatternType.regexp)).toBe('q=&patternType=regexp'))
     it('handles characters that need encoding', () =>
-        expect(buildSearchURLQuery('foo bar%baz')).toBe('q=foo+bar%25baz'))
-    it('preserves / and : for readability', () => expect(buildSearchURLQuery('repo:foo/bar')).toBe('q=repo:foo/bar'))
+        expect(buildSearchURLQuery('foo bar%baz', SearchPatternType.regexp)).toBe('q=foo+bar%25baz&patternType=regexp'))
+    it('preserves / and : for readability', () =>
+        expect(buildSearchURLQuery('repo:foo/bar', SearchPatternType.regexp)).toBe('q=repo:foo/bar&patternType=regexp'))
+    it('overrides the patternType parameter if a patternType field exists in the query', () =>
+        expect(buildSearchURLQuery('foo patternType:literal', SearchPatternType.regexp)).toBe(
+            'q=foo+&patternType=literal'
+        ))
+})
+
+describe('lprToSelectionsZeroIndexed', () => {
+    test('converts an LPR with only a start line', () => {
+        assertDeepStrictEqual(
+            lprToSelectionsZeroIndexed({
+                line: 5,
+            }),
+            [
+                {
+                    start: {
+                        line: 4,
+                        character: 0,
+                    },
+                    end: {
+                        line: 4,
+                        character: 0,
+                    },
+                    anchor: {
+                        line: 4,
+                        character: 0,
+                    },
+                    active: {
+                        line: 4,
+                        character: 0,
+                    },
+                    isReversed: false,
+                },
+            ]
+        )
+    })
+
+    test('converts an LPR with a line and a character', () => {
+        assertDeepStrictEqual(
+            lprToSelectionsZeroIndexed({
+                line: 5,
+                character: 45,
+            }),
+            [
+                {
+                    start: {
+                        line: 4,
+                        character: 44,
+                    },
+                    end: {
+                        line: 4,
+                        character: 44,
+                    },
+                    anchor: {
+                        line: 4,
+                        character: 44,
+                    },
+                    active: {
+                        line: 4,
+                        character: 44,
+                    },
+                    isReversed: false,
+                },
+            ]
+        )
+    })
+
+    test('converts an LPR with a start and end line', () => {
+        assertDeepStrictEqual(
+            lprToSelectionsZeroIndexed({
+                line: 12,
+                endLine: 15,
+            }),
+            [
+                {
+                    start: {
+                        line: 11,
+                        character: 0,
+                    },
+                    end: {
+                        line: 14,
+                        character: 0,
+                    },
+                    anchor: {
+                        line: 11,
+                        character: 0,
+                    },
+                    active: {
+                        line: 14,
+                        character: 0,
+                    },
+                    isReversed: false,
+                },
+            ]
+        )
+    })
+
+    test('converts an LPR with a start and end line and characters', () => {
+        assertDeepStrictEqual(
+            lprToSelectionsZeroIndexed({
+                line: 12,
+                character: 30,
+                endLine: 15,
+                endCharacter: 60,
+            }),
+            [
+                {
+                    start: {
+                        line: 11,
+                        character: 29,
+                    },
+                    end: {
+                        line: 14,
+                        character: 59,
+                    },
+                    anchor: {
+                        line: 11,
+                        character: 29,
+                    },
+                    active: {
+                        line: 14,
+                        character: 59,
+                    },
+                    isReversed: false,
+                },
+            ]
+        )
+    })
 })

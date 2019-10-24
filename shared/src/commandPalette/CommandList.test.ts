@@ -1,8 +1,8 @@
-import { ActionItemProps } from '../actions/ActionItem'
+import { ActionItemAction } from '../actions/ActionItem'
 import { filterAndRankItems } from './CommandList'
 
 describe('filterAndRankItems', () => {
-    function actionIDs(items: ActionItemProps[]): string[] {
+    function actionIDs(items: ActionItemAction[]): string[] {
         return items.map(({ action: { id } }) => id)
     }
 

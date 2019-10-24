@@ -19,15 +19,23 @@ $dropdown-padding-y: $dropdown-item-padding-y;
 }
 
 .theme-dark {
-    --dropdown-bg: #{$color-bg-4};
+    --dropdown-bg: #0e121b;
     --dropdown-border-color: #{$color-border};
     --dropdown-link-hover-bg: #{$color-bg-2};
     --dropdown-header-color: #{$color-text-1};
+    .dropdown-menu {
+        border-radius: 4px;
+        box-shadow: 0 0 12px 0 rgba(0, 27, 76, 0.4);
+    }
 }
 
 .theme-light {
-    --dropdown-bg: var(--body-bg);
+    --dropdown-bg: #ffffff;
     --dropdown-border-color: #{$color-light-border};
     --dropdown-link-hover-bg: #{$color-light-bg-2};
     --dropdown-header-color: #{$color-light-text-2};
+    .dropdown-menu {
+        border-radius: 4px;
+        box-shadow: 0 0 12px 0 rgba(0, 27, 76, 0.085);
+    }
 }

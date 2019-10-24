@@ -126,7 +126,7 @@ func scanDefault(s *scanner) stateFn {
 
 func scanText(s *scanner) stateFn {
 	// Characters that may come before a ':' (TokenColon) in a TokenLiteral.
-	preColonChars := "abcdefghijklmnopqrstuvwxyz0123456789"
+	preColonChars := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 	for {
 		if s.eof() {

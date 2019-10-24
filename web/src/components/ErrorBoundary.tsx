@@ -1,3 +1,4 @@
+import * as sentry from '@sentry/browser'
 import H from 'history'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import ReloadIcon from 'mdi-react/ReloadIcon'
@@ -19,7 +20,7 @@ interface State {
 
 /**
  * A [React error boundary](https://reactjs.org/docs/error-boundaries.html) that catches errors from
- * its children. If an error occurs, it displays a nice error page instead of a blank page.
+ * its children. If an error occurs, it displays a nice error page instead of a blank page and reports the error to Sentry.
  *
  * Components should handle their own errors (and must not rely on this error boundary). This error
  * boundary is a last resort in case of an unexpected error.
@@ -31,10 +32,20 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
         return { error: asError(error) }
     }
 
+    public componentDidCatch(error: any, errorInfo: React.ErrorInfo): void {
+        sentry.withScope(scope => {
+            for (const [key, value] of Object.entries(errorInfo)) {
+                scope.setExtra(key, value)
+            }
+            sentry.captureException(error)
+        })
+    }
+
     public componentDidUpdate(prevProps: Props): void {
         if (prevProps.location !== this.props.location) {
             // Reset error state when location changes, so that the user can try navigating to a different page to
             // clear the error.
+            /* eslint react/no-did-update-set-state: warn */
             this.setState({ error: undefined })
         }
     }
@@ -52,7 +63,7 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
                         subtitle={
                             <div className="container">
                                 <p>A new version of Sourcegraph is available.</p>
-                                <button className="btn btn-primary" onClick={this.onReloadClick}>
+                                <button type="button" className="btn btn-primary" onClick={this.onReloadClick}>
                                     Reload to update
                                 </button>
                             </div>
@@ -72,7 +83,7 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
                                 contact your site admin or Sourcegraph support.
                             </p>
                             <p>
-                                <code>{this.state.error.message}</code>
+                                <code className="text-wrap">{this.state.error.message}</code>
                             </p>
                         </div>
                     }

@@ -1,0 +1,187 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`GitCommitNodeByline author (compact) 1`] = `
+<small
+  className="git-commit-node-byline git-commit-node-byline--no-committer "
+>
+  <img
+    className="user-avatar icon-inline mr-1"
+    data-tooltip="Alice Zhao"
+    src="http://example.com/alice.png"
+  />
+   
+  <strong
+    data-tooltip="alice@example.com"
+  >
+    Alice Zhao
+  </strong>
+   
+  committed 
+  <span
+    className="timestamp"
+    data-tooltip="1990-01-01"
+  >
+    about 16 years ago
+  </span>
+</small>
+`;
+
+exports[`GitCommitNodeByline author 1`] = `
+<small
+  className="git-commit-node-byline git-commit-node-byline--no-committer "
+>
+  <img
+    className="user-avatar icon-inline mr-1"
+    data-tooltip="Alice Zhao"
+    src="http://example.com/alice.png"
+  />
+   
+  <strong
+    data-tooltip="alice@example.com"
+  >
+    Alice Zhao
+  </strong>
+   
+  committed 
+  <span
+    className="timestamp"
+    data-tooltip="1990-01-01"
+  >
+    about 16 years ago
+  </span>
+</small>
+`;
+
+exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
+<small
+  className="git-commit-node-byline git-commit-node-byline--has-committer "
+>
+  <img
+    className="user-avatar icon-inline"
+    data-tooltip="Alice Zhao (author)"
+    src="http://example.com/alice.png"
+  />
+   
+  <img
+    className="user-avatar icon-inline mr-1"
+    data-tooltip="bYang (Bob Yang) (committer)"
+    src="http://example.com/bob.png"
+  />
+   
+  <strong
+    data-tooltip="alice@example.com"
+  >
+    Alice Zhao
+  </strong>
+   
+  authored
+   and
+   
+  <strong
+    data-tooltip="bob@example.com"
+  >
+    bYang (Bob Yang)
+  </strong>
+   
+  committed 
+  <span
+    className="timestamp"
+    data-tooltip="1991-01-01"
+  >
+    about 15 years ago
+  </span>
+</small>
+`;
+
+exports[`GitCommitNodeByline different author and committer 1`] = `
+<small
+  className="git-commit-node-byline git-commit-node-byline--has-committer "
+>
+  <img
+    className="user-avatar icon-inline"
+    data-tooltip="Alice Zhao (author)"
+    src="http://example.com/alice.png"
+  />
+   
+  <img
+    className="user-avatar icon-inline mr-1"
+    data-tooltip="bYang (Bob Yang) (committer)"
+    src="http://example.com/bob.png"
+  />
+   
+  <strong
+    data-tooltip="alice@example.com"
+  >
+    Alice Zhao
+  </strong>
+   
+  authored
+   and
+   
+  <strong
+    data-tooltip="bob@example.com"
+  >
+    bYang (Bob Yang)
+  </strong>
+   
+  committed 
+  <span
+    className="timestamp"
+    data-tooltip="1991-01-01"
+  >
+    about 15 years ago
+  </span>
+</small>
+`;
+
+exports[`GitCommitNodeByline omit GitHub committer 1`] = `
+<small
+  className="git-commit-node-byline git-commit-node-byline--no-committer "
+>
+  <img
+    className="user-avatar icon-inline mr-1"
+    data-tooltip="Alice Zhao"
+    src="http://example.com/alice.png"
+  />
+   
+  <strong
+    data-tooltip="alice@example.com"
+  >
+    Alice Zhao
+  </strong>
+   
+  committed 
+  <span
+    className="timestamp"
+    data-tooltip="1990-01-01"
+  >
+    about 16 years ago
+  </span>
+</small>
+`;
+
+exports[`GitCommitNodeByline same author and committer 1`] = `
+<small
+  className="git-commit-node-byline git-commit-node-byline--no-committer "
+>
+  <img
+    className="user-avatar icon-inline mr-1"
+    data-tooltip="Alice Zhao"
+    src="http://example.com/alice.png"
+  />
+   
+  <strong
+    data-tooltip="alice@example.com"
+  >
+    Alice Zhao
+  </strong>
+   
+  committed 
+  <span
+    className="timestamp"
+    data-tooltip="1990-01-01"
+  >
+    about 16 years ago
+  </span>
+</small>
+`;

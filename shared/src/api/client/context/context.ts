@@ -1,23 +1,6 @@
 import { basename, dirname, extname } from 'path'
 import { isSettingsValid, SettingsCascadeOrError } from '../../../settings/settings'
-import { Model, ViewComponentData } from '../model'
-import { TextDocumentItem } from '../types/textDocument'
-
-/**
- * Returns a new context created by applying the update context to the base context. It is equivalent to `{...base,
- * ...update}` in JavaScript except that null values in the update result in deletion of the property.
- */
-export function applyContextUpdate(base: Context, update: Context): Context {
-    const result = { ...base }
-    for (const [key, value] of Object.entries(update)) {
-        if (value === null) {
-            delete result[key]
-        } else {
-            result[key] = value
-        }
-    }
-    return result
-}
+import { CodeEditorWithPartialModel } from '../services/editorService'
 
 /**
  * Context is an arbitrary, immutable set of key-value pairs. Its value can be any JSON object.
@@ -33,10 +16,12 @@ export interface Context<T = never>
     > {}
 
 export type ContributionScope =
-    | (Pick<ViewComponentData, 'type' | 'selections'> & {
-          item: Pick<TextDocumentItem, 'uri' | 'languageId'>
-      })
-    | { type: 'panelView'; id: string }
+    | CodeEditorWithPartialModel
+    | {
+          type: 'panelView'
+          id: string
+          hasLocations: boolean
+      }
 
 /**
  * Looks up a key in the computed context, which consists of computed context properties (with higher precedence)
@@ -46,7 +31,7 @@ export type ContributionScope =
  * @param scope the user interface component in whose scope this computation should occur
  */
 export function getComputedContextProperty(
-    model: Model,
+    activeEditor: CodeEditorWithPartialModel | undefined,
     settings: SettingsCascadeOrError,
     context: Context<any>,
     key: string,
@@ -60,13 +45,12 @@ export function getComputedContextProperty(
         // which a falsey null default is useful).
         return value === undefined ? null : value
     }
-    const component: ContributionScope | null =
-        scope || (model.visibleViewComponents && model.visibleViewComponents.find(({ isActive }) => isActive)) || null
+    const component: ContributionScope | null = scope || activeEditor || null
     if (key === 'resource' || key === 'component' /* BACKCOMPAT: allow 'component' */) {
         return !!component
     }
     if (key.startsWith('resource.')) {
-        if (!component || component.type !== 'textEditor') {
+        if (!component || component.type !== 'CodeEditor') {
             return null
         }
         // TODO(sqs): Define these precisely. If the resource is in a repository, what is the "path"? Is it the
@@ -75,27 +59,27 @@ export function getComputedContextProperty(
         const prop = key.slice('resource.'.length)
         switch (prop) {
             case 'uri':
-                return component.item.uri
+                return component.resource
             case 'basename':
-                return basename(component.item.uri)
+                return basename(component.resource)
             case 'dirname':
-                return dirname(component.item.uri)
+                return dirname(component.resource)
             case 'extname':
-                return extname(component.item.uri)
+                return extname(component.resource)
             case 'language':
-                return component.item.languageId
+                return component.model.languageId
             case 'type':
                 return 'textDocument'
         }
     }
     if (key.startsWith('component.')) {
-        if (!component || component.type !== 'textEditor') {
+        if (!component || component.type !== 'CodeEditor') {
             return null
         }
         const prop = key.slice('component.'.length)
         switch (prop) {
             case 'type':
-                return 'textEditor'
+                return 'CodeEditor'
             case 'selections':
                 return component.selections
             case 'selection':
@@ -122,6 +106,8 @@ export function getComputedContextProperty(
         switch (prop) {
             case 'id':
                 return component.id
+            case 'hasLocations':
+                return component.hasLocations
         }
     }
     if (key === 'context') {

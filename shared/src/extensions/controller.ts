@@ -1,20 +1,17 @@
-import { combineLatest, from, Observable, Subject, Subscription, Unsubscribable } from 'rxjs'
-import { distinctUntilChanged, map, share, switchMap, tap } from 'rxjs/operators'
+import { from, Observable, Subject, Subscription, Unsubscribable } from 'rxjs'
+import { map, publishReplay, refCount } from 'rxjs/operators'
 import { createExtensionHostClient } from '../api/client/client'
 import { Services } from '../api/client/services'
 import { ExecuteCommandParams } from '../api/client/services/command'
-import { ContributionRegistry } from '../api/client/services/contribution'
+import { ContributionRegistry, parseContributionExpressions } from '../api/client/services/contribution'
 import { ExtensionsService } from '../api/client/services/extensionsService'
-import { MessageType } from '../api/client/services/notifications'
+import { NotificationType } from '../api/client/services/notifications'
 import { InitData } from '../api/extension/extensionHost'
-import { Contributions } from '../api/protocol'
-import { createConnection } from '../api/protocol/jsonrpc2/connection'
-import { BrowserConsoleTracer } from '../api/protocol/jsonrpc2/trace'
 import { registerBuiltinClientCommands } from '../commands/commands'
 import { Notification } from '../notifications/notification'
 import { PlatformContext } from '../platform/context'
-import { asError, isErrorLike } from '../util/errors'
-import { ExtensionManifest } from './extensionManifest'
+import { asError, ErrorLike, isErrorLike } from '../util/errors'
+import { isDefined } from '../util/types'
 
 export interface Controller extends Unsubscribable {
     /**
@@ -67,30 +64,12 @@ export function createController(context: PlatformContext): Controller {
     const subscriptions = new Subscription()
 
     const services = new Services(context)
-    const extensionHostConnection = combineLatest(
-        context.createExtensionHost().pipe(
-            switchMap(async messageTransports => {
-                const connection = createConnection(messageTransports)
-                connection.listen()
-
-                const initData: InitData = {
-                    sourcegraphURL: context.sourcegraphURL,
-                    clientApplication: context.clientApplication,
-                }
-                await connection.sendRequest('initialize', [initData])
-                return connection
-            }),
-            share()
-        ),
-        context.traceExtensionHostCommunication
-    ).pipe(
-        tap(([connection, trace]) => {
-            connection.trace(trace ? new BrowserConsoleTracer('') : null)
-        }),
-        map(([connection]) => connection),
-        distinctUntilChanged()
-    )
-    const client = createExtensionHostClient(services, extensionHostConnection)
+    const extensionHostEndpoint = context.createExtensionHost()
+    const initData: InitData = {
+        sourcegraphURL: context.sourcegraphURL,
+        clientApplication: context.clientApplication,
+    }
+    const client = createExtensionHostClient(services, extensionHostEndpoint, initData)
     subscriptions.add(client)
 
     const notifications = new Subject<Notification>()
@@ -104,7 +83,7 @@ export function createController(context: PlatformContext): Controller {
     )
     subscriptions.add(
         services.notifications.progresses.subscribe(({ title, progress }) => {
-            notifications.next({ message: title, progress, type: MessageType.Log })
+            notifications.next({ message: title, progress, type: NotificationType.Log })
         })
     )
 
@@ -133,26 +112,19 @@ export function createController(context: PlatformContext): Controller {
         )
     )
 
-    // Print window/logMessage log messages to the browser devtools console.
-    subscriptions.add(
-        services.notifications.logMessages.subscribe(({ message }) => {
-            log('info', 'EXT', message)
-        })
-    )
-
     // Debug helpers.
     const DEBUG = true
     if (DEBUG) {
-        // Debug helper: log model changes.
-        const LOG_MODEL = false
-        if (LOG_MODEL) {
-            subscriptions.add(services.model.model.subscribe(model => log('info', 'model', model)))
+        // Debug helper: log editor changes.
+        const LOG_EDITORS = false
+        if (LOG_EDITORS) {
+            subscriptions.add(
+                services.editor.editorUpdates.subscribe(() => log('info', 'editors', services.editor.editors))
+            )
         }
 
         // Debug helpers: e.g., just run `sxservices` in devtools to get a reference to the services.
         ;(window as any).sxservices = services
-        // This value is synchronously available because observable has an underlying BehaviorSubject source.
-        subscriptions.add(services.model.model.subscribe(v => ((window as any).sxmodel = v)))
     }
 
     return {
@@ -163,7 +135,7 @@ export function createController(context: PlatformContext): Controller {
                 if (!suppressNotificationOnError) {
                     notifications.next({
                         message: asError(err).message,
-                        type: MessageType.Error,
+                        type: NotificationType.Error,
                         source: params.command,
                     })
                 }
@@ -173,22 +145,40 @@ export function createController(context: PlatformContext): Controller {
     }
 }
 
-function registerExtensionContributions(
-    contributionRegistry: ContributionRegistry,
+export function registerExtensionContributions(
+    contributionRegistry: Pick<ContributionRegistry, 'registerContributions'>,
     { activeExtensions }: Pick<ExtensionsService, 'activeExtensions'>
 ): Unsubscribable {
     const contributions = from(activeExtensions).pipe(
         map(extensions =>
             extensions
                 .map(({ manifest }) => manifest)
-                .filter((manifest): manifest is ExtensionManifest => manifest !== null && !isErrorLike(manifest))
+                .filter(
+                    (manifest): manifest is Exclude<typeof manifest, ErrorLike | null> =>
+                        manifest !== null && !isErrorLike(manifest)
+                )
                 .map(({ contributes }) => contributes)
-                .filter((contributions): contributions is Contributions => !!contributions)
-        )
+                .filter(isDefined)
+                .map(contributions => {
+                    try {
+                        return parseContributionExpressions(contributions)
+                    } catch (err) {
+                        // An error during evaluation causes all of the contributions in the same entry to be
+                        // discarded.
+                        console.warn('Discarding contributions: parsing expressions or templates failed.', {
+                            contributions,
+                            err,
+                        })
+                        return {}
+                    }
+                })
+        ),
+        // Perf optimization: only parse all the context expression once if there are multiple Subscribers.
+        // This does not change the behaviour of the Observable, it always emits the current value on Subscription.
+        publishReplay(1),
+        refCount()
     )
-    return contributionRegistry.registerContributions({
-        contributions,
-    })
+    return contributionRegistry.registerContributions({ contributions })
 }
 
 /** Prints a nicely formatted console log or error message. */
@@ -197,11 +187,11 @@ function log(level: 'info' | 'error', subject: string, message: any, other?: { [
     let color: string
     let backgroundColor: string
     if (level === 'info') {
-        f = console.log
+        f = console.log.bind(console)
         color = '#000'
         backgroundColor = '#eee'
     } else {
-        f = console.error
+        f = console.error.bind(console)
         color = 'white'
         backgroundColor = 'red'
     }

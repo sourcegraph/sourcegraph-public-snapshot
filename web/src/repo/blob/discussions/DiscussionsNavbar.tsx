@@ -19,16 +19,11 @@ export class DiscussionsNavbar extends React.PureComponent<Props> {
         const { threadID, threadTitle, commentID, commentContent, filePath, location } = this.props
         return (
             <div className="discussions-navbar">
-                <Link to={this.locationWith(location)} data-tooltip={`All discussions on ${filePath}`}>
-                    {filePath}
-                </Link>
+                <Link to={this.locationWith(location)}>{filePath}</Link>
                 <ChevronRightIcon className="icon-inline" />
                 {threadID !== undefined && commentID !== undefined && (
                     <>
-                        <Link
-                            to={this.locationWith(location, threadID)}
-                            data-tooltip={`Discussion thread #${this.props.threadID}`}
-                        >
+                        <Link to={this.locationWith(location, threadID)}>
                             {threadTitle !== undefined && `${threadTitle} `}#{threadID}
                         </Link>
                         <ChevronRightIcon className="icon-inline" />

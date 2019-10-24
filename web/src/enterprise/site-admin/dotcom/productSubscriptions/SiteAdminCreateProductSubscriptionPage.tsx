@@ -10,7 +10,6 @@ import { pluralize } from '../../../../../../shared/src/util/strings'
 import { mutateGraphQL, queryGraphQL } from '../../../../backend/graphql'
 import { Form } from '../../../../components/Form'
 import { PageTitle } from '../../../../components/PageTitle'
-import { Select } from '../../../../components/Select'
 import { eventLogger } from '../../../../tracking/eventLogger'
 import { AccountEmailAddresses } from '../../../dotcom/productSubscriptions/AccountEmailAddresses'
 
@@ -117,8 +116,9 @@ export class SiteAdminCreateProductSubscriptionPage extends React.Component<Prop
                 <Form onSubmit={this.onSubmit}>
                     <div className="form-group">
                         <label htmlFor="site-admin-create-product-subscription-page__account">Account (customer)</label>
-                        <Select
+                        <select
                             id="site-admin-create-product-subscription-page__account"
+                            className="form-control"
                             required={true}
                             disabled={
                                 disableForm ||
@@ -138,7 +138,7 @@ export class SiteAdminCreateProductSubscriptionPage extends React.Component<Prop
                                     </option>
                                 ))
                             )}
-                        </Select>
+                        </select>
                         {isErrorLike(this.state.accountsOrError) ? (
                             <div className="alert alert-danger mt-2">
                                 Error loading accounts: {upperFirst(this.state.accountsOrError.message)}

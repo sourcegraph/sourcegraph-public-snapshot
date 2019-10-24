@@ -1,3 +1,4 @@
+import { parseISO } from 'date-fns'
 import React from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { numberWithCommas } from '../../../../../shared/src/util/strings'
@@ -34,7 +35,7 @@ export const ProductSubscriptionBeforeAfterInvoiceItem: React.FunctionComponent<
             )}
             <li>
                 Prorated for remainder of subscription (through{' '}
-                <ExpirationDate showTime={false} date={afterInvoiceItem.expiresAt} lowercase={true} />
+                <ExpirationDate showTime={false} date={parseISO(afterInvoiceItem.expiresAt)} lowercase={true} />
                 ).
             </li>
         </ul>

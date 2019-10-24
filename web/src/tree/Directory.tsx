@@ -17,6 +17,7 @@ interface TreeChildProps extends TreeLayerProps {
 
 /**
  * JSX to render a tree directory
+ *
  * @param props
  */
 export const Directory: React.FunctionComponent<TreeChildProps> = (props: TreeChildProps): JSX.Element => (
@@ -29,11 +30,12 @@ export const Directory: React.FunctionComponent<TreeChildProps> = (props: TreeCh
             >
                 <div className="tree__row-contents-text">
                     <a
+                        // needed because of dynamic styling
+                        // eslint-disable-next-line react/forbid-dom-props
+                        style={treePadding(props.depth, true)}
                         className="tree__row-icon"
                         href={props.entryInfo.url}
                         onClick={props.noopRowClick}
-                        // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
-                        style={treePadding(props.depth, true)}
                         tabIndex={-1}
                     >
                         {props.isExpanded ? (
@@ -62,7 +64,8 @@ export const Directory: React.FunctionComponent<TreeChildProps> = (props: TreeCh
             {props.index === props.maxEntries - 1 && (
                 <div
                     className="tree__row-alert alert alert-warning"
-                    // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
+                    // needed because of dynamic styling
+                    // eslint-disable-next-line react/forbid-dom-props
                     style={treePadding(props.depth, true)}
                 >
                     Too many entries. Use search to find a specific file.

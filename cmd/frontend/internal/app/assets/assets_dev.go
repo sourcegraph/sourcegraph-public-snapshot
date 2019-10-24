@@ -2,8 +2,6 @@
 
 package assets
 
-import (
-	"net/http"
-)
+import "net/http"
 
 var Assets = http.Dir("./ui/assets")

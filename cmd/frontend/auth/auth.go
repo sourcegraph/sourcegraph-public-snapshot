@@ -4,10 +4,10 @@ package auth
 import (
 	"fmt"
 	"net/http"
-	"regexp"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/suspiciousnames"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 // AuthURLPrefix is the URL path prefix under which to attach authentication handlers
@@ -58,28 +58,38 @@ func composeMiddleware(middlewares ...*Middleware) *Middleware {
 }
 
 // NormalizeUsername normalizes a proposed username into a format that meets Sourcegraph's
-// username formatting rules (consistent with
+// username formatting rules (based on, but not identical to
 // https://help.github.com/enterprise/2.11/admin/guides/user-management/using-ldap/#username-considerations-with-ldap):
 //
-// - Any portion of the username after a '@' character is removed
-// - Any characters not in `[a-zA-Z0-9-]` are replaced with `-`
-// - Usernames with consecutive '-' characters are not allowed
-// - Usernames that start or end with '-' are not allowed
+// - Any characters not in `[a-zA-Z0-9-.]` are replaced with `-`
+// - Usernames with exactly one `@` character are interpreted as an email address, so the username will be extracted by truncating at the `@` character.
+// - Usernames with two or more `@` characters are not considered an email address, so the `@` will be treated as a non-standard character and be replaced with `-`
+// - Usernames with consecutive `-` or `.` characters are not allowed
+// - Usernames that start or end with `.` are not allowed
+// - Usernames that start with `-` are not allowed
 //
 // Usernames that could not be converted return an error.
+//
+// Note: Do not forget to change database constraints on "users" and "orgs" tables.
 func NormalizeUsername(name string) (string, error) {
 	origName := name
 	if i := strings.Index(name, "@"); i != -1 && i == strings.LastIndex(name, "@") {
 		name = name[:i]
 	}
+
 	name = disallowedCharacter.ReplaceAllString(name, "-")
-	if strings.HasPrefix(name, "-") || strings.HasSuffix(name, "-") || strings.Contains(name, "--") {
+	if disallowedSymbols.MatchString(name) {
 		return "", fmt.Errorf("username %q could not be normalized to acceptable format", origName)
 	}
+
 	if err := suspiciousnames.CheckNameAllowedForUserOrOrganization(name); err != nil {
 		return "", err
 	}
+
 	return name, nil
 }
 
-var disallowedCharacter = regexp.MustCompile(`[^a-zA-Z0-9\-]`)
+var (
+	disallowedSymbols   = lazyregexp.New(`(^[\-\.])|(\.$)|([\-\.]{2,})`)
+	disallowedCharacter = lazyregexp.New(`[^a-zA-Z0-9\-\.]`)
+)

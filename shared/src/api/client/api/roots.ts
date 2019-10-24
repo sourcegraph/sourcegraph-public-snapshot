@@ -1,20 +1,17 @@
-import { WorkspaceRoot } from '@sourcegraph/extension-api-types'
-import { Observable, Subscription } from 'rxjs'
-import { createProxyAndHandleRequests } from '../../common/proxy'
+import { ProxyResult } from '@sourcegraph/comlink'
+import { Subscription } from 'rxjs'
 import { ExtRootsAPI } from '../../extension/api/roots'
-import { Connection } from '../../protocol/jsonrpc2/connection'
+import { WorkspaceService } from '../services/workspaceService'
 
 /** @internal */
 export class ClientRoots {
     private subscriptions = new Subscription()
-    private proxy: ExtRootsAPI
 
-    constructor(connection: Connection, modelRoots: Observable<WorkspaceRoot[] | null>) {
-        this.proxy = createProxyAndHandleRequests('roots', connection, this)
-
+    constructor(proxy: ProxyResult<ExtRootsAPI>, workspaceService: WorkspaceService) {
         this.subscriptions.add(
-            modelRoots.subscribe(roots => {
-                this.proxy.$acceptRoots(roots || [])
+            workspaceService.roots.subscribe(roots => {
+                // eslint-disable-next-line @typescript-eslint/no-floating-promises
+                proxy.$acceptRoots(roots || [])
             })
         )
     }

@@ -1,22 +1,11 @@
 import { isEqual } from 'lodash'
 import { from, Observable, of, throwError } from 'rxjs'
-import {
-    catchError,
-    distinctUntilChanged,
-    filter,
-    map,
-    publishReplay,
-    refCount,
-    startWith,
-    switchMap,
-} from 'rxjs/operators'
-import { gql, graphQLContent } from '../graphql/graphql'
+import { catchError, distinctUntilChanged, map, publishReplay, refCount, switchMap } from 'rxjs/operators'
+import { gql } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
 import { PlatformContext } from '../platform/context'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
+import { asError, createAggregateError } from '../util/errors'
 import { ConfiguredRegistryExtension, extensionIDsFromSettings, toConfiguredRegistryExtension } from './extension'
-
-const LOADING: 'loading' = 'loading'
 
 /**
  * @returns An observable that emits the list of extensions configured in the viewer's final settings upon
@@ -24,17 +13,13 @@ const LOADING: 'loading' = 'loading'
  */
 export function viewerConfiguredExtensions({
     settings,
-    queryGraphQL,
-}: Pick<PlatformContext, 'settings' | 'queryGraphQL'>): Observable<ConfiguredRegistryExtension[]> {
+    requestGraphQL,
+}: Pick<PlatformContext, 'settings' | 'requestGraphQL'>): Observable<ConfiguredRegistryExtension[]> {
     return from(settings).pipe(
         map(settings => extensionIDsFromSettings(settings)),
         distinctUntilChanged((a, b) => isEqual(a, b)),
-        switchMap(extensionIDs =>
-            queryConfiguredRegistryExtensions({ queryGraphQL }, extensionIDs).pipe(startWith(LOADING))
-        ),
-        catchError(error => [asError(error) as ErrorLike]),
-        filter((extensions): extensions is ConfiguredRegistryExtension[] | ErrorLike => extensions !== LOADING),
-        switchMap(extensions => (isErrorLike(extensions) ? throwError(extensions) : [extensions])),
+        switchMap(extensionIDs => queryConfiguredRegistryExtensions({ requestGraphQL }, extensionIDs)),
+        catchError(error => throwError(asError(error))),
         publishReplay(),
         refCount()
     )
@@ -46,15 +31,19 @@ export function viewerConfiguredExtensions({
  * @returns An observable that emits once with the results.
  */
 export function queryConfiguredRegistryExtensions(
-    { queryGraphQL }: Pick<PlatformContext, 'queryGraphQL'>,
+    { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
     extensionIDs: string[]
 ): Observable<ConfiguredRegistryExtension[]> {
     if (extensionIDs.length === 0) {
         return of([])
     }
+    const variables: GQL.IExtensionsOnExtensionRegistryArguments = {
+        first: extensionIDs.length,
+        prioritizeExtensionIDs: extensionIDs,
+    }
     return from(
-        queryGraphQL<GQL.IQuery>(
-            gql`
+        requestGraphQL<GQL.IQuery>({
+            request: gql`
                 query Extensions($first: Int!, $prioritizeExtensionIDs: [String!]!) {
                     extensionRegistry {
                         extensions(first: $first, prioritizeExtensionIDs: $prioritizeExtensionIDs) {
@@ -70,13 +59,10 @@ export function queryConfiguredRegistryExtensions(
                         }
                     }
                 }
-            `[graphQLContent],
-            {
-                first: extensionIDs.length,
-                prioritizeExtensionIDs: extensionIDs,
-            } as GQL.IExtensionsOnExtensionRegistryArguments,
-            false
-        )
+            `,
+            variables,
+            mightContainPrivateInfo: false,
+        })
     ).pipe(
         map(({ data, errors }) => {
             if (

@@ -13,8 +13,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"golang.org/x/net/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -37,7 +37,7 @@ func (s *Service) startParsers() error {
 	return nil
 }
 
-func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID api.CommitID) (symbols []protocol.Symbol, err error) {
+func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID api.CommitID, callback func(symbol protocol.Symbol) error) (err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "parseUncached")
 	defer func() {
 		if err != nil {
@@ -52,8 +52,9 @@ func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID
 	tr := trace.New("parseUncached", string(repo))
 	tr.LazyPrintf("commitID: %s", commitID)
 
+	totalSymbols := 0
 	defer func() {
-		tr.LazyPrintf("symbols=%d", len(symbols))
+		tr.LazyPrintf("symbols=%d", totalSymbols)
 		if err != nil {
 			tr.LazyPrintf("error: %s", err)
 			tr.SetError()
@@ -65,7 +66,7 @@ func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID
 	parseRequests, errChan, err := s.fetchRepositoryArchive(ctx, repo, commitID)
 	tr.LazyPrintf("fetch (returned chans)")
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -74,7 +75,7 @@ func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID
 	var (
 		mu  sync.Mutex // protects symbols and err
 		wg  sync.WaitGroup
-		sem = make(chan struct{}, runtime.NumCPU())
+		sem = make(chan struct{}, runtime.GOMAXPROCS(0))
 	)
 	tr.LazyPrintf("parse")
 	totalParseRequests := 0
@@ -86,7 +87,7 @@ func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID
 				for range parseRequests {
 				}
 			}()
-			return nil, ctx.Err()
+			return ctx.Err()
 		}
 		sem <- struct{}{}
 		wg.Add(1)
@@ -97,12 +98,6 @@ func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID
 			}()
 			entries, parseErr := s.parse(ctx, req)
 			if parseErr != nil && parseErr != context.Canceled && parseErr != context.DeadlineExceeded {
-				if err == nil {
-					mu.Lock()
-					err = errors.Wrap(parseErr, fmt.Sprintf("parse repo %s commit %s path %s", repo, commitID, req.path))
-					mu.Unlock()
-				}
-				cancel()
 				log15.Error("Error parsing symbols.", "repo", repo, "commitID", commitID, "path", req.path, "dataSize", len(req.data), "error", parseErr)
 			}
 			if len(entries) > 0 {
@@ -112,18 +107,20 @@ func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID
 					if e.Name == "" || strings.HasPrefix(e.Name, "__anon") || strings.HasPrefix(e.Parent, "__anon") || strings.HasPrefix(e.Name, "AnonymousFunction") || strings.HasPrefix(e.Parent, "AnonymousFunction") {
 						continue
 					}
-					symbols = append(symbols, entryToSymbol(e))
+					totalSymbols++
+					err = callback(entryToSymbol(e))
+					if err != nil {
+						log15.Error("Failed to add symbol", "symbol", e, "error", err)
+						return
+					}
 				}
 			}
 		}(req)
 	}
 	wg.Wait()
-	tr.LazyPrintf("parse (done) totalParseRequests=%d symbols=%d", totalParseRequests, len(symbols))
+	tr.LazyPrintf("parse (done) totalParseRequests=%d symbols=%d", totalParseRequests, totalSymbols)
 
-	if err := <-errChan; err != nil {
-		return nil, err
-	}
-	return symbols, nil
+	return <-errChan
 }
 
 // parse gets a parser from the pool and uses it to satisfy the parse request.
@@ -223,5 +220,6 @@ var (
 func init() {
 	prometheus.MustRegister(parsing)
 	prometheus.MustRegister(parseQueueSize)
+	prometheus.MustRegister(parseQueueTimeouts)
 	prometheus.MustRegister(parseFailed)
 }

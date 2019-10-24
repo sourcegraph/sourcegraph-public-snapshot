@@ -18,7 +18,17 @@ interface Props {
     /** A tooltip to display when the user hovers or focuses this element. */
     ['data-tooltip']?: string
 
-    /** The component's CSS class name (defaults to "nav-link"). */
+    /**
+     * If given, the element is treated as a toggle with the boolean indicating its state.
+     * Applies `aria-pressed`.
+     */
+    pressed?: boolean
+
+    /**
+     * The component's CSS class name
+     *
+     * @default "nav-link"
+     */
     className?: string
 
     disabled?: boolean
@@ -44,6 +54,8 @@ export class LinkOrButton extends React.PureComponent<Props> {
             className,
             'data-tooltip': this.props['data-tooltip'],
             'aria-label': this.props['data-tooltip'],
+            role: typeof this.props.pressed === 'boolean' ? 'button' : undefined,
+            'aria-pressed': this.props.pressed,
             tabIndex: 0,
             onClick: this.onAnchorClick,
             onKeyPress: this.onAnchorKeyPress,

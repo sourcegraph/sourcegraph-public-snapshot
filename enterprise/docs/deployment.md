@@ -33,17 +33,10 @@ Sourcegraph is deployed to multiple locations:
 
 ### Dogfood and production
 
-Commits to the master branch of github.com/sourcegraph/sourcegraph are continuously deployed to our
-frontend service in production and in dogfood. Other core services are automatically deployed when
-commits are pushed to a branch with the prefix `docker-images/`.
-
-E.g., to deploy gitserver,
-
-```
-git checkout master
-git pull
-git push origin master:docker-images/gitserver
-```
+Commits to the master branch of github.com/sourcegraph/sourcegraph are
+continuously deployed to all of our services [except
+gitserver](https://github.com/sourcegraph/deploy-sourcegraph-dot-com/blob/release/README.info.md#automatic-ci-deployments)
+in production and in dogfood.
 
 If you need to update more than just the Docker images (i.e., if you need to update the
 Kubernetes configuration), refer to the appropriate link below:

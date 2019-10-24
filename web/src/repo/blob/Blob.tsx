@@ -6,12 +6,12 @@ import { isEqual, pick } from 'lodash'
 import * as React from 'react'
 import { combineLatest, fromEvent, merge, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, share, switchMap, withLatestFrom } from 'rxjs/operators'
-import { ActionItemProps } from '../../../../shared/src/actions/ActionItem'
+import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { decorationStyleForTheme } from '../../../../shared/src/api/client/services/decoration'
 import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { getHoverActions } from '../../../../shared/src/hover/actions'
-import { HoverContext, HoverOverlay } from '../../../../shared/src/hover/HoverOverlay'
+import { HoverContext } from '../../../../shared/src/hover/HoverOverlay'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
@@ -20,6 +20,7 @@ import {
     AbsoluteRepoFile,
     FileSpec,
     LineOrPositionOrRange,
+    lprToSelectionsZeroIndexed,
     ModeSpec,
     parseHash,
     PositionSpec,
@@ -30,22 +31,26 @@ import {
     toPositionOrRangeHash,
 } from '../../../../shared/src/util/url'
 import { getHover } from '../../backend/features'
+import { WebHoverOverlay } from '../../components/shared'
 import { isDiscussionsEnabled } from '../../discussions'
-import { lprToSelectionsZeroIndexed } from '../../util/url'
+import { ThemeProps } from '../../theme'
+import { EventLoggerProps } from '../../tracking/eventLogger'
 import { DiscussionsGutterOverlay } from './discussions/DiscussionsGutterOverlay'
 import { LineDecorationAttachment } from './LineDecorationAttachment'
 
 /**
  * toPortalID builds an ID that will be used for the {@link LineDecorationAttachment} portal containers.
  */
-const toPortalID = (line: number) => `line-decoration-attachment-${line}`
+const toPortalID = (line: number): string => `line-decoration-attachment-${line}`
 
 interface BlobProps
     extends AbsoluteRepoFile,
         ModeSpec,
         SettingsCascadeProps,
         PlatformContextProps,
-        ExtensionsControllerProps {
+        EventLoggerProps,
+        ExtensionsControllerProps,
+        ThemeProps {
     /** The raw content of the blob. */
     content: string
 
@@ -57,10 +62,9 @@ interface BlobProps
     className: string
     wrapCode: boolean
     renderMode: RenderMode
-    isLightTheme: boolean
 }
 
-interface BlobState extends HoverState<HoverContext, HoverMerged, ActionItemProps> {
+interface BlobState extends HoverState<HoverContext, HoverMerged, ActionItemAction> {
     /** The desired position of the discussions gutter overlay */
     discussionsGutterOverlayPosition?: { left: number; top: number }
 
@@ -148,10 +152,16 @@ export class Blob extends React.Component<BlobProps, BlobState> {
             share()
         )
 
+        const singleClickGoToDefinition = Boolean(
+            this.props.settingsCascade.final &&
+                !isErrorLike(this.props.settingsCascade.final) &&
+                this.props.settingsCascade.final.singleClickGoToDefinition === true
+        )
+
         const hoverifier = createHoverifier<
             RepoSpec & RevSpec & FileSpec & ResolvedRevSpec,
             HoverMerged,
-            ActionItemProps
+            ActionItemAction
         >({
             closeButtonClicks: this.closeButtonClicks,
             hoverOverlayElements: this.hoverOverlayElements,
@@ -164,20 +174,15 @@ export class Blob extends React.Component<BlobProps, BlobState> {
             ),
             getHover: position => getHover(this.getLSPTextDocumentPositionParams(position), this.props),
             getActions: context => getHoverActions(this.props, context),
+            pinningEnabled: !singleClickGoToDefinition,
         })
         this.subscriptions.add(hoverifier)
 
-        const resolveContext = () => ({
-            repoName: this.props.repoName,
-            rev: this.props.rev,
-            commitID: this.props.commitID,
-            filePath: this.props.filePath,
-        })
         this.subscriptions.add(
             hoverifier.hoverify({
                 positionEvents: this.codeViewElements.pipe(
                     filter(isDefined),
-                    findPositionsFromEvents(domFunctions)
+                    findPositionsFromEvents({ domFunctions })
                 ),
                 positionJumps: locationPositions.pipe(
                     withLatestFrom(this.codeViewElements, this.blobElements),
@@ -189,12 +194,39 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                         scrollElement: scrollElement!,
                     }))
                 ),
-                resolveContext,
+                resolveContext: () => ({
+                    repoName: this.props.repoName,
+                    rev: this.props.rev,
+                    commitID: this.props.commitID,
+                    filePath: this.props.filePath,
+                }),
                 dom: domFunctions,
             })
         )
+        const goToDefinition = (ev: MouseEvent): void => {
+            const goToDefinitionAction =
+                Array.isArray(this.state.actionsOrError) &&
+                this.state.actionsOrError.find(action => action.action.id === 'goToDefinition.preloaded')
+            if (goToDefinitionAction) {
+                this.props.history.push(goToDefinitionAction.action.commandArguments![0] as string)
+                ev.stopPropagation()
+            }
+        }
+
+        let hoveredTokenElement: HTMLElement | undefined
         this.subscriptions.add(
             hoverifier.hoverStateUpdates.subscribe(update => {
+                if (singleClickGoToDefinition && hoveredTokenElement !== update.hoveredTokenElement) {
+                    if (hoveredTokenElement) {
+                        hoveredTokenElement.style.cursor = 'auto'
+                        hoveredTokenElement.removeEventListener('click', goToDefinition)
+                    }
+                    if (update.hoveredTokenElement) {
+                        update.hoveredTokenElement.style.cursor = 'pointer'
+                        update.hoveredTokenElement.addEventListener('click', goToDefinition)
+                    }
+                    hoveredTokenElement = update.hoveredTokenElement
+                }
                 this.setState(update)
             })
         )
@@ -206,13 +238,13 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                     filter(isDefined),
                     switchMap(codeView => fromEvent<MouseEvent>(codeView, 'click')),
                     // Ignore click events caused by the user selecting text
-                    filter(() => window.getSelection().toString() === '')
+                    filter(() => window.getSelection()!.toString() === '')
                 )
                 .subscribe(event => {
                     // Prevent selecting text on shift click (click+drag to select will still work)
                     // Note that this is only called if the selection was empty initially (see above),
                     // so this only clears a selection caused by this click.
-                    window.getSelection().removeAllRanges()
+                    window.getSelection()!.removeAllRanges()
 
                     const position = locateTarget(event.target as HTMLElement, domFunctions)
                     let hash: string
@@ -278,38 +310,38 @@ export class Blob extends React.Component<BlobProps, BlobState> {
 
         /** Emits when the URL's target blob (repository, revision, path, and content) changes. */
         const modelChanges: Observable<
-            AbsoluteRepoFile & ModeSpec & Pick<BlobProps, 'content'>
+            AbsoluteRepoFile & ModeSpec & Pick<BlobProps, 'content' | 'isLightTheme'>
         > = this.componentUpdates.pipe(
-            map(props => pick(props, 'repoName', 'rev', 'commitID', 'filePath', 'mode', 'content')),
+            map(props => pick(props, 'repoName', 'rev', 'commitID', 'filePath', 'mode', 'content', 'isLightTheme')),
             distinctUntilChanged((a, b) => isEqual(a, b)),
             share()
         )
 
         // Update the Sourcegraph extensions model to reflect the current file.
         this.subscriptions.add(
-            combineLatest(modelChanges, locationPositions).subscribe(([model, pos]) => {
-                this.props.extensionsController.services.model.model.next({
-                    ...this.props.extensionsController.services.model.model.value,
-                    visibleViewComponents: [
-                        {
-                            type: 'textEditor' as 'textEditor',
-                            item: {
-                                uri: `git://${model.repoName}?${model.commitID}#${model.filePath}`,
-                                languageId: model.mode,
-                                text: model.content,
-                            },
-                            selections: lprToSelectionsZeroIndexed(pos),
-                            isActive: true,
-                        },
-                    ],
+            combineLatest([modelChanges, locationPositions]).subscribe(([model, pos]) => {
+                const uri = `git://${model.repoName}?${model.commitID}#${model.filePath}`
+                if (!this.props.extensionsController.services.model.hasModel(uri)) {
+                    this.props.extensionsController.services.model.addModel({
+                        uri,
+                        languageId: model.mode,
+                        text: model.content,
+                    })
+                }
+                this.props.extensionsController.services.editor.removeAllEditors()
+                this.props.extensionsController.services.editor.addEditor({
+                    type: 'CodeEditor' as const,
+                    resource: uri,
+                    selections: lprToSelectionsZeroIndexed(pos),
+                    isActive: true,
                 })
             })
         )
 
         /** Decorations */
         let lastModel: (AbsoluteRepoFile & ModeSpec) | undefined
-        const decorations: Observable<TextDocumentDecoration[] | null> = combineLatest(modelChanges).pipe(
-            switchMap(([model]) => {
+        const decorations: Observable<TextDocumentDecoration[] | null> = modelChanges.pipe(
+            switchMap(model => {
                 const modelChanged = !isEqual(model, lastModel)
                 lastModel = model // record so we can compute modelChanged
 
@@ -333,7 +365,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         /** Render decorations. */
         let decoratedElements: HTMLElement[] = []
         this.subscriptions.add(
-            combineLatest(
+            combineLatest([
                 decorations.pipe(
                     map(decorations => decorations || []),
                     catchError(error => {
@@ -343,16 +375,16 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                         return [[] as TextDocumentDecoration[]]
                     })
                 ),
-                this.codeViewElements
-            ).subscribe(([decorations, codeView]) => {
+                this.codeViewElements,
+            ]).subscribe(([decorations, codeView]) => {
                 if (codeView) {
                     if (decoratedElements) {
                         // Clear previous decorations.
                         for (const element of decoratedElements) {
-                            element.style.backgroundColor = null
-                            element.style.border = null
-                            element.style.borderColor = null
-                            element.style.borderWidth = null
+                            element.style.backgroundColor = ''
+                            element.style.border = ''
+                            element.style.borderColor = ''
+                            element.style.borderWidth = ''
                         }
                     }
 
@@ -386,7 +418,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                         }
 
                         if (decoration.after) {
-                            const codeCell = row.cells[1]!
+                            const codeCell = row.cells[1]
                             this.createLineDecorationAttachmentDOMNode(line, codeCell)
                         }
                     }
@@ -421,7 +453,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         if (codeCell.querySelector('.line-decoration-attachment-portal')) {
             return
         }
-        const portalNode = document.createElement('span')
+        const portalNode = document.createElement('div')
 
         const id = toPortalID(line)
         portalNode.id = id
@@ -462,13 +494,12 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                     dangerouslySetInnerHTML={{ __html: this.props.html }}
                 />
                 {this.state.hoverOverlayProps && (
-                    <HoverOverlay
+                    <WebHoverOverlay
+                        {...this.props}
                         {...this.state.hoverOverlayProps}
                         hoverRef={this.nextOverlayElement}
+                        telemetryService={this.props.telemetryService}
                         onCloseButtonClick={this.nextCloseButtonClick}
-                        extensionsController={this.props.extensionsController}
-                        platformContext={this.props.platformContext}
-                        location={this.props.location}
                     />
                 )}
                 {this.state.decorationsOrError &&

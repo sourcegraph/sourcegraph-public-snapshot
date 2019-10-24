@@ -1,33 +1,41 @@
-import { BehaviorSubject, NEVER, NextObserver, of, Subscribable, throwError } from 'rxjs'
-import { switchMap } from 'rxjs/operators'
-import * as sourcegraph from 'sourcegraph'
-import { PlatformContext } from '../../platform/context'
-import { createExtensionHostClient, ExtensionHostClient } from '../client/client'
-import { Model } from '../client/model'
-import { Services } from '../client/services'
-import { InitData, startExtensionHost } from '../extension/extensionHost'
-import { createConnection } from '../protocol/jsonrpc2/connection'
-import { createMessageTransports } from '../protocol/jsonrpc2/testHelpers'
+import 'message-port-polyfill'
 
-const FIXTURE_MODEL: Model = {
+import { BehaviorSubject, from, NEVER, throwError } from 'rxjs'
+import { filter, first, switchMap, take } from 'rxjs/operators'
+import * as sourcegraph from 'sourcegraph'
+import { EndpointPair, PlatformContext } from '../../platform/context'
+import { isDefined } from '../../util/types'
+import { ExtensionHostClient } from '../client/client'
+import { createExtensionHostClientConnection } from '../client/connection'
+import { Services } from '../client/services'
+import { CodeEditorData } from '../client/services/editorService'
+import { TextModel } from '../client/services/modelService'
+import { WorkspaceRootWithMetadata } from '../client/services/workspaceService'
+import { InitData, startExtensionHost } from '../extension/extensionHost'
+
+export function assertToJSON(a: any, expected: any): void {
+    const raw = JSON.stringify(a)
+    const actual = JSON.parse(raw)
+    expect(actual).toEqual(expected)
+}
+
+interface TestInitData {
+    roots: readonly WorkspaceRootWithMetadata[]
+    models?: readonly TextModel[]
+    editors: readonly CodeEditorData[]
+}
+
+const FIXTURE_INIT_DATA: TestInitData = {
     roots: [{ uri: 'file:///' }],
-    visibleViewComponents: [
+    models: [{ uri: 'file:///f', text: 't', languageId: 'l' }],
+    editors: [
         {
-            type: 'textEditor',
-            item: {
-                uri: 'file:///f',
-                languageId: 'l',
-                text: 't',
-            },
+            type: 'CodeEditor',
+            resource: 'file:///f',
             selections: [],
             isActive: true,
         },
     ],
-}
-
-interface TestContext {
-    client: ExtensionHostClient
-    extensionHost: typeof sourcegraph
 }
 
 interface Mocks
@@ -35,7 +43,7 @@ interface Mocks
         PlatformContext,
         | 'settings'
         | 'updateSettings'
-        | 'queryGraphQL'
+        | 'requestGraphQL'
         | 'getScriptURLForExtension'
         | 'clientApplication'
         | 'sideloadedExtensionURL'
@@ -44,7 +52,7 @@ interface Mocks
 const NOOP_MOCKS: Mocks = {
     settings: NEVER,
     updateSettings: () => Promise.reject(new Error('Mocks#updateSettings not implemented')),
-    queryGraphQL: () => throwError(new Error('Mocks#queryGraphQL not implemented')),
+    requestGraphQL: () => throwError(new Error('Mocks#queryGraphQL not implemented')),
     getScriptURLForExtension: scriptURL => scriptURL,
     clientApplication: 'sourcegraph',
     sideloadedExtensionURL: new BehaviorSubject<string | null>(null),
@@ -56,45 +64,70 @@ const NOOP_MOCKS: Mocks = {
  * @internal
  */
 export async function integrationTestContext(
-    partialMocks: Partial<Mocks> = NOOP_MOCKS
-): Promise<
-    TestContext & {
-        model: Subscribable<Model> & { value: Model } & NextObserver<Model>
-        services: Services
-    }
-> {
+    partialMocks: Partial<Mocks> = NOOP_MOCKS,
+    initModel: TestInitData = FIXTURE_INIT_DATA
+): Promise<{
+    client: ExtensionHostClient
+    extensionAPI: typeof sourcegraph
+    services: Services
+}> {
     const mocks = partialMocks ? { ...NOOP_MOCKS, ...partialMocks } : NOOP_MOCKS
 
-    const [clientTransports, serverTransports] = createMessageTransports()
+    const clientAPIChannel = new MessageChannel()
+    const extensionHostAPIChannel = new MessageChannel()
+    const extensionHostEndpoints: EndpointPair = {
+        proxy: clientAPIChannel.port2,
+        expose: extensionHostAPIChannel.port2,
+    }
+    const clientEndpoints: EndpointPair = {
+        proxy: extensionHostAPIChannel.port1,
+        expose: clientAPIChannel.port1,
+    }
 
-    const extensionHost = startExtensionHost(serverTransports)
+    const extensionHost = startExtensionHost(extensionHostEndpoints)
 
     const services = new Services(mocks)
-    const client = createExtensionHostClient(
-        services,
-        of(clientTransports).pipe(
-            switchMap(async clientTransports => {
-                const connection = createConnection(clientTransports)
-                connection.listen()
+    const initData: InitData = {
+        sourcegraphURL: 'https://example.com/',
+        clientApplication: 'sourcegraph',
+    }
+    const client = await createExtensionHostClientConnection(clientEndpoints, services, initData)
 
-                const initData: InitData = {
-                    sourcegraphURL: 'https://example.com',
-                    clientApplication: 'sourcegraph',
-                }
-                await connection.sendRequest('initialize', [initData])
-                return connection
-            })
-        )
-    )
+    const extensionAPI = await extensionHost.extensionAPI
+    if (initModel.models) {
+        for (const model of initModel.models) {
+            services.model.addModel(model)
+        }
+    }
+    for (const editor of initModel.editors) {
+        services.editor.addEditor(editor)
+    }
+    services.workspace.roots.next(initModel.roots)
 
-    services.model.model.next(FIXTURE_MODEL)
+    // Wait for initModel to be initialized
+    if (initModel.editors.length) {
+        await Promise.all([
+            from(extensionAPI.workspace.openedTextDocuments)
+                .pipe(take(initModel.editors.length))
+                .toPromise(),
+            from(extensionAPI.app.activeWindowChanges)
+                .pipe(
+                    first(isDefined),
+                    switchMap(activeWindow =>
+                        from(activeWindow.activeViewComponentChanges).pipe(
+                            filter(isDefined),
+                            take(initModel.editors.length)
+                        )
+                    )
+                )
+                .toPromise(),
+        ])
+    }
 
-    await (await extensionHost.__testAPI).internal.sync()
     return {
         client,
-        extensionHost: await extensionHost.__testAPI,
+        extensionAPI,
         services,
-        model: services.model.model,
     }
 }
 

@@ -10,8 +10,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	tracepkg "github.com/sourcegraph/sourcegraph/pkg/trace"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	tracepkg "github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 var metricLabels = []string{"method", "success"}
@@ -22,6 +22,7 @@ var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Help:      "Total time spent on backend endpoints.",
 	Buckets:   tracepkg.UserLatencyBuckets,
 }, metricLabels)
+
 var requestGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Namespace: "src",
 	Subsystem: "backend",

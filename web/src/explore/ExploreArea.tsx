@@ -1,15 +1,20 @@
 import H from 'history'
 import * as React from 'react'
-import { Subject, Subscription } from 'rxjs'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SettingsCascadeOrError } from '../../../shared/src/settings/settings'
+import { ThemeProps } from '../theme'
+import { eventLogger } from '../tracking/eventLogger'
 import { ComponentDescriptor } from '../util/contributions'
+import { PatternTypeProps } from '../search'
 
 /**
  * Properties passed to all section components in the explore area.
  */
-export interface ExploreAreaSectionContext extends ExtensionsControllerProps {
+export interface ExploreAreaSectionContext
+    extends ExtensionsControllerProps,
+        ThemeProps,
+        Omit<PatternTypeProps, 'togglePatternType'> {
     /** The currently authenticated user. */
     authenticatedUser: GQL.IUser | null
 
@@ -19,7 +24,6 @@ export interface ExploreAreaSectionContext extends ExtensionsControllerProps {
     /** The viewer's settings. */
     settingsCascade: SettingsCascadeOrError
 
-    isLightTheme: boolean
     location: H.Location
     history: H.History
 }
@@ -28,10 +32,8 @@ export interface ExploreAreaSectionContext extends ExtensionsControllerProps {
 export interface ExploreSectionDescriptor extends ComponentDescriptor<ExploreAreaSectionContext> {}
 
 interface ExploreAreaProps extends ExploreAreaSectionContext {
-    exploreSections: ReadonlyArray<ExploreSectionDescriptor>
+    exploreSections: readonly ExploreSectionDescriptor[]
 }
-
-const LOADING: 'loading' = 'loading'
 
 interface ExploreAreaState {}
 
@@ -41,23 +43,10 @@ interface ExploreAreaState {}
  * on the space-constrained global nav).
  */
 export class ExploreArea extends React.Component<ExploreAreaProps, ExploreAreaState> {
-    public state: ExploreAreaState = {
-        subjectOrError: LOADING,
-    }
-
-    private componentUpdates = new Subject<ExploreAreaProps>()
-    private subscriptions = new Subscription()
+    public state: ExploreAreaState = {}
 
     public componentDidMount(): void {
-        this.componentUpdates.next(this.props)
-    }
-
-    public componentWillReceiveProps(props: ExploreAreaProps): void {
-        this.componentUpdates.next(props)
-    }
-
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+        eventLogger.logViewEvent('Explore')
     }
 
     public render(): JSX.Element | null {
@@ -69,6 +58,7 @@ export class ExploreArea extends React.Component<ExploreAreaProps, ExploreAreaSt
             isLightTheme: this.props.isLightTheme,
             location: this.props.location,
             history: this.props.history,
+            patternType: this.props.patternType,
         }
 
         return (

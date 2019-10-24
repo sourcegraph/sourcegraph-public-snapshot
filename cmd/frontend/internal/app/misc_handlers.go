@@ -9,7 +9,8 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
 var allowRobotsVar = env.Get("ROBOTS_TXT_ALLOW", "false", "allow search engines to index the site")
@@ -25,7 +26,6 @@ func robotsTxtHelper(w io.Writer, allowRobots bool) {
 	fmt.Fprintln(&buf, "User-agent: *")
 	if allowRobots {
 		fmt.Fprintln(&buf, "Allow: /")
-
 	} else {
 		fmt.Fprintln(&buf, "Disallow: /")
 	}
@@ -34,5 +34,9 @@ func robotsTxtHelper(w io.Writer, allowRobots bool) {
 }
 
 func favicon(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, assetsutil.URL("/img/favicon.png").String(), http.StatusMovedPermanently)
+	path := assetsutil.URL("/img/favicon.png").String()
+	if branding := conf.Branding(); branding != nil && branding.Favicon != "" {
+		path = branding.Favicon
+	}
+	http.Redirect(w, r, path, http.StatusMovedPermanently)
 }

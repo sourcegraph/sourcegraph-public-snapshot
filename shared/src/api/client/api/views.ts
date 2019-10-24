@@ -1,82 +1,84 @@
-import { ReplaySubject, Subject, Subscription } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { ProxyValue, proxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { isEqual, omit } from 'lodash'
+import { combineLatest, from, of, ReplaySubject, Unsubscribable } from 'rxjs'
+import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { PanelView } from 'sourcegraph'
-import { handleRequests } from '../../common/proxy'
-import { ContributableViewContainer, TextDocumentPositionParams } from '../../protocol'
-import { Connection } from '../../protocol/jsonrpc2/connection'
+import { ContributableViewContainer } from '../../protocol'
+import { EditorService, getActiveCodeEditorPosition } from '../services/editorService'
 import { TextDocumentLocationProviderIDRegistry } from '../services/location'
 import { PanelViewWithComponent, ViewProviderRegistry } from '../services/view'
-import { SubscriptionMap } from './common'
 
 /** @internal */
 export interface PanelViewData extends Pick<PanelView, 'title' | 'content' | 'priority' | 'component'> {}
 
+export interface PanelUpdater extends Unsubscribable, ProxyValue {
+    update(data: PanelViewData): void
+}
+
 /** @internal */
-export interface ClientViewsAPI {
-    $unregister(id: number): void
-    $registerPanelViewProvider(id: number, provider: { id: string }): void
-    $acceptPanelViewUpdate(id: number, params: Partial<PanelViewData>): void
+export interface ClientViewsAPI extends ProxyValue {
+    $registerPanelViewProvider(provider: { id: string }): PanelUpdater
 }
 
 /** @internal */
 export class ClientViews implements ClientViewsAPI {
-    private subscriptions = new Subscription()
-    private panelViews = new Map<number, Subject<PanelViewData>>()
-    private registrations = new SubscriptionMap()
+    public readonly [proxyValueSymbol] = true
 
     constructor(
-        connection: Connection,
         private viewRegistry: ViewProviderRegistry,
-        private textDocumentLocations: TextDocumentLocationProviderIDRegistry
-    ) {
-        this.subscriptions.add(this.registrations)
+        private textDocumentLocations: TextDocumentLocationProviderIDRegistry,
+        private editorService: EditorService
+    ) {}
 
-        handleRequests(connection, 'views', this)
-    }
-
-    public $unregister(id: number): void {
-        this.registrations.remove(id)
-    }
-
-    public $registerPanelViewProvider(id: number, provider: { id: string }): void {
+    public $registerPanelViewProvider(provider: { id: string }): PanelUpdater {
         // TODO(sqs): This will probably hang forever if an extension neglects to set any of the fields on a
         // PanelView because this subject will never emit.
         const panelView = new ReplaySubject<PanelViewData>(1)
-        this.panelViews.set(id, panelView)
         const registryUnsubscribable = this.viewRegistry.registerProvider(
             { ...provider, container: ContributableViewContainer.Panel },
-            panelView.pipe(
-                map(
-                    ({ title, content, priority, component }) =>
-                        ({
-                            title,
-                            content,
-                            priority,
-                            locationProvider: component
-                                ? (params: TextDocumentPositionParams) =>
-                                      this.textDocumentLocations.getLocations(component.locationProvider, params)
-                                : undefined,
-                        } as PanelViewWithComponent)
-                )
+            combineLatest([
+                panelView.pipe(
+                    map(data => omit(data, 'component')),
+                    distinctUntilChanged((x, y) => isEqual(x, y))
+                ),
+                panelView.pipe(
+                    map(({ component }) => component),
+                    distinctUntilChanged((a, b) => isEqual(a, b)),
+                    map(component => {
+                        if (!component) {
+                            return undefined
+                        }
+
+                        return from(this.editorService.activeEditorUpdates).pipe(
+                            map(getActiveCodeEditorPosition),
+                            switchMap(params => {
+                                if (!params) {
+                                    return of(of(null))
+                                }
+                                return this.textDocumentLocations.getLocations(component.locationProvider, params)
+                            })
+                        )
+                    })
+                ),
+            ]).pipe(
+                map(([{ title, content, priority }, locationProvider]) => {
+                    const panelView: PanelViewWithComponent = {
+                        title,
+                        content,
+                        priority,
+                        locationProvider,
+                    }
+                    return panelView
+                })
             )
         )
-        this.registrations.add(id, {
+        return proxyValue({
+            update: (data: PanelViewData) => {
+                panelView.next(data)
+            },
             unsubscribe: () => {
                 registryUnsubscribable.unsubscribe()
-                this.panelViews.delete(id)
             },
         })
-    }
-
-    public $acceptPanelViewUpdate(id: number, data: PanelViewData): void {
-        const panelView = this.panelViews.get(id)
-        if (panelView === undefined) {
-            throw new Error(`no panel view with ID ${id}`)
-        }
-        panelView.next(data)
-    }
-
-    public unsubscribe(): void {
-        this.subscriptions.unsubscribe()
     }
 }

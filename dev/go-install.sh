@@ -3,16 +3,9 @@
 # Build commands, optionally with or without race detector.  a list of every command we know about,
 # to use by default
 #
-# This will install binaries into the `.bin` directory under the repository root by default or, if
-# $GOMOD_ROOT is set, under that directory.
+# This will install binaries into the `.bin` directory under the repository root.
 
-all_oss_commands=" gitserver query-runner github-proxy management-console searcher frontend repo-updater symbols "
-
-# GOMOD_ROOT is the directory from which `go install` commands are run. It should contain a go.mod
-# file. The go.mod file may be updated as a side effect of updating the dependencies before the `go
-# install`.
-GOMOD_ROOT=${GOMOD_ROOT:-$PWD}
-echo >&2 "Running \`go install\` from $GOMOD_ROOT"
+all_oss_commands=" gitserver query-runner github-proxy management-console searcher replacer frontend repo-updater symbols "
 
 # handle options
 verbose=false
@@ -41,20 +34,6 @@ case $# in
 	done
 	;;
 esac
-if [ ! -z "$ENTERPRISE_COMMANDS" ]; then
-    for entCmd in $ENTERPRISE_COMMANDS; do
-        exists=false
-        for cmd in $commands; do
-            if [ "$cmd" = "$entCmd" ]; then
-                exists=true
-                break
-            fi
-        done
-        if [ "$exists" = false ]; then
-            commands="$commands $entCmd "
-        fi
-    done
-fi
 
 $ok || exit 1
 
@@ -62,13 +41,18 @@ mkdir -p .bin
 export GOBIN=$PWD/.bin
 export GO111MODULE=on
 
-if ! go install \
-	github.com/mattn/goreman \
-	github.com/derekparker/delve/cmd/dlv \
-	github.com/sourcegraph/docsite/cmd/docsite \
-	github.com/google/zoekt/cmd/zoekt-archive-index \
-	github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver \
-	github.com/google/zoekt/cmd/zoekt-webserver; then
+INSTALL_GO_PKGS="github.com/mattn/goreman \
+github.com/sourcegraph/docsite/cmd/docsite \
+github.com/google/zoekt/cmd/zoekt-archive-index \
+github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver \
+github.com/google/zoekt/cmd/zoekt-webserver \
+"
+
+if [ ! -n "${OFFLINE-}" ]; then
+    INSTALL_GO_PKGS="$INSTALL_GO_PKGS github.com/go-delve/delve/cmd/dlv"
+fi
+
+if ! go install $INSTALL_GO_PKGS; then
 	echo >&2 "failed to install prerequisites, aborting."
 	exit 1
 fi
@@ -121,7 +105,7 @@ do_install() {
 			cmds="$cmds github.com/sourcegraph/sourcegraph/cmd/$cmd"
 		fi
 	done
-	if ( cd $GOMOD_ROOT && go install -v -gcflags="$GCFLAGS" -tags "$TAGS" -race=$race $cmds ); then
+	if ( go install -v -gcflags="$GCFLAGS" -tags "$TAGS" -race=$race $cmds ); then
 		if $verbose; then
 			# echo each command on its own line
 			echo "$cmdlist" | tr ' ' '\012'

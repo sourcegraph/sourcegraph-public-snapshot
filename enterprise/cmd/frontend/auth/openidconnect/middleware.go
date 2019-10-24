@@ -11,8 +11,9 @@ import (
 
 	"github.com/gorilla/csrf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"golang.org/x/oauth2"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -88,7 +89,7 @@ func handleOpenIDConnectAuth(w http.ResponseWriter, r *http.Request, next http.H
 	// and it's an app request, redirect to signin immediately. The user wouldn't be able to do
 	// anything else anyway; there's no point in showing them a signin screen with just a single
 	// signin option.
-	if ps := auth.Providers(); len(ps) == 1 && ps[0].Config().Openidconnect != nil && !isAPIRequest {
+	if ps := providers.Providers(); len(ps) == 1 && ps[0].Config().Openidconnect != nil && !isAPIRequest {
 		p, handled := handleGetProvider(r.Context(), w, ps[0].ConfigID().ID)
 		if handled {
 			return

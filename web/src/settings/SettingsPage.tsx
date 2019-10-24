@@ -1,12 +1,11 @@
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { overwriteSettings } from '../../../shared/src/settings/edit'
+import { ThemeProps } from '../theme'
 import { SettingsAreaPageProps } from './SettingsArea'
 import { SettingsFile } from './SettingsFile'
 
-interface Props extends SettingsAreaPageProps, Pick<RouteComponentProps<{}>, 'history' | 'location'> {
-    isLightTheme: boolean
-
+interface Props extends SettingsAreaPageProps, Pick<RouteComponentProps<{}>, 'history' | 'location'>, ThemeProps {
     /** Optional description to render above the editor. */
     description?: JSX.Element
 }
@@ -21,14 +20,11 @@ interface State {
 export class SettingsPage extends React.PureComponent<Props, State> {
     public state: State = {}
 
-    private extraSchemas = [this.props.data.settingsJSONSchema]
-
     public render(): JSX.Element | null {
         return (
             <SettingsFile
                 settings={this.props.data.subjects[this.props.data.subjects.length - 1].latestSettings}
-                jsonSchemaId="settings.schema.json#"
-                extraSchemas={this.extraSchemas}
+                jsonSchema={this.props.data.settingsJSONSchema}
                 commitError={this.state.commitError}
                 onDidCommit={this.onDidCommit}
                 onDidDiscard={this.onDidDiscard}

@@ -58,12 +58,19 @@ export const browserExtensionInstalled = browserExtensionMessageReceived.pipe(
  */
 export function pageViewQueryParameters(url: string): EventQueryParameters {
     const parsedUrl = new URL(url)
+
+    const utmSource = parsedUrl.searchParams.get('utm_source')
+    if (utmSource === 'saved-search-email') {
+        eventLogger.log('SavedSearchEmailClicked')
+    } else if (utmSource === 'saved-search-slack') {
+        eventLogger.log('SavedSearchSlackClicked')
+    }
+
     return {
         utm_campaign: parsedUrl.searchParams.get('utm_campaign') || undefined,
         utm_source: parsedUrl.searchParams.get('utm_source') || undefined,
         utm_product_name: parsedUrl.searchParams.get('utm_product_name') || undefined,
         utm_product_version: parsedUrl.searchParams.get('utm_product_version') || undefined,
-        editor_machine_id: parsedUrl.searchParams.get('mid') || undefined,
     }
 }
 

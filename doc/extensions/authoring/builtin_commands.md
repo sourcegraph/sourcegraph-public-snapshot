@@ -1,4 +1,4 @@
-# Builtin commands
+# Builtin Sourcegraph extension commands
 
 This document lists the predefined commands that extensions can execute to perform actions on Sourcegraph or the client application. In addition to these commands, extensions may also define their own commands.
 
@@ -31,9 +31,7 @@ Extension actions defined in `package.json` can also invoke commands. The follow
 }
 ```
 
-## Commands
-
-### open
+## open
 
 - Parameters:
   1. `url` (string) - The URL to open. (Example: `https://example.com`)
@@ -45,7 +43,7 @@ When a button (or other extension action) specifies this command, the button beh
 
 When this command is executed by an extension, it is equivalent to `window.open(url, '_blank')`. (Extensions can't call `window.open` directly because they run in a Web Worker without access to the DOM.) Most browsers' pop-up blockers will block new windows opened in this way, so use this sparingly.
 
-### updateConfiguration
+## updateConfiguration
 
 - Parameters:
   1. `keyPath` (`(string | number)[]`) - The key path of the value in user settings to update. Each element indexes into the settings object. For example, the key path `["foo", 2]` refers to `"B"` in `{ "foo": ["A", "B"] }`.
@@ -63,7 +61,7 @@ await sourcegraph.commands.executeCommand('updateConfiguration', ['lint.ignoreRu
 await sourcegraph.commands.executeCommand('updateConfiguration', ['lint.maxWarnings'], 25)
 ```
 
-#### Toggle settings actions
+## Toggle settings actions
 
 Many extensions need to let the user easily toggle a feature on/off, such as with a "Show/hide lint warnings" button. To implement this, extensions can define an action that executes `updateConfiguration` and passes it specially crafted arguments to toggle between `true` and `false` values in the user's settings.
 
@@ -102,7 +100,7 @@ Here is an example `package.json` that defines a toggle button:
 
 The specially crafted `commandArguments` make the action update the `myext.enabled` settings property to the opposite of its current value. To achieve this, it uses template interpolation (with `${...}`) and a special 4th argument of `"json"` that causes the argument to be parsed as JSON instead of treated as a string. (This is important, because we want the `myext.enabled` setting to have a boolean value: `{"myext.enabled": true}`, not `{"myext.enabled": "true"}`.
 
-### queryGraphQL
+## queryGraphQL
 
 - Parameters:
   1. `query` (string) - The GraphQL query. (Example: `query Foo($bar: Int) { baz(bar: $bar) { zap } }`)
@@ -113,7 +111,7 @@ Executes a [Sourcegraph GraphQL API](../../api/graphql/index.md) query or mutati
 
 This can be used to identify the current user, perform a search, fetch a file's contents, list a repository's branches, and anything else that Sourcegraph itself can do. See [example Sourcegraph GraphQL API queries](../../api/graphql/examples.md) for more.
 
-### openPanel
+## openPanel
 
 - Parameters:
   1. `viewID` (string) - The `id` of the panel view to open (as specified in the `sourcegraph.app.createPanelView(id)` call).
@@ -121,7 +119,7 @@ This can be used to identify the current user, perform a search, fetch a file's 
 
 Opens a view in the panel. The view must have been previously created by the extension using `sourcegraph.app.createPanelView`.
 
-### executeLocationProvider
+## executeLocationProvider
 
 - Parameters:
   1. `id` (string) - The location provider ID. This is defined by the extension as the first argument to `sourcegraph.languages.registerLocationProvider`.
@@ -137,7 +135,7 @@ Known issues:
 
 - If the location provider returns an `Observable` (stream of values), the `executeLocationProvider` only returns a promise that resolves with the first emission. It does not return an observable.
 
-#### Opening a panel with a list of file locations
+## Opening a panel with a list of file locations
 
 This example shows how to open a panel view that displays the location results from a location provider.
 

@@ -1,0 +1,14 @@
+.info-dropdown {
+    &__item {
+        // white-space: normal;
+        min-width: 18rem;
+    }
+
+    &__content {
+        padding: 0.5rem;
+    }
+
+    p {
+        margin-bottom: 0;
+    }
+}

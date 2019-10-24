@@ -1,17 +1,16 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import * as H from 'history'
+import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import * as React from 'react'
+import { UncontrolledPopover } from 'reactstrap'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { ExecutableExtension } from '../api/client/services/extensionsService'
 import { Link } from '../components/Link'
-import { PopoverButton } from '../components/PopoverButton'
-import { Toggle } from '../components/Toggle'
-import { ExtensionsControllerProps } from '../extensions/controller'
+import { ExtensionsControllerProps } from './controller'
 import { PlatformContextProps } from '../platform/context'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 
-interface Props extends ExtensionsControllerProps, PlatformContextProps {
+interface Props extends ExtensionsControllerProps, PlatformContextProps<'sideloadedExtensionURL'> {
     link: React.ComponentType<{ id: string }>
 }
 
@@ -19,8 +18,6 @@ interface State {
     /** The extension IDs of extensions that are active, an error, or undefined while loading. */
     extensionsOrError?: Pick<ExecutableExtension, 'id'>[] | ErrorLike
 
-    /** Whether to log traces of communication with extensions. */
-    traceExtensionHostCommunication?: boolean
     sideloadedExtensionURL?: string | null
 }
 
@@ -49,19 +46,11 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
             map(({ platformContext }) => platformContext),
             distinctUntilChanged()
         )
-        this.subscriptions.add(
-            platformContext
-                .pipe(
-                    switchMap(({ traceExtensionHostCommunication }) => traceExtensionHostCommunication),
-                    map(traceExtensionHostCommunication => ({ traceExtensionHostCommunication }))
-                )
-                .subscribe(stateUpdate => this.setState({ ...this.state, ...stateUpdate }))
-        )
 
         this.subscriptions.add(
             platformContext
-                .pipe(switchMap(({ sideloadedExtensionURL: sideloadedExtensionURL }) => sideloadedExtensionURL))
-                .subscribe(sideloadedExtensionURL => this.setState({ ...this.state, sideloadedExtensionURL }))
+                .pipe(switchMap(({ sideloadedExtensionURL }) => sideloadedExtensionURL))
+                .subscribe(sideloadedExtensionURL => this.setState({ sideloadedExtensionURL }))
         )
 
         this.componentUpdates.next(this.props)
@@ -101,17 +90,6 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
                         <LoadingSpinner className="icon-inline" /> Loading extensions...
                     </span>
                 )}
-                <div className="card-body border-top d-flex justify-content-start align-items-center">
-                    <label htmlFor="extension-status__trace" className="mr-2 mb-0">
-                        Log to devtools console{' '}
-                    </label>
-                    <Toggle
-                        id="extension-status__trace"
-                        onToggle={this.onToggleTrace}
-                        value={this.state.traceExtensionHostCommunication}
-                        title="Toggle extension trace logging to devtools console"
-                    />
-                </div>
                 <div className="card-body border-top">
                     <h6>Sideload extension</h6>
                     {this.state.sideloadedExtensionURL ? (
@@ -122,12 +100,17 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
                             </p>
                             <div>
                                 <button
+                                    type="button"
                                     className="btn btn-sm btn-primary mr-1"
                                     onClick={this.setSideloadedExtensionURL}
                                 >
                                     Change
                                 </button>
-                                <button className="btn btn-sm btn-danger" onClick={this.clearSideloadedExtensionURL}>
+                                <button
+                                    type="button"
+                                    className="btn btn-sm btn-danger"
+                                    onClick={this.clearSideloadedExtensionURL}
+                                >
                                     Clear
                                 </button>
                             </div>
@@ -138,7 +121,11 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
                                 <span>No sideloaded extension</span>
                             </p>
                             <div>
-                                <button className="btn btn-sm btn-primary" onClick={this.setSideloadedExtensionURL}>
+                                <button
+                                    type="button"
+                                    className="btn btn-sm btn-primary"
+                                    onClick={this.setSideloadedExtensionURL}
+                                >
                                     Load extension
                                 </button>
                             </div>
@@ -147,10 +134,6 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
                 </div>
             </div>
         )
-    }
-
-    private onToggleTrace = () => {
-        this.props.platformContext.traceExtensionHostCommunication.next(!this.state.traceExtensionHostCommunication)
     }
 
     private setSideloadedExtensionURL = () => {
@@ -167,16 +150,17 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
 }
 
 /** A button that toggles the visibility of the ExtensionStatus element in a popover. */
-export class ExtensionStatusPopover extends React.PureComponent<Props & { location: H.Location }> {
+export class ExtensionStatusPopover extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         return (
-            <PopoverButton
-                placement="auto-end"
-                hideOnChange={this.props.location}
-                popoverElement={<ExtensionStatus {...this.props} />}
-            >
-                <span className="text-muted">Ext</span>
-            </PopoverButton>
+            <>
+                <button type="button" id="extension-status-popover" className="btn btn-link text-decoration-none px-2">
+                    <span className="text-muted">Ext</span> <MenuUpIcon className="icon-inline" />
+                </button>
+                <UncontrolledPopover placement="auto-end" target="extension-status-popover">
+                    <ExtensionStatus {...this.props} />
+                </UncontrolledPopover>
+            </>
         )
     }
 }

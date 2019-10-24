@@ -1,20 +1,26 @@
 import { HoveredToken, LOADER_DELAY } from '@sourcegraph/codeintellify'
 import { Location } from '@sourcegraph/extension-api-types'
 import { createMemoryHistory } from 'history'
-import { from, of } from 'rxjs'
+import { BehaviorSubject, from, Observable, of, throwError } from 'rxjs'
 import { first, map } from 'rxjs/operators'
-// tslint:disable-next-line:no-submodule-imports
 import { TestScheduler } from 'rxjs/testing'
-import { ActionItemProps } from '../actions/ActionItem'
-import { EMPTY_MODEL, Model } from '../api/client/model'
+import * as sinon from 'sinon'
+import { ActionItemAction } from '../actions/ActionItem'
 import { Services } from '../api/client/services'
 import { CommandRegistry } from '../api/client/services/command'
 import { ContributionRegistry } from '../api/client/services/contribution'
+import { createTestEditorService } from '../api/client/services/editorService.test'
 import { ProvideTextDocumentLocationSignature } from '../api/client/services/location'
+import { WorkspaceRootWithMetadata, WorkspaceService } from '../api/client/services/workspaceService'
 import { ContributableMenu, ReferenceParams, TextDocumentPositionParams } from '../api/protocol'
+import { PrivateRepoPublicSourcegraphComError } from '../backend/errors'
 import { getContributedActionItems } from '../contributions/contributions'
+import { SuccessGraphQLResult } from '../graphql/graphql'
+import { IMutation, IQuery } from '../graphql/schema'
+import { PlatformContext } from '../platform/context'
 import { EMPTY_SETTINGS_CASCADE } from '../settings/settings'
-import { toPrettyBlobURL } from '../util/url'
+import { resetAllMemoizationCaches } from '../util/memoizeObservable'
+import { FileSpec, PositionSpec, RawRepoSpec, RepoSpec, RevSpec, toPrettyBlobURL, ViewStateSpec } from '../util/url'
 import { getDefinitionURL, getHoverActionsContext, HoverActionsContext, registerHoverContributions } from './actions'
 import { HoverContext } from './HoverOverlay'
 
@@ -40,19 +46,36 @@ const FIXTURE_HOVER_CONTEXT: HoveredToken & HoverContext = {
     character: 2,
 }
 
-function testModelService(
-    roots: Model['roots'] = [{ uri: 'git://r3?c3', inputRevision: 'v3' }]
-): { model: { value: Pick<Model, 'roots'> } } {
-    return { model: { value: { roots } } }
+function testWorkspaceService(
+    roots: readonly WorkspaceRootWithMetadata[] = [{ uri: 'git://r3?c3', inputRevision: 'v3' }]
+): WorkspaceService {
+    return { roots: new BehaviorSubject(roots) }
 }
 
 // Use toPrettyBlobURL as the urlToFile passed to these functions because it results in the most readable/familiar
 // expected test output.
 const urlToFile = toPrettyBlobURL
+const requestGraphQL: PlatformContext['requestGraphQL'] = <R extends IQuery | IMutation>({
+    variables,
+}: {
+    variables: { [key: string]: any }
+}) =>
+    // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
+    of({
+        data: {
+            repository: {
+                uri: variables.repoName,
+                mirrorInfo: {
+                    cloned: true,
+                },
+            },
+        },
+    } as SuccessGraphQLResult<R>)
 
-const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
+const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 describe('getHoverActionsContext', () => {
+    beforeEach(() => resetAllMemoizationCaches())
     test('shows a loader for the definition if slow', () =>
         scheduler().run(({ cold, expectObservable }) =>
             expectObservable(
@@ -61,10 +84,12 @@ describe('getHoverActionsContext', () => {
                         {
                             extensionsController: {
                                 services: {
-                                    model: testModelService(),
+                                    workspace: testWorkspaceService(),
                                     textDocumentDefinition: {
                                         getLocations: () =>
-                                            cold<Location[]>(`- ${LOADER_DELAY}ms --- d`, { d: [FIXTURE_LOCATION] }),
+                                            cold<Observable<Location[]>>(`- ${LOADER_DELAY}ms --- d`, {
+                                                d: of([FIXTURE_LOCATION]),
+                                            }),
                                     },
                                     textDocumentReferences: {
                                         providersForDocument: () =>
@@ -75,12 +100,12 @@ describe('getHoverActionsContext', () => {
                                     },
                                 },
                             },
-                            platformContext: { urlToFile },
+                            platformContext: { urlToFile, requestGraphQL },
                         },
                         FIXTURE_HOVER_CONTEXT
                     )
                 )
-                // tslint:disable-next-line:no-object-literal-type-assertion
+                // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
             ).toBe(`a ${LOADER_DELAY - 1}ms (bc)d`, {
                 a: {
                     'goToDefinition.showLoading': false,
@@ -125,9 +150,10 @@ describe('getHoverActionsContext', () => {
                         {
                             extensionsController: {
                                 services: {
-                                    model: testModelService(),
+                                    workspace: testWorkspaceService(),
                                     textDocumentDefinition: {
-                                        getLocations: () => cold<Location[]>(`-b`, { b: [FIXTURE_LOCATION] }),
+                                        getLocations: () =>
+                                            cold<Observable<Location[]>>('-b', { b: of([FIXTURE_LOCATION]) }),
                                     },
                                     textDocumentReferences: {
                                         providersForDocument: () =>
@@ -138,13 +164,13 @@ describe('getHoverActionsContext', () => {
                                     },
                                 },
                             },
-                            platformContext: { urlToFile },
+                            platformContext: { urlToFile, requestGraphQL },
                         },
                         FIXTURE_HOVER_CONTEXT
                     )
                 )
-                // tslint:disable-next-line:no-object-literal-type-assertion
-            ).toBe(`a(bc)`, {
+                // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
+            ).toBe('a(bc)', {
                 a: {
                     'goToDefinition.showLoading': false,
                     'goToDefinition.url': null,
@@ -174,13 +200,14 @@ describe('getHoverActionsContext', () => {
 })
 
 describe('getDefinitionURL', () => {
-    test('emits null if the locations result is null', async () =>
+    beforeEach(() => resetAllMemoizationCaches())
+    test('emits null if the locations result is null', () =>
         expect(
             getDefinitionURL(
-                { urlToFile },
+                { urlToFile, requestGraphQL },
                 {
-                    model: testModelService(),
-                    textDocumentDefinition: { getLocations: () => of(null) },
+                    workspace: testWorkspaceService(),
+                    textDocumentDefinition: { getLocations: () => of(of(null)) },
                 },
                 FIXTURE_PARAMS
             )
@@ -188,13 +215,13 @@ describe('getDefinitionURL', () => {
                 .toPromise()
         ).resolves.toBe(null))
 
-    test('emits null if the locations result is empty', async () =>
+    test('emits null if the locations result is empty', () =>
         expect(
             getDefinitionURL(
-                { urlToFile },
+                { urlToFile, requestGraphQL },
                 {
-                    model: testModelService(),
-                    textDocumentDefinition: { getLocations: () => of([]) },
+                    workspace: testWorkspaceService(),
+                    textDocumentDefinition: { getLocations: () => of(of([])) },
                 },
                 FIXTURE_PARAMS
             )
@@ -203,14 +230,93 @@ describe('getDefinitionURL', () => {
         ).resolves.toBe(null))
 
     describe('if there is exactly 1 location result', () => {
+        test('resolves the raw repo name and passes it to urlToFile()', async () => {
+            const requestGraphQL = <R extends IQuery | IMutation>({
+                variables,
+            }: {
+                [key: string]: any
+            }): Observable<SuccessGraphQLResult<R>> =>
+                // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
+                of({
+                    data: {
+                        repository: {
+                            uri: `github.com/${variables.repoName}`,
+                            mirrorInfo: {
+                                cloned: true,
+                            },
+                        },
+                    },
+                } as SuccessGraphQLResult<R>)
+            const urlToFile = sinon.spy(
+                (
+                    location: RepoSpec &
+                        Partial<RawRepoSpec> &
+                        RevSpec &
+                        FileSpec &
+                        Partial<PositionSpec> &
+                        Partial<ViewStateSpec>
+                ) => ''
+            )
+            await getDefinitionURL(
+                { urlToFile, requestGraphQL },
+                {
+                    workspace: testWorkspaceService(),
+                    textDocumentDefinition: {
+                        getLocations: () => of<Observable<Location[]>>(of([{ uri: 'git://r3?c3#f' }])),
+                    },
+                },
+                FIXTURE_PARAMS
+            )
+                .pipe(first())
+                .toPromise()
+            sinon.assert.calledOnce(urlToFile)
+            expect(urlToFile.getCalls()[0].args[0]).toMatchObject({
+                filePath: 'f',
+                position: undefined,
+                rawRepoName: 'github.com/r3',
+                repoName: 'r3',
+                rev: 'v3',
+            })
+        })
+
+        test('fails gracefully when resolveRawRepoName() fails with a PrivateRepoPublicSourcegraph error', async () => {
+            const requestGraphQL = (): Observable<never> =>
+                throwError(new PrivateRepoPublicSourcegraphComError('ResolveRawRepoName'))
+            const urlToFile = sinon.spy()
+            await getDefinitionURL(
+                { urlToFile, requestGraphQL },
+                {
+                    workspace: testWorkspaceService(),
+                    textDocumentDefinition: {
+                        getLocations: () => of<Observable<Location[]>>(of([{ uri: 'git://r3?c3#f' }])),
+                    },
+                },
+                FIXTURE_PARAMS
+            )
+                .pipe(first())
+                .toPromise()
+            sinon.assert.calledOnce(urlToFile)
+            sinon.assert.calledWith(urlToFile, {
+                commitID: undefined,
+                filePath: 'f',
+                position: undefined,
+                range: undefined,
+                rawRepoName: 'r3',
+                repoName: 'r3',
+                rev: 'v3',
+            })
+        })
+
         describe('when the result is inside the current root', () => {
-            test('emits the definition URL the user input revision (not commit SHA) of the root', async () =>
+            test('emits the definition URL the user input revision (not commit SHA) of the root', () =>
                 expect(
                     getDefinitionURL(
-                        { urlToFile },
+                        { urlToFile, requestGraphQL },
                         {
-                            model: testModelService(),
-                            textDocumentDefinition: { getLocations: () => of<Location[]>([{ uri: 'git://r3?c3#f' }]) },
+                            workspace: testWorkspaceService(),
+                            textDocumentDefinition: {
+                                getLocations: () => of<Observable<Location[]>>(of([{ uri: 'git://r3?c3#f' }])),
+                            },
                         },
                         FIXTURE_PARAMS
                     )
@@ -220,13 +326,15 @@ describe('getDefinitionURL', () => {
         })
 
         describe('when the result is not inside the current root (different repo and/or commit)', () => {
-            test('emits the definition URL with range', async () =>
+            test('emits the definition URL with range', () =>
                 expect(
                     getDefinitionURL(
-                        { urlToFile },
+                        { urlToFile, requestGraphQL },
                         {
-                            model: testModelService(),
-                            textDocumentDefinition: { getLocations: () => of<Location[]>([FIXTURE_LOCATION]) },
+                            workspace: testWorkspaceService(),
+                            textDocumentDefinition: {
+                                getLocations: () => of<Observable<Location[]>>(of([FIXTURE_LOCATION])),
+                            },
                         },
                         FIXTURE_PARAMS
                     )
@@ -234,14 +342,15 @@ describe('getDefinitionURL', () => {
                         .toPromise()
                 ).resolves.toEqual({ url: '/r2@c2/-/blob/f2#L3:3', multiple: false }))
 
-            test('emits the definition URL without range', async () =>
+            test('emits the definition URL without range', () =>
                 expect(
                     getDefinitionURL(
-                        { urlToFile },
+                        { urlToFile, requestGraphQL },
                         {
-                            model: testModelService(),
+                            workspace: testWorkspaceService(),
                             textDocumentDefinition: {
-                                getLocations: () => of<Location[]>([{ ...FIXTURE_LOCATION, range: undefined }]),
+                                getLocations: () =>
+                                    of<Observable<Location[]>>(of([{ ...FIXTURE_LOCATION, range: undefined }])),
                             },
                         },
                         FIXTURE_PARAMS
@@ -252,14 +361,15 @@ describe('getDefinitionURL', () => {
         })
     })
 
-    test('emits the definition panel URL if there is more than 1 location result', async () =>
+    test('emits the definition panel URL if there is more than 1 location result', () =>
         expect(
             getDefinitionURL(
-                { urlToFile },
+                { urlToFile, requestGraphQL },
                 {
-                    model: testModelService([{ uri: 'git://r?c', inputRevision: 'v' }]),
+                    workspace: testWorkspaceService([{ uri: 'git://r?c', inputRevision: 'v' }]),
                     textDocumentDefinition: {
-                        getLocations: () => of<Location[]>([FIXTURE_LOCATION, { ...FIXTURE_LOCATION, uri: 'other' }]),
+                        getLocations: () =>
+                            of<Observable<Location[]>>(of([FIXTURE_LOCATION, { ...FIXTURE_LOCATION, uri: 'other' }])),
                     },
                 },
                 FIXTURE_PARAMS
@@ -269,11 +379,19 @@ describe('getDefinitionURL', () => {
         ).resolves.toEqual({ url: '/r@v/-/blob/f#L2:2&tab=def', multiple: true }))
 })
 
-describe('registerHoverContributions', () => {
-    const contribution = new ContributionRegistry(of(EMPTY_MODEL), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
+describe('registerHoverContributions()', () => {
+    beforeEach(() => resetAllMemoizationCaches())
+    const contribution = new ContributionRegistry(
+        createTestEditorService({}),
+        {
+            getPartialModel: () => ({ languageId: 'x' }),
+        },
+        { data: of(EMPTY_SETTINGS_CASCADE) },
+        of({})
+    )
     const commands = new CommandRegistry()
     const textDocumentDefinition: Pick<Services['textDocumentDefinition'], 'getLocations'> = {
-        getLocations: () => of(null),
+        getLocations: () => of(of(null)),
     }
     const history = createMemoryHistory()
     const subscription = registerHoverContributions({
@@ -281,16 +399,16 @@ describe('registerHoverContributions', () => {
             services: {
                 contribution,
                 commands,
-                model: testModelService(),
+                workspace: testWorkspaceService(),
                 textDocumentDefinition,
             },
         },
-        platformContext: { urlToFile },
+        platformContext: { urlToFile, requestGraphQL },
         history,
     })
     afterAll(() => subscription.unsubscribe())
 
-    const getHoverActions = (context: HoverActionsContext) =>
+    const getHoverActions = (context: HoverActionsContext): Promise<ActionItemAction[]> =>
         contribution
             .getContributions(undefined, context)
             .pipe(
@@ -299,17 +417,21 @@ describe('registerHoverContributions', () => {
             )
             .toPromise()
 
-    describe('getHoverActions', () => {
-        const GO_TO_DEFINITION_ACTION: ActionItemProps = {
+    describe('getHoverActions()', () => {
+        const GO_TO_DEFINITION_ACTION: ActionItemAction = {
             action: {
                 command: 'goToDefinition',
                 commandArguments: ['{"textDocument":{"uri":"git://r?c#f"},"position":{"line":1,"character":1}}'],
                 id: 'goToDefinition',
                 title: 'Go to definition',
+                actionItem: undefined,
+                category: undefined,
+                description: undefined,
+                iconURL: undefined,
             },
             altAction: undefined,
         }
-        const GO_TO_DEFINITION_PRELOADED_ACTION: ActionItemProps = {
+        const GO_TO_DEFINITION_PRELOADED_ACTION: ActionItemAction = {
             action: {
                 command: 'open',
                 commandArguments: ['/r2@c2/-/blob/f2#L3:3'],
@@ -318,7 +440,7 @@ describe('registerHoverContributions', () => {
             },
             altAction: undefined,
         }
-        const FIND_REFERENCES_ACTION: ActionItemProps = {
+        const FIND_REFERENCES_ACTION: ActionItemAction = {
             action: {
                 command: 'open',
                 commandArguments: ['/r@v/-/blob/f#L2:2&tab=references'],
@@ -328,7 +450,7 @@ describe('registerHoverContributions', () => {
             altAction: undefined,
         }
 
-        test('shows goToDefinition (non-preloaded) when the definition is loading', async () =>
+        it('shows goToDefinition (non-preloaded) when the definition is loading', () =>
             expect(
                 getHoverActions({
                     'goToDefinition.showLoading': true,
@@ -340,7 +462,7 @@ describe('registerHoverContributions', () => {
                 })
             ).resolves.toEqual([GO_TO_DEFINITION_ACTION]))
 
-        test('shows goToDefinition (non-preloaded) when the definition had an error', async () =>
+        it('shows goToDefinition (non-preloaded) when the definition had an error', () =>
             expect(
                 getHoverActions({
                     'goToDefinition.showLoading': false,
@@ -352,7 +474,7 @@ describe('registerHoverContributions', () => {
                 })
             ).resolves.toEqual([GO_TO_DEFINITION_ACTION]))
 
-        test('hides goToDefinition when the definition was not found', async () =>
+        it('hides goToDefinition when the definition was not found', () =>
             expect(
                 getHoverActions({
                     'goToDefinition.showLoading': false,
@@ -364,7 +486,7 @@ describe('registerHoverContributions', () => {
                 })
             ).resolves.toEqual([]))
 
-        test('shows goToDefinition.preloaded when goToDefinition.url is available', async () =>
+        it('shows goToDefinition.preloaded when goToDefinition.url is available', () =>
             expect(
                 getHoverActions({
                     'goToDefinition.showLoading': false,
@@ -376,7 +498,7 @@ describe('registerHoverContributions', () => {
                 })
             ).resolves.toEqual([GO_TO_DEFINITION_PRELOADED_ACTION]))
 
-        test('shows findReferences when the definition exists', async () =>
+        it('shows findReferences when the definition exists', () =>
             expect(
                 getHoverActions({
                     'goToDefinition.showLoading': false,
@@ -388,7 +510,7 @@ describe('registerHoverContributions', () => {
                 })
             ).resolves.toEqual([GO_TO_DEFINITION_PRELOADED_ACTION, FIND_REFERENCES_ACTION]))
 
-        test('hides findReferences when the definition might exist (and is still loading)', async () =>
+        it('hides findReferences when the definition might exist (and is still loading)', () =>
             expect(
                 getHoverActions({
                     'goToDefinition.showLoading': true,
@@ -400,7 +522,7 @@ describe('registerHoverContributions', () => {
                 })
             ).resolves.toEqual([GO_TO_DEFINITION_ACTION, FIND_REFERENCES_ACTION]))
 
-        test('shows findReferences when the definition had an error', async () =>
+        it('shows findReferences when the definition had an error', () =>
             expect(
                 getHoverActions({
                     'goToDefinition.showLoading': false,
@@ -412,7 +534,7 @@ describe('registerHoverContributions', () => {
                 })
             ).resolves.toEqual([GO_TO_DEFINITION_ACTION, FIND_REFERENCES_ACTION]))
 
-        test('shows findReferences when the definition was not found', async () =>
+        it('does not show findReferences when the definition was not found', () =>
             expect(
                 getHoverActions({
                     'goToDefinition.showLoading': false,
@@ -422,30 +544,30 @@ describe('registerHoverContributions', () => {
                     'findReferences.url': '/r@v/-/blob/f#L2:2&tab=references',
                     hoverPosition: FIXTURE_PARAMS,
                 })
-            ).resolves.toEqual([FIND_REFERENCES_ACTION]))
+            ).resolves.toEqual([]))
     })
 
     describe('goToDefinition command', () => {
         test('reports no definition found', async () => {
-            textDocumentDefinition.getLocations = () => of(null) // mock
-            return expect(
+            textDocumentDefinition.getLocations = () => of(of(null)) // mock
+            await expect(
                 commands.executeCommand({ command: 'goToDefinition', arguments: [JSON.stringify(FIXTURE_PARAMS)] })
             ).rejects.toMatchObject({ message: 'No definition found.' })
         })
 
         test('reports panel already visible', async () => {
             textDocumentDefinition.getLocations = () =>
-                of([FIXTURE_LOCATION, { ...FIXTURE_LOCATION, uri: 'git://r3?v3#f3' }]) // mock
+                of(of([FIXTURE_LOCATION, { ...FIXTURE_LOCATION, uri: 'git://r3?v3#f3' }])) // mock
             history.push('/r@c/-/blob/f#L2:2&tab=def')
-            return expect(
+            await expect(
                 commands.executeCommand({ command: 'goToDefinition', arguments: [JSON.stringify(FIXTURE_PARAMS)] })
             ).rejects.toMatchObject({ message: 'Multiple definitions shown in panel below.' })
         })
 
         test('reports already at the definition', async () => {
-            textDocumentDefinition.getLocations = () => of([FIXTURE_LOCATION]) // mock
+            textDocumentDefinition.getLocations = () => of(of([FIXTURE_LOCATION])) // mock
             history.push('/r2@c2/-/blob/f2#L3:3')
-            return expect(
+            await expect(
                 commands.executeCommand({ command: 'goToDefinition', arguments: [JSON.stringify(FIXTURE_PARAMS)] })
             ).rejects.toMatchObject({ message: 'Already at the definition.' })
         })

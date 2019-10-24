@@ -4,26 +4,25 @@ import (
 	"context"
 	"errors"
 	"sync"
-	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
-	repoupdaterprotocol "github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	repoupdaterprotocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 )
 
-func (r *repositoryResolver) MirrorInfo() *repositoryMirrorInfoResolver {
+func (r *RepositoryResolver) MirrorInfo() *repositoryMirrorInfoResolver {
 	return &repositoryMirrorInfoResolver{repository: r}
 }
 
 type repositoryMirrorInfoResolver struct {
-	repository *repositoryResolver
+	repository *RepositoryResolver
 
 	// memoize the repo-updater RepoUpdateSchedulerInfo call
 	repoUpdateSchedulerInfoOnce   sync.Once
@@ -32,20 +31,24 @@ type repositoryMirrorInfoResolver struct {
 
 	// memoize the gitserver RepoInfo call
 	repoInfoOnce     sync.Once
-	repoInfoResponse *protocol.RepoInfoResponse
+	repoInfoResponse *protocol.RepoInfo
 	repoInfoErr      error
 }
 
-func (r *repositoryMirrorInfoResolver) gitserverRepoInfo(ctx context.Context) (*protocol.RepoInfoResponse, error) {
+func (r *repositoryMirrorInfoResolver) gitserverRepoInfo(ctx context.Context) (*protocol.RepoInfo, error) {
 	r.repoInfoOnce.Do(func() {
-		r.repoInfoResponse, r.repoInfoErr = gitserver.DefaultClient.RepoInfo(ctx, r.repository.repo.Name)
+		resp, err := gitserver.DefaultClient.RepoInfo(ctx, r.repository.repo.Name)
+		r.repoInfoResponse, r.repoInfoErr = resp.Results[r.repository.repo.Name], err
 	})
 	return r.repoInfoResponse, r.repoInfoErr
 }
 
 func (r *repositoryMirrorInfoResolver) repoUpdateSchedulerInfo(ctx context.Context) (*repoupdaterprotocol.RepoUpdateSchedulerInfoResult, error) {
 	r.repoUpdateSchedulerInfoOnce.Do(func() {
-		args := repoupdaterprotocol.RepoUpdateSchedulerInfoArgs{RepoName: r.repository.repo.Name}
+		args := repoupdaterprotocol.RepoUpdateSchedulerInfoArgs{
+			RepoName: r.repository.repo.Name,
+			ID:       uint32(r.repository.repo.ID),
+		}
 		r.repoUpdateSchedulerInfoResult, r.repoUpdateSchedulerInfoErr = repoupdater.DefaultClient.RepoUpdateSchedulerInfo(ctx, args)
 	})
 	return r.repoUpdateSchedulerInfoResult, r.repoUpdateSchedulerInfoErr
@@ -61,8 +64,7 @@ func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, e
 	{
 		// Look up the remote URL in repo-updater.
 		result, err := repoupdater.DefaultClient.RepoLookup(ctx, repoupdaterprotocol.RepoLookupArgs{
-			Repo:         r.repository.repo.Name,
-			ExternalRepo: r.repository.repo.ExternalRepo,
+			Repo: r.repository.repo.Name,
 		})
 		if err != nil {
 			return "", err
@@ -104,16 +106,12 @@ func (r *repositoryMirrorInfoResolver) CloneProgress(ctx context.Context) (*stri
 	return strptr(info.CloneProgress), nil
 }
 
-func (r *repositoryMirrorInfoResolver) UpdatedAt(ctx context.Context) (*string, error) {
+func (r *repositoryMirrorInfoResolver) UpdatedAt(ctx context.Context) (*DateTime, error) {
 	info, err := r.gitserverRepoInfo(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if info.LastFetched == nil {
-		return nil, err
-	}
-	s := info.LastFetched.Format(time.RFC3339)
-	return &s, nil
+	return DateTimeOrNil(info.LastFetched), nil
 }
 
 func (r *repositoryMirrorInfoResolver) UpdateSchedule(ctx context.Context) (*updateScheduleResolver, error) {
@@ -135,8 +133,8 @@ func (r *updateScheduleResolver) IntervalSeconds() int32 {
 	return int32(r.schedule.IntervalSeconds)
 }
 
-func (r *updateScheduleResolver) Due() string {
-	return r.schedule.Due.Format(time.RFC3339)
+func (r *updateScheduleResolver) Due() DateTime {
+	return DateTime{Time: r.schedule.Due}
 }
 
 func (r *updateScheduleResolver) Index() int32 {
@@ -244,7 +242,7 @@ func (r *schemaResolver) UpdateMirrorRepository(ctx context.Context, args *struc
 	if err != nil {
 		return nil, err
 	}
-	if err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo); err != nil {
+	if _, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
@@ -270,7 +268,7 @@ func (r *schemaResolver) UpdateAllMirrorRepositories(ctx context.Context) (*Empt
 		if err != nil {
 			return nil, err
 		}
-		if err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo); err != nil {
+		if _, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo); err != nil {
 			return nil, err
 		}
 	}

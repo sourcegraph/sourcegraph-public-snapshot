@@ -2,35 +2,112 @@ import React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { getModeFromPath } from '../../../shared/src/languages'
 import { isLegacyFragment, parseHash } from '../../../shared/src/util/url'
+import { lazyComponent } from '../util/lazyComponent'
 import { formatHash } from '../util/url'
-const BlobPage = React.lazy(async () => ({ default: (await import('./blob/BlobPage')).BlobPage }))
-const RepositoryCommitsPage = React.lazy(async () => ({
-    default: (await import('./commits/RepositoryCommitsPage')).RepositoryCommitsPage,
-}))
-const FilePathBreadcrumb = React.lazy(async () => ({
-    default: (await import('./FilePathBreadcrumb')).FilePathBreadcrumb,
-}))
+import { RepoContainerRoute } from './RepoContainer'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { RepoRevContainerContext, RepoRevContainerRoute } from './RepoRevContainer'
-const RepoRevSidebar = React.lazy(async () => ({ default: (await import('./RepoRevSidebar')).RepoRevSidebar }))
-const TreePage = React.lazy(async () => ({ default: (await import('./TreePage')).TreePage }))
+
+const BlobPage = lazyComponent(() => import('./blob/BlobPage'), 'BlobPage')
+const RepositoryCommitsPage = lazyComponent(() => import('./commits/RepositoryCommitsPage'), 'RepositoryCommitsPage')
+const FilePathBreadcrumb = lazyComponent(() => import('./FilePathBreadcrumb'), 'FilePathBreadcrumb')
+const RepoRevSidebar = lazyComponent(() => import('./RepoRevSidebar'), 'RepoRevSidebar')
+const TreePage = lazyComponent(() => import('./TreePage'), 'TreePage')
+
+const RepositoryGitDataContainer = lazyComponent(
+    () => import('./RepositoryGitDataContainer'),
+    'RepositoryGitDataContainer'
+)
+const RepositoryCommitPage = lazyComponent(() => import('./commit/RepositoryCommitPage'), 'RepositoryCommitPage')
+const RepositoryBranchesArea = lazyComponent(
+    () => import('./branches/RepositoryBranchesArea'),
+    'RepositoryBranchesArea'
+)
+const RepositoryReleasesArea = lazyComponent(
+    () => import('./releases/RepositoryReleasesArea'),
+    'RepositoryReleasesArea'
+)
+const RepoSettingsArea = lazyComponent(() => import('./settings/RepoSettingsArea'), 'RepoSettingsArea')
+const RepositoryCompareArea = lazyComponent(() => import('./compare/RepositoryCompareArea'), 'RepositoryCompareArea')
+const RepositoryStatsArea = lazyComponent(() => import('./stats/RepositoryStatsArea'), 'RepositoryStatsArea')
+
+export const repoContainerRoutes: readonly RepoContainerRoute[] = [
+    {
+        path: '/-/commit/:revspec+',
+        render: context => (
+            <RepositoryGitDataContainer repoName={context.repo.name}>
+                <RepositoryCommitPage {...context} />
+            </RepositoryGitDataContainer>
+        ),
+    },
+    {
+        path: '/-/branches',
+        render: context => (
+            <RepositoryGitDataContainer repoName={context.repo.name}>
+                <RepositoryBranchesArea {...context} />
+            </RepositoryGitDataContainer>
+        ),
+    },
+    {
+        path: '/-/tags',
+        render: context => (
+            <RepositoryGitDataContainer repoName={context.repo.name}>
+                <RepositoryReleasesArea {...context} />
+            </RepositoryGitDataContainer>
+        ),
+    },
+    {
+        path: '/-/compare/:spec*',
+        render: context => (
+            <RepositoryGitDataContainer repoName={context.repo.name}>
+                <RepositoryCompareArea {...context} />
+            </RepositoryGitDataContainer>
+        ),
+    },
+    {
+        path: '/-/stats',
+        render: context => (
+            <RepositoryGitDataContainer repoName={context.repo.name}>
+                <RepositoryStatsArea {...context} />
+            </RepositoryGitDataContainer>
+        ),
+    },
+    {
+        path: '/-/settings',
+        render: context => (
+            <RepositoryGitDataContainer repoName={context.repo.name}>
+                <RepoSettingsArea {...context} />
+            </RepositoryGitDataContainer>
+        ),
+    },
+]
 
 /** Dev feature flag to make benchmarking the file tree in isolation easier. */
 const hideRepoRevContent = localStorage.getItem('hideRepoRevContent')
 
-export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
+export const repoRevContainerRoutes: readonly RepoRevContainerRoute[] = [
     ...['', '/-/:objectType(blob|tree)/:filePath+'].map(routePath => ({
         path: routePath,
         exact: routePath === '',
-        render: (
-            context: RepoRevContainerContext &
-                RouteComponentProps<{
-                    objectType: 'blob' | 'tree' | undefined
-                    filePath: string | undefined
-                }>
-        ) => {
-            const objectType: 'blob' | 'tree' = context.match.params.objectType || 'tree'
-            const filePath = context.match.params.filePath || '' // empty string is root
+        render: ({
+            repo: { name: repoName, id: repoID, description: repoDescription },
+            resolvedRev: { commitID, defaultBranch },
+            match,
+            patternType,
+            togglePatternType,
+            ...context
+        }: RepoRevContainerContext &
+            RouteComponentProps<{
+                objectType: 'blob' | 'tree' | undefined
+                filePath: string | undefined
+            }>) => {
+            const objectType: 'blob' | 'tree' = match.params.objectType || 'tree'
+
+            // The decoding depends on the pinned `history` version.
+            // See https://github.com/sourcegraph/sourcegraph/issues/4408
+            // and https://github.com/ReactTraining/history/issues/505
+            const filePath = decodeURIComponent(match.params.filePath || '') // empty string is root
+
             const mode = getModeFromPath(filePath)
 
             // For blob pages with legacy URL fragment hashes like "#L17:19-21:23$foo:bar"
@@ -44,6 +121,16 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                 return <Redirect to={window.location.pathname + window.location.search + formatHash(hash, newHash)} />
             }
 
+            const repoRevProps = {
+                repoID,
+                repoDescription,
+                repoName,
+                commitID,
+                filePath,
+                patternType,
+                togglePatternType,
+            }
+
             return (
                 <>
                     {filePath && (
@@ -54,7 +141,7 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                                 element={
                                     <FilePathBreadcrumb
                                         key="path"
-                                        repoName={context.repo.name}
+                                        repoName={repoName}
                                         rev={context.rev}
                                         filePath={filePath}
                                         isDir={objectType === 'tree'}
@@ -65,54 +152,25 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                         </>
                     )}
                     <RepoRevSidebar
+                        {...context}
+                        {...repoRevProps}
                         className="repo-rev-container__sidebar"
-                        repoID={context.repo.id}
-                        repoName={context.repo.name}
-                        rev={context.rev}
-                        commitID={context.resolvedRev.commitID}
-                        filePath={context.match.params.filePath || '' || ''}
                         isDir={objectType === 'tree'}
-                        defaultBranch={context.resolvedRev.defaultBranch || 'HEAD'}
-                        history={context.history}
-                        location={context.location}
-                        extensionsController={context.extensionsController}
+                        defaultBranch={defaultBranch || 'HEAD'}
                     />
                     {!hideRepoRevContent && (
                         <div className="repo-rev-container__content">
                             {objectType === 'blob' ? (
                                 <BlobPage
-                                    repoName={context.repo.name}
-                                    repoID={context.repo.id}
-                                    commitID={context.resolvedRev.commitID}
-                                    rev={context.rev}
-                                    filePath={context.match.params.filePath || ''}
+                                    {...context}
+                                    {...repoRevProps}
                                     mode={mode}
                                     repoHeaderContributionsLifecycleProps={
                                         context.repoHeaderContributionsLifecycleProps
                                     }
-                                    settingsCascade={context.settingsCascade}
-                                    platformContext={context.platformContext}
-                                    extensionsController={context.extensionsController}
-                                    location={context.location}
-                                    history={context.history}
-                                    isLightTheme={context.isLightTheme}
-                                    authenticatedUser={context.authenticatedUser}
                                 />
                             ) : (
-                                <TreePage
-                                    repoName={context.repo.name}
-                                    repoID={context.repo.id}
-                                    repoDescription={context.repo.description}
-                                    commitID={context.resolvedRev.commitID}
-                                    rev={context.rev}
-                                    filePath={context.match.params.filePath || ''}
-                                    settingsCascade={context.settingsCascade}
-                                    extensionsController={context.extensionsController}
-                                    platformContext={context.platformContext}
-                                    location={context.location}
-                                    history={context.history}
-                                    isLightTheme={context.isLightTheme}
-                                />
+                                <TreePage {...context} {...repoRevProps} />
                             )}
                         </div>
                     )}
@@ -122,11 +180,11 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
     })),
     {
         path: '/-/commits',
-        render: context => (
+        render: ({ resolvedRev: { commitID }, repoHeaderContributionsLifecycleProps, ...context }) => (
             <RepositoryCommitsPage
                 {...context}
-                commitID={context.resolvedRev.commitID}
-                repoHeaderContributionsLifecycleProps={context.repoHeaderContributionsLifecycleProps}
+                commitID={commitID}
+                repoHeaderContributionsLifecycleProps={repoHeaderContributionsLifecycleProps}
             />
         ),
     },

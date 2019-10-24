@@ -22,11 +22,12 @@ import (
 	"github.com/crewjam/saml"
 	"github.com/crewjam/saml/samlidp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/enterprise/pkg/license"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -191,8 +192,8 @@ func TestMiddleware(t *testing.T) {
 
 	mockGetProviderValue = &provider{config: *config}
 	defer func() { mockGetProviderValue = nil }()
-	auth.MockProviders = []auth.Provider{mockGetProviderValue}
-	defer func() { auth.MockProviders = nil }()
+	providers.MockProviders = []providers.Provider{mockGetProviderValue}
+	defer func() { providers.MockProviders = nil }()
 
 	cleanup := session.ResetMockSessionStore(t)
 	defer cleanup()
@@ -291,9 +292,9 @@ func TestMiddleware(t *testing.T) {
 			t.Errorf("wrong response code: got %v, want %v", got, want)
 		}
 	})
-	var (
-		loggedInCookies []*http.Cookie
-	)
+
+	var loggedInCookies []*http.Cookie
+
 	t.Run("get SP metadata and register SP with IDP", func(t *testing.T) {
 		resp := doRequest("GET", "http://example.com/.auth/saml/metadata?pc="+providerID, "", nil, false, nil)
 		service := samlidp.Service{}

@@ -1,357 +1,36 @@
 package repos
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/url"
-	"os"
-	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/atomicvalue"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-var githubConnections = func() *atomicvalue.Value {
-	c := atomicvalue.New()
-	c.Set(func() interface{} {
-		return []*githubConnection{}
-	})
-	return c
-}()
-
-// SyncGitHubConnections periodically syncs connections from
-// the Frontend API.
-func SyncGitHubConnections(ctx context.Context) {
-	t := time.NewTicker(configWatchInterval)
-	var lastGitHubConf []*schema.GitHubConnection
-	for range t.C {
-		githubConf, err := conf.GitHubConfigs(ctx)
-		if err != nil {
-			log15.Error("unable to fetch GitHub configs", "err", err)
-			continue
-		}
-
-		var hasGitHubDotComConnection bool
-		for _, c := range githubConf {
-			u, _ := url.Parse(c.Url)
-			if u != nil && (u.Hostname() == "github.com" || u.Hostname() == "www.github.com" || u.Hostname() == "api.github.com") {
-				hasGitHubDotComConnection = true
-				break
-			}
-		}
-		if !hasGitHubDotComConnection {
-			// Add a GitHub.com entry by default, to support navigating to URL paths like
-			// /github.com/foo/bar to auto-add that repository.
-			githubConf = append(githubConf, &schema.GitHubConnection{
-				RepositoryQuery:             []string{"none"}, // don't try to list all repositories during syncs
-				Url:                         "https://github.com",
-				InitialRepositoryEnablement: true,
-			})
-		}
-
-		if reflect.DeepEqual(githubConf, lastGitHubConf) {
-			continue
-		}
-		lastGitHubConf = githubConf
-
-		var conns []*githubConnection
-		for _, c := range githubConf {
-			conn, err := newGitHubConnection(c)
-			if err != nil {
-				log15.Error("Error processing configured GitHub connection. Skipping it.", "url", c.Url, "error", err)
-				continue
-			}
-			conns = append(conns, conn)
-		}
-
-		githubConnections.Set(func() interface{} {
-			return conns
-		})
-
-		gitHubRepositorySyncWorker.restart()
-	}
-}
-
-// getGitHubConnection returns the GitHub connection (config + API client) that is responsible for
-// the repository specified by the args.
-func getGitHubConnection(args protocol.RepoLookupArgs) (*githubConnection, error) {
-	githubConnections := githubConnections.Get().([]*githubConnection)
-	if args.ExternalRepo != nil && args.ExternalRepo.ServiceType == github.ServiceType {
-		// Look up by external repository spec.
-		skippedBecauseNoAuth := false
-		for _, conn := range githubConnections {
-			if args.ExternalRepo.ServiceID == conn.baseURL.String() {
-				if canUseGraphQLAPI := conn.config.Token != ""; !canUseGraphQLAPI { // GraphQL API requires authentication
-					skippedBecauseNoAuth = true
-					continue
-				}
-				return conn, nil
-			}
-		}
-
-		if !skippedBecauseNoAuth {
-			return nil, errors.Wrap(github.ErrNotFound, fmt.Sprintf("no configured GitHub connection with URL: %q", args.ExternalRepo.ServiceID))
-		}
-	}
-
-	if args.Repo != "" {
-		// Look up by repository name.
-		repo := strings.ToLower(string(args.Repo))
-		for _, conn := range githubConnections {
-			if strings.HasPrefix(repo, conn.originalHostname+"/") {
-				return conn, nil
-			}
-		}
-	}
-
-	return nil, nil
-}
-
-// GetGitHubRepositoryMock is set by tests that need to mock GetGitHubRepository.
-var GetGitHubRepositoryMock func(args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error)
-
-var (
-	bypassGitHubAPI, _       = strconv.ParseBool(os.Getenv("BYPASS_GITHUB_API"))
-	minGitHubAPIRateLimit, _ = strconv.Atoi(os.Getenv("GITHUB_API_MIN_RATE_LIMIT"))
-
-	// ErrGitHubAPITemporarilyUnavailable is returned by GetGitHubRepository when the GitHub API is
-	// unavailable.
-	ErrGitHubAPITemporarilyUnavailable = errors.New("the GitHub API is temporarily unavailable")
-)
-
-func init() {
-	if v, _ := strconv.ParseBool(os.Getenv("OFFLINE")); v {
-		bypassGitHubAPI = true
-	}
-}
-
-// GetGitHubRepository queries a configured GitHub connection endpoint for information about the
-// specified repository.
-//
-// If args.Repo refers to a repository that is not known to be on a configured GitHub connection's
-// host, it returns authoritative == false.
-func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error) {
-	if GetGitHubRepositoryMock != nil {
-		return GetGitHubRepositoryMock(args)
-	}
-
-	ghrepoToRepoInfo := func(ghrepo *github.Repository, conn *githubConnection) *protocol.RepoInfo {
-		return &protocol.RepoInfo{
-			Name:         githubRepositoryToRepoPath(conn, ghrepo),
-			ExternalRepo: github.ExternalRepoSpec(ghrepo, *conn.baseURL),
-			Description:  ghrepo.Description,
-			Fork:         ghrepo.IsFork,
-			Archived:     ghrepo.IsArchived,
-			Links: &protocol.RepoLinks{
-				Root:   ghrepo.URL,
-				Tree:   ghrepo.URL + "/tree/{rev}/{path}",
-				Blob:   ghrepo.URL + "/blob/{rev}/{path}",
-				Commit: ghrepo.URL + "/commit/{commit}",
-			},
-			VCS: protocol.VCSInfo{
-				URL: conn.authenticatedRemoteURL(ghrepo),
-			},
-		}
-	}
-
-	conn, err := getGitHubConnection(args)
-	if err != nil {
-		return nil, true, err // refers to a GitHub repo but the host is not configured
-	}
-	if conn == nil {
-		return nil, false, nil // refers to a non-GitHub repo
-	}
-
-	// Support bypassing GitHub API, for rate limit evasion.
-	var bypassReason string
-	bypass := bypassGitHubAPI
-	if bypass {
-		bypassReason = "manual bypass env var BYPASS_GITHUB_API=1 is set"
-	}
-	if !bypass && minGitHubAPIRateLimit > 0 {
-		remaining, reset, known := conn.client.RateLimit.Get()
-		// If we're below the min rate limit, bypass the GitHub API. But if the rate limit has reset, then we need
-		// to perform an API request to check the new rate limit. (Give 30s of buffer for clock unsync.)
-		if known && remaining < minGitHubAPIRateLimit && reset > -30*time.Second {
-			bypass = true
-			bypassReason = "GitHub API rate limit is exhausted"
-		}
-	}
-	if bypass {
-		remaining, reset, known := conn.client.RateLimit.Get()
-
-		logArgs := []interface{}{"reason", bypassReason, "repo", args.Repo, "baseURL", conn.config.Url}
-		if known {
-			logArgs = append(logArgs, "rateLimitRemaining", remaining, "rateLimitReset", reset)
-		} else {
-			logArgs = append(logArgs, "rateLimitKnown", false)
-		}
-
-		// For public repositories, we can bypass the GitHub API and still get almost everything we
-		// need (except for the repository's ID, description, and fork status).
-		isPublicRepo := args.Repo != "" && conn.config.Token == ""
-		if isPublicRepo {
-			log15.Debug("Bypassing GitHub API when getting public repository. Some repository metadata fields will be blank.", logArgs...)
-
-			// It's important to still check cloneability, so we don't add a bunch of junk GitHub repos that don't
-			// exist (like github.com/settings/profile) or that are private and not on Sourcegraph.com.
-			remoteURL := "https://" + string(args.Repo)
-			if err := gitserver.DefaultClient.IsRepoCloneable(ctx, gitserver.Repo{Name: args.Repo, URL: remoteURL}); err != nil {
-				return nil, true, errors.Wrap(github.ErrNotFound, fmt.Sprintf("IsRepoCloneable: %s", err))
-			}
-
-			return &protocol.RepoInfo{
-				Name:         args.Repo,
-				ExternalRepo: nil,
-				Description:  "",
-				Fork:         false,
-				Archived:     false,
-				Links: &protocol.RepoLinks{
-					Root:   remoteURL,
-					Tree:   remoteURL + "/tree/{rev}/{path}",
-					Blob:   remoteURL + "/blob/{rev}/{path}",
-					Commit: remoteURL + "/commit/{commit}",
-				},
-				VCS: protocol.VCSInfo{URL: remoteURL},
-			}, true, nil
-		}
-
-		log15.Warn("Unable to get repository metadata from GitHub API for a (possibly) private repository.", logArgs...)
-		return nil, true, ErrGitHubAPITemporarilyUnavailable
-	}
-
-	log15.Debug("GetGitHubRepository", "repo", args.Repo, "externalRepo", args.ExternalRepo)
-
-	canUseGraphQLAPI := conn.config.Token != "" // GraphQL API requires authentication
-	if canUseGraphQLAPI && args.ExternalRepo != nil && args.ExternalRepo.ServiceType == github.ServiceType {
-		// Look up by external repository spec.
-		ghrepo, err := conn.client.GetRepositoryByNodeID(ctx, "", args.ExternalRepo.ID)
-		if ghrepo != nil {
-			repo = ghrepoToRepoInfo(ghrepo, conn)
-		}
-		return repo, true, err
-	}
-
-	if args.Repo != "" {
-		// Look up by repository name.
-		nameWithOwner := strings.TrimPrefix(strings.ToLower(string(args.Repo)), conn.originalHostname+"/")
-		owner, repoName, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
-		if err != nil {
-			return nil, true, err
-		}
-
-		ghrepo, err := conn.client.GetRepository(ctx, owner, repoName)
-		if ghrepo != nil {
-			repo = ghrepoToRepoInfo(ghrepo, conn)
-		}
-		return repo, true, err
-	}
-
-	return nil, true, fmt.Errorf("unable to look up GitHub repository (%+v)", args)
-}
-
-var gitHubRepositorySyncWorker = &worker{
-	work: func(ctx context.Context, shutdown chan struct{}) {
-		githubConnections := githubConnections.Get().([]*githubConnection)
-		if len(githubConnections) == 0 {
-			return
-		}
-		for _, c := range githubConnections {
-			go func(c *githubConnection) {
-				for {
-					if rateLimitRemaining, rateLimitReset, ok := c.client.RateLimit.Get(); ok && rateLimitRemaining < 200 {
-						wait := rateLimitReset + 10*time.Second
-						log15.Warn("GitHub API rate limit is almost exhausted. Waiting until rate limit is reset.", "wait", rateLimitReset, "rateLimitRemaining", rateLimitRemaining)
-						time.Sleep(wait)
-					}
-					updateGitHubRepositories(ctx, c)
-					githubUpdateTime.WithLabelValues(c.baseURL.String()).Set(float64(time.Now().Unix()))
-					select {
-					case <-shutdown:
-						return
-					case <-time.After(GetUpdateInterval()):
-					}
-				}
-			}(c)
-		}
-	},
-}
-
-// RunGitHubRepositorySyncWorker runs the worker that syncs repositories from the configured GitHub and GitHub
-// Enterprise instances to Sourcegraph.
-func RunGitHubRepositorySyncWorker(ctx context.Context) {
-	gitHubRepositorySyncWorker.start(ctx)
-}
-
-func githubRepositoryToRepoPath(conn *githubConnection, repo *github.Repository) api.RepoName {
-	return reposource.GitHubRepoName(conn.config.RepositoryPathPattern, conn.originalHostname, repo.NameWithOwner)
-}
-
-// updateGitHubRepositories ensures that all provided repositories have been added and updated on Sourcegraph.
-func updateGitHubRepositories(ctx context.Context, conn *githubConnection) {
-	repos := conn.listAllRepositories(ctx)
-
-	repoChan := make(chan repoCreateOrUpdateRequest)
-	defer close(repoChan)
-	go createEnableUpdateRepos(ctx, fmt.Sprintf("github:%s", conn.config.Token), repoChan)
-	for repo := range repos {
-		// log15.Debug("github sync: create/enable/update repo", "repo", repo.NameWithOwner)
-		repoChan <- repoCreateOrUpdateRequest{
-			RepoCreateOrUpdateRequest: api.RepoCreateOrUpdateRequest{
-				RepoName:     githubRepositoryToRepoPath(conn, repo),
-				ExternalRepo: github.ExternalRepoSpec(repo, *conn.baseURL),
-				Description:  repo.Description,
-				Fork:         repo.IsFork,
-				Archived:     repo.IsArchived,
-				Enabled:      conn.config.InitialRepositoryEnablement,
-			},
-			URL: conn.authenticatedRemoteURL(repo),
-		}
-	}
-}
-
-func newGitHubConnection(config *schema.GitHubConnection) (*githubConnection, error) {
-	baseURL, err := url.Parse(config.Url)
-	if err != nil {
-		return nil, err
-	}
-	baseURL = NormalizeBaseURL(baseURL)
-	originalHostname := baseURL.Hostname()
-
-	apiURL, githubDotCom := github.APIRoot(baseURL)
-
-	transport, err := cachedTransportWithCertTrusted(config.Certificate)
-	if err != nil {
-		return nil, err
-	}
-
-	return &githubConnection{
-		config:           config,
-		baseURL:          baseURL,
-		githubDotCom:     githubDotCom,
-		client:           github.NewClient(apiURL, config.Token, transport),
-		searchClient:     github.NewClient(apiURL, config.Token, transport),
-		originalHostname: originalHostname,
-	}, nil
-}
-
-type githubConnection struct {
-	config       *schema.GitHubConnection
-	githubDotCom bool
-	baseURL      *url.URL
-	client       *github.Client
+// A GithubSource yields repositories from a single Github connection configured
+// in Sourcegraph via the external services configuration.
+type GithubSource struct {
+	svc             *ExternalService
+	config          *schema.GitHubConnection
+	exclude         map[string]bool
+	excludePatterns []*regexp.Regexp
+	githubDotCom    bool
+	baseURL         *url.URL
+	client          *github.Client
 	// searchClient is for using the GitHub search API, which has an independent
 	// rate limit much lower than non-search API requests.
 	searchClient *github.Client
@@ -361,15 +40,188 @@ type githubConnection struct {
 	originalHostname string
 }
 
+// NewGithubSource returns a new GithubSource from the given external service.
+func NewGithubSource(svc *ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
+	var c schema.GitHubConnection
+	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
+		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
+	return newGithubSource(svc, &c, cf)
+}
+
+func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpcli.Factory) (*GithubSource, error) {
+	baseURL, err := url.Parse(c.Url)
+	if err != nil {
+		return nil, err
+	}
+	baseURL = NormalizeBaseURL(baseURL)
+	originalHostname := baseURL.Hostname()
+
+	apiURL, githubDotCom := github.APIRoot(baseURL)
+
+	if cf == nil {
+		cf = NewHTTPClientFactory()
+	}
+
+	opts := []httpcli.Opt{
+		// Use a 30s timeout to avoid running into EOF errors, because GitHub
+		// closes idle connections after 60s
+		httpcli.NewIdleConnTimeoutOpt(30 * time.Second),
+	}
+
+	if c.Certificate != "" {
+		pool, err := newCertPool(c.Certificate)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, httpcli.NewCertPoolOpt(pool))
+	}
+
+	cli, err := cf.Doer(opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	exclude := make(map[string]bool, len(c.Exclude))
+	var excludePatterns []*regexp.Regexp
+	for _, r := range c.Exclude {
+		if r.Name != "" {
+			exclude[strings.ToLower(r.Name)] = true
+		}
+
+		if r.Id != "" {
+			exclude[r.Id] = true
+		}
+
+		if r.Pattern != "" {
+			re, err := regexp.Compile(r.Pattern)
+			if err != nil {
+				return nil, err
+			}
+			excludePatterns = append(excludePatterns, re)
+		}
+	}
+
+	return &GithubSource{
+		svc:              svc,
+		config:           c,
+		exclude:          exclude,
+		excludePatterns:  excludePatterns,
+		baseURL:          baseURL,
+		githubDotCom:     githubDotCom,
+		client:           github.NewClient(apiURL, c.Token, cli),
+		searchClient:     github.NewClient(apiURL, c.Token, cli),
+		originalHostname: originalHostname,
+	}, nil
+}
+
+type githubResult struct {
+	err  error
+	repo *github.Repository
+}
+
+// ListRepos returns all Github repositories accessible to all connections configured
+// in Sourcegraph via the external services configuration.
+func (s GithubSource) ListRepos(ctx context.Context, results chan SourceResult) {
+	unfiltered := make(chan *githubResult)
+	go func() {
+		s.listAllRepositories(ctx, unfiltered)
+		close(unfiltered)
+	}()
+
+	seen := make(map[int64]bool)
+	for res := range unfiltered {
+		if res.err != nil {
+			results <- SourceResult{Source: s, Err: res.err}
+			continue
+		}
+		if !seen[res.repo.DatabaseID] && !s.excludes(res.repo) {
+			results <- SourceResult{Source: s, Repo: s.makeRepo(res.repo)}
+			seen[res.repo.DatabaseID] = true
+		}
+	}
+}
+
+// ExternalServices returns a singleton slice containing the external service.
+func (s GithubSource) ExternalServices() ExternalServices {
+	return ExternalServices{s.svc}
+}
+
+// LoadChangesets loads the latest state of the given Changesets from the codehost.
+func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) error {
+	prs := make([]*github.PullRequest, len(cs))
+	for i := range cs {
+		repo := cs[i].Repo.Metadata.(*github.Repository)
+		number, err := strconv.ParseInt(cs[i].ExternalID, 10, 64)
+		if err != nil {
+			return err
+		}
+
+		prs[i] = &github.PullRequest{
+			RepoWithOwner: repo.NameWithOwner,
+			Number:        number,
+		}
+	}
+
+	err := s.client.LoadPullRequests(ctx, prs...)
+	if err != nil {
+		return err
+	}
+
+	for i := range cs {
+		cs[i].Changeset.Metadata = prs[i]
+	}
+
+	return nil
+}
+
+// GetRepo returns the Github repository with the given name and owner
+// ("org/repo-name")
+func (s GithubSource) GetRepo(ctx context.Context, nameWithOwner string) (*Repo, error) {
+	r, err := s.getRepository(ctx, nameWithOwner)
+	if err != nil {
+		return nil, err
+	}
+	return s.makeRepo(r), nil
+}
+
+func (s GithubSource) makeRepo(r *github.Repository) *Repo {
+	urn := s.svc.URN()
+	return &Repo{
+		Name: string(reposource.GitHubRepoName(
+			s.config.RepositoryPathPattern,
+			s.originalHostname,
+			r.NameWithOwner,
+		)),
+		URI: string(reposource.GitHubRepoName(
+			"",
+			s.originalHostname,
+			r.NameWithOwner,
+		)),
+		ExternalRepo: github.ExternalRepoSpec(r, *s.baseURL),
+		Description:  r.Description,
+		Fork:         r.IsFork,
+		Enabled:      true,
+		Archived:     r.IsArchived,
+		Sources: map[string]*SourceInfo{
+			urn: {
+				ID:       urn,
+				CloneURL: s.authenticatedRemoteURL(r),
+			},
+		},
+		Metadata: r,
+	}
+}
+
 // authenticatedRemoteURL returns the repository's Git remote URL with the configured
 // GitHub personal access token inserted in the URL userinfo.
-func (c *githubConnection) authenticatedRemoteURL(repo *github.Repository) string {
-	if c.config.GitURLType == "ssh" {
-		url := fmt.Sprintf("git@%s:%s.git", c.originalHostname, repo.NameWithOwner)
+func (s *GithubSource) authenticatedRemoteURL(repo *github.Repository) string {
+	if s.config.GitURLType == "ssh" {
+		url := fmt.Sprintf("git@%s:%s.git", s.originalHostname, repo.NameWithOwner)
 		return url
 	}
 
-	if c.config.Token == "" {
+	if s.config.Token == "" {
 		return repo.URL
 	}
 	u, err := url.Parse(repo.URL)
@@ -377,150 +229,401 @@ func (c *githubConnection) authenticatedRemoteURL(repo *github.Repository) strin
 		log15.Warn("Error adding authentication to GitHub repository Git remote URL.", "url", repo.URL, "error", err)
 		return repo.URL
 	}
-	u.User = url.User(c.config.Token)
+	u.User = url.User(s.config.Token)
 	return u.String()
 }
 
-func (c *githubConnection) listAllRepositories(ctx context.Context) <-chan *github.Repository {
-	const first = 100 // max GitHub API "first" parameter
-	ch := make(chan *github.Repository, first)
-
-	var wg sync.WaitGroup
-
-	repositoryQueries := c.config.RepositoryQuery
-	if len(repositoryQueries) == 0 {
-		// Users need to specify ["none"] to disable mirroring.
-		if c.githubDotCom {
-			// Doesn't make sense to try to enumerate all public repos on github.com
-			repositoryQueries = []string{"affiliated"}
-		} else {
-			repositoryQueries = []string{"public", "affiliated"}
-		}
-	}
-	for _, repositoryQuery := range repositoryQueries {
-		wg.Add(1)
-		go func(repositoryQuery string) {
-			defer wg.Done()
-			switch repositoryQuery {
-			case "public":
-				if c.githubDotCom {
-					log15.Warn(`ignoring unsupported configuration "public" for "repositoryQuery" for github.com`)
-					return
-				}
-				var sinceRepoID int64
-				for {
-					repos, err := c.client.ListPublicRepositories(ctx, sinceRepoID)
-					if err != nil {
-						log15.Error("Error listing public repositories", "sinceRepoID", sinceRepoID, "error", err)
-						return
-					}
-					if len(repos) == 0 {
-						// Last page
-						return
-					}
-					for _, r := range repos {
-						ch <- r
-						if sinceRepoID < r.DatabaseID {
-							sinceRepoID = r.DatabaseID
-						}
-					}
-				}
-			case "affiliated":
-				hasNextPage := true
-				for page := 1; hasNextPage; page++ {
-					var repos []*github.Repository
-					var rateLimitCost int
-					var err error
-					repos, hasNextPage, rateLimitCost, err = c.client.ListViewerRepositories(ctx, "", page)
-					if err != nil {
-						log15.Error("Error listing viewer's affiliated GitHub repositories", "page", page, "error", err)
-						break
-					}
-					rateLimitRemaining, rateLimitReset, _ := c.client.RateLimit.Get()
-					log15.Debug("github sync: ListViewerRepositories", "repos", len(repos), "rateLimitCost", rateLimitCost, "rateLimitRemaining", rateLimitRemaining, "rateLimitReset", rateLimitReset)
-					for _, r := range repos {
-						if c.githubDotCom && r.IsFork && r.ViewerPermission == "READ" {
-							log15.Debug("not syncing readonly fork", "repo", r.NameWithOwner)
-							continue
-						}
-						// log15.Debug("github sync: ListViewerRepositories: repo", "repo", r.NameWithOwner)
-						ch <- r
-					}
-					if hasNextPage {
-						time.Sleep(c.client.RateLimit.RecommendedWaitForBackgroundOp(rateLimitCost))
-					}
-				}
-
-			case "none":
-				// nothing to do
-
-			default:
-				// Run the query as a GitHub advanced repository search
-				// (https://github.com/search/advanced).
-				hasNextPage := true
-				for page := 1; hasNextPage; page++ {
-					var repos []*github.Repository
-					var rateLimitCost int
-					var err error
-					repos, hasNextPage, rateLimitCost, err = c.searchClient.ListRepositoriesForSearch(ctx, repositoryQuery, page)
-					if err != nil {
-						log15.Error("Error listing GitHub repositories for search", "searchString", repositoryQuery, "page", page, "error", err)
-						break
-					}
-					rateLimitRemaining, rateLimitReset, _ := c.searchClient.RateLimit.Get()
-					log15.Debug("github sync: ListRepositoriesForSearch", "searchString", repositoryQuery, "repos", len(repos), "rateLimitCost", rateLimitCost, "rateLimitRemaining", rateLimitRemaining, "rateLimitReset", rateLimitReset)
-					for _, r := range repos {
-						ch <- r
-					}
-					if hasNextPage {
-						time.Sleep(c.searchClient.RateLimit.RecommendedWaitForBackgroundOp(rateLimitCost))
-					}
-				}
-			}
-		}(repositoryQuery)
+func (s *GithubSource) excludes(r *github.Repository) bool {
+	if s.exclude[strings.ToLower(r.NameWithOwner)] || s.exclude[r.ID] {
+		return true
 	}
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		for _, nameWithOwner := range c.config.Repos {
-			owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
-			if err != nil {
-				log15.Error("Invalid GitHub repository", "nameWithOwner", nameWithOwner)
-				continue
-			}
-			repo, err := c.client.GetRepository(ctx, owner, name)
-			if err != nil {
-				log15.Error("Error getting GitHub repository", "nameWithOwner", nameWithOwner, "error", err)
-				continue
-			}
-			log15.Debug("github sync: GetRepository", "repo", repo.NameWithOwner)
-			ch <- repo
-			time.Sleep(c.client.RateLimit.RecommendedWaitForBackgroundOp(1)) // 0-duration sleep unless nearing rate limit exhaustion
+	for _, re := range s.excludePatterns {
+		if re.MatchString(r.NameWithOwner) {
+			return true
 		}
-	}()
-
-	go func() {
-		wg.Wait()
-		close(ch)
-	}()
-
-	return unique(ch)
+	}
+	return false
 }
 
-// unique returns a channel that only forwards repositories
-// that have never been sent on the channel before.
-func unique(in <-chan *github.Repository) <-chan *github.Repository {
-	out := make(chan *github.Repository)
-	go func() {
-		found := make(map[string]struct{})
-		for repo := range in {
-			if _, ok := found[repo.URL]; !ok {
-				out <- repo
-				found[repo.URL] = struct{}{}
+// repositoryPager is a function that returns repositories on a given `page`.
+// It also returns:
+// - `hasNext` bool: if there is a next page
+// - `cost` int: rate limit cost used to determine recommended wait before next call
+// - `err` error: if something goes wrong
+type repositoryPager func(page int) (repos []*github.Repository, hasNext bool, cost int, err error)
+
+// paginate returns all the repositories from the given repositoryPager.
+// It repeatedly calls `pager` with incrementing page count until it
+// returns false for hasNext.
+func (s *GithubSource) paginate(ctx context.Context, results chan *githubResult, pager repositoryPager) {
+	hasNext := true
+	for page := 1; hasNext; page++ {
+		if err := ctx.Err(); err != nil {
+			results <- &githubResult{err: err}
+			return
+		}
+
+		var pageRepos []*github.Repository
+		var cost int
+		var err error
+		pageRepos, hasNext, cost, err = pager(page)
+		if err != nil {
+			results <- &githubResult{err: err}
+			return
+		}
+
+		for _, r := range pageRepos {
+			results <- &githubResult{repo: r}
+		}
+
+		if hasNext && cost > 0 {
+			time.Sleep(s.client.RateLimit.RecommendedWaitForBackgroundOp(cost))
+		}
+	}
+}
+
+// listOrg handles the `org` config option.
+// It returns all the repositories belonging to the given organization
+// by hitting the /orgs/:org/repos endpoint.
+//
+// It returns an error if the request fails on the first page.
+func (s *GithubSource) listOrg(ctx context.Context, org string, results chan *githubResult) {
+	var oerr error
+	s.paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
+		defer func() {
+			// Catch 404 to handle
+			if page == 1 {
+				if apiErr, ok := err.(*github.APIError); ok && apiErr.Code == 404 {
+					oerr, err = err, nil
+				}
+			}
+
+			remaining, reset, retry, _ := s.client.RateLimit.Get()
+			log15.Debug(
+				"github sync: ListOrgRepositories",
+				"repos", len(repos),
+				"rateLimitCost", cost,
+				"rateLimitRemaining", remaining,
+				"rateLimitReset", reset,
+				"retryAfter", retry,
+			)
+		}()
+		return s.client.ListOrgRepositories(ctx, org, page)
+	})
+
+	// Handle 404 from org repos endpoint by trying user repos endpoint
+	if oerr != nil && s.listUser(ctx, org, results) != nil {
+		results <- &githubResult{
+			err: oerr,
+		}
+	}
+}
+
+// listUser returns all the repositories belonging to the given user
+// by hitting the /users/:user/repos endpoint.
+//
+// It returns an error if the request fails on the first page.
+func (s *GithubSource) listUser(ctx context.Context, user string, results chan *githubResult) (fail error) {
+	s.paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
+		defer func() {
+			if err != nil && page == 1 {
+				fail, err = err, nil
+			}
+
+			remaining, reset, retry, _ := s.client.RateLimit.Get()
+			log15.Debug(
+				"github sync: ListUserRepositories",
+				"repos", len(repos),
+				"rateLimitCost", cost,
+				"rateLimitRemaining", remaining,
+				"rateLimitReset", reset,
+				"retryAfter", retry,
+			)
+		}()
+		return s.client.ListUserRepositories(ctx, user, page)
+	})
+	return
+}
+
+// listRepos returns the valid repositories from the given list of repository names.
+// This is done by hitting the /repos/:owner/:name endpoint for each of the given
+// repository names.
+func (s *GithubSource) listRepos(ctx context.Context, repos []string, results chan *githubResult) {
+	if err := s.fetchAllRepositoriesInBatches(ctx, results); err == nil {
+		return
+	} else {
+		// The way we fetch repositories in batches through the GraphQL API -
+		// using aliases to query multiple repositories in one query - is
+		// currently "undefined behaviour". Very rarely but unreproducibly it
+		// resulted in EOF errors while testing. And since we rely on fetching
+		// to work, we fall back to the (slower) sequential fetching in case we
+		// run into an GraphQL API error
+		log15.Warn("github sync: fetching in batches failed. falling back to sequential fetch", "error", err)
+	}
+
+	// Admins normally add to end of lists, so end of list most likely has new
+	// repos => stream them first.
+	for i := len(repos) - 1; i >= 0; i-- {
+		nameWithOwner := repos[i]
+		if err := ctx.Err(); err != nil {
+			results <- &githubResult{err: err}
+			return
+		}
+
+		owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
+		if err != nil {
+			results <- &githubResult{err: errors.New("Invalid GitHub repository: nameWithOwner=" + nameWithOwner)}
+			return
+		}
+		var repo *github.Repository
+		repo, err = s.client.GetRepository(ctx, owner, name)
+		if err != nil {
+			// TODO(tsenart): When implementing dry-run, reconsider alternatives to return
+			// 404 errors on external service config validation.
+			if github.IsNotFound(err) {
+				log15.Warn("skipping missing github.repos entry:", "name", nameWithOwner, "err", err)
+				continue
+			}
+
+			results <- &githubResult{err: errors.Wrapf(err, "Error getting GitHub repository: nameWithOwner=%s", nameWithOwner)}
+			break
+		}
+		log15.Debug("github sync: GetRepository", "repo", repo.NameWithOwner)
+
+		results <- &githubResult{repo: repo}
+
+		time.Sleep(s.client.RateLimit.RecommendedWaitForBackgroundOp(1)) // 0-duration sleep unless nearing rate limit exhaustion
+	}
+}
+
+// listPublic handles the `public` keyword of the `repositoryQuery` config option.
+// It returns the public repositories listed on the /repositories endpoint.
+func (s *GithubSource) listPublic(ctx context.Context, results chan *githubResult) {
+	if s.githubDotCom {
+		results <- &githubResult{err: errors.New(`unsupported configuration "public" for "repositoryQuery" for github.com`)}
+		return
+	}
+	var sinceRepoID int64
+	for {
+		if err := ctx.Err(); err != nil {
+			results <- &githubResult{err: err}
+			return
+		}
+
+		repos, err := s.client.ListPublicRepositories(ctx, sinceRepoID)
+		if err != nil {
+			results <- &githubResult{err: errors.Wrapf(err, "failed to list public repositories: sinceRepoID=%d", sinceRepoID)}
+			return
+		}
+		if len(repos) == 0 {
+			return
+		}
+		log15.Debug("github sync public", "repos", len(repos), "error", err)
+		for _, r := range repos {
+			results <- &githubResult{repo: r}
+			if sinceRepoID < r.DatabaseID {
+				sinceRepoID = r.DatabaseID
 			}
 		}
-		close(out)
-	}()
-	return out
+	}
+}
+
+// listAffiliated handles the `affiliated` keyword of the `repositoryQuery` config option.
+// It returns the repositories affiliated with the client token by hitting the /user/repos
+// endpoint.
+//
+// Affiliation is present if the user: (1) owns the repo, (2) is apart of an org that
+// the repo belongs to, or (3) is a collaborator.
+func (s *GithubSource) listAffiliated(ctx context.Context, results chan *githubResult) {
+	s.paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
+		defer func() {
+			remaining, reset, retry, _ := s.client.RateLimit.Get()
+			log15.Debug(
+				"github sync: ListAffiliated",
+				"repos", len(repos),
+				"rateLimitCost", cost,
+				"rateLimitRemaining", remaining,
+				"rateLimitReset", reset,
+				"retryAfter", retry,
+			)
+		}()
+		return s.client.ListAffiliatedRepositories(ctx, page)
+	})
+}
+
+// listSearch handles the `repositoryQuery` config option when a keyword is not present.
+// It returns the repositories resulting from from GitHub's advanced repository search
+// by hitting the /search/repositories endpoint.
+func (s *GithubSource) listSearch(ctx context.Context, query string, results chan *githubResult) {
+	s.paginate(ctx, results, func(page int) ([]*github.Repository, bool, int, error) {
+		reposPage, err := s.searchClient.ListRepositoriesForSearch(ctx, query, page)
+		if err != nil {
+			return nil, false, 0, errors.Wrapf(err, "failed to list GitHub repositories for search: page=%d, searchString=%q", page, query)
+		}
+
+		if reposPage.TotalCount > 1000 {
+			// GitHub's advanced repository search will only
+			// return 1000 results. We specially handle this case
+			// to ensure the admin gets a detailed error
+			// message. https://github.com/sourcegraph/sourcegraph/issues/2562
+			return nil, false, 0, errors.Errorf(`repositoryQuery %q would return %d results. GitHub's Search API only returns up to 1000 results. Please adjust your repository query into multiple queries such that each returns less than 1000 results. For example: {"repositoryQuery": %s}`, query, reposPage.TotalCount, exampleRepositoryQuerySplit(query))
+		}
+
+		repos, hasNext := reposPage.Repos, reposPage.HasNextPage
+		remaining, reset, retry, ok := s.searchClient.RateLimit.Get()
+		log15.Debug(
+			"github sync: ListRepositoriesForSearch",
+			"searchString", query,
+			"repos", len(repos),
+			"rateLimitRemaining", remaining,
+			"rateLimitReset", reset,
+			"retryAfter", retry,
+		)
+
+		// GitHub search has vastly different rate limits to
+		// the normal GitHub API (30req/m vs
+		// 5000req/h). RecommendedWaitForBackgroundOp has
+		// heuristics tuned for the normal API, part of which
+		// is to not sleep if we have ample rate limit left.
+		//
+		// So we only let the heuristic kick in if we have
+		// less than 5 requests left.
+		var cost int
+		if retry > 0 || (ok && remaining < 5) {
+			cost = 1
+		}
+
+		return repos, hasNext, cost, nil
+	})
+}
+
+// regOrg is a regular expression that matches the pattern `org:<org-name>`
+// `<org-name>` follows the GitHub username convention:
+// - only single hyphens and alphanumeric characters allowed.
+// - cannot begin/end with hyphen.
+// - up to 38 characters.
+var regOrg = lazyregexp.New(`^org:([a-zA-Z0-9](?:-?[a-zA-Z0-9]){0,38})$`)
+
+// matchOrg extracts the org name from the pattern `org:<org-name>` if it exists.
+func matchOrg(q string) string {
+	match := regOrg.FindStringSubmatch(q)
+	if len(match) != 2 {
+		return ""
+	}
+	return match[1]
+}
+
+// listRepositoryQuery handles the `repositoryQuery` config option.
+// The supported keywords to select repositories are:
+// - `public`: public repositories (from endpoint: /repositories)
+// - `affiliated`: repositories affiliated with client token (from endpoint: /user/repos)
+// - `none`: disables `repositoryQuery`
+// Inputs other than these three keywords will be queried using
+// GitHub advanced repository search (endpoint: /search/repositories)
+func (s *GithubSource) listRepositoryQuery(ctx context.Context, query string, results chan *githubResult) {
+	switch query {
+	case "public":
+		s.listPublic(ctx, results)
+		return
+	case "affiliated":
+		s.listAffiliated(ctx, results)
+		return
+	case "none":
+		// nothing
+		return
+	}
+
+	// Special-casing for `org:<org-name>`
+	// to directly use GitHub's org repo
+	// list API instead of the limited
+	// search API.
+	//
+	// If the org repo list API fails, we
+	// try the user repo list API.
+	if org := matchOrg(query); org != "" {
+		s.listOrg(ctx, org, results)
+		return
+	}
+
+	// Run the query as a GitHub advanced repository search
+	// (https://github.com/search/advanced).
+	s.listSearch(ctx, query, results)
+}
+
+// listAllRepositories returns the repositories from the given `orgs`, `repos`, and
+// `repositoryQuery` config options excluding the ones specified by `exclude`.
+func (s *GithubSource) listAllRepositories(ctx context.Context, results chan *githubResult) {
+	s.listRepos(ctx, s.config.Repos, results)
+
+	// Admins normally add to end of lists, so end of list most likely has new
+	// repos => stream them first.
+	for i := len(s.config.RepositoryQuery) - 1; i >= 0; i-- {
+		s.listRepositoryQuery(ctx, s.config.RepositoryQuery[i], results)
+	}
+
+	for i := len(s.config.Orgs) - 1; i >= 0; i-- {
+		s.listOrg(ctx, s.config.Orgs[i], results)
+	}
+}
+
+func (s *GithubSource) getRepository(ctx context.Context, nameWithOwner string) (*github.Repository, error) {
+	owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Invalid GitHub repository: nameWithOwner="+nameWithOwner)
+	}
+
+	repo, err := s.client.GetRepository(ctx, owner, name)
+	if err != nil {
+		return nil, err
+	}
+
+	return repo, nil
+}
+
+// fetchAllRepositoriesInBatches fetches the repositories configured in
+// config.Repos in batches and adds them to the supplied set
+func (s *GithubSource) fetchAllRepositoriesInBatches(ctx context.Context, results chan *githubResult) error {
+	const batchSize = 30
+
+	// Admins normally add to end of lists, so end of list most likely has new
+	// repos => stream them first.
+	for end := len(s.config.Repos); end > 0; end -= batchSize {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
+		start := end - batchSize
+		if start < 0 {
+			start = 0
+		}
+		batch := s.config.Repos[start:end]
+
+		repos, err := s.client.GetReposByNameWithOwner(ctx, batch...)
+		if err != nil {
+			return err
+		}
+
+		log15.Debug("github sync: GetGetReposByNameWithOwner", "repos", batch)
+		for _, r := range repos {
+			results <- &githubResult{repo: r}
+		}
+
+		time.Sleep(s.client.RateLimit.RecommendedWaitForBackgroundOp(1)) // 0-duration sleep unless nearing rate limit exhaustion
+	}
+
+	return nil
+}
+
+func exampleRepositoryQuerySplit(q string) string {
+	var qs []string
+	for _, suffix := range []string{"created:>=2019", "created:2018", "created:2016..2017", "created:<2016"} {
+		qs = append(qs, fmt.Sprintf("%s %s", q, suffix))
+	}
+	// Avoid escaping < and >
+	var b bytes.Buffer
+	enc := json.NewEncoder(&b)
+	enc.SetEscapeHTML(false)
+	_ = enc.Encode(qs)
+	return strings.TrimSpace(b.String())
 }

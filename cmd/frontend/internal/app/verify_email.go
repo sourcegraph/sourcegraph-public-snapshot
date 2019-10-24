@@ -6,7 +6,7 @@ import (
 	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -49,7 +49,7 @@ func serveVerifyEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/user/account", http.StatusFound)
+	http.Redirect(w, r, "/user/settings/emails", http.StatusFound)
 }
 
 func httpLogAndError(w http.ResponseWriter, msg string, code int, errArgs ...interface{}) {

@@ -8,14 +8,13 @@ import (
 
 	"github.com/dghubble/gologin"
 	oauth2Login "github.com/dghubble/gologin/oauth2"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"golang.org/x/oauth2"
 )
 
 // GitLab login errors
-var (
-	ErrUnableToGetGitLabUser = errors.New("github: unable to get GitLab User")
-)
+
+var ErrUnableToGetGitLabUser = errors.New("github: unable to get GitLab User")
 
 func LoginHandler(config *oauth2.Config, failure http.Handler) http.Handler {
 	return oauth2Login.LoginHandler(config, failure)

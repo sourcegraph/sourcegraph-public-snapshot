@@ -1,17 +1,55 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
-	"os"
-	"path"
-	"path/filepath"
-	"strings"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
+
+func (s *Server) repoInfo(ctx context.Context, repo api.RepoName) (*protocol.RepoInfo, error) {
+	dir := s.dir(repo)
+	resp := protocol.RepoInfo{
+		Cloned: repoCloned(dir),
+	}
+	if resp.Cloned {
+		remoteURL, err := repoRemoteURL(ctx, dir)
+		if err != nil {
+			return nil, err
+		}
+		resp.URL = remoteURL
+	}
+	{
+		resp.CloneProgress, resp.CloneInProgress = s.locker.Status(dir)
+		if isAlwaysCloningTest(repo) {
+			resp.CloneInProgress = true
+			resp.CloneProgress = "This will never finish cloning"
+		}
+	}
+	if resp.Cloned {
+		if mtime, err := repoLastFetched(dir); err != nil {
+			log15.Warn("error computing last-fetched date", "repo", repo, "err", err)
+		} else {
+			resp.LastFetched = &mtime
+		}
+
+		if cloneTime, err := getRecloneTime(dir); err != nil {
+			log15.Warn("error getting reclone time", "repo", repo, "err", err)
+		} else {
+			resp.CloneTime = &cloneTime
+		}
+
+		if lastChanged, err := repoLastChanged(dir); err != nil {
+			log15.Warn("error getting last changed", "repo", repo, "err", err)
+		} else {
+			resp.LastChanged = &lastChanged
+		}
+	}
+	return &resp, nil
+}
 
 func (s *Server) handleRepoInfo(w http.ResponseWriter, r *http.Request) {
 	var req protocol.RepoInfoRequest
@@ -19,45 +57,17 @@ func (s *Server) handleRepoInfo(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	repo := protocol.NormalizeRepo(req.Repo)
-	dir := path.Join(s.ReposDir, string(repo))
 
 	resp := protocol.RepoInfoResponse{
-		Cloned: repoCloned(dir),
+		Results: make(map[api.RepoName]*protocol.RepoInfo, len(req.Repos)),
 	}
-	if resp.Cloned {
-		remoteURL, err := repoRemoteURL(r.Context(), dir)
+	for _, repoName := range req.Repos {
+		result, err := s.repoInfo(r.Context(), repoName)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		resp.URL = remoteURL
-	}
-	{
-		resp.CloneProgress, resp.CloneInProgress = s.locker.Status(dir)
-		if strings.ToLower(string(req.Repo)) == "github.com/sourcegraphtest/alwayscloningtest" {
-			resp.CloneInProgress = true
-			resp.CloneProgress = "This will never finish cloning"
-		}
-	}
-	if resp.Cloned {
-		if mtime, err := repoLastFetched(dir); err != nil {
-			log15.Warn("error computing last-fetched date", "repo", req.Repo, "err", err)
-		} else {
-			resp.LastFetched = &mtime
-		}
-
-		if cloneTime, err := getRecloneTime(dir); err != nil {
-			log15.Warn("error getting reclone time", "repo", req.Repo, "err", err)
-		} else {
-			resp.CloneTime = &cloneTime
-		}
-
-		if lastChanged, err := repoLastChanged(dir); err != nil {
-			log15.Warn("error getting last changed", "repo", req.Repo, "err", err)
-		} else {
-			resp.LastChanged = &lastChanged
-		}
+		resp.Results[repoName] = result
 	}
 
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
@@ -67,7 +77,7 @@ func (s *Server) handleRepoInfo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleRepoDelete(w http.ResponseWriter, r *http.Request) {
-	var req protocol.RepoInfoRequest
+	var req protocol.RepoDeleteRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -82,21 +92,5 @@ func (s *Server) handleRepoDelete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) deleteRepo(repo api.RepoName) error {
-	repo = protocol.NormalizeRepo(repo)
-	dir := filepath.Join(s.ReposDir, string(repo))
-
-	if _, err := os.Stat(filepath.Join(dir, ".git")); err != nil && !os.IsNotExist(err) {
-		return err
-	} else if err == nil {
-		// New style, so we just delete the .git dir
-		dir = filepath.Join(dir, ".git")
-	} else {
-		// Old style, ensure it actually is a git dir so we don't delete
-		// multiple repos. We do not need to change dir.
-		if _, err := os.Stat(filepath.Join(dir, "HEAD")); err != nil {
-			return err
-		}
-	}
-
-	return s.removeRepoDirectory(dir)
+	return s.removeRepoDirectory(s.dir(repo))
 }

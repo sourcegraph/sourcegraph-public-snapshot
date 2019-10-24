@@ -9,5 +9,5 @@ import (
 )
 
 func ExternalURL() *url.URL {
-	return globals.ExternalURL
+	return globals.ExternalURL()
 }

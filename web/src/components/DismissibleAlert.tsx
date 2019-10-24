@@ -22,7 +22,7 @@ export class DismissibleAlert extends React.PureComponent<Props, State> {
 
     constructor(props: Props) {
         super(props)
-        this.key = 'DismissibleAlert/' + props.partialStorageKey + '/dismissed'
+        this.key = `DismissibleAlert/${props.partialStorageKey}/dismissed`
 
         this.state = {
             dismissed: localStorage.getItem(this.key) === 'true',
@@ -36,7 +36,7 @@ export class DismissibleAlert extends React.PureComponent<Props, State> {
         return (
             <div className={`alert dismissible-alert ${this.props.className}`}>
                 <div className="dismissible-alert__content">{this.props.children}</div>
-                <button className="btn btn-icon" onClick={this.onDismiss}>
+                <button type="button" className="btn btn-icon" onClick={this.onDismiss}>
                     <CloseIcon className="icon-inline" />
                 </button>
             </div>

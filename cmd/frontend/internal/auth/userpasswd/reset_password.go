@@ -7,10 +7,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/txemail"
-	"github.com/sourcegraph/sourcegraph/pkg/txemail/txtypes"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/txemail"
+	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 )
 
 // HandleResetPasswordInit initiates the builtin-auth password reset flow by sending a password-reset email.
@@ -42,7 +43,11 @@ func HandleResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 
 	usr, err := db.Users.GetByVerifiedEmail(ctx, formData.Email)
 	if err != nil {
-		httpLogAndError(w, "No user found with a matching verified email address", http.StatusBadRequest, "email", formData.Email)
+		// 🚨 SECURITY: We don't show an error message when the user is not found
+		// as to not leak the existence of a given e-mail address in the database.
+		if !errcode.IsNotFound(err) {
+			httpLogAndError(w, "Failed to lookup user", http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -63,7 +68,7 @@ func HandleResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 			URL      string
 		}{
 			Username: usr.Username,
-			URL:      globals.ExternalURL.ResolveReference(resetURL).String(),
+			URL:      globals.ExternalURL().ResolveReference(resetURL).String(),
 		},
 	}); err != nil {
 		httpLogAndError(w, "Could not send reset password email", http.StatusInternalServerError, "err", err)
@@ -71,17 +76,16 @@ func HandleResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-var (
-	resetPasswordEmailTemplates = txemail.MustValidate(txtypes.Templates{
-		Subject: `Reset your Sourcegraph password`,
-		Text: `
+var resetPasswordEmailTemplates = txemail.MustValidate(txtypes.Templates{
+	Subject: `Reset your Sourcegraph password`,
+	Text: `
 Somebody (likely you) requested a password reset for the user {{.Username}} on Sourcegraph.
 
 To reset the password for {{.Username}} on Sourcegraph, follow this link:
 
   {{.URL}}
 `,
-		HTML: `
+	HTML: `
 <p>
   Somebody (likely you) requested a password reset for <strong>{{.Username}}</strong>
   on Sourcegraph.
@@ -89,8 +93,7 @@ To reset the password for {{.Username}} on Sourcegraph, follow this link:
 
 <p><strong><a href="{{.URL}}">Reset password for {{.Username}}</a></strong></p>
 `,
-	})
-)
+})
 
 // HandleResetPasswordCode resets the password if the correct code is provided.
 func HandleResetPasswordCode(w http.ResponseWriter, r *http.Request) {

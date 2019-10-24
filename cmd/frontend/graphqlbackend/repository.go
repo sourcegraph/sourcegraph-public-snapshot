@@ -4,34 +4,42 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"sync"
 	"time"
-
-	"github.com/pkg/errors"
-
-	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/phabricator"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-type repositoryResolver struct {
+type RepositoryResolver struct {
+	hydration sync.Once
+	err       error
+
 	repo        *types.Repo
 	redirectURL *string
 	icon        string
 	matches     []*searchResultMatchResolver
 }
 
-func repositoryByID(ctx context.Context, id graphql.ID) (*repositoryResolver, error) {
+func NewRepositoryResolver(repo *types.Repo) *RepositoryResolver {
+	return &RepositoryResolver{repo: repo}
+}
+
+var RepositoryByID = repositoryByID
+
+func repositoryByID(ctx context.Context, id graphql.ID) (*RepositoryResolver, error) {
 	var repoID api.RepoID
 	if err := relay.UnmarshalSpec(id, &repoID); err != nil {
 		return nil, err
@@ -40,18 +48,18 @@ func repositoryByID(ctx context.Context, id graphql.ID) (*repositoryResolver, er
 	if err != nil {
 		return nil, err
 	}
-	return &repositoryResolver{repo: repo}, nil
+	return &RepositoryResolver{repo: repo}, nil
 }
 
-func repositoryByIDInt32(ctx context.Context, repoID api.RepoID) (*repositoryResolver, error) {
+func RepositoryByIDInt32(ctx context.Context, repoID api.RepoID) (*RepositoryResolver, error) {
 	repo, err := db.Repos.Get(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
-	return &repositoryResolver{repo: repo}, nil
+	return &RepositoryResolver{repo: repo}, nil
 }
 
-func (r *repositoryResolver) ID() graphql.ID {
+func (r *RepositoryResolver) ID() graphql.ID {
 	return marshalRepositoryID(r.repo.ID)
 }
 
@@ -62,24 +70,33 @@ func unmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
 	return
 }
 
-func (r *repositoryResolver) Name() string {
+func (r *RepositoryResolver) Name() string {
 	return string(r.repo.Name)
 }
 
-// TODO(chris): Remove URI in favor of Name.
-func (r *repositoryResolver) URI() string {
-	return string(r.repo.Name)
+func (r *RepositoryResolver) URI(ctx context.Context) (string, error) {
+	err := r.hydrate(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return r.repo.URI, nil
 }
 
-func (r *repositoryResolver) Description() string {
-	return r.repo.Description
+func (r *RepositoryResolver) Description(ctx context.Context) (string, error) {
+	err := r.hydrate(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return r.repo.Description, nil
 }
 
-func (r *repositoryResolver) RedirectURL() *string {
+func (r *RepositoryResolver) RedirectURL() *string {
 	return r.redirectURL
 }
 
-func (r *repositoryResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
+func (r *RepositoryResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		if err == backend.ErrMustBeSiteAdmin || err == backend.ErrNotAuthenticated {
 			return false, nil // not an error
@@ -89,13 +106,7 @@ func (r *repositoryResolver) ViewerCanAdminister(ctx context.Context) (bool, err
 	return true, nil
 }
 
-func (r *repositoryResolver) CloneInProgress(ctx context.Context) (bool, error) {
-	// Asking gitserver may trigger a clone of the repo, so ensure it is
-	// enabled.
-	if !r.repo.Enabled {
-		return false, nil
-	}
-
+func (r *RepositoryResolver) CloneInProgress(ctx context.Context) (bool, error) {
 	return r.MirrorInfo().CloneInProgress(ctx)
 }
 
@@ -104,16 +115,10 @@ type repositoryCommitArgs struct {
 	InputRevspec *string
 }
 
-func (r *repositoryResolver) Commit(ctx context.Context, args *repositoryCommitArgs) (*gitCommitResolver, error) {
-	// Asking gitserver may trigger a clone of the repo, so ensure it is
-	// enabled.
-	if !r.repo.Enabled {
-		return nil, nil
-	}
-
+func (r *RepositoryResolver) Commit(ctx context.Context, args *repositoryCommitArgs) (*GitCommitResolver, error) {
 	commitID, err := backend.Repos.ResolveRev(ctx, r.repo, args.Rev)
 	if err != nil {
-		if git.IsRevisionNotFound(err) {
+		if gitserver.IsRevisionNotFound(err) {
 			return nil, nil
 		}
 		return nil, err
@@ -133,13 +138,7 @@ func (r *repositoryResolver) Commit(ctx context.Context, args *repositoryCommitA
 	return resolver, nil
 }
 
-func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*gitRefResolver, error) {
-	// Asking gitserver may trigger a clone of the repo, so ensure it is
-	// enabled.
-	if !r.repo.Enabled {
-		return nil, nil
-	}
-
+func (r *RepositoryResolver) DefaultBranch(ctx context.Context) (*GitRefResolver, error) {
 	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo)
 	if err != nil {
 		return nil, err
@@ -155,53 +154,102 @@ func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*gitRefResolver
 
 	// If we fail to get the default branch due to cloning or being empty, we return nothing.
 	if err != nil {
-		if vcs.IsCloneInProgress(err) || git.IsRevisionNotFound(err) {
+		if vcs.IsCloneInProgress(err) || gitserver.IsRevisionNotFound(err) {
 			return nil, nil
 		}
 		return nil, err
 	}
 
-	return &gitRefResolver{repo: r, name: refName}, nil
+	return &GitRefResolver{repo: r, name: refName}, nil
 }
 
-func (r *repositoryResolver) Language() string {
-	return r.repo.Language
-}
+func (r *RepositoryResolver) Language(ctx context.Context) string {
+	// The repository language is the most common language at the HEAD commit of the repository.
+	// Note: the repository database field is no longer updated as of
+	// https://github.com/sourcegraph/sourcegraph/issues/2586, so we do not use it anymore and
+	// instead compute the language on the fly.
 
-func (r *repositoryResolver) Enabled() bool { return r.repo.Enabled }
-
-func (r *repositoryResolver) CreatedAt() string {
-	return r.repo.CreatedAt.Format(time.RFC3339)
-}
-
-func (r *repositoryResolver) UpdatedAt() *string {
-	if r.repo.UpdatedAt != nil {
-		t := r.repo.UpdatedAt.Format(time.RFC3339)
-		return &t
+	commitID, err := backend.Repos.ResolveRev(ctx, r.repo, "")
+	if err != nil {
+		return ""
 	}
+
+	inventory, err := backend.Repos.GetInventory(ctx, r.repo, commitID)
+	if err != nil {
+		return ""
+	}
+	if len(inventory.Languages) == 0 {
+		return ""
+	}
+	return inventory.Languages[0].Name
+}
+
+func (r *RepositoryResolver) Enabled() bool { return true }
+
+func (r *RepositoryResolver) CreatedAt() DateTime {
+	return DateTime{Time: time.Now()}
+}
+
+func (r *RepositoryResolver) UpdatedAt() *DateTime {
 	return nil
 }
 
-func (r *repositoryResolver) URL() string { return "/" + string(r.repo.Name) }
+func (r *RepositoryResolver) URL() string { return "/" + string(r.repo.Name) }
 
-func (r *repositoryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
+func (r *RepositoryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
 	return externallink.Repository(ctx, r.repo)
 }
 
-func (r *repositoryResolver) Icon() string {
+func (r *RepositoryResolver) Icon() string {
 	return r.icon
 }
-func (r *repositoryResolver) Label() (*markdownResolver, error) {
+
+func (r *RepositoryResolver) Label() (*markdownResolver, error) {
 	text := "[" + string(r.repo.Name) + "](/" + string(r.repo.Name) + ")"
 	return &markdownResolver{text: text}, nil
 }
 
-func (r *repositoryResolver) Detail() *markdownResolver {
+func (r *RepositoryResolver) Detail() *markdownResolver {
 	return &markdownResolver{text: "Repository name match"}
 }
 
-func (r *repositoryResolver) Matches() []*searchResultMatchResolver {
+func (r *RepositoryResolver) Matches() []*searchResultMatchResolver {
 	return r.matches
+}
+
+func (r *RepositoryResolver) ToRepository() (*RepositoryResolver, bool) { return r, true }
+func (r *RepositoryResolver) ToFileMatch() (*fileMatchResolver, bool)   { return nil, false }
+func (r *RepositoryResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
+	return nil, false
+}
+func (r *RepositoryResolver) ToCodemodResult() (*codemodResultResolver, bool) {
+	return nil, false
+}
+
+func (r *RepositoryResolver) searchResultURIs() (string, string) {
+	return string(r.repo.Name), ""
+}
+
+func (r *RepositoryResolver) resultCount() int32 {
+	return 1
+}
+
+func (r *RepositoryResolver) hydrate(ctx context.Context) error {
+	r.hydration.Do(func() {
+		if r.repo.RepoFields != nil {
+			return
+		}
+
+		log15.Debug("RepositoryResolver.hydrate", "repo.ID", r.repo.ID)
+
+		var repo *types.Repo
+		repo, r.err = db.Repos.Get(ctx, r.repo.ID)
+		if r.err == nil {
+			r.repo.RepoFields = repo.RepoFields
+		}
+	})
+
+	return r.err
 }
 
 func (*schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
@@ -231,15 +279,15 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 	AuthorEmail *string
 	Description *string
 	Date        *string
-}) (*gitCommitResolver, error) {
+}) (*GitCommitResolver, error) {
 	repo, err := db.Repos.GetByName(ctx, api.RepoName(args.RepoName))
 	if err != nil {
 		return nil, err
 	}
 	targetRef := fmt.Sprintf("phabricator/diff/%d", args.DiffID)
-	getCommit := func() (*gitCommitResolver, error) {
+	getCommit := func() (*GitCommitResolver, error) {
 		// We first check via the vcsrepo api so that we can toggle
-		// NoEnsureRevision. We do this, otherwise repositoryResolver.Commit
+		// NoEnsureRevision. We do this, otherwise RepositoryResolver.Commit
 		// will try and fetch it from the remote host. However, this is not on
 		// the remote host since we created it.
 		cachedRepo, err := backend.CachedGitRepo(ctx, repo)
@@ -252,12 +300,12 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 		if err != nil {
 			return nil, err
 		}
-		r := &repositoryResolver{repo: repo}
+		r := &RepositoryResolver{repo: repo}
 		return r.Commit(ctx, &repositoryCommitArgs{Rev: targetRef})
 	}
 
 	// If we already created the commit
-	if commit, err := getCommit(); commit != nil || (err != nil && !git.IsRevisionNotFound(err)) {
+	if commit, err := getCommit(); commit != nil || (err != nil && !gitserver.IsRevisionNotFound(err)) {
 		return commit, err
 	}
 
@@ -278,7 +326,7 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 	} else if client == nil {
 		return nil, clientErr
 	} else {
-		diff, err := client.GetRawDiff(int(args.DiffID))
+		diff, err := client.GetRawDiff(ctx, int(args.DiffID))
 		// No diff contents were given and we couldn't fetch them
 		if err != nil {
 			return nil, err
@@ -289,7 +337,7 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 
 	var info *phabricator.DiffInfo
 	if client != nil && (args.AuthorEmail == nil || args.AuthorName == nil || args.Date == nil) {
-		info, err = client.GetDiffInfo(int(args.DiffID))
+		info, err = client.GetDiffInfo(ctx, int(args.DiffID))
 		// Not all the information was given and we couldn't fetch it
 		if err != nil {
 			return nil, err
@@ -352,7 +400,7 @@ func makePhabClientForOrigin(ctx context.Context, origin string) (*phabricator.C
 			return nil, errors.Errorf("no phabricator token was given for: %s", origin)
 		}
 
-		return phabricator.NewClient(phab.Url, phab.Token), nil
+		return phabricator.NewClient(ctx, phab.Url, phab.Token, nil)
 	}
 
 	return nil, errors.Errorf("no phabricator was configured for: %s", origin)

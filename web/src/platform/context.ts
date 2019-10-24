@@ -1,17 +1,17 @@
 import { concat, Observable, ReplaySubject } from 'rxjs'
 import { map, publishReplay, refCount } from 'rxjs/operators'
-import ExtensionHostWorker from 'worker-loader!../../../shared/src/api/extension/main.worker.ts'
-import { createWebWorkerMessageTransports } from '../../../shared/src/api/protocol/jsonrpc2/transports/webWorker'
+import { createExtensionHost } from '../../../shared/src/api/extension/worker'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../shared/src/platform/context'
 import { mutateSettings, updateSettings } from '../../../shared/src/settings/edit'
 import { gqlToCascade } from '../../../shared/src/settings/settings'
+import { createAggregateError } from '../../../shared/src/util/errors'
 import { LocalStorageSubject } from '../../../shared/src/util/LocalStorageSubject'
 import { toPrettyBlobURL } from '../../../shared/src/util/url'
-import { requestGraphQL } from '../backend/graphql'
+import { queryGraphQL, requestGraphQL } from '../backend/graphql'
 import { Tooltip } from '../components/tooltip/Tooltip'
-import { fetchViewerSettings } from '../user/settings/backend'
+import { eventLogger } from '../tracking/eventLogger'
 
 /**
  * Creates the {@link PlatformContext} for the web app.
@@ -30,7 +30,7 @@ export function createPlatformContext(): PlatformContext {
             // extension is why this logic lives here and not in shared/.)
             if (!window.context.isAuthenticatedUser) {
                 const editDescription =
-                    typeof edit === 'string' ? 'edit settings' : `update setting ` + '`' + edit.path.join('.') + '`'
+                    typeof edit === 'string' ? 'edit settings' : 'update setting `' + edit.path.join('.') + '`'
                 const u = new URL(window.context.externalURL)
                 throw new Error(
                     `Unable to ${editDescription} because you are not signed in.` +
@@ -41,10 +41,21 @@ export function createPlatformContext(): PlatformContext {
                 )
             }
 
-            await updateSettings(context, subject, edit, mutateSettings)
+            try {
+                await updateSettings(context, subject, edit, mutateSettings)
+            } catch (error) {
+                if ('message' in error && error.message.includes('version mismatch')) {
+                    // The user probably edited the settings in another tab, so
+                    // try once more.
+                    updatedSettings.next(await fetchViewerSettings().toPromise())
+                    await updateSettings(context, subject, edit, mutateSettings)
+                } else {
+                    throw error
+                }
+            }
             updatedSettings.next(await fetchViewerSettings().toPromise())
         },
-        queryGraphQL: (request, variables) =>
+        requestGraphQL: ({ request, variables }) =>
             requestGraphQL(
                 gql`
                     ${request}
@@ -52,20 +63,67 @@ export function createPlatformContext(): PlatformContext {
                 variables
             ),
         forceUpdateTooltip: () => Tooltip.forceUpdate(),
-        createExtensionHost: () => {
-            const worker = new ExtensionHostWorker()
-            const messageTransports = createWebWorkerMessageTransports(worker)
-            return new Observable(sub => {
-                sub.next(messageTransports)
-                return () => worker.terminate()
-            })
-        },
+        createExtensionHost: () => createExtensionHost({ wrapEndpoints: false }),
         urlToFile: toPrettyBlobURL,
         getScriptURLForExtension: bundleURL => bundleURL,
         sourcegraphURL: window.context.externalURL,
         clientApplication: 'sourcegraph',
-        traceExtensionHostCommunication: new LocalStorageSubject<boolean>('traceExtensionHostCommunication', false),
         sideloadedExtensionURL: new LocalStorageSubject<string | null>('sideloadedExtensionURL', null),
+        telemetryService: eventLogger,
     }
     return context
+}
+
+const settingsCascadeFragment = gql`
+    fragment SettingsCascadeFields on SettingsCascade {
+        subjects {
+            __typename
+            ... on Org {
+                id
+                name
+                displayName
+            }
+            ... on User {
+                id
+                username
+                displayName
+            }
+            ... on Site {
+                id
+                siteID
+            }
+            latestSettings {
+                id
+                contents
+            }
+            settingsURL
+            viewerCanAdminister
+        }
+        final
+    }
+`
+
+/**
+ * Fetches the viewer's settings from the server. Callers should use settingsRefreshes#next instead of calling
+ * this function, to ensure that the result is propagated consistently throughout the app instead of only being
+ * returned to the caller.
+ *
+ * @returns Observable that emits the settings
+ */
+function fetchViewerSettings(): Observable<GQL.ISettingsCascade> {
+    return queryGraphQL(gql`
+        query ViewerSettings {
+            viewerSettings {
+                ...SettingsCascadeFields
+            }
+        }
+        ${settingsCascadeFragment}
+    `).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.viewerSettings) {
+                throw createAggregateError(errors)
+            }
+            return data.viewerSettings
+        })
+    )
 }

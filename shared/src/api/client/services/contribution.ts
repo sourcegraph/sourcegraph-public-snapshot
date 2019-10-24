@@ -1,20 +1,13 @@
-import { flatten, isEqual } from 'lodash'
-import { BehaviorSubject, combineLatest, isObservable, Observable, of, Subscribable, Unsubscribable } from 'rxjs'
+import { isEqual, mapValues } from 'lodash'
+import { BehaviorSubject, combineLatest, isObservable, Observable, of, Subscribable, Unsubscribable, from } from 'rxjs'
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
-import {
-    ActionContribution,
-    ActionItem,
-    ContributableMenu,
-    Contributions,
-    MenuContributions,
-    MenuItemContribution,
-} from '../../protocol'
+import { ContributableMenu, Contributions, Evaluated, MenuItemContribution, Raw } from '../../protocol'
 import { Context, ContributionScope, getComputedContextProperty } from '../context/context'
-import { ComputedContext, evaluate, evaluateTemplate } from '../context/expr/evaluator'
-import { TEMPLATE_BEGIN } from '../context/expr/lexer'
-import { Model } from '../model'
+import { ComputedContext, Expression, parse, parseTemplate } from '../context/expr/evaluator'
+import { EditorService } from './editorService'
 import { SettingsService } from './settings'
+import { ModelService } from './modelService'
 
 /** A registered set of contributions from an extension in the registry. */
 export interface ContributionsEntry {
@@ -41,13 +34,17 @@ export class ContributionRegistry {
     /** All entries, including entries that are not enabled in the current context. */
     private _entries = new BehaviorSubject<ContributionsEntry[]>([])
 
-    public constructor(
-        private model: Subscribable<Model>,
+    constructor(
+        private editorService: Pick<EditorService, 'activeEditorUpdates'>,
+        private modelService: Pick<ModelService, 'getPartialModel'>,
         private settingsService: Pick<SettingsService, 'data'>,
         private context: Subscribable<Context<any>>
     ) {}
 
-    /** Register contributions and return an unsubscribable that deregisters the contributions. */
+    /**
+     * Register contributions and return an unsubscribable that deregisters the contributions.
+     * Any expressions in the contributions need to be already parsed for fast re-evaluation.
+     */
     public registerContributions(entry: ContributionsEntry): ContributionUnsubscribable {
         this._entries.next([...this._entries.value, entry])
         return {
@@ -88,7 +85,7 @@ export class ContributionRegistry {
     public getContributions<T>(
         scope?: ContributionScope | undefined,
         extraContext?: Context<T>
-    ): Observable<Contributions> {
+    ): Observable<Evaluated<Contributions>> {
         return this.getContributionsFromEntries(this._entries, scope, extraContext)
     }
 
@@ -101,25 +98,31 @@ export class ContributionRegistry {
         scope: ContributionScope | undefined,
         extraContext?: Context<T>,
         logWarning = (...args: any[]) => console.log(...args)
-    ): Observable<Contributions> {
-        return combineLatest(
+    ): Observable<Evaluated<Contributions>> {
+        return combineLatest([
             entries.pipe(
                 switchMap(entries =>
                     combineLatestOrDefault(
                         entries.map(entry =>
                             isObservable<Contributions | Contributions[]>(entry.contributions)
                                 ? entry.contributions
-                                : of<Contributions>(entry.contributions)
+                                : of(entry.contributions)
                         ),
                         []
                     )
                 )
             ),
-            this.model,
+            from(this.editorService.activeEditorUpdates).pipe(
+                map(activeEditor =>
+                    activeEditor
+                        ? { ...activeEditor, model: this.modelService.getPartialModel(activeEditor.resource) }
+                        : undefined
+                )
+            ),
             this.settingsService.data,
-            this.context
-        ).pipe(
-            map(([multiContributions, model, settings, context]) => {
+            this.context,
+        ]).pipe(
+            map(([multiContributions, activeEditor, settings, context]) => {
                 // Merge in extra context.
                 if (extraContext) {
                     context = { ...context, ...extraContext }
@@ -127,14 +130,11 @@ export class ContributionRegistry {
 
                 // TODO(sqs): use {@link ContextService#observeValue}
                 const computedContext = {
-                    get: (key: string) => getComputedContextProperty(model, settings, context, key, scope),
+                    get: (key: string) => getComputedContextProperty(activeEditor, settings, context, key, scope),
                 }
-                return flatten(multiContributions).map(contributions => {
+                return multiContributions.flat().map(contributions => {
                     try {
-                        return evaluateContributions(
-                            computedContext,
-                            filterContributions(computedContext, contributions)
-                        )
+                        return filterContributions(evaluateContributions(computedContext, contributions))
                     } catch (err) {
                         // An error during evaluation causes all of the contributions in the same entry to be
                         // discarded.
@@ -167,14 +167,14 @@ export class ContributionRegistry {
  * Most callers should use ContributionRegistry#getContributions, which merges all registered
  * contributions.
  */
-export function mergeContributions(contributions: Contributions[]): Contributions {
+export function mergeContributions(contributions: Evaluated<Contributions>[]): Evaluated<Contributions> {
     if (contributions.length === 0) {
         return {}
     }
     if (contributions.length === 1) {
         return contributions[0]
     }
-    const merged: Contributions = {}
+    const merged: Evaluated<Contributions> = {}
     for (const c of contributions) {
         if (c.actions) {
             if (!merged.actions) {
@@ -187,11 +187,15 @@ export function mergeContributions(contributions: Contributions[]): Contribution
             if (!merged.menus) {
                 merged.menus = { ...c.menus }
             } else {
-                for (const [menu, items] of Object.entries(c.menus) as [ContributableMenu, MenuItemContribution[]][]) {
-                    if (!merged.menus[menu]) {
+                for (const [menu, items] of Object.entries(c.menus) as [
+                    ContributableMenu,
+                    Evaluated<MenuItemContribution>[]
+                ][]) {
+                    const mergedItems = merged.menus[menu]
+                    if (!mergedItems) {
                         merged.menus[menu] = [...items]
                     } else {
-                        merged.menus[menu] = [...merged.menus[menu]!, ...items]
+                        merged.menus[menu] = [...mergedItems, ...items]
                     }
                 }
             }
@@ -207,111 +211,125 @@ export function mergeContributions(contributions: Contributions[]): Contribution
     return merged
 }
 
-/** Filters out items whose `when` context expression evaluates to false (or a falsey value). */
-export function contextFilter<T extends { when?: string }>(
-    context: ComputedContext,
-    items: T[],
-    evaluateExpr = evaluate
-): T[] {
-    const keep: T[] = []
-    for (const item of items) {
-        if (item.when !== undefined && !evaluateExpr(item.when, context)) {
-            continue // omit
-        }
-        keep.push(item)
-    }
-    return keep
-}
-
-/** Filters the contributions to only those that are enabled in the current context. */
-export function filterContributions(
-    context: ComputedContext,
-    contributions: Contributions,
-    evaluateExpr = evaluate
-): Contributions {
+/**
+ * Filters the contributions to only those that are enabled in the current context.
+ */
+export function filterContributions(contributions: Evaluated<Contributions>): Evaluated<Contributions> {
     if (!contributions.menus) {
         return contributions
     }
-    const filteredMenus: MenuContributions = {}
-    for (const [menu, items] of Object.entries(contributions.menus) as [ContributableMenu, MenuItemContribution[]][]) {
-        filteredMenus[menu] = contextFilter(context, items, evaluateExpr)
+    return {
+        ...contributions,
+        menus: mapValues(
+            contributions.menus,
+            menuItems => menuItems && menuItems.filter(menuItem => menuItem.when !== false)
+        ),
     }
-    return { ...contributions, menus: filteredMenus }
 }
 
-const DEFAULT_TEMPLATE_EVALUATOR: {
-    evaluateTemplate: (template: string, context: ComputedContext) => any
-
-    /**
-     * Reports whether the string needs evaluation. Skipping evaluation for strings where it is unnecessary is an
-     * optimization.
-     */
-    needsEvaluation: (template: string) => boolean
-} = {
-    evaluateTemplate,
-    needsEvaluation: (template: string) => template.includes(TEMPLATE_BEGIN),
+/**
+ * Evaluates expressions in contribution definitions against the given context.
+ *
+ * @todo could walk object recursively
+ */
+export function evaluateContributions(
+    context: ComputedContext,
+    contributions: Contributions
+): Evaluated<Contributions> {
+    return {
+        ...contributions,
+        menus:
+            contributions.menus &&
+            mapValues(
+                contributions.menus,
+                (menuItems): Evaluated<MenuItemContribution>[] | undefined =>
+                    menuItems &&
+                    menuItems.map(menuItem => ({
+                        ...menuItem,
+                        when: menuItem.when && !!menuItem.when.exec(context),
+                    }))
+            ),
+        actions: evaluateActionContributions(context, contributions.actions),
+    }
 }
 
 /**
  * Evaluates expressions in contribution definitions against the given context.
  */
-export function evaluateContributions(
+function evaluateActionContributions(
     context: ComputedContext,
-    contributions: Contributions,
-    { evaluateTemplate, needsEvaluation } = DEFAULT_TEMPLATE_EVALUATOR
-): Contributions {
-    if (!contributions.actions || contributions.actions.length === 0) {
-        return contributions
+    actions: Contributions['actions']
+): Evaluated<Contributions['actions']> {
+    return (
+        actions &&
+        actions.map(action => ({
+            ...action,
+            title: action.title && action.title.exec(context),
+            category: action.category && action.category.exec(context),
+            description: action.description && action.description.exec(context),
+            iconURL: action.iconURL && action.iconURL.exec(context),
+            actionItem: action.actionItem && {
+                ...action.actionItem,
+                label: action.actionItem.label && action.actionItem.label.exec(context),
+                description: action.actionItem.description && action.actionItem.description.exec(context),
+                iconURL: action.actionItem.iconURL && action.actionItem.iconURL.exec(context),
+                iconDescription: action.actionItem.iconDescription && action.actionItem.iconDescription.exec(context),
+                pressed: action.actionItem.pressed && action.actionItem.pressed.exec(context),
+            },
+            commandArguments:
+                action.commandArguments &&
+                action.commandArguments.map(arg => (arg instanceof Expression ? arg.exec(context) : arg)),
+        }))
+    )
+}
+
+/**
+ * Evaluates expressions in contribution definitions against the given context.
+ */
+export function parseContributionExpressions(contributions: Raw<Contributions>): Contributions {
+    return {
+        ...contributions,
+        menus:
+            contributions.menus &&
+            mapValues(
+                contributions.menus,
+                (menuItems): MenuItemContribution[] | undefined =>
+                    menuItems &&
+                    menuItems.map(menuItem => ({
+                        ...menuItem,
+                        when: typeof menuItem.when === 'string' ? parse<boolean>(menuItem.when) : undefined,
+                    }))
+            ),
+        actions: contributions && parseActionContributionExpressions(contributions.actions),
     }
-    const evaluatedActions: ActionContribution[] = []
-    for (const action of contributions.actions as Readonly<ActionContribution>[]) {
-        const changed: Partial<ActionContribution> = {}
-        if (action.commandArguments) {
-            for (const [i, arg] of action.commandArguments.entries()) {
-                if (typeof arg === 'string' && needsEvaluation(arg)) {
-                    const evaluatedArg = evaluateTemplate(arg, context)
-                    if (changed.commandArguments) {
-                        changed.commandArguments.push(evaluatedArg)
-                    } else {
-                        changed.commandArguments = action.commandArguments.slice(0, i).concat(evaluatedArg)
-                    }
-                } else if (changed.commandArguments) {
-                    changed.commandArguments.push(arg)
-                }
-            }
-        }
-        if (action.title && needsEvaluation(action.title)) {
-            changed.title = evaluateTemplate(action.title, context)
-        }
-        if (action.category && needsEvaluation(action.category)) {
-            changed.category = evaluateTemplate(action.category, context)
-        }
-        if (action.description && needsEvaluation(action.description)) {
-            changed.description = evaluateTemplate(action.description, context)
-        }
-        if (action.iconURL && needsEvaluation(action.iconURL)) {
-            changed.iconURL = evaluateTemplate(action.iconURL, context)
-        }
-        if (action.actionItem) {
-            const changedActionItem: Partial<ActionItem> = {}
-            if (action.actionItem.label && needsEvaluation(action.actionItem.label)) {
-                changedActionItem.label = evaluateTemplate(action.actionItem.label, context)
-            }
-            if (action.actionItem.description && needsEvaluation(action.actionItem.description)) {
-                changedActionItem.description = evaluateTemplate(action.actionItem.description, context)
-            }
-            if (action.actionItem.iconURL && needsEvaluation(action.actionItem.iconURL)) {
-                changedActionItem.iconURL = evaluateTemplate(action.actionItem.iconURL, context)
-            }
-            if (action.actionItem.iconDescription && needsEvaluation(action.actionItem.iconDescription)) {
-                changedActionItem.iconDescription = evaluateTemplate(action.actionItem.iconDescription, context)
-            }
-            if (Object.keys(changedActionItem).length !== 0) {
-                changed.actionItem = { ...action.actionItem, ...changedActionItem }
-            }
-        }
-        const modified = Object.keys(changed).length !== 0
-        evaluatedActions.push(modified ? { ...action, ...changed } : action)
-    }
-    return { ...contributions, actions: evaluatedActions }
+}
+
+const maybe = <T, R>(value: T | undefined, fn: (value: T) => R): R | undefined =>
+    value === undefined ? undefined : fn(value)
+
+/**
+ * Evaluates expressions in contribution definitions against the given context.
+ */
+function parseActionContributionExpressions(actions: Raw<Contributions['actions']>): Contributions['actions'] {
+    return (
+        actions &&
+        actions.map(action => ({
+            ...action,
+            title: maybe(action.title, parseTemplate),
+            category: maybe(action.category, parseTemplate),
+            description: maybe(action.description, parseTemplate),
+            iconURL: maybe(action.iconURL, parseTemplate),
+            actionItem: action.actionItem && {
+                ...action.actionItem,
+                label: maybe(action.actionItem.label, parseTemplate),
+                description: maybe(action.actionItem.description, parseTemplate),
+                iconURL: maybe(action.actionItem.iconURL, parseTemplate),
+                iconDescription: maybe(action.actionItem.iconDescription, parseTemplate),
+                pressed: maybe(action.actionItem.pressed, pressed => parse(pressed)),
+            },
+            commandArguments:
+                action.commandArguments &&
+                action.commandArguments.map(arg => (typeof arg === 'string' ? parseTemplate(arg) : arg)),
+        }))
+    )
 }

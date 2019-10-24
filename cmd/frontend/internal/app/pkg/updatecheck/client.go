@@ -22,8 +22,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/version"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
 // Status of the check for software updates for Sourcegraph.
@@ -90,6 +90,9 @@ func updateURL(ctx context.Context) string {
 	q.Set("site", siteid.Get())
 	q.Set("auth", strings.Join(authProviderTypes(), ","))
 	q.Set("deployType", conf.DeployType())
+	q.Set("hasExtURL", strconv.FormatBool(conf.UsingExternalURL()))
+	q.Set("signup", strconv.FormatBool(conf.IsBuiltinSignupAllowed()))
+
 	count, err := usagestats.GetUsersActiveTodayCount()
 	if err != nil {
 		logFunc("usagestats.GetUsersActiveTodayCount failed", "error", err)
@@ -100,6 +103,23 @@ func updateURL(ctx context.Context) string {
 		logFunc("db.Users.Count failed", "error", err)
 	}
 	q.Set("totalUsers", strconv.Itoa(totalUsers))
+	totalRepos, err := db.Repos.Count(ctx, db.ReposListOptions{Enabled: true, Disabled: true})
+	hasRepos := totalRepos > 0
+	if err != nil {
+		logFunc("db.Repos.Count failed", "error", err)
+	}
+	q.Set("repos", strconv.FormatBool(hasRepos))
+	searchOccurred, err := usagestats.HasSearchOccurred()
+	if err != nil {
+		logFunc("usagestats.HasSearchOccurred failed", "error", err)
+	}
+	// Searches only count if repos have been added.
+	q.Set("searched", strconv.FormatBool(hasRepos && searchOccurred))
+	findRefsOccurred, err := usagestats.HasFindRefsOccurred()
+	if err != nil {
+		logFunc("usagestats.HasFindRefsOccurred failed", "error", err)
+	}
+	q.Set("refs", strconv.FormatBool(findRefsOccurred))
 	if act, err := getSiteActivityJSON(); err != nil {
 		logFunc("getSiteActivityJSON failed", "error", err)
 	} else {
@@ -110,6 +130,11 @@ func updateURL(ctx context.Context) string {
 		logFunc("db.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
 	}
 	q.Set("initAdmin", initAdminEmail)
+	svcs, err := externalServiceKinds(ctx)
+	if err != nil {
+		logFunc("externalServicesKinds failed", "error", err)
+	}
+	q.Set("extsvcs", strings.Join(svcs, ","))
 	return baseURL.ResolveReference(&url.URL{RawQuery: q.Encode()}).String()
 }
 
@@ -122,6 +147,18 @@ func authProviderTypes() []string {
 	return types
 }
 
+func externalServiceKinds(ctx context.Context) ([]string, error) {
+	services, err := db.ExternalServices.List(ctx, db.ExternalServicesListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	kinds := make([]string, len(services))
+	for i, s := range services {
+		kinds[i] = s.Kind
+	}
+	return kinds, nil
+}
+
 // check performs an update check. It returns the result and updates the global state
 // (returned by Last and IsPending).
 func check(ctx context.Context) (*Status, error) {
@@ -131,7 +168,6 @@ func check(ctx context.Context) (*Status, error) {
 			return "", err
 		}
 		defer resp.Body.Close()
-
 		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 			var description string
 			if body, err := ioutil.ReadAll(io.LimitReader(resp.Body, 30)); err != nil {

@@ -1,4 +1,4 @@
-import { ActionItemProps } from '../actions/ActionItem'
+import { ActionItemAction } from '../actions/ActionItem'
 import { ContributableMenu } from '../api/protocol'
 import { getContributedActionItems } from './contributions'
 
@@ -25,5 +25,5 @@ describe('getContributedActionItems', () => {
                 altAction: { id: 'c', command: 'c', title: 'tc', description: 'dc' },
             },
             { action: { id: 'a', command: 'a', title: 'ta', description: 'da' }, altAction: undefined },
-        ] as ActionItemProps[]))
+        ] as ActionItemAction[]))
 })

@@ -1,8 +1,6 @@
 package db
 
-import (
-	"github.com/keegancsmith/sqlf"
-)
+import "github.com/keegancsmith/sqlf"
 
 // LimitOffset specifies SQL LIMIT and OFFSET counts. A pointer to it is typically embedded in other options
 // structs that need to perform SQL queries with LIMIT and OFFSET.

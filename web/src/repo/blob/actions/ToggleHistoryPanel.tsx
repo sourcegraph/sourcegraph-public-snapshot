@@ -4,10 +4,14 @@ import * as React from 'react'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import { LinkOrButton } from '../../../../../shared/src/components/LinkOrButton'
-import { parseHash, toPositionOrRangeHash, toViewStateHashComponent } from '../../../../../shared/src/util/url'
+import {
+    lprToRange,
+    parseHash,
+    toPositionOrRangeHash,
+    toViewStateHashComponent,
+} from '../../../../../shared/src/util/url'
 import { Tooltip } from '../../../components/tooltip/Tooltip'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { lprToRange } from '../../../util/url'
 import { BlobPanelTabID } from '../panel/BlobPanel'
 
 /**

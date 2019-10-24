@@ -6,12 +6,12 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subscription } from 'rxjs'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { HeroPage } from '../../components/HeroPage'
-import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
+import { RepoContainerContext } from '../RepoContainer'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { RepositoryReleasesTagsPage } from './RepositoryReleasesTagsPage'
 
-const NotFoundPage = () => (
+const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
         icon={MapSearchIcon}
         title="404: Not Found"
@@ -19,11 +19,10 @@ const NotFoundPage = () => (
     />
 )
 
-interface Props extends RouteComponentProps<{}>, RepoHeaderContributionsLifecycleProps {
+interface Props
+    extends RouteComponentProps<{}>,
+        Pick<RepoContainerContext, 'repo' | 'routePrefix' | 'repoHeaderContributionsLifecycleProps'> {
     repo: GQL.IRepository
-
-    /** The URL match from RepoContainer. */
-    repoMatchURL: string
 }
 
 interface State {
@@ -62,25 +61,26 @@ export class RepositoryReleasesArea extends React.Component<Props> {
         }
 
         return (
-            <div className="repository-graph-area area--vertical">
+            <div className="repository-graph-area">
                 <RepoHeaderContributionPortal
                     position="nav"
                     element={<RepoHeaderBreadcrumbNavItem key="tags">Tags</RepoHeaderBreadcrumbNavItem>}
                     repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
-                <div className="area--vertical__content">
-                    <div className="area--vertical__content-inner">
+                <div className="container">
+                    <div className="container-inner">
                         <Switch>
+                            {/* eslint-disable react/jsx-no-bind */}
                             <Route
-                                path={`${this.props.repoMatchURL}/-/tags`}
+                                path={`${this.props.routePrefix}/-/tags`}
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                 exact={true}
-                                // tslint:disable-next-line:jsx-no-lambda
                                 render={routeComponentProps => (
                                     <RepositoryReleasesTagsPage {...routeComponentProps} {...transferProps} />
                                 )}
                             />
                             <Route key="hardcoded-key" component={NotFoundPage} />
+                            {/* eslint-enable react/jsx-no-bind */}
                         </Switch>
                     </div>
                 </div>

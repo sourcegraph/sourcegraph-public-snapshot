@@ -6,7 +6,7 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
 func (r *UserResolver) Emails(ctx context.Context) ([]*userEmailResolver, error) {
@@ -91,6 +91,12 @@ func (r *schemaResolver) RemoveUserEmail(ctx context.Context, args *struct {
 	if err := db.UserEmails.Remove(ctx, userID, args.Email); err != nil {
 		return nil, err
 	}
+
+	// 🚨 SECURITY: If an email is removed, invalidate any existing password reset tokens that may have been sent to that email.
+	if err := db.Users.DeletePasswordResetCode(ctx, userID); err != nil {
+		return nil, err
+	}
+
 	return &EmptyResponse{}, nil
 }
 

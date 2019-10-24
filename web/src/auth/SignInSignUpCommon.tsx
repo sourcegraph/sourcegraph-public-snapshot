@@ -41,6 +41,7 @@ export const UsernameInput: React.FunctionComponent<React.InputHTMLAttributes<HT
         spellCheck={false}
         pattern={VALID_USERNAME_REGEXP}
         maxLength={USERNAME_MAX_LENGTH}
+        autoCapitalize="off"
         autoComplete="username"
     />
 )

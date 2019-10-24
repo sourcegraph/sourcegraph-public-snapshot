@@ -25,9 +25,7 @@ interface SurveyResponseNodeProps {
     node: GQL.ISurveyResponse
 }
 
-interface SurveyResponseNodeState {
-    loading: boolean
-}
+interface SurveyResponseNodeState {}
 
 function scoreToClassSuffix(score: number): string {
     return score > 8 ? 'success' : score > 6 ? 'info' : 'danger'
@@ -43,9 +41,7 @@ const ScoreBadge: React.FunctionComponent<{ score: number }> = props => (
 )
 
 class SurveyResponseNode extends React.PureComponent<SurveyResponseNodeProps, SurveyResponseNodeState> {
-    public state: SurveyResponseNodeState = {
-        loading: false,
-    }
+    public state: SurveyResponseNodeState = {}
 
     public render(): JSX.Element | null {
         return (
@@ -108,13 +104,11 @@ interface UserSurveyResponseNodeProps {
 }
 
 interface UserSurveyResponseNodeState {
-    loading: boolean
     displayAll: boolean
 }
 
 class UserSurveyResponseNode extends React.PureComponent<UserSurveyResponseNodeProps, UserSurveyResponseNodeState> {
     public state: UserSurveyResponseNodeState = {
-        loading: false,
         displayAll: false,
     }
 
@@ -149,7 +143,7 @@ class UserSurveyResponseNode extends React.PureComponent<UserSurveyResponseNodeP
                     </td>
                     <td>
                         {responses.length > 0 && (
-                            <button className="btn btn-sm btn-secondary" onClick={this.showMoreClicked}>
+                            <button type="button" className="btn btn-sm btn-secondary" onClick={this.showMoreClicked}>
                                 {this.state.displayAll ? 'Hide' : 'See all'}
                             </button>
                         )}
@@ -262,9 +256,7 @@ interface Props extends RouteComponentProps<any> {}
 
 type surveyResultsDisplays = 'chronological' | 'by-user'
 
-interface State {
-    tab: surveyResultsDisplays
-}
+interface State {}
 
 class FilteredSurveyResponseConnection extends FilteredConnection<GQL.ISurveyResponse, {}> {}
 class FilteredUserSurveyResponseConnection extends FilteredConnection<GQL.IUser, {}> {}
@@ -273,7 +265,7 @@ class FilteredUserSurveyResponseConnection extends FilteredConnection<GQL.IUser,
  * A page displaying the survey responses on this site.
  */
 export class SiteAdminSurveyResponsesPage extends React.Component<Props, State> {
-    public state: State = { tab: 'chronological' }
+    public state: State = {}
     private static TABS: Tab<surveyResultsDisplays>[] = [
         { id: 'chronological', label: 'Chronological feed' },
         { id: 'by-user', label: 'Sort by user' },
@@ -283,8 +275,6 @@ export class SiteAdminSurveyResponsesPage extends React.Component<Props, State> 
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminSurveyResponses')
     }
-
-    private tabSelected = (tab: surveyResultsDisplays) => this.setState({ tab })
 
     public render(): JSX.Element | null {
         return (
@@ -307,7 +297,6 @@ export class SiteAdminSurveyResponsesPage extends React.Component<Props, State> 
                     tabs={SiteAdminSurveyResponsesPage.TABS}
                     storageKey={SiteAdminSurveyResponsesPage.LAST_TAB_STORAGE_KEY}
                     tabClassName="tab-bar__tab--h5like"
-                    onSelectTab={this.tabSelected}
                 >
                     <FilteredSurveyResponseConnection
                         key="chronological"

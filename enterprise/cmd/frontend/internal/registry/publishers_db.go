@@ -7,7 +7,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )
 
 // dbPublisher is a publisher of extensions to the registry.
@@ -31,7 +31,7 @@ type publisherNotFoundError struct {
 func (err publisherNotFoundError) NotFound() bool { return true }
 
 func (err publisherNotFoundError) Error() string {
-	return fmt.Sprintf("registry extension publisher not found: %v", err.args)
+	return fmt.Sprintf("registry extension publisher not found: %v (there is no user or organization with the specified name)", err.args)
 }
 
 // dbPublishersListOptions contains options for listing publishers of extensions in the

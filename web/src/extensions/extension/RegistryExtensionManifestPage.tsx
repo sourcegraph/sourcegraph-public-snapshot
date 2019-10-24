@@ -7,8 +7,9 @@ import { ConfiguredRegistryExtension } from '../../../../shared/src/extensions/e
 import extensionSchemaJSON from '../../../../shared/src/schema/extension.schema.json'
 import { PageTitle } from '../../components/PageTitle'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
+import { ThemeProps } from '../../theme'
+import { eventLogger } from '../../tracking/eventLogger'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
-
 export const ExtensionNoManifestAlert: React.FunctionComponent<{
     extension: ConfiguredRegistryExtension
 }> = ({ extension }) => (
@@ -25,9 +26,7 @@ export const ExtensionNoManifestAlert: React.FunctionComponent<{
     </div>
 )
 
-interface Props extends ExtensionAreaRouteContext, RouteComponentProps<{}> {
-    isLightTheme: boolean
-}
+interface Props extends ExtensionAreaRouteContext, RouteComponentProps<{}>, ThemeProps {}
 
 interface State {
     viewMode: ViewMode
@@ -37,8 +36,6 @@ enum ViewMode {
     Rich = 'rich',
     Plain = 'plain',
 }
-
-const EXTRA_SCHEMAS = [extensionSchemaJSON]
 
 /** A page that displays an extension's manifest. */
 export class RegistryExtensionManifestPage extends React.PureComponent<Props, State> {
@@ -55,6 +52,10 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
     }
 
     public state: State = { viewMode: RegistryExtensionManifestPage.getViewMode() }
+
+    public componentDidMount(): void {
+        eventLogger.logViewEvent('RegistryExtensionManifest')
+    }
 
     public render(): JSX.Element | null {
         return (
@@ -94,15 +95,13 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
                             id="registry-extension-edit-page__data"
                             value={this.props.extension.rawManifest}
                             height={500}
-                            jsonSchemaId="extension.schema.json#"
-                            extraSchemas={EXTRA_SCHEMAS}
+                            jsonSchema={extensionSchemaJSON}
                             readOnly={true}
                             isLightTheme={this.props.isLightTheme}
                             history={this.props.history}
                         />
                     ) : (
-                        // tslint:disable-next-line:jsx-ban-props
-                        <pre className="form-control" style={{ minHeight: '30rem' }}>
+                        <pre className="form-control registry-extension-manifest-page__plain-viewer">
                             <code>{this.props.extension.rawManifest}</code>
                         </pre>
                     )}

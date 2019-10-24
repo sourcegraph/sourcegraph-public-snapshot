@@ -11,7 +11,7 @@ interface Props {
     subscriptionName: string
     productNameWithBrand: string
     userCount: number
-    expiresAt: string
+    expiresAt: Date | number
     licenseKey: string | null
 }
 
@@ -78,9 +78,7 @@ export class UserProductSubscriptionStatus extends React.PureComponent<Props, St
                                         No license key found.{' '}
                                         <a
                                             href={mailtoSales({
-                                                subject: `No license key for subscription ${
-                                                    this.props.subscriptionName
-                                                }`,
+                                                subject: `No license key for subscription ${this.props.subscriptionName}`,
                                             })}
                                         >
                                             Contact sales

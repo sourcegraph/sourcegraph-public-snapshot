@@ -5,64 +5,40 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/kylelemons/godebug/pretty"
+	"github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-func TestServer_handleExternalServiceSync(t *testing.T) {
-	for _, tc := range []struct {
-		name string
-		svc  *api.ExternalService
-		err  string
-	}{
-		{
-			name: "bad kind",
-			svc:  &api.ExternalService{},
-			err:  "empty external service kind\n",
-		},
-		{
-			name: "bad service config",
-			svc: &api.ExternalService{
-				DisplayName: "Other",
-				Kind:        "OTHER",
-				Config:      "{",
-			},
-			err: "external-service=0: config error: failed to parse JSON: [CloseBraceExpected]; \n",
-		},
-	} {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
-			fa := repos.NewFakeInternalAPI([]*api.ExternalService{tc.svc}, nil)
-			s := Server{OtherReposSyncer: repos.NewOtherReposSyncer(fa, nil)}
-			ts := httptest.NewServer(s.Handler())
-			defer ts.Close()
-
-			cli := repoupdater.Client{URL: ts.URL, HTTPClient: http.DefaultClient}
-			ctx := context.Background()
-
-			err := cli.SyncExternalService(ctx, *tc.svc)
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("\nhave: %s\nwant: %s", have, want)
-			}
-		})
-	}
-}
-
 func TestServer_handleRepoLookup(t *testing.T) {
-	s := &Server{OtherReposSyncer: repos.NewOtherReposSyncer(api.InternalClient, nil)}
-	h := s.Handler()
+	s := &Server{}
+
+	h := ObservedHandler(
+		log15.Root(),
+		NewHandlerMetrics(),
+		opentracing.GlobalTracer(),
+	)(s.Handler())
 
 	repoLookup := func(t *testing.T, repo api.RepoName) (resp *protocol.RepoLookupResult, statusCode int) {
 		t.Helper()
@@ -135,7 +111,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 	t.Run("found", func(t *testing.T) {
 		want := protocol.RepoLookupResult{
 			Repo: &protocol.RepoInfo{
-				ExternalRepo: &api.ExternalRepoSpec{
+				ExternalRepo: api.ExternalRepoSpec{
 					ID:          "a",
 					ServiceType: github.ServiceType,
 					ServiceID:   "https://github.com/",
@@ -155,117 +131,948 @@ func TestServer_handleRepoLookup(t *testing.T) {
 	})
 }
 
-func TestRepoLookup(t *testing.T) {
-	s := Server{OtherReposSyncer: repos.NewOtherReposSyncer(api.InternalClient, nil)}
+func TestServer_SetRepoEnabled(t *testing.T) {
+	githubService := &repos.ExternalService{
+		ID:          1,
+		Kind:        "GITHUB",
+		DisplayName: "github.com - test",
+		Config: formatJSON(`
+		{
+			// Some comment
+			"url": "https://github.com",
+			"repositoryQuery": ["none"],
+			"token": "secret"
+		}`),
+	}
 
-	t.Run("no args", func(t *testing.T) {
-		if _, err := s.repoLookup(context.Background(), protocol.RepoLookupArgs{}); err == nil {
-			t.Error()
+	githubRepo := (&repos.Repo{
+		Name:    "github.com/foo/bar",
+		Enabled: false,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "bar",
+			ServiceType: "github",
+			ServiceID:   "http://github.com",
+		},
+		Sources: map[string]*repos.SourceInfo{},
+		Metadata: &github.Repository{
+			ID:            "bar",
+			NameWithOwner: "foo/bar",
+		},
+	}).With(repos.Opt.RepoSources(githubService.URN()))
+
+	gitlabService := &repos.ExternalService{
+		ID:          1,
+		Kind:        "GITLAB",
+		DisplayName: "gitlab.com - test",
+		Config: formatJSON(`
+		{
+			// Some comment
+			"url": "https://gitlab.com",
+			"projectQuery": ["none"],
+			"token": "secret"
+		}`),
+	}
+
+	gitlabRepo := (&repos.Repo{
+		Name:    "gitlab.com/foo/bar",
+		Enabled: false,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "1",
+			ServiceType: "gitlab",
+			ServiceID:   "http://gitlab.com",
+		},
+		Sources: map[string]*repos.SourceInfo{},
+		Metadata: &gitlab.Project{
+			ProjectCommon: gitlab.ProjectCommon{
+				ID:                1,
+				PathWithNamespace: "foo/bar",
+			},
+		},
+	}).With(repos.Opt.RepoSources(gitlabService.URN()))
+
+	bitbucketServerService := &repos.ExternalService{
+		ID:          1,
+		Kind:        "BITBUCKETSERVER",
+		DisplayName: "Bitbucket Server - Test",
+		Config: formatJSON(`
+		{
+			// Some comment
+			"url": "https://bitbucketserver.mycorp.com",
+			"token": "secret",
+			"username": "alice",
+			"repositoryQuery": ["none"]
+		}`),
+	}
+
+	bitbucketServerRepo := (&repos.Repo{
+		Name:    "bitbucketserver.mycorp.com/foo/bar",
+		Enabled: false,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "1",
+			ServiceType: "bitbucketServer",
+			ServiceID:   "http://bitbucketserver.mycorp.com",
+		},
+		Sources: map[string]*repos.SourceInfo{},
+		Metadata: &bitbucketserver.Repo{
+			ID:   1,
+			Slug: "bar",
+			Project: &bitbucketserver.Project{
+				Key: "foo",
+			},
+		},
+	}).With(repos.Opt.RepoSources(bitbucketServerService.URN()))
+
+	type testCase struct {
+		name  string
+		svcs  repos.ExternalServices // stored services
+		repos repos.Repos            // stored repos
+		kind  string
+		res   *protocol.ExcludeRepoResponse
+		err   string
+	}
+
+	var testCases []testCase
+
+	for _, k := range []struct {
+		svc  *repos.ExternalService
+		repo *repos.Repo
+	}{
+		{githubService, githubRepo},
+		{bitbucketServerService, bitbucketServerRepo},
+		{gitlabService, gitlabRepo},
+	} {
+		svcs := repos.ExternalServices{
+			k.svc,
+			k.svc.With(func(e *repos.ExternalService) {
+				e.ID++
+				e.DisplayName += " - Duplicate"
+			}),
 		}
-	})
 
-	t.Run("github", func(t *testing.T) {
-		t.Run("not authoritative", func(t *testing.T) {
-			orig := repos.GetGitHubRepositoryMock
-			repos.GetGitHubRepositoryMock = func(args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error) {
-				return nil, false, errors.New("x")
-			}
-			defer func() { repos.GetGitHubRepositoryMock = orig }()
+		testCases = append(testCases, testCase{
+			name:  "excluded from every external service of the same kind/" + k.svc.Kind,
+			svcs:  svcs,
+			repos: repos.Repos{k.repo}.With(repos.Opt.RepoSources()),
+			kind:  k.svc.Kind,
+			res: &protocol.ExcludeRepoResponse{
+				ExternalServices: apiExternalServices(svcs.With(func(e *repos.ExternalService) {
+					if err := e.Exclude(k.repo); err != nil {
+						panic(err)
+					}
+				})...),
+			},
+		})
+	}
 
-			result, err := s.repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "example.com/a/b"})
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+
+			store := new(repos.FakeStore)
+			storedSvcs := tc.svcs.Clone()
+			err := store.UpsertExternalServices(ctx, storedSvcs...)
 			if err != nil {
-				t.Fatal(err)
+				t.Fatalf("failed to prepare store: %v", err)
 			}
-			if want := (&protocol.RepoLookupResult{ErrorNotFound: true}); !reflect.DeepEqual(result, want) {
-				t.Errorf("got result %+v, want nil", result)
-			}
-		})
 
-		t.Run("not found", func(t *testing.T) {
-			orig := repos.GetGitHubRepositoryMock
-			repos.GetGitHubRepositoryMock = func(args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error) {
-				return nil, true, github.ErrNotFound
-			}
-			defer func() { repos.GetGitHubRepositoryMock = orig }()
-
-			result, err := s.repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "github.com/a/b"})
+			storedRepos := tc.repos.Clone()
+			err = store.UpsertRepos(ctx, storedRepos...)
 			if err != nil {
-				t.Fatal(err)
+				t.Fatalf("failed to prepare store: %v", err)
 			}
-			if want := (&protocol.RepoLookupResult{ErrorNotFound: true}); !reflect.DeepEqual(result, want) {
-				t.Errorf("got result %+v, want nil", result)
+
+			s := &Server{Store: store}
+			srv := httptest.NewServer(s.Handler())
+			defer srv.Close()
+			cli := repoupdater.Client{URL: srv.URL}
+
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			exclude := storedRepos.Filter(func(r *repos.Repo) bool {
+				return strings.EqualFold(r.ExternalRepo.ServiceType, tc.kind)
+			})
+
+			if len(exclude) != 1 {
+				t.Fatalf("no stored repo of kind %q", tc.kind)
+			}
+
+			res, err := cli.ExcludeRepo(ctx, exclude[0].ID)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("have err: %q, want: %q", have, want)
+			}
+
+			if have, want := res, tc.res; !reflect.DeepEqual(have, want) {
+				// t.Logf("have: %s\nwant: %s\n", pp.Sprint(have), pp.Sprint(want))
+				t.Errorf("response:\n%s", cmp.Diff(have, want))
+			}
+
+			if res == nil || len(res.ExternalServices) == 0 {
+				return
+			}
+
+			ids := make([]int64, 0, len(res.ExternalServices))
+			for _, s := range res.ExternalServices {
+				ids = append(ids, s.ID)
+			}
+
+			svcs, err := store.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
+				IDs: ids,
+			})
+			if err != nil {
+				t.Fatalf("failed to read from store: %v", err)
+			}
+
+			have, want := apiExternalServices(svcs...), res.ExternalServices
+			if !reflect.DeepEqual(have, want) {
+				t.Errorf("stored external services:\n%s", cmp.Diff(have, want))
 			}
 		})
+	}
+}
 
-		t.Run("unexpected error", func(t *testing.T) {
-			wantErr := errors.New("x")
+func TestServer_EnqueueRepoUpdate(t *testing.T) {
+	repo := repos.Repo{
+		Name: "github.com/foo/bar",
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "bar",
+			ServiceType: "github",
+			ServiceID:   "http://github.com",
+		},
+		Metadata: new(github.Repository),
+		Sources: map[string]*repos.SourceInfo{
+			"extsvc:123": {
+				ID:       "extsvc:123",
+				CloneURL: "https://secret-token@github.com/foo/bar",
+			},
+		},
+	}
 
-			orig := repos.GetGitHubRepositoryMock
-			repos.GetGitHubRepositoryMock = func(args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error) {
-				return nil, true, wantErr
+	ctx := context.Background()
+
+	type testCase struct {
+		name  string
+		store repos.Store
+		repo  gitserver.Repo
+		res   *protocol.RepoUpdateResponse
+		err   string
+	}
+
+	var testCases []testCase
+	testCases = append(testCases,
+		func() testCase {
+			err := errors.New("boom")
+			return testCase{
+				name:  "returns an error on store failure",
+				store: &repos.FakeStore{ListReposError: err},
+				err:   `store.list-repos: boom`,
 			}
-			defer func() { repos.GetGitHubRepositoryMock = orig }()
+		}(),
+		testCase{
+			name:  "missing repo",
+			store: new(repos.FakeStore), // empty store
+			repo:  gitserver.Repo{Name: "foo"},
+			err:   `repo "foo" not found in store`,
+		},
+		func() testCase {
+			repo := repo.Clone()
+			repo.Sources = nil
 
-			result, err := s.repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "github.com/a/b"})
-			if err != wantErr {
-				t.Fatal(err)
-			}
-			if result != nil {
-				t.Errorf("got result %+v, want nil", result)
-			}
-		})
+			store := new(repos.FakeStore)
+			must(store.UpsertRepos(ctx, repo))
 
-		t.Run("found", func(t *testing.T) {
-			want := &protocol.RepoLookupResult{
-				Repo: &protocol.RepoInfo{
-					ExternalRepo: &api.ExternalRepoSpec{
-						ID:          "a",
-						ServiceType: github.ServiceType,
-						ServiceID:   "https://github.com/",
-					},
-					Name:        "github.com/c/d",
-					Description: "b",
-					Fork:        true,
+			return testCase{
+				name:  "missing clone URL",
+				store: store,
+				repo:  gitserver.Repo{Name: api.RepoName(repo.Name)},
+				res: &protocol.RepoUpdateResponse{
+					ID:   repo.ID,
+					Name: repo.Name,
 				},
 			}
-
-			metadataUpdate := make(chan *api.ReposUpdateMetadataRequest, 1)
-			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				var params api.ReposUpdateMetadataRequest
-				json.NewDecoder(r.Body).Decode(&params)
-				metadataUpdate <- &params
-			}))
-			defer ts.Close()
-			api.InternalClient.URL = ts.URL
-
-			orig := repos.GetGitHubRepositoryMock
-			repos.GetGitHubRepositoryMock = func(args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error) {
-				return want.Repo, true, nil
+		}(),
+		func() testCase {
+			store := new(repos.FakeStore)
+			repo := repo.Clone()
+			must(store.UpsertRepos(ctx, repo))
+			cloneURL := "https://user:password@github.com/foo/bar"
+			return testCase{
+				name:  "given clone URL is preferred",
+				store: store,
+				repo:  gitserver.Repo{Name: api.RepoName(repo.Name), URL: cloneURL},
+				res: &protocol.RepoUpdateResponse{
+					ID:   repo.ID,
+					Name: repo.Name,
+					URL:  cloneURL,
+				},
 			}
-			defer func() { repos.GetGitHubRepositoryMock = orig }()
+		}(),
+		func() testCase {
+			store := new(repos.FakeStore)
+			repo := repo.Clone()
+			must(store.UpsertRepos(ctx, repo))
+			return testCase{
+				name:  "if missing, clone URL is set when stored",
+				store: store,
+				repo:  gitserver.Repo{Name: api.RepoName(repo.Name)},
+				res: &protocol.RepoUpdateResponse{
+					ID:   repo.ID,
+					Name: repo.Name,
+					URL:  repo.CloneURLs()[0],
+				},
+			}
+		}(),
+	)
 
-			result, err := s.repoLookup(context.Background(), protocol.RepoLookupArgs{Repo: "github.com/c/d"})
+	for _, tc := range testCases {
+		tc := tc
+		ctx := context.Background()
+
+		t.Run(tc.name, func(t *testing.T) {
+			s := &Server{Store: tc.store, Scheduler: &fakeScheduler{}}
+			srv := httptest.NewServer(s.Handler())
+			defer srv.Close()
+			cli := repoupdater.Client{URL: srv.URL}
+
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			res, err := cli.EnqueueRepoUpdate(ctx, tc.repo)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("have err: %q, want: %q", have, want)
+			}
+
+			if have, want := res, tc.res; !reflect.DeepEqual(have, want) {
+				t.Errorf("response: %s", cmp.Diff(have, want))
+			}
+		})
+	}
+}
+
+func TestServer_RepoExternalServices(t *testing.T) {
+	service1 := &repos.ExternalService{
+		ID:          1,
+		Kind:        "GITHUB",
+		DisplayName: "github.com - test",
+		Config: formatJSON(`
+		{
+			// Some comment
+			"url": "https://github.com",
+			"token": "secret"
+		}`),
+	}
+	service2 := &repos.ExternalService{
+		ID:          2,
+		Kind:        "GITHUB",
+		DisplayName: "github.com - test2",
+		Config: formatJSON(`
+		{
+			// Some comment
+			"url": "https://github.com",
+			"token": "secret"
+		}`),
+	}
+
+	// No sources are repos that are not managed by the syncer
+	repoNoSources := &repos.Repo{
+		Name: "gitolite.example.com/oldschool",
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "nosources",
+			ServiceType: "gitolite",
+			ServiceID:   "http://gitolite.my.corp",
+		},
+	}
+
+	repoSources := (&repos.Repo{
+		Name: "github.com/foo/sources",
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "sources",
+			ServiceType: "github",
+			ServiceID:   "http://github.com",
+		},
+		Metadata: new(github.Repository),
+	}).With(repos.Opt.RepoSources(service1.URN(), service2.URN()))
+
+	// We share the store across test cases. Initialize now so we have IDs
+	// set for test cases.
+	ctx := context.Background()
+	store := new(repos.FakeStore)
+	must(store.UpsertExternalServices(ctx, service1, service2))
+	must(store.UpsertRepos(ctx, repoNoSources, repoSources))
+
+	testCases := []struct {
+		name   string
+		repoID uint32
+		svcs   []api.ExternalService
+		err    string
+	}{{
+		name:   "repo no sources",
+		repoID: repoNoSources.ID,
+		svcs:   nil,
+		err:    "<nil>",
+	}, {
+		name:   "repo sources",
+		repoID: repoSources.ID,
+		svcs:   apiExternalServices(service1, service2),
+		err:    "<nil>",
+	}, {
+		name:   "repo not in store",
+		repoID: 42,
+		svcs:   nil,
+		err:    "repository with ID 42 does not exist",
+	}}
+
+	s := &Server{Store: store}
+	srv := httptest.NewServer(s.Handler())
+	defer srv.Close()
+	cli := repoupdater.Client{URL: srv.URL}
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			res, err := cli.RepoExternalServices(ctx, tc.repoID)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("have err: %q, want: %q", have, want)
+			}
+
+			if have, want := res, tc.svcs; !reflect.DeepEqual(have, want) {
+				t.Errorf("response:\n%s", cmp.Diff(have, want))
+			}
+		})
+	}
+}
+
+func TestServer_StatusMessages(t *testing.T) {
+	githubService := &repos.ExternalService{
+		ID:          1,
+		Kind:        "GITHUB",
+		DisplayName: "github.com - test",
+	}
+
+	testCases := []struct {
+		name            string
+		stored          repos.Repos
+		gitserverCloned []string
+		sourcerErr      error
+		listRepoErr     error
+		res             *protocol.StatusMessagesResponse
+		err             string
+	}{
+		{
+			name:            "all cloned",
+			gitserverCloned: []string{"foobar"},
+			stored:          []*repos.Repo{{Name: "foobar"}},
+			res: &protocol.StatusMessagesResponse{
+				Messages: []protocol.StatusMessage{},
+			},
+		},
+		{
+			name:            "nothing cloned",
+			stored:          []*repos.Repo{{Name: "foobar"}},
+			gitserverCloned: []string{},
+			res: &protocol.StatusMessagesResponse{
+				Messages: []protocol.StatusMessage{
+					{
+						Cloning: &protocol.CloningProgress{
+							Message: "1 repositories enqueued for cloning...",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:            "subset cloned",
+			stored:          []*repos.Repo{{Name: "foobar"}, {Name: "barfoo"}},
+			gitserverCloned: []string{"foobar"},
+			res: &protocol.StatusMessagesResponse{
+				Messages: []protocol.StatusMessage{
+					{
+						Cloning: &protocol.CloningProgress{
+							Message: "1 repositories enqueued for cloning...",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:            "more cloned than stored",
+			stored:          []*repos.Repo{{Name: "foobar"}},
+			gitserverCloned: []string{"foobar", "barfoo"},
+			res: &protocol.StatusMessagesResponse{
+				Messages: []protocol.StatusMessage{},
+			},
+		},
+		{
+			name:            "cloned different than stored",
+			stored:          []*repos.Repo{{Name: "foobar"}, {Name: "barfoo"}},
+			gitserverCloned: []string{"one", "two", "three"},
+			res: &protocol.StatusMessagesResponse{
+				Messages: []protocol.StatusMessage{
+					{
+						Cloning: &protocol.CloningProgress{
+							Message: "2 repositories enqueued for cloning...",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:            "case insensitivity",
+			gitserverCloned: []string{"foobar"},
+			stored:          []*repos.Repo{{Name: "FOOBar"}},
+			res: &protocol.StatusMessagesResponse{
+				Messages: []protocol.StatusMessage{},
+			},
+		},
+		{
+			name:            "case insensitivity to gitserver names",
+			gitserverCloned: []string{"FOOBar"},
+			stored:          []*repos.Repo{{Name: "FOOBar"}},
+			res: &protocol.StatusMessagesResponse{
+				Messages: []protocol.StatusMessage{},
+			},
+		},
+		{
+			name:       "one external service syncer err",
+			sourcerErr: errors.New("github is down"),
+			res: &protocol.StatusMessagesResponse{
+				Messages: []protocol.StatusMessage{
+					{
+						ExternalServiceSyncError: &protocol.ExternalServiceSyncError{
+							Message:           "github is down",
+							ExternalServiceId: githubService.ID,
+						},
+					},
+				},
+			},
+		},
+		{
+			name:        "one syncer err",
+			listRepoErr: errors.New("could not connect to database"),
+			res: &protocol.StatusMessagesResponse{
+				Messages: []protocol.StatusMessage{
+					{
+						SyncError: &protocol.SyncError{
+							Message: "syncer.sync.streaming: syncer.storedExternalIDs: could not connect to database",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		ctx := context.Background()
+
+		t.Run(tc.name, func(t *testing.T) {
+			gitserverClient := &fakeGitserverClient{listClonedResponse: tc.gitserverCloned}
+
+			store := new(repos.FakeStore)
+			err := store.UpsertRepos(ctx, tc.stored.Clone()...)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !reflect.DeepEqual(result, want) {
-				t.Errorf("got %+v, want %+v", result, want)
+			err = store.UpsertExternalServices(ctx, githubService)
+			if err != nil {
+				t.Fatal(err)
 			}
 
-			select {
-			case got := <-metadataUpdate:
-				want2 := &api.ReposUpdateMetadataRequest{
-					RepoName:    want.Repo.Name,
-					Description: want.Repo.Description,
-					Fork:        want.Repo.Fork,
-					Archived:    want.Repo.Archived,
-				}
-				if !reflect.DeepEqual(got, want2) {
-					t.Errorf("got %+v, want %+v", got, want2)
-				}
-			case <-time.After(5 * time.Second):
-				t.Error("ReposUpdateMetadata was not called")
+			clock := repos.NewFakeClock(time.Now(), 0)
+			syncer := &repos.Syncer{
+				Store: store,
+				Now:   clock.Now,
+			}
+
+			if tc.sourcerErr != nil || tc.listRepoErr != nil {
+				store.ListReposError = tc.listRepoErr
+				sourcer := repos.NewFakeSourcer(tc.sourcerErr, repos.NewFakeSource(githubService, nil))
+				// Run Sync so that possibly `LastSyncErrors` is set
+				syncer.Sourcer = sourcer
+				_ = syncer.Sync(ctx)
+			}
+
+			s := &Server{
+				Syncer:          syncer,
+				Store:           store,
+				GitserverClient: gitserverClient,
+			}
+
+			srv := httptest.NewServer(s.Handler())
+			defer srv.Close()
+			cli := repoupdater.Client{URL: srv.URL}
+
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			res, err := cli.StatusMessages(ctx)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("have err: %q, want: %q", have, want)
+			}
+
+			if have, want := res, tc.res; !reflect.DeepEqual(have, want) {
+				t.Errorf("response: %s", cmp.Diff(have, want))
 			}
 		})
-	})
+	}
+}
+
+func apiExternalServices(es ...*repos.ExternalService) []api.ExternalService {
+	if len(es) == 0 {
+		return nil
+	}
+
+	svcs := make([]api.ExternalService, 0, len(es))
+	for _, e := range es {
+		svc := api.ExternalService{
+			ID:          e.ID,
+			Kind:        e.Kind,
+			DisplayName: e.DisplayName,
+			Config:      e.Config,
+			CreatedAt:   e.CreatedAt,
+			UpdatedAt:   e.UpdatedAt,
+		}
+
+		if e.IsDeleted() {
+			svc.DeletedAt = &e.DeletedAt
+		}
+
+		svcs = append(svcs, svc)
+	}
+
+	return svcs
+}
+
+func TestRepoLookup(t *testing.T) {
+	clock := repos.NewFakeClock(time.Now(), 0)
+	now := clock.Now()
+
+	githubRepository := &repos.Repo{
+		Name:        "github.com/foo/bar",
+		Description: "The description",
+		Language:    "barlang",
+		Enabled:     true,
+		Archived:    false,
+		Fork:        false,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+			ServiceType: "github",
+			ServiceID:   "https://github.com/",
+		},
+		Sources: map[string]*repos.SourceInfo{
+			"extsvc:123": {
+				ID:       "extsvc:123",
+				CloneURL: "git@github.com:foo/bar.git",
+			},
+		},
+		Metadata: &github.Repository{
+			ID:            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+			URL:           "github.com/foo/bar",
+			DatabaseID:    1234,
+			Description:   "The description",
+			NameWithOwner: "foo/bar",
+		},
+	}
+
+	awsCodeCommitRepository := &repos.Repo{
+		Name:        "git-codecommit.us-west-1.amazonaws.com/stripe-go",
+		Description: "The stripe-go lib",
+		Language:    "barlang",
+		Enabled:     true,
+		Archived:    false,
+		Fork:        false,
+		CreatedAt:   now,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
+			ServiceType: awscodecommit.ServiceType,
+			ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
+		},
+		Sources: map[string]*repos.SourceInfo{
+			"extsvc:456": {
+				ID:       "extsvc:456",
+				CloneURL: "git@git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go",
+			},
+		},
+		Metadata: &awscodecommit.Repository{
+			ARN:          "arn:aws:codecommit:us-west-1:999999999999:stripe-go",
+			AccountID:    "999999999999",
+			ID:           "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
+			Name:         "stripe-go",
+			Description:  "The stripe-go lib",
+			HTTPCloneURL: "https://git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go",
+			LastModified: &now,
+		},
+	}
+
+	testCases := []struct {
+		name               string
+		args               protocol.RepoLookupArgs
+		stored             repos.Repos
+		result             *protocol.RepoLookupResult
+		githubDotComSource *fakeGithubDotComSource
+		assert             repos.ReposAssertion
+		err                string
+	}{
+		{
+			name: "not found",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName("github.com/a/b"),
+			},
+			result: &protocol.RepoLookupResult{ErrorNotFound: true},
+			err:    "repository not found",
+		},
+		{
+			name: "found - GitHub",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName("github.com/foo/bar"),
+			},
+			stored: []*repos.Repo{githubRepository},
+			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+					ServiceType: github.ServiceType,
+					ServiceID:   "https://github.com/",
+				},
+				Name:        "github.com/foo/bar",
+				Description: "The description",
+				VCS:         protocol.VCSInfo{URL: "git@github.com:foo/bar.git"},
+				Links: &protocol.RepoLinks{
+					Root:   "github.com/foo/bar",
+					Tree:   "github.com/foo/bar/tree/{rev}/{path}",
+					Blob:   "github.com/foo/bar/blob/{rev}/{path}",
+					Commit: "github.com/foo/bar/commit/{commit}",
+				},
+			}},
+		},
+		{
+			name: "found - AWS CodeCommit",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName("git-codecommit.us-west-1.amazonaws.com/stripe-go"),
+			},
+			stored: []*repos.Repo{awsCodeCommitRepository},
+			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
+					ServiceType: awscodecommit.ServiceType,
+					ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
+				},
+				Name:        "git-codecommit.us-west-1.amazonaws.com/stripe-go",
+				Description: "The stripe-go lib",
+				VCS:         protocol.VCSInfo{URL: "git@git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go"},
+				Links: &protocol.RepoLinks{
+					Root:   "https://us-west-1.console.aws.amazon.com/codecommit/home#/repository/stripe-go",
+					Tree:   "https://us-west-1.console.aws.amazon.com/codecommit/home#/repository/stripe-go/browse/{rev}/--/{path}",
+					Blob:   "https://us-west-1.console.aws.amazon.com/codecommit/home#/repository/stripe-go/browse/{rev}/--/{path}",
+					Commit: "https://us-west-1.console.aws.amazon.com/codecommit/home#/repository/stripe-go/commit/{commit}",
+				},
+			}},
+		},
+		{
+			name: "found - GitHub.com on Sourcegraph.com",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName("github.com/foo/bar"),
+			},
+			stored: []*repos.Repo{},
+			githubDotComSource: &fakeGithubDotComSource{
+				repo: githubRepository,
+			},
+			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+					ServiceType: github.ServiceType,
+					ServiceID:   "https://github.com/",
+				},
+				Name:        "github.com/foo/bar",
+				Description: "The description",
+				VCS:         protocol.VCSInfo{URL: "git@github.com:foo/bar.git"},
+				Links: &protocol.RepoLinks{
+					Root:   "github.com/foo/bar",
+					Tree:   "github.com/foo/bar/tree/{rev}/{path}",
+					Blob:   "github.com/foo/bar/blob/{rev}/{path}",
+					Commit: "github.com/foo/bar/commit/{commit}",
+				},
+			}},
+			assert: repos.Assert.ReposEqual(githubRepository),
+		},
+		{
+			name: "found - GitHub.com on Sourcegraph.com already exists",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName("github.com/foo/bar"),
+			},
+			stored: []*repos.Repo{githubRepository},
+			githubDotComSource: &fakeGithubDotComSource{
+				repo: githubRepository,
+			},
+			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
+				ExternalRepo: api.ExternalRepoSpec{
+					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+					ServiceType: github.ServiceType,
+					ServiceID:   "https://github.com/",
+				},
+				Name:        "github.com/foo/bar",
+				Description: "The description",
+				VCS:         protocol.VCSInfo{URL: "git@github.com:foo/bar.git"},
+				Links: &protocol.RepoLinks{
+					Root:   "github.com/foo/bar",
+					Tree:   "github.com/foo/bar/tree/{rev}/{path}",
+					Blob:   "github.com/foo/bar/blob/{rev}/{path}",
+					Commit: "github.com/foo/bar/commit/{commit}",
+				},
+			}},
+			assert: repos.Assert.ReposEqual(githubRepository),
+		},
+		{
+			name: "not found - GitHub.com on Sourcegraph.com",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName("github.com/foo/bar"),
+			},
+			githubDotComSource: &fakeGithubDotComSource{
+				err: github.ErrNotFound,
+			},
+			result: &protocol.RepoLookupResult{ErrorNotFound: true},
+			err:    "repository not found",
+			assert: repos.Assert.ReposEqual(),
+		},
+		{
+			name: "unauthorized - GitHub.com on Sourcegraph.com",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName("github.com/foo/bar"),
+			},
+			githubDotComSource: &fakeGithubDotComSource{
+				err: &github.APIError{Code: http.StatusUnauthorized},
+			},
+			result: &protocol.RepoLookupResult{ErrorUnauthorized: true},
+			err:    "not authorized",
+			assert: repos.Assert.ReposEqual(),
+		},
+		{
+			name: "temporarily unavailable - GitHub.com on Sourcegraph.com",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName("github.com/foo/bar"),
+			},
+			githubDotComSource: &fakeGithubDotComSource{
+				err: &github.APIError{Message: "API rate limit exceeded"},
+			},
+			result: &protocol.RepoLookupResult{ErrorTemporarilyUnavailable: true},
+			err:    "repository temporarily unavailable",
+			assert: repos.Assert.ReposEqual(),
+		},
+		{
+			name: "GithubDotcomSource on Sourcegraph.com ignores non-Github.com repos",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName("git-codecommit.us-west-1.amazonaws.com/stripe-go"),
+			},
+			githubDotComSource: &fakeGithubDotComSource{
+				repo: githubRepository,
+			},
+			result: &protocol.RepoLookupResult{ErrorNotFound: true},
+			err:    "repository not found",
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+
+			store := new(repos.FakeStore)
+			err := store.UpsertRepos(ctx, tc.stored.Clone()...)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			syncer := &repos.Syncer{
+				Store: store,
+				Now:   clock.Now,
+			}
+			s := &Server{Syncer: syncer, Store: store}
+			if tc.githubDotComSource != nil {
+				s.GithubDotComSource = tc.githubDotComSource
+			}
+
+			srv := httptest.NewServer(s.Handler())
+			defer srv.Close()
+
+			cli := repoupdater.Client{URL: srv.URL}
+
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			res, err := cli.RepoLookup(ctx, tc.args)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("have err: %q, want: %q", have, want)
+			}
+
+			if have, want := res, tc.result; !reflect.DeepEqual(have, want) {
+				t.Errorf("response: %s", cmp.Diff(have, want))
+			}
+
+			if diff := pretty.Compare(res, tc.result); diff != "" {
+				t.Fatalf("RepoLookup:\n%s", diff)
+			}
+
+			if tc.assert != nil {
+				rs, err := store.ListRepos(ctx, repos.StoreListReposArgs{})
+				if err != nil {
+					t.Fatal(err)
+				}
+				tc.assert(t, rs)
+			}
+		})
+	}
+}
+
+type fakeGithubDotComSource struct {
+	repo *repos.Repo
+	err  error
+}
+
+func (s *fakeGithubDotComSource) GetRepo(ctx context.Context, nameWithOwner string) (*repos.Repo, error) {
+	return s.repo.Clone(), s.err
+}
+
+type fakeScheduler struct {
+	queue repos.Repos
+}
+
+func (s *fakeScheduler) UpdateOnce(_ uint32, _ api.RepoName, _ string) {}
+func (s *fakeScheduler) ScheduleInfo(id uint32) *protocol.RepoUpdateSchedulerInfoResult {
+	return &protocol.RepoUpdateSchedulerInfoResult{}
+}
+
+type fakeGitserverClient struct {
+	listClonedResponse []string
+}
+
+func (g *fakeGitserverClient) ListCloned(ctx context.Context) ([]string, error) {
+	return g.listClonedResponse, nil
+}
+
+func formatJSON(s string) string {
+	formatted, err := jsonc.Format(s, nil)
+	if err != nil {
+		panic(err)
+	}
+	return formatted
+}
+
+func must(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
+func TestMain(m *testing.M) {
+	flag.Parse()
+	if !testing.Verbose() {
+		log15.Root().SetHandler(log15.LvlFilterHandler(log15.LvlError, log15.Root().GetHandler()))
+	}
+	os.Exit(m.Run())
 }

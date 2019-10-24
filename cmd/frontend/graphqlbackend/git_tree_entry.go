@@ -3,17 +3,17 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	neturl "net/url"
 	"os"
 	"path"
-	"path/filepath"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -21,60 +21,74 @@ import (
 // gitTreeEntryResolver resolves an entry in a Git tree in a repository. The entry can be any Git
 // object type that is valid in a tree.
 type gitTreeEntryResolver struct {
-	commit *gitCommitResolver
+	commit *GitCommitResolver
 
-	path string      // this tree entry's path (relative to the root)
-	stat os.FileInfo // this tree entry's file info
+	// stat is this tree entry's file info. Its Name method must return the full path relative to
+	// the root, not the basename.
+	stat os.FileInfo
 
 	isRecursive bool // whether entries is populated recursively (otherwise just current level of hierarchy)
 }
 
-func (r *gitTreeEntryResolver) Path() string { return r.path }
-func (r *gitTreeEntryResolver) Name() string { return path.Base(r.path) }
+func (r *gitTreeEntryResolver) Path() string { return r.stat.Name() }
+func (r *gitTreeEntryResolver) Name() string { return path.Base(r.stat.Name()) }
 
 func (r *gitTreeEntryResolver) ToGitTree() (*gitTreeEntryResolver, bool) { return r, true }
 func (r *gitTreeEntryResolver) ToGitBlob() (*gitTreeEntryResolver, bool) { return r, true }
 
-func (r *gitTreeEntryResolver) Commit() *gitCommitResolver { return r.commit }
+func (r *gitTreeEntryResolver) Commit() *GitCommitResolver { return r.commit }
 
-func (r *gitTreeEntryResolver) Repository() *repositoryResolver { return r.commit.repo }
+func (r *gitTreeEntryResolver) Repository() *RepositoryResolver { return r.commit.repo }
 
 func (r *gitTreeEntryResolver) IsRecursive() bool { return r.isRecursive }
 
-func (r *gitTreeEntryResolver) URL(ctx context.Context) string {
+func (r *gitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 	if submodule := r.Submodule(); submodule != nil {
 		repoName, err := cloneURLToRepoName(ctx, submodule.URL())
 		if err != nil {
-			log15.Error("Failed to resolve submodule repository name from clone URL", "cloneURL", submodule.URL())
-			return ""
+			log15.Error("Failed to resolve submodule repository name from clone URL", "cloneURL", submodule.URL(), "err", err)
+			return "", nil
 		}
-		return "/" + repoName + "@" + submodule.Commit()
+		return "/" + repoName + "@" + submodule.Commit(), nil
 	}
-	return r.urlPath(r.commit.repoRevURL())
+	url, err := r.commit.repoRevURL()
+	if err != nil {
+		return "", err
+	}
+	return r.urlPath(url)
 }
 
-func (r *gitTreeEntryResolver) CanonicalURL() string {
-	return r.urlPath(r.commit.canonicalRepoRevURL())
+func (r *gitTreeEntryResolver) CanonicalURL() (string, error) {
+	url, err := r.commit.canonicalRepoRevURL()
+	if err != nil {
+		return "", err
+	}
+	return r.urlPath(url)
 }
 
-func (r *gitTreeEntryResolver) urlPath(prefix string) string {
+func (r *gitTreeEntryResolver) urlPath(prefix string) (string, error) {
 	if r.IsRoot() {
-		return prefix
+		return prefix, nil
 	}
 
-	url := prefix + "/-/"
-	if r.IsDirectory() {
-		url += "tree"
-	} else {
-		url += "blob"
+	u, err := neturl.Parse(prefix)
+	if err != nil {
+		return "", err
 	}
-	return url + "/" + r.path
+
+	typ := "blob"
+	if r.IsDirectory() {
+		typ = "tree"
+	}
+
+	u.Path = path.Join(u.Path, "-", typ, r.Path())
+	return u.String(), nil
 }
 
 func (r *gitTreeEntryResolver) IsDirectory() bool { return r.stat.Mode().IsDir() }
 
 func (r *gitTreeEntryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
-	return externallink.FileOrDir(ctx, r.commit.repo.repo, r.commit.inputRevOrImmutableRev(), r.path, r.stat.Mode().IsDir())
+	return externallink.FileOrDir(ctx, r.commit.repo.repo, r.commit.inputRevOrImmutableRev(), r.Path(), r.stat.Mode().IsDir())
 }
 
 func (r *gitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
@@ -170,6 +184,7 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 
 	return "", nil
 }
+
 func createFileInfo(path string, isDir bool) os.FileInfo {
 	return fileInfo{path: path, isDir: isDir}
 }
@@ -182,7 +197,7 @@ func (r *gitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	if err != nil {
 		return false, err
 	}
-	entries, err := git.ReadDir(ctx, *cachedRepo, api.CommitID(r.commit.oid), filepath.Dir(r.path), false)
+	entries, err := git.ReadDir(ctx, *cachedRepo, api.CommitID(r.commit.OID()), path.Dir(r.Path()), false)
 	if err != nil {
 		return false, err
 	}

@@ -1,7 +1,6 @@
+import { Position, Range } from '@sourcegraph/extension-api-classes'
 import * as clientType from '@sourcegraph/extension-api-types'
 import * as sourcegraph from 'sourcegraph'
-import { Position } from '../types/position'
-import { Range } from '../types/range'
 
 /**
  * Converts from a plain object {@link clientType.Position} to an instance of {@link Position}.
@@ -32,8 +31,7 @@ export function fromLocation(location: sourcegraph.Location): clientType.Locatio
 export function fromHover(hover: sourcegraph.Hover): clientType.Hover {
     return {
         contents: hover.contents,
-        __backcompatContents: hover.__backcompatContents, // tslint:disable-line deprecation
-        priority: hover.priority,
+        __backcompatContents: hover.__backcompatContents,
         range: fromRange(hover.range),
     }
 }

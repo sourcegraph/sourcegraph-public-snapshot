@@ -7,7 +7,7 @@ import (
 	"sort"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 )
 
 // settingsCascade implements the GraphQL type SettingsCascade (and the deprecated type ConfigurationCascade).
@@ -31,7 +31,7 @@ func (r *settingsCascade) Subjects(ctx context.Context) ([]*settingsSubject, err
 		return mockSettingsCascadeSubjects()
 	}
 
-	subjects := []*settingsSubject{{site: singletonSiteResolver}}
+	subjects := []*settingsSubject{{defaultSettings: singletonDefaultSettingsResolver}, {site: singletonSiteResolver}}
 
 	if r.unauthenticatedActor {
 		return subjects, nil
@@ -116,6 +116,7 @@ var deeplyMergedSettingsFields = map[string]int{
 	"search.scopes":           1,
 	"search.savedQueries":     1,
 	"search.repositoryGroups": 1,
+	"quicklinks":              1,
 	"motd":                    1,
 	"extensions":              1,
 }

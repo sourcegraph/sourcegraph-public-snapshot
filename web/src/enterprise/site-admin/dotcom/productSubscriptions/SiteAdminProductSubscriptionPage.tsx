@@ -83,10 +83,10 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
             distinctUntilChanged()
         )
 
-        const productSubscriptionChanges = combineLatest(
+        const productSubscriptionChanges = combineLatest([
             subscriptionUUIDChanges,
-            this.updates.pipe(startWith(void 0))
-        ).pipe(
+            this.updates.pipe(startWith(undefined)),
+        ]).pipe(
             switchMap(([subscriptionUUID]) =>
                 this.queryProductSubscription(subscriptionUUID).pipe(
                     catchError(err => [asError(err)]),
@@ -148,7 +148,7 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
             <div className="site-admin-product-subscription-page">
                 <PageTitle title="Product subscription" />
                 <div className="mb-2">
-                    <Link to="/site-admin/dotcom/product/subscriptions" className="btn btn-outline-link btn-sm">
+                    <Link to="/site-admin/dotcom/product/subscriptions" className="btn btn-link btn-sm">
                         <ArrowLeftIcon className="icon-inline" /> All subscriptions
                     </Link>
                 </div>
@@ -163,9 +163,10 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
                         <h2>Product subscription {this.state.productSubscriptionOrError.name}</h2>
                         <div className="mb-3">
                             <button
-                                className="btn btn-outline-danger"
+                                type="button"
+                                className="btn btn-danger"
                                 onClick={this.archiveProductSubscription}
-                                disabled={this.state.archivalOrError === undefined}
+                                disabled={this.state.archivalOrError === null}
                             >
                                 Archive
                             </button>
@@ -232,12 +233,17 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
                             <div className="card-header d-flex align-items-center justify-content-between">
                                 Licenses
                                 {this.state.showGenerate ? (
-                                    <button className="btn btn-secondary" onClick={this.toggleShowGenerate}>
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary"
+                                        onClick={this.toggleShowGenerate}
+                                    >
                                         Dismiss new license form
                                     </button>
                                 ) : (
                                     <button
-                                        className="btn btn-outline-primary btn-sm"
+                                        type="button"
+                                        className="btn btn-primary btn-sm"
                                         onClick={this.toggleShowGenerate}
                                     >
                                         <AddIcon className="icon-inline" /> Generate new license manually

@@ -32,6 +32,6 @@ func (r ProductLicenseInfo) UserCount() int32 {
 	return int32(r.UserCountValue)
 }
 
-func (r ProductLicenseInfo) ExpiresAt() string {
-	return r.ExpiresAtValue.Format(time.RFC3339)
+func (r ProductLicenseInfo) ExpiresAt() DateTime {
+	return DateTime{Time: r.ExpiresAtValue}
 }

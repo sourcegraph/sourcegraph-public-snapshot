@@ -36,8 +36,8 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMi
         )
     }
 
-    public componentWillReceiveProps(props: UpdateMirrorRepositoryActionContainerProps): void {
-        this.componentUpdates.next(props)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -88,7 +88,7 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMi
                     )}
                 </>
             )
-            if (window.context.updateScheduler2Enabled && !updateSchedule) {
+            if (!updateSchedule) {
                 description = 'This repository is automatically updated when accessed by a user.'
             } else {
                 description =
@@ -185,6 +185,7 @@ class CheckMirrorRepositoryConnectionActionContainer extends React.PureComponent
                 description={<span>Diagnose problems cloning or updating from the remote repository.</span>}
                 action={
                     <button
+                        type="button"
                         className="btn btn-primary"
                         disabled={this.state.loading}
                         onClick={this.checkMirrorRepositoryConnection}

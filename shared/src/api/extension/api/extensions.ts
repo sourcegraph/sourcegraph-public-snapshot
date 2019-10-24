@@ -1,9 +1,10 @@
+import { ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import { Subscription, Unsubscribable } from 'rxjs'
 import { asError } from '../../../util/errors'
 import { tryCatchPromise } from '../../util'
 
 /** @internal */
-export interface ExtExtensionsAPI {
+export interface ExtExtensionsAPI extends ProxyValue {
     $activateExtension(extensionID: string, bundleURL: string): Promise<void>
     $deactivateExtension(extensionID: string): Promise<void>
 }
@@ -12,9 +13,11 @@ export interface ExtExtensionsAPI {
 declare const self: any
 
 /** @internal */
-export class ExtExtensions implements ExtExtensionsAPI, Unsubscribable {
+export class ExtExtensions implements ExtExtensionsAPI, Unsubscribable, ProxyValue {
+    public readonly [proxyValueSymbol] = true
+
     /** Extensions' deactivate functions. */
-    private extensionDeactivate = new Map<string, (() => void | Promise<void>)>()
+    private extensionDeactivate = new Map<string, () => void | Promise<void>>()
 
     /**
      * Proxy method invoked by the client to load an extension and invoke its `activate` function to start running it.
@@ -74,7 +77,7 @@ export class ExtExtensions implements ExtExtensionsAPI, Unsubscribable {
         //
         // TODO(sqs): Add timeouts to prevent long-running activate or deactivate functions from
         // significantly delaying other extensions.
-        return tryCatchPromise<void>(() => extensionExports.activate({ subscriptions: extensionSubscriptions })).catch(
+        await tryCatchPromise<void>(() => extensionExports.activate({ subscriptions: extensionSubscriptions })).catch(
             error => {
                 error = asError(error)
                 throw Object.assign(
@@ -92,7 +95,7 @@ export class ExtExtensions implements ExtExtensionsAPI, Unsubscribable {
         const deactivate = this.extensionDeactivate.get(extensionID)
         if (deactivate) {
             this.extensionDeactivate.delete(extensionID)
-            return Promise.resolve(deactivate())
+            await Promise.resolve(deactivate())
         }
     }
 

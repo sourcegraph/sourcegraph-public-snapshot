@@ -2,7 +2,8 @@ import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
 import { from, Observable, Subject, Subscription } from 'rxjs'
-import { distinctUntilChanged, map, skip, startWith } from 'rxjs/operators'
+import { distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
+import { getActiveCodeEditorPosition } from '../../../../../shared/src/api/client/services/editorService'
 import { TextDocumentLocationProviderRegistry } from '../../../../../shared/src/api/client/services/location'
 import { Entry } from '../../../../../shared/src/api/client/services/registry'
 import {
@@ -11,16 +12,17 @@ import {
     ViewProviderRegistrationOptions,
 } from '../../../../../shared/src/api/client/services/view'
 import { ContributableViewContainer, TextDocumentPositionParams } from '../../../../../shared/src/api/protocol'
+import { ActivationProps } from '../../../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
 import { AbsoluteRepoFile, ModeSpec, parseHash, PositionSpec } from '../../../../../shared/src/util/url'
 import { isDiscussionsEnabled } from '../../../discussions'
+import { ThemeProps } from '../../../theme'
 import { RepoHeaderContributionsLifecycleProps } from '../../RepoHeader'
 import { RepoRevSidebarCommits } from '../../RepoRevSidebarCommits'
 import { DiscussionsTree } from '../discussions/DiscussionsTree'
-
 interface Props
     extends AbsoluteRepoFile,
         Partial<PositionSpec>,
@@ -28,13 +30,14 @@ interface Props
         RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
         PlatformContextProps,
-        ExtensionsControllerProps {
+        ExtensionsControllerProps,
+        ThemeProps,
+        ActivationProps {
     location: H.Location
     history: H.History
     repoID: GQL.ID
     repoName: string
     commitID: string
-    isLightTheme: boolean
     authenticatedUser: GQL.IUser | null
 }
 
@@ -43,6 +46,12 @@ export type BlobPanelTabID = 'info' | 'def' | 'references' | 'discussions' | 'im
 /** The subject (what the contextual information refers to). */
 interface PanelSubject extends AbsoluteRepoFile, ModeSpec, Partial<PositionSpec> {
     repoID: string
+
+    /**
+     * Include the full URI fragment here because it represents the state of panels, and we want
+     * panels to be re-rendered when this state changes.
+     */
+    hash: string
 }
 
 function toSubject(props: Props): PanelSubject {
@@ -56,6 +65,7 @@ function toSubject(props: Props): PanelSubject {
         mode: props.mode,
         position:
             parsedHash.line !== undefined ? { line: parsedHash.line, character: parsedHash.character || 0 } : undefined,
+        hash: props.location.hash,
     }
 }
 
@@ -64,10 +74,9 @@ function toSubject(props: Props): PanelSubject {
  */
 export class BlobPanel extends React.PureComponent<Props> {
     private componentUpdates = new Subject<Props>()
-    private locationsUpdates = new Subject<void>()
     private subscriptions = new Subscription()
 
-    public constructor(props: Props) {
+    constructor(props: Props) {
         super(props)
 
         const componentUpdates = this.componentUpdates.pipe(startWith(this.props))
@@ -78,34 +87,65 @@ export class BlobPanel extends React.PureComponent<Props> {
             distinctUntilChanged((a, b) => isEqual(a, b))
         )
 
-        const entryForViewProviderRegistration: <P extends TextDocumentPositionParams>(
+        const entryForViewProviderRegistration = <P extends TextDocumentPositionParams>(
             id: string,
             title: string,
             priority: number,
             registry: TextDocumentLocationProviderRegistry<P>,
             extraParams?: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParams>>
-        ) => Entry<ViewProviderRegistrationOptions, ProvideViewSignature> = (
-            id,
-            title,
-            priority,
-            registry,
-            extraParams
-        ) => ({
+        ): Entry<ViewProviderRegistrationOptions, ProvideViewSignature> => ({
             registrationOptions: { id, container: ContributableViewContainer.Panel },
-            provider: registry
-                .getLocationsAndProviders(from(this.props.extensionsController.services.model.model), extraParams)
-                .pipe(
-                    map(({ locations, hasProviders }) =>
-                        hasProviders && locations
-                            ? {
-                                  title,
-                                  content: '',
-                                  priority,
-                                  locationProvider: locations,
-                              }
-                            : null
-                    )
+            provider: from(this.props.extensionsController.services.editor.activeEditorUpdates).pipe(
+                map(activeEditor =>
+                    activeEditor
+                        ? {
+                              ...activeEditor,
+                              model: this.props.extensionsController.services.model.getPartialModel(
+                                  activeEditor.resource
+                              ),
+                          }
+                        : undefined
                 ),
+                switchMap(activeEditor =>
+                    registry.hasProvidersForActiveTextDocument(activeEditor).pipe(
+                        map(hasProviders => {
+                            if (!hasProviders) {
+                                return null
+                            }
+                            const params: TextDocumentPositionParams | null = getActiveCodeEditorPosition(activeEditor)
+                            if (!params) {
+                                return null
+                            }
+                            return {
+                                title,
+                                content: '',
+                                priority,
+
+                                // This disable directive is necessary because TypeScript is not yet smart
+                                // enough to know that (typeof params & typeof extraParams) is P.
+                                //
+                                // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
+                                locationProvider: registry.getLocations({ ...params, ...extraParams } as P).pipe(
+                                    map(locationsObservable =>
+                                        locationsObservable.pipe(
+                                            tap(locations => {
+                                                if (
+                                                    this.props.activation &&
+                                                    id === 'references' &&
+                                                    locations &&
+                                                    locations.length > 0
+                                                ) {
+                                                    this.props.activation.update({ FoundReferences: true })
+                                                }
+                                            })
+                                        )
+                                    )
+                                ),
+                            }
+                        })
+                    )
+                )
+            ),
         })
 
         this.subscriptions.add(
@@ -126,18 +166,6 @@ export class BlobPanel extends React.PureComponent<Props> {
                             context: { includeDeclaration: false },
                         }
                     ),
-                    entryForViewProviderRegistration(
-                        'impl',
-                        'Implementation',
-                        160,
-                        this.props.extensionsController.services.textDocumentImplementation
-                    ),
-                    entryForViewProviderRegistration(
-                        'typedef',
-                        'Type definition',
-                        150,
-                        this.props.extensionsController.services.textDocumentTypeDefinition
-                    ),
 
                     {
                         // File history view.
@@ -151,7 +179,6 @@ export class BlobPanel extends React.PureComponent<Props> {
                                 reactElement: (
                                     <RepoRevSidebarCommits
                                         key="commits"
-                                        repoName={subject.repoName}
                                         repoID={this.props.repoID}
                                         rev={subject.rev}
                                         filePath={subject.filePath}
@@ -183,7 +210,8 @@ export class BlobPanel extends React.PureComponent<Props> {
                                                   filePath={subject.filePath}
                                                   history={this.props.history}
                                                   location={this.props.location}
-                                                  authenticatedUser={this.props.authenticatedUser}
+                                                  compact={true}
+                                                  extensionsController={this.props.extensionsController}
                                               />
                                           ),
                                       }
@@ -196,9 +224,6 @@ export class BlobPanel extends React.PureComponent<Props> {
                 )
             )
         )
-
-        // Update references when subject changes after the initial mount.
-        this.subscriptions.add(subjectChanges.pipe(skip(1)).subscribe(() => this.locationsUpdates.next()))
     }
 
     public componentDidUpdate(): void {

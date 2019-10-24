@@ -2,6 +2,7 @@ import { action } from '@storybook/addon-actions'
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { Toggle } from './Toggle'
+import './Toggle.scss'
 
 const onToggle = action('onToggle')
 

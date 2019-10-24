@@ -14,6 +14,7 @@ import { catchError, distinctUntilChanged, map, startWith, switchMap, tap } from
 import { ActionItem } from '../../../shared/src/actions/ActionItem'
 import { ActionsContainer } from '../../../shared/src/actions/ActionsContainer'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
+import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { RepositoryIcon } from '../../../shared/src/components/icons' // TODO: Switch to mdi icon
 import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
@@ -29,11 +30,12 @@ import { Form } from '../components/Form'
 import { PageTitle } from '../components/PageTitle'
 import { isDiscussionsEnabled } from '../discussions'
 import { DiscussionsList } from '../discussions/DiscussionsList'
-import { searchQueryForRepoRev } from '../search'
+import { searchQueryForRepoRev, PatternTypeProps } from '../search'
 import { submitSearch } from '../search/helpers'
 import { QueryInput } from '../search/input/QueryInput'
 import { SearchButton } from '../search/input/SearchButton'
-import { eventLogger } from '../tracking/eventLogger'
+import { ThemeProps } from '../theme'
+import { eventLogger, EventLoggerProps } from '../tracking/eventLogger'
 import { basename } from '../util/path'
 import { fetchTree } from './backend'
 import { GitCommitNode, GitCommitNodeProps } from './commits/GitCommitNode'
@@ -119,16 +121,21 @@ const fetchTreeCommits = memoizeObservable(
     args => `${args.repo}:${args.revspec}:${args.first}:${args.filePath}`
 )
 
-interface Props extends SettingsCascadeProps, ExtensionsControllerProps, PlatformContextProps {
+interface Props
+    extends SettingsCascadeProps,
+        ExtensionsControllerProps,
+        PlatformContextProps,
+        ThemeProps,
+        EventLoggerProps,
+        ActivationProps,
+        PatternTypeProps {
     repoName: string
     repoID: GQL.ID
     repoDescription: string
-    // filePath is the tree's path in TreePage. We call it filePath for consistency elsewhere.
+    /** The tree's path in TreePage. We call it filePath for consistency elsewhere. */
     filePath: string
     commitID: string
     rev: string
-    isLightTheme: boolean
-
     location: H.Location
     history: H.History
 }
@@ -189,8 +196,8 @@ export class TreePage extends React.PureComponent<Props, State> {
         this.componentUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(newProps: Props): void {
-        this.componentUpdates.next(newProps)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -253,7 +260,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                             <HistoryIcon className="icon-inline" /> Compare
                                         </Link>
                                         <Link
-                                            className={`btn btn-secondary`}
+                                            className="btn btn-secondary"
                                             to={`/${this.props.repoName}/-/stats/contributors`}
                                         >
                                             <UserIcon className="icon-inline" /> Contributors
@@ -273,12 +280,11 @@ export class TreePage extends React.PureComponent<Props, State> {
                                 </h3>
                                 <Form className="tree-page__section-search" onSubmit={this.onSubmit}>
                                     <QueryInput
+                                        {...this.props}
                                         value={this.state.query}
                                         onChange={this.onQueryChange}
                                         prependQueryForSuggestions={this.getQueryPrefix()}
                                         autoFocus={true}
-                                        location={this.props.location}
-                                        history={this.props.history}
                                         placeholder=""
                                     />
                                     <SearchButton />
@@ -293,47 +299,40 @@ export class TreePage extends React.PureComponent<Props, State> {
                                 <div className="tree-page__section mt-2 tree-page__section--discussions">
                                     <h3 className="tree-page__section-header">Discussions</h3>
                                     <DiscussionsList
-                                        repoID={this.props.repoID}
-                                        rev={this.props.rev}
+                                        {...this.props}
                                         filePath={this.props.filePath + '/**' || undefined}
-                                        history={this.props.history}
-                                        location={this.props.location}
                                         noun="discussion in this tree"
                                         pluralNoun="discussions in this tree"
                                         defaultFirst={2}
                                         hideSearch={true}
+                                        compact={false}
                                     />
                                 </div>
                             )}
+                            {/* eslint-disable react/jsx-no-bind */}
                             <ActionsContainer
+                                {...this.props}
                                 menu={ContributableMenu.DirectoryPage}
-                                // tslint:disable-next-line:jsx-no-lambda
                                 render={items => (
                                     <section className="tree-page__section">
                                         <h3 className="tree-page__section-header">Actions</h3>
                                         {items.map((item, i) => (
                                             <ActionItem
+                                                {...this.props}
                                                 key={i}
                                                 {...item}
                                                 className="btn btn-secondary mr-1 mb-1"
-                                                extensionsController={this.props.extensionsController}
-                                                platformContext={this.props.platformContext}
-                                                location={this.props.location}
                                             />
                                         ))}
                                     </section>
                                 )}
                                 empty={null}
-                                extensionsController={this.props.extensionsController}
-                                platformContext={this.props.platformContext}
-                                location={this.props.location}
                             />
+                            {/* eslint-enable react/jsx-no-bind */}
                             <div className="tree-page__section">
                                 <h3 className="tree-page__section-header">Changes</h3>
-                                <FilteredConnection<
-                                    GQL.IGitCommit,
-                                    Pick<GitCommitNodeProps, 'repoName' | 'className' | 'compact'>
-                                >
+                                <FilteredConnection<GQL.IGitCommit, Pick<GitCommitNodeProps, 'className' | 'compact'>>
+                                    {...this.props}
                                     className="mt-2 tree-page__section--commits"
                                     listClassName="list-group list-group-flush"
                                     noun="commit in this tree"
@@ -341,16 +340,13 @@ export class TreePage extends React.PureComponent<Props, State> {
                                     queryConnection={this.queryCommits}
                                     nodeComponent={GitCommitNode}
                                     nodeComponentProps={{
-                                        repoName: this.props.repoName,
                                         className: 'list-group-item',
                                         compact: true,
                                     }}
                                     updateOnChange={`${this.props.repoName}:${this.props.rev}:${this.props.filePath}`}
                                     defaultFirst={7}
-                                    history={this.props.history}
                                     shouldUpdateURLQuery={false}
                                     hideSearch={true}
-                                    location={this.props.location}
                                 />
                             </div>
                         </>
@@ -366,7 +362,9 @@ export class TreePage extends React.PureComponent<Props, State> {
         submitSearch(
             this.props.history,
             this.getQueryPrefix() + this.state.query,
-            this.props.filePath ? 'tree' : 'repo'
+            this.props.filePath ? 'tree' : 'repo',
+            this.props.patternType,
+            this.props.activation
         )
     }
 

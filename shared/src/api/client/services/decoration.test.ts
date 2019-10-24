@@ -1,7 +1,7 @@
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { of } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
-import { TextDocumentIdentifier } from '../../client/types/textDocument'
+import { TextDocumentIdentifier } from '../types/textDocument'
 import {
     decorationAttachmentStyleForTheme,
     decorationStyleForTheme,
@@ -22,7 +22,7 @@ const FIXTURE_RESULT: TextDocumentDecoration[] | null = [
     },
 ]
 
-const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
+const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 describe('getDecorations', () => {
     describe('0 providers', () => {
@@ -106,7 +106,7 @@ describe('getDecorations', () => {
                         FIXTURE.TextDocumentIdentifier
                     )
                 ).toBe('-a-|', {
-                    a: [...FIXTURE_RESULT!, ...FIXTURE_RESULT!],
+                    a: [...FIXTURE_RESULT, ...FIXTURE_RESULT],
                 })
             ))
     })
@@ -135,7 +135,6 @@ describe('decorationStyleForTheme', () => {
 
     test('supports no theme overrides', () =>
         expect(decorationStyleForTheme({ range: FIXTURE_RANGE, backgroundColor: 'red' }, true)).toEqual({
-            range: FIXTURE_RANGE, // it's not necessary that range is included, but it saves an object allocation
             backgroundColor: 'red',
         }))
 

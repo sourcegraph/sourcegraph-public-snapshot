@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -44,27 +43,23 @@ func unmarshalOrgInvitationID(id graphql.ID) (orgInvitationID int64, err error) 
 func (r *organizationInvitationResolver) Organization(ctx context.Context) (*OrgResolver, error) {
 	return OrgByIDInt32(ctx, r.v.OrgID)
 }
+
 func (r *organizationInvitationResolver) Sender(ctx context.Context) (*UserResolver, error) {
 	return UserByIDInt32(ctx, r.v.SenderUserID)
 }
+
 func (r *organizationInvitationResolver) Recipient(ctx context.Context) (*UserResolver, error) {
 	return UserByIDInt32(ctx, r.v.RecipientUserID)
 }
-func (r *organizationInvitationResolver) CreatedAt() string { return r.v.CreatedAt.Format(time.RFC3339) }
-func (r *organizationInvitationResolver) NotifiedAt() *string {
-	if r.v.NotifiedAt == nil {
-		return nil
-	}
-	s := r.v.NotifiedAt.Format(time.RFC3339)
-	return &s
+func (r *organizationInvitationResolver) CreatedAt() DateTime { return DateTime{Time: r.v.CreatedAt} }
+func (r *organizationInvitationResolver) NotifiedAt() *DateTime {
+	return DateTimeOrNil(r.v.NotifiedAt)
 }
-func (r *organizationInvitationResolver) RespondedAt() *string {
-	if r.v.RespondedAt == nil {
-		return nil
-	}
-	s := r.v.RespondedAt.Format(time.RFC3339)
-	return &s
+
+func (r *organizationInvitationResolver) RespondedAt() *DateTime {
+	return DateTimeOrNil(r.v.RespondedAt)
 }
+
 func (r *organizationInvitationResolver) ResponseType() *string {
 	if r.v.ResponseType == nil {
 		return nil
@@ -74,6 +69,7 @@ func (r *organizationInvitationResolver) ResponseType() *string {
 	}
 	return strptr("REJECT")
 }
+
 func (r *organizationInvitationResolver) RespondURL(ctx context.Context) (*string, error) {
 	if r.v.Pending() {
 		org, err := db.Orgs.GetByID(ctx, r.v.OrgID)
@@ -85,12 +81,9 @@ func (r *organizationInvitationResolver) RespondURL(ctx context.Context) (*strin
 	}
 	return nil, nil
 }
-func (r *organizationInvitationResolver) RevokedAt() *string {
-	if r.v.RevokedAt == nil {
-		return nil
-	}
-	s := r.v.RevokedAt.Format(time.RFC3339)
-	return &s
+
+func (r *organizationInvitationResolver) RevokedAt() *DateTime {
+	return DateTimeOrNil(r.v.RevokedAt)
 }
 
 func strptr(s string) *string { return &s }

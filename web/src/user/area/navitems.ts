@@ -1,8 +1,8 @@
+import FeatureSearchOutlineIcon from 'mdi-react/FeatureSearchOutlineIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
-import TuneVerticalIcon from 'mdi-react/TuneVerticalIcon'
 import { UserAreaHeaderNavItem } from './UserAreaHeader'
 
-export const userAreaHeaderNavItems: ReadonlyArray<UserAreaHeaderNavItem> = [
+export const userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[] = [
     {
         to: '',
         exact: true,
@@ -10,15 +10,14 @@ export const userAreaHeaderNavItems: ReadonlyArray<UserAreaHeaderNavItem> = [
     },
     {
         to: '/settings',
-        exact: true,
         label: 'Settings',
         icon: SettingsIcon,
         condition: ({ user: { viewerCanAdminister } }) => viewerCanAdminister,
     },
     {
-        to: '/account',
-        label: 'Account',
-        icon: TuneVerticalIcon,
+        to: '/searches',
+        label: 'Saved searches',
+        icon: FeatureSearchOutlineIcon,
         condition: ({ user: { viewerCanAdminister } }) => viewerCanAdminister,
     },
 ]

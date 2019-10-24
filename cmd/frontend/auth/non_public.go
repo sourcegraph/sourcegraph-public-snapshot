@@ -8,8 +8,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
 // RequireAuthMiddleware is a middleware that requires authentication for all HTTP requests, except
@@ -93,6 +93,16 @@ func AllowAnonymousRequest(req *http.Request) bool {
 	}
 
 	if strings.HasPrefix(req.URL.Path, "/.assets/") || strings.HasPrefix(req.URL.Path, "/.api/telemetry/log/v1/") {
+		return true
+	}
+
+	// Permission is checked later by validating the LSIF upload token.
+	if strings.HasPrefix(req.URL.Path, "/.api/lsif/upload") {
+		return true
+	}
+
+	// Authentication is performed in the webhook handler itself.
+	if strings.HasPrefix(req.URL.Path, "/.api/github-webhooks") {
 		return true
 	}
 

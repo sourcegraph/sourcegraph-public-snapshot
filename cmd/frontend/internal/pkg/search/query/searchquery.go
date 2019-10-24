@@ -3,21 +3,26 @@
 package query
 
 import (
+	"strings"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/types"
 )
 
 // All field names.
 const (
-	FieldDefault   = ""
-	FieldCase      = "case"
-	FieldRepo      = "repo"
-	FieldRepoGroup = "repogroup"
-	FieldFile      = "file"
-	FieldFork      = "fork"
-	FieldArchived  = "archived"
-	FieldLang      = "lang"
-	FieldType      = "type"
+	FieldDefault            = ""
+	FieldCase               = "case"
+	FieldRepo               = "repo"
+	FieldRepoGroup          = "repogroup"
+	FieldFile               = "file"
+	FieldFork               = "fork"
+	FieldArchived           = "archived"
+	FieldLang               = "lang"
+	FieldType               = "type"
+	FieldRepoHasFile        = "repohasfile"
+	FieldRepoHasCommitAfter = "repohascommitafter"
+	FieldPatternType        = "patterntype"
 
 	// For diff and commit search only:
 	FieldBefore    = "before"
@@ -31,6 +36,7 @@ const (
 	FieldCount   = "count" // Searches that specify `count:` will fetch at least that number of results, or the full result set
 	FieldMax     = "max"   // Deprecated alias for count
 	FieldTimeout = "timeout"
+	FieldReplace = "replace"
 )
 
 var (
@@ -39,15 +45,19 @@ var (
 
 	conf = types.Config{
 		FieldTypes: map[string]types.FieldType{
-			FieldDefault:   {Literal: types.RegexpType, Quoted: types.StringType},
-			FieldCase:      {Literal: types.BoolType, Quoted: types.BoolType, Singular: true},
-			FieldRepo:      regexpNegatableFieldType,
-			FieldRepoGroup: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
-			FieldFile:      regexpNegatableFieldType,
-			FieldFork:      {Literal: types.StringType, Quoted: types.StringType, Singular: true},
-			FieldArchived:  {Literal: types.StringType, Quoted: types.StringType, Singular: true},
-			FieldLang:      {Literal: types.StringType, Quoted: types.StringType, Negatable: true},
-			FieldType:      stringFieldType,
+			FieldDefault:     {Literal: types.RegexpType, Quoted: types.StringType},
+			FieldCase:        {Literal: types.BoolType, Quoted: types.BoolType, Singular: true},
+			FieldRepo:        regexpNegatableFieldType,
+			FieldRepoGroup:   {Literal: types.StringType, Quoted: types.StringType, Singular: true},
+			FieldFile:        regexpNegatableFieldType,
+			FieldFork:        {Literal: types.StringType, Quoted: types.StringType, Singular: true},
+			FieldArchived:    {Literal: types.StringType, Quoted: types.StringType, Singular: true},
+			FieldLang:        {Literal: types.StringType, Quoted: types.StringType, Negatable: true},
+			FieldType:        stringFieldType,
+			FieldPatternType: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
+
+			FieldRepoHasFile:        regexpNegatableFieldType,
+			FieldRepoHasCommitAfter: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 
 			FieldBefore:    stringFieldType,
 			FieldAfter:     stringFieldType,
@@ -60,6 +70,7 @@ var (
 			FieldCount:   {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 			FieldMax:     {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 			FieldTimeout: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
+			FieldReplace: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 		},
 		FieldAliases: map[string]string{
 			"r":        FieldRepo,
@@ -82,18 +93,56 @@ type Query struct {
 	*types.Query // the underlying query
 }
 
-// ParseAndCheck parses and typechecks a search query using the default
-// query type configuration.
-func ParseAndCheck(input string) (*Query, error) {
-	return parseAndCheck(&conf, input)
-}
-
-func parseAndCheck(conf *types.Config, input string) (*Query, error) {
-	syntaxQuery, err := syntax.Parse(input)
+func Parse(input string) (syntax.ParseTree, error) {
+	parseTree, err := syntax.Parse(input)
 	if err != nil {
 		return nil, err
 	}
-	checkedQuery, err := conf.Check(syntaxQuery)
+
+	// We want to make query fields case insensitive
+	for _, expr := range parseTree {
+		expr.Field = strings.ToLower(expr.Field)
+	}
+	return parseTree, nil
+}
+
+func Check(parseTree syntax.ParseTree) (*Query, error) {
+	checkedQuery, err := conf.Check(parseTree)
+	if err != nil {
+		return nil, err
+	}
+	return &Query{conf: &conf, Query: checkedQuery}, nil
+}
+
+// ParseAndCheck parses and typechecks a search query using the default
+// query type configuration.
+func ParseAndCheck(input string) (*Query, error) {
+	parseTree, err := Parse(input)
+	if err != nil {
+		return nil, err
+	}
+
+	checkedQuery, err := Check(parseTree)
+	if err != nil {
+		return nil, err
+	}
+
+	return checkedQuery, err
+}
+
+// parseAndCheck is preserved for testing custom Configs only.
+func parseAndCheck(conf *types.Config, input string) (*Query, error) {
+	parseTree, err := syntax.Parse(input)
+	if err != nil {
+		return nil, err
+	}
+
+	// We want to make query fields case insensitive
+	for _, expr := range parseTree {
+		expr.Field = strings.ToLower(expr.Field)
+	}
+
+	checkedQuery, err := conf.Check(parseTree)
 	if err != nil {
 		return nil, err
 	}

@@ -40,6 +40,7 @@ export class PanelView extends React.PureComponent<Props, State> {
                 {this.props.panelView.reactElement}
                 {this.props.panelView.locationProvider && this.props.repoName && (
                     <HierarchicalLocationsView
+                        location={this.props.location}
                         locations={this.props.panelView.locationProvider}
                         defaultGroup={this.props.repoName}
                         isLightTheme={this.props.isLightTheme}

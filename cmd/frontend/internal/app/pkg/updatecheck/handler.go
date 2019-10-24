@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -12,24 +11,29 @@ import (
 	"github.com/coreos/go-semver/semver"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/eventlogger"
-	"github.com/sourcegraph/sourcegraph/pkg/hubspot"
-	"github.com/sourcegraph/sourcegraph/pkg/pubsub/pubsubutil"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
+	"github.com/sourcegraph/sourcegraph/internal/hubspot"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/pubsub/pubsubutil"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
+
+// pubSubPingsTopicID is the topic ID of the topic that forwards messages to Pings' pub/sub subscribers.
+var pubSubPingsTopicID = env.Get("PUBSUB_TOPIC_ID", "", "Pub/sub pings topic ID is the pub/sub topic id where pings are published.")
 
 var (
 	// latestReleaseDockerServerImageBuild is only used by sourcegraph.com to tell existing
 	// non-cluster installations what the latest version is. The version here _must_ be
 	// available at https://hub.docker.com/r/sourcegraph/server/tags/ before
 	// landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("2.13.5") // We don't plan on advertising 3.0.0-beta, but should update this for 3.0.0
+	latestReleaseDockerServerImageBuild = newBuild("3.9.1")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("2.13.5") // We don't plan on advertising 3.0.0-beta, but should update this for 3.0.0
+	latestReleaseKubernetesBuild = newBuild("3.9.1")
 )
 
 func getLatestRelease(deployType string) build {
@@ -117,7 +121,7 @@ func canUpdateVersion(clientVersionString string, latestReleaseBuild build) (boo
 	return clientVersion.LessThan(latestReleaseBuild.Version), nil
 }
 
-var dateRegex = regexp.MustCompile("_([0-9]{4}-[0-9]{2}-[0-9]{2})_")
+var dateRegex = lazyregexp.New("_([0-9]{4}-[0-9]{2}-[0-9]{2})_")
 var timeNow = time.Now
 
 // canUpdateDate returns true if clientVersionString contains a date
@@ -143,12 +147,17 @@ func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 	q := r.URL.Query()
 	clientSiteID := q.Get("site")
 	authProviders := q.Get("auth")
+	externalServices := q.Get("extsvcs")
+	builtinSignupAllowed := q.Get("signup")
+	hasExtURL := q.Get("hasExtURL")
 	uniqueUsers := q.Get("u")
 	activity := q.Get("act")
 	initialAdminEmail := q.Get("initAdmin")
-	hasCodeIntelligence := q.Get("codeintel")
 	deployType := q.Get("deployType")
 	totalUsers := q.Get("totalUsers")
+	hasRepos := q.Get("repos")
+	everSearched := q.Get("searched")
+	everFindRefs := q.Get("refs")
 
 	// Log update check.
 	var clientAddr string
@@ -170,12 +179,17 @@ func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 		"remote_site_id": "%s",
 		"has_update": "%s",
 		"unique_users_today": "%s",
-		"has_code_intelligence": "%s",
 		"site_activity": %s,
 		"installer_email": "%s",
 		"auth_providers": "%s",
+		"ext_services": "%s",
+		"builtin_signup_allowed": "%s",
 		"deploy_type": "%s",
 		"total_user_accounts": "%s",
+		"has_external_url": "%s",
+		"has_repos": "%s",
+		"ever_searched": "%s",
+		"ever_find_refs": "%s",
 		"timestamp": "%s"
 	}`,
 		clientAddr,
@@ -183,19 +197,24 @@ func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 		clientSiteID,
 		strconv.FormatBool(hasUpdate),
 		uniqueUsers,
-		hasCodeIntelligence,
 		activity,
 		initialAdminEmail,
 		authProviders,
+		externalServices,
+		builtinSignupAllowed,
 		deployType,
 		totalUsers,
+		hasExtURL,
+		hasRepos,
+		everSearched,
+		everFindRefs,
 		time.Now().UTC().Format(time.RFC3339),
 	)
 
-	eventlogger.LogEvent("", "ServerUpdateCheck", json.RawMessage(message))
+	eventlogger.LogEvent(0, "", "ServerUpdateCheck", json.RawMessage(message))
 
 	if pubsubutil.Enabled() {
-		err := pubsubutil.Publish(pubsubutil.PubSubTopicID, message)
+		err := pubsubutil.Publish(pubSubPingsTopicID, message)
 		if err != nil {
 			log15.Warn("pubsubutil.Publish: failed to Publish", "message", message, "error", err)
 		}
@@ -203,7 +222,11 @@ func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 
 	// Sync the initial administrator email in HubSpot.
 	if initialAdminEmail != "" && strings.Contains(initialAdminEmail, "@") {
-		go tracking.SyncUser(initialAdminEmail, "", &hubspot.ContactProperties{IsServerAdmin: true})
+		// Hubspot requires the timestamp to be rounded to the nearest day at midnight.
+		now := time.Now().UTC()
+		rounded := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+		millis := rounded.UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
+		go tracking.SyncUser(initialAdminEmail, "", &hubspot.ContactProperties{IsServerAdmin: true, LatestPing: millis})
 	}
 }
 

@@ -1,6 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
-import { upperFirst } from 'lodash'
+import { isEqual, upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import FileIcon from 'mdi-react/FileIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
@@ -9,29 +9,42 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged, filter, first, map, skip, skipUntil } from 'rxjs/operators'
-import { parseSearchURLQuery } from '..'
+import { parseSearchURLQuery, PatternTypeProps } from '..'
 import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
 import { FileMatch } from '../../../../shared/src/components/FileMatch'
 import { RepositoryIcon } from '../../../../shared/src/components/icons' // TODO: Switch to mdi icon
+import { displayRepoName } from '../../../../shared/src/components/RepoFileLink'
 import { VirtualList } from '../../../../shared/src/components/VirtualList'
+import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { isDefined } from '../../../../shared/src/util/types'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { ModalContainer } from '../../components/ModalContainer'
 import { SearchResult } from '../../components/SearchResult'
+import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
+import { ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
-import { SavedQueryCreateForm } from '../saved-queries/SavedQueryCreateForm'
+import { shouldDisplayPerformanceWarning } from '../backend'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 
 const isSearchResults = (val: any): val is GQL.ISearchResults => val && val.__typename === 'SearchResults'
 
-interface SearchResultsListProps extends SettingsCascadeProps {
-    isLightTheme: boolean
+export interface SearchResultsListProps
+    extends ExtensionsControllerProps<'executeCommand' | 'services'>,
+        PlatformContextProps<'forceUpdateTooltip'>,
+        TelemetryProps,
+        SettingsCascadeProps,
+        ThemeProps,
+        PatternTypeProps {
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null
+    isSourcegraphDotCom: boolean
+    deployType: DeployType
 
     // Result list
     resultsOrError?: GQL.ISearchResults | ErrorLike
@@ -55,6 +68,9 @@ interface State {
     resultsShown: number
     visibleItems: Set<number>
     didScrollToItem: boolean
+    /** Map from repo name to display name */
+    fileMatchRepoDisplayNames: ReadonlyMap<string, string>
+    displayPerformanceWarning: boolean
 }
 
 export class SearchResultsList extends React.PureComponent<SearchResultsListProps, State> {
@@ -77,6 +93,8 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
     private jumpToTopClicks = new Subject<void>()
     private nextJumpToTopClick = () => this.jumpToTopClicks.next()
 
+    private componentUpdates = new Subject<SearchResultsListProps>()
+
     private subscriptions = new Subscription()
 
     constructor(props: SearchResultsListProps) {
@@ -86,6 +104,8 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
             resultsShown: this.getCheckpoint() + 15,
             visibleItems: new Set<number>(),
             didScrollToItem: false,
+            fileMatchRepoDisplayNames: new Map<string, string>(),
+            displayPerformanceWarning: false,
         }
 
         // Handle items that have become visible
@@ -129,11 +149,9 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         //  Update the `at` query param with the latest first visible item
         this.subscriptions.add(
             firstVisibleItemChanges
-                .pipe(
-                    // Skip page load
-                    skip(1)
-                )
-                .subscribe(this.setCheckpoint)
+                // Skip page load
+                .pipe(skip(1))
+                .subscribe(checkpoint => this.setCheckpoint(checkpoint))
         )
 
         // Remove the "Jump to top" button when the user starts scrolling
@@ -215,12 +233,64 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                 this.setState({ didScrollToItem: false })
             })
         )
+
+        this.subscriptions.add(
+            this.componentUpdates
+                .pipe(
+                    distinctUntilChanged((a, b) => isEqual(a, b)),
+                    map(({ resultsOrError }) => resultsOrError),
+                    filter(isDefined),
+                    filter((resultsOrError): resultsOrError is GQL.ISearchResults => !isErrorLike(resultsOrError)),
+                    map(({ results }) => results),
+                    map((results): GQL.IFileMatch[] =>
+                        results.filter((res): res is GQL.IFileMatch => res.__typename === 'FileMatch')
+                    )
+                )
+                .subscribe(fileMatches => {
+                    const fileMatchRepoDisplayNames = new Map<string, string>()
+                    for (const {
+                        repository: { name },
+                    } of fileMatches) {
+                        const displayName = displayRepoName(name)
+                        fileMatchRepoDisplayNames.set(name, displayName)
+                    }
+
+                    const displayNameCounts = new Map<string, number>()
+                    for (const displayName of fileMatchRepoDisplayNames.values()) {
+                        displayNameCounts.set(displayName, (displayNameCounts.get(displayName) || 0) + 1)
+                    }
+
+                    for (const [displayName, count] of displayNameCounts.entries()) {
+                        if (count > 1) {
+                            for (const [name, displayName1] of fileMatchRepoDisplayNames) {
+                                if (displayName === displayName1) {
+                                    fileMatchRepoDisplayNames.set(name, name)
+                                }
+                            }
+                        }
+                    }
+
+                    this.setState({ fileMatchRepoDisplayNames })
+                })
+        )
+    }
+
+    public componentDidMount(): void {
+        this.componentUpdates.next(this.props)
+
+        this.subscriptions.add(
+            shouldDisplayPerformanceWarning(this.props.deployType).subscribe(displayPerformanceWarning =>
+                this.setState({ displayPerformanceWarning })
+            )
+        )
     }
 
     public componentDidUpdate(): void {
         const lowestIndex = Array.from(this.state.visibleItems).reduce((low, index) => Math.min(index, low), Infinity)
 
         this.firstVisibleItems.next(lowestIndex)
+
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -231,7 +301,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         const parsedQuery = parseSearchURLQuery(this.props.location.search)
 
         return (
-            <React.Fragment>
+            <>
                 {this.state.didScrollToItem && (
                     <div className="search-results-list__jump-to-top">
                         Scrolled to result {this.getCheckpoint()} based on URL.&nbsp;
@@ -247,24 +317,23 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                         <ModalContainer
                             onClose={this.props.onSavedQueryModalClose}
                             component={
-                                <SavedQueryCreateForm
+                                <SavedSearchModal
+                                    {...this.props}
+                                    query={parsedQuery}
                                     authenticatedUser={this.props.authenticatedUser}
-                                    values={{ query: parsedQuery || '' }}
                                     onDidCancel={this.props.onSavedQueryModalClose}
-                                    onDidCreate={this.props.onDidCreateSavedQuery}
-                                    settingsCascade={this.props.settingsCascade}
                                 />
                             }
                         />
                     )}
 
                     {this.props.resultsOrError === undefined ? (
-                        <div className="text-center">
-                            <LoadingSpinner className="icon-inline" /> Loading
+                        <div className="text-center mt-2" data-testid="loading-container">
+                            <LoadingSpinner className="icon-inline" />
                         </div>
                     ) : isErrorLike(this.props.resultsOrError) ? (
                         /* GraphQL, network, query syntax error */
-                        <div className="alert alert-warning">
+                        <div className="alert alert-warning m-2" data-testid="search-results-list-error">
                             <AlertCircleIcon className="icon-inline" />
                             {upperFirst(this.props.resultsOrError.message)}
                         </div>
@@ -275,14 +344,18 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                 <>
                                     {/* Info Bar */}
                                     <SearchResultsInfoBar
-                                        authenticatedUser={this.props.authenticatedUser}
+                                        {...this.props}
+                                        query={parsedQuery}
                                         results={results}
-                                        allExpanded={this.props.allExpanded}
-                                        didSave={this.props.didSave}
-                                        onDidCreateSavedQuery={this.props.onDidCreateSavedQuery}
-                                        onExpandAllResultsToggle={this.props.onExpandAllResultsToggle}
-                                        onSaveQueryClick={this.props.onSaveQueryClick}
-                                        onShowMoreResultsClick={this.props.onShowMoreResultsClick}
+                                        showDotComMarketing={this.props.isSourcegraphDotCom}
+                                        displayPerformanceWarning={this.state.displayPerformanceWarning}
+                                        // This isn't always correct, but the penalty for a false-positive is
+                                        // low.
+                                        hasRepoishField={
+                                            parsedQuery
+                                                ? parsedQuery.includes('repo:') || parsedQuery.includes('repogroup:')
+                                                : false
+                                        }
                                     />
 
                                     {/* Results */}
@@ -297,10 +370,24 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                         onRef={this.nextVirtualListContainerElement}
                                     />
 
-                                    {/* Show more button */}
-                                    {results.limitHit && results.results.length === this.state.resultsShown && (
+                                    {/*
+                                        Show more button
+
+                                        We only show this button at the bottom of the page when the
+                                        user has scrolled completely to the bottom of the virtual
+                                        list (i.e. when resultsShown is results.length).
+
+                                        Note however that when the bottom is hit, this.onBottomHit
+                                        is called to asynchronously update resultsShown to add 10
+                                        which means there is a race condition in which e.g.
+                                        results.length == 30 && resultsShown == 40 so we use >=
+                                        comparison below.
+                                    */}
+                                    {results.limitHit && this.state.resultsShown >= results.results.length && (
                                         <button
+                                            type="button"
                                             className="btn btn-secondary btn-block"
+                                            data-testid="search-show-more-button"
                                             onClick={this.props.onShowMoreResultsClick}
                                         >
                                             Show more
@@ -309,7 +396,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
 
                                     {/* Server-provided help message */}
                                     {results.alert ? (
-                                        <div className="alert alert-info">
+                                        <div className="alert alert-info m-2">
                                             <h3>
                                                 <AlertCircleIcon className="icon-inline" /> {results.alert.title}
                                             </h3>
@@ -324,7 +411,10 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                                     className="btn btn-secondary btn-sm"
                                                                     to={
                                                                         '/search?' +
-                                                                        buildSearchURLQuery(proposedQuery.query)
+                                                                        buildSearchURLQuery(
+                                                                            proposedQuery.query,
+                                                                            this.props.patternType
+                                                                        )
                                                                     }
                                                                 >
                                                                     {proposedQuery.query || proposedQuery.description}
@@ -342,7 +432,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                         results.results.length === 0 &&
                                         (results.timedout.length > 0 ? (
                                             /* No results, but timeout hit */
-                                            <div className="alert alert-warning">
+                                            <div className="alert alert-warning m-2">
                                                 <h3>
                                                     <TimerSandIcon className="icon-inline" /> Search timed out
                                                 </h3>
@@ -352,23 +442,23 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                         your query.
                                                     </>,
                                                     /* If running on non-cluster, give some smart advice */
-                                                    ...(!window.context.sourcegraphDotComMode &&
-                                                    !window.context.isClusterDeployment
+                                                    ...(!this.props.isSourcegraphDotCom &&
+                                                    window.context.deployType !== 'cluster'
                                                         ? [
                                                               <>
                                                                   Upgrade to Sourcegraph Enterprise for a highly
                                                                   scalable Kubernetes cluster deployment option.
                                                               </>,
                                                               window.context.likelyDockerOnMac
-                                                                  ? 'Use Docker Machine instead of Docker for Mac for better performance on macOS'
-                                                                  : 'Run Sourcegraph on a server with more CPU and memory, or faster disk IO',
+                                                                  ? 'Use Docker Machine instead of Docker for Mac for better performance on macOS.'
+                                                                  : 'Run Sourcegraph on a server with more CPU and memory, or faster disk IO.',
                                                           ]
                                                         : []),
                                                 ])}
                                             </div>
                                         ) : (
                                             <>
-                                                <div className="alert alert-info d-flex">
+                                                <div className="alert alert-info d-flex m-2">
                                                     <h3 className="m-0">
                                                         <SearchIcon className="icon-inline" /> No results
                                                     </h3>
@@ -383,12 +473,12 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
 
                     <div className="pb-4" />
                     {this.props.resultsOrError !== undefined && (
-                        <Link className="mb-2" to="/help/user/search">
+                        <Link className="mb-4 p-3" to="/help/user/search">
                             Not seeing expected results?
                         </Link>
                     )}
                 </div>
-            </React.Fragment>
+            </>
         )
     }
 
@@ -420,6 +510,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                 return (
                     <FileMatch
                         key={'file:' + result.file.url}
+                        location={this.props.location}
                         icon={result.lineMatches && result.lineMatches.length > 0 ? RepositoryIcon : FileIcon}
                         result={result}
                         onSelect={this.logEvent}
@@ -428,6 +519,8 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                         isLightTheme={this.props.isLightTheme}
                         allExpanded={this.props.allExpanded}
                         fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
+                        repoDisplayName={this.state.fileMatchRepoDisplayNames.get(result.repository.name)}
+                        settingsCascade={this.props.settingsCascade}
                     />
                 )
         }
@@ -444,15 +537,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
      * getCheckpoint gets the location from the hash in the URL. It is used to scroll to the result on page load of the given URL.
      */
     private getCheckpoint(): number {
-        const at = this.props.location.hash.replace(/^#/, '')
-
-        let checkpoint: number
-
-        if (!at) {
-            checkpoint = 0
-        } else {
-            checkpoint = parseInt(at, 10)
-        }
+        const checkpoint = parseInt(this.props.location.hash.substr(1), 10) || 0
 
         // If checkpoint is `0`, remove it.
         if (checkpoint === 0) {

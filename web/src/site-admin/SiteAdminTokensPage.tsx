@@ -16,7 +16,6 @@ import {
     FilteredAccessTokenConnection,
 } from '../settings/tokens/AccessTokenNode'
 import { eventLogger } from '../tracking/eventLogger'
-import { userURL } from '../user'
 
 interface Props extends RouteComponentProps<{}> {
     authenticatedUser: GQL.IUser
@@ -49,7 +48,7 @@ export class SiteAdminTokensPage extends React.PureComponent<Props, State> {
                     <h2 className="mb-0">Access tokens</h2>
                     <Link
                         className="btn btn-primary ml-2"
-                        to={`${userURL(this.props.authenticatedUser.username)}/account/tokens/new`}
+                        to={`${this.props.authenticatedUser.settingsURL!}/tokens/new`}
                     >
                         <AddIcon className="icon-inline" /> Generate access token
                     </Link>

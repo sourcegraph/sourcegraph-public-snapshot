@@ -16,6 +16,6 @@ curl -XPOST -H 'Authorization: token $ACCESS_TOKEN' $SOURCEGRAPH_ORIGIN/.api/rep
 
 ## Disabling built-in repo updating
 
-Sourcegraph will periodically ask your code-host to list its repositories (e.g. via its HTTP API) to _discover repositories_. You can control how often this occurs by changing [`repoListUpdateInterval`](../site_config/all.md#repolistupdateinterval-integer) in the site config.
+Sourcegraph will periodically ask your code-host to list its repositories (e.g. via its HTTP API) to _discover repositories_. You can control how often this occurs by changing [`repoListUpdateInterval`](../config/site_config.md) in the site config.
 
-For repositories that Sourcegraph is already aware of, it will periodically perform background Git repository updates. You can disable this if you wish by setting [`disableAutoGitUpdates`](../site_config/all.md#disableautogitupdates-boolean) to `true`. In which case, the repository will only update when the webhook is used or, e.g., if a user visits the repository directly. This may be desirable in cases where you wish to rely solely on the repository update webhook, for example.
+For repositories that Sourcegraph is already aware of, it will periodically perform background Git repository updates. You can disable this if you wish by setting [`disableAutoGitUpdates`](../config/site_config.md) to `true`. In which case, the repository will only update when the webhook is used or, e.g., if a user visits the repository directly. This may be desirable in cases where you wish to rely solely on the repository update webhook, for example.

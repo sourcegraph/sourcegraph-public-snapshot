@@ -7,8 +7,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 var ErrMustBeSiteAdmin = errors.New("must be site admin")
@@ -110,6 +110,4 @@ func hasAuthzBypass(ctx context.Context) bool {
 
 type contextKey int
 
-const (
-	authzBypass contextKey = iota
-)
+const authzBypass contextKey = iota

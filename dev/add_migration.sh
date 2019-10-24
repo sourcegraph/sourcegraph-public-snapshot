@@ -1,8 +1,40 @@
 #!/bin/bash
 
-# The name is intentionally empty ('') so that it forces a merge conflict if two branches attempt to
-# create a migration at the same sequence number (because they will both add a file with the same
-# name, like `migrations/1528277032_.up.sql`).
-unset CDPATH
-cd migrations && migrate create -ext sql -dir . -digits 10 -seq ''
-echo Empty migration files added in migrations/
+cd $(dirname "${BASH_SOURCE[0]}")/../migrations
+set -e
+
+if [ -z "$1" ]; then
+    echo "USAGE: $0 <name>"
+    exit 1
+fi
+
+# Workaround for https://github.com/golang-migrate/migrate/issues/238
+ABSOLUTE_PATH=$(pwd)
+migrate create -ext sql -dir $ABSOLUTE_PATH -digits 10 -seq "$1"
+
+if [ -z "$(git status --porcelain -- . | grep "^??")" ]; then
+    echo "It looks like your migrate command failed to create new .sql files. Try upgrading:"
+    echo ""
+    echo "    go get -tags 'postgres' -u github.com/golang-migrate/migrate/v4/cmd/migrate/"
+    echo ""
+    exit 1
+fi
+
+files=$(ls -1 | grep '^[0-9]'.*\.sql | sort -n | tail -n2)
+
+for f in $files; do
+    cat > $f <<EOF
+BEGIN;
+
+-- Insert migration here. See README.md. Highlights:
+--  * Always use IF EXISTS. eg: DROP TABLE IF EXISTS global_dep_private;
+--  * All migrations must be backward-compatible. Old versions of Sourcegraph
+--    need to be able to read/write post migration.
+--  * Historically we advised against transactions since we thought the
+--    migrate library handled it. However, it does not! /facepalm
+
+COMMIT;
+EOF
+
+    echo "Created migrations/$f"
+done

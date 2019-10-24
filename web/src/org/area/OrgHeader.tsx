@@ -1,72 +1,53 @@
-import SettingsIcon from 'mdi-react/SettingsIcon'
-import TuneVerticalIcon from 'mdi-react/TuneVerticalIcon'
-import UserIcon from 'mdi-react/UserIcon'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
+import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { OrgAvatar } from '../OrgAvatar'
 import { OrgAreaPageProps } from './OrgArea'
 
 interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
-    className: string
+    navItems: readonly OrgAreaHeaderNavItem[]
+    className?: string
 }
+
+export type OrgAreaHeaderContext = Pick<Props, 'org'>
+
+export interface OrgAreaHeaderNavItem extends NavItemWithIconDescriptor<OrgAreaHeaderContext> {}
 
 /**
  * Header for the organization area.
  */
-export const OrgHeader: React.FunctionComponent<Props> = (props: Props) => (
-    <div className={`org-header area-header ${props.className}`}>
-        <div className={`${props.className}-inner`}>
-            {props.org && (
+export const OrgHeader: React.FunctionComponent<Props> = ({ org, navItems, match, className = '' }) => (
+    <div className={`org-header ${className}`}>
+        <div className="container">
+            {org && (
                 <>
                     <h2 className="org-header__title">
-                        <OrgAvatar org={props.org.name} />{' '}
-                        <span className="org-header__title-text">{props.org.displayName || props.org.name}</span>
+                        <OrgAvatar org={org.name} />{' '}
+                        <span className="org-header__title-text">{org.displayName || org.name}</span>
                     </h2>
-                    <div className="area-header__nav">
-                        <div className="area-header__nav-links">
-                            <NavLink
-                                to={`${props.match.url}`}
-                                exact={true}
-                                className="btn area-header__nav-link"
-                                activeClassName="area-header__nav-link--active"
-                            >
-                                Overview
-                            </NavLink>
-                            <NavLink
-                                to={`${props.match.url}/members`}
-                                exact={true}
-                                className="btn area-header__nav-link"
-                                activeClassName="area-header__nav-link--active"
-                            >
-                                <UserIcon className="icon-inline" /> Members
-                            </NavLink>
-                            {props.org.viewerCanAdminister && (
-                                <NavLink
-                                    to={`${props.match.url}/settings`}
-                                    exact={true}
-                                    className="btn area-header__nav-link"
-                                    activeClassName="area-header__nav-link--active"
-                                >
-                                    <SettingsIcon className="icon-inline" /> Settings
-                                </NavLink>
+                    <div className="d-flex align-items-end justify-content-between">
+                        <ul className="nav nav-tabs border-bottom-0">
+                            {navItems.map(
+                                ({ to, label, exact, icon: Icon, condition = () => true }) =>
+                                    condition({ org }) && (
+                                        <li key={label} className="nav-item">
+                                            <NavLink
+                                                to={match.url + to}
+                                                className="nav-link"
+                                                activeClassName="active"
+                                                exact={exact}
+                                            >
+                                                {Icon && <Icon className="icon-inline" />} {label}
+                                            </NavLink>
+                                        </li>
+                                    )
                             )}
-                            {props.org.viewerCanAdminister && (
-                                <NavLink
-                                    to={`${props.match.url}/account`}
-                                    className="btn area-header__nav-link"
-                                    activeClassName="area-header__nav-link--active"
-                                >
-                                    <TuneVerticalIcon className="icon-inline" /> Account
-                                </NavLink>
-                            )}
-                        </div>
-                        {props.org.viewerPendingInvitation && props.org.viewerPendingInvitation.respondURL && (
-                            <div className="area-header__nav-actions">
-                                <small className="area-header__nav-actions-label mr-sm-2">Join organization:</small>
-                                <Link
-                                    to={props.org.viewerPendingInvitation.respondURL}
-                                    className="btn btn-success btn-sm"
-                                >
+                        </ul>
+                        <div className="flex-1" />
+                        {org.viewerPendingInvitation && org.viewerPendingInvitation.respondURL && (
+                            <div className="pb-1">
+                                <small className="mr-2">Join organization:</small>
+                                <Link to={org.viewerPendingInvitation.respondURL} className="btn btn-success btn-sm">
                                     View invitation
                                 </Link>
                             </div>

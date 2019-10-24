@@ -3,24 +3,49 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
-	"time"
+	"fmt"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
-func (r *schemaResolver) User(ctx context.Context, args struct{ Username string }) (*UserResolver, error) {
-	user, err := db.Users.GetByUsername(ctx, args.Username)
-	if err != nil {
-		return nil, err
+func (r *schemaResolver) User(ctx context.Context, args struct {
+	Username *string
+	Email    *string
+}) (*UserResolver, error) {
+	switch {
+	case args.Username != nil:
+		user, err := db.Users.GetByUsername(ctx, *args.Username)
+		if err != nil {
+			return nil, err
+		}
+		return &UserResolver{user: user}, nil
+
+	case args.Email != nil:
+		// 🚨 SECURITY: Only site admins are allowed to look up by email address on Sourcegraph.com, for
+		// user privacy reasons.
+		if envvar.SourcegraphDotComMode() {
+			if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+				return nil, err
+			}
+		}
+		user, err := db.Users.GetByVerifiedEmail(ctx, *args.Email)
+		if err != nil {
+			return nil, err
+		}
+		return &UserResolver{user: user}, nil
+
+	default:
+		return nil, errors.New("must specify either username or email to look up user")
 	}
-	return &UserResolver{user: user}, nil
 }
 
 // UserResolver implements the GraphQL User type.
@@ -96,15 +121,14 @@ func (r *UserResolver) URL() string {
 	return "/users/" + r.user.Username
 }
 
-func (r *UserResolver) SettingsURL() string { return r.URL() + "/settings" }
+func (r *UserResolver) SettingsURL() *string { return strptr(r.URL() + "/settings") }
 
-func (r *UserResolver) CreatedAt() string {
-	return r.user.CreatedAt.Format(time.RFC3339)
+func (r *UserResolver) CreatedAt() DateTime {
+	return DateTime{Time: r.user.CreatedAt}
 }
 
-func (r *UserResolver) UpdatedAt() *string {
-	t := r.user.UpdatedAt.Format(time.RFC3339) // ISO
-	return &t
+func (r *UserResolver) UpdatedAt() *DateTime {
+	return &DateTime{Time: r.user.UpdatedAt}
 }
 
 func (r *UserResolver) settingsSubject() api.SettingsSubject {
@@ -170,6 +194,9 @@ func (*schemaResolver) UpdateUser(ctx context.Context, args *struct {
 		AvatarURL:   args.AvatarURL,
 	}
 	if args.Username != nil {
+		if !viewerCanChangeUsername(ctx, userID) {
+			return nil, fmt.Errorf("unable to change username because auth.disableUsernameChanges is true in critical config")
+		}
 		update.Username = *args.Username
 	}
 	if err := db.Users.Update(ctx, userID, update); err != nil {
@@ -248,6 +275,8 @@ func (r *UserResolver) URLForSiteAdminBilling(ctx context.Context) (*string, err
 	return UserURLForSiteAdminBilling(ctx, r.user.ID)
 }
 
+func (r *UserResolver) NamespaceName() string { return r.user.Username }
+
 func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 	OldPassword string
 	NewPassword string
@@ -265,4 +294,21 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
+}
+
+// ViewerCanChangeUsername returns if the current user can change the username of the user.
+func (r *UserResolver) ViewerCanChangeUsername(ctx context.Context) bool {
+	return viewerCanChangeUsername(ctx, r.user.ID)
+}
+
+func viewerCanChangeUsername(ctx context.Context, userID int32) bool {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
+		return false
+	}
+	if conf.Get().Critical.AuthEnableUsernameChanges {
+		return true
+	}
+	// 🚨 SECURITY: Only site admins are allowed to change a user's username when auth.enableUsernameChanges == false.
+	isSiteAdminErr := backend.CheckCurrentUserIsSiteAdmin(ctx)
+	return isSiteAdminErr == nil
 }

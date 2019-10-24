@@ -11,10 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/txemail"
-	"github.com/sourcegraph/sourcegraph/pkg/txemail/txtypes"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/txemail"
+	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 )
 
 // UserEmails contains backend methods related to user email addresses.
@@ -143,7 +143,7 @@ func SendUserEmailVerificationEmail(ctx context.Context, email, code string) err
 			URL   string
 		}{
 			Email: email,
-			URL: globals.ExternalURL.ResolveReference(&url.URL{
+			URL: globals.ExternalURL().ResolveReference(&url.URL{
 				Path:     verifyEmailPath.Path,
 				RawQuery: q.Encode(),
 			}).String(),
@@ -151,18 +151,16 @@ func SendUserEmailVerificationEmail(ctx context.Context, email, code string) err
 	})
 }
 
-var (
-	verifyEmailTemplates = txemail.MustValidate(txtypes.Templates{
-		Subject: `Verify your email on Sourcegraph`,
-		Text: `
+var verifyEmailTemplates = txemail.MustValidate(txtypes.Templates{
+	Subject: `Verify your email on Sourcegraph`,
+	Text: `
 Verify your email address {{printf "%q" .Email}} on Sourcegraph by following this link:
 
   {{.URL}}
 `,
-		HTML: `
+	HTML: `
 <p>Verify your email address {{printf "%q" .Email}} on Sourcegraph by following this link:</p>
 
 <p><strong><a href="{{.URL}}">Verify email address</a></p>
 `,
-	})
-)
+})

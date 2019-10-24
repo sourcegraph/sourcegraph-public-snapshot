@@ -6,25 +6,24 @@ import (
 	"bytes"
 	"io/ioutil"
 	"net/http"
-	"regexp"
 	"strings"
 
 	"github.com/gorilla/csrf"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-var sentryDSNFrontend = env.Get("SENTRY_DSN_FRONTEND", "", "Sentry/Raven DSN used for tracking of JavaScript errors")
 
 // BillingPublishableKey is the publishable (non-secret) API key for the billing system, if any.
 var BillingPublishableKey string
@@ -54,17 +53,17 @@ type JSContext struct {
 
 	IsAuthenticatedUser bool `json:"isAuthenticatedUser"`
 
-	SentryDSN      string `json:"sentryDSN"`
-	SiteID         string `json:"siteID"`
-	SiteGQLID      string `json:"siteGQLID"`
-	Debug          bool   `json:"debug"`
-	ShowOnboarding bool   `json:"showOnboarding"`
-	EmailEnabled   bool   `json:"emailEnabled"`
+	SentryDSN      *string `json:"sentryDSN"`
+	SiteID         string  `json:"siteID"`
+	SiteGQLID      string  `json:"siteGQLID"`
+	Debug          bool    `json:"debug"`
+	ShowOnboarding bool    `json:"showOnboarding"`
+	EmailEnabled   bool    `json:"emailEnabled"`
 
-	Critical            schema.CriticalConfiguration `json:"critical"` // public subset of critical configuration
-	LikelyDockerOnMac   bool                         `json:"likelyDockerOnMac"`
-	NeedServerRestart   bool                         `json:"needServerRestart"`
-	IsClusterDeployment bool                         `json:"isClusterDeployment"`
+	Critical          schema.CriticalConfiguration `json:"critical"` // public subset of critical configuration
+	LikelyDockerOnMac bool                         `json:"likelyDockerOnMac"`
+	NeedServerRestart bool                         `json:"needServerRestart"`
+	DeployType        string                       `json:"deployType"`
 
 	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
 
@@ -78,7 +77,9 @@ type JSContext struct {
 
 	AuthProviders []authProviderInfo `json:"authProviders"`
 
-	UpdateScheduler2Enabled bool `json:"updateScheduler2Enabled"`
+	Branding *schema.Branding `json:"branding"`
+
+	ExperimentalFeatures schema.ExperimentalFeatures `json:"experimentalFeatures"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -87,7 +88,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	actor := actor.FromContext(req.Context())
 
 	headers := make(map[string]string)
-	headers["x-sourcegraph-client"] = globals.ExternalURL.String()
+	headers["x-sourcegraph-client"] = globals.ExternalURL().String()
 	headers["X-Requested-With"] = "Sourcegraph" // required for httpapi to use cookie auth
 
 	// -- currently we don't associate XHR calls with the parent page's span --
@@ -115,7 +116,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 	// Auth providers
 	var authProviders []authProviderInfo
-	for _, p := range auth.Providers() {
+	for _, p := range providers.Providers() {
 		info := p.CachedInfo()
 		if info != nil {
 			authProviders = append(authProviders, authProviderInfo{
@@ -126,31 +127,37 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		}
 	}
 
+	var sentryDSN *string
+	criticalConfig := conf.Get().Critical
+	if criticalConfig.Log != nil && criticalConfig.Log.Sentry != nil && criticalConfig.Log.Sentry.Dsn != "" {
+		sentryDSN = &criticalConfig.Log.Sentry.Dsn
+	}
+
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
 	// server. Including secret fields here is OK if it is based on the user's
 	// authentication above, but do not include e.g. hard-coded secrets about
 	// the server instance here as they would be sent to anonymous users.
 	return JSContext{
-		ExternalURL:         globals.ExternalURL.String(),
+		ExternalURL:         globals.ExternalURL().String(),
 		XHRHeaders:          headers,
 		CSRFToken:           csrfToken,
 		UserAgentIsBot:      isBot(req.UserAgent()),
 		AssetsRoot:          assetsutil.URL("").String(),
-		Version:             env.Version,
+		Version:             version.Version(),
 		IsAuthenticatedUser: actor.IsAuthenticated(),
-		SentryDSN:           sentryDSNFrontend,
+		SentryDSN:           sentryDSN,
 		Debug:               env.InsecureDev,
 		SiteID:              siteID,
 
 		SiteGQLID: string(graphqlbackend.SiteGQLID()),
 
-		ShowOnboarding:      showOnboarding,
-		EmailEnabled:        conf.CanSendEmail(),
-		Critical:            publicCriticalConfiguration(),
-		LikelyDockerOnMac:   likelyDockerOnMac(),
-		NeedServerRestart:   globals.ConfigurationServerFrontendOnly.NeedServerRestart(),
-		IsClusterDeployment: conf.IsDeployTypeCluster(conf.DeployType()),
+		ShowOnboarding:    showOnboarding,
+		EmailEnabled:      conf.CanSendEmail(),
+		Critical:          publicCriticalConfiguration(),
+		LikelyDockerOnMac: likelyDockerOnMac(),
+		NeedServerRestart: globals.ConfigurationServerFrontendOnly.NeedServerRestart(),
+		DeployType:        conf.DeployType(),
 
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 
@@ -166,7 +173,9 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 		AuthProviders: authProviders,
 
-		UpdateScheduler2Enabled: conf.UpdateScheduler2Enabled(),
+		Branding: conf.Branding(),
+
+		ExperimentalFeatures: conf.ExperimentalFeatures(),
 	}
 }
 
@@ -184,7 +193,7 @@ func publicCriticalConfiguration() schema.CriticalConfiguration {
 	}
 }
 
-var isBotPat = regexp.MustCompile(`(?i:googlecloudmonitoring|pingdom.com|go .* package http|sourcegraph e2etest|bot|crawl|slurp|spider|feed|rss|camo asset proxy|http-client|sourcegraph-client)`)
+var isBotPat = lazyregexp.New(`(?i:googlecloudmonitoring|pingdom.com|go .* package http|sourcegraph e2etest|bot|crawl|slurp|spider|feed|rss|camo asset proxy|http-client|sourcegraph-client)`)
 
 func isBot(userAgent string) bool {
 	return isBotPat.MatchString(userAgent)

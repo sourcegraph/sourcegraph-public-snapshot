@@ -21,10 +21,13 @@ interface ImmutableUser {
     readonly UID: number
 }
 
+type DeployType = 'cluster' | 'docker-container' | 'dev'
+
 /**
  * Defined in cmd/frontend/internal/app/jscontext/jscontext.go JSContext struct
  */
-interface SourcegraphContext {
+interface SourcegraphContext
+    extends Pick<Required<import('./schema/site.schema').SiteConfiguration>, 'experimentalFeatures'> {
     xhrHeaders: { [key: string]: string }
     csrfToken: string
     userAgentIsBot: boolean
@@ -34,7 +37,7 @@ interface SourcegraphContext {
      */
     readonly isAuthenticatedUser: boolean
 
-    sentryDSN: string
+    readonly sentryDSN: string | null
 
     /** Externally accessible URL for Sourcegraph (e.g., https://sourcegraph.com or http://localhost:3080). */
     externalURL: string
@@ -52,7 +55,7 @@ interface SourcegraphContext {
     sourcegraphDotComMode: boolean
 
     /**
-     * siteID is the identifier of the Sourcegraph site. It is also the Telligent app ID.
+     * siteID is the identifier of the Sourcegraph site.
      */
     siteID: string
 
@@ -95,10 +98,9 @@ interface SourcegraphContext {
     needServerRestart: boolean
 
     /**
-     * Whether the site is a Sourcegraph cluster deployment (e.g., to Kubernetes, not just
-     * sourcegraph/server in a single Docker container).
+     * The kind of deployment.
      */
-    isClusterDeployment: boolean
+    deployType: DeployType
 
     /** Whether signup is allowed on the site. */
     allowSignup: boolean
@@ -110,15 +112,28 @@ interface SourcegraphContext {
         authenticationURL?: string
     }[]
 
-    /** Whether the new update scheduler is enabled */
-    updateScheduler2Enabled: boolean
+    /** Custom branding for the homepage and search icon. */
+    branding?: {
+        /** The URL of the favicon to be used for your instance */
+        favicon?: string
+
+        /** Override style for light themes */
+        light?: BrandAssets
+        /** Override style for dark themes */
+        dark?: BrandAssets
+
+        /** Prevents the icon in the top-left corner of the screen from spinning. */
+        disableSymbolSpin?: boolean
+
+        brandName: string
+    }
 }
 
-// We cannot use resolveJsonModule because of https://github.com/Microsoft/TypeScript/issues/25755
-// I tried updating to 3.1-rc.1 but it crashed
-declare module '*.json' {
-    const value: any
-    export = value
+interface BrandAssets {
+    /** The URL to the logo used on the homepage */
+    logo?: string
+    /** The URL to the symbol used as the search icon */
+    symbol?: string
 }
 
 /**
@@ -126,7 +141,7 @@ declare module '*.json' {
  *
  * See https://github.com/webpack-contrib/worker-loader#integrating-with-typescript.
  */
-declare module 'worker-loader!*' {
+declare module 'worker-loader?*' {
     class WebpackWorker extends Worker {
         constructor()
     }

@@ -41,7 +41,7 @@ interface DirSuggestion extends BaseSuggestion {
 
 export type Suggestion = SymbolSuggestion | RepoSuggestion | FileSuggestion | DirSuggestion
 
-export function createSuggestion(item: GQL.SearchSuggestion): Suggestion {
+export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undefined {
     switch (item.__typename) {
         case 'Repository': {
             return {
@@ -54,7 +54,7 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion {
         case 'File': {
             const descriptionParts = []
             const dir = dirname(item.path)
-            if (dir !== undefined && dir !== '.') {
+            if (dir !== '.') {
                 descriptionParts.push(`${dir}/`)
             }
             descriptionParts.push(basename(item.repository.name))
@@ -87,6 +87,9 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion {
                 urlLabel: 'go to definition',
             }
         }
+        default:
+            // TODO: Handle language suggestions
+            return undefined
     }
 }
 
@@ -120,7 +123,12 @@ interface SuggestionProps {
     liRef?: (ref: HTMLLIElement | null) => void
 }
 
-export const SuggestionItem = ({ suggestion, isSelected, onClick, liRef }: SuggestionProps) => (
+export const SuggestionItem: React.FunctionComponent<SuggestionProps> = ({
+    suggestion,
+    isSelected,
+    onClick,
+    liRef,
+}) => (
     <li className={'suggestion' + (isSelected ? ' suggestion--selected' : '')} onMouseDown={onClick} ref={liRef}>
         <SuggestionIcon className="icon-inline suggestion__icon" suggestion={suggestion} />
         <div className="suggestion__title">{suggestion.title}</div>

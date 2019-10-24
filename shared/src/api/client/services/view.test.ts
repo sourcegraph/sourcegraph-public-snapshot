@@ -18,7 +18,7 @@ const FIXTURE_ENTRY_2: Entry<ViewProviderRegistrationOptions, Observable<PanelVi
 }
 const FIXTURE_RESULT_2 = { container: FIXTURE_CONTAINER, id: '2', title: 't2', content: 'c2', priority: 0 }
 
-const scheduler = () => new TestScheduler((a, b) => expect(a).toEqual(b))
+const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 describe('getView', () => {
     describe('0 providers', () => {
@@ -109,7 +109,7 @@ describe('getViews', () => {
                         a: [
                             {
                                 registrationOptions: { container: FIXTURE_CONTAINER, id: 'err' },
-                                provider: throwError('err'),
+                                provider: throwError(new Error('err')),
                             },
                             FIXTURE_ENTRY_1,
                         ],

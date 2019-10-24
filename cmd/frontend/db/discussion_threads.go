@@ -16,9 +16,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/searchquery"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // TODO(slimsag:discussions): future: tests for DiscussionThreadsListOptions.TargetRepoID
@@ -127,6 +127,10 @@ func (t *discussionThreads) Create(ctx context.Context, newThread *types.Discuss
 }
 
 func (t *discussionThreads) Get(ctx context.Context, threadID int64) (*types.DiscussionThread, error) {
+	if Mocks.DiscussionThreads.Get != nil {
+		return Mocks.DiscussionThreads.Get(threadID)
+	}
+
 	threads, err := t.List(ctx, &DiscussionThreadsListOptions{
 		ThreadIDs: []int64{threadID},
 	})
@@ -140,20 +144,15 @@ func (t *discussionThreads) Get(ctx context.Context, threadID int64) (*types.Dis
 }
 
 type DiscussionThreadsUpdateOptions struct {
+	// Title, when non-nil, updates the thread's title.
+	Title *string
+
 	// Archive, when non-nil, specifies whether the thread is archived or not.
 	Archive *bool
 
 	// Delete, when true, specifies that the thread should be deleted. This
 	// operation cannot be undone.
 	Delete bool
-
-	// hardDelete, when true, indicates that the discussion thread should be
-	// deleted entirely from the DB (not just marked as deleted / a soft
-	// delete).
-	//
-	// In general, this should only occur when e.g. deleting repositories. NOT
-	// when a user or admin requests to delete something.
-	hardDelete bool
 }
 
 func (t *discussionThreads) Update(ctx context.Context, threadID int64, opts *DiscussionThreadsUpdateOptions) (*types.DiscussionThread, error) {
@@ -168,6 +167,12 @@ func (t *discussionThreads) Update(ctx context.Context, threadID int64, opts *Di
 	// TODO(slimsag:discussions): should be in a transaction
 
 	anyUpdate := false
+	if opts.Title != nil {
+		anyUpdate = true
+		if _, err := dbconn.Global.ExecContext(ctx, "UPDATE discussion_threads SET title=$1 WHERE id=$2 AND deleted_at IS NULL", opts.Title, threadID); err != nil {
+			return nil, err
+		}
+	}
 	if opts.Archive != nil {
 		anyUpdate = true
 		var archivedAt *time.Time
@@ -198,48 +203,12 @@ func (t *discussionThreads) Update(ctx context.Context, threadID int64, opts *Di
 			}
 		}
 	}
-	if opts.hardDelete {
-		// Intentionally not setting anyUpdate=true here, it would cause us to
-		// try to update updated_at below which would fail.
-
-		// Hard delete the mail reply tokens.
-		if _, err := dbconn.Global.ExecContext(ctx, "DELETE FROM discussion_mail_reply_tokens WHERE thread_id=$1", threadID); err != nil {
-			return nil, err
-		}
-
-		// Unlink and hard delete discussion thread targets.
-		if _, err := dbconn.Global.ExecContext(ctx, "UPDATE discussion_threads SET target_repo_id=null WHERE id=$1", threadID); err != nil {
-			return nil, err
-		}
-		if _, err := dbconn.Global.ExecContext(ctx, "DELETE FROM discussion_threads_target_repo WHERE thread_id=$1", threadID); err != nil {
-			return nil, err
-		}
-
-		// Hard delete all comments in the thread.
-		comments, err := DiscussionComments.List(ctx, &DiscussionCommentsListOptions{
-			ThreadID: &threadID,
-		})
-		if err != nil {
-			return nil, err
-		}
-		for _, comment := range comments {
-			_, err := DiscussionComments.Update(ctx, comment.ID, &DiscussionCommentsUpdateOptions{hardDelete: true, noThreadDelete: true})
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		// Finally, hard delete the discussion thread itself.
-		if _, err := dbconn.Global.ExecContext(ctx, "DELETE FROM discussion_threads WHERE id=$1", threadID); err != nil {
-			return nil, err
-		}
-	}
 	if anyUpdate {
 		if _, err := dbconn.Global.ExecContext(ctx, "UPDATE discussion_threads SET updated_at=$1 WHERE id=$2 AND deleted_at IS NULL", now, threadID); err != nil {
 			return nil, err
 		}
 	}
-	if opts.Delete || opts.hardDelete {
+	if opts.Delete {
 		return nil, nil
 	}
 	return t.Get(ctx, threadID)
@@ -555,12 +524,12 @@ func (*discussionThreads) getListSQL(opts *DiscussionThreadsListOptions) (conds 
 	conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
 	if opts.TitleQuery != nil && strings.TrimSpace(*opts.TitleQuery) != "" {
-		conds = append(conds, sqlf.Sprintf("title LIKE %v", extraFuzzy(*opts.TitleQuery)))
+		conds = append(conds, sqlf.Sprintf("title ILIKE %v", extraFuzzy(*opts.TitleQuery)))
 	}
 	if opts.NotTitleQuery != nil && strings.TrimSpace(*opts.NotTitleQuery) != "" {
 		// Using extraFuzzy here would exclude too many results, so instead we
 		// just do prefix/suffix fuzziness for now.
-		conds = append(conds, sqlf.Sprintf("title NOT LIKE %v", "%"+*opts.NotTitleQuery+"%"))
+		conds = append(conds, sqlf.Sprintf("title NOT ILIKE %v", "%"+*opts.NotTitleQuery+"%"))
 	}
 	if len(opts.ThreadIDs) > 0 {
 		conds = append(conds, sqlf.Sprintf("id = ANY(%v)", pq.Array(opts.ThreadIDs)))
@@ -605,7 +574,7 @@ func (*discussionThreads) getListSQL(opts *DiscussionThreadsListOptions) (conds 
 				targetRepoConds = append(targetRepoConds, sqlf.Sprintf("path!=%v", *opts.NotTargetRepoPath))
 			}
 		}
-		conds = append(conds, sqlf.Sprintf("id IN (SELECT id FROM discussion_threads_target_repo WHERE %v)", sqlf.Join(targetRepoConds, "AND")))
+		conds = append(conds, sqlf.Sprintf("id IN (SELECT thread_id FROM discussion_threads_target_repo WHERE %v)", sqlf.Join(targetRepoConds, "AND")))
 	}
 	return conds
 }
@@ -651,8 +620,8 @@ func (t *discussionThreads) createTargetRepo(ctx context.Context, tr *types.Disc
 	q := sqlf.Sprintf("INSERT INTO discussion_threads_target_repo(%v) VALUES (%v) RETURNING id", sqlf.Join(fields, ",\n"), sqlf.Join(values, ","))
 
 	// To debug query building, uncomment these lines:
-	//fmt.Println(q.Query(sqlf.PostgresBindVar))
-	//fmt.Println(q.Args())
+	// fmt.Println(q.Query(sqlf.PostgresBindVar))
+	// fmt.Println(q.Args())
 
 	err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&tr.ID)
 	if err != nil {

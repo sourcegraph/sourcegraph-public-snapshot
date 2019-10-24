@@ -4,8 +4,9 @@ import * as _monaco from 'monaco-editor' // type only
 import * as React from 'react'
 import { Subscription } from 'rxjs'
 import { SaveToolbar } from '../components/SaveToolbar'
-import * as _monacoSettingsEditorModule from '../settings/MonacoSettingsEditor' // type only
+import * as _monacoSettingsEditorModule from './MonacoSettingsEditor' // type only
 import { EditorAction } from '../site-admin/configHelpers'
+import { ThemeProps } from '../theme'
 
 /**
  * Converts a Monaco/vscode style Disposable object to a simple function that can be added to a rxjs Subscription
@@ -13,10 +14,8 @@ import { EditorAction } from '../site-admin/configHelpers'
 const disposableToFn = (disposable: _monaco.IDisposable) => () => disposable.dispose()
 
 interface Props
-    extends Pick<
-        _monacoSettingsEditorModule.Props,
-        'id' | 'readOnly' | 'height' | 'jsonSchemaId' | 'extraSchemas' | 'isLightTheme'
-    > {
+    extends Pick<_monacoSettingsEditorModule.Props, 'id' | 'readOnly' | 'height' | 'jsonSchema' | 'language'>,
+        ThemeProps {
     value: string
 
     actions?: EditorAction[]
@@ -26,12 +25,11 @@ interface Props
 
     canEdit?: boolean
 
+    className?: string
+
     onSave?: (value: string) => void
     onChange?: (value: string) => void
     onDirtyChange?: (dirty: boolean) => void
-
-    isLightTheme: boolean
-
     history: H.History
 }
 
@@ -41,7 +39,7 @@ interface State {
 }
 
 const MonacoSettingsEditor = React.lazy(async () => ({
-    default: (await import('../settings/MonacoSettingsEditor')).MonacoSettingsEditor,
+    default: (await import('./MonacoSettingsEditor')).MonacoSettingsEditor,
 }))
 
 /** Displays a MonacoSettingsEditor component without loading Monaco in the current Webpack chunk. */
@@ -84,7 +82,7 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
         const isDirty = this.isDirty
         const effectiveValue = this.effectiveValue
         return (
-            <>
+            <div className={this.props.className || ''}>
                 {this.props.actions && (
                     <div className="site-admin-configuration-page__action-groups">
                         <div className="site-admin-configuration-page__action-groups">
@@ -94,8 +92,8 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
                                     <button
                                         key={id}
                                         className="btn btn-secondary btn-sm site-admin-configuration-page__action"
-                                        // tslint:disable-next-line:jsx-no-lambda
                                         onClick={() => this.runAction(id, this.configEditor)}
+                                        type="button"
                                     >
                                         {label}
                                     </button>
@@ -122,7 +120,7 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
                         monacoRef={this.monacoRef}
                     />
                 </React.Suspense>
-            </>
+            </div>
         )
     }
 
@@ -154,12 +152,9 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
         }
     }
 
-    private monacoRef = (monacoValue: typeof _monaco | null) => {
+    private monacoRef = (monacoValue: typeof _monaco | null): void => {
         this.monaco = monacoValue
-        // This function can only be called if the lazy MonacoSettingsEditor component was loaded,
-        // so we know its #_result property is set by now.
-        const monacoSettingsEditor = MonacoSettingsEditor._result
-        if (this.monaco && monacoSettingsEditor) {
+        if (this.monaco && MonacoSettingsEditor) {
             this.subscriptions.add(
                 disposableToFn(
                     this.monaco.editor.onDidCreateEditor(editor => {
@@ -169,14 +164,18 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
             )
             this.subscriptions.add(
                 disposableToFn(
-                    this.monaco.editor.onDidCreateModel(model => {
+                    this.monaco.editor.onDidCreateModel(async model => {
+                        // This function can only be called if the lazy MonacoSettingsEditor component was loaded,
+                        // so this import call will not incur another load.
+                        const { MonacoSettingsEditor } = await import('./MonacoSettingsEditor')
+
                         if (
                             this.configEditor &&
-                            monacoSettingsEditor.isStandaloneCodeEditor(this.configEditor) &&
+                            MonacoSettingsEditor.isStandaloneCodeEditor(this.configEditor) &&
                             this.props.actions
                         ) {
                             for (const { id, label, run } of this.props.actions) {
-                                monacoSettingsEditor.addEditorAction(this.configEditor, model, label, id, run)
+                                MonacoSettingsEditor.addEditorAction(this.configEditor, model, label, id, run)
                             }
                         }
                     })
@@ -188,7 +187,7 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
     private runAction(id: string, editor?: _monaco.editor.ICodeEditor): void {
         if (editor) {
             const action = editor.getAction(id)
-            action.run().then(() => void 0, (err: any) => console.error(err))
+            action.run().then(() => undefined, (err: any) => console.error(err))
         } else {
             alert('Wait for editor to load before running action.')
         }

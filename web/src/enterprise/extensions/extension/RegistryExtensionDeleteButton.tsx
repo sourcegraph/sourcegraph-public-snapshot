@@ -69,7 +69,8 @@ export class RegistryExtensionDeleteButton extends React.PureComponent<
         return (
             <div className="btn-group" role="group">
                 <button
-                    className="btn btn-outline-danger"
+                    type="button"
+                    className="btn btn-danger"
                     onClick={this.deleteExtension}
                     disabled={this.props.disabled || this.state.deletionOrError === undefined}
                     title={this.props.compact ? 'Delete extension' : ''}
@@ -78,6 +79,7 @@ export class RegistryExtensionDeleteButton extends React.PureComponent<
                 </button>
                 {isErrorLike(this.state.deletionOrError) && (
                     <button
+                        type="button"
                         disabled={true}
                         className="btn btn-danger"
                         title={upperFirst(this.state.deletionOrError.message)}

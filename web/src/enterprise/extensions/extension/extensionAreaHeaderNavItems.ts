@@ -2,7 +2,7 @@ import LockIcon from 'mdi-react/LockIcon'
 import { ExtensionAreaHeaderNavItem } from '../../../extensions/extension/ExtensionAreaHeader'
 import { extensionAreaHeaderNavItems } from '../../../extensions/extension/extensionAreaHeaderNavItems'
 
-export const enterpriseExtensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem> = [
+export const enterpriseExtensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[] = [
     ...extensionAreaHeaderNavItems,
     {
         condition: context =>

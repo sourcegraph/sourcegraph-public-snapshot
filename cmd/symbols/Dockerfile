@@ -1,13 +1,35 @@
-# This Dockerfile was generated from github.com/sourcegraph/godockerize. It
-# was not written by a human, and as such looks janky. As you change this
-# file, please don't be scared to make it more pleasant / remove hadolint
-# ignores.
+FROM alpine:3.9@sha256:644fcb1a676b5165371437feaa922943aaf7afcfa8bfee4472f6860aad1ef2a0
 
-FROM alpine:3.8
+ARG COMMIT_SHA="unknown"
+ARG DATE="unknown"
+ARG VERSION="unknown"
+
+LABEL org.opencontainers.image.revision=${COMMIT_SHA}
+LABEL org.opencontainers.image.created=${DATE}
+LABEL org.opencontainers.image.version=${VERSION}
+LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
+
 # hadolint ignore=DL3018
 RUN apk add --no-cache bind-tools ca-certificates mailcap tini
-# hadolint ignore=DL3018,DL3003,DL4006
-RUN apk --no-cache add curl jansson-dev libseccomp-dev linux-headers autoconf pkgconfig make automake gcc g++ binutils && curl https://codeload.github.com/universal-ctags/ctags/tar.gz/7918d19fe358fae9bad1c264c4f5dc2dcde5cece | tar xz -C /tmp && cd /tmp/ctags-7918d19fe358fae9bad1c264c4f5dc2dcde5cece && ./autogen.sh && LDFLAGS=-static ./configure --program-prefix=universal- --enable-json --enable-seccomp && make -j8 && make install && cd && rm -rf /tmp/ctags-7918d19fe358fae9bad1c264c4f5dc2dcde5cece && apk --no-cache --purge del curl jansson-dev libseccomp-dev linux-headers autoconf pkgconfig make automake gcc g++ binutils
+
+# hadolint ignore=DL3022
+COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
+
+# hadolint ignore=DL3022
+COPY --from=libsqlite3-pcre /sqlite3-pcre/pcre.so /libsqlite3-pcre.so
+ENV LIBSQLITE3_PCRE /libsqlite3-pcre.so
+# hadolint ignore=DL3018
+RUN apk --no-cache add pcre-dev
+
+# universal-ctags doesn't support some popular languages out of the box (Scala,
+# Swift, and Haskell, to name a few). However, you can add language support by
+# providing regexes on the command line or in a configuration file.
+# universal-ctags looks in the current working directory for config files during
+# initialization:
+# https://github.com/universal-ctags/ctags/blob/1b747b38589f7a1c98ac9fe0a0b8b174dd476050/docs/optlib.rst#preload-option-file
+WORKDIR /
+COPY .ctags.d /.ctags.d
+
 ENV CACHE_DIR=/mnt/cache/symbols
 EXPOSE 3184
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/symbols"]

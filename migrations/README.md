@@ -2,7 +2,7 @@ This directory contains database migrations for the frontend Postgres DB.
 
 ## Usage
 
-Migrations are handled by the [migrate](https://github.com/tsenart/migrate/tree/master/cli#installation) tool. Migrations get applied automatically at application startup. The CLI tool can also be used to manually test migrations.
+Migrations are handled by the [migrate](https://github.com/golang-migrate/migrate/tree/master/cmd/migrate#installation) tool. Migrations get applied automatically at application startup. The CLI tool can also be used to manually test migrations.
 
 ### Add a new migration
 
@@ -18,13 +18,13 @@ are terminated.
 Run the following:
 
 ```
-./dev/add_migration.sh
+./dev/add_migration.sh MIGRATION_NAME
 ```
 
-There will be up/down `.sql` migration files created in this directory. Add SQL statements to these
-files that will perform the desired migration. **NOTE**: the migration runner wraps each migration
-script in a transaction block; do not add explicit transaction blocks to the migration script as
-this has caused issues in the past.
+There will be up/down `.sql` migration files created in this directory. Add
+SQL statements to these files that will perform the desired
+migration. **NOTE**: the migration runner does not use transactions. Use the
+explicit transaction blocks added to the migration script template.
 
 ```sql
 # Enter statements here
@@ -53,7 +53,7 @@ dev/ci/ci-db-backcompat.sh  # NOTE: this checks out a different git revision, so
 
 Up migrations happen automatically on server start-up after running the
 generate scripts. They can also be run manually using the migrate CLI:
-`run dev/migrate.sh up` to move forward to the latest migration. Run
+run `./dev/migrate.sh up` to move forward to the latest migration. Run
 `./dev/migrate.sh` for a full list of options.
 
 You can run `./dev/migrate.sh down 1` to rollback the previous migration. If a migration fails and

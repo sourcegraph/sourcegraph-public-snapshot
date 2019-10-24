@@ -1,6 +1,8 @@
 package repos
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestSetUserinfoBestEffort(t *testing.T) {
 	cases := []struct {

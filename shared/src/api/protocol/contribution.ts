@@ -1,3 +1,5 @@
+import { Primitive } from 'utility-types'
+import { Expression, TemplateExpression } from '../client/context/expr/evaluator'
 import { KeyPath } from '../client/services/settings'
 
 // NOTE: You must manually keep this file in sync with extension.schema.json#/properties/contributes (and possibly
@@ -7,7 +9,21 @@ import { KeyPath } from '../client/services/settings'
 // worth.
 
 /**
- * Contributions describes the functionality provided by an extension.
+ * The given contribution type as it's specified in a package.json (expressions as strings)
+ */
+export type Raw<TContribution> = { [K in keyof TContribution]: RawValue<TContribution[K]> }
+// need a type alias so union types (including undefined for optional properties) distribute
+type RawValue<V> = V extends Expression<any> ? string : (V extends Primitive | null | undefined ? V : Raw<V>)
+
+/**
+ * The given contribution type after being evaluated (all expressions replaced with their value)
+ */
+export type Evaluated<TContribution> = { [K in keyof TContribution]: EvaluatedValue<TContribution[K]> }
+// need a type alias so union types (including undefined for optional properties) distribute
+type EvaluatedValue<V> = V extends Expression<infer T> ? T : (V extends Primitive | null | undefined ? V : Evaluated<V>)
+
+/**
+ * Describes the functionality provided by an extension.
  */
 export interface Contributions {
     /** Actions contributed by the extension. */
@@ -57,11 +73,12 @@ export interface ActionContribution {
 
     /**
      * Optional arguments to pass to the extension when the action is invoked.
+     * Strings are interpreted as template strings, any other value is taken as-is.
      */
-    commandArguments?: any[]
+    commandArguments?: (TemplateExpression | number | boolean | null | object | any[])[]
 
     /** The title that succinctly describes what this action does. */
-    title?: string
+    title?: TemplateExpression
 
     /**
      * The category that describes the group of related actions of which this action is a member.
@@ -69,7 +86,7 @@ export interface ActionContribution {
      * Clients: When displaying this action's title alongside titles of actions from other groups, the client
      * should display each action as "${category}: ${title}" if the prefix is set.
      */
-    category?: string
+    category?: TemplateExpression
 
     /**
      * A longer description of the action taken by this action.
@@ -78,7 +95,7 @@ export interface ActionContribution {
      *
      * Clients: If the description is shown, the title must be shown nearby.
      */
-    description?: string
+    description?: TemplateExpression
 
     /**
      * A URL to an icon for this action (data: URIs are OK).
@@ -88,7 +105,7 @@ export interface ActionContribution {
      * should assume the icon is square (or roughly square). The client must not display a border around the icon.
      * The client may choose not to display this icon.
      */
-    iconURL?: string
+    iconURL?: TemplateExpression
 
     /**
      * A specification of how to display this action as a button on a toolbar. The client is responsible for
@@ -115,7 +132,7 @@ export interface ActionContributionClientCommandOpen extends ActionContribution 
      * The arguments for the `open` client command. The first array element is a URL, which is opened by the client
      * using the default URL handler.
      */
-    commandArguments: [string]
+    commandArguments: [TemplateExpression]
 }
 
 /**
@@ -132,13 +149,18 @@ export interface ActionContributionClientCommandUpdateConfiguration extends Acti
      * 3. Optional: reserved for future use (must always be `null`)
      * 4. Optional: 'json' if the client should parse the 2nd argument using JSON.parse before inserting the value
      */
-    commandArguments: [KeyPath, any] | [KeyPath, string, null, 'json']
+    commandArguments:
+        | [KeyPath, TemplateExpression | number | boolean | object | any[] | null]
+        | [KeyPath, TemplateExpression, null, TemplateExpression<'json'>]
 }
 
 /**
- * A description of how to display an {@link ActionContribution} on a toolbar. This value is set on the
- * {@link ActionContribution#actionItem} interface field (it always is directly associated with an
- * {@link ActionContribution}).
+ * A description of how to display an {@link ActionContribution} on a toolbar,
+ * with all template properties interpolated, and all expression properties replaced
+ * by their evaluated value.
+ *
+ * This value is set on the {@link ActionContribution#actionItem} interface field
+ * (it always is directly associated with an {@link ActionContribution}).
  *
  * It is necessary because an action's ({@link ActionContribution}'s) fields are intended for display in a command
  * palette or list, not in a button. The {@link ActionContribution} fields usually have long, descriptive text
@@ -159,14 +181,14 @@ export interface ActionContributionClientCommandUpdateConfiguration extends Acti
  */
 export interface ActionItem {
     /** The text label for this item. */
-    label?: string
+    label?: Expression<string>
 
     /**
      * A description associated with this action item.
      *
      * Clients: The description should be shown in a tooltip when the user focuses or hovers this toolbar item.
      */
-    description?: string
+    description?: Expression<string>
 
     /**
      * The icon URL for this action (data: URIs are OK).
@@ -176,7 +198,7 @@ export interface ActionItem {
      * In space-constrained situations, the client should show only the icon and omit the label. The client
      * must not display a border around the icon. The client may choose not to display this icon.
      */
-    iconURL?: string
+    iconURL?: Expression<string>
 
     /**
      * A description of the information represented by the icon.
@@ -185,7 +207,12 @@ export interface ActionItem {
      * accessibility facilities of the client's platform (such as the <img alt> attribute) to make it available
      * to users needing the textual description.
      */
-    iconDescription?: string
+    iconDescription?: Expression<string>
+
+    /**
+     * Whether the action item should be rendered as a pressed button.
+     */
+    pressed?: Expression<boolean>
 }
 
 export enum ContributableMenu {
@@ -206,6 +233,9 @@ export enum ContributableMenu {
 
     /** The panel toolbar. */
     PanelToolbar = 'panel/toolbar',
+
+    /** The search results toolbar. */
+    SearchResultsToolbar = 'search/results/toolbar',
 
     /** The help menu in the application. */
     Help = 'help',
@@ -235,7 +265,7 @@ export interface MenuItemContribution {
      * An expression that, if given, must evaluate to true (or a truthy value) for this contribution to be
      * displayed. The expression may use values from the context in which the contribution would be displayed.
      */
-    when?: string
+    when?: Expression<boolean>
 
     /**
      * The group in which this item is displayed. This defines the sort order of menu items. The group value is an

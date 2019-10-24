@@ -57,15 +57,11 @@
             padding-left: 1rem;
             white-space: pre;
 
-            // Possibly not needed. Without this, empty lines with line-decoration-attachment-portals wrap
-            // incorrectly.
-            span {
+            div {
                 display: inline-block;
             }
 
             .line-decoration-attachment-portal {
-                display: inline-block;
-
                 span::before {
                     content: attr(data-contents);
                 }

@@ -10,7 +10,7 @@
          * takes up full width.
          */
         display: table;
-        border-bottom: 1px solid #2b3750;
+        border-bottom: 1px solid var(--border-color);
         padding-bottom: 0.5rem;
 
         a.anchor {
@@ -30,7 +30,7 @@
     table,
     th,
     td {
-        border: 1px solid #2b3750;
+        border: 1px solid var(--border-color);
         padding: 0.5rem 1rem;
     }
 
@@ -45,7 +45,7 @@
 
     code,
     pre {
-        background: #141a2a;
+        background: $code-bg;
     }
 
     pre {
@@ -63,8 +63,8 @@
 
     blockquote {
         padding: 0 1rem;
-        color: #93a9c8;
-        border-left: 4px solid #93a9c8;
+        color: var(--text-muted);
+        border-left: 4px solid var(--border-color);
     }
 
     img {
@@ -84,35 +84,6 @@
                 background-color: transparent;
                 padding: 0;
             }
-        }
-    }
-}
-
-.theme-light {
-    .markdown {
-        h1,
-        h2,
-        h3,
-        h4,
-        h5,
-        h6 {
-            border-bottom-color: #cad2e2;
-        }
-
-        table,
-        th,
-        td {
-            border-color: #cad2e2;
-        }
-
-        code,
-        pre {
-            background-color: #f2f4f8;
-        }
-
-        blockquote {
-            color: #6a737d;
-            border-left-color: #dfe2e5;
         }
     }
 }

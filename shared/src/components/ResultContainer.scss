@@ -1,16 +1,23 @@
 .result-container {
     position: relative;
-    margin-bottom: 0.5rem;
-    border-radius: 2px;
+
+    border-width: 0 0 1px 0;
+    border-style: solid;
+    border-color: var(--border-color);
+    &:first-child {
+        border-top-width: 1px;
+    }
 
     &__header {
-        padding: 0.25rem 0.5rem;
-        user-select: none;
+        padding: 0.5rem 0.5rem;
+
+        position: sticky;
+        top: 0;
 
         display: flex;
         align-items: center;
         white-space: nowrap;
-        $background-color: #1c2736;
+        $background-color: $card-cap-bg;
 
         background-color: $background-color;
 
@@ -24,12 +31,12 @@
             overflow: hidden;
         }
 
-        &:hover {
-            background-color: darken($background-color, 0.05);
-        }
-
         p {
             margin-bottom: 0;
+        }
+
+        &:not(:only-of-type) {
+            border-bottom: 1px solid var(--border-color);
         }
     }
 
@@ -43,17 +50,6 @@
 }
 
 .theme-light {
-    .result-container {
-        border: 1px solid $color-light-border;
-        &__header {
-            background-color: $color-light-bg-2;
-
-            &:hover {
-                background-color: $color-light-bg-4;
-            }
-        }
-    }
-
     .icon-inline__filtered {
         filter: brightness(0%);
     }

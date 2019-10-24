@@ -1,85 +1,92 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
-import { upperFirst } from 'lodash'
 import * as React from 'react'
-import siteSchemaJSON from '../../../schema/site.schema.json'
+import { Markdown } from '../../../shared/src/components/Markdown'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { ErrorLike } from '../../../shared/src/util/errors'
+import { renderMarkdown } from '../../../shared/src/util/markdown'
 import { Form } from '../components/Form'
-import { Select } from '../components/Select'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
-import { ALL_EXTERNAL_SERVICES } from './externalServices'
+import { ExternalServiceKindMetadata } from './externalServices'
 
-interface Props {
+interface Props extends Pick<ExternalServiceKindMetadata, 'jsonSchema' | 'editorActions'> {
     history: H.History
     input: GQL.IAddExternalServiceInput
     isLightTheme: boolean
     error?: ErrorLike
+    warning?: string
     mode: 'edit' | 'create'
     loading: boolean
     onSubmit: (event?: React.FormEvent<HTMLFormElement>) => void
     onChange: (change: GQL.IAddExternalServiceInput) => void
 }
 
-const EXTRA_SCHEMAS = [siteSchemaJSON]
-
+/**
+ * Form for submitting a new or updated external service.
+ */
 export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
     public render(): JSX.Element | null {
         return (
             <Form className="external-service-form" onSubmit={this.props.onSubmit}>
-                {this.props.error && <p className="alert alert-danger">{upperFirst(this.props.error.message)}</p>}
+                {this.props.error && (
+                    <div className="alert alert-danger">
+                        <p>Error saving configuration:</p>
+                        <Markdown dangerousInnerHTML={renderMarkdown(this.props.error.message.replace(/\t/g, ''))} />
+                    </div>
+                )}
+                {this.props.warning && (
+                    <div className="alert alert-warning">
+                        <h4>Warning</h4>
+                        <Markdown dangerousInnerHTML={renderMarkdown(this.props.warning.replace(/\t/g, ''))} />
+                    </div>
+                )}
                 <div className="form-group">
-                    <label htmlFor="external-service-form-display-name">Display name</label>
+                    <label className="font-weight-bold" htmlFor="e2e-external-service-form-display-name">
+                        Display name:
+                    </label>
                     <input
-                        id="external-service-form-display-name"
+                        id="e2e-external-service-form-display-name"
                         type="text"
                         className="form-control"
                         required={true}
                         autoCorrect="off"
                         autoComplete="off"
                         autoFocus={true}
+                        spellCheck={false}
                         value={this.props.input.displayName}
                         onChange={this.onDisplayNameChange}
                         disabled={this.props.loading}
                     />
                 </div>
-                <div className="form-group">
-                    <label htmlFor="external-service-page-form-kind">Kind</label>
-                    <Select
-                        id="external-service-page-form-kind"
-                        onChange={this.onKindChange}
-                        required={true}
-                        disabled={this.props.loading || this.props.mode === 'edit'}
-                        value={this.props.input.kind}
-                    >
-                        {ALL_EXTERNAL_SERVICES.map(s => (
-                            <option key={s.kind} value={s.kind}>
-                                {s.displayName}
-                            </option>
-                        ))}
-                    </Select>
-                </div>
+
                 <div className="form-group">
                     <DynamicallyImportedMonacoSettingsEditor
                         // DynamicallyImportedMonacoSettingsEditor does not re-render the passed input.config
                         // if it thinks the config is dirty. We want to always replace the config if the kind changes
                         // so the editor is keyed on the kind.
-                        key={this.props.input.kind}
                         value={this.props.input.config}
-                        jsonSchemaId={`site.schema.json#definitions/${getKindDefinitionId(this.props.input.kind)}`}
-                        extraSchemas={EXTRA_SCHEMAS}
+                        jsonSchema={this.props.jsonSchema}
                         canEdit={false}
                         loading={this.props.loading}
-                        height={300}
+                        height={350}
                         isLightTheme={this.props.isLightTheme}
                         onChange={this.onConfigChange}
                         history={this.props.history}
+                        actions={this.props.editorActions}
                     />
                     <p className="form-text text-muted">
                         <small>Use Ctrl+Space for completion, and hover over JSON properties for documentation.</small>
                     </p>
                 </div>
-                <button type="submit" className="btn btn-primary" disabled={this.props.loading}>
+                <button
+                    type="submit"
+                    className={`btn btn-primary ${
+                        this.props.mode === 'create'
+                            ? 'e2e-add-external-service-button'
+                            : 'e2e-update-external-service-button'
+                    }`}
+                    disabled={this.props.loading}
+                >
                     {this.props.loading && <LoadingSpinner className="icon-inline" />}
                     {this.props.mode === 'edit' ? 'Update external service' : 'Add external service'}
                 </button>
@@ -91,30 +98,7 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
         this.props.onChange({ ...this.props.input, displayName: event.currentTarget.value })
     }
 
-    private onKindChange: React.ChangeEventHandler<HTMLSelectElement> = event => {
-        this.props.onChange({ ...this.props.input, kind: event.currentTarget.value as GQL.ExternalServiceKind })
-    }
-
     private onConfigChange = (config: string) => {
         this.props.onChange({ ...this.props.input, config })
-    }
-}
-
-function getKindDefinitionId(kind: GQL.ExternalServiceKind): string {
-    switch (kind) {
-        case GQL.ExternalServiceKind.AWSCODECOMMIT:
-            return 'AWSCodeCommitConnection'
-        case GQL.ExternalServiceKind.BITBUCKETSERVER:
-            return 'BitbucketServerConnection'
-        case GQL.ExternalServiceKind.GITHUB:
-            return 'GitHubConnection'
-        case GQL.ExternalServiceKind.GITLAB:
-            return 'GitLabConnection'
-        case GQL.ExternalServiceKind.GITOLITE:
-            return 'GitoliteConnection'
-        case GQL.ExternalServiceKind.PHABRICATOR:
-            return 'PhabricatorConnection'
-        case GQL.ExternalServiceKind.OTHER:
-            return 'OtherExternalServiceConnection'
     }
 }

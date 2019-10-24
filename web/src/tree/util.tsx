@@ -17,6 +17,7 @@ export interface SingleChildGitTree extends TreeEntryInfo {
 }
 
 export function scrollIntoView(el: Element, scrollRoot: Element): void {
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     if (!scrollRoot.getBoundingClientRect) {
         return el.scrollIntoView()
     }
@@ -34,10 +35,11 @@ export function scrollIntoView(el: Element, scrollRoot: Element): void {
     }
 }
 
-export const getDomElement = (path: string): Element | null => document.querySelector(`[data-tree-path='${path}']`)
+export const getDomElement = (path: string): Element | null =>
+    document.querySelector(`[data-tree-path='${path.replace(/'/g, "\\'")}']`)
 
-export const treePadding = (depth: number, isTree: boolean) => ({
-    marginLeft: depth * 12 + (isTree ? 0 : 12) + 12 + 'px',
+export const treePadding = (depth: number, isTree: boolean): React.CSSProperties => ({
+    marginLeft: `${depth * 12 + (isTree ? 0 : 12) + 12}px`,
     paddingRight: '16px',
 })
 

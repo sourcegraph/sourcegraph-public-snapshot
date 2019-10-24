@@ -1,7 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
 import * as React from 'react'
-import { combineLatest, concat, from, Observable, of, Subject, Subscription, timer } from 'rxjs'
+import { concat, from, Observable, of, Subject, Subscription, timer } from 'rxjs'
 import { catchError, debounce, delay, filter, map, switchMap, take, takeUntil, withLatestFrom } from 'rxjs/operators'
 import {
     ConfiguredRegistryExtension,
@@ -56,7 +56,7 @@ export const registryExtensionFragment = gql`
     }
 `
 
-interface Props extends SettingsCascadeProps, PlatformContextProps<'settings' | 'updateSettings' | 'queryGraphQL'> {
+interface Props extends SettingsCascadeProps, PlatformContextProps<'settings' | 'updateSettings' | 'requestGraphQL'> {
     subject: Pick<SettingsSubject, 'id' | 'viewerCanAdminister'>
     location: H.Location
     history: H.History
@@ -149,9 +149,9 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
         )
 
         this.subscriptions.add(
-            combineLatest(debouncedQueryChanges)
+            debouncedQueryChanges
                 .pipe(
-                    switchMap(([{ query, immediate }]) => {
+                    switchMap(({ query, immediate }) => {
                         const resultOrError = this.queryRegistryExtensions({ query }).pipe(
                             catchError(err => [asError(err)])
                         )
@@ -171,8 +171,8 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
         this.queryChanges.next({ query: this.state.query, immediate: true })
     }
 
-    public componentWillReceiveProps(nextProps: Props): void {
-        this.componentUpdates.next(nextProps)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -181,8 +181,8 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="configured-extensions-list">
-                <Form onSubmit={this.onSubmit} className="form-inline d-flex">
+            <div className="extensions-list">
+                <Form onSubmit={this.onSubmit} className="form-inline">
                     <input
                         className="form-control flex-grow-1 mr-1 mb-2"
                         type="search"
@@ -221,7 +221,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                                 <span className="text-muted">No extensions found</span>
                             )
                         ) : (
-                            <div className="row mt-1">
+                            <div className="extensions-list__cards mt-1">
                                 {this.state.data.resultOrError.extensions.map((e, i) => (
                                     <ExtensionCard
                                         key={i}

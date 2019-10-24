@@ -1,42 +1,59 @@
 import { isEqual, upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
+import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
+import { UncontrolledPopover } from 'reactstrap'
 import { defer, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap } from 'rxjs/operators'
+import { CloneInProgressError, ECLONEINPROGESS, EREPONOTFOUND, EREVNOTFOUND } from '../../../shared/src/backend/errors'
+import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { HeroPage } from '../components/HeroPage'
-import { PopoverButton } from '../components/PopoverButton'
 import { ChromeExtensionToast } from '../marketing/BrowserExtensionToast'
 import { SurveyToast } from '../marketing/SurveyToast'
 import { IS_CHROME } from '../marketing/util'
+import { ThemeProps } from '../theme'
+import { EventLoggerProps } from '../tracking/eventLogger'
 import { RouteDescriptor } from '../util/contributions'
 import { CopyLinkAction } from './actions/CopyLinkAction'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
-import { CloneInProgressError, ECLONEINPROGESS, EREPONOTFOUND, EREVNOTFOUND, ResolvedRev, resolveRev } from './backend'
+import { ResolvedRev, resolveRev } from './backend'
+import { RepoContainerContext } from './RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { EmptyRepositoryPage, RepositoryCloningInProgressPage } from './RepositoryGitDataContainer'
 import { RevisionsPopover } from './RevisionsPopover'
+import { PatternTypeProps } from '../search'
 
+/** Props passed to sub-routes of {@link RepoRevContainer}. */
 export interface RepoRevContainerContext
     extends RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
         ExtensionsControllerProps,
-        PlatformContextProps {
+        PlatformContextProps,
+        ThemeProps,
+        EventLoggerProps,
+        ActivationProps,
+        Pick<
+            RepoContainerContext,
+            Exclude<keyof RepoContainerContext, 'onDidUpdateRepository' | 'onDidUpdateExternalLinks'>
+        >,
+        PatternTypeProps {
     repo: GQL.IRepository
     rev: string
-    authenticatedUser: GQL.IUser | null
     resolvedRev: ResolvedRev
-    isLightTheme: boolean
+
+    /** The URL route match for {@link RepoRevContainer}. */
     routePrefix: string
 }
 
+/** A sub-route of {@link RepoRevContainer}. */
 export interface RepoRevContainerRoute extends RouteDescriptor<RepoRevContainerContext> {}
 
 interface RepoRevContainerProps
@@ -44,12 +61,15 @@ interface RepoRevContainerProps
         RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
         PlatformContextProps,
-        ExtensionsControllerProps {
-    routes: ReadonlyArray<RepoRevContainerRoute>
+        EventLoggerProps,
+        ExtensionsControllerProps,
+        ThemeProps,
+        ActivationProps,
+        PatternTypeProps {
+    routes: readonly RepoRevContainerRoute[]
     repo: GQL.IRepository
     rev: string
     authenticatedUser: GQL.IUser | null
-    isLightTheme: boolean
     routePrefix: string
 
     /**
@@ -62,18 +82,14 @@ interface RepoRevContainerProps
     onResolvedRevOrError: (v: ResolvedRev | ErrorLike | undefined) => void
 }
 
-interface RepoRevContainerState {
-    showSidebar: boolean
-}
+interface RepoRevContainerState {}
 
 /**
  * A container for a repository page that incorporates revisioned Git data. (For example,
  * blob and tree pages are revisioned, but the repository settings page is not.)
  */
 export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps, RepoRevContainerState> {
-    public state: RepoRevContainerState = {
-        showSidebar: true,
-    }
+    public state: RepoRevContainerState = {}
 
     private propsUpdates = new Subject<RepoRevContainerProps>()
     private subscriptions = new Subscription()
@@ -132,8 +148,8 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
         this.propsUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(props: RepoRevContainerProps): void {
-        this.propsUpdates.next(props)
+    public componentDidUpdate(): void {
+        this.propsUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -191,6 +207,8 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
             platformContext: this.props.platformContext,
             extensionsController: this.props.extensionsController,
             isLightTheme: this.props.isLightTheme,
+            telemetryService: this.props.telemetryService,
+            activation: this.props.activation,
             repo: this.props.repo,
             repoHeaderContributionsLifecycleProps: this.props.repoHeaderContributionsLifecycleProps,
             resolvedRev: this.props.resolvedRevOrError,
@@ -198,6 +216,8 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
             routePrefix: this.props.routePrefix,
             authenticatedUser: this.props.authenticatedUser,
             settingsCascade: this.props.settingsCascade,
+            patternType: this.props.patternType,
+            togglePatternType: this.props.togglePatternType,
         }
 
         return (
@@ -208,11 +228,18 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                     position="nav"
                     priority={100}
                     element={
-                        <PopoverButton
-                            key="repo-rev"
-                            className="repo-header__section-btn repo-header__rev"
-                            globalKeyBinding="v"
-                            popoverElement={
+                        <div className="d-flex align-items-center" key="repo-rev">
+                            <span className="e2e-revision">
+                                {(this.props.rev && this.props.rev === this.props.resolvedRevOrError.commitID
+                                    ? this.props.resolvedRevOrError.commitID.slice(0, 7)
+                                    : this.props.rev) ||
+                                    this.props.resolvedRevOrError.defaultBranch ||
+                                    'HEAD'}
+                            </span>
+                            <button type="button" id="repo-rev-popover" className="btn btn-link px-0">
+                                <MenuDownIcon className="icon-inline" />
+                            </button>
+                            <UncontrolledPopover placement="bottom-start" target="repo-rev-popover" trigger="legacy">
                                 <RevisionsPopover
                                     repo={this.props.repo.id}
                                     repoName={this.props.repo.name}
@@ -222,19 +249,13 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                     history={this.props.history}
                                     location={this.props.location}
                                 />
-                            }
-                            hideOnChange={`${this.props.repo.id}:${this.props.rev || ''}`}
-                        >
-                            {(this.props.rev && this.props.rev === this.props.resolvedRevOrError.commitID
-                                ? this.props.resolvedRevOrError.commitID.slice(0, 7)
-                                : this.props.rev) ||
-                                this.props.resolvedRevOrError.defaultBranch ||
-                                'HEAD'}
-                        </PopoverButton>
+                            </UncontrolledPopover>
+                        </div>
                     }
                     repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
                 <Switch>
+                    {/* eslint-disable react/jsx-no-bind */}
                     {this.props.routes.map(
                         ({ path, render, exact, condition = () => true }) =>
                             condition(context) && (
@@ -242,11 +263,11 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                     path={this.props.routePrefix + path}
                                     key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                     exact={exact}
-                                    // tslint:disable-next-line:jsx-no-lambda RouteProps.render is an exception
                                     render={routeComponentProps => render({ ...context, ...routeComponentProps })}
                                 />
                             )
                     )}
+                    {/* eslint-enable react/jsx-no-bind */}
                 </Switch>
                 <RepoHeaderContributionPortal
                     position="left"

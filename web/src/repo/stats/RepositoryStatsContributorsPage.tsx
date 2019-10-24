@@ -14,7 +14,7 @@ import { FilteredConnection } from '../../components/FilteredConnection'
 import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
-import { quoteIfNeeded, searchQueryForRepoRev } from '../../search'
+import { quoteIfNeeded, searchQueryForRepoRev, PatternTypeProps } from '../../search'
 import { eventLogger } from '../../tracking/eventLogger'
 import { PersonLink } from '../../user/PersonLink'
 import { UserAvatar } from '../../user/UserAvatar'
@@ -26,7 +26,7 @@ interface QuerySpec {
     path: string | null
 }
 
-interface RepositoryContributorNodeProps extends QuerySpec {
+interface RepositoryContributorNodeProps extends QuerySpec, Omit<PatternTypeProps, 'togglePatternType'> {
     node: GQL.IRepositoryContributor
     repoName: string
 }
@@ -37,6 +37,7 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
     revisionRange,
     after,
     path,
+    patternType,
 }) => {
     const commit = node.commits.nodes[0] as GQL.IGitCommit | undefined
 
@@ -54,7 +55,7 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
         <div className="repository-contributor-node list-group-item py-2">
             <div className="repository-contributor-node__person">
                 <UserAvatar className="icon-inline mr-2" user={node.person} />
-                <PersonLink userClassName="font-weight-bold" {...node.person} />
+                <PersonLink userClassName="font-weight-bold" user={node.person.user || node.person.displayName} />
             </div>
             <div className="repository-contributor-node__commits">
                 <div className="repository-contributor-node__commit">
@@ -73,7 +74,7 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
                 </div>
                 <div className="repository-contributor-node__count">
                     <Link
-                        to={`/search?${buildSearchURLQuery(query)}`}
+                        to={`/search?${buildSearchURLQuery(query, patternType)}`}
                         className="font-weight-bold"
                         data-tooltip={
                             revisionRange &&
@@ -154,11 +155,14 @@ const queryRepositoryContributors = memoizeObservable(
     args => `${args.repo}:${args.first}:${args.revisionRange}:${args.after}:${args.path}`
 )
 
-interface Props extends RepositoryStatsAreaPageProps, RouteComponentProps<{}> {}
+interface Props
+    extends RepositoryStatsAreaPageProps,
+        RouteComponentProps<{}>,
+        Omit<PatternTypeProps, 'togglePatternType'> {}
 
 class FilteredContributorsConnection extends FilteredConnection<
     GQL.IRepositoryContributor,
-    Pick<RepositoryContributorNodeProps, 'repoName' | 'revisionRange' | 'after' | 'path'>
+    Pick<RepositoryContributorNodeProps, 'repoName' | 'revisionRange' | 'after' | 'path' | 'patternType'>
 > {}
 
 interface State extends QuerySpec {}
@@ -182,6 +186,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
         const prevSpec = this.getDerivedProps(prevProps.location)
         if (!isEqual(spec, prevSpec)) {
             eventLogger.log('RepositoryStatsContributorsPropsUpdated')
+            // eslint-disable-next-line react/no-did-update-set-state
             this.setState(spec)
             this.specChanges.next()
         }
@@ -240,7 +245,6 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                                 className={`btn btn-secondary ${
                                                     this.state.after === '7 days ago' ? 'active' : ''
                                                 } repository-stats-page__btn-no-left-rounded-corners`}
-                                                // tslint:disable-next-line:jsx-no-lambda
                                                 onClick={() => this.setStateAfterAndSubmit('7 days ago')}
                                             >
                                                 Last 7 days
@@ -250,7 +254,6 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                                 className={`btn btn-secondary ${
                                                     this.state.after === '30 days ago' ? 'active' : ''
                                                 }`}
-                                                // tslint:disable-next-line:jsx-no-lambda
                                                 onClick={() => this.setStateAfterAndSubmit('30 days ago')}
                                             >
                                                 Last 30 days
@@ -260,7 +263,6 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                                 className={`btn btn-secondary ${
                                                     this.state.after === '1 year ago' ? 'active' : ''
                                                 }`}
-                                                // tslint:disable-next-line:jsx-no-lambda
                                                 onClick={() => this.setStateAfterAndSubmit('1 year ago')}
                                             >
                                                 Last year
@@ -268,7 +270,6 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                                             <button
                                                 type="button"
                                                 className={`btn btn-secondary ${!this.state.after ? 'active' : ''}`}
-                                                // tslint:disable-next-line:jsx-no-lambda
                                                 onClick={() => this.setStateAfterAndSubmit(null)}
                                             >
                                                 All time
@@ -351,6 +352,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                         revisionRange,
                         after,
                         path,
+                        patternType: this.props.patternType,
                     }}
                     defaultFirst={20}
                     hideSearch={true}

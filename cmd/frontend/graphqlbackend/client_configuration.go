@@ -3,7 +3,7 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
 type clientConfigurationResolver struct {
@@ -65,10 +65,6 @@ func (r *schemaResolver) ClientConfiguration(ctx context.Context) (*clientConfig
 	}
 	for _, ph := range phabricators {
 		contentScriptUrls = append(contentScriptUrls, ph.Url)
-	}
-
-	for _, rb := range cfg.ReviewBoard {
-		contentScriptUrls = append(contentScriptUrls, rb.Url)
 	}
 
 	var parentSourcegraph parentSourcegraphResolver

@@ -1,3 +1,4 @@
+import { ProxyResult, ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import { BehaviorSubject, PartialObserver, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { SettingsCascade } from '../../../settings/settings'
@@ -8,7 +9,7 @@ import { ClientConfigurationAPI } from '../../client/api/configuration'
  * @template C - The configuration schema.
  */
 class ExtConfigurationSection<C extends object> implements sourcegraph.Configuration<C> {
-    constructor(private proxy: ClientConfigurationAPI, private data: C) {}
+    constructor(private proxy: ProxyResult<ClientConfigurationAPI>, private data: C) {}
 
     public get<K extends keyof C>(key: K): C[K] | undefined {
         return this.data[key]
@@ -34,24 +35,26 @@ class ExtConfigurationSection<C extends object> implements sourcegraph.Configura
  * @internal
  * @template C - The configuration schema.
  */
-export interface ExtConfigurationAPI<C> {
-    $acceptConfigurationData(data: Readonly<SettingsCascade<C>>): Promise<void>
+export interface ExtConfigurationAPI<C> extends ProxyValue {
+    $acceptConfigurationData(data: Readonly<SettingsCascade<C>>): void
 }
 
 /**
  * @internal
  * @template C - The configuration schema.
  */
-export class ExtConfiguration<C extends object> implements ExtConfigurationAPI<C> {
+export class ExtConfiguration<C extends object> implements ExtConfigurationAPI<C>, ProxyValue {
+    public readonly [proxyValueSymbol] = true
+
     /**
      * The settings data observable, assigned when the initial data is received from the client. Extensions should
      * never be able to call {@link ExtConfiguration}'s methods before the initial data is received.
      */
     private data?: BehaviorSubject<Readonly<SettingsCascade<C>>>
 
-    constructor(private proxy: ClientConfigurationAPI) {}
+    constructor(private proxy: ProxyResult<ClientConfigurationAPI>) {}
 
-    public async $acceptConfigurationData(data: Readonly<SettingsCascade<C>>): Promise<void> {
+    public $acceptConfigurationData(data: Readonly<SettingsCascade<C>>): void {
         if (!this.data) {
             this.data = new BehaviorSubject(data)
         } else {

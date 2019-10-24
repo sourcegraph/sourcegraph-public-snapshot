@@ -7,7 +7,7 @@ on the filesystem.
 
 ## Version requirements
 
-You must use PostgreSQL 11.1 for development.
+Our minimum supported version is `9.6` which means you must use that for development to ensure we don't use Postgres features introduced after that version.
 
 For Ubuntu 18.04, you will need to add a repository source. Use the
 [PostgreSQL.org official repo and instructions.](https://www.postgresql.org/download/linux/ubuntu/)
@@ -55,6 +55,12 @@ export PGPASSWORD=sourcegraph
 export PGDATABASE=sourcegraph
 export PGSSLMODE=disable
 ```
+
+You can also use a tool like [`envdir`][s] or [a `.dotenv` file][dotenv] to
+source these env vars on demand when you start the server.
+
+[envdir]: https://cr.yp.to/daemontools/envdir.html
+[dotenv]: https://github.com/joho/godotenv
 
 To test the environment's credentials, run `psql` (the PostgreSQL CLI
 client) with the `PG*` environment variables set. If you see a
@@ -205,6 +211,25 @@ Join tables should be named based on the two tables being joined (e.g. `foo_bar`
 
 To the extent that certain fields require validation (e.g. username) we should perform that validation in client AND EITHER the database when possible, OR the graphql api. This results in the best experience for the client, and protects us from corrupt data.
 
-## Trigger functions
+## Triggers
 
-Trigger functions perform some action when data is inserted or updated. We don't use trigger functions.
+Because a trigger resides in the database and anyone who has the required privilege can use it, a trigger lets you write a set of SQL statements that multiple applications can use. It lets you avoid redundant code when multiple programs need to perform the same database operation.
+
+Triggers are usually a good tool for:
+
+- Computing derived column values automatically.
+- Enforcing complex integrity constraints (e.g. when a faster CHECK constraint isn't powerful enough).
+- Maintaining derived tables (e.g creating an audit trail of activity in the database).
+
+Triggers are often not a good tool for:
+
+- Implementing complex application logic.
+
+Whatever you end up doing, ensure that the affected code paths are tested appropriately. For instance, if you created a trigger that populates a column, you should test that a record that is written can be read back with the affected column set to what you expect.
+
+A test like this ought to exercise your data access module, regardless of the design pattern you use to implement it (`Store`, `Repo`, `DAO`, `DB`, etc). If you refactor your code to move some functionality from the trigger to the application code, or vice-versa, your tests should not need to change.
+
+Here's an example of how you could [structure such tests](https://github.com/sourcegraph/sourcegraph/blob/da3743ece358fbe6709f07e95d5fd97bd554e047/cmd/repo-updater/repos/integration_test.go#L17).
+
+If you're uncertain about using triggers as part of your work, do some research before committing to a solution and don't hesitate to discuss it with your peers.
+

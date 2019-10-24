@@ -13,12 +13,14 @@ import { routes } from '../../routes'
 import { Settings } from '../../schema/settings.schema'
 import { eventLogger } from '../../tracking/eventLogger'
 import { FilterChip } from '../FilterChip'
-import { submitSearch, toggleSearchFilter } from '../helpers'
+import { submitSearch, toggleSearchFilter, toggleSearchFilterAndReplaceSampleRepogroup } from '../helpers'
+import { PatternTypeProps } from '..'
 
-interface Props extends SettingsCascadeProps {
+interface Props extends SettingsCascadeProps, Omit<PatternTypeProps, 'togglePatternType'> {
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null
+    isSourcegraphDotCom: boolean
 
     /**
      * The current query.
@@ -26,7 +28,7 @@ interface Props extends SettingsCascadeProps {
     query: string
 }
 
-interface ISearchScope {
+export interface ISearchScope {
     name?: string
     value: string
 }
@@ -44,8 +46,8 @@ export class SearchFilterChips extends React.PureComponent<Props> {
         )
     }
 
-    public componentWillReceiveProps(newProps: Props): void {
-        this.componentUpdates.next(newProps)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -82,7 +84,7 @@ export class SearchFilterChips extends React.PureComponent<Props> {
                                         Add search scopes for quick filtering
                                     </span>
                                 ) : (
-                                    `Edit`
+                                    'Edit'
                                 )}
                             </small>
                         </NavLink>
@@ -159,7 +161,12 @@ export class SearchFilterChips extends React.PureComponent<Props> {
                 value,
             },
         })
-        submitSearch(this.props.history, toggleSearchFilter(this.props.query, value), 'filter')
+
+        const newQuery = this.props.isSourcegraphDotCom
+            ? toggleSearchFilterAndReplaceSampleRepogroup(this.props.query, value)
+            : toggleSearchFilter(this.props.query, value)
+
+        submitSearch(this.props.history, newQuery, 'filter', this.props.patternType)
     }
 }
 

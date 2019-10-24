@@ -4,6 +4,20 @@ package syntax
 
 import "strconv"
 
+func _() {
+	// An "invalid array index" compiler error signifies that the constant values have changed.
+	// Re-run the stringer command to generate them again.
+	var x [1]struct{}
+	_ = x[TokenEOF-0]
+	_ = x[TokenError-1]
+	_ = x[TokenLiteral-2]
+	_ = x[TokenQuoted-3]
+	_ = x[TokenPattern-4]
+	_ = x[TokenColon-5]
+	_ = x[TokenMinus-6]
+	_ = x[TokenSep-7]
+}
+
 const _TokenType_name = "TokenEOFTokenErrorTokenLiteralTokenQuotedTokenPatternTokenColonTokenMinusTokenSep"
 
 var _TokenType_index = [...]uint8{0, 8, 18, 30, 41, 53, 63, 73, 81}

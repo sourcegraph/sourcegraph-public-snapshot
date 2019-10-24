@@ -1,4 +1,4 @@
-import { cloneDeep, isFunction, isPlainObject } from 'lodash'
+import { cloneDeep, isFunction } from 'lodash'
 import * as GQL from '../graphql/schema'
 import { createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 import { parseJSONCOrError } from '../util/jsonc'
@@ -32,12 +32,13 @@ export interface Settings {
  * A settings subject is something that can have settings associated with it, such as a site ("global
  * settings"), an organization ("organization settings"), a user ("user settings"), etc.
  */
-export type SettingsSubject = Pick<GQL.ISettingsSubject, 'id' | 'settingsURL' | 'viewerCanAdminister'> &
+export type SettingsSubject = Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'> &
     (
         | Pick<IClient, '__typename' | 'displayName'>
         | Pick<GQL.IUser, '__typename' | 'username' | 'displayName'>
         | Pick<GQL.IOrg, '__typename' | 'name' | 'displayName'>
-        | Pick<GQL.ISite, '__typename'>)
+        | Pick<GQL.ISite, '__typename'>
+        | Pick<GQL.IDefaultSettings, '__typename'>)
 
 /**
  * A cascade of settings from multiple subjects, from lowest precedence to highest precedence, and the final
@@ -176,9 +177,17 @@ export function mergeSettings<S extends Settings>(values: S[]): S | null {
     if (values.length === 0) {
         return null
     }
+    const customFunctions: CustomMergeFunctions = {
+        extensions: (base: any, add: any) => ({ ...base, ...add }),
+        notices: (base: any, add: any) => [...base, ...add],
+        'search.scopes': (base: any, add: any) => [...base, ...add],
+        'search.savedQueries': (base: any, add: any) => [...base, ...add],
+        'search.repositoryGroups': (base: any, add: any) => ({ ...base, ...add }),
+        quicklinks: (base: any, add: any) => [...base, ...add],
+    }
     const target = cloneDeep(values[0])
     for (const value of values.slice(1)) {
-        merge(target, value)
+        merge(target, value, customFunctions)
     }
     return target
 }
@@ -188,8 +197,10 @@ export interface CustomMergeFunctions {
 }
 
 /**
- * Deeply merges add into base (modifying base). The merged value for a key path can be customized by providing a
- * function at the same key path in custom.
+ * Shallow merges add into base (modifying base). Only the top-level object is smerged.
+ *
+ * The merged value for a key path can be customized by providing a
+ * function at the same key path in `custom`.
  *
  * Most callers should use mergeSettings, which uses the set of CustomMergeFunctions that are required to properly
  * merge settings.
@@ -200,8 +211,6 @@ export function merge(base: any, add: any, custom?: CustomMergeFunctions): void 
             const customEntry = custom && custom[key]
             if (customEntry && isFunction(customEntry)) {
                 base[key] = customEntry(base[key], add[key])
-            } else if (isPlainObject(base[key]) && isPlainObject(add[key])) {
-                merge(base[key], add[key], customEntry)
             } else {
                 base[key] = add[key]
             }
@@ -227,37 +236,6 @@ export function isSettingsValid<S extends Settings>(
         settingsCascade.final !== null &&
         !isErrorLike(settingsCascade.final)
     )
-}
-
-/**
- * The conventional ordering of extension settings subject types in a list.
- */
-export const SUBJECT_TYPE_ORDER: SettingsSubject['__typename'][] = ['Client', 'User', 'Org', 'Site']
-
-export function subjectTypeHeader(nodeType: SettingsSubject['__typename']): string | null {
-    switch (nodeType) {
-        case 'Client':
-            return null
-        case 'Site':
-            return null
-        case 'Org':
-            return 'Organization:'
-        case 'User':
-            return null
-    }
-}
-
-export function subjectLabel(subject: SettingsSubject): string {
-    switch (subject.__typename) {
-        case 'Client':
-            return 'Client'
-        case 'Site':
-            return 'Everyone'
-        case 'Org':
-            return subject.name
-        case 'User':
-            return subject.username
-    }
 }
 
 /**

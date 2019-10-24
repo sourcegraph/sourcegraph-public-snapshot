@@ -1,97 +1,144 @@
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
-import { concat, Subject, Subscription } from 'rxjs'
+import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
-import { parseSearchURLQuery } from '..'
-import { Contributions } from '../../../../shared/src/api/protocol'
+import { parseSearchURLQuery, parseSearchURLPatternType, PatternTypeProps } from '..'
+import { Contributions, Evaluated } from '../../../../shared/src/api/protocol'
+import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
-import { isErrorLike } from '../../../../shared/src/util/errors'
+import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
+import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { PageTitle } from '../../components/PageTitle'
-import { fetchHighlightedFileLines } from '../../repo/backend'
 import { Settings } from '../../schema/settings.schema'
-import { eventLogger } from '../../tracking/eventLogger'
-import { search } from '../backend'
-import { FilterChip } from '../FilterChip'
-import { isSearchResults, submitSearch, toggleSearchFilter } from '../helpers'
+import { ThemeProps } from '../../theme'
+import { EventLogger } from '../../tracking/eventLogger'
+import {
+    isSearchResults,
+    submitSearch,
+    toggleSearchFilter,
+    toggleSearchFilterAndReplaceSampleRepogroup,
+    getSearchTypeFromQuery,
+} from '../helpers'
 import { queryTelemetryData } from '../queryTelemetry'
+import { SearchResultsFilterBars, SearchScopeWithOptionalName } from './SearchResultsFilterBars'
 import { SearchResultsList } from './SearchResultsList'
-import { SearchResultsListOld } from './SearchResultsListOld'
+import { SearchResultTypeTabs } from './SearchResultTypeTabs'
+import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 
-const UI_PAGE_SIZE = 75
-
-interface SearchResultsProps extends ExtensionsControllerProps, SettingsCascadeProps, PlatformContextProps {
+export interface SearchResultsProps
+    extends ExtensionsControllerProps<'executeCommand' | 'services'>,
+        PlatformContextProps<'forceUpdateTooltip'>,
+        SettingsCascadeProps,
+        TelemetryProps,
+        ThemeProps,
+        PatternTypeProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
-    isLightTheme: boolean
     navbarSearchQuery: string
+    telemetryService: Pick<EventLogger, 'log' | 'logViewEvent'>
+    fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
+    searchRequest: (
+        query: string,
+        version: string,
+        patternType: GQL.SearchPatternType,
+        { extensionsController }: ExtensionsControllerProps<'services'>
+    ) => Observable<GQL.ISearchResults | ErrorLike>
+    isSourcegraphDotCom: boolean
+    deployType: DeployType
 }
 
-interface SearchScope {
-    name?: string
-    value: string
-}
 interface SearchResultsState {
     /** The loaded search results, error or undefined while loading */
     resultsOrError?: GQL.ISearchResults
     allExpanded: boolean
 
-    // TODO: Remove when newSearchResultsList is removed
-    uiLimit: number
-
     // Saved Queries
     showSavedQueryModal: boolean
     didSaveQuery: boolean
+
     /** The contributions, merged from all extensions, or undefined before the initial emission. */
-    contributions?: Contributions
+    contributions?: Evaluated<Contributions>
 }
 
-const newRepoFilters = localStorage.getItem('newRepoFilters') !== 'false'
-const newSearchResultsList = localStorage.getItem('newSearchResultsList') !== 'false'
+/** All values that are valid for the `type:` filter. `null` represents default code search. */
+export type SearchType = 'diff' | 'commit' | 'symbol' | 'repo' | null
+
+// The latest supported version of our search syntax. Users should never be able to determine the search version.
+// The version is set based on the release tag of the instance. Anything before 3.9.0 will not pass a version parameter,
+// and will therefore default to V1.
+const LATEST_VERSION = 'V2'
 
 export class SearchResults extends React.Component<SearchResultsProps, SearchResultsState> {
     public state: SearchResultsState = {
         didSaveQuery: false,
         showSavedQueryModal: false,
         allExpanded: false,
-        uiLimit: UI_PAGE_SIZE,
     }
-
     /** Emits on componentDidUpdate with the new props */
     private componentUpdates = new Subject<SearchResultsProps>()
 
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('SearchResults')
+        const patternType = parseSearchURLPatternType(this.props.location.search)
+
+        if (!patternType) {
+            // If the patternType query parameter does not exist in the URL or is invalid, redirect to a URL which
+            // has patternType=regexp appended. This is to ensure old URLs before requiring patternType still work.
+            const newLoc = '/search?' + buildSearchURLQuery(this.props.navbarSearchQuery, GQL.SearchPatternType.regexp)
+            window.location.replace(newLoc)
+        }
+
+        this.props.telemetryService.logViewEvent('SearchResults')
 
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(
                     startWith(this.props),
-                    map(props => parseSearchURLQuery(props.location.search)),
+                    map(props => [
+                        parseSearchURLQuery(props.location.search),
+                        parseSearchURLPatternType(props.location.search),
+                    ]),
                     // Search when a new search query was specified in the URL
                     distinctUntilChanged((a, b) => isEqual(a, b)),
-                    filter((query): query is string => !!query),
-                    tap(query => {
-                        eventLogger.log('SearchResultsQueried', {
-                            code_search: { query_data: queryTelemetryData(query) },
+                    filter(
+                        (queryAndPatternType): queryAndPatternType is [string, GQL.SearchPatternType] =>
+                            !!queryAndPatternType[0] && !!queryAndPatternType[1]
+                    ),
+                    tap(([query]) => {
+                        const query_data = queryTelemetryData(query)
+                        this.props.telemetryService.log('SearchResultsQueried', {
+                            code_search: { query_data },
                         })
+                        if (
+                            query_data.query &&
+                            query_data.query.field_type &&
+                            query_data.query.field_type.value_diff > 0
+                        ) {
+                            this.props.telemetryService.log('DiffSearchResultsQueried')
+                        }
                     }),
-                    switchMap(query =>
+                    switchMap(([query, patternType]) =>
                         concat(
                             // Reset view state
-                            [{ resultsOrError: undefined, didSave: false }],
+                            [
+                                {
+                                    resultsOrError: undefined,
+                                    didSave: false,
+                                    activeType: getSearchTypeFromQuery(query),
+                                },
+                            ],
                             // Do async search request
-                            search(query, this.props).pipe(
+                            this.props.searchRequest(query, LATEST_VERSION, patternType, this.props).pipe(
                                 // Log telemetry
                                 tap(
-                                    results =>
-                                        eventLogger.log('SearchResultsFetched', {
+                                    results => {
+                                        this.props.telemetryService.log('SearchResultsFetched', {
                                             code_search: {
                                                 // 🚨 PRIVACY: never provide any private data in { code_search: { results } }.
                                                 results: {
@@ -101,16 +148,20 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                                         : results.cloning.length > 0,
                                                 },
                                             },
-                                        }),
+                                        })
+                                        if (patternType && patternType !== this.props.patternType) {
+                                            this.props.togglePatternType()
+                                        }
+                                    },
                                     error => {
-                                        eventLogger.log('SearchResultsFetchFailed', {
+                                        this.props.telemetryService.log('SearchResultsFetchFailed', {
                                             code_search: { error_message: error.message },
                                         })
                                         console.error(error)
                                     }
                                 ),
                                 // Update view with results or error
-                                map(results => ({ resultsOrError: results })),
+                                map(resultsOrError => ({ resultsOrError })),
                                 catchError(error => [{ resultsOrError: error }])
                             )
                         )
@@ -124,7 +175,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             .subscribe(contributions => this.setState({ contributions }))
     }
 
-    public componentDidUpdate(prevProps: SearchResultsProps): void {
+    public componentDidUpdate(): void {
         this.componentUpdates.next(this.props)
     }
 
@@ -137,12 +188,12 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     }
 
     private onDidCreateSavedQuery = () => {
-        eventLogger.log('SavedQueryCreated')
+        this.props.telemetryService.log('SavedQueryCreated')
         this.setState({ showSavedQueryModal: false, didSaveQuery: true })
     }
 
     private onModalClose = () => {
-        eventLogger.log('SavedQueriesToggleCreating', { queries: { creating: false } })
+        this.props.telemetryService.log('SavedQueriesToggleCreating', { queries: { creating: false } })
         this.setState({ didSaveQuery: false, showSavedQueryModal: false })
     }
 
@@ -151,122 +202,46 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         const filters = this.getFilters()
         const extensionFilters = this.state.contributions && this.state.contributions.searchFilters
 
+        const quickLinks =
+            (isSettingsValid<Settings>(this.props.settingsCascade) && this.props.settingsCascade.final.quicklinks) || []
+
         return (
-            <div className="search-results">
+            <div className="e2e-search-results search-results d-flex flex-column w-100">
                 <PageTitle key="page-title" title={query} />
-                {((isSearchResults(this.state.resultsOrError) && filters.length > 0) || extensionFilters) && (
-                    <div className="search-results__filters-bar">
-                        Filters:
-                        <div className="search-results__filters">
-                            {extensionFilters &&
-                                extensionFilters
-                                    .filter(filter => filter.value !== '')
-                                    .map((filter, i) => (
-                                        <FilterChip
-                                            query={this.props.navbarSearchQuery}
-                                            onFilterChosen={this.onDynamicFilterClicked}
-                                            key={filter.name + filter.value}
-                                            value={filter.value}
-                                            name={filter.name}
-                                        />
-                                    ))}
-                            {filters
-                                .filter(filter => filter.value !== '')
-                                .map((filter, i) => (
-                                    <FilterChip
-                                        query={this.props.navbarSearchQuery}
-                                        onFilterChosen={this.onDynamicFilterClicked}
-                                        key={filter.name + filter.value}
-                                        value={filter.value}
-                                        name={filter.name}
-                                    />
-                                ))}
-                        </div>
-                    </div>
-                )}
-                {newRepoFilters &&
-                    isSearchResults(this.state.resultsOrError) &&
-                    this.state.resultsOrError.dynamicFilters.filter(filter => filter.kind === 'repo').length > 0 && (
-                        <div className="search-results__filters-bar">
-                            Repositories:
-                            <div className="search-results__filters">
-                                {this.state.resultsOrError.dynamicFilters
-                                    .filter(filter => filter.kind === 'repo' && filter.value !== '')
-                                    .map((filter, i) => (
-                                        <FilterChip
-                                            name={filter.label}
-                                            query={this.props.navbarSearchQuery}
-                                            onFilterChosen={this.onDynamicFilterClicked}
-                                            key={filter.value}
-                                            value={filter.value}
-                                            count={filter.count}
-                                            limitHit={filter.limitHit}
-                                        />
-                                    ))}
-                                {this.state.resultsOrError.limitHit &&
-                                    !/\brepo:/.test(this.props.navbarSearchQuery) && (
-                                        <FilterChip
-                                            name="Show more"
-                                            query={this.props.navbarSearchQuery}
-                                            onFilterChosen={this.showMoreResults}
-                                            key={`count:${this.calculateCount()}`}
-                                            value={`count:${this.calculateCount()}`}
-                                            showMore={true}
-                                        />
-                                    )}
-                            </div>
-                        </div>
-                    )}
-                {newSearchResultsList ? (
-                    <SearchResultsList
-                        resultsOrError={this.state.resultsOrError}
-                        onShowMoreResultsClick={this.showMoreResults}
-                        onExpandAllResultsToggle={this.onExpandAllResultsToggle}
-                        allExpanded={this.state.allExpanded}
-                        showSavedQueryModal={this.state.showSavedQueryModal}
-                        onSaveQueryClick={this.showSaveQueryModal}
-                        onSavedQueryModalClose={this.onModalClose}
-                        onDidCreateSavedQuery={this.onDidCreateSavedQuery}
-                        didSave={this.state.didSaveQuery}
-                        location={this.props.location}
-                        history={this.props.history}
-                        authenticatedUser={this.props.authenticatedUser}
-                        settingsCascade={this.props.settingsCascade}
-                        isLightTheme={this.props.isLightTheme}
-                        fetchHighlightedFileLines={fetchHighlightedFileLines}
-                    />
-                ) : (
-                    <SearchResultsListOld
-                        resultsOrError={this.state.resultsOrError}
-                        onShowMoreResultsClick={this.showMoreResults}
-                        onExpandAllResultsToggle={this.onExpandAllResultsToggle}
-                        allExpanded={this.state.allExpanded}
-                        showSavedQueryModal={this.state.showSavedQueryModal}
-                        onSaveQueryClick={this.showSaveQueryModal}
-                        onSavedQueryModalClose={this.onModalClose}
-                        onDidCreateSavedQuery={this.onDidCreateSavedQuery}
-                        didSave={this.state.didSaveQuery}
-                        location={this.props.location}
-                        authenticatedUser={this.props.authenticatedUser}
-                        isLightTheme={this.props.isLightTheme}
-                        settingsCascade={this.props.settingsCascade}
-                        uiLimit={this.state.uiLimit}
-                        fetchHighlightedFileLines={fetchHighlightedFileLines}
-                    />
-                )}
+                <SearchResultsFilterBars
+                    navbarSearchQuery={this.props.navbarSearchQuery}
+                    results={this.state.resultsOrError}
+                    filters={filters}
+                    extensionFilters={extensionFilters}
+                    quickLinks={quickLinks}
+                    onFilterClick={this.onDynamicFilterClicked}
+                    onShowMoreResultsClick={this.showMoreResults}
+                    calculateShowMoreResultsCount={this.calculateCount}
+                />
+                <SearchResultTypeTabs {...this.props} query={this.props.navbarSearchQuery} />
+                <SearchResultsList
+                    {...this.props}
+                    resultsOrError={this.state.resultsOrError}
+                    onShowMoreResultsClick={this.showMoreResults}
+                    onExpandAllResultsToggle={this.onExpandAllResultsToggle}
+                    allExpanded={this.state.allExpanded}
+                    showSavedQueryModal={this.state.showSavedQueryModal}
+                    onSaveQueryClick={this.showSaveQueryModal}
+                    onSavedQueryModalClose={this.onModalClose}
+                    onDidCreateSavedQuery={this.onDidCreateSavedQuery}
+                    didSave={this.state.didSaveQuery}
+                />
             </div>
         )
     }
 
     /** Combines dynamic filters and search scopes into a list de-duplicated by value. */
-    private getFilters(): SearchScope[] {
-        const filters = new Map<string, SearchScope>()
+    private getFilters(): SearchScopeWithOptionalName[] {
+        const filters = new Map<string, SearchScopeWithOptionalName>()
 
         if (isSearchResults(this.state.resultsOrError) && this.state.resultsOrError.dynamicFilters) {
             let dynamicFilters = this.state.resultsOrError.dynamicFilters
-            if (newRepoFilters) {
-                dynamicFilters = this.state.resultsOrError.dynamicFilters.filter(filter => filter.kind !== 'repo')
-            }
+            dynamicFilters = this.state.resultsOrError.dynamicFilters.filter(filter => filter.kind !== 'repo')
             for (const d of dynamicFilters) {
                 filters.set(d.value, d)
             }
@@ -329,15 +304,20 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         this.setState(
             state => ({ allExpanded: !state.allExpanded }),
             () => {
-                eventLogger.log(this.state.allExpanded ? 'allResultsExpanded' : 'allResultsCollapsed')
+                this.props.telemetryService.log(this.state.allExpanded ? 'allResultsExpanded' : 'allResultsCollapsed')
             }
         )
     }
 
     private onDynamicFilterClicked = (value: string) => {
-        eventLogger.log('DynamicFilterClicked', {
+        this.props.telemetryService.log('DynamicFilterClicked', {
             search_filter: { value },
         })
-        submitSearch(this.props.history, toggleSearchFilter(this.props.navbarSearchQuery, value), 'filter')
+
+        const newQuery = this.props.isSourcegraphDotCom
+            ? toggleSearchFilterAndReplaceSampleRepogroup(this.props.navbarSearchQuery, value)
+            : toggleSearchFilter(this.props.navbarSearchQuery, value)
+
+        submitSearch(this.props.history, newQuery, 'filter', this.props.patternType)
     }
 }

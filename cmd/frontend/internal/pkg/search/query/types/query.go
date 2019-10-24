@@ -1,15 +1,38 @@
 package types
 
 import (
+	"fmt"
 	"regexp"
+	"sort"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
 )
 
 // A Query is the typechecked representation of a search query.
 type Query struct {
-	Syntax *syntax.Query       // the query syntax
-	Fields map[string][]*Value // map of field name -> values
+	ParseTree syntax.ParseTree    // the query parse tree
+	Fields    map[string][]*Value // map of field name -> values
+}
+
+func (q *Query) String() string {
+	fields := []string{}
+	for key, values := range q.Fields {
+		for _, v := range values {
+			switch s := v.Value().(type) {
+			case string:
+				fields = append(fields, fmt.Sprintf("%s:%q", key, s))
+			case *regexp.Regexp:
+				fields = append(fields, fmt.Sprintf("%s~%q", key, s))
+			case bool:
+				fields = append(fields, fmt.Sprintf("%s:%v", key, s))
+			default:
+				fields = append(fields, fmt.Sprintf("(UNKNOWN TYPE %s:%v)", key, s))
+			}
+		}
+	}
+	sort.Strings(fields)
+	return strings.Join(fields, " ")
 }
 
 // ValueType is the set of types of values in queries.

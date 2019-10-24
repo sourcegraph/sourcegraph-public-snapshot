@@ -3,13 +3,13 @@
   "compilerOptions": {
     "sourceRoot": "src",
     "isolatedModules": true,
-    "forceConsistentCasingInFileNames": false
+    "forceConsistentCasingInFileNames": false,
   },
   "include": [
     "typings/**/*.d.ts",
     "src/**/*.test.tsx",
     "src/**/*.test.ts",
     "src/**/*.test.e2e.tsx",
-    "src/**/*.test.e2e.ts"
-  ]
+    "src/**/*.test.e2e.ts",
+  ],
 }

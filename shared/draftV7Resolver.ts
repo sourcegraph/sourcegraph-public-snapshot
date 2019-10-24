@@ -1,4 +1,4 @@
-import fs from 'fs'
+import { readFile } from 'mz/fs'
 import { ResolverOptions } from 'json-schema-ref-parser'
 import path from 'path'
 
@@ -8,6 +8,6 @@ import path from 'path'
  */
 export const draftV7resolver: ResolverOptions = {
     order: 1,
-    read: () => fs.readFileSync(path.join(__dirname, '../schema/json-schema-draft-07.schema.json')),
+    read: () => readFile(path.join(__dirname, '../schema/json-schema-draft-07.schema.json')),
     canRead: file => file.url === 'http://json-schema.org/draft-07/schema',
 }

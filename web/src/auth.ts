@@ -30,10 +30,14 @@ export function refreshAuthenticatedUser(): Observable<never> {
                 siteAdmin
                 tags
                 url
+                settingsURL
                 organizations {
                     nodes {
                         id
                         name
+                        displayName
+                        url
+                        settingsURL
                     }
                 }
                 session {
@@ -53,7 +57,7 @@ export function refreshAuthenticatedUser(): Observable<never> {
     )
 }
 
-const initialSiteConfigAuthPublic = window.context.critical['auth.public']
+const initialSiteConfigAuthPublic = window.context ? window.context.critical['auth.public'] : false // default to false in tests
 
 /**
  * Whether auth is required to perform any action.
@@ -67,10 +71,10 @@ const initialSiteConfigAuthPublic = window.context.critical['auth.public']
 export const authRequired = authenticatedUser.pipe(map(user => user === null && !initialSiteConfigAuthPublic))
 
 // Populate authenticatedUser.
-if (window.context.isAuthenticatedUser) {
+if (window.context && window.context.isAuthenticatedUser) {
     refreshAuthenticatedUser()
         .toPromise()
-        .then(() => void 0, err => console.error(err))
+        .then(() => undefined, err => console.error(err))
 } else {
     authenticatedUser.next(null)
 }

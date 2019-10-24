@@ -1,6 +1,7 @@
 package graphqlbackend
 
 import (
+	"context"
 	"encoding/json"
 	"reflect"
 	"testing"
@@ -32,7 +33,8 @@ func TestMergeSettings(t *testing.T) {
 			want:    `{"a":1}`,
 		},
 		"single with comments": {
-			configs: []string{`
+			configs: []string{
+				`
 /* comment */
 {
 	// comment
@@ -125,6 +127,22 @@ func TestMergeSettings(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSubjects(t *testing.T) {
+	t.Run("Default settings are included", func(t *testing.T) {
+		cascade := &settingsCascade{unauthenticatedActor: true}
+		subjects, err := cascade.Subjects(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(subjects) < 1 {
+			t.Fatal("Expected at least 1 subject")
+		}
+		if subjects[0].defaultSettings == nil {
+			t.Fatal("Expected the first subject to be default settings")
+		}
+	})
 }
 
 func jsonDeepEqual(a, b string) bool {

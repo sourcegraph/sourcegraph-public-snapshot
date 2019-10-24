@@ -1,16 +1,18 @@
 package db
 
 import (
+	"context"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
-	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 // usernamesForTests is a list of test cases containing valid and invalid usernames and org names.
@@ -28,14 +30,21 @@ var usernamesForTests = []struct {
 	{"deadmau5", true},
 	{"deadmau-5", true},
 	{"3blindmice", true},
+	{"nick.com", true},
+	{"nick.com.uk", true},
+	{"nick.com-put-er", true},
+	{"nick-", true},
 	{"777", true},
 	{"7-7", true},
 	{"long-butnotquitelongenoughtoreachlimit", true},
 
-	{"nick-", false},
+	{".nick", false},
+	{"-nick", false},
+	{"nick.", false},
 	{"nick--s", false},
 	{"nick--sny", false},
-	{"nick.com", false},
+	{"nick..sny", false},
+	{"nick.-sny", false},
 	{"nick_s", false},
 	{"_", false},
 	{"_nick", false},
@@ -58,7 +67,8 @@ func TestUsers_ValidUsernames(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	for _, test := range usernamesForTests {
 		t.Run(test.name, func(t *testing.T) {
@@ -82,7 +92,8 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	if _, err := globalstatedb.Get(ctx); err != nil {
 		t.Fatal(err)
@@ -168,7 +179,8 @@ func TestUsers_CheckAndDecrementInviteQuota(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	user, err := Users.Create(ctx, NewUser{
 		Email:                 "a@a.com",
@@ -216,7 +228,8 @@ func TestUsers_ListCount(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	user, err := Users.Create(ctx, NewUser{
 		Email:                 "a@a.com",
@@ -272,7 +285,8 @@ func TestUsers_Update(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	user, err := Users.Create(ctx, NewUser{
 		Email:                 "a@a.com",
@@ -348,7 +362,8 @@ func TestUsers_GetByVerifiedEmail(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	user, err := Users.Create(ctx, NewUser{
 		Email:                 "a@a.com",
@@ -383,7 +398,9 @@ func TestUsers_Delete(t *testing.T) {
 			if testing.Short() {
 				t.Skip()
 			}
-			ctx := dbtesting.TestContext(t)
+			dbtesting.SetupGlobalTestDB(t)
+			ctx := context.Background()
+			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
 			otherUser, err := Users.Create(ctx, NewUser{Username: "other"})
 			if err != nil {

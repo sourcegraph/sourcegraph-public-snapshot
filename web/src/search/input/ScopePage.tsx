@@ -16,11 +16,11 @@ import { SearchScope, Settings } from '../../schema/settings.schema'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchReposByQuery } from '../backend'
 import { submitSearch } from '../helpers'
-import { queryUpdates } from './QueryInput'
-import { QueryInput } from './QueryInput'
+import { QueryInput, queryUpdates } from './QueryInput'
 import { SearchButton } from './SearchButton'
+import { PatternTypeProps } from '..'
 
-const ScopeNotFound = () => (
+const ScopeNotFound: React.FunctionComponent = () => (
     <HeroPage
         icon={MapSearchIcon}
         title="404: Not Found"
@@ -34,7 +34,7 @@ const ScopeNotFound = () => (
     />
 )
 
-interface ScopePageProps extends RouteComponentProps<{ id: GQL.ID }>, SettingsCascadeProps {
+interface ScopePageProps extends RouteComponentProps<{ id: GQL.ID }>, SettingsCascadeProps, PatternTypeProps {
     authenticatedUser: GQL.IUser | null
 }
 
@@ -124,8 +124,8 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
         this.propUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(newProps: ScopePageProps): void {
-        this.propUpdates.next(newProps)
+    public componentDidUpdate(): void {
+        this.propUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -158,6 +158,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                                 <span className="scope-page__input-scope-text">{this.state.value}</span>
                             </div>
                             <QueryInput
+                                {...this.props}
                                 value={this.state.query}
                                 onChange={this.onQueryChange}
                                 prependQueryForSuggestions={this.state.value}
@@ -200,6 +201,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                                             </p>
                                             {this.state.first < this.state.repositories.length && (
                                                 <button
+                                                    type="button"
                                                     className="btn btn-secondary btn-sm scope-page__show-more"
                                                     onClick={this.onShowMore}
                                                 >
@@ -228,7 +230,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
-        submitSearch(this.props.history, `${this.state.value} ${this.state.query}`, 'home')
+        submitSearch(this.props.history, `${this.state.value} ${this.state.query}`, 'home', this.props.patternType)
     }
 
     private onShowMore = (event: React.MouseEvent<HTMLButtonElement>): void => {

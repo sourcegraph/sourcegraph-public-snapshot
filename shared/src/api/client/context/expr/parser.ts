@@ -1,12 +1,12 @@
 import { Lexer, Operator, TemplateLexer, Token, TokenType } from './lexer'
 
-export type Expression =
-    | { FunctionCall: { name: string; args: Expression[] } }
+export type ExpressionNode =
+    | { FunctionCall: { name: string; args: ExpressionNode[] } }
     | { Identifier: string }
     | { Literal: { type: TokenType.String | TokenType.Number; value: string } }
-    | { Template: { parts: Expression[] } }
-    | { Unary: { operator: Operator; expression: Expression } }
-    | { Binary: { operator: Operator; left: Expression; right: Expression } }
+    | { Template: { parts: ExpressionNode[] } }
+    | { Unary: { operator: Operator; expression: ExpressionNode } }
+    | { Binary: { operator: Operator; left: ExpressionNode; right: ExpressionNode } }
 
 /**
  * Parses an expression.
@@ -17,7 +17,7 @@ export type Expression =
 export class Parser {
     protected lexer!: Lexer
 
-    public parse(exprStr: string): Expression {
+    public parse(exprStr: string): ExpressionNode {
         if (!this.lexer) {
             this.lexer = new Lexer()
         }
@@ -36,8 +36,8 @@ export class Parser {
 
     // ArgumentList := Expression |
     //                 Expression ',' ArgumentList
-    private parseArgumentList(): Expression[] {
-        const args: Expression[] = []
+    private parseArgumentList(): ExpressionNode[] {
+        const args: ExpressionNode[] = []
         while (true) {
             const expr = this.parseExpression()
             if (expr === undefined) {
@@ -59,14 +59,14 @@ export class Parser {
 
     // FunctionCall ::= Identifier '(' ')' ||
     //                  Identifier '(' ArgumentList ')'
-    private parseFunctionCall(name: string): Expression {
+    private parseFunctionCall(name: string): ExpressionNode {
         let token: Pick<Token, 'type' | 'value'> | undefined = this.lexer.next()
         if (!matchOp(token, '(')) {
             throw new SyntaxError(`Expected "(" in function call ${JSON.stringify(name)} (at ${this.lexer.index})`)
         }
 
         token = this.lexer.peek()
-        const args: Expression[] = matchOp(token, ')') ? [] : this.parseArgumentList()
+        const args: ExpressionNode[] = matchOp(token, ')') ? [] : this.parseArgumentList()
 
         token = this.lexer.next()
         if (!matchOp(token, ')')) {
@@ -81,8 +81,8 @@ export class Parser {
         }
     }
 
-    private parseTemplateParts(): Expression[] {
-        const parts: Expression[] = []
+    private parseTemplateParts(): ExpressionNode[] {
+        const parts: ExpressionNode[] = []
         while (true) {
             const token: Pick<Token, 'type' | 'value'> | undefined = this.lexer.peek()
             if (!token) {
@@ -109,7 +109,7 @@ export class Parser {
         return parts
     }
 
-    protected parseTemplate(): Expression {
+    protected parseTemplate(): ExpressionNode {
         const token = this.lexer.peek()
         if (token === undefined) {
             throw new SyntaxError(
@@ -145,7 +145,7 @@ export class Parser {
     //             Template |
     //             Number |
     //             FunctionCall
-    private parsePrimary(): Expression {
+    private parsePrimary(): ExpressionNode {
         const token = this.lexer.peek()
         if (token === undefined) {
             throw new SyntaxError(`Unexpected termination of expression (at ${this.lexer.index})`)
@@ -189,7 +189,7 @@ export class Parser {
 
     // Unary ::= Primary |
     //           UnaryOp Unary
-    private parseUnary(): Expression {
+    private parseUnary(): ExpressionNode {
         const token = this.lexer.peek()
         if (token !== undefined && (matchOp(token, '-') || matchOp(token, '+') || matchOp(token, '!'))) {
             this.lexer.next()
@@ -206,7 +206,7 @@ export class Parser {
 
     // Multiplicative ::= Unary |
     //                    Multiplicative BinaryOp Unary
-    private parseMultiplicative(): Expression {
+    private parseMultiplicative(): ExpressionNode {
         let expr = this.parseUnary()
         let token = this.lexer.peek()
         while (token !== undefined && (matchOp(token, '*') || matchOp(token, '/') || matchOp(token, '%'))) {
@@ -225,7 +225,7 @@ export class Parser {
 
     // Additive ::= Multiplicative |
     //              Additive BinaryOp Multiplicative
-    private parseAdditive(): Expression {
+    private parseAdditive(): ExpressionNode {
         let expr = this.parseMultiplicative()
         let token = this.lexer.peek()
         while (
@@ -257,14 +257,14 @@ export class Parser {
     }
 
     // Expression ::= Additive
-    private parseExpression(): Expression {
+    private parseExpression(): ExpressionNode {
         return this.parseAdditive()
     }
 }
 
 /** Parses a template. */
 export class TemplateParser extends Parser {
-    public parse(templateStr: string): Expression {
+    public parse(templateStr: string): ExpressionNode {
         if (!this.lexer) {
             this.lexer = new TemplateLexer()
         }

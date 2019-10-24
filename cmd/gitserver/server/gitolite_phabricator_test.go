@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -32,7 +32,7 @@ func TestServer_handleGet(t *testing.T) {
 	s := &Server{ReposDir: "/testroot"}
 	h := s.Handler()
 
-	var cases = []struct {
+	cases := []struct {
 		repo        string
 		expMetadata string
 	}{{
@@ -76,7 +76,7 @@ func TestServer_handleGet_invalid(t *testing.T) {
 	s := &Server{ReposDir: "/testroot"}
 	h := s.Handler()
 
-	var cases = []struct {
+	cases := []struct {
 		repo        string
 		expMetadata string
 	}{{

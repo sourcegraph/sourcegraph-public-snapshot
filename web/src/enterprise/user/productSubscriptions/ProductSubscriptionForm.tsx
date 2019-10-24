@@ -1,6 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { isEqual } from 'lodash'
-import { upperFirst } from 'lodash'
+import { isEqual, upperFirst } from 'lodash'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { ReactStripeElements } from 'react-stripe-elements'
@@ -9,6 +8,7 @@ import { catchError, map, startWith, switchMap } from 'rxjs/operators'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { Form } from '../../../components/Form'
+import { ThemeProps } from '../../../theme'
 import { StripeWrapper } from '../../dotcom/billing/StripeWrapper'
 import { ProductPlanFormControl } from '../../dotcom/productPlans/ProductPlanFormControl'
 import { ProductSubscriptionUserCountFormControl } from '../../dotcom/productPlans/ProductSubscriptionUserCountFormControl'
@@ -29,7 +29,7 @@ export interface ProductSubscriptionFormData {
 
 const LOADING: 'loading' = 'loading'
 
-interface Props {
+interface Props extends ThemeProps {
     /**
      * The ID of the account associated with the subscription, or null if there is none (in which case this form
      * can only be used to price out a subscription, not to buy).
@@ -41,8 +41,6 @@ interface Props {
      * or null if this is a new subscription.
      */
     subscriptionID: GQL.ID | null
-
-    isLightTheme: boolean
 
     /** Called when the user submits the form (to buy or update the subscription). */
     onSubmit: (args: ProductSubscriptionFormData) => void
@@ -85,7 +83,7 @@ interface State {
 /**
  * Displays a form for a product subscription.
  */
-// tslint:disable-next-line:class-name
+// eslint-disable-next-line @typescript-eslint/class-name-casing
 class _ProductSubscriptionForm extends React.Component<Props & ReactStripeElements.InjectedStripeProps, State> {
     constructor(props: Props) {
         super(props)
@@ -155,6 +153,7 @@ class _ProductSubscriptionForm extends React.Component<Props & ReactStripeElemen
         // change without the component being unmounted, but handle this case for completeness
         // anyway.
         if (!isEqual(prevProps.initialValue, this.props.initialValue)) {
+            /* eslint react/no-did-update-set-state: warn */
             this.setState(this.getStateForInitialValue(this.props))
         }
     }
@@ -208,7 +207,7 @@ class _ProductSubscriptionForm extends React.Component<Props & ReactStripeElemen
                                 <div className="form-group mt-3">
                                     <Link
                                         to={`/sign-up?returnTo=${encodeURIComponent(
-                                            `/user/subscriptions/new${productSubscriptionInputForLocationHash(
+                                            `/subscriptions/new${productSubscriptionInputForLocationHash(
                                                 productSubscriptionInput
                                             )}`
                                         )}`}
@@ -220,7 +219,7 @@ class _ProductSubscriptionForm extends React.Component<Props & ReactStripeElemen
                                         A user account on Sourcegraph.com is required to create a subscription so you
                                         can view the license key and invoice.
                                     </small>
-                                    <hr />
+                                    <hr className="my-3" />
                                     <small className="form-text text-muted">
                                         Next, you'll enter payment information and buy the subscription.
                                     </small>

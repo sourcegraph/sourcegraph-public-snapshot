@@ -9,11 +9,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"time"
 )
 
 type externalServiceResolver struct {
 	externalService *types.ExternalService
+	warning         string
 }
 
 const externalServiceIDKind = "ExternalService"
@@ -66,10 +66,17 @@ func (r *externalServiceResolver) Config() string {
 	return r.externalService.Config
 }
 
-func (r *externalServiceResolver) CreatedAt() string {
-	return r.externalService.CreatedAt.Format(time.RFC3339)
+func (r *externalServiceResolver) CreatedAt() DateTime {
+	return DateTime{Time: r.externalService.CreatedAt}
 }
 
-func (r *externalServiceResolver) UpdatedAt() string {
-	return r.externalService.UpdatedAt.Format(time.RFC3339)
+func (r *externalServiceResolver) UpdatedAt() DateTime {
+	return DateTime{Time: r.externalService.UpdatedAt}
+}
+
+func (r *externalServiceResolver) Warning() *string {
+	if r.warning == "" {
+		return nil
+	}
+	return &r.warning
 }

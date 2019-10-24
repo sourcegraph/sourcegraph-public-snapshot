@@ -9,8 +9,9 @@ import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { RepositoryStatsContributorsPage } from './RepositoryStatsContributorsPage'
 import { RepositoryStatsNavbar } from './RepositoryStatsNavbar'
+import { PatternTypeProps } from '../../search'
 
-const NotFoundPage = () => (
+const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
         icon={MapSearchIcon}
         title="404: Not Found"
@@ -18,7 +19,10 @@ const NotFoundPage = () => (
     />
 )
 
-interface Props extends RouteComponentProps<{}>, RepoHeaderContributionsLifecycleProps {
+interface Props
+    extends RouteComponentProps<{}>,
+        RepoHeaderContributionsLifecycleProps,
+        Omit<PatternTypeProps, 'togglePatternType'> {
     repo: GQL.IRepository
 }
 
@@ -50,33 +54,30 @@ export class RepositoryStatsArea extends React.Component<Props> {
         }
 
         return (
-            <div className="repository-stats-area area--vertical">
+            <div className="repository-stats-area container mt-3">
                 <RepoHeaderContributionPortal
                     position="nav"
                     element={<RepoHeaderBreadcrumbNavItem key="stats">Contributors</RepoHeaderBreadcrumbNavItem>}
                     repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
-                {showNavbar && (
-                    <div className="area--vertical__navbar">
-                        <RepositoryStatsNavbar className="area--vertical__navbar-inner" repo={this.props.repo.name} />
-                    </div>
-                )}
-                <div className="area--vertical__content">
-                    <div className="area--vertical__content-inner">
-                        <Switch>
-                            <Route
-                                path={`${this.props.match.url}/contributors`}
-                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                exact={true}
-                                // tslint:disable-next-line:jsx-no-lambda
-                                render={routeComponentProps => (
-                                    <RepositoryStatsContributorsPage {...routeComponentProps} {...transferProps} />
-                                )}
+                {showNavbar && <RepositoryStatsNavbar className="mb-3" repo={this.props.repo.name} />}
+                <Switch>
+                    {/* eslint-disable react/jsx-no-bind */}
+                    <Route
+                        path={`${this.props.match.url}/contributors`}
+                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                        exact={true}
+                        render={routeComponentProps => (
+                            <RepositoryStatsContributorsPage
+                                {...routeComponentProps}
+                                {...transferProps}
+                                patternType={this.props.patternType}
                             />
-                            <Route key="hardcoded-key" component={NotFoundPage} />
-                        </Switch>
-                    </div>
-                </div>
+                        )}
+                    />
+                    <Route key="hardcoded-key" component={NotFoundPage} />
+                    {/* eslint-enable react/jsx-no-bind */}
+                </Switch>
             </div>
         )
     }

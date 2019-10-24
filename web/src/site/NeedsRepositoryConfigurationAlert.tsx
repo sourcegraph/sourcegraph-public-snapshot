@@ -4,7 +4,7 @@ import { CircleChevronRightIcon } from '../../../shared/src/components/icons' //
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { eventLogger } from '../tracking/eventLogger'
 
-const onClickCTA = () => {
+const onClickCTA = (): void => {
     eventLogger.log('AlertNeedsRepoConfigCTAClicked')
 }
 

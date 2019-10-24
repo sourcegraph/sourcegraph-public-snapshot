@@ -11,11 +11,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // CachedGitRepo returns a handle to the Git repository that does not know the remote URL. If
@@ -23,7 +25,7 @@ import (
 // value), those operations will fail. This occurs when the repository isn't cloned on gitserver or
 // when an update is needed (eg in ResolveRevision).
 func CachedGitRepo(ctx context.Context, repo *types.Repo) (*gitserver.Repo, error) {
-	r, err := quickGitserverRepo(ctx, repo.Name)
+	r, err := quickGitserverRepo(ctx, repo.Name, repo.ExternalRepo.ServiceType)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +38,7 @@ func CachedGitRepo(ctx context.Context, repo *types.Repo) (*gitserver.Repo, erro
 // GitRepo returns a handle to the Git repository with the up-to-date (as of the time of this call)
 // remote URL. See CachedGitRepo for when this is necessary vs. unnecessary.
 func GitRepo(ctx context.Context, repo *types.Repo) (gitserver.Repo, error) {
-	gitserverRepo, err := quickGitserverRepo(ctx, repo.Name)
+	gitserverRepo, err := quickGitserverRepo(ctx, repo.Name, repo.ExternalRepo.ServiceType)
 	if err != nil {
 		return gitserver.Repo{Name: repo.Name}, err
 	}
@@ -45,8 +47,7 @@ func GitRepo(ctx context.Context, repo *types.Repo) (gitserver.Repo, error) {
 	}
 
 	result, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{
-		Repo:         repo.Name,
-		ExternalRepo: repo.ExternalRepo,
+		Repo: repo.Name,
 	})
 	if err != nil {
 		return gitserver.Repo{Name: repo.Name}, err
@@ -57,7 +58,7 @@ func GitRepo(ctx context.Context, repo *types.Repo) (gitserver.Repo, error) {
 	return gitserver.Repo{Name: result.Repo.Name, URL: result.Repo.VCS.URL}, nil
 }
 
-func quickGitserverRepo(ctx context.Context, repo api.RepoName) (*gitserver.Repo, error) {
+func quickGitserverRepo(ctx context.Context, repo api.RepoName, serviceType string) (*gitserver.Repo, error) {
 	// If it is possible to 100% correctly determine it statically, use a fast path. This is
 	// used to avoid a RepoLookup call for public GitHub.com and GitLab.com repositories
 	// (especially on Sourcegraph.com), which reduces rate limit pressure significantly.
@@ -67,9 +68,9 @@ func quickGitserverRepo(ctx context.Context, repo api.RepoName) (*gitserver.Repo
 	lowerRepo := strings.ToLower(string(repo))
 	var hasToken func(context.Context) (bool, error)
 	switch {
-	case strings.HasPrefix(lowerRepo, "github.com/"):
+	case serviceType == github.ServiceType && strings.HasPrefix(lowerRepo, "github.com/"):
 		hasToken = hasGitHubDotComToken
-	case strings.HasPrefix(lowerRepo, "gitlab.com/"):
+	case serviceType == gitlab.ServiceType && strings.HasPrefix(lowerRepo, "gitlab.com/"):
 		hasToken = hasGitLabDotComToken
 	default:
 		return nil, nil
@@ -148,13 +149,23 @@ func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (c
 	ctx, done := trace(ctx, "Repos", "ResolveRev", map[string]interface{}{"repo": repo.Name, "rev": rev}, &err)
 	defer done()
 
-	// Try to get latest remote URL, but continue even if that fails.
-	grepo, err := GitRepo(ctx, repo)
+	// We start out by using a CachedGitRepo which doesn't have a remote URL.
+	// If we need the remote URL, git.ResolveRevision will ask for it via
+	// remoteURLFunc (which is costly as it e.g. consumes code host API
+	// requests).
+	gitserverRepo, err := CachedGitRepo(ctx, repo)
 	maybeLogRepoUpdaterError(repo, err)
 	if err != nil && !isIgnorableRepoUpdaterError(err) {
 		return "", err
 	}
-	return git.ResolveRevision(ctx, grepo, nil, rev, nil)
+	remoteURLFunc := func() (string, error) {
+		grepo, err := GitRepo(ctx, repo)
+		if err != nil {
+			return "", err
+		}
+		return grepo.URL, nil
+	}
+	return git.ResolveRevision(ctx, *gitserverRepo, remoteURLFunc, rev, nil)
 }
 
 func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *git.Commit, err error) {
@@ -171,13 +182,23 @@ func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.Co
 		return nil, errors.Errorf("non-absolute CommitID for Repos.GetCommit: %v", commitID)
 	}
 
-	// Try to get latest remote URL, but continue even if that fails.
-	gitserverRepo, err := GitRepo(ctx, repo)
+	// We start out by using a CachedGitRepo which doesn't have a remote URL.
+	// If we need the remote URL, git.ResolveRevision will ask for it via
+	// remoteURLFunc (which is costly as it e.g. consumes code host API
+	// requests).
+	gitserverRepo, err := CachedGitRepo(ctx, repo)
 	maybeLogRepoUpdaterError(repo, err)
 	if err != nil && !isIgnorableRepoUpdaterError(err) {
 		return nil, err
 	}
-	return git.GetCommit(ctx, gitserverRepo, commitID)
+	remoteURLFunc := func() (string, error) {
+		grepo, err := GitRepo(ctx, repo)
+		if err != nil {
+			return "", err
+		}
+		return grepo.URL, nil
+	}
+	return git.GetCommit(ctx, *gitserverRepo, remoteURLFunc, commitID)
 }
 
 func isIgnorableRepoUpdaterError(err error) bool {

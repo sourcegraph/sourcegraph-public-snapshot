@@ -7,10 +7,10 @@ import { RepoLink } from '../../../../shared/src/components/RepoLink'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { pluralize } from '../../../../shared/src/util/strings'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { queryGraphQL } from '../../backend/graphql'
-
-interface Props {}
+import { PatternTypeProps } from '../../search'
 
 const LOADING: 'loading' = 'loading'
 
@@ -22,7 +22,10 @@ interface State {
 /**
  * An explore section that shows a few repositories and a link to all.
  */
-export class RepositoriesExploreSection extends React.PureComponent<Props, State> {
+export class RepositoriesExploreSection extends React.PureComponent<
+    Omit<PatternTypeProps, 'togglePatternType'>,
+    State
+> {
     private static QUERY_REPOSITORIES_ARGS: { first: number } & Pick<GQL.IRepositoriesOnQueryArguments, 'names'> = {
         // Show sample repositories on Sourcegraph.com.
         names: window.context.sourcegraphDotComMode
@@ -64,49 +67,50 @@ export class RepositoriesExploreSection extends React.PureComponent<Props, State
 
         // Only show total count if it is counting *all* repositories (i.e., no filter args are specified).
         const queryingAllRepositories = RepositoriesExploreSection.QUERY_REPOSITORIES_ARGS.names === null
-        const totalCount = queryingAllRepositories &&
+        const totalCount =
+            queryingAllRepositories &&
             this.state.repositoriesOrError !== LOADING &&
             !isErrorLike(this.state.repositoriesOrError) &&
-            typeof this.state.repositoriesOrError.totalCount === 'number' && (
-                <span className="text-muted">{this.state.repositoriesOrError.totalCount}</span>
-            )
+            typeof this.state.repositoriesOrError.totalCount === 'number'
+                ? this.state.repositoriesOrError.totalCount
+                : undefined
 
         return (
-            <div className="repositories-explore-section">
-                <h2>Repositories: {totalCount}</h2>
-                {isErrorLike(repositoriesOrError) ? (
-                    <div className="alert alert-danger">Error: {repositoriesOrError.message}</div>
-                ) : repositoriesOrError.length === 0 ? (
-                    <p>No repositories.</p>
-                ) : (
-                    <>
-                        <div className="list-group list-group-flush">
-                            {repositoriesOrError.map((repo /* or loading */, i) =>
-                                repo === LOADING ? (
-                                    <div key={i} className={`${itemClass} list-group-item`}>
-                                        <h3 className="text-muted mb-0">⋯</h3>&nbsp;
-                                    </div>
-                                ) : (
-                                    <Link
-                                        key={i}
-                                        className={`${itemClass} list-group-item list-group-item-action text-truncate`}
-                                        to={repo.url}
-                                    >
-                                        <h3 className="mb-0 text-truncate repositories-explore-section__name">
-                                            <RepoLink to={null} repoName={repo.name} />
-                                        </h3>
-                                        <span>{repo.description || <>&nbsp;</>}</span>
-                                    </Link>
-                                )
-                            )}
-                        </div>
-                        <div className="text-right mt-3">
-                            <Link to={`/search?${buildSearchURLQuery('repo:')}`}>
-                                View all repositories
-                                <ChevronRightIcon className="icon-inline" />
-                            </Link>
-                        </div>
-                    </>
+            <div className="card">
+                <h3 className="card-header">Repositories</h3>
+                <div className="list-group list-group-flush">
+                    {isErrorLike(repositoriesOrError) ? (
+                        <div className="alert alert-danger">Error: {repositoriesOrError.message}</div>
+                    ) : repositoriesOrError.length === 0 ? (
+                        <p>No repositories.</p>
+                    ) : (
+                        repositoriesOrError.map((repo /* or loading */, i) =>
+                            repo === LOADING ? (
+                                <div key={i} className={`${itemClass} list-group-item`}>
+                                    <h4 className="text-muted mb-0">⋯</h4>&nbsp;
+                                </div>
+                            ) : (
+                                <Link
+                                    key={i}
+                                    className={`${itemClass} list-group-item list-group-item-action text-truncate`}
+                                    to={repo.url}
+                                >
+                                    <h4 className="mb-0 text-truncate">
+                                        <RepoLink to={null} repoName={repo.name} />
+                                    </h4>
+                                    <span>{repo.description || <>&nbsp;</>}</span>
+                                </Link>
+                            )
+                        )
+                    )}
+                </div>
+                {typeof totalCount === 'number' && totalCount > 0 && (
+                    <div className="card-footer">
+                        <Link to={`/search?${buildSearchURLQuery('repo:', this.props.patternType)}`}>
+                            View all {totalCount} {pluralize('repository', totalCount, 'repositories')}
+                            <ChevronRightIcon className="icon-inline" />
+                        </Link>
+                    </div>
                 )}
             </div>
         )

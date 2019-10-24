@@ -5,26 +5,31 @@
   "description": "The Sourcegraph web app",
   "license": "MIT",
   "scripts": {
-    "test": "jest --testPathIgnorePatterns e2e",
-    "test-e2e": "cross-env OVERRIDE_AUTH_SECRET=sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ jest --coverage=false e2e",
-    "test-e2e-sgdev": "env SOURCEGRAPH_BASE_URL=https://sourcegraph.sgdev.org OVERRIDE_AUTH_SECRET=${SGDEV_OVERRIDE_AUTH_SECRET} jest --coverage=false e2e",
+    "test": "jest --testPathIgnorePatterns e2e --testPathIgnorePatterns regression",
+    "test-e2e": "jest --coverage=false --runInBand ./e2e/e2e.test",
+    "test-regression": "jest --coverage=false --runInBand ./regression/",
+    "test-e2e-sgdev": "env SOURCEGRAPH_BASE_URL=https://sourcegraph.sgdev.org OVERRIDE_AUTH_SECRET=${SGDEV_OVERRIDE_AUTH_SECRET} jest --coverage=false --runInBand ./e2e/e2e.test",
     "build": "cross-env NODE_OPTIONS=\"--max_old_space_size=4096\" gulp build",
     "watch": "cross-env NODE_OPTIONS=\"--max_old_space_size=4096\" gulp watch",
     "watch-webpack": "cross-env NODE_OPTIONS=\"--max_old_space_size=4096\" gulp watchWebpack",
     "webpack": "cross-env NODE_OPTIONS=\"--max_old_space_size=4096\" gulp webpack",
     "lint": "yarn run tslint && gulp unusedExports && yarn run stylelint",
     "tslint": "tslint -t stylish -c tslint.json -p tsconfig.json -e 'src/schema/**' 'src/**/*.ts?(x)' 'types/**/*.ts?(x)' './*.ts?(x)'",
-    "stylelint": "stylelint --quiet 'src/**/*.scss'",
-    "stylelint-compact": "yarn run stylelint --custom-formatter ./node_modules/stylelint-formatter-compact/index.js",
+    "eslint": "eslint '**/*.[jt]s?(x)'",
+    "typecheck": "tsc -p .",
+    "stylelint": "stylelint 'src/**/*.scss'",
     "bundlesize": "cross-env GITHUB_TOKEN= bundlesize",
     "browserslist": "browserslist"
   },
   "bundlesize": [
     {
-      "path": "../ui/assets/styles/style.bundle.css"
+      "path": "../ui/assets/styles/app.bundle.css"
     },
     {
       "path": "../ui/assets/scripts/app.bundle.js"
     }
-  ]
+  ],
+  "jest": {
+    "testURL": "http://localhost:3080"
+  }
 }

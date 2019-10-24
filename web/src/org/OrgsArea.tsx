@@ -1,14 +1,18 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
+import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { HeroPage } from '../components/HeroPage'
-import { OrgArea } from './area/OrgArea'
+import { ThemeProps } from '../theme'
+import { OrgArea, OrgAreaRoute } from './area/OrgArea'
+import { OrgAreaHeaderNavItem } from './area/OrgHeader'
 import { NewOrganizationPage } from './new/NewOrganizationPage'
+import { PatternTypeProps } from '../search'
 
-const NotFoundPage = () => (
+const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
         icon={MapSearchIcon}
         title="404: Not Found"
@@ -16,30 +20,31 @@ const NotFoundPage = () => (
     />
 )
 
-interface Props extends RouteComponentProps<any>, PlatformContextProps, SettingsCascadeProps {
+interface Props
+    extends RouteComponentProps<any>,
+        ExtensionsControllerProps,
+        PlatformContextProps,
+        SettingsCascadeProps,
+        ThemeProps,
+        Omit<PatternTypeProps, 'togglePatternType'> {
+    orgAreaRoutes: readonly OrgAreaRoute[]
+    orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
+
     authenticatedUser: GQL.IUser | null
-    isLightTheme: boolean
 }
 
 /**
  * Renders a layout of a sidebar and a content area to display organization-related pages.
  */
-export class OrgsArea extends React.Component<Props> {
-    public render(): JSX.Element | null {
-        return (
-            <div className="orgs-area">
-                <div className="orgs-area__content">
-                    <Switch>
-                        <Route path={`${this.props.match.url}/new`} component={NewOrganizationPage} exact={true} />
-                        <Route path={`${this.props.match.url}/:name`} render={this.renderOrgArea} />
-                        <Route component={NotFoundPage} />
-                    </Switch>
-                </div>
-            </div>
-        )
-    }
-
-    private renderOrgArea = (routeComponentProps: RouteComponentProps<any>) => (
-        <OrgArea {...this.props} {...routeComponentProps} />
-    )
-}
+export const OrgsArea: React.FunctionComponent<Props> = props => (
+    /* eslint-disable react/jsx-no-bind */
+    <Switch>
+        <Route path={`${props.match.url}/new`} component={NewOrganizationPage} exact={true} />
+        <Route
+            path={`${props.match.url}/:name`}
+            render={routeComponentProps => <OrgArea {...props} {...routeComponentProps} />}
+        />
+        <Route component={NotFoundPage} />
+    </Switch>
+    /* eslint-enable react/jsx-no-bind */
+)

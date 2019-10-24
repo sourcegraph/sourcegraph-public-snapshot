@@ -116,7 +116,7 @@ function displayLineCount(editor: sourcegraph.CodeEditor | undefined = activeEdi
     const fileName = editor.document.uri.substring(editor.document.uri.lastIndexOf('/') + 1).split('#').slice(-1)[0]
     const message = `The ${fileName} file has ${lineCount} line${lineCount > 1 ? 's' : ''} of code `
 
-    sourcegraph.app.activeWindow!.showNotification(message)
+    sourcegraph.app.activeWindow!.showNotification(message, sourcegraph.NotificationType.Info)
 }
 
 /**

@@ -1,35 +1,39 @@
 import * as jsonc from '@sqs/jsonc-parser'
-import * as monaco from 'monaco-editor'
+import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, distinctUntilKeyChanged, map, startWith } from 'rxjs/operators'
 import jsonSchemaMetaSchema from '../../../schema/json-schema-draft-07.schema.json'
 import settingsSchema from '../../../schema/settings.schema.json'
 import { BuiltinTheme, MonacoEditor } from '../components/MonacoEditor'
+import { ThemeProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 
 const isLightThemeToMonacoTheme = (isLightTheme: boolean): BuiltinTheme => (isLightTheme ? 'vs' : 'sourcegraph-dark')
 
-export interface Props {
+/**
+ * Minimal shape of a JSON Schema. These values are treated as opaque, so more specific types are
+ * not needed.
+ */
+interface JSONSchema {
+    $id: string
+}
+
+export interface Props extends ThemeProps {
     id?: string
     value: string | undefined
     onChange?: (newValue: string) => void
     readOnly?: boolean | undefined
     height?: number
 
-    /**
-     * The id of the JSON schema for the document.
-     */
-    jsonSchemaId: string
+    language?: string
 
     /**
-     * Extra schemas that are transitively referenced by jsonSchemaId.
+     * JSON Schema of the document.
      */
-    extraSchemas?: { $id: string }[]
+    jsonSchema?: JSONSchema
 
     monacoRef?: (monacoValue: typeof monaco | null) => void
-    isLightTheme: boolean
-
     /**
      * Called when the user presses the key binding for "save" (Ctrl+S/Cmd+S).
      */
@@ -82,16 +86,16 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
         )
 
         this.subscriptions.add(
-            componentUpdates.pipe(distinctUntilKeyChanged('jsonSchemaId')).subscribe(props => {
+            componentUpdates.pipe(distinctUntilKeyChanged('jsonSchema')).subscribe(props => {
                 if (this.monaco) {
-                    setDiagnosticsOptions(this.monaco, props)
+                    setDiagnosticsOptions(this.monaco, props.jsonSchema)
                 }
             })
         )
     }
 
-    public componentWillReceiveProps(newProps: Props): void {
-        this.componentUpdates.next(newProps)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -107,7 +111,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
         return (
             <MonacoEditor
                 id={this.props.id}
-                language="json"
+                language={this.props.language || 'json'}
                 height={this.props.height || 400}
                 theme={isLightThemeToMonacoTheme(this.props.isLightTheme)}
                 value={this.props.value}
@@ -169,8 +173,18 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
             rules: [],
         })
 
-        this.disposables.push(monaco.editor.onDidCreateEditor(editor => this.onDidCreateEditor(editor)))
-        this.disposables.push(monaco.editor.onDidCreateModel(model => this.onDidCreateModel(model)))
+        // Only listen to 1 event each to avoid receiving events from other Monaco editors on the
+        // same page (if there are multiple).
+        const editorDisposable = monaco.editor.onDidCreateEditor(editor => {
+            this.onDidCreateEditor(editor)
+            editorDisposable.dispose()
+        })
+        this.disposables.push(editorDisposable)
+        const modelDisposable = monaco.editor.onDidCreateModel(model => {
+            this.onDidCreateModel(model)
+            modelDisposable.dispose()
+        })
+        this.disposables.push(modelDisposable)
     }
 
     private onDidCreateEditor(editor: monaco.editor.ICodeEditor): void {
@@ -206,7 +220,8 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
     public static isStandaloneCodeEditor(
         editor: monaco.editor.ICodeEditor
     ): editor is monaco.editor.IStandaloneCodeEditor {
-        return editor.getEditorType() === monaco.editor.EditorType.ICodeEditor
+        const editorAny = editor as any
+        return editor.getEditorType() === monaco.editor.EditorType.ICodeEditor && editorAny.addAction
     }
 
     public static addEditorAction(
@@ -245,6 +260,8 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                     }
                 }
                 if (!selection) {
+                    // TODO: This is buggy. See
+                    // https://github.com/sourcegraph/sourcegraph/issues/2756.
                     selection = monaco.Selection.fromPositions(
                         monacoEdits[0].range.getStartPosition(),
                         monacoEdits[monacoEdits.length - 1].range.getEndPosition()
@@ -257,34 +274,27 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
     }
 }
 
-function setDiagnosticsOptions(m: typeof monaco, props: Props): void {
-    const extraSchemas = (props.extraSchemas || []).map(schema => ({
-        uri: schema.$id,
-        schema,
-    }))
-
+function setDiagnosticsOptions(m: typeof monaco, jsonSchema: any): void {
     m.languages.json.jsonDefaults.setDiagnosticsOptions({
         validate: true,
         allowComments: true,
         schemas: [
             {
                 uri: 'root#', // doesn't matter as long as it doesn't collide
-                schema: {
-                    $ref: props.jsonSchemaId,
-                },
+                schema: jsonSchema,
                 fileMatch: ['*'],
             },
 
             // Include these schemas because they are referenced by other schemas.
             {
                 uri: 'http://json-schema.org/draft-07/schema',
-                schema: jsonSchemaMetaSchema,
+                schema: jsonSchemaMetaSchema as JSONSchema,
             },
             {
                 uri: 'settings.schema.json#',
                 schema: settingsSchema,
             },
-        ].concat(extraSchemas),
+        ],
     })
 }
 

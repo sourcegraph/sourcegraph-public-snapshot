@@ -1,61 +1,60 @@
 package gitlaboauth
 
 import (
-	"fmt"
 	"net/url"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 const PkgName = "gitlaboauth"
 
 func init() {
+	conf.ContributeValidator(func(cfg conf.Unified) conf.Problems {
+		_, problems := parseConfig(&cfg)
+		return problems
+	})
 	go func() {
 		conf.Watch(func() {
 			newProviders, _ := parseConfig(conf.Get())
 			if len(newProviders) == 0 {
-				auth.UpdateProviders(PkgName, nil)
+				providers.Update(PkgName, nil)
 			} else {
-				newProvidersList := make([]auth.Provider, 0, len(newProviders))
+				newProvidersList := make([]providers.Provider, 0, len(newProviders))
 				for _, p := range newProviders {
 					newProvidersList = append(newProvidersList, p)
 				}
-				auth.UpdateProviders(PkgName, newProvidersList)
+				providers.Update(PkgName, newProvidersList)
 			}
-		})
-		conf.ContributeValidator(func(cfg conf.Unified) (problems []string) {
-			_, problems = parseConfig(&cfg)
-			return problems
 		})
 	}()
 }
 
-func parseConfig(cfg *conf.Unified) (providers map[schema.GitLabAuthProvider]auth.Provider, problems []string) {
-	providers = make(map[schema.GitLabAuthProvider]auth.Provider)
+func parseConfig(cfg *conf.Unified) (ps map[schema.GitLabAuthProvider]providers.Provider, problems conf.Problems) {
+	ps = make(map[schema.GitLabAuthProvider]providers.Provider)
 	for _, pr := range cfg.Critical.AuthProviders {
 		if pr.Gitlab == nil {
 			continue
 		}
 
 		if cfg.Critical.ExternalURL == "" {
-			problems = append(problems, "`externalURL` was empty and it is needed to determine the OAuth callback URL.")
+			problems = append(problems, conf.NewCriticalProblem("`externalURL` was empty and it is needed to determine the OAuth callback URL."))
 			continue
 		}
 		externalURL, err := url.Parse(cfg.Critical.ExternalURL)
 		if err != nil {
-			problems = append(problems, fmt.Sprintf("Could not parse `externalURL`, which is needed to determine the OAuth callback URL."))
+			problems = append(problems, conf.NewCriticalProblem("Could not parse `externalURL`, which is needed to determine the OAuth callback URL."))
 			continue
 		}
 		callbackURL := *externalURL
 		callbackURL.Path = "/.auth/gitlab/callback"
 
-		provider, providerProblems := parseProvider(callbackURL.String(), pr.Gitlab, pr)
-		problems = append(problems, providerProblems...)
+		provider, providerMessages := parseProvider(callbackURL.String(), pr.Gitlab, pr)
+		problems = append(problems, conf.NewCriticalProblems(providerMessages...)...)
 		if provider != nil {
-			providers[*pr.Gitlab] = provider
+			ps[*pr.Gitlab] = provider
 		}
 	}
-	return providers, problems
+	return ps, problems
 }

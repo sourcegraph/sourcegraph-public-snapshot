@@ -20,12 +20,12 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { mutateGraphQL, queryGraphQL } from '../../../backend/graphql'
 import { PageTitle } from '../../../components/PageTitle'
+import { ThemeProps } from '../../../theme'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { ProductSubscriptionForm, ProductSubscriptionFormData } from './ProductSubscriptionForm'
 
-interface Props extends RouteComponentProps<{ subscriptionUUID: string }> {
+interface Props extends RouteComponentProps<{ subscriptionUUID: string }>, ThemeProps {
     user: GQL.IUser
-    isLightTheme: boolean
 }
 
 const LOADING: 'loading' = 'loading'
@@ -130,40 +130,32 @@ export class UserSubscriptionsEditProductSubscriptionPage extends React.Componen
                     </div>
                 ) : (
                     <>
-                        <Link
-                            to={this.state.productSubscriptionOrError.url}
-                            className="btn btn-outline-link btn-sm mb-3"
-                        >
+                        <Link to={this.state.productSubscriptionOrError.url} className="btn btn-link btn-sm mb-3">
                             <ArrowLeftIcon className="icon-inline" /> Subscription
                         </Link>
-                        <div className="row">
-                            <div className="col-md-9">
-                                <h2>Upgrade or change subscription {this.state.productSubscriptionOrError.name}</h2>
-                                <ProductSubscriptionForm
-                                    accountID={this.props.user.id}
-                                    subscriptionID={this.state.productSubscriptionOrError.id}
-                                    isLightTheme={this.props.isLightTheme}
-                                    onSubmit={this.onSubmit}
-                                    submissionState={this.state.updateOrError}
-                                    initialValue={
-                                        this.state.productSubscriptionOrError.invoiceItem
-                                            ? {
-                                                  billingPlanID: this.state.productSubscriptionOrError.invoiceItem.plan
-                                                      .billingPlanID,
-                                                  userCount: this.state.productSubscriptionOrError.invoiceItem
-                                                      .userCount,
-                                              }
-                                            : undefined
-                                    }
-                                    primaryButtonText="Upgrade subscription"
-                                    afterPrimaryButton={
-                                        <small className="form-text text-muted">
-                                            An upgraded license key will be available immediately after payment.
-                                        </small>
-                                    }
-                                />
-                            </div>
-                        </div>
+                        <h2>Upgrade or change subscription {this.state.productSubscriptionOrError.name}</h2>
+                        <ProductSubscriptionForm
+                            accountID={this.props.user.id}
+                            subscriptionID={this.state.productSubscriptionOrError.id}
+                            isLightTheme={this.props.isLightTheme}
+                            onSubmit={this.onSubmit}
+                            submissionState={this.state.updateOrError}
+                            initialValue={
+                                this.state.productSubscriptionOrError.invoiceItem
+                                    ? {
+                                          billingPlanID: this.state.productSubscriptionOrError.invoiceItem.plan
+                                              .billingPlanID,
+                                          userCount: this.state.productSubscriptionOrError.invoiceItem.userCount,
+                                      }
+                                    : undefined
+                            }
+                            primaryButtonText="Upgrade subscription"
+                            afterPrimaryButton={
+                                <small className="form-text text-muted">
+                                    An upgraded license key will be available immediately after payment.
+                                </small>
+                            }
+                        />
                     </>
                 )}
             </div>

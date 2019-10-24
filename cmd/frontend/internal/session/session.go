@@ -12,11 +12,11 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/redispool"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -34,17 +34,17 @@ const defaultExpiryPeriod = 90 * 24 * time.Hour
 const cookieName = "sgs"
 
 func init() {
-	conf.ContributeValidator(func(c conf.Unified) (problems []string) {
+	conf.ContributeValidator(func(c conf.Unified) (problems conf.Problems) {
 		if c.Critical.AuthSessionExpiry == "" {
 			return nil
 		}
 
 		d, err := time.ParseDuration(c.Critical.AuthSessionExpiry)
 		if err != nil {
-			return []string{"auth.sessionExpiry does not conform to the Go time.Duration format (https://golang.org/pkg/time/#ParseDuration). The default of 90 days will be used."}
+			return conf.NewCriticalProblems("auth.sessionExpiry does not conform to the Go time.Duration format (https://golang.org/pkg/time/#ParseDuration). The default of 90 days will be used.")
 		}
 		if d == 0 {
-			return []string{"auth.sessionExpiry should be greater than zero. The default of 90 days will be used."}
+			return conf.NewCriticalProblems("auth.sessionExpiry should be greater than zero. The default of 90 days will be used.")
 		}
 		return nil
 	})
@@ -63,16 +63,51 @@ func SetSessionStore(s sessions.Store) {
 	sessionStore = s
 }
 
+// sessionsStore wraps another sessions.Store to dynamically set the value
+// of a session.Options.Secure field to what is returned by the secure
+// closure at invocation time.
+type sessionsStore struct {
+	sessions.Store
+	secure func() bool
+}
+
+// Get returns a cached session, setting the secure cookie option dynamically.
+func (st *sessionsStore) Get(r *http.Request, name string) (s *sessions.Session, err error) {
+	defer st.setSecureOption(s)
+	return st.Store.Get(r, name)
+}
+
+// New creates and returns a new session with the secure cookie setting option set
+// dynamically.
+func (st *sessionsStore) New(r *http.Request, name string) (s *sessions.Session, err error) {
+	defer st.setSecureOption(s)
+	return st.Store.New(r, name)
+}
+
+func (st *sessionsStore) setSecureOption(s *sessions.Session) {
+	if s != nil {
+		if s.Options == nil {
+			s.Options = new(sessions.Options)
+		}
+		s.Options.Secure = st.secure()
+	}
+}
+
 // NewRedisStore creates a new session store backed by Redis.
-func NewRedisStore(secureCookie bool) sessions.Store {
+func NewRedisStore(secureCookie func() bool) sessions.Store {
 	rstore, err := redistore.NewRediStoreWithPool(redispool.Store, []byte(sessionCookieKey))
 	if err != nil {
 		waitForRedis(rstore)
 	}
+
 	rstore.Options.Path = "/"
+	rstore.Options.Secure = secureCookie()
 	rstore.Options.HttpOnly = true
-	rstore.Options.Secure = secureCookie
-	return rstore
+
+	return &sessionsStore{
+		Store:  rstore,
+		secure: secureCookie,
+	}
 }
 
 // Ping attempts to contact Redis and returns a non-nil error upon failure. It is intended to be

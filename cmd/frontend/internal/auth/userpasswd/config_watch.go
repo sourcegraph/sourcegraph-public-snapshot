@@ -1,8 +1,8 @@
 package userpasswd
 
 import (
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
 // Watch for configuration changes related to the builtin auth provider.
@@ -11,10 +11,10 @@ func init() {
 		conf.Watch(func() {
 			newPC, _ := getProviderConfig()
 			if newPC == nil {
-				auth.UpdateProviders("builtin", nil)
+				providers.Update("builtin", nil)
 				return
 			}
-			auth.UpdateProviders("builtin", []auth.Provider{&provider{c: newPC}})
+			providers.Update("builtin", []providers.Provider{&provider{c: newPC}})
 		})
 	}()
 }

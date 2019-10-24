@@ -5,24 +5,26 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/inventory"
-	"github.com/sourcegraph/sourcegraph/pkg/rcache"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // ErrRepoSeeOther indicates that the repo does not exist on this server but might exist on an external Sourcegraph
@@ -65,12 +67,12 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 	repo, err := db.Repos.GetByName(ctx, name)
 	if err != nil && envvar.SourcegraphDotComMode() {
 		// Automatically add repositories on Sourcegraph.com.
-		if err := s.Add(ctx, name); err != nil {
+		if err := s.AddGitHubDotComRepository(ctx, name); err != nil {
 			return nil, err
 		}
 		return db.Repos.GetByName(ctx, name)
 	} else if err != nil {
-		if !conf.GetTODO().DisablePublicRepoRedirects && strings.HasPrefix(strings.ToLower(string(name)), "github.com/") {
+		if !conf.Get().DisablePublicRepoRedirects && strings.HasPrefix(strings.ToLower(string(name)), "github.com/") {
 			return nil, ErrRepoSeeOther{RedirectURL: (&url.URL{
 				Scheme:   "https",
 				Host:     "sourcegraph.com",
@@ -84,21 +86,21 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 	return repo, nil
 }
 
-// Add adds the repository with the given name. The name is mapped to a repository by consulting the
+// AddGitHubDotComRepository adds the repository with the given name. The name is mapped to a repository by consulting the
 // repo-updater, which contains information about all configured code hosts and the names that they
 // handle.
-func (s *repos) Add(ctx context.Context, name api.RepoName) (err error) {
-	if Mocks.Repos.Add != nil {
-		return Mocks.Repos.Add(name)
+func (s *repos) AddGitHubDotComRepository(ctx context.Context, name api.RepoName) (err error) {
+	if Mocks.Repos.AddGitHubDotComRepository != nil {
+		return Mocks.Repos.AddGitHubDotComRepository(name)
 	}
 
-	ctx, done := trace(ctx, "Repos", "Add", name, &err)
+	ctx, done := trace(ctx, "Repos", "AddGitHubDotComRepository", name, &err)
 	defer done()
 
 	// Avoid hitting the repoupdater (and incurring a hit against our GitHub/etc. API rate
 	// limit) for repositories that don't exist or private repositories that people attempt to
 	// access.
-	gitserverRepo, err := quickGitserverRepo(ctx, name)
+	gitserverRepo, err := quickGitserverRepo(ctx, name, "github.com")
 	if err != nil {
 		return err
 	}
@@ -152,7 +154,24 @@ func (s *repos) List(ctx context.Context, opt db.ReposListOptions) (repos []*typ
 	return db.Repos.List(ctx, opt)
 }
 
+// ListDefault calls db.DefaultRepos.List, with tracing.
+func (s *repos) ListDefault(ctx context.Context) (repos []*types.Repo, err error) {
+	ctx, done := trace(ctx, "Repos", "ListDefault", nil, &err)
+	defer func() {
+		if err == nil {
+			span := opentracing.SpanFromContext(ctx)
+			span.LogFields(otlog.Int("result.len", len(repos)))
+		}
+		done()
+	}()
+	return db.DefaultRepos.List(ctx)
+}
+
 var inventoryCache = rcache.New("inv")
+
+// Feature flag for enhanced (but much slower) language detection that uses file contents, not just
+// filenames.
+var useEnhancedLanguageDetection, _ = strconv.ParseBool(os.Getenv("USE_ENHANCED_LANGUAGE_DETECTION"))
 
 func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *inventory.Inventory, err error) {
 	if Mocks.Repos.GetInventory != nil {
@@ -170,48 +189,63 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 		return nil, errors.Errorf("non-absolute CommitID for Repos.GetInventory: %v", commitID)
 	}
 
-	// Try cache first
-	cacheKey := fmt.Sprintf("%s:%s", repo.Name, commitID)
-	if b, ok := inventoryCache.Get(cacheKey); ok {
-		var inv inventory.Inventory
-		if err := json.Unmarshal(b, &inv); err == nil {
-			return &inv, nil
-		}
-		log15.Warn("Repos.GetInventory failed to unmarshal cached JSON inventory", "repo", repo.Name, "commitID", commitID, "err", err)
-	}
-
-	// Not found in the cache, so compute it.
-	inv, err := s.GetInventoryUncached(ctx, repo, commitID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Store inventory in cache.
-	b, err := json.Marshal(inv)
-	if err != nil {
-		return nil, err
-	}
-	inventoryCache.Set(cacheKey, b)
-
-	return inv, nil
-}
-
-func (s *repos) GetInventoryUncached(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *inventory.Inventory, err error) {
-	if Mocks.Repos.GetInventoryUncached != nil {
-		return Mocks.Repos.GetInventoryUncached(ctx, repo, commitID)
-	}
-
-	ctx, done := trace(ctx, "Repos", "GetInventoryUncached", map[string]interface{}{"repo": repo.Name, "commitID": commitID}, &err)
-	defer done()
-
 	cachedRepo, err := CachedGitRepo(ctx, repo)
 	if err != nil {
 		return nil, err
 	}
-
-	files, err := git.ReadDir(ctx, *cachedRepo, commitID, "", true)
+	root, err := git.Stat(ctx, *cachedRepo, commitID, "")
 	if err != nil {
 		return nil, err
 	}
-	return inventory.Get(ctx, files)
+
+	cacheKey := func(tree os.FileInfo) string {
+		// Cache based on the OID of the Git tree. Compared to per-blob caching, this creates many
+		// fewer cache entries, which means fewer stores, fewer lookups, and less cache storage
+		// overhead. Compared to per-commit caching, this yields a higher cache hit rate because
+		// most trees are unchanged across commits.
+		return tree.Sys().(git.ObjectInfo).OID().String()
+	}
+	invCtx := inventory.Context{
+		ReadTree: func(ctx context.Context, path string) ([]os.FileInfo, error) {
+			// TODO: As a perf optimization, we could read multiple levels of the Git tree at once
+			// to avoid sequential tree traversal calls.
+			return git.ReadDir(ctx, *cachedRepo, commitID, path, false)
+		},
+		ReadFile: func(ctx context.Context, path string, minBytes int64) ([]byte, error) {
+			return git.ReadFile(ctx, *cachedRepo, commitID, path, minBytes)
+		},
+		CacheGet: func(tree os.FileInfo) (inventory.Inventory, bool) {
+			if b, ok := inventoryCache.Get(cacheKey(tree)); ok {
+				var inv inventory.Inventory
+				if err := json.Unmarshal(b, &inv); err != nil {
+					log15.Warn("Repos.GetInventory failed to unmarshal cached JSON inventory", "repo", repo.Name, "commitID", commitID, "tree", tree.Name(), "err", err)
+					return inventory.Inventory{}, false
+				}
+				return inv, true
+			}
+			return inventory.Inventory{}, false
+		},
+		CacheSet: func(tree os.FileInfo, inv inventory.Inventory) {
+			b, err := json.Marshal(&inv)
+			if err != nil {
+				log15.Warn("Repos.GetInventory failed to marshal JSON inventory for cache", "repo", repo.Name, "commitID", commitID, "tree", tree.Name(), "err", err)
+				return
+			}
+			inventoryCache.Set(cacheKey(tree), b)
+		},
+	}
+
+	if !useEnhancedLanguageDetection {
+		// If USE_ENHANCED_LANGUAGE_DETECTION is disabled, do not read file contents to determine
+		// the language.
+		invCtx.ReadFile = func(ctx context.Context, path string, minBytes int64) ([]byte, error) {
+			return nil, nil
+		}
+	}
+
+	inv, err := invCtx.Tree(ctx, root)
+	if err != nil {
+		return nil, err
+	}
+	return &inv, nil
 }

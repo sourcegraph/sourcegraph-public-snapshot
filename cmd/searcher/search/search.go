@@ -24,6 +24,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/store"
 
 	"github.com/pkg/errors"
 
@@ -36,7 +37,7 @@ import (
 
 // Service is the search service. It is an http.Handler.
 type Service struct {
-	Store *Store
+	Store *store.Store
 	Log   log15.Logger
 }
 
@@ -185,11 +186,17 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 	}
 	prepareCtx, cancel := context.WithTimeout(ctx, fetchTimeout)
 	defer cancel()
-	path, err := s.Store.prepareZip(prepareCtx, p.GitserverRepo(), p.Commit)
-	if err != nil {
-		return nil, false, false, err
+
+	getZf := func() (string, *store.ZipFile, error) {
+		path, err := s.Store.PrepareZip(prepareCtx, p.GitserverRepo(), p.Commit)
+		if err != nil {
+			return "", nil, err
+		}
+		zf, err := s.Store.ZipCache.Get(path)
+		return path, zf, err
 	}
-	zf, err := s.Store.zipCache.get(path)
+
+	_, zf, err := store.GetZipFileWithRetry(getZf)
 	if err != nil {
 		return nil, false, false, err
 	}
@@ -216,7 +223,7 @@ func validateParams(p *protocol.Request) error {
 	if len(p.Commit) != 40 {
 		return errors.Errorf("Commit must be resolved (Commit=%q)", p.Commit)
 	}
-	if p.Pattern == "" && p.ExcludePattern == "" && len(p.IncludePatterns) == 0 && p.IncludePattern == "" {
+	if p.Pattern == "" && p.ExcludePattern == "" && len(p.IncludePatterns) == 0 {
 		return errors.New("At least one of pattern and include/exclude pattners must be non-empty")
 	}
 	return nil
@@ -255,6 +262,8 @@ var (
 
 func init() {
 	prometheus.MustRegister(running)
+	prometheus.MustRegister(archiveSize)
+	prometheus.MustRegister(archiveFiles)
 	prometheus.MustRegister(requestTotal)
 }
 

@@ -7,7 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 func TestGuessRepoNameFromRemoteURL(t *testing.T) {
@@ -56,10 +56,9 @@ func TestEditorRev(t *testing.T) {
 		return "", nil
 	}
 	backend.Mocks.Repos.GetByName = func(v0 context.Context, name api.RepoName) (*types.Repo, error) {
-		return &types.Repo{
-			ID:   api.RepoID(1),
-			Name: name,
-		}, nil
+		return &types.Repo{ID: api.RepoID(1), Name: name},
+
+			nil
 	}
 	ctx := context.Background()
 

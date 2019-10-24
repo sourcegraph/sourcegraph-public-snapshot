@@ -6,7 +6,8 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 var Mocks MockServices
@@ -19,6 +20,7 @@ type MockServices struct {
 func testContext() context.Context {
 	db.Mocks = db.MockStores{}
 	Mocks = MockServices{}
+	git.ResetMocks()
 
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})

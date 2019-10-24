@@ -3,13 +3,15 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/url"
+	"sort"
 	"strings"
 	"sync"
+	"time"
 
+	"github.com/google/zoekt"
 	"github.com/neelance/parallel"
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
@@ -18,13 +20,28 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/gituri"
-	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gituri"
+	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"gopkg.in/inconshreveable/log15.v2"
 )
+
+// searchSymbolResult is a result from symbol search.
+type searchSymbolResult struct {
+	symbol  protocol.Symbol
+	baseURI *gituri.URI
+	lang    string
+	commit  *GitCommitResolver // TODO: change to utility type we create to remove git resolvers from search.
+}
+
+func (s *searchSymbolResult) uri() *gituri.URI {
+	return s.baseURI.WithFilePath(s.symbol.Path)
+}
 
 var mockSearchSymbols func(ctx context.Context, args *search.Args, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error)
 
@@ -50,12 +67,116 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 	ctx, cancelAll := context.WithCancel(ctx)
 	defer cancelAll()
 
-	common = &searchResultsCommon{}
+	common = &searchResultsCommon{partial: make(map[api.RepoName]struct{})}
 	var (
-		run = parallel.NewRun(20)
-		mu  sync.Mutex
+		searcherRepos = args.Repos
+		zoektRepos    []*search.RepositoryRevisions
 	)
-	for _, repoRevs := range args.Repos {
+
+	if args.Zoekt.Enabled() {
+		filter := func(repo *zoekt.Repository) bool {
+			return repo.HasSymbols
+		}
+		zoektRepos, searcherRepos, err = zoektIndexedRepos(ctx, args.Zoekt, args.Repos, filter)
+		if err != nil {
+			// Don't hard fail if index is not available yet.
+			tr.LogFields(otlog.String("indexErr", err.Error()))
+			if ctx.Err() == nil {
+				log15.Warn("zoektIndexedRepos failed", "error", err)
+			}
+			common.indexUnavailable = true
+			err = nil
+		}
+	}
+
+	common.repos = make([]*types.Repo, len(args.Repos))
+	for i, repo := range args.Repos {
+		common.repos[i] = repo.Repo
+	}
+
+	index, _ := args.Query.StringValues(query.FieldIndex)
+	if len(index) > 0 {
+		index := index[len(index)-1]
+		switch parseYesNoOnly(index) {
+		case Yes, True:
+			// default
+			if args.Zoekt.Enabled() {
+				tr.LazyPrintf("%d indexed repos, %d unindexed repos", len(zoektRepos), len(searcherRepos))
+			}
+		case Only:
+			if !args.Zoekt.Enabled() {
+				return nil, common, fmt.Errorf("invalid index:%q (indexed search is not enabled)", index)
+			}
+			common.missing = make([]*types.Repo, len(searcherRepos))
+			for i, r := range searcherRepos {
+				common.missing[i] = r.Repo
+			}
+			tr.LazyPrintf("index:only, ignoring %d unindexed repos", len(searcherRepos))
+			searcherRepos = nil
+		case No, False:
+			tr.LazyPrintf("index:no, bypassing zoekt (using searcher) for %d indexed repos", len(zoektRepos))
+			searcherRepos = append(searcherRepos, zoektRepos...)
+			zoektRepos = nil
+		default:
+			return nil, common, fmt.Errorf("invalid index:%q (valid values are: yes, only, no)", index)
+		}
+	}
+
+	var (
+		run = parallel.NewRun(conf.SearchSymbolsParallelism())
+		mu  sync.Mutex
+
+		unflattened       [][]*fileMatchResolver
+		flattenedSize     int
+		overLimitCanceled bool
+	)
+
+	addMatches := func(matches []*fileMatchResolver) {
+		if len(matches) > 0 {
+			common.resultCount += int32(len(matches))
+			sort.Slice(matches, func(i, j int) bool {
+				a, b := matches[i].uri, matches[j].uri
+				return a > b
+			})
+			unflattened = append(unflattened, matches)
+			flattenedSize += len(matches)
+
+			if flattenedSize > int(args.Pattern.FileMatchLimit) {
+				tr.LazyPrintf("cancel due to result size: %d > %d", flattenedSize, args.Pattern.FileMatchLimit)
+				overLimitCanceled = true
+				common.limitHit = true
+				cancelAll()
+			}
+		}
+	}
+
+	run.Acquire()
+	goroutine.Go(func() {
+		defer run.Release()
+		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, args, zoektRepos, true, time.Since)
+		mu.Lock()
+		defer mu.Unlock()
+		if ctx.Err() == nil {
+			for _, repo := range zoektRepos {
+				common.searched = append(common.searched, repo.Repo)
+				common.indexed = append(common.indexed, repo.Repo)
+			}
+			for repo := range reposLimitHit {
+				common.partial[api.RepoName(repo)] = struct{}{}
+			}
+		}
+		if limitHit {
+			common.limitHit = true
+		}
+		tr.LogFields(otlog.Object("searchErr", searchErr), otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
+		if searchErr != nil && err == nil && !overLimitCanceled {
+			err = searchErr
+			tr.LazyPrintf("cancel indexed symbol search due to error: %v", err)
+		}
+		addMatches(matches)
+	})
+
+	for _, repoRevs := range searcherRepos {
 		repoRevs := repoRevs
 		if ctx.Err() != nil {
 			break
@@ -72,8 +193,8 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 			}
 			mu.Lock()
 			defer mu.Unlock()
-			limitHit := len(res) > limit
-			repoErr = handleRepoSearchResult(common, *repoRevs, limitHit, false, repoErr)
+			limitHit := symbolCount(res) > limit
+			repoErr = handleRepoSearchResult(common, repoRevs, limitHit, false, repoErr)
 			if repoErr != nil {
 				if ctx.Err() == nil || errors.Cause(repoErr) != ctx.Err() {
 					// Only record error if it's not directly caused by a context error.
@@ -83,20 +204,44 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 				common.searched = append(common.searched, repoRevs.Repo)
 			}
 			if repoSymbols != nil {
-				res = append(res, repoSymbols...)
-				if limitHit {
-					cancelAll()
-				}
+				addMatches(repoSymbols)
 			}
 		})
 	}
 	err = run.Wait()
+	flattened := flattenFileMatches(unflattened, int(args.Pattern.FileMatchLimit))
+	res2 := limitSymbolResults(flattened, limit)
+	common.limitHit = symbolCount(res2) < symbolCount(res)
+	return res2, common, err
+}
 
-	if len(res) > limit {
-		common.limitHit = true
-		res = res[:limit]
+// limitSymbolResults returns a new version of res containing no more than limit symbol matches.
+func limitSymbolResults(res []*fileMatchResolver, limit int) []*fileMatchResolver {
+	res2 := make([]*fileMatchResolver, 0, len(res))
+	nsym := 0
+	for _, r := range res {
+		r2 := *r
+		if nsym+len(r.symbols) > limit {
+			r2.symbols = r2.symbols[:limit-nsym]
+		}
+		if len(r2.symbols) > 0 {
+			res2 = append(res2, &r2)
+		}
+		nsym += len(r2.symbols)
+		if nsym >= limit {
+			return res2
+		}
 	}
-	return res, common, err
+	return res2
+}
+
+// symbolCount returns the total number of symbols in a slice of fileMatchResolvers.
+func symbolCount(fmrs []*fileMatchResolver) int {
+	nsym := 0
+	for _, fmr := range fmrs {
+		nsym += len(fmr.symbols)
+	}
+	return nsym
 }
 
 func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.PatternInfo, query *query.Query, limit int) (res []*fileMatchResolver, err error) {
@@ -134,30 +279,36 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 		IsRegExp:        patternInfo.IsRegExp,
 		IncludePatterns: patternInfo.IncludePatterns,
 		ExcludePattern:  patternInfo.ExcludePattern,
-		First:           limit,
+		// Ask for limit + 1 so we can detect whether there are more results than the limit.
+		First: limit + 1,
 	})
 	fileMatchesByURI := make(map[string]*fileMatchResolver)
 	fileMatches := make([]*fileMatchResolver, 0)
 	for _, symbol := range symbols {
-		commit := &gitCommitResolver{
-			repo:     &repositoryResolver{repo: repoRevs.Repo},
-			oid:      gitObjectID(commitID),
+		commit := &GitCommitResolver{
+			repo:     &RepositoryResolver{repo: repoRevs.Repo},
+			oid:      GitObjectID(commitID),
 			inputRev: &inputRev,
 			// NOTE: Not all fields are set, for performance.
 		}
-		if inputRev != "" {
-			commit.inputRev = &inputRev
+		symbolRes := &searchSymbolResult{
+			symbol:  symbol,
+			baseURI: baseURI,
+			lang:    strings.ToLower(symbol.Language),
+			commit:  commit,
 		}
-		symbolRes := toSymbolResolver(symbolToLSPSymbolInformation(symbol, baseURI), strings.ToLower(symbol.Language), commit)
 		uri := makeFileMatchURIFromSymbol(symbolRes, inputRev)
 		if fileMatch, ok := fileMatchesByURI[uri]; ok {
 			fileMatch.symbols = append(fileMatch.symbols, symbolRes)
 		} else {
 			fileMatch := &fileMatchResolver{
-				symbols:  []*symbolResolver{symbolRes},
-				uri:      uri,
-				repo:     symbolRes.location.resource.commit.repo.repo,
-				commitID: api.CommitID(symbolRes.location.resource.commit.oid),
+				JPath:   symbolRes.symbol.Path,
+				symbols: []*searchSymbolResult{symbolRes},
+				uri:     uri,
+				repo:    symbolRes.commit.repo.repo,
+				// Don't get commit from GitCommitResolver.OID() because we don't want to
+				// slow search results down when they are coming from zoekt.
+				commitID: api.CommitID(symbolRes.commit.oid),
 			}
 			fileMatchesByURI[uri] = fileMatch
 			fileMatches = append(fileMatches, fileMatch)
@@ -166,31 +317,22 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 	return fileMatches, err
 }
 
-// makeFileMatchURIFromSymbol makes a git://repo?rev#path URI from a symbolResolver to use in a fileMatchResolver
-func makeFileMatchURIFromSymbol(symbolResolver *symbolResolver, inputRev string) string {
-	uri := "git:/" + string(symbolResolver.location.resource.commit.repo.URL())
+// makeFileMatchURIFromSymbol makes a git://repo?rev#path URI from a symbol
+// search result to use in a fileMatchResolver
+func makeFileMatchURIFromSymbol(symbolResult *searchSymbolResult, inputRev string) string {
+	uri := "git:/" + string(symbolResult.commit.repo.URL())
 	if inputRev != "" {
 		uri += "?" + inputRev
 	}
-	uri += "#" + symbolResolver.location.resource.path
+	uri += "#" + symbolResult.uri().Fragment
 	return uri
 }
 
-// symbolToLSPSymbolInformation converts a symbols service Symbol struct to an LSP SymbolInformation
-// baseURI is the git://repo?rev base URI for the symbol that is extended with the file path
-func symbolToLSPSymbolInformation(s protocol.Symbol, baseURI *gituri.URI) lsp.SymbolInformation {
+func symbolRange(s protocol.Symbol) lsp.Range {
 	ch := ctagsSymbolCharacter(s)
-	return lsp.SymbolInformation{
-		Name:          s.Name + s.Signature,
-		ContainerName: s.Parent,
-		Kind:          ctagsKindToLSPSymbolKind(s.Kind),
-		Location: lsp.Location{
-			URI: lsp.DocumentURI(baseURI.WithFilePath(s.Path).String()),
-			Range: lsp.Range{
-				Start: lsp.Position{Line: s.Line - 1, Character: ch},
-				End:   lsp.Position{Line: s.Line - 1, Character: ch + len(s.Name)},
-			},
-		},
+	return lsp.Range{
+		Start: lsp.Position{Line: s.Line - 1, Character: ch},
+		End:   lsp.Position{Line: s.Line - 1, Character: ch + len(s.Name)},
 	}
 }
 
@@ -210,22 +352,22 @@ func ctagsSymbolCharacter(s protocol.Symbol) int {
 
 func ctagsKindToLSPSymbolKind(kind string) lsp.SymbolKind {
 	// Ctags kinds are determined by the parser and do not (in general) match LSP symbol kinds.
-	switch kind {
+	switch strings.ToLower(kind) {
 	case "file":
 		return lsp.SKFile
 	case "module":
 		return lsp.SKModule
 	case "namespace":
 		return lsp.SKNamespace
-	case "package", "subprogspec":
+	case "package", "packagename", "subprogspec":
 		return lsp.SKPackage
 	case "class", "type", "service", "typedef", "union", "section", "subtype", "component":
 		return lsp.SKClass
-	case "method":
+	case "method", "methodspec":
 		return lsp.SKMethod
 	case "property":
 		return lsp.SKProperty
-	case "field", "member", "anonMember":
+	case "field", "member", "anonmember", "recordfield":
 		return lsp.SKField
 	case "constructor":
 		return lsp.SKConstructor
@@ -233,9 +375,9 @@ func ctagsKindToLSPSymbolKind(kind string) lsp.SymbolKind {
 		return lsp.SKEnum
 	case "interface":
 		return lsp.SKInterface
-	case "function", "func", "subroutine", "macro", "subprogram", "procedure", "command", "singletonMethod":
+	case "function", "func", "subroutine", "macro", "subprogram", "procedure", "command", "singletonmethod":
 		return lsp.SKFunction
-	case "variable", "var", "functionVar", "define", "alias":
+	case "variable", "var", "functionvar", "define", "alias", "val":
 		return lsp.SKVariable
 	case "constant", "const":
 		return lsp.SKConstant
@@ -253,7 +395,7 @@ func ctagsKindToLSPSymbolKind(kind string) lsp.SymbolKind {
 		return lsp.SKKey
 	case "null":
 		return lsp.SKNull
-	case "enum member", "enumConstant":
+	case "enum member", "enumconstant":
 		return lsp.SKEnumMember
 	case "struct":
 		return lsp.SKStruct
@@ -264,6 +406,6 @@ func ctagsKindToLSPSymbolKind(kind string) lsp.SymbolKind {
 	case "type parameter", "annotation":
 		return lsp.SKTypeParameter
 	}
-	log.Printf("Unknown ctags kind: %q", kind)
+	log15.Debug("Unknown ctags kind", "kind", kind)
 	return 0
 }

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -16,24 +17,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/ratelimit"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-// marshalDiscussionID marshals a discussion thread or comment ID into a
-// graphql.ID. These IDs are a lot like GitHub issue IDs: we want them to be
-// pretty integer values (not base64 encoded values), so we just turn the ID
-// integer into a string. Note we cannot use a GraphQL Int type, as it is not
-// 64 bits.
-func marshalDiscussionID(discussionID int64) graphql.ID {
-	return graphql.ID(strconv.FormatInt(discussionID, 10))
-}
-
-func unmarshalDiscussionID(id graphql.ID) (discussionID int64, err error) {
-	return strconv.ParseInt(string(id), 10, 64)
-}
 
 type discussionsMutationResolver struct {
 }
@@ -50,7 +38,7 @@ type discussionThreadTargetRepoSelectionInput struct {
 
 // discussionsResolveRepository resolves the repository given an ID, name, or
 // git clone URL. Only one must be specified, or else this function will panic.
-func discussionsResolveRepository(ctx context.Context, id *graphql.ID, name, gitCloneURL *string) (*repositoryResolver, error) {
+func discussionsResolveRepository(ctx context.Context, id *graphql.ID, name, gitCloneURL *string) (*RepositoryResolver, error) {
 	switch {
 	case id != nil:
 		return repositoryByID(ctx, *id)
@@ -59,7 +47,7 @@ func discussionsResolveRepository(ctx context.Context, id *graphql.ID, name, git
 		if err != nil {
 			return nil, err
 		}
-		return repositoryByIDInt32(ctx, repo.ID)
+		return RepositoryByIDInt32(ctx, repo.ID)
 	case gitCloneURL != nil:
 		repositoryName, err := cloneURLToRepoName(ctx, *gitCloneURL)
 		if err != nil {
@@ -69,7 +57,7 @@ func discussionsResolveRepository(ctx context.Context, id *graphql.ID, name, git
 		if err != nil {
 			return nil, err
 		}
-		return repositoryByIDInt32(ctx, repo.ID)
+		return RepositoryByIDInt32(ctx, repo.ID)
 	default:
 		panic("invalid state")
 	}
@@ -157,7 +145,7 @@ func (d *discussionThreadTargetRepoInput) validate() error {
 // d.LinesAfter fields by pulling the information directly from the repository.
 //
 // Precondition: d.Selection != nil && d.validate() == nil
-func (d *discussionThreadTargetRepoInput) populateLinesFromRepository(ctx context.Context, repo *repositoryResolver) error {
+func (d *discussionThreadTargetRepoInput) populateLinesFromRepository(ctx context.Context, repo *RepositoryResolver) error {
 	if d.Selection == nil {
 		panic("precondition failed")
 	}
@@ -270,6 +258,7 @@ func (r *discussionsMutationResolver) CreateThread(ctx context.Context, args *st
 func (r *discussionsMutationResolver) UpdateThread(ctx context.Context, args *struct {
 	Input *struct {
 		ThreadID graphql.ID
+		Title    *string
 		Archive  *bool
 		Delete   *bool
 	}
@@ -292,13 +281,14 @@ func (r *discussionsMutationResolver) UpdateThread(ctx context.Context, args *st
 		delete = *args.Input.Delete
 	}
 
-	threadID, err := unmarshalDiscussionID(args.Input.ThreadID)
+	threadID, err := unmarshalDiscussionThreadID(args.Input.ThreadID)
 	if err != nil {
 		return nil, err
 	}
 	thread, err := db.DiscussionThreads.Update(ctx, threadID, &db.DiscussionThreadsUpdateOptions{
 		Archive: args.Input.Archive,
 		Delete:  delete,
+		Title:   args.Input.Title,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "DiscussionThreads.Update")
@@ -344,11 +334,14 @@ func (*schemaResolver) DiscussionThreads(ctx context.Context, args *struct {
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 
 	if args.ThreadID != nil {
-		threadID, err := unmarshalDiscussionID(*args.ThreadID)
+		// BACKCOMPAT DEPRECATED: For backcompat, this value is treated as
+		// DiscussionThread#idWithoutKind and is a strictly numeric string like "1234", not a
+		// conventional graphql.ID value (i.e., base64("DiscussionThread:1234")).
+		dbID, err := strconv.ParseInt(string(*args.ThreadID), 10, 64)
 		if err != nil {
 			return nil, err
 		}
-		opt.ThreadIDs = []int64{threadID}
+		opt.ThreadIDs = []int64{dbID}
 	}
 	if args.AuthorUserID != nil {
 		authorUserID, err := UnmarshalUserID(*args.AuthorUserID)
@@ -380,6 +373,16 @@ func (*schemaResolver) DiscussionThreads(ctx context.Context, args *struct {
 	return &discussionThreadsConnectionResolver{opt: opt}, nil
 }
 
+func (schemaResolver) DiscussionThread(ctx context.Context, args *struct {
+	IDWithoutKind string
+}) (*discussionThreadResolver, error) {
+	dbID, err := strconv.ParseInt(args.IDWithoutKind, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	return discussionThreadByID(ctx, marshalDiscussionThreadID(dbID))
+}
+
 type discussionThreadTargetRepoSelectionResolver struct {
 	t *types.DiscussionThreadTargetRepo
 }
@@ -398,29 +401,29 @@ type discussionThreadTargetRepoResolver struct {
 	t *types.DiscussionThreadTargetRepo
 }
 
-func (r *discussionThreadTargetRepoResolver) Repository(ctx context.Context) (*repositoryResolver, error) {
-	return repositoryByIDInt32(ctx, r.t.RepoID)
+func (r *discussionThreadTargetRepoResolver) Repository(ctx context.Context) (*RepositoryResolver, error) {
+	return RepositoryByIDInt32(ctx, r.t.RepoID)
 }
 
 func (r *discussionThreadTargetRepoResolver) Path() *string { return r.t.Path }
 
-func (r *discussionThreadTargetRepoResolver) Branch(ctx context.Context) (*gitRefResolver, error) {
+func (r *discussionThreadTargetRepoResolver) Branch(ctx context.Context) (*GitRefResolver, error) {
 	return r.branchOrRevision(ctx, r.t.Branch)
 }
 
-func (r *discussionThreadTargetRepoResolver) Revision(ctx context.Context) (*gitRefResolver, error) {
+func (r *discussionThreadTargetRepoResolver) Revision(ctx context.Context) (*GitRefResolver, error) {
 	return r.branchOrRevision(ctx, r.t.Revision)
 }
 
-func (r *discussionThreadTargetRepoResolver) branchOrRevision(ctx context.Context, rev *string) (*gitRefResolver, error) {
+func (r *discussionThreadTargetRepoResolver) branchOrRevision(ctx context.Context, rev *string) (*GitRefResolver, error) {
 	if rev == nil {
 		return nil, nil
 	}
-	repo, err := repositoryByIDInt32(ctx, r.t.RepoID)
+	repo, err := RepositoryByIDInt32(ctx, r.t.RepoID)
 	if err != nil {
 		return nil, err
 	}
-	return &gitRefResolver{repo: repo, name: *rev}, nil
+	return &GitRefResolver{repo: repo, name: *rev}, nil
 }
 
 func (r *discussionThreadTargetRepoResolver) Selection() *discussionThreadTargetRepoSelectionResolver {
@@ -436,7 +439,7 @@ func (r *discussionThreadTargetRepoResolver) RelativePath(ctx context.Context, a
 	if r.t.Path == nil {
 		return nil, nil
 	}
-	repo, err := repositoryByIDInt32(ctx, r.t.RepoID)
+	repo, err := RepositoryByIDInt32(ctx, r.t.RepoID)
 	if err != nil {
 		return nil, err
 	}
@@ -462,7 +465,7 @@ func (r *discussionThreadTargetRepoResolver) RelativePath(ctx context.Context, a
 	} else if r.t.Branch != nil {
 		rev = *r.t.Branch
 	}
-	comparison, err := repo.Comparison(ctx, &repositoryComparisonInput{
+	comparison, err := repo.Comparison(ctx, &RepositoryComparisonInput{
 		Base: &rev,
 		Head: &args.Rev,
 	})
@@ -576,7 +579,7 @@ func (r *discussionThreadTargetRepoResolver) RelativeSelection(ctx context.Conte
 	if path == nil {
 		return nil, nil
 	}
-	repo, err := repositoryByIDInt32(ctx, r.t.RepoID)
+	repo, err := RepositoryByIDInt32(ctx, r.t.RepoID)
 	if err != nil {
 		return nil, err
 	}
@@ -624,6 +627,34 @@ func (r *discussionThreadTargetResolver) ToDiscussionThreadTargetRepo() (*discus
 	return &discussionThreadTargetRepoResolver{t: r.t.TargetRepo}, true
 }
 
+func marshalDiscussionThreadID(dbID int64) graphql.ID {
+	return relay.MarshalID("DiscussionThread", strconv.FormatInt(dbID, 36))
+}
+
+func unmarshalDiscussionThreadID(id graphql.ID) (dbID int64, err error) {
+	var dbIDStr string
+	err = relay.UnmarshalSpec(id, &dbIDStr)
+	if err == nil {
+		dbID, err = strconv.ParseInt(dbIDStr, 36, 64)
+	}
+	return
+}
+
+// discussionThreadByID looks up a DiscussionThread by its GraphQL ID.
+func discussionThreadByID(ctx context.Context, id graphql.ID) (*discussionThreadResolver, error) {
+	dbID, err := unmarshalDiscussionThreadID(id)
+	if err != nil {
+		return nil, err
+	}
+	// 🚨 SECURITY: No authentication is required to get a discussion. Discussions are public unless
+	// the Sourcegraph instance itself (and inherently, the GraphQL API) is private.
+	thread, err := db.DiscussionThreads.Get(ctx, dbID)
+	if err != nil {
+		return nil, err
+	}
+	return &discussionThreadResolver{t: thread}, nil
+}
+
 // 🚨 SECURITY: When instantiating an discussionThreadResolver value, the
 // caller MUST check permissions.
 type discussionThreadResolver struct {
@@ -631,7 +662,11 @@ type discussionThreadResolver struct {
 }
 
 func (d *discussionThreadResolver) ID() graphql.ID {
-	return marshalDiscussionID(d.t.ID)
+	return marshalDiscussionThreadID(d.t.ID)
+}
+
+func (d *discussionThreadResolver) IDWithoutKind() string {
+	return strconv.FormatInt(d.t.ID, 10)
 }
 
 func (d *discussionThreadResolver) Author(ctx context.Context) (*UserResolver, error) {
@@ -652,19 +687,16 @@ func (d *discussionThreadResolver) InlineURL(ctx context.Context) (*string, erro
 	return strptr(url.String()), nil
 }
 
-func (d *discussionThreadResolver) CreatedAt(ctx context.Context) string {
-	return d.t.CreatedAt.Format(time.RFC3339)
+func (d *discussionThreadResolver) CreatedAt() DateTime {
+	return DateTime{Time: d.t.CreatedAt}
 }
 
-func (d *discussionThreadResolver) UpdatedAt(ctx context.Context) string {
-	return d.t.UpdatedAt.Format(time.RFC3339)
+func (d *discussionThreadResolver) UpdatedAt() DateTime {
+	return DateTime{Time: d.t.UpdatedAt}
 }
 
-func (d *discussionThreadResolver) ArchivedAt(ctx context.Context) *string {
-	if d.t.ArchivedAt == nil {
-		return nil
-	}
-	return strptr(d.t.ArchivedAt.Format(time.RFC3339))
+func (d *discussionThreadResolver) ArchivedAt() *DateTime {
+	return DateTimeOrNil(d.t.ArchivedAt)
 }
 
 func (d *discussionThreadResolver) Comments(ctx context.Context, args *struct {
@@ -734,10 +766,16 @@ func (r *discussionThreadsConnectionResolver) PageInfo(ctx context.Context) (*gr
 	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && len(threads) > r.opt.Limit), nil
 }
 
+var mockViewerCanUseDiscussions func() error
+
 // viewerCanUseDiscussions returns an error if the user in the context cannot
 // use code discussions, e.g. due to the extension not being installed or
 // enabled.
 func viewerCanUseDiscussions(ctx context.Context) error {
+	if mockViewerCanUseDiscussions != nil {
+		return mockViewerCanUseDiscussions()
+	}
+
 	merged, err := viewerFinalSettings(ctx)
 	if err != nil {
 		return err

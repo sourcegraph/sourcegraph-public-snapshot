@@ -1,0 +1,156 @@
+import { combineLatest, merge, Observable, ReplaySubject } from 'rxjs'
+import { map, publishReplay, refCount, switchMap, take } from 'rxjs/operators'
+import { PrivateRepoPublicSourcegraphComError } from '../../../shared/src/backend/errors'
+import { GraphQLResult, requestGraphQL as requestGraphQLCommon } from '../../../shared/src/graphql/graphql'
+import * as GQL from '../../../shared/src/graphql/schema'
+import { PlatformContext } from '../../../shared/src/platform/context'
+import { mutateSettings, updateSettings } from '../../../shared/src/settings/edit'
+import { EMPTY_SETTINGS_CASCADE, gqlToCascade } from '../../../shared/src/settings/settings'
+import { LocalStorageSubject } from '../../../shared/src/util/LocalStorageSubject'
+import { toPrettyBlobURL } from '../../../shared/src/util/url'
+import { ExtensionStorageSubject } from '../browser/ExtensionStorageSubject'
+import { background } from '../browser/runtime'
+import { isInPage } from '../context'
+import { CodeHost } from '../libs/code_intelligence'
+import { DEFAULT_SOURCEGRAPH_URL, observeSourcegraphURL } from '../shared/util/context'
+import { createExtensionHost } from './extensionHost'
+import { editClientSettings, fetchViewerSettings, mergeCascades, storageSettingsCascade } from './settings'
+
+export interface SourcegraphIntegrationURLs {
+    /**
+     * The URL of the configured Sourcegraph instance. Used for extensions, find-references, ...
+     */
+    sourcegraphURL: string
+
+    /**
+     * The base URL where assets will be fetched from (CSS, extension host
+     * worker bundle, ...)
+     *
+     * This is the sourcegraph URL in most cases, but may be different for
+     * native code hosts that self-host the integration bundle.
+     */
+    assetsURL: string
+}
+
+/**
+ * Creates the {@link PlatformContext} for the browser extension.
+ */
+export function createPlatformContext(
+    { urlToFile, getContext }: Pick<CodeHost, 'urlToFile' | 'getContext'>,
+    { sourcegraphURL, assetsURL }: SourcegraphIntegrationURLs,
+    isExtension: boolean
+): PlatformContext {
+    const updatedViewerSettings = new ReplaySubject<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>>(1)
+    const requestGraphQL: PlatformContext['requestGraphQL'] = <T extends GQL.IQuery | GQL.IMutation>({
+        request,
+        variables,
+        mightContainPrivateInfo,
+    }: {
+        request: string
+        variables: {}
+        mightContainPrivateInfo: boolean
+    }): Observable<GraphQLResult<T>> =>
+        observeSourcegraphURL(isExtension).pipe(
+            take(1),
+            switchMap(sourcegraphURL => {
+                if (mightContainPrivateInfo && sourcegraphURL === DEFAULT_SOURCEGRAPH_URL) {
+                    // If we can't determine the code host context, assume the current repository is private.
+                    const privateRepository = getContext ? getContext().privateRepository : true
+                    if (privateRepository) {
+                        const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
+                        throw new PrivateRepoPublicSourcegraphComError(nameMatch ? nameMatch[1] : '')
+                    }
+                }
+                if (isExtension) {
+                    // In the browser extension, send all GraphQL requests from the background page.
+                    return background.requestGraphQL<T>({ request, variables })
+                }
+                return requestGraphQLCommon<T>({
+                    request,
+                    variables,
+                    baseUrl: window.SOURCEGRAPH_URL,
+                    credentials: 'include',
+                })
+            })
+        )
+
+    const context: PlatformContext = {
+        /**
+         * The active settings cascade.
+         *
+         * - For unauthenticated users, this is the GraphQL settings plus client settings (which are stored locally
+         *   in the browser extension.
+         * - For authenticated users, this is just the GraphQL settings (client settings are ignored to simplify
+         *   the UX).
+         */
+        settings: combineLatest([
+            merge(fetchViewerSettings(requestGraphQL), updatedViewerSettings).pipe(
+                publishReplay(1),
+                refCount()
+            ),
+            storageSettingsCascade,
+        ]).pipe(
+            map(([gqlCascade, storageCascade]) =>
+                mergeCascades(
+                    gqlToCascade(gqlCascade),
+                    gqlCascade.subjects.some(subject => subject.__typename === 'User')
+                        ? EMPTY_SETTINGS_CASCADE
+                        : storageCascade
+                )
+            )
+        ),
+        updateSettings: async (subject, edit) => {
+            if (subject === 'Client') {
+                // Support storing settings on the client (in the browser extension) so that unauthenticated
+                // Sourcegraph viewers can update settings.
+                await updateSettings(context, subject, edit, () => editClientSettings(edit))
+                return
+            }
+
+            try {
+                await updateSettings(context, subject, edit, mutateSettings)
+            } catch (error) {
+                if ('message' in error && error.message.includes('version mismatch')) {
+                    // The user probably edited the settings in another tab, so
+                    // try once more.
+                    updatedViewerSettings.next(await fetchViewerSettings(requestGraphQL).toPromise())
+                    await updateSettings(context, subject, edit, mutateSettings)
+                } else {
+                    throw error
+                }
+            }
+            updatedViewerSettings.next(await fetchViewerSettings(requestGraphQL).toPromise())
+        },
+        requestGraphQL,
+        forceUpdateTooltip: () => {
+            // TODO(sqs): implement tooltips on the browser extension
+        },
+        createExtensionHost: () => createExtensionHost({ assetsURL }),
+        getScriptURLForExtension: async bundleURL => {
+            if (isInPage) {
+                return bundleURL
+            }
+            // We need to import the extension's JavaScript file (in importScripts in the Web Worker) from a blob:
+            // URI, not its original http:/https: URL, because Chrome extensions are not allowed to be published
+            // with a CSP that allowlists https://* in script-src (see
+            // https://developer.chrome.com/extensions/contentSecurityPolicy#relaxing-remote-script). (Firefox
+            // add-ons have an even stricter restriction.)
+            const blobURL = await background.createBlobURL(bundleURL)
+            return blobURL
+        },
+        urlToFile: ({ rawRepoName, ...location }) => {
+            if (rawRepoName && urlToFile) {
+                // Construct URL to file on code host, if possible.
+                return urlToFile(sourcegraphURL, { rawRepoName, ...location })
+            }
+            // Otherwise fall back to linking to Sourcegraph (with an absolute URL).
+            return `${sourcegraphURL}${toPrettyBlobURL(location)}`
+        },
+        sourcegraphURL,
+        clientApplication: 'other',
+        sideloadedExtensionURL: isInPage
+            ? new LocalStorageSubject<string | null>('sideloadedExtensionURL', null)
+            : new ExtensionStorageSubject('sideloadedExtensionURL', null),
+    }
+    return context
+}

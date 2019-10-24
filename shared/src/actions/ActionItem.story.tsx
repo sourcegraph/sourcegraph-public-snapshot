@@ -3,7 +3,9 @@ import { storiesOf } from '@storybook/react'
 import * as H from 'history'
 import React from 'react'
 import { setLinkComponent } from '../components/Link'
+import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import { ActionItem, ActionItemComponentProps } from './ActionItem'
+import './ActionItem.scss'
 
 setLinkComponent(({ to, children, ...props }) => (
     <a href={to && typeof to !== 'string' ? H.createPath(to) : to} {...props}>
@@ -16,7 +18,7 @@ const EXTENSIONS_CONTROLLER: ActionItemComponentProps['extensionsController'] = 
 }
 
 const PLATFORM_CONTEXT: ActionItemComponentProps['platformContext'] = {
-    forceUpdateTooltip: () => void 0,
+    forceUpdateTooltip: () => undefined,
 }
 
 const LOCATION: H.Location = { hash: '', pathname: '/', search: '', state: undefined }
@@ -31,6 +33,7 @@ const { add } = storiesOf('ActionItem', module)
 add('noop action', () => (
     <ActionItem
         action={{ id: 'a', command: undefined, actionItem: { label: 'Hello' } }}
+        telemetryService={NOOP_TELEMETRY_SERVICE}
         variant="actionItem"
         location={LOCATION}
         extensionsController={EXTENSIONS_CONTROLLER}
@@ -41,6 +44,7 @@ add('noop action', () => (
 add('command action', () => (
     <ActionItem
         action={{ id: 'a', command: 'c', title: 'Hello', iconURL: ICON_URL }}
+        telemetryService={NOOP_TELEMETRY_SERVICE}
         disabledDuringExecution={true}
         showLoadingSpinnerDuringExecution={true}
         showInlineError={true}
@@ -59,6 +63,7 @@ add('link action', () => (
             commandArguments: ['javascript:alert("link clicked")'],
             actionItem: { label: 'Hello' },
         }}
+        telemetryService={NOOP_TELEMETRY_SERVICE}
         variant="actionItem"
         onDidExecute={onDidExecute}
         location={LOCATION}
@@ -77,6 +82,7 @@ add('executing', () => {
     return (
         <ActionItemExecuting
             action={{ id: 'a', command: 'c', title: 'Hello', iconURL: ICON_URL }}
+            telemetryService={NOOP_TELEMETRY_SERVICE}
             disabledDuringExecution={true}
             showLoadingSpinnerDuringExecution={true}
             showInlineError={true}
@@ -87,26 +93,23 @@ add('executing', () => {
     )
 })
 
-add(
-    'error',
-    () => {
-        class ActionItemWithError extends ActionItem {
-            constructor(props: ActionItem['props']) {
-                super(props)
-                this.state.actionOrError = new Error('e')
-            }
+add('error', () => {
+    class ActionItemWithError extends ActionItem {
+        constructor(props: ActionItem['props']) {
+            super(props)
+            this.state.actionOrError = new Error('e')
         }
-        return (
-            <ActionItemWithError
-                action={{ id: 'a', command: 'c', title: 'Hello', iconURL: ICON_URL }}
-                disabledDuringExecution={true}
-                showLoadingSpinnerDuringExecution={true}
-                showInlineError={true}
-                location={LOCATION}
-                extensionsController={EXTENSIONS_CONTROLLER}
-                platformContext={PLATFORM_CONTEXT}
-            />
-        )
-    },
-    { notes: 'The error is shown in a tooltip, which is not yet visible in the storybook.' }
-)
+    }
+    return (
+        <ActionItemWithError
+            action={{ id: 'a', command: 'c', title: 'Hello', iconURL: ICON_URL }}
+            telemetryService={NOOP_TELEMETRY_SERVICE}
+            disabledDuringExecution={true}
+            showLoadingSpinnerDuringExecution={true}
+            showInlineError={true}
+            location={LOCATION}
+            extensionsController={EXTENSIONS_CONTROLLER}
+            platformContext={PLATFORM_CONTEXT}
+        />
+    )
+})

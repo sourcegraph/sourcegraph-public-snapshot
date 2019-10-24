@@ -22,15 +22,12 @@ interface State {
     loading: boolean
     error?: Error
 
-    isDirty?: boolean
     saving?: boolean
     restartToApply: boolean
     reloadStartedAt?: number
 }
 
 const EXPECTED_RELOAD_WAIT = 7 * 1000 // 7 seconds
-
-const EXTRA_SCHEMAS = [siteSchemaJSON]
 
 /**
  * A page displaying the site configuration.
@@ -84,7 +81,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                         } else {
                             // Refresh site flags so that global site alerts
                             // reflect the latest configuration.
-                            refreshSiteFlags().subscribe(undefined, err => console.error(err))
+                            refreshSiteFlags().subscribe({ error: err => console.error(err) })
                         }
                         this.setState({ restartToApply })
                         this.remoteRefreshes.next()
@@ -157,7 +154,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                     className="alert alert-warning site-admin-configuration-page__alert site-admin-configuration-page__alert-flex"
                 >
                     Server restart is required for the configuration to take effect.
-                    <button className="btn btn-primary btn-sm" onClick={this.reloadSite}>
+                    <button type="button" className="btn btn-primary btn-sm" onClick={this.reloadSite}>
                         Restart server
                     </button>
                 </div>
@@ -238,7 +235,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                 </div>
                 <p>
                     View and edit the Sourcegraph site configuration. See{' '}
-                    <Link to="/help/admin/site_config">documentation</Link> for more information.
+                    <Link to="/help/admin/config/site_config">documentation</Link> for more information.
                 </p>
                 <div className="mb-3">
                     <SiteAdminManagementConsolePassword />
@@ -254,9 +251,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                     <div>
                         <DynamicallyImportedMonacoSettingsEditor
                             value={contents || ''}
-                            jsonSchemaId="site.schema.json#"
-                            extraSchemas={EXTRA_SCHEMAS}
-                            onDirtyChange={this.onDirtyChange}
+                            jsonSchema={siteSchemaJSON}
                             canEdit={true}
                             saving={this.state.saving}
                             loading={isReloading || this.state.saving}
@@ -268,7 +263,8 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                         <p className="form-text text-muted">
                             <small>
                                 Use Ctrl+Space for completion, and hover over JSON properties for documentation. For
-                                more information, see the <Link to="/help/admin/site_config/all">documentation</Link>.
+                                more information, see the <Link to="/help/admin/config/site_config">documentation</Link>
+                                .
                             </small>
                         </p>
                     </div>
@@ -276,8 +272,6 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             </div>
         )
     }
-
-    private onDirtyChange = (isDirty: boolean) => this.setState({ isDirty })
 
     private onSave = (value: string) => {
         eventLogger.log('SiteConfigurationSaved')

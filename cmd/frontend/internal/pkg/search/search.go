@@ -5,6 +5,8 @@ import (
 	"regexp/syntax"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/endpoint"
+	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 )
 
 // PatternInfo is the struct used by vscode pass on search queries. Keep it in
@@ -12,15 +14,18 @@ import (
 type PatternInfo struct {
 	Pattern         string
 	IsRegExp        bool
+	IsStructuralPat bool
 	IsWordMatch     bool
 	IsCaseSensitive bool
 	FileMatchLimit  int32
 
 	// We do not support IsMultiline
-	//IsMultiline     bool
-	IncludePattern  string
+	// IsMultiline     bool
 	IncludePatterns []string
 	ExcludePattern  string
+
+	FilePatternsReposMustInclude []string
+	FilePatternsReposMustExclude []string
 
 	PathPatternsAreRegExps       bool
 	PathPatternsAreCaseSensitive bool
@@ -30,7 +35,7 @@ type PatternInfo struct {
 }
 
 func (p *PatternInfo) IsEmpty() bool {
-	return p.Pattern == "" && p.ExcludePattern == "" && len(p.IncludePatterns) == 0 && p.IncludePattern == ""
+	return p.Pattern == "" && p.ExcludePattern == "" && len(p.IncludePatterns) == 0
 }
 
 // Validate returns a non-nil error if PatternInfo is not valid.
@@ -42,11 +47,6 @@ func (p *PatternInfo) Validate() error {
 	}
 
 	if p.PathPatternsAreRegExps {
-		if p.IncludePattern != "" {
-			if _, err := syntax.Parse(p.IncludePattern, syntax.Perl); err != nil {
-				return err
-			}
-		}
 		if p.ExcludePattern != "" {
 			if _, err := syntax.Parse(p.ExcludePattern, syntax.Perl); err != nil {
 				return err
@@ -82,4 +82,7 @@ type Args struct {
 	// repository if this field is true. Another example is we set this field
 	// to true if the user requests a specific timeout or maximum result size.
 	UseFullDeadline bool
+
+	Zoekt        *searchbackend.Zoekt
+	SearcherURLs *endpoint.Map
 }

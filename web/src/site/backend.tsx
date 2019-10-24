@@ -24,7 +24,7 @@ export function refreshSiteFlags(): Observable<never> {
                 query SiteFlags {
                     site {
                         needsRepositoryConfiguration
-                        noRepositoriesEnabled
+                        freeUsersExceeded
                         alerts {
                             type
                             message
@@ -48,6 +48,13 @@ export function refreshSiteFlags(): Observable<never> {
                             errorMessage
                             updateVersionAvailable
                         }
+                        productSubscription {
+                            license {
+                                expiresAt
+                            }
+                            noLicenseWarningUserCount
+                        }
+                        productVersion
                     }
                 }
             `)
@@ -64,4 +71,4 @@ export function refreshSiteFlags(): Observable<never> {
 
 refreshSiteFlags()
     .toPromise()
-    .then(() => void 0, err => console.error(err))
+    .then(() => undefined, err => console.error(err))

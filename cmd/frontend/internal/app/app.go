@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 // NewHandler returns a new app handler that uses the app router.
@@ -21,7 +21,9 @@ import (
 // 🚨 SECURITY: The caller MUST wrap the returned handler in middleware that checks authentication
 // and sets the actor in the request context.
 func NewHandler() http.Handler {
-	session.SetSessionStore(session.NewRedisStore(globals.ExternalURL.Scheme == "https"))
+	session.SetSessionStore(session.NewRedisStore(func() bool {
+		return globals.ExternalURL().Scheme == "https"
+	}))
 
 	r := router.Router()
 

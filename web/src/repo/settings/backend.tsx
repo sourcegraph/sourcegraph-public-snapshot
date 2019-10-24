@@ -16,7 +16,6 @@ export function fetchRepository(name: string): Observable<GQL.IRepository> {
                     id
                     name
                     viewerCanAdminister
-                    enabled
                     mirrorInfo {
                         remoteURL
                         cloneInProgress
@@ -32,6 +31,13 @@ export function fetchRepository(name: string): Observable<GQL.IRepository> {
                             updating
                             index
                             total
+                        }
+                    }
+                    externalServices {
+                        nodes {
+                            id
+                            kind
+                            displayName
                         }
                     }
                 }

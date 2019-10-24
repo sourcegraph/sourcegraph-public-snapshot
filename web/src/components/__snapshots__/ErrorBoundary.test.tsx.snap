@@ -34,7 +34,9 @@ exports[`ErrorBoundary passes through if non-error 1`] = `
         Sourcegraph encountered an unexpected error. If reloading the page doesn't fix it, contact your site admin or Sourcegraph support.
       </p>
       <p>
-        <code>
+        <code
+          className="text-wrap"
+        >
           x
         </code>
       </p>
@@ -83,7 +85,9 @@ exports[`ErrorBoundary renders reload page if chunk error 1`] = `
         Sourcegraph encountered an unexpected error. If reloading the page doesn't fix it, contact your site admin or Sourcegraph support.
       </p>
       <p>
-        <code>
+        <code
+          className="text-wrap"
+        >
           Loading chunk 123 failed.
         </code>
       </p>

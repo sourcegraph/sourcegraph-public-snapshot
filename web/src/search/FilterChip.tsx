@@ -17,10 +17,12 @@ export class FilterChip extends React.PureComponent<Props> {
         const truncatedValue = truncate(this.props.value, { length: 50 })
         return (
             <button
+                type="button"
                 className={
-                    `btn btn-sm text-nowrap filter-chip ${!!this.props.count ? 'filter-chip-repo' : ''}` +
+                    `btn btn-sm text-nowrap filter-chip ${this.props.count ? 'filter-chip-repo' : ''}` +
                     (this.isScopeSelected(this.props.query, this.props.value) ? ' filter-chip--selected' : '')
                 }
+                data-testid="filter-chip"
                 value={this.props.value}
                 title={this.renderTooltip(this.props.value !== truncatedValue)}
                 onMouseDown={this.onMouseDown}

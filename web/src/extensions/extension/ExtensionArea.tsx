@@ -11,11 +11,11 @@ import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
-import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { createAggregateError } from '../../../../shared/src/util/errors'
+import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../backend/graphql'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
+import { ThemeProps } from '../../theme'
 import { RouteDescriptor } from '../../util/contributions'
 import { ExtensionsAreaRouteContext } from '../ExtensionsArea'
 import { ExtensionAreaHeader, ExtensionAreaHeaderNavItem } from './ExtensionAreaHeader'
@@ -57,14 +57,16 @@ export const registryExtensionFragment = gql`
     }
 `
 
-const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
+const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
 export interface ExtensionAreaRoute extends RouteDescriptor<ExtensionAreaRouteContext> {}
 
-export interface ExtensionAreaProps extends ExtensionsAreaRouteContext, RouteComponentProps<{ extensionID: string }> {
-    routes: ReadonlyArray<ExtensionAreaRoute>
-    isLightTheme: boolean
-    extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
+export interface ExtensionAreaProps
+    extends ExtensionsAreaRouteContext,
+        RouteComponentProps<{ extensionID: string }>,
+        ThemeProps {
+    routes: readonly ExtensionAreaRoute[]
+    extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
 }
 
 interface ExtensionAreaState {
@@ -75,7 +77,7 @@ interface ExtensionAreaState {
 /**
  * Properties passed to all page components in the registry extension area.
  */
-export interface ExtensionAreaRouteContext extends SettingsCascadeProps, PlatformContextProps {
+export interface ExtensionAreaRouteContext extends SettingsCascadeProps, PlatformContextProps, ThemeProps {
     /** The extension registry area main URL. */
     url: string
 
@@ -86,7 +88,6 @@ export interface ExtensionAreaRouteContext extends SettingsCascadeProps, Platfor
 
     /** The currently authenticated user. */
     authenticatedUser: GQL.IUser | null
-    isLightTheme: boolean
 }
 
 /**
@@ -119,20 +120,20 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
 
         // Fetch extension.
         this.subscriptions.add(
-            combineLatest(
+            combineLatest([
                 extensionIDChanges,
                 merge(
                     this.refreshRequests.pipe(mapTo(false)),
                     globalExtensionsSettingsChanges.pipe(mapTo(false)),
                     of(false)
-                )
-            )
+                ),
+            ])
                 .pipe(
                     switchMap(([extensionID, forceRefresh]) => {
                         type PartialStateUpdate = Pick<ExtensionAreaState, 'extensionOrError'>
                         return queryExtension(extensionID).pipe(
                             catchError(error => [error]),
-                            map(c => ({ extensionOrError: c } as PartialStateUpdate)),
+                            map((c): PartialStateUpdate => ({ extensionOrError: c })),
 
                             // Don't clear old data while we reload, to avoid unmounting all components during
                             // loading.
@@ -146,8 +147,8 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
         this.componentUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(props: ExtensionAreaProps): void {
-        this.componentUpdates.next(props)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -182,25 +183,31 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
         }
 
         return (
-            <div className="registry-extension-area area--vertical">
-                <ExtensionAreaHeader {...this.props} {...context} navItems={this.props.extensionAreaHeaderNavItems} />
+            <div className="registry-extension-area">
+                <ExtensionAreaHeader
+                    {...this.props}
+                    {...context}
+                    navItems={this.props.extensionAreaHeaderNavItems}
+                    className="border-bottom mt-4"
+                />
                 <div className="container pt-3">
                     <ErrorBoundary location={this.props.location}>
                         <React.Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
                             <Switch>
                                 {this.props.routes.map(
+                                    /* eslint-disable react/jsx-no-bind */
                                     ({ path, render, exact, condition = () => true }) =>
                                         condition(context) && (
                                             <Route
                                                 path={url + path}
                                                 exact={exact}
                                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                                // tslint:disable-next-line:jsx-no-lambda
                                                 render={routeComponentProps =>
                                                     render({ ...context, ...routeComponentProps })
                                                 }
                                             />
                                         )
+                                    /* eslint-enable react/jsx-no-bind */
                                 )}
                                 <Route key="hardcoded-key" component={NotFoundPage} />
                             </Switch>

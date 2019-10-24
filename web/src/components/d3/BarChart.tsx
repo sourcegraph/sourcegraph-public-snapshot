@@ -4,6 +4,7 @@ import { select, Selection } from 'd3-selection'
 import { stack } from 'd3-shape'
 import { isEqual } from 'lodash'
 import * as React from 'react'
+import { ThemeProps } from '../../theme'
 
 interface BarChartSeries {
     [key: string]: null
@@ -14,7 +15,7 @@ interface BarChartDatum<T extends BarChartSeries> {
     yValues: { [key in keyof T]: number }
 }
 
-interface Props<T extends BarChartSeries> {
+interface Props<T extends BarChartSeries> extends ThemeProps {
     /**
      * Bar chart data.
      * One datum for each column, with each datum containing values for each series in the given column.
@@ -37,7 +38,6 @@ interface Props<T extends BarChartSeries> {
      */
     showLegend?: boolean
     className?: string
-    isLightTheme: boolean
 }
 
 export class BarChart<T extends BarChartSeries> extends React.Component<Props<T>> {
@@ -85,7 +85,7 @@ export class BarChart<T extends BarChartSeries> extends React.Component<Props<T>
             .range(barColors)
         const xAxis = axisBottom(x)
 
-        const svg = select(this.svgRef!)
+        const svg = select(this.svgRef)
         svg.selectAll('*').remove()
 
         const barWidth = width / columns - 2
@@ -139,7 +139,7 @@ export class BarChart<T extends BarChartSeries> extends React.Component<Props<T>
         barHolder
             .append<AxisContainerElement>('g')
             .classed('axis', true)
-            .attr('transform', 'translate(0,' + height + ')')
+            .attr('transform', `translate(0, ${height})`)
             .call(xAxis)
             .selectAll('.tick text')
             .call(wrapLabel, barWidth)

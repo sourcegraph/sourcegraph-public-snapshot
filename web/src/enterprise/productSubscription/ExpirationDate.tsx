@@ -5,7 +5,7 @@ import { formatRelativeExpirationDate, isProductLicenseExpired } from './helpers
 /** Displays an expiration date (for product subscriptions or licenses). */
 export const ExpirationDate: React.FunctionComponent<{
     /** The expiration date of a product subscription or license. */
-    date: string | number
+    date: Date | number
 
     /** Show the time of day of expiration. */
     showTime?: boolean

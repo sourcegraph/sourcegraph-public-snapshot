@@ -10,8 +10,8 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
 // Deprecated: The GraphQL type Configuration is deprecated.
@@ -43,7 +43,12 @@ type settingsMutation struct {
 func (r *schemaResolver) SettingsMutation(ctx context.Context, args *struct {
 	Input *settingsMutationGroupInput
 }) (*settingsMutation, error) {
-	subject, err := settingsSubjectByID(ctx, args.Input.Subject)
+	n, err := r.nodeByID(ctx, args.Input.Subject)
+	if err != nil {
+		return nil, err
+	}
+
+	subject, err := settingsSubjectForNode(ctx, n)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +83,7 @@ func (updateSettingsPayload) Empty() *EmptyResponse { return nil }
 
 type settingsEdit struct {
 	KeyPath                   []*keyPathSegment
-	Value                     *jsonValue
+	Value                     *JSONValue
 	ValueIsJSONCEncodedString bool
 }
 
@@ -117,7 +122,7 @@ func (r *settingsMutation) EditSettings(ctx context.Context, args *struct {
 	remove := args.Edit.Value == nil
 	var value interface{}
 	if args.Edit.Value != nil {
-		value = args.Edit.Value.value
+		value = args.Edit.Value.Value
 	}
 	if args.Edit.ValueIsJSONCEncodedString {
 		s, ok := value.(string)

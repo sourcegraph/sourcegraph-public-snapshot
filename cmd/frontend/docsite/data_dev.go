@@ -2,9 +2,7 @@
 
 package docsite
 
-import (
-	"net/http"
-)
+import "net/http"
 
 // content contains the Sourcegraph documentation content.
 var content = http.Dir("doc") // top-level doc dir

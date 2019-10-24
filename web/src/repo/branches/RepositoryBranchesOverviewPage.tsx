@@ -92,7 +92,7 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                         type PartialStateUpdate = Pick<State, 'dataOrError'>
                         return queryGitBranches({ repo: repo.id, first: 10 }).pipe(
                             catchError(error => [error]),
-                            map(c => ({ dataOrError: c } as PartialStateUpdate)),
+                            map((c): PartialStateUpdate => ({ dataOrError: c })),
                             startWith<PartialStateUpdate>({ dataOrError: undefined })
                         )
                     })
@@ -102,8 +102,8 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
         this.componentUpdates.next(this.props)
     }
 
-    public componentWillUpdate(nextProps: Props): void {
-        this.componentUpdates.next(nextProps)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {

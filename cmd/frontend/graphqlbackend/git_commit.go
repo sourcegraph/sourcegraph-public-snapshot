@@ -8,14 +8,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 )
 
-func gitCommitByID(ctx context.Context, id graphql.ID) (*gitCommitResolver, error) {
+func gitCommitByID(ctx context.Context, id graphql.ID) (*GitCommitResolver, error) {
 	repoID, commitID, err := unmarshalGitCommitID(id)
 	if err != nil {
 		return nil, err
@@ -27,25 +27,29 @@ func gitCommitByID(ctx context.Context, id graphql.ID) (*gitCommitResolver, erro
 	return repo.Commit(ctx, &repositoryCommitArgs{Rev: string(commitID)})
 }
 
-type gitCommitResolver struct {
-	repo *repositoryResolver
+type GitCommitResolver struct {
+	repo *RepositoryResolver
 
 	// inputRev is the Git revspec that the user originally requested that resolved to this Git commit. It is used
 	// to avoid redirecting a user browsing a revision "mybranch" to the absolute commit ID as they follow links in the UI.
 	inputRev *string
 
-	oid       gitObjectID
+	// oid MUST be specified and a 40-character Git SHA.
+	oid GitObjectID
+
 	author    signatureResolver
 	committer *signatureResolver
 	message   string
 	parents   []api.CommitID
 }
 
-func toGitCommitResolver(repo *repositoryResolver, commit *git.Commit) *gitCommitResolver {
+func toGitCommitResolver(repo *RepositoryResolver, commit *git.Commit) *GitCommitResolver {
 	authorResolver := toSignatureResolver(&commit.Author)
-	return &gitCommitResolver{
-		repo:      repo,
-		oid:       gitObjectID(commit.ID),
+	return &GitCommitResolver{
+		repo: repo,
+
+		oid: GitObjectID(commit.ID),
+
 		author:    *authorResolver,
 		committer: toSignatureResolver(commit.Committer),
 		message:   commit.Message,
@@ -57,30 +61,35 @@ func toGitCommitResolver(repo *repositoryResolver, commit *git.Commit) *gitCommi
 // GraphQL ID.
 type gitCommitGQLID struct {
 	Repository graphql.ID  `json:"r"`
-	CommitID   gitObjectID `json:"c"`
+	CommitID   GitObjectID `json:"c"`
 }
 
-func marshalGitCommitID(repo graphql.ID, commitID gitObjectID) graphql.ID {
+func marshalGitCommitID(repo graphql.ID, commitID GitObjectID) graphql.ID {
 	return relay.MarshalID("GitCommit", gitCommitGQLID{Repository: repo, CommitID: commitID})
 }
 
-func unmarshalGitCommitID(id graphql.ID) (repoID graphql.ID, commitID gitObjectID, err error) {
+func unmarshalGitCommitID(id graphql.ID) (repoID graphql.ID, commitID GitObjectID, err error) {
 	var spec gitCommitGQLID
 	err = relay.UnmarshalSpec(id, &spec)
 	return spec.Repository, spec.CommitID, err
 }
 
-func (r *gitCommitResolver) ID() graphql.ID { return marshalGitCommitID(r.repo.ID(), r.oid) }
+func (r *GitCommitResolver) ID() graphql.ID {
+	return marshalGitCommitID(r.repo.ID(), r.oid)
+}
 
-func (r *gitCommitResolver) Repository() *repositoryResolver { return r.repo }
+func (r *GitCommitResolver) Repository() *RepositoryResolver { return r.repo }
 
-func (r *gitCommitResolver) OID() gitObjectID              { return r.oid }
-func (r *gitCommitResolver) AbbreviatedOID() string        { return string(r.oid)[:7] }
-func (r *gitCommitResolver) Author() *signatureResolver    { return &r.author }
-func (r *gitCommitResolver) Committer() *signatureResolver { return r.committer }
-func (r *gitCommitResolver) Message() string               { return r.message }
-func (r *gitCommitResolver) Subject() string               { return gitCommitSubject(r.message) }
-func (r *gitCommitResolver) Body() *string {
+func (r *GitCommitResolver) OID() GitObjectID { return r.oid }
+
+func (r *GitCommitResolver) AbbreviatedOID() string {
+	return string(r.oid)[:7]
+}
+func (r *GitCommitResolver) Author() *signatureResolver    { return &r.author }
+func (r *GitCommitResolver) Committer() *signatureResolver { return r.committer }
+func (r *GitCommitResolver) Message() string               { return r.message }
+func (r *GitCommitResolver) Subject() string               { return gitCommitSubject(r.message) }
+func (r *GitCommitResolver) Body() *string {
 	body := gitCommitBody(r.message)
 	if body == "" {
 		return nil
@@ -88,8 +97,8 @@ func (r *gitCommitResolver) Body() *string {
 	return &body
 }
 
-func (r *gitCommitResolver) Parents(ctx context.Context) ([]*gitCommitResolver, error) {
-	resolvers := make([]*gitCommitResolver, len(r.parents))
+func (r *GitCommitResolver) Parents(ctx context.Context) ([]*GitCommitResolver, error) {
+	resolvers := make([]*GitCommitResolver, len(r.parents))
 	for i, parent := range r.parents {
 		var err error
 		resolvers[i], err = r.repo.Commit(ctx, &repositoryCommitArgs{Rev: string(parent)})
@@ -100,17 +109,19 @@ func (r *gitCommitResolver) Parents(ctx context.Context) ([]*gitCommitResolver, 
 	return resolvers, nil
 }
 
-func (r *gitCommitResolver) URL() string {
-	return r.repo.URL() + "/-/commit/" + string(r.inputRevOrImmutableRev())
+func (r *GitCommitResolver) URL() (string, error) {
+	return r.repo.URL() + "/-/commit/" + string(r.inputRevOrImmutableRev()), nil
 }
 
-func (r *gitCommitResolver) CanonicalURL() string { return r.repo.URL() + "/-/commit/" + string(r.oid) }
+func (r *GitCommitResolver) CanonicalURL() (string, error) {
+	return r.repo.URL() + "/-/commit/" + string(r.oid), nil
+}
 
-func (r *gitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
+func (r *GitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
 	return externallink.Commit(ctx, r.repo.repo, api.CommitID(r.oid))
 }
 
-func (r *gitCommitResolver) Tree(ctx context.Context, args *struct {
+func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 	Path      string
 	Recursive bool
 }) (*gitTreeEntryResolver, error) {
@@ -118,7 +129,6 @@ func (r *gitCommitResolver) Tree(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-
 	stat, err := git.Stat(ctx, *cachedRepo, api.CommitID(r.oid), args.Path)
 	if err != nil {
 		return nil, err
@@ -128,20 +138,18 @@ func (r *gitCommitResolver) Tree(ctx context.Context, args *struct {
 	}
 	return &gitTreeEntryResolver{
 		commit:      r,
-		path:        args.Path,
 		stat:        stat,
 		isRecursive: args.Recursive,
 	}, nil
 }
 
-func (r *gitCommitResolver) Blob(ctx context.Context, args *struct {
+func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 	Path string
 }) (*gitTreeEntryResolver, error) {
 	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.repo)
 	if err != nil {
 		return nil, err
 	}
-
 	stat, err := git.Stat(ctx, *cachedRepo, api.CommitID(r.oid), args.Path)
 	if err != nil {
 		return nil, err
@@ -151,18 +159,17 @@ func (r *gitCommitResolver) Blob(ctx context.Context, args *struct {
 	}
 	return &gitTreeEntryResolver{
 		commit: r,
-		path:   args.Path,
 		stat:   stat,
 	}, nil
 }
 
-func (r *gitCommitResolver) File(ctx context.Context, args *struct {
+func (r *GitCommitResolver) File(ctx context.Context, args *struct {
 	Path string
 }) (*gitTreeEntryResolver, error) {
 	return r.Blob(ctx, args)
 }
 
-func (r *gitCommitResolver) Languages(ctx context.Context) ([]string, error) {
+func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
 	inventory, err := backend.Repos.GetInventory(ctx, r.repo.repo, api.CommitID(r.oid))
 	if err != nil {
 		return nil, err
@@ -175,28 +182,27 @@ func (r *gitCommitResolver) Languages(ctx context.Context) ([]string, error) {
 	return names, nil
 }
 
-func (r *gitCommitResolver) Ancestors(ctx context.Context, args *struct {
+func (r *GitCommitResolver) Ancestors(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
 	Query *string
 	Path  *string
-}) *gitCommitConnectionResolver {
+}) (*gitCommitConnectionResolver, error) {
 	return &gitCommitConnectionResolver{
 		revisionRange: string(r.oid),
 		first:         args.ConnectionArgs.First,
 		query:         args.Query,
 		path:          args.Path,
 		repo:          r.repo,
-	}
+	}, nil
 }
 
-func (r *gitCommitResolver) BehindAhead(ctx context.Context, args *struct {
+func (r *GitCommitResolver) BehindAhead(ctx context.Context, args *struct {
 	Revspec string
 }) (*behindAheadCountsResolver, error) {
 	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.repo)
 	if err != nil {
 		return nil, err
 	}
-
 	counts, err := git.GetBehindAhead(ctx, *cachedRepo, args.Revspec, string(r.oid))
 	if err != nil {
 		return nil, err
@@ -214,7 +220,7 @@ func (r *behindAheadCountsResolver) Ahead() int32  { return r.ahead }
 
 // inputRevOrImmutableRev returns the input revspec, if it is provided and nonempty. Otherwise it returns the
 // canonical OID for the revision.
-func (r *gitCommitResolver) inputRevOrImmutableRev() string {
+func (r *GitCommitResolver) inputRevOrImmutableRev() string {
 	if r.inputRev != nil && *r.inputRev != "" {
 		return escapeRevspecForURL(*r.inputRev)
 	}
@@ -226,7 +232,7 @@ func (r *gitCommitResolver) inputRevOrImmutableRev() string {
 // given. This is because the convention in the frontend is for repo-rev URLs to omit the "@rev"
 // portion (unlike for commit page URLs, which must include some revspec in
 // "/REPO/-/commit/REVSPEC").
-func (r *gitCommitResolver) repoRevURL() string {
+func (r *GitCommitResolver) repoRevURL() (string, error) {
 	url := r.repo.URL()
 	var rev string
 	if r.inputRev != nil {
@@ -235,13 +241,13 @@ func (r *gitCommitResolver) repoRevURL() string {
 		rev = string(r.oid)
 	}
 	if rev != "" {
-		return url + "@" + escapeRevspecForURL(rev)
+		return url + "@" + escapeRevspecForURL(rev), nil
 	}
-	return url
+	return url, nil
 }
 
-func (r *gitCommitResolver) canonicalRepoRevURL() string {
-	return r.repo.URL() + "@" + string(r.oid)
+func (r *GitCommitResolver) canonicalRepoRevURL() (string, error) {
+	return r.repo.URL() + "@" + string(r.oid), nil
 }
 
 // gitCommitBody returns the first line of the Git commit message.

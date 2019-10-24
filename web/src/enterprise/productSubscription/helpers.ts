@@ -1,3 +1,4 @@
+import { parseISO } from 'date-fns'
 import formatDistanceStrict from 'date-fns/formatDistanceStrict'
 import isAfter from 'date-fns/isAfter'
 import { numberWithCommas, pluralize } from '../../../../shared/src/util/strings'
@@ -15,15 +16,17 @@ export function formatUserCount(userCount: number, hyphenate?: boolean): string 
 /**
  * Reports whether {@link expiresAt} is in the past.
  */
-export function isProductLicenseExpired(expiresAt: string | number): boolean {
-    return !isAfter(expiresAt, Date.now())
+export function isProductLicenseExpired(expiresAt: string | number | Date): boolean {
+    return !isAfter(typeof expiresAt === 'string' ? parseISO(expiresAt) : expiresAt, Date.now())
 }
 
 /**
  * Returns "T remaining" or "T ago" for an expiration date.
  */
-export function formatRelativeExpirationDate(date: string | number): string {
-    return `${formatDistanceStrict(date, Date.now())} ${isProductLicenseExpired(date) ? 'ago' : 'remaining'}`
+export function formatRelativeExpirationDate(date: string | number | Date): string {
+    return `${formatDistanceStrict(typeof date === 'string' ? parseISO(date) : date, Date.now())} ${
+        isProductLicenseExpired(date) ? 'ago' : 'remaining'
+    }`
 }
 
 /**
