@@ -46,8 +46,6 @@ type Mutation {
     createCampaign(input: CreateCampaignInput!): Campaign!
     # Updates a campaign.
     updateCampaign(input: UpdateCampaignInput!): Campaign!
-    # Move the campaign out of draft mode and start creating changesets according to the campaign's codeModSpec.
-    startCampaign(campaign: ID!): Campaign!
     # Deletes a campaign.
     deleteCampaign(campaign: ID!): EmptyResponse
 
