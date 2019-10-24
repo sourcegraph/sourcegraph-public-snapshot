@@ -63,7 +63,7 @@ func TestReposService_List(t *testing.T) {
 	}
 }
 
-func TestRepos_AddRepository(t *testing.T) {
+func TestRepos_Add(t *testing.T) {
 	var s repos
 	ctx := testContext()
 
