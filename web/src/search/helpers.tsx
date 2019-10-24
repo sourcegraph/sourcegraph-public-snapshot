@@ -5,7 +5,7 @@ import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { eventLogger } from '../tracking/eventLogger'
 import { SearchType } from './results/SearchResults'
 import { Suggestion, SuggestionTypes } from './input/Suggestion'
-import { SearchFilterSuggestions } from './getSearchFilterSuggestions'
+import { SearchFilterSuggestions, filterAliases } from './getSearchFilterSuggestions'
 import { QueryCursorPair } from './input/QueryInput'
 
 /**
@@ -168,10 +168,16 @@ export const filterSearchSuggestions = (
     const textUntilCursor = query.substring(0, cursorPosition)
     const [lastWord] = textUntilCursor.match(/([^\s]+)$/) || ['']
     const [_filter, valueSearch] = lastWord.split(':')
-    const filter = _filter.replace('-', '') as SuggestionTypes
+    let filter = _filter.replace('-', '')
 
-    if (filter !== SuggestionTypes.filters && (valueSearch || lastWord.endsWith(':'))) {
-        const suggestionsToShow = filterSuggestions[filter] || []
+    if (!filter) {
+        return []
+    }
+
+    filter = filterAliases[filter as keyof typeof filterAliases] || filter
+
+    if (filter in SuggestionTypes && filter !== SuggestionTypes.filters && (valueSearch || lastWord.endsWith(':'))) {
+        const suggestionsToShow = filterSuggestions[filter as SuggestionTypes] || []
         return suggestionsToShow.values.filter(
             suggestion => suggestion.title.slice(0, valueSearch.length) === valueSearch
         )

@@ -312,14 +312,14 @@ export class QueryInput extends React.Component<Props, State> {
         }
 
         // 🚨 PRIVACY: never provide any private data in { code_search: { suggestion: { type } } }.
-        /* eventLogger.log('SearchSuggestionSelected', {
+        eventLogger.log('SearchSuggestionSelected', {
             code_search: {
                 suggestion: {
                     type: suggestion.type,
-                    url: suggestion.url,
+                    // TODO: url: suggestion.url,
                 },
             },
-        }) */
+        })
 
         const { cursorPosition } = this.state.suggestions
         const isValueSuggestion = suggestion.type !== SuggestionTypes.filters

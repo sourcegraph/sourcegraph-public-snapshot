@@ -34,6 +34,14 @@ export const addTypeToSuggestions = (suggestions: PartialSearchFilterSuggestions
         suggestions as SearchFilterSuggestions
     )
 
+export const filterAliases = {
+    r: SuggestionTypes.repo,
+    g: SuggestionTypes.repogroup,
+    f: SuggestionTypes.file,
+    l: SuggestionTypes.lang,
+    language: SuggestionTypes.lang,
+}
+
 export const baseSuggestions: PartialSearchFilterSuggestions = {
     filters: {
         values: [

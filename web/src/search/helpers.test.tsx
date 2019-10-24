@@ -1,6 +1,9 @@
 import { getSearchTypeFromQuery, toggleSearchType, filterSearchSuggestions, insertSuggestionInQuery } from './helpers'
 import { SearchType } from './results/SearchResults'
 import { addTypeToSuggestions, baseSuggestions } from './getSearchFilterSuggestions'
+import startsWith from 'lodash/fp/startsWith'
+import map from 'lodash/map'
+import forEach from 'lodash/forEach'
 
 describe('search/helpers', () => {
     describe('queryIndexOfScope()', () => {
@@ -90,21 +93,39 @@ describe('search/helpers', () => {
 
     describe('suggestions', () => {
         const filterSuggestions = addTypeToSuggestions(baseSuggestions)
-        const filterQuery = 'test re test'
+        const filterQuery = 'test r test'
 
         const getArchivedSuggestions = () => filterSearchSuggestions('archived:', 9, filterSuggestions)
+        const getFilterSuggestionStartingWithR = () => filterSearchSuggestions(filterQuery, 6, filterSuggestions)
 
-        const getRepoFilterSuggestion = () =>
-            filterSearchSuggestions(filterQuery, 7, filterSuggestions).filter(({ title }) => title === 'repo')[0]
+        describe('filterSearchSuggestions()', () => {
+            test('filters suggestions for filters starting with "r"', () => {
+                const filtersStartingWithR = Object.keys(baseSuggestions).filter(startsWith('r'))
+                expect(map(getFilterSuggestionStartingWithR(), 'title')).toEqual(
+                    expect.arrayContaining(filtersStartingWithR)
+                )
+            })
 
-        describe('filterSearchSuggestions', () => {
-            test('filters suggestions for filters starting with "re"', () => {
-                expect(getRepoFilterSuggestion().title).toBe('repo')
+            test('filters suggestions for filter alias "r:"', () => {
+                forEach(
+                    {
+                        r: 'repo',
+                        g: 'repogroup',
+                        language: 'lang',
+                    },
+                    (filter: string, alias: string) => {
+                        const [{ title }] = filterSearchSuggestions(alias, alias.length, filterSuggestions)
+                        expect(title).toBe(filter)
+                    }
+                )
+            })
+
+            test('does not throw for query ":"', () => {
+                expect(() => filterSearchSuggestions(':', 1, filterSuggestions)).not.toThrowError()
             })
 
             test('filters suggestions for word "test"', () => {
-                const suggestions = filterSearchSuggestions(filterQuery, 4, filterSuggestions)
-                expect(suggestions.length).toBe(0)
+                expect(filterSearchSuggestions(filterQuery, 4, filterSuggestions)).toHaveLength(0)
             })
 
             test('filters suggestions for the "archived:" filter', () => {
@@ -113,13 +134,13 @@ describe('search/helpers', () => {
             })
         })
 
-        describe('insertSuggestionInQuery', () => {
+        describe('insertSuggestionInQuery()', () => {
             describe('inserts suggestions for a filter name', () => {
-                const suggestion = getRepoFilterSuggestion()
-                const [newQuery] = insertSuggestionInQuery('test re test', suggestion, 7)
+                const suggestion = getFilterSuggestionStartingWithR().filter(({ title }) => title === 'repo')[0]
+                const [newQuery] = insertSuggestionInQuery('test r test', suggestion, 6)
                 expect(newQuery).toBe(`test ${suggestion.title}: test`)
             })
-            test('insets suggestion for a filter value', () => {
+            test('inserts suggestion for a filter value', () => {
                 const [suggestion] = getArchivedSuggestions()
                 const [newQuery] = insertSuggestionInQuery('test archived: test', suggestion, 14)
                 expect(newQuery).toBe(`test archived:${suggestion.title} test`)
