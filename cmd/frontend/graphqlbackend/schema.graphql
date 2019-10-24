@@ -452,13 +452,13 @@ type CampaignPlan implements Node {
     changesets(first: Int): ChangesetConnection!
 
     # The combined diff of all changesets that will be created by the campaign.
-    repositoryDiff(first: Int): PreviewRepositoryComparisonConnection!
+    repositoryDiff(first: Int): PreviewRepositoryDiffConnection!
 }
 
-# A paginated list of repository diffs.
-type PreviewRepositoryComparisonConnection {
+# A paginated list of repository diff previews.
+type PreviewRepositoryDiffConnection {
     # A list of repository diffs.
-    nodes: [PreviewRepositoryComparison!]!
+    nodes: [PreviewRepositoryDiff!]!
 
     # The total number of repository diffs in the connection.
     totalCount: Int!
@@ -468,9 +468,9 @@ type PreviewRepositoryComparisonConnection {
 }
 
 # A paginated list of repository diffs committed to git.
-type GitRepositoryComparisonConnection {
+type RepositoryComparisonConnection {
     # A list of repository diffs committed to git.
-    nodes: [GitRepositoryComparison!]!
+    nodes: [RepositoryComparison!]!
 
     # The total number of repository diffs in the connection.
     totalCount: Int!
@@ -506,7 +506,7 @@ type Campaign implements Node {
     updatedAt: DateTime!
 
     # The combined diff of all changesets across all repositories, already created on the code host.
-    repositoryDiffs(first: Int): GitRepositoryComparisonConnection!
+    repositoryDiffs(first: Int): RepositoryComparisonConnection!
 
     # The changesets in this campaign, already created on the code host.
     changesets(first: Int): ChangesetConnection!
@@ -615,7 +615,7 @@ type Changeset implements Node {
     reviewState: ChangesetReviewState!
 
     # The diff of this changeset.
-    diff: RepositoryComparison!
+    diff: RepositoryDiff!
 }
 
 # A list of changesets.
@@ -1654,7 +1654,7 @@ type Repository implements Node & GenericSearchResultInterface {
         base: String
         # The head of the diff ("new" or "right-hand side"), or "HEAD" if not specified.
         head: String
-    ): GitRepositoryComparison!
+    ): RepositoryComparison!
     # The repository's contributors.
     contributors(
         # The Git revision range to compute contributors in.
@@ -1805,9 +1805,9 @@ type GitRefConnection {
     pageInfo: PageInfo!
 }
 
-# A non-yet-committed preview of a diff on a repository.
-type PreviewRepositoryComparison implements RepositoryComparison {
-    # The repository that is the base (left-hand side) of this comparison.
+# A not-yet-committed preview of a diff on a repository.
+type PreviewRepositoryDiff implements RepositoryDiff {
+    # The repository that this diff is targeting.
     baseRepository: Repository!
 
     # The file diffs for each changed file.
@@ -1817,9 +1817,9 @@ type PreviewRepositoryComparison implements RepositoryComparison {
     ): FileDiffConnection!
 }
 
-# A subset of RepositoryComparison that does not require the diff to refer to concrete git commits.
-interface RepositoryComparison {
-    # The repository that is the base (left-hand side) of this comparison.
+# Any diff on a concrete repository.
+interface RepositoryDiff {
+    # The repository that this diff is targeting.
     baseRepository: Repository!
 
     # The file diffs for each changed file.
@@ -1829,14 +1829,14 @@ interface RepositoryComparison {
     ): FileDiffConnection!
 }
 
-# The differences between two Git commits in a repository.
-type GitRepositoryComparison implements RepositoryComparison {
+# The differences between two concrete Git commits in a repository.
+type RepositoryComparison implements RepositoryDiff {
     # The repository that is the base (left-hand side) of this comparison.
     baseRepository: Repository!
 
     # The repository that is the head (right-hand side) of this comparison. Cross-repository
     # comparisons are not yet supported, so this is always equal to
-    # GitRepositoryComparison.baseRepository.
+    # RepositoryComparison.baseRepository.
     headRepository: Repository!
 
     # The range that this comparison represents.
