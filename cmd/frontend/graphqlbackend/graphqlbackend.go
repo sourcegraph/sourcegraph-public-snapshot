@@ -167,13 +167,18 @@ func (r *NodeResolver) ToSite() (*siteResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToLsifJob() (*lsifJobResolver, bool) {
-	n, ok := r.Node.(*lsifJobResolver)
+func (r *NodeResolver) ToLSIFDump() (*lsifDumpResolver, bool) {
+	n, ok := r.Node.(*lsifDumpResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToLsifJobStats() (*lsifJobStatsResolver, bool) {
+func (r *NodeResolver) ToLSIFJobStats() (*lsifJobStatsResolver, bool) {
 	n, ok := r.Node.(*lsifJobStatsResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToLSIFJob() (*lsifJobResolver, bool) {
+	n, ok := r.Node.(*lsifJobResolver)
 	return n, ok
 }
 
@@ -247,9 +252,11 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return savedSearchByID(ctx, id)
 	case "Site":
 		return siteByGQLID(ctx, id)
-	case "LsifJob":
+	case "LSIFDump":
+		return lsifDumpByGQLID(ctx, id)
+	case "LSIFJob":
 		return lsifJobByGQLID(ctx, id)
-	case "LsifJobStats":
+	case "LSIFJobStats":
 		return lsifJobStatsByGQLID(ctx, id)
 	default:
 		return nil, errors.New("invalid id")

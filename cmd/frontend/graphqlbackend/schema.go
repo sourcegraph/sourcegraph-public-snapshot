@@ -1092,14 +1092,20 @@ type Query {
     # Look up a namespace by ID.
     namespace(id: ID!): Namespace
 
+    # Retrieve the LSIF dumps for a repository.
+    lsifDumps(repository: String!): [LSIFDump!]!
+
+    # TODO - document
+    lsifDump(id: ID!): LSIFDump
+
     # Retrieve counts of jobs in the LSIF work queue.
-    lsifJobStats: LsifJobStats!
+    lsifJobStats: LSIFJobStats!
 
     # Look up an LSIF job by ID.
-    lsifJob(id: ID!): LsifJob
+    lsifJob(id: ID!): LSIFJob
 
     # Search for LSIF jobs by status ad query term.
-    lsifJobs(first: Int, after: ID, status: String!, query: String): LsifJobConnection!
+    lsifJobs(first: Int, after: ID, status: String!, query: String): LSIFJobConnection!
 }
 
 # The version of the search syntax.
@@ -3703,8 +3709,26 @@ type RegistryExtensionConnection {
     error: String
 }
 
+# Metadata about an LSIF upload.
+type LSIFDump implements Node {
+    # An opaque GraphQL ID.
+    id: ID!
+
+    # TODO - document
+    repository: String!
+
+    # TODO - document
+    commit: String!
+
+    # TODO - document
+    root: String!
+}
+
 # Counts of LISF jobs by status.
-type LsifJobStats implements Node {
+type LSIFJobStats implements Node {
+    # An opaque GraphQL ID.
+    id: ID!
+
     # The number of active jobs.
     active: Int!
 
@@ -3722,7 +3746,7 @@ type LsifJobStats implements Node {
 }
 
 # A queued, active, or completed LSIF job.
-type LsifJob implements Node {
+type LSIFJob implements Node {
     # The ID.
     id: ID!
 
@@ -3755,9 +3779,9 @@ type LsifJob implements Node {
 }
 
 # A list of LSIF jobs.
-type LsifJobConnection {
+type LSIFJobConnection {
     # A list of LSIF jobs.
-    nodes: [LsifJob!]!
+    nodes: [LSIFJob!]!
 
     # The total number of jobs with this status.
     totalCount: Int!

@@ -93,8 +93,6 @@ const createConvertJobProcessor = (xrepoDatabase: XrepoDatabase, fetchConfigurat
     { repository, commit, root, filename }: { repository: string; commit: string; root: string; filename: string },
     ctx: TracingContext
 ): Promise<void> => {
-    await new Promise(resolve => setTimeout(resolve, 15000))
-
     await logAndTraceCall(ctx, 'converting LSIF data', async (ctx: TracingContext) => {
         const input = fs.createReadStream(filename)
         const tempFile = path.join(STORAGE_ROOT, 'tmp', uuid.v4())

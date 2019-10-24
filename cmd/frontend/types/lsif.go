@@ -5,7 +5,14 @@ import (
 	"time"
 )
 
-type LsifJobStats struct {
+type LSIFDump struct {
+	ID         int32  `json:"id"`
+	Repository string `json:"repository"`
+	Commit     string `json:"commit"`
+	Root       string `json:"root"`
+}
+
+type LSIFJobStats struct {
 	Active    int32 `json:"active"`
 	Queued    int32 `json:"queued"`
 	Scheduled int32 `json:"scheduled"`
@@ -13,7 +20,7 @@ type LsifJobStats struct {
 	Failed    int32 `json:"failed"`
 }
 
-type LsifJob struct {
+type LSIFJob struct {
 	ID           string           `json:"id"`
 	Name         string           `json:"name"`
 	Args         *json.RawMessage `json:"args"`

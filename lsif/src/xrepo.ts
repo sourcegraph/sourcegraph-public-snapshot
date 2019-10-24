@@ -291,6 +291,33 @@ export class XrepoDatabase {
     }
 
     /**
+     * Get the dumps for a repository.
+     *
+     * @param repository The repository.
+     */
+    public getDumps(repository: string): Promise<LsifDump[]> {
+        // TODO - also limit
+        //
+        return this.withConnection(async connection =>
+            connection
+                .getRepository(LsifDump)
+                .createQueryBuilder()
+                .where({ repository })
+                .orderBy('commit')
+                .getMany()
+        )
+    }
+
+    /**
+     * Get a dump by identifier.
+     *
+     * @param id The dump identifier.
+     */
+    public getDumpById(id: DumpID): Promise<LsifDump | undefined> {
+        return this.withConnection(async connection => connection.getRepository(LsifDump).findOne({ id }))
+    }
+
+    /**
      * Find the dump for the given repository and commit.
      *
      * @param repository The repository.

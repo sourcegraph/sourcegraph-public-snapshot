@@ -12,20 +12,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
-type LsifJobsListOptions struct {
+type LSIFJobsListOptions struct {
 	Status string
 	Query  *string
 	Limit  *int32
 	Offset *int
 }
 
-func (r *schemaResolver) LsifJobs(args *struct {
+func (r *schemaResolver) LSIFJobs(args *struct {
 	graphqlutil.ConnectionArgs
 	Status string
 	Query  *string
 	After  *graphql.ID
 }) (*lsifJobConnectionResolver, error) {
-	opt := LsifJobsListOptions{
+	opt := LSIFJobsListOptions{
 		Status: args.Status,
 		Query:  args.Query,
 	}
@@ -33,7 +33,7 @@ func (r *schemaResolver) LsifJobs(args *struct {
 		opt.Limit = args.First
 	}
 	if args.After != nil {
-		offset, err := unmarshalLsifJobsCursorGQLID(*args.After)
+		offset, err := unmarshalLSIFJobsCursorGQLID(*args.After)
 		if err != nil {
 			return nil, err
 		}
@@ -44,16 +44,16 @@ func (r *schemaResolver) LsifJobs(args *struct {
 }
 
 type lsifJobConnectionResolver struct {
-	opt LsifJobsListOptions
+	opt LSIFJobsListOptions
 
 	// cache results because they are used by multiple fields
 	once       sync.Once
-	jobs       []*types.LsifJob
+	jobs       []*types.LSIFJob
 	totalCount int
 	err        error
 }
 
-func (r *lsifJobConnectionResolver) compute(ctx context.Context) ([]*types.LsifJob, int, error) {
+func (r *lsifJobConnectionResolver) compute(ctx context.Context) ([]*types.LSIFJob, int, error) {
 	r.once.Do(func() {
 		query := url.Values{}
 		if r.opt.Query != nil {
@@ -67,7 +67,7 @@ func (r *lsifJobConnectionResolver) compute(ctx context.Context) ([]*types.LsifJ
 		}
 
 		var payload struct {
-			Jobs       []*types.LsifJob `json:"jobs"`
+			Jobs       []*types.LSIFJob `json:"jobs"`
 			TotalCount int              `json:"totalCount"`
 		}
 
@@ -116,17 +116,17 @@ func (r *lsifJobConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.
 	}
 
 	if seen < count {
-		return graphqlutil.NextPageCursor(marshalLsifJobsCursorGQLID(seen)), nil
+		return graphqlutil.NextPageCursor(marshalLSIFJobsCursorGQLID(seen)), nil
 	}
 
 	return graphqlutil.HasNextPage(false), nil
 }
 
-func marshalLsifJobsCursorGQLID(offset int) graphql.ID {
-	return relay.MarshalID("LsifJobsCursor", offset)
+func marshalLSIFJobsCursorGQLID(offset int) graphql.ID {
+	return relay.MarshalID("LSIFJobsCursor", offset)
 }
 
-func unmarshalLsifJobsCursorGQLID(id graphql.ID) (offset int, err error) {
+func unmarshalLSIFJobsCursorGQLID(id graphql.ID) (offset int, err error) {
 	err = relay.UnmarshalSpec(id, &offset)
 	return
 }

@@ -18,7 +18,7 @@ local searchableArguments = {
 
 local commandsByQueue = {
     ['active'] = 'LRANGE',
-    ['waiting'] = 'LRANGE',
+    ['wait'] = 'LRANGE',
     ['delayed'] = 'ZRANGE',
     ['completed'] = 'ZREVRANGE',
     ['failed'] = 'ZREVRANGE',

@@ -9,16 +9,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
-func (r *schemaResolver) LsifJob(ctx context.Context, args *struct{ ID graphql.ID }) (*lsifJobResolver, error) {
+func (r *schemaResolver) LSIFJob(ctx context.Context, args *struct{ ID graphql.ID }) (*lsifJobResolver, error) {
 	return lsifJobByGQLID(ctx, args.ID)
 }
 
 type lsifJobResolver struct {
-	lsifJob *types.LsifJob
+	lsifJob *types.LSIFJob
 }
 
 func lsifJobByGQLID(ctx context.Context, id graphql.ID) (*lsifJobResolver, error) {
-	jobID, err := unmarshalLsifJobGQLID(id)
+	jobID, err := unmarshalLSIFJobGQLID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +27,7 @@ func lsifJobByGQLID(ctx context.Context, id graphql.ID) (*lsifJobResolver, error
 }
 
 func lsifJobByStringID(ctx context.Context, id string) (*lsifJobResolver, error) {
-	var lsifJob *types.LsifJob
+	var lsifJob *types.LSIFJob
 	if err := lsifRequest(ctx, fmt.Sprintf("jobs/%s", id), nil, &lsifJob); err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func lsifJobByStringID(ctx context.Context, id string) (*lsifJobResolver, error)
 	return &lsifJobResolver{lsifJob: lsifJob}, nil
 }
 
-func (r *lsifJobResolver) ID() graphql.ID         { return marshalLsifJobGQLID(r.lsifJob.ID) }
+func (r *lsifJobResolver) ID() graphql.ID         { return marshalLSIFJobGQLID(r.lsifJob.ID) }
 func (r *lsifJobResolver) Name() string           { return r.lsifJob.Name }
 func (r *lsifJobResolver) Args() JSONValue        { return JSONValue{r.lsifJob.Args} }
 func (r *lsifJobResolver) Status() string         { return r.lsifJob.Status }
@@ -46,11 +46,11 @@ func (r *lsifJobResolver) Timestamp() DateTime    { return DateTime{Time: r.lsif
 func (r *lsifJobResolver) ProcessedOn() *DateTime { return DateTimeOrNil(r.lsifJob.ProcessedOn) }
 func (r *lsifJobResolver) FinishedOn() *DateTime  { return DateTimeOrNil(r.lsifJob.FinishedOn) }
 
-func marshalLsifJobGQLID(lsifJobID string) graphql.ID {
-	return relay.MarshalID("LsifJob", lsifJobID)
+func marshalLSIFJobGQLID(lsifJobID string) graphql.ID {
+	return relay.MarshalID("LSIFJob", lsifJobID)
 }
 
-func unmarshalLsifJobGQLID(id graphql.ID) (lsifJobID string, err error) {
+func unmarshalLSIFJobGQLID(id graphql.ID) (lsifJobID string, err error) {
 	err = relay.UnmarshalSpec(id, &lsifJobID)
 	return
 }

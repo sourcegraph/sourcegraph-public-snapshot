@@ -9,22 +9,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
-const singletonLsifJobStatsGQLID = "lsifJobStats"
+const singletonLSIFJobStatsGQLID = "lsifJobStats"
 
-func (r *schemaResolver) LsifJobStats(ctx context.Context) (*lsifJobStatsResolver, error) {
-	return lsifJobStatsByGQLID(ctx, marshalLsifJobStatsGQLID(singletonLsifJobStatsGQLID))
+func (r *schemaResolver) LSIFJobStats(ctx context.Context) (*lsifJobStatsResolver, error) {
+	return lsifJobStatsByGQLID(ctx, marshalLSIFJobStatsGQLID(singletonLSIFJobStatsGQLID))
 }
 
 func lsifJobStatsByGQLID(ctx context.Context, id graphql.ID) (*lsifJobStatsResolver, error) {
-	lsifJobStatsGQLID, err := unmarshalLsifJobStatsGQLID(id)
+	lsifJobStatsGQLID, err := unmarshalLSIFJobStatsGQLID(id)
 	if err != nil {
 		return nil, err
 	}
-	if lsifJobStatsGQLID != singletonLsifJobStatsGQLID {
+	if lsifJobStatsGQLID != singletonLSIFJobStatsGQLID {
 		return nil, fmt.Errorf("lsif job stats not found: %q", lsifJobStatsGQLID)
 	}
 
-	var stats *types.LsifJobStats
+	var stats *types.LSIFJobStats
 	if err := lsifRequest(ctx, "jobs/stats", nil, &stats); err != nil {
 		return nil, err
 	}
@@ -33,12 +33,12 @@ func lsifJobStatsByGQLID(ctx context.Context, id graphql.ID) (*lsifJobStatsResol
 }
 
 type lsifJobStatsResolver struct {
-	stats *types.LsifJobStats
+	stats *types.LSIFJobStats
 }
 
 func (r *lsifJobStatsResolver) ID() graphql.ID {
 
-	return marshalLsifJobStatsGQLID(singletonLsifJobStatsGQLID)
+	return marshalLSIFJobStatsGQLID(singletonLSIFJobStatsGQLID)
 }
 
 func (r *lsifJobStatsResolver) Active() int32    { return r.stats.Active }
@@ -47,11 +47,11 @@ func (r *lsifJobStatsResolver) Scheduled() int32 { return r.stats.Scheduled }
 func (r *lsifJobStatsResolver) Completed() int32 { return r.stats.Completed }
 func (r *lsifJobStatsResolver) Failed() int32    { return r.stats.Failed }
 
-func marshalLsifJobStatsGQLID(lsifJobStatsID string) graphql.ID {
-	return relay.MarshalID("LsifJobStats", lsifJobStatsID)
+func marshalLSIFJobStatsGQLID(lsifJobStatsID string) graphql.ID {
+	return relay.MarshalID("LSIFJobStats", lsifJobStatsID)
 }
 
-func unmarshalLsifJobStatsGQLID(id graphql.ID) (lsifJobStatsID string, err error) {
+func unmarshalLSIFJobStatsGQLID(id graphql.ID) (lsifJobStatsID string, err error) {
 	err = relay.UnmarshalSpec(id, &lsifJobStatsID)
 	return
 }

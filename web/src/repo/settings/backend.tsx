@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { gql } from '../../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../backend/graphql'
@@ -51,5 +51,29 @@ export function fetchRepository(name: string): Observable<GQL.IRepository> {
             }
             return data.repository
         })
+    )
+}
+
+/**
+ * Fetch of LSIF dumps for a repository.
+ */
+export function fetchLsifDumps(repository: string): Observable<GQL.ILSIFDumpConnection> {
+    return queryGraphQL(
+        gql`
+            query LsifDumps($repository: String!) {
+                lsifDumps(repository: $repository) {
+                    nodes {
+                        id
+                        repository
+                        commit
+                        root
+                    }
+                }
+            }
+        `,
+        { repository }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.lsifDumps)
     )
 }

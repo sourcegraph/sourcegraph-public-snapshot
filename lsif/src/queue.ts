@@ -22,14 +22,14 @@ const QUEUE_PREFIX = 'bull:lsif:'
 /**
  * The names of queues as defined in Bull.
  */
-export type QueueTypes = 'active' | 'waiting' | 'delayed' | 'completed' | 'failed'
+export type QueueTypes = 'active' | 'wait' | 'delayed' | 'completed' | 'failed'
 
 /**
  * A mapping from job statuses to queue names.
  */
 export const queueTypes = new Map<string, QueueTypes>([
     ['active', 'active'],
-    ['queued', 'waiting'],
+    ['queued', 'wait'],
     ['scheduled', 'delayed'],
     ['completed', 'completed'],
     ['failed', 'failed'],

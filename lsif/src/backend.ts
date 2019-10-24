@@ -34,9 +34,30 @@ export class Backend {
     ) {}
 
     /**
+     * Get the set of dumps for a repository.
+     *
+     * @param repository The repository.
+     */
+    public dumps(repository: string): Promise<LsifDump[]> {
+        return this.xrepoDatabase.getDumps(repository)
+    }
+
+    /**
+     * Get a dump by identifier.
+     *
+     * @param id The dump identifier.
+     */
+    public dump(id: DumpID): Promise<LsifDump | undefined> {
+        return this.xrepoDatabase.getDumpById(id)
+    }
+
+    /**
      * Determine if data exists for a particular document in this database.
      *
+     * @param repository The repository.
+     * @param commit The commit.
      * @param path The path of the document.
+     * @param ctx The tracing context.
      */
     public async exists(repository: string, commit: string, path: string, ctx: TracingContext = {}): Promise<boolean> {
         try {
@@ -53,6 +74,8 @@ export class Backend {
     /**
      * Return the location for the definition of the reference at the given position.
      *
+     * @param repository The repository.
+     * @param commit The commit.
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
      * @param ctx The tracing context.

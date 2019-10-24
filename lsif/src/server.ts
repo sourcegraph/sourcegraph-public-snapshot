@@ -317,6 +317,27 @@ async function lsifEndpoints(
         )
     )
 
+    router.get(
+        '/dumps',
+        wrap(
+            async (req: express.Request & { span?: Span }, res: express.Response): Promise<void> => {
+                const { repository } = req.query
+                checkRepository(repository)
+                res.json(await backend.dumps(repository))
+            }
+        )
+    )
+
+    router.get(
+        '/dumps/:id',
+        wrap(
+            async (req: express.Request & { span?: Span }, res: express.Response): Promise<void> => {
+                const { id } = req.params
+                res.json(await backend.dump(parseInt(id, 10))) // TODO
+            }
+        )
+    )
+
     router.post(
         '/exists',
         wrap(
