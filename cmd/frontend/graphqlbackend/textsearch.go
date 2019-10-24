@@ -530,7 +530,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		}
 	}
 
-	// This  function calls searcher on a set of repos.
+	// This function calls searcher on a set of repos.
 	callSearcherOverRepos := func(searcherRepos []*search.RepositoryRevisions, common *searchResultsCommon) (*searchResultsCommon, error) {
 		var err error
 		var fetchTimeout time.Duration
