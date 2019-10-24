@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -102,10 +103,10 @@ func (s *repos) AddGitHubDotComRepository(ctx context.Context, name api.RepoName
 	ctx, done := trace(ctx, "Repos", "AddGitHubDotComRepository", name, &err)
 	defer done()
 
-	// Avoid hitting the repoupdater (and incurring a hit against our GitHub/etc. API rate
+	// Avoid hitting repoupdater (and incurring a hit against our GitHub/etc. API rate
 	// limit) for repositories that don't exist or private repositories that people attempt to
 	// access.
-	gitserverRepo, err := quickGitserverRepo(ctx, name, "github.com")
+	gitserverRepo, err := quickGitserverRepo(ctx, name, github.ServiceType)
 	if err != nil {
 		return err
 	}
