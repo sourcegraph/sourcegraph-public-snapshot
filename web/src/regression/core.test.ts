@@ -246,6 +246,10 @@ describe('Core functionality regression test suite', () => {
         }
     })
 
+    test('Quicklinks', async () => {
+        // TODO(@sourcegraph/web)
+    })
+
     test('Organizations (admin user)', async () => {
         // TODO(@sourcegraph/web)
     })
@@ -253,9 +257,6 @@ describe('Core functionality regression test suite', () => {
         // TODO(@sourcegraph/web)
     })
     test('Explore page', async () => {
-        // TODO(@sourcegraph/web)
-    })
-    test('Quicklinks', async () => {
         // TODO(@sourcegraph/web)
     })
 })

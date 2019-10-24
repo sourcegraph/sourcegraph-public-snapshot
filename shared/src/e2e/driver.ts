@@ -52,12 +52,12 @@ interface FindElementOptions {
     /**
      * Specifies how exact the search criterion is.
      */
-    fuzziness: 'exact' | 'prefix' | 'space-prefix' | 'contains'
+    fuzziness?: 'exact' | 'prefix' | 'space-prefix' | 'contains'
 }
 
 function getFindElementQueries(
     text: string,
-    { tagName, fuzziness }: Pick<FindElementOptions, 'tagName' | 'fuzziness'>
+    { tagName, fuzziness = 'space-prefix' }: Pick<FindElementOptions, 'tagName' | 'fuzziness'>
 ): string[] {
     const tag = tagName || '*'
     const queries = [`//${tag}[text() = ${JSON.stringify(text)}]`]
@@ -438,7 +438,7 @@ export class Driver {
 
     public async waitForElementWithText(
         text: string,
-        { tagName, fuzziness = 'space-prefix' }: FindElementOptions = { fuzziness: 'space-prefix' },
+        { tagName, fuzziness }: FindElementOptions = {},
         options?: PageFnOptions
     ): Promise<puppeteer.ElementHandle<Element>> {
         const queries = getFindElementQueries(text, { tagName, fuzziness })
@@ -486,7 +486,7 @@ export class Driver {
      */
     public async findElementWithText(
         text: string,
-        { tagName, log, fuzziness = 'space-prefix' }: FindElementOptions = { fuzziness: 'space-prefix' }
+        { tagName, log, fuzziness }: FindElementOptions = {}
     ): Promise<puppeteer.ElementHandle<Element>[]> {
         const queries = getFindElementQueries(text, { tagName, fuzziness })
         for (const query of queries) {
@@ -515,7 +515,7 @@ export class Driver {
      * Click the element containing the text. The element is discovered using the
      * `findElementWithText` method.
      */
-    public async clickElementWithText(text: string, options?: FindElementOptions): Promise<void> {
+    public async clickElementWithText(text: string, options: FindElementOptions = {}): Promise<void> {
         const handles = await this.findElementWithText(text, options)
         await handles[0].click()
         await Promise.all(handles.map(handle => handle.dispose()))
