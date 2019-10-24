@@ -19,7 +19,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- Fixed unable to use hyphens in Bitbucket Cloud team name. [#6154](https://github.com/sourcegraph/sourcegraph/issues/6154)
+- Support hyphens in Bitbucket Cloud team names. [#6154](https://github.com/sourcegraph/sourcegraph/issues/6154)
 
 ### Removed
 
