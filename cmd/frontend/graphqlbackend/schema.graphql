@@ -552,8 +552,8 @@ enum ChangesetState {
     OPEN
     CLOSED
     MERGED
-    # This changeset has not been created on the code host yet.
-    PENDING_CREATION
+    # This changeset is part of a CampaignPlan and has not been opened on the code host yet.
+    PLANNED
 }
 
 # The state of a Changeset Review
@@ -601,10 +601,12 @@ type Changeset implements Node {
     # The state of the changeset
     state: ChangesetState!
 
-    # The external URL of the changeset on the code host, if already created.
+    # The external URL of the changeset on the code host,
+    # if already opened on the code host.
     externalURL: ExternalLink
 
     # The review state of this changeset.
+    # PENDING for planned changesets.
     reviewState: ChangesetReviewState!
 
     # The diff of this changeset.
