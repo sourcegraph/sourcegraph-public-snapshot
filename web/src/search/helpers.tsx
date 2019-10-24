@@ -150,6 +150,9 @@ export const toggleSearchFilterAndReplaceSampleRepogroup = (query: string, searc
     return newQuery
 }
 
+const isValidFilter = (s: string): s is SuggestionTypes => s in SuggestionTypes
+const isValidFilterAlias = (s: string): s is keyof typeof filterAliases => s in filterAliases
+
 /**
  * Returns suggestions for a given search query but only at the last typed word.
  * If the word does not contain ":" then it returns filter types as suggestions
@@ -174,10 +177,10 @@ export const filterSearchSuggestions = (
         return []
     }
 
-    filter = filterAliases[filter as keyof typeof filterAliases] || filter
+    filter = isValidFilterAlias(filter) ? filterAliases[filter] : filter
 
-    if (filter in SuggestionTypes && filter !== SuggestionTypes.filters && (valueSearch || lastWord.endsWith(':'))) {
-        const suggestionsToShow = filterSuggestions[filter as SuggestionTypes] || []
+    if (isValidFilter(filter) && filter !== SuggestionTypes.filters && (valueSearch || lastWord.endsWith(':'))) {
+        const suggestionsToShow = filterSuggestions[filter] || []
         return suggestionsToShow.values.filter(
             suggestion => suggestion.title.slice(0, valueSearch.length) === valueSearch
         )
