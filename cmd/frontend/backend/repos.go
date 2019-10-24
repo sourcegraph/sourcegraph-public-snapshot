@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -74,7 +75,7 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 	_, notFound := err.(interface{ NotFound() bool })
 	if notFound && envvar.SourcegraphDotComMode() {
 		// Automatically add repositories on Sourcegraph.com.
-		if err := s.AddGitHubDotComRepository(ctx, name); err != nil {
+		if err := s.Add(ctx, name); err != nil {
 			return nil, err
 		}
 		return db.Repos.GetByName(ctx, name)
@@ -92,21 +93,24 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 	return repo, nil
 }
 
-// AddGitHubDotComRepository adds the repository with the given name. The name is mapped to a repository by consulting the
-// repo-updater, which contains information about all configured code hosts and the names that they
-// handle.
-func (s *repos) AddGitHubDotComRepository(ctx context.Context, name api.RepoName) (err error) {
-	if Mocks.Repos.AddGitHubDotComRepository != nil {
-		return Mocks.Repos.AddGitHubDotComRepository(name)
-	}
-
-	ctx, done := trace(ctx, "Repos", "AddGitHubDotComRepository", name, &err)
+// Add adds the repository with the given name to the database by calling
+// repo-updater when in sourcegraph.com mode.
+func (s *repos) Add(ctx context.Context, name api.RepoName) (err error) {
+	ctx, done := trace(ctx, "Repos", "Add", name, &err)
 	defer done()
 
 	// Avoid hitting repoupdater (and incurring a hit against our GitHub/etc. API rate
 	// limit) for repositories that don't exist or private repositories that people attempt to
 	// access.
-	gitserverRepo, err := quickGitserverRepo(ctx, name, github.ServiceType)
+	var serviceType string
+	switch name := strings.ToLower(string(name)); {
+	case strings.HasPrefix(name, "github.com/"):
+		serviceType = github.ServiceType
+	case strings.HasPrefix(name, "gitlab.com/"):
+		serviceType = gitlab.ServiceType
+	}
+
+	gitserverRepo, err := quickGitserverRepo(ctx, name, serviceType)
 	if err != nil {
 		return err
 	}

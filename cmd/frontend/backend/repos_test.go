@@ -63,7 +63,7 @@ func TestReposService_List(t *testing.T) {
 	}
 }
 
-func TestRepos_Add(t *testing.T) {
+func TestRepos_AddRepository(t *testing.T) {
 	var s repos
 	ctx := testContext()
 
@@ -81,23 +81,11 @@ func TestRepos_Add(t *testing.T) {
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
 
-	calledUpsert := false
-	db.Mocks.Repos.Upsert = func(op api.InsertRepoOp) error {
-		calledUpsert = true
-		if want := (api.InsertRepoOp{Name: repoName, Description: "d"}); !reflect.DeepEqual(op, want) {
-			t.Errorf("got %+v, want %+v", op, want)
-		}
-		return nil
-	}
-
-	if err := s.AddGitHubDotComRepository(ctx, repoName); err != nil {
+	if err := s.Add(ctx, repoName); err != nil {
 		t.Fatal(err)
 	}
 	if !calledRepoLookup {
 		t.Error("!calledRepoLookup")
-	}
-	if !calledUpsert {
-		t.Error("!calledUpsert")
 	}
 }
 
