@@ -120,6 +120,14 @@ func defaultCommand(matchTemplate string, rewriteTemplate string, matchOnly bool
 	return run(args, matchOnly)
 }
 
+func MatchesInZip(matchTemplate string, zipPath string, filePatterns []string, jobs int) (results *[]Match, err error) {
+	r, err := defaultCommand(matchTemplate, "", true, filePatterns, "-zip", zipPath)
+	if err != nil {
+		return nil, err
+	}
+	return r.Matches, nil
+}
+
 func MatchesInDir(matchTemplate string, root string, filePatterns []string, jobs int) (results *[]Match, err error) {
 	r, err := defaultCommand(matchTemplate, "", true, filePatterns, "-directory", root)
 	if err != nil {
