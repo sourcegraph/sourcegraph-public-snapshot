@@ -612,7 +612,6 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 				addMatches(matches)
 			}(limitCtx, limitDone, repoRev)
 		}
-		wg.Wait()
 		return common, err
 	}
 
@@ -649,6 +648,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 	}()
 
 	common, err = callSearcherOverRepos(searcherRepos, common)
+	wg.Wait()
 	if err != nil {
 		return nil, common, err
 	}
