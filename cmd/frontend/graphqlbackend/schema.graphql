@@ -413,7 +413,7 @@ input CampaignPlanSpecification {
     # JSONC string that configures the changes that Sourcegraph will open changesets for when the campaign is created.
     #
     # Schema for comby:
-    # { matchTemplate: string, rewriteTemplate: string }
+    # { scopeQuery: string, matchTemplate: string, rewriteTemplate: string }
     arguments: JSONCString!
 }
 
