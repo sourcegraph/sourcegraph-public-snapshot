@@ -43,7 +43,14 @@ type Mutation {
     # It is cached with a short TTL.
     # The campaign plan is computed asynchronously.
     # Check its status property and query it by its id to see its latest state.
-    previewCampaignPlan(specification: CampaignPlanSpecification!): CampaignPlan!
+    previewCampaignPlan(
+        specification: CampaignPlanSpecification!
+        # Whether to wait to finish computing the plan before returning.
+        # If false, callers must poll the CampaignPlan using its node ID to track progress and get results.
+        # If the plan is not ready within an interval that would result in request timeouts,
+        # the query will return anyway, so the caller must check the result's CampaignPlan.status.
+        wait: Boolean = false
+    ): CampaignPlan!
     # Cancel a campaign plan that is being generated.
     # Cancellation expresses a desinterest in the campaign plan and is best-effort.
     # It may not be relied upon.
