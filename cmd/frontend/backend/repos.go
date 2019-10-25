@@ -99,7 +99,7 @@ func (s *repos) Add(ctx context.Context, name api.RepoName) (err error) {
 	ctx, done := trace(ctx, "Repos", "Add", name, &err)
 	defer done()
 
-	// Avoid hitting repoupdater (and incurring a hit against our GitHub/etc. API rate
+	// Avoid hitting repo-updater (and incurring a hit against our GitHub/etc. API rate
 	// limit) for repositories that don't exist or private repositories that people attempt to
 	// access.
 	var serviceType string
