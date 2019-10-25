@@ -1898,10 +1898,7 @@ type PreviewRepositoryDiff implements RepositoryDiff {
     baseRepository: Repository!
 
     # The file diffs for each changed file.
-    fileDiffs(
-        # Return the first n file diffs from the list.
-        first: Int
-    ): FileDiffConnection!
+    fileDiffs(first: Int): FileDiffConnection!
 }
 
 # Any diff on a concrete repository.
@@ -1910,10 +1907,7 @@ interface RepositoryDiff {
     baseRepository: Repository!
 
     # The file diffs for each changed file.
-    fileDiffs(
-        # Return the first n file diffs from the list.
-        first: Int
-    ): FileDiffConnection!
+    fileDiffs(first: Int): FileDiffConnection!
 }
 
 # The differences between two concrete Git commits in a repository.
