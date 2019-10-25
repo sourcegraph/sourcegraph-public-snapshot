@@ -1,10 +1,25 @@
-#!/bin/bash
+#!/usr/bin/env python
 
-set -euf -o pipefail
 
-# Mirroring:
-# - https://github.com/sourcegraph/infrastructure/blob/d67cfdaf7760b926df165745e40f7bd9507d1c20/docker-images/zoekt-indexserver/Dockerfile#L28-L35
-# - https://github.com/sourcegraph/infrastructure/blob/d67cfdaf7760b926df165745e40f7bd9507d1c20/docker-images/zoekt-webserver/Dockerfile#L27-L34
-export GOGC=50
+def main(args, env):
+    """Return the zoekt command to run based on the arguments passed to this script.
 
-exec $@
+    >>> main(['zoekt-sourcegraph-indexserver', '-sourcegraph_url', 'http://localhost:3090', '-index', '/Users/test/.sourcegraph/zoekt/index', '-interval', '1m', '-listen', ':6072'], {})
+    (['zoekt-sourcegraph-indexserver', '-sourcegraph_url', 'http://localhost:3090', '-index', '/Users/test/.sourcegraph/zoekt/index', '-interval', '1m', '-listen', ':6072'], {'GOGC': '50'})
+    """
+
+    # Mirroring:
+    # - https://github.com/sourcegraph/infrastructure/blob/d67cfdaf7760b926df165745e40f7bd9507d1c20/docker-images/zoekt-indexserver/Dockerfile#L28-L35
+    # - https://github.com/sourcegraph/infrastructure/blob/d67cfdaf7760b926df165745e40f7bd9507d1c20/docker-images/zoekt-webserver/Dockerfile#L27-L34
+    env["GOGC"] = "50"
+
+    return args, env
+
+# We always run tests since they are silent on success.
+import doctest; doctest.testmod()
+
+if __name__ == "__main__":
+    import os, sys
+
+    argv, env = main(sys.argv[1:], os.environ.copy())
+    os.execvpe(argv[0], argv, env)
