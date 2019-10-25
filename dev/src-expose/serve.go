@@ -13,9 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func serveRepos(addr string, repoDir string) error {
-	logger := log.New(os.Stderr, "serve: ", log.LstdFlags)
-
+func serveRepos(logger *log.Logger, addr string, repoDir string) error {
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
 		return errors.Wrap(err, "listen")
