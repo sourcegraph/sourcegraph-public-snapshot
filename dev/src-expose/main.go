@@ -35,6 +35,26 @@ func dockerAddr(addr string) string {
 	return "host.docker.internal:" + port
 }
 
+func explain(s *Snapshotter, addr string) string {
+	var dirs []string
+	for _, d := range s.Dirs {
+		dirs = append(dirs, "- "+d.Dir)
+	}
+
+	return fmt.Sprintf(`Periodically syncing directories as git repositories to %s.
+%s
+Serving the repositories at http://%s.
+Paste the following configuration as an Other External Service in Sourcegraph:
+
+  {
+    // url should be reachable by Sourcegraph. host.docker.internal works for Sourcegraph
+    // in Docker on the same machine.
+    "url": "http://%s",
+    "repos": ["src-expose"] // This may change in versions later than 3.9
+  }
+`, s.Destination, strings.Join(dirs, "\n"), addr, dockerAddr(addr))
+}
+
 func usageErrorOutput(cmd *ffcli.Command, cmdPath string, err error) string {
 	var w strings.Builder
 	_, _ = fmt.Fprintf(&w, "%q %s\nSee '%s --help'.\n", cmdPath, err.Error(), cmdPath)
@@ -204,19 +224,7 @@ See https://github.com/sourcegraph/sourcegraph/tree/master/dev/src-expose/exampl
 			}
 
 			if !*globalQuiet {
-				fmt.Printf(`Periodically syncing directories as git repositories to %s.
-- %s
-Serving the repositories at http://%s.
-Paste the following configuration as an Other External Service in Sourcegraph:
-
-  {
-    // url should be reachable by Sourcegraph. host.docker.internal works for Sourcegraph
-    // in Docker on the same machine.
-    "url": "http://%s",
-    "repos": ["src-expose"] // This may change in versions later than 3.9
-  }
-
-`, s.Destination, strings.Join(args[1:], "\n- "), *globalAddr, dockerAddr(*globalAddr))
+				fmt.Println(explain(s, *globalAddr))
 			}
 
 			go func() {
