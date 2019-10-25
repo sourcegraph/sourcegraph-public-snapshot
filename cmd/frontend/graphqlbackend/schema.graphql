@@ -606,8 +606,6 @@ enum ChangesetState {
     OPEN
     CLOSED
     MERGED
-    # This changeset is part of a CampaignPlan and has not been opened on the code host yet.
-    PLANNED
 }
 
 # The state of a Changeset Review
