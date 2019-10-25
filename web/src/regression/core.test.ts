@@ -256,7 +256,7 @@ describe('Core functionality regression test suite', () => {
         }
     })
 
-    test('Quicklinks', async () => {
+    test('Quicklinks: add a quicklink, test that it appears on the front page and works.', async () => {
         const getGlobalSettings = async () => {
             const settings = await getViewerSettings(gqlClient)
             const globalSettingsSubject = first(settings.subjects.filter(subject => subject.__typename === 'Site'))

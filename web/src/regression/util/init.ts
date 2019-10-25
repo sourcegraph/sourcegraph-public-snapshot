@@ -12,8 +12,11 @@ import { TestResourceManager } from './TestResourceManager'
  * https://www.npmjs.com/package/semver. This should be updated when a change is made that breaks
  * compatibility between the regression tests and the Sourcegraph GUI. For example, when a new CSS
  * class is added that the regression tests rely on to identify a particular component.
+ *
+ * Note(beyang): this may not be up-to-date and might not be a useful mechanism, as supporting patch
+ * releases is hard.
  */
-const supportedSourcegraphVersionConstraint = '>=3.8'
+const supportedSourcegraphVersionConstraint = '>=3.9'
 
 /**
  * Sets default timeout and error handlers for regression tests. Includes:
