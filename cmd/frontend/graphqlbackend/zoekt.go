@@ -405,7 +405,6 @@ func StructuralPatToQuery(pattern string) zoektquery.Q {
 			children = append(children, &zoektquery.Substring{
 				Pattern:       s,
 				CaseSensitive: true,
-				FileName:      true,
 				Content:       true,
 			})
 		}
@@ -426,8 +425,11 @@ func queryToZoektQuery(query *search.PatternInfo, isSymbol bool) (zoektquery.Q, 
 		if err != nil {
 			return nil, err
 		}
+		fmt.Printf("REGEX ZOEKT QUERY: %s\n", q.String())
 	} else if query.IsStructuralPat {
+		fmt.Printf("ZOEKT PARSES PATTERN %s\n", query.Pattern)
 		q = StructuralPatToQuery(query.Pattern)
+		fmt.Printf("COMBY ZOEKT QUERY: %s\n", q.String())
 	} else {
 		q = &zoektquery.Substring{
 			Pattern:       query.Pattern,
@@ -436,6 +438,7 @@ func queryToZoektQuery(query *search.PatternInfo, isSymbol bool) (zoektquery.Q, 
 			FileName: true,
 			Content:  true,
 		}
+		fmt.Printf("OTHER ZOEKT QUERY: %s\n", q.String())
 	}
 
 	if isSymbol {

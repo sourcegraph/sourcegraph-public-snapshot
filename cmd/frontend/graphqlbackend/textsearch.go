@@ -199,6 +199,7 @@ func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.
 		q.Set("IsRegExp", "true")
 	}
 	if p.IsStructuralPat {
+		fmt.Println("[textsearch] setting q.IsStructuralPat")
 		q.Set("IsStructuralPat", "true")
 	}
 	if p.IsWordMatch {
@@ -435,6 +436,7 @@ var mockSearchFilesInRepos func(args *search.Args) ([]*fileMatchResolver, *searc
 
 // searchFilesInRepos searches a set of repos for a pattern.
 func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
+	fmt.Println("textsearch.searchFilesInRepos")
 	if mockSearchFilesInRepos != nil {
 		return mockSearchFilesInRepos(args)
 	}
@@ -456,6 +458,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 	)
 
 	if args.Zoekt.Enabled() {
+		fmt.Println("textsearch.searchFilesInRepos: Zoekt.Enabled  is YES")
 		zoektRepos, searcherRepos, err = zoektIndexedRepos(ctx, args.Zoekt, args.Repos, nil)
 		if err != nil {
 			// Don't hard fail if index is not available yet.
@@ -468,19 +471,25 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		}
 	}
 
+	fmt.Println("1.")
 	common.repos = make([]*types.Repo, len(args.Repos))
 	for i, repo := range args.Repos {
 		common.repos[i] = repo.Repo
 	}
+
+	fmt.Println("2.")
 
 	if args.Pattern.IsEmpty() {
 		// Empty query isn't an error, but it has no results.
 		return nil, common, nil
 	}
 
+	fmt.Println("3.")
+
 	// Support index:yes (default), index:only, and index:no in search query.
 	index, _ := args.Query.StringValues(query.FieldIndex)
 	if len(index) > 0 {
+		fmt.Println("4.")
 		index := index[len(index)-1]
 		switch parseYesNoOnly(index) {
 		case Yes, True:
@@ -506,6 +515,8 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			return nil, common, fmt.Errorf("invalid index:%q (valid values are: yes, only, no)", index)
 		}
 	}
+
+	fmt.Println("5.")
 
 	var (
 		// TODO: convert wg to an errgroup
@@ -539,15 +550,18 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		}
 	}
 
+	fmt.Println("6.")
+
 	// This  function calls searcher on a set of repos. searcherReposWithFiles are the
 	// repos that contain file paths that should be structurally searched. It is nil
 	// if no unindexed, non-structural search is in effect. When it is populated,
 	// searcherRepos and searcherReposWithFiles's keys should be the same set.
 	callSearcherOverRepos := func(
 		searcherRepos []*search.RepositoryRevisions,
-		searcherReposWithFiles map[*search.RepositoryRevisions][]string,
+		searcherReposWithFiles map[string][]string,
 		common *searchResultsCommon,
 	) (*searchResultsCommon, error) {
+		fmt.Println("a.")
 		var err error
 		var fetchTimeout time.Duration
 		if len(searcherRepos) == 1 || args.UseFullDeadline {
@@ -565,6 +579,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			fetchTimeout = 500 * time.Millisecond
 		}
 
+		fmt.Println("b.")
 		if len(searcherRepos) > 0 {
 			// The number of searcher endpoints can change over time. Inform our
 			// limiter of the new limit, which is a multiple of the number of
@@ -576,13 +591,25 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			textSearchLimiter.SetLimit(len(eps) * 32)
 		}
 
+		if searcherRepos != nil {
+			fmt.Printf("c. searcher repos: %d\n", len(searcherRepos))
+		}
 		for _, repoRev := range searcherRepos {
+			fmt.Println("x.")
+			if repoRev == nil {
+				fmt.Println("fu")
+			}
+			if repoRev.Revs == nil {
+				fmt.Println("ck")
+			}
 			if len(repoRev.Revs) == 0 {
 				continue
 			}
+			fmt.Println("y.")
 			if len(repoRev.Revs) >= 2 {
 				return common, errMultipleRevsNotSupported
 			}
+			fmt.Println("z.")
 
 			// Only reason acquire can fail is if ctx is cancelled. So we can stop
 			// looping through searcherRepos.
@@ -591,14 +618,17 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 				break
 			}
 
+			fmt.Println("d.")
 			wg.Add(1)
 			go func(ctx context.Context, done context.CancelFunc, repoRev *search.RepositoryRevisions) {
 				defer wg.Done()
 				defer done()
 
+				fmt.Println("e.")
 				var onlyFiles []string
 				if args.Pattern.IsStructuralPat && searcherReposWithFiles != nil {
-					onlyFiles = searcherReposWithFiles[repoRev]
+					fmt.Printf("Structural only files for: %d\n", len(searcherReposWithFiles))
+					onlyFiles = searcherReposWithFiles[string(repoRev.Repo.Name)]
 				}
 
 				rev := repoRev.RevSpecs()[0] // TODO(sqs): search multiple revs
@@ -636,10 +666,14 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		return common, err
 	}
 
+	fmt.Println("7.")
+
+	fmt.Println("textsearch.searchFilesInRepos: Before kicking off zoekt search in go routine")
 	wg.Add(1)
 	go func() {
 		// TODO limitHit, handleRepoSearchResult
 		defer wg.Done()
+		fmt.Println("textsearch.searchFilesInRepos: running zoektSearchHEAD")
 		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, args, zoektRepos, false, time.Since)
 		mu.Lock()
 		defer mu.Unlock()
@@ -666,6 +700,8 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			cancel()
 		}
 		if args.Pattern.IsStructuralPat {
+			fmt.Println("textsearch.searchFilesInRepos: Zoekt with IsStructuralPat")
+			fmt.Printf("Matches for structural: %d\n", len(matches))
 			// Don't return Zoekt's matches for structural
 			// search. Instead, extract the file paths and pass the
 			// (repo, filepaths) results to searcher.
@@ -674,29 +710,40 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			// don't know how to connect it back to the repo rev.
 			// Hooray: O(reposToSearch * fileMatchesFound) map.
 			// Make Zoekt bundle repo rev with matches?
-			p := make(map[*search.RepositoryRevisions][]string)
+			p := make(map[string][]string)
 			for _, repo := range zoektRepos {
 				for _, m := range matches {
 					if m.repo.Name == repo.Repo.Name {
-						p[repo] = append(p[repo], m.JPath)
+						fmt.Printf("Adding %s\n", m.repo.Name)
+						name := string(m.repo.Name)
+						p[name] = append(p[name], m.JPath)
 					}
 				}
 			}
-			repos := make([]*search.RepositoryRevisions, len(zoektRepos))
-			for repo, _ := range p {
-				repos = append(repos, repo)
-			}
+			/*
+				repos := make([]*search.RepositoryRevisions, len(zoektRepos))
+				for repo, _ := range p {
+					cpy := *repo
+					repo = &cpy
+					repos = append(repos, repo)
+				}
+			*/
+			/*p := make(map[*search.RepositoryRevisions][]string)*/
+			repos := zoektRepos
+			fmt.Println("before zoekt callSearcherOverRepos")
 			common, err = callSearcherOverRepos(repos, p, common)
 		} else {
+			fmt.Printf("Matches regex or literal: %d\n", len(matches))
 			addMatches(matches)
 		}
 	}()
 
-	common, err = callSearcherOverRepos(searcherRepos, nil, common)
+	fmt.Println("textsearch.searchFilesInRepos: Before UNINDEXED callSearcherOverRepos")
+	// common, err = callSearcherOverRepos(searcherRepos, nil, common)
 	wg.Wait()
-	if err != nil {
-		return nil, common, err
-	}
+	// if err != nil {
+	//	return nil, common, err
+	//}
 
 	flattened := flattenFileMatches(unflattened, int(args.Pattern.FileMatchLimit))
 	return flattened, common, nil
