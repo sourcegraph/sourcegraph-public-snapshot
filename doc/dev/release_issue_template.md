@@ -18,7 +18,7 @@ Run a find replace on:
     - [ ] Tagging the final release.
     - [ ] Publishing the blog post.
 - [ ] Send message to #dev-announce with a link to this tracking issue to notify the team of the release schedule.
-- [ ] Create the [retrospective document](retrospectives/index.md) and schedule the retrospective meeting within a few days _after_ the release (send calendar invites to team@sourcegraph.com).
+- [ ] Create the [retrospective document](retrospectives/index.md) and schedule the retrospective meeting within a few days _after_ the release. Send calendar invites to team@sourcegraph.com, and ensure there is a Zoom meeting on the invite.
 - [ ] Create a new test grid for MAJOR.MINOR by cloning the previous [release testing grid on Monday.com](https://sourcegraph-team.monday.com) and renaming it to "MAJOR.MINOR Release test grid".
     - [ ] Reset all tested cells to "To test", unless the "Automated" column is marked as "Done". See [this article for how to update multiple values in Monday.com](https://support.monday.com/hc/en-us/articles/115005335049-Batch-Actions-Edit-multiple-items-in-one-click).
     - [ ] Assign rows in the release testing grid to engineers from the team that owns the row.
