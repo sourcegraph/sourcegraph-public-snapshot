@@ -71,7 +71,7 @@ Run a find replace on:
     - [ ] Verify that code search returns results as you expect (depending on the repositories that you added).
     - [ ] Verify that basic code intelligence works on Go or TypeScript.
     - [ ] Tear down this Kubernetes cluster.
-- [ ] Delete entries from section 15 (CHANGELOG) of the testing grid, or move them into permanent sections above. Add new CHANGELOG items for this release into section 15. Assign the feature owner as the tester for each row.
+- [ ] Delete entries from section 15 (CHANGELOG) of the testing grid, or move them into permanent sections above. Add new CHANGELOG items for this release into section 15. Assign (1) the feature owner and (2) a person who did not work on the feature as the testers for each row.
 - [ ] Send a message to #dev-announce to kick off testing day.
   - [ ] Include a link to the testing grid.
   - [ ] Include the command to run the latest release candidate:
