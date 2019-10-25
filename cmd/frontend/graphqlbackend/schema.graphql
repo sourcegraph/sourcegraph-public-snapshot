@@ -465,7 +465,7 @@ type CampaignPlan implements Node {
     status: BackgroundProcessStatus!
 
     # The changesets that will be created by the campaign.
-    changesets(first: Int): ChangesetConnection!
+    changesets(first: Int): ChangesetPlanConnection!
 
     # The combined diff of all changesets that will be created by the campaign.
     repositoryDiff(first: Int): PreviewRepositoryDiffConnection!
@@ -556,7 +556,7 @@ type Campaign implements Node {
     repositoryDiffs(first: Int): RepositoryComparisonConnection!
 
     # The changesets in this campaign, already created on the code host.
-    changesets(first: Int): ChangesetConnection!
+    changesets(first: Int): ExternalChangesetConnection!
 
     # The changeset counts over time, in 1 day intervals backwards from the point in time given in 'to'.
     changesetCountsOverTime(
@@ -626,8 +626,38 @@ input CreateChangesetInput {
     externalID: String!
 }
 
+# Basic fields of a changeset.
+interface Changeset {
+    # The repository changed by the changeset.
+    repository: Repository!
+
+    # The title of the changeset.
+    title: String!
+
+    # The body of the changeset.
+    body: String!
+
+    # The diff of the changeset.
+    diff: RepositoryDiff!
+}
+
+# Preview of a changeset planned to be created.
+type ChangesetPlan implements Changeset {
+    # The repository changed by the changeset.
+    repository: Repository!
+
+    # The title of the changeset.
+    title: String!
+
+    # The body of the changeset.
+    body: String!
+
+    # The diff of the changeset.
+    diff: RepositoryDiff!
+}
+
 # A changeset in a code host (e.g. a PR on Github)
-type Changeset implements Node {
+type ExternalChangeset implements Changeset & Node {
     # The unique ID for the changeset.
     id: ID!
 
@@ -655,12 +685,10 @@ type Changeset implements Node {
     # The state of the changeset
     state: ChangesetState!
 
-    # The external URL of the changeset on the code host,
-    # if already opened on the code host.
-    externalURL: ExternalLink
+    # The external URL of the changeset on the code host.
+    externalURL: ExternalLink!
 
     # The review state of this changeset.
-    # PENDING for planned changesets.
     reviewState: ChangesetReviewState!
 
     # The diff of this changeset.
@@ -668,11 +696,23 @@ type Changeset implements Node {
 }
 
 # A list of changesets.
-type ChangesetConnection {
+type ExternalChangesetConnection {
     # A list of changesets.
-    nodes: [Changeset!]!
+    nodes: [ExternalChangeset!]!
 
-    # The total number of campaigns in the connection.
+    # The total number of changesets in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A list of changesets plans.
+type ChangesetPlanConnection {
+    # A list of changeset plans.
+    nodes: [ChangesetPlan!]!
+
+    # The total number of changeset plans in the connection.
     totalCount: Int!
 
     # Pagination information.
@@ -685,7 +725,7 @@ type ChangesetEvent implements Node {
     id: ID!
 
     # The changeset this event belongs to.
-    changeset: Changeset!
+    changeset: ExternalChangeset!
 
     # The date and time when the changeset was created.
     createdAt: DateTime!
