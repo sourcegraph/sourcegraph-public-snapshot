@@ -147,11 +147,11 @@ func (r *mockRepos) List(ctx context.Context, opt db.ReposListOptions) ([]*types
 	return repos, nil
 }
 
-// suffixIndexers mocks Indexers. Assign will return all repoNames with the
-// suffix of hostname.
+// suffixIndexers mocks Indexers. ReposSubset will return all repoNames with
+// the suffix of hostname.
 type suffixIndexers bool
 
-func (b suffixIndexers) Assign(hostname string, repoNames []string) ([]string, error) {
+func (b suffixIndexers) ReposSubset(hostname string, repoNames []string) ([]string, error) {
 	if !b.Enabled() {
 		return nil, errors.New("indexers disabled")
 	}

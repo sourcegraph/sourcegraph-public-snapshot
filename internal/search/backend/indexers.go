@@ -21,12 +21,12 @@ type Indexers struct {
 	Map EndpointMap
 }
 
-// Assign returns the subset of repoNames that hostname should index.
+// ReposSubset returns the subset of repoNames that hostname should index.
 //
-// Assign reuses the underlying array of repoNames.
+// ReposSubset reuses the underlying array of repoNames.
 //
 // An error is returned if hostname is not part of the Indexers endpoints.
-func (c *Indexers) Assign(hostname string, repoNames []string) ([]string, error) {
+func (c *Indexers) ReposSubset(hostname string, repoNames []string) ([]string, error) {
 	if !c.Enabled() {
 		return repoNames, nil
 	}

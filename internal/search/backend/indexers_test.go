@@ -8,7 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestAssign(t *testing.T) {
+func TestReposSubset(t *testing.T) {
 	index := &Indexers{
 		Map: prefixMap([]string{"foo", "bar", "baz.fully.qualified:80"}),
 	}
@@ -52,7 +52,7 @@ func TestAssign(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := index.Assign(tc.hostname, tc.repos)
+			got, err := index.ReposSubset(tc.hostname, tc.repos)
 			if tc.errS != "" {
 				got := fmt.Sprintf("%v", err)
 				if !strings.Contains(got, tc.errS) {
@@ -65,7 +65,7 @@ func TestAssign(t *testing.T) {
 			}
 
 			if !cmp.Equal(tc.want, got) {
-				t.Errorf("assign mismatch (-want +got):\n%s", cmp.Diff(tc.want, got))
+				t.Errorf("reposSubset mismatch (-want +got):\n%s", cmp.Diff(tc.want, got))
 			}
 		})
 	}
