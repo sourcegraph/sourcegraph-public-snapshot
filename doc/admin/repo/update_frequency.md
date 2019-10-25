@@ -6,7 +6,7 @@ The frequency at which Sourcegraph polls the code host for updates is determined
 
 Repositories will never be updated more frequently than 45 seconds, and no less frequently than every 8 hours.
 
-After Sourcegraph has polled the code host for Git updates, the search index will automatically update a short while after (usually taking just a few minutes per repository).
+After Sourcegraph has updated a repository's Git data, the global search index will automatically update a short while after (usually a few minutes).
 
 ## Limiting repository updates
 
