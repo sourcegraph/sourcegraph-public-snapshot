@@ -426,6 +426,7 @@ var mockSearchFilesInRepos func(args *search.Args) ([]*fileMatchResolver, *searc
 
 // searchFilesInRepos searches a set of repos for a pattern.
 func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
+	errc := make(chan error, 1)
 	if mockSearchFilesInRepos != nil {
 		return mockSearchFilesInRepos(args)
 	}
@@ -531,8 +532,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 	}
 
 	// This function calls searcher on a set of repos.
-	callSearcherOverRepos := func(searcherRepos []*search.RepositoryRevisions, common *searchResultsCommon) (*searchResultsCommon, error) {
-		var err error
+	callSearcherOverRepos := func(searcherRepos []*search.RepositoryRevisions, common *searchResultsCommon) *searchResultsCommon {
 		var fetchTimeout time.Duration
 		if len(searcherRepos) == 1 || args.UseFullDeadline {
 			// When searching a single repo or when an explicit timeout was specified, give it the remaining deadline to fetch the archive.
@@ -555,7 +555,8 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			// searchers.
 			eps, err := args.SearcherURLs.Endpoints()
 			if err != nil {
-				return common, err
+				errc <- err
+				return common
 			}
 			textSearchLimiter.SetLimit(len(eps) * 32)
 		}
@@ -565,7 +566,8 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 				continue
 			}
 			if len(repoRev.Revs) >= 2 {
-				return common, errMultipleRevsNotSupported
+				errc <- errMultipleRevsNotSupported
+				return common
 			}
 
 			// Only reason acquire can fail is if ctx is cancelled. So we can stop
@@ -605,15 +607,17 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 						// handle cancellations differently.
 						return
 					}
-					err = errors.Wrapf(searchErr, "failed to search %s", repoRev.String())
+					err := errors.Wrapf(searchErr, "failed to search %s", repoRev.String())
 					tr.LazyPrintf("cancel due to error: %v", err)
 					cancel()
+					errc <- err
 				}
 				addMatches(matches)
-			}(limitCtx, limitDone, repoRev)
-		}
-		return common, err
-	}
+			}(limitCtx, limitDone, repoRev) // ends the Go routine for a call to searcher for a repo
+		} // ends the for loop iterating over repos
+
+		return common
+	} // ends callSearcherOverRepos
 
 	wg.Add(1)
 	go func() {
@@ -640,16 +644,17 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		}
 		tr.LogFields(otlog.Object("searchErr", searchErr), otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
 		if searchErr != nil && err == nil && !overLimitCanceled {
-			err = searchErr
+			errc <- searchErr
 			tr.LazyPrintf("cancel indexed search due to error: %v", err)
 			cancel()
 		}
 		addMatches(matches)
 	}()
 
-	common, err = callSearcherOverRepos(searcherRepos, common)
+	common = callSearcherOverRepos(searcherRepos, common)
 	wg.Wait()
-	if err != nil {
+	close(errc)
+	if err := <-errc; err != nil {
 		return nil, common, err
 	}
 
