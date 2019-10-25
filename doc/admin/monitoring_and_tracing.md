@@ -49,7 +49,7 @@ you can access Grafana directly using Kubernetes port forwarding to your local m
 kubectl port-forward svc/grafana 3370:30070
 ``` 
 
-Then visit `http://localhost:3370/-/debug/grafana` to get to the "Home Dashboard". From there you can add, modify and delete dashboards and panels.
+Then visiting http://localhost:3370/-/debug/grafana will show the home dashboard and from there you can add, modify and delete your own dashboards and panels, as well as configure alerts.
 
 ### Docker images
 
