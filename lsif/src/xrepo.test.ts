@@ -1,10 +1,9 @@
-import * as fs from 'mz/fs'
 import rmfr from 'rmfr'
 import { XrepoDatabase, MAX_TRAVERSAL_LIMIT } from './xrepo'
-import { createCleanPostgresDatabase, createCommit, truncatePostgresTables } from './test-utils'
+import { createCleanPostgresDatabase, createCommit, truncatePostgresTables, createStorageRoot } from './test-utils'
 import { Connection } from 'typeorm'
 import { fail } from 'assert'
-import { omit } from 'lodash'
+import { pick } from 'lodash'
 import { LsifDump } from './xrepo.models'
 
 describe('XrepoDatabase', () => {
@@ -15,8 +14,8 @@ describe('XrepoDatabase', () => {
 
     beforeAll(async () => {
         ;({ connection, cleanup } = await createCleanPostgresDatabase())
-        storageRoot = await fs.mkdtemp('xrepo-', { encoding: 'utf8' })
-        xrepoDatabase = new XrepoDatabase(connection)
+        storageRoot = await createStorageRoot('xrepo')
+        xrepoDatabase = new XrepoDatabase(storageRoot, connection)
     })
 
     afterAll(async () => {
@@ -145,6 +144,7 @@ describe('XrepoDatabase', () => {
 
         const ca = createCommit('a')
         const cb = createCommit('b')
+        const fields = ['repository', 'commit', 'root']
 
         // Add relations
         await xrepoDatabase.updateCommits('foo', [[ca, ''], [cb, ca]])
@@ -155,17 +155,17 @@ describe('XrepoDatabase', () => {
 
         // Test closest commit
         expect(await xrepoDatabase.findClosestDump('foo', ca, 'blah')).toBeUndefined()
-        expect(omit(await xrepoDatabase.findClosestDump('foo', cb, 'root1/file.ts'), 'id', 'visible_at_tip')).toEqual({
+        expect(pick(await xrepoDatabase.findClosestDump('foo', cb, 'root1/file.ts'), ...fields)).toEqual({
             repository: 'foo',
             commit: cb,
             root: 'root1/',
         })
-        expect(omit(await xrepoDatabase.findClosestDump('foo', cb, 'root2/file.ts'), 'id', 'visible_at_tip')).toEqual({
+        expect(pick(await xrepoDatabase.findClosestDump('foo', cb, 'root2/file.ts'), ...fields)).toEqual({
             repository: 'foo',
             commit: cb,
             root: 'root2/',
         })
-        expect(omit(await xrepoDatabase.findClosestDump('foo', ca, 'root2/file.ts'), 'id', 'visible_at_tip')).toEqual({
+        expect(pick(await xrepoDatabase.findClosestDump('foo', ca, 'root2/file.ts'), ...fields)).toEqual({
             repository: 'foo',
             commit: cb,
             root: 'root2/',
@@ -174,12 +174,12 @@ describe('XrepoDatabase', () => {
         expect(await xrepoDatabase.findClosestDump('foo', ca, 'root3/file.ts')).toBeUndefined()
 
         await xrepoDatabase.insertDump('foo', cb, '')
-        expect(omit(await xrepoDatabase.findClosestDump('foo', ca, 'root2/file.ts'), 'id', 'visible_at_tip')).toEqual({
+        expect(pick(await xrepoDatabase.findClosestDump('foo', ca, 'root2/file.ts'), ...fields)).toEqual({
             repository: 'foo',
             commit: cb,
             root: '',
         })
-        expect(omit(await xrepoDatabase.findClosestDump('foo', ca, 'root3/file.ts'), 'id', 'visible_at_tip')).toEqual({
+        expect(pick(await xrepoDatabase.findClosestDump('foo', ca, 'root3/file.ts'), ...fields)).toEqual({
             repository: 'foo',
             commit: cb,
             root: '',
@@ -321,7 +321,7 @@ describe('XrepoDatabase', () => {
         expect(visibleDumps.map((dump: LsifDump) => dump.id).sort()).toEqual([dump1.id, dump2.id, dump3.id, dump4.id])
     })
 
-    it.only('should not set dumps visible farther than MAX_TRAVERSAL_LIMIT', async () => {
+    it('should not set dumps visible farther than MAX_TRAVERSAL_LIMIT', async () => {
         if (!xrepoDatabase) {
             fail('failed beforeAll')
         }

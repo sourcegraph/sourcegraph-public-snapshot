@@ -4,19 +4,26 @@ import {
     xrepoQueryDurationHistogram,
     xrepoQueryErrorsCounter,
 } from './xrepo.metrics'
+import * as crc32 from 'crc-32'
 import { instrument } from './metrics'
-import { Connection, EntityManager } from 'typeorm'
+import { Connection, EntityManager, Brackets } from 'typeorm'
 import { createFilter, testFilter } from './encoding'
 import { PackageModel, ReferenceModel, Commit, LsifDump } from './xrepo.models'
 import { TableInserter } from './inserter'
 import { discoverAndUpdateCommit } from './commits'
 import { TracingContext } from './tracing'
+import { dbFilename, tryDeleteFile } from './util'
 
 /**
  * The maximum number of commits to visit breadth-first style when when finding
  * the closest commit.
  */
 export const MAX_TRAVERSAL_LIMIT = 100
+
+/**
+ * A random integer specific to the xrepo database used to generate advisory lock ids.
+ */
+const ADVISORY_LOCK_ID_SALT = 1688730858
 
 /**
  * The insertion metrics for the cross-repo database.
@@ -72,9 +79,10 @@ export class XrepoDatabase {
     /**
      * Create a new `XrepoDatabase` backed by the given database connection.
      *
+     * @param storageRoot The path where SQLite databases are stored.
      * @param connection The Postgres connection.
      */
-    constructor(private connection: Connection) {}
+    constructor(private storageRoot: string, private connection: Connection) {}
 
     /**
      * Return the list of all repositories that have LSIF data.
@@ -327,15 +335,25 @@ export class XrepoDatabase {
         root: string,
         entityManager: EntityManager = this.connection.createEntityManager()
     ): Promise<LsifDump> {
-        const query = `
-            DELETE FROM lsif_dumps
-            WHERE repository = $1 AND commit = $2 AND ($3 LIKE (root || '%') OR root LIKE ($3 || '%'))
-        `
+        // Get existing dumps from the same repo@commit that overlap with the current
+        // root (where the existing root is a prefix of the current root, or vice versa).
 
-        // Delete existing dumps from the same repo@commit that overlap with the
-        // current root (where the existing root is a prefix of the current
-        // root, or vice versa). This cascades to packages and references.
-        await entityManager.query(query, [repository, commit, root])
+        const dumps = await entityManager
+            .getRepository(LsifDump)
+            .createQueryBuilder()
+            .select()
+            .where({ repository, commit })
+            .andWhere(
+                new Brackets(qb =>
+                    qb.where(":root LIKE (root || '%')", { root }).orWhere("root LIKE (:root || '%')", { root })
+                )
+            )
+            .getMany()
+
+        // Delete conflicting dumps
+        for (const dump of dumps) {
+            await this.deleteDump(dump, entityManager)
+        }
 
         const dump = new LsifDump()
         dump.repository = repository
@@ -362,6 +380,45 @@ export class XrepoDatabase {
                 .andWhere(":file LIKE (root || '%')", { file })
                 .getOne()
         )
+    }
+
+    /**
+     * Get all dumps for a repository and commit where there exists a dump for
+     * the commit that has maximal age, and no dump for the commit is visible at
+     * the tip.
+     */
+    public getOldestPrunableDumps(): Promise<LsifDump[]> {
+        const query = `
+            SELECT d3.* from (
+                SELECT * FROM lsif_dumps d1
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM lsif_dumps
+                    WHERE repository = d1.repository AND commit = d1.commit AND visible_at_tip
+                )
+                ORDER BY uploaded_at LIMIT 1
+            ) AS d2
+            JOIN lsif_dumps d3
+            ON d2.repository = d3.repository AND d2.commit = d3.commit
+        `
+
+        return this.withConnection(connection => connection.query(query))
+    }
+
+    /**
+     * Delete a dump. This removes data from the dumps, packages, and references table, and
+     * deletes the SQLite file from the storage root.
+     *
+     * @param dump The dump to delete.
+     * @param entityManager The EntityManager for the connection to the xrepo database.
+     */
+    public async deleteDump(
+        dump: LsifDump,
+        entityManager: EntityManager = this.connection.createEntityManager()
+    ): Promise<void> {
+        // Delete file first, then the record so we have something to retry off of
+        const path = dbFilename(this.storageRoot, dump.id, dump.repository, dump.commit)
+        await tryDeleteFile(path)
+        await entityManager.getRepository(LsifDump).delete(dump.id)
     }
 
     /**
@@ -424,6 +481,44 @@ export class XrepoDatabase {
         }
 
         return results.filter((_, i) => keepFlags[i])
+    }
+
+    /**
+     * Acquire an advisory lock with the given name. This will block until the lock can be
+     * acquired.
+     *
+     * See https://www.postgresql.org/docs/9.6/static/explicit-locking.html#ADVISORY-LOCKS.
+     *
+     * @param name The lock name.
+     */
+    public lock(name: string): Promise<void> {
+        return this.withConnection(connection =>
+            connection.query('SELECT pg_advisory_lock($1)', [this.generateLockId(name)])
+        )
+    }
+
+    /**
+     * Release an advisory lock acquired by `lock`.
+     *
+     * @param name The lock name.
+     */
+    public unlock(name: string): Promise<void> {
+        return this.withConnection(connection =>
+            connection.query('SELECT pg_advisory_unlock($1)', [this.generateLockId(name)])
+        )
+    }
+
+    /**
+     * Generate an advisory lock identifier from the given name and application salt. This is
+     * based on golang-migrate's advisory lock identifier generation technique, which is in turn
+     * inspired by rails migrations.
+     *
+     * See https://github.com/golang-migrate/migrate/blob/6c96ef02dfbf9430f7286b58afc15718588f2e13/database/util.go#L12.
+     *
+     * @param name The lock name.
+     */
+    private generateLockId(name: string): number {
+        return crc32.str(name) * ADVISORY_LOCK_ID_SALT
     }
 
     /**
