@@ -58,6 +58,7 @@ type Mutation {
     # Updates a campaign.
     updateCampaign(input: UpdateCampaignInput!): Campaign!
     # Retries creating changesets of the campaign plan that could not be successfully created on the code host.
+    # Retrying will clear the errors list of a campaign and change its state back to CREATING_CHANGESETS.
     retryCampaign(campaign: ID!): Campaign!
     # Deletes a campaign.
     deleteCampaign(campaign: ID!): EmptyResponse
@@ -449,10 +450,14 @@ type CampaignPlan implements Node {
     # The unique ID of this campaign plan.
     id: ID!
 
-    # Whether this campaign plan has finished planning all changesets and their diffs.
-    # If false, changesets and repositoryDiffs are not complete yet.
-    # Query the campaign plan by its ID again to see its latest state.
-    isComplete: Boolean!
+    # The campaign type.
+    type: String!
+
+    # The JSONC string that configures how Sourcegraph generates the diff and changesets.
+    arguments: JSONCString!
+
+    # The progress status of generating changesets.
+    status: BackgroundProcessStatus!
 
     # The changesets that will be created by the campaign.
     changesets(first: Int): ChangesetConnection!
@@ -485,10 +490,41 @@ type RepositoryComparisonConnection {
     pageInfo: PageInfo!
 }
 
+# The state a background process can be in.
+enum BackgroundProcessState {
+    # The background process is processing items.
+    PROCESSING
+    # The background process attempted processing all items, but some failed.
+    ERRORED
+    # The background process completed processing all items successfully.
+    DONE
+}
+
+# Reusable type to report progress of a background process.
+type BackgroundProcessStatus {
+    # How many items were successfully done.
+    doneCount: Int!
+
+    # How many items are not done yet (including items that errored).
+    pendingCount: Int!
+
+    # The state the background process is currently in.
+    state: BackgroundProcessState
+
+    # Messages of errors that occurred since the current run of this process was started.
+    errors: [String!]!
+}
+
 # A collection of changesets.
 type Campaign implements Node {
     # The unique ID for the campaign.
     id: ID!
+
+    # The campaign plan that was used to create this campaign.
+    plan: CampaignPlan!
+
+    # The current status of creating the campaigns changesets on the code host.
+    changesetCreationStatus: BackgroundProcessStatus!
 
     # The namespace where this campaign is defined.
     namespace: Namespace!
