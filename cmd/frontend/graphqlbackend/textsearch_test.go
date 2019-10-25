@@ -353,9 +353,14 @@ func TestSearchFilesInRepos(t *testing.T) {
 		Zoekt:        zoekt,
 		SearcherURLs: endpoint.Static("test"),
 	}
+
+	want := `1 error occurred:
+	* failed to search foo/no-rev@dev: revision not found: foo/no-rev@missing
+
+`
 	_, _, err = searchFilesInRepos(context.Background(), args)
-	if !gitserver.IsRevisionNotFound(errors.Cause(err)) {
-		t.Fatalf("searching non-existent rev expected to fail with RevisionNotFoundError got: %v", err)
+	if err.Error() != want {
+		t.Fatalf("searching non-existent rev expected to fail, want error message: %v, got: %v", want, err)
 	}
 }
 
