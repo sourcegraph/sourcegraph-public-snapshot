@@ -47,7 +47,7 @@ A directory can be mounted at `/sg_prometheus_add_ons`. It can contains addition
   - target files which must have the suffix `_targets.yml` in their filename (ie `local_targets.yml`)
 
 [Rule files](https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/) 
-and [target files](https://prometheus.io/docs/guides/file-sd/) need to use Prometheus 2.x syntax.  
+and [target files](https://prometheus.io/docs/guides/file-sd/) must use the latest Prometheus 2.x syntax.  
 
 The environment variable `PROMETHEUS_ADDITIONAL_FLAGS` can be used to pass on additional flags to the prometheus executable running in the container.
 
