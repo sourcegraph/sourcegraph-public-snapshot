@@ -43,7 +43,7 @@ sshuttle -r xxx_user_xxx@sxxx_remote_server_xxx 0/0
 ```
 
 If you're using the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph),  
-you can run Grafana directly using kubectl port-forwarding
+you can access Grafana directly using Kubernetes port forwarding to your local machine:
 
 ```shell script
 kubectl port-forward svc/grafana 3370:30070
