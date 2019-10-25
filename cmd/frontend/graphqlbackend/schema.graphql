@@ -37,6 +37,7 @@ type Mutation {
     # exists, it's returned instead of a new entry being added to the database.
     createChangesets(input: [CreateChangesetInput!]!): [Changeset!]!
     # Adds a list of Changesets to a Campaign.
+    # The campaign must not have a campaign plan.
     addChangesetsToCampaign(campaign: ID!, changesets: [ID!]!): Campaign!
     # Preview the plan for a campaign, including its diff.
     # The returned CampaignPlan can be referred to when creating the campaign.
@@ -526,7 +527,8 @@ type Campaign implements Node {
     id: ID!
 
     # The campaign plan that was used to create this campaign.
-    plan: CampaignPlan!
+    # If null, changesets are added to the campaign manually.
+    plan: CampaignPlan
 
     # The current status of creating the campaigns changesets on the code host.
     changesetCreationStatus: BackgroundProcessStatus!
