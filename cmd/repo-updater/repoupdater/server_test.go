@@ -809,12 +809,45 @@ func TestRepoLookup(t *testing.T) {
 		},
 	}
 
+	gitlabRepository := &repos.Repo{
+		Name:        "gitlab.com/gitlab-org/gitaly",
+		Description: "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
+		Enabled:     true,
+		URI:         "gitlab.com/gitlab-org/gitaly",
+		CreatedAt:   now,
+		UpdatedAt:   now,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "2009901",
+			ServiceType: "gitlab",
+			ServiceID:   "https://gitlab.com/",
+		},
+		Sources: map[string]*repos.SourceInfo{
+			"extsvc:gitlab:0": {
+				ID:       "extsvc:gitlab:0",
+				CloneURL: "https://gitlab.com/gitlab-org/gitaly.git",
+			},
+		},
+		Metadata: &gitlab.Project{
+			ProjectCommon: gitlab.ProjectCommon{
+				ID:                2009901,
+				PathWithNamespace: "gitlab-org/gitaly",
+				Description:       "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
+				WebURL:            "https://gitlab.com/gitlab-org/gitaly",
+				HTTPURLToRepo:     "https://gitlab.com/gitlab-org/gitaly.git",
+				SSHURLToRepo:      "git@gitlab.com:gitlab-org/gitaly.git",
+			},
+			Visibility: "",
+			Archived:   false,
+		},
+	}
+
 	testCases := []struct {
 		name               string
 		args               protocol.RepoLookupArgs
 		stored             repos.Repos
 		result             *protocol.RepoLookupResult
-		githubDotComSource *fakeGithubDotComSource
+		githubDotComSource *fakeRepoSource
+		gitlabDotComSource *fakeRepoSource
 		assert             repos.ReposAssertion
 		err                string
 	}{
@@ -878,7 +911,7 @@ func TestRepoLookup(t *testing.T) {
 				Repo: api.RepoName("github.com/foo/bar"),
 			},
 			stored: []*repos.Repo{},
-			githubDotComSource: &fakeGithubDotComSource{
+			githubDotComSource: &fakeRepoSource{
 				repo: githubRepository,
 			},
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
@@ -905,7 +938,7 @@ func TestRepoLookup(t *testing.T) {
 				Repo: api.RepoName("github.com/foo/bar"),
 			},
 			stored: []*repos.Repo{githubRepository},
-			githubDotComSource: &fakeGithubDotComSource{
+			githubDotComSource: &fakeRepoSource{
 				repo: githubRepository,
 			},
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
@@ -931,7 +964,7 @@ func TestRepoLookup(t *testing.T) {
 			args: protocol.RepoLookupArgs{
 				Repo: api.RepoName("github.com/foo/bar"),
 			},
-			githubDotComSource: &fakeGithubDotComSource{
+			githubDotComSource: &fakeRepoSource{
 				err: github.ErrNotFound,
 			},
 			result: &protocol.RepoLookupResult{ErrorNotFound: true},
@@ -943,7 +976,7 @@ func TestRepoLookup(t *testing.T) {
 			args: protocol.RepoLookupArgs{
 				Repo: api.RepoName("github.com/foo/bar"),
 			},
-			githubDotComSource: &fakeGithubDotComSource{
+			githubDotComSource: &fakeRepoSource{
 				err: &github.APIError{Code: http.StatusUnauthorized},
 			},
 			result: &protocol.RepoLookupResult{ErrorUnauthorized: true},
@@ -955,7 +988,7 @@ func TestRepoLookup(t *testing.T) {
 			args: protocol.RepoLookupArgs{
 				Repo: api.RepoName("github.com/foo/bar"),
 			},
-			githubDotComSource: &fakeGithubDotComSource{
+			githubDotComSource: &fakeRepoSource{
 				err: &github.APIError{Message: "API rate limit exceeded"},
 			},
 			result: &protocol.RepoLookupResult{ErrorTemporarilyUnavailable: true},
@@ -963,11 +996,65 @@ func TestRepoLookup(t *testing.T) {
 			assert: repos.Assert.ReposEqual(),
 		},
 		{
+			name: "found - gitlab.com on Sourcegraph.com",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName("gitlab.com/foo/bar"),
+			},
+			stored: []*repos.Repo{},
+			gitlabDotComSource: &fakeRepoSource{
+				repo: gitlabRepository,
+			},
+			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
+				Name:        "gitlab.com/gitlab-org/gitaly",
+				Description: "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
+				Fork:        false,
+				Archived:    false,
+				VCS: protocol.VCSInfo{
+					URL: "https://gitlab.com/gitlab-org/gitaly.git",
+				},
+				Links: &protocol.RepoLinks{
+					Root:   "https://gitlab.com/gitlab-org/gitaly",
+					Tree:   "https://gitlab.com/gitlab-org/gitaly/tree/{rev}/{path}",
+					Blob:   "https://gitlab.com/gitlab-org/gitaly/blob/{rev}/{path}",
+					Commit: "https://gitlab.com/gitlab-org/gitaly/commit/{commit}",
+				},
+				ExternalRepo: gitlabRepository.ExternalRepo,
+			}},
+			assert: repos.Assert.ReposEqual(gitlabRepository),
+		},
+		{
+			name: "found - gitlab.com on Sourcegraph.com already exists",
+			args: protocol.RepoLookupArgs{
+				Repo: api.RepoName("gitlab.com/foo/bar"),
+			},
+			stored: []*repos.Repo{gitlabRepository},
+			gitlabDotComSource: &fakeRepoSource{
+				repo: gitlabRepository,
+			},
+			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
+				Name:        "gitlab.com/gitlab-org/gitaly",
+				Description: "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
+				Fork:        false,
+				Archived:    false,
+				VCS: protocol.VCSInfo{
+					URL: "https://gitlab.com/gitlab-org/gitaly.git",
+				},
+				Links: &protocol.RepoLinks{
+					Root:   "https://gitlab.com/gitlab-org/gitaly",
+					Tree:   "https://gitlab.com/gitlab-org/gitaly/tree/{rev}/{path}",
+					Blob:   "https://gitlab.com/gitlab-org/gitaly/blob/{rev}/{path}",
+					Commit: "https://gitlab.com/gitlab-org/gitaly/commit/{commit}",
+				},
+				ExternalRepo: gitlabRepository.ExternalRepo,
+			}},
+			assert: repos.Assert.ReposEqual(gitlabRepository),
+		},
+		{
 			name: "GithubDotcomSource on Sourcegraph.com ignores non-Github.com repos",
 			args: protocol.RepoLookupArgs{
 				Repo: api.RepoName("git-codecommit.us-west-1.amazonaws.com/stripe-go"),
 			},
-			githubDotComSource: &fakeGithubDotComSource{
+			githubDotComSource: &fakeRepoSource{
 				repo: githubRepository,
 			},
 			result: &protocol.RepoLookupResult{ErrorNotFound: true},
@@ -993,7 +1080,13 @@ func TestRepoLookup(t *testing.T) {
 			}
 			s := &Server{Syncer: syncer, Store: store}
 			if tc.githubDotComSource != nil {
+				s.SourcegraphDotComMode = true
 				s.GithubDotComSource = tc.githubDotComSource
+			}
+
+			if tc.gitlabDotComSource != nil {
+				s.SourcegraphDotComMode = true
+				s.GitLabDotComSource = tc.gitlabDotComSource
 			}
 
 			srv := httptest.NewServer(s.Handler())
@@ -1029,12 +1122,12 @@ func TestRepoLookup(t *testing.T) {
 	}
 }
 
-type fakeGithubDotComSource struct {
+type fakeRepoSource struct {
 	repo *repos.Repo
 	err  error
 }
 
-func (s *fakeGithubDotComSource) GetRepo(ctx context.Context, nameWithOwner string) (*repos.Repo, error) {
+func (s *fakeRepoSource) GetRepo(context.Context, string) (*repos.Repo, error) {
 	return s.repo.Clone(), s.err
 }
 

@@ -1,10 +1,8 @@
 import { HoverOverlayProps as GenericHoverOverlayProps } from '@sourcegraph/codeintellify'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import classNames from 'classnames'
-import { castArray, isEqual } from 'lodash'
-import AlertCircleOutlineIcon from 'mdi-react/AlertCircleOutlineIcon'
+import { castArray, isEqual, upperFirst } from 'lodash'
 import CloseIcon from 'mdi-react/CloseIcon'
-import HelpCircleIcon from 'mdi-react/HelpCircleIcon'
 import * as React from 'react'
 import { MarkupContent } from 'sourcegraph'
 import { ActionItem, ActionItemAction, ActionItemComponentProps } from '../actions/ActionItem'
@@ -33,7 +31,8 @@ export interface HoverOverlayClassProps {
     actionItemClassName?: string
     actionItemPressedClassName?: string
 
-    alertClassName?: string
+    infoAlertClassName?: string
+    errorAlertClassName?: string
 }
 
 /**
@@ -148,11 +147,14 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                             <LoadingSpinner className="icon-inline" />
                         </div>
                     ) : isErrorLike(hoverOrError) ? (
-                        <div className="hover-overlay__row hover-overlay__hover-error alert alert-danger">
-                            <h4>
-                                <AlertCircleOutlineIcon className="icon-inline" /> Error:
-                            </h4>{' '}
-                            {hoverOrError.message}
+                        <div
+                            className={classNames(
+                                'hover-overlay__row',
+                                'hover-overlay__hover-error',
+                                this.props.errorAlertClassName
+                            )}
+                        >
+                            {upperFirst(hoverOrError.message)}
                         </div>
                     ) : (
                         hoverOrError &&
@@ -171,11 +173,14 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                                             )
                                         } catch (err) {
                                             return (
-                                                <div className="hover-overlay__row alert alert-danger" key={i}>
-                                                    <strong>
-                                                        <AlertCircleOutlineIcon className="icon-inline" /> Error:
-                                                    </strong>{' '}
-                                                    {err.message}
+                                                <div
+                                                    className={classNames(
+                                                        'hover-overlay__row',
+                                                        this.props.errorAlertClassName
+                                                    )}
+                                                    key={i}
+                                                >
+                                                    {upperFirst(err.message)}
                                                 </div>
                                             )
                                         }
@@ -205,13 +210,11 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                                 className={classNames(
                                     'hover-overlay__row',
                                     'hover-overlay__alert',
-                                    this.props.alertClassName
+                                    this.props.infoAlertClassName
                                 )}
                                 key={type}
                             >
                                 <div className="hover-overlay__alert-content">
-                                    <HelpCircleIcon className="icon-inline" />
-                                    &nbsp;
                                     <small>{content}</small>
                                     <a
                                         className="hover-overlay__alert-close"

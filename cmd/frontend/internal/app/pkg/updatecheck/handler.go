@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -16,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
 	"github.com/sourcegraph/sourcegraph/internal/hubspot"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub/pubsubutil"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -28,12 +28,12 @@ var (
 	// non-cluster installations what the latest version is. The version here _must_ be
 	// available at https://hub.docker.com/r/sourcegraph/server/tags/ before
 	// landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("3.9.1")
+	latestReleaseDockerServerImageBuild = newBuild("3.9.2")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("3.9.1")
+	latestReleaseKubernetesBuild = newBuild("3.9.2")
 )
 
 func getLatestRelease(deployType string) build {
@@ -121,7 +121,7 @@ func canUpdateVersion(clientVersionString string, latestReleaseBuild build) (boo
 	return clientVersion.LessThan(latestReleaseBuild.Version), nil
 }
 
-var dateRegex = regexp.MustCompile("_([0-9]{4}-[0-9]{2}-[0-9]{2})_")
+var dateRegex = lazyregexp.New("_([0-9]{4}-[0-9]{2}-[0-9]{2})_")
 var timeNow = time.Now
 
 // canUpdateDate returns true if clientVersionString contains a date

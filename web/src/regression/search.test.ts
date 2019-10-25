@@ -139,6 +139,7 @@ describe('Search regression test suite', () => {
         'sourcegraphBaseUrl',
         'noCleanup',
         'testUserPassword',
+        'logStatusMessages',
         'logBrowserConsole',
         'slowMo',
         'headless',
@@ -160,16 +161,20 @@ describe('Search regression test suite', () => {
                 resourceManager.add(
                     'External service',
                     testExternalServiceInfo.uniqueDisplayName,
-                    await ensureTestExternalService(gqlClient, {
-                        ...testExternalServiceInfo,
-                        config: {
-                            url: 'https://github.com',
-                            token: config.gitHubToken,
-                            repos: testRepoSlugs,
-                            repositoryQuery: ['none'],
+                    await ensureTestExternalService(
+                        gqlClient,
+                        {
+                            ...testExternalServiceInfo,
+                            config: {
+                                url: 'https://github.com',
+                                token: config.gitHubToken,
+                                repos: testRepoSlugs,
+                                repositoryQuery: ['none'],
+                            },
+                            waitForRepos: testRepoSlugs.map(slug => 'github.com/' + slug),
                         },
-                        waitForRepos: testRepoSlugs.map(slug => 'github.com/' + slug),
-                    })
+                        config
+                    )
                 )
             },
             // Cloning the repositories takes ~1 minute, so give initialization 2 minutes

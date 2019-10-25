@@ -222,6 +222,8 @@ export const bitbucketServerCodeHost: CodeHost = {
         className: 'aui-dialog',
         actionItemClassName: 'aui-button hover-action-item--bitbucket-server',
         closeButtonClassName: 'aui-button',
+        infoAlertClassName: 'aui-message',
+        errorAlertClassName: 'aui-message aui-message-error',
     },
     getViewContextOnSourcegraphMount,
     getContext,

@@ -57,6 +57,9 @@ type PatternInfo struct {
 	// IsRegExp if true will treat the Pattern as a regular expression.
 	IsRegExp bool
 
+	// IsStructuralPat if true will treat the pattern as a Comby structural search pattern.
+	IsStructuralPat bool
+
 	// IsWordMatch if true will only match the pattern at word boundaries.
 	IsWordMatch bool
 

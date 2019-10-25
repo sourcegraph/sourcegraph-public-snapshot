@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -502,7 +503,7 @@ func (s *GithubSource) listSearch(ctx context.Context, query string, results cha
 // - only single hyphens and alphanumeric characters allowed.
 // - cannot begin/end with hyphen.
 // - up to 38 characters.
-var regOrg = regexp.MustCompile(`^org:([a-zA-Z0-9](?:-?[a-zA-Z0-9]){0,38})$`)
+var regOrg = lazyregexp.New(`^org:([a-zA-Z0-9](?:-?[a-zA-Z0-9]){0,38})$`)
 
 // matchOrg extracts the org name from the pattern `org:<org-name>` if it exists.
 func matchOrg(q string) string {

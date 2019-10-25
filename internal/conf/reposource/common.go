@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 // RepoSource is a wrapper around a repository source (typically a code host config) that provides a
@@ -36,7 +37,7 @@ func NormalizeBaseURL(baseURL *url.URL) *url.URL {
 	return baseURL
 }
 
-var nonSCPURLRegex = regexp.MustCompile(`^(git\+)?(https?|ssh|rsync|file|git)://`)
+var nonSCPURLRegex = lazyregexp.New(`^(git\+)?(https?|ssh|rsync|file|git)://`)
 
 // parseCloneURL parses a git clone URL into a URL struct. It supports the SCP-style git@host:path
 // syntax that is common among code hosts.

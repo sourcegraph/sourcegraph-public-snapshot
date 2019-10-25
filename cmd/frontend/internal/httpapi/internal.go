@@ -1,10 +1,9 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -190,20 +189,39 @@ func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func serveReposList(w http.ResponseWriter, r *http.Request) error {
-	var err error
-	var res []*types.Repo
-	if envvar.SourcegraphDotComMode() {
-		res, err = backend.Repos.ListDefault(r.Context())
+type reposListServer struct {
+	SourcegraphDotComMode bool
+
+	Repos interface {
+		ListDefault(context.Context) ([]*types.Repo, error)
+		List(context.Context, db.ReposListOptions) ([]*types.Repo, error)
+	}
+}
+
+func (h *reposListServer) serve(w http.ResponseWriter, r *http.Request) error {
+	var names []string
+	if h.SourcegraphDotComMode {
+		res, err := h.Repos.ListDefault(r.Context())
+		if err != nil {
+			return errors.Wrap(err, "listing repos")
+		}
+		names = make([]string, len(res))
+		for i, r := range res {
+			names[i] = string(r.Name)
+		}
 	} else {
 		var opt db.ReposListOptions
 		if err := json.NewDecoder(r.Body).Decode(&opt); err != nil {
 			return err
 		}
-		res, err = backend.Repos.List(r.Context(), opt)
-	}
-	if err != nil {
-		return errors.Wrap(err, "listing repos")
+		res, err := h.Repos.List(r.Context(), opt)
+		if err != nil {
+			return errors.Wrap(err, "listing repos")
+		}
+		names = make([]string, len(res))
+		for i, r := range res {
+			names[i] = string(r.Name)
+		}
 	}
 
 	// BACKCOMPAT: Add a Name field that serializes to `URI` because
@@ -212,23 +230,18 @@ func serveReposList(w http.ResponseWriter, r *http.Request) error {
 	// "repo name".
 	type repoWithBackcompatURIField struct {
 		Name string `json:"URI"`
-		// The Repo field has been removed because the only caller of
-		// this handler (zoekt-sourcegraph-indexserver) wasn't using
-		// it.
 	}
-	res2 := make([]repoWithBackcompatURIField, len(res))
-	for i, repo := range res {
-		res2[i] = repoWithBackcompatURIField{
-			Name: string(repo.Name),
-		}
+	res := make([]repoWithBackcompatURIField, len(names))
+	for i, name := range names {
+		res[i].Name = name
 	}
 
-	data, err := json.Marshal(res2)
+	data, err := json.Marshal(res)
 	if err != nil {
 		return err
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write(data)
+	_, _ = w.Write(data)
 	return nil
 }
 

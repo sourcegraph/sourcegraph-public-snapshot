@@ -69,8 +69,12 @@ const commitCodeView: Omit<CodeView, 'element'> = {
     toolbarButtonProps,
 }
 
-const resolveView = (element: HTMLElement): CodeView => {
+const resolveView: ViewResolver<CodeView>['resolveView'] = (element: HTMLElement): CodeView | null => {
     const { pageKind } = getPageInfo()
+
+    if (pageKind === GitLabPageKind.Other) {
+        return null
+    }
 
     if (pageKind === GitLabPageKind.File) {
         return { element, ...singleFileCodeView }
@@ -117,6 +121,8 @@ export const gitlabCodeHost: CodeHost = {
         actionItemClassName: 'btn btn-secondary action-item--gitlab',
         actionItemPressedClassName: 'active',
         closeButtonClassName: 'btn',
+        infoAlertClassName: 'alert alert-info',
+        errorAlertClassName: 'alert alert-danger',
     },
     codeViewsRequireTokenization: true,
 }

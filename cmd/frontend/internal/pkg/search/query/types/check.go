@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 // TypeError describes an error in query typechecking.
@@ -141,8 +142,8 @@ func setValue(dst *Value, valueString string, valueType ValueType) error {
 	return nil
 }
 
-var leftParenRx = regexp.MustCompile(`([^\\]|^)\($`)
-var squareBraceRx = regexp.MustCompile(`([^\\]|^)\[$`)
+var leftParenRx = lazyregexp.New(`([^\\]|^)\($`)
+var squareBraceRx = lazyregexp.New(`([^\\]|^)\[$`)
 
 // autoFix escapes various patterns that are very likely not meant to be
 // treated as regular expressions.

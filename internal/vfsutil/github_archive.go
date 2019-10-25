@@ -2,9 +2,9 @@ package vfsutil
 
 import (
 	"fmt"
-	"regexp"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 // NewGitHubRepoVFS creates a new VFS backed by a GitHub downloadable
@@ -18,7 +18,7 @@ func NewGitHubRepoVFS(repo, rev string) (*ArchiveFS, error) {
 	return NewZipVFS(url, ghFetch.Inc, ghFetchFailed.Inc, false)
 }
 
-var githubRepoRx = regexp.MustCompile(`^github\.com/[\w.-]{1,100}/[\w.-]{1,100}$`)
+var githubRepoRx = lazyregexp.New(`^github\.com/[\w.-]{1,100}/[\w.-]{1,100}$`)
 
 var ghFetch = prometheus.NewCounter(prometheus.CounterOpts{
 	Namespace: "vfsutil",

@@ -7,12 +7,12 @@ import (
 	"net/http"
 	"net/url"
 	"path"
-	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 func editorRev(ctx context.Context, repoName api.RepoName, rev string, beExplicit bool) (string, error) {
@@ -149,7 +149,7 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 }
 
 // gitProtocolRegExp is a regular expression that matches any URL that looks like it has a git protocol
-var gitProtocolRegExp = regexp.MustCompile("^(git|(git+)?(https?|ssh))://")
+var gitProtocolRegExp = lazyregexp.New("^(git|(git+)?(https?|ssh))://")
 
 // guessRepoNameFromRemoteURL return a guess at the repo name for the given remote URL.
 //

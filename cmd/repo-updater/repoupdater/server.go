@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -27,8 +28,12 @@ import (
 type Server struct {
 	repos.Store
 	*repos.Syncer
-	GithubDotComSource interface {
+	SourcegraphDotComMode bool
+	GithubDotComSource    interface {
 		GetRepo(ctx context.Context, nameWithOwner string) (*repos.Repo, error)
+	}
+	GitLabDotComSource interface {
+		GetRepo(ctx context.Context, projectWithNamespace string) (*repos.Repo, error)
 	}
 	Scheduler interface {
 		UpdateOnce(id uint32, name api.RepoName, url string)
@@ -393,10 +398,35 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return mockRepoLookup(args)
 	}
 
-	var repo *repos.Repo
 	result = &protocol.RepoLookupResult{}
+	codehost := extsvc.CodeHostOf(args.Repo, extsvc.PublicCodeHosts...)
 
-	if s.shouldGetGithubDotComRepo(args) {
+	if !s.SourcegraphDotComMode || codehost == nil {
+		repos, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
+			Names: []string{string(args.Repo)},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		if len(repos) != 1 {
+			result.ErrorNotFound = true
+			return result, nil
+		}
+
+		repoInfo, err := newRepoInfo(repos[0])
+		if err != nil {
+			return nil, err
+		}
+
+		result.Repo = repoInfo
+		return result, nil
+	}
+
+	var repo *repos.Repo
+
+	switch codehost {
+	case extsvc.GitHubDotCom:
 		nameWithOwner := strings.TrimPrefix(string(args.Repo), "github.com/")
 		repo, err = s.GithubDotComSource.GetRepo(ctx, nameWithOwner)
 		if err != nil {
@@ -415,23 +445,25 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 			return nil, err
 		}
 
-		err = s.Syncer.SyncSubset(ctx, repo)
+	case extsvc.GitLabDotCom:
+		projectWithNamespace := strings.TrimPrefix(string(args.Repo), "gitlab.com/")
+		repo, err = s.GitLabDotComSource.GetRepo(ctx, projectWithNamespace)
 		if err != nil {
+			if gitlab.IsNotFound(err) {
+				result.ErrorNotFound = true
+				return result, nil
+			}
+			if isUnauthorized(err) {
+				result.ErrorUnauthorized = true
+				return result, nil
+			}
 			return nil, err
 		}
-	} else {
-		repos, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
-			Names: []string{string(args.Repo)},
-		})
-		if err != nil {
-			return nil, err
-		}
+	}
 
-		if len(repos) != 1 {
-			result.ErrorNotFound = true
-			return result, nil
-		}
-		repo = repos[0]
+	err = s.Syncer.SyncSubset(ctx, repo)
+	if err != nil {
+		return nil, err
 	}
 
 	repoInfo, err := newRepoInfo(repo)
@@ -441,15 +473,6 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 
 	result.Repo = repoInfo
 	return result, nil
-}
-
-func (s *Server) shouldGetGithubDotComRepo(args protocol.RepoLookupArgs) bool {
-	if s.GithubDotComSource == nil {
-		return false
-	}
-
-	repoName := strings.ToLower(string(args.Repo))
-	return strings.HasPrefix(repoName, "github.com/")
 }
 
 func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
@@ -619,6 +642,9 @@ func pathAppend(base, p string) string {
 
 func isUnauthorized(err error) bool {
 	code := github.HTTPErrorCode(err)
+	if code == 0 {
+		code = gitlab.HTTPErrorCode(err)
+	}
 	return code == http.StatusUnauthorized || code == http.StatusForbidden
 }
 

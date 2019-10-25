@@ -96,6 +96,20 @@ func (s GitLabSource) ListRepos(ctx context.Context, results chan SourceResult) 
 	s.listAllProjects(ctx, results)
 }
 
+// GetRepo returns the GitLab repository with the given pathWithNamespace.
+func (s GitLabSource) GetRepo(ctx context.Context, pathWithNamespace string) (*Repo, error) {
+	proj, err := s.client.GetProject(ctx, gitlab.GetProjectOp{
+		PathWithNamespace: pathWithNamespace,
+		CommonOp:          gitlab.CommonOp{NoCache: true},
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return s.makeRepo(proj), nil
+}
+
 // ExternalServices returns a singleton slice containing the external service.
 func (s GitLabSource) ExternalServices() ExternalServices {
 	return ExternalServices{s.svc}

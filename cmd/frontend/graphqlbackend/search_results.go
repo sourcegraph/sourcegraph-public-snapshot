@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -180,22 +181,22 @@ func (sr *searchResultsResolver) ElapsedMilliseconds() int32 {
 // commonFileFilters are common filters used. It is used by DynamicFilters to
 // propose them if they match shown results.
 var commonFileFilters = []struct {
-	Regexp *regexp.Regexp
+	Regexp *lazyregexp.Regexp
 	Filter string
 }{
 	// Exclude go tests
 	{
-		Regexp: regexp.MustCompile(`_test\.go$`),
+		Regexp: lazyregexp.New(`_test\.go$`),
 		Filter: `-file:_test\.go$`,
 	},
 	// Exclude go vendor
 	{
-		Regexp: regexp.MustCompile(`(^|/)vendor/`),
+		Regexp: lazyregexp.New(`(^|/)vendor/`),
 		Filter: `-file:(^|/)vendor/`,
 	},
 	// Exclude node_modules
 	{
-		Regexp: regexp.MustCompile(`(^|/)node_modules/`),
+		Regexp: lazyregexp.New(`(^|/)node_modules/`),
 		Filter: `-file:(^|/)node_modules/`,
 	},
 }
@@ -521,7 +522,7 @@ func longer(N int, dt time.Duration) time.Duration {
 	return dt2
 }
 
-var decimalRx = regexp.MustCompile(`\d+\.\d+`)
+var decimalRx = lazyregexp.New(`\d+\.\d+`)
 
 // roundStr rounds the first number containing a decimal within a string
 func roundStr(s string) string {
@@ -639,13 +640,19 @@ type getPatternInfoOptions struct {
 	// forceFileSearch, when true, specifies that the search query should be
 	// treated as if every default term had `file:` before it. This can be used
 	// to allow users to jump to files by just typing their name.
-	forceFileSearch bool
+	forceFileSearch         bool
+	performStructuralSearch bool
 }
 
 // getPatternInfo gets the search pattern info for the query in the resolver.
 func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.PatternInfo, error) {
 	var patternsToCombine []string
-	if opts == nil || !opts.forceFileSearch {
+	isRegExp := false
+	isStructuralPat := false
+	if opts != nil && opts.performStructuralSearch {
+		isStructuralPat = true
+	} else if opts == nil || !opts.forceFileSearch {
+		isRegExp = true
 		for _, v := range r.query.Values(query.FieldDefault) {
 			// Treat quoted strings as literal strings to match, not regexps.
 			var pattern string
@@ -666,6 +673,7 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Pa
 		// when not using indexed search. I am unsure what the right solution
 		// is here. Would this code path go away when we switch fully to
 		// indexed search @keegan? This workaround is OK for now though.
+		isRegExp = true
 		patternsToCombine = append(patternsToCombine, ".")
 	}
 
@@ -688,7 +696,8 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Pa
 	excludePatterns = append(excludePatterns, langExcludePatterns...)
 
 	patternInfo := &search.PatternInfo{
-		IsRegExp:                     true,
+		IsRegExp:                     isRegExp,
+		IsStructuralPat:              isStructuralPat,
 		IsCaseSensitive:              r.query.IsCaseSensitive(),
 		FileMatchLimit:               r.maxResults(),
 		Pattern:                      regexpPatternMatchingExprsInOrder(patternsToCombine),
@@ -806,7 +815,12 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return alertResult, nil
 	}
 
-	p, err := r.getPatternInfo(nil)
+	options := &getPatternInfoOptions{}
+	if r.patternType == SearchTypeStructural {
+		options = &getPatternInfoOptions{performStructuralSearch: true}
+	}
+	p, err := r.getPatternInfo(options)
+
 	if err != nil {
 		return nil, err
 	}
@@ -1058,7 +1072,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		alert = r.alertForMissingRepoRevs(missingRepoRevs)
 	}
 
-	if len(results) == 0 && strings.Contains(r.originalQuery, `"`) && r.patternType == "literal" {
+	if len(results) == 0 && strings.Contains(r.originalQuery, `"`) && r.patternType == SearchTypeLiteral {
 		alert, err = r.alertForQuotesInQueryInLiteralMode(ctx)
 	}
 

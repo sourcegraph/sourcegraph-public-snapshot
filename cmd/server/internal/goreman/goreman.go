@@ -3,11 +3,14 @@ package goreman
 
 import (
 	"errors"
+	"fmt"
+	"os"
 	"os/exec"
-	"regexp"
 	"runtime"
 	"strings"
 	"sync"
+
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 // -- process information structure.
@@ -29,7 +32,7 @@ var maxProcNameLength int
 // read Procfile and parse it.
 func readProcfile(content []byte) error {
 	procs = map[string]*procInfo{}
-	re := regexp.MustCompile(`\$([a-zA-Z]+[a-zA-Z0-9_]+)`)
+	re := lazyregexp.New(`\$([a-zA-Z]+[a-zA-Z0-9_]+)`)
 	for _, line := range strings.Split(string(content), "\n") {
 		tokens := strings.SplitN(line, ":", 2)
 		if len(tokens) != 2 || tokens[0][0] == '#' {
@@ -54,14 +57,49 @@ func readProcfile(content []byte) error {
 	return nil
 }
 
+// ProcDiedAction specifies the behaviour Goreman takes if a process exits
+// with a non-zero exit code.
+type ProcDiedAction uint
+
+const (
+	// Shutdown will shutdown Goreman if any process shuts down with a
+	// non-zero exit code.
+	Shutdown ProcDiedAction = iota
+
+	// Ignore will continue running Goreman and will leave not restart the
+	// dead process.
+	Ignore
+)
+
+// procDiedAction is the ProcDiedAction to take. Goreman still is globals
+// everywhere \o/
+var procDiedAction ProcDiedAction
+
+type Options struct {
+	// RPCAddr is the address to listen for Goreman RPCs.
+	RPCAddr string
+
+	// ProcDiedAction specifies the behaviour to take when a process dies.
+	ProcDiedAction ProcDiedAction
+}
+
 // Start starts up the Procfile.
-func Start(rpcAddr string, contents []byte) error {
+func Start(contents []byte, opts Options) error {
 	err := readProcfile(contents)
 	if err != nil {
 		return err
 	}
-	if err := startServer(rpcAddr); err != nil {
-		return err
+	if opts.ProcDiedAction > Ignore {
+		return fmt.Errorf("invalid ProcDiedAction %v", opts.ProcDiedAction)
+	}
+	procDiedAction = opts.ProcDiedAction
+	if opts.RPCAddr != "" {
+		if err := os.Setenv("GOREMAN_RPC_ADDR", opts.RPCAddr); err != nil {
+			return err
+		}
+		if err := startServer(opts.RPCAddr); err != nil {
+			return err
+		}
 	}
 	startProcs()
 	return waitProcs()

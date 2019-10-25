@@ -113,6 +113,56 @@ func TestQueryToZoektQuery(t *testing.T) {
 	}
 }
 
+func TestStructuralPatToZoektQuery(t *testing.T) {
+	cases := []struct {
+		Name    string
+		Pattern string
+		Want    string
+	}{
+		{
+			Name:    "Just a hole",
+			Pattern: ":[1]",
+			Want:    `TRUE`,
+		},
+		{
+			Name:    "Adjacent holes",
+			Pattern: ":[1]:[2]:[3]",
+			Want:    `TRUE`,
+		},
+		{
+			Name:    "Substring between holes",
+			Pattern: ":[1] substring :[2]",
+			Want:    `(and case_file_substr:" substring ")`,
+		},
+		{
+			Name:    "Substring before and after different hole kinds",
+			Pattern: "prefix :[[1]] :[2.] suffix",
+			Want:    `(and case_file_substr:"prefix " case_file_substr:" " case_file_substr:" suffix")`,
+		},
+		{
+			Name:    "Substrings covering all hole kinds.",
+			Pattern: `1. :[1] 2. :[[2]] 3. :[3.] 4. :[4\n] 5. :[ ] 6. :[ 6] done.`,
+			Want:    `(and case_file_substr:"1. " case_file_substr:" 2. " case_file_substr:" 3. " case_file_substr:" 4. " case_file_substr:" 5. " case_file_substr:" 6. " case_file_substr:" done.")`,
+		},
+		{
+			Name: "Substrings across multiple lines.",
+			Pattern: `:[1] spans
+multiple
+lines
+ :[2]`,
+			Want: `(and case_file_substr:" spans\nmultiple\nlines\n ")`,
+		},
+	}
+	for _, tt := range cases {
+		t.Run(tt.Name, func(t *testing.T) {
+			got := StructuralPatToQuery(tt.Pattern)
+			if got.String() != tt.Want {
+				t.Fatalf("mismatched queries\ngot  %s\nwant %s", got.String(), tt.Want)
+			}
+		})
+	}
+}
+
 func queryEqual(a zoektquery.Q, b zoektquery.Q) bool {
 	sortChildren := func(q zoektquery.Q) zoektquery.Q {
 		switch s := q.(type) {

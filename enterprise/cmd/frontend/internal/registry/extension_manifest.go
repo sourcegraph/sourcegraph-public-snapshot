@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"net/url"
 	"path"
-	"regexp"
 	"strconv"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 // validateExtensionManifest validates a JSON extension manifest for syntax.
@@ -63,7 +63,7 @@ func getExtensionManifestWithBundleURL(ctx context.Context, extensionID string, 
 	return manifest, publishedAt, nil
 }
 
-var nonLettersDigits = regexp.MustCompile(`[^a-zA-Z0-9-]`)
+var nonLettersDigits = lazyregexp.New(`[^a-zA-Z0-9-]`)
 
 func makeExtensionBundleURL(registryExtensionReleaseID int64, timestamp int64, extensionIDHint string) (string, error) {
 	u, err := url.Parse(conf.Get().Critical.ExternalURL)

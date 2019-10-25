@@ -305,26 +305,29 @@ func Test_defaultRepositories(t *testing.T) {
 	}
 }
 
-func Test_defaultToRegexp(t *testing.T) {
+func Test_detectSearchType(t *testing.T) {
 	typeRegexp := "regexp"
 	typeLiteral := "literal"
 	testCases := []struct {
 		name        string
 		version     string
 		patternType *string
-		want        bool
+		input       string
+		want        SearchType
 	}{
-		{"V1, no pattern type", "V1", nil, true},
-		{"V2, no pattern type", "V2", nil, false},
-		{"V1, regexp pattern type", "V1", &typeRegexp, true},
-		{"V2, regexp pattern type", "V2", &typeRegexp, true},
-		{"V1, literal pattern type", "V1", &typeLiteral, false},
-		{"V2, regexp pattern type", "V2", &typeLiteral, false},
+		{"V1, no pattern type", "V1", nil, "", SearchTypeRegex},
+		{"V2, no pattern type", "V2", nil, "", SearchTypeLiteral},
+		{"V1, regexp pattern type", "V1", &typeRegexp, "", SearchTypeRegex},
+		{"V2, regexp pattern type", "V2", &typeRegexp, "", SearchTypeRegex},
+		{"V1, literal pattern type", "V1", &typeLiteral, "", SearchTypeLiteral},
+		{"V2, override regexp pattern type", "V2", &typeLiteral, "patterntype:regexp", SearchTypeRegex},
+		{"V2, override regex variant pattern type", "V2", &typeLiteral, "patterntype:regex", SearchTypeRegex},
+		{"V1, override literal pattern type", "V1", &typeRegexp, "patterntype:literal", SearchTypeLiteral},
 	}
 
 	for _, test := range testCases {
 		t.Run(test.name, func(*testing.T) {
-			got, err := defaultToRegexp(test.version, test.patternType)
+			got, err := detectSearchType(test.version, test.patternType, test.input)
 			if err != nil {
 				t.Fatal(err)
 			}

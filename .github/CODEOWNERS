@@ -57,6 +57,7 @@
 /graphql-schema-linter.config.js @felixfbecker
 /.prettierignore @felixfbecker
 /.github @beyang
+/.github/workflows/lsif.yml @efritz
 /.gitmodules @beyang
 /.gitattributes @beyang
 /.yarnrc @felixfbecker
@@ -251,6 +252,7 @@ README.md @sqs
 /cmd/frontend/db/discussion* @slimsag
 
 # LSIF
+/cmd/frontend/internal/httpapi/lsif.go @sourcegraph/code-intel
 /lsif/ @sourcegraph/code-intel
 
 # Development

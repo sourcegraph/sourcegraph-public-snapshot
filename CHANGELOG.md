@@ -13,11 +13,21 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- `sourcegraph/server` Docker deployments now support the environment variable `IGNORE_PROCESS_DEATH`. If set to true the container will keep running, even if a subprocess has died. This is useful when manually fixing problems in the container which the container refuses to start. For example a bad databse migration.
+
 ### Changed
 
 ### Fixed
 
+- Support hyphens in Bitbucket Cloud team names. [#6154](https://github.com/sourcegraph/sourcegraph/issues/6154)
+
 ### Removed
+
+## 3.9.2
+
+### Fixed
+
+- URI-decode the username, password, and pathname when constructing Postgres connection paramers in lsif-server [#6174](https://github.com/sourcegraph/sourcegraph/pull/6174). Fixes a crashing lsif-server process for users with passwords containing special characters.
 
 ## 3.9.1
 

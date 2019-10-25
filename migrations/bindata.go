@@ -46,8 +46,8 @@
 // 1528395603_add_patterntype_to_saved_searches.up.sql (87B)
 // 1528395604_lsif_multi_project.down.sql (598B)
 // 1528395604_lsif_multi_project.up.sql (3.798kB)
-// 1528395605_drop_recent_searches.down.sql (107B)
-// 1528395605_drop_recent_searches.up.sql (103B)
+// 1528395605_drop_recent_searches.down.sql (151B)
+// 1528395605_drop_recent_searches.up.sql (55B)
 // 1528395606_lsif_add_visible_at_tip_flag.down.sql (361B)
 // 1528395606_lsif_add_visible_at_tip_flag.up.sql (273B)
 
@@ -1038,7 +1038,7 @@ func _1528395604_lsif_multi_projectUpSql() (*asset, error) {
 	return a, nil
 }
 
-var __1528395605_drop_recent_searchesDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x1c\xc7\xb1\x0a\x02\x31\x0c\x06\xe0\xbd\x4f\xf1\x8f\x0a\x56\x70\x76\x94\xdb\xdc\xbc\x17\x48\x73\xbf\x9c\x58\x52\x48\x52\x9f\x5f\xb8\xf1\xab\x15\xeb\x4e\x38\x95\x96\x08\x8a\xeb\xce\xc0\x9b\x92\xd3\x89\x4f\xc0\xf8\xa3\xa3\x91\x86\x19\xdc\x2e\xa5\x56\xd8\x80\x91\x1b\x72\xc0\x47\xef\x68\xa2\xdf\x03\x54\xa7\x24\x91\xd2\x3a\x4f\x71\xbe\x96\xd7\xf2\x5c\x1e\x2b\x6e\xf7\xf2\x0f\x00\x00\xff\xff\x8f\x18\xdf\xf4\x6b\x00\x00\x00")
+var __1528395605_drop_recent_searchesDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x3c\xce\x41\xaa\xc2\x30\x14\x46\xe1\x79\x56\xf1\x0f\x5b\x78\x3b\xe8\x28\x7d\x5e\xa5\x98\xa6\x12\x52\xa4\xa3\x12\xd2\x0b\x06\xac\x68\x72\x05\xdd\xbd\xa8\xe0\xf8\x3b\x83\xd3\xd2\xae\xb3\x8d\x52\xff\x8e\xb4\x27\x78\xdd\x1a\x42\xe6\xc8\x17\x99\x0b\x87\x1c\x4f\x5c\x50\x29\x00\x48\x0b\x0a\xe7\x14\xce\x38\xb8\xae\xd7\x6e\xc2\x9e\xa6\xbf\x0f\xdd\xee\x9c\x9f\x10\x7e\x08\xec\xe0\x61\x47\x63\xbe\x10\x33\x07\xe1\x65\x0e\x02\x49\x2b\x17\x09\xeb\xf5\x97\x60\x43\x5b\x3d\x1a\x0f\x3b\x1c\xab\x5a\xd5\xef\x8d\xa1\xef\x3b\xdf\xa8\x57\x00\x00\x00\xff\xff\x17\x40\x14\x6c\x97\x00\x00\x00")
 
 func _1528395605_drop_recent_searchesDownSqlBytes() ([]byte, error) {
 	return bindataRead(
@@ -1054,11 +1054,11 @@ func _1528395605_drop_recent_searchesDownSql() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "1528395605_drop_recent_searches.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xfd, 0xc8, 0x10, 0x6f, 0xc4, 0x8, 0xf5, 0x86, 0x4a, 0x29, 0x5e, 0x2b, 0x56, 0x4f, 0x36, 0x1a, 0x5e, 0xd2, 0x37, 0x40, 0x59, 0x73, 0x47, 0x9c, 0xd9, 0x9, 0xb0, 0xed, 0x6, 0x12, 0xee, 0x24}}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x1e, 0x7, 0xc, 0x0, 0x8d, 0xf7, 0xe2, 0x14, 0xad, 0x1b, 0x73, 0x15, 0x82, 0x27, 0x5e, 0x48, 0x6d, 0xa9, 0x7f, 0x66, 0xf4, 0x4a, 0x9d, 0x23, 0x52, 0x3c, 0x59, 0x98, 0x61, 0xf4, 0xfd, 0x5b}}
 	return a, nil
 }
 
-var __1528395605_drop_recent_searchesUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x4a\x4d\x4e\xcd\x2b\x89\x2f\x4e\x4d\x2c\x4a\xce\x48\x2d\xb6\x86\xa8\x0a\x76\x0d\x0c\x75\xf5\x73\xc6\xa3\x30\x3e\x33\x25\xbe\x38\xb5\xd0\x9a\x8b\xcb\xd9\xdf\xd7\xd7\x33\xc4\x9a\x0b\x10\x00\x00\xff\xff\x91\xba\x4b\x2c\x67\x00\x00\x00")
+var __1528395605_drop_recent_searchesUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x4a\x4d\x4e\xcd\x2b\x89\x2f\x4e\x4d\x2c\x4a\xce\x48\x2d\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x7f\xd0\x23\xe0\x37\x00\x00\x00")
 
 func _1528395605_drop_recent_searchesUpSqlBytes() ([]byte, error) {
 	return bindataRead(
@@ -1074,7 +1074,7 @@ func _1528395605_drop_recent_searchesUpSql() (*asset, error) {
 	}
 
 	info := bindataFileInfo{name: "1528395605_drop_recent_searches.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
-	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x6a, 0x89, 0xd2, 0xea, 0x1e, 0xd3, 0xa, 0x44, 0xf1, 0x2d, 0x35, 0x54, 0x38, 0x6d, 0x3c, 0x0, 0x1e, 0xe0, 0xb3, 0x50, 0xbc, 0x8, 0xe8, 0x67, 0xc9, 0x8c, 0xcd, 0x2a, 0x45, 0xba, 0x5d, 0xad}}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x91, 0x3e, 0x34, 0x59, 0xad, 0x5c, 0x37, 0x70, 0xf2, 0x68, 0xf6, 0x6f, 0xf3, 0x97, 0x27, 0x83, 0xf4, 0x53, 0x31, 0x14, 0x2d, 0xf5, 0xd9, 0x9b, 0xe9, 0xc6, 0x1f, 0xac, 0x6c, 0x26, 0x65, 0x19}}
 	return a, nil
 }
 
@@ -1209,105 +1209,56 @@ func AssetNames() []string {
 
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
-	"1528395582_squashed_migrations.down.sql": _1528395582_squashed_migrationsDownSql,
-
-	"1528395582_squashed_migrations.up.sql": _1528395582_squashed_migrationsUpSql,
-
-	"1528395583_add_default_repos_primary_key.down.sql": _1528395583_add_default_repos_primary_keyDownSql,
-
-	"1528395583_add_default_repos_primary_key.up.sql": _1528395583_add_default_repos_primary_keyUpSql,
-
-	"1528395584_add_campaigns_table.down.sql": _1528395584_add_campaigns_tableDownSql,
-
-	"1528395584_add_campaigns_table.up.sql": _1528395584_add_campaigns_tableUpSql,
-
-	"1528395585_go-1.13-dummy-migration.down.sql": _1528395585_go113DummyMigrationDownSql,
-
-	"1528395585_go-1.13-dummy-migration.up.sql": _1528395585_go113DummyMigrationUpSql,
-
-	"1528395586_add_threads_table.down.sql": _1528395586_add_threads_tableDownSql,
-
-	"1528395586_add_threads_table.up.sql": _1528395586_add_threads_tableUpSql,
-
-	"1528395587_campaigns_threads_many_to_many_relation.down.sql": _1528395587_campaigns_threads_many_to_many_relationDownSql,
-
-	"1528395587_campaigns_threads_many_to_many_relation.up.sql": _1528395587_campaigns_threads_many_to_many_relationUpSql,
-
-	"1528395588_rename_threads_to_changesets.down.sql": _1528395588_rename_threads_to_changesetsDownSql,
-
-	"1528395588_rename_threads_to_changesets.up.sql": _1528395588_rename_threads_to_changesetsUpSql,
-
-	"1528395589_add_external_id_to_schema.down.sql": _1528395589_add_external_id_to_schemaDownSql,
-
-	"1528395589_add_external_id_to_schema.up.sql": _1528395589_add_external_id_to_schemaUpSql,
-
-	"1528395590_add_external_service_type_to_changesets.down.sql": _1528395590_add_external_service_type_to_changesetsDownSql,
-
-	"1528395590_add_external_service_type_to_changesets.up.sql": _1528395590_add_external_service_type_to_changesetsUpSql,
-
-	"1528395591_create_events_logging_table.down.sql": _1528395591_create_events_logging_tableDownSql,
-
-	"1528395591_create_events_logging_table.up.sql": _1528395591_create_events_logging_tableUpSql,
-
-	"1528395592_add_deletion_triggers_to_campaigns_and_changesets.down.sql": _1528395592_add_deletion_triggers_to_campaigns_and_changesetsDownSql,
-
-	"1528395592_add_deletion_triggers_to_campaigns_and_changesets.up.sql": _1528395592_add_deletion_triggers_to_campaigns_and_changesetsUpSql,
-
-	"1528395593_allows_trailing_hyphen_in_usernames.down.sql": _1528395593_allows_trailing_hyphen_in_usernamesDownSql,
-
-	"1528395593_allows_trailing_hyphen_in_usernames.up.sql": _1528395593_allows_trailing_hyphen_in_usernamesUpSql,
-
-	"1528395594_create_changeset_events_table.down.sql": _1528395594_create_changeset_events_tableDownSql,
-
-	"1528395594_create_changeset_events_table.up.sql": _1528395594_create_changeset_events_tableUpSql,
-
-	"1528395595_create_lsif_database.down.sql": _1528395595_create_lsif_databaseDownSql,
-
-	"1528395595_create_lsif_database.up.sql": _1528395595_create_lsif_databaseUpSql,
-
-	"1528395596_lsif_xrepo_init.down.sql": _1528395596_lsif_xrepo_initDownSql,
-
-	"1528395596_lsif_xrepo_init.up.sql": _1528395596_lsif_xrepo_initUpSql,
-
-	"1528395597_lsif_commits.down.sql": _1528395597_lsif_commitsDownSql,
-
-	"1528395597_lsif_commits.up.sql": _1528395597_lsif_commitsUpSql,
-
-	"1528395598_destroy_separate_lsif_db.down.sql": _1528395598_destroy_separate_lsif_dbDownSql,
-
-	"1528395598_destroy_separate_lsif_db.up.sql": _1528395598_destroy_separate_lsif_dbUpSql,
-
-	"1528395599_create_lsif_tables.down.sql": _1528395599_create_lsif_tablesDownSql,
-
-	"1528395599_create_lsif_tables.up.sql": _1528395599_create_lsif_tablesUpSql,
-
-	"1528395600_lsif_commits_indexes.down.sql": _1528395600_lsif_commits_indexesDownSql,
-
-	"1528395600_lsif_commits_indexes.up.sql": _1528395600_lsif_commits_indexesUpSql,
-
-	"1528395601_lsif_dumps.down.sql": _1528395601_lsif_dumpsDownSql,
-
-	"1528395601_lsif_dumps.up.sql": _1528395601_lsif_dumpsUpSql,
-
+	"1528395582_squashed_migrations.down.sql":                                  _1528395582_squashed_migrationsDownSql,
+	"1528395582_squashed_migrations.up.sql":                                    _1528395582_squashed_migrationsUpSql,
+	"1528395583_add_default_repos_primary_key.down.sql":                        _1528395583_add_default_repos_primary_keyDownSql,
+	"1528395583_add_default_repos_primary_key.up.sql":                          _1528395583_add_default_repos_primary_keyUpSql,
+	"1528395584_add_campaigns_table.down.sql":                                  _1528395584_add_campaigns_tableDownSql,
+	"1528395584_add_campaigns_table.up.sql":                                    _1528395584_add_campaigns_tableUpSql,
+	"1528395585_go-1.13-dummy-migration.down.sql":                              _1528395585_go113DummyMigrationDownSql,
+	"1528395585_go-1.13-dummy-migration.up.sql":                                _1528395585_go113DummyMigrationUpSql,
+	"1528395586_add_threads_table.down.sql":                                    _1528395586_add_threads_tableDownSql,
+	"1528395586_add_threads_table.up.sql":                                      _1528395586_add_threads_tableUpSql,
+	"1528395587_campaigns_threads_many_to_many_relation.down.sql":              _1528395587_campaigns_threads_many_to_many_relationDownSql,
+	"1528395587_campaigns_threads_many_to_many_relation.up.sql":                _1528395587_campaigns_threads_many_to_many_relationUpSql,
+	"1528395588_rename_threads_to_changesets.down.sql":                         _1528395588_rename_threads_to_changesetsDownSql,
+	"1528395588_rename_threads_to_changesets.up.sql":                           _1528395588_rename_threads_to_changesetsUpSql,
+	"1528395589_add_external_id_to_schema.down.sql":                            _1528395589_add_external_id_to_schemaDownSql,
+	"1528395589_add_external_id_to_schema.up.sql":                              _1528395589_add_external_id_to_schemaUpSql,
+	"1528395590_add_external_service_type_to_changesets.down.sql":              _1528395590_add_external_service_type_to_changesetsDownSql,
+	"1528395590_add_external_service_type_to_changesets.up.sql":                _1528395590_add_external_service_type_to_changesetsUpSql,
+	"1528395591_create_events_logging_table.down.sql":                          _1528395591_create_events_logging_tableDownSql,
+	"1528395591_create_events_logging_table.up.sql":                            _1528395591_create_events_logging_tableUpSql,
+	"1528395592_add_deletion_triggers_to_campaigns_and_changesets.down.sql":    _1528395592_add_deletion_triggers_to_campaigns_and_changesetsDownSql,
+	"1528395592_add_deletion_triggers_to_campaigns_and_changesets.up.sql":      _1528395592_add_deletion_triggers_to_campaigns_and_changesetsUpSql,
+	"1528395593_allows_trailing_hyphen_in_usernames.down.sql":                  _1528395593_allows_trailing_hyphen_in_usernamesDownSql,
+	"1528395593_allows_trailing_hyphen_in_usernames.up.sql":                    _1528395593_allows_trailing_hyphen_in_usernamesUpSql,
+	"1528395594_create_changeset_events_table.down.sql":                        _1528395594_create_changeset_events_tableDownSql,
+	"1528395594_create_changeset_events_table.up.sql":                          _1528395594_create_changeset_events_tableUpSql,
+	"1528395595_create_lsif_database.down.sql":                                 _1528395595_create_lsif_databaseDownSql,
+	"1528395595_create_lsif_database.up.sql":                                   _1528395595_create_lsif_databaseUpSql,
+	"1528395596_lsif_xrepo_init.down.sql":                                      _1528395596_lsif_xrepo_initDownSql,
+	"1528395596_lsif_xrepo_init.up.sql":                                        _1528395596_lsif_xrepo_initUpSql,
+	"1528395597_lsif_commits.down.sql":                                         _1528395597_lsif_commitsDownSql,
+	"1528395597_lsif_commits.up.sql":                                           _1528395597_lsif_commitsUpSql,
+	"1528395598_destroy_separate_lsif_db.down.sql":                             _1528395598_destroy_separate_lsif_dbDownSql,
+	"1528395598_destroy_separate_lsif_db.up.sql":                               _1528395598_destroy_separate_lsif_dbUpSql,
+	"1528395599_create_lsif_tables.down.sql":                                   _1528395599_create_lsif_tablesDownSql,
+	"1528395599_create_lsif_tables.up.sql":                                     _1528395599_create_lsif_tablesUpSql,
+	"1528395600_lsif_commits_indexes.down.sql":                                 _1528395600_lsif_commits_indexesDownSql,
+	"1528395600_lsif_commits_indexes.up.sql":                                   _1528395600_lsif_commits_indexesUpSql,
+	"1528395601_lsif_dumps.down.sql":                                           _1528395601_lsif_dumpsDownSql,
+	"1528395601_lsif_dumps.up.sql":                                             _1528395601_lsif_dumpsUpSql,
 	"1528395602_add_updated_at_and_drop_source_from_changeset_events.down.sql": _1528395602_add_updated_at_and_drop_source_from_changeset_eventsDownSql,
-
-	"1528395602_add_updated_at_and_drop_source_from_changeset_events.up.sql": _1528395602_add_updated_at_and_drop_source_from_changeset_eventsUpSql,
-
-	"1528395603_add_patterntype_to_saved_searches.down.sql": _1528395603_add_patterntype_to_saved_searchesDownSql,
-
-	"1528395603_add_patterntype_to_saved_searches.up.sql": _1528395603_add_patterntype_to_saved_searchesUpSql,
-
-	"1528395604_lsif_multi_project.down.sql": _1528395604_lsif_multi_projectDownSql,
-
-	"1528395604_lsif_multi_project.up.sql": _1528395604_lsif_multi_projectUpSql,
-
-	"1528395605_drop_recent_searches.down.sql": _1528395605_drop_recent_searchesDownSql,
-
-	"1528395605_drop_recent_searches.up.sql": _1528395605_drop_recent_searchesUpSql,
-
-	"1528395606_lsif_add_visible_at_tip_flag.down.sql": _1528395606_lsif_add_visible_at_tip_flagDownSql,
-
-	"1528395606_lsif_add_visible_at_tip_flag.up.sql": _1528395606_lsif_add_visible_at_tip_flagUpSql,
+	"1528395602_add_updated_at_and_drop_source_from_changeset_events.up.sql":   _1528395602_add_updated_at_and_drop_source_from_changeset_eventsUpSql,
+	"1528395603_add_patterntype_to_saved_searches.down.sql":                    _1528395603_add_patterntype_to_saved_searchesDownSql,
+	"1528395603_add_patterntype_to_saved_searches.up.sql":                      _1528395603_add_patterntype_to_saved_searchesUpSql,
+	"1528395604_lsif_multi_project.down.sql":                                   _1528395604_lsif_multi_projectDownSql,
+	"1528395604_lsif_multi_project.up.sql":                                     _1528395604_lsif_multi_projectUpSql,
+	"1528395605_drop_recent_searches.down.sql":                                 _1528395605_drop_recent_searchesDownSql,
+	"1528395605_drop_recent_searches.up.sql":                                   _1528395605_drop_recent_searchesUpSql,
+	"1528395606_lsif_add_visible_at_tip_flag.down.sql":                         _1528395606_lsif_add_visible_at_tip_flagDownSql,
+	"1528395606_lsif_add_visible_at_tip_flag.up.sql":                           _1528395606_lsif_add_visible_at_tip_flagUpSql,
 }
 
 // AssetDir returns the file names below a certain

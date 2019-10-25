@@ -14,6 +14,17 @@ func (p ParseTree) String() string {
 	return ExprString(p)
 }
 
+// Values returns the raw string values associated with a field.
+func (p ParseTree) Values(field string) []string {
+	var v []string
+	for _, expr := range p {
+		if expr.Field == field {
+			v = append(v, expr.Value)
+		}
+	}
+	return v
+}
+
 // WithErrorsQuoted converts a search input like `f:foo b(ar` to `f:foo "b(ar"`.
 func (p ParseTree) WithErrorsQuoted() ParseTree {
 	p2 := []*Expr{}
