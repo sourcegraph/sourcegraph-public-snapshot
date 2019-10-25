@@ -155,7 +155,7 @@ src-expose will default to serving ~/.sourcegraph/src-expose-repos`,
 				return &usageError{"requires zero or one arguments"}
 			}
 
-			return serveRepos(*globalAddr, repoDir)
+			return serveRepos(log.New(os.Stderr, "serve: ", log.LstdFlags), *globalAddr, repoDir)
 		},
 	}
 
@@ -169,7 +169,7 @@ src-expose will default to serving ~/.sourcegraph/src-expose-repos`,
 			if err != nil {
 				return err
 			}
-			return s.Run()
+			return s.Run(log.New(os.Stderr, "sync: ", log.LstdFlags))
 		},
 	}
 
@@ -210,13 +210,15 @@ Paste the following configuration as an Other External Service in Sourcegraph:
 `, s.Destination, strings.Join(args[1:], "\n- "), *globalAddr, dockerAddr(*globalAddr))
 
 			go func() {
-				if err := serveRepos(*globalAddr, s.Destination); err != nil {
+				logger := log.New(os.Stderr, "serve: ", log.LstdFlags)
+				if err := serveRepos(logger, *globalAddr, s.Destination); err != nil {
 					log.Fatal(err)
 				}
 			}()
 
+			logger := log.New(os.Stderr, "sync: ", log.LstdFlags)
 			for {
-				if err := s.Run(); err != nil {
+				if err := s.Run(logger); err != nil {
 					return err
 				}
 				time.Sleep(s.Duration)
