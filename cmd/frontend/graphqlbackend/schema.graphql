@@ -750,7 +750,7 @@ input AddExternalServiceInput {
     # The display name of the external service.
     displayName: String!
     # The JSON configuration of the external service.
-    config: String!
+    config: JSONCString!
 }
 
 # Fields to update for an existing external service.
@@ -760,7 +760,7 @@ input UpdateExternalServiceInput {
     # The updated display name, if provided.
     displayName: String
     # The updated config, if provided.
-    config: String
+    config: JSONCString
 }
 
 # A selection within a file.
@@ -1604,7 +1604,7 @@ type ExternalService implements Node {
     # The display name of the external service.
     displayName: String!
     # The JSON configuration of the external service.
-    config: String!
+    config: JSONCString!
     # When the external service was created.
     createdAt: DateTime!
     # When the external service was last updated.
