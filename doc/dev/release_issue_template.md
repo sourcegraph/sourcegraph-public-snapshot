@@ -18,7 +18,7 @@ Run a find replace on:
     - [ ] Tagging the final release.
     - [ ] Publishing the blog post.
 - [ ] Send message to #dev-announce with a link to this tracking issue to notify the team of the release schedule.
-- [ ] Create the [retrospective document](retrospectives/index.md) and schedule the retrospective meeting within a few days _after_ the release (send calendar invites to team@sourcegraph.com).
+- [ ] Create the [retrospective document](retrospectives/index.md) and schedule the retrospective meeting within a few days _after_ the release. Send calendar invites to team@sourcegraph.com, and ensure there is a Zoom meeting on the invite.
 - [ ] Create a new test grid for MAJOR.MINOR by cloning the previous [release testing grid on Monday.com](https://sourcegraph-team.monday.com) and renaming it to "MAJOR.MINOR Release test grid".
     - [ ] Reset all tested cells to "To test", unless the "Automated" column is marked as "Done". See [this article for how to update multiple values in Monday.com](https://support.monday.com/hc/en-us/articles/115005335049-Batch-Actions-Edit-multiple-items-in-one-click).
     - [ ] Assign rows in the release testing grid to engineers from the team that owns the row.
@@ -71,7 +71,7 @@ Run a find replace on:
     - [ ] Verify that code search returns results as you expect (depending on the repositories that you added).
     - [ ] Verify that basic code intelligence works on Go or TypeScript.
     - [ ] Tear down this Kubernetes cluster.
-- [ ] Delete entries from section 15 (CHANGELOG) of the testing grid, or move them into permanent sections above. Add new CHANGELOG items for this release into section 15. Assign the feature owner as the tester for each row.
+- [ ] Delete entries from section 15 (CHANGELOG) of the testing grid, or move them into permanent sections above. Add new CHANGELOG items for this release into section 15. Assign (1) the feature owner and (2) a person who did not work on the feature as the testers for each row.
 - [ ] Send a message to #dev-announce to kick off testing day.
   - [ ] Include a link to the testing grid.
   - [ ] Include the command to run the latest release candidate:
