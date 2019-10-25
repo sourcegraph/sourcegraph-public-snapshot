@@ -168,5 +168,5 @@ func (s *settingsSubject) readSettings(ctx context.Context, v interface{}) error
 	if settings == nil {
 		return nil
 	}
-	return jsonc.Unmarshal(settings.Contents(), &v)
+	return jsonc.Unmarshal(string(settings.Contents()), &v)
 }
