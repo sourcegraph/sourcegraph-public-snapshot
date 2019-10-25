@@ -428,14 +428,12 @@ input CreateCampaignInput {
     # The description of the campaign as Markdown.
     description: String!
 
-    # The specification of how this campaign should generate changesets.
+    # An optional reference to a completed campaign plan that was previewed before this mutation.
     # If null, existing changesets can be added manually.
-    # If set, no changesets can be added manually, they will be created by Sourcegraph after starting the campaign.
-    specification: CampaignPlanSpecification
-
-    # An optional reference to a campaign plan that was previewed before this mutation.
-    # If set and the plan is still cached, it will be used.
-    # Otherwise the campaign plan will be recomputed from the specification.
+    # If set, no changesets can be added manually, they will be created by Sourcegraph
+    # after creating the campaign according to the precomputed campaign plan.
+    # Will error if the plan has been purged already and needs to be recomputed by another call to previewCampaignPlan.
+    # Will error if the plan is not completed yet.
     plan: ID
 }
 
