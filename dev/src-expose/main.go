@@ -2,6 +2,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -10,7 +11,9 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/peterbourgon/ff/ffcli"
@@ -76,9 +79,7 @@ func shortenErrHelp(cmd *ffcli.Command, cmdPath string) {
 	}
 }
 
-func main() {
-	log.SetPrefix("")
-
+func Main(rootCtx context.Context, args []string) bool {
 	var (
 		globalFlags    = flag.NewFlagSet("src-expose", flag.ExitOnError)
 		globalVerbose  = globalFlags.Bool("verbose", false, "")
@@ -155,7 +156,7 @@ src-expose will default to serving ~/.sourcegraph/src-expose-repos`,
 				return &usageError{"requires zero or one arguments"}
 			}
 
-			return serveRepos(*globalAddr, repoDir)
+			return serveRepos(rootCtx, *globalAddr, repoDir)
 		},
 	}
 
@@ -209,27 +210,66 @@ Paste the following configuration as an Other External Service in Sourcegraph:
 
 `, s.Destination, strings.Join(args[1:], "\n- "), *globalAddr, dockerAddr(*globalAddr))
 
+			ctx, cancel := context.WithCancel(rootCtx)
+			defer cancel()
+
+			errC := make(chan error)
+
 			go func() {
-				if err := serveRepos(*globalAddr, s.Destination); err != nil {
-					log.Fatal(err)
+				errC <- serveRepos(ctx, *globalAddr, s.Destination)
+			}()
+
+			go func() {
+				for {
+					if err := s.Run(); err != nil {
+						errC <- err
+						return
+					}
+					select {
+					case <-time.After(s.Duration):
+					case <-ctx.Done():
+						errC <- nil
+						return
+					}
 				}
 			}()
 
-			for {
-				if err := s.Run(); err != nil {
-					return err
-				}
-				time.Sleep(s.Duration)
+			err = <-errC
+			cancel()
+			err2 := <-errC
+			if err == nil {
+				err = err2
 			}
+			return err
 		},
 	}
 
 	shortenErrHelp(root, "")
 
-	if err := root.Run(os.Args[1:]); err != nil {
+	if err := root.Run(args); err != nil {
 		if !errors.Is(err, flag.ErrHelp) && !errors.Is(err, errSilent) {
 			_, _ = fmt.Fprintf(root.FlagSet.Output(), "\nerror: %v\n", err)
 		}
+		return false
+	}
+	return true
+}
+
+func main() {
+	log.SetPrefix("")
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go func() {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+		<-c
+		cancel()
+	}()
+
+	success := Main(ctx, os.Args[1:])
+	if !success {
 		os.Exit(1)
 	}
 }

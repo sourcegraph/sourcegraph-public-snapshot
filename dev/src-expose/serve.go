@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net"
@@ -9,27 +10,39 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 )
 
-func serveRepos(addr string, repoDir string) error {
+func serveRepos(ctx context.Context, addr string, repoDir string) error {
 	logger := log.New(os.Stderr, "serve: ", log.LstdFlags)
 
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
 		return errors.Wrap(err, "listen")
 	}
+	defer ln.Close()
 	logger.Printf("listening on http://%s", ln.Addr())
 	s, err := serve(logger, ln, repoDir)
 	if err != nil {
 		return errors.Wrap(err, "configuring server")
 	}
-	if err := s.Serve(ln); err != nil {
-		return errors.Wrap(err, "serving")
-	}
 
-	return nil
+	errC := make(chan error, 1)
+	go func() {
+		errC <- s.Serve(ln)
+	}()
+
+	select {
+	case err := <-errC:
+		return errors.Wrap(err, "serving")
+
+	case <-ctx.Done():
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		return s.Shutdown(shutdownCtx)
+	}
 }
 
 func serve(logger *log.Logger, ln net.Listener, reposRoot string) (*http.Server, error) {
