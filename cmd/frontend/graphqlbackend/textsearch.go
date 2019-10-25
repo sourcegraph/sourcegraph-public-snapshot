@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
@@ -426,10 +427,14 @@ var mockSearchFilesInRepos func(args *search.Args) ([]*fileMatchResolver, *searc
 
 // searchFilesInRepos searches a set of repos for a pattern.
 func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
-	errc := make(chan error, 1)
 	if mockSearchFilesInRepos != nil {
 		return mockSearchFilesInRepos(args)
 	}
+
+	// The number of errors that saerchFilesInRepos can report is the size
+	// of the number of go routines we fan out. This number is at most the
+	// size of repos.
+	errc := make(chan error, len(args.Repos))
 
 	tr, ctx := trace.New(ctx, "searchFilesInRepos", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.Pattern, len(args.Repos)))
 	defer func() {
@@ -615,7 +620,6 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 				addMatches(matches)
 			}(limitCtx, limitDone, repoRev) // ends the Go routine for a call to searcher for a repo
 		} // ends the for loop iterating over repos
-		return
 	} // ends callSearcherOverRepos
 
 	wg.Add(1)
@@ -653,7 +657,10 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 	callSearcherOverRepos(searcherRepos)
 	wg.Wait()
 	close(errc)
-	if err := <-errc; err != nil {
+	for e := range errc {
+		err = multierror.Append(err, e)
+	}
+	if err != nil {
 		return nil, common, err
 	}
 
