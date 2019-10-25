@@ -431,7 +431,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		return mockSearchFilesInRepos(args)
 	}
 
-	// The number of errors that saerchFilesInRepos can report is the size
+	// The number of errors that searchFilesInRepos can report is the size
 	// of the number of go routines we fan out. This number is at most the
 	// size of repos.
 	errc := make(chan error, len(args.Repos))
