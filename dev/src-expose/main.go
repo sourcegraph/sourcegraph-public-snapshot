@@ -27,12 +27,15 @@ func (e *usageError) Error() string {
 	return e.Msg
 }
 
-func dockerAddr(addr string) string {
+func exampleURL(addr string) string {
+	if u := os.Getenv("OVERRIDE_EXAMPLE_URL"); u != "" {
+		return u
+	}
 	_, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		port = "3434"
 	}
-	return "host.docker.internal:" + port
+	return "http://host.docker.internal:" + port
 }
 
 func usageErrorOutput(cmd *ffcli.Command, cmdPath string, err error) string {
@@ -203,11 +206,11 @@ Paste the following configuration as an Other External Service in Sourcegraph:
   {
     // url should be reachable by Sourcegraph. host.docker.internal works for Sourcegraph
     // in Docker on the same machine.
-    "url": "http://%s",
+    "url": "%s",
     "repos": ["src-expose"] // This may change in versions later than 3.9
   }
 
-`, s.Destination, strings.Join(args[1:], "\n- "), *globalAddr, dockerAddr(*globalAddr))
+`, s.Destination, strings.Join(args[1:], "\n- "), *globalAddr, exampleURL(*globalAddr))
 
 			go func() {
 				if err := serveRepos(*globalAddr, s.Destination); err != nil {
