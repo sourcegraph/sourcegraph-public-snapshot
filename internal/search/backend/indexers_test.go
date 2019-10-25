@@ -6,10 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 )
-
-var _ EndpointMap = (*endpoint.Map)(nil)
 
 func TestAssign(t *testing.T) {
 	index := &Indexers{
