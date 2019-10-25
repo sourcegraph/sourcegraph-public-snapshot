@@ -18,12 +18,28 @@ See [descriptions of the Grafana dashboards provisioned by Sourcegraph](monitori
 
 ### Exposing Grafana directly
 
-If you are running Sourcegraph as single server you can add an additional publish flag for the Grafana port 3370:
+If you are running Sourcegraph as single server behind a firewall you can add an additional publish flag for the Grafana port 3370:
 
 ```shell script
 docker run --publish 7080:7080 --publish 2633:2633 --publish 3370:3370 \
   --rm --volume ~/.sourcegraph/config:/etc/sourcegraph \
   --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.9.1
+```
+
+If you are running Sourcegraph as a single server in a droplet or otherwise exposed to the open internet then publishing
+the additional port is not recommended since the embedded Grafana runs in anonymous mode. In this case we suggest using
+the tools `sshuttle` and `socat` to create a secure connection. Log into your remote server using ssh 
+and run these commands: 
+
+```shell script
+docker exec -t XXX_CONTAINER_ID_XXXX apk add --no-cache socat
+socat tcp-listen:3370,reuseaddr,fork system:"docker exec -i 7298cae012eb socat stdio 'tcp:localhost:3370'"
+```
+
+On your local machine start a `sshuttle` session to your remote server
+
+```shell script
+sshuttle -r xxx_user_xxx@sxxx_remote_server_xxx 0/0
 ```
 
 If you're using the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph),  
