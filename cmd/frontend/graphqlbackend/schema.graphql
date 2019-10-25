@@ -516,7 +516,7 @@ type BackgroundProcessStatus {
     pendingCount: Int!
 
     # The state the background process is currently in.
-    state: BackgroundProcessState
+    state: BackgroundProcessState!
 
     # Messages of errors that occurred since the current run of this process was started.
     errors: [String!]!
