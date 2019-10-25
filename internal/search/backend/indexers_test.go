@@ -12,7 +12,7 @@ import (
 var _ EndpointMap = (*endpoint.Map)(nil)
 
 func TestAssign(t *testing.T) {
-	index := &Indices{
+	index := &Indexers{
 		Map: prefixMap([]string{"foo", "bar", "baz.fully.qualified:80"}),
 	}
 

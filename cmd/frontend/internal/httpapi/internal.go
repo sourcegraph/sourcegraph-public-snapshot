@@ -197,7 +197,7 @@ type reposListServer struct {
 		List(context.Context, db.ReposListOptions) ([]*types.Repo, error)
 	}
 
-	Indices interface {
+	Indexers interface {
 		Assign(string, []string) ([]string, error)
 		Enabled() bool
 	}
@@ -233,9 +233,9 @@ func (h *reposListServer) serve(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	if h.Indices.Enabled() {
+	if h.Indexers.Enabled() {
 		var err error
-		names, err = h.Indices.Assign(opt.Hostname, names)
+		names, err = h.Indexers.Assign(opt.Hostname, names)
 		if err != nil {
 			return err
 		}

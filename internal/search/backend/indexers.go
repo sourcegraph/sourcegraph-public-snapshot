@@ -12,9 +12,9 @@ type EndpointMap interface {
 	GetMany(...string) ([]string, error)
 }
 
-// Indices provides methods over the set of indexed-search servers in a
+// Indexers provides methods over the set of indexed-search servers in a
 // Sourcegraph cluster.
-type Indices struct {
+type Indexers struct {
 	Map EndpointMap
 }
 
@@ -22,8 +22,8 @@ type Indices struct {
 //
 // Assign reuses the underlying array of repoNames.
 //
-// An error is returned if hostname is not part of the Indices endpoints.
-func (c *Indices) Assign(hostname string, repoNames []string) ([]string, error) {
+// An error is returned if hostname is not part of the Indexers endpoints.
+func (c *Indexers) Assign(hostname string, repoNames []string) ([]string, error) {
 	if !c.Enabled() {
 		return repoNames, nil
 	}
@@ -56,7 +56,7 @@ func (c *Indices) Assign(hostname string, repoNames []string) ([]string, error) 
 // Enabled returns true if this feature is enabled. At first horizontal
 // sharding will be disabled, if so the functions here fallback to single
 // shard behaviour.
-func (c *Indices) Enabled() bool {
+func (c *Indexers) Enabled() bool {
 	return c.Map != nil
 }
 

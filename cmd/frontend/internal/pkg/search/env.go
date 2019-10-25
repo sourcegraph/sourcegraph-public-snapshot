@@ -23,8 +23,8 @@ var (
 	indexedSearchOnce sync.Once
 	indexedSearch     *backend.Zoekt
 
-	indicesOnce sync.Once
-	indices     *backend.Indices
+	indexersOnce sync.Once
+	indexers     *backend.Indexers
 )
 
 func SearcherURLs() *endpoint.Map {
@@ -51,17 +51,17 @@ func Indexed() *backend.Zoekt {
 	return indexedSearch
 }
 
-func Indices() *backend.Indices {
-	indicesOnce.Do(func() {
+func Indexers() *backend.Indexers {
+	indexersOnce.Do(func() {
 		if zoektAddrs != "" {
-			indices = &backend.Indices{
+			indexers = &backend.Indexers{
 				Map: endpoint.New(zoektAddrs),
 			}
 		} else {
-			indices = &backend.Indices{
+			indexers = &backend.Indexers{
 				Map: nil,
 			}
 		}
 	})
-	return indices
+	return indexers
 }

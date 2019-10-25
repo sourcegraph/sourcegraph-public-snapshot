@@ -28,48 +28,48 @@ func TestReposList(t *testing.T) {
 		body string
 		want []string
 	}{{
-		name: "no indices",
+		name: "no indexers",
 		srv: &reposListServer{
 			Repos: &mockRepos{
 				defaultRepos: defaultRepos,
 				repos:        allRepos,
 			},
-			Indices: suffixIndices(false),
+			Indexers: suffixIndexers(false),
 		},
 		body: `{"Enabled": true, "Index": true}`,
 		want: allRepos,
 	}, {
-		name: "dot-com no indices",
+		name: "dot-com no indexers",
 		srv: &reposListServer{
 			SourcegraphDotComMode: true,
 			Repos: &mockRepos{
 				defaultRepos: defaultRepos,
 				repos:        allRepos,
 			},
-			Indices: suffixIndices(false),
+			Indexers: suffixIndexers(false),
 		},
 		body: `{"Enabled": true, "Index": true}`,
 		want: defaultRepos,
 	}, {
-		name: "indices",
+		name: "indexers",
 		srv: &reposListServer{
 			Repos: &mockRepos{
 				defaultRepos: defaultRepos,
 				repos:        allRepos,
 			},
-			Indices: suffixIndices(true),
+			Indexers: suffixIndexers(true),
 		},
 		body: `{"Hostname": "foo", "Enabled": true, "Index": true}`,
 		want: []string{"github.com/popular/foo", "github.com/alice/foo"},
 	}, {
-		name: "dot-com indices",
+		name: "dot-com indexers",
 		srv: &reposListServer{
 			SourcegraphDotComMode: true,
 			Repos: &mockRepos{
 				defaultRepos: defaultRepos,
 				repos:        allRepos,
 			},
-			Indices: suffixIndices(true),
+			Indexers: suffixIndexers(true),
 		},
 		body: `{"Hostname": "foo", "Enabled": true, "Index": true}`,
 		want: []string{"github.com/popular/foo"},
@@ -80,7 +80,7 @@ func TestReposList(t *testing.T) {
 				defaultRepos: defaultRepos,
 				repos:        allRepos,
 			},
-			Indices: suffixIndices(true),
+			Indexers: suffixIndexers(true),
 		},
 		body: `{"Hostname": "baz", "Enabled": true, "Index": true}`,
 	}}
@@ -147,11 +147,11 @@ func (r *mockRepos) List(ctx context.Context, opt db.ReposListOptions) ([]*types
 	return repos, nil
 }
 
-type suffixIndices bool
+type suffixIndexers bool
 
-func (b suffixIndices) Assign(hostname string, repoNames []string) ([]string, error) {
+func (b suffixIndexers) Assign(hostname string, repoNames []string) ([]string, error) {
 	if !b.Enabled() {
-		return nil, errors.New("indices disabled")
+		return nil, errors.New("indexers disabled")
 	}
 	if hostname == "" {
 		return nil, errors.New("empty hostname")
@@ -166,6 +166,6 @@ func (b suffixIndices) Assign(hostname string, repoNames []string) ([]string, er
 	return filter, nil
 }
 
-func (b suffixIndices) Enabled() bool {
+func (b suffixIndexers) Enabled() bool {
 	return bool(b)
 }
