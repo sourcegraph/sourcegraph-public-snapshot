@@ -16,18 +16,25 @@ See [descriptions of the Grafana dashboards provisioned by Sourcegraph](monitori
 > We are working to solve [this issue](https://github.com/sourcegraph/sourcegraph/issues/6075). 
 > As a workaround, site admins can connect to Grafana directly (as described below) to make changes to the dashboards. 
 
-### Exposing Grafana directly
+## Accessing Grafana directly
 
-If you are running Sourcegraph as single server behind a firewall you can add an additional publish flag for the Grafana port 3370:
+Follow the instructions below to access Grafana directly by visiting http://localhost:3370/-/debug/grafana. 
+This URL will show the home dashboard and from there you can add, modify and delete your own dashboards and panels,
+ as well as configure alerts.
+
+### Kubernetes
+
+If you're using the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph),  
+you can access Grafana directly using Kubernetes port forwarding to your local machine:
 
 ```shell script
-docker run --publish 7080:7080 --publish 2633:2633 --publish 3370:3370 \
-  --rm --volume ~/.sourcegraph/config:/etc/sourcegraph \
-  --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.9.1
-```
+kubectl port-forward svc/grafana 3370:30070
+``` 
+
+### Single-container server deployments
 
 If you are running Sourcegraph as a single server in a droplet or otherwise exposed to the open internet then publishing
-the additional port is not recommended since the embedded Grafana runs in anonymous mode. In this case we suggest using
+an additional docker port is not recommended since the embedded Grafana runs in anonymous mode. In this case we suggest using
 the tools `sshuttle` and `socat` to create a secure connection. Log into your remote server using ssh 
 and run these commands: 
 
@@ -42,14 +49,15 @@ On your local machine start a `sshuttle` session to your remote server
 sshuttle -r xxx_user_xxx@sxxx_remote_server_xxx 0/0
 ```
 
-If you're using the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph),  
-you can access Grafana directly using Kubernetes port forwarding to your local machine:
+### Single-container server deployments (with firewall)
+
+If you are running Sourcegraph as single server behind a firewall you can add an additional publish flag for the Grafana port 3370:
 
 ```shell script
-kubectl port-forward svc/grafana 3370:30070
-``` 
-
-Then visiting http://localhost:3370/-/debug/grafana will show the home dashboard and from there you can add, modify and delete your own dashboards and panels, as well as configure alerts.
+docker run --publish 7080:7080 --publish 2633:2633 --publish 3370:3370 \
+  --rm --volume ~/.sourcegraph/config:/etc/sourcegraph \
+  --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.9.1
+```
 
 ### Docker images
 
