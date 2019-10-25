@@ -7,7 +7,7 @@ import {
 import { instrument } from './metrics'
 import { Connection, EntityManager } from 'typeorm'
 import { createFilter, testFilter } from './encoding'
-import { PackageModel, ReferenceModel, Commit, LsifDump } from './xrepo.models'
+import { PackageModel, ReferenceModel, Commit, LsifDump, DumpId } from './xrepo.models'
 import { TableInserter } from './inserter'
 import { discoverAndUpdateCommit } from './commits'
 import { TracingContext } from './tracing'
@@ -75,6 +75,42 @@ export class XrepoDatabase {
      * @param connection The Postgres connection.
      */
     constructor(private connection: Connection) {}
+
+    /**
+     * Get the dumps for a repository.
+     *
+     * @param repository The repository.
+     * @param limit The maximum number of dumps to return.
+     * @param offset The number of dumps to skip.
+     */
+    public async getDumps(
+        repository: string,
+        limit: number,
+        offset: number
+    ): Promise<{ dumps: LsifDump[]; totalCount: number }> {
+        const [dumps, totalCount] = await this.withConnection(connection =>
+            connection
+                .getRepository(LsifDump)
+                .createQueryBuilder()
+                .where({ repository })
+                // TODO - order by age desc once #6205 is merged
+                .orderBy('commit')
+                .limit(limit)
+                .offset(offset)
+                .getManyAndCount()
+        )
+
+        return { dumps, totalCount }
+    }
+
+    /**
+     * Get a dump by identifier.
+     *
+     * @param id The dump identifier.
+     */
+    public getDumpById(id: DumpId): Promise<LsifDump | undefined> {
+        return this.withConnection(connection => connection.getRepository(LsifDump).findOne({ id }))
+    }
 
     /**
      * Return the list of all repositories that have LSIF data.

@@ -68,6 +68,11 @@ const UPDATE_TIPS_JOB_SCHEDULE_INTERVAL = readEnvInt('UPDATE_TIPS_JOB_SCHEDULE_I
 const CLEAN_OLD_JOBS_INTERVAL = readEnvInt('CLEAN_OLD_JOBS_INTERVAL', 60 * 60)
 
 /**
+ * The default page size for the dumps endpoint.
+ */
+const DEFAULT_DUMP_PAGE_SIZE = 50
+
+/**
  * Middleware function used to convert uncaught exceptions into 500 responses.
  *
  * @param logger The logger instance.
@@ -259,11 +264,7 @@ async function lsifEndpoints(
     router.post(
         '/upload',
         wrap(
-            async (
-                req: express.Request & { span?: Span },
-                res: express.Response,
-                next: express.NextFunction
-            ): Promise<void> => {
+            async (req: express.Request, res: express.Response): Promise<void> => {
                 const { repository, commit, root, skipValidation: skipValidationRaw } = req.query
                 const skipValidation = skipValidationRaw === 'true'
                 checkRepository(repository)
@@ -297,10 +298,56 @@ async function lsifEndpoints(
         )
     )
 
+    const limitOffset = (req: express.Request, defaultLimit: number): { limit: number; offset: number } => ({
+        limit: parseInt(req.query.limit, 10) || defaultLimit,
+        offset: parseInt(req.query.offset, 10) || 0,
+    })
+
+    const nextLink = (req: express.Request, params: { [K: string]: any }): string => {
+        const url = new URL(`${req.protocol}://${req.get('host')}${req.originalUrl}`)
+        for (const [key, value] of Object.entries(params)) {
+            url.searchParams.set(key, String(value))
+        }
+
+        return `<${url.href}>; rel="next"`
+    }
+
+    router.get(
+        '/dumps/:repository',
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const { repository } = req.params
+                const { limit, offset } = limitOffset(req, DEFAULT_DUMP_PAGE_SIZE)
+                const { dumps, totalCount } = await backend.dumps(repository, limit, offset)
+
+                if (offset + dumps.length < totalCount) {
+                    res.set('Link', nextLink(req, { limit, offset: offset + dumps.length }))
+                }
+
+                res.json({ dumps, totalCount })
+            }
+        )
+    )
+
+    router.get(
+        '/dumps/:repository/:id',
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const { repository, id } = req.params
+                const dump = await backend.dump(parseInt(id, 10))
+                if (!dump || dump.repository !== repository) {
+                    throw Object.assign(new Error('LSIF dump not found'), { status: 404 })
+                }
+
+                res.json(dump)
+            }
+        )
+    )
+
     router.post(
         '/exists',
         wrap(
-            async (req: express.Request & { span?: Span }, res: express.Response): Promise<void> => {
+            async (req: express.Request, res: express.Response): Promise<void> => {
                 const { repository, commit, file } = req.query
                 checkRepository(repository)
                 checkCommit(commit)
@@ -316,7 +363,7 @@ async function lsifEndpoints(
         '/request',
         bodyParser.json({ limit: '1mb' }),
         wrap(
-            async (req: express.Request & { span?: Span }, res: express.Response): Promise<void> => {
+            async (req: express.Request, res: express.Response): Promise<void> => {
                 const { repository, commit } = req.query
                 const { path, position, method } = req.body
                 checkRepository(repository)

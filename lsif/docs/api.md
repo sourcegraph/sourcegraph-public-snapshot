@@ -25,3 +25,18 @@ Performs a query at a particular position. The request body must be a JSON objec
 - `position`: the zero-based `{ line, character }` hover position
 
 Returns `200 OK` on success with a body containing an LSP-compatible response. Returns `404 Not Found` if no LSIF data exists for this repository.
+
+### GET `/dumps/{repo}?limit={limit}&offset={offset}`
+
+- `repository`: the repository name
+- `limit`: the maximum number of dumps to return
+- `offset`: the number of dumps seen previously
+
+Returns all dumps for a given repository.
+
+### GET `/dumps/{repo}/{dumpId}
+
+- `repo`: the repository name
+- `dumpId`: the dump identifier
+
+Returns a particular dump by its identifier. The resulting dump must belong to the given repository.
