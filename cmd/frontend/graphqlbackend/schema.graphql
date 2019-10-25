@@ -502,13 +502,13 @@ enum BackgroundProcessState {
     # The background process attempted processing all items, but some failed.
     ERRORED
     # The background process completed processing all items successfully.
-    DONE
+    COMPLETED
 }
 
 # Reusable type to report progress of a background process.
 type BackgroundProcessStatus {
-    # How many items were successfully done.
-    doneCount: Int!
+    # How many items were successfully completed.
+    completedCount: Int!
 
     # How many items are not done yet (including items that errored).
     pendingCount: Int!
