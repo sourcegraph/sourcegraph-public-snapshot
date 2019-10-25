@@ -87,7 +87,7 @@ func findEndpoint(eps map[string]struct{}, hostname string) (string, error) {
 		}
 
 		if endpoint != "" {
-			return "", fmt.Errorf("hostname %q matches multiple in %s", hostname, endpointsQuote(eps))
+			return "", fmt.Errorf("hostname %q matches multiple in %s", hostname, endpointsString(eps))
 		}
 		endpoint = ep
 	}
@@ -95,11 +95,11 @@ func findEndpoint(eps map[string]struct{}, hostname string) (string, error) {
 		return endpoint, nil
 	}
 
-	return "", fmt.Errorf("hostname %q not found in %s", hostname, endpointsQuote(eps))
+	return "", fmt.Errorf("hostname %q not found in %s", hostname, endpointsString(eps))
 }
 
-// endpointsQuote creates a user readable String for an endpoint map.
-func endpointsQuote(m map[string]struct{}) string {
+// endpointsString creates a user readable String for an endpoint map.
+func endpointsString(m map[string]struct{}) string {
 	eps := make([]string, 0, len(m))
 	for k := range m {
 		eps = append(eps, k)
