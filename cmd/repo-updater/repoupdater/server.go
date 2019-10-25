@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -398,9 +399,9 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 	}
 
 	result = &protocol.RepoLookupResult{}
-	src := sourceFromRepoName(strings.ToLower(string(args.Repo)))
+	codehost := extsvc.CodeHostOf(args.Repo, extsvc.PublicCodeHosts...)
 
-	if !s.SourcegraphDotComMode || src == "" {
+	if !s.SourcegraphDotComMode || codehost == nil {
 		repos, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
 			Names: []string{string(args.Repo)},
 		})
@@ -424,8 +425,8 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 
 	var repo *repos.Repo
 
-	switch src {
-	case "github.com":
+	switch codehost {
+	case extsvc.GitHubDotCom:
 		nameWithOwner := strings.TrimPrefix(string(args.Repo), "github.com/")
 		repo, err = s.GithubDotComSource.GetRepo(ctx, nameWithOwner)
 		if err != nil {
@@ -444,7 +445,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 			return nil, err
 		}
 
-	case "gitlab.com":
+	case extsvc.GitLabDotCom:
 		projectWithNamespace := strings.TrimPrefix(string(args.Repo), "gitlab.com/")
 		repo, err = s.GitLabDotComSource.GetRepo(ctx, projectWithNamespace)
 		if err != nil {
@@ -472,17 +473,6 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 
 	result.Repo = repoInfo
 	return result, nil
-}
-
-func sourceFromRepoName(repoName string) string {
-	switch {
-	case strings.HasPrefix(repoName, "github.com/"):
-		return "github.com"
-	case strings.HasPrefix(repoName, "gitlab.com/"):
-		return "gitlab.com"
-	default:
-		return ""
-	}
 }
 
 func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {

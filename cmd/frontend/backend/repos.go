@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/opentracing/opentracing-go"
@@ -19,8 +18,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -67,30 +66,32 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 	ctx, done := trace(ctx, "Repos", "GetByName", name, &err)
 	defer done()
 
-	repo, err := db.Repos.GetByName(ctx, name)
-	if err == nil {
+	switch repo, err := db.Repos.GetByName(ctx, name); {
+	case err == nil:
 		return repo, nil
-	}
-
-	_, notFound := err.(interface{ NotFound() bool })
-	if notFound && envvar.SourcegraphDotComMode() {
+	case !errcode.IsNotFound(err):
+		return nil, err
+	case envvar.SourcegraphDotComMode():
 		// Automatically add repositories on Sourcegraph.com.
 		if err := s.Add(ctx, name); err != nil {
 			return nil, err
 		}
 		return db.Repos.GetByName(ctx, name)
-	}
-
-	if !conf.Get().DisablePublicRepoRedirects && strings.HasPrefix(strings.ToLower(string(name)), "github.com/") {
+	case shouldRedirect(name):
 		return nil, ErrRepoSeeOther{RedirectURL: (&url.URL{
 			Scheme:   "https",
 			Host:     "sourcegraph.com",
 			Path:     string(name),
 			RawQuery: url.Values{"utm_source": []string{conf.DeployType()}}.Encode(),
 		}).String()}
+	default:
+		return nil, err
 	}
+}
 
-	return repo, nil
+func shouldRedirect(name api.RepoName) bool {
+	return !conf.Get().DisablePublicRepoRedirects &&
+		extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...) != nil
 }
 
 // Add adds the repository with the given name to the database by calling
@@ -102,22 +103,16 @@ func (s *repos) Add(ctx context.Context, name api.RepoName) (err error) {
 	// Avoid hitting repo-updater (and incurring a hit against our GitHub/etc. API rate
 	// limit) for repositories that don't exist or private repositories that people attempt to
 	// access.
-	var serviceType string
-	switch name := strings.ToLower(string(name)); {
-	case strings.HasPrefix(name, "github.com/"):
-		serviceType = github.ServiceType
-	case strings.HasPrefix(name, "gitlab.com/"):
-		serviceType = gitlab.ServiceType
-	}
-
-	gitserverRepo, err := quickGitserverRepo(ctx, name, serviceType)
-	if err != nil {
-		return err
-	}
-
-	if gitserverRepo != nil {
-		if err := gitserver.DefaultClient.IsRepoCloneable(ctx, *gitserverRepo); err != nil {
+	if host := extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...); host != nil {
+		gitserverRepo, err := quickGitserverRepo(ctx, name, host.ServiceType)
+		if err != nil {
 			return err
+		}
+
+		if gitserverRepo != nil {
+			if err := gitserver.DefaultClient.IsRepoCloneable(ctx, *gitserverRepo); err != nil {
+				return err
+			}
 		}
 	}
 
