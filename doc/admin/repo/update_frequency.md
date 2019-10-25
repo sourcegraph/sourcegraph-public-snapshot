@@ -1,6 +1,6 @@
 # Repository update frequency
 
-Sourcegraph polls code hosts to keep repository contents up to date by default, effectively periodically running `git pull`. You can also configure Sourcegraph to use [repository webhooks](webhooks.md) instead, but this is generally not needed.
+By default, Sourcegraph polls code hosts to keep repository contents up to date, effectively running `git pull` periodically. You can also configure Sourcegraph to use [repository webhooks](webhooks.md), but this is usually not necessary.
 
 The frequency at which Sourcegraph polls the code host for updates is determined by a smart hueristic based on past commit frequency in the repository. For example, if a repositories last commit was 8 hours ago, then the next update will be scheduled 4 hours from now. If there are still no new commits, then the next update will be scheduled 6 hours from then.
 
