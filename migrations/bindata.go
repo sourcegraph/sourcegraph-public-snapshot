@@ -1209,105 +1209,56 @@ func AssetNames() []string {
 
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
-	"1528395582_squashed_migrations.down.sql": _1528395582_squashed_migrationsDownSql,
-
-	"1528395582_squashed_migrations.up.sql": _1528395582_squashed_migrationsUpSql,
-
-	"1528395583_add_default_repos_primary_key.down.sql": _1528395583_add_default_repos_primary_keyDownSql,
-
-	"1528395583_add_default_repos_primary_key.up.sql": _1528395583_add_default_repos_primary_keyUpSql,
-
-	"1528395584_add_campaigns_table.down.sql": _1528395584_add_campaigns_tableDownSql,
-
-	"1528395584_add_campaigns_table.up.sql": _1528395584_add_campaigns_tableUpSql,
-
-	"1528395585_go-1.13-dummy-migration.down.sql": _1528395585_go113DummyMigrationDownSql,
-
-	"1528395585_go-1.13-dummy-migration.up.sql": _1528395585_go113DummyMigrationUpSql,
-
-	"1528395586_add_threads_table.down.sql": _1528395586_add_threads_tableDownSql,
-
-	"1528395586_add_threads_table.up.sql": _1528395586_add_threads_tableUpSql,
-
-	"1528395587_campaigns_threads_many_to_many_relation.down.sql": _1528395587_campaigns_threads_many_to_many_relationDownSql,
-
-	"1528395587_campaigns_threads_many_to_many_relation.up.sql": _1528395587_campaigns_threads_many_to_many_relationUpSql,
-
-	"1528395588_rename_threads_to_changesets.down.sql": _1528395588_rename_threads_to_changesetsDownSql,
-
-	"1528395588_rename_threads_to_changesets.up.sql": _1528395588_rename_threads_to_changesetsUpSql,
-
-	"1528395589_add_external_id_to_schema.down.sql": _1528395589_add_external_id_to_schemaDownSql,
-
-	"1528395589_add_external_id_to_schema.up.sql": _1528395589_add_external_id_to_schemaUpSql,
-
-	"1528395590_add_external_service_type_to_changesets.down.sql": _1528395590_add_external_service_type_to_changesetsDownSql,
-
-	"1528395590_add_external_service_type_to_changesets.up.sql": _1528395590_add_external_service_type_to_changesetsUpSql,
-
-	"1528395591_create_events_logging_table.down.sql": _1528395591_create_events_logging_tableDownSql,
-
-	"1528395591_create_events_logging_table.up.sql": _1528395591_create_events_logging_tableUpSql,
-
-	"1528395592_add_deletion_triggers_to_campaigns_and_changesets.down.sql": _1528395592_add_deletion_triggers_to_campaigns_and_changesetsDownSql,
-
-	"1528395592_add_deletion_triggers_to_campaigns_and_changesets.up.sql": _1528395592_add_deletion_triggers_to_campaigns_and_changesetsUpSql,
-
-	"1528395593_allows_trailing_hyphen_in_usernames.down.sql": _1528395593_allows_trailing_hyphen_in_usernamesDownSql,
-
-	"1528395593_allows_trailing_hyphen_in_usernames.up.sql": _1528395593_allows_trailing_hyphen_in_usernamesUpSql,
-
-	"1528395594_create_changeset_events_table.down.sql": _1528395594_create_changeset_events_tableDownSql,
-
-	"1528395594_create_changeset_events_table.up.sql": _1528395594_create_changeset_events_tableUpSql,
-
-	"1528395595_create_lsif_database.down.sql": _1528395595_create_lsif_databaseDownSql,
-
-	"1528395595_create_lsif_database.up.sql": _1528395595_create_lsif_databaseUpSql,
-
-	"1528395596_lsif_xrepo_init.down.sql": _1528395596_lsif_xrepo_initDownSql,
-
-	"1528395596_lsif_xrepo_init.up.sql": _1528395596_lsif_xrepo_initUpSql,
-
-	"1528395597_lsif_commits.down.sql": _1528395597_lsif_commitsDownSql,
-
-	"1528395597_lsif_commits.up.sql": _1528395597_lsif_commitsUpSql,
-
-	"1528395598_destroy_separate_lsif_db.down.sql": _1528395598_destroy_separate_lsif_dbDownSql,
-
-	"1528395598_destroy_separate_lsif_db.up.sql": _1528395598_destroy_separate_lsif_dbUpSql,
-
-	"1528395599_create_lsif_tables.down.sql": _1528395599_create_lsif_tablesDownSql,
-
-	"1528395599_create_lsif_tables.up.sql": _1528395599_create_lsif_tablesUpSql,
-
-	"1528395600_lsif_commits_indexes.down.sql": _1528395600_lsif_commits_indexesDownSql,
-
-	"1528395600_lsif_commits_indexes.up.sql": _1528395600_lsif_commits_indexesUpSql,
-
-	"1528395601_lsif_dumps.down.sql": _1528395601_lsif_dumpsDownSql,
-
-	"1528395601_lsif_dumps.up.sql": _1528395601_lsif_dumpsUpSql,
-
+	"1528395582_squashed_migrations.down.sql":                                  _1528395582_squashed_migrationsDownSql,
+	"1528395582_squashed_migrations.up.sql":                                    _1528395582_squashed_migrationsUpSql,
+	"1528395583_add_default_repos_primary_key.down.sql":                        _1528395583_add_default_repos_primary_keyDownSql,
+	"1528395583_add_default_repos_primary_key.up.sql":                          _1528395583_add_default_repos_primary_keyUpSql,
+	"1528395584_add_campaigns_table.down.sql":                                  _1528395584_add_campaigns_tableDownSql,
+	"1528395584_add_campaigns_table.up.sql":                                    _1528395584_add_campaigns_tableUpSql,
+	"1528395585_go-1.13-dummy-migration.down.sql":                              _1528395585_go113DummyMigrationDownSql,
+	"1528395585_go-1.13-dummy-migration.up.sql":                                _1528395585_go113DummyMigrationUpSql,
+	"1528395586_add_threads_table.down.sql":                                    _1528395586_add_threads_tableDownSql,
+	"1528395586_add_threads_table.up.sql":                                      _1528395586_add_threads_tableUpSql,
+	"1528395587_campaigns_threads_many_to_many_relation.down.sql":              _1528395587_campaigns_threads_many_to_many_relationDownSql,
+	"1528395587_campaigns_threads_many_to_many_relation.up.sql":                _1528395587_campaigns_threads_many_to_many_relationUpSql,
+	"1528395588_rename_threads_to_changesets.down.sql":                         _1528395588_rename_threads_to_changesetsDownSql,
+	"1528395588_rename_threads_to_changesets.up.sql":                           _1528395588_rename_threads_to_changesetsUpSql,
+	"1528395589_add_external_id_to_schema.down.sql":                            _1528395589_add_external_id_to_schemaDownSql,
+	"1528395589_add_external_id_to_schema.up.sql":                              _1528395589_add_external_id_to_schemaUpSql,
+	"1528395590_add_external_service_type_to_changesets.down.sql":              _1528395590_add_external_service_type_to_changesetsDownSql,
+	"1528395590_add_external_service_type_to_changesets.up.sql":                _1528395590_add_external_service_type_to_changesetsUpSql,
+	"1528395591_create_events_logging_table.down.sql":                          _1528395591_create_events_logging_tableDownSql,
+	"1528395591_create_events_logging_table.up.sql":                            _1528395591_create_events_logging_tableUpSql,
+	"1528395592_add_deletion_triggers_to_campaigns_and_changesets.down.sql":    _1528395592_add_deletion_triggers_to_campaigns_and_changesetsDownSql,
+	"1528395592_add_deletion_triggers_to_campaigns_and_changesets.up.sql":      _1528395592_add_deletion_triggers_to_campaigns_and_changesetsUpSql,
+	"1528395593_allows_trailing_hyphen_in_usernames.down.sql":                  _1528395593_allows_trailing_hyphen_in_usernamesDownSql,
+	"1528395593_allows_trailing_hyphen_in_usernames.up.sql":                    _1528395593_allows_trailing_hyphen_in_usernamesUpSql,
+	"1528395594_create_changeset_events_table.down.sql":                        _1528395594_create_changeset_events_tableDownSql,
+	"1528395594_create_changeset_events_table.up.sql":                          _1528395594_create_changeset_events_tableUpSql,
+	"1528395595_create_lsif_database.down.sql":                                 _1528395595_create_lsif_databaseDownSql,
+	"1528395595_create_lsif_database.up.sql":                                   _1528395595_create_lsif_databaseUpSql,
+	"1528395596_lsif_xrepo_init.down.sql":                                      _1528395596_lsif_xrepo_initDownSql,
+	"1528395596_lsif_xrepo_init.up.sql":                                        _1528395596_lsif_xrepo_initUpSql,
+	"1528395597_lsif_commits.down.sql":                                         _1528395597_lsif_commitsDownSql,
+	"1528395597_lsif_commits.up.sql":                                           _1528395597_lsif_commitsUpSql,
+	"1528395598_destroy_separate_lsif_db.down.sql":                             _1528395598_destroy_separate_lsif_dbDownSql,
+	"1528395598_destroy_separate_lsif_db.up.sql":                               _1528395598_destroy_separate_lsif_dbUpSql,
+	"1528395599_create_lsif_tables.down.sql":                                   _1528395599_create_lsif_tablesDownSql,
+	"1528395599_create_lsif_tables.up.sql":                                     _1528395599_create_lsif_tablesUpSql,
+	"1528395600_lsif_commits_indexes.down.sql":                                 _1528395600_lsif_commits_indexesDownSql,
+	"1528395600_lsif_commits_indexes.up.sql":                                   _1528395600_lsif_commits_indexesUpSql,
+	"1528395601_lsif_dumps.down.sql":                                           _1528395601_lsif_dumpsDownSql,
+	"1528395601_lsif_dumps.up.sql":                                             _1528395601_lsif_dumpsUpSql,
 	"1528395602_add_updated_at_and_drop_source_from_changeset_events.down.sql": _1528395602_add_updated_at_and_drop_source_from_changeset_eventsDownSql,
-
-	"1528395602_add_updated_at_and_drop_source_from_changeset_events.up.sql": _1528395602_add_updated_at_and_drop_source_from_changeset_eventsUpSql,
-
-	"1528395603_add_patterntype_to_saved_searches.down.sql": _1528395603_add_patterntype_to_saved_searchesDownSql,
-
-	"1528395603_add_patterntype_to_saved_searches.up.sql": _1528395603_add_patterntype_to_saved_searchesUpSql,
-
-	"1528395604_lsif_multi_project.down.sql": _1528395604_lsif_multi_projectDownSql,
-
-	"1528395604_lsif_multi_project.up.sql": _1528395604_lsif_multi_projectUpSql,
-
-	"1528395605_drop_recent_searches.down.sql": _1528395605_drop_recent_searchesDownSql,
-
-	"1528395605_drop_recent_searches.up.sql": _1528395605_drop_recent_searchesUpSql,
-
-	"1528395606_lsif_add_visible_at_tip_flag.down.sql": _1528395606_lsif_add_visible_at_tip_flagDownSql,
-
-	"1528395606_lsif_add_visible_at_tip_flag.up.sql": _1528395606_lsif_add_visible_at_tip_flagUpSql,
+	"1528395602_add_updated_at_and_drop_source_from_changeset_events.up.sql":   _1528395602_add_updated_at_and_drop_source_from_changeset_eventsUpSql,
+	"1528395603_add_patterntype_to_saved_searches.down.sql":                    _1528395603_add_patterntype_to_saved_searchesDownSql,
+	"1528395603_add_patterntype_to_saved_searches.up.sql":                      _1528395603_add_patterntype_to_saved_searchesUpSql,
+	"1528395604_lsif_multi_project.down.sql":                                   _1528395604_lsif_multi_projectDownSql,
+	"1528395604_lsif_multi_project.up.sql":                                     _1528395604_lsif_multi_projectUpSql,
+	"1528395605_drop_recent_searches.down.sql":                                 _1528395605_drop_recent_searchesDownSql,
+	"1528395605_drop_recent_searches.up.sql":                                   _1528395605_drop_recent_searchesUpSql,
+	"1528395606_lsif_add_visible_at_tip_flag.down.sql":                         _1528395606_lsif_add_visible_at_tip_flagDownSql,
+	"1528395606_lsif_add_visible_at_tip_flag.up.sql":                           _1528395606_lsif_add_visible_at_tip_flagUpSql,
 }
 
 // AssetDir returns the file names below a certain
