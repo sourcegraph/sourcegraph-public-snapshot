@@ -147,6 +147,8 @@ func (r *mockRepos) List(ctx context.Context, opt db.ReposListOptions) ([]*types
 	return repos, nil
 }
 
+// suffixIndexers mocks Indexers. Assign will return all repoNames with the
+// suffix of hostname.
 type suffixIndexers bool
 
 func (b suffixIndexers) Assign(hostname string, repoNames []string) ([]string, error) {

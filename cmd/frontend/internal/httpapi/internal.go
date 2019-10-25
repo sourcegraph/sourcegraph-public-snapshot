@@ -190,15 +190,27 @@ func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 }
 
 type reposListServer struct {
+	// SourcegraphDotComMode is true if this instance of Sourcegraph is http://sourcegraph.com
 	SourcegraphDotComMode bool
 
+	// Repos is the subset of backend.Repos methods we use. Declared as an
+	// interface for testing.
 	Repos interface {
+		// ListDefault returns the repositories to index on Sourcegraph.com
 		ListDefault(context.Context) ([]*types.Repo, error)
+		// List returns a list of repositories
 		List(context.Context, db.ReposListOptions) ([]*types.Repo, error)
 	}
 
+	// Indexers is the subset of searchbackend.Indexers methods we
+	// use. reposListServer is used by indexed-search to get the list of
+	// repositories to index. These methods are used to return the correct
+	// subset for horizontal indexed search. Declared as an interface for
+	// testing.
 	Indexers interface {
-		Assign(string, []string) ([]string, error)
+		// Assign returns the subset of repoNames that hostname should index.
+		Assign(hostname string, repoNames []string) ([]string, error)
+		// Enabled is true if horizontal indexed search is enabled.
 		Enabled() bool
 	}
 }

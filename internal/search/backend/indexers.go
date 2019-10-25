@@ -6,9 +6,12 @@ import (
 	"strings"
 )
 
-// EndpointMap is the subset of endpoint.Map methods we use.
+// EndpointMap is the subset of endpoint.Map (consistent hashmap) methods we
+// use. Declared as an interface for testing.
 type EndpointMap interface {
+	// Endpoints returns a set of all addresses. Do not modify the returned value.
 	Endpoints() (map[string]struct{}, error)
+	// GetMany returns the endpoint for each key. (consistent hashing).
 	GetMany(...string) ([]string, error)
 }
 
@@ -70,7 +73,7 @@ func findEndpoint(eps map[string]struct{}, hostname string) (string, error) {
 	// Additionally an endpoint can also specify a port, which a hostname
 	// won't.
 	//
-	// Given this looser matching, we ensure we don't match more than once
+	// Given this looser matching, we ensure we don't match more than one
 	// endpoint.
 	endpoint := ""
 	for ep := range eps {
