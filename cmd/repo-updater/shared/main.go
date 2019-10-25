@@ -8,10 +8,10 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/opentracing/opentracing-go"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -119,11 +118,45 @@ func Main(newPreSync repos.NewPreSync) {
 	}
 
 	if envvar.SourcegraphDotComMode() {
-		src, err := makeGitHubDotComSrc(ctx, store, cf)
+		server.SourcegraphDotComMode = true
+
+		es, err := store.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
+			Kinds: []string{"GITHUB", "GITLAB"},
+		})
+
 		if err != nil {
-			log.Fatalf("failed to create Github.com source: %v", err)
+			log.Fatalf("failed to list external services: %v", err)
 		}
-		server.GithubDotComSource = src
+
+		for _, e := range es {
+			cfg, err := e.Configuration()
+			if err != nil {
+				log.Fatalf("bad external service config: %v", err)
+			}
+
+			switch c := cfg.(type) {
+			case *schema.GitHubConnection:
+				if strings.HasPrefix(c.Url, "https://github.com") && c.Token != "" {
+					server.GithubDotComSource, err = repos.NewGithubSource(e, cf)
+				}
+			case *schema.GitLabConnection:
+				if strings.HasPrefix(c.Url, "https://gitlab.com") && c.Token != "" {
+					server.GitLabDotComSource, err = repos.NewGitLabSource(e, cf)
+				}
+			}
+
+			if err != nil {
+				log.Fatalf("failed to construct source: %v", err)
+			}
+		}
+
+		if server.GithubDotComSource == nil {
+			log.Fatalf("No github.com external service configured with a token")
+		}
+
+		if server.GitLabDotComSource == nil {
+			log.Fatalf("No gitlab.com external service configured with a token")
+		}
 	}
 
 	gps := repos.NewGitolitePhabricatorMetadataSyncer(store)
@@ -215,31 +248,4 @@ func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps
 			}
 		}
 	}
-}
-
-func makeGitHubDotComSrc(ctx context.Context, store repos.Store, cf *httpcli.Factory) (*repos.GithubSource, error) {
-	es, err := store.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
-		Kinds: []string{"github"},
-	})
-	if err != nil {
-		return nil, errors.Errorf("failed to list external services: %v", err)
-	}
-
-	var githubDotComSvc *repos.ExternalService
-	for _, e := range es {
-		cfg, err := e.Configuration()
-		if err != nil {
-			return nil, errors.Errorf("unable to get external service configuration: %v", err)
-		}
-		if cfg.(*schema.GitHubConnection).Token != "" {
-			githubDotComSvc = e
-			break
-		}
-	}
-
-	if githubDotComSvc == nil {
-		return nil, errors.Errorf("no external service for Github.com found")
-	}
-
-	return repos.NewGithubSource(githubDotComSvc, cf)
 }
