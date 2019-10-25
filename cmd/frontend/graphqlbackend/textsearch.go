@@ -532,7 +532,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 	}
 
 	// This function calls searcher on a set of repos.
-	callSearcherOverRepos := func(searcherRepos []*search.RepositoryRevisions, common *searchResultsCommon) *searchResultsCommon {
+	callSearcherOverRepos := func(searcherRepos []*search.RepositoryRevisions) {
 		var fetchTimeout time.Duration
 		if len(searcherRepos) == 1 || args.UseFullDeadline {
 			// When searching a single repo or when an explicit timeout was specified, give it the remaining deadline to fetch the archive.
@@ -556,7 +556,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			eps, err := args.SearcherURLs.Endpoints()
 			if err != nil {
 				errc <- err
-				return common
+				return
 			}
 			textSearchLimiter.SetLimit(len(eps) * 32)
 		}
@@ -567,7 +567,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			}
 			if len(repoRev.Revs) >= 2 {
 				errc <- errMultipleRevsNotSupported
-				return common
+				return
 			}
 
 			// Only reason acquire can fail is if ctx is cancelled. So we can stop
@@ -615,8 +615,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 				addMatches(matches)
 			}(limitCtx, limitDone, repoRev) // ends the Go routine for a call to searcher for a repo
 		} // ends the for loop iterating over repos
-
-		return common
+		return
 	} // ends callSearcherOverRepos
 
 	wg.Add(1)
@@ -651,7 +650,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		addMatches(matches)
 	}()
 
-	common = callSearcherOverRepos(searcherRepos, common)
+	callSearcherOverRepos(searcherRepos)
 	wg.Wait()
 	close(errc)
 	if err := <-errc; err != nil {
