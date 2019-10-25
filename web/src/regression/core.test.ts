@@ -68,7 +68,7 @@ describe('Core functionality regression test suite', () => {
         await alwaysCleanupManager.destroyAll()
     })
 
-    test('User settings are saved and applied', async () => {
+    test('2.2.1 User settings are saved and applied', async () => {
         const getSettings = async () => {
             await driver.page.waitForSelector('.view-line')
             return await driver.page.evaluate(() => {
@@ -145,7 +145,7 @@ describe('Core functionality regression test suite', () => {
         }
     })
 
-    test('User profile page', async () => {
+    test('2.2.2 User profile page', async () => {
         const aviURL =
             'https://media2.giphy.com/media/26tPplGWjN0xLybiU/giphy.gif?cid=790b761127d52fa005ed23fdcb09d11a074671ac90146787&rid=giphy.gif'
         const displayName = 'Test Display Name'
@@ -177,7 +177,8 @@ describe('Core functionality regression test suite', () => {
             '.e2e-user-nav-item-toggle'
         )
     })
-    test('User emails page', async () => {
+
+    test('2.2.3. User emails page', async () => {
         const testEmail = 'sg-test-account@protonmail.com'
         await driver.page.goto(driver.sourcegraphBaseUrl + `/users/${testUsername}/settings/emails`)
         await driver.replaceText({ selector: '.e2e-user-email-add-input', newText: 'sg-test-account@protonmail.com' })
@@ -189,7 +190,7 @@ describe('Core functionality regression test suite', () => {
         await driver.waitForElementWithText('Verified')
     })
 
-    test('Access tokens work and invalid access tokens return "401 Unauthorized"', async () => {
+    test('2.2.4 Access tokens work and invalid access tokens return "401 Unauthorized"', async () => {
         await driver.page.goto(config.sourcegraphBaseUrl + `/users/${testUsername}/settings/tokens`)
         await driver.waitForElementWithText('Generate new token', undefined, { timeout: 5000 })
         await driver.clickElementWithText('Generate new token')
@@ -256,7 +257,7 @@ describe('Core functionality regression test suite', () => {
         }
     })
 
-    test('Quicklinks: add a quicklink, test that it appears on the front page and works.', async () => {
+    test('2.5 Quicklinks: add a quicklink, test that it appears on the front page and works.', async () => {
         const getGlobalSettings = async () => {
             const settings = await getViewerSettings(gqlClient)
             const globalSettingsSubject = first(settings.subjects.filter(subject => subject.__typename === 'Site'))
@@ -303,13 +304,13 @@ describe('Core functionality regression test suite', () => {
         expect(driver.page.url()).toEqual(quicklinkInfo.url)
     })
 
-    test('Organizations (admin user)', async () => {
+    test('2.3.1 Organizations (admin user)', async () => {
         // TODO(@sourcegraph/web)
     })
-    test('Organizations (non-admin user)', async () => {
+    test('2.3.2 Organizations (non-admin user)', async () => {
         // TODO(@sourcegraph/web)
     })
-    test('Explore page', async () => {
+    test('2.4 Explore page', async () => {
         // TODO(@sourcegraph/web)
     })
 })

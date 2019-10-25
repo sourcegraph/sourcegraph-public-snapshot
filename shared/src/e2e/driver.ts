@@ -55,6 +55,9 @@ interface FindElementOptions {
     fuzziness?: 'exact' | 'prefix' | 'space-prefix' | 'contains'
 }
 
+/**
+ * Returns XPath queries used to locate a DOM element by text.
+ */
 function getFindElementQueries(
     text: string,
     { tagName, fuzziness = 'space-prefix' }: Pick<FindElementOptions, 'tagName' | 'fuzziness'>
@@ -436,6 +439,9 @@ export class Driver {
         }
     }
 
+    /**
+     * Wait for element with the specified text (and other attributes) to exist.
+     */
     public async waitForElementWithText(
         text: string,
         { tagName, fuzziness }: FindElementOptions = {},
