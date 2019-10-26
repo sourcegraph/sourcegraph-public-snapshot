@@ -306,10 +306,10 @@ func (rg *readerGrep) FindZip(zf *store.ZipFile, f *store.SrcFile) (protocol.Fil
 	}, err
 }
 
-// concurrentFind searches files in zr looking for matches using rg.
-func concurrentFind(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMatchLimit int, patternMatchesContent, patternMatchesPaths bool) (fm []protocol.FileMatch, limitHit bool, err error) {
+// searchRegex concurrently searches files in zr looking for matches using rg.
+func searchRegex(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMatchLimit int, patternMatchesContent, patternMatchesPaths bool) (fm []protocol.FileMatch, limitHit bool, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "ConcurrentFind")
-	ext.Component.Set(span, "matcher")
+	ext.Component.Set(span, "search_regex")
 	if rg.re != nil {
 		span.SetTag("re", rg.re.String())
 	}
