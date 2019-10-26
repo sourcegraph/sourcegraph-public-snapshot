@@ -116,7 +116,7 @@ async function main(logger: Logger): Promise<void> {
     await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
 
     // Create queue to publish convert
-    const queue = createQueue('lsif', REDIS_ENDPOINT, logger)
+    const queue = createQueue(REDIS_ENDPOINT, logger)
 
     // Schedule jobs on timers
     await ensureOnlyRepeatableJob(queue, 'update-tips', {}, UPDATE_TIPS_JOB_SCHEDULE_INTERVAL)

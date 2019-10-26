@@ -3,13 +3,39 @@ import { Span, Tracer, FORMAT_TEXT_MAP } from 'opentracing'
 import { Logger } from 'winston'
 
 /**
+ * The name of the task queue for this process.
+ */
+export const QUEUE_NAME = 'lsif'
+
+/**
+ * The key prefix used by Bull. If the queue setup code changes, this may need
+ * to change as well.
+ */
+export const QUEUE_PREFIX = `bull:${QUEUE_NAME}:`
+
+/**
+ * The names of queues as defined in Bull.
+ */
+export type QueueTypes = 'active' | 'wait' | 'delayed' | 'completed' | 'failed'
+
+/**
+ * A mapping from job statuses to queue names.
+ */
+export const queueTypes = new Map<string, QueueTypes>([
+    ['active', 'active'],
+    ['queued', 'wait'],
+    ['scheduled', 'delayed'],
+    ['completed', 'completed'],
+    ['failed', 'failed'],
+])
+
+/**
  * Creates a queue instance.
  *
- * @param name The name of the queue.
  * @param endpoint The host:port redis address.
  * @param logger The logger instance.
  */
-export function createQueue(name: string, endpoint: string, logger: Logger): Queue {
+export function createQueue(endpoint: string, logger: Logger): Queue {
     const [host, port] = endpoint.split(':', 2)
 
     const redis = {
@@ -17,7 +43,7 @@ export function createQueue(name: string, endpoint: string, logger: Logger): Que
         port: parseInt(port, 10),
     }
 
-    const queue = new Bull(name, { redis })
+    const queue = new Bull(QUEUE_NAME, { redis })
     queue.on('error', (error: Error) => logger.error('queue error', { error }))
     queue.on('global:stalled', (id: string) => logger.error('job stalled', { jobId: id }))
 
