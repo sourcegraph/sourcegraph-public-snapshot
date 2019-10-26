@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -17,8 +19,8 @@ import (
 )
 
 func TestReposList(t *testing.T) {
-	defaultRepos := []string{"github.com/vim/vim", "github.com/torvalds/linux"}
-	allRepos := append(defaultRepos, "github.com/alice/rabbitmq", "github.com/bob/jabberd")
+	defaultRepos := []string{"github.com/popular/foo", "github.com/popular/bar"}
+	allRepos := append(defaultRepos, "github.com/alice/foo", "github.com/alice/bar")
 
 	cases := []struct {
 		name string
@@ -26,26 +28,61 @@ func TestReposList(t *testing.T) {
 		body string
 		want []string
 	}{{
-		name: "enabled",
+		name: "no indexers",
 		srv: &reposListServer{
 			Repos: &mockRepos{
 				defaultRepos: defaultRepos,
 				repos:        allRepos,
 			},
+			Indexers: suffixIndexers(false),
 		},
 		body: `{"Enabled": true, "Index": true}`,
 		want: allRepos,
 	}, {
-		name: "sourcegraph.com",
+		name: "dot-com no indexers",
 		srv: &reposListServer{
 			SourcegraphDotComMode: true,
 			Repos: &mockRepos{
 				defaultRepos: defaultRepos,
 				repos:        allRepos,
 			},
+			Indexers: suffixIndexers(false),
 		},
 		body: `{"Enabled": true, "Index": true}`,
 		want: defaultRepos,
+	}, {
+		name: "indexers",
+		srv: &reposListServer{
+			Repos: &mockRepos{
+				defaultRepos: defaultRepos,
+				repos:        allRepos,
+			},
+			Indexers: suffixIndexers(true),
+		},
+		body: `{"Hostname": "foo", "Enabled": true, "Index": true}`,
+		want: []string{"github.com/popular/foo", "github.com/alice/foo"},
+	}, {
+		name: "dot-com indexers",
+		srv: &reposListServer{
+			SourcegraphDotComMode: true,
+			Repos: &mockRepos{
+				defaultRepos: defaultRepos,
+				repos:        allRepos,
+			},
+			Indexers: suffixIndexers(true),
+		},
+		body: `{"Hostname": "foo", "Enabled": true, "Index": true}`,
+		want: []string{"github.com/popular/foo"},
+	}, {
+		name: "none",
+		srv: &reposListServer{
+			Repos: &mockRepos{
+				defaultRepos: defaultRepos,
+				repos:        allRepos,
+			},
+			Indexers: suffixIndexers(true),
+		},
+		body: `{"Hostname": "baz", "Enabled": true, "Index": true}`,
 	}}
 
 	for _, tc := range cases {
@@ -96,7 +133,11 @@ func (r *mockRepos) ListDefault(context.Context) ([]*types.Repo, error) {
 	return repos, nil
 }
 
-func (r *mockRepos) List(context.Context, db.ReposListOptions) ([]*types.Repo, error) {
+func (r *mockRepos) List(ctx context.Context, opt db.ReposListOptions) ([]*types.Repo, error) {
+	if opt.Index == nil || !*opt.Index {
+		return nil, errors.New("reposList test expects Index=true options")
+	}
+
 	var repos []*types.Repo
 	for _, name := range r.repos {
 		repos = append(repos, &types.Repo{
@@ -104,4 +145,29 @@ func (r *mockRepos) List(context.Context, db.ReposListOptions) ([]*types.Repo, e
 		})
 	}
 	return repos, nil
+}
+
+// suffixIndexers mocks Indexers. ReposSubset will return all repoNames with
+// the suffix of hostname.
+type suffixIndexers bool
+
+func (b suffixIndexers) ReposSubset(hostname string, repoNames []string) ([]string, error) {
+	if !b.Enabled() {
+		return nil, errors.New("indexers disabled")
+	}
+	if hostname == "" {
+		return nil, errors.New("empty hostname")
+	}
+
+	var filter []string
+	for _, name := range repoNames {
+		if strings.HasSuffix(name, hostname) {
+			filter = append(filter, name)
+		}
+	}
+	return filter, nil
+}
+
+func (b suffixIndexers) Enabled() bool {
+	return bool(b)
 }
