@@ -187,9 +187,6 @@ const createCleanOldJobsProcessor = (queue: Queue, logger: Logger) => async (
  * Create a job that removes upload and temp files that are older than `FAILED_JOB_MAX_AGE`.
  * This assumes that a conversion job's total duration (from enqueue to completion) is less
  * than this interval during healthy operation.
- *
- * @param queue The queue.
- * @param logger The logger instance.
  */
 const createCleanFailedJobsProcessor = () => async (_: {}, ctx: TracingContext): Promise<void> => {
     await logAndTraceCall(ctx, 'cleaning failed jobs', async (ctx: TracingContext) => {

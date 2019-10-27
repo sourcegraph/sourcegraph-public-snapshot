@@ -245,9 +245,7 @@ func abs(root, dir string) (string, error) {
 	return filepath.Abs(dir)
 }
 
-func (o *Snapshotter) Run() error {
-	logger := log.New(os.Stderr, "sync: ", log.LstdFlags)
-
+func (o *Snapshotter) Run(logger *log.Logger) error {
 	if err := o.SetDefaults(); err != nil {
 		return err
 	}

@@ -306,19 +306,13 @@ func AssetNames() []string {
 
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
-	"nginx.conf": nginxConf,
-
-	"redis-cache.conf.tmpl": redisCacheConfTmpl,
-
-	"redis-store.conf.tmpl": redisStoreConfTmpl,
-
+	"nginx.conf":                     nginxConf,
+	"redis-cache.conf.tmpl":          redisCacheConfTmpl,
+	"redis-store.conf.tmpl":          redisStoreConfTmpl,
 	"nginx/sourcegraph_backend.conf": nginxSourcegraph_backendConf,
-
-	"nginx/sourcegraph_http.conf": nginxSourcegraph_httpConf,
-
-	"nginx/sourcegraph_main.conf": nginxSourcegraph_mainConf,
-
-	"nginx/sourcegraph_server.conf": nginxSourcegraph_serverConf,
+	"nginx/sourcegraph_http.conf":    nginxSourcegraph_httpConf,
+	"nginx/sourcegraph_main.conf":    nginxSourcegraph_mainConf,
+	"nginx/sourcegraph_server.conf":  nginxSourcegraph_serverConf,
 }
 
 // AssetDir returns the file names below a certain
