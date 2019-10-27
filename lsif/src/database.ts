@@ -212,7 +212,7 @@ export class Database {
      */
     public async monikerResults(
         model: typeof DefinitionModel | typeof ReferenceModel,
-        moniker: MonikerData,
+        moniker: Pick<MonikerData, 'scheme' | 'identifier'>,
         ctx: TracingContext
     ): Promise<lsp.Location[]> {
         const results = await this.withConnection(connection =>

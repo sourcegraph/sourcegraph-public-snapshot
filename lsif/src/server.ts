@@ -15,7 +15,7 @@ import {
 import { dbFilename, dbFilenameOld, ensureDirectory, readEnvInt } from './util'
 import { createGzip } from 'mz/zlib'
 import { createPostgresConnection } from './connection'
-import { Backend } from './backend'
+import { Backend, ReferencePaginationCursor } from './backend'
 import { logger as loggingMiddleware } from 'express-winston'
 import { Logger } from 'winston'
 import { pipeline as _pipeline, Readable } from 'stream'
@@ -66,6 +66,11 @@ const UPDATE_TIPS_JOB_SCHEDULE_INTERVAL = readEnvInt('UPDATE_TIPS_JOB_SCHEDULE_I
  * The interval (in seconds) to schedule the clean-old-jobs job.
  */
 const CLEAN_OLD_JOBS_INTERVAL = readEnvInt('CLEAN_OLD_JOBS_INTERVAL', 60 * 60 * 8)
+
+/**
+ * The default number of remote repositories to open when performing a global find-reference operation.
+ */
+const DEFAULT_REFERENCES_NUM_REMOTE_REPOSITORIES = 10
 
 /**
  * Middleware function used to convert uncaught exceptions into 500 responses.
@@ -190,7 +195,9 @@ function metricsMiddleware(req: express.Request, res: express.Response, next: ex
             break
 
         case '/exists':
-        case '/request':
+        case '/definitions':
+        case '/references':
+        case '/hover':
             histogram = httpQueryDurationHistogram
     }
 
@@ -299,6 +306,7 @@ async function lsifEndpoints(
 
     router.post(
         '/exists',
+        bodyParser.json({ limit: '1mb' }),
         wrap(
             async (req: express.Request & { span?: Span }, res: express.Response): Promise<void> => {
                 const { repository, commit, file } = req.query
@@ -313,19 +321,90 @@ async function lsifEndpoints(
     )
 
     router.post(
-        '/request',
+        '/definitions',
         bodyParser.json({ limit: '1mb' }),
         wrap(
             async (req: express.Request & { span?: Span }, res: express.Response): Promise<void> => {
                 const { repository, commit } = req.query
-                const { path, position, method } = req.body
+                const { path, position } = req.body
                 checkRepository(repository)
                 checkCommit(commit)
-                checkMethod(method, ['definitions', 'references', 'hover'])
-                const cleanMethod = method as 'definitions' | 'references' | 'hover'
 
-                const ctx = createTracingContext(req, { repository, commit })
-                res.json(await backend[cleanMethod](repository, commit, path, position, ctx))
+                res.json(
+                    await backend.definitions(
+                        repository,
+                        commit,
+                        path,
+                        position,
+                        createTracingContext(req, { repository, commit })
+                    )
+                )
+            }
+        )
+    )
+
+    const extractLimit = (req: express.Request, defaultLimit: number): number =>
+        parseInt(req.query.limit, 10) || defaultLimit
+
+    const nextLink = (req: express.Request, params: { [K: string]: any }): string => {
+        const url = new URL(`${req.protocol}://${req.get('host')}${req.originalUrl}`)
+        for (const [key, value] of Object.entries(params)) {
+            url.searchParams.set(key, String(value))
+        }
+
+        return `<${url.href}>; rel="next"`
+    }
+
+    router.post(
+        '/references',
+        bodyParser.json({ limit: '1mb' }),
+        wrap(
+            async (req: express.Request & { span?: Span }, res: express.Response): Promise<void> => {
+                const { repository, commit, cursor: cursorRaw } = req.query
+                const { path, position } = req.body
+                const limit = extractLimit(req, DEFAULT_REFERENCES_NUM_REMOTE_REPOSITORIES)
+                const startCursor = parseCursor<ReferencePaginationCursor>(cursorRaw)
+                checkRepository(repository)
+                checkCommit(commit)
+
+                const { locations, cursor: endCursor } = await backend.references(
+                    repository,
+                    commit,
+                    path,
+                    position,
+                    { limit, cursor: startCursor },
+                    createTracingContext(req, { repository, commit })
+                )
+
+                const encodedCursor = encodeCursor<ReferencePaginationCursor>(endCursor)
+                if (!encodedCursor) {
+                    res.set('Link', nextLink(req, { limit, cursor: encodedCursor }))
+                }
+
+                res.json(locations)
+            }
+        )
+    )
+
+    router.post(
+        '/hover',
+        bodyParser.json({ limit: '1mb' }),
+        wrap(
+            async (req: express.Request & { span?: Span }, res: express.Response): Promise<void> => {
+                const { repository, commit } = req.query
+                const { path, position } = req.body
+                checkRepository(repository)
+                checkCommit(commit)
+
+                res.json(
+                    await backend.hover(
+                        repository,
+                        commit,
+                        path,
+                        position,
+                        createTracingContext(req, { repository, commit })
+                    )
+                )
             }
         )
     )
@@ -336,9 +415,9 @@ async function lsifEndpoints(
 /**
  * Throws an error with status 400 if the repository string is invalid.
  */
-export function checkRepository(repository: any): void {
+function checkRepository(repository: any): void {
     if (typeof repository !== 'string') {
-        throw Object.assign(new Error('Must specify the repository (usually of the form github.com/user/repo)'), {
+        throw Object.assign(new Error(`Must specify a repository ${repository}`), {
             status: 400,
         })
     }
@@ -347,7 +426,7 @@ export function checkRepository(repository: any): void {
 /**
  * Throws an error with status 400 if the commit string is invalid.
  */
-export function checkCommit(commit: any): void {
+function checkCommit(commit: any): void {
     if (typeof commit !== 'string' || commit.length !== 40 || !/^[0-9a-f]+$/.test(commit)) {
         throw Object.assign(new Error(`Must specify the commit as a 40 character hash ${commit}`), { status: 400 })
     }
@@ -356,21 +435,35 @@ export function checkCommit(commit: any): void {
 /**
  * Throws an error with status 400 if the file is not present.
  */
-export function checkFile(file: any): void {
+function checkFile(file: any): void {
     if (typeof file !== 'string') {
         throw Object.assign(new Error(`Must specify a file ${file}`), { status: 400 })
     }
 }
 
 /**
- * Throws an error with status 422 if the requested method is not supported.
+ * Parse a base64-encoded JSON payload into the expected type.
+ *
+ * @param cursorRaw The raw cursor.
  */
-export function checkMethod(method: string, supportedMethods: string[]): void {
-    if (!supportedMethods.includes(method)) {
-        throw Object.assign(new Error(`Method must be one of ${Array.from(supportedMethods).join(', ')}`), {
-            status: 422,
-        })
+function parseCursor<T>(cursorRaw: any): T | undefined {
+    if (cursorRaw === undefined) {
+        return undefined
     }
+
+    try {
+        return JSON.parse(new Buffer(cursorRaw, 'base64').toString('ascii'))
+    } catch {
+        throw Object.assign(new Error(`Malformed cursor supplied ${cursorRaw}`), { status: 400 })
+    }
+}
+
+function encodeCursor<T>(cursor: T | undefined): string | undefined {
+    if (!cursor) {
+        return undefined
+    }
+
+    return new Buffer(JSON.stringify(cursor)).toString('base64')
 }
 
 // Initialize logger
