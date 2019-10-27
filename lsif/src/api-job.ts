@@ -17,6 +17,28 @@ export interface ApiJob {
 }
 
 /**
+ * Convert a timestamp into an ISO string.
+ *
+ * @param timestamp The millisecond POSIX timestamp.
+ */
+
+const toDate = (timestamp: number): string => new Date(timestamp).toISOString()
+
+/**
+ * Attempt to convert a timestamp into an ISO string.
+ *
+ * @param timestamp The millisecond POSIX timestamp.
+ */
+const toMaybeDate = (timestamp: number | null): string | null => (timestamp ? toDate(timestamp) : null)
+
+/**
+ * Attempt to convert a string into an integer.
+ *
+ * @param value The int-y string.
+ */
+const toMaybeInt = (value: string | undefined): number | null => (value ? parseInt(value, 10) : null)
+
+/**
  * Format a job to return from the API.
  *
  * @param job The job to format.
@@ -62,25 +84,3 @@ export const formatJobFromMap = (values: Map<string, string>, status: string): A
         finishedOn: toMaybeDate(toMaybeInt(values.get('finishedOn'))),
     }
 }
-
-/**
- * Convert a timestamp into an ISO string.
- *
- * @param timestamp The millisecond POSIX timestamp.
- */
-
-const toDate = (timestamp: number): string => new Date(timestamp).toISOString()
-
-/**
- * Attempt to convert a timestamp into an ISO string.
- *
- * @param timestamp The millisecond POSIX timestamp.
- */
-const toMaybeDate = (timestamp: number | null): string | null => (timestamp ? toDate(timestamp) : null)
-
-/**
- * Attempt to convert a string into an integer.
- *
- * @param value The int-y string.
- */
-const toMaybeInt = (value: string | undefined): number | null => (value ? parseInt(value, 10) : null)
