@@ -69,7 +69,7 @@ export const ensureOnlyRepeatableJob = async (
     for (const job of await queue.getRepeatableJobs()) {
         if (job.name === name) {
             // Job already scheduled with correct interval
-            if (job.every === intervalMs * 1000) {
+            if (job.every === intervalMs) {
                 return
             }
 
@@ -83,5 +83,5 @@ export const ensureOnlyRepeatableJob = async (
     }
 
     // Schedule job with correct interval
-    await enqueue(queue, name, args, { repeat: { every: intervalMs * 1000 } })
+    await enqueue(queue, name, args, { repeat: { every: intervalMs } })
 }
