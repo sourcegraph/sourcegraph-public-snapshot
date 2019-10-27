@@ -66,12 +66,12 @@ const UPDATE_TIPS_JOB_SCHEDULE_INTERVAL = readEnvInt('UPDATE_TIPS_JOB_SCHEDULE_I
 /**
  * The interval (in seconds) to schedule the clean-old-jobs job.
  */
-const CLEAN_OLD_JOBS_INTERVAL = readEnvInt('CLEAN_OLD_JOBS_INTERVAL', 5)
+const CLEAN_OLD_JOBS_INTERVAL = readEnvInt('CLEAN_OLD_JOBS_INTERVAL', 60 * 60 * 8)
 
 /**
  * The interval (in seconds) to schedule the clean-failed-jobs job.
  */
-const CLEAN_FAILED_JOBS_INTERVAL = readEnvInt('CLEAN_FAILED_JOBS_INTERVAL', 5)
+const CLEAN_FAILED_JOBS_INTERVAL = readEnvInt('CLEAN_FAILED_JOBS_INTERVAL', 60 * 60 * 8)
 
 /**
  * Middleware function used to convert uncaught exceptions into 500 responses.
