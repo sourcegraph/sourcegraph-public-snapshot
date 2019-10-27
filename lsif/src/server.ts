@@ -313,15 +313,24 @@ async function lsifEndpoints(
 
                     try {
                         await promise
-                        // TODO - make json payload
-                        res.send('Processed.\n')
-                    } catch {
-                        // TODO - 200 vs 201...
-                        // TODO - put in json payload
-                        res.send('Conversion did nto complete within timeout.\n')
+
+                        // Job succeeded while blocked, send success
+                        res.status(200)
+                        res.send({ id: job.id })
+                        return
+                    } catch (error) {
+                        // Throw the job error, but not the timeout error
+                        if (!error.message.includes('Promise timed out')) {
+                            throw error
+                        }
                     }
                 }
 
+                // Job will complete asynchronously, send a 202: Accepted with
+                // the job id so that the client can continue to track the progress
+                // asynchronously.
+
+                res.status(202)
                 res.send({ id: job.id })
             }
         )
