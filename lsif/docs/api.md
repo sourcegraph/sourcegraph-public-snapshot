@@ -25,3 +25,15 @@ Performs a query at a particular position. The request body must be a JSON objec
 - `position`: the zero-based `{ line, character }` hover position
 
 Returns `200 OK` on success with a body containing an LSP-compatible response. Returns `404 Not Found` if no LSIF data exists for this repository.
+
+### GET `/jobs/{status}?search={search}&limit={limit}&offset={offset}`
+
+- `status`: the job status (`active`, `queued`, `scheduled`, `completed`, or `failed`)
+- `limit`: the maximum number of jobs to return
+- `offset`: the number of jobs seen previously
+
+Returns the jobs with the given status. If a search term is given, then only jobs matching that search term are returned. If no search term is given, then the response will also contain a total count.
+
+### GET `/jobs/{id}`
+
+Returns a particular job by its identifier.

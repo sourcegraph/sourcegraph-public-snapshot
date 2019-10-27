@@ -32,6 +32,9 @@ import { enqueue, createQueue, ensureOnlyRepeatableJob } from './queue'
 import { Connection } from 'typeorm'
 import { LsifDump } from './xrepo.models'
 import * as constants from './constants'
+import pTimeout from 'p-timeout'
+import { formatJob, formatJobFromMap } from './api-job'
+import { Redis } from 'ioredis'
 
 const pipeline = promisify(_pipeline)
 
@@ -259,13 +262,10 @@ async function lsifEndpoints(
     router.post(
         '/upload',
         wrap(
-            async (
-                req: express.Request & { span?: Span },
-                res: express.Response,
-                next: express.NextFunction
-            ): Promise<void> => {
-                const { repository, commit, root, skipValidation: skipValidationRaw } = req.query
+            async (req: express.Request & { span?: Span }, res: express.Response): Promise<void> => {
+                const { repository, commit, root, skipValidation: skipValidationRaw, blocking, maxWait } = req.query
                 const skipValidation = skipValidationRaw === 'true'
+                const timeout = parseInt(maxWait, 10) || 0
                 checkRepository(repository)
                 checkCommit(commit)
 
@@ -291,8 +291,26 @@ async function lsifEndpoints(
                 // Enqueue convert job
                 logger.debug('enqueueing convert job', { repository, commit, root })
                 const args = { repository, commit, root: root || '', filename }
-                await enqueue(queue, 'convert', args, {}, tracer, ctx.span)
-                res.send('Upload successful, queued for processing.\n')
+                const job = await enqueue(queue, 'convert', args, {}, tracer, ctx.span)
+
+                if (blocking) {
+                    let promise = job.finished()
+                    if (timeout >= 0) {
+                        promise = pTimeout(promise, timeout * 1000)
+                    }
+
+                    try {
+                        await promise
+                        // TODO - make json payload
+                        res.send('Processed.\n')
+                    } catch {
+                        // TODO - 200 vs 201...
+                        // TODO - put in json payload
+                        res.send('Conversion did nto complete within timeout.\n')
+                    }
+                }
+
+                res.send({ id: job.id })
             }
         )
     )
