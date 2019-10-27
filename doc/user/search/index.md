@@ -81,7 +81,7 @@ Unscoped search results over large repository sets may trail latest default bran
 
 ### Max file size
 
-Files larger than 1 MB are excluded from search results. Soon, there will be a [search keyword to override the default maximum](https://github.com/sourcegraph/sourcegraph/issues/1624).
+By default, files larger than 1 MB are excluded from search results. Use the [search.largeFiles](../../admin/config/site_config/index.md#search-largeFiles) keyword to specify files to be indexed and searched regardless of size.
 
 ---
 

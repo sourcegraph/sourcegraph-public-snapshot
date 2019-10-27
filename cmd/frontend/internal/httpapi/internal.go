@@ -190,15 +190,41 @@ func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 }
 
 type reposListServer struct {
+	// SourcegraphDotComMode is true if this instance of Sourcegraph is http://sourcegraph.com
 	SourcegraphDotComMode bool
 
+	// Repos is the subset of backend.Repos methods we use. Declared as an
+	// interface for testing.
 	Repos interface {
+		// ListDefault returns the repositories to index on Sourcegraph.com
 		ListDefault(context.Context) ([]*types.Repo, error)
+		// List returns a list of repositories
 		List(context.Context, db.ReposListOptions) ([]*types.Repo, error)
+	}
+
+	// Indexers is the subset of searchbackend.Indexers methods we
+	// use. reposListServer is used by indexed-search to get the list of
+	// repositories to index. These methods are used to return the correct
+	// subset for horizontal indexed search. Declared as an interface for
+	// testing.
+	Indexers interface {
+		// ReposSubset returns the subset of repoNames that hostname should
+		// index.
+		ReposSubset(hostname string, repoNames []string) ([]string, error)
+		// Enabled is true if horizontal indexed search is enabled.
+		Enabled() bool
 	}
 }
 
 func (h *reposListServer) serve(w http.ResponseWriter, r *http.Request) error {
+	var opt struct {
+		Hostname string
+		db.ReposListOptions
+	}
+	if err := json.NewDecoder(r.Body).Decode(&opt); err != nil {
+		return err
+	}
+
 	var names []string
 	if h.SourcegraphDotComMode {
 		res, err := h.Repos.ListDefault(r.Context())
@@ -210,17 +236,21 @@ func (h *reposListServer) serve(w http.ResponseWriter, r *http.Request) error {
 			names[i] = string(r.Name)
 		}
 	} else {
-		var opt db.ReposListOptions
-		if err := json.NewDecoder(r.Body).Decode(&opt); err != nil {
-			return err
-		}
-		res, err := h.Repos.List(r.Context(), opt)
+		res, err := h.Repos.List(r.Context(), opt.ReposListOptions)
 		if err != nil {
 			return errors.Wrap(err, "listing repos")
 		}
 		names = make([]string, len(res))
 		for i, r := range res {
 			names[i] = string(r.Name)
+		}
+	}
+
+	if h.Indexers.Enabled() {
+		var err error
+		names, err = h.Indexers.ReposSubset(opt.Hostname, names)
+		if err != nil {
+			return err
 		}
 	}
 

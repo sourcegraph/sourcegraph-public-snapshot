@@ -44,7 +44,7 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 /**
  * The maximum age (in seconds) that a job (completed or queued) will remain in redis.
  */
-const JOB_MAX_AGE = readEnvInt('JOB_MAX_AGE', 7 * 24 * 60 * 60)
+const JOB_MAX_AGE = readEnvInt('JOB_MAX_AGE', 60 * 60 * 24 * 7)
 
 /**
  * The maximum age (in seconds) that the files for a failed job can remain on disk.
@@ -70,7 +70,7 @@ const wrapJobProcessor = <T>(
     logger: Logger,
     tracer: Tracer | undefined
 ): ((job: Job) => Promise<void>) => async (job: Job) => {
-    logger.debug('convert job accepted', { jobId: job.id })
+    logger.debug(`${name} job accepted`, { jobId: job.id })
 
     // Destructure arguments and injected tracing context
     const { args, tracing } = job.data as { args: T; tracing: object }

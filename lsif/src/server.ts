@@ -61,7 +61,7 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 /**
  * The interval (in seconds) to schedule the update-tips job.
  */
-const UPDATE_TIPS_JOB_SCHEDULE_INTERVAL = readEnvInt('UPDATE_TIPS_JOB_SCHEDULE_INTERVAL', 30)
+const UPDATE_TIPS_JOB_SCHEDULE_INTERVAL = readEnvInt('UPDATE_TIPS_JOB_SCHEDULE_INTERVAL', 60 * 5)
 
 /**
  * The interval (in seconds) to schedule the clean-old-jobs job.
@@ -126,9 +126,9 @@ async function main(logger: Logger): Promise<void> {
     const queue = createQueue('lsif', REDIS_ENDPOINT, logger)
 
     // Schedule jobs on timers
-    await ensureOnlyRepeatableJob(queue, 'update-tips', {}, UPDATE_TIPS_JOB_SCHEDULE_INTERVAL)
-    await ensureOnlyRepeatableJob(queue, 'clean-old-jobs', {}, CLEAN_OLD_JOBS_INTERVAL)
-    await ensureOnlyRepeatableJob(queue, 'clean-failed-jobs', {}, CLEAN_FAILED_JOBS_INTERVAL)
+    await ensureOnlyRepeatableJob(queue, 'update-tips', {}, UPDATE_TIPS_JOB_SCHEDULE_INTERVAL * 1000)
+    await ensureOnlyRepeatableJob(queue, 'clean-old-jobs', {}, CLEAN_OLD_JOBS_INTERVAL * 1000)
+    await ensureOnlyRepeatableJob(queue, 'clean-failed-jobs', {}, CLEAN_FAILED_JOBS_INTERVAL * 1000)
 
     // Update queue size metric on a timer
     setInterval(
