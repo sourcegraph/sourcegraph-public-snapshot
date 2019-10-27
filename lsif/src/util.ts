@@ -138,7 +138,7 @@ export async function ensureDirectory(path: string): Promise<void> {
 }
 
 /**
- * Delete the file if it exists. Throws errors that are nto ENOENT.
+ * Delete the file if it exists. Throws errors that are not ENOENT.
  *
  * @param path The path to delete.
  */

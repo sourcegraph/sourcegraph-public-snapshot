@@ -383,25 +383,18 @@ export class XrepoDatabase {
     }
 
     /**
-     * Get all dumps for a repository and commit where there exists a dump for
-     * the commit that has maximal age, and no dump for the commit is visible at
-     * the tip.
+     * Get the oldest dump that is not visible at the tip of its repository.
      */
-    public getOldestPrunableDumps(): Promise<LsifDump[]> {
-        const query = `
-            SELECT d3.* from (
-                SELECT * FROM lsif_dumps d1
-                WHERE NOT EXISTS (
-                    SELECT 1 FROM lsif_dumps
-                    WHERE repository = d1.repository AND commit = d1.commit AND visible_at_tip
-                )
-                ORDER BY uploaded_at LIMIT 1
-            ) AS d2
-            JOIN lsif_dumps d3
-            ON d2.repository = d3.repository AND d2.commit = d3.commit
-        `
-
-        return this.withConnection(connection => connection.query(query))
+    public getOldestPrunableDump(): Promise<LsifDump | undefined> {
+        return this.withConnection(connection =>
+            connection
+                .getRepository(LsifDump)
+                .createQueryBuilder()
+                .select()
+                .where({ visible_at_tip: false })
+                .orderBy('uploaded_at')
+                .getOne()
+        )
     }
 
     /**
@@ -415,9 +408,16 @@ export class XrepoDatabase {
         dump: LsifDump,
         entityManager: EntityManager = this.connection.createEntityManager()
     ): Promise<void> {
-        // Delete file first, then the record so we have something to retry off of
+        // Delete the SQLite file on disk (ignore errors if the file doesn't exist)
         const path = dbFilename(this.storageRoot, dump.id, dump.repository, dump.commit)
         await tryDeleteFile(path)
+
+        // Delete the dump record. Do this AFTER the file is deleted because the retention
+        // policy scans the database for deletion candidates, and we don't want to get into
+        // the situation where the row is gone and the file is there. In this case, we don't
+        // have any process to tell us that the file is okay to delete and will be orphaned
+        // on disk forever.
+
         await entityManager.getRepository(LsifDump).delete(dump.id)
     }
 

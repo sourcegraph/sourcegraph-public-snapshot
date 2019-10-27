@@ -54,7 +54,7 @@ const FAILED_JOB_MAX_AGE = readEnvInt('FAILED_JOB_MAX_AGE', 24 * 60 * 60)
 /**
  * The maximum space (in bytes) that the dbs directory can use.
  */
-const DBS_DIR_MAXIMUM_BYTES = readEnvInt('DBS_DIR_MAXIMUM_BYTES', 1024 * 1024 * 1024)
+const DBS_DIR_MAXIMUM_SIZE_BYTES = readEnvInt('DBS_DIR_MAXIMUM_SIZE_BYTES', 1024 * 1024 * 1024 * 10)
 
 /**
  * Wrap a job processor with instrumentation.
@@ -126,7 +126,7 @@ const createConvertJobProcessor = (xrepoDatabase: XrepoDatabase, fetchConfigurat
         }
 
         // Clean up disk space if necessary
-        await purgeOldDumps(STORAGE_ROOT, xrepoDatabase, DBS_DIR_MAXIMUM_BYTES, ctx)
+        await purgeOldDumps(STORAGE_ROOT, xrepoDatabase, DBS_DIR_MAXIMUM_SIZE_BYTES, ctx)
     })
 
     // Update commit parentage information for this commit

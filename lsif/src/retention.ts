@@ -3,7 +3,6 @@ import { XrepoDatabase } from './xrepo'
 import * as fs from 'mz/fs'
 import { TracingContext } from './tracing'
 import { createSilentLogger } from './logging'
-import { Logger } from 'winston'
 import { hasErrorCode, dbFilename } from './util'
 import * as constants from './constants'
 
@@ -13,70 +12,68 @@ import * as constants from './constants'
  *
  * @param storageRoot The path where SQLite databases are stored.
  * @param xrepoDatabase The cross-repo database.
- * @param maximumBytes The maximum number of bytes.
+ * @param maximumSizeBytes The maximum number of bytes.
  * @param ctx The tracing context.
  */
 export async function purgeOldDumps(
     storageRoot: string,
     xrepoDatabase: XrepoDatabase,
-    maximumBytes: number,
+    maximumSizeBytes: number,
     { logger = createSilentLogger() }: TracingContext = {}
 ): Promise<void> {
-    if (maximumBytes < 0) {
+    if (maximumSizeBytes < 0) {
         return
     }
 
-    const lockName = 'retention'
-    await xrepoDatabase.lock(lockName)
+    const purge = async (): Promise<void> => {
+        let currentSizeBytes = await dirsize(path.join(storageRoot, constants.DBS_DIR))
 
-    try {
-        // Ensure only one worker is doing this at the same time so that we don't
-        // choose more dumps than necessary to purge. This can happen if the directory
-        // size check and the selection of a purgeable dump are interleaved between
-        // multiple workers.
+        while (currentSizeBytes > maximumSizeBytes) {
+            // While our current data usage is too big, find candidate dumps to delete
+            const dump = await xrepoDatabase.getOldestPrunableDump()
+            if (!dump) {
+                logger.warning(
+                    'Unable to reduce disk usage of the DB directory because deleting any single dump would drop in-use code intel for a repository.',
+                    { currentSizeBytes, softMaximumSizeBytes: maximumSizeBytes }
+                )
 
-        await purgeOldDumpsLocked(storageRoot, xrepoDatabase, maximumBytes, logger)
-    } finally {
-        await xrepoDatabase.unlock(lockName)
+                break
+            }
+
+            logger.debug('pruning dump', {
+                repository: dump.repository,
+                commit: dump.commit,
+            })
+
+            // Delete this dump and subtract its size from the current dir size
+            const filename = dbFilename(storageRoot, dump.id, dump.repository, dump.commit)
+            currentSizeBytes -= await filesize(filename)
+
+            // This delete cascades to the packages and references tables as well
+            await xrepoDatabase.deleteDump(dump)
+        }
     }
+
+    // Ensure only one worker is doing this at the same time so that we don't
+    // choose more dumps than necessary to purge. This can happen if the directory
+    // size check and the selection of a purgeable dump are interleaved between
+    // multiple workers.
+    return await withLock(xrepoDatabase, 'retention', purge)
 }
 
 /**
- * Remove dumps until the space occupied by the dbs directory is below
- * the given limit.
+ * Hold a Postgres advisory lock while executing the given function.
  *
- * @param storageRoot The path where SQLite databases are stored.
  * @param xrepoDatabase The cross-repo database.
- * @param maximumBytes The maximum number of bytes.
- * @param logger The logger instance.
+ * @param name The name of the lock.
+ * @param f The function to execute while holding the lock.
  */
-async function purgeOldDumpsLocked(
-    storageRoot: string,
-    xrepoDatabase: XrepoDatabase,
-    maximumBytes: number,
-    logger: Logger
-): Promise<void> {
-    let currentSizeBytes = await dirsize(path.join(storageRoot, constants.DBS_DIR))
-
-    while (currentSizeBytes > maximumBytes) {
-        // While our current data usage is too big, find candidate dumps to delete
-        const dumps = await xrepoDatabase.getOldestPrunableDumps()
-        if (dumps.length === 0) {
-            logger.error('Failed to select a prunable dump', { currentSizeBytes, maximumBytes })
-            break
-        }
-
-        logger.debug('pruning dumps', {
-            repository: dumps[0].repository,
-            commit: dumps[0].commit,
-        })
-
-        for (const dump of dumps) {
-            // Delete this dump and subtract its size from the current dir size
-            const filename = dbFilename(storageRoot, dump.id, dump.repository, dump.commit)
-            await xrepoDatabase.deleteDump(dump)
-            currentSizeBytes -= await filesize(filename)
-        }
+async function withLock<T>(xrepoDatabase: XrepoDatabase, name: string, f: () => Promise<T>): Promise<T> {
+    await xrepoDatabase.lock(name)
+    try {
+        return await f()
+    } finally {
+        await xrepoDatabase.unlock(name)
     }
 }
 
