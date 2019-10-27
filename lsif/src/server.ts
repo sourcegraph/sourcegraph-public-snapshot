@@ -7,6 +7,7 @@ import onFinished from 'on-finished'
 import promClient from 'prom-client'
 import uuid from 'uuid'
 import { httpUploadDurationHistogram, httpQueryDurationHistogram, queueSizeGauge } from './server.metrics'
+import { chunk } from 'lodash'
 import {
     connectionCacheCapacityGauge,
     documentCacheCapacityGauge,
@@ -28,7 +29,7 @@ import { Span, Tracer } from 'opentracing'
 import { default as tracingMiddleware } from 'express-opentracing'
 import { waitForConfiguration, ConfigurationFetcher } from './config'
 import { createLogger } from './logging'
-import { enqueue, createQueue, ensureOnlyRepeatableJob } from './queue'
+import { enqueue, createQueue, ensureOnlyRepeatableJob, queueTypes, QUEUE_PREFIX } from './queue'
 import { Connection } from 'typeorm'
 import { LsifDump } from './xrepo.models'
 import * as constants from './constants'
@@ -69,6 +70,16 @@ const UPDATE_TIPS_JOB_SCHEDULE_INTERVAL = readEnvInt('UPDATE_TIPS_JOB_SCHEDULE_I
  * The interval (in seconds) to schedule the clean-old-jobs job.
  */
 const CLEAN_OLD_JOBS_INTERVAL = readEnvInt('CLEAN_OLD_JOBS_INTERVAL', 60 * 60)
+
+/**
+ * The default page size for the job endpoints.
+ */
+const DEFAULT_JOB_PAGE_SIZE = readEnvInt('DEFAULT_JOB_PAGE_SIZE', 50)
+
+/**
+ * The maximum number of jobs to search in one call to the search-jobs.lua script.
+ */
+export const MAX_JOB_SEARCH = readEnvInt('MAX_JOB_SEARCH', 10000)
 
 /**
  * Middleware function used to convert uncaught exceptions into 500 responses.
@@ -148,6 +159,7 @@ async function main(logger: Logger): Promise<void> {
     // Register endpoints
     app.use(metaEndpoints())
     app.use(await lsifEndpoints(queue, fetchConfiguration, logger, tracer))
+    app.use(await jobEndpoints(queue, logger))
 
     // Error handler must be registered last
     app.use(errorHandler(logger))
@@ -349,6 +361,143 @@ async function lsifEndpoints(
     )
 
     return router
+}
+
+/**
+ * Create a router containing the job endpoints.
+ *
+ * @param queue The queue instance.
+ * @param logger The logger instance.
+ */
+async function jobEndpoints(queue: Queue, logger: Logger): Promise<express.Router> {
+    const router = express.Router()
+
+    // Register the required commands on the queue's Redis client
+    const scriptedClient = await defineRedisCommands(queue.client)
+
+    router.get(
+        '/jobs/stats',
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const counts = await queue.getJobCounts()
+
+                res.send({
+                    active: counts.active,
+                    queued: counts.waiting,
+                    scheduled: counts.delayed,
+                    completed: counts.completed,
+                    failed: counts.failed,
+                })
+            }
+        )
+    )
+
+    const limitOffset = (req: express.Request, defaultLimit: number): { limit: number; offset: number } => ({
+        limit: parseInt(req.query.limit, 10) || defaultLimit,
+        offset: parseInt(req.query.offset, 10) || 0,
+    })
+
+    const nextLink = (req: express.Request, params: { [K: string]: any }): string => {
+        const url = new URL(`${req.protocol}://${req.get('host')}${req.originalUrl}`)
+        for (const [key, value] of Object.entries(params)) {
+            url.searchParams.set(key, String(value))
+        }
+
+        return `<${url.href}>; rel="next"`
+    }
+
+    router.get(
+        `/jobs/:status(${Array.from(queueTypes.keys()).join('|')})`,
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const { status } = req.params
+                const { search } = req.query
+                const { limit, offset } = limitOffset(req, DEFAULT_JOB_PAGE_SIZE)
+
+                const queueName = queueTypes.get(status)
+                if (!queueName) {
+                    throw new Error(`Unknown job status ${status}`)
+                }
+
+                if (!search) {
+                    const rawJobs = await queue.getJobs([queueName], offset, offset + limit - 1)
+                    const jobs = rawJobs.map(job => formatJob(job, status))
+                    const totalCount = (await queue.getJobCountByTypes([queueName])) as never
+
+                    if (offset + jobs.length < totalCount) {
+                        res.set('Link', nextLink(req, { limit, offset: offset + jobs.length }))
+                    }
+
+                    res.send({ jobs, totalCount })
+                } else {
+                    const [payloads, nextOffset] = await scriptedClient.searchJobs([
+                        QUEUE_PREFIX,
+                        queueName,
+                        search,
+                        offset,
+                        limit,
+                        MAX_JOB_SEARCH,
+                    ])
+
+                    const jobs = payloads
+                        // Convert each hgetall response into a map
+                        .map(payload => new Map(chunk(payload, 2) as [string, string][]))
+                        // Format each job
+                        .map(payload => formatJobFromMap(payload, status))
+
+                    if (nextOffset) {
+                        res.set('Link', nextLink(req, { limit, offset: nextOffset }))
+                    }
+
+                    res.send({ jobs })
+                }
+            }
+        )
+    )
+
+    router.get(
+        '/jobs/:id',
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const job = await queue.getJob(req.params.id)
+                if (!job) {
+                    throw Object.assign(new Error('Job not found'), {
+                        status: 404,
+                    })
+                }
+
+                res.send(formatJob(job, await job.getState()))
+            }
+        )
+    )
+
+    return router
+}
+
+/**
+ * The type of the Redis client with additional script commands defined.
+ */
+type ScriptedRedis = Redis & {
+    // runs ./search-jobs.lua
+    searchJobs: (args: (string | number | boolean)[]) => Promise<[string[][], number | null]>
+}
+
+/**
+ * Registers the search-jobs.lua script in the given Redis instance. This function
+ * returns the same redis client with additional methods attached.
+ *
+ * @param client The redis client.
+ */
+async function defineRedisCommands(client: Redis): Promise<ScriptedRedis> {
+    client.defineCommand('searchJobs', {
+        numberOfKeys: 2,
+        lua: (await fs.readFile(`${__dirname}/search-jobs.lua`)).toString(),
+    })
+
+    // The defineCommand method on the client dynamically defines a new method, but
+    // the type system doesn't know that. We need to do a dumb cast here. This only
+    // requires us to know the return type of the script.
+    return client as ScriptedRedis
 }
 
 /**

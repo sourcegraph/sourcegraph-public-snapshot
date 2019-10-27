@@ -26,6 +26,10 @@ Performs a query at a particular position. The request body must be a JSON objec
 
 Returns `200 OK` on success with a body containing an LSP-compatible response. Returns `404 Not Found` if no LSIF data exists for this repository.
 
+### GET `/jobs/stats`
+
+Retrieve the current counts of jobs in each status.
+
 ### GET `/jobs/{status}?search={search}&limit={limit}&offset={offset}`
 
 - `status`: the job status (`active`, `queued`, `scheduled`, `completed`, or `failed`)
