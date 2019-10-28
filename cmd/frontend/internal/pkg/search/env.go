@@ -42,7 +42,7 @@ func Indexed() *backend.Zoekt {
 	indexedSearchOnce.Do(func() {
 		indexedSearch = &backend.Zoekt{}
 		if indexers := Indexers(); indexers.Enabled() {
-			indexedSearch.Client = &backend.AggregateSearcher{
+			indexedSearch.Client = &backend.HorizontalSearcher{
 				Map:  indexers.Map,
 				Dial: rpc.Client,
 			}

@@ -119,7 +119,7 @@ func (s *HorizontalSearcher) String() string {
 		addrs = append(addrs, addr)
 	}
 	sort.Strings(addrs)
-	return fmt.Sprintf("AggregateSearcher{%v}", addrs)
+	return fmt.Sprintf("HorizontalSearcher{%v}", addrs)
 }
 
 // searchers returns the list of clients to aggregate over.
