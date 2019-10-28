@@ -1,5 +1,5 @@
 --[[
-    Return the data foir jobs that match the given query. Will scan
+    Return the data for jobs that match the given query. Will scan
     between the indices `[ARGV[2], ARGV[2]+ARGV[4])` and return up to
     ARGV[3] results.
 
