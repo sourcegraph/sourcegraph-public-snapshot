@@ -71,7 +71,7 @@ const CLEAN_OLD_JOBS_INTERVAL = readEnvInt('CLEAN_OLD_JOBS_INTERVAL', 60 * 60 * 
 /**
  * The default number of remote dumps to open when performing a global find-reference operation.
  */
-const DEFAULT_REFERENCES_NUM_REMOTE_REPOSITORIES = 10
+const DEFAULT_REFERENCES_NUM_REMOTE_DUMPS = 10
 
 /**
  * The interval (in seconds) to schedule the clean-failed-jobs job.
@@ -369,7 +369,7 @@ async function lsifEndpoints(
 
                     case 'references': {
                         const { cursor: cursorRaw } = req.query
-                        const limit = extractLimit(req, DEFAULT_REFERENCES_NUM_REMOTE_REPOSITORIES)
+                        const limit = extractLimit(req, DEFAULT_REFERENCES_NUM_REMOTE_DUMPS)
                         const startCursor = parseCursor<ReferencePaginationCursor>(cursorRaw)
 
                         const { locations, cursor: endCursor } = await backend.references(
