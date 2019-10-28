@@ -38,3 +38,19 @@ Performs an definitions, references, or hover query at a particular position. Th
 - `method`: `definitions`, `references`, or `hover`
 
 Returns `200 OK` on success with a body containing an LSP-compatible response. Returns `404 Not Found` if no LSIF data exists for this repository.
+
+### GET `/dumps/{repo}?query={query}&limit={limit}&offset={offset}`
+
+- `repository`: the repository name
+- `query`: a search query (compares commits and root fields)
+- `limit`: the maximum number of dumps to return
+- `offset`: the number of dumps seen previously
+
+Returns all dumps for a given repository.
+
+### GET `/dumps/{repo}/{dumpId}
+
+- `repo`: the repository name
+- `dumpId`: the dump identifier
+
+Returns a particular dump by its identifier. The resulting dump must belong to the given repository.
