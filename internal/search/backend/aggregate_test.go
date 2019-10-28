@@ -3,7 +3,6 @@ package backend
 import (
 	"context"
 	"sort"
-	"sync"
 	"sync/atomic"
 	"testing"
 
@@ -34,33 +33,11 @@ func TestAggregateSearcher(t *testing.T) {
 	}
 	defer searcher.Close()
 
-	// Start up background goroutines which continously hit the searcher
+	// Start up background goroutines which continuously hit the searcher
 	// methods to ensure we are safe under concurrency.
-	var wg sync.WaitGroup
-	defer wg.Wait()
-	done := make(chan struct{})
-	defer close(done)
 	for i := 0; i < 5; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for {
-				_, err := searcher.Search(context.Background(), nil, nil)
-				if err != nil {
-					t.Fatal(err)
-				}
-				_, err = searcher.List(context.Background(), nil)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				select {
-				case <-done:
-					return
-				default:
-				}
-			}
-		}()
+		cleanup := backgroundSearch(searcher)
+		defer cleanup(t)
 	}
 
 	// each map is the set of servers at a point in time. This is to mainly
@@ -120,6 +97,40 @@ func TestAggregateSearcher(t *testing.T) {
 	}
 
 	searcher.Close()
+}
+
+func backgroundSearch(searcher zoekt.Searcher) func(t *testing.T) {
+	done := make(chan struct{})
+	errC := make(chan error)
+	go func() {
+		for {
+			_, err := searcher.Search(context.Background(), nil, nil)
+			if err != nil {
+				errC <- err
+				return
+			}
+			_, err = searcher.List(context.Background(), nil)
+			if err != nil {
+				errC <- err
+				return
+			}
+
+			select {
+			case <-done:
+				errC <- err
+				return
+			default:
+			}
+		}
+	}()
+
+	return func(t *testing.T) {
+		t.Helper()
+		close(done)
+		if err := <-errC; err != nil {
+			t.Error("concurrent search failed: ", err)
+		}
+	}
 }
 
 type mockSearcher struct {
