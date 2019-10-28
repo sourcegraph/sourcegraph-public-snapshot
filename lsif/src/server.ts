@@ -195,9 +195,7 @@ function metricsMiddleware(req: express.Request, res: express.Response, next: ex
             break
 
         case '/exists':
-        case '/definitions':
-        case '/references':
-        case '/hover':
+        case '/request':
             histogram = httpQueryDurationHistogram
     }
 
