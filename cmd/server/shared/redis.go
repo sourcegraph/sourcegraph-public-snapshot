@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"text/template"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/server/shared/assets"
 )
@@ -71,11 +72,22 @@ func tryCreateRedisConf(c redisProcfileConfig) (string, error) {
 	// https://github.com/sourcegraph/sourcegraph/issues/651
 	aofPath := filepath.Join(dataDir, "appendonly.aof")
 	if _, err = os.Stat(aofPath); err == nil {
-		var output bytes.Buffer
-		e := execer{Out: &output}
-		e.Command("redis-check-aof", "--fix", aofPath)
-		if err := e.Error(); err != nil {
-			l("Repairing %s appendonly.aof failed:\n%s", c.name, output.String())
+		done := make(chan struct{})
+		go func() {
+			var output bytes.Buffer
+			e := execer{Out: &output}
+			e.Command("redis-check-aof", "--fix", aofPath)
+			if err := e.Error(); err != nil {
+				l("Repairing %s appendonly.aof failed:\n%s", c.name, output.String())
+			}
+			close(done)
+		}()
+		select {
+		case <-done:
+		case <-time.After(5 * time.Second):
+			l("Running redis-check-aof --fix %q...", aofPath)
+			<-done
+			l("Finished running redis-check-aof")
 		}
 	}
 
