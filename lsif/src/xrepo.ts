@@ -8,7 +8,7 @@ import * as crc32 from 'crc-32'
 import { instrument } from './metrics'
 import { Connection, EntityManager, Brackets } from 'typeorm'
 import { createFilter, testFilter } from './encoding'
-import { PackageModel, ReferenceModel, Commit, LsifDump } from './xrepo.models'
+import { PackageModel, ReferenceModel, Commit, LsifDump, DumpId } from './xrepo.models'
 import { TableInserter } from './inserter'
 import { discoverAndUpdateCommit } from './commits'
 import { TracingContext } from './tracing'
@@ -83,6 +83,54 @@ export class XrepoDatabase {
      * @param connection The Postgres connection.
      */
     constructor(private storageRoot: string, private connection: Connection) {}
+
+    /**
+     * Get the dumps for a repository.
+     *
+     * @param repository The repository.
+     * @param query A search query.
+     * @param limit The maximum number of dumps to return.
+     * @param offset The number of dumps to skip.
+     */
+    public async getDumps(
+        repository: string,
+        query: string,
+        limit: number,
+        offset: number
+    ): Promise<{ dumps: LsifDump[]; totalCount: number }> {
+        const [dumps, totalCount] = await this.withConnection(connection => {
+            let queryBuilder = connection
+                .getRepository(LsifDump)
+                .createQueryBuilder()
+                .where({ repository })
+                .orderBy('uploaded_at')
+                .limit(limit)
+                .offset(offset)
+
+            if (query) {
+                queryBuilder = queryBuilder.andWhere(
+                    new Brackets(qb =>
+                        qb
+                            .where("commit LIKE '%' || :query || '%'", { query })
+                            .orWhere("root LIKE '%' || :query || '%'", { query })
+                    )
+                )
+            }
+
+            return queryBuilder.getManyAndCount()
+        })
+
+        return { dumps, totalCount }
+    }
+
+    /**
+     * Get a dump by identifier.
+     *
+     * @param id The dump identifier.
+     */
+    public getDumpById(id: DumpId): Promise<LsifDump | undefined> {
+        return this.withConnection(connection => connection.getRepository(LsifDump).findOne({ id }))
+    }
 
     /**
      * Return the list of all repositories that have LSIF data.
