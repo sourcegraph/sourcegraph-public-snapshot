@@ -3,20 +3,20 @@ import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { dbFilename, mustGet, NoLSIFDumpError } from './util'
 import { XrepoDatabase } from './xrepo'
 import { TracingContext, logAndTraceCall, addTags, logSpan } from './tracing'
-import * as constants from './constants'
 import { Database, sortMonikers, createRemoteUri } from './database'
 import { ConfigurationFetcher } from './config'
 import { DocumentData, MonikerData, DefinitionModel, ReferenceModel } from './database.models'
 import { uniqWith, isEqual } from 'lodash'
 import { LsifDump, DumpId } from './xrepo.models'
+import * as settings from './settings'
 
 /**
  * A wrapper around code intelligence operations.
  */
 export class Backend {
-    private connectionCache = new ConnectionCache(constants.CONNECTION_CACHE_CAPACITY)
-    private documentCache = new DocumentCache(constants.DOCUMENT_CACHE_CAPACITY)
-    private resultChunkCache = new ResultChunkCache(constants.RESULT_CHUNK_CACHE_CAPACITY)
+    private connectionCache = new ConnectionCache(settings.CONNECTION_CACHE_CAPACITY)
+    private documentCache = new DocumentCache(settings.DOCUMENT_CACHE_CAPACITY)
+    private resultChunkCache = new ResultChunkCache(settings.RESULT_CHUNK_CACHE_CAPACITY)
 
     /**
      * Create a new `Backend`.

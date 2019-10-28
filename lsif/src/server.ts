@@ -32,6 +32,7 @@ import { enqueue, createQueue, ensureOnlyRepeatableJob } from './queue'
 import { Connection } from 'typeorm'
 import { LsifDump } from './xrepo.models'
 import * as constants from './constants'
+import * as settings from './settings'
 
 const pipeline = promisify(_pipeline)
 
@@ -60,12 +61,17 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 /**
  * The interval (in seconds) to schedule the update-tips job.
  */
-const UPDATE_TIPS_JOB_SCHEDULE_INTERVAL = readEnvInt('UPDATE_TIPS_JOB_SCHEDULE_INTERVAL', 30)
+const UPDATE_TIPS_JOB_SCHEDULE_INTERVAL = readEnvInt('UPDATE_TIPS_JOB_SCHEDULE_INTERVAL', 60 * 5)
 
 /**
  * The interval (in seconds) to schedule the clean-old-jobs job.
  */
-const CLEAN_OLD_JOBS_INTERVAL = readEnvInt('CLEAN_OLD_JOBS_INTERVAL', 60 * 60)
+const CLEAN_OLD_JOBS_INTERVAL = readEnvInt('CLEAN_OLD_JOBS_INTERVAL', 60 * 60 * 8)
+
+/**
+ * The interval (in seconds) to schedule the clean-failed-jobs job.
+ */
+const CLEAN_FAILED_JOBS_INTERVAL = readEnvInt('CLEAN_FAILED_JOBS_INTERVAL', 60 * 60 * 8)
 
 /**
  * The default page size for the dumps endpoint.
@@ -111,24 +117,33 @@ async function main(logger: Logger): Promise<void> {
     const tracer = createTracer('lsif-server', fetchConfiguration())
 
     // Update cache capacities on startup
-    connectionCacheCapacityGauge.set(constants.CONNECTION_CACHE_CAPACITY)
-    documentCacheCapacityGauge.set(constants.DOCUMENT_CACHE_CAPACITY)
-    resultChunkCacheCapacityGauge.set(constants.RESULT_CHUNK_CACHE_CAPACITY)
+    connectionCacheCapacityGauge.set(settings.CONNECTION_CACHE_CAPACITY)
+    documentCacheCapacityGauge.set(settings.DOCUMENT_CACHE_CAPACITY)
+    resultChunkCacheCapacityGauge.set(settings.RESULT_CHUNK_CACHE_CAPACITY)
 
     // Ensure storage roots exist
     await ensureDirectory(STORAGE_ROOT)
-    await ensureDirectory(path.join(STORAGE_ROOT, 'tmp'))
-    await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
+    await ensureDirectory(path.join(STORAGE_ROOT, constants.DBS_DIR))
+    await ensureDirectory(path.join(STORAGE_ROOT, constants.TEMP_DIR))
+    await ensureDirectory(path.join(STORAGE_ROOT, constants.UPLOADS_DIR))
 
     // Create queue to publish convert
     const queue = createQueue('lsif', REDIS_ENDPOINT, logger)
 
     // Schedule jobs on timers
-    await ensureOnlyRepeatableJob(queue, 'update-tips', {}, UPDATE_TIPS_JOB_SCHEDULE_INTERVAL)
-    await ensureOnlyRepeatableJob(queue, 'clean-old-jobs', {}, CLEAN_OLD_JOBS_INTERVAL)
+    await ensureOnlyRepeatableJob(queue, 'update-tips', {}, UPDATE_TIPS_JOB_SCHEDULE_INTERVAL * 1000)
+    await ensureOnlyRepeatableJob(queue, 'clean-old-jobs', {}, CLEAN_OLD_JOBS_INTERVAL * 1000)
+    await ensureOnlyRepeatableJob(queue, 'clean-failed-jobs', {}, CLEAN_FAILED_JOBS_INTERVAL * 1000)
 
     // Update queue size metric on a timer
-    setInterval(() => queue.count().then(count => queueSizeGauge.set(count)), 1000)
+    setInterval(
+        () =>
+            queue
+                .count()
+                .then(count => queueSizeGauge.set(count))
+                .catch(() => {}),
+        1000
+    )
 
     const app = express()
 
@@ -155,6 +170,17 @@ async function main(logger: Logger): Promise<void> {
     app.use(errorHandler(logger))
 
     app.listen(HTTP_PORT, () => logger.debug('listening', { port: HTTP_PORT }))
+}
+
+/**
+ * Move all db files in storage root to a subdirectory.
+ */
+async function moveDatabaseFilesToSubdir(): Promise<void> {
+    for (const filename of await fs.readdir(STORAGE_ROOT)) {
+        if (filename.endsWith('.db')) {
+            await fs.rename(path.join(STORAGE_ROOT, filename), path.join(STORAGE_ROOT, constants.DBS_DIR, filename))
+        }
+    }
 }
 
 /**
@@ -245,11 +271,12 @@ async function lsifEndpoints(
 
     // Create cross-repo database
     const connection = await createPostgresConnection(fetchConfiguration(), logger)
-    const xrepoDatabase = new XrepoDatabase(connection)
-
-    await ensureFilenamesAreIDs(connection)
-
+    const xrepoDatabase = new XrepoDatabase(STORAGE_ROOT, connection)
     const backend = new Backend(STORAGE_ROOT, xrepoDatabase, fetchConfiguration)
+
+    // Temporary migrations
+    await moveDatabaseFilesToSubdir() // TODO - remove after 3.12
+    await ensureFilenamesAreIDs(connection) // TODO - remove after 3.10
 
     /**
      * Create a tracing context from the request logger and tracing span
@@ -271,7 +298,7 @@ async function lsifEndpoints(
                 checkCommit(commit)
 
                 const ctx = createTracingContext(req, { repository, commit, root })
-                const filename = path.join(STORAGE_ROOT, 'uploads', uuid.v4())
+                const filename = path.join(STORAGE_ROOT, constants.UPLOADS_DIR, uuid.v4())
                 const output = fs.createWriteStream(filename)
 
                 try {
