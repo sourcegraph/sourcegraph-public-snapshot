@@ -95,8 +95,8 @@ func TestBytesToLowerASCII(t *testing.T) {
 	})
 }
 
-func BenchmarkConcurrentFind_large_fixed(b *testing.B) {
-	benchConcurrentFind(b, &protocol.Request{
+func BenchmarkSearchRegex_large_fixed(b *testing.B) {
+	benchSearchRegex(b, &protocol.Request{
 		Repo:   "github.com/golang/go",
 		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
 		PatternInfo: protocol.PatternInfo{
@@ -105,8 +105,8 @@ func BenchmarkConcurrentFind_large_fixed(b *testing.B) {
 	})
 }
 
-func BenchmarkConcurrentFind_large_fixed_casesensitive(b *testing.B) {
-	benchConcurrentFind(b, &protocol.Request{
+func BenchmarkSearchRegex_large_fixed_casesensitive(b *testing.B) {
+	benchSearchRegex(b, &protocol.Request{
 		Repo:   "github.com/golang/go",
 		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
 		PatternInfo: protocol.PatternInfo{
@@ -116,8 +116,8 @@ func BenchmarkConcurrentFind_large_fixed_casesensitive(b *testing.B) {
 	})
 }
 
-func BenchmarkConcurrentFind_large_re_dotstar(b *testing.B) {
-	benchConcurrentFind(b, &protocol.Request{
+func BenchmarkSearchRegex_large_re_dotstar(b *testing.B) {
+	benchSearchRegex(b, &protocol.Request{
 		Repo:   "github.com/golang/go",
 		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
 		PatternInfo: protocol.PatternInfo{
@@ -127,8 +127,8 @@ func BenchmarkConcurrentFind_large_re_dotstar(b *testing.B) {
 	})
 }
 
-func BenchmarkConcurrentFind_large_re_common(b *testing.B) {
-	benchConcurrentFind(b, &protocol.Request{
+func BenchmarkSearchRegex_large_re_common(b *testing.B) {
+	benchSearchRegex(b, &protocol.Request{
 		Repo:   "github.com/golang/go",
 		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
 		PatternInfo: protocol.PatternInfo{
@@ -139,14 +139,14 @@ func BenchmarkConcurrentFind_large_re_common(b *testing.B) {
 	})
 }
 
-func BenchmarkConcurrentFind_large_re_anchor(b *testing.B) {
+func BenchmarkSearchRegex_large_re_anchor(b *testing.B) {
 	// TODO(keegan) PERF regex engine performs poorly since LiteralPrefix
 	// is empty when ^. We can improve this by:
 	// * Transforming the regex we use to prune a file to be more
 	// performant/permissive.
 	// * Searching for any literal (Rabin-Karp aka bytes.Index) or group
 	// of literals (Aho-Corasick).
-	benchConcurrentFind(b, &protocol.Request{
+	benchSearchRegex(b, &protocol.Request{
 		Repo:   "github.com/golang/go",
 		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
 		PatternInfo: protocol.PatternInfo{
@@ -157,9 +157,9 @@ func BenchmarkConcurrentFind_large_re_anchor(b *testing.B) {
 	})
 }
 
-func BenchmarkConcurrentFind_large_path(b *testing.B) {
+func BenchmarkSearchRegex_large_path(b *testing.B) {
 	do := func(b *testing.B, content, path bool) {
-		benchConcurrentFind(b, &protocol.Request{
+		benchSearchRegex(b, &protocol.Request{
 			Repo:   "github.com/golang/go",
 			Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
 			PatternInfo: protocol.PatternInfo{
@@ -176,8 +176,8 @@ func BenchmarkConcurrentFind_large_path(b *testing.B) {
 	b.Run("both path and content", func(b *testing.B) { do(b, true, true) })
 }
 
-func BenchmarkConcurrentFind_small_fixed(b *testing.B) {
-	benchConcurrentFind(b, &protocol.Request{
+func BenchmarkSearchRegex_small_fixed(b *testing.B) {
+	benchSearchRegex(b, &protocol.Request{
 		Repo:   "github.com/sourcegraph/go-langserver",
 		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
 		PatternInfo: protocol.PatternInfo{
@@ -186,8 +186,8 @@ func BenchmarkConcurrentFind_small_fixed(b *testing.B) {
 	})
 }
 
-func BenchmarkConcurrentFind_small_fixed_casesensitive(b *testing.B) {
-	benchConcurrentFind(b, &protocol.Request{
+func BenchmarkSearchRegex_small_fixed_casesensitive(b *testing.B) {
+	benchSearchRegex(b, &protocol.Request{
 		Repo:   "github.com/sourcegraph/go-langserver",
 		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
 		PatternInfo: protocol.PatternInfo{
@@ -197,8 +197,8 @@ func BenchmarkConcurrentFind_small_fixed_casesensitive(b *testing.B) {
 	})
 }
 
-func BenchmarkConcurrentFind_small_re_dotstar(b *testing.B) {
-	benchConcurrentFind(b, &protocol.Request{
+func BenchmarkSearchRegex_small_re_dotstar(b *testing.B) {
+	benchSearchRegex(b, &protocol.Request{
 		Repo:   "github.com/sourcegraph/go-langserver",
 		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
 		PatternInfo: protocol.PatternInfo{
@@ -208,8 +208,8 @@ func BenchmarkConcurrentFind_small_re_dotstar(b *testing.B) {
 	})
 }
 
-func BenchmarkConcurrentFind_small_re_common(b *testing.B) {
-	benchConcurrentFind(b, &protocol.Request{
+func BenchmarkSearchRegex_small_re_common(b *testing.B) {
+	benchSearchRegex(b, &protocol.Request{
 		Repo:   "github.com/sourcegraph/go-langserver",
 		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
 		PatternInfo: protocol.PatternInfo{
@@ -220,8 +220,8 @@ func BenchmarkConcurrentFind_small_re_common(b *testing.B) {
 	})
 }
 
-func BenchmarkConcurrentFind_small_re_anchor(b *testing.B) {
-	benchConcurrentFind(b, &protocol.Request{
+func BenchmarkSearchRegex_small_re_anchor(b *testing.B) {
+	benchSearchRegex(b, &protocol.Request{
 		Repo:   "github.com/sourcegraph/go-langserver",
 		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
 		PatternInfo: protocol.PatternInfo{
@@ -232,7 +232,7 @@ func BenchmarkConcurrentFind_small_re_anchor(b *testing.B) {
 	})
 }
 
-func benchConcurrentFind(b *testing.B, p *protocol.Request) {
+func benchSearchRegex(b *testing.B, p *protocol.Request) {
 	if testing.Short() {
 		b.Skip("")
 	}
@@ -264,7 +264,7 @@ func benchConcurrentFind(b *testing.B, p *protocol.Request) {
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
-		_, _, err := concurrentFind(ctx, rg, zf, 0, p.PatternMatchesContent, p.PatternMatchesPath)
+		_, _, err := regexSearch(ctx, rg, zf, 0, p.PatternMatchesContent, p.PatternMatchesPath)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -454,12 +454,12 @@ func TestMaxMatches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fileMatches, limitHit, err := concurrentFind(context.Background(), rg, zf, maxFileMatches, true, false)
+	fileMatches, limitHit, err := regexSearch(context.Background(), rg, zf, maxFileMatches, true, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !limitHit {
-		t.Fatalf("expected limitHit on concurrentFind")
+		t.Fatalf("expected limitHit on regexSearch")
 	}
 
 	if len(fileMatches) != maxFileMatches {
@@ -506,7 +506,7 @@ func TestPathMatches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fileMatches, _, err := concurrentFind(context.Background(), rg, zf, 10, true, true)
+	fileMatches, _, err := regexSearch(context.Background(), rg, zf, 10, true, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -554,7 +554,7 @@ func init() {
 	os.RemoveAll(githubStore.Path)
 }
 
-func Test_concurrentFind(t *testing.T) {
+func Test_regexSearch(t *testing.T) {
 	match, err := pathmatch.CompilePathPatterns([]string{`a\.go`}, `README\.md`, pathmatch.CompileOptions{RegExp: true})
 	if err != nil {
 		t.Fatal(err)
@@ -602,16 +602,16 @@ func Test_concurrentFind(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotFm, gotLimitHit, err := concurrentFind(tt.args.ctx, tt.args.rg, tt.args.zf, tt.args.fileMatchLimit, tt.args.patternMatchesContent, tt.args.patternMatchesPaths)
+			gotFm, gotLimitHit, err := regexSearch(tt.args.ctx, tt.args.rg, tt.args.zf, tt.args.fileMatchLimit, tt.args.patternMatchesContent, tt.args.patternMatchesPaths)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("concurrentFind() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("regexSearch() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(gotFm, tt.wantFm) {
-				t.Errorf("concurrentFind() gotFm = %v, want %v", gotFm, tt.wantFm)
+				t.Errorf("regexSearch() gotFm = %v, want %v", gotFm, tt.wantFm)
 			}
 			if gotLimitHit != tt.wantLimitHit {
-				t.Errorf("concurrentFind() gotLimitHit = %v, want %v", gotLimitHit, tt.wantLimitHit)
+				t.Errorf("regexSearch() gotLimitHit = %v, want %v", gotLimitHit, tt.wantLimitHit)
 			}
 		})
 	}

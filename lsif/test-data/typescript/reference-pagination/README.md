@@ -1,8 +1,16 @@
-# LSIF data for TypeScript linked reference result tests
+# LSIF data for TypeScript reference pagination tests
 
-The `./bin/generate.sh` to create an LSIF dumps for TypeScript project that produces linked reference results (namely when implementing methods from an interface or base class). This will create a gzipped LSIF dump file which is used in the tests found in `typescript-linked-reference-results.test.ts`.
+The `./bin/generate.sh` to create LSIF dumps for a set of TypeScript projects that reference each other. This will create seven repositories and gzipped LSIF dump files which is used in the tests found in `typescript-reference-pagination.test.ts`.
 
 The dump files used for testing are under version control, but can be regenerated to test changes in the indexer utilities.
+
+### Dump Layout
+
+The repository `a` defines the `math-util` package a function `add` and several uses of it.
+
+The repositories `b{1,..,10}` have a dependency on `math-util` and import and use the `add` function.
+
+The TypeScript source for each project is contained in the script that generates the project, `./bin/generate-{a,b}.sh`.
 
 ### Requirements
 

@@ -16,7 +16,7 @@ import {
 import { dbFilename, dbFilenameOld, ensureDirectory, readEnvInt } from './util'
 import { createGzip } from 'mz/zlib'
 import { createPostgresConnection } from './connection'
-import { Backend } from './backend'
+import { Backend, ReferencePaginationCursor } from './backend'
 import { logger as loggingMiddleware } from 'express-winston'
 import { Logger } from 'winston'
 import { pipeline as _pipeline, Readable } from 'stream'
@@ -36,6 +36,7 @@ import * as constants from './constants'
 import pTimeout from 'p-timeout'
 import { formatJob, formatJobFromMap } from './api-job'
 import { Redis } from 'ioredis'
+import * as settings from './settings'
 
 const pipeline = promisify(_pipeline)
 
@@ -64,12 +65,22 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 /**
  * The interval (in seconds) to schedule the update-tips job.
  */
-const UPDATE_TIPS_JOB_SCHEDULE_INTERVAL = readEnvInt('UPDATE_TIPS_JOB_SCHEDULE_INTERVAL', 30)
+const UPDATE_TIPS_JOB_SCHEDULE_INTERVAL = readEnvInt('UPDATE_TIPS_JOB_SCHEDULE_INTERVAL', 60 * 5)
 
 /**
  * The interval (in seconds) to schedule the clean-old-jobs job.
  */
-const CLEAN_OLD_JOBS_INTERVAL = readEnvInt('CLEAN_OLD_JOBS_INTERVAL', 60 * 60)
+const CLEAN_OLD_JOBS_INTERVAL = readEnvInt('CLEAN_OLD_JOBS_INTERVAL', 60 * 60 * 8)
+
+/**
+ * The default number of remote dumps to open when performing a global find-reference operation.
+ */
+const DEFAULT_REFERENCES_NUM_REMOTE_DUMPS = 10
+
+/**
+ * The interval (in seconds) to schedule the clean-failed-jobs job.
+ */
+const CLEAN_FAILED_JOBS_INTERVAL = readEnvInt('CLEAN_FAILED_JOBS_INTERVAL', 60 * 60 * 8)
 
 /**
  * The default page size for the job endpoints.
@@ -120,24 +131,33 @@ async function main(logger: Logger): Promise<void> {
     const tracer = createTracer('lsif-server', fetchConfiguration())
 
     // Update cache capacities on startup
-    connectionCacheCapacityGauge.set(constants.CONNECTION_CACHE_CAPACITY)
-    documentCacheCapacityGauge.set(constants.DOCUMENT_CACHE_CAPACITY)
-    resultChunkCacheCapacityGauge.set(constants.RESULT_CHUNK_CACHE_CAPACITY)
+    connectionCacheCapacityGauge.set(settings.CONNECTION_CACHE_CAPACITY)
+    documentCacheCapacityGauge.set(settings.DOCUMENT_CACHE_CAPACITY)
+    resultChunkCacheCapacityGauge.set(settings.RESULT_CHUNK_CACHE_CAPACITY)
 
     // Ensure storage roots exist
     await ensureDirectory(STORAGE_ROOT)
-    await ensureDirectory(path.join(STORAGE_ROOT, 'tmp'))
-    await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
+    await ensureDirectory(path.join(STORAGE_ROOT, constants.DBS_DIR))
+    await ensureDirectory(path.join(STORAGE_ROOT, constants.TEMP_DIR))
+    await ensureDirectory(path.join(STORAGE_ROOT, constants.UPLOADS_DIR))
 
     // Create queue to publish convert
     const queue = createQueue(REDIS_ENDPOINT, logger)
 
     // Schedule jobs on timers
-    await ensureOnlyRepeatableJob(queue, 'update-tips', {}, UPDATE_TIPS_JOB_SCHEDULE_INTERVAL)
-    await ensureOnlyRepeatableJob(queue, 'clean-old-jobs', {}, CLEAN_OLD_JOBS_INTERVAL)
+    await ensureOnlyRepeatableJob(queue, 'update-tips', {}, UPDATE_TIPS_JOB_SCHEDULE_INTERVAL * 1000)
+    await ensureOnlyRepeatableJob(queue, 'clean-old-jobs', {}, CLEAN_OLD_JOBS_INTERVAL * 1000)
+    await ensureOnlyRepeatableJob(queue, 'clean-failed-jobs', {}, CLEAN_FAILED_JOBS_INTERVAL * 1000)
 
     // Update queue size metric on a timer
-    setInterval(() => queue.count().then(count => queueSizeGauge.set(count)), 1000)
+    setInterval(
+        () =>
+            queue
+                .count()
+                .then(count => queueSizeGauge.set(count))
+                .catch(() => {}),
+        1000
+    )
 
     const app = express()
 
@@ -165,6 +185,17 @@ async function main(logger: Logger): Promise<void> {
     app.use(errorHandler(logger))
 
     app.listen(HTTP_PORT, () => logger.debug('listening', { port: HTTP_PORT }))
+}
+
+/**
+ * Move all db files in storage root to a subdirectory.
+ */
+async function moveDatabaseFilesToSubdir(): Promise<void> {
+    for (const filename of await fs.readdir(STORAGE_ROOT)) {
+        if (filename.endsWith('.db')) {
+            await fs.rename(path.join(STORAGE_ROOT, filename), path.join(STORAGE_ROOT, constants.DBS_DIR, filename))
+        }
+    }
 }
 
 /**
@@ -255,11 +286,12 @@ async function lsifEndpoints(
 
     // Create cross-repo database
     const connection = await createPostgresConnection(fetchConfiguration(), logger)
-    const xrepoDatabase = new XrepoDatabase(connection)
-
-    await ensureFilenamesAreIDs(connection)
-
+    const xrepoDatabase = new XrepoDatabase(STORAGE_ROOT, connection)
     const backend = new Backend(STORAGE_ROOT, xrepoDatabase, fetchConfiguration)
+
+    // Temporary migrations
+    await moveDatabaseFilesToSubdir() // TODO - remove after 3.12
+    await ensureFilenamesAreIDs(connection) // TODO - remove after 3.10
 
     /**
      * Create a tracing context from the request logger and tracing span
@@ -282,7 +314,7 @@ async function lsifEndpoints(
                 checkCommit(commit)
 
                 const ctx = createTracingContext(req, { repository, commit, root })
-                const filename = path.join(STORAGE_ROOT, 'uploads', uuid.v4())
+                const filename = path.join(STORAGE_ROOT, constants.UPLOADS_DIR, uuid.v4())
                 const output = fs.createWriteStream(filename)
 
                 try {
@@ -338,6 +370,7 @@ async function lsifEndpoints(
 
     router.post(
         '/exists',
+        bodyParser.json({ limit: '1mb' }),
         wrap(
             async (req: express.Request & { span?: Span }, res: express.Response): Promise<void> => {
                 const { repository, commit, file } = req.query
@@ -361,10 +394,51 @@ async function lsifEndpoints(
                 checkRepository(repository)
                 checkCommit(commit)
                 checkMethod(method, ['definitions', 'references', 'hover'])
-                const cleanMethod = method as 'definitions' | 'references' | 'hover'
 
                 const ctx = createTracingContext(req, { repository, commit })
-                res.json(await backend[cleanMethod](repository, commit, path, position, ctx))
+
+                switch (method) {
+                    case 'definitions':
+                        res.json(await backend.definitions(repository, commit, path, position, ctx))
+                        break
+
+                    case 'hover':
+                        res.json(await backend.hover(repository, commit, path, position, ctx))
+                        break
+
+                    case 'references': {
+                        const { cursor: cursorRaw } = req.query
+                        const limit = extractLimit(req, DEFAULT_REFERENCES_NUM_REMOTE_DUMPS)
+                        const startCursor = parseCursor<ReferencePaginationCursor>(cursorRaw)
+
+                        const { locations, cursor: endCursor } = await backend.references(
+                            repository,
+                            commit,
+                            path,
+                            position,
+                            { limit, cursor: startCursor },
+                            ctx
+                        )
+
+                        const encodedCursor = encodeCursor<ReferencePaginationCursor>(endCursor)
+                        if (!encodedCursor) {
+                            res.set('Link', nextLink(req, { limit, cursor: encodedCursor }))
+                        }
+
+                        res.json(locations)
+                        break
+                    }
+                }
+
+                res.json(
+                    await backend.definitions(
+                        repository,
+                        commit,
+                        path,
+                        position,
+                        createTracingContext(req, { repository, commit })
+                    )
+                )
             }
         )
     )
@@ -400,20 +474,6 @@ async function jobEndpoints(queue: Queue, logger: Logger): Promise<express.Route
             }
         )
     )
-
-    const limitOffset = (req: express.Request, defaultLimit: number): { limit: number; offset: number } => ({
-        limit: parseInt(req.query.limit, 10) || defaultLimit,
-        offset: parseInt(req.query.offset, 10) || 0,
-    })
-
-    const nextLink = (req: express.Request, params: { [K: string]: any }): string => {
-        const url = new URL(`${req.protocol}://${req.get('host')}${req.originalUrl}`)
-        for (const [key, value] of Object.entries(params)) {
-            url.searchParams.set(key, String(value))
-        }
-
-        return `<${url.href}>; rel="next"`
-    }
 
     router.get(
         `/jobs/:status(${Array.from(queueTypes.keys()).join('|')})`,
@@ -512,9 +572,9 @@ async function defineRedisCommands(client: Redis): Promise<ScriptedRedis> {
 /**
  * Throws an error with status 400 if the repository string is invalid.
  */
-export function checkRepository(repository: any): void {
+function checkRepository(repository: any): void {
     if (typeof repository !== 'string') {
-        throw Object.assign(new Error('Must specify the repository (usually of the form github.com/user/repo)'), {
+        throw Object.assign(new Error(`Must specify a repository ${repository}`), {
             status: 400,
         })
     }
@@ -523,7 +583,7 @@ export function checkRepository(repository: any): void {
 /**
  * Throws an error with status 400 if the commit string is invalid.
  */
-export function checkCommit(commit: any): void {
+function checkCommit(commit: any): void {
     if (typeof commit !== 'string' || commit.length !== 40 || !/^[0-9a-f]+$/.test(commit)) {
         throw Object.assign(new Error(`Must specify the commit as a 40 character hash ${commit}`), { status: 400 })
     }
@@ -532,7 +592,7 @@ export function checkCommit(commit: any): void {
 /**
  * Throws an error with status 400 if the file is not present.
  */
-export function checkFile(file: any): void {
+function checkFile(file: any): void {
     if (typeof file !== 'string') {
         throw Object.assign(new Error(`Must specify a file ${file}`), { status: 400 })
     }
@@ -547,6 +607,64 @@ export function checkMethod(method: string, supportedMethods: string[]): void {
             status: 422,
         })
     }
+}
+
+/**
+ * Extract a page limit from the request query string.
+ *
+ * @param req The HTTP request.
+ * @param defaultLimit The limit to use if one is not supplied.
+ */
+function extractLimit(req: express.Request, defaultLimit: number): number {
+    return parseInt(req.query.limit, 10) || defaultLimit
+}
+
+// TODO - this will conflict
+function limitOffset(req: express.Request, defaultLimit: number): { limit: number; offset: number } {
+    return {
+        limit: parseInt(req.query.limit, 10) || defaultLimit,
+        offset: parseInt(req.query.offset, 10) || 0,
+    }
+}
+
+/**
+ * Create a link header payload with a next link based on the previous endpoint.
+ *
+ * @param req The HTTP request.
+ * @param params The query params to overwrite.
+ */
+function nextLink(req: express.Request, params: { [K: string]: any }): string {
+    const url = new URL(`${req.protocol}://${req.get('host')}${req.originalUrl}`)
+    for (const [key, value] of Object.entries(params)) {
+        url.searchParams.set(key, String(value))
+    }
+
+    return `<${url.href}>; rel="next"`
+}
+
+/**
+ * Parse a base64-encoded JSON payload into the expected type.
+ *
+ * @param cursorRaw The raw cursor.
+ */
+function parseCursor<T>(cursorRaw: any): T | undefined {
+    if (cursorRaw === undefined) {
+        return undefined
+    }
+
+    try {
+        return JSON.parse(new Buffer(cursorRaw, 'base64').toString('ascii'))
+    } catch {
+        throw Object.assign(new Error(`Malformed cursor supplied ${cursorRaw}`), { status: 400 })
+    }
+}
+
+function encodeCursor<T>(cursor: T | undefined): string | undefined {
+    if (!cursor) {
+        return undefined
+    }
+
+    return new Buffer(JSON.stringify(cursor)).toString('base64')
 }
 
 // Initialize logger

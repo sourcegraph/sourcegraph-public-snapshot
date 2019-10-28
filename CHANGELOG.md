@@ -23,6 +23,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
+## 3.9.3
+
+### Changed
+
+- Sourcegraph is now built using Go 1.13.3 [#6200](https://github.com/sourcegraph/sourcegraph/pull/6200).
+
 ## 3.9.2
 
 ### Fixed
