@@ -1,9 +1,8 @@
-import * as fs from 'mz/fs'
 import rmfr from 'rmfr'
 import { Backend, ReferencePaginationContext } from './backend'
 import { Configuration } from './config'
 import { Connection } from 'typeorm'
-import { convertTestData, createCleanPostgresDatabase, createCommit } from './test-utils'
+import { convertTestData, createCleanPostgresDatabase, createCommit, createStorageRoot } from './test-utils'
 import { XrepoDatabase } from './xrepo'
 import { lsp } from 'lsif-protocol'
 
@@ -16,8 +15,8 @@ describe('Database', () => {
 
     beforeAll(async () => {
         ;({ connection, cleanup } = await createCleanPostgresDatabase())
-        storageRoot = await fs.mkdtemp('typescript-', { encoding: 'utf8' })
-        xrepoDatabase = new XrepoDatabase(connection)
+        storageRoot = await createStorageRoot('typescript')
+        xrepoDatabase = new XrepoDatabase(storageRoot, connection)
         backend = new Backend(storageRoot, xrepoDatabase, () => ({} as Configuration))
 
         // Prepare test data
