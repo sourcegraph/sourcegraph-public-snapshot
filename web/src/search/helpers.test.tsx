@@ -130,12 +130,12 @@ describe('search/helpers', () => {
         describe('insertSuggestionInQuery()', () => {
             describe('inserts suggestions for a filter name', () => {
                 const suggestion = getFilterSuggestionStartingWithR().filter(({ title }) => title === 'repo')[0]
-                const [newQuery] = insertSuggestionInQuery('test r test', suggestion, 6)
+                const { query: newQuery } = insertSuggestionInQuery('test r test', suggestion, 6)
                 expect(newQuery).toBe(`test ${suggestion.title}: test`)
             })
             test('inserts suggestion for a filter value', () => {
                 const [suggestion] = getArchivedSuggestions()
-                const [newQuery] = insertSuggestionInQuery('test archived: test', suggestion, 14)
+                const { query: newQuery } = insertSuggestionInQuery('test archived: test', suggestion, 14)
                 expect(newQuery).toBe(`test archived:${suggestion.title} test`)
             })
         })

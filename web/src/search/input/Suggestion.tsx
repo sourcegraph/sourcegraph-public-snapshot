@@ -2,6 +2,7 @@ import * as React from 'react'
 import { RepositoryIcon } from '../../../../shared/src/components/icons' // TODO: Switch to mdi icon
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { SymbolIcon } from '../../../../shared/src/symbols/SymbolIcon'
+import { LanguageIcon } from '../../../../shared/src/components/languageIcons'
 
 export enum SuggestionTypes {
     filters = 'filters',
@@ -36,6 +37,8 @@ const SuggestionIcon: React.FunctionComponent<SuggestionIconProps> = ({ suggesti
             return <RepositoryIcon {...passThru} />
         case SuggestionTypes.file:
             return <SymbolIcon kind={GQL.SymbolKind.FILE} {...passThru} />
+        case SuggestionTypes.lang:
+            return <LanguageIcon language={suggestion.title} {...passThru} />
         default:
             return null // TODO: handle lang suggestions in RFC 14 frontend PR.
     }

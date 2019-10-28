@@ -12,12 +12,13 @@ export type SearchFilterSuggestions = Record<
     }
 >
 
-type PartialSearchFilterSuggestions = {
-    [x in SuggestionTypes]: {
+type PartialSearchFilterSuggestions = Record<
+    SuggestionTypes,
+    {
         default?: string
         values: Omit<Suggestion, 'type'>[]
     }
-}
+>
 
 export const addTypeToSuggestions = (suggestions: PartialSearchFilterSuggestions): SearchFilterSuggestions =>
     Object.keys(suggestions).reduce<SearchFilterSuggestions>(

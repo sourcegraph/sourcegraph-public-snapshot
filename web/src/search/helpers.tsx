@@ -4,9 +4,8 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { eventLogger } from '../tracking/eventLogger'
 import { SearchType } from './results/SearchResults'
-import { Suggestion, SuggestionTypes } from './input/Suggestion'
 import { SearchFilterSuggestions, filterAliases } from './getSearchFilterSuggestions'
-import { QueryCursorPair } from './input/QueryInput'
+import { Suggestion, SuggestionTypes } from './input/Suggestion'
 
 /**
  * @param activation If set, records the DidSearch activation event for the new user activation
@@ -150,8 +149,10 @@ export const toggleSearchFilterAndReplaceSampleRepogroup = (query: string, searc
     return newQuery
 }
 
-const isValidFilter = (s: string): s is SuggestionTypes => s in SuggestionTypes
-const isValidFilterAlias = (s: string): s is keyof typeof filterAliases => s in filterAliases
+const isValidFilter = (filter: string): filter is SuggestionTypes =>
+    Object.prototype.hasOwnProperty.call(SuggestionTypes, filter)
+const isValidFilterAlias = (alias: string): alias is keyof typeof filterAliases =>
+    Object.prototype.hasOwnProperty.call(filterAliases, alias)
 
 /**
  * Returns suggestions for a given search query but only at the last typed word.
@@ -170,18 +171,22 @@ export const filterSearchSuggestions = (
 ): Suggestion[] => {
     const textUntilCursor = query.substring(0, cursorPosition)
     const [lastWord] = textUntilCursor.match(/([^\s]+)$/) || ['']
-    const [_filter, valueSearch] = lastWord.replace(/^-/, '').split(':')
-    const filter = isValidFilterAlias(_filter) ? filterAliases[_filter] : _filter
+    const [filterQuery, valueQuery] = lastWord.replace(/^-/, '').split(':')
+    const resolvedFilter = isValidFilterAlias(filterQuery) ? filterAliases[filterQuery] : filterQuery
 
-    if (isValidFilter(filter) && filter !== SuggestionTypes.filters && (valueSearch || lastWord.endsWith(':'))) {
-        const suggestionsToShow = filterSuggestions[filter] || []
+    if (
+        isValidFilter(resolvedFilter) &&
+        resolvedFilter !== SuggestionTypes.filters &&
+        (valueQuery || lastWord.endsWith(':'))
+    ) {
+        const suggestionsToShow = filterSuggestions[resolvedFilter] || []
         return suggestionsToShow.values.filter(
-            suggestion => suggestion.title.slice(0, valueSearch.length) === valueSearch
+            suggestion => suggestion.title.slice(0, valueQuery.length) === valueQuery
         )
     }
 
     return filterSuggestions.filters.values
-        .filter(({ title }) => title.slice(0, filter.length) === filter)
+        .filter(({ title }) => title.slice(0, resolvedFilter.length) === resolvedFilter)
         .map(suggestion => ({
             ...suggestion,
             type: SuggestionTypes.filters,
@@ -189,6 +194,15 @@ export const filterSearchSuggestions = (
 }
 
 const SUGGESTION_FILTER_SEPARATOR = ':'
+
+/**
+ * The search query and cursor position of when the last character was inserted.
+ * Cursor position is used to correctly insert the suggestion when it's selected.
+ */
+export interface QueryCursorPair {
+    query: string
+    cursorPosition: number
+}
 
 /**
  * Adds suggestions value to search query where cursor was positioned.
@@ -212,7 +226,8 @@ export const insertSuggestionInQuery = (
         suggestion.title +
         (!isValueSuggestion ? SUGGESTION_FILTER_SEPARATOR : '')
 
-    const newValue = newFirstPart + lastPart
-    const newCursorPosition = newFirstPart.length
-    return [newValue, newCursorPosition]
+    return {
+        query: newFirstPart + lastPart,
+        cursorPosition: newFirstPart.length,
+    }
 }

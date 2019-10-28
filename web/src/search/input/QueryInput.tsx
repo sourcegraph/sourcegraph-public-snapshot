@@ -11,7 +11,7 @@ import { PatternTypeProps } from '..'
 import Downshift from 'downshift'
 import { getSearchFilterSuggestions, SearchFilterSuggestions } from '../getSearchFilterSuggestions'
 import { Key } from 'ts-key-enum'
-import { filterSearchSuggestions, insertSuggestionInQuery } from '../helpers'
+import { QueryCursorPair, filterSearchSuggestions, insertSuggestionInQuery } from '../helpers'
 
 /**
  * The query input field is clobbered and updated to contain this subject's values, as
@@ -67,15 +67,6 @@ interface State {
     cursorPosition: number
 }
 
-/**
- * The search query and cursor position of when the last character was inserted.
- * Cursor position is used to correctly insert the suggestion when it's selected.
- */
-export type QueryCursorPair = [string, number]
-
-// TODO: format suggestion with createSuggestion
-// TODO: check outside click listener to hide suggestions
-// TODO: check something that was removed, compare code
 export class QueryInput extends React.Component<Props, State> {
     private componentUpdates = new Subject<Props>()
 
@@ -89,10 +80,10 @@ export class QueryInput extends React.Component<Props, State> {
     private suggestionsHidden = new Subject<void>()
 
     /** Only used for selection and focus management */
-    private inputElement?: HTMLInputElement
+    private inputElement: React.RefObject<HTMLInputElement> = React.createRef()
 
     /** Used for scrolling suggestions into view while scrolling with keyboard */
-    private containerElement?: HTMLDivElement
+    private containerElement: React.RefObject<HTMLDivElement> = React.createRef()
 
     /** Only used to keep track if the user has typed a single character into the input field so we can log an event once. */
     private hasLoggedFirstInput = false
@@ -113,7 +104,7 @@ export class QueryInput extends React.Component<Props, State> {
             // Trigger new suggestions every time the input field is typed into
             this.inputValues
                 .pipe(
-                    tap(([query]) => this.props.onChange(query)),
+                    tap(({ query }) => this.props.onChange(query)),
                     distinctUntilChanged(),
                     debounceTime(200),
                     // Abort suggestion display on route change or suggestion hiding
@@ -122,8 +113,7 @@ export class QueryInput extends React.Component<Props, State> {
                     repeat()
                 )
                 .subscribe(queryCursorPair => {
-                    this.setState(state => ({
-                        ...state,
+                    this.setState(() => ({
                         suggestions: this.getSuggestions(queryCursorPair),
                     }))
                 }, console.error.bind(console))
@@ -146,10 +136,10 @@ export class QueryInput extends React.Component<Props, State> {
                     )
                     .subscribe(() => {
                         this.props.onChange(String(window.getSelection() || ''))
-                        if (this.inputElement) {
-                            this.inputElement.focus()
+                        if (this.inputElement.current) {
+                            this.inputElement.current.focus()
                             // Select whole input text
-                            this.inputElement.setSelectionRange(0, this.inputElement.value.length)
+                            this.inputElement.current.setSelectionRange(0, this.inputElement.current.value.length)
                         }
                     })
             )
@@ -178,7 +168,7 @@ export class QueryInput extends React.Component<Props, State> {
 
         this.subscriptions.add(
             fromEvent<MouseEvent>(window, 'click').subscribe(event => {
-                if (!this.containerElement || !this.containerElement.contains(event.target as Node)) {
+                if (!this.containerElement.current || !this.containerElement.current.contains(event.target as Node)) {
                     this.hideSuggestions()
                 }
             })
@@ -186,7 +176,7 @@ export class QueryInput extends React.Component<Props, State> {
 
         this.subscriptions.add(
             getSearchFilterSuggestions().subscribe(searchFilterSuggestions =>
-                this.setState({ searchFilterSuggestions })
+                this.setState(() => ({ searchFilterSuggestions }))
             )
         )
     }
@@ -211,7 +201,7 @@ export class QueryInput extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const showSuggestions = !!this.state.suggestions.values.length
+        const showSuggestions = this.state.suggestions.values.length > 0
 
         return (
             <Downshift
@@ -223,7 +213,7 @@ export class QueryInput extends React.Component<Props, State> {
                     const { onChange: downshiftChange, onKeyDown } = getInputProps()
                     return (
                         <div className="query-input2">
-                            <div ref={ref => (this.containerElement = ref!)}>
+                            <div ref={this.containerElement}>
                                 <input
                                     className="form-control query-input2__input rounded-left e2e-query-input"
                                     value={this.props.value}
@@ -241,7 +231,7 @@ export class QueryInput extends React.Component<Props, State> {
                                     placeholder={
                                         this.props.placeholder === undefined ? 'Search code...' : this.props.placeholder
                                     }
-                                    ref={ref => (this.inputElement = ref!)}
+                                    ref={this.inputElement}
                                     name="query"
                                     autoComplete="off"
                                 />
@@ -287,11 +277,13 @@ export class QueryInput extends React.Component<Props, State> {
     private onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
         // ArrowDown to show all available suggestions
         if (!this.props.value && event.key === Key.ArrowDown) {
-            this.setState({ suggestions: this.getSuggestions() })
+            this.setState(() => ({ suggestions: this.getSuggestions() }))
         }
     }
 
-    private getSuggestions = ([query, cursorPosition]: [string, number] = ['', 0]): ComponentSuggestions => {
+    private getSuggestions = (
+        { query, cursorPosition }: QueryCursorPair = { query: '', cursorPosition: 0 }
+    ): ComponentSuggestions => {
         const { searchFilterSuggestions } = this.state
         return {
             cursorPosition,
@@ -303,7 +295,7 @@ export class QueryInput extends React.Component<Props, State> {
 
     private hideSuggestions = () => {
         this.suggestionsHidden.next()
-        this.setState({ suggestions: { values: [], cursorPosition: 0 } })
+        this.setState(() => ({ suggestions: { values: [], cursorPosition: 0 } }))
     }
 
     private onSuggestionSelect = (suggestion: Suggestion | undefined) => {
@@ -323,31 +315,35 @@ export class QueryInput extends React.Component<Props, State> {
 
         const { cursorPosition } = this.state.suggestions
         const isValueSuggestion = suggestion.type !== SuggestionTypes.filters
-        const [newQuery, newCursorPosition] = insertSuggestionInQuery(this.props.value, suggestion, cursorPosition)
+        const { query: newQuery, cursorPosition: newCursorPosition } = insertSuggestionInQuery(
+            this.props.value,
+            suggestion,
+            cursorPosition
+        )
 
         this.props.onChange(newQuery)
-        this.setState({ cursorPosition: newCursorPosition })
+        this.setState(() => ({ cursorPosition: newCursorPosition }))
 
         if (isValueSuggestion) {
             this.hideSuggestions()
         } else {
-            this.setState({
+            this.setState(() => ({
                 cursorPosition: newCursorPosition,
-                suggestions: this.getSuggestions([newQuery, newCursorPosition]),
-            })
+                suggestions: this.getSuggestions({ query: newQuery, cursorPosition: newCursorPosition }),
+            }))
         }
     }
 
     private focusInputAndPositionCursor(cursorPosition: number): void {
-        if (this.inputElement) {
-            this.inputElement.focus()
-            this.inputElement.setSelectionRange(cursorPosition, cursorPosition)
+        if (this.inputElement.current) {
+            this.inputElement.current.focus()
+            this.inputElement.current.setSelectionRange(cursorPosition, cursorPosition)
         }
     }
 
     private focusInputAndPositionCursorAtEnd(): void {
-        if (this.inputElement) {
-            this.focusInputAndPositionCursor(this.inputElement.value.length)
+        if (this.inputElement.current) {
+            this.focusInputAndPositionCursor(this.inputElement.current.value.length)
         }
     }
 
@@ -356,6 +352,9 @@ export class QueryInput extends React.Component<Props, State> {
             eventLogger.log('SearchInitiated')
             this.hasLoggedFirstInput = true
         }
-        this.inputValues.next([event.currentTarget.value, event.currentTarget.selectionStart || 0])
+        this.inputValues.next({
+            query: event.currentTarget.value,
+            cursorPosition: event.currentTarget.selectionStart || 0,
+        })
     }
 }
