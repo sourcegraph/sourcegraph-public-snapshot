@@ -234,7 +234,7 @@ async function main(logger: Logger): Promise<void> {
     startMetricsServer(logger)
 
     // Create queue to poll for jobs
-    const queue = createQueue('lsif', REDIS_ENDPOINT, logger)
+    const queue = createQueue(REDIS_ENDPOINT, logger)
 
     const convertJobProcessor = wrapJobProcessor(
         'convert',

@@ -7,6 +7,7 @@ import onFinished from 'on-finished'
 import promClient from 'prom-client'
 import uuid from 'uuid'
 import { httpUploadDurationHistogram, httpQueryDurationHistogram, queueSizeGauge } from './server.metrics'
+import { chunk } from 'lodash'
 import {
     connectionCacheCapacityGauge,
     documentCacheCapacityGauge,
@@ -28,10 +29,13 @@ import { Span, Tracer } from 'opentracing'
 import { default as tracingMiddleware } from 'express-opentracing'
 import { waitForConfiguration } from './config'
 import { createLogger } from './logging'
-import { enqueue, createQueue, ensureOnlyRepeatableJob } from './queue'
+import { enqueue, createQueue, ensureOnlyRepeatableJob, queueTypes, QUEUE_PREFIX } from './queue'
 import { Connection } from 'typeorm'
 import { LsifDump } from './xrepo.models'
 import * as constants from './constants'
+import pTimeout from 'p-timeout'
+import { formatJob, formatJobFromMap } from './api-job'
+import { Redis } from 'ioredis'
 import * as settings from './settings'
 
 const pipeline = promisify(_pipeline)
@@ -77,6 +81,16 @@ const DEFAULT_REFERENCES_NUM_REMOTE_DUMPS = 10
  * The interval (in seconds) to schedule the clean-failed-jobs job.
  */
 const CLEAN_FAILED_JOBS_INTERVAL = readEnvInt('CLEAN_FAILED_JOBS_INTERVAL', 60 * 60 * 8)
+
+/**
+ * The default page size for the job endpoints.
+ */
+const DEFAULT_JOB_PAGE_SIZE = readEnvInt('DEFAULT_JOB_PAGE_SIZE', 50)
+
+/**
+ * The maximum number of jobs to search in one call to the search-jobs.lua script.
+ */
+export const MAX_JOB_SEARCH = readEnvInt('MAX_JOB_SEARCH', 10000)
 
 /**
  * The default page size for the dumps endpoint.
@@ -142,7 +156,7 @@ async function main(logger: Logger): Promise<void> {
     await ensureFilenamesAreIDs(connection) // TODO - remove after 3.10
 
     // Create queue to publish convert
-    const queue = createQueue('lsif', REDIS_ENDPOINT, logger)
+    const queue = createQueue(REDIS_ENDPOINT, logger)
 
     // Schedule jobs on timers
     await ensureOnlyRepeatableJob(queue, 'update-tips', {}, UPDATE_TIPS_JOB_SCHEDULE_INTERVAL * 1000)
@@ -158,6 +172,9 @@ async function main(logger: Logger): Promise<void> {
                 .catch(() => {}),
         1000
     )
+
+    // Register the required commands on the queue's Redis client
+    const scriptedClient = await defineRedisCommands(queue.client)
 
     const app = express()
 
@@ -180,6 +197,7 @@ async function main(logger: Logger): Promise<void> {
     app.use(metaEndpoints())
     app.use(lsifEndpoints(backend, queue, logger, tracer))
     app.use(dumpEndpoints(backend, logger, tracer))
+    app.use(jobEndpoints(queue, scriptedClient, logger, tracer))
 
     // Error handler must be registered last
     app.use(errorHandler(logger))
@@ -282,9 +300,10 @@ function lsifEndpoints(backend: Backend, queue: Queue, logger: Logger, tracer: T
     router.post(
         '/upload',
         wrap(
-            async (req: express.Request, res: express.Response): Promise<void> => {
-                const { repository, commit, root, skipValidation: skipValidationRaw } = req.query
+            async (req: express.Request & { span?: Span }, res: express.Response): Promise<void> => {
+                const { repository, commit, root, skipValidation: skipValidationRaw, blocking, maxWait } = req.query
                 const skipValidation = skipValidationRaw === 'true'
+                const timeout = parseInt(maxWait, 10) || 0
                 checkRepository(repository)
                 checkCommit(commit)
 
@@ -310,8 +329,35 @@ function lsifEndpoints(backend: Backend, queue: Queue, logger: Logger, tracer: T
                 // Enqueue convert job
                 logger.debug('enqueueing convert job', { repository, commit, root })
                 const args = { repository, commit, root: root || '', filename }
-                await enqueue(queue, 'convert', args, {}, tracer, ctx.span)
-                res.send('Upload successful, queued for processing.\n')
+                const job = await enqueue(queue, 'convert', args, {}, tracer, ctx.span)
+
+                if (blocking) {
+                    let promise = job.finished()
+                    if (timeout >= 0) {
+                        promise = pTimeout(promise, timeout * 1000)
+                    }
+
+                    try {
+                        await promise
+
+                        // Job succeeded while blocked, send success
+                        res.status(200)
+                        res.send({ id: job.id })
+                        return
+                    } catch (error) {
+                        // Throw the job error, but not the timeout error
+                        if (!error.message.includes('Promise timed out')) {
+                            throw error
+                        }
+                    }
+                }
+
+                // Job will complete asynchronously, send a 202: Accepted with
+                // the job id so that the client can continue to track the progress
+                // asynchronously.
+
+                res.status(202)
+                res.send({ id: job.id })
             }
         )
     )
@@ -431,6 +477,133 @@ function dumpEndpoints(backend: Backend, logger: Logger, tracer: Tracer | undefi
 }
 
 /**
+ * Create a router containing the job endpoints.
+ *
+ * @param queue The queue instance.
+ * @param scriptedClient The Redis client with scripts loaded.
+ * @param logger The logger instance.
+ * @param tracer The tracer instance.
+ */
+function jobEndpoints(
+    queue: Queue,
+    scriptedClient: ScriptedRedis,
+    logger: Logger,
+    tracer: Tracer | undefined
+): express.Router {
+    const router = express.Router()
+
+    router.get(
+        '/jobs/stats',
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const counts = await queue.getJobCounts()
+
+                res.send({
+                    active: counts.active,
+                    queued: counts.waiting,
+                    scheduled: counts.delayed,
+                    completed: counts.completed,
+                    failed: counts.failed,
+                })
+            }
+        )
+    )
+
+    router.get(
+        `/jobs/:status(${Array.from(queueTypes.keys()).join('|')})`,
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const { status } = req.params
+                const { search } = req.query
+                const { limit, offset } = limitOffset(req, DEFAULT_JOB_PAGE_SIZE)
+
+                const queueName = queueTypes.get(status)
+                if (!queueName) {
+                    throw new Error(`Unknown job status ${status}`)
+                }
+
+                if (!search) {
+                    const rawJobs = await queue.getJobs([queueName], offset, offset + limit - 1)
+                    const jobs = rawJobs.map(job => formatJob(job, status))
+                    const totalCount = (await queue.getJobCountByTypes([queueName])) as never
+
+                    if (offset + jobs.length < totalCount) {
+                        res.set('Link', nextLink(req, { limit, offset: offset + jobs.length }))
+                    }
+
+                    res.send({ jobs, totalCount })
+                } else {
+                    const [payloads, nextOffset] = await scriptedClient.searchJobs([
+                        QUEUE_PREFIX,
+                        queueName,
+                        search,
+                        offset,
+                        limit,
+                        MAX_JOB_SEARCH,
+                    ])
+
+                    const jobs = payloads
+                        // Convert each hgetall response into a map
+                        .map(payload => new Map(chunk(payload, 2) as [string, string][]))
+                        // Format each job
+                        .map(payload => formatJobFromMap(payload, status))
+
+                    if (nextOffset) {
+                        res.set('Link', nextLink(req, { limit, offset: nextOffset }))
+                    }
+
+                    res.send({ jobs })
+                }
+            }
+        )
+    )
+
+    router.get(
+        '/jobs/:id',
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const job = await queue.getJob(req.params.id)
+                if (!job) {
+                    throw Object.assign(new Error('Job not found'), {
+                        status: 404,
+                    })
+                }
+
+                res.send(formatJob(job, await job.getState()))
+            }
+        )
+    )
+
+    return router
+}
+
+/**
+ * The type of the Redis client with additional script commands defined.
+ */
+type ScriptedRedis = Redis & {
+    // runs ./search-jobs.lua
+    searchJobs: (args: (string | number | boolean)[]) => Promise<[string[][], number | null]>
+}
+
+/**
+ * Registers the search-jobs.lua script in the given Redis instance. This function
+ * returns the same redis client with additional methods attached.
+ *
+ * @param client The redis client.
+ */
+async function defineRedisCommands(client: Redis): Promise<ScriptedRedis> {
+    client.defineCommand('searchJobs', {
+        numberOfKeys: 2,
+        lua: (await fs.readFile(`${__dirname}/search-jobs.lua`)).toString(),
+    })
+
+    // The defineCommand method on the client dynamically defines a new method, but
+    // the type system doesn't know that. We need to do a dumb cast here. This only
+    // requires us to know the return type of the script.
+    return client as ScriptedRedis
+}
+
+/**
  * Throws an error with status 400 if the repository string is invalid.
  */
 function checkRepository(repository: any): void {
@@ -462,7 +635,7 @@ function checkFile(file: any): void {
 /**
  * Throws an error with status 422 if the requested method is not supported.
  */
-export function checkMethod(method: string, supportedMethods: string[]): void {
+function checkMethod(method: string, supportedMethods: string[]): void {
     if (!supportedMethods.includes(method)) {
         throw Object.assign(new Error(`Method must be one of ${Array.from(supportedMethods).join(', ')}`), {
             status: 422,
