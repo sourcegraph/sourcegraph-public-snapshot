@@ -106,7 +106,6 @@ export class XrepoDatabase {
                 .orderBy('uploaded_at')
                 .limit(limit)
                 .offset(offset)
-                .getManyAndCount()
 
             if (query) {
                 queryBuilder = queryBuilder.andWhere(
