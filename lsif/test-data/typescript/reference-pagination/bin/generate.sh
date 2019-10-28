@@ -8,10 +8,9 @@ trap '{ rm -r ./repos; }' EXIT
 # Generate math-util
 DIR=./repos REPO=a ./bin/generate-a.sh
 
-for i in `seq 1 3`; do
-    # Generate dependencies
+for i in `seq 1 10`; do
+    # Generate remote uses
     DIR=./repos REPO="b${i}" DEP=`pwd`/repos/a ./bin/generate-b.sh
-    DIR=./repos REPO="c${i}" DEP=`pwd`/repos/a ./bin/generate-c.sh
 done
 
 mkdir -p data

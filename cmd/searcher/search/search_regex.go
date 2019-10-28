@@ -306,10 +306,10 @@ func (rg *readerGrep) FindZip(zf *store.ZipFile, f *store.SrcFile) (protocol.Fil
 	}, err
 }
 
-// concurrentFind searches files in zr looking for matches using rg.
-func concurrentFind(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMatchLimit int, patternMatchesContent, patternMatchesPaths bool) (fm []protocol.FileMatch, limitHit bool, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "ConcurrentFind")
-	ext.Component.Set(span, "matcher")
+// regexSearch concurrently searches files in zr looking for matches using rg.
+func regexSearch(ctx context.Context, rg *readerGrep, zf *store.ZipFile, fileMatchLimit int, patternMatchesContent, patternMatchesPaths bool) (fm []protocol.FileMatch, limitHit bool, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "RegexSearch")
+	ext.Component.Set(span, "regex_search")
 	if rg.re != nil {
 		span.SetTag("re", rg.re.String())
 	}
@@ -335,7 +335,7 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zf *store.ZipFile, file
 	if deadline, ok := ctx.Deadline(); ok {
 		// If a deadline is set, try to finish before the deadline expires.
 		timeout := time.Duration(0.9 * float64(time.Until(deadline)))
-		span.LogFields(otlog.Int64("concurrentFindTimeout", int64(timeout)))
+		span.LogFields(otlog.Int64("RegexSearchTimeout", int64(timeout)))
 		ctx, cancel = context.WithTimeout(ctx, timeout)
 	} else {
 		ctx, cancel = context.WithCancel(ctx)

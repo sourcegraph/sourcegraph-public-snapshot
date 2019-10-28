@@ -73,11 +73,13 @@ describe('Database', () => {
     })
 
     it('should find all refs of `mul` from repo a', async () => {
-        // TODO - (FIXME) why are these garbage results in the index
-        const references = (await backend.references('a', createCommit('a'), 'src/index.ts', {
+        const { locations } = await backend.references('a', createCommit('a'), 'src/index.ts', {
             line: 4,
             character: 19,
-        }))!.filter(l => !l.uri.includes('node_modules'))
+        })
+
+        // TODO - (FIXME) why are these garbage results in the index
+        const references = locations.filter(l => !l.uri.includes('node_modules'))
 
         // TODO - should the definition be in this result set?
         expect(references).toContainEqual(createLocation('src/index.ts', 4, 16, 4, 19)) // def
@@ -96,11 +98,13 @@ describe('Database', () => {
     })
 
     it('should find all refs of `mul` from repo b1', async () => {
-        // TODO - (FIXME) why are these garbage results in the index
-        const references = (await backend.references('b1', createCommit('b1'), 'src/index.ts', {
+        const { locations } = await backend.references('b1', createCommit('b1'), 'src/index.ts', {
             line: 3,
             character: 16,
-        }))!.filter(l => !l.uri.includes('node_modules'))
+        })
+
+        // TODO - (FIXME) why are these garbage results in the index
+        const references = locations.filter(l => !l.uri.includes('node_modules'))
 
         // TODO - should the definition be in this result set?
         expect(references).toContainEqual(createRemoteLocation('a', 'src/index.ts', 4, 16, 4, 19)) // def
@@ -119,11 +123,13 @@ describe('Database', () => {
     })
 
     it('should find all refs of `add` from repo a', async () => {
-        // TODO - (FIXME) why are these garbage results in the index
-        const references = (await backend.references('a', createCommit('a'), 'src/index.ts', {
+        const { locations } = await backend.references('a', createCommit('a'), 'src/index.ts', {
             line: 0,
             character: 17,
-        }))!.filter(l => !l.uri.includes('node_modules'))
+        })
+
+        // TODO - (FIXME) why are these garbage results in the index
+        const references = locations.filter(l => !l.uri.includes('node_modules'))
 
         // TODO - should the definition be in this result set?
         expect(references).toContainEqual(createLocation('src/index.ts', 0, 16, 0, 19)) // def
@@ -152,11 +158,13 @@ describe('Database', () => {
     })
 
     it('should find all refs of `add` from repo c1', async () => {
-        // TODO - (FIXME) why are these garbage results in the index
-        const references = (await backend.references('c1', createCommit('c1'), 'src/index.ts', {
+        const { locations } = await backend.references('c1', createCommit('c1'), 'src/index.ts', {
             line: 3,
             character: 16,
-        }))!.filter(l => !l.uri.includes('node_modules'))
+        })
+
+        // TODO - (FIXME) why are these garbage results in the index
+        const references = locations.filter(l => !l.uri.includes('node_modules'))
 
         // TODO - should the definition be in this result set?
         expect(references).toContainEqual(createRemoteLocation('a', 'src/index.ts', 0, 16, 0, 19)) // def
