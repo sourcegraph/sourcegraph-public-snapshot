@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"text/template"
@@ -60,21 +61,33 @@ func maybeRedisProcFile(c redisProcfileConfig) (string, error) {
 }
 
 func tryCreateRedisConf(c redisProcfileConfig) (string, error) {
+	dataDir := filepath.Join(os.Getenv("DATA_DIR"), c.dataDir)
+	err := os.MkdirAll(dataDir, os.FileMode(0755))
+	if err != nil {
+		return "", err
+	}
+
+	// Best-effort repair AOF in case it is corrupted
+	// https://github.com/sourcegraph/sourcegraph/issues/651
+	aofPath := filepath.Join(dataDir, "appendonly.aof")
+	if _, err = os.Stat(aofPath); err == nil {
+		var output bytes.Buffer
+		e := execer{Out: &output}
+		e.Command("redis-check-aof", "--fix", aofPath)
+		if err := e.Error(); err != nil {
+			l("Repairing %s appendonly.aof failed:\n%s", c.name, output.String())
+		}
+	}
+
 	// Create a redis.conf if it doesn't exist
 	path := filepath.Join(os.Getenv("CONFIG_DIR"), c.name+".conf")
 
-	_, err := os.Stat(path)
+	_, err = os.Stat(path)
 	if err == nil {
 		return path, nil
 	}
 
 	if !os.IsNotExist(err) {
-		return "", err
-	}
-
-	dataDir := filepath.Join(os.Getenv("DATA_DIR"), c.dataDir)
-	err = os.MkdirAll(dataDir, os.FileMode(0755))
-	if err != nil {
 		return "", err
 	}
 
