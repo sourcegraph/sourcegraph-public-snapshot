@@ -132,6 +132,15 @@ async function main(logger: Logger): Promise<void> {
     await ensureDirectory(path.join(STORAGE_ROOT, constants.TEMP_DIR))
     await ensureDirectory(path.join(STORAGE_ROOT, constants.UPLOADS_DIR))
 
+    // Create cross-repo database
+    const connection = await createPostgresConnection(fetchConfiguration(), logger)
+    const xrepoDatabase = new XrepoDatabase(STORAGE_ROOT, connection)
+    const backend = new Backend(STORAGE_ROOT, xrepoDatabase, fetchConfiguration)
+
+    // Temporary migrations
+    await moveDatabaseFilesToSubdir() // TODO - remove after 3.12
+    await ensureFilenamesAreIDs(connection) // TODO - remove after 3.10
+
     // Create queue to publish convert
     const queue = createQueue('lsif', REDIS_ENDPOINT, logger)
 
@@ -169,7 +178,8 @@ async function main(logger: Logger): Promise<void> {
 
     // Register endpoints
     app.use(metaEndpoints())
-    app.use(await lsifEndpoints(queue, fetchConfiguration, logger, tracer))
+    app.use(lsifEndpoints(backend, queue, logger, tracer))
+    app.use(dumpEndpoints(backend, logger, tracer))
 
     // Error handler must be registered last
     app.use(errorHandler(logger))
@@ -261,37 +271,13 @@ function metaEndpoints(): express.Router {
 /**
  * Create a router containing the LSIF upload and query endpoints.
  *
+ * @param backend The backend instance.
  * @param queue The queue containing LSIF jobs.
- * @param fetchConfiguration A function that returns the current configuration.
  * @param logger The logger instance.
  * @param tracer The tracer instance.
  */
-async function lsifEndpoints(
-    queue: Queue,
-    fetchConfiguration: ConfigurationFetcher,
-    logger: Logger,
-    tracer: Tracer | undefined
-): Promise<express.Router> {
+function lsifEndpoints(backend: Backend, queue: Queue, logger: Logger, tracer: Tracer | undefined): express.Router {
     const router = express.Router()
-
-    // Create cross-repo database
-    const connection = await createPostgresConnection(fetchConfiguration(), logger)
-    const xrepoDatabase = new XrepoDatabase(STORAGE_ROOT, connection)
-    const backend = new Backend(STORAGE_ROOT, xrepoDatabase, fetchConfiguration)
-
-    // Temporary migrations
-    await moveDatabaseFilesToSubdir() // TODO - remove after 3.12
-    await ensureFilenamesAreIDs(connection) // TODO - remove after 3.10
-
-    /**
-     * Create a tracing context from the request logger and tracing span
-     * tagged with the given values.
-     *
-     * @param req The express request.
-     * @param tags The tags to apply to the logger and span.
-     */
-    const createTracingContext = (req: express.Request & { span?: Span }, tags: { [K: string]: any }): TracingContext =>
-        addTags({ logger, span: req.span }, tags)
 
     router.post(
         '/upload',
@@ -302,7 +288,7 @@ async function lsifEndpoints(
                 checkRepository(repository)
                 checkCommit(commit)
 
-                const ctx = createTracingContext(req, { repository, commit, root })
+                const ctx = createTracingContext(logger, req, { repository, commit, root })
                 const filename = path.join(STORAGE_ROOT, constants.UPLOADS_DIR, uuid.v4())
                 const output = fs.createWriteStream(filename)
 
@@ -330,53 +316,6 @@ async function lsifEndpoints(
         )
     )
 
-    const limitOffset = (req: express.Request, defaultLimit: number): { limit: number; offset: number } => ({
-        limit: parseInt(req.query.limit, 10) || defaultLimit,
-        offset: parseInt(req.query.offset, 10) || 0,
-    })
-
-    const nextLink = (req: express.Request, params: { [K: string]: any }): string => {
-        const url = new URL(`${req.protocol}://${req.get('host')}${req.originalUrl}`)
-        for (const [key, value] of Object.entries(params)) {
-            url.searchParams.set(key, String(value))
-        }
-
-        return `<${url.href}>; rel="next"`
-    }
-
-    router.get(
-        '/dumps/:repository',
-        wrap(
-            async (req: express.Request, res: express.Response): Promise<void> => {
-                const { repository } = req.params
-                const { query } = req.query
-                const { limit, offset } = limitOffset(req, DEFAULT_DUMP_PAGE_SIZE)
-                const { dumps, totalCount } = await backend.dumps(repository, query, limit, offset)
-
-                if (offset + dumps.length < totalCount) {
-                    res.set('Link', nextLink(req, { limit, offset: offset + dumps.length }))
-                }
-
-                res.json({ dumps, totalCount })
-            }
-        )
-    )
-
-    router.get(
-        '/dumps/:repository/:id',
-        wrap(
-            async (req: express.Request, res: express.Response): Promise<void> => {
-                const { repository, id } = req.params
-                const dump = await backend.dump(parseInt(id, 10))
-                if (!dump || dump.repository !== repository) {
-                    throw Object.assign(new Error('LSIF dump not found'), { status: 404 })
-                }
-
-                res.json(dump)
-            }
-        )
-    )
-
     router.post(
         '/exists',
         bodyParser.json({ limit: '1mb' }),
@@ -387,7 +326,7 @@ async function lsifEndpoints(
                 checkCommit(commit)
                 checkFile(file)
 
-                const ctx = createTracingContext(req, { repository, commit })
+                const ctx = createTracingContext(logger, req, { repository, commit })
                 res.json(await backend.exists(repository, commit, file, ctx))
             }
         )
@@ -404,7 +343,7 @@ async function lsifEndpoints(
                 checkCommit(commit)
                 checkMethod(method, ['definitions', 'references', 'hover'])
 
-                const ctx = createTracingContext(req, { repository, commit })
+                const ctx = createTracingContext(logger, req, { repository, commit })
 
                 switch (method) {
                     case 'definitions':
@@ -439,15 +378,54 @@ async function lsifEndpoints(
                     }
                 }
 
-                res.json(
-                    await backend.definitions(
-                        repository,
-                        commit,
-                        path,
-                        position,
-                        createTracingContext(req, { repository, commit })
-                    )
-                )
+                res.json(await backend.definitions(repository, commit, path, position, ctx))
+            }
+        )
+    )
+
+    return router
+}
+
+/**
+ * Create a router containing the LSIF dump endpoints.
+ *
+ * @param backend The backend instance.
+ * @param queue The queue containing LSIF jobs.
+ * @param logger The logger instance.
+ * @param tracer The tracer instance.
+ */
+function dumpEndpoints(backend: Backend, logger: Logger, tracer: Tracer | undefined): express.Router {
+    const router = express.Router()
+
+    router.get(
+        '/dumps/:repository',
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const { repository } = req.params
+                const { query } = req.query
+                const { limit, offset } = limitOffset(req, DEFAULT_DUMP_PAGE_SIZE)
+                const { dumps, totalCount } = await backend.dumps(repository, query, limit, offset)
+
+                if (offset + dumps.length < totalCount) {
+                    res.set('Link', nextLink(req, { limit, offset: offset + dumps.length }))
+                }
+
+                res.json({ dumps, totalCount })
+            }
+        )
+    )
+
+    router.get(
+        '/dumps/:repository/:id',
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const { repository, id } = req.params
+                const dump = await backend.dump(parseInt(id, 10))
+                if (!dump || dump.repository !== repository) {
+                    throw Object.assign(new Error('LSIF dump not found'), { status: 404 })
+                }
+
+                res.json(dump)
             }
         )
     )
@@ -496,6 +474,22 @@ export function checkMethod(method: string, supportedMethods: string[]): void {
 }
 
 /**
+ * Create a tracing context from the request logger and tracing span
+ * tagged with the given values.
+ *
+ * @param logger The logger instance.
+ * @param req The express request.
+ * @param tags The tags to apply to the logger and span.
+ */
+function createTracingContext(
+    logger: Logger,
+    req: express.Request & { span?: Span },
+    tags: { [K: string]: any }
+): TracingContext {
+    return addTags({ logger, span: req.span }, tags)
+}
+
+/**
  * Extract a page limit from the request query string.
  *
  * @param req The HTTP request.
@@ -503,6 +497,19 @@ export function checkMethod(method: string, supportedMethods: string[]): void {
  */
 function extractLimit(req: express.Request, defaultLimit: number): number {
     return parseInt(req.query.limit, 10) || defaultLimit
+}
+
+/**
+ * Extract a page limit and offset from the request query string.
+ *
+ * @param req The HTTP request.
+ * @param defaultLimit The limit to use if one is not supplied.
+ */
+function limitOffset(req: express.Request, defaultLimit: number): { limit: number; offset: number } {
+    return {
+        limit: parseInt(req.query.limit, 10) || defaultLimit,
+        offset: parseInt(req.query.offset, 10) || 0,
+    }
 }
 
 /**
