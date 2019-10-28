@@ -124,9 +124,6 @@ const createConvertJobProcessor = (xrepoDatabase: XrepoDatabase, fetchConfigurat
             await fs.unlink(tempFile)
             throw e
         }
-
-        // Clean up disk space if necessary
-        await purgeOldDumps(STORAGE_ROOT, xrepoDatabase, DBS_DIR_MAXIMUM_SIZE_BYTES, ctx)
     })
 
     // Update commit parentage information for this commit
@@ -140,6 +137,9 @@ const createConvertJobProcessor = (xrepoDatabase: XrepoDatabase, fetchConfigurat
 
     // Remove input
     await fs.unlink(filename)
+
+    // Clean up disk space if necessary
+    await purgeOldDumps(STORAGE_ROOT, xrepoDatabase, DBS_DIR_MAXIMUM_SIZE_BYTES, ctx)
 }
 
 const cleanStatuses: JobStatusClean[] = ['completed', 'wait', 'active', 'delayed', 'failed']
