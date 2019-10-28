@@ -470,7 +470,7 @@ type CampaignPlan implements Node {
     changesets(first: Int): ChangesetPlanConnection!
 
     # The combined diff of all changesets that will be created by the campaign.
-    repositoryDiff(first: Int): PreviewRepositoryDiffConnection!
+    repositoryDiffs(first: Int): PreviewRepositoryDiffConnection!
 }
 
 # A paginated list of repository diff previews.
