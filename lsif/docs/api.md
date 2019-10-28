@@ -28,7 +28,7 @@ Determines if an LSIF dump exists that can answer queries for the given file.
 
 Available only for `reference` requests:
 
-- `limit`: the maximum number of remote repositories to search
+- `limit`: the maximum number of remote dumps to search
 - `cursor`: a cursor generated from the previous page of results
 
 Performs an definitions, references, or hover query at a particular position. The request body must be a JSON object with the following properties:

@@ -15,7 +15,7 @@ import * as settings from './settings'
  */
 export interface ReferencePaginationContext {
     /**
-     * The maximum number of remote repositories to search.
+     * The maximum number of remote dumps to search.
      */
     limit: number
 
@@ -55,7 +55,7 @@ export interface ReferencePaginationCursor {
     version: string | null
 
     /**
-     * The number of remote repositories to skip.
+     * The number of remote dumps to skip.
      */
     offset: number
 }
@@ -268,8 +268,8 @@ export class Backend {
      * @param dumpId The ID of the dump for which this database answers queries.
      * @param moniker The target moniker.
      * @param packageInformation The target package.
-     * @param limit The maximum number of remote repositories to search.
-     * @param offset The number of remote repositories to skip.
+     * @param limit The maximum number of remote repositodumpsries to search.
+     * @param offset The number of remote dumps to skip.
      * @param ctx The tracing context.
      */
     private async remoteReferences(

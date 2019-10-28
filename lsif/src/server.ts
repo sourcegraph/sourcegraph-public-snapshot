@@ -69,7 +69,7 @@ const UPDATE_TIPS_JOB_SCHEDULE_INTERVAL = readEnvInt('UPDATE_TIPS_JOB_SCHEDULE_I
 const CLEAN_OLD_JOBS_INTERVAL = readEnvInt('CLEAN_OLD_JOBS_INTERVAL', 60 * 60 * 8)
 
 /**
- * The default number of remote repositories to open when performing a global find-reference operation.
+ * The default number of remote dumps to open when performing a global find-reference operation.
  */
 const DEFAULT_REFERENCES_NUM_REMOTE_REPOSITORIES = 10
 
