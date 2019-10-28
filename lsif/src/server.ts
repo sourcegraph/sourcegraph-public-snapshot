@@ -26,7 +26,7 @@ import { XrepoDatabase } from './xrepo'
 import { createTracer, logAndTraceCall, TracingContext, addTags } from './tracing'
 import { Span, Tracer } from 'opentracing'
 import { default as tracingMiddleware } from 'express-opentracing'
-import { waitForConfiguration, ConfigurationFetcher } from './config'
+import { waitForConfiguration } from './config'
 import { createLogger } from './logging'
 import { enqueue, createQueue, ensureOnlyRepeatableJob } from './queue'
 import { Connection } from 'typeorm'
@@ -390,7 +390,6 @@ function lsifEndpoints(backend: Backend, queue: Queue, logger: Logger, tracer: T
  * Create a router containing the LSIF dump endpoints.
  *
  * @param backend The backend instance.
- * @param queue The queue containing LSIF jobs.
  * @param logger The logger instance.
  * @param tracer The tracer instance.
  */
