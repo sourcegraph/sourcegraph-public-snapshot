@@ -196,6 +196,7 @@ const createCleanFailedJobsProcessor = () => async (_: {}, ctx: TracingContext):
                 await fs.unlink(filename)
             }
         }
+
         for (const directory of [constants.TEMP_DIR, constants.UPLOADS_DIR]) {
             for (const filename of await fs.readdir(path.join(STORAGE_ROOT, directory))) {
                 await purgeFile(path.join(STORAGE_ROOT, directory, filename))
