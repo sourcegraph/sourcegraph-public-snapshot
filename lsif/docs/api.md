@@ -21,42 +21,20 @@ Returns `204 No Content` on success.
 
 Determines if an LSIF dump exists that can answer queries for the given file.
 
-### POST `/definitions?repository={repo}&commit={commit}`
+### POST `/request?repository={repo}&commit={commit}`
 
 - `repository`: the repository name
 - `commit`: the 40-character commit hash
+
+Available only for `reference` requests:
+
+- `limit`: the maximum number of remote repositories to search
+- `cursor`: a cursor generated from the previous page of results
 
 Performs a definitions query at a particular position. The request body must be a JSON object with the following properties:
 
 - `path`: the path of the document
 - `position`: the zero-based `{ line, character }` hover position
-
-Returns `200 OK` on success with a body containing an LSP-compatible response. Returns `404 Not Found` if no LSIF data exists for this repository.
-
-### POST `/references?repository={repo}&commit={commit}&limit={limit}&cursor={cursor}`
-
-- `repository`: the repository name
-- `commit`: the 40-character commit hash
-- `limit`: the maximum number of remote repositories to search
-- `cursor`: a cursor generated from the previous page of results
-
-Performs a references query at a particular position. The request body must be a JSON object with the following properties:
-
-- `path`: the path of the document
-- `position`: the zero-based `{ line, character }` hover position
-
-Returns `200 OK` on success with a body containing an LSP-compatible response. Returns `404 Not Found` if no LSIF data exists for this repository.
-
-This endpoint uses cursor-based pagination. The limit parameter is not the number of location results returned in a page, but in the number of remote databases that will be opened when doing a global search. Note that this implies that the number of results per page is unpredictable.
-
-### POST `/hover?repository={repo}&commit={commit}`
-
-- `repository`: the repository name
-- `commit`: the 40-character commit hash
-
-Performs a hover query at a particular position. The request body must be a JSON object with the following properties:
-
-- `path`: the path of the document
-- `position`: the zero-based `{ line, character }` hover position
+- `method`: `definitions`, `references`, or `hover`
 
 Returns `200 OK` on success with a body containing an LSP-compatible response. Returns `404 Not Found` if no LSIF data exists for this repository.

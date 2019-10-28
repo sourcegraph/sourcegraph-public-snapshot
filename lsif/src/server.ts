@@ -321,83 +321,53 @@ async function lsifEndpoints(
     )
 
     router.post(
-        '/definitions',
+        '/request',
         bodyParser.json({ limit: '1mb' }),
         wrap(
             async (req: express.Request & { span?: Span }, res: express.Response): Promise<void> => {
                 const { repository, commit } = req.query
-                const { path, position } = req.body
+                const { path, position, method } = req.body
                 checkRepository(repository)
                 checkCommit(commit)
+                checkMethod(method, ['definitions', 'references', 'hover'])
+
+                const ctx = createTracingContext(req, { repository, commit })
+
+                switch (method) {
+                    case 'definitions':
+                        res.json(await backend.definitions(repository, commit, path, position, ctx))
+                        break
+
+                    case 'hover':
+                        res.json(await backend.hover(repository, commit, path, position, ctx))
+                        break
+
+                    case 'references': {
+                        const { cursor: cursorRaw } = req.query
+                        const limit = extractLimit(req, DEFAULT_REFERENCES_NUM_REMOTE_REPOSITORIES)
+                        const startCursor = parseCursor<ReferencePaginationCursor>(cursorRaw)
+
+                        const { locations, cursor: endCursor } = await backend.references(
+                            repository,
+                            commit,
+                            path,
+                            position,
+                            { limit, cursor: startCursor },
+                            ctx
+                        )
+
+                        const encodedCursor = encodeCursor<ReferencePaginationCursor>(endCursor)
+                        if (!encodedCursor) {
+                            res.set('Link', nextLink(req, { limit, cursor: encodedCursor }))
+                        }
+
+                        res.json(locations)
+                        break
+                    }
+                }
 
                 res.json(
                     await backend.definitions(
-                        repository,
-                        commit,
-                        path,
-                        position,
-                        createTracingContext(req, { repository, commit })
-                    )
-                )
-            }
-        )
-    )
-
-    const extractLimit = (req: express.Request, defaultLimit: number): number =>
-        parseInt(req.query.limit, 10) || defaultLimit
-
-    const nextLink = (req: express.Request, params: { [K: string]: any }): string => {
-        const url = new URL(`${req.protocol}://${req.get('host')}${req.originalUrl}`)
-        for (const [key, value] of Object.entries(params)) {
-            url.searchParams.set(key, String(value))
-        }
-
-        return `<${url.href}>; rel="next"`
-    }
-
-    router.post(
-        '/references',
-        bodyParser.json({ limit: '1mb' }),
-        wrap(
-            async (req: express.Request & { span?: Span }, res: express.Response): Promise<void> => {
-                const { repository, commit, cursor: cursorRaw } = req.query
-                const { path, position } = req.body
-                const limit = extractLimit(req, DEFAULT_REFERENCES_NUM_REMOTE_REPOSITORIES)
-                const startCursor = parseCursor<ReferencePaginationCursor>(cursorRaw)
-                checkRepository(repository)
-                checkCommit(commit)
-
-                const { locations, cursor: endCursor } = await backend.references(
-                    repository,
-                    commit,
-                    path,
-                    position,
-                    { limit, cursor: startCursor },
-                    createTracingContext(req, { repository, commit })
-                )
-
-                const encodedCursor = encodeCursor<ReferencePaginationCursor>(endCursor)
-                if (!encodedCursor) {
-                    res.set('Link', nextLink(req, { limit, cursor: encodedCursor }))
-                }
-
-                res.json(locations)
-            }
-        )
-    )
-
-    router.post(
-        '/hover',
-        bodyParser.json({ limit: '1mb' }),
-        wrap(
-            async (req: express.Request & { span?: Span }, res: express.Response): Promise<void> => {
-                const { repository, commit } = req.query
-                const { path, position } = req.body
-                checkRepository(repository)
-                checkCommit(commit)
-
-                res.json(
-                    await backend.hover(
                         repository,
                         commit,
                         path,
@@ -439,6 +409,42 @@ function checkFile(file: any): void {
     if (typeof file !== 'string') {
         throw Object.assign(new Error(`Must specify a file ${file}`), { status: 400 })
     }
+}
+
+/**
+ * Throws an error with status 422 if the requested method is not supported.
+ */
+export function checkMethod(method: string, supportedMethods: string[]): void {
+    if (!supportedMethods.includes(method)) {
+        throw Object.assign(new Error(`Method must be one of ${Array.from(supportedMethods).join(', ')}`), {
+            status: 422,
+        })
+    }
+}
+
+/**
+ * Extract a page limit from the request query string.
+ *
+ * @param req The HTTP request.
+ * @param defaultLimit The limit to use if one is not supplied.
+ */
+function extractLimit(req: express.Request, defaultLimit: number): number {
+    return parseInt(req.query.limit, 10) || defaultLimit
+}
+
+/**
+ * Create a link header payload with a next link based on the previous endpoint.
+ *
+ * @param req The HTTP request.
+ * @param params The query params to overwrite.
+ */
+function nextLink(req: express.Request, params: { [K: string]: any }): string {
+    const url = new URL(`${req.protocol}://${req.get('host')}${req.originalUrl}`)
+    for (const [key, value] of Object.entries(params)) {
+        url.searchParams.set(key, String(value))
+    }
+
+    return `<${url.href}>; rel="next"`
 }
 
 /**
