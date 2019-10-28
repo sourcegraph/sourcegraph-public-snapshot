@@ -12,11 +12,11 @@ import (
 	"github.com/google/zoekt/query"
 )
 
-func TestAggregateSearcher(t *testing.T) {
+func TestHorizontalSearcher(t *testing.T) {
 	var endpoints atomicMap
 	endpoints.Store(prefixMap{})
 
-	searcher := &AggregateSearcher{
+	searcher := &HorizontalSearcher{
 		Map: &endpoints,
 		Dial: func(endpoint string) zoekt.Searcher {
 			var rle zoekt.RepoListEntry

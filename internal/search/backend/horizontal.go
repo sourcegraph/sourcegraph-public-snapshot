@@ -11,9 +11,9 @@ import (
 	"github.com/google/zoekt/query"
 )
 
-// AggregateSearcher is a zoekt.Searcher which aggregates searches over
+// HorizontalSearcher is a zoekt.Searcher which aggregates searches over
 // Map. It manages the connections to Map as the endpoints come and go.
-type AggregateSearcher struct {
+type HorizontalSearcher struct {
 	Map  EndpointMap
 	Dial func(endpoint string) zoekt.Searcher
 
@@ -22,7 +22,7 @@ type AggregateSearcher struct {
 }
 
 // Search aggregates search over every endpoint in Map.
-func (s *AggregateSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
+func (s *HorizontalSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
 	start := time.Now()
 
 	clients, err := s.searchers()
@@ -63,7 +63,7 @@ func (s *AggregateSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.S
 }
 
 // List aggregates list over every endpoint in Map.
-func (s *AggregateSearcher) List(ctx context.Context, q query.Q) (*zoekt.RepoList, error) {
+func (s *HorizontalSearcher) List(ctx context.Context, q query.Q) (*zoekt.RepoList, error) {
 	clients, err := s.searchers()
 	if err != nil {
 		return nil, err
@@ -100,7 +100,7 @@ func (s *AggregateSearcher) List(ctx context.Context, q query.Q) (*zoekt.RepoLis
 }
 
 // Close will close all connections in Map.
-func (s *AggregateSearcher) Close() {
+func (s *HorizontalSearcher) Close() {
 	s.mu.Lock()
 	clients := s.clients
 	s.clients = nil
@@ -110,7 +110,7 @@ func (s *AggregateSearcher) Close() {
 	}
 }
 
-func (s *AggregateSearcher) String() string {
+func (s *HorizontalSearcher) String() string {
 	s.mu.RLock()
 	clients := s.clients
 	s.mu.RUnlock()
@@ -123,7 +123,7 @@ func (s *AggregateSearcher) String() string {
 }
 
 // searchers returns the list of clients to aggregate over.
-func (s *AggregateSearcher) searchers() (map[string]zoekt.Searcher, error) {
+func (s *HorizontalSearcher) searchers() (map[string]zoekt.Searcher, error) {
 	eps, err := s.Map.Endpoints()
 	if err != nil {
 		return nil, err
