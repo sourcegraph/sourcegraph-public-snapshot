@@ -93,8 +93,7 @@ export class XrepoDatabase {
                 .getRepository(LsifDump)
                 .createQueryBuilder()
                 .where({ repository })
-                // TODO - order by age desc once #6205 is merged
-                .orderBy('commit')
+                .orderBy('uploaded_at')
                 .limit(limit)
                 .offset(offset)
                 .getManyAndCount()
