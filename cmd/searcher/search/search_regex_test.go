@@ -264,7 +264,7 @@ func benchSearchRegex(b *testing.B, p *protocol.Request) {
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
-		_, _, err := searchRegex(ctx, rg, zf, 0, p.PatternMatchesContent, p.PatternMatchesPath)
+		_, _, err := regexSearch(ctx, rg, zf, 0, p.PatternMatchesContent, p.PatternMatchesPath)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -454,12 +454,12 @@ func TestMaxMatches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fileMatches, limitHit, err := searchRegex(context.Background(), rg, zf, maxFileMatches, true, false)
+	fileMatches, limitHit, err := regexSearch(context.Background(), rg, zf, maxFileMatches, true, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !limitHit {
-		t.Fatalf("expected limitHit on searchRegex")
+		t.Fatalf("expected limitHit on regexSearch")
 	}
 
 	if len(fileMatches) != maxFileMatches {
@@ -506,7 +506,7 @@ func TestPathMatches(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fileMatches, _, err := searchRegex(context.Background(), rg, zf, 10, true, true)
+	fileMatches, _, err := regexSearch(context.Background(), rg, zf, 10, true, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -554,7 +554,7 @@ func init() {
 	os.RemoveAll(githubStore.Path)
 }
 
-func Test_searchRegex(t *testing.T) {
+func Test_regexSearch(t *testing.T) {
 	match, err := pathmatch.CompilePathPatterns([]string{`a\.go`}, `README\.md`, pathmatch.CompileOptions{RegExp: true})
 	if err != nil {
 		t.Fatal(err)
@@ -602,16 +602,16 @@ func Test_searchRegex(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotFm, gotLimitHit, err := searchRegex(tt.args.ctx, tt.args.rg, tt.args.zf, tt.args.fileMatchLimit, tt.args.patternMatchesContent, tt.args.patternMatchesPaths)
+			gotFm, gotLimitHit, err := regexSearch(tt.args.ctx, tt.args.rg, tt.args.zf, tt.args.fileMatchLimit, tt.args.patternMatchesContent, tt.args.patternMatchesPaths)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("searchRegex() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("regexSearch() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(gotFm, tt.wantFm) {
-				t.Errorf("searchRegex() gotFm = %v, want %v", gotFm, tt.wantFm)
+				t.Errorf("regexSearch() gotFm = %v, want %v", gotFm, tt.wantFm)
 			}
 			if gotLimitHit != tt.wantLimitHit {
-				t.Errorf("searchRegex() gotLimitHit = %v, want %v", gotLimitHit, tt.wantLimitHit)
+				t.Errorf("regexSearch() gotLimitHit = %v, want %v", gotLimitHit, tt.wantLimitHit)
 			}
 		})
 	}
