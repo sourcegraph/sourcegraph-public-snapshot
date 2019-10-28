@@ -2,6 +2,7 @@ import * as fs from 'mz/fs'
 import * as path from 'path'
 import { DefinitionReferenceResultId } from './database.models'
 import { Id } from 'lsif-protocol'
+import * as constants from './constants'
 
 /**
  * Reads an integer from an environment variable or defaults to the given value.
@@ -118,7 +119,7 @@ export function dbFilenameOld(storageRoot: string, repository: string, commit: s
  * @param id The ID of the dump.
  */
 export function dbFilename(storageRoot: string, id: number, repository: string, commit: string): string {
-    return path.join(storageRoot, `${id}-${encodeURIComponent(repository)}@${commit}.lsif.db`)
+    return path.join(storageRoot, constants.DBS_DIR, `${id}-${encodeURIComponent(repository)}@${commit}.lsif.db`)
 }
 
 /**
@@ -133,6 +134,24 @@ export async function ensureDirectory(path: string): Promise<void> {
         if (!hasErrorCode(e, 'EEXIST')) {
             throw e
         }
+    }
+}
+
+/**
+ * Delete the file if it exists. Throws errors that are not ENOENT.
+ *
+ * @param path The path to delete.
+ */
+export async function tryDeleteFile(path: string): Promise<boolean> {
+    try {
+        await fs.unlink(path)
+        return true
+    } catch (error) {
+        if (!hasErrorCode(error, 'ENOENT')) {
+            throw error
+        }
+
+        return false
     }
 }
 
