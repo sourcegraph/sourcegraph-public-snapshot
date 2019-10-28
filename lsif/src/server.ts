@@ -601,7 +601,7 @@ function checkFile(file: any): void {
 /**
  * Throws an error with status 422 if the requested method is not supported.
  */
-export function checkMethod(method: string, supportedMethods: string[]): void {
+function checkMethod(method: string, supportedMethods: string[]): void {
     if (!supportedMethods.includes(method)) {
         throw Object.assign(new Error(`Method must be one of ${Array.from(supportedMethods).join(', ')}`), {
             status: 422,
@@ -617,14 +617,6 @@ export function checkMethod(method: string, supportedMethods: string[]): void {
  */
 function extractLimit(req: express.Request, defaultLimit: number): number {
     return parseInt(req.query.limit, 10) || defaultLimit
-}
-
-// TODO - this will conflict
-function limitOffset(req: express.Request, defaultLimit: number): { limit: number; offset: number } {
-    return {
-        limit: parseInt(req.query.limit, 10) || defaultLimit,
-        offset: parseInt(req.query.offset, 10) || 0,
-    }
 }
 
 /**
