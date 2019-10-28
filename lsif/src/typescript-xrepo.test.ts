@@ -1,4 +1,3 @@
-import * as fs from 'mz/fs'
 import rmfr from 'rmfr'
 import {
     createCommit,
@@ -6,11 +5,11 @@ import {
     createRemoteLocation,
     createCleanPostgresDatabase,
     convertTestData,
+    createStorageRoot,
 } from './test-utils'
 import { XrepoDatabase } from './xrepo'
 import { Connection } from 'typeorm'
 import { Backend } from './backend'
-import { Configuration } from './config'
 
 describe('Database', () => {
     let connection!: Connection
@@ -21,9 +20,9 @@ describe('Database', () => {
 
     beforeAll(async () => {
         ;({ connection, cleanup } = await createCleanPostgresDatabase())
-        storageRoot = await fs.mkdtemp('typescript-', { encoding: 'utf8' })
-        xrepoDatabase = new XrepoDatabase(connection)
-        backend = new Backend(storageRoot, xrepoDatabase, () => ({} as Configuration))
+        storageRoot = await createStorageRoot('typescript')
+        xrepoDatabase = new XrepoDatabase(storageRoot, connection)
+        backend = new Backend(storageRoot, xrepoDatabase, () => ({} as never))
 
         // Prepare test data
         for (const repository of ['a', 'b1', 'b2', 'b3', 'c1', 'c2', 'c3']) {

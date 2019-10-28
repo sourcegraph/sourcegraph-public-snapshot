@@ -41,7 +41,12 @@ func SearcherURLs() *endpoint.Map {
 func Indexed() *backend.Zoekt {
 	indexedSearchOnce.Do(func() {
 		indexedSearch = &backend.Zoekt{}
-		if zoektAddr != "" {
+		if indexers := Indexers(); indexers.Enabled() {
+			indexedSearch.Client = &backend.HorizontalSearcher{
+				Map:  indexers.Map,
+				Dial: rpc.Client,
+			}
+		} else if zoektAddr != "" {
 			indexedSearch.Client = rpc.Client(zoektAddr)
 		}
 		conf.Watch(func() {

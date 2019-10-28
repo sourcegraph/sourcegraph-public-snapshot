@@ -300,16 +300,19 @@ Indexes:
 
 # Table "public.lsif_dumps"
 ```
-     Column     |  Type   |                        Modifiers                        
-----------------+---------+---------------------------------------------------------
- id             | integer | not null default nextval('lsif_dumps_id_seq'::regclass)
- repository     | text    | not null
- commit         | text    | not null
- root           | text    | not null default ''::text
- visible_at_tip | boolean | not null default false
+     Column     |           Type           |                        Modifiers                        
+----------------+--------------------------+---------------------------------------------------------
+ id             | integer                  | not null default nextval('lsif_dumps_id_seq'::regclass)
+ repository     | text                     | not null
+ commit         | text                     | not null
+ root           | text                     | not null default ''::text
+ visible_at_tip | boolean                  | not null default false
+ uploaded_at    | timestamp with time zone | not null default now()
 Indexes:
     "lsif_dumps_pkey" PRIMARY KEY, btree (id)
     "lsif_dumps_repository_commit_root" UNIQUE CONSTRAINT, btree (repository, commit, root)
+    "lsif_dumps_uploaded_at" btree (uploaded_at)
+    "lsif_dumps_visible_repository_commit" btree (repository, commit) WHERE visible_at_tip
 Check constraints:
     "lsif_dumps_commit_check" CHECK (length(commit) = 40)
     "lsif_dumps_repository_check" CHECK (repository <> ''::text)

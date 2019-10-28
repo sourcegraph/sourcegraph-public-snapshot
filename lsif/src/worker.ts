@@ -2,7 +2,6 @@ import * as fs from 'mz/fs'
 import * as path from 'path'
 import express from 'express'
 import promClient from 'prom-client'
-import uuid from 'uuid'
 import { convertLsif } from './importer'
 import { dbFilename, ensureDirectory, readEnvInt } from './util'
 import { createLogger } from './logging'
@@ -17,6 +16,8 @@ import { jobDurationHistogram, jobDurationErrorsCounter } from './worker.metrics
 import { Job, JobStatusClean, Queue } from 'bull'
 import { createQueue } from './queue'
 import { instrument } from './metrics'
+import { purgeOldDumps } from './retention'
+import * as constants from './constants'
 
 /**
  * Which port to run the worker metrics server on. Defaults to 3187.
@@ -44,6 +45,16 @@ const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
  * The maximum age (in seconds) that a job (completed or queued) will remain in redis.
  */
 const JOB_MAX_AGE = readEnvInt('JOB_MAX_AGE', 60 * 60 * 24 * 7)
+
+/**
+ * The maximum age (in seconds) that the files for a failed job can remain on disk.
+ */
+const FAILED_JOB_MAX_AGE = readEnvInt('FAILED_JOB_MAX_AGE', 24 * 60 * 60)
+
+/**
+ * The maximum space (in bytes) that the dbs directory can use.
+ */
+const DBS_DIR_MAXIMUM_SIZE_BYTES = readEnvInt('DBS_DIR_MAXIMUM_SIZE_BYTES', 1024 * 1024 * 1024 * 10)
 
 /**
  * Wrap a job processor with instrumentation.
@@ -95,7 +106,7 @@ const createConvertJobProcessor = (xrepoDatabase: XrepoDatabase, fetchConfigurat
 ): Promise<void> => {
     await logAndTraceCall(ctx, 'converting LSIF data', async (ctx: TracingContext) => {
         const input = fs.createReadStream(filename)
-        const tempFile = path.join(STORAGE_ROOT, 'tmp', uuid.v4())
+        const tempFile = path.join(STORAGE_ROOT, constants.TEMP_DIR, path.basename(filename))
 
         try {
             // Create database in a temp path
@@ -126,6 +137,9 @@ const createConvertJobProcessor = (xrepoDatabase: XrepoDatabase, fetchConfigurat
 
     // Remove input
     await fs.unlink(filename)
+
+    // Clean up disk space if necessary
+    await purgeOldDumps(STORAGE_ROOT, xrepoDatabase, DBS_DIR_MAXIMUM_SIZE_BYTES, ctx)
 }
 
 const cleanStatuses: JobStatusClean[] = ['completed', 'wait', 'active', 'delayed', 'failed']
@@ -170,6 +184,28 @@ const createCleanOldJobsProcessor = (queue: Queue, logger: Logger) => async (
 }
 
 /**
+ * Create a job that removes upload and temp files that are older than `FAILED_JOB_MAX_AGE`.
+ * This assumes that a conversion job's total duration (from enqueue to completion) is less
+ * than this interval during healthy operation.
+ */
+const createCleanFailedJobsProcessor = () => async (_: {}, ctx: TracingContext): Promise<void> => {
+    await logAndTraceCall(ctx, 'cleaning failed jobs', async (ctx: TracingContext) => {
+        const purgeFile = async (filename: string): Promise<void> => {
+            const stat = await fs.stat(filename)
+            if (Date.now() - stat.mtimeMs >= FAILED_JOB_MAX_AGE) {
+                await fs.unlink(filename)
+            }
+        }
+
+        for (const directory of [constants.TEMP_DIR, constants.UPLOADS_DIR]) {
+            for (const filename of await fs.readdir(path.join(STORAGE_ROOT, directory))) {
+                await purgeFile(path.join(STORAGE_ROOT, directory, filename))
+            }
+        }
+    })
+}
+
+/**
  * Runs the worker which accepts LSIF conversion jobs from the work queue.
  *
  * @param logger The logger instance.
@@ -186,12 +222,13 @@ async function main(logger: Logger): Promise<void> {
 
     // Ensure storage roots exist
     await ensureDirectory(STORAGE_ROOT)
-    await ensureDirectory(path.join(STORAGE_ROOT, 'tmp'))
-    await ensureDirectory(path.join(STORAGE_ROOT, 'uploads'))
+    await ensureDirectory(path.join(STORAGE_ROOT, constants.DBS_DIR))
+    await ensureDirectory(path.join(STORAGE_ROOT, constants.TEMP_DIR))
+    await ensureDirectory(path.join(STORAGE_ROOT, constants.UPLOADS_DIR))
 
     // Create cross-repo database
     const connection = await createPostgresConnection(fetchConfiguration(), logger)
-    const xrepoDatabase = new XrepoDatabase(connection)
+    const xrepoDatabase = new XrepoDatabase(STORAGE_ROOT, connection)
 
     // Start metrics server
     startMetricsServer(logger)
@@ -220,10 +257,18 @@ async function main(logger: Logger): Promise<void> {
         tracer
     )
 
+    const cleanFailedJobsProcessor = wrapJobProcessor(
+        'clean-failed-jobs',
+        createCleanFailedJobsProcessor(),
+        logger,
+        tracer
+    )
+
     // Start processing work
     queue.process('convert', convertJobProcessor).catch(() => {})
     queue.process('update-tips', updateTipsJobProcessor).catch(() => {})
     queue.process('clean-old-jobs', cleanOldJobsProcessor).catch(() => {})
+    queue.process('clean-failed-jobs', cleanFailedJobsProcessor).catch(() => {})
 }
 
 /**
