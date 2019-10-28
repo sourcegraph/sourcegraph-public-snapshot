@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
@@ -17,8 +18,7 @@ type AggregateSearcher struct {
 	Dial func(endpoint string) zoekt.Searcher
 
 	mu      sync.RWMutex
-	addrs   []string
-	clients []zoekt.Searcher
+	clients map[string]zoekt.Searcher // addr -> client
 }
 
 // Search aggregates search over every endpoint in Map.
@@ -102,22 +102,28 @@ func (s *AggregateSearcher) List(ctx context.Context, q query.Q) (*zoekt.RepoLis
 // Close will close all connections in Map.
 func (s *AggregateSearcher) Close() {
 	s.mu.Lock()
-	defer s.mu.Unlock()
-	for _, c := range s.clients {
+	clients := s.clients
+	s.clients = nil
+	s.mu.Unlock()
+	for _, c := range clients {
 		c.Close()
 	}
-	s.addrs = nil
-	s.clients = nil
 }
 
 func (s *AggregateSearcher) String() string {
 	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return fmt.Sprintf("AggregateSearcher{%v}", s.addrs)
+	clients := s.clients
+	s.mu.RUnlock()
+	addrs := make([]string, 0, len(clients))
+	for addr := range clients {
+		addrs = append(addrs, addr)
+	}
+	sort.Strings(addrs)
+	return fmt.Sprintf("AggregateSearcher{%v}", addrs)
 }
 
 // searchers returns the list of clients to aggregate over.
-func (s *AggregateSearcher) searchers() ([]zoekt.Searcher, error) {
+func (s *AggregateSearcher) searchers() (map[string]zoekt.Searcher, error) {
 	eps, err := s.Map.Endpoints()
 	if err != nil {
 		return nil, err
@@ -128,9 +134,9 @@ func (s *AggregateSearcher) searchers() ([]zoekt.Searcher, error) {
 	//
 	// We structure our state to optimize for the fast-path.
 	s.mu.RLock()
-	addrs, clients := s.addrs, s.clients
+	clients := s.clients
 	s.mu.RUnlock()
-	if equalKeys(addrs, eps) {
+	if equalKeys(clients, eps) {
 		return clients, nil
 	}
 
@@ -143,50 +149,38 @@ func (s *AggregateSearcher) searchers() ([]zoekt.Searcher, error) {
 	if err != nil {
 		return nil, err
 	}
-	if equalKeys(s.addrs, eps) {
+	if equalKeys(s.clients, eps) {
 		return s.clients, nil
 	}
 
 	// Disconnect first
-	for i, addr := range s.addrs {
+	for addr, client := range s.clients {
 		if _, ok := eps[addr]; !ok {
-			s.clients[i].Close()
+			client.Close()
 		}
 	}
 
-	// Use new slices to avoid read conflicts
-	addrs = []string{}
-	clients = []zoekt.Searcher{}
+	// Use new map to avoid read conflicts
+	clients = make(map[string]zoekt.Searcher, len(eps))
 	for addr := range eps {
 		// Try re-use
-		var client zoekt.Searcher
-		for i, a := range s.addrs {
-			if a == addr {
-				client = s.clients[i]
-				break
-			}
-		}
-
-		if client == nil {
+		client, ok := s.clients[addr]
+		if !ok {
 			client = s.Dial(addr)
 		}
-
-		addrs = append(addrs, addr)
-		clients = append(clients, client)
+		clients[addr] = client
 	}
-
-	s.addrs = addrs
 	s.clients = clients
 
 	return s.clients, nil
 }
 
-func equalKeys(keys []string, m map[string]struct{}) bool {
-	if len(keys) != len(m) {
+func equalKeys(a map[string]zoekt.Searcher, b map[string]struct{}) bool {
+	if len(a) != len(b) {
 		return false
 	}
-	for _, k := range keys {
-		if _, ok := m[k]; !ok {
+	for k := range a {
+		if _, ok := b[k]; !ok {
 			return false
 		}
 	}
