@@ -439,10 +439,11 @@ export class XrepoDatabase {
 
     /**
      * Find all repository/commit pairs that reference `value` in the given package. The
-     * returned results will include only repositories that have a dependency on the given
-     * package. The returned results may (but is not likely to) include a repository/commit
-     * pair that does not reference `value`. See cache.ts for configuration values that tune
-     * the bloom filter false positive rates.
+     * returned results will include only dumps that have a dependency on the given package.
+     * The returned results may (but is not likely to) include a repository/commit pair that
+     * does not reference `value`. See cache.ts for configuration values that tune the bloom
+     * filter false positive rates. The total count of matching dumps (ignoring limit/offset)
+     * is also returned.
      *
      * @param args Parameter bag.
      */
@@ -450,7 +451,9 @@ export class XrepoDatabase {
         scheme,
         name,
         version,
-        value,
+        identifier,
+        limit,
+        offset,
     }: {
         /** The package manager scheme (e.g. npm, pip). */
         scheme: string
@@ -458,29 +461,37 @@ export class XrepoDatabase {
         name: string
         /** The package version. */
         version: string | null
-        /** The value to test. */
-        value: string
-    }): Promise<ReferenceModel[]> {
+        /** The identifier to test. */
+        identifier: string
+        /** The maximum number of repository records to return. */
+        limit: number
+        /** The number of repository records to skip. */
+        offset: number
+    }): Promise<{ references: ReferenceModel[]; count: number }> {
         // Return all active uses of the target package
-        const results = await this.withConnection(connection =>
+        const [results, count] = await this.withConnection(connection =>
             connection
                 .getRepository(ReferenceModel)
                 .createQueryBuilder('reference')
                 .leftJoinAndSelect('reference.dump', 'dump')
                 .where({ scheme, name, version })
                 .andWhere('dump.visible_at_tip = true')
-                .getMany()
+                .orderBy('dump.repository')
+                .addOrderBy('dump.root')
+                .limit(limit)
+                .offset(offset)
+                .getManyAndCount()
         )
 
         // Test the bloom filter of each reference model concurrently
-        const keepFlags = await Promise.all(results.map(result => testFilter(result.filter, value)))
+        const keepFlags = await Promise.all(results.map(result => testFilter(result.filter, identifier)))
 
         for (const flag of keepFlags) {
             // Record hit and miss counts
             bloomFilterEventsCounter.labels(flag ? 'hit' : 'miss').inc()
         }
 
-        return results.filter((_, i) => keepFlags[i])
+        return { references: results.filter((_, i) => keepFlags[i]), count }
     }
 
     /**

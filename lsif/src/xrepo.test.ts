@@ -405,14 +405,16 @@ describe('XrepoDatabase', () => {
         await updatePackages(ce, 'r6', ['x', 'z'])
 
         const getReferencedDumpIds = async () => {
-            const refs = await xrepoDatabase.getReferences({
+            const { references } = await xrepoDatabase.getReferences({
                 scheme: 'npm',
                 name: 'p1',
                 version: '0.1.0',
-                value: 'y',
+                identifier: 'y',
+                limit: 50,
+                offset: 0,
             })
 
-            return refs.map(ref => ref.dump_id).sort()
+            return references.map(referennce => referennce.dump_id).sort()
         }
 
         await xrepoDatabase.updateCommits('foo', [[ca, ''], [cb, ca], [cc, cb], [cd, cc], [ce, cd], [cf, ce]])
@@ -443,14 +445,16 @@ describe('XrepoDatabase', () => {
         const dumpc = await xrepoDatabase.addPackagesAndReferences('foo', cc, '', [], references)
 
         const getReferencedDumpIds = async () => {
-            const refs = await xrepoDatabase.getReferences({
+            const { references } = await xrepoDatabase.getReferences({
                 scheme: 'npm',
                 name: 'p1',
                 version: '0.1.0',
-                value: 'y',
+                identifier: 'y',
+                limit: 50,
+                offset: 0,
             })
 
-            return refs.map(ref => ref.dump_id).sort()
+            return references.map(reference => reference.dump_id).sort()
         }
 
         const updateVisibility = async (visibleA: boolean, visibleB: boolean, visibleC: boolean) => {
