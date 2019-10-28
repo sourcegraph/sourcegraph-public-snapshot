@@ -33,28 +33,10 @@ kubectl port-forward svc/grafana 3370:30070
 
 ### Single-container server deployments
 
-If you are running Sourcegraph as a single server in a droplet or otherwise exposed to the open internet then publishing
-an additional docker port is not recommended since the embedded Grafana runs in anonymous mode. In this case we suggest using
-the tools `sshuttle` and `socat` to create a secure connection. Log into your remote server using ssh 
-and run these commands: 
+If you are running Sourcegraph as single server you can add an additional publish flag for the Grafana port 3370:
 
 ```shell script
-docker exec -t XXX_CONTAINER_ID_XXXX apk add --no-cache socat
-socat tcp-listen:3370,reuseaddr,fork system:"docker exec -i 7298cae012eb socat stdio 'tcp:localhost:3370'"
-```
-
-On your local machine start a `sshuttle` session to your remote server
-
-```shell script
-sshuttle -r xxx_user_xxx@sxxx_remote_server_xxx 0/0
-```
-
-### Single-container server deployments (with firewall)
-
-If you are running Sourcegraph as single server behind a firewall you can add an additional publish flag for the Grafana port 3370:
-
-```shell script
-docker run --publish 7080:7080 --publish 2633:2633 --publish 3370:3370 \
+docker run --publish 7080:7080 --publish 2633:2633 --publish 127.0.0.1:3370:3370 \
   --rm --volume ~/.sourcegraph/config:/etc/sourcegraph \
   --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.9.3
 ```
