@@ -31,7 +31,7 @@ Available only for `reference` requests:
 - `limit`: the maximum number of remote repositories to search
 - `cursor`: a cursor generated from the previous page of results
 
-Performs a definitions query at a particular position. The request body must be a JSON object with the following properties:
+Performs an definitions, references, or hover query at a particular position. The request body must be a JSON object with the following properties:
 
 - `path`: the path of the document
 - `position`: the zero-based `{ line, character }` hover position
