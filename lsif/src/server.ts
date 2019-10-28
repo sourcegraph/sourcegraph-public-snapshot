@@ -377,8 +377,6 @@ function lsifEndpoints(backend: Backend, queue: Queue, logger: Logger, tracer: T
                         break
                     }
                 }
-
-                res.json(await backend.definitions(repository, commit, path, position, ctx))
             }
         )
     )
