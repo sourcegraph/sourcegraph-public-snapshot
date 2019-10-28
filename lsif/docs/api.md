@@ -26,9 +26,10 @@ Performs a query at a particular position. The request body must be a JSON objec
 
 Returns `200 OK` on success with a body containing an LSP-compatible response. Returns `404 Not Found` if no LSIF data exists for this repository.
 
-### GET `/dumps/{repo}?limit={limit}&offset={offset}`
+### GET `/dumps/{repo}?query={query}&limit={limit}&offset={offset}`
 
 - `repository`: the repository name
+- `query`: a search query (compares commits and root fields)
 - `limit`: the maximum number of dumps to return
 - `offset`: the number of dumps seen previously
 

@@ -317,8 +317,9 @@ async function lsifEndpoints(
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { repository } = req.params
+                const { query } = req.query
                 const { limit, offset } = limitOffset(req, DEFAULT_DUMP_PAGE_SIZE)
-                const { dumps, totalCount } = await backend.dumps(repository, limit, offset)
+                const { dumps, totalCount } = await backend.dumps(repository, query, limit, offset)
 
                 if (offset + dumps.length < totalCount) {
                     res.set('Link', nextLink(req, { limit, offset: offset + dumps.length }))

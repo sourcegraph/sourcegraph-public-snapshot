@@ -35,15 +35,17 @@ export class Backend {
      * Get the set of dumps for a repository.
      *
      * @param repository The repository.
+     * @param query A search query.
      * @param limit The maximum number of dumps to return.
      * @param offset The number of dumps to skip.
      */
     public dumps(
         repository: string,
+        query: string,
         limit: number,
         offset: number
     ): Promise<{ dumps: LsifDump[]; totalCount: number }> {
-        return this.xrepoDatabase.getDumps(repository, limit, offset)
+        return this.xrepoDatabase.getDumps(repository, query, limit, offset)
     }
 
     /**

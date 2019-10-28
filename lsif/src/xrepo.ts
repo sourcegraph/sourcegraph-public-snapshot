@@ -80,16 +80,18 @@ export class XrepoDatabase {
      * Get the dumps for a repository.
      *
      * @param repository The repository.
+     * @param query A search query.
      * @param limit The maximum number of dumps to return.
      * @param offset The number of dumps to skip.
      */
     public async getDumps(
         repository: string,
+        query: string,
         limit: number,
         offset: number
     ): Promise<{ dumps: LsifDump[]; totalCount: number }> {
-        const [dumps, totalCount] = await this.withConnection(connection =>
-            connection
+        const [dumps, totalCount] = await this.withConnection(connection => {
+            let queryBuilder = connection
                 .getRepository(LsifDump)
                 .createQueryBuilder()
                 .where({ repository })
@@ -97,7 +99,19 @@ export class XrepoDatabase {
                 .limit(limit)
                 .offset(offset)
                 .getManyAndCount()
-        )
+
+            if (query) {
+                queryBuilder = queryBuilder.andWhere(
+                    new Brackets(qb =>
+                        qb
+                            .where("commit LIKE '%' || :query || '%'", { query })
+                            .orWhere("root LIKE '%' || :query || '%'", { query })
+                    )
+                )
+            }
+
+            return queryBuilder.getManyAndCount()
+        })
 
         return { dumps, totalCount }
     }
