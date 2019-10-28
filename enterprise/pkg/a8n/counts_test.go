@@ -11,7 +11,7 @@ import (
 )
 
 func TestCalcCounts(t *testing.T) {
-	now := time.Now().Truncate(time.Microsecond)
+	now := time.Now().UTC().Truncate(time.Microsecond)
 	daysAgo := func(days int) time.Time { return now.AddDate(0, 0, -days) }
 
 	tests := []struct {
