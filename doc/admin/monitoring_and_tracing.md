@@ -33,12 +33,20 @@ kubectl port-forward svc/grafana 3370:30070
 
 ### Single-container server deployments
 
-If you are running Sourcegraph as single server you can add an additional publish flag for the Grafana port 3370:
+If you are running Sourcegraph as single server locally:
 
 ```shell script
 docker run --publish 7080:7080 --publish 2633:2633 --publish 127.0.0.1:3370:3370 \
   --rm --volume ~/.sourcegraph/config:/etc/sourcegraph \
   --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.9.3
+```
+
+then http://localhost:3370/-/debug/grafana will just work. If you are running it on a remote server you can use a tool
+like [sshuttle](https://github.com/sshuttle/sshuttle) to establish a secure connection to that URL. 
+On your local machine start a `sshuttle` session to your remote server	
+
+```shell script	
+sshuttle -r xxx_user_xxx@sxxx_remote_server_xxx 0/0
 ```
 
 ### Docker images
