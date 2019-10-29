@@ -37,7 +37,7 @@ func main() {
 `,
 	}
 
-	store, cleanup, err := newStore(files)
+	zipPath, cleanup, err := newZip(files)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,13 +49,12 @@ func main() {
 	}{
 		{
 			Args{
-				Input:           Input{ZipPath: store.Path},
+				Input:           Input{ZipPath: zipPath},
 				MatchTemplate:   "func",
 				RewriteTemplate: "derp",
 				FilePatterns:    []string{".go"},
 				Matcher:         ".go",
-			}, `
-{"uri":"main.go","diff":"--- main.go\n+++ main.go\n@@ -2,6 +2,6 @@\n \n import \"fmt\"\n \n-func main() {\n+derp main() {\n \tfmt.Println(\"Hello foo\")\n }"}
+			}, `{"uri":"main.go","diff":"--- main.go\n+++ main.go\n@@ -2,6 +2,6 @@\n \n import \"fmt\"\n \n-func main() {\n+derp main() {\n \tfmt.Println(\"Hello foo\")\n }"}
 `},
 	}
 
@@ -66,26 +65,28 @@ func main() {
 		if err != nil {
 			t.Fatal(err)
 		}
-		ifb.String()
+		got := b.String()
+		if got != test.want {
+			t.Errorf("got %v, want %s", got, test.want)
+			continue
+		}
+	}
+}
+
+func newZip(files map[string]string) (path string, cleanup func(), err error) {
+	s, cleanup, err := newStore(files)
+	if err != nil {
+		return "", cleanup, err
 	}
 
-	/*
-		testCases := []struct {
-			name string
-			want string
-		}{
-			{"case 1", "yes"},
-		}
-
-		for _, test := range testCases {
-			t.Run(test.name, func(*testing.T) {
-				got := "yes"
-				if got != test.want {
-					t.Errorf("failed %v, got %v, want %v", test.name, got, test.want)
-				}
-			})
-		}
-	*/
+	ctx := context.Background()
+	repo := gitserver.Repo{Name: "foo", URL: "u"}
+	var commit api.CommitID = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+	path, err = s.PrepareZip(ctx, repo, commit)
+	if err != nil {
+		return "", cleanup, err
+	}
+	return path, cleanup, nil
 }
 
 func newStore(files map[string]string) (*store.Store, func(), error) {
@@ -115,7 +116,7 @@ func newStore(files map[string]string) (*store.Store, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	d, err := ioutil.TempDir("", "search_test")
+	d, err := ioutil.TempDir("", "comby_test")
 	if err != nil {
 		return nil, nil, err
 	}
