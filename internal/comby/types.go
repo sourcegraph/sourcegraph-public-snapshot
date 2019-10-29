@@ -4,16 +4,12 @@ type Input interface {
 	Value() string
 }
 
-type value struct {
-	value string
-}
+type ZipPath string
+type DirPath string
 
-type ZipPath value
-type DirPath value
+func (z ZipPath) Value() string { return string(z) }
 
-func (z *ZipPath) Value() string { return z.value }
-
-func (d *DirPath) Value() string { return d.value }
+func (d DirPath) Value() string { return string(d) }
 
 type Args struct {
 	// An Input to process (either a path to a directory or zip file)
