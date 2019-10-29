@@ -8,7 +8,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -18,7 +17,7 @@ import (
 
 func TestMatchesInZip(t *testing.T) {
 	// If we are not on CI skip the test if comby is not installed.
-	if _, err := exec.LookPath("comby"); os.Getenv("CI") == "" && err != nil {
+	if os.Getenv("CI") == "" && !exists() {
 		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
 	}
 
@@ -68,7 +67,7 @@ func main() {
 		}
 		got := b.String()
 		if got != test.want {
-			t.Errorf("got %v, want %s", got, test.want)
+			t.Errorf("got %v, want %v", got, test.want)
 			continue
 		}
 	}

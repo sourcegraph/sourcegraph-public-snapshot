@@ -28,4 +28,7 @@ type Args struct {
 
 	// FilePatterns is a list of file patterns (suffixes) to filter and process
 	FilePatterns []string
+
+	// NumWorkers is the number of worker processes to fork in parallel
+	NumWorkers int
 }

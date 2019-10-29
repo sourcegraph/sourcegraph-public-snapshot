@@ -13,14 +13,13 @@ import (
 )
 
 const combyPath = "comby"
-const numWorkers = 8
 
-func exists() error {
+func exists() bool {
 	_, err := exec.LookPath(combyPath)
 	if err != nil {
-		return errors.New("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'")
+		return false
 	}
-	return nil
+	return true
 }
 
 func rawArgs(args Args) (rawArgs []string) {
@@ -34,7 +33,11 @@ func rawArgs(args Args) (rawArgs []string) {
 		rawArgs = append(rawArgs, "-json-only-diff")
 	}
 
-	rawArgs = append(rawArgs, "-jobs", strconv.Itoa(numWorkers))
+	if args.NumWorkers == 0 {
+		rawArgs = append(rawArgs, "-sequential")
+	} else {
+		rawArgs = append(rawArgs, "-jobs", strconv.Itoa(args.NumWorkers))
+	}
 
 	if args.Matcher != "" {
 		rawArgs = append(rawArgs, "-matcher", args.Matcher)
@@ -46,6 +49,7 @@ func rawArgs(args Args) (rawArgs []string) {
 	case DirPath:
 		rawArgs = append(rawArgs, "-directory", string(i))
 	default:
+		log15.Error("unrecognized input type: %T", i)
 		panic("unreachable")
 	}
 
@@ -53,9 +57,9 @@ func rawArgs(args Args) (rawArgs []string) {
 }
 
 func PipeTo(args Args, w io.Writer) (err error) {
-	err = exists()
-	if err != nil {
-		return err
+	if !exists() {
+		log15.Error("comby is not installed (it could not be found on the PATH)")
+		return errors.New("comby is not installed")
 	}
 
 	rawArgs := rawArgs(args)
@@ -65,34 +69,34 @@ func PipeTo(args Args, w io.Writer) (err error) {
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		log15.Warn("could not connect to comby command stdout", "error", err.Error())
+		log15.Error("could not connect to comby command stdout", "error", err.Error())
 		return err
 	}
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
-		log15.Warn("could not connect to comby command stderr", "error", err.Error())
+		log15.Error("could not connect to comby command stderr", "error", err.Error())
 		return err
 	}
 
 	if err := cmd.Start(); err != nil {
-		log15.Info("error starting comby command", "error", err.Error())
+		log15.Error("failed to start comby command", "error", err.Error())
 		return errors.New(err.Error())
 	}
 
 	_, err = io.Copy(w, stdout)
 	if err != nil {
-		log15.Info("error copying comby output to writer", "error", err.Error())
-		return
+		log15.Error("failed to copy comby output to writer", "error", err.Error())
+		return err
 	}
 
 	stderrMsg, _ := ioutil.ReadAll(stderr)
 
 	if err := cmd.Wait(); err != nil {
 		if stderrMsg != nil {
-			log15.Info("error after executing comby command", "error", string(stderrMsg))
+			log15.Error("failed to execute comby command", "error", string(stderrMsg))
 			return fmt.Errorf("comby error: %s", string(stderrMsg))
 		}
-		log15.Info("error after executing comby command", "error", string(err.(*exec.ExitError).Stderr))
+		log15.Error("failed to wait for executing comby command", "error", string(err.(*exec.ExitError).Stderr))
 		return err
 	}
 
