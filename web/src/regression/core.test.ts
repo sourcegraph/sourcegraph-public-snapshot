@@ -241,21 +241,12 @@ describe('Core functionality regression test suite', () => {
             token: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
         })
 
-        let noError = false
-        try {
-            await gqlClientWithInvalidToken
+        await expect(
+            gqlClientWithInvalidToken
                 .queryGraphQL(currentUsernameQuery)
                 .pipe(map(dataOrThrowErrors))
                 .toPromise()
-            noError = true
-        } catch (err) {
-            if (!(err as Error).message.includes('401 Unauthorized')) {
-                throw new Error(`Unexpected error making GraphQL request with invalid token: ${err}`)
-            }
-        }
-        if (noError) {
-            throw new Error('GraphQL request with invalid token completed successfully')
-        }
+        ).rejects.toThrowError('401 Unauthorized')
     })
 
     test('2.5 Quicklinks: add a quicklink, test that it appears on the front page and works.', async () => {
