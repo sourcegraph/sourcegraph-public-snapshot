@@ -1,15 +1,14 @@
 package comby
 
 type Input interface {
-	Value() string
+	Value()
 }
 
 type ZipPath string
 type DirPath string
 
-func (z ZipPath) Value() string { return string(z) }
-
-func (d DirPath) Value() string { return string(d) }
+func (z ZipPath) Value() {}
+func (d DirPath) Value() {}
 
 type Args struct {
 	// An Input to process (either a path to a directory or zip file)
