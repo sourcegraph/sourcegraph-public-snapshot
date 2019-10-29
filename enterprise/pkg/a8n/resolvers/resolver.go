@@ -28,21 +28,11 @@ import (
 type Resolver struct {
 	store       *ee.Store
 	httpFactory *httpcli.Factory
-
-	repoSearcher graphqlbackend.RepoSearcher
 }
 
 // NewResolver returns a new Resolver whose store uses the given db
 func NewResolver(db *sql.DB) graphqlbackend.A8NResolver {
 	return &Resolver{store: ee.NewStore(db)}
-}
-
-func (r *Resolver) HasRepoSearcher() bool {
-	return r.repoSearcher != nil
-}
-
-func (r *Resolver) SetRepoSearcher(rs graphqlbackend.RepoSearcher) {
-	r.repoSearcher = rs
 }
 
 func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbackend.ExternalChangesetResolver, error) {
@@ -440,12 +430,8 @@ func (r *Resolver) PreviewCampaignPlan(ctx context.Context, args graphqlbackend.
 		return nil, err
 	}
 
-	// TODO(a8n): Implement this according to the `Arguments["scope"]`
 	// Search repositories over which to execute code modification
-	if r.repoSearcher == nil {
-		return nil, errors.New("No repo search possible")
-	}
-	repos, err := r.repoSearcher.SearchRepos(ctx, specArgs["searchScope"])
+	repos, err := graphqlbackend.SearchRepos(ctx, specArgs["searchScope"])
 	if err != nil {
 		return nil, err
 	}

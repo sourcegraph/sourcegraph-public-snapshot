@@ -63,10 +63,6 @@ type CreateChangesetsArgs struct {
 	}
 }
 
-type RepoSearcher interface {
-	SearchRepos(ctx context.Context, query string) ([]*RepositoryResolver, error)
-}
-
 type A8NResolver interface {
 	CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (CampaignResolver, error)
 	UpdateCampaign(ctx context.Context, args *UpdateCampaignArgs) (CampaignResolver, error)
@@ -84,9 +80,6 @@ type A8NResolver interface {
 	PreviewCampaignPlan(ctx context.Context, args PreviewCampaignPlanArgs) (CampaignPlanResolver, error)
 	CampaignPlanByID(ctx context.Context, id graphql.ID) (CampaignPlanResolver, error)
 	CancelCampaignPlan(ctx context.Context, args CancelCampaignPlanArgs) (*EmptyResponse, error)
-
-	HasRepoSearcher() bool
-	SetRepoSearcher(RepoSearcher)
 }
 
 var onlyInEnterprise = errors.New("campaigns and changesets are only available in enterprise")
@@ -101,9 +94,6 @@ func (r *schemaResolver) AddChangesetsToCampaign(ctx context.Context, args *AddC
 func (r *schemaResolver) PreviewCampaignPlan(ctx context.Context, args PreviewCampaignPlanArgs) (CampaignPlanResolver, error) {
 	if r.a8nResolver == nil {
 		return nil, onlyInEnterprise
-	}
-	if !r.a8nResolver.HasRepoSearcher() {
-		r.a8nResolver.SetRepoSearcher(r)
 	}
 	return r.a8nResolver.PreviewCampaignPlan(ctx, args)
 }
