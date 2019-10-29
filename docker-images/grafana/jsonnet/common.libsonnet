@@ -363,4 +363,5 @@ local makeHttpDurationPercentilesPanel(titleValue, metricValue, timeRange, perce
   makeDurationPercentilesPanel:: makeDurationPercentilesPanel,
   makeHttpDurationPercentilesPanel:: makeHttpDurationPercentilesPanel,
   makeBucketSeriesOverrides:: makeBucketSeriesOverrides,
+  makePercentileSeriesOverrides:: makePercentileSeriesOverrides,
 }

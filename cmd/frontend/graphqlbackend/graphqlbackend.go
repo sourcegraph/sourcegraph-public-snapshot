@@ -25,7 +25,7 @@ var graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Name:      "field_seconds",
 	Help:      "GraphQL field resolver latencies in seconds.",
 	Buckets:   []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
-}, []string{"type", "field", "error"})
+}, []string{"error"})
 
 func init() {
 	prometheus.MustRegister(graphqlFieldHistogram)
@@ -39,7 +39,7 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 	traceCtx, finish := trace.OpenTracingTracer{}.TraceField(ctx, label, typeName, fieldName, trivial, args)
 	start := time.Now()
 	return traceCtx, func(err *gqlerrors.QueryError) {
-		graphqlFieldHistogram.WithLabelValues(typeName, fieldName, strconv.FormatBool(err != nil)).Observe(time.Since(start).Seconds())
+		graphqlFieldHistogram.WithLabelValues(strconv.FormatBool(err != nil)).Observe(time.Since(start).Seconds())
 		finish(err)
 	}
 }
