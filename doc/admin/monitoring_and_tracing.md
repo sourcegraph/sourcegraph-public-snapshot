@@ -33,7 +33,7 @@ kubectl port-forward svc/grafana 3370:30070
 
 ### Single-container server deployments
 
-If you are running Sourcegraph as single server locally:
+If you are running Sourcegraph as a single-container server deployment:
 
 ```shell script
 docker run --publish 7080:7080 --publish 2633:2633 --publish 127.0.0.1:3370:3370 \
