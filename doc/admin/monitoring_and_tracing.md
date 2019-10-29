@@ -48,7 +48,7 @@ such as [sshuttle](https://github.com/sshuttle/sshuttle) is required to establis
 To access the remote server using `sshuttle` from your local machine:
 
 ```shell script	
-sshuttle -r xxx_user_xxx@sxxx_remote_server_xxx 0/0
+sshuttle -r user@host 0/0
 ```
 
 ### Docker images
