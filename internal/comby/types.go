@@ -35,20 +35,3 @@ type Args = struct {
 	// FilePatterns is a list of file patterns (suffixes) to filter and process
 	FilePatterns []string
 }
-
-type Range struct {
-	Offset int `json:"offset"`
-	Line   int `json:"line"`
-	Column int `json:"column"`
-}
-
-type Match struct {
-	URI     string  `json:"uri"`
-	Matches []Range `json:"matches"`
-	Matched string  `json:"matched"`
-}
-
-type Diff struct {
-	URI  string `json:"uri"`
-	Diff string `json:"diff"`
-}
