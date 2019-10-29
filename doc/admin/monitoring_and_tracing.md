@@ -44,7 +44,7 @@ docker run --publish 7080:7080 --publish 2633:2633 --publish 127.0.0.1:3370:3370
 For simplicity, Garafana does not require authentication, as the port binding of 3370 is limited to connections from localhost.
 
 Therefore, if accessing Grafana locally, the URL will be http://localhost:3370/-/debug/grafana. If Sourcegraph is deployed to a remote server, then access via an SSH tunnel using a tool
-like [sshuttle](https://github.com/sshuttle/sshuttle) to establish a secure connection to that URL. 
+such as [sshuttle](https://github.com/sshuttle/sshuttle) is required to establish a secure connection to Grafana.
 On your local machine start a `sshuttle` session to your remote server	
 
 ```shell script	
