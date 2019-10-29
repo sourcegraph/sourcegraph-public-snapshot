@@ -120,7 +120,7 @@ func (r *campaignResolver) UpdatedAt() graphqlbackend.DateTime {
 
 func (r *campaignResolver) Changesets(ctx context.Context, args struct {
 	graphqlutil.ConnectionArgs
-}) graphqlbackend.ChangesetsConnectionResolver {
+}) graphqlbackend.ExternalChangesetsConnectionResolver {
 	return &changesetsConnectionResolver{
 		store: r.store,
 		opts: ee.ListChangesetsOpts{
@@ -186,4 +186,35 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 	}
 
 	return resolvers, nil
+}
+
+func (r *campaignResolver) Plan(ctx context.Context) (graphqlbackend.CampaignPlanResolver, error) {
+	if r.Campaign.CampaignPlanID == 0 {
+		return nil, nil
+	}
+
+	plan, err := r.store.GetCampaignPlan(ctx, ee.GetCampaignPlanOpts{ID: r.Campaign.CampaignPlanID})
+	if err != nil {
+		return nil, err
+	}
+
+	return &campaignPlanResolver{store: r.store, campaignPlan: plan}, nil
+}
+
+func (r *campaignResolver) RepositoryDiffs(
+	ctx context.Context,
+	args *graphqlutil.ConnectionArgs,
+) (graphqlbackend.RepositoryComparisonConnectionResolver, error) {
+	// TODO(a8n): implement this
+	return nil, nil
+}
+
+func (r *campaignResolver) ChangesetCreationStatus() graphqlbackend.BackgroundProcessStatus {
+	// TODO(a8n): Implement this
+	return a8n.BackgroundProcessStatus{
+		Completed:     0,
+		Pending:       99,
+		ProcessState:  a8n.BackgroundProcessStateErrored,
+		ProcessErrors: []string{"something went wrong we don't know what"},
+	}
 }

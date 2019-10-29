@@ -29,12 +29,12 @@ type changesetsConnectionResolver struct {
 	err        error
 }
 
-func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ChangesetResolver, error) {
+func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ExternalChangesetResolver, error) {
 	changesets, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]graphqlbackend.ChangesetResolver, 0, len(changesets))
+	resolvers := make([]graphqlbackend.ExternalChangesetResolver, 0, len(changesets))
 	for _, c := range changesets {
 		resolvers = append(resolvers, &changesetResolver{store: r.store, Changeset: c})
 	}
@@ -77,6 +77,14 @@ func marshalChangesetID(id int64) graphql.ID {
 func unmarshalChangesetID(id graphql.ID) (cid int64, err error) {
 	err = relay.UnmarshalSpec(id, &cid)
 	return
+}
+
+func (r *changesetResolver) ToChangesetPlan() (graphqlbackend.ChangesetPlanResolver, bool) {
+	return r, true
+}
+
+func (r *changesetResolver) ToExternalChangeset() (graphqlbackend.ExternalChangesetResolver, bool) {
+	return r, true
 }
 
 func (r *changesetResolver) ID() graphql.ID {
@@ -178,4 +186,9 @@ func (r *changesetResolver) Events(ctx context.Context, args *struct {
 			Limit:        int(args.ConnectionArgs.GetFirst()),
 		},
 	}, nil
+}
+
+func (r *changesetResolver) Diff(ctx context.Context) (*graphqlbackend.RepositoryComparisonResolver, error) {
+	// TODO(a8n): implement this (see: https://github.com/sourcegraph/sourcegraph/pull/6206/files)
+	return nil, nil
 }

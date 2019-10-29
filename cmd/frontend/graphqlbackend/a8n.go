@@ -24,6 +24,7 @@ type CreateCampaignArgs struct {
 		Namespace   graphql.ID
 		Name        string
 		Description string
+		Plan        *graphql.ID
 	}
 }
 
@@ -35,7 +36,23 @@ type UpdateCampaignArgs struct {
 	}
 }
 
+type PreviewCampaignPlanArgs struct {
+	Specification struct {
+		Type      string
+		Arguments JSONCString
+	}
+	Wait bool
+}
+
+type CancelCampaignPlanArgs struct {
+	Plan graphql.ID
+}
+
 type DeleteCampaignArgs struct {
+	Campaign graphql.ID
+}
+
+type RetryCampaignArgs struct {
 	Campaign graphql.ID
 }
 
@@ -46,18 +63,30 @@ type CreateChangesetsArgs struct {
 	}
 }
 
+type RepoSearcher interface {
+	SearchRepos(ctx context.Context, query string) ([]*RepositoryResolver, error)
+}
+
 type A8NResolver interface {
 	CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (CampaignResolver, error)
 	UpdateCampaign(ctx context.Context, args *UpdateCampaignArgs) (CampaignResolver, error)
 	CampaignByID(ctx context.Context, id graphql.ID) (CampaignResolver, error)
 	Campaigns(ctx context.Context, args *graphqlutil.ConnectionArgs) (CampaignsConnectionResolver, error)
 	DeleteCampaign(ctx context.Context, args *DeleteCampaignArgs) (*EmptyResponse, error)
+	RetryCampaign(ctx context.Context, args *RetryCampaignArgs) (CampaignResolver, error)
 
-	CreateChangesets(ctx context.Context, args *CreateChangesetsArgs) ([]ChangesetResolver, error)
-	ChangesetByID(ctx context.Context, id graphql.ID) (ChangesetResolver, error)
-	Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) (ChangesetsConnectionResolver, error)
+	CreateChangesets(ctx context.Context, args *CreateChangesetsArgs) ([]ExternalChangesetResolver, error)
+	ChangesetByID(ctx context.Context, id graphql.ID) (ExternalChangesetResolver, error)
+	Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) (ExternalChangesetsConnectionResolver, error)
 
 	AddChangesetsToCampaign(ctx context.Context, args *AddChangesetsToCampaignArgs) (CampaignResolver, error)
+
+	PreviewCampaignPlan(ctx context.Context, args PreviewCampaignPlanArgs) (CampaignPlanResolver, error)
+	CampaignPlanByID(ctx context.Context, id graphql.ID) (CampaignPlanResolver, error)
+	CancelCampaignPlan(ctx context.Context, args CancelCampaignPlanArgs) (*EmptyResponse, error)
+
+	HasRepoSearcher() bool
+	SetRepoSearcher(RepoSearcher)
 }
 
 var onlyInEnterprise = errors.New("campaigns and changesets are only available in enterprise")
@@ -67,6 +96,23 @@ func (r *schemaResolver) AddChangesetsToCampaign(ctx context.Context, args *AddC
 		return nil, onlyInEnterprise
 	}
 	return r.a8nResolver.AddChangesetsToCampaign(ctx, args)
+}
+
+func (r *schemaResolver) PreviewCampaignPlan(ctx context.Context, args PreviewCampaignPlanArgs) (CampaignPlanResolver, error) {
+	if r.a8nResolver == nil {
+		return nil, onlyInEnterprise
+	}
+	if !r.a8nResolver.HasRepoSearcher() {
+		r.a8nResolver.SetRepoSearcher(r)
+	}
+	return r.a8nResolver.PreviewCampaignPlan(ctx, args)
+}
+
+func (r *schemaResolver) CancelCampaignPlan(ctx context.Context, args CancelCampaignPlanArgs) (*EmptyResponse, error) {
+	if r.a8nResolver == nil {
+		return nil, onlyInEnterprise
+	}
+	return r.a8nResolver.CancelCampaignPlan(ctx, args)
 }
 
 func (r *schemaResolver) CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (CampaignResolver, error) {
@@ -90,6 +136,13 @@ func (r *schemaResolver) DeleteCampaign(ctx context.Context, args *DeleteCampaig
 	return r.a8nResolver.DeleteCampaign(ctx, args)
 }
 
+func (r *schemaResolver) RetryCampaign(ctx context.Context, args *RetryCampaignArgs) (CampaignResolver, error) {
+	if r.a8nResolver == nil {
+		return nil, onlyInEnterprise
+	}
+	return r.a8nResolver.RetryCampaign(ctx, args)
+}
+
 func (r *schemaResolver) Campaigns(ctx context.Context, args *graphqlutil.ConnectionArgs) (CampaignsConnectionResolver, error) {
 	if r.a8nResolver == nil {
 		return nil, onlyInEnterprise
@@ -97,14 +150,14 @@ func (r *schemaResolver) Campaigns(ctx context.Context, args *graphqlutil.Connec
 	return r.a8nResolver.Campaigns(ctx, args)
 }
 
-func (r *schemaResolver) CreateChangesets(ctx context.Context, args *CreateChangesetsArgs) ([]ChangesetResolver, error) {
+func (r *schemaResolver) CreateChangesets(ctx context.Context, args *CreateChangesetsArgs) ([]ExternalChangesetResolver, error) {
 	if r.a8nResolver == nil {
 		return nil, onlyInEnterprise
 	}
 	return r.a8nResolver.CreateChangesets(ctx, args)
 }
 
-func (r *schemaResolver) Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) (ChangesetsConnectionResolver, error) {
+func (r *schemaResolver) Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) (ExternalChangesetsConnectionResolver, error) {
 	if r.a8nResolver == nil {
 		return nil, onlyInEnterprise
 	}
@@ -125,8 +178,11 @@ type CampaignResolver interface {
 	Namespace(ctx context.Context) (n NamespaceResolver, err error)
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
-	Changesets(ctx context.Context, args struct{ graphqlutil.ConnectionArgs }) ChangesetsConnectionResolver
+	Changesets(ctx context.Context, args struct{ graphqlutil.ConnectionArgs }) ExternalChangesetsConnectionResolver
 	ChangesetCountsOverTime(ctx context.Context, args *ChangesetCountsArgs) ([]ChangesetCountsResolver, error)
+	RepositoryDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (RepositoryComparisonConnectionResolver, error)
+	Plan(ctx context.Context) (CampaignPlanResolver, error)
+	ChangesetCreationStatus() BackgroundProcessStatus
 }
 
 type CampaignsConnectionResolver interface {
@@ -135,13 +191,20 @@ type CampaignsConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
-type ChangesetsConnectionResolver interface {
-	Nodes(ctx context.Context) ([]ChangesetResolver, error)
+type ChangesetResolver interface {
+	Title() (string, error)
+	Body() (string, error)
+	Repository(ctx context.Context) (*RepositoryResolver, error)
+	Diff(ctx context.Context) (*RepositoryComparisonResolver, error)
+}
+
+type ExternalChangesetsConnectionResolver interface {
+	Nodes(ctx context.Context) ([]ExternalChangesetResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
-type ChangesetResolver interface {
+type ExternalChangesetResolver interface {
 	ID() graphql.ID
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
@@ -153,6 +216,23 @@ type ChangesetResolver interface {
 	Repository(ctx context.Context) (*RepositoryResolver, error)
 	Campaigns(ctx context.Context, args *struct{ graphqlutil.ConnectionArgs }) (CampaignsConnectionResolver, error)
 	Events(ctx context.Context, args *struct{ graphqlutil.ConnectionArgs }) (ChangesetEventsConnectionResolver, error)
+	Diff(ctx context.Context) (*RepositoryComparisonResolver, error)
+	ToChangesetPlan() (ChangesetPlanResolver, bool)
+	ToExternalChangeset() (ExternalChangesetResolver, bool)
+}
+
+type ChangesetPlansConnectionResolver interface {
+	Nodes(ctx context.Context) ([]ChangesetPlanResolver, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type ChangesetPlanResolver interface {
+	Title() (string, error)
+	Body() (string, error)
+	Repository(ctx context.Context) (*RepositoryResolver, error)
+	Diff(ctx context.Context) (*RepositoryComparisonResolver, error)
+	ToExternalChangeset() (ExternalChangesetResolver, bool)
 }
 
 type ChangesetEventsConnectionResolver interface {
@@ -163,7 +243,7 @@ type ChangesetEventsConnectionResolver interface {
 
 type ChangesetEventResolver interface {
 	ID() graphql.ID
-	Changeset(ctx context.Context) (ChangesetResolver, error)
+	Changeset(ctx context.Context) (ExternalChangesetResolver, error)
 	CreatedAt() DateTime
 }
 
@@ -176,4 +256,36 @@ type ChangesetCountsResolver interface {
 	OpenApproved() int32
 	OpenChangesRequested() int32
 	OpenPending() int32
+}
+
+type CampaignPlanArgResolver interface {
+	Name() string
+	Value() string
+}
+
+type CampaignPlanSpecification interface {
+	Type() string
+	Arguments() string
+}
+
+type BackgroundProcessStatus interface {
+	CompletedCount() int32
+	PendingCount() int32
+
+	State() a8n.BackgroundProcessState
+
+	Errors() []string
+}
+
+type CampaignPlanResolver interface {
+	ID() graphql.ID
+
+	Type() string
+	Arguments() (JSONCString, error)
+
+	Status() BackgroundProcessStatus
+
+	Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) ChangesetPlansConnectionResolver
+
+	RepositoryDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (PreviewRepositoryDiffConnectionResolver, error)
 }

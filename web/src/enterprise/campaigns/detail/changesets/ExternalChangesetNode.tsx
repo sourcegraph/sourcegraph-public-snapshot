@@ -1,4 +1,4 @@
-import { IChangeset } from '../../../../../../shared/src/graphql/schema'
+import { IExternalChangeset } from '../../../../../../shared/src/graphql/schema'
 import React from 'react'
 import SourcePullIcon from 'mdi-react/SourcePullIcon'
 import {
@@ -10,10 +10,10 @@ import {
 import { Link } from '../../../../../../shared/src/components/Link'
 
 interface Props {
-    node: IChangeset
+    node: IExternalChangeset
 }
 
-export const ChangesetNode: React.FunctionComponent<Props> = ({ node }) => {
+export const ExternalChangesetNode: React.FunctionComponent<Props> = ({ node }) => {
     const ReviewStateIcon = changesetReviewStateIcons[node.reviewState]
     return (
         <li className="list-group-item d-flex pl-1 align-items-center">

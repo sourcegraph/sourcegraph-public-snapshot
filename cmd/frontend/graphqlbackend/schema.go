@@ -33,15 +33,41 @@ type Mutation {
     # Creates a list of Changesets of a given repository in a code host (e.g.
     # pull request on GitHub). If a changeset with the given input already
     # exists, it's returned instead of a new entry being added to the database.
-    createChangesets(input: [CreateChangesetInput!]!): [Changeset!]!
+    createChangesets(input: [CreateChangesetInput!]!): [ExternalChangeset!]!
     # Adds a list of Changesets to a Campaign.
+    # The campaign must not have a campaign plan.
     addChangesetsToCampaign(campaign: ID!, changesets: [ID!]!): Campaign!
     # Create a campaign in a namespace. The newly created campaign is returned.
     createCampaign(input: CreateCampaignInput!): Campaign!
+    # Preview the plan for a campaign, including its diff.
+    # The returned CampaignPlan can be referred to when creating the campaign.
+    # It is cached with a short TTL.
+    # The campaign plan is computed asynchronously.
+    # Check its status property and query it by its id to see its latest state.
+    previewCampaignPlan(
+        specification: CampaignPlanSpecification!
+        # Whether to wait to finish computing the plan before returning.
+        # If false, callers must poll the CampaignPlan using its node ID to track progress and get results.
+        # If the plan is not ready within an interval that would result in request timeouts,
+        # the query will return anyway, so the caller must check the result's CampaignPlan.status.
+        wait: Boolean = false
+    ): CampaignPlan!
+    # Cancel a campaign plan that is being generated.
+    # Cancellation expresses a desinterest in the campaign plan and is best-effort.
+    # It may not be relied upon.
+    # The return of this mutation does not mean the plan was fully cancelled yet,
+    # only that the desinterest in the campaign plan was acknowledged.
+    # This mutation is idempotent and a noop if called for a completed campaign plan.
+    # There is no requirement to call this mutation, it is a performance optimization.
+    cancelCampaignPlan(plan: ID!): EmptyResponse
     # Updates a campaign.
     updateCampaign(input: UpdateCampaignInput!): Campaign!
+    # Retries creating changesets of the campaign plan that could not be successfully created on the code host.
+    # Retrying will clear the errors list of a campaign and change its state back to CREATING_CHANGESETS.
+    retryCampaign(campaign: ID!): Campaign!
     # Deletes a campaign.
     deleteCampaign(campaign: ID!): EmptyResponse
+
     # Updates the user profile information for the user with the given ID.
     #
     # Only the user and site admins may perform this mutation.
@@ -371,6 +397,19 @@ type Mutation {
     deleteSavedSearch(id: ID!): EmptyResponse
 }
 
+# The specification of what changesets Sourcegraph will open when the campaign is created.
+input CampaignPlanSpecification {
+    # A known campaign type.
+    # Currently only "comby" is supported.
+    type: String!
+
+    # JSONC string that configures the changes that Sourcegraph will open changesets for when the campaign is created.
+    #
+    # Schema for comby:
+    # { scopeQuery: string, matchTemplate: string, rewriteTemplate: string }
+    arguments: JSONCString!
+}
+
 # Input arguments for creating a campaign.
 input CreateCampaignInput {
     # The ID of the namespace where this campaign is defined.
@@ -381,6 +420,15 @@ input CreateCampaignInput {
 
     # The description of the campaign as Markdown.
     description: String!
+
+    # An optional reference to a completed campaign plan that was previewed before this mutation.
+    # If null, existing changesets can be added manually.
+    # If set, no changesets can be added manually, they will be created by Sourcegraph
+    # after creating the campaign according to the precomputed campaign plan.
+    # Will error if the plan has been purged already and needs to be recomputed by another call to previewCampaignPlan.
+    # Will error if the plan is not completed yet.
+    # Using a campaign plan for a campaign will retain it for the lifetime of the campaign and prevents it from being purged.
+    plan: ID
 }
 
 # Input arguments for updating a campaign.
@@ -395,10 +443,88 @@ input UpdateCampaignInput {
     description: String
 }
 
-# A collection of threads.
+# A preview of changes that will be applied by a campaign.
+# It is chached and addressable by its ID for a limited amount of time.
+type CampaignPlan implements Node {
+    # The unique ID of this campaign plan.
+    id: ID!
+
+    # The campaign type.
+    type: String!
+
+    # The JSONC string that configures how Sourcegraph generates the diff and changesets.
+    arguments: JSONCString!
+
+    # The progress status of generating changesets.
+    status: BackgroundProcessStatus!
+
+    # The changesets that will be created by the campaign.
+    changesets(first: Int): ChangesetPlanConnection!
+
+    # The combined diff of all changesets that will be created by the campaign.
+    repositoryDiffs(first: Int): PreviewRepositoryDiffConnection!
+}
+
+# A paginated list of repository diff previews.
+type PreviewRepositoryDiffConnection {
+    # A list of repository diffs.
+    nodes: [PreviewRepositoryDiff!]!
+
+    # The total number of repository diffs in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A paginated list of repository diffs committed to git.
+type RepositoryComparisonConnection {
+    # A list of repository diffs committed to git.
+    nodes: [RepositoryComparison!]!
+
+    # The total number of repository diffs in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# The state a background process can be in.
+enum BackgroundProcessState {
+    # The background process is processing items.
+    PROCESSING
+    # The background process attempted processing all items, but some failed.
+    ERRORED
+    # The background process completed processing all items successfully.
+    COMPLETED
+}
+
+# Reusable type to report progress of a background process.
+type BackgroundProcessStatus {
+    # How many items were successfully completed.
+    completedCount: Int!
+
+    # How many items are not done yet (including items that errored).
+    pendingCount: Int!
+
+    # The state the background process is currently in.
+    state: BackgroundProcessState!
+
+    # Messages of errors that occurred since the current run of this process was started.
+    errors: [String!]!
+}
+
+# A collection of changesets.
 type Campaign implements Node {
     # The unique ID for the campaign.
     id: ID!
+
+    # The campaign plan that was used to create this campaign.
+    # If null, changesets are added to the campaign manually.
+    plan: CampaignPlan
+
+    # The current status of creating the campaigns changesets on the code host.
+    changesetCreationStatus: BackgroundProcessStatus
 
     # The namespace where this campaign is defined.
     namespace: Namespace!
@@ -421,8 +547,11 @@ type Campaign implements Node {
     # The date and time when the campaign was updated.
     updatedAt: DateTime!
 
-    # The changesets in this campaign.
-    changesets(first: Int): ChangesetConnection!
+    # The combined diff of all changesets across all repositories, already created on the code host.
+    repositoryDiffs(first: Int): RepositoryComparisonConnection!
+
+    # The changesets in this campaign, already created on the code host.
+    changesets(first: Int): ExternalChangesetConnection!
 
     # The changeset counts over time, in 1 day intervals backwards from the point in time given in 'to'.
     changesetCountsOverTime(
@@ -490,12 +619,42 @@ input CreateChangesetInput {
     externalID: String!
 }
 
+# Basic fields of a changeset.
+interface Changeset {
+    # The repository changed by the changeset.
+    repository: Repository!
+
+    # The title of the changeset.
+    title: String!
+
+    # The body of the changeset.
+    body: String!
+
+    # The diff of the changeset.
+    diff: RepositoryDiff!
+}
+
+# Preview of a changeset planned to be created.
+type ChangesetPlan implements Changeset {
+    # The repository changed by the changeset.
+    repository: Repository!
+
+    # The title of the changeset.
+    title: String!
+
+    # The body of the changeset.
+    body: String!
+
+    # The diff of the changeset.
+    diff: RepositoryDiff!
+}
+
 # A changeset in a code host (e.g. a PR on Github)
-type Changeset implements Node {
+type ExternalChangeset implements Changeset & Node {
     # The unique ID for the changeset.
     id: ID!
 
-    # The repository where this changeset is defined.
+    # The repository changed by this changeset.
     repository: Repository!
 
     # The campaigns that have this changeset in them.
@@ -519,19 +678,34 @@ type Changeset implements Node {
     # The state of the changeset
     state: ChangesetState!
 
-    # The external URL of the changeset on the code host
+    # The external URL of the changeset on the code host.
     externalURL: ExternalLink!
 
     # The review state of this changeset.
     reviewState: ChangesetReviewState!
+
+    # The diff of this changeset.
+    diff: RepositoryDiff!
 }
 
 # A list of changesets.
-type ChangesetConnection {
+type ExternalChangesetConnection {
     # A list of changesets.
-    nodes: [Changeset!]!
+    nodes: [ExternalChangeset!]!
 
-    # The total number of campaigns in the connection.
+    # The total number of changesets in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A list of changesets plans.
+type ChangesetPlanConnection {
+    # A list of changeset plans.
+    nodes: [ChangesetPlan!]!
+
+    # The total number of changeset plans in the connection.
     totalCount: Int!
 
     # Pagination information.
@@ -544,7 +718,7 @@ type ChangesetEvent implements Node {
     id: ID!
 
     # The changeset this event belongs to.
-    changeset: Changeset!
+    changeset: ExternalChangeset!
 
     # The date and time when the changeset was created.
     createdAt: DateTime!
@@ -1713,8 +1887,26 @@ type GitRefConnection {
     pageInfo: PageInfo!
 }
 
-# The differences between two Git commits in a repository.
-type RepositoryComparison {
+# A not-yet-committed preview of a diff on a repository.
+type PreviewRepositoryDiff implements RepositoryDiff {
+    # The repository that this diff is targeting.
+    baseRepository: Repository!
+
+    # The file diffs for each changed file.
+    fileDiffs(first: Int): FileDiffConnection!
+}
+
+# Any diff on a concrete repository.
+interface RepositoryDiff {
+    # The repository that this diff is targeting.
+    baseRepository: Repository!
+
+    # The file diffs for each changed file.
+    fileDiffs(first: Int): FileDiffConnection!
+}
+
+# The differences between two concrete Git commits in a repository.
+type RepositoryComparison implements RepositoryDiff {
     # The repository that is the base (left-hand side) of this comparison.
     baseRepository: Repository!
 
@@ -2300,13 +2492,6 @@ interface File2 {
     externalURLs: [ExternalLink!]!
     # Highlight the file.
     highlight(disableTimeout: Boolean!, isLightTheme: Boolean!): HighlightedFile!
-    # Symbols defined in this file.
-    symbols(
-        # Returns the first n symbols from the list.
-        first: Int
-        # Return symbols matching the query.
-        query: String
-    ): SymbolConnection!
 }
 
 # File is temporarily preserved for backcompat with browser extension search API client code.
