@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/opentracing/opentracing-go"
@@ -19,6 +18,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -53,8 +54,9 @@ func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err er
 	return db.Repos.Get(ctx, repo)
 }
 
-// GetByName retrieves the repository with the given name. If the name refers to a repository on a known external
-// service (such as a code host) that is not yet present in the database, it will automatically look up the
+// GetByName retrieves the repository with the given name. On sourcegraph.com,
+// if the name refers to a repository on a github.com or gitlab.com that is not
+// yet present in the database, it will automatically look up the
 // repository externally and add it to the database before returning it.
 func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo, err error) {
 	if Mocks.Repos.GetByName != nil {
@@ -64,73 +66,60 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 	ctx, done := trace(ctx, "Repos", "GetByName", name, &err)
 	defer done()
 
-	repo, err := db.Repos.GetByName(ctx, name)
-	if err != nil && envvar.SourcegraphDotComMode() {
+	switch repo, err := db.Repos.GetByName(ctx, name); {
+	case err == nil:
+		return repo, nil
+	case !errcode.IsNotFound(err):
+		return nil, err
+	case envvar.SourcegraphDotComMode():
 		// Automatically add repositories on Sourcegraph.com.
-		if err := s.AddGitHubDotComRepository(ctx, name); err != nil {
+		if err := s.Add(ctx, name); err != nil {
 			return nil, err
 		}
 		return db.Repos.GetByName(ctx, name)
-	} else if err != nil {
-		if !conf.Get().DisablePublicRepoRedirects && strings.HasPrefix(strings.ToLower(string(name)), "github.com/") {
-			return nil, ErrRepoSeeOther{RedirectURL: (&url.URL{
-				Scheme:   "https",
-				Host:     "sourcegraph.com",
-				Path:     string(name),
-				RawQuery: url.Values{"utm_source": []string{conf.DeployType()}}.Encode(),
-			}).String()}
-		}
+	case shouldRedirect(name):
+		return nil, ErrRepoSeeOther{RedirectURL: (&url.URL{
+			Scheme:   "https",
+			Host:     "sourcegraph.com",
+			Path:     string(name),
+			RawQuery: url.Values{"utm_source": []string{conf.DeployType()}}.Encode(),
+		}).String()}
+	default:
 		return nil, err
 	}
-
-	return repo, nil
 }
 
-// AddGitHubDotComRepository adds the repository with the given name. The name is mapped to a repository by consulting the
-// repo-updater, which contains information about all configured code hosts and the names that they
-// handle.
-func (s *repos) AddGitHubDotComRepository(ctx context.Context, name api.RepoName) (err error) {
-	if Mocks.Repos.AddGitHubDotComRepository != nil {
-		return Mocks.Repos.AddGitHubDotComRepository(name)
-	}
+func shouldRedirect(name api.RepoName) bool {
+	return !conf.Get().DisablePublicRepoRedirects &&
+		extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...) != nil
+}
 
-	ctx, done := trace(ctx, "Repos", "AddGitHubDotComRepository", name, &err)
+// Add adds the repository with the given name to the database by calling
+// repo-updater when in sourcegraph.com mode.
+func (s *repos) Add(ctx context.Context, name api.RepoName) (err error) {
+	ctx, done := trace(ctx, "Repos", "Add", name, &err)
 	defer done()
 
-	// Avoid hitting the repoupdater (and incurring a hit against our GitHub/etc. API rate
+	// Avoid hitting repo-updater (and incurring a hit against our GitHub/etc. API rate
 	// limit) for repositories that don't exist or private repositories that people attempt to
 	// access.
-	gitserverRepo, err := quickGitserverRepo(ctx, name, "github.com")
-	if err != nil {
-		return err
-	}
-	if gitserverRepo != nil {
-		if err := gitserver.DefaultClient.IsRepoCloneable(ctx, *gitserverRepo); err != nil {
+	if host := extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...); host != nil {
+		gitserverRepo, err := quickGitserverRepo(ctx, name, host.ServiceType)
+		if err != nil {
 			return err
+		}
+
+		if gitserverRepo != nil {
+			if err := gitserver.DefaultClient.IsRepoCloneable(ctx, *gitserverRepo); err != nil {
+				return err
+			}
 		}
 	}
 
-	// Try to look up and add the repo.
-	result, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{Repo: name})
-	if err != nil {
-		return err
-	}
-	if result.Repo != nil {
-		// Allow anonymous users on Sourcegraph.com to enable repositories just by visiting them, but
-		// everywhere else, require server admins to explicitly enable repositories.
-		enableAutoAddedRepos := envvar.SourcegraphDotComMode()
-		if err := s.Upsert(ctx, api.InsertRepoOp{
-			Name:         result.Repo.Name,
-			Description:  result.Repo.Description,
-			Fork:         result.Repo.Fork,
-			Archived:     result.Repo.Archived,
-			Enabled:      enableAutoAddedRepos,
-			ExternalRepo: result.Repo.ExternalRepo,
-		}); err != nil {
-			return err
-		}
-	}
-	return nil
+	// Looking up the repo in repo-updater makes it sync that repo to the
+	// database on sourcegraph.com if that repo is from github.com or gitlab.com
+	_, err = repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{Repo: name})
+	return err
 }
 
 func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {

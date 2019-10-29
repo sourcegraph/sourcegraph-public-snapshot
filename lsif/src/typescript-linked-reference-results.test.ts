@@ -1,7 +1,12 @@
-import * as fs from 'mz/fs'
 import rmfr from 'rmfr'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { createCommit, createLocation, createCleanPostgresDatabase, convertTestData } from './test-utils'
+import {
+    createCommit,
+    createLocation,
+    createCleanPostgresDatabase,
+    convertTestData,
+    createStorageRoot,
+} from './test-utils'
 import { dbFilename } from './util'
 import { Database } from './database'
 import { XrepoDatabase } from './xrepo'
@@ -22,8 +27,8 @@ describe('Database', () => {
 
     beforeAll(async () => {
         ;({ connection, cleanup } = await createCleanPostgresDatabase())
-        storageRoot = await fs.promises.mkdtemp('typescript-')
-        xrepoDatabase = new XrepoDatabase(connection)
+        storageRoot = await createStorageRoot('typescript')
+        xrepoDatabase = new XrepoDatabase(storageRoot, connection)
 
         // Prepare test data
         await convertTestData(

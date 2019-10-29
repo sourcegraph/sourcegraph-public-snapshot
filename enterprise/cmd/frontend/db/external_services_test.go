@@ -290,7 +290,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 				"url": "https://bitbucket.org/",
 				"username": "admin",
 				"appPassword": "app-password",
-				"teams": ["sglocal", "sg_local"]
+				"teams": ["sglocal", "sg_local", "--a-team----name-"]
 			}`,
 			assert: equals("<nil>"),
 		},
@@ -319,10 +319,9 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		{
 			kind:   "BITBUCKETCLOUD",
 			desc:   "invalid team name",
-			config: `{"teams": ["sg-local", "sg local"]}`,
+			config: `{"teams": ["sg local"]}`,
 			assert: includes(
-				`teams.0: Does not match pattern '^\w+$'`,
-				`teams.1: Does not match pattern '^\w+$'`,
+				`teams.0: Does not match pattern '^[\w-]+$'`,
 			),
 		},
 		{

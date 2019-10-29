@@ -17,9 +17,19 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- Fields of type `String` in our GraphQL API that contain [JSONC](https://komkom.github.io/) now have the custom scalar type `JSONCString`. [#6209](https://github.com/sourcegraph/sourcegraph/pull/6209)
+
 ### Fixed
 
+- Support hyphens in Bitbucket Cloud team names. [#6154](https://github.com/sourcegraph/sourcegraph/issues/6154)
+
 ### Removed
+
+## 3.9.3
+
+### Changed
+
+- Sourcegraph is now built using Go 1.13.3 [#6200](https://github.com/sourcegraph/sourcegraph/pull/6200).
 
 ## 3.9.2
 

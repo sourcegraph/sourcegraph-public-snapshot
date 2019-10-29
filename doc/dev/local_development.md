@@ -36,6 +36,7 @@ Sourcegraph has the following dependencies:
 - [Yarn](https://yarnpkg.com) (v1.10.1 or higher)
 - [nginx](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-open-source/) (v1.14 or higher)
 - [SQLite](https://www.sqlite.org/index.html) tools
+- [Golang Migrate](https://github.com/golang-migrate/migrate/) (v4.7.0 or higher)
 
 The following are two recommendations for installing these dependencies:
 
@@ -50,10 +51,10 @@ The following are two recommendations for installing these dependencies:
     brew cask install docker
     ```
 
-3.  Install Go, Node, PostgreSQL, Redis, Git, nginx, and SQLite tools with the following command:
+3.  Install Go, Node, PostgreSQL, Redis, Git, nginx, golang-migrate, and SQLite tools with the following command:
 
     ```bash
-    brew install go node yarn redis postgresql git gnu-sed nginx sqlite pcre FiloSottile/musl-cross/musl-cross
+    brew install go node yarn redis postgresql git gnu-sed nginx golang-migrate sqlite pcre FiloSottile/musl-cross/musl-cross
     ```
 
 4.  Configure PostgreSQL and Redis to start automatically
@@ -106,6 +107,9 @@ The following are two recommendations for installing these dependencies:
 
     ```bash
     sudo apt install -y make git-all postgresql postgresql-contrib redis-server nginx libpcre3-dev libsqlite3-dev pkg-config golang-go musl-tools docker-ce docker-ce-cli containerd.io nodejs yarn
+
+    # install golang-migrate (you must move the extracted binary into your $PATH)
+    curl -L https://github.com/golang-migrate/migrate/releases/download/v4.7.0/migrate.linux-amd64.tar.gz | tar xvz
     ```
 
 4. Configure startup services

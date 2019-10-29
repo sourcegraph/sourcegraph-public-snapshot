@@ -14,6 +14,7 @@ Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](h
 ### Technical
 
 - [Quickstart](local_development.md)
+- [Tech stack](tech_stack.md)
 - [Architecture](architecture/index.md)
 - [Developing the web app](web_app.md)
 - [Developing the GraphQL API](graphql_api.md)

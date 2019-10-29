@@ -20,3 +20,7 @@ Fetch the tip of the default branch for each repository with LSIF data from gits
 ### `clean-old-jobs({})`
 
 Remove old job data from the system. This is based on a configurable age, `JOB_MAX_AGE`, within the worker process.
+
+### `clean-failed-jobs({})`
+
+Remove the upload and temporary files left over from a failed conversion job. Only files older than `FAILED_JOB_MAX_AGE` are deleted.

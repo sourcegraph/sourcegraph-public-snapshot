@@ -1,7 +1,12 @@
-import * as fs from 'mz/fs'
 import rmfr from 'rmfr'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { createCommit, createLocation, convertTestData, createCleanPostgresDatabase } from './test-utils'
+import {
+    createCommit,
+    createLocation,
+    convertTestData,
+    createCleanPostgresDatabase,
+    createStorageRoot,
+} from './test-utils'
 import { dbFilename } from './util'
 import { Database } from './database'
 import { XrepoDatabase } from './xrepo'
@@ -22,8 +27,8 @@ describe('Database', () => {
 
     beforeAll(async () => {
         ;({ connection, cleanup } = await createCleanPostgresDatabase())
-        storageRoot = await fs.mkdtemp('cpp-', { encoding: 'utf8' })
-        xrepoDatabase = new XrepoDatabase(connection)
+        storageRoot = await createStorageRoot('cpp')
+        xrepoDatabase = new XrepoDatabase(storageRoot, connection)
 
         // Prepare test data
         await convertTestData(xrepoDatabase, storageRoot, repository, commit, '', 'cpp/data/data.lsif.gz')

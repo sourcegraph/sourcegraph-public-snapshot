@@ -3,30 +3,20 @@
 mkdir -p "${DIR}/${REPO}/src"
 
 cat << EOF > "${DIR}/${REPO}/src/index.ts"
-export function add(a: number, b: number): number {
-    return a + b
-}
+import { add } from 'math-util/src'
 
-export function mul(a: number, b: number): number {
-    if (b === 0) {
-        return 0
-    }
-
-    let product = a
-    for (let i = 0; i < b; i++) {
-        product = add(product, a)
-    }
-
-    return product
-}
+// Peano-construction of 5
+add(1, add(1, add(1, add(1, 1))))
 EOF
 
 cat << EOF > "${DIR}/${REPO}/package.json"
 {
-    "name": "math-util",
+    "name": "${REPO}",
     "license": "MIT",
     "version": "0.1.0",
-    "dependencies": {},
+    "dependencies": {
+        "math-util": "link:${DEP}"
+    },
     "scripts": {
         "build": "tsc"
     }
@@ -45,3 +35,5 @@ cat << EOF > "${DIR}/${REPO}/tsconfig.json"
     "exclude": ["node_modules"]
 }
 EOF
+
+yarn --cwd "${DIR}/${REPO}" > /dev/null

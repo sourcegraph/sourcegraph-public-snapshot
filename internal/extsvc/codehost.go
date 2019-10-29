@@ -13,6 +13,20 @@ type CodeHost struct {
 	BaseURL     *url.URL
 }
 
+// Known public code hosts and their URLs
+var (
+	GitHubDotComURL = mustParseURL("https://github.com")
+	GitHubDotCom    = NewCodeHost(GitHubDotComURL, "github")
+
+	GitLabDotComURL = mustParseURL("https://gitlab.com")
+	GitLabDotCom    = NewCodeHost(GitLabDotComURL, "gitlab")
+
+	PublicCodeHosts = []*CodeHost{
+		GitHubDotCom,
+		GitLabDotCom,
+	}
+)
+
 func NewCodeHost(baseURL *url.URL, serviceType string) *CodeHost {
 	return &CodeHost{
 		ServiceID:   NormalizeBaseURL(baseURL).String(),
@@ -35,4 +49,24 @@ func NormalizeBaseURL(baseURL *url.URL) *url.URL {
 		baseURL.Path += "/"
 	}
 	return baseURL
+}
+
+// CodeHostOf returns the CodeHost of the given repo, if any, as
+// determined by a common prefix between the repo name and the
+// codehosts' URL hostname component.
+func CodeHostOf(name api.RepoName, codehosts ...*CodeHost) *CodeHost {
+	for _, c := range codehosts {
+		if strings.HasPrefix(strings.ToLower(string(name)), c.BaseURL.Hostname()) {
+			return c
+		}
+	}
+	return nil
+}
+
+func mustParseURL(rawurl string) *url.URL {
+	u, err := url.Parse(rawurl)
+	if err != nil {
+		panic(err)
+	}
+	return u
 }

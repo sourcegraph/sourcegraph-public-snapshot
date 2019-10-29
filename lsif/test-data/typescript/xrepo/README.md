@@ -6,7 +6,7 @@ The dump files used for testing are under version control, but can be regenerate
 
 ### Dump Layout
 
-The repository `a` defines the `math-util` package containing functions `add` and `mul`. The latter function is defined in terms of the former (and thus contains a eference to it).
+The repository `a` defines the `math-util` package containing functions `add` and `mul`. The latter function is defined in terms of the former (and thus contains a reference to it).
 
 The repositories `b{1,2,3}` have a dependency on `math-util` and import both `add` and `mul` functions.
 

@@ -121,6 +121,8 @@ export const gitlabCodeHost: CodeHost = {
         actionItemClassName: 'btn btn-secondary action-item--gitlab',
         actionItemPressedClassName: 'active',
         closeButtonClassName: 'btn',
+        infoAlertClassName: 'alert alert-info',
+        errorAlertClassName: 'alert alert-danger',
     },
     codeViewsRequireTokenization: true,
 }

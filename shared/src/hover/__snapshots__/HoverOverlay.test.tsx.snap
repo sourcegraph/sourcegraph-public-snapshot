@@ -34,16 +34,9 @@ exports[`HoverOverlay actions and hover error 1`] = `
     className="hover-overlay__contents"
   >
     <div
-      className="hover-overlay__row hover-overlay__hover-error alert alert-danger"
+      className="hover-overlay__row hover-overlay__hover-error"
     >
-      <h4>
-        <Memo(AlertCircleOutlineIcon)
-          className="icon-inline"
-        />
-         Error:
-      </h4>
-       
-      m2
+      M2
     </div>
   </div>
 </div>
@@ -373,10 +366,6 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
       <div
         className="hover-overlay__alert-content"
       >
-        <Memo(HelpCircleIcon)
-          className="icon-inline"
-        />
-         
         <small>
           <React.Fragment>
             b 
@@ -463,16 +452,9 @@ exports[`HoverOverlay hover error 1`] = `
     className="hover-overlay__contents"
   >
     <div
-      className="hover-overlay__row hover-overlay__hover-error alert alert-danger"
+      className="hover-overlay__row hover-overlay__hover-error"
     >
-      <h4>
-        <Memo(AlertCircleOutlineIcon)
-          className="icon-inline"
-        />
-         Error:
-      </h4>
-       
-      m
+      M
     </div>
   </div>
 </div>
@@ -494,16 +476,9 @@ exports[`HoverOverlay hover error, actions present 1`] = `
     className="hover-overlay__contents"
   >
     <div
-      className="hover-overlay__row hover-overlay__hover-error alert alert-danger"
+      className="hover-overlay__row hover-overlay__hover-error"
     >
-      <h4>
-        <Memo(AlertCircleOutlineIcon)
-          className="icon-inline"
-        />
-         Error:
-      </h4>
-       
-      m
+      M
     </div>
   </div>
   <div

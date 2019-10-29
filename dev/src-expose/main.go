@@ -27,12 +27,33 @@ func (e *usageError) Error() string {
 	return e.Msg
 }
 
-func dockerAddr(addr string) string {
+func explain(s *Snapshotter, addr string) string {
+	var dirs []string
+	for _, d := range s.Dirs {
+		dirs = append(dirs, "- "+d.Dir)
+	}
+
 	_, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		port = "3434"
 	}
-	return "host.docker.internal:" + port
+
+	return fmt.Sprintf(`Periodically syncing directories as git repositories to %s.
+%s
+Serving the repositories at http://%s.
+
+FIRST RUN NOTE: If src-expose has not yet been setup on Sourcegraph, then you
+need to configure Sourcegraph to sync with src-expose. Paste the following
+configuration as an Other External Service in Sourcegraph:
+
+  {
+    // url is the http url to src-expose (listening on %s)
+    // url should be reachable by Sourcegraph.
+    // "http://host.docker.internal:%s" works from Sourcegraph when using Docker for Desktop.
+    "url": "http://host.docker.internal:%s",
+    "repos": ["src-expose"] // This may change in versions later than 3.9
+  }
+`, s.Destination, strings.Join(dirs, "\n"), addr, addr, port, port)
 }
 
 func usageErrorOutput(cmd *ffcli.Command, cmdPath string, err error) string {
@@ -81,6 +102,7 @@ func main() {
 
 	var (
 		globalFlags    = flag.NewFlagSet("src-expose", flag.ExitOnError)
+		globalQuiet    = globalFlags.Bool("quiet", false, "")
 		globalVerbose  = globalFlags.Bool("verbose", false, "")
 		globalBefore   = globalFlags.String("before", "", "A command to run before sync. It is run from the current working directory.")
 		globalReposDir = globalFlags.String("repos-dir", "", "src-expose's git directories. src-expose creates a git repo per directory synced. The git repo is then served to Sourcegraph. The repositories are stored and served relative to this directory. Default: ~/.sourcegraph/src-expose-repos")
@@ -91,6 +113,13 @@ func main() {
 
 		serveFlags = flag.NewFlagSet("serve", flag.ExitOnError)
 	)
+
+	newLogger := func(prefix string) *log.Logger {
+		if *globalQuiet {
+			return log.New(ioutil.Discard, prefix, log.LstdFlags)
+		}
+		return log.New(os.Stderr, prefix, log.LstdFlags)
+	}
 
 	parseSnapshotter := func(flagSet *flag.FlagSet, args []string) (*Snapshotter, error) {
 		var s Snapshotter
@@ -155,7 +184,7 @@ src-expose will default to serving ~/.sourcegraph/src-expose-repos`,
 				return &usageError{"requires zero or one arguments"}
 			}
 
-			return serveRepos(*globalAddr, repoDir)
+			return serveRepos(newLogger("serve: "), *globalAddr, repoDir)
 		},
 	}
 
@@ -169,7 +198,7 @@ src-expose will default to serving ~/.sourcegraph/src-expose-repos`,
 			if err != nil {
 				return err
 			}
-			return s.Run()
+			return s.Run(newLogger("sync: "))
 		},
 	}
 
@@ -195,28 +224,20 @@ See https://github.com/sourcegraph/sourcegraph/tree/master/dev/src-expose/exampl
 				fmt.Println()
 			}
 
-			fmt.Printf(`Periodically syncing directories as git repositories to %s.
-- %s
-Serving the repositories at http://%s.
-Paste the following configuration as an Other External Service in Sourcegraph:
-
-  {
-    // url should be reachable by Sourcegraph. host.docker.internal works for Sourcegraph
-    // in Docker on the same machine.
-    "url": "http://%s",
-    "repos": ["src-expose"] // This may change in versions later than 3.9
-  }
-
-`, s.Destination, strings.Join(args[1:], "\n- "), *globalAddr, dockerAddr(*globalAddr))
+			if !*globalQuiet {
+				fmt.Println(explain(s, *globalAddr))
+			}
 
 			go func() {
-				if err := serveRepos(*globalAddr, s.Destination); err != nil {
+				logger := newLogger("serve: ")
+				if err := serveRepos(logger, *globalAddr, s.Destination); err != nil {
 					log.Fatal(err)
 				}
 			}()
 
+			logger := newLogger("sync: ")
 			for {
-				if err := s.Run(); err != nil {
+				if err := s.Run(logger); err != nil {
 					return err
 				}
 				time.Sleep(s.Duration)
