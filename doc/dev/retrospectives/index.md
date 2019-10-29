@@ -4,7 +4,7 @@ We value continuous learning and improvement.
 
 Retrospectives are a chance for teams to reflect on past experiences, celebrate what went well, and identify areas of improvement for the future.
 
-The [release captain](../releases.md#release-captain) is responsible for facilitating a retrospective for each monthly release, but additional retrospectives may be organized by anyone on the team for any reason (e.g. project retrospective, ops incident, customer incident).
+The [release captain](../releases.md#release-captain) is responsible for facilitating an engineering wide retrospective for each monthly release, but additional retrospectives may be organized by anyone for any reason (e.g. team retrospective, ops incident, customer incident).
 
 ## How to facilitate a retrospective
 
