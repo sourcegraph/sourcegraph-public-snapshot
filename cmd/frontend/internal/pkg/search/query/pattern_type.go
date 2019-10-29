@@ -48,12 +48,10 @@ var tokenRx = lazyregexp.New(`("([^"\\]|[\\].)*"|\s+|\S+)`)
 // tokenize returns a slice of the double-quoted strings, contiguous chunks
 // of non-whitespace, and contiguous chunks of whitespace in the input.
 func tokenize(input string) []string {
-	var modifiedInput string
 	// Find all tokens with quoted values, and then remove them from the original input
 	matchedTokens := quotedTokenValueRx.FindAllString(input, -1)
-	modifiedInput = quotedTokenValueRx.ReplaceAllString(input, "")
+	modifiedInput := quotedTokenValueRx.ReplaceAllString(input, "")
 
 	// Find all remaining tokens
-	matchedTokens = append(matchedTokens, tokenRx.FindAllString(modifiedInput, -1)...)
-	return matchedTokens
+	return append(matchedTokens, tokenRx.FindAllString(modifiedInput, -1)...)
 }
