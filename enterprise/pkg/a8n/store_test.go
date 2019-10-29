@@ -28,8 +28,6 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 		ctx := context.Background()
 
-		deferConstraint(t, tx, "campaign_jobs_repo_id_fkey")
-
 		t.Run("Campaigns", func(t *testing.T) {
 			campaigns := make([]*a8n.Campaign, 0, 3)
 
@@ -1232,14 +1230,5 @@ func testStore(db *sql.DB) func(*testing.T) {
 				}
 			})
 		})
-	}
-}
-
-func deferConstraint(t *testing.T, tx *sql.Tx, constraint string) {
-	t.Helper()
-
-	_, err := tx.Exec("SET CONSTRAINTS " + constraint + " DEFERRED")
-	if err != nil {
-		t.Fatal(err)
 	}
 }
