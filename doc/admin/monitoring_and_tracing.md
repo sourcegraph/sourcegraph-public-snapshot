@@ -45,7 +45,7 @@ For simplicity, Garafana does not require authentication, as the port binding of
 
 Therefore, if accessing Grafana locally, the URL will be http://localhost:3370/-/debug/grafana. If Sourcegraph is deployed to a remote server, then access via an SSH tunnel using a tool
 such as [sshuttle](https://github.com/sshuttle/sshuttle) is required to establish a secure connection to Grafana.
-On your local machine start a `sshuttle` session to your remote server	
+To access the remote server using `sshuttle` from your local machine:
 
 ```shell script	
 sshuttle -r xxx_user_xxx@sxxx_remote_server_xxx 0/0
