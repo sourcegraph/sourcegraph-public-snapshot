@@ -20,6 +20,31 @@ import (
 // when computing the `git diff` of the root commit.
 const devNullSHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 
+type PreviewRepositoryDiff interface {
+	BaseRepository() *RepositoryResolver
+	FileDiffs(*graphqlutil.ConnectionArgs) *fileDiffConnectionResolver
+}
+
+type PreviewRepositoryDiffConnectionResolver interface {
+	Nodes(ctx context.Context) ([]PreviewRepositoryDiff, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type RepositoryComparison interface {
+	BaseRepository() *RepositoryResolver
+	HeadRepository() *RepositoryResolver
+	Range() *gitRevisionRange
+	Commits(*graphqlutil.ConnectionArgs) *gitCommitConnectionResolver
+	FileDiffs(*graphqlutil.ConnectionArgs) *fileDiffConnectionResolver
+}
+
+type RepositoryComparisonConnectionResolver interface {
+	Nodes(ctx context.Context) ([]RepositoryComparison, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
 type RepositoryComparisonInput struct {
 	Base *string
 	Head *string
@@ -89,6 +114,14 @@ type RepositoryComparisonResolver struct {
 	repo                     *RepositoryResolver
 }
 
+func (r *RepositoryComparisonResolver) ToPreviewRepositoryDiff() (PreviewRepositoryDiff, bool) {
+	return r, true
+}
+
+func (r *RepositoryComparisonResolver) ToRepositoryComparison() (RepositoryComparison, bool) {
+	return r, true
+}
+
 func (r *RepositoryComparisonResolver) BaseRepository() *RepositoryResolver { return r.repo }
 
 func (r *RepositoryComparisonResolver) HeadRepository() *RepositoryResolver { return r.repo }
@@ -102,9 +135,9 @@ func (r *RepositoryComparisonResolver) Range() *gitRevisionRange {
 	}
 }
 
-func (r *RepositoryComparisonResolver) Commits(args *struct {
-	First *int32
-}) *gitCommitConnectionResolver {
+func (r *RepositoryComparisonResolver) Commits(
+	args *graphqlutil.ConnectionArgs,
+) *gitCommitConnectionResolver {
 	return &gitCommitConnectionResolver{
 		revisionRange: string(r.baseRevspec) + ".." + string(r.headRevspec),
 		first:         args.First,
@@ -112,9 +145,9 @@ func (r *RepositoryComparisonResolver) Commits(args *struct {
 	}
 }
 
-func (r *RepositoryComparisonResolver) FileDiffs(args *struct {
-	First *int32
-}) *fileDiffConnectionResolver {
+func (r *RepositoryComparisonResolver) FileDiffs(
+	args *graphqlutil.ConnectionArgs,
+) *fileDiffConnectionResolver {
 	return &fileDiffConnectionResolver{
 		cmp:   r,
 		first: args.First,

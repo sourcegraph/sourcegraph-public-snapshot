@@ -34,9 +34,13 @@ export const ChangesetNode: React.FunctionComponent<Props> = ({ node }) => {
                     <Link to={node.repository.url} className="text-muted">
                         {node.repository.name}
                     </Link>{' '}
-                    <Link to={node.externalURL.url} target="_blank" rel="noopener noreferrer">
-                        {node.title}
-                    </Link>
+                    {node.externalURL ? (
+                        <Link to={node.externalURL.url} target="_blank" rel="noopener noreferrer">
+                            {node.title}
+                        </Link>
+                    ) : (
+                        node.title
+                    )}
                 </h4>
                 <div className="text-truncate w-100">{node.body}</div>
             </div>
