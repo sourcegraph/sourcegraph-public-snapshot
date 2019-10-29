@@ -108,13 +108,6 @@ func (r *schemaResolver) PreviewCampaignPlan(ctx context.Context, args PreviewCa
 	return r.a8nResolver.PreviewCampaignPlan(ctx, args)
 }
 
-func (r *schemaResolver) CampaignPlanByID(ctx context.Context, id graphql.ID) (CampaignPlanResolver, error) {
-	if r.a8nResolver == nil {
-		return nil, onlyInEnterprise
-	}
-	return r.a8nResolver.CampaignPlanByID(ctx, id)
-}
-
 func (r *schemaResolver) CancelCampaignPlan(ctx context.Context, args CancelCampaignPlanArgs) (*EmptyResponse, error) {
 	if r.a8nResolver == nil {
 		return nil, onlyInEnterprise

@@ -211,7 +211,7 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 			return nil, onlyInEnterprise
 		}
 		return r.a8nResolver.CampaignPlanByID(ctx, id)
-	case "Changeset":
+	case "ExternalChangeset":
 		if r.a8nResolver == nil {
 			return nil, onlyInEnterprise
 		}
