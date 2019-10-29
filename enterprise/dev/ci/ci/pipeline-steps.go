@@ -136,9 +136,9 @@ func addE2E(c Config) func(*bk.Pipeline) {
 			bk.Cmd("./dev/ci/e2e.sh"),
 			bk.ArtifactPaths("./puppeteer/*.png;./web/e2e.mp4;./web/ffmpeg.log"),
 		}
-		requireE2E := c.isRenovateBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
+		requireE2E := c.branch == "master" || c.isRenovateBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
 		if requireE2E {
-			opts = append(opts, bk.AutomaticRetry(1))
+			opts = append(opts, bk.AutomaticRetry(2))
 		} else {
 			opts = append(opts, bk.SoftFail(true))
 		}
