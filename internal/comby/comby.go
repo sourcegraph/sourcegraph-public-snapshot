@@ -67,7 +67,6 @@ func PipeTo(args Args, w io.Writer) (err error) {
 		log15.Warn("could not connect to comby command stdout", "error", err.Error())
 		return err
 	}
-
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
 		log15.Warn("could not connect to comby command stderr", "error", err.Error())

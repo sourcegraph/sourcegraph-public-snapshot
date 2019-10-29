@@ -17,13 +17,13 @@ func (z *ZipPath) Value() string { return z.value }
 func (d *DirPath) Value() string { return d.value }
 
 type Args = struct {
-	// An Input to process (either a path to a directory or zip file).
+	// An Input to process (either a path to a directory or zip file)
 	Input
 
-	// A template pattern that expresses what to match.
+	// A template pattern that expresses what to match
 	MatchTemplate string
 
-	// A template pattern that expresses how matches should be rewritten.
+	// A template pattern that expresses how matches should be rewritten
 	RewriteTemplate string
 
 	// Matcher is a file extension (e.g., '.go') which denotes which language parser to use
