@@ -11,13 +11,10 @@ jest.mock('react-visibility-sensor', (): typeof _VisibilitySensor => ({ children
 ))
 
 import sinon from 'sinon'
-import {
-    HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
-    NOOP_SETTINGS_CASCADE,
-    RESULT,
-} from '../../../web/src/search/testHelpers'
+
 import { FileMatchChildren } from './FileMatchChildren'
 import { setLinkComponent } from './Link'
+import { RESULT, HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST, NOOP_SETTINGS_CASCADE } from '../util/searchTestHelpers'
 
 const history = H.createBrowserHistory()
 history.replace({ pathname: '/search' })
