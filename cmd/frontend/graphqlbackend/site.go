@@ -172,13 +172,14 @@ func (r *siteConfigurationResolver) ID(ctx context.Context) (int32, error) {
 	return 0, nil // TODO(slimsag): future: return the real ID here to prevent races
 }
 
-func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (string, error) {
+func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (JSONCString, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return "", err
+		return JSONCString(""), err
 	}
-	return globals.ConfigurationServerFrontendOnly.Raw().Site, nil
+	siteConfig := globals.ConfigurationServerFrontendOnly.Raw().Site
+	return JSONCString(siteConfig), nil
 }
 
 func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]string, error) {
@@ -186,7 +187,7 @@ func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]s
 	if err != nil {
 		return nil, err
 	}
-	return conf.ValidateSite(contents)
+	return conf.ValidateSite(string(contents))
 }
 
 var siteConfigAllowEdits, _ = strconv.ParseBool(env.Get("SITE_CONFIG_ALLOW_EDITS", "false", "When SITE_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
@@ -226,11 +227,12 @@ func (r *criticalConfigurationResolver) ID(ctx context.Context) (int32, error) {
 	return 0, nil // TODO(slimsag): future: return the real ID here to prevent races
 }
 
-func (r *criticalConfigurationResolver) EffectiveContents(ctx context.Context) (string, error) {
+func (r *criticalConfigurationResolver) EffectiveContents(ctx context.Context) (JSONCString, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return "", err
+		return JSONCString(""), err
 	}
-	return globals.ConfigurationServerFrontendOnly.Raw().Critical, nil
+	criticalConf := globals.ConfigurationServerFrontendOnly.Raw().Critical
+	return JSONCString(criticalConf), nil
 }

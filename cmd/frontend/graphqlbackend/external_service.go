@@ -62,8 +62,8 @@ func (r *externalServiceResolver) DisplayName() string {
 	return r.externalService.DisplayName
 }
 
-func (r *externalServiceResolver) Config() string {
-	return r.externalService.Config
+func (r *externalServiceResolver) Config() JSONCString {
+	return JSONCString(r.externalService.Config)
 }
 
 func (r *externalServiceResolver) CreatedAt() DateTime {

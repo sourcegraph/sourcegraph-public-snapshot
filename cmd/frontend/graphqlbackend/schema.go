@@ -25,6 +25,9 @@ interface Node {
 # A valid JSON value.
 scalar JSONValue
 
+# A string that contains valid JSON, with additional support for //-style comments and trailing commas.
+scalar JSONCString
+
 # A mutation.
 type Mutation {
     # Creates a list of Changesets of a given repository in a code host (e.g.
@@ -1420,7 +1423,7 @@ type ExternalService implements Node {
     # The display name of the external service.
     displayName: String!
     # The JSON configuration of the external service.
-    config: String!
+    config: JSONCString!
     # When the external service was created.
     createdAt: DateTime!
     # When the external service was last updated.
@@ -3169,7 +3172,7 @@ type SiteConfiguration {
     # The unique identifier of this site configuration version.
     id: Int!
     # The effective configuration JSON.
-    effectiveContents: String!
+    effectiveContents: JSONCString!
     # Messages describing validation problems or usage of deprecated configuration in the configuration JSON.
     # This includes both JSON Schema validation problems and other messages that perform more advanced checks
     # on the configuration (that can't be expressed in the JSON Schema).
@@ -3181,7 +3184,7 @@ type CriticalConfiguration {
     # The unique identifier of this site configuration version.
     id: Int!
     # The effective configuration JSON.
-    effectiveContents: String!
+    effectiveContents: JSONCString!
 }
 
 # Information about software updates for Sourcegraph.
@@ -3271,7 +3274,7 @@ type Settings {
     createdAt: DateTime!
     # The stringified JSON contents of the settings. The contents may include "//"-style comments and trailing
     # commas in the JSON.
-    contents: String!
+    contents: JSONCString!
     # DEPRECATED: This field will be removed in a future release.
     #
     # The configuration.
@@ -3283,7 +3286,7 @@ type Configuration {
     # DEPRECATED: This field will be removed in a future release.
     #
     # The raw JSON contents, encoded as a string.
-    contents: String! @deprecated(reason: "use the contents field on the parent type instead")
+    contents: JSONCString! @deprecated(reason: "use the contents field on the parent type instead")
     # DEPRECATED: This field is always empty. It will be removed in a future release.
     messages: [String!]! @deprecated(reason: "use client-side JSON Schema validation instead")
 }
