@@ -410,28 +410,3 @@ export function getViewerSettings(gqlClient: GraphQLClient): Promise<GQL.ISettin
         )
         .toPromise()
 }
-
-export function overwriteSettings(
-    gqlClient: GraphQLClient,
-    subject: GQL.ID,
-    lastID: number | null,
-    contents: string
-): Promise<GQL.IMutation> {
-    return gqlClient
-        .mutateGraphQL(
-            gql`
-                mutation OverwriteSettings($subject: ID!, $lastID: Int, $contents: String!) {
-                    settingsMutation(input: { subject: $subject, lastID: $lastID }) {
-                        overwriteSettings(contents: $contents) {
-                            empty {
-                                alwaysNil
-                            }
-                        }
-                    }
-                }
-            `,
-            { subject, contents, lastID }
-        )
-        .pipe(map(dataOrThrowErrors))
-        .toPromise()
-}
