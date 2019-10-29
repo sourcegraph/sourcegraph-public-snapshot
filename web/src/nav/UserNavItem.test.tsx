@@ -4,8 +4,8 @@ import { MemoryRouter } from 'react-router'
 import renderer from 'react-test-renderer'
 import { setLinkComponent } from '../../../shared/src/components/Link'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { ThemePreference } from '../theme'
 import { UserNavItem } from './UserNavItem'
+import { ThemePreference } from '../../../shared/src/theme/theme'
 
 describe('UserNavItem', () => {
     setLinkComponent((props: any) => <a {...props} />)

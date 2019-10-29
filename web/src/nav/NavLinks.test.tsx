@@ -7,9 +7,9 @@ import { ExtensionsControllerProps } from '../../../shared/src/extensions/contro
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
-import { ThemePreference } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { NavLinks } from './NavLinks'
+import { ThemePreference } from '../../../shared/src/theme/theme'
 
 // Renders a human-readable list of the NavLinks' contents so that humans can more easily diff
 // snapshots to see what actually changed.

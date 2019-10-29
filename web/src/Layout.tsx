@@ -35,7 +35,6 @@ import { LayoutRouteProps } from './routes'
 import { parseSearchURLQuery, PatternTypeProps } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import { ThemePreferenceProps, ThemeProps } from './theme'
 import { EventLogger, EventLoggerProps } from './tracking/eventLogger'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
@@ -43,6 +42,7 @@ import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { parseBrowserRepoURL } from './util/url'
 import LiteralSearchToast from './marketing/LiteralSearchToast'
+import { ThemeProps, ThemePreferenceProps } from '../../shared/src/theme/theme'
 
 export interface LayoutProps
     extends RouteComponentProps<any>,

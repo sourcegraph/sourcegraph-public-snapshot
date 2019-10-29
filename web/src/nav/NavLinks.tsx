@@ -16,7 +16,7 @@ import {
     KEYBOARD_SHORTCUT_SWITCH_THEME,
     KeyboardShortcutsProps,
 } from '../keyboardShortcuts/keyboardShortcuts'
-import { ThemePreferenceProps, ThemeProps } from '../theme'
+import { ThemePreferenceProps, ThemeProps } from '../../../shared/src/theme/theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { fetchAllStatusMessages, StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { UserNavItem } from './UserNavItem'

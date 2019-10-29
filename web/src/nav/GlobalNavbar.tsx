@@ -11,10 +11,10 @@ import { authRequired } from '../auth'
 import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
 import { parseSearchURLQuery, PatternTypeProps } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
-import { ThemePreferenceProps, ThemeProps } from '../theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { showDotComMarketing } from '../util/features'
 import { NavLinks } from './NavLinks'
+import { ThemeProps, ThemePreferenceProps } from '../../../shared/src/theme/theme'
 
 interface Props
     extends SettingsCascadeProps,
