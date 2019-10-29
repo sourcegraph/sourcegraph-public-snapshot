@@ -1108,6 +1108,543 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 	)
 }
 
+// CreateCampaignPlan creates the given CampaignPlan.
+func (s *Store) CreateCampaignPlan(ctx context.Context, c *a8n.CampaignPlan) error {
+	q, err := s.createCampaignPlanQuery(c)
+	if err != nil {
+		return err
+	}
+
+	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
+		err = scanCampaignPlan(c, sc)
+		return int64(c.ID), 1, err
+	})
+}
+
+var createCampaignPlanQueryFmtstr = `
+-- source: pkg/a8n/store.go:CreateCampaignPlan
+INSERT INTO campaign_plans (
+  campaign_type,
+  arguments,
+  created_at,
+  updated_at
+)
+VALUES (%s, %s, %s, %s)
+RETURNING
+  id,
+  campaign_type,
+  arguments,
+  created_at,
+  updated_at
+`
+
+func (s *Store) createCampaignPlanQuery(c *a8n.CampaignPlan) (*sqlf.Query, error) {
+	if c.CreatedAt.IsZero() {
+		c.CreatedAt = s.now()
+	}
+
+	if c.UpdatedAt.IsZero() {
+		c.UpdatedAt = c.CreatedAt
+	}
+
+	arguments, err := metadataColumn(c.Arguments)
+	if err != nil {
+		return nil, err
+	}
+
+	return sqlf.Sprintf(
+		createCampaignPlanQueryFmtstr,
+		c.CampaignType,
+		arguments,
+		c.CreatedAt,
+		c.UpdatedAt,
+	), nil
+}
+
+// UpdateCampaignPlan updates the given CampaignPlan.
+func (s *Store) UpdateCampaignPlan(ctx context.Context, c *a8n.CampaignPlan) error {
+	q, err := s.updateCampaignPlanQuery(c)
+	if err != nil {
+		return err
+	}
+
+	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
+		err = scanCampaignPlan(c, sc)
+		return int64(c.ID), 1, err
+	})
+}
+
+var updateCampaignPlanQueryFmtstr = `
+-- source: pkg/a8n/store.go:UpdateCampaignPlan
+UPDATE campaign_plans
+SET (
+  campaign_type,
+  arguments,
+  updated_at
+) = (%s, %s, %s)
+WHERE id = %s
+RETURNING
+  id,
+  campaign_type,
+  arguments,
+  created_at,
+  updated_at
+`
+
+func (s *Store) updateCampaignPlanQuery(c *a8n.CampaignPlan) (*sqlf.Query, error) {
+	c.UpdatedAt = s.now()
+
+	arguments, err := metadataColumn(c.Arguments)
+	if err != nil {
+		return nil, err
+	}
+
+	return sqlf.Sprintf(
+		updateCampaignPlanQueryFmtstr,
+		c.CampaignType,
+		arguments,
+		c.UpdatedAt,
+		c.ID,
+	), nil
+}
+
+// DeleteCampaignPlan deletes the CampaignPlan with the given ID.
+func (s *Store) DeleteCampaignPlan(ctx context.Context, id int64) error {
+	q := sqlf.Sprintf(deleteCampaignPlanQueryFmtstr, id)
+
+	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return err
+	}
+	return rows.Close()
+}
+
+var deleteCampaignPlanQueryFmtstr = `
+-- source: pkg/a8n/store.go:DeleteCampaignPlan
+DELETE FROM campaign_plans WHERE id = %s
+`
+
+// CountCampaignPlans returns the number of code mods in the database.
+func (s *Store) CountCampaignPlans(ctx context.Context) (count int64, _ error) {
+	q := sqlf.Sprintf(countCampaignPlansQueryFmtstr)
+	return count, s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		err = sc.Scan(&count)
+		return 0, count, err
+	})
+}
+
+var countCampaignPlansQueryFmtstr = `
+-- source: pkg/a8n/store.go:CountCampaignPlans
+SELECT COUNT(id)
+FROM campaign_plans
+`
+
+// GetCampaignPlanOpts captures the query options needed for getting a CampaignPlan
+type GetCampaignPlanOpts struct {
+	ID int64
+}
+
+// GetCampaignPlan gets a code mod matching the given options.
+func (s *Store) GetCampaignPlan(ctx context.Context, opts GetCampaignPlanOpts) (*a8n.CampaignPlan, error) {
+	q := getCampaignPlanQuery(&opts)
+
+	var c a8n.CampaignPlan
+	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		return 0, 0, scanCampaignPlan(&c, sc)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if c.ID == 0 {
+		return nil, ErrNoResults
+	}
+
+	return &c, nil
+}
+
+var getCampaignPlansQueryFmtstr = `
+-- source: pkg/a8n/store.go:GetCampaignPlan
+SELECT
+  id,
+  campaign_type,
+  arguments,
+  created_at,
+  updated_at
+FROM campaign_plans
+WHERE %s
+LIMIT 1
+`
+
+func getCampaignPlanQuery(opts *GetCampaignPlanOpts) *sqlf.Query {
+	var preds []*sqlf.Query
+	if opts.ID != 0 {
+		preds = append(preds, sqlf.Sprintf("id = %s", opts.ID))
+	}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
+
+	return sqlf.Sprintf(getCampaignPlansQueryFmtstr, sqlf.Join(preds, "\n AND "))
+}
+
+// ListCampaignPlansOpts captures the query options needed for
+// listing code mods.
+type ListCampaignPlansOpts struct {
+	Cursor int64
+	Limit  int
+}
+
+// ListCampaignPlans lists CampaignPlans with the given filters.
+func (s *Store) ListCampaignPlans(ctx context.Context, opts ListCampaignPlansOpts) (cs []*a8n.CampaignPlan, next int64, err error) {
+	q := listCampaignPlansQuery(&opts)
+
+	cs = make([]*a8n.CampaignPlan, 0, opts.Limit)
+	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
+		var c a8n.CampaignPlan
+		if err = scanCampaignPlan(&c, sc); err != nil {
+			return 0, 0, err
+		}
+		cs = append(cs, &c)
+		return int64(c.ID), 1, err
+	})
+
+	if len(cs) == opts.Limit {
+		next = cs[len(cs)-1].ID
+		cs = cs[:len(cs)-1]
+	}
+
+	return cs, next, err
+}
+
+var listCampaignPlansQueryFmtstr = `
+-- source: pkg/a8n/store.go:ListCampaignPlans
+SELECT
+  id,
+  campaign_type,
+  arguments,
+  created_at,
+  updated_at
+FROM campaign_plans
+WHERE %s
+ORDER BY id ASC
+LIMIT %s
+`
+
+func listCampaignPlansQuery(opts *ListCampaignPlansOpts) *sqlf.Query {
+	if opts.Limit == 0 {
+		opts.Limit = defaultListLimit
+	}
+	opts.Limit++
+
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("id >= %s", opts.Cursor),
+	}
+
+	return sqlf.Sprintf(
+		listCampaignPlansQueryFmtstr,
+		sqlf.Join(preds, "\n AND "),
+		opts.Limit,
+	)
+}
+
+// CreateCampaignJob creates the given CampaignJob.
+func (s *Store) CreateCampaignJob(ctx context.Context, c *a8n.CampaignJob) error {
+	q, err := s.createCampaignJobQuery(c)
+	if err != nil {
+		return err
+	}
+
+	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
+		err = scanCampaignJob(c, sc)
+		return int64(c.ID), 1, err
+	})
+}
+
+var createCampaignJobQueryFmtstr = `
+-- source: pkg/a8n/store.go:CreateCampaignJob
+INSERT INTO campaign_jobs (
+  campaign_plan_id,
+  repo_id,
+  rev,
+  diff,
+  error,
+  started_at,
+  finished_at,
+  created_at,
+  updated_at
+)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+RETURNING
+  id,
+  campaign_plan_id,
+  repo_id,
+  rev,
+  diff,
+  error,
+  started_at,
+  finished_at,
+  created_at,
+  updated_at
+`
+
+func (s *Store) createCampaignJobQuery(c *a8n.CampaignJob) (*sqlf.Query, error) {
+	if c.CreatedAt.IsZero() {
+		c.CreatedAt = s.now()
+	}
+
+	if c.UpdatedAt.IsZero() {
+		c.UpdatedAt = c.CreatedAt
+	}
+
+	return sqlf.Sprintf(
+		createCampaignJobQueryFmtstr,
+		c.CampaignPlanID,
+		c.RepoID,
+		c.Rev,
+		c.Diff,
+		c.Error,
+		c.StartedAt,
+		c.FinishedAt,
+		c.CreatedAt,
+		c.UpdatedAt,
+	), nil
+}
+
+// UpdateCampaignJob updates the given CampaignJob.
+func (s *Store) UpdateCampaignJob(ctx context.Context, c *a8n.CampaignJob) error {
+	q, err := s.updateCampaignJobQuery(c)
+	if err != nil {
+		return err
+	}
+
+	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
+		err = scanCampaignJob(c, sc)
+		return int64(c.ID), 1, err
+	})
+}
+
+var updateCampaignJobQueryFmtstr = `
+-- source: pkg/a8n/store.go:UpdateCampaignJob
+UPDATE campaign_jobs
+SET (
+  campaign_plan_id,
+  repo_id,
+  rev,
+  diff,
+  error,
+  started_at,
+  finished_at,
+  updated_at
+) = (%s, %s, %s, %s, %s, %s, %s, %s)
+WHERE id = %s
+RETURNING
+  id,
+  campaign_plan_id,
+  repo_id,
+  rev,
+  diff,
+  error,
+  started_at,
+  finished_at,
+  created_at,
+  updated_at
+`
+
+func (s *Store) updateCampaignJobQuery(c *a8n.CampaignJob) (*sqlf.Query, error) {
+	c.UpdatedAt = s.now()
+
+	return sqlf.Sprintf(
+		updateCampaignJobQueryFmtstr,
+		c.CampaignPlanID,
+		c.RepoID,
+		c.Rev,
+		c.Diff,
+		c.Error,
+		c.StartedAt,
+		c.FinishedAt,
+		c.UpdatedAt,
+		c.ID,
+	), nil
+}
+
+// DeleteCampaignJob deletes the CampaignJob with the given ID.
+func (s *Store) DeleteCampaignJob(ctx context.Context, id int64) error {
+	q := sqlf.Sprintf(deleteCampaignJobQueryFmtstr, id)
+
+	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return err
+	}
+	return rows.Close()
+}
+
+var deleteCampaignJobQueryFmtstr = `
+-- source: pkg/a8n/store.go:DeleteCampaignJob
+DELETE FROM campaign_jobs WHERE id = %s
+`
+
+// CountCampaignJobsOpts captures the query options needed for
+// counting code mods.
+type CountCampaignJobsOpts struct {
+	CampaignPlanID int64
+}
+
+// CountCampaignJobs returns the number of code mods in the database.
+func (s *Store) CountCampaignJobs(ctx context.Context, opts CountCampaignJobsOpts) (count int64, _ error) {
+	q := countCampaignJobsQuery(&opts)
+	return count, s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		err = sc.Scan(&count)
+		return 0, count, err
+	})
+}
+
+var countCampaignJobsQueryFmtstr = `
+-- source: pkg/a8n/store.go:CountCampaignJobs
+SELECT COUNT(id)
+FROM campaign_jobs
+WHERE %s
+`
+
+func countCampaignJobsQuery(opts *CountCampaignJobsOpts) *sqlf.Query {
+	var preds []*sqlf.Query
+	if opts.CampaignPlanID != 0 {
+		preds = append(preds, sqlf.Sprintf("campaign_plan_id = %s", opts.CampaignPlanID))
+	}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
+
+	return sqlf.Sprintf(countCampaignJobsQueryFmtstr, sqlf.Join(preds, "\n AND "))
+}
+
+// GetCampaignJobOpts captures the query options needed for getting a CampaignJob
+type GetCampaignJobOpts struct {
+	ID int64
+}
+
+// GetCampaignJob gets a code mod matching the given options.
+func (s *Store) GetCampaignJob(ctx context.Context, opts GetCampaignJobOpts) (*a8n.CampaignJob, error) {
+	q := getCampaignJobQuery(&opts)
+
+	var c a8n.CampaignJob
+	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		return 0, 0, scanCampaignJob(&c, sc)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if c.ID == 0 {
+		return nil, ErrNoResults
+	}
+
+	return &c, nil
+}
+
+var getCampaignJobsQueryFmtstr = `
+-- source: pkg/a8n/store.go:GetCampaignJob
+SELECT
+  id,
+  campaign_plan_id,
+  repo_id,
+  rev,
+  diff,
+  error,
+  started_at,
+  finished_at,
+  created_at,
+  updated_at
+FROM campaign_jobs
+WHERE %s
+LIMIT 1
+`
+
+func getCampaignJobQuery(opts *GetCampaignJobOpts) *sqlf.Query {
+	var preds []*sqlf.Query
+	if opts.ID != 0 {
+		preds = append(preds, sqlf.Sprintf("id = %s", opts.ID))
+	}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
+
+	return sqlf.Sprintf(getCampaignJobsQueryFmtstr, sqlf.Join(preds, "\n AND "))
+}
+
+// ListCampaignJobsOpts captures the query options needed for
+// listing code mods.
+type ListCampaignJobsOpts struct {
+	CampaignPlanID int64
+	Cursor         int64
+	Limit          int
+}
+
+// ListCampaignJobs lists CampaignJobs with the given filters.
+func (s *Store) ListCampaignJobs(ctx context.Context, opts ListCampaignJobsOpts) (cs []*a8n.CampaignJob, next int64, err error) {
+	q := listCampaignJobsQuery(&opts)
+
+	cs = make([]*a8n.CampaignJob, 0, opts.Limit)
+	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
+		var c a8n.CampaignJob
+		if err = scanCampaignJob(&c, sc); err != nil {
+			return 0, 0, err
+		}
+		cs = append(cs, &c)
+		return int64(c.ID), 1, err
+	})
+
+	if len(cs) == opts.Limit {
+		next = cs[len(cs)-1].ID
+		cs = cs[:len(cs)-1]
+	}
+
+	return cs, next, err
+}
+
+var listCampaignJobsQueryFmtstr = `
+-- source: pkg/a8n/store.go:ListCampaignJobs
+SELECT
+  id,
+  campaign_plan_id,
+  repo_id,
+  rev,
+  diff,
+  error,
+  started_at,
+  finished_at,
+  created_at,
+  updated_at
+FROM campaign_jobs
+WHERE %s
+ORDER BY id ASC
+LIMIT %s
+`
+
+func listCampaignJobsQuery(opts *ListCampaignJobsOpts) *sqlf.Query {
+	if opts.Limit == 0 {
+		opts.Limit = defaultListLimit
+	}
+	opts.Limit++
+
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("id >= %s", opts.Cursor),
+	}
+
+	if opts.CampaignPlanID != 0 {
+		preds = append(preds, sqlf.Sprintf("campaign_plan_id = %s", opts.CampaignPlanID))
+	}
+
+	return sqlf.Sprintf(
+		listCampaignJobsQueryFmtstr,
+		sqlf.Join(preds, "\n AND "),
+		opts.Limit,
+	)
+}
+
 func (s *Store) exec(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
 	_, _, err := s.query(ctx, q, sc)
 	return err
@@ -1247,6 +1784,42 @@ func scanCampaign(c *a8n.Campaign, s scanner) error {
 		&c.CreatedAt,
 		&c.UpdatedAt,
 		&dbutil.JSONInt64Set{Set: &c.ChangesetIDs},
+	)
+}
+
+func scanCampaignPlan(c *a8n.CampaignPlan, s scanner) error {
+	var arguments json.RawMessage
+
+	err := s.Scan(
+		&c.ID,
+		&c.CampaignType,
+		&arguments,
+		&c.CreatedAt,
+		&c.UpdatedAt,
+	)
+	if err != nil {
+		return err
+	}
+
+	if err = json.Unmarshal(arguments, &c.Arguments); err != nil {
+		return errors.Wrap(err, "scanCampaignPlan: failed to unmarshal arguments")
+	}
+
+	return nil
+}
+
+func scanCampaignJob(c *a8n.CampaignJob, s scanner) error {
+	return s.Scan(
+		&c.ID,
+		&c.CampaignPlanID,
+		&c.RepoID,
+		&c.Rev,
+		&c.Diff,
+		&c.Error,
+		&c.StartedAt,
+		&c.FinishedAt,
+		&c.CreatedAt,
+		&c.UpdatedAt,
 	)
 }
 

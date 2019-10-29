@@ -82,8 +82,8 @@
     "typecheck": "tsc --noEmit",
     "tslint": "../node_modules/.bin/tslint -p tsconfig.json",
     "eslint": "../node_modules/.bin/eslint 'src/**/*.ts?(x)'",
-    "run:server": "tsc-watch --onSuccess \"node -r source-map-support/register out/server.js\" --noClear",
-    "run:worker": "tsc-watch --onSuccess \"node -r source-map-support/register out/worker.js\" --noClear",
+    "run:server": "tsc-watch --onFirstSuccess \"yarn postbuild\" --onSuccess \"node -r source-map-support/register out/server.js\" --noClear",
+    "run:worker": "tsc-watch --onFirstSuccess \"yarn postbuild\" --onSuccess \"node -r source-map-support/register out/worker.js\" --noClear",
     "schema": "typescript-json-schema ./node_modules/lsif-protocol/lib/protocol.d.ts '*' -o src/lsif.schema.json --titles --ignoreErrors --noExtraProps --required --strictNullChecks"
   }
 }

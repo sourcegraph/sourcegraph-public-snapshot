@@ -80,8 +80,18 @@ func (r *NodeResolver) ToCampaign() (CampaignResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToCampaignPlan() (CampaignPlanResolver, bool) {
+	n, ok := r.Node.(CampaignPlanResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToChangeset() (ChangesetResolver, bool) {
 	n, ok := r.Node.(ChangesetResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToExternalChangeset() (ExternalChangesetResolver, bool) {
+	n, ok := r.Node.(ExternalChangesetResolver)
 	return n, ok
 }
 
@@ -196,7 +206,12 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 			return nil, onlyInEnterprise
 		}
 		return r.a8nResolver.CampaignByID(ctx, id)
-	case "Changeset":
+	case "CampaignPlan":
+		if r.a8nResolver == nil {
+			return nil, onlyInEnterprise
+		}
+		return r.a8nResolver.CampaignPlanByID(ctx, id)
+	case "ExternalChangeset":
 		if r.a8nResolver == nil {
 			return nil, onlyInEnterprise
 		}

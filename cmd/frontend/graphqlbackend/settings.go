@@ -27,7 +27,9 @@ func (o *settingsResolver) Configuration() *configurationResolver {
 	return &configurationResolver{contents: o.settings.Contents}
 }
 
-func (o *settingsResolver) Contents() string { return o.settings.Contents }
+func (o *settingsResolver) Contents() JSONCString {
+	return JSONCString(o.settings.Contents)
+}
 
 func (o *settingsResolver) CreatedAt() DateTime {
 	return DateTime{Time: o.settings.CreatedAt}

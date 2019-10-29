@@ -849,5 +849,386 @@ func testStore(db *sql.DB) func(*testing.T) {
 				})
 			})
 		})
+
+		t.Run("CampaignPlans", func(t *testing.T) {
+			campaignPlans := make([]*a8n.CampaignPlan, 0, 3)
+
+			t.Run("Create", func(t *testing.T) {
+				for i := 0; i < cap(campaignPlans); i++ {
+					c := &a8n.CampaignPlan{
+						CampaignType: "COMBY",
+						Arguments:    map[string]string{"pattern": "foobar"},
+					}
+
+					want := c.Clone()
+					have := c
+
+					err := s.CreateCampaignPlan(ctx, have)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if have.ID == 0 {
+						t.Fatal("ID should not be zero")
+					}
+
+					want.ID = have.ID
+					want.CreatedAt = now
+					want.UpdatedAt = now
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
+					}
+
+					campaignPlans = append(campaignPlans, c)
+				}
+			})
+
+			t.Run("Count", func(t *testing.T) {
+				count, err := s.CountCampaignPlans(ctx)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := count, int64(len(campaignPlans)); have != want {
+					t.Fatalf("have count: %d, want: %d", have, want)
+				}
+			})
+
+			t.Run("List", func(t *testing.T) {
+				opts := ListCampaignPlansOpts{}
+
+				ts, next, err := s.ListCampaignPlans(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := next, int64(0); have != want {
+					t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+				}
+
+				have, want := ts, campaignPlans
+				if len(have) != len(want) {
+					t.Fatalf("listed %d campaignPlans, want: %d", len(have), len(want))
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				}
+
+				for i := 1; i <= len(campaignPlans); i++ {
+					cs, next, err := s.ListCampaignPlans(ctx, ListCampaignPlansOpts{Limit: i})
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					{
+						have, want := next, int64(0)
+						if i < len(campaignPlans) {
+							want = campaignPlans[i].ID
+						}
+
+						if have != want {
+							t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
+						}
+					}
+
+					{
+						have, want := cs, campaignPlans[:i]
+						if len(have) != len(want) {
+							t.Fatalf("listed %d campaignPlans, want: %d", len(have), len(want))
+						}
+
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatal(diff)
+						}
+					}
+				}
+
+				{
+					var cursor int64
+					for i := 1; i <= len(campaignPlans); i++ {
+						opts := ListCampaignPlansOpts{Cursor: cursor, Limit: 1}
+						have, next, err := s.ListCampaignPlans(ctx, opts)
+						if err != nil {
+							t.Fatal(err)
+						}
+
+						want := campaignPlans[i-1 : i]
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatalf("opts: %+v, diff: %s", opts, diff)
+						}
+
+						cursor = next
+					}
+				}
+			})
+
+			t.Run("Update", func(t *testing.T) {
+				for _, c := range campaignPlans {
+					c.CampaignType += "-updated"
+					c.Arguments["anotherArg"] = "anotherValue"
+
+					now = now.Add(time.Second)
+					want := c
+					want.UpdatedAt = now
+
+					have := c.Clone()
+					if err := s.UpdateCampaignPlan(ctx, have); err != nil {
+						t.Fatal(err)
+					}
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
+					}
+				}
+			})
+
+			t.Run("Get", func(t *testing.T) {
+				t.Run("ByID", func(t *testing.T) {
+					if len(campaignPlans) == 0 {
+						t.Fatalf("campaignPlans is empty")
+					}
+					want := campaignPlans[0]
+					opts := GetCampaignPlanOpts{ID: want.ID}
+
+					have, err := s.GetCampaignPlan(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
+					}
+				})
+
+				t.Run("NoResults", func(t *testing.T) {
+					opts := GetCampaignPlanOpts{ID: 0xdeadbeef}
+
+					_, have := s.GetCampaignPlan(ctx, opts)
+					want := ErrNoResults
+
+					if have != want {
+						t.Fatalf("have err %v, want %v", have, want)
+					}
+				})
+			})
+
+			t.Run("Delete", func(t *testing.T) {
+				for i := range campaignPlans {
+					err := s.DeleteCampaignPlan(ctx, campaignPlans[i].ID)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					count, err := s.CountCampaignPlans(ctx)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if have, want := count, int64(len(campaignPlans)-(i+1)); have != want {
+						t.Fatalf("have count: %d, want: %d", have, want)
+					}
+				}
+			})
+		})
+
+		t.Run("CampaignJobs", func(t *testing.T) {
+			campaignJobs := make([]*a8n.CampaignJob, 0, 3)
+
+			t.Run("Create", func(t *testing.T) {
+				for i := 0; i < cap(campaignJobs); i++ {
+					c := &a8n.CampaignJob{
+						CampaignPlanID: int64(i + 1),
+						RepoID:         1,
+						Diff:           "+ foobar - barfoo",
+						Error:          "only set on error",
+					}
+
+					want := c.Clone()
+					have := c
+
+					err := s.CreateCampaignJob(ctx, have)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if have.ID == 0 {
+						t.Fatal("ID should not be zero")
+					}
+
+					want.ID = have.ID
+					want.CreatedAt = now
+					want.UpdatedAt = now
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
+					}
+
+					campaignJobs = append(campaignJobs, c)
+				}
+			})
+
+			t.Run("Count", func(t *testing.T) {
+				count, err := s.CountCampaignJobs(ctx, CountCampaignJobsOpts{})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := count, int64(len(campaignJobs)); have != want {
+					t.Fatalf("have count: %d, want: %d", have, want)
+				}
+
+				count, err = s.CountCampaignJobs(ctx, CountCampaignJobsOpts{CampaignPlanID: 1})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := count, int64(1); have != want {
+					t.Fatalf("have count: %d, want: %d", have, want)
+				}
+			})
+
+			t.Run("List", func(t *testing.T) {
+				for i := 1; i <= len(campaignJobs); i++ {
+					opts := ListCampaignJobsOpts{CampaignPlanID: int64(i)}
+
+					ts, next, err := s.ListCampaignJobs(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if have, want := next, int64(0); have != want {
+						t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+					}
+
+					have, want := ts, campaignJobs[i-1:i]
+					if len(have) != len(want) {
+						t.Fatalf("listed %d campaignJobs, want: %d", len(have), len(want))
+					}
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatalf("opts: %+v, diff: %s", opts, diff)
+					}
+				}
+
+				for i := 1; i <= len(campaignJobs); i++ {
+					cs, next, err := s.ListCampaignJobs(ctx, ListCampaignJobsOpts{Limit: i})
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					{
+						have, want := next, int64(0)
+						if i < len(campaignJobs) {
+							want = campaignJobs[i].ID
+						}
+
+						if have != want {
+							t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
+						}
+					}
+
+					{
+						have, want := cs, campaignJobs[:i]
+						if len(have) != len(want) {
+							t.Fatalf("listed %d campaignJobs, want: %d", len(have), len(want))
+						}
+
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatal(diff)
+						}
+					}
+				}
+
+				{
+					var cursor int64
+					for i := 1; i <= len(campaignJobs); i++ {
+						opts := ListCampaignJobsOpts{Cursor: cursor, Limit: 1}
+						have, next, err := s.ListCampaignJobs(ctx, opts)
+						if err != nil {
+							t.Fatal(err)
+						}
+
+						want := campaignJobs[i-1 : i]
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatalf("opts: %+v, diff: %s", opts, diff)
+						}
+
+						cursor = next
+					}
+				}
+			})
+
+			t.Run("Update", func(t *testing.T) {
+				for _, c := range campaignJobs {
+					now = now.Add(time.Second)
+					c.StartedAt = now
+					c.FinishedAt = now
+					c.Diff += "-updated"
+					c.Error += "-updated"
+
+					want := c
+					want.UpdatedAt = now
+
+					have := c.Clone()
+					if err := s.UpdateCampaignJob(ctx, have); err != nil {
+						t.Fatal(err)
+					}
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
+					}
+				}
+			})
+
+			t.Run("Get", func(t *testing.T) {
+				t.Run("ByID", func(t *testing.T) {
+					if len(campaignJobs) == 0 {
+						t.Fatal("campaignJobs is empty")
+					}
+					want := campaignJobs[0]
+					opts := GetCampaignJobOpts{ID: want.ID}
+
+					have, err := s.GetCampaignJob(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
+					}
+				})
+
+				t.Run("NoResults", func(t *testing.T) {
+					opts := GetCampaignJobOpts{ID: 0xdeadbeef}
+
+					_, have := s.GetCampaignJob(ctx, opts)
+					want := ErrNoResults
+
+					if have != want {
+						t.Fatalf("have err %v, want %v", have, want)
+					}
+				})
+			})
+
+			t.Run("Delete", func(t *testing.T) {
+				for i := range campaignJobs {
+					err := s.DeleteCampaignJob(ctx, campaignJobs[i].ID)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					count, err := s.CountCampaignJobs(ctx, CountCampaignJobsOpts{})
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if have, want := count, int64(len(campaignJobs)-(i+1)); have != want {
+						t.Fatalf("have count: %d, want: %d", have, want)
+					}
+				}
+			})
+		})
 	}
 }

@@ -3,6 +3,10 @@ package resolvers
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"strings"
+	"sync"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -16,12 +20,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // Resolver is the GraphQL resolver of all things A8N.
 type Resolver struct {
 	store       *ee.Store
 	httpFactory *httpcli.Factory
+
+	repoSearcher graphqlbackend.RepoSearcher
 }
 
 // NewResolver returns a new Resolver whose store uses the given db
@@ -29,7 +37,15 @@ func NewResolver(db *sql.DB) graphqlbackend.A8NResolver {
 	return &Resolver{store: ee.NewStore(db)}
 }
 
-func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetResolver, error) {
+func (r *Resolver) HasRepoSearcher() bool {
+	return r.repoSearcher != nil
+}
+
+func (r *Resolver) SetRepoSearcher(rs graphqlbackend.RepoSearcher) {
+	r.repoSearcher = rs
+}
+
+func (r *Resolver) ChangesetByID(ctx context.Context, id graphql.ID) (graphqlbackend.ExternalChangesetResolver, error) {
 	// 🚨 SECURITY: Only site admins may access changesets for now.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -65,6 +81,25 @@ func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlback
 	}
 
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
+}
+
+func (r *Resolver) CampaignPlanByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignPlanResolver, error) {
+	// 🚨 SECURITY: Only site admins may access campaign plans for now.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	planID, err := unmarshalCampaignPlanID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	plan, err := r.store.GetCampaignPlan(ctx, ee.GetCampaignPlanOpts{ID: planID})
+	if err != nil {
+		return nil, err
+	}
+
+	return &campaignPlanResolver{store: r.store, campaignPlan: plan}, nil
 }
 
 func (r *Resolver) AddChangesetsToCampaign(ctx context.Context, args *graphqlbackend.AddChangesetsToCampaignArgs) (_ graphqlbackend.CampaignResolver, err error) {
@@ -103,6 +138,8 @@ func (r *Resolver) AddChangesetsToCampaign(ctx context.Context, args *graphqlbac
 	if err != nil {
 		return nil, err
 	}
+	// TODO(a8n): If campaign.CampaignPlainID != 0, we need to return an error
+	// here. Only "manual" campaigns can have changesets added.
 
 	changesets, _, err := tx.ListChangesets(ctx, ee.ListChangesetsOpts{IDs: changesetIDs})
 	if err != nil {
@@ -145,6 +182,16 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		Name:        args.Input.Name,
 		Description: args.Input.Description,
 		AuthorID:    user.ID,
+	}
+
+	if args.Input.Plan != nil {
+		planID, err := unmarshalCampaignPlanID(*args.Input.Plan)
+		if err != nil {
+			return nil, err
+		}
+		campaign.CampaignPlanID = planID
+		// TODO(a8n): Implement this. We need to turn the CampaignJobs into
+		// changesets on the code host.
 	}
 
 	switch relay.UnmarshalKind(args.Input.Namespace) {
@@ -220,6 +267,27 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
+func (r *Resolver) RetryCampaign(ctx context.Context, args *graphqlbackend.RetryCampaignArgs) (graphqlbackend.CampaignResolver, error) {
+	// 🚨 SECURITY: Only site admins may update campaigns for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	campaignID, err := unmarshalCampaignID(args.Campaign)
+	if err != nil {
+		return nil, err
+	}
+
+	campaign, err := r.store.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO(a8n): Implement the retrying of turning "diffs" into changesets
+
+	return &campaignResolver{store: r.store, Campaign: campaign}, nil
+}
+
 func (r *Resolver) Campaigns(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins may read campaigns for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
@@ -234,7 +302,7 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlutil.ConnectionAr
 	}, nil
 }
 
-func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.CreateChangesetsArgs) (_ []graphqlbackend.ChangesetResolver, err error) {
+func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.CreateChangesetsArgs) (_ []graphqlbackend.ExternalChangesetResolver, err error) {
 	// 🚨 SECURITY: Only site admins may create changesets for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -312,7 +380,7 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 		return nil, err
 	}
 
-	csr := make([]graphqlbackend.ChangesetResolver, len(cs))
+	csr := make([]graphqlbackend.ExternalChangesetResolver, len(cs))
 	for i := range cs {
 		csr[i] = &changesetResolver{
 			store:     r.store,
@@ -324,7 +392,7 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 	return csr, nil
 }
 
-func (r *Resolver) Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.ChangesetsConnectionResolver, error) {
+func (r *Resolver) Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.ExternalChangesetsConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins may read changesets for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -336,4 +404,130 @@ func (r *Resolver) Changesets(ctx context.Context, args *graphqlutil.ConnectionA
 			Limit: int(args.GetFirst()),
 		},
 	}, nil
+}
+
+func (r *Resolver) PreviewCampaignPlan(ctx context.Context, args graphqlbackend.PreviewCampaignPlanArgs) (graphqlbackend.CampaignPlanResolver, error) {
+	// 🚨 SECURITY: Only site admins may update campaigns for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	typeName := strings.ToLower(args.Specification.Type)
+	if typeName == "" {
+		return nil, errors.New("cannot create CampaignPlan without Type")
+	}
+	campaignType, ok := a8n.CampaignTypes[typeName]
+	if !ok {
+		return nil, errors.New("campaign type does not exist. Don't know how to plan this campaign")
+	}
+
+	specArgs := make(map[string]string)
+	// TODO(a8n): This turns the JSONC into JSON. We need to preserve the JSONC.
+	if err := jsonc.Unmarshal(string(args.Specification.Arguments), &specArgs); err != nil {
+		return nil, err
+	}
+	if len(specArgs) != len(campaignType.Parameters) {
+		return nil, errors.New("not enough arguments for campaign type specified")
+	}
+	for _, param := range campaignType.Parameters {
+		if _, ok := specArgs[param]; !ok {
+			return nil, fmt.Errorf("missing argument in specification: %s", param)
+		}
+	}
+
+	plan := &a8n.CampaignPlan{CampaignType: typeName, Arguments: specArgs}
+	if err := r.store.CreateCampaignPlan(ctx, plan); err != nil {
+		return nil, err
+	}
+
+	// TODO(a8n): Implement this according to the `Arguments["scope"]`
+	// Search repositories over which to execute code modification
+	if r.repoSearcher == nil {
+		return nil, errors.New("No repo search possible")
+	}
+	repos, err := r.repoSearcher.SearchRepos(ctx, specArgs["searchScope"])
+	if err != nil {
+		return nil, err
+	}
+
+	var wg sync.WaitGroup
+	for _, repo := range repos {
+		job := &a8n.CampaignJob{
+			CampaignPlanID: plan.ID,
+			StartedAt:      time.Now().UTC(),
+		}
+
+		err := relay.UnmarshalSpec(repo.ID(), &job.RepoID)
+		if err != nil {
+			return nil, err
+		}
+
+		defaultBranch, err := repo.DefaultBranch(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if defaultBranch != nil {
+			commit, err := defaultBranch.Target().Commit(ctx)
+			if err != nil {
+				return nil, err
+			}
+			job.Rev = api.CommitID(commit.OID())
+		}
+
+		err = r.store.CreateCampaignJob(ctx, job)
+		if err != nil {
+			return nil, err
+		}
+
+		wg.Add(1)
+		go func(plan *a8n.CampaignPlan, job *a8n.CampaignJob) {
+			// TODO(a8n): Do real work.
+			// Send request to service with Repo, Ref, Arguments.
+			// Receive diff.
+			job.Diff = bogusDiff
+			job.FinishedAt = time.Now()
+
+			err := r.store.UpdateCampaignJob(ctx, job)
+			if err != nil {
+				log15.Error("RunCampaign.UpdateCampaignJob failed", "err", err)
+			}
+
+			wg.Done()
+		}(plan, job)
+	}
+
+	// TODO(a8n): Implement this so that `if !args.Wait` this mutation is
+	// asynchronous
+	wg.Wait()
+
+	return &campaignPlanResolver{store: r.store, campaignPlan: plan}, nil
+}
+
+const bogusDiff = `diff --git a/README.md b/README.md
+index 323fae0..34a3ec2 100644
+--- a/README.md
++++ b/README.md
+@@ -1 +1 @@
+-foobar
++barfoo
+`
+
+func (r *Resolver) CancelCampaignPlan(ctx context.Context, args graphqlbackend.CancelCampaignPlanArgs) (*graphqlbackend.EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins may update campaigns for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	id, err := unmarshalCampaignPlanID(args.Plan)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = r.store.GetCampaignPlan(ctx, ee.GetCampaignPlanOpts{ID: id})
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO(a8n): Implement this. We need to cancel plan so that all jobs are stopped.
+	return &graphqlbackend.EmptyResponse{}, nil
 }

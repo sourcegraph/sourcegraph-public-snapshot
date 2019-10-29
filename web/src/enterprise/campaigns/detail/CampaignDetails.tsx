@@ -7,7 +7,7 @@ import { PageTitle } from '../../../components/PageTitle'
 import { UserAvatar } from '../../../user/UserAvatar'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { CampaignsIcon } from '../icons'
-import { ChangesetNode } from './changesets/ChangesetNode'
+import { ExternalChangesetNode } from './changesets/ExternalChangesetNode'
 import { noop, upperFirst } from 'lodash'
 import { Form } from '../../../components/Form'
 import { fetchCampaignById, updateCampaign, deleteCampaign, createCampaign, queryChangesets } from './backend'
@@ -277,10 +277,10 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
                     <AddChangesetForm campaignID={campaign.id} onAdd={nextChangesetUpdate} />
 
-                    <FilteredConnection<GQL.IChangeset>
+                    <FilteredConnection<GQL.IExternalChangeset>
                         className="mt-2"
                         updates={changesetUpdates}
-                        nodeComponent={ChangesetNode}
+                        nodeComponent={ExternalChangesetNode}
                         queryConnection={queryChangesetsConnection}
                         hideSearch={true}
                         defaultFirst={15}

@@ -7,7 +7,7 @@ import {
     ICampaign,
     IUpdateCampaignInput,
     ICreateCampaignInput,
-    IChangesetConnection,
+    IExternalChangesetConnection,
     IChangesetsOnCampaignArguments,
 } from '../../../../../shared/src/graphql/schema'
 
@@ -116,7 +116,7 @@ export const fetchCampaignById = (campaign: ID): Observable<ICampaign | null> =>
 export const queryChangesets = (
     campaign: ID,
     { first }: IChangesetsOnCampaignArguments
-): Observable<IChangesetConnection> =>
+): Observable<IExternalChangesetConnection> =>
     queryGraphQL(
         gql`
             query CampaignChangesets($campaign: ID!, $first: Int) {
