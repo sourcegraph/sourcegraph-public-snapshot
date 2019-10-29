@@ -1,23 +1,17 @@
 package comby
 
 import (
-	"bufio"
-	"encoding/json"
 	"errors"
+	"io"
 	"os/exec"
 	"strconv"
+	"strings"
 
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
 const combyPath = "comby"
 const numWorkers = 8
-
-// {"uri":"/private/tmp/rrrr/doc.go","matches":[{"range":{"start":{"offset":215,"line":1,"column":216},"end":{"offset":222,"line":1,"column":223}},"environment":[],"matched":"package"}]}
-
-// A result is either a match result or a diff result. These members are
-// mutually exclusive, but are bundled together so that we can share the
-// unmarshalling code.
 
 func exists() (_ int, err error) {
 	_, err = exec.LookPath("comby")
@@ -27,107 +21,65 @@ func exists() (_ int, err error) {
 	return 0, nil
 }
 
-func run(args []string, matchOnly bool) (result *Result, err error) {
-	var matches []Match
-	var diffs []Diff
-	cmd := exec.Command(combyPath, args...)
+func rawArgs(args Args) (rawArgs []string) {
+	rawArgs = append(rawArgs, args.MatchTemplate, args.RewriteTemplate)
+	rawArgs = append(rawArgs, args.FilePatterns...)
+	rawArgs = append(rawArgs, "-json-lines")
+
+	if args.MatchOnly {
+		rawArgs = append(rawArgs, "-match-only")
+	} else {
+		rawArgs = append(rawArgs, "-json-only-diff")
+	}
+
+	rawArgs = append(rawArgs, "-jobs", strconv.Itoa(numWorkers))
+
+	if args.Matcher != "" {
+		rawArgs = append(rawArgs, "-matcher", args.Matcher)
+	}
+
+	if args.ZipPath != "" {
+		rawArgs = append(rawArgs, "-zip", args.ZipPath)
+	} else {
+		rawArgs = append(rawArgs, "-directory", args.DirPath)
+	}
+
+	return rawArgs
+}
+
+func Pipe(args Args, w io.Writer) (err error) {
+	_, err = exists()
+	if err != nil {
+		return err
+	}
+
+	rawArgs := rawArgs(args)
+	log15.Info("Running: comby " + strings.Join(rawArgs, " "))
+
+	cmd := exec.Command(combyPath, rawArgs...)
 
 	// TODO test stderr
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		log15.Info("Could not connect to command stdout: " + err.Error())
-		return nil, err
+		return err
 	}
 
 	if err := cmd.Start(); err != nil {
 		log15.Info("Error starting command: " + err.Error())
-		return nil, errors.New(err.Error())
+		return errors.New(err.Error())
 	}
 
-	scanner := bufio.NewScanner(stdout)
-	for scanner.Scan() {
-		b := scanner.Bytes()
-		if err := scanner.Err(); err != nil {
-			// skip scanner errors
-			continue
-		}
-		if matchOnly {
-			var r *Match
-			if err := json.Unmarshal(b, &r); err != nil {
-				// skip decode errors
-				continue
-			}
-			matches = append(matches, *r)
-		} else {
-			var r *Diff
-			if err := json.Unmarshal(b, &r); err != nil {
-				// skip decode errors
-				continue
-			}
-			diffs = append(diffs, *r)
-		}
+	_, err = io.Copy(w, stdout)
+	if err != nil {
+		log15.Info("Error copying external command output to HTTP writer: " + err.Error())
+		return
 	}
 
 	if err := cmd.Wait(); err != nil {
 		log15.Info("Error after executing command: " + string(err.(*exec.ExitError).Stderr))
-		return nil, err
+		return err
 	}
 
-	return &Result{Diffs: &diffs, Matches: &matches}, nil
-}
-
-func defaultCommand(matchTemplate string, rewriteTemplate string, matchOnly bool, anonArgs []string, otherArgs ...string) (result *Result, err error) {
-	_, err = exists()
-	if err != nil {
-		return nil, err
-	}
-
-	args := []string{
-		matchTemplate,
-		rewriteTemplate,
-		"-json-lines",
-		"-jobs", strconv.Itoa(numWorkers),
-	}
-
-	if matchOnly {
-		args = append(args, "-match-only")
-	} else {
-		args = append(args, "-json-only-diff")
-	}
-
-	args = append(args, otherArgs...)
-	args = append(args, anonArgs...)
-	return run(args, matchOnly)
-}
-
-func MatchesInZip(matchTemplate string, zipPath string, filePatterns []string, jobs int) (results *[]Match, err error) {
-	r, err := defaultCommand(matchTemplate, "", true, filePatterns, "-zip", zipPath)
-	if err != nil {
-		return nil, err
-	}
-	return r.Matches, nil
-}
-
-func MatchesInDir(matchTemplate string, root string, filePatterns []string, jobs int) (results *[]Match, err error) {
-	r, err := defaultCommand(matchTemplate, "", true, filePatterns, "-directory", root)
-	if err != nil {
-		return nil, err
-	}
-	return r.Matches, nil
-}
-
-func DiffsInZip(matchTemplate string, rewriteTemplate string, zipPath string, filePatterns []string, jobs int) (results *[]Diff, err error) {
-	r, err := defaultCommand(matchTemplate, rewriteTemplate, true, filePatterns, "-zip", zipPath)
-	if err != nil {
-		return nil, err
-	}
-	return r.Diffs, nil
-}
-
-func DiffsInDir(matchTemplate string, rewriteTemplate string, root string, filePatterns []string, jobs int) (results *[]Diff, err error) {
-	r, err := defaultCommand(matchTemplate, rewriteTemplate, true, filePatterns, "-directory", root)
-	if err != nil {
-		return nil, err
-	}
-	return r.Diffs, nil
+	return nil
 }

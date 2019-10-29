@@ -1,5 +1,8 @@
 package comby
 
+// A result is either a match result or a diff result. These members are
+// mutually exclusive, but are bundled together so that we can share the
+// unmarshalling code.
 type Input = struct {
 	ZipPath string
 	DirPath string
@@ -9,8 +12,9 @@ type Args = struct {
 	Input
 	MatchTemplate   string
 	RewriteTemplate string
+	Matcher         string
+	MatchOnly       bool
 	FilePatterns    []string
-	Jobs            int
 }
 
 type Range struct {
@@ -19,6 +23,7 @@ type Range struct {
 	Column int `json:"column"`
 }
 
+// {"uri":"/private/tmp/rrrr/doc.go","matches":[{"range":{"start":{"offset":215,"line":1,"column":216},"end":{"offset":222,"line":1,"column":223}},"environment":[],"matched":"package"}]}
 type Match struct {
 	URI     string  `json:"uri"`
 	Matches []Range `json:"matches"`
