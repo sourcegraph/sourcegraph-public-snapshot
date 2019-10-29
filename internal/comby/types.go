@@ -4,13 +4,12 @@ type Input interface {
 	Value() string
 }
 
-type ZipPath struct {
+type value struct {
 	value string
 }
 
-type DirPath struct {
-	value string
-}
+type ZipPath value
+type DirPath value
 
 func (z *ZipPath) Value() string { return z.value }
 
