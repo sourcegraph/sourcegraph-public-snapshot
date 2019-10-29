@@ -25,7 +25,6 @@ func ProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.Requ
 }
 
 func UploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
-
 	return func(w http.ResponseWriter, r *http.Request) {
 		_, err := backend.Repos.GetByName(r.Context(), api.RepoName(r.URL.Query().Get("repository")))
 		if err != nil {

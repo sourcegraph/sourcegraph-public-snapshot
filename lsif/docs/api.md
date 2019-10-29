@@ -39,7 +39,7 @@ Performs an definitions, references, or hover query at a particular position. Th
 
 Returns `200 OK` on success with a body containing an LSP-compatible response. Returns `404 Not Found` if no LSIF data exists for this repository.
 
-### GET `/dumps/{repo}?query={query}&limit={limit}&offset={offset}`
+### GET `/dumps/{repository}?query={query}&limit={limit}&offset={offset}`
 
 - `repository`: the repository name
 - `query`: a search query (compares commits and root fields)
@@ -48,7 +48,7 @@ Returns `200 OK` on success with a body containing an LSP-compatible response. R
 
 Returns all dumps for a given repository.
 
-### GET `/dumps/{repo}/{dumpId}
+### GET `/dumps/{repository}/{dumpId}
 
 - `repo`: the repository name
 - `dumpId`: the dump identifier

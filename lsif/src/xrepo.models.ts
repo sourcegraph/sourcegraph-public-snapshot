@@ -81,13 +81,19 @@ export class LsifDump {
     /**
      * Whether or not this commit is visible at the tip of the default branch.
      */
-    @Column('boolean')
-    public visible_at_tip!: boolean
+    @Column('boolean', { name: 'visible_at_tip' })
+    public visibleAtTip!: boolean
+
+    /**
+     * The dump's insertion time.
+     */
+    @Column('timestamp with time zone', { name: 'uploaded_at' })
+    public uploadedAt!: Date
 
     /**
      * The number of model instances that can be inserted at once.
      */
-    public static BatchSize = getBatchSize(5)
+    public static BatchSize = getBatchSize(6)
 }
 
 /**

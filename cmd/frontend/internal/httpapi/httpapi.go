@@ -56,7 +56,7 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook http.Handle
 	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL(schema))))
 
 	lsifServerURL, err := url.Parse(lsif.ServerURLFromEnv)
-	if err == nil {
+	if err != nil {
 		log15.Error("skipping initialization of the LSIF HTTP API because the environment variable LSIF_SERVER_URL is not a valid URL", "parse_error", err, "value", lsif.ServerURLFromEnv)
 	} else {
 		proxy := httputil.NewSingleHostReverseProxy(lsifServerURL)

@@ -62,7 +62,7 @@ func New(base *mux.Router) *mux.Router {
 	addTelemetryRoute(base)
 	base.Path("/github-webhooks").Methods("POST").Name(GitHubWebhooks)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
-	base.Path("/lsif/{rest:.*}").Methods("POST").Name(LSIF)
+	base.Path("/lsif/{rest:.*}").Methods("GET", "POST").Name(LSIF)
 
 	// repo contains routes that are NOT specific to a revision. In these routes, the URL may not contain a revspec after the repo (that is, no "github.com/foo/bar@myrevspec").
 	repoPath := `/repos/` + routevar.Repo

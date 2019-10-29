@@ -440,6 +440,15 @@ function lsifEndpoints(backend: Backend, queue: Queue, logger: Logger, tracer: T
 function dumpEndpoints(backend: Backend, logger: Logger, tracer: Tracer | undefined): express.Router {
     const router = express.Router()
 
+    const formatDump = (dump: LsifDump): object => ({
+        id: dump.id,
+        repository: dump.repository,
+        commit: dump.commit,
+        visibleAtTip: dump.visibleAtTip,
+        root: dump.root,
+        uploadedAt: new Date(dump.uploadedAt).toISOString(),
+    })
+
     router.get(
         '/dumps/:repository',
         wrap(
@@ -447,13 +456,13 @@ function dumpEndpoints(backend: Backend, logger: Logger, tracer: Tracer | undefi
                 const { repository } = req.params
                 const { query } = req.query
                 const { limit, offset } = limitOffset(req, DEFAULT_DUMP_PAGE_SIZE)
-                const { dumps, totalCount } = await backend.dumps(repository, query, limit, offset)
+                const { dumps, totalCount } = await backend.dumps(decodeURIComponent(repository), query, limit, offset)
 
                 if (offset + dumps.length < totalCount) {
                     res.set('Link', nextLink(req, { limit, offset: offset + dumps.length }))
                 }
 
-                res.json({ dumps, totalCount })
+                res.json({ dumps: dumps.map(formatDump), totalCount })
             }
         )
     )
@@ -464,11 +473,11 @@ function dumpEndpoints(backend: Backend, logger: Logger, tracer: Tracer | undefi
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { repository, id } = req.params
                 const dump = await backend.dump(parseInt(id, 10))
-                if (!dump || dump.repository !== repository) {
+                if (!dump || dump.repository !== decodeURIComponent(repository)) {
                     throw Object.assign(new Error('LSIF dump not found'), { status: 404 })
                 }
 
-                res.json(dump)
+                res.json(formatDump(dump))
             }
         )
     )
