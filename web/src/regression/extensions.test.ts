@@ -6,7 +6,7 @@ import { TestResourceManager } from './util/TestResourceManager'
 import { GraphQLClient } from './util/GraphQLClient'
 import { Driver } from '../../../shared/src/e2e/driver'
 import { getConfig } from '../../../shared/src/e2e/config'
-import { getTestFixtures } from './util/init'
+import { getTestTools } from './util/init'
 import { ensureLoggedInOrCreateTestUser, clickAndWaitForNavigation } from './util/helpers'
 import { editUserSettings } from './util/settings'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
@@ -59,7 +59,7 @@ describe('Sourcegraph extensions regression test suite', () => {
     let graphQLClient: GraphQLClient
     let resourceManager: TestResourceManager
     beforeAll(async () => {
-        ;({ driver, gqlClient: graphQLClient, resourceManager } = await getTestFixtures(config))
+        ;({ driver, gqlClient: graphQLClient, resourceManager } = await getTestTools(config))
         resourceManager.add(
             'User',
             testUsername,
