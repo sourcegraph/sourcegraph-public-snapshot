@@ -135,7 +135,7 @@ Examples:
 		// Our request may have failed before the reaching GraphQL endpoint, so
 		// confirm the status code. You can test this easily with e.g. an invalid
 		// endpoint like -endpoint=https://google.com
-		if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 			body, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
 				return err
