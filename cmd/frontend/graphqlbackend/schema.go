@@ -33,7 +33,7 @@ type Mutation {
     # Creates a list of Changesets of a given repository in a code host (e.g.
     # pull request on GitHub). If a changeset with the given input already
     # exists, it's returned instead of a new entry being added to the database.
-    createChangesets(input: [CreateChangesetInput!]!): [Changeset!]!
+    createChangesets(input: [CreateChangesetInput!]!): [ExternalChangeset!]!
     # Adds a list of Changesets to a Campaign.
     # The campaign must not have a campaign plan.
     addChangesetsToCampaign(campaign: ID!, changesets: [ID!]!): Campaign!
