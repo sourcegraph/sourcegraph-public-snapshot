@@ -12,6 +12,7 @@ var fieldRx = lazyregexp.New(`^-?[a-zA-Z]+:`)
 // ConvertToLiteral quotes the input query for literal search.
 func ConvertToLiteral(input string) string {
 	tokens := tokenize(input)
+	fmt.Println("TOKENS", tokens)
 	// Sort the tokens into fields and non-fields.
 	var fields, nonFields []string
 	for _, t := range tokens {
