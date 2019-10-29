@@ -33,14 +33,6 @@ kubectl port-forward svc/grafana 3370:30070
 
 ### Single-container server deployments
 
-If you are running Sourcegraph as a single-container server deployment:
-
-```shell script
-docker run --publish 7080:7080 --publish 2633:2633 --publish 127.0.0.1:3370:3370 \
-  --rm --volume ~/.sourcegraph/config:/etc/sourcegraph \
-  --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.9.3
-```
-
 For simplicity, Garafana does not require authentication, as the port binding of 3370 is limited to connections from localhost.
 
 Therefore, if accessing Grafana locally, the URL will be http://localhost:3370/-/debug/grafana. If Sourcegraph is deployed to a remote server, then access via an SSH tunnel using a tool
