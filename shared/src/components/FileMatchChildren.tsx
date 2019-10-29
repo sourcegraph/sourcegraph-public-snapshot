@@ -2,7 +2,6 @@ import H from 'history'
 import { flatMap } from 'lodash'
 import * as React from 'react'
 import { Observable } from 'rxjs'
-import { Settings } from '../../../web/src/schema/settings.schema'
 import { ThemeProps } from '../theme/theme'
 import { isSettingsValid, SettingsCascadeProps } from '../settings/settings'
 import { SymbolIcon } from '../symbols/SymbolIcon'
@@ -58,7 +57,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
     if (props.location.pathname === '/search') {
         // Check if search.contextLines is configured in settings.
         const contextLinesSetting =
-            isSettingsValid<Settings>(props.settingsCascade) &&
+            isSettingsValid(props.settingsCascade) &&
             props.settingsCascade.final &&
             props.settingsCascade.final['search.contextLines']
 
