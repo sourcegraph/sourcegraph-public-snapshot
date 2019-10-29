@@ -15,12 +15,12 @@ import (
 const combyPath = "comby"
 const numWorkers = 8
 
-func exists() (_ int, err error) {
-	_, err = exec.LookPath("comby")
+func exists() error {
+	_, err := exec.LookPath(combyPath)
 	if err != nil {
-		return -1, errors.New("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'")
+		return errors.New("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'")
 	}
-	return 0, nil
+	return nil
 }
 
 func rawArgs(args Args) (rawArgs []string) {
@@ -52,7 +52,7 @@ func rawArgs(args Args) (rawArgs []string) {
 }
 
 func PipeTo(args Args, w io.Writer) (err error) {
-	_, err = exists()
+	err = exists()
 	if err != nil {
 		return err
 	}

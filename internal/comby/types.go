@@ -15,7 +15,7 @@ func (z *ZipPath) Value() string { return z.value }
 
 func (d *DirPath) Value() string { return d.value }
 
-type Args = struct {
+type Args struct {
 	// An Input to process (either a path to a directory or zip file)
 	Input
 

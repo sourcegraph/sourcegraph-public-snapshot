@@ -48,13 +48,14 @@ func main() {
 		want string
 	}{
 		{
-			Args{
+			args: Args{
 				Input:           &ZipPath{value: zipPath},
 				MatchTemplate:   "func",
 				RewriteTemplate: "derp",
 				FilePatterns:    []string{".go"},
 				Matcher:         ".go",
-			}, `{"uri":"main.go","diff":"--- main.go\n+++ main.go\n@@ -2,6 +2,6 @@\n \n import \"fmt\"\n \n-func main() {\n+derp main() {\n \tfmt.Println(\"Hello foo\")\n }"}
+			},
+			want: `{"uri":"main.go","diff":"--- main.go\n+++ main.go\n@@ -2,6 +2,6 @@\n \n import \"fmt\"\n \n-func main() {\n+derp main() {\n \tfmt.Println(\"Hello foo\")\n }"}
 `},
 	}
 
