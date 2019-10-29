@@ -42,30 +42,18 @@ func ConvertToLiteral(input string) string {
 	return input
 }
 
-var tokenRx = lazyregexp.New(`("([^"\\]|[\\].)*")`)
 var quotedTokenValueRx = lazyregexp.New(`(\b-?[a-zA-Z]+:"([^"\\]|[\\].)*")`)
-var spaceRx = lazyregexp.New(`\s+`)
-var nonSpaceRx = lazyregexp.New(`\S+`)
+var tokenRx = lazyregexp.New(`("([^"\\]|[\\].)*"|\s+|\S+)`)
 
 // tokenize returns a slice of the double-quoted strings, contiguous chunks
 // of non-whitespace, and contiguous chunks of whitespace in the input.
 func tokenize(input string) []string {
 	var modifiedInput string
-	matchedTokens := []string{}
-
 	// Find all tokens with quoted values, and then remove them from the original input
-	matchedTokens = quotedTokenValueRx.FindAllString(input, -1)
+	matchedTokens := quotedTokenValueRx.FindAllString(input, -1)
 	modifiedInput = quotedTokenValueRx.ReplaceAllString(input, "")
 
-	// Find all contiguouos non-whitespace, and then remove them from the original input
-	matchedTokens = append(matchedTokens, nonSpaceRx.FindAllString(modifiedInput, -1)...)
-	modifiedInput = nonSpaceRx.ReplaceAllString(modifiedInput, "")
-
-	// Find all contiguous whitespace, and then remove from input
-	matchedTokens = append(matchedTokens, spaceRx.FindAllString(modifiedInput, -1)...)
-	modifiedInput = tokenRx.ReplaceAllString(modifiedInput, "")
-
-	// Find all quoted strings, and then remove from input
+	// Find all remaining tokens
 	matchedTokens = append(matchedTokens, tokenRx.FindAllString(modifiedInput, -1)...)
 	return matchedTokens
 }
