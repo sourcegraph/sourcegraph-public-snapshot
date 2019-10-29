@@ -42,10 +42,11 @@ func rawArgs(args Args) (rawArgs []string) {
 
 	switch i := args.Input.(type) {
 	case ZipPath:
-		rawArgs = append(rawArgs, "-zip", fmt.Sprint(i))
+		rawArgs = append(rawArgs, "-zip", string(i))
 	case DirPath:
+		rawArgs = append(rawArgs, "-directory", string(i))
 	default:
-		rawArgs = append(rawArgs, "-directory", fmt.Sprint(i))
+		panic("unreachable")
 	}
 
 	return rawArgs
