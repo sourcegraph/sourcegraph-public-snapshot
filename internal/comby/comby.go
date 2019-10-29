@@ -16,10 +16,7 @@ const combyPath = "comby"
 
 func exists() bool {
 	_, err := exec.LookPath(combyPath)
-	if err != nil {
-		return false
-	}
-	return true
+	return err == nil
 }
 
 func rawArgs(args Args) (rawArgs []string) {
