@@ -2,7 +2,9 @@ package comby
 
 import (
 	"errors"
+	"fmt"
 	"io"
+	"io/ioutil"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -47,37 +49,48 @@ func rawArgs(args Args) (rawArgs []string) {
 	return rawArgs
 }
 
-func Pipe(args Args, w io.Writer) (err error) {
+func PipeTo(args Args, w io.Writer) (err error) {
 	_, err = exists()
 	if err != nil {
 		return err
 	}
 
 	rawArgs := rawArgs(args)
-	log15.Info("Running: comby " + strings.Join(rawArgs, " "))
+	log15.Info("running comby", "args", strings.Join(rawArgs, " "))
 
 	cmd := exec.Command(combyPath, rawArgs...)
 
-	// TODO test stderr
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		log15.Info("Could not connect to command stdout: " + err.Error())
+		log15.Warn("could not connect to comby command stdout", "error", err.Error())
+		return err
+	}
+
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		log15.Warn("could not connect to comby command stderr", "error", err.Error())
 		return err
 	}
 
 	if err := cmd.Start(); err != nil {
-		log15.Info("Error starting command: " + err.Error())
+		log15.Info("error starting comby command", "error", err.Error())
 		return errors.New(err.Error())
 	}
 
 	_, err = io.Copy(w, stdout)
 	if err != nil {
-		log15.Info("Error copying external command output to HTTP writer: " + err.Error())
+		log15.Info("error copying comby output to writer", "error", err.Error())
 		return
 	}
 
+	stderrMsg, _ := ioutil.ReadAll(stderr)
+
 	if err := cmd.Wait(); err != nil {
-		log15.Info("Error after executing command: " + string(err.(*exec.ExitError).Stderr))
+		if stderrMsg != nil {
+			log15.Info("error after executing comby command", "error", string(stderrMsg))
+			return fmt.Errorf("comby error: %s", string(stderrMsg))
+		}
+		log15.Info("error after executing comby command", "error", string(err.(*exec.ExitError).Stderr))
 		return err
 	}
 

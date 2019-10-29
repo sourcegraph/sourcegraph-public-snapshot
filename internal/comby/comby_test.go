@@ -59,9 +59,9 @@ func main() {
 	}
 
 	for _, test := range cases {
-		var b bytes.Buffer
-		w := bufio.NewWriter(&b)
-		err := Pipe(test.args, w)
+		b := new(bytes.Buffer)
+		w := bufio.NewWriter(b)
+		err := PipeTo(test.args, w)
 		if err != nil {
 			t.Fatal(err)
 		}
