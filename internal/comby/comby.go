@@ -40,10 +40,12 @@ func rawArgs(args Args) (rawArgs []string) {
 		rawArgs = append(rawArgs, "-matcher", args.Matcher)
 	}
 
-	if args.ZipPath != "" {
-		rawArgs = append(rawArgs, "-zip", args.ZipPath)
-	} else {
-		rawArgs = append(rawArgs, "-directory", args.DirPath)
+	switch input := args.Input.(type) {
+	case *ZipPath:
+		rawArgs = append(rawArgs, "-zip", input.Value())
+	case *DirPath:
+	default:
+		rawArgs = append(rawArgs, "-directory", input.Value())
 	}
 
 	return rawArgs

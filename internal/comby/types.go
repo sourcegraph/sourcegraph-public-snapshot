@@ -1,20 +1,39 @@
 package comby
 
-// A result is either a match result or a diff result. These members are
-// mutually exclusive, but are bundled together so that we can share the
-// unmarshalling code.
-type Input = struct {
-	ZipPath string
-	DirPath string
+type Input interface {
+	Value() string
 }
 
+type ZipPath struct {
+	value string
+}
+
+type DirPath struct {
+	value string
+}
+
+func (z *ZipPath) Value() string { return z.value }
+
+func (d *DirPath) Value() string { return d.value }
+
 type Args = struct {
+	// An Input to process (either a path to a directory or zip file).
 	Input
-	MatchTemplate   string
+
+	// A template pattern that expresses what to match.
+	MatchTemplate string
+
+	// A template pattern that expresses how matches should be rewritten.
 	RewriteTemplate string
-	Matcher         string
-	MatchOnly       bool
-	FilePatterns    []string
+
+	// Matcher is a file extension (e.g., '.go') which denotes which language parser to use
+	Matcher string
+
+	// If MatchOnly is set to true, then comby will only find matches and not perform replacement
+	MatchOnly bool
+
+	// FilePatterns is a list of file patterns (suffixes) to filter and process
+	FilePatterns []string
 }
 
 type Range struct {
@@ -23,7 +42,6 @@ type Range struct {
 	Column int `json:"column"`
 }
 
-// {"uri":"/private/tmp/rrrr/doc.go","matches":[{"range":{"start":{"offset":215,"line":1,"column":216},"end":{"offset":222,"line":1,"column":223}},"environment":[],"matched":"package"}]}
 type Match struct {
 	URI     string  `json:"uri"`
 	Matches []Range `json:"matches"`
@@ -33,10 +51,4 @@ type Match struct {
 type Diff struct {
 	URI  string `json:"uri"`
 	Diff string `json:"diff"`
-}
-
-// Nuke this
-type Result struct {
-	Matches *[]Match
-	Diffs   *[]Diff
 }

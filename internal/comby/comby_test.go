@@ -49,7 +49,7 @@ func main() {
 	}{
 		{
 			Args{
-				Input:           Input{ZipPath: zipPath},
+				Input:           &ZipPath{value: zipPath},
 				MatchTemplate:   "func",
 				RewriteTemplate: "derp",
 				FilePatterns:    []string{".go"},
