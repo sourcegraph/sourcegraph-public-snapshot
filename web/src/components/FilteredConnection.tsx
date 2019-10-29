@@ -311,7 +311,7 @@ interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}>
  */
 export interface FilteredConnectionQueryArgs {
     first?: number
-    after?: string | null
+    after?: string
     query?: string
 }
 
@@ -456,16 +456,17 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         // The endCursor of the previous request. This is defined here and injected into the filter state
         // as React's setState is asynchronous and we can't guarantee the state is updated before the observer
         // of a query change, active filter change, or refresh request is handled.
-        let after: string | null | undefined
+        let after: string | undefined
 
-        // Whether or not to skip appending results onto the previous page (when `appendResults` is true).
-        // This is set to true immediately following a change in the query or filters.
-        let stalePreviousPage = false
+        // The list of nodes that should be prepended to the next page of results (when `appendResults` is true).
+        // This is cleared when the query or active filters change, and updated on each successful request of
+        // a new page of results.
+        let previousPage: N[] = []
 
         // Called on query/active filter change to reset pagination state
         const resetCursor = (): void => {
             after = undefined
-            stalePreviousPage = true
+            previousPage = []
         }
 
         // Track the last query and filter we used. We only want to show the loader if these change,
@@ -497,15 +498,13 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                         // connection, if appendResults is set, the previous page is not
                         // stale, and neither the connection nor the current page are an
                         // error-like value.
-                        const appendResultsToPage = (newC: C | ErrorLike | undefined): typeof newC => {
-                            if (this.props.appendResults && !stalePreviousPage) {
-                                const oldC = this.state.connectionOrError
-                                if (newC && !isErrorLike(newC) && oldC && !isErrorLike(oldC)) {
-                                    newC.nodes = oldC.nodes.concat(newC.nodes)
-                                }
+                        const prependPreviousPage = (c: C | ErrorLike | undefined): typeof c => {
+                            if (c && !isErrorLike(c) && this.props.appendResults) {
+                                c.nodes = previousPage.concat(c.nodes)
+                                previousPage = c.nodes
                             }
 
-                            return newC
+                            return c
                         }
 
                         const result = this.props
@@ -519,15 +518,11 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                                 catchError(error => [asError(error)]),
                                 map(
                                     (c): PartialStateUpdate => ({
-                                        connectionOrError: appendResultsToPage(c),
+                                        connectionOrError: prependPreviousPage(c),
                                         connectionQuery: query,
                                         loading: false,
                                     })
                                 ),
-                                // Unset stale previous page on successful request
-                                tap(() => {
-                                    stalePreviousPage = false
-                                }),
                                 publishReplay<PartialStateUpdate>(),
                                 refCount()
                             )
@@ -554,7 +549,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                         // it so we can pass it to the subsequent request. We'll either update or
                         // unset the after cursor here so it is not used twice.
                         if (connectionOrError && !isErrorLike(connectionOrError) && connectionOrError.pageInfo) {
-                            after = connectionOrError.pageInfo.endCursor
+                            after = connectionOrError.pageInfo.endCursor || undefined
                         } else {
                             resetCursor()
                         }
