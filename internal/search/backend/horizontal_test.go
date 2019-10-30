@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"sort"
+	"strings"
 	"sync/atomic"
 	"testing"
 
@@ -97,6 +98,78 @@ func TestHorizontalSearcher(t *testing.T) {
 	}
 
 	searcher.Close()
+}
+
+func TestDedupper(t *testing.T) {
+	parse := func(s string) []zoekt.FileMatch {
+		t.Helper()
+		var fms []zoekt.FileMatch
+		for _, t := range strings.Split(s, " ") {
+			if t == "" {
+				continue
+			}
+			parts := strings.Split(t, ":")
+			fms = append(fms, zoekt.FileMatch{
+				Repository: parts[0],
+				FileName:   parts[1],
+			})
+		}
+		return fms
+	}
+	cases := []struct {
+		name    string
+		matches []string
+		want    string
+	}{{
+		name: "empty",
+		matches: []string{
+			"",
+		},
+		want: "",
+	}, {
+		name: "one",
+		matches: []string{
+			"r1:a r1:a r1:b r2:a",
+		},
+		want: "r1:a r1:a r1:b r2:a",
+	}, {
+		name: "some dups",
+		matches: []string{
+			"r1:a r1:a r1:b r2:a",
+			"r1:c r1:c r3:a",
+		},
+		want: "r1:a r1:a r1:b r2:a r3:a",
+	}, {
+		name: "no dups",
+		matches: []string{
+			"r1:a r1:a r1:b r2:a",
+			"r4:c r4:c r5:a",
+		},
+		want: "r1:a r1:a r1:b r2:a r4:c r4:c r5:a",
+	}, {
+		name: "shuffled",
+		matches: []string{
+			"r1:a r2:a r1:a r1:b",
+			"r1:c r3:a r1:c",
+		},
+		want: "r1:a r2:a r1:a r1:b r3:a",
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			d := dedupper{}
+			var got []zoekt.FileMatch
+			for _, s := range tc.matches {
+				fms := parse(s)
+				got = append(got, d.Dedup(fms)...)
+			}
+
+			want := parse(tc.want)
+			if !cmp.Equal(want, got, cmpopts.EquateEmpty()) {
+				t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(want, got))
+			}
+		})
+	}
 }
 
 func backgroundSearch(searcher zoekt.Searcher) func(t *testing.T) {
