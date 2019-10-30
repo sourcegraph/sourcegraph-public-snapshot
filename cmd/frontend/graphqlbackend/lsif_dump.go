@@ -69,8 +69,8 @@ func (r *lsifDumpResolver) UploadedAt() DateTime {
 }
 
 type lsifDumpIDPayload struct {
-	RepoName string `json:"repo"`
-	ID       string `json:"id"`
+	RepoName string
+	ID       string
 }
 
 func marshalLSIFDumpGQLID(repoName string, lsifDumpID int64) graphql.ID {
