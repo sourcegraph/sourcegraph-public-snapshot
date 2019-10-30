@@ -99,12 +99,18 @@ type PatternInfo struct {
 	// PatternMatchesPath is whether a file whose path matches Pattern (but whose contents don't) should be
 	// considered a match.
 	PatternMatchesPath bool
+
+	// OnlyFiles specifies a list of files that should be searched and all other files should be ignored.
+	OnlyFiles []string
 }
 
 func (p *PatternInfo) String() string {
 	args := []string{fmt.Sprintf("%q", p.Pattern)}
 	if p.IsRegExp {
 		args = append(args, "re")
+	}
+	if p.IsStructuralPat {
+		args = append(args, "structural")
 	}
 	if p.IsWordMatch {
 		args = append(args, "word")
@@ -133,6 +139,12 @@ func (p *PatternInfo) String() string {
 		args = append(args, fmt.Sprintf("-%s:%q", path, p.ExcludePattern))
 	}
 	if incs := p.IncludePatterns; len(incs) > 0 {
+		for _, inc := range incs {
+			args = append(args, fmt.Sprintf("%s:%q", path, inc))
+		}
+	}
+	// XXX can we use IncludePatterns instead?
+	if incs := p.OnlyFiles; len(incs) > 0 {
 		for _, inc := range incs {
 			args = append(args, fmt.Sprintf("%s:%q", path, inc))
 		}

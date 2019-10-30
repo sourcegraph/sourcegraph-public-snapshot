@@ -161,7 +161,7 @@ var mockTextSearch func(ctx context.Context, repo gitserver.Repo, commit api.Com
 
 // textSearch searches repo@commit with p.
 // Note: the returned matches do not set fileMatch.uri
-func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.Repo, commit api.CommitID, p *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
+func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.Repo, commit api.CommitID, p *search.PatternInfo, fetchTimeout time.Duration, onlyFiles []string) (matches []*fileMatchResolver, limitHit bool, err error) {
 	if mockTextSearch != nil {
 		return mockTextSearch(ctx, repo, commit, p, fetchTimeout)
 	}
@@ -172,6 +172,10 @@ func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.
 		tr.Finish()
 	}()
 
+	if onlyFiles == nil {
+		onlyFiles = []string{""}
+	}
+
 	q := url.Values{
 		"Repo":            []string{string(repo.Name)},
 		"URL":             []string{repo.URL},
@@ -180,6 +184,7 @@ func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.
 		"ExcludePattern":  []string{p.ExcludePattern},
 		"IncludePatterns": p.IncludePatterns,
 		"FetchTimeout":    []string{fetchTimeout.String()},
+		"OnlyFiles":       onlyFiles,
 	}
 	if deadline, ok := ctx.Deadline(); ok {
 		t, err := deadline.MarshalText()
@@ -191,6 +196,9 @@ func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.
 	q.Set("FileMatchLimit", strconv.FormatInt(int64(p.FileMatchLimit), 10))
 	if p.IsRegExp {
 		q.Set("IsRegExp", "true")
+	}
+	if p.IsStructuralPat {
+		q.Set("IsStructuralPat", "true")
 	}
 	if p.IsWordMatch {
 		q.Set("IsWordMatch", "true")
@@ -332,7 +340,7 @@ func (e *searcherError) Error() string {
 
 var mockSearchFilesInRepo func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error)
 
-func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
+func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration, onlyFiles []string) (matches []*fileMatchResolver, limitHit bool, err error) {
 	if mockSearchFilesInRepo != nil {
 		return mockSearchFilesInRepo(ctx, repo, gitserverRepo, rev, info, fetchTimeout)
 	}
@@ -354,7 +362,7 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *ty
 		return matches, false, err
 	}
 
-	matches, limitHit, err = textSearch(ctx, searcherURLs, gitserverRepo, commit, info, fetchTimeout)
+	matches, limitHit, err = textSearch(ctx, searcherURLs, gitserverRepo, commit, info, fetchTimeout, onlyFiles)
 
 	workspace := fileMatchURI(repo.Name, rev, "")
 	for _, fm := range matches {
@@ -393,7 +401,7 @@ func repoShouldBeSearched(ctx context.Context, searcherURLs *endpoint.Map, searc
 func repoHasFilesWithNamesMatching(ctx context.Context, searcherURLs *endpoint.Map, include bool, repoHasFileFlag []string, gitserverRepo gitserver.Repo, commit api.CommitID, fetchTimeout time.Duration) (bool, error) {
 	for _, pattern := range repoHasFileFlag {
 		p := search.PatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
-		matches, _, err := textSearch(ctx, searcherURLs, gitserverRepo, commit, &p, fetchTimeout)
+		matches, _, err := textSearch(ctx, searcherURLs, gitserverRepo, commit, &p, fetchTimeout, nil)
 		if err != nil {
 			return false, err
 		}
@@ -532,7 +540,10 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 	}
 
 	// This function calls searcher on a set of repos.
-	callSearcherOverRepos := func(searcherRepos []*search.RepositoryRevisions) error {
+	callSearcherOverRepos := func(
+		searcherRepos []*search.RepositoryRevisions,
+		searcherReposWithFiles map[string][]string,
+	) error {
 		var fetchTimeout time.Duration
 		if len(searcherRepos) == 1 || args.UseFullDeadline {
 			// When searching a single repo or when an explicit timeout was specified, give it the remaining deadline to fetch the archive.
@@ -580,8 +591,14 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 				defer wg.Done()
 				defer done()
 
+				var onlyFiles []string
+				if args.Pattern.IsStructuralPat && searcherReposWithFiles != nil {
+					fmt.Printf("Structural only files for: %d\n", len(searcherReposWithFiles))
+					onlyFiles = searcherReposWithFiles[string(repoRev.Repo.Name)]
+				}
+
 				rev := repoRev.RevSpecs()[0] // TODO(sqs): search multiple revs
-				matches, repoLimitHit, err := searchFilesInRepo(ctx, args.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), rev, args.Pattern, fetchTimeout)
+				matches, repoLimitHit, err := searchFilesInRepo(ctx, args.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), rev, args.Pattern, fetchTimeout, onlyFiles)
 				if err != nil {
 					tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.Error(err), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
 					log15.Warn("searchFilesInRepo failed", "error", err, "repo", repoRev.Repo.Name)
@@ -646,10 +663,35 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			tr.LazyPrintf("cancel indexed search due to error: %v", err)
 			cancel()
 		}
-		addMatches(matches)
+		if args.Pattern.IsStructuralPat {
+			fmt.Printf("Matches to consider for structural search: %d\n", len(matches))
+
+			// Don't return Zoekt's matches for structural
+			// search. Instead, extract the file paths and pass the
+			// (repo, filepaths) results to searcher.
+
+			// zoektSearchHEAD returns a flat list of matches and we
+			// don't know how to connect it back to the repo rev.
+			// Hooray: O(reposToSearch * fileMatchesFound) map.
+			// Make Zoekt bundle repo rev with matches?
+			p := make(map[string][]string)
+			for _, repo := range zoektRepos {
+				for _, m := range matches {
+					if m.repo.Name == repo.Repo.Name {
+						fmt.Printf("Adding to %s file %s\n", m.repo.Name, m.JPath)
+						name := string(m.repo.Name)
+						p[name] = append(p[name], m.JPath)
+					}
+				}
+			}
+			// XXX I don't know about assigning to searchErr
+			searchErr = callSearcherOverRepos(zoektRepos, p)
+		} else {
+			addMatches(matches)
+		}
 	}()
 
-	if err := callSearcherOverRepos(searcherRepos); err != nil {
+	if err := callSearcherOverRepos(searcherRepos, nil); err != nil {
 		mu.Lock()
 		searchErr = err
 		mu.Unlock()

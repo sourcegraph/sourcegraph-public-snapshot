@@ -651,6 +651,23 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Pa
 	isStructuralPat := false
 	if opts != nil && opts.performStructuralSearch {
 		isStructuralPat = true
+		// TODO clean
+		for _, v := range r.query.Values(query.FieldDefault) {
+			var pattern string
+			switch {
+			case v.String != nil:
+				pattern = *v.String
+			case v.Regexp != nil:
+				pattern = v.Regexp.String()
+			}
+			if pattern == "" {
+				continue
+			}
+			patternsToCombine = append(patternsToCombine, pattern)
+			p := strings.Join(patternsToCombine, " ")
+			// don't do that regex thing
+			patternsToCombine = []string{p}
+		}
 	} else if opts == nil || !opts.forceFileSearch {
 		isRegExp = true
 		for _, v := range r.query.Values(query.FieldDefault) {
