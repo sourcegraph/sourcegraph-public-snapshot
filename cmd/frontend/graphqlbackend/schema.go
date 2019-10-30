@@ -3703,10 +3703,10 @@ type RegistryExtensionConnection {
 
 # Metadata about an LSIF upload.
 type LSIFDump implements Node {
-    # An opaque GraphQL ID.
+    # An opaque GraphQL ID representing this LSIF dump.
     id: ID!
 
-    # The project for which this dump provides intelligence.
+    # The project for which this dump provides code intelligence.
     projectRoot: GitTree!
 
     # Whether or not this dump provides intelligence for the tip of the default branch. Find reference queries
