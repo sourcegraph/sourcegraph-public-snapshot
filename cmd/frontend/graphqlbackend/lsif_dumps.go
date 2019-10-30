@@ -150,7 +150,7 @@ func (r *lsifDumpConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil
 	}
 
 	if nextURL != "" {
-		return graphqlutil.NextPageCursor(graphql.ID(base64.StdEncoding.EncodeToString([]byte(nextURL)))), nil
+		return graphqlutil.NextPageCursor(base64.StdEncoding.EncodeToString([]byte(nextURL))), nil
 	}
 
 	return graphqlutil.HasNextPage(false), nil

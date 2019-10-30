@@ -17,6 +17,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- The GraphQL PageInfo object now returns a string instead of an ID for its endCursor. This only affects the experimental paginated search introduced in 3.9, which now accepts a string value instead of an ID for its after parameter.
+
 ### Fixed
 
 - Support hyphens in Bitbucket Cloud team names. [#6154](https://github.com/sourcegraph/sourcegraph/issues/6154)
