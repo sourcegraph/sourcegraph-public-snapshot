@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"errors"
 	"sort"
 	"sync"
 
@@ -92,6 +93,10 @@ func (r *changesetResolver) ID() graphql.ID {
 }
 
 func (r *changesetResolver) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
+	return r.repoResolver(ctx)
+}
+
+func (r *changesetResolver) repoResolver(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
 	if r.repo != nil {
 		return graphqlbackend.NewRepositoryResolver(&types.Repo{
 			ID:           api.RepoID(r.repo.ID),
@@ -189,6 +194,40 @@ func (r *changesetResolver) Events(ctx context.Context, args *struct {
 }
 
 func (r *changesetResolver) Diff(ctx context.Context) (*graphqlbackend.RepositoryComparisonResolver, error) {
-	// TODO(a8n): implement this (see: https://github.com/sourcegraph/sourcegraph/pull/6206/files)
-	return nil, nil
+	s, err := r.Changeset.State()
+	if err != nil {
+		return nil, err
+	}
+
+	// Only return diffs for open changesets, otherwise we can't guarantee that
+	// we have the refs on gitserver
+	if s != a8n.ChangesetStateOpen {
+		return nil, nil
+	}
+
+	repo, err := r.repoResolver(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	base, err := r.Changeset.BaseRefOid()
+	if err != nil {
+		return nil, err
+	}
+	if base == "" {
+		return nil, errors.New("changeset base ref name could not be determined")
+	}
+
+	head, err := r.Changeset.HeadRefOid()
+	if err != nil {
+		return nil, err
+	}
+	if head == "" {
+		return nil, errors.New("changeset head ref name could not be determined")
+	}
+
+	return graphqlbackend.NewRepositoryComparison(ctx, repo, &graphqlbackend.RepositoryComparisonInput{
+		Base: &base,
+		Head: &head,
+	})
 }

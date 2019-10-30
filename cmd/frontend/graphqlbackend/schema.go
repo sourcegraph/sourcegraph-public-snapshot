@@ -631,7 +631,8 @@ interface Changeset {
     body: String!
 
     # The diff of the changeset.
-    diff: RepositoryDiff!
+    # Only returned if the changeset has not been merged or closed.
+    diff: RepositoryDiff
 }
 
 # Preview of a changeset planned to be created.
@@ -685,7 +686,8 @@ type ExternalChangeset implements Changeset & Node {
     reviewState: ChangesetReviewState!
 
     # The diff of this changeset.
-    diff: RepositoryDiff!
+    # Only returned if the changeset has not been merged or closed.
+    diff: RepositoryDiff
 }
 
 # A list of changesets.

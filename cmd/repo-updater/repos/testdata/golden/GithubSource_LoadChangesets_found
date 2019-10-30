@@ -5,6 +5,8 @@
    "Body": "This flag should only be observed in the browser extension. Calling `observeStorageKey()` breaks native integrations.",
    "State": "MERGED",
    "URL": "https://github.com/sourcegraph/sourcegraph/pull/5550",
+   "HeadRefOid": "30cc0384757b7d2fe9d42cf09ab7744731c8a9ea",
+   "BaseRefOid": "f7097fe19816d0a9d637dc759722f6f43fd057ea",
    "Number": 5550,
    "Author": {
     "AvatarURL": "https://avatars1.githubusercontent.com/u/1741180?v=4",
@@ -199,6 +201,8 @@
    "Body": "With the header-option, it is possible to create statistics of 1 or more response-headers.\n\nI used it, to analyze how our load-balancing performs under heavy load.\n",
    "State": "CLOSED",
    "URL": "https://github.com/tsenart/vegeta/pull/50",
+   "HeadRefOid": "dc9f13131bbf79c58b067094f71020a6254ba548",
+   "BaseRefOid": "461ce5917a4adb92c741ca39e3dcc543727ec6d1",
    "Number": 50,
    "Author": {
     "AvatarURL": "https://avatars2.githubusercontent.com/u/214626?v=4",
@@ -294,6 +298,8 @@
    "Body": "This adds the necessary methods to the `a8n.Store` to upsert, list and count `a8n.ChangesetEvents`.\r\n\r\nAfter loading changesets in the `a8n.Syncer` we upsert them into the database, making sure that on conflict they're updated.\r\n\r\nThe `key` column on `changeset_events` is added in preparation for the introduction of webhooks, where we could potentially receive the same event via API calls and via webhook payloads. In that case, we want to make sure that we can reconcile the two different representations of the same event and update the database entry to its newest version.\r\n\r\nThe PR also adds a minimal first GraphQL API for changeset events. It's minimal, because we still need to work out the schema.\r\n\r\ncc @felixfbecker \r\n",
    "State": "MERGED",
    "URL": "https://github.com/sourcegraph/sourcegraph/pull/5834",
+   "HeadRefOid": "9780015346b79568f04925a03f6ec6cdbc0ae9be",
+   "BaseRefOid": "cec6864065fbe12890b3778af1f76c03b03c801a",
    "Number": 5834,
    "Author": {
     "AvatarURL": "https://avatars2.githubusercontent.com/u/67471?v=4",
@@ -356,7 +362,7 @@
        "Login": "tsenart",
        "URL": "https://github.com/tsenart"
       },
-      "AuthorAssociation": "MEMBER",
+      "AuthorAssociation": "CONTRIBUTOR",
       "Body": "This is a comment. EDIT",
       "URL": "https://github.com/sourcegraph/sourcegraph/pull/5834#issuecomment-537920237",
       "CreatedAt": "2019-10-03T12:18:21Z",
@@ -396,7 +402,7 @@
        "Login": "tsenart",
        "URL": "https://github.com/tsenart"
       },
-      "AuthorAssociation": "MEMBER",
+      "AuthorAssociation": "CONTRIBUTOR",
       "Body": "A review",
       "State": "COMMENTED",
       "URL": "https://github.com/sourcegraph/sourcegraph/pull/5834#pullrequestreview-296894453",
@@ -433,7 +439,7 @@
        "URL": "https://github.com/tsenart"
       },
       "Editor": null,
-      "AuthorAssociation": "MEMBER",
+      "AuthorAssociation": "CONTRIBUTOR",
       "Body": "Making this PR the playground for fetching timeline events from Github. ",
       "URL": "https://github.com/sourcegraph/sourcegraph/pull/5834#issuecomment-537960109",
       "CreatedAt": "2019-10-03T14:04:06Z",
@@ -543,7 +549,7 @@
        "Login": "mrnugget",
        "URL": "https://github.com/mrnugget"
       },
-      "AuthorAssociation": "MEMBER",
+      "AuthorAssociation": "CONTRIBUTOR",
       "Body": "",
       "State": "COMMENTED",
       "URL": "https://github.com/sourcegraph/sourcegraph/pull/5834#pullrequestreview-298093884",
@@ -579,7 +585,7 @@
        "Login": "mrnugget",
        "URL": "https://github.com/mrnugget"
       },
-      "AuthorAssociation": "MEMBER",
+      "AuthorAssociation": "CONTRIBUTOR",
       "Body": "",
       "State": "COMMENTED",
       "URL": "https://github.com/sourcegraph/sourcegraph/pull/5834#pullrequestreview-298094119",
@@ -628,7 +634,7 @@
        "Login": "mrnugget",
        "URL": "https://github.com/mrnugget"
       },
-      "AuthorAssociation": "MEMBER",
+      "AuthorAssociation": "CONTRIBUTOR",
       "Body": "",
       "State": "APPROVED",
       "URL": "https://github.com/sourcegraph/sourcegraph/pull/5834#pullrequestreview-298099102",
@@ -664,7 +670,7 @@
        "Login": "mrnugget",
        "URL": "https://github.com/mrnugget"
       },
-      "AuthorAssociation": "MEMBER",
+      "AuthorAssociation": "CONTRIBUTOR",
       "Body": "👍 \r\n\u003cimg width=\"495\" alt=\"Screen Shot 2019-10-07 at 14 49 12\" src=\"https://user-images.githubusercontent.com/1185253/66312845-a4328180-e911-11e9-93b9-d1c421324015.png\"\u003e\r\n",
       "State": "APPROVED",
       "URL": "https://github.com/sourcegraph/sourcegraph/pull/5834#pullrequestreview-298101262",
