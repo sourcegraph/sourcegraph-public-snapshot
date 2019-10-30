@@ -453,7 +453,7 @@ function dumpEndpoints(backend: Backend, logger: Logger, tracer: Tracer | undefi
                     res.set('Link', nextLink(req, { limit, offset: offset + dumps.length }))
                 }
 
-                res.json({ dumps: dumps.map(dump => ({ ...dump, uploadedAt: new Date(dump.uploadedAt) })), totalCount })
+                res.json({ dumps, totalCount })
             }
         )
     )
@@ -468,7 +468,7 @@ function dumpEndpoints(backend: Backend, logger: Logger, tracer: Tracer | undefi
                     throw Object.assign(new Error('LSIF dump not found'), { status: 404 })
                 }
 
-                res.json({ ...dump, uploadedAt: new Date(dump.uploadedAt) })
+                res.json(dump)
             }
         )
     )
