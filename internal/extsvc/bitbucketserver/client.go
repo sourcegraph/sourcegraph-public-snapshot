@@ -841,15 +841,15 @@ type ActivityAction string
 
 // Known ActivityActions
 const (
-	ApprovedActivitiyAction   ActivityAction = "APPROVED"
-	UnapprovedActivitiyAction ActivityAction = "UNAPPROVED"
-	DeclinedActivitiyAction   ActivityAction = "DECLINED"
-	ReviewedActivitiyAction   ActivityAction = "REVIEWED"
-	OpenedActivitiyAction     ActivityAction = "OPENED"
-	RepenedActivitiyAction    ActivityAction = "REOPENED"
-	UpdatedActivitiyAction    ActivityAction = "UPDATED"
-	CommentedActivitiyAction  ActivityAction = "COMMENTED"
-	MergedActivitiyAction     ActivityAction = "MERGED"
+	ApprovedActivityAction   ActivityAction = "APPROVED"
+	UnapprovedActivityAction ActivityAction = "UNAPPROVED"
+	DeclinedActivityAction   ActivityAction = "DECLINED"
+	ReviewedActivityAction   ActivityAction = "REVIEWED"
+	OpenedActivityAction     ActivityAction = "OPENED"
+	RepenedActivityAction    ActivityAction = "REOPENED"
+	UpdatedActivityAction    ActivityAction = "UPDATED"
+	CommentedActivityAction  ActivityAction = "COMMENTED"
+	MergedActivityAction     ActivityAction = "MERGED"
 )
 
 // A Comment in a PullRequest.
