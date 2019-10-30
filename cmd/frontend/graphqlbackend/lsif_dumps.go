@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"strconv"
 	"sync"
 
 	graphql "github.com/graph-gophers/graphql-go"
@@ -75,7 +76,7 @@ func (r *lsifDumpConnectionResolver) compute(ctx context.Context) ([]*types.LSIF
 		var path string
 		if r.opt.NextURL == nil {
 			// first page of results
-			path = fmt.Sprintf("/dumps/%s", url.QueryEscape(r.opt.Repository))
+			path = fmt.Sprintf("/dumps/%s", url.PathEscape(r.opt.Repository))
 		} else {
 			// subsequent page of results
 			path = *r.opt.NextURL
