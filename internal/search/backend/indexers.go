@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -26,7 +27,7 @@ type Indexers struct {
 // ReposSubset reuses the underlying array of repoNames.
 //
 // An error is returned if hostname is not part of the Indexers endpoints.
-func (c *Indexers) ReposSubset(hostname string, repoNames []string) ([]string, error) {
+func (c *Indexers) ReposSubset(ctx context.Context, hostname string, repoNames []string) ([]string, error) {
 	if !c.Enabled() {
 		return repoNames, nil
 	}

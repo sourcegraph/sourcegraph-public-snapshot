@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -52,7 +53,7 @@ func TestReposSubset(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := index.ReposSubset(tc.hostname, tc.repos)
+			got, err := index.ReposSubset(context.Background(), tc.hostname, tc.repos)
 			if tc.errS != "" {
 				got := fmt.Sprintf("%v", err)
 				if !strings.Contains(got, tc.errS) {
