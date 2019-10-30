@@ -479,6 +479,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 
 	// Support index:yes (default), index:only, and index:no in search query.
 	index, _ := args.Query.StringValues(query.FieldIndex)
+	var indexSet bool
 	if len(index) > 0 {
 		index := index[len(index)-1]
 		switch parseYesNoOnly(index) {
@@ -487,6 +488,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			if args.Zoekt.Enabled() {
 				tr.LazyPrintf("%d indexed repos, %d unindexed repos", len(zoektRepos), len(searcherRepos))
 			}
+			indexSet = true
 		case Only:
 			if !args.Zoekt.Enabled() {
 				return nil, common, fmt.Errorf("invalid index:%q (indexed search is not enabled)", index)
@@ -496,15 +498,20 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 				common.missing[i] = r.Repo
 			}
 			tr.LazyPrintf("index:only, ignoring %d unindexed repos", len(searcherRepos))
+			indexSet = true
 			searcherRepos = nil
 		case No, False:
 			tr.LazyPrintf("index:no, bypassing zoekt (using searcher) for %d indexed repos", len(zoektRepos))
 			searcherRepos = append(searcherRepos, zoektRepos...)
+			indexSet = false
 			zoektRepos = nil
 		default:
+			indexSet = false
 			return nil, common, fmt.Errorf("invalid index:%q (valid values are: yes, only, no)", index)
 		}
 	}
+
+	fmt.Println("ZZZZZZZZ indexSet: %t", indexSet)
 
 	var (
 		// TODO: convert wg to an errgroup
@@ -603,7 +610,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 					tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.Error(err), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
 					log15.Warn("searchFilesInRepo failed", "error", err, "repo", repoRev.Repo.Name)
 				}
-				mu.Lock()
+				mu.Lock() // searcher needs to acquire lock: we're going to modify common for this repo
 				defer mu.Unlock()
 				if ctx.Err() == nil {
 					common.searched = append(common.searched, repoRev.Repo)
@@ -640,7 +647,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		defer wg.Done()
 		matches, limitHit, reposLimitHit, err := zoektSearchHEAD(ctx, args, zoektRepos, false, time.Since)
 		mu.Lock()
-		defer mu.Unlock()
+		// defer mu.Unlock()
 		if ctx.Err() == nil {
 			for _, repo := range zoektRepos {
 				common.searched = append(common.searched, repo.Repo)
@@ -675,6 +682,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			// Hooray: O(reposToSearch * fileMatchesFound) map.
 			// Make Zoekt bundle repo rev with matches?
 			p := make(map[string][]string)
+			var onlyTheseRepos []*search.RepositoryRevisions
 			for _, repo := range zoektRepos {
 				for _, m := range matches {
 					if m.repo.Name == repo.Repo.Name {
@@ -684,17 +692,43 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 					}
 				}
 			}
-			// XXX I don't know about assigning to searchErr
-			searchErr = callSearcherOverRepos(zoektRepos, p)
+
+			for _, repo := range zoektRepos {
+				for key := range p {
+					if string(repo.Repo.Name) == key {
+						onlyTheseRepos = append(onlyTheseRepos, repo)
+					}
+				}
+			}
+
+			// XXX I don't know about assigning to searchErr, seems ok it's under lock
+			mu.Unlock() // zoekt is done, it will never need tock at this point. unlock it so that callSearcher can acquire it
+			searchErr = callSearcherOverRepos(onlyTheseRepos, p)
 		} else {
 			addMatches(matches)
+			mu.Unlock() // unlock explicitly, instead of using the deferred for this whole business
 		}
 	}()
 
-	if err := callSearcherOverRepos(searcherRepos, nil); err != nil {
-		mu.Lock()
-		searchErr = err
-		mu.Unlock()
+	// only call searcher over repos if we didn't call it from the zoekt line. we don't call it from
+	// the zoekt line when index:no, which _implies_ zoektRepos = nil, but is not iff
+	fmt.Println("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+	fmt.Println("FFFFFFFFFFFFF indexSet ", indexSet)
+	if !indexSet && args.Pattern.IsStructuralPat {
+		fmt.Println("STRUCTURAL calling over all repos")
+		if err := callSearcherOverRepos(searcherRepos, nil); err != nil {
+			mu.Lock()
+			searchErr = err
+			mu.Unlock()
+		}
+	} else {
+		if !args.Pattern.IsStructuralPat {
+			if err := callSearcherOverRepos(searcherRepos, nil); err != nil {
+				mu.Lock()
+				searchErr = err
+				mu.Unlock()
+			}
+		}
 	}
 
 	wg.Wait()

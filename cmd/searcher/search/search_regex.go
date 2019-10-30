@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"regexp"
 	"regexp/syntax"
@@ -299,6 +300,7 @@ func appendMatches(matches []protocol.LineMatch, fileBuf []byte, matchLineBuf []
 // FindZip is a convenience function to run Find on f.
 func (rg *readerGrep) FindZip(zf *store.ZipFile, f *store.SrcFile) (protocol.FileMatch, error) {
 	lm, limitHit, err := rg.Find(zf, f)
+	fmt.Println("Rij", f.Name, lm)
 	return protocol.FileMatch{
 		Path:        f.Name,
 		LineMatches: lm,

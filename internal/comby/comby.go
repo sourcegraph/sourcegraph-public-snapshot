@@ -2,7 +2,6 @@ package comby
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os/exec"
@@ -91,7 +90,8 @@ func PipeTo(args Args, w io.Writer) (err error) {
 	if err := cmd.Wait(); err != nil {
 		if stderrMsg != nil {
 			log15.Error("failed to execute comby command", "error", string(stderrMsg))
-			return fmt.Errorf("comby error: %s", string(stderrMsg))
+			// return fmt.Errorf("comby error: %s", string(stderrMsg))
+			return nil
 		}
 		log15.Error("failed to wait for executing comby command", "error", string(err.(*exec.ExitError).Stderr))
 		return err

@@ -19,18 +19,20 @@ func structuralSearch(ctx context.Context, pattern string, zipPath string, fileM
 	w := bufio.NewWriter(b)
 
 	// XXX only do structural if we have onlyFiles to search. But remove this later to enable unindexed search
-	if len(onlyFiles) == 0 {
-		return matches, limitHit, err
-	}
+	// if len(onlyFiles) == 0 {
+	//	return matches, limitHit, err
+	// }
 
-	fmt.Printf("Only files: %s\n", strings.Join(onlyFiles, ","))
+	fmt.Printf("Only files: %d [%s]\n", len(onlyFiles), strings.Join(onlyFiles, ","))
 
 	args := comby.Args{
 		Input:         comby.ZipPath(zipPath),
 		MatchTemplate: pattern,
 		MatchOnly:     true,
 		FilePatterns:  onlyFiles,
-		NumWorkers:    numWorkers,
+		// XXX unhardcode
+		Matcher:    ".go",
+		NumWorkers: numWorkers,
 	}
 	err = comby.PipeTo(args, w)
 	if err != nil {
@@ -57,7 +59,9 @@ func structuralSearch(ctx context.Context, pattern string, zipPath string, fileM
 		combyMatches = append(combyMatches, *r)
 	}
 
-	fmt.Printf("Done searching. Num matches: %d\n", len(combyMatches))
+	if len(combyMatches) > 0 {
+		fmt.Printf("Done searching. Num matches: %d\n", len(combyMatches))
+	}
 
 	for _, m := range combyMatches {
 		var lineMatches []protocol.LineMatch
@@ -65,7 +69,8 @@ func structuralSearch(ctx context.Context, pattern string, zipPath string, fileM
 			lineMatch := protocol.LineMatch{
 				LineNumber: r.Range.Start.Line - 1,
 				// XXX sigh. assume one match per line.
-				OffsetAndLengths: [][2]int{{r.Range.Start.Column - 1, r.Range.Start.Column + len(r.Matched) - 1}},
+				OffsetAndLengths: [][2]int{{r.Range.Start.Column - 1, len(r.Matched)}},
+				Preview:          "derp",
 			}
 			lineMatches = append(lineMatches, lineMatch)
 		}
