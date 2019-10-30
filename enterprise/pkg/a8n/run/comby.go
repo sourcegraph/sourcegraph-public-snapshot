@@ -1,19 +1,20 @@
 package run
 
 import (
+	"bufio"
+	"encoding/json"
 	"errors"
-	"time"
+	"fmt"
+	"net/http"
+	"net/url"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
-	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
-
-var combyServiceURL string
-
-func init() {
-	combyServiceURL = env.Get("COMBY_URL", "http://replacer:3185", "replacer server URL")
-}
 
 type combyArgs struct {
 	ScopeQuery      string `json:"scopeQuery"`
@@ -48,18 +49,54 @@ func (c *comby) validateArgs() error {
 }
 
 func (c *comby) searchQuery() string { return c.args.ScopeQuery }
-func (c *comby) runJob(j *a8n.CampaignJob) {
-	// TODO(a8n): Do real work.
-	j.Diff = bogusDiff
-	j.Error = ""
-	j.FinishedAt = time.Now()
-}
+func (c *comby) generateDiff(repo api.RepoName, commit api.CommitID) (string, error) {
+	u, err := url.Parse(graphqlbackend.ReplacerURL)
+	if err != nil {
+		return "", err
+	}
 
-const bogusDiff = `diff --git a/README.md b/README.md
-index 323fae0..34a3ec2 100644
---- a/README.md
-+++ b/README.md
-@@ -1 +1 @@
--foobar
-+barfoo
-`
+	q := u.Query()
+	q.Set("repo", string(repo))
+	q.Set("commit", string(commit))
+	q.Set("matchtemplate", c.args.MatchTemplate)
+	q.Set("rewritetemplate", c.args.RewriteTemplate)
+	u.RawQuery = q.Encode()
+
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return "", err
+	}
+
+	cl := &http.Client{}
+	resp, err := cl.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return "", err
+	}
+
+	scanner := bufio.NewScanner(resp.Body)
+	scanner.Buffer(make([]byte, 100), 10*bufio.MaxScanTokenSize)
+
+	type rawCodemodResult struct {
+		URI  string `json:"uri"`
+		Diff string
+	}
+
+	var diff string
+	for scanner.Scan() {
+		var raw *rawCodemodResult
+		b := scanner.Bytes()
+		if err := scanner.Err(); err != nil {
+			log15.Info(fmt.Sprintf("Skipping codemod scanner error (line too long?): %s", err.Error()))
+			continue
+		}
+		if err := json.Unmarshal(b, &raw); err != nil {
+			continue
+		}
+		diff += raw.Diff
+	}
+	return diff, nil
+}

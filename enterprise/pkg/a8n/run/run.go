@@ -2,6 +2,7 @@ package run
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -29,12 +31,12 @@ type Runner struct {
 	wg      sync.WaitGroup
 }
 
-// A campaignType provides a search query, argument validation and execution of
-// job for a specific CampaignType specified on CampaignPlan.
+// A campaignType provides a search query, argument validation and generates a
+// diff in a given repository.
 type campaignType interface {
 	searchQuery() string
 	validateArgs() error
-	runJob(*a8n.CampaignJob)
+	generateDiff(api.RepoName, api.CommitID) (string, error)
 }
 
 // repoSearch takes in a raw search query and returns the list of repositories
@@ -74,13 +76,13 @@ func (r *Runner) Start(ctx context.Context) error {
 	}
 	r.started = true
 
-	repos, err := r.search(ctx, r.ct.searchQuery())
+	rs, err := r.search(ctx, r.ct.searchQuery())
 	if err != nil {
 		return err
 	}
 
-	jobs := make([]*a8n.CampaignJob, 0, len(repos))
-	for _, repo := range repos {
+	jobs := make([]*a8n.CampaignJob, 0, len(rs))
+	for _, repo := range rs {
 		// TODO(a8n): Do we want to persist a failed job instead
 		// of returning an error here?
 		var repoID int32
@@ -118,18 +120,37 @@ func (r *Runner) Start(ctx context.Context) error {
 		log15.Info("Launching job", "job", job.ID, "repo", job.RepoID)
 
 		r.wg.Add(1)
-		go func(job *a8n.CampaignJob) {
-			r.ct.runJob(job)
+		go func(ctx context.Context, ct campaignType, job *a8n.CampaignJob) {
+			defer func() {
+				r.wg.Done()
+				job.FinishedAt = time.Now().UTC()
+				err = r.store.UpdateCampaignJob(ctx, job)
+				if err != nil {
+					log15.Error("UpdateCampaignJob failed", "err", err)
+				}
+			}()
 
-			log15.Info("Job done", "job", job.ID)
-
-			err := r.store.UpdateCampaignJob(ctx, job)
+			// We load the repository here again so that we decouple the
+			// creation and running of jobs from the start.
+			store := repos.NewDBStore(r.store.DB(), sql.TxOptions{})
+			opts := repos.StoreListReposArgs{IDs: []uint32{uint32(job.RepoID)}}
+			rs, err := store.ListRepos(ctx, opts)
 			if err != nil {
-				log15.Error("UpdateCampaignJob failed", "err", err)
+				job.Error = err.Error()
+				return
+			}
+			if len(rs) != 1 {
+				job.Error = fmt.Sprintf("repository %d not found", job.RepoID)
+				return
 			}
 
-			r.wg.Done()
-		}(job)
+			diff, err := ct.generateDiff(api.RepoName(rs[0].Name), api.CommitID(job.Rev))
+			if err != nil {
+				job.Error = err.Error()
+			}
+
+			job.Diff = diff
+		}(context.Background(), r.ct, job)
 	}
 
 	return nil
