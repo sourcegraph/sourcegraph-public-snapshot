@@ -25,11 +25,7 @@ func lsifJobByGQLID(ctx context.Context, id graphql.ID) (*lsifJobResolver, error
 		return nil, err
 	}
 
-	return lsifJobByStringID(ctx, jobID)
-}
-
-func lsifJobByStringID(ctx context.Context, id string) (*lsifJobResolver, error) {
-	path := fmt.Sprintf("/jobs/%s", id)
+	path := fmt.Sprintf("/jobs/%s", jobID)
 
 	var lsifJob *types.LSIFJob
 	if err := lsif.TraceRequestAndUnmarshalPayload(ctx, path, nil, &lsifJob); err != nil {

@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -81,7 +82,7 @@ func (r *lsifJobConnectionResolver) compute(ctx context.Context) ([]*types.LSIFJ
 			query.Set("query", *r.opt.Query)
 		}
 		if r.opt.Limit != nil {
-			query.Set("limit", fmt.Sprintf("%d", *r.opt.Limit))
+			query.Set("limit", strconv.FormatInt(int64(*r.opt.Limit), 10))
 		}
 
 		resp, err := lsif.BuildAndTraceRequest(ctx, path, query)
