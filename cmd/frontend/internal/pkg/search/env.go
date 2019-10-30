@@ -1,10 +1,12 @@
 package search
 
 import (
+	"context"
 	"errors"
 	"strings"
 	"sync"
 
+	"github.com/google/zoekt/query"
 	"github.com/google/zoekt/rpc"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -60,7 +62,8 @@ func Indexers() *backend.Indexers {
 	indexersOnce.Do(func() {
 		if zoektAddrs != "" {
 			indexers = &backend.Indexers{
-				Map: endpoint.New(zoektAddrs),
+				Map:     endpoint.New(zoektAddrs),
+				Indexed: reposAtEndpoint,
 			}
 		} else {
 			indexers = &backend.Indexers{
@@ -69,4 +72,20 @@ func Indexers() *backend.Indexers {
 		}
 	})
 	return indexers
+}
+
+func reposAtEndpoint(ctx context.Context, endpoint string) map[string]struct{} {
+	cl := rpc.Client(endpoint)
+	defer cl.Close()
+
+	resp, err := cl.List(ctx, &query.Const{Value: true})
+	if err != nil {
+		return map[string]struct{}{}
+	}
+
+	set := make(map[string]struct{}, len(resp.Repos))
+	for _, r := range resp.Repos {
+		set[r.Repository.Name] = struct{}{}
+	}
+	return set
 }
