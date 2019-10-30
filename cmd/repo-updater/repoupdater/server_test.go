@@ -1131,9 +1131,7 @@ func (s *fakeRepoSource) GetRepo(context.Context, string) (*repos.Repo, error) {
 	return s.repo.Clone(), s.err
 }
 
-type fakeScheduler struct {
-	queue repos.Repos
-}
+type fakeScheduler struct{}
 
 func (s *fakeScheduler) UpdateOnce(_ uint32, _ api.RepoName, _ string) {}
 func (s *fakeScheduler) ScheduleInfo(id uint32) *protocol.RepoUpdateSchedulerInfoResult {
