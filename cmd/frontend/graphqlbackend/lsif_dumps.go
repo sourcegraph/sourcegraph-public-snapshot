@@ -86,7 +86,7 @@ func (r *lsifDumpConnectionResolver) compute(ctx context.Context) ([]*types.LSIF
 			query.Set("query", *r.opt.Query)
 		}
 		if r.opt.Limit != nil {
-			query.Set("limit", fmt.Sprintf("%d", *r.opt.Limit))
+			query.Set("limit", strconv.FormatInt(*r.opt.Limit, 10))
 		}
 
 		resp, err := lsif.BuildAndTraceRequest(ctx, path, query)
