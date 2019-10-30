@@ -57,7 +57,7 @@ CREATE OR REPLACE FUNCTION closest_dump(repository text, "commit" text, path tex
             -- return it and end the function. This will end up returning the first row
             -- we get from lineage with LSIF data which, as we pull rows back from
             -- lineage in order of distance from the source commit, it is necessarily
-            -- the closest commit with LISF data.
+            -- the closest commit with LSIF data.
 
             SELECT dump.* INTO found_dump FROM lsif_dumps dump WHERE dump.repository = lineage_row.repository AND dump.commit = lineage_row.commit AND $3 LIKE (dump.root || '%');
             IF found_dump.id IS NOT NULL THEN

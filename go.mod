@@ -157,6 +157,7 @@ require (
 	github.com/src-d/enry/v2 v2.1.0
 	github.com/stripe/stripe-go v65.1.0+incompatible
 	github.com/temoto/robotstxt v1.1.1
+	github.com/tomnomnom/linkheader v0.0.0-20180905144013-02ca5825eb80
 	github.com/uber-go/atomic v1.4.0 // indirect
 	github.com/uber/gonduit v0.4.1
 	github.com/uber/jaeger-client-go v2.19.0+incompatible

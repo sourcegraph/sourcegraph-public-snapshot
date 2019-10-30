@@ -1229,7 +1229,7 @@ type Query {
         #
         # A future request can be made for more results by passing in the
         # 'SearchResults.pageInfo.endCursor' that is returned.
-        after: ID
+        after: String
 
         # (experimental) Sourcegraph 3.9 added support for cursor-based paginated
         # search requests when this field is specified. For details, see
@@ -1238,9 +1238,6 @@ type Query {
         # When specified, indicates that this request should be paginated and
         # the first N results (relative to the cursor) should be returned. i.e.
         # how many results to return per page. It must be in the range of 0-5000.
-        #
-        # A future request can be made for more results by passing in the
-        # 'SearchResults.pageInfo.endCursor' that is returned.
         first: Int
     ): Search
     # All saved searches configured for the current user, merged from all configurations.
@@ -1265,6 +1262,30 @@ type Query {
 
     # Look up a namespace by ID.
     namespace(id: ID!): Namespace
+
+    # Lookup an LSIF dump by ID.
+    lsifDump(id: ID!): LSIFDump
+
+    # Retrieve the LSIF dumps for a repository.
+    lsifDumps(
+        # The repository ID that this LSIF dump belongs to.
+        repository: ID!
+
+        # An (optional) search query that searches over the commit and root properties.
+        query: String
+
+        # When specified, indicates that this request should be paginated and
+        # the first N results (relative to the cursor) should be returned. i.e.
+        # how many results to return per page. It must be in the range of 0-5000.
+        first: Int
+
+        # When specified, indicates that this request should be paginated and
+        # to fetch results starting at this cursor.
+        #
+        # A future request can be made for more results by passing in the
+        # 'LSIFDumpConnection.pageInfo.endCursor' that is returned.
+        after: String
+    ): LSIFDumpConnection!
 }
 
 # The version of the search syntax.
@@ -2238,7 +2259,7 @@ type PhabricatorRepo {
 # Pagination information. See https://facebook.github.io/relay/graphql/connections.htm#sec-undefined.PageInfo.
 type PageInfo {
     # When paginating forwards, the cursor to continue.
-    endCursor: ID
+    endCursor: String
     # When paginating forwards, are there more items?
     hasNextPage: Boolean!
 }
@@ -3868,6 +3889,35 @@ type RegistryExtensionConnection {
     # In order to be able to return local extensions even when the remote registry is unreachable, errors are
     # recorded here instead of in the top-level GraphQL errors list.
     error: String
+}
+
+# Metadata about an LSIF upload.
+type LSIFDump implements Node {
+    # An opaque GraphQL ID representing this LSIF dump.
+    id: ID!
+
+    # The project for which this dump provides code intelligence.
+    projectRoot: GitTree!
+
+    # Whether or not this dump provides intelligence for the tip of the default branch. Find reference queries
+    # will return symbols from remote repositories only when this property is true. This property is updated
+    # asynchronously and is eventually consistent with the git data known by the Sourcegraph instance.
+    isLatestForRepo: Boolean!
+
+    # The time the dump was uploaded.
+    uploadedAt: DateTime!
+}
+
+# A list of LSIF dumps.
+type LSIFDumpConnection {
+    # A list of LSIF dumps.
+    nodes: [LSIFDump!]!
+
+    # The total number of dumps for this repository.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
 }
 
 # Mutations that are only used on Sourcegraph.com.
