@@ -69,14 +69,14 @@ func (r *lsifDumpResolver) UploadedAt() DateTime {
 }
 
 type lsifDumpIDPayload struct {
-	Repository string `json:"repo"`
-	DumpID     string `json:"id"`
+	RepoName string `json:"repo"`
+	ID       string `json:"id"`
 }
 
 func marshalLSIFDumpGQLID(repoName string, lsifDumpID int64) graphql.ID {
 	return relay.MarshalID("LSIFDump", lsifDumpIDPayload{
-		Repository: repoName,
-		DumpID:     strconv.FormatInt(lsifDumpID, 36),
+		RepoName: repoName,
+		ID:       strconv.FormatInt(lsifDumpID, 36),
 	})
 }
 
@@ -86,10 +86,10 @@ func unmarshalLSIFDumpGQLID(id graphql.ID) (string, int64, error) {
 		return "", 0, err
 	}
 
-	dumpID, err := strconv.ParseInt(raw.DumpID, 36, 64)
+	dumpID, err := strconv.ParseInt(raw.ID, 36, 64)
 	if err != nil {
 		return "", 0, err
 	}
 
-	return raw.Repository, dumpID, nil
+	return raw.RepoName, dumpID, nil
 }
