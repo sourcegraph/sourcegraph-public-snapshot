@@ -81,7 +81,7 @@ interface ConnectionDisplayProps {
     /** The component displayed when the list of nodes is empty. */
     emptyElement?: JSX.Element
 
-    /** Append new results onto existing list when paging with cursors. */
+    /** Append new results onto existing list. This should always be true when paging with cursors. */
     appendResults?: boolean
 }
 
@@ -467,7 +467,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         // The number of additional results we want to load on the first query. This is used instead of encoding
         // the `after` parameter so that we load the entire visible result set again when a user has loaded multiple
         // pages of results and copied the URL.
-        let previousPagesCount = parseQueryInt(q, 'previousPagesCount') || 0
+        const previousPagesCount = parseQueryInt(q, 'previousPagesCount') || 0
 
         // Whether or not a query has been made. We track this so that we only change the `first` parameter of
         // the very first request of this component (see `previousPagesCount` defined above).
@@ -535,11 +535,11 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                                 query,
                                 ...(filter ? filter.args : {}),
                             })
-                            .tap(() => {
-                                // Do not modify the first parameter for subsequent requests
-                                queried = true
-                            })
                             .pipe(
+                                tap(() => {
+                                    // Do not modify the first parameter for subsequent requests
+                                    queried = true
+                                }),
                                 catchError(error => [asError(error)]),
                                 map(
                                     (c): PartialStateUpdate => ({
@@ -659,7 +659,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
             q.set('filter', arg.filter.id)
         }
         if (arg.previousPagesCount !== 0) {
-            q.set('visipreviousPagesCountble', String(arg.previousPagesCount))
+            q.set('previousPagesCount', String(arg.previousPagesCount))
         }
         return q.toString()
     }
