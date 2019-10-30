@@ -415,10 +415,19 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
             query: (!this.props.hideSearch && q.get(QUERY_KEY)) || '',
             activeFilter: getFilterFromURL(q, this.props.filters),
             first: parseQueryInt(q, 'first') || this.props.defaultFirst!,
-            // Note: Do not set after from the URL, as we don't currently have a
-            // way to determine the number of results on previous pages. This makes
-            // the count look broken when coming to a page in the middle of a set
-            // of results.
+
+            // Note: Do not set after from the URL, as this doesn't track the number
+            // of results on the previous page. This makes teh count look broken when
+            // coming to a page in the middle of a set of results.
+            //
+            // For example:
+            //   (1) come to page with first = 20
+            //   (2) set first and after cursor in URL
+            //   (3) reload page; will skip 20 results but will display (first 20 of X)
+            //
+            // Instead, we use the `previousPagesCount` parameter as a marker for the
+            // number of results we have seen on previous pages, tracked in the
+            // implementation of the `componentDidMount` method below.
         }
     }
 
@@ -453,6 +462,17 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
             this.activeFilterChanges.subscribe(filter => this.setState({ activeFilter: filter }))
         )
 
+        const q = new URLSearchParams(this.props.location.search)
+
+        // The number of additional results we want to load on the first query. This is used instead of encoding
+        // the `after` parameter so that we load the entire visible result set again when a user has loaded multiple
+        // pages of results and copied the URL.
+        let previousPagesCount = parseQueryInt(q, 'previousPagesCount') || 0
+
+        // Whether or not a query has been made. We track this so that we only change the `first` parameter of
+        // the very first request of this component (see `previousPagesCount` defined above).
+        let queried = false
+
         // The endCursor of the previous request. This is defined here and injected into the filter state
         // as React's setState is asynchronous and we can't guarantee the state is updated before the observer
         // of a query change, active filter change, or refresh request is handled.
@@ -483,7 +503,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                     tap(([query, filter]) => {
                         if (this.props.shouldUpdateURLQuery) {
                             this.props.history.replace({
-                                search: this.urlQuery({ query, filter }),
+                                search: this.urlQuery({ query, filter, previousPagesCount: previousPage.length }),
                                 hash: this.props.location.hash,
                             })
                         }
@@ -509,10 +529,15 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
 
                         const result = this.props
                             .queryConnection({
-                                first: this.state.first,
+                                // If this is our first query, load `previousPagesCount` additional results
+                                first: this.state.first + ((!queried && previousPagesCount) || 0),
                                 after,
                                 query,
                                 ...(filter ? filter.args : {}),
+                            })
+                            .tap(() => {
+                                // Do not modify the first parameter for subsequent requests
+                                queried = true
                             })
                             .pipe(
                                 catchError(error => [asError(error)]),
@@ -566,12 +591,10 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                         // Use this and do not change the first (page size) parameter. Otherwise,
                         // we'll fallback to our legacy 'request-more' paging technique and not
                         // supply a cursor to the subsequent request.
-                        ({ after, first: after ? this.state.first : this.state.first * 2 })
+                        ({ first: after ? this.state.first : this.state.first * 2 })
                     )
                 )
-                .subscribe(({ after, ...args }) =>
-                    this.setState({ ...args, loading: true }, () => refreshRequests.next())
-                )
+                .subscribe(({ first }) => this.setState({ first, loading: true }, () => refreshRequests.next()))
         )
 
         if (this.props.updates) {
@@ -609,7 +632,12 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         this.componentUpdates.next(this.props)
     }
 
-    private urlQuery(arg: { first?: number; query?: string; filter?: FilteredConnectionFilter }): string {
+    private urlQuery(arg: {
+        first?: number
+        query?: string
+        filter?: FilteredConnectionFilter
+        previousPagesCount?: number
+    }): string {
         if (!arg.first) {
             arg.first = this.state.first
         }
@@ -623,15 +651,15 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         if (arg.query) {
             q.set(QUERY_KEY, arg.query)
         }
+
         if (arg.first !== this.props.defaultFirst) {
             q.set('first', String(arg.first))
         }
-        // Note: Do not set after on the URL, as we don't currently have a
-        // way to determine the number of results on previous pages. This makes
-        // the count look broken when coming to a page in the middle of a set
-        // of results.
         if (arg.filter && this.props.filters && arg.filter !== this.props.filters[0]) {
             q.set('filter', arg.filter.id)
+        }
+        if (arg.previousPagesCount !== 0) {
+            q.set('visipreviousPagesCountble', String(arg.previousPagesCount))
         }
         return q.toString()
     }
