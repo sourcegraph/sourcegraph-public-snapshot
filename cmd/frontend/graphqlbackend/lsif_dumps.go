@@ -2,15 +2,18 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/base64"
+	"errors"
 	"fmt"
 	"net/url"
 	"sync"
 
 	graphql "github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/lsif"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 type LSIFDumpsListOptions struct {
@@ -31,20 +34,25 @@ func (r *schemaResolver) LSIFDumps(args *struct {
 	graphqlutil.ConnectionArgs
 	Repository string
 	Query      *string
-	After      *graphql.ID
+	After      *string
 }) (*lsifDumpConnectionResolver, error) {
 	opt := LSIFDumpsListOptions{
 		Repository: args.Repository,
 		Query:      args.Query,
 	}
 	if args.First != nil {
+		if *args.First < 0 || *args.First > 5000 {
+			return nil, errors.New("lsifDumps: requested pagination 'first' value outside allowed range (0 - 5000)")
+		}
+
 		opt.Limit = args.First
 	}
 	if args.After != nil {
-		nextURL, err := unmarshalLSIFDumpsCursorGQLID(*args.After)
+		decoded, err := base64.StdEncoding.DecodeString(*args.After)
 		if err != nil {
 			return nil, err
 		}
+		nextURL := string(decoded)
 		opt.NextURL = &nextURL
 	}
 
@@ -113,9 +121,15 @@ func (r *lsifDumpConnectionResolver) Nodes(ctx context.Context) ([]*lsifDumpReso
 		return nil, err
 	}
 
+	repo, err := backend.Repos.GetByName(ctx, api.RepoName(r.opt.Repository))
+	if err != nil {
+		return nil, err
+	}
+
 	var l []*lsifDumpResolver
 	for _, lsifDump := range dumps {
 		l = append(l, &lsifDumpResolver{
+			repo:     repo,
 			lsifDump: lsifDump,
 		})
 	}
@@ -134,17 +148,8 @@ func (r *lsifDumpConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil
 	}
 
 	if nextURL != "" {
-		return graphqlutil.NextPageCursor(marshalLSIFDumpsCursorGQLID(nextURL)), nil
+		return graphqlutil.NextPageCursor(graphql.ID(base64.StdEncoding.EncodeToString([]byte(nextURL)))), nil
 	}
 
 	return graphqlutil.HasNextPage(false), nil
-}
-
-func marshalLSIFDumpsCursorGQLID(nextURL string) graphql.ID {
-	return relay.MarshalID("LSIFDumpsCursor", nextURL)
-}
-
-func unmarshalLSIFDumpsCursorGQLID(id graphql.ID) (nextURL string, err error) {
-	err = relay.UnmarshalSpec(id, &nextURL)
-	return
 }

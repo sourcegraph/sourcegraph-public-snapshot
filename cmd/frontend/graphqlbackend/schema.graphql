@@ -1066,9 +1066,6 @@ type Query {
         # When specified, indicates that this request should be paginated and
         # the first N results (relative to the cursor) should be returned. i.e.
         # how many results to return per page. It must be in the range of 0-5000.
-        #
-        # A future request can be made for more results by passing in the
-        # 'SearchResults.pageInfo.endCursor' that is returned.
         first: Int
     ): Search
     # All saved searches configured for the current user, merged from all configurations.
@@ -1098,7 +1095,25 @@ type Query {
     lsifDump(id: ID!): LSIFDump
 
     # Retrieve the LSIF dumps for a repository.
-    lsifDumps(repository: String!, query: String, first: Int, after: ID): LSIFDumpConnection!
+    lsifDumps(
+        # The name of the repository to retrieve dumps for.
+        repository: String!,
+
+        # An (optional) search query that searches over the commit and root properties.
+        query: String,
+
+        # When specified, indicates that this request should be paginated and
+        # the first N results (relative to the cursor) should be returned. i.e.
+        # how many results to return per page. It must be in the range of 0-5000.
+        first: Int,
+
+        # When specified, indicates that this request should be paginated and
+        # to fetch results starting at this cursor.
+        #
+        # A future request can be made for more results by passing in the
+        # 'SearchResults.pageInfo.endCursor' that is returned.
+        after: String
+    ): LSIFDumpConnection!
 }
 
 # The version of the search syntax.
@@ -3698,14 +3713,8 @@ type LSIFDump implements Node {
     # An opaque GraphQL ID.
     id: ID!
 
-    # The repository name.
-    repository: String!
-
-    # The 40-chracter commit hash.
-    commit: String!
-
-    # The directory to which this dump applies.
-    root: String!
+    # The Git tree for which this dump provides intelligence.
+    tree: GitTree!
 
     # Whether or not this dump is used for tip of the default branch.
     visibleAtTip: Boolean!
