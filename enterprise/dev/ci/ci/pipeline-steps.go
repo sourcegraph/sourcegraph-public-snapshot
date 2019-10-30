@@ -124,7 +124,7 @@ func addDockerfileLint(pipeline *bk.Pipeline) {
 // End-to-end tests.
 func addE2E(c Config) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":chromium:",
+		opts := []bk.StepOpt{
 			// Avoid crashing the sourcegraph/server containers. See
 			// https://github.com/sourcegraph/sourcegraph/issues/2657
 			bk.ConcurrencyGroup("e2e"),
@@ -134,7 +134,15 @@ func addE2E(c Config) func(*bk.Pipeline) {
 			bk.Env("VERSION", c.version),
 			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
 			bk.Cmd("./dev/ci/e2e.sh"),
-			bk.ArtifactPaths("./puppeteer/*.png;./web/e2e.mp4;./web/ffmpeg.log"))
+			bk.ArtifactPaths("./puppeteer/*.png;./web/e2e.mp4;./web/ffmpeg.log"),
+		}
+		requireE2E := c.branch == "master" || c.isRenovateBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
+		if requireE2E {
+			opts = append(opts, bk.AutomaticRetry(2))
+		} else {
+			opts = append(opts, bk.SoftFail(true))
+		}
+		pipeline.AddStep(":chromium:", opts...)
 	}
 }
 
@@ -210,6 +218,7 @@ func addServerDockerImageCandidate(c Config) func(*bk.Pipeline) {
 func addCleanUpServerDockerImageCandidate(c Config) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":sparkles:",
+			bk.SoftFail(true),
 			bk.Cmd("docker image rm -f sourcegraph/server:"+c.version+"_candidate"))
 	}
 }
