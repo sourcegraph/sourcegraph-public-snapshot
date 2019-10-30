@@ -3713,7 +3713,7 @@ type LSIFDump implements Node {
     # An opaque GraphQL ID.
     id: ID!
 
-    # The project for which this dump provides intelligence.
+    # The project for which this dump provides code intelligence.
     projectRoot: GitTree!
 
     # Whether or not this dump provides intelligence for the tip of the default branch. Find reference queries
