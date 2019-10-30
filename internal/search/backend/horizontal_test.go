@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 	"sync/atomic"
@@ -169,6 +170,36 @@ func TestDedupper(t *testing.T) {
 				t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(want, got))
 			}
 		})
+	}
+}
+
+func BenchmarkDedup(b *testing.B) {
+	nRepos := 100
+	nMatchPerRepo := 15
+	// primes to avoid the need of dedup most of the time :)
+	shardStrides := []int{7, 5, 3, 2, 1}
+
+	shards := [][]zoekt.FileMatch{}
+	for _, stride := range shardStrides {
+		shard := []zoekt.FileMatch{}
+		for i := stride; i <= nRepos; i += stride {
+			repo := fmt.Sprintf("repo-%d", i)
+			for j := 0; j < nMatchPerRepo; j++ {
+				path := fmt.Sprintf("%d.go", j)
+				shard = append(shard, zoekt.FileMatch{
+					Repository: repo,
+					FileName:   path,
+				})
+			}
+		}
+	}
+
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		d := dedupper{}
+		for _, shard := range shards {
+			_ = d.Dedup(append([]zoekt.FileMatch{}, shard...))
+		}
 	}
 }
 
