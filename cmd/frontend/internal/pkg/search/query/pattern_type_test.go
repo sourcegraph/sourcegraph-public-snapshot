@@ -68,6 +68,10 @@ func TestHandlePatternType_Literal(t *testing.T) {
 		{`\`, false, `"\\"`},
 		{`foo\d "bar*"`, false, `"foo\\d \"bar*\""`},
 		{`\d`, false, `"\\d"`},
+		{`type:commit message:"a commit message" after:"10 days ago"`, false, `message:"a commit message" after:"10 days ago" type:commit`},
+		{`type:commit message:"a commit message" after:"10 days ago" test`, false, `message:"a commit message" after:"10 days ago" type:commit "test"`},
+		{`type:commit message:"a commit message" after:"10 days ago" test test2`, false, `message:"a commit message" after:"10 days ago" type:commit "test test2"`},
+		{`type:commit message:"a commit message" test after:"10 days ago" test2`, false, `message:"a commit message" after:"10 days ago" type:commit "test  test2"`},
 	}
 
 	for _, test := range tests {
@@ -107,6 +111,11 @@ func TestTokenize(t *testing.T) {
 		{`f:a "r:b"`, []string{`f:a`, " ", `"r:b"`}},
 		{"//", []string{"//"}},
 		{"/**/", []string{"/**/"}},
+		{`type:commit message:"a commit message"`, []string{"message:\"a commit message\"", "type:commit", " "}},
+		{`type:commit message:"a commit message" after:"10 days ago"`, []string{"message:\"a commit message\"", "after:\"10 days ago\"", "type:commit", "  "}},
+		{`type:commit message:"a commit message" test after:"10 days ago"`, []string{"message:\"a commit message\"", "after:\"10 days ago\"", "type:commit", "  ", "test", " "}},
+		{`type:commit message:"a commit message" after:"10 days ago" test`, []string{"message:\"a commit message\"", "after:\"10 days ago\"", "type:commit", "   ", "test"}},
+		{`type:commit message:"a commit message" after:"10 days ago" test test2`, []string{"message:\"a commit message\"", "after:\"10 days ago\"", "type:commit", "   ", "test", " ", "test2"}},
 	}
 
 	for _, test := range tests {
