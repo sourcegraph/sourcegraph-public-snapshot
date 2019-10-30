@@ -1293,6 +1293,35 @@ type Query {
         # 'LSIFDumpConnection.pageInfo.endCursor' that is returned.
         after: String
     ): LSIFDumpConnection!
+
+
+    # Retrieve counts of jobs in the LSIF work queue.
+    lsifJobStats: LSIFJobStats!
+
+    # Look up an LSIF job by ID.
+    lsifJob(id: ID!): LSIFJob
+
+    # Search for LSIF jobs by status ad query term.
+    lsifJobs(
+        # The status of returned jobs.
+        status: LSIFJobState!
+
+        # An (optional) search query taht searches over the job name, failure
+        # properties (reason and stacktrace) and the job's arguments.
+        query: String
+
+        # When specified, indicates that this request should be paginated and
+        # the first N results (relative to the cursor) should be returned. i.e.
+        # how many results to return per page. It must be in the range of 0-5000.
+        first: Int
+
+        # When specified, indicates that this request should be paginated and
+        # to fetch results starting at this cursor.
+        #
+        # A future request can be made for more results by passing in the
+        # 'LSIFJobConnection.pageInfo.endCursor' that is returned.
+        after: String
+    ): LSIFJobConnection!
 }
 
 # The version of the search syntax.
@@ -3921,6 +3950,81 @@ type LSIFDumpConnection {
     nodes: [LSIFDump!]!
 
     # The total number of dumps for this repository.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# Counts of LISF jobs by status.
+type LSIFJobStats implements Node {
+    # An opaque GraphQL ID.
+    id: ID!
+
+    # The number of active jobs.
+    active: Int!
+
+    # The number of queued jobs.
+    queued: Int!
+
+    # The number of scheduled jobs.
+    scheduled: Int!
+
+    # The number of completed jobs.
+    completed: Int!
+
+    # The number of failed jobs.
+    failed: Int!
+}
+
+# An LSIF job's status.
+enum LSIFJobState {
+    ACTIVE
+    QUEUED
+    SCHEDULED
+    COMPLETED
+    FAILED
+}
+
+# A queued, active, or completed LSIF job.
+type LSIFJob implements Node {
+    # The ID.
+    id: ID!
+
+    # The job type (convert, or clean-old-jobs).
+    name: String!
+
+    # The job's arguments.
+    args: JSONValue!
+
+    # The job's current status.
+    status: LSIFJobState!
+
+    # The current job progress (0 to 100).
+    progress: Float!
+
+    # If the job failed, its failure message.
+    failedReason: String
+
+    # If the job failed, the its stacktrace.
+    stacktrace: [String!]
+
+    # The time the job was queued.
+    timestamp: DateTime!
+
+    # The time the job was processed.
+    processedOn: DateTime
+
+    # The time the job was finished.
+    finishedOn: DateTime
+}
+
+# A list of LSIF jobs.
+type LSIFJobConnection {
+    # A list of LSIF jobs.
+    nodes: [LSIFJob!]!
+
+    # The total number of jobs with this status.
     totalCount: Int!
 
     # Pagination information.

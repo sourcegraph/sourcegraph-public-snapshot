@@ -59,9 +59,10 @@ Returns a particular dump by its identifier. The resulting dump must belong to t
 
 Retrieve the current counts of jobs in each status.
 
-### GET `/jobs/{status}?search={search}&limit={limit}&offset={offset}`
+### GET `/jobs/{status}?query={query}&limit={limit}&offset={offset}`
 
 - `status`: the job status (`active`, `queued`, `scheduled`, `completed`, or `failed`)
+- `query`: a search query
 - `limit`: the maximum number of jobs to return
 - `offset`: the number of jobs seen previously
 

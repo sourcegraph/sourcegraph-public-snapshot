@@ -514,7 +514,7 @@ function jobEndpoints(
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { status } = req.params
-                const { search } = req.query
+                const { query } = req.query
                 const { limit, offset } = limitOffset(req, DEFAULT_JOB_PAGE_SIZE)
 
                 const queueName = queueTypes.get(status)
@@ -522,7 +522,7 @@ function jobEndpoints(
                     throw new Error(`Unknown job status ${status}`)
                 }
 
-                if (!search) {
+                if (!query) {
                     const rawJobs = await queue.getJobs([queueName], offset, offset + limit - 1)
                     const jobs = rawJobs.map(job => formatJob(job, status))
                     const totalCount = (await queue.getJobCountByTypes([queueName])) as never
@@ -536,7 +536,7 @@ function jobEndpoints(
                     const [payloads, nextOffset] = await scriptedClient.searchJobs([
                         QUEUE_PREFIX,
                         queueName,
-                        search,
+                        query,
                         offset,
                         limit,
                         MAX_JOB_SEARCH,
