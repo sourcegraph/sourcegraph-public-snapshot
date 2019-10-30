@@ -12,29 +12,6 @@ export type SearchFilterSuggestions = Record<
     }
 >
 
-type PartialSearchFilterSuggestions = Record<
-    SuggestionTypes,
-    {
-        default?: string
-        values: Omit<Suggestion, 'type'>[]
-    }
->
-
-export const addTypeToSuggestions = (suggestions: PartialSearchFilterSuggestions): SearchFilterSuggestions =>
-    Object.keys(suggestions).reduce<SearchFilterSuggestions>(
-        (suggestionsWithTypes, type) => {
-            const typeSuggestions = suggestions[type as SuggestionTypes]
-            return {
-                ...suggestionsWithTypes,
-                [type]: {
-                    ...typeSuggestions,
-                    values: typeSuggestions.values.map(suggestion => ({ ...suggestion, type })),
-                },
-            }
-        },
-        suggestions as SearchFilterSuggestions
-    )
-
 export const filterAliases = {
     r: SuggestionTypes.repo,
     g: SuggestionTypes.repogroup,
@@ -43,66 +20,81 @@ export const filterAliases = {
     language: SuggestionTypes.lang,
 }
 
-export const baseSuggestions: PartialSearchFilterSuggestions = {
+export const filterSuggestions: SearchFilterSuggestions = {
     filters: {
         values: [
             {
+                type: SuggestionTypes.filters,
                 title: 'repo',
                 description: 'regex-pattern (include results whose repository path matches)',
             },
             {
+                type: SuggestionTypes.filters,
                 title: '-repo',
                 description: 'regex-pattern (exclude results whose repository path matches)',
             },
             {
+                type: SuggestionTypes.filters,
                 title: 'repogroup',
                 description: 'group-name (include results from the named group)',
             },
             {
+                type: SuggestionTypes.filters,
                 title: 'repohasfile',
                 description: 'regex-pattern (include results from repos that contain a matching file)',
             },
             {
+                type: SuggestionTypes.filters,
                 title: 'repohascommitafter',
                 description: '"string specifying time frame" (filter out stale repositories without recent commits)',
             },
             {
+                type: SuggestionTypes.filters,
                 title: 'file',
                 description: 'regex-pattern (include results whose file path matches)',
             },
             {
+                type: SuggestionTypes.filters,
                 title: '-file',
                 description: 'regex-pattern (exclude results whose file path matches)',
             },
             {
+                type: SuggestionTypes.filters,
                 title: 'type',
                 description: 'code | diff | commit | symbol',
             },
             {
+                type: SuggestionTypes.filters,
                 title: 'case',
                 description: 'yes | no (default)',
             },
             {
+                type: SuggestionTypes.filters,
                 title: 'lang',
                 description: 'lang-name (include results from the named language)',
             },
             {
+                type: SuggestionTypes.filters,
                 title: '-lang',
                 description: 'lang-name (exclude results from the named language)',
             },
             {
+                type: SuggestionTypes.filters,
                 title: 'fork',
                 description: 'no | only | yes (default)',
             },
             {
+                type: SuggestionTypes.filters,
                 title: 'archived',
                 description: 'no | only | yes (default)',
             },
             {
+                type: SuggestionTypes.filters,
                 title: 'count',
                 description: 'integer (number of results to fetch)',
             },
             {
+                type: SuggestionTypes.filters,
                 title: 'timeout',
                 description: '"string specifying time duration" (duration before timeout)',
             },
@@ -110,46 +102,68 @@ export const baseSuggestions: PartialSearchFilterSuggestions = {
     },
     type: {
         default: 'code',
-        values: [{ title: 'code' }, { title: 'diff' }, { title: 'commit' }, { title: 'symbol' }],
+        values: [
+            { type: SuggestionTypes.type, title: 'code' },
+            { type: SuggestionTypes.type, title: 'diff' },
+            { type: SuggestionTypes.type, title: 'commit' },
+            { type: SuggestionTypes.type, title: 'symbol' },
+        ],
     },
     case: {
         default: 'no',
-        values: [{ title: 'yes' }, { title: 'no' }],
+        values: [{ type: SuggestionTypes.case, title: 'yes' }, { type: SuggestionTypes.case, title: 'no' }],
     },
     fork: {
         default: 'yes',
-        values: [{ title: 'no' }, { title: 'only' }, { title: 'yes' }],
+        values: [
+            { type: SuggestionTypes.fork, title: 'no' },
+            { type: SuggestionTypes.fork, title: 'only' },
+            { type: SuggestionTypes.fork, title: 'yes' },
+        ],
     },
     archived: {
         default: 'yes',
-        values: [{ title: 'no' }, { title: 'only' }, { title: 'yes' }],
+        values: [
+            { type: SuggestionTypes.archived, title: 'no' },
+            { type: SuggestionTypes.archived, title: 'only' },
+            { type: SuggestionTypes.archived, title: 'yes' },
+        ],
     },
     file: {
         values: [
             {
+                type: SuggestionTypes.file,
                 title: '(test|spec)',
                 description: 'Test files',
             },
             {
+                type: SuggestionTypes.file,
                 title: '\\.json$',
                 description: 'JSON files',
             },
             {
+                type: SuggestionTypes.file,
                 title: '(vendor|node_modules)/',
                 description: 'Vendored code',
             },
             {
+                type: SuggestionTypes.file,
                 title: '\\.md$',
                 description: 'Markdown files',
             },
             {
+                type: SuggestionTypes.file,
                 title: '\\.(txt|md)$',
                 description: 'Text documents',
             },
         ],
     },
     lang: {
-        values: [{ title: 'javascript' }, { title: 'go' }, { title: 'markdown' }],
+        values: [
+            { type: SuggestionTypes.lang, title: 'javascript' },
+            { type: SuggestionTypes.lang, title: 'go' },
+            { type: SuggestionTypes.lang, title: 'markdown' },
+        ],
     },
     repogroup: {
         values: [],
@@ -158,29 +172,41 @@ export const baseSuggestions: PartialSearchFilterSuggestions = {
         values: [],
     },
     repohasfile: {
-        values: [{ title: 'go.mod' }, { title: 'package.json' }, { title: 'Gemfile' }],
+        values: [
+            { type: SuggestionTypes.repohasfile, title: 'go.mod' },
+            { type: SuggestionTypes.repohasfile, title: 'package.json' },
+            { type: SuggestionTypes.repohasfile, title: 'Gemfile' },
+        ],
     },
     repohascommitafter: {
-        values: [{ title: '1 week ago' }, { title: '1 month ago' }],
+        values: [
+            { type: SuggestionTypes.repohascommitafter, title: '1 week ago' },
+            { type: SuggestionTypes.repohascommitafter, title: '1 month ago' },
+        ],
     },
     count: {
-        values: [{ title: '100' }, { title: '1000' }],
+        values: [{ type: SuggestionTypes.count, title: '100' }, { type: SuggestionTypes.count, title: '1000' }],
     },
     timeout: {
-        values: [{ title: '10s' }, { title: '30s' }],
+        values: [{ type: SuggestionTypes.timeout, title: '10s' }, { type: SuggestionTypes.timeout, title: '30s' }],
     },
 }
 
+/**
+ * Fetch filter suggestions that are dynamic, currently repo and repogroup.
+ */
 export const getSearchFilterSuggestions = (): Observable<SearchFilterSuggestions> =>
     fetchSearchFilterSuggestions().pipe(
         map(loadedSuggestions => {
             const { repo, repogroup } = loadedSuggestions
-            const formattedValues = mapValues({ repo, repogroup }, values => ({
-                values: values.map(title => ({ title })),
+
+            const fetchedFilterSuggestions = mapValues({ repo, repogroup }, (values, type: SuggestionTypes) => ({
+                values: values.map(title => ({ title, type })),
             }))
-            return addTypeToSuggestions({
-                ...baseSuggestions,
-                ...formattedValues,
-            })
+
+            return {
+                ...filterSuggestions,
+                ...fetchedFilterSuggestions,
+            }
         })
     )

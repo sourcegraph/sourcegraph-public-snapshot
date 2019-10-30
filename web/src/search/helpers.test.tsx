@@ -1,9 +1,8 @@
 import { getSearchTypeFromQuery, toggleSearchType, filterSearchSuggestions, insertSuggestionInQuery } from './helpers'
 import { SearchType } from './results/SearchResults'
-import { addTypeToSuggestions, baseSuggestions, filterAliases } from './getSearchFilterSuggestions'
-import startsWith from 'lodash/fp/startsWith'
-import map from 'lodash/map'
-import forEach from 'lodash/forEach'
+import { filterSuggestions, filterAliases } from './getSearchFilterSuggestions'
+import { startsWith } from 'lodash/fp'
+import { map, forEach } from 'lodash'
 
 describe('search/helpers', () => {
     describe('queryIndexOfScope()', () => {
@@ -92,7 +91,6 @@ describe('search/helpers', () => {
     })
 
     describe('suggestions', () => {
-        const filterSuggestions = addTypeToSuggestions(baseSuggestions)
         const filterQuery = 'test r test'
 
         const getArchivedSuggestions = () => filterSearchSuggestions('archived:', 9, filterSuggestions)
@@ -100,7 +98,7 @@ describe('search/helpers', () => {
 
         describe('filterSearchSuggestions()', () => {
             test('filters suggestions for filters starting with "r"', () => {
-                const filtersStartingWithR = Object.keys(baseSuggestions).filter(startsWith('r'))
+                const filtersStartingWithR = Object.keys(filterSuggestions).filter(startsWith('r'))
                 expect(map(getFilterSuggestionStartingWithR(), 'title')).toEqual(
                     expect.arrayContaining(filtersStartingWithR)
                 )

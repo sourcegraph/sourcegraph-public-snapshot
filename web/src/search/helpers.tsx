@@ -196,10 +196,10 @@ export const filterSearchSuggestions = (
 const SUGGESTION_FILTER_SEPARATOR = ':'
 
 /**
- * The search query and cursor position of when the last character was inserted.
+ * The search query and cursor position of where the last character was inserted.
  * Cursor position is used to correctly insert the suggestion when it's selected.
  */
-export interface QueryCursorPair {
+export interface SearchQueryCursor {
     query: string
     cursorPosition: number
 }
@@ -215,7 +215,7 @@ export const insertSuggestionInQuery = (
     query: string,
     suggestion: Suggestion,
     cursorPosition: number
-): QueryCursorPair => {
+): SearchQueryCursor => {
     const firstPart = query.substring(0, cursorPosition)
     const lastPart = query.substring(firstPart.length)
     const isValueSuggestion = suggestion.type !== SuggestionTypes.filters

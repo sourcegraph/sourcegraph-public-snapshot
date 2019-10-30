@@ -11,7 +11,7 @@ import { PatternTypeProps } from '..'
 import Downshift from 'downshift'
 import { getSearchFilterSuggestions, SearchFilterSuggestions } from '../getSearchFilterSuggestions'
 import { Key } from 'ts-key-enum'
-import { QueryCursorPair, filterSearchSuggestions, insertSuggestionInQuery } from '../helpers'
+import { SearchQueryCursor, filterSearchSuggestions, insertSuggestionInQuery } from '../helpers'
 
 /**
  * The query input field is clobbered and updated to contain this subject's values, as
@@ -52,6 +52,10 @@ interface Props extends PatternTypeProps {
     hasGlobalQueryBehavior?: boolean
 }
 
+/**
+ * The search suggestions and cursor position of where the last character was inserted.
+ * Cursor position is used to correctly insert the suggestion when it's selected.
+ */
 interface ComponentSuggestions {
     values: Suggestion[]
     cursorPosition: number
@@ -67,6 +71,8 @@ interface State {
     cursorPosition: number
 }
 
+const hiddenSuggestions: State['suggestions'] = { values: [], cursorPosition: 0 }
+
 export class QueryInput extends React.Component<Props, State> {
     private componentUpdates = new Subject<Props>()
 
@@ -74,16 +80,16 @@ export class QueryInput extends React.Component<Props, State> {
     private subscriptions = new Subscription()
 
     /** Emits new input values */
-    private inputValues = new Subject<QueryCursorPair>()
+    private inputValues = new Subject<SearchQueryCursor>()
 
     /** Emits when the suggestions are hidden */
     private suggestionsHidden = new Subject<void>()
 
     /** Only used for selection and focus management */
-    private inputElement: React.RefObject<HTMLInputElement> = React.createRef()
+    private inputElement = React.createRef<HTMLInputElement>()
 
     /** Used for scrolling suggestions into view while scrolling with keyboard */
-    private containerElement: React.RefObject<HTMLDivElement> = React.createRef()
+    private containerElement = React.createRef<HTMLDivElement>()
 
     /** Only used to keep track if the user has typed a single character into the input field so we can log an event once. */
     private hasLoggedFirstInput = false
@@ -113,8 +119,8 @@ export class QueryInput extends React.Component<Props, State> {
                     repeat()
                 )
                 .subscribe(queryCursorPair => {
-                    this.setState(() => ({
-                        suggestions: this.getSuggestions(queryCursorPair),
+                    this.setState(state => ({
+                        suggestions: this.getSuggestions(state.searchFilterSuggestions, queryCursorPair),
                     }))
                 }, console.error.bind(console))
         )
@@ -176,7 +182,7 @@ export class QueryInput extends React.Component<Props, State> {
 
         this.subscriptions.add(
             getSearchFilterSuggestions().subscribe(searchFilterSuggestions =>
-                this.setState(() => ({ searchFilterSuggestions }))
+                this.setState({ searchFilterSuggestions })
             )
         )
     }
@@ -268,7 +274,7 @@ export class QueryInput extends React.Component<Props, State> {
         )
     }
 
-    private itemToString = (suggestion: Suggestion) => !!suggestion && suggestion.title
+    private itemToString = (suggestion: Suggestion) => suggestion.title
 
     private scrollIntoView = (node: HTMLElement, menuNode: HTMLElement) => {
         scrollIntoView(menuNode, node)
@@ -277,61 +283,61 @@ export class QueryInput extends React.Component<Props, State> {
     private onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
         // ArrowDown to show all available suggestions
         if (!this.props.value && event.key === Key.ArrowDown) {
-            this.setState(() => ({ suggestions: this.getSuggestions() }))
+            this.setState(state => ({ suggestions: this.getSuggestions(state.searchFilterSuggestions) }))
         }
     }
 
     private getSuggestions = (
-        { query, cursorPosition }: QueryCursorPair = { query: '', cursorPosition: 0 }
-    ): ComponentSuggestions => {
-        const { searchFilterSuggestions } = this.state
-        return {
-            cursorPosition,
-            values: !searchFilterSuggestions
-                ? []
-                : filterSearchSuggestions(query, cursorPosition, searchFilterSuggestions),
-        }
-    }
+        searchFilterSuggestions: State['searchFilterSuggestions'],
+        { query, cursorPosition }: SearchQueryCursor = { query: '', cursorPosition: 0 }
+    ): ComponentSuggestions => ({
+        cursorPosition,
+        values: !searchFilterSuggestions ? [] : filterSearchSuggestions(query, cursorPosition, searchFilterSuggestions),
+    })
 
     private hideSuggestions = () => {
         this.suggestionsHidden.next()
-        this.setState(() => ({ suggestions: { values: [], cursorPosition: 0 } }))
+        this.setState({ suggestions: hiddenSuggestions })
     }
 
     private onSuggestionSelect = (suggestion: Suggestion | undefined) => {
-        if (typeof suggestion === 'undefined') {
-            return this.hideSuggestions()
-        }
+        this.setState((state, props) => {
+            if (!suggestion) {
+                return {
+                    suggestions: hiddenSuggestions,
+                    cursorPosition: state.cursorPosition,
+                }
+            }
 
-        // 🚨 PRIVACY: never provide any private data in { code_search: { suggestion: { type } } }.
-        eventLogger.log('SearchSuggestionSelected', {
-            code_search: {
-                suggestion: {
-                    type: suggestion.type,
-                    // TODO: url: suggestion.url,
+            // 🚨 PRIVACY: never provide any private data in { code_search: { suggestion: { type } } }.
+            eventLogger.log('SearchSuggestionSelected', {
+                code_search: {
+                    suggestion: {
+                        type: suggestion.type,
+                    },
                 },
-            },
-        })
+            })
 
-        const { cursorPosition } = this.state.suggestions
-        const isValueSuggestion = suggestion.type !== SuggestionTypes.filters
-        const { query: newQuery, cursorPosition: newCursorPosition } = insertSuggestionInQuery(
-            this.props.value,
-            suggestion,
-            cursorPosition
-        )
+            const { cursorPosition } = state.suggestions
+            const isValueSuggestion = suggestion.type !== SuggestionTypes.filters
+            const { query: newQuery, cursorPosition: newCursorPosition } = insertSuggestionInQuery(
+                props.value,
+                suggestion,
+                cursorPosition
+            )
 
-        this.props.onChange(newQuery)
-        this.setState(() => ({ cursorPosition: newCursorPosition }))
+            props.onChange(newQuery)
 
-        if (isValueSuggestion) {
-            this.hideSuggestions()
-        } else {
-            this.setState(() => ({
+            return {
                 cursorPosition: newCursorPosition,
-                suggestions: this.getSuggestions({ query: newQuery, cursorPosition: newCursorPosition }),
-            }))
-        }
+                suggestions: isValueSuggestion
+                    ? hiddenSuggestions
+                    : this.getSuggestions(state.searchFilterSuggestions, {
+                          query: newQuery,
+                          cursorPosition: newCursorPosition,
+                      }),
+            }
+        })
     }
 
     private focusInputAndPositionCursor(cursorPosition: number): void {

@@ -40,20 +40,14 @@ const SuggestionIcon: React.FunctionComponent<SuggestionIconProps> = ({ suggesti
         case SuggestionTypes.lang:
             return <LanguageIcon language={suggestion.title} {...passThru} />
         default:
-            return null // TODO: handle lang suggestions in RFC 14 frontend PR.
+            return null
     }
 }
 
 interface SuggestionProps {
     suggestion: Suggestion
-
     isSelected?: boolean
-
-    /** Called when the user clicks on the suggestion */
     onClick?: () => void
-
-    /** Get a reference to the HTML element for scroll management */
-    ref?: (ref: HTMLLIElement | null) => void
 }
 
 export const SuggestionItem: React.FunctionComponent<SuggestionProps> = ({ suggestion, isSelected, ...props }) => (
