@@ -4,34 +4,37 @@ It is not used for patch releases. See [patch_release_issue_template.md](patch_r
 for the patch release checklist.
 
 Run a find replace on:
-- MAJOR.MINOR
-- YYYY-MM
+- $VERSION
+- $RELEASE_DATE
+- $FIVE_WORKING_DAYS_BEFORE_RELEASE
+- $FOUR_WORKING_DAYS_BEFORE_RELEASE
+- $THREE_WORKING_DAYS_BEFORE_RELEASE
+- $ONE_WORKING_DAY_BEFORE_RELEASE
 -->
 
-# MAJOR.MINOR Release (YYYY-MM-20)
+# $VERSION Release ($RELEASE_DATE)
 
-## At the start of the month (YYYY-MM-01)
+**Note:** All `yarn run release ...` commands should be run from `dev/release`.
 
-- [ ] Choose dates/times for the steps in this release process and update this issue template accordingly. Note that this template references _working days_, which do not include weekends or holidays observed by Sourcegraph.
-- [ ] Add events to the shared Release Schedule calendar in Google and invite team@sourcegraph.com.
-    - [ ] Creating the release branch.
-    - [ ] Tagging the final release.
-    - [ ] Publishing the blog post.
-- [ ] Send message to #dev-announce with a link to this tracking issue to notify the team of the release schedule.
-- [ ] Create the [retrospective document](retrospectives/index.md) and schedule the retrospective meeting within a few days _after_ the release. Send calendar invites to team@sourcegraph.com, and ensure there is a Zoom meeting on the invite.
+## At the start of the iteration
+
+- [ ] Create the retrospective doc for the next iteration by copying the previous one.
+- [ ] Update `dev/release/config.json` with the parameters for the current release.
+- [ ] Add calendar events and reminders for key dates in the release cycle: `yarn run release add-timeline-to-calendar`
+- [ ] Create the release tracking issue (i.e., this issue): `yarn run release tracking-issue:create`
+- [ ] Post link to tracking to #dev-announce: `yarn run release tracking-issue:announce`
 - [ ] Create a new test grid for MAJOR.MINOR by cloning the previous [release testing grid on Monday.com](https://sourcegraph-team.monday.com) and renaming it to "MAJOR.MINOR Release test grid".
     - [ ] Reset all tested cells to "To test", unless the "Automated" column is marked as "Done". See [this article for how to update multiple values in Monday.com](https://support.monday.com/hc/en-us/articles/115005335049-Batch-Actions-Edit-multiple-items-in-one-click).
     - [ ] Assign rows in the release testing grid to engineers from the team that owns the row.
-- [ ] Create reminders for yourself to preform the remaining sections in this checklist at appropriate times.
 
-## 5 working days before release (YYYY-MM-DD)
+## 5 working days before release ($FIVE_WORKING_DAYS_BEFORE_RELEASE)
 
 - [ ] Use `./dev/release-ping.sh` to message teammates who have open issues / PRs in the milestone and ask them to remove those that won't be done by the time that the release branch is scheduled to be created.
 - [ ] Verify that there is a draft of the blog post and that it will be ready to be merged on time.
 - [ ] Ping each team, and ask them to identify which of the optional rows that they own on the release testing grid should be tested this iteration.
 - [ ] Ping the @distribution team to determine which environments each row on the release testing grid should be tested in.
 
-## 4 working days before release (YYYY-MM-DD)
+## 4 working days before release ($FOUR_WORKING_DAYS_BEFORE_RELEASE)
 
 - [ ] **HH:MM AM/PM PT** Add a new section header for this version to the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/master/CHANGELOG.md#unreleased) immediately under the `## Unreleased changes` heading and add new empty sections under `## Unreleased changes` ([example](https://github.com/sourcegraph/sourcegraph/pull/2323)).
 - [ ] Create the `MAJOR.MINOR` branch for this release off of the changelog commit that you created in the previous step.
@@ -80,9 +83,7 @@ Run a find replace on:
     ```
   - [ ] Mention that testing is the top priority, it is expected to take the whole day, and that known or suspected regressions should be tagged as release blockers. Mention that, for other issues found, high-level details like customer impact should be added to help Product determine whether it's a release blocker.
 
-
-
-## 3 working days before release (YYYY-MM-DD)
+## 3 working days before release ($THREE_WORKING_DAYS_BEFORE_RELEASE)
 
 - [ ] Send a message to #dev-announce to report whether any [release blocking issues](releases.md#blocking) were found.
 - [ ] Add any [release blocking issues](releases.md#blocking) as checklist items here and start working to resolve them.
@@ -95,7 +96,7 @@ Run a find replace on:
 - Re-test any flows that might have been impacted by commits that have been cherry picked into the release branch.
 - Tag additional release candidates.
 
-## 1 working day before release (YYYY-MM-DD)
+## 1 working day before release ($ONE_WORKING_DAY_BEFORE_RELEASE)
 
 - [ ] **HH:MM AM/PM PT** Tag the final release.
     ```
