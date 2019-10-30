@@ -62,7 +62,7 @@ func (r *lsifDumpResolver) Tree() *gitTreeEntryResolver {
 	}
 }
 
-func (r *lsifDumpResolver) VisibleAtTip() bool {
+func (r *lsifDumpResolver) IsLatestForRepo() bool {
 	return r.lsifDump.VisibleAtTip
 }
 

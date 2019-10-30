@@ -3716,8 +3716,10 @@ type LSIFDump implements Node {
     # The Git tree for which this dump provides intelligence.
     tree: GitTree!
 
-    # Whether or not this dump is used for tip of the default branch.
-    visibleAtTip: Boolean!
+    # Whether or not this dump provides intelligence for the tip of the default branch. Find reference queries
+    # will return symbols from remote repositories only when this property is true. This property is updated
+    # asynchronously and is eventually consistent with the git data known by the Sourcegraph instance.
+    isLatestForRepo: Boolean!
 
     # The time the dump was uploaded.
     uploadedAt: DateTime!
