@@ -3,7 +3,7 @@ package types
 import "time"
 
 type LSIFDump struct {
-	ID           int32     `json:"id"`
+	ID           int64     `json:"id"`
 	Repository   string    `json:"repository"`
 	Commit       string    `json:"commit"`
 	Root         string    `json:"root"`

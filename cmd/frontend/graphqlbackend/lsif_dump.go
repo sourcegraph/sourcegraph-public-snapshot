@@ -2,12 +2,9 @@ package graphqlbackend
 
 import (
 	"context"
-	"encoding/base64"
-	"errors"
 	"fmt"
 	"net/url"
 	"strconv"
-	"strings"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -71,35 +68,28 @@ func (r *lsifDumpResolver) UploadedAt() DateTime {
 	return DateTime{Time: r.lsifDump.UploadedAt}
 }
 
-func marshalLSIFDumpGQLID(repoName string, lsifDumpID int32) graphql.ID {
-	// Encode both repository and ID, as we need both to make the backend request
-	return relay.MarshalID("LSIFDump", fmt.Sprintf(
-		"%s:%s",
-		base64.StdEncoding.EncodeToString([]byte(repoName)),
-		strconv.FormatInt(int64(lsifDumpID), 36),
-	))
+type lsifDumpIDPayload struct {
+	Repository string `json:"repo"`
+	DumpID     string `json:"id"`
 }
 
-func unmarshalLSIFDumpGQLID(id graphql.ID) (string, int32, error) {
-	var raw string
+func marshalLSIFDumpGQLID(repoName string, lsifDumpID int64) graphql.ID {
+	return relay.MarshalID("LSIFDump", lsifDumpIDPayload{
+		Repository: repoName,
+		DumpID:     strconv.FormatInt(lsifDumpID, 36),
+	})
+}
+
+func unmarshalLSIFDumpGQLID(id graphql.ID) (string, int64, error) {
+	var raw lsifDumpIDPayload
 	if err := relay.UnmarshalSpec(id, &raw); err != nil {
 		return "", 0, err
 	}
 
-	parts := strings.Split(raw, ":")
-	if len(parts) != 2 {
-		return "", 0, errors.New("malformed LSIF dump id")
-	}
-
-	repoName, err := base64.StdEncoding.DecodeString(parts[0])
+	dumpID, err := strconv.ParseInt(raw.DumpID, 36, 64)
 	if err != nil {
 		return "", 0, err
 	}
 
-	lsifDumpID, err = strconv.ParseInt(parts[1], 36, 32)
-	if err != nil {
-		return "", 0, err
-	}
-
-	return string(repoName), lsifDumpID, nil
+	return raw.Repository, dumpID, nil
 }
