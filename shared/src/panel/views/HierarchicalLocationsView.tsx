@@ -208,7 +208,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                                     storageKey={`hierarchical-locations-view-resizable:${g.name}`}
                                     defaultSize={g.defaultSize}
                                     element={
-                                        <div className="list-group list-group-flush hierarchical-locations-view__list">
+                                        <div className="list-group list-group-flush hierarchical-locations-view__list e2e-hierarchical-locations-view-list">
                                             {groups[i].map((group, j) => (
                                                 <span
                                                     key={j}
