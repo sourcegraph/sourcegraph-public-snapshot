@@ -214,7 +214,14 @@ type mockSearcher struct {
 }
 
 func (s *mockSearcher) Search(context.Context, query.Q, *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
-	return s.searchResult, s.searchError
+	res := s.searchResult
+	if s.searchResult != nil {
+		// Copy since we mutate the File slice
+		sr := *res
+		sr.Files = append([]zoekt.FileMatch{}, sr.Files...)
+		res = &sr
+	}
+	return res, s.searchError
 }
 
 func (s *mockSearcher) List(context.Context, query.Q) (*zoekt.RepoList, error) {
