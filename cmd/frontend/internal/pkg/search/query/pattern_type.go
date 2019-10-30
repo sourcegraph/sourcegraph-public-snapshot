@@ -43,7 +43,7 @@ func ConvertToLiteral(input string) string {
 	return input
 }
 
-var fieldWithQuotedTokenValue = lazyregexp.New(`(\b-?[a-zA-Z]+:"([^"\\]|[\\].)*")`)
+var fieldWithQuotedTokenValue = lazyregexp.New(`(\b-?[a-zA-Z]+:("([^"\\]|[\\].)*"|'([^'\\]|[\\].)*'))`)
 var tokenRx = lazyregexp.New(`("([^"\\]|[\\].)*"|\s+|\S+)`)
 
 // tokenize returns a slice of the double-quoted strings, contiguous chunks
