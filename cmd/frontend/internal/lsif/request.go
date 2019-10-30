@@ -18,12 +18,7 @@ import (
 
 var httpClient = &http.Client{
 	// nethttp.Transport will propagate opentracing spans
-	Transport: &nethttp.Transport{
-		RoundTripper: &http.Transport{
-			// Default is 2, but we can send many concurrent requests
-			MaxIdleConnsPerHost: 500,
-		},
-	},
+	Transport: &nethttp.Transport{},
 }
 
 // BuildAndTraceRequest builds a URL and performs a request. This is a convenience wrapper
