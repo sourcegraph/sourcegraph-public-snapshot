@@ -64,7 +64,7 @@ func HandlePatternType(input string, defaultToRegexp bool) (string, bool) {
 	return input, isRegex
 }
 
-var fieldWithQuotedTokenValue = lazyregexp.New(`(\b-?[a-zA-Z]+:"([^"\\]|[\\].)*")`)
+var fieldWithQuotedTokenValue = lazyregexp.New(`(\b-?[a-zA-Z]+:("([^"\\]|[\\].)*"|'([^'\\]|[\\].)*'))`)
 var tokenRx = lazyregexp.New(`("([^"\\]|[\\].)*"|\s+|\S+)`)
 
 // tokenize returns a slice of the double-quoted strings, contiguous chunks
