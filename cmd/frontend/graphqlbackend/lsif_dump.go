@@ -31,7 +31,7 @@ func lsifDumpByGQLID(ctx context.Context, id graphql.ID) (*lsifDumpResolver, err
 		return nil, err
 	}
 
-	path := fmt.Sprintf("/dumps/%s/%s", url.QueryEscape(repoName), dumpID)
+	path := fmt.Sprintf("/dumps/%s/%s", url.PathEscape(repoName), dumpID)
 
 	var lsifDump *types.LSIFDump
 	if err := lsif.TraceRequestAndUnmarshalPayload(ctx, path, nil, &lsifDump); err != nil {
