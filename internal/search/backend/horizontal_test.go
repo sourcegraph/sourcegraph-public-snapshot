@@ -175,11 +175,11 @@ func TestDedupper(t *testing.T) {
 
 func BenchmarkDedup(b *testing.B) {
 	nRepos := 100
-	nMatchPerRepo := 15
+	nMatchPerRepo := 50
 	// primes to avoid the need of dedup most of the time :)
 	shardStrides := []int{7, 5, 3, 2, 1}
 
-	shards := [][]zoekt.FileMatch{}
+	shardsOrig := [][]zoekt.FileMatch{}
 	for _, stride := range shardStrides {
 		shard := []zoekt.FileMatch{}
 		for i := stride; i <= nRepos; i += stride {
@@ -192,13 +192,22 @@ func BenchmarkDedup(b *testing.B) {
 				})
 			}
 		}
+		shardsOrig = append(shardsOrig, shard)
 	}
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
+		// Create copy since we mutate the input in Deddup
+		b.StopTimer()
+		shards := make([][]zoekt.FileMatch, 0, len(shardsOrig))
+		for _, shard := range shardsOrig {
+			shards = append(shards, append([]zoekt.FileMatch{}, shard...))
+		}
+		b.StartTimer()
+
 		d := dedupper{}
 		for _, shard := range shards {
-			_ = d.Dedup(append([]zoekt.FileMatch{}, shard...))
+			_ = d.Dedup(shard)
 		}
 	}
 }
