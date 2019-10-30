@@ -24,12 +24,12 @@ var httpClient = &http.Client{
 // BuildAndTraceRequest builds a URL and performs a request. This is a convenience wrapper
 // around BuildURL and TraceRequest.
 func BuildAndTraceRequest(ctx context.Context, path string, query url.Values) (*http.Response, error) {
-	url, err := BuildURL(path, query)
+	url, err := buildURL(path, query)
 	if err != nil {
 		return nil, err
 	}
 
-	return TraceRequest(ctx, url)
+	return traceRequest(ctx, url)
 }
 
 // TraceRequestAndUnmarshalPayload builds a URL, performs a request, and populates
@@ -44,7 +44,7 @@ func TraceRequestAndUnmarshalPayload(ctx context.Context, path string, query url
 	return UnmarshalPayload(resp, &payload)
 }
 
-// BuildURL constructs a URL to the backend LSIF server with the given path
+// buildURL constructs a URL to the backend LSIF server with the given path
 // and query values. If path is relative (indicated by a leading slash), then
 // the configured LSIF server url is prepended. Otherwise, it is treated as
 // an absolute URL. The given query values will override any query string that
@@ -53,7 +53,7 @@ func TraceRequestAndUnmarshalPayload(ctx context.Context, path string, query url
 // This method can be used to construct a LSIF request URL either from a root
 // relative path on the first request of a paginated endpoint or from the URL
 // provided by the Link header in a previous response.
-func BuildURL(path string, query url.Values) (string, error) {
+func buildURL(path string, query url.Values) (string, error) {
 	build := url.Parse
 	if len(path) > 0 && path[0] == '/' {
 		build = func(path string) (*url.URL, error) {
@@ -81,10 +81,10 @@ func BuildURL(path string, query url.Values) (string, error) {
 	return u.String(), nil
 }
 
-// TraceRequest performs a GET request to the given URL with the given context. The
+// traceRequest performs a GET request to the given URL with the given context. The
 // response is expected to have a 200-level status code. If an error is returned, the
 // HTTP response body has been closed.
-func TraceRequest(ctx context.Context, url string) (resp *http.Response, err error) {
+func traceRequest(ctx context.Context, url string) (resp *http.Response, err error) {
 	tr, ctx := trace.New(ctx, "lsifRequest", fmt.Sprintf("url: %s", url))
 	defer func() {
 		tr.SetError(err)

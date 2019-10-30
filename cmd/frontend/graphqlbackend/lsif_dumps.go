@@ -10,15 +10,13 @@ import (
 	"sync"
 
 	graphql "github.com/graph-gophers/graphql-go"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/lsif"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 type LSIFDumpsListOptions struct {
-	Repository string
+	Repository graphql.ID
 	Query      *string
 	Limit      *int32
 	NextURL    *string
@@ -33,7 +31,7 @@ type LSIFDumpsListOptions struct {
 
 func (r *schemaResolver) LSIFDumps(args *struct {
 	graphqlutil.ConnectionArgs
-	Repository string
+	Repository graphql.ID
 	Query      *string
 	After      *string
 }) (*lsifDumpConnectionResolver, error) {
@@ -66,17 +64,24 @@ type lsifDumpConnectionResolver struct {
 	// cache results because they are used by multiple fields
 	once       sync.Once
 	dumps      []*types.LSIFDump
+	repo       *RepositoryResolver
 	totalCount int
 	nextURL    string
 	err        error
 }
 
-func (r *lsifDumpConnectionResolver) compute(ctx context.Context) ([]*types.LSIFDump, int, string, error) {
+func (r *lsifDumpConnectionResolver) compute(ctx context.Context) ([]*types.LSIFDump, *RepositoryResolver, int, string, error) {
 	r.once.Do(func() {
+		repo, err := repositoryByID(ctx, r.opt.Repository)
+		if err != nil {
+			r.err = err
+			return
+		}
+
 		var path string
 		if r.opt.NextURL == nil {
 			// first page of results
-			path = fmt.Sprintf("/dumps/%s", url.PathEscape(r.opt.Repository))
+			path = fmt.Sprintf("/dumps/%s", url.PathEscape(repo.Name()))
 		} else {
 			// subsequent page of results
 			path = *r.opt.NextURL
@@ -109,20 +114,16 @@ func (r *lsifDumpConnectionResolver) compute(ctx context.Context) ([]*types.LSIF
 		}
 
 		r.dumps = payload.Dumps
+		r.repo = repo
 		r.totalCount = payload.TotalCount
 		r.nextURL = lsif.ExtractNextURL(resp)
 	})
 
-	return r.dumps, r.totalCount, r.nextURL, r.err
+	return r.dumps, r.repo, r.totalCount, r.nextURL, r.err
 }
 
 func (r *lsifDumpConnectionResolver) Nodes(ctx context.Context) ([]*lsifDumpResolver, error) {
-	dumps, _, _, err := r.compute(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	repo, err := backend.Repos.GetByName(ctx, api.RepoName(r.opt.Repository))
+	dumps, repo, _, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +131,7 @@ func (r *lsifDumpConnectionResolver) Nodes(ctx context.Context) ([]*lsifDumpReso
 	var l []*lsifDumpResolver
 	for _, lsifDump := range dumps {
 		l = append(l, &lsifDumpResolver{
-			repo:     repo,
+			repo:     repo.repo,
 			lsifDump: lsifDump,
 		})
 	}
@@ -138,12 +139,12 @@ func (r *lsifDumpConnectionResolver) Nodes(ctx context.Context) ([]*lsifDumpReso
 }
 
 func (r *lsifDumpConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	_, count, _, err := r.compute(ctx)
+	_, _, count, _, err := r.compute(ctx)
 	return int32(count), err
 }
 
 func (r *lsifDumpConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	_, _, nextURL, err := r.compute(ctx)
+	_, _, _, nextURL, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}

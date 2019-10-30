@@ -1089,8 +1089,8 @@ type Query {
 
     # Retrieve the LSIF dumps for a repository.
     lsifDumps(
-        # The name of the repository to retrieve dumps for.
-        repository: String!
+        # The repository ID that this LSIF dump belongs to.
+        repository: ID!
 
         # An (optional) search query that searches over the commit and root properties.
         query: String
