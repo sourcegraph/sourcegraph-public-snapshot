@@ -17,7 +17,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
-- The GraphQL PageInfo object now returns a string instead of an ID for its endCursor. This only affects the experimental paginated search introduced in 3.9, which now accepts a string value instead of an ID for its after parameter.
+- The GraphQL `PageInfo` object now returns a `String` instead of an `ID` for its `endCursor`, and likewise for the `after` search field. Users of the experimental paginated search API introduced in 3.9 may need to update their usages to replace `ID` cursor types with `String` ones.
 
 ### Fixed
 
