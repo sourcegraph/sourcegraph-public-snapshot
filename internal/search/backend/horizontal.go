@@ -203,19 +203,37 @@ func (seenRepo dedupper) Dedup(fms []zoekt.FileMatch) []zoekt.FileMatch {
 		return fms
 	}
 
+	// PERF: Normally fms is sorted by Repository. So we can avoid the map
+	// lookup if we just did it for the previous entry.
+	lastRepo := ""
+	lastSeen := false
+
 	// Remove entries for repos we have already seen.
 	dedup := fms[:0]
 	for _, fm := range fms {
-		if _, ok := seenRepo[fm.Repository]; ok {
+		if lastRepo == fm.Repository {
+			if lastSeen {
+				continue
+			}
+		} else if _, ok := seenRepo[fm.Repository]; ok {
+			lastRepo = fm.Repository
+			lastSeen = true
 			continue
 		}
+
+		lastRepo = fm.Repository
+		lastSeen = false
 		dedup = append(dedup, fm)
 	}
 
 	// Update seenRepo now, so the next call of dedup will contain the
 	// repos.
+	lastRepo = ""
 	for _, fm := range dedup {
-		seenRepo[fm.Repository] = struct{}{}
+		if lastRepo != fm.Repository {
+			lastRepo = fm.Repository
+			seenRepo[fm.Repository] = struct{}{}
+		}
 	}
 
 	return dedup
