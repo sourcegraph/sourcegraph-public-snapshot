@@ -46,7 +46,7 @@ func (s *HorizontalSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.
 		}(c)
 	}
 
-	// During rebalancing a repository can appear on more than on replica.
+	// During rebalancing a repository can appear on more than one replica.
 	dedupper := dedupper{}
 
 	var aggregate zoekt.SearchResult
