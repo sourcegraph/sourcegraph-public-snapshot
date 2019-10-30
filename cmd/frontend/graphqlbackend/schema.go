@@ -3706,8 +3706,8 @@ type LSIFDump implements Node {
     # An opaque GraphQL ID.
     id: ID!
 
-    # The Git tree for which this dump provides intelligence.
-    tree: GitTree!
+    # The project for which this dump provides intelligence.
+    projectRoot: GitTree!
 
     # Whether or not this dump provides intelligence for the tip of the default branch. Find reference queries
     # will return symbols from remote repositories only when this property is true. This property is updated

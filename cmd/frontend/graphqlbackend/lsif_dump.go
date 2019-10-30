@@ -50,7 +50,7 @@ func (r *lsifDumpResolver) ID() graphql.ID {
 	return marshalLSIFDumpGQLID(r.lsifDump.Repository, fmt.Sprintf("%d", r.lsifDump.ID))
 }
 
-func (r *lsifDumpResolver) Tree() *gitTreeEntryResolver {
+func (r *lsifDumpResolver) ProjectRoot() *gitTreeEntryResolver {
 	commitResolver := &GitCommitResolver{
 		repo: &RepositoryResolver{repo: r.repo},
 		oid:  GitObjectID(r.lsifDump.Commit),
