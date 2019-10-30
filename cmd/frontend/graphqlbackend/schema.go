@@ -1104,7 +1104,7 @@ type Query {
         # to fetch results starting at this cursor.
         #
         # A future request can be made for more results by passing in the
-        # 'SearchResults.pageInfo.endCursor' that is returned.
+        # 'LSIFDumpConnection.pageInfo.endCursor' that is returned.
         after: String
     ): LSIFDumpConnection!
 }
