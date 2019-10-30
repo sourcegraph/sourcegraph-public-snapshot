@@ -132,17 +132,17 @@ func TestStructuralPatToZoektQuery(t *testing.T) {
 		{
 			Name:    "Substring between holes",
 			Pattern: ":[1] substring :[2]",
-			Want:    `(and case_file_substr:" substring ")`,
+			Want:    `(and case_content_substr:" substring ")`,
 		},
 		{
 			Name:    "Substring before and after different hole kinds",
 			Pattern: "prefix :[[1]] :[2.] suffix",
-			Want:    `(and case_file_substr:"prefix " case_file_substr:" " case_file_substr:" suffix")`,
+			Want:    `(and case_content_substr:"prefix " case_content_substr:" " case_content_substr:" suffix")`,
 		},
 		{
 			Name:    "Substrings covering all hole kinds.",
 			Pattern: `1. :[1] 2. :[[2]] 3. :[3.] 4. :[4\n] 5. :[ ] 6. :[ 6] done.`,
-			Want:    `(and case_file_substr:"1. " case_file_substr:" 2. " case_file_substr:" 3. " case_file_substr:" 4. " case_file_substr:" 5. " case_file_substr:" 6. " case_file_substr:" done.")`,
+			Want:    `(and case_content_substr:"1. " case_content_substr:" 2. " case_content_substr:" 3. " case_content_substr:" 4. " case_content_substr:" 5. " case_content_substr:" 6. " case_content_substr:" done.")`,
 		},
 		{
 			Name: "Substrings across multiple lines.",
@@ -150,7 +150,7 @@ func TestStructuralPatToZoektQuery(t *testing.T) {
 multiple
 lines
  :[2]`,
-			Want: `(and case_file_substr:" spans\nmultiple\nlines\n ")`,
+			Want: `(and case_content_substr:" spans\nmultiple\nlines\n ")`,
 		},
 	}
 	for _, tt := range cases {
