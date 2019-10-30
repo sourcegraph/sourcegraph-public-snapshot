@@ -352,7 +352,7 @@ func TestCampaigns(t *testing.T) {
 	)
 
 	mustExec(ctx, t, s, nil, &result, fmt.Sprintf(`
-		fragment cs on Changeset {
+		fragment cs on ExternalChangeset {
 			id
 			repository { id }
 			createdAt
@@ -474,7 +474,7 @@ func TestCampaigns(t *testing.T) {
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 
-		fragment cs on Changeset {
+		fragment cs on ExternalChangeset {
 			id
 			repository { id }
 			createdAt

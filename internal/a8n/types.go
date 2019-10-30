@@ -4,9 +4,75 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
+
+type CampaignType struct {
+	// TODO(a8n): This should probably be an `interface{}` and then have
+	// concrete implementations such as `CombyArguments`
+	Parameters []string
+	ServiceURL string
+}
+
+var CampaignTypes = map[string]CampaignType{
+	"comby": {
+		Parameters: []string{"scopeQuery", "matchTemplate", "rewriteTemplate"},
+		ServiceURL: env.Get("COMBY_URL", "http://replacer:3185", "replacer server URL"),
+	},
+}
+
+// A CampaignPlan represents the application of a CampaignType to the Arguments
+// over multiple repositories.
+type CampaignPlan struct {
+	ID int64
+
+	CampaignType string
+	// TODO(a8n): This should probably be an `interface{}` and depending on the
+	// `Type` we unmarshal/marshal it
+	Arguments map[string]string
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+// Clone returns a clone of a CampaignPlan.
+func (c *CampaignPlan) Clone() *CampaignPlan {
+	cc := *c
+	cc.Arguments = make(map[string]string, len(c.Arguments))
+	for k, v := range c.Arguments {
+		cc.Arguments[k] = v
+	}
+	return &cc
+}
+
+// A CampaignJob is the application of a CampaignType over CampaignPlan arguments in
+// a specific repository at a specific revision.
+type CampaignJob struct {
+	ID             int64
+	CampaignPlanID int64
+
+	RepoID int32
+	Rev    api.CommitID
+
+	Diff string
+
+	StartedAt  time.Time
+	FinishedAt time.Time
+
+	Error string
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+// Clone returns a clone of a CampaignJob.
+func (c *CampaignJob) Clone() *CampaignJob {
+	cc := *c
+	return &cc
+}
 
 // A Campaign of changesets over multiple Repos over time.
 type Campaign struct {
@@ -19,6 +85,7 @@ type Campaign struct {
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 	ChangesetIDs    []int64
+	CampaignPlanID  int64
 }
 
 // Clone returns a clone of a Campaign.
@@ -49,6 +116,29 @@ func (s ChangesetState) Valid() bool {
 		return false
 	}
 }
+
+// BackgroundProcessStatus defines the status of a background process.
+type BackgroundProcessStatus struct {
+	Completed     int32
+	Pending       int32
+	ProcessState  BackgroundProcessState
+	ProcessErrors []string
+}
+
+func (b BackgroundProcessStatus) CompletedCount() int32         { return b.Completed }
+func (b BackgroundProcessStatus) PendingCount() int32           { return b.Pending }
+func (b BackgroundProcessStatus) State() BackgroundProcessState { return b.ProcessState }
+func (b BackgroundProcessStatus) Errors() []string              { return b.ProcessErrors }
+
+// BackgroundProcessState defines the possible states of a background process.
+type BackgroundProcessState string
+
+// BackgroundProcessState constants
+const (
+	BackgroundProcessStateProcessing BackgroundProcessState = "PROCESSING"
+	BackgroundProcessStateErrored    BackgroundProcessState = "ERRORED"
+	BackgroundProcessStateDone       BackgroundProcessState = "DONE"
+)
 
 // ChangesetReviewState defines the possible states of a Changeset's review.
 type ChangesetReviewState string

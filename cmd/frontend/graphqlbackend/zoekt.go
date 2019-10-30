@@ -405,7 +405,6 @@ func StructuralPatToQuery(pattern string) zoektquery.Q {
 			children = append(children, &zoektquery.Substring{
 				Pattern:       s,
 				CaseSensitive: true,
-				FileName:      true,
 				Content:       true,
 			})
 		}

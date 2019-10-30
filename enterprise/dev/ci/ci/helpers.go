@@ -27,6 +27,7 @@ type Config struct {
 	taggedRelease       bool
 	releaseBranch       bool
 	isBextReleaseBranch bool
+	isRenovateBranch    bool
 	patch               bool
 	patchNoTest         bool
 	isQuick             bool
@@ -77,6 +78,7 @@ func ComputeConfig() Config {
 		taggedRelease:       taggedRelease,
 		releaseBranch:       lazyregexp.New(`^[0-9]+\.[0-9]+$`).MatchString(branch),
 		isBextReleaseBranch: branch == "bext/release",
+		isRenovateBranch:    strings.HasPrefix(branch, "renovate/"),
 		patch:               patch,
 		patchNoTest:         patchNoTest,
 		isQuick:             isQuick,
