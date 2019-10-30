@@ -857,7 +857,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 				for i := 0; i < cap(campaignPlans); i++ {
 					c := &a8n.CampaignPlan{
 						CampaignType: "COMBY",
-						Arguments:    map[string]string{"pattern": "foobar"},
+						Arguments:    `{"scopeQuery": "file:README.md"}`,
 					}
 
 					want := c.Clone()
@@ -967,7 +967,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 			t.Run("Update", func(t *testing.T) {
 				for _, c := range campaignPlans {
 					c.CampaignType += "-updated"
-					c.Arguments["anotherArg"] = "anotherValue"
+					c.Arguments = `{"updated": true}`
 
 					now = now.Add(time.Second)
 					want := c

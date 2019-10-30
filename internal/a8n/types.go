@@ -30,9 +30,9 @@ type CampaignPlan struct {
 	ID int64
 
 	CampaignType string
-	// TODO(a8n): This should probably be an `interface{}` and depending on the
-	// `Type` we unmarshal/marshal it
-	Arguments map[string]string
+
+	// Arguments is a JSONC string
+	Arguments string
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -41,10 +41,6 @@ type CampaignPlan struct {
 // Clone returns a clone of a CampaignPlan.
 func (c *CampaignPlan) Clone() *CampaignPlan {
 	cc := *c
-	cc.Arguments = make(map[string]string, len(c.Arguments))
-	for k, v := range c.Arguments {
-		cc.Arguments[k] = v
-	}
 	return &cc
 }
 
