@@ -64,21 +64,19 @@ type comby struct {
 }
 
 func (c *comby) validate() error {
-	var args combyArgs
-
-	if err := jsonc.Unmarshal(c.plan.Arguments, &args); err != nil {
+	if err := jsonc.Unmarshal(c.plan.Arguments, &c.args); err != nil {
 		return err
 	}
 
-	if args.ScopeQuery == "" {
+	if c.args.ScopeQuery == "" {
 		return errors.New("missing argument in specification: scopeQuery")
 	}
 
-	if args.MatchTemplate == "" {
+	if c.args.MatchTemplate == "" {
 		return errors.New("missing argument in specification: matchTemplate")
 	}
 
-	if args.RewriteTemplate == "" {
+	if c.args.RewriteTemplate == "" {
 		return errors.New("missing argument in specification: rewriteTemplate")
 	}
 
@@ -88,12 +86,16 @@ func (c *comby) validate() error {
 func (c *comby) Start(ctx context.Context) error {
 	c.started = true
 
+	log15.Info("Searching repos", "query", c.args.ScopeQuery)
+
 	repos, err := c.search(ctx, c.args.ScopeQuery)
 	if err != nil {
 		return err
 	}
 
-	var wg sync.WaitGroup
+	log15.Info("Search done", "query", c.args.ScopeQuery, "len(repos)", len(repos))
+
+	jobs := make([]*a8n.CampaignJob, 0, len(repos))
 	for _, repo := range repos {
 		job := &a8n.CampaignJob{
 			CampaignPlanID: c.plan.ID,
@@ -121,21 +123,26 @@ func (c *comby) Start(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
+		jobs = append(jobs, job)
+	}
 
-		wg.Add(1)
+	for _, job := range jobs {
+		log15.Info("Launching job", "job", job.ID, "repo", job.RepoID)
+
+		c.wg.Add(1)
 		go func(plan *a8n.CampaignPlan, job *a8n.CampaignJob) {
 			// TODO(a8n): Do real work.
-			// Send request to service with Repo, Ref, Arguments.
-			// Receive diff.
 			job.Diff = bogusDiff
+			job.Error = ""
 			job.FinishedAt = time.Now()
 
 			err := c.store.UpdateCampaignJob(ctx, job)
 			if err != nil {
-				log15.Error("RunCampaign.UpdateCampaignJob failed", "err", err)
+				log15.Error("UpdateCampaignJob failed", "err", err)
 			}
+			log15.Info("Job done", "job", job.ID)
 
-			wg.Done()
+			c.wg.Done()
 		}(c.plan, job)
 	}
 
