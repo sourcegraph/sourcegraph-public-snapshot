@@ -60,7 +60,7 @@ func PipeTo(args Args, w io.Writer) (err error) {
 	}
 
 	rawArgs := rawArgs(args)
-	log15.Info("running comby", "args", strings.Join(rawArgs, " "))
+	log15.Info("running comby", "args", strings.Join(rawArgs, ","))
 
 	cmd := exec.Command(combyPath, rawArgs...)
 

@@ -593,7 +593,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 
 				var onlyFiles []string
 				if args.Pattern.IsStructuralPat && searcherReposWithFiles != nil {
-					fmt.Printf("Structural only files for: %d\n", len(searcherReposWithFiles))
+					fmt.Printf("Structural only files for: %d repos\n", len(searcherReposWithFiles))
 					onlyFiles = searcherReposWithFiles[string(repoRev.Repo.Name)]
 				}
 

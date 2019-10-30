@@ -32,3 +32,31 @@ type Args struct {
 	// NumWorkers is the number of worker processes to fork in parallel
 	NumWorkers int
 }
+
+type Location struct {
+	Offset int `json:"offset"`
+	Line   int `json:"line"`
+	Column int `json:"column"`
+}
+
+type Range struct {
+	Start Location `json:"start"`
+	End   Location `json:"end"`
+}
+
+// XXX environment
+type Match struct {
+	Range   Range  `json:"range"`
+	Matched string `json:"matched"`
+}
+
+// {"uri":"/private/tmp/rrrr/doc.go","matches":[{"range":{"start":{"offset":215,"line":1,"column":216},"end":{"offset":222,"line":1,"column":223}},"environment":[],"matched":"package"}]}
+type FileMatch struct {
+	URI     string  `json:"uri"`
+	Matches []Match `json:"matches"`
+}
+
+type FileDiff struct {
+	URI  string   `json:"uri"`
+	Diff []string `json:"diff"`
+}
