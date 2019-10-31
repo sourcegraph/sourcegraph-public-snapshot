@@ -24,6 +24,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Support hyphens in Bitbucket Cloud team names. [#6154](https://github.com/sourcegraph/sourcegraph/issues/6154)
+- Fixed an issue where the experimental search pagination API could omit a single repository worth of results at the end of the result set.
 
 ### Removed
 

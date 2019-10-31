@@ -359,22 +359,19 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 			wantSearchedBatches: [][]*search.RepositoryRevisions{
 				{
 					repoRevs("4", "master"),
-					// BUG: repo 5 should be included!
-					//repoRevs("5", "master"),
+					repoRevs("5", "master"),
 				},
 			},
-			wantCursor: &searchCursor{RepositoryOffset: 4, ResultOffset: 0, Finished: true},
+			wantCursor: &searchCursor{RepositoryOffset: 5, ResultOffset: 0, Finished: true},
 			wantResults: []searchResultResolver{
 				result(repo("4"), "some/file1.go", "master"),
 				result(repo("4"), "some/file2.go", "master"),
-				// BUG: These should be included!
-				//result(repo("5"), "some/file0.go", "master"),
-				//result(repo("5"), "some/file1.go", "master"),
-				//result(repo("5"), "some/file2.go", "master"),
+				result(repo("5"), "some/file0.go", "master"),
+				result(repo("5"), "some/file1.go", "master"),
+				result(repo("5"), "some/file2.go", "master"),
 			},
 			wantCommon: &searchResultsCommon{
-				// BUG: repo 5 should be included!
-				repos:   []*types.Repo{repo("4")},
+				repos:   []*types.Repo{repo("4"), repo("5")},
 				partial: map[api.RepoName]struct{}{},
 			},
 		},

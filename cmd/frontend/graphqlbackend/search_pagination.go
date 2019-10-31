@@ -337,7 +337,7 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 			break
 		}
 
-		batch := repos[start:clamp(start+batchSize, 0, len(repos)-1)]
+		batch := repos[start:clamp(start+batchSize, 0, len(repos))]
 		batchResults, batchCommon, err := exec(batch)
 		if err != nil {
 			return nil, nil, nil, err
