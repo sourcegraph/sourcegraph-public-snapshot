@@ -15,8 +15,8 @@ import {
     KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE,
     KEYBOARD_SHORTCUT_SWITCH_THEME,
     KeyboardShortcutsProps,
-} from '../../../shared/src/keyboardShortcuts/keyboardShortcuts'
-import { ThemePreferenceProps, ThemeProps } from '../../../shared/src/theme/theme'
+} from '../../../shared/src/keyboardShortcuts'
+import { ThemePreferenceProps, ThemeProps } from '../../../shared/src/theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { fetchAllStatusMessages, StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { UserNavItem } from './UserNavItem'

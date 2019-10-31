@@ -20,7 +20,7 @@ import { RouteDescriptor } from '../../util/contributions'
 import { OrgAreaHeaderNavItem, OrgHeader } from './OrgHeader'
 import { OrgInvitationPage } from './OrgInvitationPage'
 import { PatternTypeProps } from '../../search'
-import { ThemeProps } from '../../../../shared/src/theme/theme'
+import { ThemeProps } from '../../../../shared/src/theme'
 
 function queryOrganization(args: { name: string }): Observable<GQL.IOrg | null> {
     return queryGraphQL(

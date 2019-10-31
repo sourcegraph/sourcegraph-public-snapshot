@@ -19,7 +19,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 import { RepositoryCompareCommitsPage } from './RepositoryCompareCommitsPage'
 import { RepositoryCompareDiffPage } from './RepositoryCompareDiffPage'
-import { ThemeProps } from '../../../../shared/src/theme/theme'
+import { ThemeProps } from '../../../../shared/src/theme'
 
 function queryRepositoryComparison(args: {
     repo: GQL.ID

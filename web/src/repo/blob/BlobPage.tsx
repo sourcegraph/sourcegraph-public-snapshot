@@ -33,7 +33,7 @@ import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { Blob } from './Blob'
 import { BlobPanel } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
-import { ThemeProps } from '../../../../shared/src/theme/theme'
+import { ThemeProps } from '../../../../shared/src/theme'
 
 export function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean; disableTimeout: boolean }): string {
     return makeRepoURI(parsed) + parsed.isLightTheme + parsed.disableTimeout

@@ -7,7 +7,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
 import { ExtensionNoManifestAlert } from './RegistryExtensionManifestPage'
-import { ThemeProps } from '../../../../shared/src/theme/theme'
+import { ThemeProps } from '../../../../shared/src/theme'
 
 interface Props extends ExtensionAreaRouteContext, RouteComponentProps<{}>, ThemeProps {}
 

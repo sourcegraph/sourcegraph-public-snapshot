@@ -15,7 +15,7 @@ import { queryGraphQL } from '../../backend/graphql'
 import { FileDiffConnection } from './FileDiffConnection'
 import { FileDiffNode } from './FileDiffNode'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
-import { ThemeProps } from '../../../../shared/src/theme/theme'
+import { ThemeProps } from '../../../../shared/src/theme'
 
 export function queryRepositoryComparisonFileDiffs(args: {
     repo: GQL.ID

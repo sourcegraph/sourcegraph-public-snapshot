@@ -24,7 +24,7 @@ import { GlobalDebug } from './global/GlobalDebug'
 import {
     KEYBOARD_SHORTCUT_SHOW_HELP,
     KeyboardShortcutsProps,
-} from '../../shared/src/keyboardShortcuts/keyboardShortcuts'
+} from '../../shared/src/keyboardShortcuts'
 import { KeyboardShortcutsHelp } from './keyboardShortcuts/KeyboardShortcutsHelp'
 import { IntegrationsToast } from './marketing/IntegrationsToast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
@@ -45,7 +45,7 @@ import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { parseBrowserRepoURL } from './util/url'
 import LiteralSearchToast from './marketing/LiteralSearchToast'
-import { ThemeProps, ThemePreferenceProps } from '../../shared/src/theme/theme'
+import { ThemeProps, ThemePreferenceProps } from '../../shared/src/theme'
 
 export interface LayoutProps
     extends RouteComponentProps<any>,

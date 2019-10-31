@@ -4,8 +4,8 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { KeyboardShortcut } from '../../../shared/src/keyboardShortcuts/keyboardShortcuts'
-import { ThemePreference, ThemePreferenceProps, ThemeProps } from '../../../shared/src/theme/theme'
+import { KeyboardShortcut } from '../../../shared/src/keyboardShortcuts'
+import { ThemePreference, ThemePreferenceProps, ThemeProps } from '../../../shared/src/theme'
 import { UserAvatar } from '../user/UserAvatar'
 
 interface Props extends ThemeProps, ThemePreferenceProps {

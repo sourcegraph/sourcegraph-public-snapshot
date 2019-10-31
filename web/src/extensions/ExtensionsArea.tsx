@@ -9,7 +9,7 @@ import { RouteDescriptor } from '../util/contributions'
 import { ExtensionAreaRoute } from './extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extension/ExtensionAreaHeader'
 import { ExtensionsAreaHeader, ExtensionsAreaHeaderActionButton } from './ExtensionsAreaHeader'
-import { ThemeProps } from '../../../shared/src/theme/theme'
+import { ThemeProps } from '../../../shared/src/theme'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 

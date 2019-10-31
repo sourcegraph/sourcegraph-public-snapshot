@@ -26,7 +26,7 @@ import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecyclePro
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { RepoRevContainer, RepoRevContainerRoute } from './RepoRevContainer'
 import { RepositoryNotFoundPage } from './RepositoryNotFoundPage'
-import { ThemeProps } from '../../../shared/src/theme/theme'
+import { ThemeProps } from '../../../shared/src/theme'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.

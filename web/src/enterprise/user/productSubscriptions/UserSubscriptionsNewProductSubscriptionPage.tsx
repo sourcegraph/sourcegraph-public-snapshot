@@ -14,7 +14,7 @@ import { PageTitle } from '../../../components/PageTitle'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { BackToAllSubscriptionsLink } from './BackToAllSubscriptionsLink'
 import { ProductSubscriptionForm, ProductSubscriptionFormData } from './ProductSubscriptionForm'
-import { ThemeProps } from '../../../../../shared/src/theme/theme'
+import { ThemeProps } from '../../../../../shared/src/theme'
 
 interface Props extends RouteComponentProps<{}>, ThemeProps {
     /**

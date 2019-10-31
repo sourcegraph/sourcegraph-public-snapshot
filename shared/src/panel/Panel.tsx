@@ -16,7 +16,7 @@ import { SettingsCascadeProps } from '../settings/settings'
 import { TelemetryProps } from '../telemetry/telemetryService'
 import { EmptyPanelView } from './views/EmptyPanelView'
 import { PanelView } from './views/PanelView'
-import { ThemeProps } from '../theme/theme'
+import { ThemeProps } from '../theme'
 
 interface Props
     extends ExtensionsControllerProps,

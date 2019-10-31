@@ -39,7 +39,7 @@ import { basename } from '../util/path'
 import { fetchTree } from './backend'
 import { GitCommitNode, GitCommitNodeProps } from './commits/GitCommitNode'
 import { gitCommitFragment } from './commits/RepositoryCommitsPage'
-import { ThemeProps } from '../../../shared/src/theme/theme'
+import { ThemeProps } from '../../../shared/src/theme'
 
 const TreeEntry: React.FunctionComponent<{
     isDir: boolean

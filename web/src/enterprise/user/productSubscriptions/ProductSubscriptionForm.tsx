@@ -15,7 +15,7 @@ import { LicenseGenerationKeyWarning } from '../../productSubscription/LicenseGe
 import { NewProductSubscriptionPaymentSection } from './NewProductSubscriptionPaymentSection'
 import { PaymentTokenFormControl } from './PaymentTokenFormControl'
 import { productSubscriptionInputForLocationHash } from './UserSubscriptionsNewProductSubscriptionPage'
-import { ThemeProps } from '../../../../../shared/src/theme/theme'
+import { ThemeProps } from '../../../../../shared/src/theme'
 
 /**
  * The form data that is submitted by the ProductSubscriptionForm component.

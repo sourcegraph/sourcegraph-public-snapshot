@@ -22,7 +22,7 @@ import { mutateGraphQL, queryGraphQL } from '../../../backend/graphql'
 import { PageTitle } from '../../../components/PageTitle'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { ProductSubscriptionForm, ProductSubscriptionFormData } from './ProductSubscriptionForm'
-import { ThemeProps } from '../../../../../shared/src/theme/theme'
+import { ThemeProps } from '../../../../../shared/src/theme'
 
 interface Props extends RouteComponentProps<{ subscriptionUUID: string }>, ThemeProps {
     user: GQL.IUser

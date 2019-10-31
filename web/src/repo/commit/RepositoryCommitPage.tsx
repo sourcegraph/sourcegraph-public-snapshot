@@ -28,7 +28,7 @@ import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { FileDiffConnection } from '../compare/FileDiffConnection'
 import { FileDiffNode } from '../compare/FileDiffNode'
 import { queryRepositoryComparisonFileDiffs } from '../compare/RepositoryCompareDiffPage'
-import { ThemeProps } from '../../../../shared/src/theme/theme'
+import { ThemeProps } from '../../../../shared/src/theme'
 
 const queryCommit = memoizeObservable(
     (args: { repo: GQL.ID; revspec: string }): Observable<GQL.IGitCommit> =>

@@ -22,7 +22,7 @@ import { isDiscussionsEnabled } from '../../../discussions'
 import { RepoHeaderContributionsLifecycleProps } from '../../RepoHeader'
 import { RepoRevSidebarCommits } from '../../RepoRevSidebarCommits'
 import { DiscussionsTree } from '../discussions/DiscussionsTree'
-import { ThemeProps } from '../../../../../shared/src/theme/theme'
+import { ThemeProps } from '../../../../../shared/src/theme'
 interface Props
     extends AbsoluteRepoFile,
         Partial<PositionSpec>,

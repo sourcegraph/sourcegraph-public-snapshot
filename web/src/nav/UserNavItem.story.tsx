@@ -4,7 +4,7 @@ import * as H from 'history'
 import React, { useCallback } from 'react'
 import { MemoryRouter } from 'react-router'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { ThemePreference } from '../../../shared/src/theme/theme'
+import { ThemePreference } from '../../../shared/src/theme'
 import { UserNavItem } from './UserNavItem'
 
 import './UserNavItem.scss'

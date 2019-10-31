@@ -12,7 +12,7 @@ import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
 import { DiffStat } from './DiffStat'
 import { FileDiffHunks } from './FileDiffHunks'
-import { ThemeProps } from '../../../../shared/src/theme/theme'
+import { ThemeProps } from '../../../../shared/src/theme'
 
 export interface FileDiffNodeProps extends PlatformContextProps, ExtensionsControllerProps, ThemeProps {
     node: GQL.IFileDiff
