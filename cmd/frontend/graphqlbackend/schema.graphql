@@ -1305,7 +1305,7 @@ type Query {
         # The status of returned jobs.
         status: LSIFJobState!
 
-        # An (optional) search query taht searches over the job name, failure
+        # An (optional) search query that searches over the job name, failure
         # properties (reason and stacktrace) and the job's arguments.
         query: String
 
