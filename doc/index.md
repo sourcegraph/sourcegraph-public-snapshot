@@ -88,6 +88,7 @@ For self-hosted Sourcegraph instances, you run a Docker image or Kubernetes clus
 
 - [Sourcegraph open-source repository](https://github.com/sourcegraph/sourcegraph)
 - [Contributing to Sourcegraph](dev/index.md)
+- [Sourcegraph team documentation](team/index.md)
 - [Sourcegraph blog](https://about.sourcegraph.com/blog/)
 - [Issue tracker](https://github.com/sourcegraph/sourcegraph/issues)
 - [about.sourcegraph.com](https://about.sourcegraph.com) (general information about Sourcegraph)

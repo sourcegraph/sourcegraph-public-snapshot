@@ -20,7 +20,7 @@ source "$DEV_PRIVATE_PATH/enterprise/dev/env"
 
 export CRITICAL_CONFIG_FILE=$DEV_PRIVATE_PATH/enterprise/dev/critical-config.json
 export SITE_CONFIG_FILE=$DEV_PRIVATE_PATH/enterprise/dev/site-config.json
-export EXTSVC_CONFIG_FILE=$DEV_PRIVATE_PATH/enterprise/dev/external-services-config.json
+# export EXTSVC_CONFIG_FILE=$DEV_PRIVATE_PATH/enterprise/dev/external-services-config.json
 export SITE_CONFIG_ALLOW_EDITS=true
 export EXTSVC_CONFIG_ALLOW_EDITS=true
 

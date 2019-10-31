@@ -1,10 +1,8 @@
-# Communication
-
-## Team meeting
+# Weekly team meetings
 
 Schedule: 10:30-11:30am PST/PDT Monday (link in the calendar event)
 
-### Agenda
+## Agenda
 
 1.  Graph awards
 1.  Birthdays/anniversaries
