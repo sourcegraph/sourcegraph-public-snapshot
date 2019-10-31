@@ -148,3 +148,37 @@ describe('QueryBuilder', () => {
         sinon.assert.calledWith(onChange, 'type:diff message:"fix issue"')
     })
 })
+
+describe('QueryBuilder in literal mode', () => {
+    afterAll(cleanup)
+
+    let onChange: sinon.SinonSpy<[string], void>
+    let container: HTMLElement
+    beforeEach(() => {
+        localStorage.clear()
+        onChange = sinon.spy((query: string) => {})
+        ;({ container } = render(
+            <QueryBuilder
+                onFieldsQueryChange={onChange}
+                isSourcegraphDotCom={false}
+                patternType={SearchPatternType.regexp}
+            />
+        ))
+
+        const toggle = getByTestId(container, 'test-query-builder-toggle')
+        fireEvent.click(toggle)
+    })
+
+    it('in literal mode, fires the onFieldsQueryChange prop handler with a single-word term wrapped in double quotes when updating the "Exact match"', async () => {
+        const exactMatchField = container.querySelector('#query-builder-exactMatch')!
+        fireEvent.change(exactMatchField, { target: { value: 'open(' } })
+        sinon.assert.calledOnce(onChange)
+        sinon.assert.calledWith(onChange, '"open("')
+    })
+    it('in literal mode, fires the onFieldsQueryChange prop handler with a multi-word term wrapped in double quotes when updating the "Exact match"', async () => {
+        const exactMatchField = container.querySelector('#query-builder-exactMatch')!
+        fireEvent.change(exactMatchField, { target: { value: 'foo bar' } })
+        sinon.assert.calledOnce(onChange)
+        sinon.assert.calledWith(onChange, '"foo bar"')
+    })
+})
