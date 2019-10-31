@@ -2,12 +2,15 @@ package graphqlbackend
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"reflect"
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/google/go-cmp/cmp"
 	"github.com/sergi/go-diff/diffmatchpatch"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
@@ -253,6 +256,155 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 					dmp = diffmatchpatch.New()
 					t.Error("diff(got, want):\n", dmp.DiffPrettyText(dmp.DiffMain(spew.Sdump(test.want), spew.Sdump(got), true)))
 				}
+			}
+		})
+	}
+}
+
+func TestSearchPagination_repoPaginationPlan(t *testing.T) {
+	revs := func(rev ...string) (revs []search.RevisionSpecifier) {
+		for _, r := range rev {
+			revs = append(revs, search.RevisionSpecifier{RevSpec: r})
+		}
+		return revs
+	}
+	repo := func(name string) *types.Repo {
+		return &types.Repo{Name: api.RepoName(name)}
+	}
+	result := func(repo *types.Repo, path, rev string) *fileMatchResolver {
+		return &fileMatchResolver{JPath: path, repo: repo, inputRev: &rev}
+	}
+	repoRevs := func(name string, rev ...string) *search.RepositoryRevisions {
+		return &search.RepositoryRevisions{
+			Repo: repo(name),
+			Revs: revs(rev...),
+		}
+	}
+	searchRepos := []*search.RepositoryRevisions{
+		repoRevs("1", "master"),
+		repoRevs("2", "master"),
+		repoRevs("3", "master"),
+		repoRevs("4", "master"),
+		repoRevs("5", "master"),
+	}
+	var searchedBatches [][]*search.RepositoryRevisions
+	executor := func(batch []*search.RepositoryRevisions) (results []searchResultResolver, common *searchResultsCommon, err error) {
+		searchedBatches = append(searchedBatches, batch)
+		common = &searchResultsCommon{}
+		for _, repoRev := range batch {
+			for _, rev := range repoRev.Revs {
+				rev := rev.RevSpec
+				for i := 0; i < 3; i++ {
+					results = append(results, &fileMatchResolver{
+						JPath:    fmt.Sprintf("some/file%d.go", i),
+						repo:     repoRev.Repo,
+						inputRev: &rev,
+					})
+				}
+			}
+			common.repos = append(common.repos, repoRev.Repo)
+		}
+		return
+	}
+	ctx := context.Background()
+
+	tests := []struct {
+		name                string
+		request             *searchPaginationInfo
+		wantSearchedBatches [][]*search.RepositoryRevisions
+		wantCursor          *searchCursor
+		wantResults         []searchResultResolver
+		wantCommon          *searchResultsCommon
+		wantErr             error
+	}{
+		{
+			name: "first request",
+			request: &searchPaginationInfo{
+				cursor: &searchCursor{},
+				limit:  10,
+			},
+			wantSearchedBatches: [][]*search.RepositoryRevisions{
+				{
+					repoRevs("1", "master"),
+					repoRevs("2", "master"),
+					repoRevs("3", "master"),
+					repoRevs("4", "master"),
+				},
+			},
+			wantCursor: &searchCursor{RepositoryOffset: 3, ResultOffset: 1},
+			wantResults: []searchResultResolver{
+				result(repo("1"), "some/file0.go", "master"),
+				result(repo("1"), "some/file1.go", "master"),
+				result(repo("1"), "some/file2.go", "master"),
+				result(repo("2"), "some/file0.go", "master"),
+				result(repo("2"), "some/file1.go", "master"),
+				result(repo("2"), "some/file2.go", "master"),
+				result(repo("3"), "some/file0.go", "master"),
+				result(repo("3"), "some/file1.go", "master"),
+				result(repo("3"), "some/file2.go", "master"),
+				result(repo("4"), "some/file0.go", "master"),
+			},
+			wantCommon: &searchResultsCommon{
+				repos:       []*types.Repo{repo("1"), repo("2"), repo("3"), repo("4")},
+				partial:     map[api.RepoName]struct{}{},
+				resultCount: 10,
+			},
+		},
+		{
+			name: "second request",
+			request: &searchPaginationInfo{
+				cursor: &searchCursor{RepositoryOffset: 3, ResultOffset: 1},
+				limit:  10,
+			},
+			wantSearchedBatches: [][]*search.RepositoryRevisions{
+				{
+					repoRevs("4", "master"),
+					// BUG: repo 5 should be included!
+					//repoRevs("5", "master"),
+				},
+			},
+			wantCursor: &searchCursor{RepositoryOffset: 4, ResultOffset: 0, Finished: true},
+			wantResults: []searchResultResolver{
+				result(repo("4"), "some/file1.go", "master"),
+				result(repo("4"), "some/file2.go", "master"),
+				// BUG: These should be included!
+				//result(repo("5"), "some/file0.go", "master"),
+				//result(repo("5"), "some/file1.go", "master"),
+				//result(repo("5"), "some/file2.go", "master"),
+			},
+			wantCommon: &searchResultsCommon{
+				// BUG: repo 5 should be included!
+				repos:   []*types.Repo{repo("4")},
+				partial: map[api.RepoName]struct{}{},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			searchedBatches = nil
+			plan := &repoPaginationPlan{
+				pagination:          test.request,
+				repositories:        searchRepos,
+				searchBucketDivisor: 8,
+				searchBucketMin:     4,
+				searchBucketMax:     10,
+				mockNumTotalRepos:   func() int { return len(searchRepos) },
+			}
+			cursor, results, common, err := plan.execute(ctx, executor)
+			if !cmp.Equal(test.wantCursor, cursor) {
+				t.Error("wantCursor != cursor", cmp.Diff(test.wantCursor, cursor))
+			}
+			if !cmp.Equal(test.wantResults, results) {
+				t.Error("wantResults != results", cmp.Diff(test.wantResults, results))
+			}
+			if !cmp.Equal(test.wantCommon, common) {
+				t.Error("wantCommon != common", cmp.Diff(test.wantCommon, common))
+			}
+			if !cmp.Equal(test.wantErr, err) {
+				t.Error("wantErr != err", cmp.Diff(test.wantErr, err))
+			}
+			if !cmp.Equal(test.wantSearchedBatches, searchedBatches) {
+				t.Error("wantSearchedBatches != searchedBatches", cmp.Diff(test.wantSearchedBatches, searchedBatches))
 			}
 		})
 	}

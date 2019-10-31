@@ -292,6 +292,8 @@ type repoPaginationPlan struct {
 	// larger than max.
 	searchBucketDivisor              int
 	searchBucketMin, searchBucketMax int
+
+	mockNumTotalRepos func() int
 }
 
 // executor is a function which searches a batch of repositories.
@@ -304,7 +306,13 @@ type executor func(batch []*search.RepositoryRevisions) ([]searchResultResolver,
 // returned.
 func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *searchCursor, results []searchResultResolver, common *searchResultsCommon, err error) {
 	// Determine how large the batches of repositories we will search over will be.
-	batchSize := clamp(numTotalRepos.get(ctx)/p.searchBucketDivisor, p.searchBucketMin, p.searchBucketMax)
+	var totalRepos int
+	if p.mockNumTotalRepos != nil {
+		totalRepos = p.mockNumTotalRepos()
+	} else {
+		totalRepos = numTotalRepos.get(ctx)
+	}
+	batchSize := clamp(totalRepos/p.searchBucketDivisor, p.searchBucketMin, p.searchBucketMax)
 
 	// Determine where in the repositories list we will begin searching.
 	var (
