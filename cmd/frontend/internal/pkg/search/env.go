@@ -3,6 +3,7 @@ package search
 import (
 	"context"
 	"errors"
+	"os"
 	"strings"
 	"sync"
 
@@ -15,8 +16,6 @@ import (
 )
 
 var (
-	zoektAddr   = env.Get("ZOEKT_HOST", "indexed-search:80", "host:port of the zoekt instance")
-	zoektAddrs  = env.Get("INDEXED_SEARCH_SERVERS", "", "zoekt instances")
 	searcherURL = env.Get("SEARCHER_URL", "k8s+http://searcher:3181", "searcher server URL")
 
 	searcherURLsOnce sync.Once
@@ -48,8 +47,6 @@ func Indexed() *backend.Zoekt {
 				Map:  indexers.Map,
 				Dial: rpc.Client,
 			}
-		} else if zoektAddr != "" {
-			indexedSearch.Client = rpc.Client(zoektAddr)
 		}
 		conf.Watch(func() {
 			indexedSearch.SetEnabled(conf.SearchIndexEnabled())
@@ -60,9 +57,9 @@ func Indexed() *backend.Zoekt {
 
 func Indexers() *backend.Indexers {
 	indexersOnce.Do(func() {
-		if zoektAddrs != "" {
+		if addr := zoektAddr(os.Environ()); addr != "" {
 			indexers = &backend.Indexers{
-				Map:     endpoint.New(zoektAddrs),
+				Map:     endpoint.New(addr),
 				Indexed: reposAtEndpoint,
 			}
 		} else {
@@ -72,6 +69,30 @@ func Indexers() *backend.Indexers {
 		}
 	})
 	return indexers
+}
+
+func zoektAddr(environ []string) string {
+	if addr, ok := getEnv(environ, "INDEXED_SEARCH_SERVERS"); ok {
+		return addr
+	}
+
+	// Backwards compatibility: We used to call this variable ZOEKT_HOST
+	if addr, ok := getEnv(environ, "ZOEKT_HOST"); ok {
+		return addr
+	}
+
+	// Not set, use the default
+	return "indexed-search-0.indexed-search:6070"
+}
+
+func getEnv(environ []string, key string) (string, bool) {
+	key = key + "="
+	for _, env := range environ {
+		if strings.HasPrefix(env, key) {
+			return env[len(key):], true
+		}
+	}
+	return "", false
 }
 
 func reposAtEndpoint(ctx context.Context, endpoint string) map[string]struct{} {
