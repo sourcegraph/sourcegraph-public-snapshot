@@ -13,7 +13,7 @@ import (
 )
 
 // XXX TODO: fileMatchLimit
-func structuralSearch(ctx context.Context, pattern string, zipPath string, fileMatchLimit int, onlyFiles []string) (matches []protocol.FileMatch, limitHit bool, err error) {
+func structuralSearch(ctx context.Context, pattern string, zipPath string, fileMatchLimit int, includePatterns []string) (matches []protocol.FileMatch, limitHit bool, err error) {
 
 	b := new(bytes.Buffer)
 	w := bufio.NewWriter(b)
@@ -23,13 +23,13 @@ func structuralSearch(ctx context.Context, pattern string, zipPath string, fileM
 	//	return matches, limitHit, err
 	// }
 
-	fmt.Printf("Only files: %d [%s]\n", len(onlyFiles), strings.Join(onlyFiles, ","))
+	fmt.Printf("Only files: %d [%s]\n", len(includePatterns), strings.Join(includePatterns, ","))
 
 	args := comby.Args{
 		Input:         comby.ZipPath(zipPath),
 		MatchTemplate: pattern,
 		MatchOnly:     true,
-		FilePatterns:  onlyFiles,
+		FilePatterns:  includePatterns,
 		// XXX unhardcode
 		Matcher:    ".go",
 		NumWorkers: numWorkers,

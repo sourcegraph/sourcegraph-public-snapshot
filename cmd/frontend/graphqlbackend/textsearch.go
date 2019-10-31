@@ -161,7 +161,7 @@ var mockTextSearch func(ctx context.Context, repo gitserver.Repo, commit api.Com
 
 // textSearch searches repo@commit with p.
 // Note: the returned matches do not set fileMatch.uri
-func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.Repo, commit api.CommitID, p *search.PatternInfo, fetchTimeout time.Duration, onlyFiles []string) (matches []*fileMatchResolver, limitHit bool, err error) {
+func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.Repo, commit api.CommitID, p *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
 	if mockTextSearch != nil {
 		return mockTextSearch(ctx, repo, commit, p, fetchTimeout)
 	}
@@ -172,10 +172,6 @@ func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.
 		tr.Finish()
 	}()
 
-	if onlyFiles == nil {
-		onlyFiles = []string{""}
-	}
-
 	q := url.Values{
 		"Repo":            []string{string(repo.Name)},
 		"URL":             []string{repo.URL},
@@ -184,7 +180,6 @@ func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.
 		"ExcludePattern":  []string{p.ExcludePattern},
 		"IncludePatterns": p.IncludePatterns,
 		"FetchTimeout":    []string{fetchTimeout.String()},
-		"OnlyFiles":       onlyFiles,
 	}
 	if deadline, ok := ctx.Deadline(); ok {
 		t, err := deadline.MarshalText()
@@ -340,7 +335,7 @@ func (e *searcherError) Error() string {
 
 var mockSearchFilesInRepo func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error)
 
-func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration, onlyFiles []string) (matches []*fileMatchResolver, limitHit bool, err error) {
+func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
 	if mockSearchFilesInRepo != nil {
 		return mockSearchFilesInRepo(ctx, repo, gitserverRepo, rev, info, fetchTimeout)
 	}
@@ -362,7 +357,7 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *ty
 		return matches, false, err
 	}
 
-	matches, limitHit, err = textSearch(ctx, searcherURLs, gitserverRepo, commit, info, fetchTimeout, onlyFiles)
+	matches, limitHit, err = textSearch(ctx, searcherURLs, gitserverRepo, commit, info, fetchTimeout)
 
 	workspace := fileMatchURI(repo.Name, rev, "")
 	for _, fm := range matches {
@@ -401,7 +396,7 @@ func repoShouldBeSearched(ctx context.Context, searcherURLs *endpoint.Map, searc
 func repoHasFilesWithNamesMatching(ctx context.Context, searcherURLs *endpoint.Map, include bool, repoHasFileFlag []string, gitserverRepo gitserver.Repo, commit api.CommitID, fetchTimeout time.Duration) (bool, error) {
 	for _, pattern := range repoHasFileFlag {
 		p := search.PatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
-		matches, _, err := textSearch(ctx, searcherURLs, gitserverRepo, commit, &p, fetchTimeout, nil)
+		matches, _, err := textSearch(ctx, searcherURLs, gitserverRepo, commit, &p, fetchTimeout)
 		if err != nil {
 			return false, err
 		}
@@ -598,14 +593,15 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 				defer wg.Done()
 				defer done()
 
-				var onlyFiles []string
+				//var onlyFilesRegexp []string
 				if args.Pattern.IsStructuralPat && searcherReposWithFiles != nil {
 					fmt.Printf("Structural only files for: %d repos\n", len(searcherReposWithFiles))
-					onlyFiles = searcherReposWithFiles[string(repoRev.Repo.Name)]
+					// onlyFilesRegexp = searcherReposWithFiles[string(repoRev.Repo.Name)]
+					args.Pattern.IncludePatterns = append(args.Pattern.IncludePatterns, searcherReposWithFiles[string(repoRev.Repo.Name)]...)
 				}
 
 				rev := repoRev.RevSpecs()[0] // TODO(sqs): search multiple revs
-				matches, repoLimitHit, err := searchFilesInRepo(ctx, args.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), rev, args.Pattern, fetchTimeout, onlyFiles)
+				matches, repoLimitHit, err := searchFilesInRepo(ctx, args.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), rev, args.Pattern, fetchTimeout)
 				if err != nil {
 					tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.Error(err), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
 					log15.Warn("searchFilesInRepo failed", "error", err, "repo", repoRev.Repo.Name)
