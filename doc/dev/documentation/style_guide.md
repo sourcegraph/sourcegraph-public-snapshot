@@ -182,26 +182,19 @@ below.
 
 ### Sourcegraph versions and tiers
 
-- Every piece of documentation that comes with a new feature should declare the
-  Sourcegraph version that the feature was introduced in. Right below the heading add a
-  blockquote:
+> NOTE: Every feature should link to the blog post, issue, or pull request (in that order) that introduced it.
 
-  ```md
-  > Introduced in Sourcegraph 8.3.
-  ```
+New features should be documented to include the Sourcegraph version in which they were introduced.
 
-- Whenever possible, every feature should have a link to the blog post, issue, or pull request
-  (in that order) that introduced it. The above quote would be then transformed to:
+```md
+> Introduced in Sourcegraph 8.3.
+```
 
-  ```md
-  > [Introduced](link) in Sourcegraph 2.10.
-  ```
+If the feature is only available in Sourcegraph Enterprise, mention that:
 
-- If the feature is only available in Sourcegraph Enterprise, mention that:
-
-  ```md
-  > [Introduced](link) in [Sourcegraph Enterprise](https://about.sourcegraph.com/pricing) 2.10.
-  ```
+```md
+> Introduced in Sourcegraph Enterprise 2.10.
+```
 
 <!-- TODO(sqs): Consider adding product tier badges. -->
 

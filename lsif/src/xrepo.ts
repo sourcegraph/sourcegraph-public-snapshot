@@ -13,17 +13,7 @@ import { TableInserter } from './inserter'
 import { discoverAndUpdateCommit } from './commits'
 import { TracingContext } from './tracing'
 import { dbFilename, tryDeleteFile } from './util'
-
-/**
- * The maximum number of commits to visit breadth-first style when when finding
- * the closest commit.
- */
-export const MAX_TRAVERSAL_LIMIT = 100
-
-/**
- * A random integer specific to the xrepo database used to generate advisory lock ids.
- */
-const ADVISORY_LOCK_ID_SALT = 1688730858
+import { MAX_TRAVERSAL_LIMIT, ADVISORY_LOCK_ID_SALT } from './constants'
 
 /**
  * The insertion metrics for the cross-repo database.

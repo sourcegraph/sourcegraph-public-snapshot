@@ -27,7 +27,7 @@ This URL will show the home dashboard and from there you can add, modify and del
 If you're using the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph),  
 you can access Grafana directly using Kubernetes port forwarding to your local machine:
 
-```shell script
+```bash script
 kubectl port-forward svc/grafana 3370:30070
 ``` 
 
@@ -38,14 +38,14 @@ an additional docker port is not recommended since the embedded Grafana runs in 
 the tools `sshuttle` and `socat` to create a secure connection. Log into your remote server using ssh 
 and run these commands: 
 
-```shell script
+```bash script
 docker exec -t XXX_CONTAINER_ID_XXXX apk add --no-cache socat
 socat tcp-listen:3370,reuseaddr,fork system:"docker exec -i 7298cae012eb socat stdio 'tcp:localhost:3370'"
 ```
 
 On your local machine start a `sshuttle` session to your remote server
 
-```shell script
+```bash script
 sshuttle -r xxx_user_xxx@sxxx_remote_server_xxx 0/0
 ```
 
@@ -53,7 +53,7 @@ sshuttle -r xxx_user_xxx@sxxx_remote_server_xxx 0/0
 
 If you are running Sourcegraph as single server behind a firewall you can add an additional publish flag for the Grafana port 3370:
 
-```shell script
+```bash script
 docker run --publish 7080:7080 --publish 2633:2633 --publish 3370:3370 \
   --rm --volume ~/.sourcegraph/config:/etc/sourcegraph \
   --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.9.3
@@ -79,7 +79,7 @@ The environment variable `PROMETHEUS_ADDITIONAL_FLAGS` can be used to pass on ad
 
 We are running our own image of Grafana which contains a standard Grafana installation packaged together with provisioned dashboards.
 
-> Note: Our Grafana instance runs in anonymous mode with all authentication turned off. Please be careful when exposing it directly.
+> NOTE: Our Grafana instance runs in anonymous mode with all authentication turned off. Please be careful when exposing it directly.
 
 A directory containing dashboard json specifications can be mounted in the docker container at
 `/sg_grafana_additional_dashboards` and they will be picked up automatically. Changes to files in that directory

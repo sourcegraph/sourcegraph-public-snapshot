@@ -95,6 +95,21 @@ func TestQueryToZoektQuery(t *testing.T) {
 			},
 			Query: `foo case:yes f:\.go$ f:\.yaml$ -f:\bvendor\b`,
 		},
+		{
+			Name: "path matches only",
+			Pattern: &search.PatternInfo{
+				IsRegExp:                     true,
+				IsCaseSensitive:              false,
+				Pattern:                      "test",
+				IncludePatterns:              []string{},
+				ExcludePattern:               ``,
+				PathPatternsAreRegExps:       true,
+				PathPatternsAreCaseSensitive: true,
+				PatternMatchesContent:        false,
+				PatternMatchesPath:           true,
+			},
+			Query: `f:test`,
+		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
@@ -736,9 +751,12 @@ func Test_zoektIndexedRepos(t *testing.T) {
 	makeIndexed := func(repos []*search.RepositoryRevisions) []*search.RepositoryRevisions {
 		var indexed []*search.RepositoryRevisions
 		for _, r := range repos {
-			rev := *r
+			rev := &search.RepositoryRevisions{
+				Repo: r.Repo,
+				Revs: r.Revs,
+			}
 			rev.SetIndexedHEADCommit("deadbeef")
-			indexed = append(indexed, &rev)
+			indexed = append(indexed, rev)
 		}
 		return indexed
 	}

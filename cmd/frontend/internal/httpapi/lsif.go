@@ -28,10 +28,17 @@ func lsifUploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, 
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
 		repoName := q.Get("repository")
+		commit := q.Get("commit")
 
-		_, err := backend.Repos.GetByName(r.Context(), api.RepoName(repoName))
+		repo, err := backend.Repos.GetByName(r.Context(), api.RepoName(repoName))
 		if err != nil {
 			http.Error(w, "Unknown repository.", http.StatusNotFound)
+			return
+		}
+
+		_, err = backend.Repos.ResolveRev(r.Context(), repo, commit)
+		if err != nil {
+			http.Error(w, "Unknown commit.", http.StatusNotFound)
 			return
 		}
 

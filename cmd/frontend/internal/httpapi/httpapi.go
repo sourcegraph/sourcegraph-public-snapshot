@@ -91,11 +91,13 @@ func NewInternalHandler(m *mux.Router, schema *graphql.Schema) http.Handler {
 	m.Get(apirouter.PhabricatorRepoCreate).Handler(trace.TraceRoute(handler(servePhabricatorRepoCreate)))
 	m.Get(apirouter.ReposCreateIfNotExists).Handler(trace.TraceRoute(handler(serveReposCreateIfNotExists)))
 	m.Get(apirouter.ReposUpdateMetadata).Handler(trace.TraceRoute(handler(serveReposUpdateMetadata)))
-	m.Get(apirouter.ReposList).Handler(trace.TraceRoute(handler((&reposListServer{
+	reposList := &reposListServer{
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 		Repos:                 backend.Repos,
 		Indexers:              search.Indexers(),
-	}).serve)))
+	}
+	m.Get(apirouter.ReposList).Handler(trace.TraceRoute(handler(reposList.serveList)))
+	m.Get(apirouter.ReposIndex).Handler(trace.TraceRoute(handler(reposList.serveIndex)))
 	m.Get(apirouter.ReposListEnabled).Handler(trace.TraceRoute(handler(serveReposListEnabled)))
 	m.Get(apirouter.ReposGetByName).Handler(trace.TraceRoute(handler(serveReposGetByName)))
 	m.Get(apirouter.SettingsGetForSubject).Handler(trace.TraceRoute(handler(serveSettingsGetForSubject)))

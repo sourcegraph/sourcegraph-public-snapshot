@@ -111,9 +111,9 @@ dev/phabricator/stop.sh
 
 #### Add repositories
 
-1. Click the link to [Diffusion](http://127.0.0.1/diffusion/)
+1. Click the link to [Diffusion](http://localhost/diffusion/)
 
-2. [Create a repository](http://127.0.0.1/diffusion/edit) and
+2. [Create a repository](http://localhost/diffusion/edit) and
     select git as the vcs
 
     Give the repository a name and a callsign with only

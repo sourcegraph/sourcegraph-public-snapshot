@@ -1788,24 +1788,13 @@ func scanCampaign(c *a8n.Campaign, s scanner) error {
 }
 
 func scanCampaignPlan(c *a8n.CampaignPlan, s scanner) error {
-	var arguments json.RawMessage
-
-	err := s.Scan(
+	return s.Scan(
 		&c.ID,
 		&c.CampaignType,
-		&arguments,
+		&c.Arguments,
 		&c.CreatedAt,
 		&c.UpdatedAt,
 	)
-	if err != nil {
-		return err
-	}
-
-	if err = json.Unmarshal(arguments, &c.Arguments); err != nil {
-		return errors.Wrap(err, "scanCampaignPlan: failed to unmarshal arguments")
-	}
-
-	return nil
 }
 
 func scanCampaignJob(c *a8n.CampaignJob, s scanner) error {

@@ -72,7 +72,7 @@ func (r *schemaResolver) SettingsMutation(ctx context.Context, args *struct {
 	}, nil
 }
 
-// DEPRECATED in the GraphQL API
+// Deprecated: in the GraphQL API
 func (r *schemaResolver) ConfigurationMutation(ctx context.Context, args *struct {
 	Input *settingsMutationGroupInput
 }) (*settingsMutation, error) {

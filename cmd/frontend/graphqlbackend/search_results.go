@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"path"
+	"reflect"
 	"regexp"
 	"sort"
 	"strconv"
@@ -88,6 +89,10 @@ func (c *searchResultsCommon) Timedout() []*RepositoryResolver {
 
 func (c *searchResultsCommon) IndexUnavailable() bool {
 	return c.indexUnavailable
+}
+
+func (c *searchResultsCommon) Equal(other *searchResultsCommon) bool {
+	return reflect.DeepEqual(c, other)
 }
 
 func RepositoryResolvers(repos types.Repos) []*RepositoryResolver {

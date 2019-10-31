@@ -253,7 +253,8 @@ func paginatedSearchFilesInRepos(ctx context.Context, args *search.Args, paginat
 		if err != nil {
 			return nil, nil, err
 		}
-		// fileCommon is sorted, but fileResults is not so we must sort it now.
+		// fileResults is not sorted so we must sort it now. fileCommon may or
+		// may not be sorted, but we do not rely on its order.
 		sort.Slice(fileResults, func(i, j int) bool {
 			return fileResults[i].uri < fileResults[j].uri
 		})
@@ -291,6 +292,8 @@ type repoPaginationPlan struct {
 	// larger than max.
 	searchBucketDivisor              int
 	searchBucketMin, searchBucketMax int
+
+	mockNumTotalRepos func() int
 }
 
 // executor is a function which searches a batch of repositories.
@@ -303,7 +306,13 @@ type executor func(batch []*search.RepositoryRevisions) ([]searchResultResolver,
 // returned.
 func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *searchCursor, results []searchResultResolver, common *searchResultsCommon, err error) {
 	// Determine how large the batches of repositories we will search over will be.
-	batchSize := clamp(numTotalRepos.get(ctx)/p.searchBucketDivisor, p.searchBucketMin, p.searchBucketMax)
+	var totalRepos int
+	if p.mockNumTotalRepos != nil {
+		totalRepos = p.mockNumTotalRepos()
+	} else {
+		totalRepos = numTotalRepos.get(ctx)
+	}
+	batchSize := clamp(totalRepos/p.searchBucketDivisor, p.searchBucketMin, p.searchBucketMax)
 
 	// Determine where in the repositories list we will begin searching.
 	var (
@@ -328,7 +337,7 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 			break
 		}
 
-		batch := repos[start:clamp(start+batchSize, 0, len(repos)-1)]
+		batch := repos[start:clamp(start+batchSize, 0, len(repos))]
 		batchResults, batchCommon, err := exec(batch)
 		if err != nil {
 			return nil, nil, nil, err
@@ -408,6 +417,7 @@ func sliceSearchResults(results []searchResultResolver, common *searchResultsCom
 		return
 	}
 	final.limitHit = true
+	originalResults := results
 	results = results[offset:]
 
 	// Break results into repositories because for each result we need to add
@@ -434,7 +444,7 @@ func sliceSearchResults(results []searchResultResolver, common *searchResultsCom
 	// request should use a Cursor.ResultOffset == 2 to indicate we should
 	// resume fetching results starting at b3.
 	lastResultRepo, _ := results[len(results)-1].searchResultURIs()
-	for _, r := range results[:limit] {
+	for _, r := range originalResults[:offset+limit] {
 		repo, _ := r.searchResultURIs()
 		if repo != lastResultRepo {
 			final.resultOffset = 0

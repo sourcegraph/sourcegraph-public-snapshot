@@ -1,6 +1,7 @@
 package search
 
 import (
+	"reflect"
 	"strings"
 	"sync"
 
@@ -62,6 +63,10 @@ type RepositoryRevisions struct {
 	// rationale.
 	mu                sync.Mutex
 	indexedHEADCommit api.CommitID
+}
+
+func (r *RepositoryRevisions) Equal(other *RepositoryRevisions) bool {
+	return reflect.DeepEqual(r.Repo, other.Repo) && reflect.DeepEqual(r.Revs, other.Revs)
 }
 
 func (r *RepositoryRevisions) IndexedHEADCommit() api.CommitID {

@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -83,7 +82,7 @@ func healthCheckMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/healthz", "/__version":
-			fmt.Fprintf(w, version.Version())
+			_, _ = w.Write([]byte(version.Version()))
 		default:
 			next.ServeHTTP(w, r)
 		}
