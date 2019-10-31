@@ -41,11 +41,11 @@ func (r *lsifJobStatsResolver) ID() graphql.ID {
 	return marshalLSIFJobStatsGQLID(singletonLSIFJobStatsGQLID)
 }
 
-func (r *lsifJobStatsResolver) Active() int32    { return r.stats.Active }
-func (r *lsifJobStatsResolver) Queued() int32    { return r.stats.Queued }
-func (r *lsifJobStatsResolver) Scheduled() int32 { return r.stats.Scheduled }
-func (r *lsifJobStatsResolver) Completed() int32 { return r.stats.Completed }
-func (r *lsifJobStatsResolver) Failed() int32    { return r.stats.Failed }
+func (r *lsifJobStatsResolver) ProcessingCount() int32 { return r.stats.Active }
+func (r *lsifJobStatsResolver) ErroredCount() int32    { return r.stats.Failed }
+func (r *lsifJobStatsResolver) CompletedCount() int32  { return r.stats.Completed }
+func (r *lsifJobStatsResolver) QueuedCount() int32     { return r.stats.Queued }
+func (r *lsifJobStatsResolver) ScheduledCount() int32  { return r.stats.Scheduled }
 
 func marshalLSIFJobStatsGQLID(lsifJobStatsID string) graphql.ID {
 	return relay.MarshalID("LSIFJobStats", lsifJobStatsID)

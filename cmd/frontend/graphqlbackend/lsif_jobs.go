@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
-	"strings"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -15,7 +14,7 @@ import (
 )
 
 type LSIFJobsListOptions struct {
-	Status  string
+	State   string
 	Query   *string
 	Limit   *int32
 	NextURL *string
@@ -30,13 +29,13 @@ type LSIFJobsListOptions struct {
 
 func (r *schemaResolver) LSIFJobs(args *struct {
 	graphqlutil.ConnectionArgs
-	Status string
-	Query  *string
-	After  *string
+	State string
+	Query *string
+	After *string
 }) (*lsifJobConnectionResolver, error) {
 	opt := LSIFJobsListOptions{
-		Status: args.Status,
-		Query:  args.Query,
+		State: args.State,
+		Query: args.Query,
 	}
 	if args.First != nil {
 		opt.Limit = args.First
@@ -69,7 +68,7 @@ func (r *lsifJobConnectionResolver) compute(ctx context.Context) ([]*types.LSIFJ
 		var path string
 		if r.opt.NextURL == nil {
 			// first page of results
-			path = fmt.Sprintf("/jobs/%s", strings.ToLower(r.opt.Status))
+			path = fmt.Sprintf("/jobs/%s", jobStatusByState[r.opt.State])
 		} else {
 			// subsequent page of results
 			path = *r.opt.NextURL

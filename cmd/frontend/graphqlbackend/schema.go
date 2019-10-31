@@ -1287,16 +1287,16 @@ type Query {
         after: String
     ): LSIFDumpConnection!
 
-    # Retrieve counts of jobs by status in the LSIF work queue.
+    # Retrieve counts of jobs by state in the LSIF work queue.
     lsifJobStats: LSIFJobStats!
 
     # Look up an LSIF job by ID.
     lsifJob(id: ID!): LSIFJob
 
-    # Search for LSIF jobs by status and query term.
+    # Search for LSIF jobs by state and query term.
     lsifJobs(
-        # The status of returned jobs.
-        status: LSIFJobStatus!
+        # The state of returned jobs.
+        state: LSIFJobState!
 
         # An (optional) search query that searches over the job name, failure
         # properties (reason and stacktrace) and the job's arguments.
@@ -3948,43 +3948,43 @@ type LSIFDumpConnection {
     pageInfo: PageInfo!
 }
 
-# Counts of LISF jobs by status.
+# The state an LSIF job can be in.
+enum LSIFJobState {
+    # The LSIF worker is processing this job.
+    PROCESSING
+
+    # The LSIF worker failed to process this job.
+    ERRORED
+
+    # The LSIF worker processed this job successfully.
+    COMPLETED
+
+    # This job is queued to be processed later.
+    QUEUED
+
+    # This job is scheduled to be queued at a specific time.
+    SCHEDULED
+}
+
+# Counts of LISF jobs by state.
 type LSIFJobStats implements Node {
     # An opaque GraphQL ID.
     id: ID!
 
-    # The number of active jobs.
-    active: Int!
+    # How many jobs are currently being processed.
+    processingCount: Int!
 
-    # The number of queued jobs.
-    queued: Int!
+    # How many jobs have errored.
+    erroredCount: Int!
 
-    # The number of scheduled jobs.
-    scheduled: Int!
+    # How many jobs have completed.
+    completedCount: Int!
 
-    # The number of completed jobs.
-    completed: Int!
+    # How many jobs are queued.
+    queuedCount: Int!
 
-    # The number of failed jobs.
-    failed: Int!
-}
-
-# An LSIF job's status.
-enum LSIFJobStatus {
-    # The job is currently being processed.
-    ACTIVE
-
-    # The job will be processed later.
-    QUEUED
-
-    # The job is recurring and is not currently queued, but will be in the future.
-    SCHEDULED
-
-    # The job has completed succesfully.
-    COMPLETED
-
-    # The job has failed due to an exception.
-    FAILED
+    # How many jobs are scheduled.
+    scheduledCount: Int!
 }
 
 # A queued, active, or completed LSIF job.
@@ -3998,8 +3998,8 @@ type LSIFJob implements Node {
     # The job's arguments.
     args: JSONValue!
 
-    # The job's current status.
-    status: LSIFJobStatus!
+    # The job's current state.
+    state: LSIFJobState!
 
     # The current job progress (0 to 100).
     progress: Float!
@@ -4025,7 +4025,7 @@ type LSIFJobConnection {
     # A list of LSIF jobs.
     nodes: [LSIFJob!]!
 
-    # The total number of jobs with this status.
+    # The total number of jobs in this result set.
     totalCount: Int!
 
     # Pagination information.
