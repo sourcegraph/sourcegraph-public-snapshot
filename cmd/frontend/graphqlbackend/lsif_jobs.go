@@ -75,8 +75,6 @@ func (r *lsifJobConnectionResolver) compute(ctx context.Context) ([]*types.LSIFJ
 			path = *r.opt.NextURL
 		}
 
-		fmt.Printf("> %#v\n", path)
-
 		query := url.Values{}
 		if r.opt.Query != nil {
 			query.Set("query", *r.opt.Query)
