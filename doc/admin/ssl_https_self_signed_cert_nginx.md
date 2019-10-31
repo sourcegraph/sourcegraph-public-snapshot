@@ -25,7 +25,7 @@ To set up mkcert on the Sourcegraph instance:
 1. [Install mkcert](https://github.com/FiloSottile/mkcert#installation)
 1. Create the root [CA](https://en.wikipedia.org/wiki/Certificate_authority) by running:
 
-```shell
+```bash
 sudo CAROOT=~/.sourcegraph/config mkcert -install
 ```
 
@@ -33,7 +33,7 @@ sudo CAROOT=~/.sourcegraph/config mkcert -install
 
 Now that the root CA has been created, mkcert can issue a self-signed certificate (`sourcegraph.crt`) and key (`sourcegraph.key`).
 
-```shell
+```bash
 sudo CAROOT=~/.sourcegraph/config mkcert \
   -cert-file ~/.sourcegraph/config/sourcegraph.crt \
   -key-file ~/.sourcegraph/config/sourcegraph.key \
@@ -77,7 +77,7 @@ http {
 
 Now that NGINX is listening on port 443, we need the Sourcegraph container to listen on port 443 by adding `--publish 443:7080` to the `docker run` command:
 
-```shell
+```bash
 docker container run \
   --rm  \
   --publish 7080:7080 \
@@ -103,24 +103,24 @@ To have the browser trust the certificate, the root CA on the Sourcegraph instan
 
 **2.** Downloading `rootCA-key.pem` and `rootCA.pem` from `~/.sourcegraph/config/mkcert` on the Sourcegraph instance to the location of `mkcert -CAROOT` on your local machine:
 
-```shell
+```bash
 # Run locally: Ensure directory the root CA files will be downloaded to exists
 mkdir -p "$(mkcert -CAROOT)"
 ```
 
-```shell
+```bash
 # Run on Sourcegraph host: Ensure `scp` user can read (and therefore download) the root CA files
 sudo chown $USER ~/.sourcegraph/config/root*
 ```
 
-```shell
+```bash
 # Run locally: Download the files (change username and hostname)
 scp user@example.com:~/.sourcegraph/config/root* "$(mkcert -CAROOT)"
 ```
 
 **3.** Install the root CA by running:
 
-```shell
+```bash
 mkcert -install
 ```
 

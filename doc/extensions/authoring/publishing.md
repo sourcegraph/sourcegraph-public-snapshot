@@ -9,7 +9,7 @@ When [setting up your development environment](development_environment.md), you'
 
 Now publish your extension by running:
 
-```shell
+```bash
 src extensions publish
 ```
 

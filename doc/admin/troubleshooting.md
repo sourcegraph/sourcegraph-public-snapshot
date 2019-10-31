@@ -4,7 +4,7 @@
 
 If you are using Docker Toolbox on Windows to run Sourcegraph, you may see an error in the `frontend` log output:
 
-```shell
+```bash
 frontend |
      frontend |
      frontend |
@@ -15,7 +15,7 @@ After this error, no more `frontend` log output is printed.
 
 This problem is caused by [docker/toolbox#695](https://github.com/docker/toolbox/issues/695#issuecomment-356218801) in Docker Toolbox on Windows. To work around it, set the environment variable `LOGO=false`, as in:
 
-```shell
+```bash
 docker container run -e LOGO=false ... sourcegraph/server
 ```
 

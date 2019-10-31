@@ -43,3 +43,5 @@ or follow the [IANA specification for Redis URLs](https://www.iana.org/assignmen
 <pre class="pre-wrap"><code>docker run [...]<span class="virtual-br"></span>   -e REDIS_ENDPOINT=redis.mycompany.org:6379<span class="virtual-br"></span>   sourcegraph/server:3.9.3</code></pre>
 
 > NOTE: On Mac/Windows, if trying to connect to a Redis server on the same host machine, remember that Sourcegraph is running inside a Docker container inside of the Docker virtual machine. You may need to specify your actual machine IP address and not `localhost` or `127.0.0.1` as that refers to the Docker VM itself.
+
+If using Docker for Desktop, `host.docker.internal` will resolve to the host IP address.

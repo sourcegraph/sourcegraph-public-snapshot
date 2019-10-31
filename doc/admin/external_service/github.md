@@ -45,7 +45,7 @@ GitHub's per-user repository permissions, see "[Repository permissions](../repo/
 ## User authentication
 
 To configure GitHub as an authentication provider (which will enable sign-in via GitHub), see the
-[authentication documentation](../auth.md#github).
+[authentication documentation](../auth/index.md#github).
 
 ## Webhooks
 
