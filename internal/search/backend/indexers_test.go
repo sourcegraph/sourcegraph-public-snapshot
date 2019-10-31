@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -9,13 +10,25 @@ import (
 )
 
 func TestReposSubset(t *testing.T) {
+	var indexed map[string][]string
 	index := &Indexers{
 		Map: prefixMap([]string{"foo", "bar", "baz.fully.qualified:80"}),
+		Indexed: func(ctx context.Context, k string) map[string]struct{} {
+			set := map[string]struct{}{}
+			if indexed == nil {
+				return set
+			}
+			for _, s := range indexed[k] {
+				set[s] = struct{}{}
+			}
+			return set
+		},
 	}
 
 	cases := []struct {
 		name     string
 		hostname string
+		indexed  map[string][]string
 		repos    []string
 		want     []string
 		errS     string
@@ -48,11 +61,21 @@ func TestReposSubset(t *testing.T) {
 		hostname: "baz",
 		repos:    []string{"baz.fully.qualified:80-1", "baz.fully.qualified:80-2", "foo-1"},
 		want:     []string{"baz.fully.qualified:80-1", "baz.fully.qualified:80-2"},
+	}, {
+		name:     "drop",
+		hostname: "foo",
+		indexed: map[string][]string{
+			"foo": {"foo-1", "foo-drop", "bar-drop", "bar-keep"},
+			"bar": {"foo-1", "bar-drop"},
+		},
+		repos: []string{"foo-1", "foo-2", "foo-3", "bar-drop", "bar-keep"},
+		want:  []string{"foo-1", "foo-2", "foo-3", "bar-keep"},
 	}}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := index.ReposSubset(tc.hostname, tc.repos)
+			indexed = tc.indexed
+			got, err := index.ReposSubset(context.Background(), tc.hostname, tc.repos)
 			if tc.errS != "" {
 				got := fmt.Sprintf("%v", err)
 				if !strings.Contains(got, tc.errS) {

@@ -210,7 +210,7 @@ type reposListServer struct {
 	Indexers interface {
 		// ReposSubset returns the subset of repoNames that hostname should
 		// index.
-		ReposSubset(hostname string, repoNames []string) ([]string, error)
+		ReposSubset(ctx context.Context, hostname string, repoNames []string) ([]string, error)
 		// Enabled is true if horizontal indexed search is enabled.
 		Enabled() bool
 	}
@@ -248,7 +248,7 @@ func (h *reposListServer) serve(w http.ResponseWriter, r *http.Request) error {
 
 	if h.Indexers.Enabled() {
 		var err error
-		names, err = h.Indexers.ReposSubset(opt.Hostname, names)
+		names, err = h.Indexers.ReposSubset(r.Context(), opt.Hostname, names)
 		if err != nil {
 			return err
 		}

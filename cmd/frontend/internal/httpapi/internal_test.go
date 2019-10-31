@@ -151,7 +151,7 @@ func (r *mockRepos) List(ctx context.Context, opt db.ReposListOptions) ([]*types
 // the suffix of hostname.
 type suffixIndexers bool
 
-func (b suffixIndexers) ReposSubset(hostname string, repoNames []string) ([]string, error) {
+func (b suffixIndexers) ReposSubset(ctx context.Context, hostname string, repoNames []string) ([]string, error) {
 	if !b.Enabled() {
 		return nil, errors.New("indexers disabled")
 	}

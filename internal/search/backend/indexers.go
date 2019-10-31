@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -18,7 +19,12 @@ type EndpointMap interface {
 // Indexers provides methods over the set of indexed-search servers in a
 // Sourcegraph cluster.
 type Indexers struct {
+	// Map is the desired mapping from repository names to endpoints.
 	Map EndpointMap
+
+	// Indexed returns a set of repository names currently indexed on
+	// endpoint. If indexed fails, it is expected to return an empty set.
+	Indexed func(ctx context.Context, endpoint string) map[string]struct{}
 }
 
 // ReposSubset returns the subset of repoNames that hostname should index.
@@ -26,7 +32,7 @@ type Indexers struct {
 // ReposSubset reuses the underlying array of repoNames.
 //
 // An error is returned if hostname is not part of the Indexers endpoints.
-func (c *Indexers) ReposSubset(hostname string, repoNames []string) ([]string, error) {
+func (c *Indexers) ReposSubset(ctx context.Context, hostname string, repoNames []string) ([]string, error) {
 	if !c.Enabled() {
 		return repoNames, nil
 	}
@@ -46,10 +52,31 @@ func (c *Indexers) ReposSubset(hostname string, repoNames []string) ([]string, e
 		return nil, err
 	}
 
+	// Rebalancing: Get the currently indexed repositories so we can populate
+	// other. Other contains all repositories endpoint has indexed which it
+	// should drop. We will only drop them if the assigned endpoint has
+	// indexed it. This is to prevent dropping a computed index until
+	// rebalancing is finished.
+	indexed := c.Indexed(ctx, endpoint)
+	other := map[string][]string{}
+
 	subset := repoNames[:0]
 	for i, name := range repoNames {
 		if assigned[i] == endpoint {
 			subset = append(subset, name)
+		} else if _, ok := indexed[name]; ok {
+			other[assigned[i]] = append(other[assigned[i]], name)
+		}
+	}
+
+	// Only include repos from other if the assigned endpoint has not yet
+	// indexed the repository.
+	for assignedEndpoint, repoNames := range other {
+		drop := c.Indexed(ctx, assignedEndpoint)
+		for _, name := range repoNames {
+			if _, ok := drop[name]; !ok {
+				subset = append(subset, name)
+			}
 		}
 	}
 
