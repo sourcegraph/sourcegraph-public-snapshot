@@ -6,8 +6,7 @@ cmd="${1:-}"
 replica="${2:-0}"
 index="$HOME/.sourcegraph/zoekt/index-$replica"
 
-if (( replica != 0 )) && [[ -z "${DEV_SEARCH_SHARDING-}" ]]; then
-    echo "set DEV_SEARCH_SHARDING=t to enable horizontal indexed search"
+if (( replica != 0 )) && [[ -n "${DISABLE_SEARCH_SHARDING-}" ]]; then
     exit 0
 fi
 
