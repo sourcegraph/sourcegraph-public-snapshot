@@ -205,8 +205,36 @@ func (r *campaignResolver) RepositoryDiffs(
 	ctx context.Context,
 	args *graphqlutil.ConnectionArgs,
 ) (graphqlbackend.RepositoryComparisonConnectionResolver, error) {
-	// TODO(a8n): implement this
-	return nil, nil
+	changesetsConnection := &changesetsConnectionResolver{
+		store: r.store,
+		opts: ee.ListChangesetsOpts{
+			CampaignID: r.Campaign.ID,
+			Limit:      int(args.GetFirst()),
+		},
+	}
+	return &changesetDiffsConnectionResolver{changesetsConnection}, nil
+}
+
+type changesetDiffsConnectionResolver struct {
+	*changesetsConnectionResolver
+}
+
+func (r *changesetDiffsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.RepositoryComparison, error) {
+	changesets, err := r.changesetsConnectionResolver.Nodes(ctx)
+	if err != nil {
+		return nil, err
+	}
+	resolvers := make([]graphqlbackend.RepositoryComparison, 0, len(changesets))
+	for _, c := range changesets {
+		comp, err := c.Diff(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if comp != nil {
+			resolvers = append(resolvers, comp)
+		}
+	}
+	return resolvers, nil
 }
 
 func (r *campaignResolver) ChangesetCreationStatus() graphqlbackend.BackgroundProcessStatus {
