@@ -122,9 +122,9 @@ describe('discoverAndUpdateTips', () => {
                 ctx: {},
             })
 
-            expect((await xrepoDatabase.getDump('test-repo', ca, 'foo/test.ts'))!.visible_at_tip).toBeFalsy()
-            expect((await xrepoDatabase.getDump('test-repo', cb, 'foo/test.ts'))!.visible_at_tip).toBeTruthy()
-            expect((await xrepoDatabase.getDump('test-repo', cc, 'bar/test.ts'))!.visible_at_tip).toBeTruthy()
+            expect((await xrepoDatabase.getDump('test-repo', ca, 'foo/test.ts'))!.visibleAtTip).toBeFalsy()
+            expect((await xrepoDatabase.getDump('test-repo', cb, 'foo/test.ts'))!.visibleAtTip).toBeTruthy()
+            expect((await xrepoDatabase.getDump('test-repo', cc, 'bar/test.ts'))!.visibleAtTip).toBeTruthy()
         } finally {
             await cleanup()
         }

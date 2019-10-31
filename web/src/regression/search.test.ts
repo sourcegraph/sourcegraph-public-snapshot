@@ -4,7 +4,7 @@
 
 import { Driver } from '../../../shared/src/e2e/driver'
 import { getConfig } from '../../../shared/src/e2e/config'
-import { getTestFixtures } from './util/init'
+import { getTestTools } from './util/init'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { GraphQLClient } from './util/GraphQLClient'
 import { ensureTestExternalService } from './util/api'
@@ -152,7 +152,7 @@ describe('Search regression test suite', () => {
         let resourceManager: TestResourceManager
         beforeAll(
             async () => {
-                ;({ driver, gqlClient, resourceManager } = await getTestFixtures(config))
+                ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
                 resourceManager.add(
                     'User',
                     testUsername,

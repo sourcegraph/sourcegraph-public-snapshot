@@ -384,6 +384,39 @@ func (c *Client) LoadPullRequest(ctx context.Context, pr *PullRequest) error {
 	return c.send(ctx, "GET", path, nil, nil, pr)
 }
 
+// LoadPullRequestActivities loads the given PullRequest's timeline of activities,
+// returning an error in case of failure.
+func (c *Client) LoadPullRequestActivities(ctx context.Context, pr *PullRequest) (err error) {
+	if pr.ToRef.Repository.Slug == "" {
+		return errors.New("repository slug empty")
+	}
+
+	if pr.ToRef.Repository.Project.Key == "" {
+		return errors.New("project key empty")
+	}
+
+	path := fmt.Sprintf(
+		"rest/api/1.0/projects/%s/repos/%s/pull-requests/%d/activities",
+		pr.ToRef.Repository.Project.Key,
+		pr.ToRef.Repository.Slug,
+		pr.ID,
+	)
+
+	t := &PageToken{Limit: 1000}
+
+	var activities []Activity
+	for t.HasMore() {
+		var page []Activity
+		if t, err = c.page(ctx, path, nil, t, &page); err != nil {
+			return err
+		}
+		activities = append(activities, page...)
+	}
+
+	pr.Activities = activities
+	return nil
+}
+
 func (c *Client) Repo(ctx context.Context, projectKey, repoSlug string) (*Repo, error) {
 	u := fmt.Sprintf("rest/api/1.0/projects/%s/repos/%s", projectKey, repoSlug)
 	req, err := http.NewRequest("GET", u, nil)
@@ -779,6 +812,98 @@ type PullRequest struct {
 			Href string `json:"href"`
 		} `json:"self"`
 	} `json:"links"`
+
+	Activities []Activity `json:"activities,omitempty"`
+}
+
+// Activity is a union type of all supported pull request activity items.
+type Activity struct {
+	ID          int            `json:"id"`
+	CreatedDate int            `json:"createdDate"`
+	User        User           `json:"user"`
+	Action      ActivityAction `json:"action"`
+
+	// Comment activity fields.
+	CommentAction string         `json:"commentAction,omitempty"`
+	Comment       *Comment       `json:"comment,omitempty"`
+	CommentAnchor *CommentAnchor `json:"commentAnchor,omitempty"`
+
+	// Reviewers change fields.
+	AddedReviewers   []User `json:"addedReviewers,omitempty"`
+	RemovedReviewers []User `json:"removedReviewers,omitempty"`
+
+	// Merged event fields.
+	Commit *Commit `json:"commit,omitempty"`
+}
+
+// ActivityAction defines the action taken in an Activity.
+type ActivityAction string
+
+// Known ActivityActions
+const (
+	ApprovedActivityAction   ActivityAction = "APPROVED"
+	UnapprovedActivityAction ActivityAction = "UNAPPROVED"
+	DeclinedActivityAction   ActivityAction = "DECLINED"
+	ReviewedActivityAction   ActivityAction = "REVIEWED"
+	OpenedActivityAction     ActivityAction = "OPENED"
+	RepenedActivityAction    ActivityAction = "REOPENED"
+	UpdatedActivityAction    ActivityAction = "UPDATED"
+	CommentedActivityAction  ActivityAction = "COMMENTED"
+	MergedActivityAction     ActivityAction = "MERGED"
+)
+
+// A Comment in a PullRequest.
+type Comment struct {
+	ID                  int                 `json:"id"`
+	Version             int                 `json:"version"`
+	Text                string              `json:"text"`
+	Author              User                `json:"author"`
+	CreatedDate         int                 `json:"createdDate"`
+	UpdatedDate         int                 `json:"updatedDate"`
+	Comments            []Comment           `json:"comments"` // Replies to the comment
+	Tasks               []Task              `json:"tasks"`
+	PermittedOperations PermittedOperations `json:"permittedOperations"`
+}
+
+// A CommentAnchor captures the location of a code comment in a PullRequest.
+type CommentAnchor struct {
+	FromHash string `json:"fromHash"`
+	ToHash   string `json:"toHash"`
+	Line     int    `json:"line"`
+	LineType string `json:"lineType"`
+	FileType string `json:"fileType"`
+	Path     string `json:"path"`
+	DiffType string `json:"diffType"`
+	Orphaned bool   `json:"orphaned"`
+}
+
+// A Task in a PullRequest.
+type Task struct {
+	ID                  int                 `json:"id"`
+	Author              User                `json:"author"`
+	Text                string              `json:"text"`
+	State               string              `json:"state"`
+	CreatedDate         int                 `json:"createdDate"`
+	PermittedOperations PermittedOperations `json:"permittedOperations"`
+}
+
+// PermittedOperations of a Comment or Task.
+type PermittedOperations struct {
+	Editable       bool `json:"editable,omitempty"`
+	Deletable      bool `json:"deletable,omitempty"`
+	Transitionable bool `json:"transitionable,omitempty"`
+}
+
+// A Commit in a Repository.
+type Commit struct {
+	ID                 string   `json:"id,omitempty"`
+	DisplayID          string   `json:"displayId,omitempty"`
+	Author             *User    `json:"user,omitempty"`
+	AuthorTimestamp    int64    `json:"authorTimestamp,omitempty"`
+	Committer          *User    `json:"committer,omitempty"`
+	CommitterTimestamp int64    `json:"committerTimestamp,omitempty"`
+	Message            string   `json:"message,omitempty"`
+	Parents            []Commit `json:"parents,omitempty"`
 }
 
 // IsNotFound reports whether err is a Bitbucket Server API not found error.

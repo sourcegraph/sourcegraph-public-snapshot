@@ -73,6 +73,8 @@ type PullRequest struct {
 	Body          string
 	State         string
 	URL           string
+	HeadRefOid    string
+	BaseRefOid    string
 	Number        int64
 	Author        Actor
 	Participants  []Actor
@@ -390,6 +392,7 @@ func (c *Client) LoadPullRequests(ctx context.Context, prs ...*PullRequest) erro
     }
     fragment pr on PullRequest {
       id, title, body, state, url, number, createdAt, updatedAt
+	  headRefOid, baseRefOid
       author { ...actor }
       participants(first: 100) { nodes { ...actor } }
       timelineItems(

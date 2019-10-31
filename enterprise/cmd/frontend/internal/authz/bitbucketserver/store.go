@@ -375,7 +375,7 @@ WHERE user_id = %s AND permission = %s AND object_type = %s
 `
 
 func (s *store) update(ctx context.Context, p *Permissions, update PermissionsUpdateFunc) (err error) {
-	ctx, save := s.observe(ctx, "update", "")
+	_, save := s.observe(ctx, "update", "")
 	defer func() { save(&err, p.tracingFields()...) }()
 
 	// Set context to background without a request bound timeout,

@@ -447,7 +447,7 @@ function dumpEndpoints(backend: Backend, logger: Logger, tracer: Tracer | undefi
                 const { repository } = req.params
                 const { query } = req.query
                 const { limit, offset } = limitOffset(req, DEFAULT_DUMP_PAGE_SIZE)
-                const { dumps, totalCount } = await backend.dumps(repository, query, limit, offset)
+                const { dumps, totalCount } = await backend.dumps(decodeURIComponent(repository), query, limit, offset)
 
                 if (offset + dumps.length < totalCount) {
                     res.set('Link', nextLink(req, { limit, offset: offset + dumps.length }))
@@ -464,7 +464,7 @@ function dumpEndpoints(backend: Backend, logger: Logger, tracer: Tracer | undefi
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { repository, id } = req.params
                 const dump = await backend.dump(parseInt(id, 10))
-                if (!dump || dump.repository !== repository) {
+                if (!dump || dump.repository !== decodeURIComponent(repository)) {
                     throw Object.assign(new Error('LSIF dump not found'), { status: 404 })
                 }
 

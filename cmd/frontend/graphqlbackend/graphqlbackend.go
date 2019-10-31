@@ -177,6 +177,11 @@ func (r *NodeResolver) ToSite() (*siteResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToLSIFDump() (*lsifDumpResolver, bool) {
+	n, ok := r.Node.(*lsifDumpResolver)
+	return n, ok
+}
+
 // schemaResolver handles all GraphQL queries for Sourcegraph.  To do this, it
 // uses subresolvers, some of which are globals and some of which are fields on
 // schemaResolver.
@@ -252,6 +257,8 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return savedSearchByID(ctx, id)
 	case "Site":
 		return siteByGQLID(ctx, id)
+	case "LSIFDump":
+		return lsifDumpByGQLID(ctx, id)
 	default:
 		return nil, errors.New("invalid id")
 	}

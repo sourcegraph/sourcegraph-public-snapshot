@@ -439,7 +439,7 @@ export class XrepoDatabase {
                 .getRepository(LsifDump)
                 .createQueryBuilder()
                 .select()
-                .where({ visible_at_tip: false })
+                .where({ visibleAtTip: false })
                 .orderBy('uploaded_at')
                 .getOne()
         )
@@ -480,7 +480,7 @@ export class XrepoDatabase {
                 .getRepository(LsifDump)
                 .createQueryBuilder()
                 .select()
-                .where({ repository, visible_at_tip: true })
+                .where({ repository, visibleAtTip: true })
                 .getMany()
         )
     }
