@@ -28,6 +28,7 @@ import { GlobalDebug } from '../../shared/components/GlobalDebug'
 import { ShortcutProvider } from '../../shared/components/ShortcutProvider'
 import { CodeHost } from './code_intelligence'
 import { DOMFunctions } from './code_views'
+import { ISettingsCascade } from '../../../../shared/src/graphql/schema'
 
 /**
  * Initializes extensions for a page. It creates the {@link PlatformContext} and extensions controller.
@@ -36,9 +37,10 @@ import { DOMFunctions } from './code_views'
 export function initializeExtensions(
     { urlToFile, getContext }: Pick<CodeHost, 'urlToFile' | 'getContext'>,
     urls: SourcegraphIntegrationURLs,
+    initialSettings: Pick<ISettingsCascade, 'subjects' | 'final'>,
     isExtension: boolean
 ): PlatformContextProps & ExtensionsControllerProps {
-    const platformContext = createPlatformContext({ urlToFile, getContext }, urls, isExtension)
+    const platformContext = createPlatformContext({ urlToFile, getContext }, urls, initialSettings, isExtension)
     const extensionsController = createExtensionsController(platformContext)
     return { platformContext, extensionsController }
 }

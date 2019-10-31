@@ -1,7 +1,7 @@
-import { combineLatest, merge, Observable, ReplaySubject } from 'rxjs'
+import { combineLatest, merge, Observable, ReplaySubject, of } from 'rxjs'
 import { map, publishReplay, refCount, switchMap, take } from 'rxjs/operators'
 import { PrivateRepoPublicSourcegraphComError } from '../../../shared/src/backend/errors'
-import { GraphQLResult, requestGraphQL as requestGraphQLCommon } from '../../../shared/src/graphql/graphql'
+import { GraphQLResult } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../shared/src/platform/context'
 import { mutateSettings, updateSettings } from '../../../shared/src/settings/edit'
@@ -39,6 +39,7 @@ export interface SourcegraphIntegrationURLs {
 export function createPlatformContext(
     { urlToFile, getContext }: Pick<CodeHost, 'urlToFile' | 'getContext'>,
     { sourcegraphURL, assetsURL }: SourcegraphIntegrationURLs,
+    initialSettings: Pick<GQL.ISettingsCascade, 'subjects' | 'final'>,
     isExtension: boolean
 ): PlatformContext {
     const updatedViewerSettings = new ReplaySubject<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>>(1)
@@ -76,7 +77,7 @@ export function createPlatformContext(
          *   the UX).
          */
         settings: combineLatest([
-            merge(fetchViewerSettings(requestGraphQL), updatedViewerSettings).pipe(
+            merge(of(initialSettings), updatedViewerSettings).pipe(
                 publishReplay(1),
                 refCount()
             ),

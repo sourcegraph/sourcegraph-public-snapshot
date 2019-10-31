@@ -43,4 +43,4 @@ async function init(): Promise<void> {
     await injectCodeIntelligence({ sourcegraphURL, assetsURL }, IS_EXTENSION)
 }
 
-init()
+init().catch(console.error.bind(console))
