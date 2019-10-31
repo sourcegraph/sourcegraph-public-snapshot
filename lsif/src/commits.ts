@@ -1,20 +1,9 @@
 import got from 'got'
-import { XrepoDatabase, MAX_TRAVERSAL_LIMIT } from './xrepo'
+import { XrepoDatabase } from './xrepo'
 import * as crypto from 'crypto'
 import { TracingContext, logAndTraceCall } from './tracing'
 import { chunk } from 'lodash'
-
-/**
- * The number of commits to ask gitserver for when updating commit data for
- * a particular repository. This should be just slightly above the max traversal
- * limit.
- */
-const MAX_COMMITS_PER_UPDATE = MAX_TRAVERSAL_LIMIT * 1.5
-
-/**
- * The maximum number of requests we can make to gitserver in a single batch.
- */
-const MAX_CONCURRENT_GITSERVER_REQUESTS = 100
+import { MAX_CONCURRENT_GITSERVER_REQUESTS, MAX_COMMITS_PER_UPDATE } from './constants'
 
 /**
  * Update the commits tables in the cross-repository database with the current
