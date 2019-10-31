@@ -20,7 +20,7 @@ Fundamentally, the process is entirely manual today. It's up to the member of th
 
 What are we going to change to make sure customers get the correct license keys at the correct time?
 
-A few things. These changes all have the goal of making the process less manual/artisinal/custom.
+A few things. These changes all have the goal of making the process less manual/artisanal/custom.
 
 1. Dan will add code that creates a dismissable site alert for admins starting 7 days out from license expiration.
 1. Dan will add a page (or add functionality to an existing page) that shows licenses in ascending order by expiration date on Sourcegraph.com, so we can see which ones will be expiring soon.
