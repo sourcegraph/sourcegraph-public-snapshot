@@ -95,6 +95,21 @@ func TestQueryToZoektQuery(t *testing.T) {
 			},
 			Query: `foo case:yes f:\.go$ f:\.yaml$ -f:\bvendor\b`,
 		},
+		{
+			Name: "path matches only",
+			Pattern: &search.PatternInfo{
+				IsRegExp:                     true,
+				IsCaseSensitive:              false,
+				Pattern:                      "test",
+				IncludePatterns:              []string{},
+				ExcludePattern:               ``,
+				PathPatternsAreRegExps:       true,
+				PathPatternsAreCaseSensitive: true,
+				PatternMatchesContent:        false,
+				PatternMatchesPath:           true,
+			},
+			Query: `f:test`,
+		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
