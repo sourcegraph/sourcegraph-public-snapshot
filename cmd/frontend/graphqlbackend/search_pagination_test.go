@@ -374,8 +374,6 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 		{
 			name: "second request",
 			request: &searchPaginationInfo{
-				// Not a user-facing bug, but we should probably make this
-				// repo=3 offset=0 for sanity sake.
 				cursor: &searchCursor{RepositoryOffset: 2, ResultOffset: 4},
 				limit:  10,
 			},
