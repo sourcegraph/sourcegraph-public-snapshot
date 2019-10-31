@@ -1294,7 +1294,7 @@ type Query {
         after: String
     ): LSIFDumpConnection!
 
-    # Retrieve counts of jobs in the LSIF work queue.
+    # Retrieve counts of jobs by status in the LSIF work queue.
     lsifJobStats: LSIFJobStats!
 
     # Look up an LSIF job by ID.
