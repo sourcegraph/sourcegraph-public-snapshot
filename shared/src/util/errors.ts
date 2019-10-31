@@ -21,6 +21,21 @@ export const asError = (value: unknown): Error => {
     return new Error(String(value))
 }
 
+const EAGGREGATEERROR = 'AggregateError'
+
+/**
+ * An Error that aggregates multiple errors
+ */
+interface AggregateError extends Error {
+    name: typeof EAGGREGATEERROR
+    errors: Error[]
+}
+
+/**
+ * A type guard checking whether the given value is an {@link AggregateError}
+ */
+export const isAggregateError = (e: any): e is AggregateError => isErrorLike(e) && e.code === EAGGREGATEERROR
+
 /**
  * DEPRECATED: use dataOrThrowErrors instead
  * Creates an aggregate error out of multiple provided error likes
@@ -31,7 +46,8 @@ export const createAggregateError = (errors: ErrorLike[] = []): Error =>
     errors.length === 1
         ? asError(errors[0])
         : Object.assign(new Error(errors.map(e => e.message).join('\n')), {
-              name: 'AggregateError' as const,
+              name: EAGGREGATEERROR,
+              code: EAGGREGATEERROR,
               errors: errors.map(asError),
           })
 
