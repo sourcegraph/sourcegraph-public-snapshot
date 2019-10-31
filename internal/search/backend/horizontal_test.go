@@ -2,7 +2,9 @@ package backend
 
 import (
 	"context"
+	"fmt"
 	"sort"
+	"strings"
 	"sync/atomic"
 	"testing"
 
@@ -99,6 +101,117 @@ func TestHorizontalSearcher(t *testing.T) {
 	searcher.Close()
 }
 
+func TestDedupper(t *testing.T) {
+	parse := func(s string) []zoekt.FileMatch {
+		t.Helper()
+		var fms []zoekt.FileMatch
+		for _, t := range strings.Split(s, " ") {
+			if t == "" {
+				continue
+			}
+			parts := strings.Split(t, ":")
+			fms = append(fms, zoekt.FileMatch{
+				Repository: parts[0],
+				FileName:   parts[1],
+			})
+		}
+		return fms
+	}
+	cases := []struct {
+		name    string
+		matches []string
+		want    string
+	}{{
+		name: "empty",
+		matches: []string{
+			"",
+		},
+		want: "",
+	}, {
+		name: "one",
+		matches: []string{
+			"r1:a r1:a r1:b r2:a",
+		},
+		want: "r1:a r1:a r1:b r2:a",
+	}, {
+		name: "some dups",
+		matches: []string{
+			"r1:a r1:a r1:b r2:a",
+			"r1:c r1:c r3:a",
+		},
+		want: "r1:a r1:a r1:b r2:a r3:a",
+	}, {
+		name: "no dups",
+		matches: []string{
+			"r1:a r1:a r1:b r2:a",
+			"r4:c r4:c r5:a",
+		},
+		want: "r1:a r1:a r1:b r2:a r4:c r4:c r5:a",
+	}, {
+		name: "shuffled",
+		matches: []string{
+			"r1:a r2:a r1:a r1:b",
+			"r1:c r3:a r1:c",
+		},
+		want: "r1:a r2:a r1:a r1:b r3:a",
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			d := dedupper{}
+			var got []zoekt.FileMatch
+			for _, s := range tc.matches {
+				fms := parse(s)
+				got = append(got, d.Dedup(fms)...)
+			}
+
+			want := parse(tc.want)
+			if !cmp.Equal(want, got, cmpopts.EquateEmpty()) {
+				t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(want, got))
+			}
+		})
+	}
+}
+
+func BenchmarkDedup(b *testing.B) {
+	nRepos := 100
+	nMatchPerRepo := 50
+	// primes to avoid the need of dedup most of the time :)
+	shardStrides := []int{7, 5, 3, 2, 1}
+
+	shardsOrig := [][]zoekt.FileMatch{}
+	for _, stride := range shardStrides {
+		shard := []zoekt.FileMatch{}
+		for i := stride; i <= nRepos; i += stride {
+			repo := fmt.Sprintf("repo-%d", i)
+			for j := 0; j < nMatchPerRepo; j++ {
+				path := fmt.Sprintf("%d.go", j)
+				shard = append(shard, zoekt.FileMatch{
+					Repository: repo,
+					FileName:   path,
+				})
+			}
+		}
+		shardsOrig = append(shardsOrig, shard)
+	}
+
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		// Create copy since we mutate the input in Deddup
+		b.StopTimer()
+		shards := make([][]zoekt.FileMatch, 0, len(shardsOrig))
+		for _, shard := range shardsOrig {
+			shards = append(shards, append([]zoekt.FileMatch{}, shard...))
+		}
+		b.StartTimer()
+
+		d := dedupper{}
+		for _, shard := range shards {
+			_ = d.Dedup(shard)
+		}
+	}
+}
+
 func backgroundSearch(searcher zoekt.Searcher) func(t *testing.T) {
 	done := make(chan struct{})
 	errC := make(chan error)
@@ -141,7 +254,14 @@ type mockSearcher struct {
 }
 
 func (s *mockSearcher) Search(context.Context, query.Q, *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
-	return s.searchResult, s.searchError
+	res := s.searchResult
+	if s.searchResult != nil {
+		// Copy since we mutate the File slice
+		sr := *res
+		sr.Files = append([]zoekt.FileMatch{}, sr.Files...)
+		res = &sr
+	}
+	return res, s.searchError
 }
 
 func (s *mockSearcher) List(context.Context, query.Q) (*zoekt.RepoList, error) {

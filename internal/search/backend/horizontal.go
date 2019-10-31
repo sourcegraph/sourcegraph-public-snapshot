@@ -46,6 +46,9 @@ func (s *HorizontalSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.
 		}(c)
 	}
 
+	// During rebalancing a repository can appear on more than one replica.
+	dedupper := dedupper{}
+
 	var aggregate zoekt.SearchResult
 	for range clients {
 		r := <-results
@@ -53,7 +56,7 @@ func (s *HorizontalSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.
 			return nil, r.err
 		}
 
-		aggregate.Files = append(aggregate.Files, r.sr.Files...)
+		aggregate.Files = append(aggregate.Files, dedupper.Dedup(r.sr.Files)...)
 		aggregate.Stats.Add(r.sr.Stats)
 	}
 
@@ -84,6 +87,9 @@ func (s *HorizontalSearcher) List(ctx context.Context, q query.Q) (*zoekt.RepoLi
 			results <- result{rl: rl, err: err}
 		}(c)
 	}
+
+	// PERF: We don't deduplicate Repos since the only user of List already
+	// does deduplication.
 
 	var aggregate zoekt.RepoList
 	for range clients {
@@ -185,4 +191,50 @@ func equalKeys(a map[string]zoekt.Searcher, b map[string]struct{}) bool {
 		}
 	}
 	return true
+}
+
+type dedupper map[string]struct{}
+
+// Dedup will in-place filter out matches on Repositories we already have
+// already seen. A Repository has been seen if a previous call to Dedup had a
+// match in it.
+func (seenRepo dedupper) Dedup(fms []zoekt.FileMatch) []zoekt.FileMatch {
+	if len(fms) == 0 { // handles fms being nil
+		return fms
+	}
+
+	// PERF: Normally fms is sorted by Repository. So we can avoid the map
+	// lookup if we just did it for the previous entry.
+	lastRepo := ""
+	lastSeen := false
+
+	// Remove entries for repos we have already seen.
+	dedup := fms[:0]
+	for _, fm := range fms {
+		if lastRepo == fm.Repository {
+			if lastSeen {
+				continue
+			}
+		} else if _, ok := seenRepo[fm.Repository]; ok {
+			lastRepo = fm.Repository
+			lastSeen = true
+			continue
+		}
+
+		lastRepo = fm.Repository
+		lastSeen = false
+		dedup = append(dedup, fm)
+	}
+
+	// Update seenRepo now, so the next call of dedup will contain the
+	// repos.
+	lastRepo = ""
+	for _, fm := range dedup {
+		if lastRepo != fm.Repository {
+			lastRepo = fm.Repository
+			seenRepo[fm.Repository] = struct{}{}
+		}
+	}
+
+	return dedup
 }

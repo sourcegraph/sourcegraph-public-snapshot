@@ -42,6 +42,7 @@
 /internal/debugserver/ @beyang
 /internal/vfsutil/ @slimsag
 /internal/gituri/ @beyang
+/internal/comby @rvantonder
 /internal/db/ @keegancsmith
 /internal/processrestart @slimsag @keegancsmith
 /internal/honey @keegancsmith

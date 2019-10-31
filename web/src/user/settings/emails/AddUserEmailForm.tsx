@@ -66,7 +66,7 @@ export class AddUserEmailForm extends React.PureComponent<Props, State> {
                     <input
                         type="email"
                         name="email"
-                        className="form-control mr-sm-2"
+                        className="form-control mr-sm-2 e2e-user-email-add-input"
                         id="AddUserEmailForm-email"
                         onChange={this.onChange}
                         size={32}

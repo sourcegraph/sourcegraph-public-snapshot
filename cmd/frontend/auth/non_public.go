@@ -96,7 +96,7 @@ func AllowAnonymousRequest(req *http.Request) bool {
 		return true
 	}
 
-	// Permission is checked later by validating the LSIF upload token.
+	// Permission is checked by github token
 	if strings.HasPrefix(req.URL.Path, "/.api/lsif/upload") {
 		return true
 	}

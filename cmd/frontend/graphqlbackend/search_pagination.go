@@ -39,20 +39,20 @@ type searchCursor struct {
 const searchCursorKind = "SearchCursor"
 
 // marshalSearchCursor marshals a search pagination cursor.
-func marshalSearchCursor(c *searchCursor) graphql.ID {
-	return relay.MarshalID(searchCursorKind, c)
+func marshalSearchCursor(c *searchCursor) string {
+	return string(relay.MarshalID(searchCursorKind, c))
 }
 
 // unmarshalSearchCursor unmarshals a search pagination cursor.
-func unmarshalSearchCursor(cursor *graphql.ID) (*searchCursor, error) {
+func unmarshalSearchCursor(cursor *string) (*searchCursor, error) {
 	if cursor == nil {
 		return nil, nil
 	}
-	if kind := relay.UnmarshalKind(*cursor); kind != searchCursorKind {
+	if kind := relay.UnmarshalKind(graphql.ID(*cursor)); kind != searchCursorKind {
 		return nil, fmt.Errorf("cannot unmarshal search cursor type: %q", kind)
 	}
 	var spec *searchCursor
-	if err := relay.UnmarshalSpec(*cursor, &spec); err != nil {
+	if err := relay.UnmarshalSpec(graphql.ID(*cursor), &spec); err != nil {
 		return nil, err
 	}
 	return spec, nil

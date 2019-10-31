@@ -458,9 +458,9 @@ describe('XrepoDatabase', () => {
         }
 
         const updateVisibility = async (visibleA: boolean, visibleB: boolean, visibleC: boolean) => {
-            dumpa.visible_at_tip = visibleA
-            dumpb.visible_at_tip = visibleB
-            dumpc.visible_at_tip = visibleC
+            dumpa.visibleAtTip = visibleA
+            dumpb.visibleAtTip = visibleB
+            dumpc.visibleAtTip = visibleC
             await connection.getRepository(LsifDump).save(dumpa)
             await connection.getRepository(LsifDump).save(dumpb)
             await connection.getRepository(LsifDump).save(dumpc)

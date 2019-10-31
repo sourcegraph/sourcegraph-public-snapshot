@@ -211,7 +211,7 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                             <input
                                 id="user-settings-profile-page__form-display-name"
                                 type="text"
-                                className="form-control"
+                                className="form-control e2e-user-settings-profile-page__display-name"
                                 value={
                                     this.state.displayName === undefined
                                         ? this.state.userOrError.displayName || ''
@@ -230,7 +230,7 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                                 <input
                                     id="user-settings-profile-page__form-avatar-url"
                                     type="url"
-                                    className="form-control"
+                                    className="form-control e2e-user-settings-profile-page__avatar_url"
                                     value={
                                         this.state.avatarURL === undefined
                                             ? this.state.userOrError.avatarURL || ''
