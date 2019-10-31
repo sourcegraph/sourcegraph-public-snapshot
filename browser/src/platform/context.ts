@@ -15,6 +15,7 @@ import { CodeHost } from '../libs/code_intelligence'
 import { DEFAULT_SOURCEGRAPH_URL, observeSourcegraphURL } from '../shared/util/context'
 import { createExtensionHost } from './extensionHost'
 import { editClientSettings, fetchViewerSettings, mergeCascades, storageSettingsCascade } from './settings'
+import { requestGraphQLHelper } from '../shared/backend/requestGraphQL'
 
 export interface SourcegraphIntegrationURLs {
     /**
@@ -61,16 +62,7 @@ export function createPlatformContext(
                         throw new PrivateRepoPublicSourcegraphComError(nameMatch ? nameMatch[1] : '')
                     }
                 }
-                if (isExtension) {
-                    // In the browser extension, send all GraphQL requests from the background page.
-                    return background.requestGraphQL<T>({ request, variables })
-                }
-                return requestGraphQLCommon<T>({
-                    request,
-                    variables,
-                    baseUrl: window.SOURCEGRAPH_URL,
-                    credentials: 'include',
-                })
+                return requestGraphQLHelper(isExtension, sourcegraphURL)<T>({ request, variables })
             })
         )
 
