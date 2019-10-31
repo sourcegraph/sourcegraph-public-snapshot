@@ -56,6 +56,8 @@
 // 1528395608_create_campaign_plans_table.up.sql (470B)
 // 1528395609_create_campaign_jobs_table.down.sql (54B)
 // 1528395609_create_campaign_jobs_table.up.sql (551B)
+// 1528395610_change_campaign_plan_arguments_to_text.down.sql (191B)
+// 1528395610_change_campaign_plan_arguments_to_text.up.sql (254B)
 
 package migrations
 
@@ -1244,6 +1246,46 @@ func _1528395609_create_campaign_jobs_tableUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395610_change_campaign_plan_arguments_to_textDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\xcb\xb1\xae\x82\x30\x18\x06\xd0\xfd\x7f\x8a\x6f\x2b\x3c\x43\x73\x87\xd2\xf6\x2a\xb1\xb4\x86\x94\x99\x14\x82\x44\x22\x85\x48\x1d\x8c\xf1\xdd\x4d\x1c\x5c\x4c\xdc\xcf\x29\xf4\xae\xb4\x9c\x48\x18\xaf\x6b\x78\x51\x18\x8d\x3e\xcc\x6b\x38\x8f\xb1\x5d\x2f\x21\x6e\x50\xb5\x3b\x42\x3a\xd3\x54\x16\xe1\x3a\xde\xe6\x21\xa6\x8d\xff\x18\x04\x08\xa5\xbe\x0a\xa6\x6d\x89\x1d\xac\xf3\xb0\x8d\x31\x50\xfa\x5f\x34\xc6\x83\x3d\x9e\x8c\x00\xb9\xd7\xf2\x80\xec\x8d\xda\x74\x5f\x87\xe5\x94\x7d\x6e\x8e\x3f\xb0\xa5\x9b\x86\x3e\xb1\x9c\x13\x49\x57\x55\xa5\xe7\xf4\x0a\x00\x00\xff\xff\x64\x5a\x4d\x83\xbf\x00\x00\x00")
+
+func _1528395610_change_campaign_plan_arguments_to_textDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395610_change_campaign_plan_arguments_to_textDownSql,
+		"1528395610_change_campaign_plan_arguments_to_text.down.sql",
+	)
+}
+
+func _1528395610_change_campaign_plan_arguments_to_textDownSql() (*asset, error) {
+	bytes, err := _1528395610_change_campaign_plan_arguments_to_textDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395610_change_campaign_plan_arguments_to_text.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x75, 0x26, 0x9f, 0x74, 0x4a, 0x8c, 0x82, 0xc4, 0xe6, 0x20, 0xc0, 0x96, 0x20, 0xca, 0xcd, 0x94, 0x41, 0x57, 0x8e, 0x45, 0xd9, 0xae, 0xe3, 0x26, 0xd5, 0xa9, 0x42, 0xa3, 0xd, 0xad, 0x4f, 0x81}}
+	return a, nil
+}
+
+var __1528395610_change_campaign_plan_arguments_to_textUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\xce\xc1\x4e\x83\x40\x10\xc6\xf1\xfb\x3e\xc5\x77\xf3\x62\x7d\x01\x4e\xb4\x10\xd3\x64\x01\x53\xe9\x59\x06\x3a\x16\x0c\xcc\x92\x9d\x59\x95\xb7\x37\x78\x35\xf1\xfa\x25\xff\x5f\xbe\x63\xf9\x7c\xae\x33\xe7\x0e\x07\xbc\x4e\x32\x30\x26\x7b\x50\x48\x30\x30\xe9\x06\x0b\x18\x82\x7c\x72\x34\x74\x1f\x1a\xa4\xef\xf6\xa9\x33\xfe\xb6\xee\x11\x5f\x0c\x9d\x96\x75\xde\x70\x8b\x61\x85\x8d\xbc\x3b\x43\x98\xd3\x22\xd0\x5f\xce\x46\x86\x51\x3f\x33\x46\x52\xf4\xcc\x82\x24\x49\xf9\x06\x0d\x78\xa7\xf8\xe4\x72\xdf\x96\x17\xb4\xf9\xd1\x97\x18\x68\x59\x69\xba\xcb\xdb\x3a\x93\x28\x8a\x4b\xf3\x82\x53\xe3\xaf\x55\x0d\x8a\xf7\xb4\xb0\x98\x66\xff\x14\x0e\xc8\x8b\xe2\x4f\x82\xfd\x2f\xea\xa6\x45\x7d\xf5\x3e\x73\xee\xd4\x54\xd5\xb9\xcd\xdc\x4f\x00\x00\x00\xff\xff\x3c\xff\x91\x7e\xfe\x00\x00\x00")
+
+func _1528395610_change_campaign_plan_arguments_to_textUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395610_change_campaign_plan_arguments_to_textUpSql,
+		"1528395610_change_campaign_plan_arguments_to_text.up.sql",
+	)
+}
+
+func _1528395610_change_campaign_plan_arguments_to_textUpSql() (*asset, error) {
+	bytes, err := _1528395610_change_campaign_plan_arguments_to_textUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395610_change_campaign_plan_arguments_to_text.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xf9, 0x1c, 0xfb, 0x31, 0xee, 0x24, 0x2a, 0xb7, 0x89, 0xfb, 0xb0, 0x8c, 0x4b, 0x5b, 0xc1, 0xb2, 0x25, 0xec, 0xe7, 0xb7, 0x65, 0xc5, 0x88, 0x93, 0xc, 0x47, 0x8e, 0xfc, 0xe2, 0x30, 0x11, 0x48}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1391,6 +1433,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395608_create_campaign_plans_table.up.sql":                            _1528395608_create_campaign_plans_tableUpSql,
 	"1528395609_create_campaign_jobs_table.down.sql":                           _1528395609_create_campaign_jobs_tableDownSql,
 	"1528395609_create_campaign_jobs_table.up.sql":                             _1528395609_create_campaign_jobs_tableUpSql,
+	"1528395610_change_campaign_plan_arguments_to_text.down.sql":               _1528395610_change_campaign_plan_arguments_to_textDownSql,
+	"1528395610_change_campaign_plan_arguments_to_text.up.sql":                 _1528395610_change_campaign_plan_arguments_to_textUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1490,6 +1534,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395608_create_campaign_plans_table.up.sql":                            {_1528395608_create_campaign_plans_tableUpSql, map[string]*bintree{}},
 	"1528395609_create_campaign_jobs_table.down.sql":                           {_1528395609_create_campaign_jobs_tableDownSql, map[string]*bintree{}},
 	"1528395609_create_campaign_jobs_table.up.sql":                             {_1528395609_create_campaign_jobs_tableUpSql, map[string]*bintree{}},
+	"1528395610_change_campaign_plan_arguments_to_text.down.sql":               {_1528395610_change_campaign_plan_arguments_to_textDownSql, map[string]*bintree{}},
+	"1528395610_change_campaign_plan_arguments_to_text.up.sql":                 {_1528395610_change_campaign_plan_arguments_to_textUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
