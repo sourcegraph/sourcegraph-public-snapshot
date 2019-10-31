@@ -13,7 +13,6 @@ import (
 
 	"github.com/google/zoekt"
 	zoektrpc "github.com/google/zoekt/rpc"
-	"github.com/graph-gophers/graphql-go"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
@@ -33,7 +32,7 @@ func TestSearchResults(t *testing.T) {
 			Version     string
 			PatternType *string
 			Query       string
-			After       *graphql.ID
+			After       *string
 			First       *int32
 		}{Query: query, Version: version})
 		if err != nil {

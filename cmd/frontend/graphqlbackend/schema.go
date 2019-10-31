@@ -1046,7 +1046,7 @@ type Query {
         #
         # A future request can be made for more results by passing in the
         # 'SearchResults.pageInfo.endCursor' that is returned.
-        after: ID
+        after: String
 
         # (experimental) Sourcegraph 3.9 added support for cursor-based paginated
         # search requests when this field is specified. For details, see
@@ -1055,9 +1055,6 @@ type Query {
         # When specified, indicates that this request should be paginated and
         # the first N results (relative to the cursor) should be returned. i.e.
         # how many results to return per page. It must be in the range of 0-5000.
-        #
-        # A future request can be made for more results by passing in the
-        # 'SearchResults.pageInfo.endCursor' that is returned.
         first: Int
     ): Search
     # All saved searches configured for the current user, merged from all configurations.
@@ -2037,7 +2034,7 @@ type PhabricatorRepo {
 # Pagination information. See https://facebook.github.io/relay/graphql/connections.htm#sec-undefined.PageInfo.
 type PageInfo {
     # When paginating forwards, the cursor to continue.
-    endCursor: ID
+    endCursor: String
     # When paginating forwards, are there more items?
     hasNextPage: Boolean!
 }

@@ -11,7 +11,6 @@ import (
 	"strings"
 	"sync"
 
-	graphql "github.com/graph-gophers/graphql-go"
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/neelance/parallel"
@@ -60,7 +59,7 @@ func (r *schemaResolver) Search(args *struct {
 	Version     string
 	PatternType *string
 	Query       string
-	After       *graphql.ID
+	After       *string
 	First       *int32
 }) (interface {
 	Results(context.Context) (*searchResultsResolver, error)
