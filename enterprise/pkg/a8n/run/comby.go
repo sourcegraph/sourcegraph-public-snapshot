@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -24,7 +25,6 @@ type combyArgs struct {
 
 type comby struct {
 	plan *a8n.CampaignPlan
-
 	args combyArgs
 }
 
@@ -85,7 +85,7 @@ func (c *comby) generateDiff(repo api.RepoName, commit api.CommitID) (string, er
 		Diff string
 	}
 
-	var diff string
+	var diffs []*diff.FileDiff
 	for scanner.Scan() {
 		var raw *rawCodemodResult
 		b := scanner.Bytes()
@@ -94,9 +94,23 @@ func (c *comby) generateDiff(repo api.RepoName, commit api.CommitID) (string, er
 			continue
 		}
 		if err := json.Unmarshal(b, &raw); err != nil {
+			log15.Error("unmarshalling raw diff failed", "err", err)
 			continue
 		}
-		diff += raw.Diff
+		// TODO(a8n): Do we need to use `diff.ParseFileDiff` or can we just concatenate?
+		parsed, err := diff.ParseFileDiff([]byte(raw.Diff))
+		if err != nil {
+			log15.Error("parsing diff failed", "err", err)
+			continue
+		}
+		diffs = append(diffs, parsed)
 	}
-	return diff, nil
+
+	// TODO(a8n): Can this diff be applied by `git apply`?
+	multiDiff, err := diff.PrintMultiFileDiff(diffs)
+	if err != nil {
+		return "", err
+	}
+
+	return string(multiDiff), nil
 }
