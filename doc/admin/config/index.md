@@ -13,7 +13,7 @@ There are 2 types of site configuration for a Sourcegraph instance:
 - [Add user authentication providers (SSO)](../auth/index.md)
 - [Configure search scopes](../../user/search/scopes.md)
 - [Integrate with Phabricator](../../integration/phabricator.md)
-- [Add organizations](../../user/organizations.md)
+- [Add organizations](../../user/organizations/index.md)
 - [Set up HTTPS](../nginx.md)
 - [Use a custom domain](../url.md)
 - [Update Sourcegraph](../updates.md)

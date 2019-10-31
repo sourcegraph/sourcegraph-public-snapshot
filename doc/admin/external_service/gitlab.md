@@ -44,7 +44,7 @@ permissions](../repo/permissions.md#gitlab)".
 ## User authentication
 
 To configure GitLab as an authentication provider (which will enable sign-in via GitLab), see the
-[authentication documentation](../auth.md#gitlab).
+[authentication documentation](../auth/index.md#gitlab).
 
 ## Configuration
 

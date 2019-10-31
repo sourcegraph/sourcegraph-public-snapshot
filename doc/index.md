@@ -60,7 +60,7 @@ Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](h
 - [**Administrator documentation**](admin/index.md)
 - [Install Sourcegraph](admin/install/index.md) or [update Sourcegraph](admin/updates.md)
 - [Sourcegraph extensions](extensions/index.md)
-- [Roadmap](dev/roadmap.md)
+- [Roadmap](dev/roadmap/index.md)
 
 ### Features and tutorials
 
