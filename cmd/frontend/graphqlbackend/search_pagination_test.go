@@ -381,6 +381,55 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 				partial: map[api.RepoName]struct{}{},
 			},
 		},
+		{
+			name: "small limit, first request",
+			request: &searchPaginationInfo{
+				cursor: &searchCursor{},
+				limit:  1,
+			},
+			wantSearchedBatches: [][]*search.RepositoryRevisions{
+				{
+					repoRevs("1", "master"),
+					repoRevs("2", "master"),
+					repoRevs("3", "master", "feature"),
+					repoRevs("4", "master"),
+				},
+			},
+			wantCursor: &searchCursor{RepositoryOffset: 0, ResultOffset: 1},
+			wantResults: []searchResultResolver{
+				result(repo("1"), "some/file0.go", "master"),
+			},
+			wantCommon: &searchResultsCommon{
+				repos:       []*types.Repo{repo("1")},
+				partial:     map[api.RepoName]struct{}{},
+				resultCount: 1,
+			},
+		},
+		{
+			name: "small limit, second request",
+			request: &searchPaginationInfo{
+				cursor: &searchCursor{RepositoryOffset: 0, ResultOffset: 1},
+				limit:  1,
+			},
+			wantSearchedBatches: [][]*search.RepositoryRevisions{
+				{
+					repoRevs("1", "master"),
+					repoRevs("2", "master"),
+					repoRevs("3", "master", "feature"),
+					repoRevs("4", "master"),
+				},
+			},
+			// BUG: ResultOffset should be 2! Issue #6287
+			wantCursor: &searchCursor{RepositoryOffset: 0, ResultOffset: 1},
+			wantResults: []searchResultResolver{
+				result(repo("1"), "some/file1.go", "master"),
+			},
+			wantCommon: &searchResultsCommon{
+				repos:       []*types.Repo{repo("1")},
+				partial:     map[api.RepoName]struct{}{},
+				resultCount: 1,
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
