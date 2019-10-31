@@ -216,6 +216,8 @@ type reposListServer struct {
 	}
 }
 
+// serveList is deprecated. It used to be used by Zoekt to get the list of
+// repositories to index. Can be removed in 3.11.
 func (h *reposListServer) serveList(w http.ResponseWriter, r *http.Request) error {
 	var opt struct {
 		Hostname string
@@ -273,6 +275,59 @@ func (h *reposListServer) serveList(w http.ResponseWriter, r *http.Request) erro
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(data)
 	return nil
+}
+
+// serveIndex is used by zoekt to get the list of repositories for it to
+// index.
+func (h *reposListServer) serveIndex(w http.ResponseWriter, r *http.Request) error {
+	var opt struct {
+		// Hostname is used to determine the subset of repos to return
+		Hostname string
+		// Indexed is the repository names of indexed repos by Hostname.
+		Indexed []string
+	}
+	if err := json.NewDecoder(r.Body).Decode(&opt); err != nil {
+		return err
+	}
+
+	var names []string
+	if h.SourcegraphDotComMode {
+		res, err := h.Repos.ListDefault(r.Context())
+		if err != nil {
+			return errors.Wrap(err, "listing repos")
+		}
+		names = make([]string, len(res))
+		for i, r := range res {
+			names[i] = string(r.Name)
+		}
+	} else {
+		trueP := true
+		res, err := h.Repos.List(r.Context(), db.ReposListOptions{Index: &trueP, Enabled: true})
+		if err != nil {
+			return errors.Wrap(err, "listing repos")
+		}
+		names = make([]string, len(res))
+		for i, r := range res {
+			names[i] = string(r.Name)
+		}
+	}
+
+	if h.Indexers.Enabled() {
+		var err error
+		names, err = h.Indexers.ReposSubset(r.Context(), opt.Hostname, names)
+		if err != nil {
+			return err
+		}
+	}
+
+	data := struct {
+		RepoNames []string
+	}{
+		RepoNames: names,
+	}
+
+	w.WriteHeader(http.StatusOK)
+	return json.NewEncoder(w).Encode(&data)
 }
 
 func serveReposListEnabled(w http.ResponseWriter, r *http.Request) error {

@@ -118,6 +118,80 @@ func TestReposList(t *testing.T) {
 	}
 }
 
+func TestReposIndex(t *testing.T) {
+	defaultRepos := []string{"github.com/popular/foo", "github.com/popular/bar"}
+	allRepos := append(defaultRepos, "github.com/alice/foo", "github.com/alice/bar")
+
+	cases := []struct {
+		name string
+		srv  *reposListServer
+		body string
+		want []string
+	}{{
+		name: "indexers",
+		srv: &reposListServer{
+			Repos: &mockRepos{
+				defaultRepos: defaultRepos,
+				repos:        allRepos,
+			},
+			Indexers: suffixIndexers(true),
+		},
+		body: `{"Hostname": "foo"}`,
+		want: []string{"github.com/popular/foo", "github.com/alice/foo"},
+	}, {
+		name: "dot-com indexers",
+		srv: &reposListServer{
+			SourcegraphDotComMode: true,
+			Repos: &mockRepos{
+				defaultRepos: defaultRepos,
+				repos:        allRepos,
+			},
+			Indexers: suffixIndexers(true),
+		},
+		body: `{"Hostname": "foo"}`,
+		want: []string{"github.com/popular/foo"},
+	}, {
+		name: "none",
+		srv: &reposListServer{
+			Repos: &mockRepos{
+				defaultRepos: defaultRepos,
+				repos:        allRepos,
+			},
+			Indexers: suffixIndexers(true),
+		},
+		body: `{"Hostname": "baz"}`,
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest("POST", "/", bytes.NewReader([]byte(tc.body)))
+			w := httptest.NewRecorder()
+			if err := tc.srv.serveIndex(w, req); err != nil {
+				t.Fatal(err)
+			}
+
+			resp := w.Result()
+			body, _ := ioutil.ReadAll(resp.Body)
+
+			if resp.StatusCode != http.StatusOK {
+				t.Errorf("got status %v", resp.StatusCode)
+			}
+
+			var data struct {
+				RepoNames []string
+			}
+			if err := json.Unmarshal(body, &data); err != nil {
+				t.Fatal(err)
+			}
+			got := data.RepoNames
+
+			if !cmp.Equal(tc.want, got) {
+				t.Fatalf("mismatch (-want +got):\n%s", cmp.Diff(tc.want, got))
+			}
+		})
+	}
+}
+
 type mockRepos struct {
 	defaultRepos []string
 	repos        []string
