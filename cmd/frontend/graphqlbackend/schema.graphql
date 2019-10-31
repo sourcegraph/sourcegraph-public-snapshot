@@ -4005,7 +4005,7 @@ type LSIFJob implements Node {
     # If the job failed, its failure message.
     failedReason: String
 
-    # If the job failed, the its stacktrace.
+    # If the job failed, its stacktrace.
     stacktrace: [String!]
 
     # The time the job was queued.
