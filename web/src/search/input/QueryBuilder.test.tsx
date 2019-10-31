@@ -2,6 +2,7 @@ import * as React from 'react'
 import { cleanup, fireEvent, getByDisplayValue, getByTestId, queryByTestId, render, wait } from '@testing-library/react'
 import sinon from 'sinon'
 import { QueryBuilder } from './QueryBuilder'
+import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 
 describe('QueryBuilder', () => {
     afterAll(cleanup)
@@ -11,7 +12,13 @@ describe('QueryBuilder', () => {
     beforeEach(() => {
         localStorage.clear()
         onChange = sinon.spy((query: string) => {})
-        ;({ container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />))
+        ;({ container } = render(
+            <QueryBuilder
+                onFieldsQueryChange={onChange}
+                isSourcegraphDotCom={false}
+                patternType={SearchPatternType.regexp}
+            />
+        ))
 
         const toggle = getByTestId(container, 'test-query-builder-toggle')
         fireEvent.click(toggle)

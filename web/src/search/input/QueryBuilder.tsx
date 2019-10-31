@@ -2,8 +2,10 @@ import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import * as React from 'react'
 import { InfoDropdown } from './InfoDropdown'
 import { QueryBuilderInputRow } from './QueryBuilderInputRow'
+import { PatternTypeProps } from '..'
+import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 
-interface Props {
+interface Props extends Omit<PatternTypeProps, 'togglePatternType'> {
     /**
      * Called when there is a change to the query synthesized from this
      * component's fields.
@@ -83,7 +85,9 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                             fieldsQueryParts.push(inputValue)
                         } else if (inputField === 'exactMatch') {
                             // Exact matches don't have a literal field operator (e.g. exactMatch:) in the query.
-                            fieldsQueryParts.push(formatFieldForQuery('', inputValue, true))
+                            fieldsQueryParts.push(
+                                formatFieldForQuery('', inputValue, this.props.patternType === SearchPatternType.regexp)
+                            )
                         } else if (inputField === 'type' && inputValue === 'code') {
                             // code searches don't need to be specified.
                             continue
