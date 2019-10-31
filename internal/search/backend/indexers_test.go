@@ -74,8 +74,9 @@ func TestReposSubset(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
 			indexed = tc.indexed
-			got, err := index.ReposSubset(context.Background(), tc.hostname, tc.repos)
+			got, err := index.ReposSubset(ctx, tc.hostname, index.Indexed(ctx, tc.hostname), tc.repos)
 			if tc.errS != "" {
 				got := fmt.Sprintf("%v", err)
 				if !strings.Contains(got, tc.errS) {

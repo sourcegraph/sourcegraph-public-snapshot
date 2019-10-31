@@ -139,6 +139,17 @@ func TestReposIndex(t *testing.T) {
 		body: `{"Hostname": "foo"}`,
 		want: []string{"github.com/popular/foo", "github.com/alice/foo"},
 	}, {
+		name: "indexers",
+		srv: &reposListServer{
+			Repos: &mockRepos{
+				defaultRepos: defaultRepos,
+				repos:        allRepos,
+			},
+			Indexers: suffixIndexers(true),
+		},
+		body: `{"Hostname": "foo", "Indexed": ["github.com/alice/bar"]}`,
+		want: []string{"github.com/popular/foo", "github.com/alice/foo", "github.com/alice/bar"},
+	}, {
 		name: "dot-com indexers",
 		srv: &reposListServer{
 			SourcegraphDotComMode: true,
@@ -225,7 +236,7 @@ func (r *mockRepos) List(ctx context.Context, opt db.ReposListOptions) ([]*types
 // the suffix of hostname.
 type suffixIndexers bool
 
-func (b suffixIndexers) ReposSubset(ctx context.Context, hostname string, repoNames []string) ([]string, error) {
+func (b suffixIndexers) ReposSubset(ctx context.Context, hostname string, indexed map[string]struct{}, repoNames []string) ([]string, error) {
 	if !b.Enabled() {
 		return nil, errors.New("indexers disabled")
 	}
@@ -236,6 +247,8 @@ func (b suffixIndexers) ReposSubset(ctx context.Context, hostname string, repoNa
 	var filter []string
 	for _, name := range repoNames {
 		if strings.HasSuffix(name, hostname) {
+			filter = append(filter, name)
+		} else if _, ok := indexed[name]; ok {
 			filter = append(filter, name)
 		}
 	}
