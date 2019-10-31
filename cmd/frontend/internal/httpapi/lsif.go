@@ -26,8 +26,9 @@ func lsifProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.
 
 func lsifUploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		repoName := r.URL.Query().Get("repository")
-		commit := r.URL.Query().Get("commit")
+		q := r.URL.Query()
+		repoName := q.Get("repository")
+		commit := q.Get("commit")
 
 		repo, err := backend.Repos.GetByName(r.Context(), api.RepoName(repoName))
 		if err != nil {
