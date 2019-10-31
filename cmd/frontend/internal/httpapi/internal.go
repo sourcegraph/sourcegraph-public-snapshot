@@ -216,7 +216,7 @@ type reposListServer struct {
 	}
 }
 
-// serveList is deprecated. It used to be used by Zoekt to get the list of
+// Deprecated: serveList used to be used by Zoekt to get the list of
 // repositories to index. Can be removed in 3.11.
 func (h *reposListServer) serveList(w http.ResponseWriter, r *http.Request) error {
 	var opt struct {
