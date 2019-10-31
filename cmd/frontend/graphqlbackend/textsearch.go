@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -63,6 +64,10 @@ type fileMatchResolver struct {
 	// preserve the original revision specifier from the user instead of navigating them to the
 	// absolute commit ID when they select a result.
 	inputRev *string
+}
+
+func (fm *fileMatchResolver) Equal(other *fileMatchResolver) bool {
+	return reflect.DeepEqual(fm, other)
 }
 
 func (fm *fileMatchResolver) Key() string {
