@@ -239,6 +239,28 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 				limitHit:                  false,
 			},
 		},
+		{
+			name:    "limit non-repo boundary small",
+			results: sharedResult,
+			common:  sharedCommon,
+			offset:  1,
+			limit:   1,
+			want: slicedSearchResults{
+				results: []searchResultResolver{
+					result(repo("org/repo1"), "b.go"),
+				},
+				common: &searchResultsCommon{
+					resultCount: 1,
+					repos:       []*types.Repo{repo("org/repo1")},
+					partial:     make(map[api.RepoName]struct{}),
+				},
+				// BUG: resultOffset should be 2! Issue #6287
+				resultOffset:              1,
+				lastRepoConsumed:          repo("org/repo1"),
+				lastRepoConsumedPartially: true,
+				limitHit:                  true,
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
