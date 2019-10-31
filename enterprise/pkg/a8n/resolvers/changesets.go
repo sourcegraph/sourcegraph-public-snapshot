@@ -80,14 +80,6 @@ func unmarshalChangesetID(id graphql.ID) (cid int64, err error) {
 	return
 }
 
-func (r *changesetResolver) ToChangesetPlan() (graphqlbackend.ChangesetPlanResolver, bool) {
-	return r, true
-}
-
-func (r *changesetResolver) ToExternalChangeset() (graphqlbackend.ExternalChangesetResolver, bool) {
-	return r, true
-}
-
 func (r *changesetResolver) ID() graphql.ID {
 	return marshalChangesetID(r.Changeset.ID)
 }

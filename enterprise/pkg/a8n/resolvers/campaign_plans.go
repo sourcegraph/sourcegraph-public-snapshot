@@ -3,6 +3,8 @@ package resolvers
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -10,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 const campaignPlanIDKind = "CampaignPlan"
@@ -56,10 +59,10 @@ func (r *campaignPlanResolver) Changesets(
 	ctx context.Context,
 	args *graphqlutil.ConnectionArgs,
 ) graphqlbackend.ChangesetPlansConnectionResolver {
-	// TODO(a8n): Implement this. We need to fetch the CampaignJobs and their
-	// diffs/errors and return them as a `campaignJobConnectionResolver` that
-	// implements the `ChangesetsConnectionResolver` interface.
-	return &changesetPlansConnectionResolver{store: r.store, campaignPlan: r.campaignPlan}
+	return &campaignJobsConnectionResolver{
+		store:        r.store,
+		campaignPlan: r.campaignPlan,
+	}
 }
 
 func (r *campaignPlanResolver) RepositoryDiffs(
@@ -71,19 +74,70 @@ func (r *campaignPlanResolver) RepositoryDiffs(
 	return nil, nil
 }
 
-type changesetPlansConnectionResolver struct {
+type campaignJobsConnectionResolver struct {
 	store        *ee.Store
+	campaignPlan *a8n.CampaignPlan
+
+	// cache results because they are used by multiple fields
+	once sync.Once
+	jobs []*a8n.CampaignJob
+	next int64
+	err  error
+}
+
+func (r *campaignJobsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ChangesetPlanResolver, error) {
+	jobs, _, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+	resolvers := make([]graphqlbackend.ChangesetPlanResolver, 0, len(jobs))
+	for _, j := range jobs {
+		resolvers = append(resolvers, &campaignJobResolver{
+			store:        r.store,
+			job:          j,
+			campaignPlan: r.campaignPlan,
+		})
+	}
+	return resolvers, nil
+}
+
+func (r *campaignJobsConnectionResolver) compute(ctx context.Context) ([]*a8n.CampaignJob, int64, error) {
+	r.once.Do(func() {
+		r.jobs, r.next, r.err = r.store.ListCampaignJobs(ctx, ee.ListCampaignJobsOpts{
+			CampaignPlanID: r.campaignPlan.ID,
+		})
+		// TODO(a8n): To avoid n+1 queries, we could preload all repositories here
+		// and save them
+	})
+	return r.jobs, r.next, r.err
+}
+
+func (r *campaignJobsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	opts := ee.CountCampaignJobsOpts{CampaignPlanID: r.campaignPlan.ID}
+	count, err := r.store.CountCampaignJobs(ctx, opts)
+	return int32(count), err
+}
+
+func (r *campaignJobsConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	_, next, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return graphqlutil.HasNextPage(next != 0), nil
+}
+
+type campaignJobResolver struct {
+	store        *ee.Store
+	job          *a8n.CampaignJob
 	campaignPlan *a8n.CampaignPlan
 }
 
-func (r *changesetPlansConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ChangesetPlanResolver, error) {
-	return []graphqlbackend.ChangesetPlanResolver{}, nil
+func (r *campaignJobResolver) Title() (string, error) { return "Title placeholder", nil }
+func (r *campaignJobResolver) Body() (string, error)  { return "Body placeholder", nil }
+func (r *campaignJobResolver) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
+	return graphqlbackend.RepositoryByIDInt32(ctx, api.RepoID(r.job.RepoID))
 }
 
-func (r *changesetPlansConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	return 0, nil
-}
-
-func (r *changesetPlansConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	return graphqlutil.HasNextPage(false), nil
+func (r *campaignJobResolver) Diff(ctx context.Context) (graphqlbackend.PreviewRepositoryDiff, error) {
+	return nil, errors.New("not implemented")
 }
