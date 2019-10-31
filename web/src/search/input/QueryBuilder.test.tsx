@@ -161,7 +161,7 @@ describe('QueryBuilder in literal mode', () => {
             <QueryBuilder
                 onFieldsQueryChange={onChange}
                 isSourcegraphDotCom={false}
-                patternType={SearchPatternType.regexp}
+                patternType={SearchPatternType.literal}
             />
         ))
 
@@ -173,12 +173,12 @@ describe('QueryBuilder in literal mode', () => {
         const exactMatchField = container.querySelector('#query-builder-exactMatch')!
         fireEvent.change(exactMatchField, { target: { value: 'open(' } })
         sinon.assert.calledOnce(onChange)
-        sinon.assert.calledWith(onChange, '"open("')
+        sinon.assert.calledWith(onChange, 'open(')
     })
     it('in literal mode, fires the onFieldsQueryChange prop handler with a multi-word term wrapped in double quotes when updating the "Exact match"', async () => {
         const exactMatchField = container.querySelector('#query-builder-exactMatch')!
         fireEvent.change(exactMatchField, { target: { value: 'foo bar' } })
         sinon.assert.calledOnce(onChange)
-        sinon.assert.calledWith(onChange, '"foo bar"')
+        sinon.assert.calledWith(onChange, 'foo bar')
     })
 })
