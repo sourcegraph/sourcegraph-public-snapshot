@@ -27,6 +27,13 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
+## 3.9.4
+
+### Fixed
+
+- The experimental search pagination API no longer omits a single repository worth of results at the end of the result set. [#6286](https://github.com/sourcegraph/sourcegraph/issues/6286)
+- The experimental search pagination API no longer produces search cursors that can get "stuck". [#6287](https://github.com/sourcegraph/sourcegraph/issues/6287)
+
 ## 3.9.3
 
 ### Changed
