@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 )
 
 // Alert implements the GraphQL type Alert.
@@ -61,20 +60,35 @@ func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
 	return alerts, nil
 }
 
+// ContributeConfigWarning adds the configuration validator function to the validation process.
+// It is called to validate site configuration. Any problems it returns are shown as configuration
+// warnings in the form of site alerts.
+//
+// It may only be called at init time.
+func ContributeConfigWarning(f func(conf.Unified) conf.Problems) {
+	contributedConfigWarnings = append(contributedConfigWarnings, f)
+}
+
+var contributedConfigWarnings []func(conf.Unified) conf.Problems
+
 // getConfigWarnings identifies problems with the configuration that a site
 // admin should address, but do not prevent Sourcegraph from running.
 func getConfigWarnings() (problems conf.Problems, err error) {
-	var c conf.Unified
-	if err := jsonc.Unmarshal(globals.ConfigurationServerFrontendOnly.Raw().Critical, &c.Critical); err != nil {
-		return nil, err
-	}
-	if c.Critical.ExternalURL == "" {
-		problems = append(problems, conf.NewCriticalProblem("`externalURL` was empty and it is required to be configured for Sourcegraph to work correctly."))
+	c := *conf.Get()
+	for i := range contributedConfigWarnings {
+		problems = append(problems, contributedConfigWarnings[i](c)...)
 	}
 	return problems, nil
 }
 
 func init() {
+	ContributeConfigWarning(func(c conf.Unified) (problems conf.Problems) {
+		if c.Critical.ExternalURL == "" {
+			problems = append(problems, conf.NewCriticalProblem("`externalURL` was empty and it is required to be configured for Sourcegraph to work correctly."))
+		}
+		return problems
+	})
+
 	// Warn about invalid site configuration.
 	AlertFuncs = append(AlertFuncs, func(args AlertFuncArgs) []*Alert {
 		// 🚨 SECURITY: Only the site admin cares about this. Leaking a boolean wouldn't be a
