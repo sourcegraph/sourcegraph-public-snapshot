@@ -2,6 +2,7 @@ import * as React from 'react'
 import { cleanup, fireEvent, getByDisplayValue, getByTestId, queryByTestId, render, wait } from '@testing-library/react'
 import sinon from 'sinon'
 import { QueryBuilder } from './QueryBuilder'
+import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 
 describe('QueryBuilder', () => {
     afterAll(cleanup)
@@ -11,7 +12,13 @@ describe('QueryBuilder', () => {
     beforeEach(() => {
         localStorage.clear()
         onChange = sinon.spy((query: string) => {})
-        ;({ container } = render(<QueryBuilder onFieldsQueryChange={onChange} isSourcegraphDotCom={false} />))
+        ;({ container } = render(
+            <QueryBuilder
+                onFieldsQueryChange={onChange}
+                isSourcegraphDotCom={false}
+                patternType={SearchPatternType.regexp}
+            />
+        ))
 
         const toggle = getByTestId(container, 'test-query-builder-toggle')
         fireEvent.click(toggle)
@@ -139,5 +146,39 @@ describe('QueryBuilder', () => {
 
         sinon.assert.calledTwice(onChange)
         sinon.assert.calledWith(onChange, 'type:diff message:"fix issue"')
+    })
+})
+
+describe('QueryBuilder in literal mode', () => {
+    afterAll(cleanup)
+
+    let onChange: sinon.SinonSpy<[string], void>
+    let container: HTMLElement
+    beforeEach(() => {
+        localStorage.clear()
+        onChange = sinon.spy((query: string) => {})
+        ;({ container } = render(
+            <QueryBuilder
+                onFieldsQueryChange={onChange}
+                isSourcegraphDotCom={false}
+                patternType={SearchPatternType.literal}
+            />
+        ))
+
+        const toggle = getByTestId(container, 'test-query-builder-toggle')
+        fireEvent.click(toggle)
+    })
+
+    it('in literal mode, fires the onFieldsQueryChange prop handler with a single-word term not wrapped in double quotes when updating the "Exact match"', () => {
+        const exactMatchField = container.querySelector('#query-builder-exactMatch')!
+        fireEvent.change(exactMatchField, { target: { value: 'open(' } })
+        sinon.assert.calledOnce(onChange)
+        sinon.assert.calledWith(onChange, 'open(')
+    })
+    it('in literal mode, fires the onFieldsQueryChange prop handler with a multi-word term not wrapped in double-quotes when updating the "Exact match"', () => {
+        const exactMatchField = container.querySelector('#query-builder-exactMatch')!
+        fireEvent.change(exactMatchField, { target: { value: 'foo bar' } })
+        sinon.assert.calledOnce(onChange)
+        sinon.assert.calledWith(onChange, 'foo bar')
     })
 })
