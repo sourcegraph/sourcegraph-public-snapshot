@@ -7,7 +7,7 @@ export interface ApiJob {
     id: string
     name: string
     args: object
-    status: string
+    state: string
     progress: number
     failedReason: string | null
     stacktrace: string[] | null
@@ -42,16 +42,16 @@ const toMaybeInt = (value: string | undefined): number | null => (value ? parseI
  * Format a job to return from the API.
  *
  * @param job The job to format.
- * @param status The job's status.
+ * @param state The job's state.
  */
-export const formatJob = (job: Job, status: string): ApiJob => {
+export const formatJob = (job: Job, state: string): ApiJob => {
     const payload = job.toJSON()
 
     return {
         id: `${payload.id}`,
         name: payload.name,
         args: payload.data.args,
-        status,
+        state,
         progress: payload.progress,
         failedReason: payload.failedReason,
         stacktrace: payload.stacktrace,
@@ -65,9 +65,9 @@ export const formatJob = (job: Job, status: string): ApiJob => {
  * Format a job to return from the API.
  *
  * @param values A map of values composing the job.
- * @param status The job's status.
+ * @param state The job's state.
  */
-export const formatJobFromMap = (values: Map<string, string>, status: string): ApiJob => {
+export const formatJobFromMap = (values: Map<string, string>, state: string): ApiJob => {
     const rawData = values.get('data')
     const rawStacktrace = values.get('stacktrace')
 
@@ -75,7 +75,7 @@ export const formatJobFromMap = (values: Map<string, string>, status: string): A
         id: values.get('id') || '',
         name: values.get('name') || '',
         args: rawData ? JSON.parse(rawData).args : {},
-        status,
+        state,
         progress: toMaybeInt(values.get('progress')) || 0,
         failedReason: values.get('failedReason') || null,
         stacktrace: rawStacktrace ? JSON.parse(rawStacktrace) : null,

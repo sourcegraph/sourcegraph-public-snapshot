@@ -3,29 +3,13 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/lsif"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
-
-var jobStateByStatus = map[string]string{
-	"active":    "PROCESSING",
-	"queued":    "QUEUED",
-	"scheduled": "SCHEDULED",
-	"completed": "COMPLETED",
-	"failed":    "ERRORED",
-}
-
-// An inversion of jobStateByStatus
-var jobStatusByState = map[string]string{}
-
-func init() {
-	for k, v := range jobStateByStatus {
-		jobStatusByState[v] = k
-	}
-}
 
 func (r *schemaResolver) LSIFJob(ctx context.Context, args *struct{ ID graphql.ID }) (*lsifJobResolver, error) {
 	return lsifJobByGQLID(ctx, args.ID)
@@ -54,7 +38,7 @@ func lsifJobByGQLID(ctx context.Context, id graphql.ID) (*lsifJobResolver, error
 func (r *lsifJobResolver) ID() graphql.ID         { return marshalLSIFJobGQLID(r.lsifJob.ID) }
 func (r *lsifJobResolver) Name() string           { return r.lsifJob.Name }
 func (r *lsifJobResolver) Args() JSONValue        { return JSONValue{r.lsifJob.Args} }
-func (r *lsifJobResolver) State() string          { return jobStateByStatus[r.lsifJob.Status] }
+func (r *lsifJobResolver) State() string          { return strings.ToUpper(r.lsifJob.State) }
 func (r *lsifJobResolver) Progress() float64      { return r.lsifJob.Progress }
 func (r *lsifJobResolver) FailedReason() *string  { return r.lsifJob.FailedReason }
 func (r *lsifJobResolver) Stacktrace() *[]string  { return r.lsifJob.Stacktrace }

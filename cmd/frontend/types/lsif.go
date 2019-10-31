@@ -15,18 +15,18 @@ type LSIFDump struct {
 }
 
 type LSIFJobStats struct {
-	Active    int32 `json:"active"`
-	Queued    int32 `json:"queued"`
-	Scheduled int32 `json:"scheduled"`
-	Completed int32 `json:"completed"`
-	Failed    int32 `json:"failed"`
+	ProcessingCount int32 `json:"processingCount"`
+	ErroredCount    int32 `json:"erroredCount"`
+	CompletedCount  int32 `json:"completedCount"`
+	QueuedCount     int32 `json:"queuedCount"`
+	ScheduledCount  int32 `json:"scheduledCount"`
 }
 
 type LSIFJob struct {
 	ID           string           `json:"id"`
 	Name         string           `json:"name"`
 	Args         *json.RawMessage `json:"args"`
-	Status       string           `json:"status"`
+	State        string           `json:"state"`
 	Progress     float64          `json:"progress"`
 	FailedReason *string          `json:"failedReason"`
 	Stacktrace   *[]string        `json:"stacktrace"`
