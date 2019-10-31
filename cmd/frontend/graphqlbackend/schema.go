@@ -1287,18 +1287,18 @@ type Query {
         after: String
     ): LSIFDumpConnection!
 
-    # Retrieve counts of jobs in the LSIF work queue.
+    # Retrieve counts of jobs by status in the LSIF work queue.
     lsifJobStats: LSIFJobStats!
 
     # Look up an LSIF job by ID.
     lsifJob(id: ID!): LSIFJob
 
-    # Search for LSIF jobs by status ad query term.
+    # Search for LSIF jobs by status and query term.
     lsifJobs(
         # The status of returned jobs.
-        status: LSIFJobState!
+        status: LSIFJobStatus!
 
-        # An (optional) search query taht searches over the job name, failure
+        # An (optional) search query that searches over the job name, failure
         # properties (reason and stacktrace) and the job's arguments.
         query: String
 
@@ -3970,11 +3970,20 @@ type LSIFJobStats implements Node {
 }
 
 # An LSIF job's status.
-enum LSIFJobState {
+enum LSIFJobStatus {
+    # The job is currently being processed.
     ACTIVE
+
+    # The job will be processed later.
     QUEUED
+
+    # The job is recurring and is not currently queued, but will be in the future.
     SCHEDULED
+
+    # The job has completed succesfully.
     COMPLETED
+
+    # The job has failed due to an exception.
     FAILED
 }
 
@@ -3990,7 +3999,7 @@ type LSIFJob implements Node {
     args: JSONValue!
 
     # The job's current status.
-    status: LSIFJobState!
+    status: LSIFJobStatus!
 
     # The current job progress (0 to 100).
     progress: Float!
@@ -3998,7 +4007,7 @@ type LSIFJob implements Node {
     # If the job failed, its failure message.
     failedReason: String
 
-    # If the job failed, the its stacktrace.
+    # If the job failed, its stacktrace.
     stacktrace: [String!]
 
     # The time the job was queued.
