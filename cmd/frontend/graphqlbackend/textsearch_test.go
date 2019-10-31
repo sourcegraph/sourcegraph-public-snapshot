@@ -736,9 +736,12 @@ func Test_zoektIndexedRepos(t *testing.T) {
 	makeIndexed := func(repos []*search.RepositoryRevisions) []*search.RepositoryRevisions {
 		var indexed []*search.RepositoryRevisions
 		for _, r := range repos {
-			rev := *r
+			rev := &search.RepositoryRevisions{
+				Repo: r.Repo,
+				Revs: r.Revs,
+			}
 			rev.SetIndexedHEADCommit("deadbeef")
-			indexed = append(indexed, &rev)
+			indexed = append(indexed, rev)
 		}
 		return indexed
 	}
