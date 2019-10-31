@@ -673,26 +673,16 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		if args.Pattern.IsStructuralPat {
 			fmt.Printf("Matches to consider for structural search: %d\n", len(matches))
 
-			// Don't return Zoekt's matches for structural
-			// search. Instead, extract the file paths and pass the
-			// (repo, filepaths) results to searcher.
-
-			// zoektSearchHEAD returns a flat list of matches and we
-			// don't know how to connect it back to the repo rev.
-			// Hooray: O(reposToSearch * fileMatchesFound) map.
-			// Make Zoekt bundle repo rev with matches?
 			p := make(map[string][]string)
 			var onlyTheseRepos []*search.RepositoryRevisions
-			for _, repo := range zoektRepos {
-				for _, m := range matches {
-					if m.repo.Name == repo.Repo.Name {
-						fmt.Printf("Adding to %s file %s\n", m.repo.Name, m.JPath)
-						name := string(m.repo.Name)
-						p[name] = append(p[name], m.JPath)
-					}
-				}
+
+			for _, m := range matches {
+				fmt.Printf("Adding to %s file %s\n", m.repo.Name, m.JPath)
+				name := string(m.repo.Name)
+				p[name] = append(p[name], m.JPath)
 			}
 
+			// filter zoektRepos that didn't contain matches
 			for _, repo := range zoektRepos {
 				for key := range p {
 					if string(repo.Repo.Name) == key {
@@ -701,7 +691,6 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 				}
 			}
 
-			// XXX I don't know about assigning to searchErr, seems ok it's under lock
 			mu.Unlock() // zoekt is done, it will never need tock at this point. unlock it so that callSearcher can acquire it
 			searchErr = callSearcherOverRepos(onlyTheseRepos, p)
 		} else {
