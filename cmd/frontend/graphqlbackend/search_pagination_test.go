@@ -81,7 +81,10 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 		result(repo("org/repo5"), "e.go"),
 	}
 	sharedCommon := &searchResultsCommon{
-		repos: []*types.Repo{repo("org/repo1"), repo("org/repo2"), repo("org/repo3")},
+		// Note: this is an intentionally unordered list to ensure we do not
+		// rely on the order of lists in common (which is not guaranteed by
+		// tests).
+		repos: []*types.Repo{repo("org/repo1"), repo("org/repo3"), repo("org/repo2")},
 	}
 	tests := []struct {
 		name          string
