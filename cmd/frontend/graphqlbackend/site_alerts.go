@@ -142,6 +142,15 @@ func init() {
 					"\n* " + strings.Join(siteProblems.Messages(), "\n* "),
 			})
 		}
+
+		externalServiceProblems := problems.ExternalService()
+		if len(externalServiceProblems) > 0 {
+			alerts = append(alerts, &Alert{
+				TypeValue: AlertTypeWarning,
+				MessageValue: `[**Update external service configuration**](/site-admin/external-services) to resolve problems:` +
+					"\n* " + strings.Join(externalServiceProblems.Messages(), "\n* "),
+			})
+		}
 		return alerts
 	})
 }
