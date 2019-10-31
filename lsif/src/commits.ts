@@ -1,140 +1,6 @@
 import got from 'got'
-import { XrepoDatabase } from './xrepo'
 import * as crypto from 'crypto'
-import { TracingContext, logAndTraceCall } from './tracing'
-import { chunk } from 'lodash'
-import { MAX_CONCURRENT_GITSERVER_REQUESTS, MAX_COMMITS_PER_UPDATE } from './constants'
-
-/**
- * Update the commits tables in the cross-repository database with the current
- * output of gitserver for the given repository around the given commit. If we
- * already have commit parentage information for this commit, this function
- * will do nothing.
- *
- * @param args Parameter bag.
- */
-export async function discoverAndUpdateCommit({
-    xrepoDatabase,
-    repository,
-    commit,
-    gitserverUrls,
-    ctx,
-}: {
-    /** The cross-repo database. */
-    xrepoDatabase: XrepoDatabase
-    /** The repository name. */
-    repository: string
-    /** The commit from which the gitserver queries should start. */
-    commit: string
-    /** The set of ordered gitserver urls. */
-    gitserverUrls: string[]
-    /** The tracing context. */
-    ctx: TracingContext
-}): Promise<void> {
-    // No need to update if we already know about this commit
-    if (await xrepoDatabase.isCommitTracked(repository, commit)) {
-        return
-    }
-
-    // No need to pull commits for repos we don't have data for
-    if (!(await xrepoDatabase.isRepositoryTracked(repository))) {
-        return
-    }
-
-    const gitserverUrl = addrFor(repository, gitserverUrls)
-    const commits = await logAndTraceCall(ctx, 'querying commits', () =>
-        getCommitsNear(gitserverUrl, repository, commit)
-    )
-    await logAndTraceCall(ctx, 'updating commits', () => xrepoDatabase.updateCommits(repository, commits))
-}
-
-/**
- * Update the known tip of the default branch for every repository for which
- * we have LSIF data. This queries gitserver for the last known tip. From that,
- * we determine the closest commit with LSIF data and mark those as commits for
- * which we can return results in a global find-references query.
- *
- * @param args Parameter bag.
- */
-export async function discoverAndUpdateTips({
-    xrepoDatabase,
-    gitserverUrls,
-    ctx,
-    batchSize = MAX_CONCURRENT_GITSERVER_REQUESTS,
-}: {
-    /** The cross-repo database. */
-    xrepoDatabase: XrepoDatabase
-    /** The set of ordered gitserver urls. */
-    gitserverUrls: string[]
-    /** The tracing context. */
-    ctx: TracingContext
-    /** The maximum number of requests to make at once. Set during testing.*/
-    batchSize?: number
-}): Promise<void> {
-    for (const [repository, commit] of (await discoverTips({
-        xrepoDatabase,
-        gitserverUrls,
-        ctx,
-        batchSize,
-    })).entries()) {
-        await xrepoDatabase.updateDumpsVisibleFromTip(repository, commit)
-    }
-}
-
-/**
- * Query gitserver for the head of the default branch for every repository that has
- * LSIF data.
- *
- * @param args Parameter bag.
- */
-export async function discoverTips({
-    xrepoDatabase,
-    gitserverUrls,
-    ctx,
-    batchSize = MAX_CONCURRENT_GITSERVER_REQUESTS,
-}: {
-    /** The cross-repo database. */
-    xrepoDatabase: XrepoDatabase
-    /** The set of ordered gitserver urls. */
-    gitserverUrls: string[]
-    /** The tracing context. */
-    ctx: TracingContext
-    /** The maximum number of requests to make at once. Set during testing.*/
-    batchSize?: number
-}): Promise<Map<string, string>> {
-    // Construct the calls we need to make to gitserver for each repository that
-    // we know about. We're going to construct these as factories so they do not
-    // start immediately and we can apply them in batches to not overload us or
-    // gitserver with too many in-flight requests.
-
-    const factories: (() => Promise<{ repository: string; commit: string }>)[] = []
-    for (const repository of await xrepoDatabase.getTrackedRepositories()) {
-        factories.push(async () => {
-            const lines = await gitserverExecLines(addrFor(repository, gitserverUrls), repository, [
-                'git',
-                'rev-parse',
-                'HEAD',
-            ])
-
-            return { repository, commit: lines ? lines[0] : '' }
-        })
-    }
-
-    const tips = new Map<string, string>()
-    for (const batch of chunk(factories, batchSize)) {
-        // Perform this batch of calls to the appropriate gitserver instance
-        const responses = await logAndTraceCall(ctx, 'getting repository metadata', () =>
-            Promise.all(batch.map(factory => factory()))
-        )
-
-        // Combine the results
-        for (const { repository, commit } of responses) {
-            tips.set(repository, commit)
-        }
-    }
-
-    return tips
-}
+import { MAX_COMMITS_PER_UPDATE } from './constants'
 
 /**
  * Determine the gitserver that holds data for the given repository. This matches the
@@ -145,7 +11,7 @@ export async function discoverTips({
  * @param repository The repository name.
  * @param gitserverUrls The set of ordered gitserver urls.
  */
-function addrFor(repository: string, gitserverUrls: string[]): string {
+export function addrFor(repository: string, gitserverUrls: string[]): string {
     if (gitserverUrls.length === 0) {
         throw new Error('No gitserverUrls provided.')
     }
@@ -245,7 +111,7 @@ export function flattenCommitParents(lines: string[]): [string, string][] {
  * @param repository The repository name.
  * @param args The command to run in the repository's git directory.
  */
-async function gitserverExecLines(gitserverUrl: string, repository: string, args: string[]): Promise<string[]> {
+export async function gitserverExecLines(gitserverUrl: string, repository: string, args: string[]): Promise<string[]> {
     return (await gitserverExec(gitserverUrl, repository, args)).split('\n').filter(line => Boolean(line))
 }
 

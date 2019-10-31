@@ -10,10 +10,11 @@ import { Connection, EntityManager, Brackets } from 'typeorm'
 import { createFilter, testFilter } from './encoding'
 import { PackageModel, ReferenceModel, Commit, LsifDump, DumpId } from './xrepo.models'
 import { TableInserter } from './inserter'
-import { discoverAndUpdateCommit } from './commits'
-import { TracingContext } from './tracing'
+import { addrFor, getCommitsNear, gitserverExecLines } from './commits'
+import { TracingContext, logAndTraceCall } from './tracing'
 import { dbFilename, tryDeleteFile } from './util'
-import { MAX_TRAVERSAL_LIMIT, ADVISORY_LOCK_ID_SALT } from './constants'
+import { MAX_TRAVERSAL_LIMIT, ADVISORY_LOCK_ID_SALT, MAX_CONCURRENT_GITSERVER_REQUESTS } from './constants'
+import { chunk } from 'lodash'
 
 /**
  * The insertion metrics for the cross-repo database.
@@ -241,7 +242,7 @@ export class XrepoDatabase {
         // cross-repository database. This populates the necessary data for
         // the following query.
         if (gitserverUrls) {
-            await discoverAndUpdateCommit({ xrepoDatabase: this, repository, commit, gitserverUrls, ctx })
+            await this.discoverAndUpdateCommit({ repository, commit, gitserverUrls, ctx })
         }
 
         return this.withConnection(async connection => {
@@ -588,5 +589,126 @@ export class XrepoDatabase {
      */
     private withTransactionalEntityManager<T>(callback: (connection: EntityManager) => Promise<T>): Promise<T> {
         return this.withConnection(connection => connection.transaction(callback))
+    }
+
+    /**
+     * Update the commits tables in the cross-repository database with the current
+     * output of gitserver for the given repository around the given commit. If we
+     * already have commit parentage information for this commit, this function
+     * will do nothing.
+     *
+     * @param args Parameter bag.
+     */
+    public async discoverAndUpdateCommit({
+        repository,
+        commit,
+        gitserverUrls,
+        ctx,
+    }: {
+        /** The repository name. */
+        repository: string
+        /** The commit from which the gitserver queries should start. */
+        commit: string
+        /** The set of ordered gitserver urls. */
+        gitserverUrls: string[]
+        /** The tracing context. */
+        ctx: TracingContext
+    }): Promise<void> {
+        // No need to update if we already know about this commit
+        if (await this.isCommitTracked(repository, commit)) {
+            return
+        }
+
+        // No need to pull commits for repos we don't have data for
+        if (!(await this.isRepositoryTracked(repository))) {
+            return
+        }
+
+        const gitserverUrl = addrFor(repository, gitserverUrls)
+        const commits = await logAndTraceCall(ctx, 'querying commits', () =>
+            getCommitsNear(gitserverUrl, repository, commit)
+        )
+        await logAndTraceCall(ctx, 'updating commits', () => this.updateCommits(repository, commits))
+    }
+
+    /**
+     * Update the known tip of the default branch for every repository for which
+     * we have LSIF data. This queries gitserver for the last known tip. From that,
+     * we determine the closest commit with LSIF data and mark those as commits for
+     * which we can return results in a global find-references query.
+     *
+     * @param args Parameter bag.
+     */
+    public async discoverAndUpdateTips({
+        gitserverUrls,
+        ctx,
+        batchSize = MAX_CONCURRENT_GITSERVER_REQUESTS,
+    }: {
+        /** The set of ordered gitserver urls. */
+        gitserverUrls: string[]
+        /** The tracing context. */
+        ctx: TracingContext
+        /** The maximum number of requests to make at once. Set during testing.*/
+        batchSize?: number
+    }): Promise<void> {
+        for (const [repository, commit] of (await this.discoverTips({
+            gitserverUrls,
+            ctx,
+            batchSize,
+        })).entries()) {
+            await this.updateDumpsVisibleFromTip(repository, commit)
+        }
+    }
+
+    /**
+     * Query gitserver for the head of the default branch for every repository that has
+     * LSIF data.
+     *
+     * @param args Parameter bag.
+     */
+    public async discoverTips({
+        gitserverUrls,
+        ctx,
+        batchSize = MAX_CONCURRENT_GITSERVER_REQUESTS,
+    }: {
+        /** The set of ordered gitserver urls. */
+        gitserverUrls: string[]
+        /** The tracing context. */
+        ctx: TracingContext
+        /** The maximum number of requests to make at once. Set during testing.*/
+        batchSize?: number
+    }): Promise<Map<string, string>> {
+        // Construct the calls we need to make to gitserver for each repository that
+        // we know about. We're going to construct these as factories so they do not
+        // start immediately and we can apply them in batches to not overload us or
+        // gitserver with too many in-flight requests.
+
+        const factories: (() => Promise<{ repository: string; commit: string }>)[] = []
+        for (const repository of await this.getTrackedRepositories()) {
+            factories.push(async () => {
+                const lines = await gitserverExecLines(addrFor(repository, gitserverUrls), repository, [
+                    'git',
+                    'rev-parse',
+                    'HEAD',
+                ])
+
+                return { repository, commit: lines ? lines[0] : '' }
+            })
+        }
+
+        const tips = new Map<string, string>()
+        for (const batch of chunk(factories, batchSize)) {
+            // Perform this batch of calls to the appropriate gitserver instance
+            const responses = await logAndTraceCall(ctx, 'getting repository metadata', () =>
+                Promise.all(batch.map(factory => factory()))
+            )
+
+            // Combine the results
+            for (const { repository, commit } of responses) {
+                tips.set(repository, commit)
+            }
+        }
+
+        return tips
     }
 }

@@ -1,28 +1,19 @@
 import { Column, Entity, Index, PrimaryColumn } from 'typeorm'
-import { Id, MonikerKind } from 'lsif-protocol'
+import { MonikerKind } from 'lsif-protocol'
 import { getBatchSize } from './util'
-
-export type DocumentId = Id
-export type DocumentPath = string
-export type RangeId = Id
-export type DefinitionResultId = Id
-export type ReferenceResultId = Id
-export type DefinitionReferenceResultId = DefinitionResultId | ReferenceResultId
-export type HoverResultId = Id
-export type MonikerId = Id
-export type PackageInformationId = Id
-
-/**
- * A type that describes a gzipped and JSON-encoded value of type `T`.
- */
-export type JSONEncoded<T> = Buffer
-
-/**
- * A type of hashed value created by hashing a value of type `T` and performing
- * the modulus with a value of type `U`. This is to link the index of a result
- * chunk to the hashed value of the identifiers stored within it.
- */
-export type HashMod<T, U> = number
+import {
+    DocumentPath,
+    JSONEncoded,
+    HashMod,
+    DefinitionReferenceResultId,
+    HoverResultId,
+    MonikerId,
+    PackageInformationId,
+    DocumentId,
+    RangeId,
+    DefinitionResultId,
+    ReferenceResultId,
+} from './database.types'
 
 /**
 n entity within the database describing LSIF data for a single repository
