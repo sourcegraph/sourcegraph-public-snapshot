@@ -66,7 +66,7 @@ type RepositoryRevisions struct {
 }
 
 func (r *RepositoryRevisions) Equal(other *RepositoryRevisions) bool {
-	return reflect.DeepEqual(r, other)
+	return reflect.DeepEqual(r.Repo, other.Repo) && reflect.DeepEqual(r.Revs, other.Revs)
 }
 
 func (r *RepositoryRevisions) IndexedHEADCommit() api.CommitID {
