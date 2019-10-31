@@ -89,7 +89,7 @@ func TestReposList(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			req := httptest.NewRequest("POST", "/", bytes.NewReader([]byte(tc.body)))
 			w := httptest.NewRecorder()
-			if err := tc.srv.serve(w, req); err != nil {
+			if err := tc.srv.serveList(w, req); err != nil {
 				t.Fatal(err)
 			}
 
@@ -110,6 +110,91 @@ func TestReposList(t *testing.T) {
 			for _, r := range repos {
 				got = append(got, r.URI)
 			}
+
+			if !cmp.Equal(tc.want, got) {
+				t.Fatalf("mismatch (-want +got):\n%s", cmp.Diff(tc.want, got))
+			}
+		})
+	}
+}
+
+func TestReposIndex(t *testing.T) {
+	defaultRepos := []string{"github.com/popular/foo", "github.com/popular/bar"}
+	allRepos := append(defaultRepos, "github.com/alice/foo", "github.com/alice/bar")
+
+	cases := []struct {
+		name string
+		srv  *reposListServer
+		body string
+		want []string
+	}{{
+		name: "indexers",
+		srv: &reposListServer{
+			Repos: &mockRepos{
+				defaultRepos: defaultRepos,
+				repos:        allRepos,
+			},
+			Indexers: suffixIndexers(true),
+		},
+		body: `{"Hostname": "foo"}`,
+		want: []string{"github.com/popular/foo", "github.com/alice/foo"},
+	}, {
+		name: "indexers",
+		srv: &reposListServer{
+			Repos: &mockRepos{
+				defaultRepos: defaultRepos,
+				repos:        allRepos,
+			},
+			Indexers: suffixIndexers(true),
+		},
+		body: `{"Hostname": "foo", "Indexed": ["github.com/alice/bar"]}`,
+		want: []string{"github.com/popular/foo", "github.com/alice/foo", "github.com/alice/bar"},
+	}, {
+		name: "dot-com indexers",
+		srv: &reposListServer{
+			SourcegraphDotComMode: true,
+			Repos: &mockRepos{
+				defaultRepos: defaultRepos,
+				repos:        allRepos,
+			},
+			Indexers: suffixIndexers(true),
+		},
+		body: `{"Hostname": "foo"}`,
+		want: []string{"github.com/popular/foo"},
+	}, {
+		name: "none",
+		srv: &reposListServer{
+			Repos: &mockRepos{
+				defaultRepos: defaultRepos,
+				repos:        allRepos,
+			},
+			Indexers: suffixIndexers(true),
+		},
+		body: `{"Hostname": "baz"}`,
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest("POST", "/", bytes.NewReader([]byte(tc.body)))
+			w := httptest.NewRecorder()
+			if err := tc.srv.serveIndex(w, req); err != nil {
+				t.Fatal(err)
+			}
+
+			resp := w.Result()
+			body, _ := ioutil.ReadAll(resp.Body)
+
+			if resp.StatusCode != http.StatusOK {
+				t.Errorf("got status %v", resp.StatusCode)
+			}
+
+			var data struct {
+				RepoNames []string
+			}
+			if err := json.Unmarshal(body, &data); err != nil {
+				t.Fatal(err)
+			}
+			got := data.RepoNames
 
 			if !cmp.Equal(tc.want, got) {
 				t.Fatalf("mismatch (-want +got):\n%s", cmp.Diff(tc.want, got))
@@ -151,7 +236,7 @@ func (r *mockRepos) List(ctx context.Context, opt db.ReposListOptions) ([]*types
 // the suffix of hostname.
 type suffixIndexers bool
 
-func (b suffixIndexers) ReposSubset(ctx context.Context, hostname string, repoNames []string) ([]string, error) {
+func (b suffixIndexers) ReposSubset(ctx context.Context, hostname string, indexed map[string]struct{}, repoNames []string) ([]string, error) {
 	if !b.Enabled() {
 		return nil, errors.New("indexers disabled")
 	}
@@ -162,6 +247,8 @@ func (b suffixIndexers) ReposSubset(ctx context.Context, hostname string, repoNa
 	var filter []string
 	for _, name := range repoNames {
 		if strings.HasSuffix(name, hostname) {
+			filter = append(filter, name)
+		} else if _, ok := indexed[name]; ok {
 			filter = append(filter, name)
 		}
 	}

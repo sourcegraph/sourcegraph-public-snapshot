@@ -40,6 +40,7 @@ const (
 	ReposInventoryUncached = "internal.repos.inventory-uncached"
 	ReposInventory         = "internal.repos.inventory"
 	ReposList              = "internal.repos.list"
+	ReposIndex             = "internal.repos.index"
 	ReposListEnabled       = "internal.repos.list-enabled"
 	ReposUpdateMetadata    = "internal.repos.update-metadata"
 	Configuration          = "internal.configuration"
@@ -106,6 +107,7 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/repos/inventory-uncached").Methods("POST").Name(ReposInventoryUncached)
 	base.Path("/repos/inventory").Methods("POST").Name(ReposInventory)
 	base.Path("/repos/list").Methods("POST").Name(ReposList)
+	base.Path("/repos/index").Methods("POST").Name(ReposIndex)
 	base.Path("/repos/list-enabled").Methods("POST").Name(ReposListEnabled)
 	base.Path("/repos/update-metadata").Methods("POST").Name(ReposUpdateMetadata)
 	base.Path("/repos/{RepoName:.*}").Methods("POST").Name(ReposGetByName)

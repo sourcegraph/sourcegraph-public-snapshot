@@ -31,8 +31,10 @@ type Indexers struct {
 //
 // ReposSubset reuses the underlying array of repoNames.
 //
+// indexed is the set of repositories currently indexed by hostname.
+//
 // An error is returned if hostname is not part of the Indexers endpoints.
-func (c *Indexers) ReposSubset(ctx context.Context, hostname string, repoNames []string) ([]string, error) {
+func (c *Indexers) ReposSubset(ctx context.Context, hostname string, indexed map[string]struct{}, repoNames []string) ([]string, error) {
 	if !c.Enabled() {
 		return repoNames, nil
 	}
@@ -52,12 +54,10 @@ func (c *Indexers) ReposSubset(ctx context.Context, hostname string, repoNames [
 		return nil, err
 	}
 
-	// Rebalancing: Get the currently indexed repositories so we can populate
-	// other. Other contains all repositories endpoint has indexed which it
-	// should drop. We will only drop them if the assigned endpoint has
+	// Rebalancing: Other contains all repositories endpoint has indexed which
+	// it should drop. We will only drop them if the assigned endpoint has
 	// indexed it. This is to prevent dropping a computed index until
 	// rebalancing is finished.
-	indexed := c.Indexed(ctx, endpoint)
 	other := map[string][]string{}
 
 	subset := repoNames[:0]
