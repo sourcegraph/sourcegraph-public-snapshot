@@ -9,15 +9,65 @@ info:
     url: https://sourcegraph.com
 servers:
   - url: http://localhost:3186
+tags:
+  - name: LSIF
+    description: LSIF operations
+  - name: Dumps
+    description: Dump operations
+  - name: Jobs
+    description: Job operations
 paths:
   /upload:
     post:
-      description: Upload LSIF data for a particular commit and directory.
+      description: Upload LSIF data for a particular commit and directory. Exactly one file must be uploaded, and it is assumed to be the gzipped output of an LSIF indexer.
       tags:
         - LSIF
+      requestBody:
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      parameters:
+        - name: repository
+          in: query
+          description: The repository name.
+          required: true
+          schema:
+            type: string
+        - name: commit
+          in: query
+          description: The 40-character commit hash.
+          required: true
+          schema:
+            type: string
+        - name: root
+          in: query
+          description: The root-relative path of the dump.
+          required: false
+          schema:
+            type: string
+        - name: skipValidation
+          in: query
+          description: If true, skip JSON schema validation of the input.
+          required: false
+          schema:
+            type: boolean
+        - name: blocking
+          in: query
+          description: If true, block the request until the upload is processed.
+          required: false
+          schema:
+            type: boolean
+        - name: maxWait
+          in: query
+          description: The maximum time (in seconds) that request will block. The job will continue asynchronously if this much time has elapesed.
+          required: false
+          schema:
+            type: number
       responses:
         '201':
-          description: Processed
+          description: Processed (synchronously)
           content:
             application/json:
               schema:
@@ -209,7 +259,7 @@ paths:
               - scheduled
               - completed
               - failed
-        - name: search
+        - name: query
           in: query
           description: A search query applied over job type, job arguments, and failure (reason and stacktrace) properties.
           required: false
@@ -266,17 +316,21 @@ components:
   schemas:
     Position:
       type: object
+      description: A cursor position in a source file.
       properties:
         line:
           type: number
+          description: The (zero-index) line index.
         character:
           type: number
+          description: The (zero-index) character index.
       required:
         - line
         - character
       additionalProperties: false
     Range:
       type: object
+      description: A closed range of positions in a source file.
       properties:
         start:
           $ref: '#/components/schemas/Position'
@@ -288,9 +342,11 @@ components:
       additionalProperties: false
     Location:
       type: object
+      description: A position in a file of a code base.
       properties:
         uri:
           type: string
+          description: The root-relative path to the file.
         range:
           $ref: '#/components/schemas/Range'
       required:
@@ -299,23 +355,28 @@ components:
       additionalProperties: false
     UploadResponse:
       type: object
+      description: A payload indicating the job that will process this dump.
       properties:
         id:
           type: string
+          description: The job identifier.
       required:
         - id
       additionalProperties: false
     LSPRequest:
       type: object
+      description: A payload indicating the type of requested LSP data.
       properties:
         method:
           type: string
+          description: The request type.
           enum:
             - definitions
             - references
             - hover
         path:
           type: string
+          description: The root-relative path to the file containing the hover position.
         position:
           $ref: '#/components/schemas/Position'
       required:
@@ -324,20 +385,25 @@ components:
       additionalProperties: false
     Locations:
       type: array
+      description: A list of definition or reference locations.
       items:
         $ref: '#/components/schemas/Location'
     Hover:
       type: object
+      description: The text associated with a position in a source file.
       properties:
         contents:
           type: object
+          description: The hover text wrapper.
           properties:
             kind:
               type: string
+              description: An indicator for the format of the value property. Currently only markdown is supported.
               enum:
                 - markdown
             value:
               type: string
+              description: The raw markdown text.
           required:
             - kind
             - value
@@ -349,32 +415,42 @@ components:
       additionalProperties: false
     Dumps:
       type: object
+      description: A paginated wrapper for a list of dumps.
       properties:
         dumps:
           type: array
+          description: A list of LSIF dumps for a repository.
           items:
             $ref: '#/components/schemas/Dump'
         totalCount:
           type: number
+          descrpition: The total number of dumps in this result set.
       required:
         - dumps
         - totalCount
       additionalProperties: false
     Dump:
       type: object
+      description: An LSIF dump.
       properties:
         id:
           type: number
+          description: A unique identifier.
         repository:
           type: string
+          description: The repository name.
         commit:
           type: string
+          description: The 40-character commit hash.
         root:
           type: string
+          description: The root-relative path of the dump.
         visibleAtTip:
           type: boolean
+          description: Whether or not this dump can provide global reference code intelligence.
         uploadedAt:
           type: string
+          description: An ISO 8601-formatted time that the dump was created.
       required:
         - id
         - repository
@@ -385,6 +461,7 @@ components:
       additionalProperties: false
     Stats:
       type: object
+      description: An object containing the counts of jobs by status.
       properties:
         active:
           type: number
@@ -410,25 +487,37 @@ components:
       additionalProperties: false
     Jobs:
       type: object
+      description: A paginated wrapper for a list of jobs.
       properties:
         jobs:
           type: array
+          description: A list of jobs with a particular status.
           items:
             $ref: '#/components/schemas/Job'
         totalCount:
           type: number
+          description: The total number of jobs in this result set.
       required:
         - jobs
       additionalProperties: false
     Job:
       type: object
+      description: An LSIF job.
       properties:
         id:
           type: string
+          description: A unique identifier.
         name:
           type: string
+          description: The type of job.
+          enum:
+            - convert
+            - update-tips
+            - clean-old-jobs
+            - clean-failed-jobs
         args:
           type: object
+          description: The arguments passed to the job.
           additionalProperties:
             oneOf:
               - type: string
@@ -436,6 +525,7 @@ components:
               - type: boolean
         status:
           type: string
+          description: The job's current status.
           enum:
             - active
             - queued
@@ -444,21 +534,27 @@ components:
             - failed
         progress:
           type: number
+          description: A percentage progress of the job (0-100%).
         failedReason:
           type: string
+          description: A brief description of why the job failed.
           nullable: true
         stacktrace:
           type: array
+          description: The stacktrace that caused an exception.
           items:
             type: string
           nullable: true
         timestamp:
           type: string
+          description: An ISO 8601-formatted time that the job was queued.
         processedOn:
           type: string
+          description: An ISO 8601-formatted time that the job was processed.
           nullable: true
         finishedOn:
           type: string
+          description: An ISO 8601-formatted time that the job was completed.
           nullable: true
       required:
         - id
