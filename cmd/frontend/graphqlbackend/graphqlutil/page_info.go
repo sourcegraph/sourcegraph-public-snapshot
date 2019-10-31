@@ -1,10 +1,8 @@
 package graphqlutil
 
-import graphql "github.com/graph-gophers/graphql-go"
-
 // PageInfo implements the GraphQL type PageInfo.
 type PageInfo struct {
-	endCursor   *graphql.ID
+	endCursor   *string
 	hasNextPage bool
 }
 
@@ -15,9 +13,9 @@ func HasNextPage(hasNextPage bool) *PageInfo {
 
 // NextPageCursor returns a new PageInfo indicating there is a next page with
 // the given end cursor.
-func NextPageCursor(endCursor graphql.ID) *PageInfo {
+func NextPageCursor(endCursor string) *PageInfo {
 	return &PageInfo{endCursor: &endCursor, hasNextPage: true}
 }
 
-func (r *PageInfo) EndCursor() *graphql.ID { return r.endCursor }
-func (r *PageInfo) HasNextPage() bool      { return r.hasNextPage }
+func (r *PageInfo) EndCursor() *string { return r.endCursor }
+func (r *PageInfo) HasNextPage() bool  { return r.hasNextPage }
