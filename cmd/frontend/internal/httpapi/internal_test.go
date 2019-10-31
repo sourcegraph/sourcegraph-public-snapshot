@@ -89,7 +89,7 @@ func TestReposList(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			req := httptest.NewRequest("POST", "/", bytes.NewReader([]byte(tc.body)))
 			w := httptest.NewRecorder()
-			if err := tc.srv.serve(w, req); err != nil {
+			if err := tc.srv.serveList(w, req); err != nil {
 				t.Fatal(err)
 			}
 

@@ -216,7 +216,7 @@ type reposListServer struct {
 	}
 }
 
-func (h *reposListServer) serve(w http.ResponseWriter, r *http.Request) error {
+func (h *reposListServer) serveList(w http.ResponseWriter, r *http.Request) error {
 	var opt struct {
 		Hostname string
 		db.ReposListOptions

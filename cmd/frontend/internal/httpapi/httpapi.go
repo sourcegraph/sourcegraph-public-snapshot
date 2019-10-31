@@ -95,7 +95,7 @@ func NewInternalHandler(m *mux.Router, schema *graphql.Schema) http.Handler {
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 		Repos:                 backend.Repos,
 		Indexers:              search.Indexers(),
-	}).serve)))
+	}).serveList)))
 	m.Get(apirouter.ReposListEnabled).Handler(trace.TraceRoute(handler(serveReposListEnabled)))
 	m.Get(apirouter.ReposGetByName).Handler(trace.TraceRoute(handler(serveReposGetByName)))
 	m.Get(apirouter.SettingsGetForSubject).Handler(trace.TraceRoute(handler(serveSettingsGetForSubject)))
