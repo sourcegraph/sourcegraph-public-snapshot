@@ -421,7 +421,8 @@ func queryToZoektQuery(query *search.PatternInfo, isSymbol bool) (zoektquery.Q, 
 	var q zoektquery.Q
 	if query.IsRegExp {
 		var err error
-		q, err = parseRe(query.Pattern, false, query.IsCaseSensitive)
+		fileNameOnly := query.PatternMatchesPath && !query.PatternMatchesContent
+		q, err = parseRe(query.Pattern, fileNameOnly, query.IsCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
