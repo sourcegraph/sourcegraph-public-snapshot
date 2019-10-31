@@ -254,8 +254,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 					repos:       []*types.Repo{repo("org/repo1")},
 					partial:     make(map[api.RepoName]struct{}),
 				},
-				// BUG: resultOffset should be 2! Issue #6287
-				resultOffset:              1,
+				resultOffset:              2,
 				lastRepoConsumed:          repo("org/repo1"),
 				lastRepoConsumedPartially: true,
 				limitHit:                  true,
@@ -441,8 +440,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 					repoRevs("4", "master"),
 				},
 			},
-			// BUG: ResultOffset should be 2! Issue #6287
-			wantCursor: &searchCursor{RepositoryOffset: 0, ResultOffset: 1},
+			wantCursor: &searchCursor{RepositoryOffset: 0, ResultOffset: 2},
 			wantResults: []searchResultResolver{
 				result(repo("1"), "some/file1.go", "master"),
 			},

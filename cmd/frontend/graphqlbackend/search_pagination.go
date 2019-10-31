@@ -417,6 +417,7 @@ func sliceSearchResults(results []searchResultResolver, common *searchResultsCom
 		return
 	}
 	final.limitHit = true
+	originalResults := results
 	results = results[offset:]
 
 	// Break results into repositories because for each result we need to add
@@ -443,7 +444,7 @@ func sliceSearchResults(results []searchResultResolver, common *searchResultsCom
 	// request should use a Cursor.ResultOffset == 2 to indicate we should
 	// resume fetching results starting at b3.
 	lastResultRepo, _ := results[len(results)-1].searchResultURIs()
-	for _, r := range results[:limit] {
+	for _, r := range originalResults[:offset+limit] {
 		repo, _ := r.searchResultURIs()
 		if repo != lastResultRepo {
 			final.resultOffset = 0
