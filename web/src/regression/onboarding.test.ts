@@ -145,7 +145,7 @@ describe('Onboarding', () => {
                 // for some reason, first click doesn't work here
                 await driver.page.click(activationNavBarSelector)
                 await driver.page.click(activationNavBarSelector)
-                await driver.clickElementWithText('Connect your code host')
+                await (await driver.findElementWithText('Connect your code host')).click()
             })
             await driver.waitUntilURL(driver.sourcegraphBaseUrl + '/site-admin/external-services')
             // Verify confetti plays

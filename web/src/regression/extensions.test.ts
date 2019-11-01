@@ -115,8 +115,7 @@ describe('Sourcegraph extensions regression test suite', () => {
             expect(await driver.page.$$('.line-decoration-attachment')).toHaveLength(0)
 
             // Wait for the "Coverage: X%" button to appear and click it
-            await retry(() => driver.findElementWithText('Coverage: 80%'))
-            await driver.clickElementWithText('Coverage: 80%')
+            await (await driver.findElementWithText('Coverage: 80%', { wait: true })).click()
 
             // Lines should get decorated, but without line/hit branch counts
             await retry(async () => expect(await driver.page.$$('tr[style]')).toHaveLength(264))
@@ -124,7 +123,7 @@ describe('Sourcegraph extensions regression test suite', () => {
 
             // Open the command palette and click "Show line/hit branch counts"
             await driver.page.click('.command-list-popover-button')
-            await driver.clickElementWithText('Codecov: Show line hit/branch counts')
+            await (await driver.findElementWithText('Codecov: Show line hit/branch counts')).click()
 
             // Line/hit branch counts should now show up
             await retry(async () => expect(await driver.page.$$('.line-decoration-attachment')).toHaveLength(264))
@@ -132,7 +131,7 @@ describe('Sourcegraph extensions regression test suite', () => {
             // Check that the the "View commit report" button links to the correct location
             await driver.page.click('.command-list-popover-button')
             await clickAndWaitForNavigation(
-                (await driver.findElementWithText('Codecov: View commit report'))[0],
+                await driver.findElementWithText('Codecov: View commit report'),
                 driver.page
             )
             expect(driver.page.url()).toEqual(

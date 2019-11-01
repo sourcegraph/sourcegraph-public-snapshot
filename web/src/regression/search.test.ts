@@ -190,8 +190,10 @@ describe('Search regression test suite', () => {
             }
         })
 
-        test('Global text search (asdfalksdjflaksjdflkasjdf) with 0 results.', async () => {
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=asdfalksdjflaksjdflkasjdf')
+        test('Global text search with 0 results.', async () => {
+            await driver.page.goto(
+                config.sourcegraphBaseUrl + '/search?q=asdfalksd+jflaksjdflkasjdf&patternType=literal'
+            )
             await driver.page.waitForFunction(hasNoResultsOrError)
         })
         test('Global text search with double-quoted string constant ("error type:") with a few results.', async () => {

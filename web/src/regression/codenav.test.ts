@@ -273,7 +273,7 @@ describe('Code navigation regression test suite', () => {
 
                         // Find-references
                         if (expectedReferences) {
-                            await driver.clickElementWithText('Find references')
+                            await (await driver.findElementWithText('Find references')).click()
                             await driver.page.waitForSelector('.e2e-search-result')
                             const refLinks = await collectLinks('.e2e-search-result')
                             for (const expectedReference of expectedReferences) {
@@ -283,7 +283,7 @@ describe('Code navigation regression test suite', () => {
                         }
 
                         // Go-to-definition
-                        await driver.clickElementWithText('Go to definition')
+                        await (await driver.findElementWithText('Go to definition')).click()
                         if (Array.isArray(expectedDefinition)) {
                             await driver.page.waitForSelector('.e2e-search-result')
                             const defLinks = await collectLinks('.e2e-search-result')
