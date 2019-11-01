@@ -38,6 +38,13 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook http.Handle
 	}
 	m.StrictSlash(true)
 
+	handler := jsonMiddleware(&errorHandler{
+		// Only display error message to admins when in debug mode, since it
+		// may contain sensitive info (like API keys in net/http error
+		// messages).
+		WriteErrBody: env.InsecureDev,
+	})
+
 	// Set handlers for the installed routes.
 	m.Get(apirouter.RepoShield).Handler(trace.TraceRoute(handler(serveRepoShield)))
 
@@ -86,6 +93,11 @@ func NewInternalHandler(m *mux.Router, schema *graphql.Schema) http.Handler {
 	}
 	m.StrictSlash(true)
 
+	handler := jsonMiddleware(&errorHandler{
+		// Internal endpoints can expose sensitive errors
+		WriteErrBody: true,
+	})
+
 	m.Get(apirouter.ExternalServiceConfigs).Handler(trace.TraceRoute(handler(serveExternalServiceConfigs)))
 	m.Get(apirouter.ExternalServicesList).Handler(trace.TraceRoute(handler(serveExternalServicesList)))
 	m.Get(apirouter.PhabricatorRepoCreate).Handler(trace.TraceRoute(handler(servePhabricatorRepoCreate)))
@@ -128,17 +140,6 @@ func NewInternalHandler(m *mux.Router, schema *graphql.Schema) http.Handler {
 	return m
 }
 
-// handler is a wrapper func for API handlers.
-func handler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
-	return handlerutil.HandlerWithErrorReturn{
-		Handler: func(w http.ResponseWriter, r *http.Request) error {
-			w.Header().Set("Content-Type", "application/json")
-			return h(w, r)
-		},
-		Error: handleError,
-	}
-}
-
 var schemaDecoder = schema.NewDecoder()
 
 func init() {
@@ -155,7 +156,11 @@ func init() {
 	})
 }
 
-func handleError(w http.ResponseWriter, r *http.Request, status int, err error) {
+type errorHandler struct {
+	WriteErrBody bool
+}
+
+func (h *errorHandler) Handle(w http.ResponseWriter, r *http.Request, status int, err error) {
 	// Handle custom errors
 	if ee, ok := err.(*handlerutil.URLMovedError); ok {
 		err := handlerutil.RedirectToNewRepoName(w, r, ee.NewRepo)
@@ -171,9 +176,7 @@ func handleError(w http.ResponseWriter, r *http.Request, status int, err error) 
 	errBody := err.Error()
 
 	var displayErrBody string
-	if env.InsecureDev {
-		// Only display error message to admins when in debug mode, since it may
-		// contain sensitive info (like API keys in net/http error messages).
+	if h.WriteErrBody {
 		displayErrBody = string(errBody)
 	}
 	http.Error(w, displayErrBody, status)
@@ -184,5 +187,17 @@ func handleError(w http.ResponseWriter, r *http.Request, status int, err error) 
 	}
 	if status < 200 || status >= 500 {
 		log15.Error("API HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", status, "error", err, "trace", spanURL)
+	}
+}
+
+func jsonMiddleware(errorHandler *errorHandler) func(func(http.ResponseWriter, *http.Request) error) http.Handler {
+	return func(h func(http.ResponseWriter, *http.Request) error) http.Handler {
+		return handlerutil.HandlerWithErrorReturn{
+			Handler: func(w http.ResponseWriter, r *http.Request) error {
+				w.Header().Set("Content-Type", "application/json")
+				return h(w, r)
+			},
+			Error: errorHandler.Handle,
+		}
 	}
 }
