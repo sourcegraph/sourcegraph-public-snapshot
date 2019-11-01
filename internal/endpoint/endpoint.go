@@ -199,7 +199,7 @@ func endpointsToMap(u *k8sURL, eps *corev1.Endpoints) (*hashMap, error) {
 	var urls []string
 	for _, subset := range eps.Subsets {
 		for _, addr := range subset.Addresses {
-			if addr.Hostname != nil {
+			if addr.Hostname != nil && *addr.Hostname != "" {
 				urls = append(urls, u.endpointURL(*addr.Hostname+"."+u.Service))
 			} else if addr.Ip != nil {
 				urls = append(urls, u.endpointURL(*addr.Ip))
