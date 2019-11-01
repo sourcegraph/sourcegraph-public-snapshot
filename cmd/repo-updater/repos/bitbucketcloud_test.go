@@ -178,3 +178,104 @@ func TestBitbucketCloudSource_MakeRepo(t *testing.T) {
 		})
 	}
 }
+
+func TestBitbucketCloudSource_Exclude(t *testing.T) {
+	b, err := ioutil.ReadFile(filepath.Join("testdata", "bitbucketcloud-repos.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var repos []*bitbucketcloud.Repo
+	if err := json.Unmarshal(b, &repos); err != nil {
+		t.Fatal(err)
+	}
+
+	cases := map[string]*schema.BitbucketCloudConnection{
+		"none": {
+			Url:         "https://bitbucket.org",
+			Username:    "alice",
+			AppPassword: "secret",
+		},
+		"name": {
+			Url:         "https://bitbucket.org",
+			Username:    "alice",
+			AppPassword: "secret",
+			Exclude: []*schema.ExcludedBitbucketCloudRepo{
+				{Name: "SG/go-langserver"},
+			},
+		},
+		"uuid": {
+			Url:         "https://bitbucket.org",
+			Username:    "alice",
+			AppPassword: "secret",
+			Exclude: []*schema.ExcludedBitbucketCloudRepo{
+				{Uuid: "{fceb73c7-cef6-4abe-956d-e471281126bd}"},
+			},
+		},
+		"pattern": {
+			Url:         "https://bitbucket.org",
+			Username:    "alice",
+			AppPassword: "secret",
+			Exclude: []*schema.ExcludedBitbucketCloudRepo{
+				{Pattern: ".*-fork$"},
+			},
+		},
+		"all": {
+			Url:         "https://bitbucket.org",
+			Username:    "alice",
+			AppPassword: "secret",
+			Exclude: []*schema.ExcludedBitbucketCloudRepo{
+				{Name: "SG/go-LanGserVer"},
+				{Uuid: "{fceb73c7-cef6-4abe-956d-e471281126bd}"},
+				{Pattern: ".*-fork$"},
+			},
+		},
+	}
+
+	svc := ExternalService{ID: 1, Kind: "BITBUCKETCLOUD"}
+
+	for name, config := range cases {
+		t.Run(name, func(t *testing.T) {
+			s, err := newBitbucketCloudSource(&svc, config, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			type output struct {
+				Include []string
+				Exclude []string
+			}
+			var got output
+			for _, r := range repos {
+				if s.excludes(r) {
+					got.Exclude = append(got.Exclude, r.FullName)
+				} else {
+					got.Include = append(got.Include, r.FullName)
+				}
+			}
+			actual, err := json.MarshalIndent(got, "", "  ")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			golden := filepath.Join("testdata", "bitbucketcloud-repos-exclude-"+name+".golden")
+			if update(name) {
+				err := ioutil.WriteFile(golden, actual, 0644)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			expect, err := ioutil.ReadFile(golden)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !bytes.Equal(actual, expect) {
+				d, err := diff(actual, expect)
+				if err != nil {
+					t.Fatal(err)
+				}
+				t.Error(d)
+			}
+		})
+	}
+}
