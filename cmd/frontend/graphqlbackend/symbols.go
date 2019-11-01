@@ -19,7 +19,7 @@ type symbolsArgs struct {
 	IncludePatterns *[]string
 }
 
-func (r *gitTreeEntryResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
+func (r *GitTreeEntryResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
 	symbols, err := computeSymbols(ctx, r.commit, args.Query, args.First, args.IncludePatterns)
 	if err != nil && len(symbols) == 0 {
 		return nil, err
@@ -95,7 +95,7 @@ func toSymbolResolver(symbol protocol.Symbol, baseURI *gituri.URI, lang string, 
 	}
 	symbolRange := symbolRange(symbol)
 	resolver.location = &locationResolver{
-		resource: &gitTreeEntryResolver{
+		resource: &GitTreeEntryResolver{
 			commit: commitResolver,
 			stat:   createFileInfo(resolver.uri.Fragment, false), // assume the path refers to a file (not dir)
 		},

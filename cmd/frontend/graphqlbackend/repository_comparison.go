@@ -312,27 +312,27 @@ func (r *fileDiffResolver) Stat() DiffStat {
 	}
 }
 
-func (r *fileDiffResolver) OldFile() *gitTreeEntryResolver {
+func (r *fileDiffResolver) OldFile() *GitTreeEntryResolver {
 	if diffPathOrNull(r.fileDiff.OrigName) == nil {
 		return nil
 	}
-	return &gitTreeEntryResolver{
+	return &GitTreeEntryResolver{
 		commit: r.cmp.base,
 		stat:   createFileInfo(r.fileDiff.OrigName, false),
 	}
 }
 
-func (r *fileDiffResolver) NewFile() *gitTreeEntryResolver {
+func (r *fileDiffResolver) NewFile() *GitTreeEntryResolver {
 	if diffPathOrNull(r.fileDiff.NewName) == nil {
 		return nil
 	}
-	return &gitTreeEntryResolver{
+	return &GitTreeEntryResolver{
 		commit: r.cmp.head,
 		stat:   createFileInfo(r.fileDiff.NewName, false),
 	}
 }
 
-func (r *fileDiffResolver) MostRelevantFile() *gitTreeEntryResolver {
+func (r *fileDiffResolver) MostRelevantFile() *GitTreeEntryResolver {
 	if newFile := r.NewFile(); newFile != nil {
 		return newFile
 	}
