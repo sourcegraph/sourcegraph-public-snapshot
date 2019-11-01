@@ -71,7 +71,8 @@ const commitCodeView: Omit<CodeView, 'element'> = {
 
 const resolveView: ViewResolver<CodeView>['resolveView'] = (element: HTMLElement): CodeView | null => {
     if (element.classList.contains('discussion-wrapper')) {
-        // This is a commented snippet in a merge request discussion timeline,
+        // This is a commented snippet in a merge request discussion timeline
+        // (a snippet where somebody added a review comment on a piece of code in the MR),
         // we don't support adding code intelligence on those.
         return null
     }
