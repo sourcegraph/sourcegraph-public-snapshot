@@ -865,6 +865,43 @@ func ChangesetEventKindFor(e interface{}) ChangesetEventKind {
 	}
 }
 
+// NewChangesetEventMetadata returns a new metadata object for the given
+// ChangesetEventKind.
+func NewChangesetEventMetadata(k ChangesetEventKind) (interface{}, error) {
+	switch {
+	case strings.HasPrefix(string(k), "bitbucketserver"):
+		return new(bitbucketserver.Activity), nil
+	case strings.HasPrefix(string(k), "github"):
+		switch k {
+		case ChangesetEventKindGitHubAssigned:
+			return new(github.AssignedEvent), nil
+		case ChangesetEventKindGitHubClosed:
+			return new(github.ClosedEvent), nil
+		case ChangesetEventKindGitHubCommented:
+			return new(github.IssueComment), nil
+		case ChangesetEventKindGitHubRenamedTitle:
+			return new(github.RenamedTitleEvent), nil
+		case ChangesetEventKindGitHubMerged:
+			return new(github.MergedEvent), nil
+		case ChangesetEventKindGitHubReviewed:
+			return new(github.PullRequestReview), nil
+		case ChangesetEventKindGitHubReviewCommented:
+			return new(github.PullRequestReviewComment), nil
+		case ChangesetEventKindGitHubReopened:
+			return new(github.ReopenedEvent), nil
+		case ChangesetEventKindGitHubReviewDismissed:
+			return new(github.ReviewDismissedEvent), nil
+		case ChangesetEventKindGitHubReviewRequestRemoved:
+			return new(github.ReviewRequestRemovedEvent), nil
+		case ChangesetEventKindGitHubReviewRequested:
+			return new(github.ReviewRequestedEvent), nil
+		case ChangesetEventKindGitHubUnassigned:
+			return new(github.UnassignedEvent), nil
+		}
+	}
+	return nil, errors.Errorf("unknown changeset event kind %q", k)
+}
+
 // ChangesetEventKind defines the kind of a ChangesetEvent. This type is unexported
 // so that users of ChangesetEvent can't instantiate it with a Kind being an arbitrary
 // string.
