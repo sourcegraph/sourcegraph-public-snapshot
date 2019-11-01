@@ -25,6 +25,12 @@ export enum SuggestionTypes {
     symbol = 'symbol',
 }
 
+/**
+ * dir and symbol are fetched/suggested by the fuzzy-search
+ * but are not filter types: /web/src/search/getSearchFilterSuggestions.ts
+ */
+export type FiltersSuggestionTypes = Exclude<SuggestionTypes, SuggestionTypes.dir | SuggestionTypes.symbol>
+
 export interface Suggestion {
     title: string
     description?: string
@@ -88,7 +94,6 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
 }
 
 const SuggestionIcon: React.FunctionComponent<SuggestionIconProps> = ({ suggestion, children, ...passThru }) => {
-    console.log(suggestion.type)
     switch (suggestion.type) {
         case SuggestionTypes.filters:
             return <FilterIcon {...passThru} />

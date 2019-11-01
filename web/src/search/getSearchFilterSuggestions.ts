@@ -1,11 +1,11 @@
 import { fetchSearchFilterSuggestions } from './backend'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { Suggestion, SuggestionTypes } from './input/Suggestion'
+import { Suggestion, SuggestionTypes, FiltersSuggestionTypes } from './input/Suggestion'
 import { mapValues } from 'lodash'
 
 export type SearchFilterSuggestions = Record<
-    Exclude<SuggestionTypes, SuggestionTypes.dir | SuggestionTypes.symbol>,
+    FiltersSuggestionTypes,
     {
         default?: string
         values: Suggestion[]

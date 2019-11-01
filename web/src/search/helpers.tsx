@@ -5,7 +5,7 @@ import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { eventLogger } from '../tracking/eventLogger'
 import { SearchType } from './results/SearchResults'
 import { SearchFilterSuggestions, filterAliases } from './getSearchFilterSuggestions'
-import { Suggestion, SuggestionTypes } from './input/Suggestion'
+import { Suggestion, SuggestionTypes, FiltersSuggestionTypes } from './input/Suggestion'
 
 /**
  * @param activation If set, records the DidSearch activation event for the new user activation
@@ -149,7 +149,7 @@ export const toggleSearchFilterAndReplaceSampleRepogroup = (query: string, searc
     return newQuery
 }
 
-const isValidFilter = (filter: string): filter is SuggestionTypes =>
+const isValidFilter = (filter: string): filter is FiltersSuggestionTypes =>
     Object.prototype.hasOwnProperty.call(SuggestionTypes, filter)
 const isValidFilterAlias = (alias: string): alias is keyof typeof filterAliases =>
     Object.prototype.hasOwnProperty.call(filterAliases, alias)
