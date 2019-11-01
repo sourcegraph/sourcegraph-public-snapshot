@@ -2614,10 +2614,10 @@ istanbul-reports@^2.2.6:
   dependencies:
     handlebars "^4.1.2"
 
-jaeger-client@^3.17.0:
-  version "3.17.0"
-  resolved "https://registry.npmjs.org/jaeger-client/-/jaeger-client-3.17.0.tgz#34b752897fcf7bce0413ade92f3bfde58042cf33"
-  integrity sha512-8kdw8Z9G311/i4qo65YPB6jaotw1hxOhgAuL5gcLX5i6Anz0PW0EEq0+TR+Ue6+KBCh1hsrpC0OrVJhrgkeF5Q==
+jaeger-client@^3.17.1:
+  version "3.17.1"
+  resolved "https://registry.npmjs.org/jaeger-client/-/jaeger-client-3.17.1.tgz#8fea09f832c2bbfb1ea6935f37424cc907164342"
+  integrity sha512-S3fS3vk7dcWTWUWGqMWD9fGa/diLhPIP9h0S8L+OQdz24+7hR7cdALk+AOZD1VzbvqUIQbj6uUELp31J4Frgcw==
   dependencies:
     node-int64 "^0.4.0"
     opentracing "^0.13.0"
