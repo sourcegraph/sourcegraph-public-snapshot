@@ -569,6 +569,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			textSearchLimiter.SetLimit(len(eps) * 32)
 		}
 
+		originalIncludes := args.Pattern.IncludePatterns
 		for _, repoRev := range searcherRepos {
 			if len(repoRev.Revs) == 0 {
 				continue
@@ -592,7 +593,9 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 				if args.Pattern.IsStructuralPat && searcherReposFilteredFiles != nil {
 					// Modify the search query to only run for the filtered files
 					if v, ok := searcherReposFilteredFiles[string(repoRev.Repo.Name)]; ok {
-						args.Pattern.IncludePatterns = append(args.Pattern.IncludePatterns, v...)
+						args.Pattern.IncludePatterns = append(originalIncludes, v...)
+					} else {
+						args.Pattern.IncludePatterns = originalIncludes
 					}
 				}
 
