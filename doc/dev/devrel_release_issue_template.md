@@ -77,3 +77,7 @@ Add events to the shared Release Schedule calendar in Google and invite team@sou
    ```
 - [ ] Use tweet or email content for post on the [LinkedIn Sourcegraph company page](https://www.linkedin.com/company/sourcegraph/)
 - [ ] Put notification in #dev-rel Slack channel with links to blog post and tweet
+
+## 1 week after release
+
+Comment out the [release notice on Sourcegraph.com](https://sourcegraph.com/site-admin/global-settings)
