@@ -257,7 +257,7 @@
     "uuid": "^3.3.2",
     "webext-domain-permission-toggle": "^1.0.0",
     "webextension-polyfill": "^0.5.0",
-    "whatwg-url": "^7.0.0"
+    "whatwg-url": "^7.1.0"
   },
   "resolutions": {
     "history": "4.5.1"
