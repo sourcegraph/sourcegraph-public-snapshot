@@ -69,7 +69,7 @@ func (e *execer) Run(cmd *exec.Cmd) {
 	}
 
 	if e.Out != nil {
-		e.Out.Write([]byte(fmt.Sprintf("\n$ %s %s\n", cmd.Path, strings.Join(cmd.Args, " "))))
+		_, _ = e.Out.Write([]byte(fmt.Sprintf("\n$ %s %s\n", cmd.Path, strings.Join(cmd.Args, " "))))
 	}
 
 	if cmd.Stdout == nil {
