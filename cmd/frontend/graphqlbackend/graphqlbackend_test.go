@@ -3,6 +3,8 @@ package graphqlbackend
 import (
 	"flag"
 	"os"
+	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/graph-gophers/graphql-go/gqltesting"
@@ -40,85 +42,12 @@ func TestNodeResolverTo(t *testing.T) {
 	// run. The To* resolvers are stored in a map in our graphql
 	// implementation => the order we call them is non deterministic =>
 	// codecov coverage reports are noisy.
-	nodes := []Node{
-		&accessTokenResolver{},
-		&discussionCommentResolver{},
-		&discussionThreadResolver{},
-		&externalAccountResolver{},
-		&externalServiceResolver{},
-		&GitRefResolver{},
-		&RepositoryResolver{},
-		&UserResolver{},
-		&OrgResolver{},
-		&organizationInvitationResolver{},
-		&GitCommitResolver{},
-		&savedSearchResolver{},
-		&siteResolver{},
-	}
-
-	for _, n := range nodes {
-		r := &NodeResolver{n}
-		if _, b := r.ToAccessToken(); b {
-			continue
+	r := &NodeResolver{}
+	typ := reflect.TypeOf(r)
+	for i := 0; i < typ.NumMethod(); i++ {
+		if name := typ.Method(i).Name; strings.HasPrefix(name, "To") {
+			reflect.ValueOf(r).MethodByName(name).Call(nil)
 		}
-		if _, b := r.ToCampaign(); b {
-			continue
-		}
-		if _, b := r.ToCampaignPlan(); b {
-			continue
-		}
-		if _, b := r.ToChangeset(); b {
-			continue
-		}
-		if _, b := r.ToChangesetEvent(); b {
-			continue
-		}
-		if _, b := r.ToDiscussionComment(); b {
-			continue
-		}
-		if _, b := r.ToDiscussionThread(); b {
-			continue
-		}
-		if _, b := r.ToProductLicense(); b {
-			continue
-		}
-		if _, b := r.ToProductSubscription(); b {
-			continue
-		}
-		if _, b := r.ToExternalAccount(); b {
-			continue
-		}
-		if _, b := r.ToExternalService(); b {
-			continue
-		}
-		if _, b := r.ToGitRef(); b {
-			continue
-		}
-		if _, b := r.ToRepository(); b {
-			continue
-		}
-		if _, b := r.ToUser(); b {
-			continue
-		}
-		if _, b := r.ToOrg(); b {
-			continue
-		}
-		if _, b := r.ToOrganizationInvitation(); b {
-			continue
-		}
-		if _, b := r.ToGitCommit(); b {
-			continue
-		}
-		if _, b := r.ToRegistryExtension(); b {
-			continue
-		}
-		if _, b := r.ToSavedSearch(); b {
-			continue
-		}
-		if _, b := r.ToSite(); b {
-			continue
-		}
-		t.Fatalf("unexpected node %#+v", n)
 	}
 }
 
