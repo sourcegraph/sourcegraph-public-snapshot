@@ -224,7 +224,7 @@
     "got": "^9.6.0",
     "graphiql": "^0.13.2",
     "he": "^1.2.0",
-    "highlight.js": "^9.15.10",
+    "highlight.js": "^9.16.2",
     "is-absolute-url": "^3.0.1",
     "lodash": "^4.17.15",
     "marked": "^0.7.0",
