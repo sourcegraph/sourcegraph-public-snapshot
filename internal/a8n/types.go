@@ -289,7 +289,7 @@ func (t *Changeset) Events() (events []*ChangesetEvent) {
 		for _, ti := range m.TimelineItems {
 			ev := ChangesetEvent{ChangesetID: t.ID}
 
-			switch e := ev.Metadata.(type) {
+			switch e := ti.Item.(type) {
 			case *github.PullRequestReviewThread:
 				for _, c := range e.Comments {
 					ev := ev

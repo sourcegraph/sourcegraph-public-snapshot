@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
@@ -73,6 +74,110 @@ func TestChangesetMetadata(t *testing.T) {
 
 	if want, have := githubPR.URL, url; want != have {
 		t.Errorf("changeset url wrong. want=%q, have=%q", want, have)
+	}
+}
+
+func TestChangesetEvents(t *testing.T) {
+	type testCase struct {
+		name      string
+		changeset Changeset
+		events    []*ChangesetEvent
+	}
+
+	var cases []testCase
+
+	{ // Github PRs
+
+		now := time.Now().UTC()
+
+		reviewComments := []*github.PullRequestReviewComment{
+			{DatabaseID: 1, Body: "foo"},
+			{DatabaseID: 2, Body: "bar"},
+			{DatabaseID: 3, Body: "baz"},
+		}
+
+		actor := github.Actor{Login: "john-doe"}
+
+		assignedEvent := &github.AssignedEvent{
+			Actor:     actor,
+			Assignee:  actor,
+			CreatedAt: now,
+		}
+
+		unassignedEvent := &github.UnassignedEvent{
+			Actor:     actor,
+			Assignee:  actor,
+			CreatedAt: now,
+		}
+
+		closedEvent := &github.ClosedEvent{
+			Actor:     actor,
+			CreatedAt: now,
+		}
+
+		cases = append(cases, testCase{"github",
+			Changeset{
+				ID: 23,
+				Metadata: &github.PullRequest{
+					TimelineItems: []github.TimelineItem{
+						{"AssignedEvent", assignedEvent},
+						{"PullRequestReviewThread", &github.PullRequestReviewThread{
+							Comments: reviewComments[:2],
+						}},
+						{"UnassignedEvent", unassignedEvent},
+						{"PullRequestReviewThread", &github.PullRequestReviewThread{
+							Comments: reviewComments[2:],
+						}},
+						{"ClosedEvent", closedEvent},
+					},
+				},
+			},
+			[]*ChangesetEvent{{
+				ChangesetID: 23,
+				Kind:        ChangesetEventKindGitHubAssigned,
+				Key:         assignedEvent.Key(),
+				Metadata:    assignedEvent,
+			}, {
+				ChangesetID: 23,
+				Kind:        ChangesetEventKindGitHubReviewCommented,
+				Key:         reviewComments[0].Key(),
+				Metadata:    reviewComments[0],
+			}, {
+				ChangesetID: 23,
+				Kind:        ChangesetEventKindGitHubReviewCommented,
+				Key:         reviewComments[1].Key(),
+				Metadata:    reviewComments[1],
+			}, {
+				ChangesetID: 23,
+				Kind:        ChangesetEventKindGitHubUnassigned,
+				Key:         unassignedEvent.Key(),
+				Metadata:    unassignedEvent,
+			}, {
+				ChangesetID: 23,
+				Kind:        ChangesetEventKindGitHubReviewCommented,
+				Key:         reviewComments[2].Key(),
+				Metadata:    reviewComments[2],
+			}, {
+				ChangesetID: 23,
+				Kind:        ChangesetEventKindGitHubClosed,
+				Key:         closedEvent.Key(),
+				Metadata:    closedEvent,
+			}},
+		})
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			have := tc.changeset.Events()
+			want := tc.events
+
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+		})
 	}
 }
 
