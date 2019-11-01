@@ -121,7 +121,15 @@ export class QueryInput extends React.Component<Props, State> {
         super(props)
 
         this.subscriptions.add(
-            // Trigger new suggestions every time the input field is typed into
+            /**
+             * Trigger new suggestions every time the input field is typed into.             *
+             * if first word:
+             *     if selected suggestion is not a filter: redirect to suggestion URL
+             *     else: add filter to query and show filter values
+             * for filter values:
+             *     if filter is a regex value: use fuzzy-search for suggestion
+             *     else: use static values from this.searchFilterSuggestions
+             */
             this.inputValues
                 .pipe(
                     tap(({ query }) => this.props.onChange(query)),
