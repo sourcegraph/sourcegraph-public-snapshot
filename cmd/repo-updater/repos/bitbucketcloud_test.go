@@ -200,7 +200,7 @@ func TestBitbucketCloudSource_Exclude(t *testing.T) {
 			Username:    "alice",
 			AppPassword: "secret",
 			Exclude: []*schema.ExcludedBitbucketCloudRepo{
-				{Name: "sg/go-langserver"},
+				{Name: "SG/go-langserver"},
 			},
 		},
 		"uuid": {
@@ -224,7 +224,7 @@ func TestBitbucketCloudSource_Exclude(t *testing.T) {
 			Username:    "alice",
 			AppPassword: "secret",
 			Exclude: []*schema.ExcludedBitbucketCloudRepo{
-				{Name: "sg/go-langserver"},
+				{Name: "SG/go-LanGserVer"},
 				{Uuid: "{fceb73c7-cef6-4abe-956d-e471281126bd}"},
 				{Pattern: ".*-fork$"},
 			},
