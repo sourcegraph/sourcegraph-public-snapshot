@@ -10,13 +10,7 @@
 
 An LSIF indexer is a command line tool that analyzes your project's source code and generates a file in LSIF format containing all the definitions, references, and hover documentation in your project. That LSIF file is later uploaded to Sourcegraph to provide code intelligence.
 
-Several languages are currently supported:
-
-- [TypeScript](https://github.com/Microsoft/lsif-node/tree/master/tsc)
-- [Go](https://github.com/sourcegraph/lsif-go)
-- [C/C++](https://github.com/sourcegraph/lsif-cpp)
-- [Python](https://github.com/sourcegraph/lsif-py), [Java](https://github.com/sourcegraph/lsif-java), and [OCaml](https://github.com/sourcegraph/merlin-to-coif) are early stage
-- LSIF indexers for more languages coming soon! See https://lsif.dev for more information.
+Go to https://lsif.dev to find an LSIF indexer for your language.
 
 You can upload LSIF data to a Sourcegraph instance using your existing [continuous integration infrastructure](./lsif_in_ci.md), or using [GitHub Actions](./lsif_on_github.md).
 
