@@ -74,7 +74,7 @@ func Indexers() *backend.Indexers {
 	return indexers
 }
 
-// escape hatch to disable new indexed-search code path. Can remove in 1.11
+// escape hatch to disable new indexed-search code path. Can remove in 3.11
 func disableHorizontalSearch() bool {
 	v, _ := strconv.ParseBool(os.Getenv("DISABLE_HORIZONTAL_INDEXED_SEARCH"))
 	return v
