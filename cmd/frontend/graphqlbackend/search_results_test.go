@@ -1007,7 +1007,6 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 	db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 		return []*types.Repo{indexedRepo, unindexedRepo}, nil
 	}
-
 	defer func() { db.Mocks = db.MockStores{} }()
 
 	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {

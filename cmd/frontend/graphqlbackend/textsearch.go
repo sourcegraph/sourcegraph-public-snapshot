@@ -591,7 +591,9 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 
 				if args.Pattern.IsStructuralPat && searcherReposFilteredFiles != nil {
 					// Modify the search query to only run for the filtered files
-					args.Pattern.IncludePatterns = append(args.Pattern.IncludePatterns, searcherReposFilteredFiles[string(repoRev.Repo.Name)]...)
+					if v, ok := searcherReposFilteredFiles[string(repoRev.Repo.Name)]; ok {
+						args.Pattern.IncludePatterns = append(args.Pattern.IncludePatterns, v...)
+					}
 				}
 
 				rev := repoRev.RevSpecs()[0] // TODO(sqs): search multiple revs
@@ -637,6 +639,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		defer wg.Done()
 		matches, limitHit, reposLimitHit, err := zoektSearchHEAD(ctx, args, zoektRepos, false, time.Since)
 		mu.Lock()
+		defer mu.Unlock()
 		if ctx.Err() == nil {
 			for _, repo := range zoektRepos {
 				common.searched = append(common.searched, repo.Repo)
@@ -661,7 +664,6 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		}
 
 		if args.Pattern.IsStructuralPat {
-
 			// A partition of {repo name => file list} that we will build from Zoekt matches
 			partition := make(map[string][]string)
 			var repos []*search.RepositoryRevisions
@@ -689,10 +691,13 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			// structural search is concerned, so the lock can be
 			// freely released.
 			mu.Unlock()
-			searchErr = callSearcherOverRepos(repos, partition)
+			err := callSearcherOverRepos(repos, partition)
+			mu.Lock()
+			if err != nil {
+				searchErr = err
+			}
 		} else {
 			addMatches(matches)
-			mu.Unlock()
 		}
 	}()
 
