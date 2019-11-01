@@ -15,7 +15,7 @@ interface Props {
 export const CampaignNode: React.FunctionComponent<Props> = ({ node }) => (
     <li className="card p-2 mt-2">
         <div className="d-flex">
-            <CampaignsIcon className="icon-inline mr-2" />
+            <CampaignsIcon className="icon-inline mr-2 flex-shrink-0" />
             <div className="campaign-node__content">
                 <h3 className="mb-0">
                     <Link to={`/campaigns/${node.id}`} className="d-flex align-items-center text-decoration-none">
