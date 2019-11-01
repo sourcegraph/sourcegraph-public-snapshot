@@ -4,7 +4,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { eventLogger } from '../tracking/eventLogger'
 import { SearchType } from './results/SearchResults'
-import { SearchFilterSuggestions, filterAliases } from './getSearchFilterSuggestions'
+import { SearchFilterSuggestions, filterAliases } from './searchFilterSuggestions'
 import { Suggestion, SuggestionTypes, FiltersSuggestionTypes } from './input/Suggestion'
 
 /**

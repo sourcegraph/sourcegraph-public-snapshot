@@ -1,6 +1,6 @@
 import { getSearchTypeFromQuery, toggleSearchType, filterSearchSuggestions, insertSuggestionInQuery } from './helpers'
 import { SearchType } from './results/SearchResults'
-import { filterSuggestions, filterAliases } from './getSearchFilterSuggestions'
+import { searchFilterSuggestions, filterAliases } from './searchFilterSuggestions'
 import { startsWith } from 'lodash/fp'
 import { map, forEach } from 'lodash'
 
@@ -93,12 +93,12 @@ describe('search/helpers', () => {
     describe('suggestions', () => {
         const filterQuery = 'test r test'
 
-        const getArchivedSuggestions = () => filterSearchSuggestions('archived:', 9, filterSuggestions)
-        const getFilterSuggestionStartingWithR = () => filterSearchSuggestions(filterQuery, 6, filterSuggestions)
+        const getArchivedSuggestions = () => filterSearchSuggestions('archived:', 9, searchFilterSuggestions)
+        const getFilterSuggestionStartingWithR = () => filterSearchSuggestions(filterQuery, 6, searchFilterSuggestions)
 
         describe('filterSearchSuggestions()', () => {
             test('filters suggestions for filters starting with "r"', () => {
-                const filtersStartingWithR = Object.keys(filterSuggestions).filter(startsWith('r'))
+                const filtersStartingWithR = Object.keys(searchFilterSuggestions).filter(startsWith('r'))
                 expect(map(getFilterSuggestionStartingWithR(), 'title')).toEqual(
                     expect.arrayContaining(filtersStartingWithR)
                 )
@@ -106,22 +106,22 @@ describe('search/helpers', () => {
 
             test('filters suggestions for filter aliases', () => {
                 forEach(filterAliases, (filter: string, alias: string) => {
-                    const [{ title }] = filterSearchSuggestions(alias, alias.length, filterSuggestions)
+                    const [{ title }] = filterSearchSuggestions(alias, alias.length, searchFilterSuggestions)
                     expect(title).toBe(filter)
                 })
             })
 
             test('does not throw for query ":"', () => {
-                expect(() => filterSearchSuggestions(':', 1, filterSuggestions)).not.toThrowError()
+                expect(() => filterSearchSuggestions(':', 1, searchFilterSuggestions)).not.toThrowError()
             })
 
             test('filters suggestions for word "test"', () => {
-                expect(filterSearchSuggestions(filterQuery, 4, filterSuggestions)).toHaveLength(0)
+                expect(filterSearchSuggestions(filterQuery, 4, searchFilterSuggestions)).toHaveLength(0)
             })
 
             test('filters suggestions for the "archived:" filter', () => {
                 const archivedSuggestions = getArchivedSuggestions()
-                expect(archivedSuggestions).toEqual(expect.arrayContaining(filterSuggestions.archived.values))
+                expect(archivedSuggestions).toEqual(expect.arrayContaining(searchFilterSuggestions.archived.values))
             })
         })
 

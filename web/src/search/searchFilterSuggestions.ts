@@ -1,8 +1,4 @@
-import { fetchSearchFilterSuggestions } from './backend'
-import { Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
 import { Suggestion, SuggestionTypes, FiltersSuggestionTypes } from './input/Suggestion'
-import { mapValues } from 'lodash'
 import { assign } from 'lodash/fp'
 
 export type SearchFilterSuggestions = Record<
@@ -21,7 +17,7 @@ export const filterAliases = {
     language: SuggestionTypes.lang,
 }
 
-export const filterSuggestions: SearchFilterSuggestions = {
+export const searchFilterSuggestions: SearchFilterSuggestions = {
     filters: {
         values: [
             {
@@ -211,22 +207,3 @@ export const filterSuggestions: SearchFilterSuggestions = {
         ),
     },
 }
-
-/**
- * Fetch filter suggestions that are dynamic, currently repo and repogroup.
- */
-export const getSearchFilterSuggestions = (): Observable<SearchFilterSuggestions> =>
-    fetchSearchFilterSuggestions().pipe(
-        map(loadedSuggestions => {
-            const { repo, repogroup } = loadedSuggestions
-
-            const fetchedFilterSuggestions = mapValues({ repo, repogroup }, (values, type: SuggestionTypes) => ({
-                values: values.map(title => ({ title, type })),
-            }))
-
-            return {
-                ...filterSuggestions,
-                ...fetchedFilterSuggestions,
-            }
-        })
-    )

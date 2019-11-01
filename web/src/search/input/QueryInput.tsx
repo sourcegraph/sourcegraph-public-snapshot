@@ -21,7 +21,7 @@ import RegexpToggle from './RegexpToggle'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 import { PatternTypeProps } from '..'
 import Downshift from 'downshift'
-import { getSearchFilterSuggestions, SearchFilterSuggestions } from '../getSearchFilterSuggestions'
+import { searchFilterSuggestions, SearchFilterSuggestions } from '../searchFilterSuggestions'
 import { Key } from 'ts-key-enum'
 import {
     SearchQueryCursor,
@@ -83,10 +83,10 @@ interface ComponentSuggestions {
 interface State {
     /** The suggestions shown to the user */
     suggestions: ComponentSuggestions
-
-    /** All suggestions (some static and some fetched on page load) */
-    searchFilterSuggestions: SearchFilterSuggestions | null
-
+    /**
+     * Used to add suggestions into the query
+     * and correctly position the cursor
+     */
     cursorPosition: number
 }
 
@@ -118,7 +118,6 @@ export class QueryInput extends React.Component<Props, State> {
             cursorPosition: 0,
             values: [],
         },
-        searchFilterSuggestions: null,
         cursorPosition: 0,
     }
 
@@ -142,7 +141,7 @@ export class QueryInput extends React.Component<Props, State> {
                             return [{ suggestions: hiddenSuggestions }]
                         }
 
-                        const filterSuggestions = this.getSuggestions(this.state.searchFilterSuggestions, queryCursor)
+                        const filterSuggestions = this.getSuggestions(searchFilterSuggestions, queryCursor)
 
                         const fullQuery = [this.props.prependQueryForSuggestions, queryCursor.query]
                             .filter(s => !!s)
@@ -236,12 +235,6 @@ export class QueryInput extends React.Component<Props, State> {
                     this.hideSuggestions()
                 }
             })
-        )
-
-        this.subscriptions.add(
-            getSearchFilterSuggestions().subscribe(searchFilterSuggestions =>
-                this.setState({ searchFilterSuggestions })
-            )
         )
     }
 
@@ -355,12 +348,12 @@ export class QueryInput extends React.Component<Props, State> {
     private onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
         // ArrowDown to show all available suggestions
         if (!this.props.value && event.key === Key.ArrowDown) {
-            this.setState(state => ({ suggestions: this.getSuggestions(state.searchFilterSuggestions) }))
+            this.setState(state => ({ suggestions: this.getSuggestions(searchFilterSuggestions) }))
         }
     }
 
     private getSuggestions = (
-        searchFilterSuggestions: State['searchFilterSuggestions'],
+        searchFilterSuggestions: SearchFilterSuggestions,
         { query, cursorPosition }: SearchQueryCursor = { query: '', cursorPosition: 0 }
     ): ComponentSuggestions => ({
         cursorPosition,
@@ -423,7 +416,7 @@ export class QueryInput extends React.Component<Props, State> {
                 cursorPosition: newCursorPosition,
                 suggestions: isValueSuggestion
                     ? hiddenSuggestions
-                    : this.getSuggestions(state.searchFilterSuggestions, {
+                    : this.getSuggestions(searchFilterSuggestions, {
                           query: newQuery,
                           cursorPosition: newCursorPosition,
                       }),
