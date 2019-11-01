@@ -1065,13 +1065,9 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 		t.Fatal("Results:", err)
 	}
 
-	wantMatchCount := 1
-	if int(results.MatchCount()) != wantMatchCount {
-		t.Fatalf("wrong results length. want=%d, have=%d\n", wantMatchCount, results.MatchCount())
-		fm, _ := results.Results()[0].ToFileMatch()
-		if fm.JPath != indexedFileName {
-			t.Fatalf("wrong indexed filename. want=%s, have=%s\n", indexedFileName, fm.JPath)
-		}
+	fm, _ := results.Results()[0].ToFileMatch()
+	if fm.JPath != indexedFileName {
+		t.Fatalf("wrong indexed filename. want=%s, have=%s\n", indexedFileName, fm.JPath)
 	}
 }
 
