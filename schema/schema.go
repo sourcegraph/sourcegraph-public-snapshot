@@ -115,7 +115,7 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 type BitbucketCloudConnection struct {
 	// AppPassword description: The app password to use when authenticating to the Bitbucket Cloud. Also set the corresponding "username" field.
 	AppPassword string `json:"appPassword"`
-	// Exclude description: A list of repositories to never mirror from Bitbucket Cloud. Takes precedence over "team" configuration.
+	// Exclude description: A list of repositories to never mirror from Bitbucket Cloud. Takes precedence over "teams" configuration.
 	//
 	// Supports excluding by name ({"name": "myorg/myrepo"}) or by UUID ({"uuid": "{fceb73c7-cef6-4abe-956d-e471281126bd}"}).
 	Exclude []*ExcludedBitbucketCloudRepo `json:"exclude,omitempty"`
