@@ -587,7 +587,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
             this.showMoreClicks
                 .pipe(
                     map(() =>
-                        // If after is set, then it's the endCursor from the previous request.
+                        // If `after` is set, then it's the endCursor from the previous request.
                         // Use this and do not change the first (page size) parameter. Otherwise,
                         // we'll fallback to our legacy 'request-more' paging technique and not
                         // supply a cursor to the subsequent request.
