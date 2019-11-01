@@ -58,9 +58,9 @@ COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
 COPY --from=sourcegraph/lsif-server:ci /lsif /lsif
 
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/prometheus:10.0.1@sha256:ba6dd9e33621801d553651191b4d4c64f866a6620374d48aedb92abad305e7ca /bin/prometheus /usr/local/bin
+COPY --from=sourcegraph/prometheus:10.0.4@sha256:03af446c1c1d49e6ac395c06a29a207e8c7b59e6aa1fcf156c0bff63ad88d829 /bin/prometheus /usr/local/bin
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/prometheus:10.0.1@sha256:ba6dd9e33621801d553651191b4d4c64f866a6620374d48aedb92abad305e7ca /usr/share/prometheus /usr/share/prometheus
+COPY --from=sourcegraph/prometheus:10.0.4@sha256:03af446c1c1d49e6ac395c06a29a207e8c7b59e6aa1fcf156c0bff63ad88d829 /usr/share/prometheus /usr/share/prometheus
 
 # hadolint ignore=DL3018
 RUN set -ex && \
