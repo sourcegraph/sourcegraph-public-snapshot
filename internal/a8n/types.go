@@ -1,6 +1,7 @@
 package a8n
 
 import (
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -304,6 +305,17 @@ func (t *Changeset) Events() (events []*ChangesetEvent) {
 				ev.Metadata = ti.Item
 				events = append(events, &ev)
 			}
+		}
+
+	case *bitbucketserver.PullRequest:
+		events = make([]*ChangesetEvent, 0, len(m.Activities))
+		for _, a := range m.Activities {
+			events = append(events, &ChangesetEvent{
+				ChangesetID: t.ID,
+				Key:         a.Key(),
+				Kind:        ChangesetEventKindFor(&a),
+				Metadata:    a,
+			})
 		}
 	}
 	return events
@@ -846,6 +858,8 @@ func ChangesetEventKindFor(e interface{}) ChangesetEventKind {
 		return ChangesetEventKindGitHubReviewRequested
 	case *github.UnassignedEvent:
 		return ChangesetEventKindGitHubUnassigned
+	case *bitbucketserver.Activity:
+		return ChangesetEventKind("bitbucketserver:" + strings.ToLower(string(e.Action)))
 	default:
 		panic(errors.Errorf("unknown changeset event kind for %T", e))
 	}
@@ -871,16 +885,16 @@ const (
 	ChangesetEventKindGitHubReviewCommented      ChangesetEventKind = "github:review_commented"
 	ChangesetEventKindGitHubUnassigned           ChangesetEventKind = "github:unassigned"
 
-	// TODO: Full set of Bitbucket Server pull request actions:
-	//   - APPROVED
-	//   - COMMENTED
-	//   - DECLINED
-	//   - MERGED
-	//   - OPENED
-	//   - REOPENED
-	//   - RESCOPED
-	//   - UNAPPROVED
-	//   - UPDATED
+	ChangesetEventKindBitbucketServerApproved   ChangesetEventKind = "bitbucketserver:approved"
+	ChangesetEventKindBitbucketServerUnapproved ChangesetEventKind = "bitbucketserver:unapproved"
+	ChangesetEventKindBitbucketServerDeclined   ChangesetEventKind = "bitbucketserver:declined"
+	ChangesetEventKindBitbucketServerReviewed   ChangesetEventKind = "bitbucketserver:reviewed"
+	ChangesetEventKindBitbucketServerOpened     ChangesetEventKind = "bitbucketserver:opened"
+	ChangesetEventKindBitbucketServerReopened   ChangesetEventKind = "bitbucketserver:reopened"
+	ChangesetEventKindBitbucketServerRescoped   ChangesetEventKind = "bitbucketserver:rescoped"
+	ChangesetEventKindBitbucketServerUpdated    ChangesetEventKind = "bitbucketserver:updated"
+	ChangesetEventKindBitbucketServerCommented  ChangesetEventKind = "bitbucketserver:commented"
+	ChangesetEventKindBitbucketServerMerged     ChangesetEventKind = "bitbucketserver:merged"
 )
 
 func unixMilliToTime(ms int64) time.Time {

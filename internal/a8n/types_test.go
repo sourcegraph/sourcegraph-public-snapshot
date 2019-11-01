@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
@@ -86,7 +87,7 @@ func TestChangesetEvents(t *testing.T) {
 
 	var cases []testCase
 
-	{ // Github PRs
+	{ // Github
 
 		now := time.Now().UTC()
 
@@ -162,6 +163,69 @@ func TestChangesetEvents(t *testing.T) {
 				Kind:        ChangesetEventKindGitHubClosed,
 				Key:         closedEvent.Key(),
 				Metadata:    closedEvent,
+			}},
+		})
+	}
+
+	{ // Bitbucket Server
+
+		user := bitbucketserver.User{Name: "john-doe"}
+		reviewer := bitbucketserver.User{Name: "jane-doe"}
+
+		activities := []bitbucketserver.Activity{{
+			ID:     1,
+			User:   user,
+			Action: bitbucketserver.OpenedActivityAction,
+		}, {
+			ID:     2,
+			User:   reviewer,
+			Action: bitbucketserver.ReviewedActivityAction,
+		}, {
+			ID:     3,
+			User:   reviewer,
+			Action: bitbucketserver.DeclinedActivityAction,
+		}, {
+			ID:     4,
+			User:   user,
+			Action: bitbucketserver.ReopenedActivityAction,
+		}, {
+			ID:     5,
+			User:   user,
+			Action: bitbucketserver.MergedActivityAction,
+		}}
+
+		cases = append(cases, testCase{"bitbucketserver",
+			Changeset{
+				ID: 24,
+				Metadata: &bitbucketserver.PullRequest{
+					Activities: activities,
+				},
+			},
+			[]*ChangesetEvent{{
+				ChangesetID: 24,
+				Kind:        ChangesetEventKindBitbucketServerOpened,
+				Key:         activities[0].Key(),
+				Metadata:    activities[0],
+			}, {
+				ChangesetID: 24,
+				Kind:        ChangesetEventKindBitbucketServerReviewed,
+				Key:         activities[1].Key(),
+				Metadata:    activities[1],
+			}, {
+				ChangesetID: 24,
+				Kind:        ChangesetEventKindBitbucketServerDeclined,
+				Key:         activities[2].Key(),
+				Metadata:    activities[2],
+			}, {
+				ChangesetID: 24,
+				Kind:        ChangesetEventKindBitbucketServerReopened,
+				Key:         activities[3].Key(),
+				Metadata:    activities[3],
+			}, {
+				ChangesetID: 24,
+				Kind:        ChangesetEventKindBitbucketServerMerged,
+				Key:         activities[4].Key(),
+				Metadata:    activities[4],
 			}},
 		})
 	}
