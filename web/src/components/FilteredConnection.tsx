@@ -119,7 +119,7 @@ interface ConnectionStateCommon {
 
     connectionQuery?: string
 
-    /** The `endCursor` value from the previous request. */
+    /** The `PageInfo.endCursor` value from the previous request. */
     after?: string
 
     /**
