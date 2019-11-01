@@ -1,6 +1,7 @@
 import * as lsp from 'vscode-languageserver-protocol'
 import { comparePosition, createRemoteUri, mapRangesToLocations, findRanges } from './database'
-import { MonikerId, RangeData, RangeId } from './database.models'
+import { RangeData } from './database.models'
+import { MonikerId, RangeId } from './database.types'
 
 describe('findRanges', () => {
     it('should return ranges containing position', () => {

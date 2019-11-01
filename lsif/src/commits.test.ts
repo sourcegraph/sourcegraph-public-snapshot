@@ -1,11 +1,4 @@
-import {
-    hashmod,
-    flattenCommitParents,
-    getCommitsNear,
-    discoverAndUpdateCommit,
-    discoverAndUpdateTips,
-    discoverTips,
-} from './commits'
+import { hashmod, flattenCommitParents, getCommitsNear } from './commits'
 import nock from 'nock'
 import { XrepoDatabase } from './xrepo'
 import { createCleanPostgresDatabase, createCommit } from './test-utils'
@@ -26,8 +19,7 @@ describe('discoverAndUpdateCommit', () => {
             const xrepoDatabase = new XrepoDatabase('', connection)
             await xrepoDatabase.insertDump('test-repo', ca, '')
 
-            await discoverAndUpdateCommit({
-                xrepoDatabase,
+            await xrepoDatabase.discoverAndUpdateCommit({
                 repository: 'test-repo', // hashes to gitserver1
                 commit: cc,
                 gitserverUrls: ['gitserver0', 'gitserver1', 'gitserver2'],
@@ -58,8 +50,7 @@ describe('discoverAndUpdateCommit', () => {
             // As we did not register a nock interceptor, any request will result
             // in an exception being thrown.
 
-            await discoverAndUpdateCommit({
-                xrepoDatabase,
+            await xrepoDatabase.discoverAndUpdateCommit({
                 repository: 'test-repo', // hashes to gitserver1
                 commit: cb,
                 gitserverUrls: ['gitserver0', 'gitserver1', 'gitserver2'],
@@ -82,8 +73,7 @@ describe('discoverAndUpdateCommit', () => {
             // As we did not register a nock interceptor, any request will result
             // in an exception being thrown.
 
-            await discoverAndUpdateCommit({
-                xrepoDatabase,
+            await xrepoDatabase.discoverAndUpdateCommit({
                 repository: 'test-repo', // hashes to gitserver1
                 commit: ca,
                 gitserverUrls: ['gitserver0', 'gitserver1', 'gitserver2'],
@@ -116,8 +106,7 @@ describe('discoverAndUpdateTips', () => {
             await xrepoDatabase.insertDump('test-repo', cb, 'foo')
             await xrepoDatabase.insertDump('test-repo', cc, 'bar')
 
-            await discoverAndUpdateTips({
-                xrepoDatabase,
+            await xrepoDatabase.discoverAndUpdateTips({
                 gitserverUrls: ['gitserver0'],
                 ctx: {},
             })
@@ -164,8 +153,7 @@ describe('discoverTips', () => {
                 await xrepoDatabase.insertDump(`test-repo-${i}`, createCommit('c'), '')
             }
 
-            const tips = await discoverTips({
-                xrepoDatabase,
+            const tips = await xrepoDatabase.discoverTips({
                 gitserverUrls: ['gitserver0', 'gitserver1', 'gitserver2'],
                 ctx: {},
                 batchSize: 5,
