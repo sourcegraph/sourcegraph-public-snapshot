@@ -47,7 +47,7 @@
     "@types/bull": "3.10.5",
     "@types/express": "4.17.0",
     "@types/express-winston": "3.0.4",
-    "@types/got": "9.6.7",
+    "@types/got": "9.6.8",
     "@types/ioredis": "4.0.18",
     "@types/jaeger-client": "3.15.1",
     "@types/jest": "24.0.21",
