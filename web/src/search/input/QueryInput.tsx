@@ -23,7 +23,12 @@ import { PatternTypeProps } from '..'
 import Downshift from 'downshift'
 import { getSearchFilterSuggestions, SearchFilterSuggestions } from '../getSearchFilterSuggestions'
 import { Key } from 'ts-key-enum'
-import { SearchQueryCursor, filterSearchSuggestions, insertSuggestionInQuery } from '../helpers'
+import {
+    SearchQueryCursor,
+    filterSearchSuggestions,
+    insertSuggestionInQuery,
+    isTypingWordAndNotFilterValue,
+} from '../helpers'
 import { fetchSuggestions } from '../backend'
 import { isDefined } from '../../../../shared/src/util/types'
 
@@ -261,7 +266,10 @@ export class QueryInput extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         const showSuggestions = this.state.suggestions.values.length > 0
-        const showUrlLabel = this.isFirstWordQuery(this.props.value)
+        const showUrlLabel = this.isFuzzyWordSearch({
+            query: this.props.value,
+            cursorPosition: this.state.suggestions.cursorPosition,
+        })
         return (
             <Downshift
                 scrollIntoView={this.scrollIntoView}
@@ -328,7 +336,15 @@ export class QueryInput extends React.Component<Props, State> {
         )
     }
 
-    private isFirstWordQuery = (query: string) => !query.includes(':') && query.trim().split(/\s+/).length === 1
+    /**
+     * If last typed word is not a filter type,
+     * suggestions should show url label and redirect on select
+     */
+    private isFuzzyWordSearch = (queryCursor: SearchQueryCursor) => {
+        const firstPart = queryCursor.query.substring(0, queryCursor.cursorPosition)
+        const isTypingFirstWord = Boolean(firstPart.match(/^(\s?)+[^:\s]+$/))
+        return isTypingFirstWord || isTypingWordAndNotFilterValue(firstPart)
+    }
 
     private itemToString = (suggestion?: Suggestion) => (suggestion ? suggestion.title : '')
 
@@ -379,7 +395,13 @@ export class QueryInput extends React.Component<Props, State> {
             })
 
             // if first word is being typed and suggestion with url is selected
-            if (this.isFirstWordQuery(props.value) && suggestion.url) {
+            if (
+                this.isFuzzyWordSearch({
+                    query: props.value,
+                    cursorPosition: state.suggestions.cursorPosition,
+                }) &&
+                suggestion.url
+            ) {
                 this.props.history.push(suggestion.url)
                 return {
                     cursorPosition: 0,

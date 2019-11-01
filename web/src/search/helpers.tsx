@@ -206,6 +206,13 @@ export interface SearchQueryCursor {
 }
 
 /**
+ * Used to decide if the search if for a filter value or a fuzzy-search word.
+ * "l:go yes" => true
+ * "l:go archived:" => false
+ */
+export const isTypingWordAndNotFilterValue = (value: string): boolean => Boolean(value.match(/\s+([^:]?)+$/))
+
+/**
  * Adds suggestions value to search query where cursor was positioned.
  *
  * @param query current search query
@@ -224,7 +231,7 @@ export const insertSuggestionInQuery = (
 
     const newFirstPart = (() => {
         const lastWordOfFirstPartMatch = firstPart.match(/\s+(\S?)+$/)
-        const isSeparateWordSuggestion = Boolean(firstPart.match(/\s+([^:]?)+$/))
+        const isSeparateWordSuggestion = isTypingWordAndNotFilterValue(firstPart)
 
         if (
             !isFiltersSuggestion &&
