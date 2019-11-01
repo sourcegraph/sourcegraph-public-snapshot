@@ -681,6 +681,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			for _, m := range matches {
 				name := string(m.repo.Name)
 				partition[name] = append(partition[name], m.JPath)
+				fmt.Printf("adding %s -> %s\n", name, m.JPath)
 			}
 
 			// Filter Zoekt repos that didn't contain matches

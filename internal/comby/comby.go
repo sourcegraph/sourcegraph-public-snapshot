@@ -1,6 +1,9 @@
 package comby
 
 import (
+	"bufio"
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -60,7 +63,7 @@ func PipeTo(args Args, w io.Writer) (err error) {
 	}
 
 	rawArgs := rawArgs(args)
-	log15.Info("running comby", "args", strings.Join(rawArgs, " "))
+	log15.Info("running comby", "args", strings.Join(rawArgs, ","))
 
 	cmd := exec.Command(combyPath, rawArgs...)
 
@@ -92,10 +95,45 @@ func PipeTo(args Args, w io.Writer) (err error) {
 		if stderrMsg != nil {
 			log15.Error("failed to execute comby command", "error", string(stderrMsg))
 			return fmt.Errorf("comby error: %s", string(stderrMsg))
+			// return nil
 		}
 		log15.Error("failed to wait for executing comby command", "error", string(err.(*exec.ExitError).Stderr))
 		return err
 	}
 
 	return nil
+}
+
+func Matches(args Args) (matches []FileMatch, err error) {
+	b := new(bytes.Buffer)
+	w := bufio.NewWriter(b)
+
+	err = PipeTo(args, w)
+	if err != nil {
+		return nil, err
+	}
+
+	scanner := bufio.NewScanner(b)
+	// scanner.Buffer(make([]byte, 100), 10*bufio.MaxScanTokenSize)
+	for scanner.Scan() {
+		b := scanner.Bytes()
+		if err := scanner.Err(); err != nil {
+			fmt.Printf("Error scanning: %v", err)
+			// skip scanner errors
+			continue
+		}
+		var m *FileMatch
+		// fmt.Printf("Received: %s\n", string(b))
+		if err := json.Unmarshal(b, &m); err != nil {
+			fmt.Printf("Error unmarshaling: %v", err)
+			// skip decode errors
+			continue
+		}
+		matches = append(matches, *m)
+	}
+
+	if len(matches) > 0 {
+		fmt.Printf("Done searching. Num FileMatches: %d\n", len(matches))
+	}
+	return matches, nil
 }
