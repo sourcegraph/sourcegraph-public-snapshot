@@ -12,6 +12,9 @@ export interface Config {
     gitHubToken: string
     gitHubUserBobPassword: string
     gitHubUserAmyPassword: string
+    gitLabClientID: string
+    gitLabClientSecret: string
+    gitLabUserAmyPassword: string
     sourcegraphBaseUrl: string
     managementConsoleUrl: string
     includeAdminOnboarding: boolean
@@ -74,11 +77,23 @@ const configFields: ConfigFields = {
     },
     gitHubUserBobPassword: {
         envVar: 'GITHUB_USER_BOB_PASSWORD',
-        description: 'Password of the GitHub user sg-e2e-regression-test-bob, used to log into Sourcegraph.',
+        description: 'Password of the GitHub user sg-e2e-regression-test-bob, used to log in to Sourcegraph.',
     },
     gitHubUserAmyPassword: {
         envVar: 'GITHUB_USER_AMY_PASSWORD',
-        description: 'Password of the GitHub user sg-e2e-regression-test-amy, used to log into Sourcegraph.',
+        description: 'Password of the GitHub user sg-e2e-regression-test-amy, used to log in to Sourcegraph.',
+    },
+    gitLabClientID: {
+        envVar: 'GITLAB_CLIENT_ID',
+        description: 'Application ID of the GitLab OAuth app used to authenticate Sourcegraph.',
+    },
+    gitLabClientSecret: {
+        envVar: 'GITLAB_CLIENT_SECRET',
+        description: 'Secret of the GitLab OAuth app used to authenticate Sourcegraph',
+    },
+    gitLabUserAmyPassword: {
+        envVar: 'GITLAB_USER_AMY_PASSWORD',
+        description: 'Password of the GitLab user sg-e2e-regression-test-amy, used to log in to Sourcegraph.',
     },
     sourcegraphBaseUrl: {
         envVar: 'SOURCEGRAPH_BASE_URL',
