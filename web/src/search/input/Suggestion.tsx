@@ -27,7 +27,7 @@ export enum SuggestionTypes {
 
 /**
  * dir and symbol are fetched/suggested by the fuzzy-search
- * but are not filter types: /web/src/search/getSearchFilterSuggestions.ts
+ * but are not filter types: /web/src/search/searchFilterSuggestions.ts
  */
 export type FiltersSuggestionTypes = Exclude<SuggestionTypes, SuggestionTypes.dir | SuggestionTypes.symbol>
 

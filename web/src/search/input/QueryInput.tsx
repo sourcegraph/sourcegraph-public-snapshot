@@ -387,7 +387,7 @@ export class QueryInput extends React.Component<Props, State> {
                 },
             })
 
-            // if first word is being typed and suggestion with url is selected
+            // if separate word is being typed and suggestion with url is selected
             if (
                 this.isFuzzyWordSearch({
                     query: props.value,

@@ -233,20 +233,20 @@ export const insertSuggestionInQuery = (
         const lastWordOfFirstPartMatch = firstPart.match(/\s+(\S?)+$/)
         const isSeparateWordSuggestion = isTypingWordAndNotFilterValue(firstPart)
 
-        /**
-         * If a fuzzy-search suggestion was selected but it doesn't
-         * have a URL then it's just appended to the query
-         */
+        // If a fuzzy-search suggestion was selected but it
+        // doesn't have a URL then it's just appended to the query
         if (
             !isFiltersSuggestion &&
             isSeparateWordSuggestion &&
             lastWordOfFirstPartMatch &&
             lastWordOfFirstPartMatch.index
         ) {
+            // adds a space because a separate word was being typed
             return firstPart.substring(0, lastWordOfFirstPartMatch.index) + ' ' + suggestion.title + lastPart
         }
 
         return (
+            // join first part with the selected suggestion
             firstPart.substring(0, separatorIndex + 1) +
             suggestion.title +
             (isFiltersSuggestion ? SUGGESTION_FILTER_SEPARATOR : '')
