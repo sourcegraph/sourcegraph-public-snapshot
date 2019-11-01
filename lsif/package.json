@@ -68,7 +68,7 @@
     "jest": "^24.8.0",
     "nock": "^11.7.0",
     "sinon": "^7.5.0",
-    "source-map-support": "^0.5.13",
+    "source-map-support": "^0.5.16",
     "tsc-watch": "^4.0.0",
     "tslint": "^5.20.0",
     "typescript": "^3.5.3",
