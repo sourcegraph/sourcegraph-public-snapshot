@@ -148,7 +148,7 @@
     "chrome-webstore-upload-cli": "^1.2.0",
     "cross-env": "^6.0.3",
     "css-loader": "^3.2.0",
-    "eslint": "^6.5.1",
+    "eslint": "^6.6.0",
     "execa": "^2.0.5",
     "fancy-log": "^1.3.3",
     "get-port": "^5.0.0",
