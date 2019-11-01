@@ -2759,10 +2759,10 @@
   dependencies:
     "@types/node" "*"
 
-"@types/simmerjs@0.5.0":
-  version "0.5.0"
-  resolved "https://registry.npmjs.org/@types/simmerjs/-/simmerjs-0.5.0.tgz#8af013ff6aa071bb18328c6ce8861d7c51fca4b3"
-  integrity sha512-2SbGw2eDt9eFGoj7KwuJbw2Kqccw6MXO8ViIBDPolV4naxsZtMCJg3E5cmj53uZj7tIwyyiQMfY2ty016Yc/wA==
+"@types/simmerjs@0.5.1":
+  version "0.5.1"
+  resolved "https://registry.npmjs.org/@types/simmerjs/-/simmerjs-0.5.1.tgz#74ff8f8614ddf995c135eebc6348fb5d42cadaa1"
+  integrity sha512-246t3U8Y3zVaUPwI5kDlOah0eL3rc2tZ1dX72SYBs0he6GyINOhZMP8qXEdgxbl4q/ARQkrYHZl9fLgDmBpo9w==
 
 "@types/sinon@7.5.0":
   version "7.5.0"
