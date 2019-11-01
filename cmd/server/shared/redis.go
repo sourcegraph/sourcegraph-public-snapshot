@@ -2,7 +2,9 @@ package shared
 
 import (
 	"bytes"
+	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"text/template"
 	"time"
@@ -119,7 +121,9 @@ func redisFixAOF(rootDataDir string, c redisProcfileConfig) {
 	go func() {
 		var output bytes.Buffer
 		e := execer{Out: &output}
-		e.Command("redis-check-aof", "--fix", aofPath)
+		cmd := exec.Command("redis-check-aof", "--fix", aofPath)
+		cmd.Stdin = &yesReader{Expletive: []byte("y\n")}
+		e.Run(cmd)
 		if err := e.Error(); err != nil {
 			l("Repairing %s appendonly.aof failed:\n%s", c.name, output.String())
 		}
@@ -132,4 +136,26 @@ func redisFixAOF(rootDataDir string, c redisProcfileConfig) {
 		<-done
 		l("Finished running redis-check-aof")
 	}
+}
+
+// yesReader simulates the output of the "yes" command.
+//
+// It is equivalent to bytes.NewReader(bytes.Repeat(Expletive, infinity))
+type yesReader struct {
+	Expletive []byte
+	offset    int
+}
+
+func (r *yesReader) Read(p []byte) (int, error) {
+	if len(r.Expletive) == 0 {
+		return 0, errors.New("yesReader.Expletive is empty")
+	}
+	for n := 0; n < len(p); n++ {
+		p[n] = r.Expletive[r.offset]
+		r.offset++
+		if r.offset == len(r.Expletive) {
+			r.offset = 0
+		}
+	}
+	return len(p), nil
 }
