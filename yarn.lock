@@ -8979,10 +8979,10 @@ graphql-request@^1.5.0:
   dependencies:
     cross-fetch "2.2.2"
 
-graphql-schema-linter@^0.2.1:
-  version "0.2.1"
-  resolved "https://registry.npmjs.org/graphql-schema-linter/-/graphql-schema-linter-0.2.1.tgz#f4231ff6def031a83fa86c66a4f2b688a78f505f"
-  integrity sha512-Z0rKFkxvIXqktkd/4luMYgBXWZeVCp8VJysOKz3RtbcpqbiIpdwtH0J678xOQ+hJLwEfrdCrhKNxxvRpt6mCSg==
+graphql-schema-linter@^0.2.2:
+  version "0.2.2"
+  resolved "https://registry.npmjs.org/graphql-schema-linter/-/graphql-schema-linter-0.2.2.tgz#e197662903d78b54f269750f10d8325d50d4388b"
+  integrity sha512-2K89KElFSgR4cUT4IyQDdiNxdAdLvYOYxCzXFZeTSC9bgDIBFdv+TNrPIbq3xkgJiVf7vnMFeBlIfDx1IwfE5w==
   dependencies:
     chalk "^2.0.1"
     columnify "^1.5.4"
