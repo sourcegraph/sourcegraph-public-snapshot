@@ -500,11 +500,11 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 		}
 	}
 	repoResults := map[string][]searchResultResolver{
-		"1": []searchResultResolver{
+		"1": {
 			result(repo("1"), "a.go"),
 			result(repo("1"), "b.go"),
 		},
-		"2": []searchResultResolver{
+		"2": {
 			result(repo("2"), "a.go"),
 			result(repo("2"), "b.go"),
 			result(repo("2"), "c.go"),
