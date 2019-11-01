@@ -70,6 +70,11 @@ const commitCodeView: Omit<CodeView, 'element'> = {
 }
 
 const resolveView: ViewResolver<CodeView>['resolveView'] = (element: HTMLElement): CodeView | null => {
+    if (element.classList.contains('discussion-wrapper')) {
+        // This is a commented snippet in a merge request discussion timeline,
+        // we don't support adding code intelligence on those.
+        return null
+    }
     const { pageKind } = getPageInfo()
 
     if (pageKind === GitLabPageKind.Other) {
