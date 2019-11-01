@@ -16,8 +16,8 @@ import * as constants from './constants'
  *
  * @param prefix The temporary path prefix.
  */
-export async function createStorageRoot(prefix: string): Promise<string> {
-    const tempPath = await fs.mkdtemp(`${prefix}-`, { encoding: 'utf8' })
+export async function createStorageRoot(): Promise<string> {
+    const tempPath = await fs.mkdtemp('test-', { encoding: 'utf8' })
     await ensureDirectory(path.join(tempPath, constants.DBS_DIR))
     return tempPath
 }
