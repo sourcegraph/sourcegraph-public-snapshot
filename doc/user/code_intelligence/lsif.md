@@ -6,11 +6,7 @@
 
 > For users who have a language server deployed, LSIF will take priority over the language server when LSIF data exists for a repository.
 
-## LSIF indexers
-
-An LSIF indexer is a command line tool that analyzes your project's source code and generates a file in LSIF format containing all the definitions, references, and hover documentation in your project. That LSIF file is later uploaded to Sourcegraph to provide code intelligence.
-
-Go to https://lsif.dev to find an LSIF indexer for your language.
+## Generating and uploading LSIF data
 
 You can upload LSIF data to a Sourcegraph instance using your existing [continuous integration infrastructure](./lsif_in_ci.md), or using [GitHub Actions](./lsif_on_github.md).
 
