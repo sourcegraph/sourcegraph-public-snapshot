@@ -417,7 +417,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
             first: parseQueryInt(q, 'first') || this.props.defaultFirst!,
 
             // Note: Do not set after from the URL, as this doesn't track the number
-            // of results on the previous page. This makes teh count look broken when
+            // of results on the previous page. This makes the count look broken when
             // coming to a page in the middle of a set of results.
             //
             // For example:
