@@ -49,6 +49,37 @@ const BitbucketCloudSchemaJSON = `{
       "type": "array",
       "items": { "type": "string", "pattern": "^[\\w-]+$" },
       "examples": [["name"], ["kubernetes", "golang", "facebook"]]
+    },
+    "exclude": {
+      "description": "A list of repositories to never mirror from Bitbucket Cloud. Takes precedence over \"team\" configuration.\n\nSupports excluding by name ({\"name\": \"myorg/myrepo\"}) or by UUID ({\"uuid\": \"{fceb73c7-cef6-4abe-956d-e471281126bd}\"}).",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "title": "ExcludedBitbucketCloudRepo",
+        "additionalProperties": false,
+        "anyOf": [{ "required": ["name"] }, { "required": ["uuid"] }, { "required": ["pattern"] }],
+        "properties": {
+          "name": {
+            "description": "The name of a Bitbucket Cloud repo (\"myorg/myrepo\") to exclude from mirroring.",
+            "type": "string",
+            "pattern": "^[\\w-]+/[\\w.-]+$"
+          },
+          "uuid": {
+            "description": "The UUID of a Bitbucket Cloud repo (as returned by the Bitbucket Cloud's API) to exclude from mirroring.",
+            "type": "string",
+            "pattern": "^\\{[0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{12}\\}$"
+          },
+          "pattern": {
+            "description": "Regular expression which matches against the name of a Bitbucket Cloud repo.",
+            "type": "string",
+            "format": "regex"
+          }
+        }
+      },
+      "examples": [
+        [{ "name": "myorg/myrepo" }, { "uuid": "{fceb73c7-cef6-4abe-956d-e471281126bc}" }],
+        [{ "name": "myorg/myrepo" }, { "name": "myorg/myotherrepo" }, { "pattern": "^topsecretproject/.*" }]
+      ]
     }
   }
 }

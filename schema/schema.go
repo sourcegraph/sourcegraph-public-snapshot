@@ -115,6 +115,10 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 type BitbucketCloudConnection struct {
 	// AppPassword description: The app password to use when authenticating to the Bitbucket Cloud. Also set the corresponding "username" field.
 	AppPassword string `json:"appPassword"`
+	// Exclude description: A list of repositories to never mirror from Bitbucket Cloud. Takes precedence over "team" configuration.
+	//
+	// Supports excluding by name ({"name": "myorg/myrepo"}) or by UUID ({"uuid": "{fceb73c7-cef6-4abe-956d-e471281126bd}"}).
+	Exclude []*ExcludedBitbucketCloudRepo `json:"exclude,omitempty"`
 	// GitURLType description: The type of Git URLs to use for cloning and fetching Git repositories on this Bitbucket Cloud.
 	//
 	// If "http", Sourcegraph will access Bitbucket Cloud repositories using Git URLs of the form https://bitbucket.org/myteam/myproject.git.
@@ -350,6 +354,14 @@ type ExcludedAWSCodeCommitRepo struct {
 	Id string `json:"id,omitempty"`
 	// Name description: The name of an AWS CodeCommit repository ("repo-name") to exclude from mirroring.
 	Name string `json:"name,omitempty"`
+}
+type ExcludedBitbucketCloudRepo struct {
+	// Name description: The name of a Bitbucket Cloud repo ("myorg/myrepo") to exclude from mirroring.
+	Name string `json:"name,omitempty"`
+	// Pattern description: Regular expression which matches against the name of a Bitbucket Cloud repo.
+	Pattern string `json:"pattern,omitempty"`
+	// Uuid description: The UUID of a Bitbucket Cloud repo (as returned by the Bitbucket Cloud's API) to exclude from mirroring.
+	Uuid string `json:"uuid,omitempty"`
 }
 type ExcludedBitbucketServerRepo struct {
 	// Id description: The ID of a Bitbucket Server repo (as returned by the Bitbucket Server instance's API) to exclude from mirroring.

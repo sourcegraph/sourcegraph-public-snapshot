@@ -14,6 +14,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - `sourcegraph/server` Docker deployments now support the environment variable `IGNORE_PROCESS_DEATH`. If set to true the container will keep running, even if a subprocess has died. This is useful when manually fixing problems in the container which the container refuses to start. For example a bad databse migration.
+- Bitbucket Cloud external service supports `exclude` config option. [#6035](https://github.com/sourcegraph/sourcegraph/issues/6035)
 
 ### Changed
 
@@ -25,6 +26,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Support hyphens in Bitbucket Cloud team names. [#6154](https://github.com/sourcegraph/sourcegraph/issues/6154)
 - Server will run `redis-check-aof --fix` on startup to fix corrupted AOF files. [#651](https://github.com/sourcegraph/sourcegraph/issues/651)
+- Authorization provider configuration errors in external services will be shown as site alerts. [#6061](https://github.com/sourcegraph/sourcegraph/issues/6061)
 
 ### Removed
 
