@@ -2731,10 +2731,10 @@
   dependencies:
     "@types/htmlparser2" "*"
 
-"@types/semver@6.0.0":
-  version "6.0.0"
-  resolved "https://registry.npmjs.org/@types/semver/-/semver-6.0.0.tgz#86ba89f02a414e39c68d02b351872e4ed31bd773"
-  integrity sha512-OO0srjOGH99a4LUN2its3+r6CBYcplhJ466yLqs+zvAWgphCpS8hYZEZ797tRDP/QKcqTdb/YCN6ifASoAWkrQ==
+"@types/semver@6.2.0":
+  version "6.2.0"
+  resolved "https://registry.npmjs.org/@types/semver/-/semver-6.2.0.tgz#d688d574400d96c5b0114968705366f431831e1a"
+  integrity sha512-1OzrNb4RuAzIT7wHSsgZRlMBlNsJl+do6UblR7JMW4oB7bbR+uBEYtUh7gEc/jM84GGilh68lSOokyM/zNUlBA==
 
 "@types/serve-static@*":
   version "1.13.2"
