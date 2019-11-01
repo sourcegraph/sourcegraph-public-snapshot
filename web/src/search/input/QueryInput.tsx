@@ -123,9 +123,6 @@ export class QueryInput extends React.Component<Props, State> {
         this.subscriptions.add(
             /**
              * Trigger new suggestions every time the input field is typed into.             *
-             * if first word:
-             *     if selected suggestion is not a filter: redirect to suggestion URL
-             *     else: add filter to query and show filter values
              * for filter values:
              *     if filter is a regex value: use fuzzy-search for suggestion
              *     else: use static values from this.searchFilterSuggestions
@@ -135,17 +132,14 @@ export class QueryInput extends React.Component<Props, State> {
                     tap(({ query }) => this.props.onChange(query)),
                     distinctUntilChanged(),
                     debounceTime(200),
-                    switchMap(queryCursorPair => {
-                        if (queryCursorPair.query.length < 1) {
+                    switchMap(queryCursor => {
+                        if (queryCursor.query.length === 0) {
                             return [{ suggestions: hiddenSuggestions }]
                         }
 
-                        const filterSuggestions = this.getSuggestions(
-                            this.state.searchFilterSuggestions,
-                            queryCursorPair
-                        )
+                        const filterSuggestions = this.getSuggestions(this.state.searchFilterSuggestions, queryCursor)
 
-                        const fullQuery = [this.props.prependQueryForSuggestions, queryCursorPair.query]
+                        const fullQuery = [this.props.prependQueryForSuggestions, queryCursor.query]
                             .filter(s => !!s)
                             .join(' ')
 
@@ -155,7 +149,7 @@ export class QueryInput extends React.Component<Props, State> {
                             toArray(),
                             map(suggestions => ({
                                 suggestions: {
-                                    cursorPosition: filterSuggestions.cursorPosition,
+                                    cursorPosition: queryCursor.cursorPosition,
                                     values: filterSuggestions.values.concat(suggestions),
                                 },
                             })),
@@ -228,8 +222,12 @@ export class QueryInput extends React.Component<Props, State> {
         }
 
         this.subscriptions.add(
+            // hide suggestions when clicking outside search input
             fromEvent<MouseEvent>(window, 'click').subscribe(event => {
-                if (!this.containerElement.current || !this.containerElement.current.contains(event.target as Node)) {
+                if (
+                    this.state.suggestions.values.length > 0 && // prevent unnecessary render
+                    (!this.containerElement.current || !this.containerElement.current.contains(event.target as Node))
+                ) {
                     this.hideSuggestions()
                 }
             })
@@ -263,9 +261,7 @@ export class QueryInput extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         const showSuggestions = this.state.suggestions.values.length > 0
-
-        console.log(JSON.stringify(this.state.suggestions.values))
-
+        const showUrlLabel = this.isFirstWordQuery(this.props.value)
         return (
             <Downshift
                 scrollIntoView={this.scrollIntoView}
@@ -313,6 +309,7 @@ export class QueryInput extends React.Component<Props, State> {
                                                     })}
                                                     suggestion={suggestion}
                                                     isSelected={isSelected}
+                                                    showUrlLabel={showUrlLabel}
                                                 />
                                             )
                                         })}
@@ -330,6 +327,8 @@ export class QueryInput extends React.Component<Props, State> {
             </Downshift>
         )
     }
+
+    private isFirstWordQuery = (query: string) => !query.includes(':') && query.trim().split(/\s+/).length === 1
 
     private itemToString = (suggestion?: Suggestion) => (suggestion ? suggestion.title : '')
 
@@ -357,6 +356,10 @@ export class QueryInput extends React.Component<Props, State> {
         this.setState({ suggestions: hiddenSuggestions })
     }
 
+    /**
+     * if query only has one word and selected suggestion is not a filter: redirect to suggestion URL
+     * else: add selected suggestion to query
+     */
     private onSuggestionSelect = (suggestion: Suggestion | undefined) => {
         this.setState((state, props) => {
             if (!suggestion) {
@@ -375,6 +378,15 @@ export class QueryInput extends React.Component<Props, State> {
                 },
             })
 
+            // if first word is being typed and suggestion with url is selected
+            if (this.isFirstWordQuery(props.value) && suggestion.url) {
+                this.props.history.push(suggestion.url)
+                return {
+                    cursorPosition: 0,
+                    suggestions: hiddenSuggestions,
+                }
+            }
+
             const { cursorPosition } = state.suggestions
             const isValueSuggestion = suggestion.type !== SuggestionTypes.filters
             const { query: newQuery, cursorPosition: newCursorPosition } = insertSuggestionInQuery(
@@ -383,7 +395,7 @@ export class QueryInput extends React.Component<Props, State> {
                 cursorPosition
             )
 
-            props.onChange(newQuery + (isValueSuggestion ? ' ' : ''))
+            props.onChange(newQuery)
 
             return {
                 cursorPosition: newCursorPosition,
@@ -398,10 +410,13 @@ export class QueryInput extends React.Component<Props, State> {
     }
 
     private focusInputAndPositionCursor(cursorPosition: number): void {
-        if (this.inputElement.current) {
-            this.inputElement.current.focus()
-            this.inputElement.current.setSelectionRange(cursorPosition, cursorPosition)
-        }
+        // run after props.onChange (in case it was called)
+        setTimeout(() => {
+            if (this.inputElement.current) {
+                this.inputElement.current.focus()
+                this.inputElement.current.setSelectionRange(cursorPosition, cursorPosition)
+            }
+        }, 0)
     }
 
     private focusInputAndPositionCursorAtEnd(): void {

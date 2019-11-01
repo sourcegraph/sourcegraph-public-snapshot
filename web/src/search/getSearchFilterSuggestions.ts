@@ -3,6 +3,7 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { Suggestion, SuggestionTypes, FiltersSuggestionTypes } from './input/Suggestion'
 import { mapValues } from 'lodash'
+import { assign } from 'lodash/fp'
 
 export type SearchFilterSuggestions = Record<
     FiltersSuggestionTypes,
@@ -24,160 +25,156 @@ export const filterSuggestions: SearchFilterSuggestions = {
     filters: {
         values: [
             {
-                type: SuggestionTypes.filters,
                 title: 'repo',
                 description: 'regex-pattern (include results whose repository path matches)',
             },
             {
-                type: SuggestionTypes.filters,
                 title: '-repo',
                 description: 'regex-pattern (exclude results whose repository path matches)',
             },
             {
-                type: SuggestionTypes.filters,
                 title: 'repogroup',
                 description: 'group-name (include results from the named group)',
             },
             {
-                type: SuggestionTypes.filters,
                 title: 'repohasfile',
                 description: 'regex-pattern (include results from repos that contain a matching file)',
             },
             {
-                type: SuggestionTypes.filters,
                 title: 'repohascommitafter',
                 description: '"string specifying time frame" (filter out stale repositories without recent commits)',
             },
             {
-                type: SuggestionTypes.filters,
                 title: 'file',
                 description: 'regex-pattern (include results whose file path matches)',
             },
             {
-                type: SuggestionTypes.filters,
                 title: '-file',
                 description: 'regex-pattern (exclude results whose file path matches)',
             },
             {
-                type: SuggestionTypes.filters,
                 title: 'type',
                 description: 'code | diff | commit | symbol',
             },
             {
-                type: SuggestionTypes.filters,
                 title: 'case',
                 description: 'yes | no (default)',
             },
             {
-                type: SuggestionTypes.filters,
                 title: 'lang',
                 description: 'lang-name (include results from the named language)',
             },
             {
-                type: SuggestionTypes.filters,
                 title: '-lang',
                 description: 'lang-name (exclude results from the named language)',
             },
             {
-                type: SuggestionTypes.filters,
                 title: 'fork',
                 description: 'no | only | yes (default)',
             },
             {
-                type: SuggestionTypes.filters,
                 title: 'archived',
                 description: 'no | only | yes (default)',
             },
             {
-                type: SuggestionTypes.filters,
                 title: 'count',
                 description: 'integer (number of results to fetch)',
             },
             {
-                type: SuggestionTypes.filters,
                 title: 'timeout',
                 description: '"string specifying time duration" (duration before timeout)',
             },
-        ],
+        ].map(
+            assign({
+                type: SuggestionTypes.filters,
+                label: 'add to query',
+            })
+        ),
     },
     type: {
         default: 'code',
-        values: [
-            { type: SuggestionTypes.type, title: 'code' },
-            { type: SuggestionTypes.type, title: 'diff' },
-            { type: SuggestionTypes.type, title: 'commit' },
-            { type: SuggestionTypes.type, title: 'symbol' },
-        ],
+        values: [{ title: 'code' }, { title: 'diff' }, { title: 'commit' }, { title: 'symbol' }].map(
+            assign({
+                type: SuggestionTypes.type,
+            })
+        ),
     },
     case: {
         default: 'no',
-        values: [{ type: SuggestionTypes.case, title: 'yes' }, { type: SuggestionTypes.case, title: 'no' }],
+        values: [{ title: 'yes' }, { title: 'no' }].map(
+            assign({
+                type: SuggestionTypes.case,
+            })
+        ),
     },
     fork: {
         default: 'yes',
-        values: [
-            { type: SuggestionTypes.fork, title: 'no' },
-            { type: SuggestionTypes.fork, title: 'only' },
-            { type: SuggestionTypes.fork, title: 'yes' },
-        ],
+        values: [{ title: 'no' }, { title: 'only' }, { title: 'yes' }].map(
+            assign({
+                type: SuggestionTypes.fork,
+            })
+        ),
     },
     archived: {
         default: 'yes',
-        values: [
-            { type: SuggestionTypes.archived, title: 'no' },
-            { type: SuggestionTypes.archived, title: 'only' },
-            { type: SuggestionTypes.archived, title: 'yes' },
-        ],
+        values: [{ title: 'no' }, { title: 'only' }, { title: 'yes' }].map(
+            assign({
+                type: SuggestionTypes.archived,
+            })
+        ),
     },
     file: {
         values: [
             {
-                type: SuggestionTypes.file,
                 title: '(test|spec)',
                 description: 'Test files',
             },
             {
-                type: SuggestionTypes.file,
                 title: '\\.json$',
                 description: 'JSON files',
             },
             {
-                type: SuggestionTypes.file,
                 title: '(vendor|node_modules)/',
                 description: 'Vendored code',
             },
             {
-                type: SuggestionTypes.file,
                 title: '\\.md$',
                 description: 'Markdown files',
             },
             {
-                type: SuggestionTypes.file,
                 title: '\\.(txt|md)$',
                 description: 'Text documents',
             },
-        ],
+        ].map(
+            assign({
+                type: SuggestionTypes.file,
+            })
+        ),
     },
     lang: {
         values: [
-            { type: SuggestionTypes.lang, title: 'c' },
-            { type: SuggestionTypes.lang, title: 'cpp' },
-            { type: SuggestionTypes.lang, title: 'csharp' },
-            { type: SuggestionTypes.lang, title: 'css' },
-            { type: SuggestionTypes.lang, title: 'go' },
-            { type: SuggestionTypes.lang, title: 'haskell' },
-            { type: SuggestionTypes.lang, title: 'html' },
-            { type: SuggestionTypes.lang, title: 'java' },
-            { type: SuggestionTypes.lang, title: 'javascript' },
-            { type: SuggestionTypes.lang, title: 'lua' },
-            { type: SuggestionTypes.lang, title: 'markdown' },
-            { type: SuggestionTypes.lang, title: 'php' },
-            { type: SuggestionTypes.lang, title: 'python' },
-            { type: SuggestionTypes.lang, title: 'r' },
-            { type: SuggestionTypes.lang, title: 'ruby' },
-            { type: SuggestionTypes.lang, title: 'swift' },
-            { type: SuggestionTypes.lang, title: 'typescript' },
-        ],
+            { title: 'c' },
+            { title: 'cpp' },
+            { title: 'csharp' },
+            { title: 'css' },
+            { title: 'go' },
+            { title: 'haskell' },
+            { title: 'html' },
+            { title: 'java' },
+            { title: 'javascript' },
+            { title: 'lua' },
+            { title: 'markdown' },
+            { title: 'php' },
+            { title: 'python' },
+            { title: 'r' },
+            { title: 'ruby' },
+            { title: 'swift' },
+            { title: 'typescript' },
+        ].map(
+            assign({
+                type: SuggestionTypes.lang,
+            })
+        ),
     },
     repogroup: {
         values: [],
@@ -186,23 +183,32 @@ export const filterSuggestions: SearchFilterSuggestions = {
         values: [],
     },
     repohasfile: {
-        values: [
-            { type: SuggestionTypes.repohasfile, title: 'go.mod' },
-            { type: SuggestionTypes.repohasfile, title: 'package.json' },
-            { type: SuggestionTypes.repohasfile, title: 'Gemfile' },
-        ],
+        values: [{ title: 'go.mod' }, { title: 'package.json' }, { title: 'Gemfile' }].map(
+            assign({
+                type: SuggestionTypes.repohasfile,
+            })
+        ),
     },
     repohascommitafter: {
-        values: [
-            { type: SuggestionTypes.repohascommitafter, title: '1 week ago' },
-            { type: SuggestionTypes.repohascommitafter, title: '1 month ago' },
-        ],
+        values: [{ title: '1 week ago' }, { title: '1 month ago' }].map(
+            assign({
+                type: SuggestionTypes.repohascommitafter,
+            })
+        ),
     },
     count: {
-        values: [{ type: SuggestionTypes.count, title: '100' }, { type: SuggestionTypes.count, title: '1000' }],
+        values: [{ title: '100' }, { title: '1000' }].map(
+            assign({
+                type: SuggestionTypes.count,
+            })
+        ),
     },
     timeout: {
-        values: [{ type: SuggestionTypes.timeout, title: '10s' }, { type: SuggestionTypes.timeout, title: '30s' }],
+        values: [{ title: '10s' }, { title: '30s' }].map(
+            assign({
+                type: SuggestionTypes.timeout,
+            })
+        ),
     },
 }
 

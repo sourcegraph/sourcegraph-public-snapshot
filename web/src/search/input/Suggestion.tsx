@@ -36,7 +36,7 @@ export interface Suggestion {
     description?: string
     type: SuggestionTypes
     url?: string
-    urlLabel?: string
+    label?: string
     kind?: GQL.SymbolKind
 }
 
@@ -53,6 +53,7 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
                 type: SuggestionTypes.repo,
                 title: item.name,
                 url: `/${item.name}`,
+                label: 'go to repository',
             }
         }
         case 'File': {
@@ -68,6 +69,7 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
                     title: item.name,
                     description: descriptionParts.join(' — '),
                     url: `${item.url}?suggestion`,
+                    label: 'go to dir',
                 }
             }
             return {
@@ -75,6 +77,7 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
                 title: item.name,
                 description: descriptionParts.join(' — '),
                 url: `${item.url}?suggestion`,
+                label: 'go to file',
             }
         }
         case 'Symbol': {
@@ -86,6 +89,7 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
                     item.location.resource.repository.name
                 )}`,
                 url: item.url,
+                label: 'go to definition',
             }
         }
         default:
@@ -117,12 +121,23 @@ interface SuggestionProps {
     suggestion: Suggestion
     isSelected?: boolean
     onClick?: () => void
+    showUrlLabel: boolean
 }
 
-export const SuggestionItem: React.FunctionComponent<SuggestionProps> = ({ suggestion, isSelected, ...props }) => (
+export const SuggestionItem: React.FunctionComponent<SuggestionProps> = ({
+    suggestion,
+    isSelected,
+    showUrlLabel,
+    ...props
+}) => (
     <li className={'suggestion' + (isSelected ? ' suggestion--selected' : '')} {...props}>
         <SuggestionIcon size={20} className="icon-inline suggestion__icon" suggestion={suggestion} />
         <div className="suggestion__title">{suggestion.title}</div>
         <div className="suggestion__description">{suggestion.description}</div>
+        {showUrlLabel && !!suggestion.label && (
+            <div className="suggestion__action" hidden={!isSelected}>
+                <kbd>enter</kbd> {suggestion.label}
+            </div>
+        )}
     </li>
 )

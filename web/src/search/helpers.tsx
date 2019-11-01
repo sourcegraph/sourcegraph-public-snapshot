@@ -219,13 +219,28 @@ export const insertSuggestionInQuery = (
 ): SearchQueryCursor => {
     const firstPart = query.substring(0, cursorPosition)
     const lastPart = query.substring(firstPart.length)
-    const isValueSuggestion = suggestion.type !== SuggestionTypes.filters
-    const separatorIndex = firstPart.lastIndexOf(isValueSuggestion ? SUGGESTION_FILTER_SEPARATOR : ' ')
+    const isFiltersSuggestion = suggestion.type === SuggestionTypes.filters
+    const separatorIndex = firstPart.lastIndexOf(!isFiltersSuggestion ? SUGGESTION_FILTER_SEPARATOR : ' ')
 
-    const newFirstPart =
-        firstPart.substring(0, separatorIndex + 1) +
-        suggestion.title +
-        (!isValueSuggestion ? SUGGESTION_FILTER_SEPARATOR : '')
+    const newFirstPart = (() => {
+        const lastWordOfFirstPartMatch = firstPart.match(/\s+(\S?)+$/)
+        const isSeparateWordSuggestion = Boolean(firstPart.match(/\s+([^:]?)+$/))
+
+        if (
+            !isFiltersSuggestion &&
+            isSeparateWordSuggestion &&
+            lastWordOfFirstPartMatch &&
+            lastWordOfFirstPartMatch.index
+        ) {
+            return firstPart.substring(0, lastWordOfFirstPartMatch.index) + ' ' + suggestion.title + lastPart
+        }
+
+        return (
+            firstPart.substring(0, separatorIndex + 1) +
+            suggestion.title +
+            (isFiltersSuggestion ? SUGGESTION_FILTER_SEPARATOR : '')
+        )
+    })()
 
     return {
         query: newFirstPart + lastPart,
