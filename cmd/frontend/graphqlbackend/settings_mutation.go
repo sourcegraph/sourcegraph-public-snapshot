@@ -20,7 +20,9 @@ type configurationResolver struct {
 	messages []string // error and warning messages
 }
 
-func (r *configurationResolver) Contents() string { return r.contents }
+func (r *configurationResolver) Contents() JSONCString {
+	return JSONCString(r.contents)
+}
 
 func (r *configurationResolver) Messages() []string {
 	if r.messages == nil {
@@ -70,7 +72,7 @@ func (r *schemaResolver) SettingsMutation(ctx context.Context, args *struct {
 	}, nil
 }
 
-// DEPRECATED in the GraphQL API
+// Deprecated: in the GraphQL API
 func (r *schemaResolver) ConfigurationMutation(ctx context.Context, args *struct {
 	Input *settingsMutationGroupInput
 }) (*settingsMutation, error) {

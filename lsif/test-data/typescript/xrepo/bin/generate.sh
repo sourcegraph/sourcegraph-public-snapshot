@@ -5,13 +5,14 @@ LSIF_NPM=${LSIF_NPM:-`which lsif-npm`}
 
 trap '{ rm -r ./repos; }' EXIT
 
-DIR=./repos REPO=a  ./bin/generate-a.sh
-DIR=./repos REPO=b1 DEP=`pwd`/repos/a ./bin/generate-b.sh
-DIR=./repos REPO=b2 DEP=`pwd`/repos/a ./bin/generate-b.sh
-DIR=./repos REPO=b3 DEP=`pwd`/repos/a ./bin/generate-b.sh
-DIR=./repos REPO=c1 DEP=`pwd`/repos/a ./bin/generate-c.sh
-DIR=./repos REPO=c2 DEP=`pwd`/repos/a ./bin/generate-c.sh
-DIR=./repos REPO=c3 DEP=`pwd`/repos/a ./bin/generate-c.sh
+# Generate math-util
+DIR=./repos REPO=a ./bin/generate-a.sh
+
+for i in `seq 1 3`; do
+    # Generate dependencies
+    DIR=./repos REPO="b${i}" DEP=`pwd`/repos/a ./bin/generate-b.sh
+    DIR=./repos REPO="c${i}" DEP=`pwd`/repos/a ./bin/generate-c.sh
+done
 
 mkdir -p data
 

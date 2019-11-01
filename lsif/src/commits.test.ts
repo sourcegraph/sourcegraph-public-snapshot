@@ -23,7 +23,7 @@ describe('discoverAndUpdateCommit', () => {
         const { connection, cleanup } = await createCleanPostgresDatabase()
 
         try {
-            const xrepoDatabase = new XrepoDatabase(connection)
+            const xrepoDatabase = new XrepoDatabase('', connection)
             await xrepoDatabase.insertDump('test-repo', ca, '')
 
             await discoverAndUpdateCommit({
@@ -50,7 +50,7 @@ describe('discoverAndUpdateCommit', () => {
         const { connection, cleanup } = await createCleanPostgresDatabase()
 
         try {
-            const xrepoDatabase = new XrepoDatabase(connection)
+            const xrepoDatabase = new XrepoDatabase('', connection)
             await xrepoDatabase.insertDump('test-repo', ca, '')
             await xrepoDatabase.updateCommits('test-repo', [[cb, '']])
 
@@ -76,7 +76,7 @@ describe('discoverAndUpdateCommit', () => {
         const { connection, cleanup } = await createCleanPostgresDatabase()
 
         try {
-            const xrepoDatabase = new XrepoDatabase(connection)
+            const xrepoDatabase = new XrepoDatabase('', connection)
 
             // This test ensures the following does not make a gitserver request.
             // As we did not register a nock interceptor, any request will result
@@ -110,7 +110,7 @@ describe('discoverAndUpdateTips', () => {
         const { connection, cleanup } = await createCleanPostgresDatabase()
 
         try {
-            const xrepoDatabase = new XrepoDatabase(connection)
+            const xrepoDatabase = new XrepoDatabase('', connection)
             await xrepoDatabase.updateCommits('test-repo', [[ca, ''], [cb, ca], [cc, cb], [cd, cc], [ce, cd]])
             await xrepoDatabase.insertDump('test-repo', ca, 'foo')
             await xrepoDatabase.insertDump('test-repo', cb, 'foo')
@@ -122,9 +122,9 @@ describe('discoverAndUpdateTips', () => {
                 ctx: {},
             })
 
-            expect((await xrepoDatabase.getDump('test-repo', ca, 'foo/test.ts'))!.visible_at_tip).toBeFalsy()
-            expect((await xrepoDatabase.getDump('test-repo', cb, 'foo/test.ts'))!.visible_at_tip).toBeTruthy()
-            expect((await xrepoDatabase.getDump('test-repo', cc, 'bar/test.ts'))!.visible_at_tip).toBeTruthy()
+            expect((await xrepoDatabase.getDump('test-repo', ca, 'foo/test.ts'))!.visibleAtTip).toBeFalsy()
+            expect((await xrepoDatabase.getDump('test-repo', cb, 'foo/test.ts'))!.visibleAtTip).toBeTruthy()
+            expect((await xrepoDatabase.getDump('test-repo', cc, 'bar/test.ts'))!.visibleAtTip).toBeTruthy()
         } finally {
             await cleanup()
         }
@@ -158,7 +158,7 @@ describe('discoverTips', () => {
         const { connection, cleanup } = await createCleanPostgresDatabase()
 
         try {
-            const xrepoDatabase = new XrepoDatabase(connection)
+            const xrepoDatabase = new XrepoDatabase('', connection)
 
             for (let i = 0; i < 15; i++) {
                 await xrepoDatabase.insertDump(`test-repo-${i}`, createCommit('c'), '')

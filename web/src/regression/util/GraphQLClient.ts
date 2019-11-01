@@ -1,7 +1,6 @@
 import { GraphQLResult, requestGraphQL } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { Observable } from 'rxjs'
-import { Config } from '../../../../shared/src/e2e/config'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 
 /**
@@ -32,15 +31,25 @@ export interface GraphQLClient {
 
 /**
  * Returns a {@link GraphQLClient} for use in regression test scripts.
+ *
+ * @param sudoUsername should be set if and only if the token is a sudo-level token.
  */
 export const createGraphQLClient = ({
-    sourcegraphBaseUrl: baseUrl,
-    sudoToken,
+    baseUrl,
+    token,
     sudoUsername,
-}: Pick<Config, 'sourcegraphBaseUrl' | 'sudoToken' | 'sudoUsername'>): GraphQLClient => {
-    const headers = {
-        Authorization: `token-sudo user="${sudoUsername}",token="${sudoToken}"`,
-    }
+}: {
+    baseUrl: string
+    token: string
+    sudoUsername?: string
+}): GraphQLClient => {
+    const headers = sudoUsername
+        ? {
+              Authorization: `token-sudo user="${sudoUsername}",token="${token}"`,
+          }
+        : {
+              Authorization: `token ${token}`,
+          }
     return {
         mutateGraphQL: (request, variables) =>
             requestGraphQL({

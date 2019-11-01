@@ -3,11 +3,19 @@
  */
 
 import { TestResourceManager } from './util/TestResourceManager'
-import { GraphQLClient } from './util/GraphQLClient'
+import { GraphQLClient, createGraphQLClient } from './util/GraphQLClient'
 import { Driver } from '../../../shared/src/e2e/driver'
 import { getConfig } from '../../../shared/src/e2e/config'
-import { getTestFixtures } from './util/init'
+import { getTestTools } from './util/init'
 import { ensureLoggedInOrCreateTestUser } from './util/helpers'
+import { setUserEmailVerified, getViewerSettings } from './util/api'
+import { ScreenshotVerifier } from './util/ScreenshotVerifier'
+import { gql, dataOrThrowErrors } from '../../../shared/src/graphql/graphql'
+import { map } from 'rxjs/operators'
+import { first } from 'lodash'
+import { setProperty } from '@sqs/jsonc-parser/lib/edit'
+import { applyEdits, parse } from '@sqs/jsonc-parser'
+import { overwriteSettings } from '../../../shared/src/settings/edit'
 
 describe('Core functionality regression test suite', () => {
     const testUsername = 'test-core'
@@ -27,8 +35,9 @@ describe('Core functionality regression test suite', () => {
     let driver: Driver
     let gqlClient: GraphQLClient
     let resourceManager: TestResourceManager
+    let screenshots: ScreenshotVerifier
     beforeAll(async () => {
-        ;({ driver, gqlClient, resourceManager } = await getTestFixtures(config))
+        ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
         resourceManager.add(
             'User',
             testUsername,
@@ -38,8 +47,8 @@ describe('Core functionality regression test suite', () => {
                 ...config,
             })
         )
+        screenshots = new ScreenshotVerifier(driver)
     })
-
     afterAll(async () => {
         if (!config.noCleanup) {
             await resourceManager.destroyAll()
@@ -47,9 +56,20 @@ describe('Core functionality regression test suite', () => {
         if (driver) {
             await driver.close()
         }
+        if (screenshots.screenshots.length > 0) {
+            console.log(screenshots.verificationInstructions())
+        }
     })
 
-    test('User settings are saved and applied', async () => {
+    let alwaysCleanupManager: TestResourceManager
+    beforeEach(() => {
+        alwaysCleanupManager = new TestResourceManager()
+    })
+    afterEach(async () => {
+        await alwaysCleanupManager.destroyAll()
+    })
+
+    test('2.2.1 User settings are saved and applied', async () => {
         const getSettings = async () => {
             await driver.page.waitForSelector('.view-line')
             return await driver.page.evaluate(() => {
@@ -126,25 +146,163 @@ describe('Core functionality regression test suite', () => {
         }
     })
 
-    test('User profile page', async () => {
+    test('2.2.2 User profile page', async () => {
+        const aviURL =
+            'https://media2.giphy.com/media/26tPplGWjN0xLybiU/giphy.gif?cid=790b761127d52fa005ed23fdcb09d11a074671ac90146787&rid=giphy.gif'
+        const displayName = 'Test Display Name'
+
+        await driver.page.goto(driver.sourcegraphBaseUrl + `/users/${testUsername}/settings/profile`)
+        await driver.replaceText({
+            selector: '.e2e-user-settings-profile-page__display-name',
+            newText: displayName,
+        })
+        await driver.replaceText({
+            selector: '.e2e-user-settings-profile-page__avatar_url',
+            newText: aviURL,
+            enterTextMethod: 'paste',
+        })
+        await driver.clickElementWithText('Update profile')
+        await driver.page.reload()
+        await driver.page.waitForFunction(
+            displayName => {
+                const el = document.querySelector('.e2e-user-area-header__display-name')
+                return el && el.textContent && el.textContent.trim() === displayName
+            },
+            undefined,
+            displayName
+        )
+
+        await screenshots.verifySelector(
+            'navbar-toggle-is-bart-simpson.png',
+            'Navbar toggle avatar is Bart Simpson',
+            '.e2e-user-nav-item-toggle'
+        )
+    })
+
+    test('2.2.3. User emails page', async () => {
+        const testEmail = 'sg-test-account@protonmail.com'
+        await driver.page.goto(driver.sourcegraphBaseUrl + `/users/${testUsername}/settings/emails`)
+        await driver.replaceText({ selector: '.e2e-user-email-add-input', newText: 'sg-test-account@protonmail.com' })
+        await driver.clickElementWithText('Add')
+        await driver.waitForElementWithText(testEmail)
+        await driver.findElementWithText('Verification pending')
+        await setUserEmailVerified(gqlClient, testUsername, testEmail, true)
+        await driver.page.reload()
+        await driver.waitForElementWithText('Verified')
+    })
+
+    test('2.2.4 Access tokens work and invalid access tokens return "401 Unauthorized"', async () => {
+        await driver.page.goto(config.sourcegraphBaseUrl + `/users/${testUsername}/settings/tokens`)
+        await driver.waitForElementWithText('Generate new token', undefined, { timeout: 5000 })
+        await driver.clickElementWithText('Generate new token')
+        await driver.waitForElementWithText('New access token')
+        await driver.replaceText({
+            selector: '.e2e-create-access-token-description',
+            newText: 'test-regression',
+        })
+        await driver.waitForElementWithText('Generate token')
+        await driver.clickElementWithText('Generate token')
+        await driver.waitForElementWithText("Copy the new access token now. You won't be able to see it again.")
+        await driver.clickElementWithText('Copy')
+        const token = await driver.page.evaluate(() => {
+            const tokenEl = document.querySelector('.e2e-access-token')
+            if (!tokenEl) {
+                return null
+            }
+            const inputEl = tokenEl.querySelector('input')
+            if (!inputEl) {
+                return null
+            }
+            return inputEl.value
+        })
+        if (!token) {
+            throw new Error('Could not obtain access token')
+        }
+        const gqlClientWithToken = createGraphQLClient({
+            baseUrl: config.sourcegraphBaseUrl,
+            token,
+        })
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        const currentUsernameQuery = gql`
+            query {
+                currentUser {
+                    username
+                }
+            }
+        `
+        const response = await gqlClientWithToken
+            .queryGraphQL(currentUsernameQuery)
+            .pipe(map(dataOrThrowErrors))
+            .toPromise()
+        expect(response).toEqual({ currentUser: { username: testUsername } })
+
+        const gqlClientWithInvalidToken = createGraphQLClient({
+            baseUrl: config.sourcegraphBaseUrl,
+            token: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        })
+
+        await expect(
+            gqlClientWithInvalidToken
+                .queryGraphQL(currentUsernameQuery)
+                .pipe(map(dataOrThrowErrors))
+                .toPromise()
+        ).rejects.toThrowError('401 Unauthorized')
+    })
+
+    test('2.5 Quicklinks: add a quicklink, test that it appears on the front page and works.', async () => {
+        const getGlobalSettings = async () => {
+            const settings = await getViewerSettings(gqlClient)
+            const globalSettingsSubject = first(settings.subjects.filter(subject => subject.__typename === 'Site'))
+            if (!globalSettingsSubject || !globalSettingsSubject.latestSettings) {
+                throw new Error('Could not get global settings')
+            }
+            return {
+                subjectID: globalSettingsSubject.id,
+                settingsID: globalSettingsSubject.latestSettings.id,
+                contents: globalSettingsSubject.latestSettings.contents,
+            }
+        }
+
+        const quicklinkInfo = {
+            name: 'Quicklink',
+            url: config.sourcegraphBaseUrl + '/api/console',
+            description: 'This is a quicklink',
+        }
+
+        const { subjectID, settingsID, contents: oldContents } = await getGlobalSettings()
+        if (parse(oldContents).quicklinks) {
+            throw new Error('Global setting quicklinks already exists, aborting test')
+        }
+        const newContents = applyEdits(
+            oldContents,
+            setProperty(oldContents, ['quicklinks'], [quicklinkInfo], {
+                eol: '\n',
+                insertSpaces: true,
+                tabSize: 2,
+            })
+        )
+        await overwriteSettings(gqlClient, subjectID, settingsID, newContents)
+        alwaysCleanupManager.add('Global setting', 'quicklinks', async () => {
+            const { subjectID: currentSubjectID, settingsID: currentSettingsID } = await getGlobalSettings()
+            await overwriteSettings(gqlClient, currentSubjectID, currentSettingsID, oldContents)
+        })
+
+        await driver.page.goto(config.sourcegraphBaseUrl + '/search')
+        await driver.waitForElementWithText(quicklinkInfo.name)
+        await driver.clickElementWithText(quicklinkInfo.name, { hover: true })
+        await driver.waitForElementWithText(quicklinkInfo.description)
+        await driver.clickElementWithText(quicklinkInfo.name)
+        await driver.page.waitForNavigation()
+        expect(driver.page.url()).toEqual(quicklinkInfo.url)
+    })
+
+    test('2.3.1 Organizations (admin user)', async () => {
         // TODO(@sourcegraph/web)
     })
-    test('User emails page', async () => {
+    test('2.3.2 Organizations (non-admin user)', async () => {
         // TODO(@sourcegraph/web)
     })
-    test('Access tokens work', async () => {
-        // TODO(@sourcegraph/web)
-    })
-    test('Organizations (admin user)', async () => {
-        // TODO(@sourcegraph/web)
-    })
-    test('Organizations (non-admin user)', async () => {
-        // TODO(@sourcegraph/web)
-    })
-    test('Explore page', async () => {
-        // TODO(@sourcegraph/web)
-    })
-    test('Quicklinks', async () => {
+    test('2.4 Explore page', async () => {
         // TODO(@sourcegraph/web)
     })
 })

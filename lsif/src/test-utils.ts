@@ -7,8 +7,20 @@ import { lsp } from 'lsif-protocol'
 import { child_process } from 'mz'
 import { convertLsif } from './importer'
 import { XrepoDatabase } from './xrepo'
-import { dbFilename } from './util'
+import { dbFilename, ensureDirectory } from './util'
 import { userInfo } from 'os'
+import * as constants from './constants'
+
+/**
+ * Create a temporary directory with a subdirectory for dbs.
+ *
+ * @param prefix The temporary path prefix.
+ */
+export async function createStorageRoot(prefix: string): Promise<string> {
+    const tempPath = await fs.mkdtemp(`${prefix}-`, { encoding: 'utf8' })
+    await ensureDirectory(path.join(tempPath, constants.DBS_DIR))
+    return tempPath
+}
 
 /**
  * Create a new postgres database with a random suffix, apply the frontend
@@ -133,7 +145,7 @@ export async function convertTestData(
     // the cases where `yarn test` is run from the root or from the lsif directory.
     const input = fs.createReadStream(path.join((await fs.exists('lsif')) ? 'lsif' : '', 'test-data', filename))
 
-    const tmp = path.join(storageRoot, 'tmp')
+    const tmp = path.join(storageRoot, constants.TEMP_DIR)
     const { packages, references } = await convertLsif(input, tmp)
     const dump = await xrepoDatabase.addPackagesAndReferences(repository, commit, root, packages, references)
     await fs.rename(tmp, dbFilename(storageRoot, dump.id, repository, commit))

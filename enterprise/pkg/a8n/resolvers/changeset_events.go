@@ -78,7 +78,7 @@ func (r *changesetEventResolver) CreatedAt() graphqlbackend.DateTime {
 	return graphqlbackend.DateTime{Time: r.ChangesetEvent.CreatedAt}
 }
 
-func (r *changesetEventResolver) Changeset(ctx context.Context) (graphqlbackend.ChangesetResolver, error) {
+func (r *changesetEventResolver) Changeset(ctx context.Context) (graphqlbackend.ExternalChangesetResolver, error) {
 	return &changesetResolver{store: r.store, Changeset: r.changeset}, nil
 }
 

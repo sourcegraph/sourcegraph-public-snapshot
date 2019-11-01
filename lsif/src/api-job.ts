@@ -1,0 +1,86 @@
+import { Job } from 'bull'
+
+/**
+ * The representation of a job as returned by the API.
+ */
+export interface ApiJob {
+    id: string
+    name: string
+    args: object
+    status: string
+    progress: number
+    failedReason: string | null
+    stacktrace: string[] | null
+    timestamp: string
+    processedOn: string | null
+    finishedOn: string | null
+}
+
+/**
+ * Convert a timestamp into an ISO string.
+ *
+ * @param timestamp The millisecond POSIX timestamp.
+ */
+
+const toDate = (timestamp: number): string => new Date(timestamp).toISOString()
+
+/**
+ * Attempt to convert a timestamp into an ISO string.
+ *
+ * @param timestamp The millisecond POSIX timestamp.
+ */
+const toMaybeDate = (timestamp: number | null): string | null => (timestamp ? toDate(timestamp) : null)
+
+/**
+ * Attempt to convert a string into an integer.
+ *
+ * @param value The int-y string.
+ */
+const toMaybeInt = (value: string | undefined): number | null => (value ? parseInt(value, 10) : null)
+
+/**
+ * Format a job to return from the API.
+ *
+ * @param job The job to format.
+ * @param status The job's status.
+ */
+export const formatJob = (job: Job, status: string): ApiJob => {
+    const payload = job.toJSON()
+
+    return {
+        id: `${payload.id}`,
+        name: payload.name,
+        args: payload.data.args,
+        status,
+        progress: payload.progress,
+        failedReason: payload.failedReason,
+        stacktrace: payload.stacktrace,
+        timestamp: toDate(payload.timestamp),
+        processedOn: toMaybeDate(payload.processedOn),
+        finishedOn: toMaybeDate(payload.finishedOn),
+    }
+}
+
+/**
+ * Format a job to return from the API.
+ *
+ * @param values A map of values composing the job.
+ * @param status The job's status.
+ */
+export const formatJobFromMap = (values: Map<string, string>, status: string): ApiJob => {
+    const rawData = values.get('data')
+    const rawStacktrace = values.get('stacktrace')
+
+    return {
+        id: values.get('id') || '',
+        name: values.get('name') || '',
+        args: rawData ? JSON.parse(rawData).args : {},
+        status,
+        progress: toMaybeInt(values.get('progress')) || 0,
+        failedReason: values.get('failedReason') || null,
+        stacktrace: rawStacktrace ? JSON.parse(rawStacktrace) : null,
+        timestamp: toMaybeDate(toMaybeInt(values.get('timestamp'))) || '',
+        processedOn: toMaybeDate(toMaybeInt(values.get('processedOn'))),
+        finishedOn: toMaybeDate(toMaybeInt(values.get('finishedOn'))),
+    }
+}

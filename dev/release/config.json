@@ -1,0 +1,17 @@
+{
+  "teamEmail": "team@sourcegraph.com",
+
+  "captainSlackUsername": "beyang",
+  "captainGitHubUsername": "beyang",
+
+  "version": "3.10",
+  "releaseDateTime": "20 Nov 2019 10:00 PST",
+  "oneWorkingDayBeforeRelease": "19 Nov 2019 10:00 PST",
+  "threeWorkingDaysBeforeRelease": "15 Nov 2019 10:00 PST",
+  "fourWorkingDaysBeforeRelease": "14 Nov 2019 10:00 PST",
+  "fiveWorkingDaysBeforeRelease": "13 Nov 2019 10:00 PST'",
+
+  "retrospectiveReminderDateTime": "25 Nov 2019 10:00 PST",
+  "retrospectiveDateTime": "26 Nov 2019 10:00 PST",
+  "retrospectiveDocURL": "https://docs.google.com/document/d/1yNNOy7-MAtdXhVUku__9MBjm6snF69T9BgAjZ3AlU28/edit"
+}

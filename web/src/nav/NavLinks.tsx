@@ -63,6 +63,13 @@ export class NavLinks extends React.PureComponent<Props> {
                         <ActivationDropdown activation={this.props.activation} history={this.props.history} />
                     </li>
                 )}
+                {(!this.props.showDotComMarketing || !!this.props.authenticatedUser) && (
+                    <li className="nav-item">
+                        <Link to="/explore" className="nav-link">
+                            Explore
+                        </Link>
+                    </li>
+                )}
                 {this.props.showCampaigns && (
                     <li className="nav-item">
                         <CampaignsNavItem />

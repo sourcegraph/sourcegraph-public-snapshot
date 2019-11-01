@@ -1,18 +1,26 @@
-import { readEnvInt } from './util'
+export const DBS_DIR = 'dbs'
+export const TEMP_DIR = 'temp'
+export const UPLOADS_DIR = 'uploads'
 
 /**
- * The number of SQLite connections that can be opened at once. This
- * value may be exceeded for a short period if many handles are held
- * at once.
+ * The maximum number of commits to visit breadth-first style when when finding
+ * the closest commit.
  */
-export const CONNECTION_CACHE_CAPACITY = readEnvInt('CONNECTION_CACHE_CAPACITY', 100)
+export const MAX_TRAVERSAL_LIMIT = 100
 
 /**
- * The maximum number of documents that can be held in memory at once.
+ * A random integer specific to the xrepo database used to generate advisory lock ids.
  */
-export const DOCUMENT_CACHE_CAPACITY = readEnvInt('DOCUMENT_CACHE_CAPACITY', 1024 * 1024 * 1024)
+export const ADVISORY_LOCK_ID_SALT = 1688730858
 
 /**
- * The maximum number of result chunks that can be held in memory at once.
+ * The number of commits to ask gitserver for when updating commit data for
+ * a particular repository. This should be just slightly above the max traversal
+ * limit.
  */
-export const RESULT_CHUNK_CACHE_CAPACITY = readEnvInt('RESULT_CHUNK_CACHE_CAPACITY', 1024 * 1024 * 1024)
+export const MAX_COMMITS_PER_UPDATE = MAX_TRAVERSAL_LIMIT * 1.5
+
+/**
+ * The maximum number of requests we can make to gitserver in a single batch.
+ */
+export const MAX_CONCURRENT_GITSERVER_REQUESTS = 100

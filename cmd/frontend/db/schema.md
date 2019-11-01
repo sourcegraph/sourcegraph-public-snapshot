@@ -21,6 +21,47 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.campaign_jobs"
+```
+      Column      |           Type           |                         Modifiers                          
+------------------+--------------------------+------------------------------------------------------------
+ id               | bigint                   | not null default nextval('campaign_jobs_id_seq'::regclass)
+ campaign_plan_id | bigint                   | not null
+ repo_id          | bigint                   | not null
+ rev              | text                     | not null
+ diff             | text                     | not null
+ error            | text                     | not null
+ started_at       | timestamp with time zone | 
+ finished_at      | timestamp with time zone | 
+ created_at       | timestamp with time zone | not null default now()
+ updated_at       | timestamp with time zone | not null default now()
+Indexes:
+    "campaign_jobs_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "campaign_jobs_campaign_plan_id_fkey" FOREIGN KEY (campaign_plan_id) REFERENCES campaign_plans(id) ON DELETE CASCADE DEFERRABLE
+    "campaign_jobs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
+
+```
+
+# Table "public.campaign_plans"
+```
+    Column     |           Type           |                          Modifiers                          
+---------------+--------------------------+-------------------------------------------------------------
+ id            | bigint                   | not null default nextval('campaign_plans_id_seq'::regclass)
+ campaign_type | text                     | not null
+ created_at    | timestamp with time zone | not null default now()
+ updated_at    | timestamp with time zone | not null default now()
+ arguments     | text                     | not null
+Indexes:
+    "campaign_plans_pkey" PRIMARY KEY, btree (id)
+Check constraints:
+    "campaign_plans_campaign_type_check" CHECK (campaign_type <> ''::text)
+Referenced by:
+    TABLE "campaign_jobs" CONSTRAINT "campaign_jobs_campaign_plan_id_fkey" FOREIGN KEY (campaign_plan_id) REFERENCES campaign_plans(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "campaigns" CONSTRAINT "campaigns_campaign_plan_id_fkey" FOREIGN KEY (campaign_plan_id) REFERENCES campaign_plans(id) DEFERRABLE
+
+```
+
 # Table "public.campaigns"
 ```
       Column       |           Type           |                       Modifiers                        
@@ -34,6 +75,7 @@ Foreign-key constraints:
  created_at        | timestamp with time zone | not null default now()
  updated_at        | timestamp with time zone | not null default now()
  changeset_ids     | jsonb                    | not null default '{}'::jsonb
+ campaign_plan_id  | integer                  | 
 Indexes:
     "campaigns_pkey" PRIMARY KEY, btree (id)
     "campaigns_changeset_ids_gin_idx" gin (changeset_ids)
@@ -44,6 +86,7 @@ Check constraints:
     "campaigns_has_1_namespace" CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
 Foreign-key constraints:
     "campaigns_author_id_fkey" FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+    "campaigns_campaign_plan_id_fkey" FOREIGN KEY (campaign_plan_id) REFERENCES campaign_plans(id) DEFERRABLE
     "campaigns_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
     "campaigns_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
 Triggers:
@@ -300,16 +343,19 @@ Indexes:
 
 # Table "public.lsif_dumps"
 ```
-     Column     |  Type   |                        Modifiers                        
-----------------+---------+---------------------------------------------------------
- id             | integer | not null default nextval('lsif_dumps_id_seq'::regclass)
- repository     | text    | not null
- commit         | text    | not null
- root           | text    | not null default ''::text
- visible_at_tip | boolean | not null default false
+     Column     |           Type           |                        Modifiers                        
+----------------+--------------------------+---------------------------------------------------------
+ id             | integer                  | not null default nextval('lsif_dumps_id_seq'::regclass)
+ repository     | text                     | not null
+ commit         | text                     | not null
+ root           | text                     | not null default ''::text
+ visible_at_tip | boolean                  | not null default false
+ uploaded_at    | timestamp with time zone | not null default now()
 Indexes:
     "lsif_dumps_pkey" PRIMARY KEY, btree (id)
     "lsif_dumps_repository_commit_root" UNIQUE CONSTRAINT, btree (repository, commit, root)
+    "lsif_dumps_uploaded_at" btree (uploaded_at)
+    "lsif_dumps_visible_repository_commit" btree (repository, commit) WHERE visible_at_tip
 Check constraints:
     "lsif_dumps_commit_check" CHECK (length(commit) = 40)
     "lsif_dumps_repository_check" CHECK (repository <> ''::text)
@@ -609,6 +655,7 @@ Check constraints:
     "repo_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
     "repo_sources_check" CHECK (jsonb_typeof(sources) = 'object'::text)
 Referenced by:
+    TABLE "campaign_jobs" CONSTRAINT "campaign_jobs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
     TABLE "changesets" CONSTRAINT "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "default_repos" CONSTRAINT "default_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id)
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE

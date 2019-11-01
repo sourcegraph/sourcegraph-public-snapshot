@@ -12,4 +12,4 @@ NODE_ENV=production DISABLE_TYPECHECKING=true yarn run build
 popd
 
 echo "--- go generate"
-go generate ./cmd/frontend/internal/app/assets ./cmd/frontend/internal/app/templates ./cmd/frontend/docsite
+go generate ./cmd/frontend/internal/app/assets ./cmd/frontend/internal/app/templates

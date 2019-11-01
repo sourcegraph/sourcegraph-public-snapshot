@@ -64,6 +64,9 @@ func TestNodeResolverTo(t *testing.T) {
 		if _, b := r.ToCampaign(); b {
 			continue
 		}
+		if _, b := r.ToCampaignPlan(); b {
+			continue
+		}
 		if _, b := r.ToChangeset(); b {
 			continue
 		}

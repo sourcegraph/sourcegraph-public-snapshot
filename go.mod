@@ -157,6 +157,7 @@ require (
 	github.com/src-d/enry/v2 v2.1.0
 	github.com/stripe/stripe-go v65.1.0+incompatible
 	github.com/temoto/robotstxt v1.1.1
+	github.com/tomnomnom/linkheader v0.0.0-20180905144013-02ca5825eb80
 	github.com/uber-go/atomic v1.4.0 // indirect
 	github.com/uber/gonduit v0.4.1
 	github.com/uber/jaeger-client-go v2.19.0+incompatible
@@ -198,7 +199,7 @@ require (
 )
 
 replace (
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20191022114252-c1011d80f8fa
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20191031085051-5bd7e84795f0
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.0.0-20190712190530-f05918046bab
 	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0

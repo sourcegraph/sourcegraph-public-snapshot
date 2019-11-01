@@ -473,7 +473,7 @@ func (r *discussionThreadTargetRepoResolver) RelativePath(ctx context.Context, a
 		return nil, err
 	}
 	currentPath := *r.t.Path
-	fileDiffs, err := comparison.FileDiffs(&struct{ First *int32 }{}).Nodes(ctx)
+	fileDiffs, err := comparison.FileDiffs(&graphqlutil.ConnectionArgs{}).Nodes(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -781,7 +781,7 @@ func viewerCanUseDiscussions(ctx context.Context) error {
 		return err
 	}
 	var settings schema.Settings
-	if err := jsonc.Unmarshal(merged.Contents(), &settings); err != nil {
+	if err := jsonc.Unmarshal(string(merged.Contents()), &settings); err != nil {
 		return err
 	}
 	enabled, ok := settings.Extensions["sourcegraph/code-discussions"]

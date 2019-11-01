@@ -22,19 +22,19 @@ Several languages are currently supported:
 
 Install the LSIF indexer for your language (e.g. Go):
 
-```
-$ go get github.com/sourcegraph/lsif-go/cmd/lsif-go
+```bash
+go get github.com/sourcegraph/lsif-go/cmd/lsif-go
 ```
 
 Generate `data.lsif` in your project root (most LSIF indexers require a proper build environment: dependencies have been fetched, environment variables are set, etc.):
 
-```
+```bash
 some-project-dir$ lsif-go --noContents --out=data.lsif
 ```
 
 Then, upload `data.lsif` to your Sourcegraph instance via the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli):
 
-```
+```bash
 some-project-dir$ src \
   -endpoint=https://sourcegraph.example.com \
   lsif upload \
@@ -51,10 +51,12 @@ If successful, you'll see the following message:
 
 If an error occurred, you'll see it in the response.
 
-Go to your global settings at https://sourcegraph.example.com/site-admin/global-settings and enable LSIF:
+Go to your global settings at `/site-admin/global-settings` and enable LSIF:
 
 ```json
+{
   "codeIntel.lsif": true
+}
 ```
 
 After uploading LSIF files, your Sourcegraph instance will use these files to power code intelligence so that when you visit a file in that repository on your Sourcegraph instance, the code intelligence should be more precise than it was out-of-the-box.
