@@ -664,6 +664,16 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		}
 
 		if args.Pattern.IsStructuralPat {
+			// For structural search, we run callSearcherOverRepos
+			// over the set of repos and files known to contain
+			// parts of the pattern as determined by Zoekt.
+			// callSearcherOverRepos must acquire the lock, so we
+			// must release the lock held by Zoekt at this point.
+			// The Zoekt part of the search is done here as far as
+			// structural search is concerned, so the lock can be
+			// freely released.
+			mu.Unlock()
+
 			// A partition of {repo name => file list} that we will build from Zoekt matches
 			partition := make(map[string][]string)
 			var repos []*search.RepositoryRevisions
@@ -682,15 +692,6 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 				}
 			}
 
-			// For structural search, we run callSearcherOverRepos
-			// over the set of repos and files known to contain
-			// parts of the pattern as determined by Zoekt.
-			// callSearcherOverRepos must acquire the lock, so we
-			// must release the lock held by Zoekt at this point.
-			// The Zoekt part of the search is done here as far as
-			// structural search is concerned, so the lock can be
-			// freely released.
-			mu.Unlock()
 			err := callSearcherOverRepos(repos, partition)
 			mu.Lock()
 			if err != nil {
