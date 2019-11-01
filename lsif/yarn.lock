@@ -378,10 +378,10 @@
     "@types/connect" "*"
     "@types/node" "*"
 
-"@types/bull@3.10.3":
-  version "3.10.3"
-  resolved "https://registry.npmjs.org/@types/bull/-/bull-3.10.3.tgz#b33e0c8008dfd4d99beb3906731799a9232969c0"
-  integrity sha512-6n4YcNUGBWzAq+l6oZzpUTU+pg5eqPEg4IQNpyQkVsxXLl1tWf5ztYN+ddF9Ale9Z92cPZVOvjpDOkpQJFBs5Q==
+"@types/bull@3.10.5":
+  version "3.10.5"
+  resolved "https://registry.npmjs.org/@types/bull/-/bull-3.10.5.tgz#06bb3551c2eae88075fdc03d462063f647dbb0eb"
+  integrity sha512-1/4/tNitRNBjXpQ9tJdWJxpbVft0fFUPc5d0UPB/1NJgxn8Wd9xjSkFkS+YxwUqW6+NfFzOFqqPMPL+yzLL6LQ==
   dependencies:
     "@types/ioredis" "*"
 
