@@ -18,9 +18,9 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-// gitTreeEntryResolver resolves an entry in a Git tree in a repository. The entry can be any Git
+// GitTreeEntryResolver resolves an entry in a Git tree in a repository. The entry can be any Git
 // object type that is valid in a tree.
-type gitTreeEntryResolver struct {
+type GitTreeEntryResolver struct {
 	commit *GitCommitResolver
 
 	// stat is this tree entry's file info. Its Name method must return the full path relative to
@@ -30,19 +30,23 @@ type gitTreeEntryResolver struct {
 	isRecursive bool // whether entries is populated recursively (otherwise just current level of hierarchy)
 }
 
-func (r *gitTreeEntryResolver) Path() string { return r.stat.Name() }
-func (r *gitTreeEntryResolver) Name() string { return path.Base(r.stat.Name()) }
+func NewGitTreeEntryResolver(commit *GitCommitResolver, stat os.FileInfo) *GitTreeEntryResolver {
+	return &GitTreeEntryResolver{commit: commit, stat: stat}
+}
 
-func (r *gitTreeEntryResolver) ToGitTree() (*gitTreeEntryResolver, bool) { return r, true }
-func (r *gitTreeEntryResolver) ToGitBlob() (*gitTreeEntryResolver, bool) { return r, true }
+func (r *GitTreeEntryResolver) Path() string { return r.stat.Name() }
+func (r *GitTreeEntryResolver) Name() string { return path.Base(r.stat.Name()) }
 
-func (r *gitTreeEntryResolver) Commit() *GitCommitResolver { return r.commit }
+func (r *GitTreeEntryResolver) ToGitTree() (*GitTreeEntryResolver, bool) { return r, true }
+func (r *GitTreeEntryResolver) ToGitBlob() (*GitTreeEntryResolver, bool) { return r, true }
 
-func (r *gitTreeEntryResolver) Repository() *RepositoryResolver { return r.commit.repo }
+func (r *GitTreeEntryResolver) Commit() *GitCommitResolver { return r.commit }
 
-func (r *gitTreeEntryResolver) IsRecursive() bool { return r.isRecursive }
+func (r *GitTreeEntryResolver) Repository() *RepositoryResolver { return r.commit.repo }
 
-func (r *gitTreeEntryResolver) URL(ctx context.Context) (string, error) {
+func (r *GitTreeEntryResolver) IsRecursive() bool { return r.isRecursive }
+
+func (r *GitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 	if submodule := r.Submodule(); submodule != nil {
 		repoName, err := cloneURLToRepoName(ctx, submodule.URL())
 		if err != nil {
@@ -58,7 +62,7 @@ func (r *gitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 	return r.urlPath(url)
 }
 
-func (r *gitTreeEntryResolver) CanonicalURL() (string, error) {
+func (r *GitTreeEntryResolver) CanonicalURL() (string, error) {
 	url, err := r.commit.canonicalRepoRevURL()
 	if err != nil {
 		return "", err
@@ -66,7 +70,7 @@ func (r *gitTreeEntryResolver) CanonicalURL() (string, error) {
 	return r.urlPath(url)
 }
 
-func (r *gitTreeEntryResolver) urlPath(prefix string) (string, error) {
+func (r *GitTreeEntryResolver) urlPath(prefix string) (string, error) {
 	if r.IsRoot() {
 		return prefix, nil
 	}
@@ -85,13 +89,13 @@ func (r *gitTreeEntryResolver) urlPath(prefix string) (string, error) {
 	return u.String(), nil
 }
 
-func (r *gitTreeEntryResolver) IsDirectory() bool { return r.stat.Mode().IsDir() }
+func (r *GitTreeEntryResolver) IsDirectory() bool { return r.stat.Mode().IsDir() }
 
-func (r *gitTreeEntryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
+func (r *GitTreeEntryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
 	return externallink.FileOrDir(ctx, r.commit.repo.repo, r.commit.inputRevOrImmutableRev(), r.Path(), r.stat.Mode().IsDir())
 }
 
-func (r *gitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
+func (r *GitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
 	if submoduleInfo, ok := r.stat.Sys().(git.Submodule); ok {
 		return &gitSubmoduleResolver{submodule: submoduleInfo}
 	}
@@ -189,7 +193,7 @@ func createFileInfo(path string, isDir bool) os.FileInfo {
 	return fileInfo{path: path, isDir: isDir}
 }
 
-func (r *gitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeEntryConnectionArgs) (bool, error) {
+func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeEntryConnectionArgs) (bool, error) {
 	if !r.IsDirectory() {
 		return false, nil
 	}

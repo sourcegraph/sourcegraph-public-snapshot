@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-func (r *gitTreeEntryResolver) IsRoot() bool {
+func (r *GitTreeEntryResolver) IsRoot() bool {
 	path := path.Clean(r.Path())
 	return path == "/" || path == "." || path == ""
 }
@@ -26,19 +26,19 @@ type gitTreeEntryConnectionArgs struct {
 	RecursiveSingleChild bool
 }
 
-func (r *gitTreeEntryResolver) Entries(ctx context.Context, args *gitTreeEntryConnectionArgs) ([]*gitTreeEntryResolver, error) {
+func (r *GitTreeEntryResolver) Entries(ctx context.Context, args *gitTreeEntryConnectionArgs) ([]*GitTreeEntryResolver, error) {
 	return r.entries(ctx, args, nil)
 }
 
-func (r *gitTreeEntryResolver) Directories(ctx context.Context, args *gitTreeEntryConnectionArgs) ([]*gitTreeEntryResolver, error) {
+func (r *GitTreeEntryResolver) Directories(ctx context.Context, args *gitTreeEntryConnectionArgs) ([]*GitTreeEntryResolver, error) {
 	return r.entries(ctx, args, func(fi os.FileInfo) bool { return fi.Mode().IsDir() })
 }
 
-func (r *gitTreeEntryResolver) Files(ctx context.Context, args *gitTreeEntryConnectionArgs) ([]*gitTreeEntryResolver, error) {
+func (r *GitTreeEntryResolver) Files(ctx context.Context, args *gitTreeEntryConnectionArgs) ([]*GitTreeEntryResolver, error) {
 	return r.entries(ctx, args, func(fi os.FileInfo) bool { return !fi.Mode().IsDir() })
 }
 
-func (r *gitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryConnectionArgs, filter func(fi os.FileInfo) bool) ([]*gitTreeEntryResolver, error) {
+func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryConnectionArgs, filter func(fi os.FileInfo) bool) ([]*GitTreeEntryResolver, error) {
 	cachedRepo, err := backend.CachedGitRepo(ctx, r.commit.repo.repo)
 	if err != nil {
 		return nil, err
@@ -58,10 +58,10 @@ func (r *gitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 		entries = entries[:int(*args.First)]
 	}
 
-	var l []*gitTreeEntryResolver
+	var l []*GitTreeEntryResolver
 	for _, entry := range entries {
 		if filter == nil || filter(entry) {
-			l = append(l, &gitTreeEntryResolver{
+			l = append(l, &GitTreeEntryResolver{
 				commit: r.commit,
 				stat:   entry,
 			})

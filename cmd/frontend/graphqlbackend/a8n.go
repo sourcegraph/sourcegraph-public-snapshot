@@ -275,7 +275,7 @@ type PreviewFileDiff interface {
 	NewPath() *string
 	Hunks() []FileDiffHunk
 	Stat() DiffStat
-	OldFile() *gitTreeEntryResolver
+	OldFile() *GitTreeEntryResolver
 	InternalID() string
 }
 

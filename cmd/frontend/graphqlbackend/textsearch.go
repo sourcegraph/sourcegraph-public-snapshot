@@ -74,11 +74,11 @@ func (fm *fileMatchResolver) Key() string {
 	return fm.uri
 }
 
-func (fm *fileMatchResolver) File() *gitTreeEntryResolver {
+func (fm *fileMatchResolver) File() *GitTreeEntryResolver {
 	// NOTE(sqs): Omits other commit fields to avoid needing to fetch them
 	// (which would make it slow). This GitCommitResolver will return empty
 	// values for all other fields.
-	return &gitTreeEntryResolver{
+	return &GitTreeEntryResolver{
 		commit: &GitCommitResolver{
 			repo:     &RepositoryResolver{repo: fm.repo},
 			oid:      GitObjectID(fm.commitID),

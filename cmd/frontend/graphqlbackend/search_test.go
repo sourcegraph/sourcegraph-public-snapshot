@@ -230,7 +230,7 @@ func testStringResult(result *searchSuggestionResolver) string {
 	switch r := result.result.(type) {
 	case *RepositoryResolver:
 		name = "repo:" + string(r.repo.Name)
-	case *gitTreeEntryResolver:
+	case *GitTreeEntryResolver:
 		name = "file:" + r.Path()
 	case *languageResolver:
 		name = "lang:" + r.name

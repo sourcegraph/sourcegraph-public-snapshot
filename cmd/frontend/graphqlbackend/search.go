@@ -839,7 +839,7 @@ func (e *badRequestError) Cause() error {
 
 // searchSuggestionResolver is a resolver for the GraphQL union type `SearchSuggestion`
 type searchSuggestionResolver struct {
-	// result is either a RepositoryResolver or a gitTreeEntryResolver
+	// result is either a RepositoryResolver or a GitTreeEntryResolver
 	result interface{}
 	// score defines how well this item matches the query for sorting purposes
 	score int
@@ -854,18 +854,18 @@ func (r *searchSuggestionResolver) ToRepository() (*RepositoryResolver, bool) {
 	return res, ok
 }
 
-func (r *searchSuggestionResolver) ToFile() (*gitTreeEntryResolver, bool) {
-	res, ok := r.result.(*gitTreeEntryResolver)
+func (r *searchSuggestionResolver) ToFile() (*GitTreeEntryResolver, bool) {
+	res, ok := r.result.(*GitTreeEntryResolver)
 	return res, ok
 }
 
-func (r *searchSuggestionResolver) ToGitBlob() (*gitTreeEntryResolver, bool) {
-	res, ok := r.result.(*gitTreeEntryResolver)
+func (r *searchSuggestionResolver) ToGitBlob() (*GitTreeEntryResolver, bool) {
+	res, ok := r.result.(*GitTreeEntryResolver)
 	return res, ok && res.stat.Mode().IsRegular()
 }
 
-func (r *searchSuggestionResolver) ToGitTree() (*gitTreeEntryResolver, bool) {
-	res, ok := r.result.(*gitTreeEntryResolver)
+func (r *searchSuggestionResolver) ToGitTree() (*GitTreeEntryResolver, bool) {
+	res, ok := r.result.(*GitTreeEntryResolver)
 	return res, ok && res.stat.Mode().IsDir()
 }
 
@@ -885,14 +885,14 @@ func (r *searchSuggestionResolver) ToLanguage() (*languageResolver, bool) {
 // newSearchResultResolver returns a new searchResultResolver wrapping the
 // given result.
 //
-// A panic occurs if the type of result is not a *RepositoryResolver, *gitTreeEntryResolver,
+// A panic occurs if the type of result is not a *RepositoryResolver, *GitTreeEntryResolver,
 // *searchSymbolResult or *languageResolver.
 func newSearchResultResolver(result interface{}, score int) *searchSuggestionResolver {
 	switch r := result.(type) {
 	case *RepositoryResolver:
 		return &searchSuggestionResolver{result: r, score: score, length: len(r.repo.Name), label: string(r.repo.Name)}
 
-	case *gitTreeEntryResolver:
+	case *GitTreeEntryResolver:
 		return &searchSuggestionResolver{result: r, score: score, length: len(r.Path()), label: r.Path()}
 
 	case *searchSymbolResult:
