@@ -96,6 +96,8 @@ import { resolveRepoNames } from './util/file_info'
 import { ViewResolver } from './views'
 import { observeStorageKey } from '../../browser/storage'
 import { SourcegraphIntegrationURLs } from '../../platform/context'
+import { requestGraphQLHelper } from '../../shared/backend/requestGraphQL'
+import { checkUserLoggedInAndFetchSettings } from '../../platform/settings'
 
 registerHighlightContributions()
 
@@ -849,17 +851,26 @@ const SHOW_DEBUG = (): boolean => localStorage.getItem('debug') !== null
 const CODE_HOSTS: CodeHost[] = [bitbucketServerCodeHost, githubCodeHost, gitlabCodeHost, phabricatorCodeHost]
 export const determineCodeHost = (): CodeHost | undefined => CODE_HOSTS.find(codeHost => codeHost.check())
 
-export function injectCodeIntelligenceToCodeHost(
+export async function injectCodeIntelligenceToCodeHost(
     mutations: Observable<MutationRecordLike[]>,
     codeHost: CodeHost,
     { sourcegraphURL, assetsURL }: SourcegraphIntegrationURLs,
     isExtension: boolean,
     showGlobalDebug = SHOW_DEBUG()
-): Subscription {
+): Promise<Subscription> {
     const subscriptions = new Subscription()
+    const initialSettingsResult = await checkUserLoggedInAndFetchSettings(
+        requestGraphQLHelper(isExtension, sourcegraphURL)
+    ).toPromise()
+    if (!initialSettingsResult.userLoggedIn) {
+        // Exit early when the user is not logged in to the Sourcegraph instance.
+        console.warn(`Sourcegraph is disabled: you must be logged in to ${sourcegraphURL} to use Sourcegraph.`)
+        return subscriptions
+    }
     const { platformContext, extensionsController } = initializeExtensions(
         codeHost,
         { sourcegraphURL, assetsURL },
+        initialSettingsResult.settings,
         isExtension
     )
     const telemetryService = new EventLogger(isExtension, platformContext.requestGraphQL)
