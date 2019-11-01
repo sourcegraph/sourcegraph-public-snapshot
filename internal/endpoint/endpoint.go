@@ -199,13 +199,15 @@ func endpointsToMap(u *k8sURL, eps *corev1.Endpoints) (*hashMap, error) {
 	var urls []string
 	for _, subset := range eps.Subsets {
 		for _, addr := range subset.Addresses {
-			if addr.Ip != nil {
+			if addr.Hostname != nil {
+				urls = append(urls, u.endpointURL(*addr.Hostname+"."+u.Service))
+			} else if addr.Ip != nil {
 				urls = append(urls, u.endpointURL(*addr.Ip))
 			}
 		}
 	}
 	if len(urls) == 0 {
-		return nil, errors.Errorf("no %s endpoints could be found (this may indicate more searcher replicas are needed, contact support@sourcegraph.com for assistance)", u.Service)
+		return nil, errors.Errorf("no %s endpoints could be found (this may indicate more %s replicas are needed, contact support@sourcegraph.com for assistance)", u.Service, u.Service)
 	}
 	return newConsistentHashMap(urls), nil
 }
@@ -224,6 +226,9 @@ func (u *k8sURL) endpointURL(endpoint string) string {
 	} else {
 		uCopy.Host = endpoint
 	}
+	if uCopy.Scheme == "rpc" {
+		return uCopy.Host
+	}
 	return uCopy.String()
 }
 
@@ -238,7 +243,7 @@ func parseURL(rawurl string) (*k8sURL, error) {
 	case 1:
 		svc = parts[0]
 	case 2:
-		svc, ns = parts[1], parts[2]
+		svc, ns = parts[0], parts[1]
 	default:
 		return nil, fmt.Errorf("invalid k8s url. expected k8s+http://service.namespace:port/path, got %s", rawurl)
 	}
