@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -152,24 +153,19 @@ func detectSearchType(version string, patternType *string, input string) (Search
 		}
 	}
 
-	parseTree, err := query.Parse(input)
-	if err != nil {
-		return -1, err
-	}
-
-	patternTypes := parseTree.Values(query.FieldPatternType)
-
-	// Override the searchType if the query explicitly specifies one. If
-	// there are multiple patternTypes, use the last one we encounter.
-	// Since this field is Singular, the validation check on the
-	// parse tree wil reject patterns with duplicate fields.
-	for _, pat := range patternTypes {
-		switch pat {
-		case "regex", "regexp":
+	// The patterntype field is Singular, but not enforced since we do not
+	// properly parse the input. The regex extraction, takes the left-most
+	// "patterntype:value" match.
+	var patternTypeRegex = lazyregexp.New(`patterntype:([a-zA-Z"']+)`)
+	patternFromField := patternTypeRegex.FindStringSubmatch(input)
+	if len(patternFromField) > 1 {
+		extracted := patternFromField[1]
+		if match, _ := regexp.MatchString("regex", extracted); match {
 			searchType = SearchTypeRegex
-		case "literal":
+		} else if match, _ := regexp.MatchString("literal", extracted); match {
 			searchType = SearchTypeLiteral
-		case "structural":
+
+		} else if match, _ := regexp.MatchString("structural", extracted); match {
 			searchType = SearchTypeStructural
 		}
 	}

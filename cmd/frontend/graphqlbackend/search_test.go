@@ -317,11 +317,14 @@ func Test_detectSearchType(t *testing.T) {
 	}{
 		{"V1, no pattern type", "V1", nil, "", SearchTypeRegex},
 		{"V2, no pattern type", "V2", nil, "", SearchTypeLiteral},
+		{"V2, no pattern type, input does not produce parse error", "V2", nil, "/-/godoc", SearchTypeLiteral},
 		{"V1, regexp pattern type", "V1", &typeRegexp, "", SearchTypeRegex},
 		{"V2, regexp pattern type", "V2", &typeRegexp, "", SearchTypeRegex},
 		{"V1, literal pattern type", "V1", &typeLiteral, "", SearchTypeLiteral},
 		{"V2, override regexp pattern type", "V2", &typeLiteral, "patterntype:regexp", SearchTypeRegex},
 		{"V2, override regex variant pattern type", "V2", &typeLiteral, "patterntype:regex", SearchTypeRegex},
+		{"V2, override regex variant pattern type with double quotes", "V2", &typeLiteral, `patterntype:"regex"`, SearchTypeRegex},
+		{"V2, override regex variant pattern type with single quotes", "V2", &typeLiteral, `patterntype:'regex'`, SearchTypeRegex},
 		{"V1, override literal pattern type", "V1", &typeRegexp, "patterntype:literal", SearchTypeLiteral},
 	}
 
