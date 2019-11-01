@@ -355,12 +355,17 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 	// ones.
 	sliced := sliceSearchResults(results, common, resultOffset, int(p.pagination.limit))
 	nextCursor := &searchCursor{ResultOffset: sliced.resultOffset}
-	for globalOffset, repo := range p.repositories {
-		if repo.Repo == sliced.lastRepoConsumed {
-			nextCursor.RepositoryOffset = int32(globalOffset)
+
+	if len(sliced.results) > 0 {
+		lastRepoConsumedName, _ := sliced.results[len(sliced.results)-1].searchResultURIs()
+		for globalOffset, repo := range p.repositories {
+			if string(repo.Repo.Name) == lastRepoConsumedName {
+				nextCursor.RepositoryOffset = int32(globalOffset)
+			}
 		}
 	}
-	if !sliced.lastRepoConsumedPartially {
+	lastRepoConsumedPartially := sliced.resultOffset != 0
+	if !lastRepoConsumedPartially {
 		nextCursor.RepositoryOffset++
 	}
 	nextCursor.Finished = !sliced.limitHit || int(nextCursor.RepositoryOffset) == len(p.repositories) // Finished if we searched the last repository
@@ -383,15 +388,6 @@ type slicedSearchResults struct {
 	//
 	resultOffset int32
 
-	// lastRepoConsumed indicates the last repo whose results were consumed
-	// within the input result set, or nil if there were no results after
-	// slicing.
-	lastRepoConsumed *types.Repo
-
-	// lastRepoConsumedPartially tells if the repository was consumed partially or
-	// fully.
-	lastRepoConsumedPartially bool
-
 	// limitHit indicates if the limit was hit and results were truncated.
 	limitHit bool
 }
@@ -406,14 +402,6 @@ func sliceSearchResults(results []searchResultResolver, common *searchResultsCom
 		results = results[offset:]
 		final.results = results
 		final.common = common
-		if len(results) > 0 {
-			lastRepoConsumedName, _ := results[len(results)-1].searchResultURIs()
-			for _, repo := range common.repos {
-				if string(repo.Name) == lastRepoConsumedName {
-					final.lastRepoConsumed = repo
-				}
-			}
-		}
 		return
 	}
 	final.limitHit = true
@@ -443,12 +431,11 @@ func sliceSearchResults(results []searchResultResolver, common *searchResultsCom
 	// Since it is within the boundary of B's results, the next paginated
 	// request should use a Cursor.ResultOffset == 2 to indicate we should
 	// resume fetching results starting at b3.
-	lastResultRepo, _ := results[len(results)-1].searchResultURIs()
+	var lastResultRepo string
 	for _, r := range originalResults[:offset+limit] {
 		repo, _ := r.searchResultURIs()
 		if repo != lastResultRepo {
 			final.resultOffset = 0
-			final.lastRepoConsumed = reposByName[repo]
 		} else {
 			final.resultOffset++
 		}
@@ -457,10 +444,8 @@ func sliceSearchResults(results []searchResultResolver, common *searchResultsCom
 	nextRepo, _ := results[limit].searchResultURIs()
 	if nextRepo != lastResultRepo {
 		final.resultOffset = 0
-		final.lastRepoConsumedPartially = false
 	} else {
 		final.resultOffset++
-		final.lastRepoConsumedPartially = true
 	}
 
 	// Construct the new searchResultsCommon structure for just the results
