@@ -444,7 +444,7 @@ func sliceSearchResults(results []searchResultResolver, common *searchResultsCom
 	// Since it is within the boundary of B's results, the next paginated
 	// request should use a Cursor.ResultOffset == 2 to indicate we should
 	// resume fetching results starting at b3.
-	lastResultRepo, _ := results[len(results)-1].searchResultURIs()
+	var lastResultRepo string
 	for _, r := range originalResults[:offset+limit] {
 		repo, _ := r.searchResultURIs()
 		if repo != lastResultRepo {

@@ -544,8 +544,7 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 				cursor: &searchCursor{RepositoryOffset: 1, ResultOffset: 1},
 				limit:  3,
 			},
-			// BUG: issue #6287: should be {RepositoryOffset:1, ResultOffset: 4}
-			wantCursor: &searchCursor{RepositoryOffset: 1, ResultOffset: 5},
+			wantCursor: &searchCursor{RepositoryOffset: 1, ResultOffset: 4},
 			wantResults: []searchResultResolver{
 				result(repo("2"), "b.go"),
 				result(repo("2"), "c.go"),
