@@ -56,6 +56,8 @@ func maybeRedisProcFile(c redisProcfileConfig) (string, error) {
 		return "", err
 	}
 
+	redisFixAOF(os.Getenv("DATA_DIR"), c)
+
 	SetDefaultEnv(c.envVar, "127.0.0.1:"+c.port)
 
 	return redisProcFileEntry(c.name, conf), nil
@@ -66,29 +68,6 @@ func tryCreateRedisConf(c redisProcfileConfig) (string, error) {
 	err := os.MkdirAll(dataDir, os.FileMode(0755))
 	if err != nil {
 		return "", err
-	}
-
-	// Best-effort repair AOF in case it is corrupted
-	// https://github.com/sourcegraph/sourcegraph/issues/651
-	aofPath := filepath.Join(dataDir, "appendonly.aof")
-	if _, err = os.Stat(aofPath); err == nil {
-		done := make(chan struct{})
-		go func() {
-			var output bytes.Buffer
-			e := execer{Out: &output}
-			e.Command("redis-check-aof", "--fix", aofPath)
-			if err := e.Error(); err != nil {
-				l("Repairing %s appendonly.aof failed:\n%s", c.name, output.String())
-			}
-			close(done)
-		}()
-		select {
-		case <-done:
-		case <-time.After(5 * time.Second):
-			l("Running redis-check-aof --fix %q...", aofPath)
-			<-done
-			l("Finished running redis-check-aof")
-		}
 	}
 
 	// Create a redis.conf if it doesn't exist
@@ -126,4 +105,31 @@ func redisProcFileEntry(name, conf string) string {
 	// so we only output the last log line when redis stops in case it stopped unexpectly
 	// and the log contains the reason why it stopped.
 	return name + ": redis-server " + conf + " | tail -n 1"
+}
+
+// redisFixAOF does a best-effort repair of the AOF file in case it is
+// corrupted https://github.com/sourcegraph/sourcegraph/issues/651
+func redisFixAOF(rootDataDir string, c redisProcfileConfig) {
+	aofPath := filepath.Join(rootDataDir, c.dataDir, "appendonly.aof")
+	if _, err := os.Stat(aofPath); os.IsNotExist(err) {
+		return
+	}
+
+	done := make(chan struct{})
+	go func() {
+		var output bytes.Buffer
+		e := execer{Out: &output}
+		e.Command("redis-check-aof", "--fix", aofPath)
+		if err := e.Error(); err != nil {
+			l("Repairing %s appendonly.aof failed:\n%s", c.name, output.String())
+		}
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		l("Running redis-check-aof --fix %q...", aofPath)
+		<-done
+		l("Finished running redis-check-aof")
+	}
 }
