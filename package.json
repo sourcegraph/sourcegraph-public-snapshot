@@ -225,7 +225,7 @@
     "graphiql": "^0.13.2",
     "he": "^1.2.0",
     "highlight.js": "^9.16.2",
-    "is-absolute-url": "^3.0.1",
+    "is-absolute-url": "^3.0.3",
     "lodash": "^4.17.15",
     "marked": "^0.7.0",
     "mdi-react": "^5.5.0",
