@@ -41,6 +41,10 @@ export const highlightCodeSafe = (code: string, language?: string): string => {
 /**
  * Renders the given markdown to HTML, highlighting code and sanitizing dangerous HTML.
  * Can throw an exception on parse errors.
+ *
+ * @param markdown The markdown to render
+ * @param options Options object for passing additional parameters
+ * @param options.plainText Strip off any HTML and return a plain text string, useful for previews
  */
 export const renderMarkdown = (markdown: string, options: { plainText?: boolean } = {}): string => {
     const rendered = marked(markdown, {
