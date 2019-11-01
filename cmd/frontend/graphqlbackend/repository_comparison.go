@@ -20,27 +20,27 @@ import (
 // when computing the `git diff` of the root commit.
 const devNullSHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 
-type PreviewRepositoryDiff interface {
-	BaseRepository() *RepositoryResolver
-	FileDiffs(*graphqlutil.ConnectionArgs) *fileDiffConnectionResolver
+type DiffHunkRange interface {
+	StartLine() int32
+	Lines() int32
 }
 
-type PreviewRepositoryDiffConnectionResolver interface {
-	Nodes(ctx context.Context) ([]PreviewRepositoryDiff, error)
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+type DiffStat interface {
+	Added() int32
+	Changed() int32
+	Deleted() int32
 }
 
-type RepositoryComparison interface {
-	BaseRepository() *RepositoryResolver
-	HeadRepository() *RepositoryResolver
-	Range() *gitRevisionRange
-	Commits(*graphqlutil.ConnectionArgs) *gitCommitConnectionResolver
-	FileDiffs(*graphqlutil.ConnectionArgs) *fileDiffConnectionResolver
+type FileDiffHunk interface {
+	OldRange() DiffHunkRange
+	OldNoNewlineAt() bool
+	NewRange() DiffHunkRange
+	Section() *string
+	Body() string
 }
 
 type RepositoryComparisonConnectionResolver interface {
-	Nodes(ctx context.Context) ([]RepositoryComparison, error)
+	Nodes(ctx context.Context) ([]*RepositoryComparisonResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
@@ -112,14 +112,6 @@ type RepositoryComparisonResolver struct {
 	baseRevspec, headRevspec string
 	base, head               *GitCommitResolver
 	repo                     *RepositoryResolver
-}
-
-func (r *RepositoryComparisonResolver) ToPreviewRepositoryDiff() (PreviewRepositoryDiff, bool) {
-	return r, true
-}
-
-func (r *RepositoryComparisonResolver) ToRepositoryComparison() (RepositoryComparison, bool) {
-	return r, true
 }
 
 func (r *RepositoryComparisonResolver) BaseRepository() *RepositoryResolver { return r.repo }
@@ -271,7 +263,7 @@ func (r *fileDiffConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil
 	return graphqlutil.HasNextPage(r.hasNextPage), nil
 }
 
-func (r *fileDiffConnectionResolver) DiffStat(ctx context.Context) (*diffStat, error) {
+func (r *fileDiffConnectionResolver) DiffStat(ctx context.Context) (DiffStat, error) {
 	fileDiffs, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
@@ -303,15 +295,15 @@ type fileDiffResolver struct {
 
 func (r *fileDiffResolver) OldPath() *string { return diffPathOrNull(r.fileDiff.OrigName) }
 func (r *fileDiffResolver) NewPath() *string { return diffPathOrNull(r.fileDiff.NewName) }
-func (r *fileDiffResolver) Hunks() []*diffHunk {
-	hunks := make([]*diffHunk, len(r.fileDiff.Hunks))
+func (r *fileDiffResolver) Hunks() []FileDiffHunk {
+	hunks := make([]FileDiffHunk, len(r.fileDiff.Hunks))
 	for i, hunk := range r.fileDiff.Hunks {
 		hunks[i] = &diffHunk{hunk: hunk}
 	}
 	return hunks
 }
 
-func (r *fileDiffResolver) Stat() *diffStat {
+func (r *fileDiffResolver) Stat() DiffStat {
 	stat := r.fileDiff.Stat()
 	return &diffStat{
 		added:   stat.Added,
@@ -363,11 +355,11 @@ type diffHunk struct {
 	hunk *diff.Hunk
 }
 
-func (r *diffHunk) OldRange() *diffHunkRange {
+func (r *diffHunk) OldRange() DiffHunkRange {
 	return &diffHunkRange{startLine: r.hunk.OrigStartLine, lines: r.hunk.OrigLines}
 }
 func (r *diffHunk) OldNoNewlineAt() bool { return r.hunk.OrigNoNewlineAt != 0 }
-func (r *diffHunk) NewRange() *diffHunkRange {
+func (r *diffHunk) NewRange() DiffHunkRange {
 	return &diffHunkRange{startLine: r.hunk.NewStartLine, lines: r.hunk.NewLines}
 }
 

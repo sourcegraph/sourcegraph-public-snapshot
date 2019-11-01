@@ -181,13 +181,6 @@ type CampaignsConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
-type ChangesetResolver interface {
-	Title() (string, error)
-	Body() (string, error)
-	Repository(ctx context.Context) (*RepositoryResolver, error)
-	Diff(ctx context.Context) (*RepositoryComparisonResolver, error)
-}
-
 type ExternalChangesetsConnectionResolver interface {
 	Nodes(ctx context.Context) ([]ExternalChangesetResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
@@ -207,8 +200,6 @@ type ExternalChangesetResolver interface {
 	Campaigns(ctx context.Context, args *struct{ graphqlutil.ConnectionArgs }) (CampaignsConnectionResolver, error)
 	Events(ctx context.Context, args *struct{ graphqlutil.ConnectionArgs }) (ChangesetEventsConnectionResolver, error)
 	Diff(ctx context.Context) (*RepositoryComparisonResolver, error)
-	ToChangesetPlan() (ChangesetPlanResolver, bool)
-	ToExternalChangeset() (ExternalChangesetResolver, bool)
 }
 
 type ChangesetPlansConnectionResolver interface {
@@ -221,8 +212,7 @@ type ChangesetPlanResolver interface {
 	Title() (string, error)
 	Body() (string, error)
 	Repository(ctx context.Context) (*RepositoryResolver, error)
-	Diff(ctx context.Context) (*RepositoryComparisonResolver, error)
-	ToExternalChangeset() (ExternalChangesetResolver, bool)
+	Diff(ctx context.Context) (PreviewRepositoryDiff, error)
 }
 
 type ChangesetEventsConnectionResolver interface {
@@ -278,4 +268,32 @@ type CampaignPlanResolver interface {
 	Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) ChangesetPlansConnectionResolver
 
 	RepositoryDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (PreviewRepositoryDiffConnectionResolver, error)
+}
+
+type PreviewFileDiff interface {
+	OldPath() *string
+	NewPath() *string
+	Hunks() []FileDiffHunk
+	Stat() DiffStat
+	OldFile() *gitTreeEntryResolver
+	InternalID() string
+}
+
+type PreviewFileDiffConnection interface {
+	Nodes(ctx context.Context) ([]PreviewFileDiff, error)
+	TotalCount(ctx context.Context) (*int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	DiffStat(ctx context.Context) (DiffStat, error)
+	RawDiff(ctx context.Context) (string, error)
+}
+
+type PreviewRepositoryDiff interface {
+	BaseRepository() *RepositoryResolver
+	FileDiffs(*graphqlutil.ConnectionArgs) PreviewFileDiffConnection
+}
+
+type PreviewRepositoryDiffConnectionResolver interface {
+	Nodes(ctx context.Context) ([]PreviewRepositoryDiff, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }

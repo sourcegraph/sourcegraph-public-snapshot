@@ -219,12 +219,12 @@ type changesetDiffsConnectionResolver struct {
 	*changesetsConnectionResolver
 }
 
-func (r *changesetDiffsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.RepositoryComparison, error) {
+func (r *changesetDiffsConnectionResolver) Nodes(ctx context.Context) ([]*graphqlbackend.RepositoryComparisonResolver, error) {
 	changesets, err := r.changesetsConnectionResolver.Nodes(ctx)
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]graphqlbackend.RepositoryComparison, 0, len(changesets))
+	resolvers := make([]*graphqlbackend.RepositoryComparisonResolver, 0, len(changesets))
 	for _, c := range changesets {
 		comp, err := c.Diff(ctx)
 		if err != nil {

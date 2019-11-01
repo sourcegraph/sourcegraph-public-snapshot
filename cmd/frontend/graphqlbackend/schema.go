@@ -619,24 +619,8 @@ input CreateChangesetInput {
     externalID: String!
 }
 
-# Basic fields of a changeset.
-interface Changeset {
-    # The repository changed by the changeset.
-    repository: Repository!
-
-    # The title of the changeset.
-    title: String!
-
-    # The body of the changeset.
-    body: String!
-
-    # The diff of the changeset.
-    # Only returned if the changeset has not been merged or closed.
-    diff: RepositoryDiff
-}
-
 # Preview of a changeset planned to be created.
-type ChangesetPlan implements Changeset {
+type ChangesetPlan {
     # The repository changed by the changeset.
     repository: Repository!
 
@@ -647,11 +631,11 @@ type ChangesetPlan implements Changeset {
     body: String!
 
     # The diff of the changeset.
-    diff: RepositoryDiff!
+    diff: PreviewRepositoryDiff!
 }
 
 # A changeset in a code host (e.g. a PR on Github)
-type ExternalChangeset implements Changeset & Node {
+type ExternalChangeset implements Node {
     # The unique ID for the changeset.
     id: ID!
 
@@ -687,7 +671,7 @@ type ExternalChangeset implements Changeset & Node {
 
     # The diff of this changeset.
     # Only returned if the changeset has not been merged or closed.
-    diff: RepositoryDiff
+    diff: RepositoryComparison
 }
 
 # A list of changesets.
@@ -1911,25 +1895,53 @@ type GitRefConnection {
 }
 
 # A not-yet-committed preview of a diff on a repository.
-type PreviewRepositoryDiff implements RepositoryDiff {
+type PreviewRepositoryDiff {
     # The repository that this diff is targeting.
     baseRepository: Repository!
 
-    # The file diffs for each changed file.
-    fileDiffs(first: Int): FileDiffConnection!
+    # The preview of the file diffs for each file in the diff.
+    fileDiffs(first: Int): PreviewFileDiffConnection!
 }
 
-# Any diff on a concrete repository.
-interface RepositoryDiff {
-    # The repository that this diff is targeting.
-    baseRepository: Repository!
+# A list of file diffs that might be applied.
+type PreviewFileDiffConnection {
+    # A list of file diffs that might be applied.
+    nodes: [PreviewFileDiff!]!
+    # The total count of file diffs in the connection, if available. This total count may be larger than the number
+    # of nodes in this object when the result is paginated.
+    totalCount: Int
+    # Pagination information.
+    pageInfo: PageInfo!
+    # The diff stat for the file diffs in this object, which may be a subset of the entire diff if the result is
+    # paginated.
+    diffStat: DiffStat!
+    # The raw diff for the file diffs in this object, which may be a subset of the entire diff if the result is
+    # paginated.
+    rawDiff: String!
+}
 
-    # The file diffs for each changed file.
-    fileDiffs(first: Int): FileDiffConnection!
+# A diff for a single file that has not been applied yet.
+# Subset of the FileDiff type.
+type PreviewFileDiff {
+    # The old (original) path of the file, or null if the file was added.
+    oldPath: String
+    # The old file, or null if the file was created (oldFile.path == oldPath).
+    oldFile: File2
+    # The new path of the file if the diff was applied, or null if the file was deleted.
+    newPath: String
+    # Hunks that were would be changed from old to new.
+    hunks: [FileDiffHunk!]!
+    # The diff stat for the whole file.
+    stat: DiffStat!
+    # FOR INTERNAL USE ONLY.
+    #
+    # An identifier for the file diff that is unique among all other file diffs in the list that
+    # contains it.
+    internalID: String!
 }
 
 # The differences between two concrete Git commits in a repository.
-type RepositoryComparison implements RepositoryDiff {
+type RepositoryComparison {
     # The repository that is the base (left-hand side) of this comparison.
     baseRepository: Repository!
 
