@@ -81,8 +81,9 @@ func zoektAddr(environ []string) string {
 		return addr
 	}
 
-	// Not set, use the default
-	return "indexed-search-0.indexed-search:6070"
+	// Not set, use the default (service discovery on the indexed-search
+	// statefulset)
+	return "k8s+rpc://indexed-search:6070"
 }
 
 func getEnv(environ []string, key string) (string, bool) {

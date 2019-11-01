@@ -13,7 +13,7 @@ func TestZoektAddr(t *testing.T) {
 		want    string
 	}{{
 		name: "default",
-		want: "indexed-search-0.indexed-search:6070",
+		want: "k8s+rpc://indexed-search:6070",
 	}, {
 		name:    "old",
 		environ: []string{"ZOEKT_HOST=127.0.0.1:3070"},
