@@ -1,10 +1,22 @@
 import * as H from 'history'
 import * as React from 'react'
 import { fromEvent, Subject, Subscription } from 'rxjs'
-import { debounceTime, distinctUntilChanged, filter, repeat, startWith, takeUntil, tap } from 'rxjs/operators'
+import {
+    debounceTime,
+    distinctUntilChanged,
+    filter,
+    repeat,
+    startWith,
+    takeUntil,
+    tap,
+    switchMap,
+    map,
+    toArray,
+    catchError,
+} from 'rxjs/operators'
 import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
-import { Suggestion, SuggestionItem, SuggestionTypes } from './Suggestion'
+import { Suggestion, SuggestionItem, SuggestionTypes, createSuggestion } from './Suggestion'
 import RegexpToggle from './RegexpToggle'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 import { PatternTypeProps } from '..'
@@ -12,6 +24,8 @@ import Downshift from 'downshift'
 import { getSearchFilterSuggestions, SearchFilterSuggestions } from '../getSearchFilterSuggestions'
 import { Key } from 'ts-key-enum'
 import { SearchQueryCursor, filterSearchSuggestions, insertSuggestionInQuery } from '../helpers'
+import { fetchSuggestions } from '../backend'
+import { isDefined } from '../../../../shared/src/util/types'
 
 /**
  * The query input field is clobbered and updated to contain this subject's values, as
@@ -113,16 +127,49 @@ export class QueryInput extends React.Component<Props, State> {
                     tap(({ query }) => this.props.onChange(query)),
                     distinctUntilChanged(),
                     debounceTime(200),
+                    switchMap(queryCursorPair => {
+                        if (queryCursorPair.query.length < 1) {
+                            return [{ suggestions: hiddenSuggestions }]
+                        }
+
+                        const filterSuggestions = this.getSuggestions(
+                            this.state.searchFilterSuggestions,
+                            queryCursorPair
+                        )
+
+                        const fullQuery = [this.props.prependQueryForSuggestions, queryCursorPair.query]
+                            .filter(s => !!s)
+                            .join(' ')
+
+                        return fetchSuggestions(fullQuery).pipe(
+                            map(createSuggestion),
+                            filter(isDefined),
+                            toArray(),
+                            map(suggestions => ({
+                                suggestions: {
+                                    cursorPosition: filterSuggestions.cursorPosition,
+                                    values: filterSuggestions.values.concat(suggestions),
+                                },
+                            })),
+                            catchError((err: Error) => {
+                                console.error(err)
+                                return [{ suggestions: filterSuggestions }]
+                            })
+                        )
+                    }),
                     // Abort suggestion display on route change or suggestion hiding
                     takeUntil(this.suggestionsHidden),
                     // But resubscribe afterwards
                     repeat()
                 )
-                .subscribe(queryCursorPair => {
-                    this.setState(state => ({
-                        suggestions: this.getSuggestions(state.searchFilterSuggestions, queryCursorPair),
-                    }))
-                }, console.error.bind(console))
+                .subscribe(
+                    state => {
+                        this.setState(state)
+                    },
+                    err => {
+                        console.error(err)
+                    }
+                )
         )
 
         if (this.props.hasGlobalQueryBehavior) {
@@ -209,6 +256,8 @@ export class QueryInput extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         const showSuggestions = this.state.suggestions.values.length > 0
 
+        console.log(JSON.stringify(this.state.suggestions.values))
+
         return (
             <Downshift
                 scrollIntoView={this.scrollIntoView}
@@ -274,7 +323,7 @@ export class QueryInput extends React.Component<Props, State> {
         )
     }
 
-    private itemToString = (suggestion: Suggestion) => suggestion.title
+    private itemToString = (suggestion?: Suggestion) => (suggestion ? suggestion.title : '')
 
     private scrollIntoView = (node: HTMLElement, menuNode: HTMLElement) => {
         scrollIntoView(menuNode, node)
@@ -326,7 +375,7 @@ export class QueryInput extends React.Component<Props, State> {
                 cursorPosition
             )
 
-            props.onChange(newQuery)
+            props.onChange(newQuery + (isValueSuggestion ? ' ' : ''))
 
             return {
                 cursorPosition: newCursorPosition,

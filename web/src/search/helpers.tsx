@@ -175,6 +175,7 @@ export const filterSearchSuggestions = (
     const resolvedFilter = isValidFilterAlias(filterQuery) ? filterAliases[filterQuery] : filterQuery
 
     if (
+        // suggest values for selected filter
         isValidFilter(resolvedFilter) &&
         resolvedFilter !== SuggestionTypes.filters &&
         (valueQuery || lastWord.endsWith(':'))

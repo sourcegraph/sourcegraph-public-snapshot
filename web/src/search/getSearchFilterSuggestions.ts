@@ -5,7 +5,7 @@ import { Suggestion, SuggestionTypes } from './input/Suggestion'
 import { mapValues } from 'lodash'
 
 export type SearchFilterSuggestions = Record<
-    SuggestionTypes,
+    Exclude<SuggestionTypes, SuggestionTypes.dir | SuggestionTypes.symbol>,
     {
         default?: string
         values: Suggestion[]
@@ -160,9 +160,23 @@ export const filterSuggestions: SearchFilterSuggestions = {
     },
     lang: {
         values: [
-            { type: SuggestionTypes.lang, title: 'javascript' },
+            { type: SuggestionTypes.lang, title: 'c' },
+            { type: SuggestionTypes.lang, title: 'cpp' },
+            { type: SuggestionTypes.lang, title: 'csharp' },
+            { type: SuggestionTypes.lang, title: 'css' },
             { type: SuggestionTypes.lang, title: 'go' },
+            { type: SuggestionTypes.lang, title: 'haskell' },
+            { type: SuggestionTypes.lang, title: 'html' },
+            { type: SuggestionTypes.lang, title: 'java' },
+            { type: SuggestionTypes.lang, title: 'javascript' },
+            { type: SuggestionTypes.lang, title: 'lua' },
             { type: SuggestionTypes.lang, title: 'markdown' },
+            { type: SuggestionTypes.lang, title: 'php' },
+            { type: SuggestionTypes.lang, title: 'python' },
+            { type: SuggestionTypes.lang, title: 'r' },
+            { type: SuggestionTypes.lang, title: 'ruby' },
+            { type: SuggestionTypes.lang, title: 'swift' },
+            { type: SuggestionTypes.lang, title: 'typescript' },
         ],
     },
     repogroup: {
