@@ -125,12 +125,7 @@ export class QueryInput extends React.Component<Props, State> {
         super(props)
 
         this.subscriptions.add(
-            /**
-             * Trigger new suggestions every time the input field is typed into.             *
-             * for filter values:
-             *     if filter is a regex value: use fuzzy-search for suggestion
-             *     else: use static values from this.searchFilterSuggestions
-             */
+            // Trigger new suggestions every time the input field is typed into.
             this.inputValues
                 .pipe(
                     tap(({ query }) => this.props.onChange(query)),
@@ -140,6 +135,9 @@ export class QueryInput extends React.Component<Props, State> {
                         if (queryCursor.query.length === 0) {
                             return [{ suggestions: hiddenSuggestions }]
                         }
+
+                        // A filter value (example, in "archive:yes", "archive" is filter and "yes" is the value)
+                        // can either be one defined in `searchFilterSuggestions` or a suggestion from the fuzzy-search.
 
                         const filterSuggestions = this.getSuggestions(searchFilterSuggestions, queryCursor)
 
