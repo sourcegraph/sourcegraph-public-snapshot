@@ -60,29 +60,8 @@ func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
 	return alerts, nil
 }
 
-// ContributeConfigWarning adds the configuration validator function to the validation process.
-// It is called to validate site configuration. Any problems it returns are shown as configuration
-// warnings in the form of site alerts.
-//
-// It may only be called at init time.
-func ContributeConfigWarning(f func(conf.Unified) conf.Problems) {
-	contributedConfigWarnings = append(contributedConfigWarnings, f)
-}
-
-var contributedConfigWarnings []func(conf.Unified) conf.Problems
-
-// getConfigWarnings identifies problems with the configuration that a site
-// admin should address, but do not prevent Sourcegraph from running.
-func getConfigWarnings() (problems conf.Problems, err error) {
-	c := *conf.Get()
-	for i := range contributedConfigWarnings {
-		problems = append(problems, contributedConfigWarnings[i](c)...)
-	}
-	return problems, nil
-}
-
 func init() {
-	ContributeConfigWarning(func(c conf.Unified) (problems conf.Problems) {
+	conf.ContributeWarning(func(c conf.Unified) (problems conf.Problems) {
 		if c.Critical.ExternalURL == "" {
 			problems = append(problems, conf.NewCriticalProblem("`externalURL` was empty and it is required to be configured for Sourcegraph to work correctly."))
 		}
@@ -108,7 +87,7 @@ func init() {
 			}
 		}
 
-		configWarnings, err := getConfigWarnings()
+		warnings, err := conf.GetWarnings()
 		if err != nil {
 			return []*Alert{
 				{
@@ -117,7 +96,7 @@ func init() {
 				},
 			}
 		}
-		problems = append(problems, configWarnings...)
+		problems = append(problems, warnings...)
 
 		if len(problems) == 0 {
 			return nil
