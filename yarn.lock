@@ -2711,7 +2711,7 @@
   resolved "https://registry.npmjs.org/@types/recharts-scale/-/recharts-scale-1.0.0.tgz#348c9220d6d9062c44a9d585d686644a97f7e25d"
   integrity sha512-HR/PrCcxYb2YHviTqH7CMdL1TUhUZLTUKzfrkMhxm1HTa5mg/QtP8XMiuSPz6dZ6wecazAOu8aYZ5DqkNlgHHQ==
 
-"@types/recharts@^1.1.22":
+"@types/recharts@1.1.22":
   version "1.1.22"
   resolved "https://registry.npmjs.org/@types/recharts/-/recharts-1.1.22.tgz#c6982f46391e7769884ae65de535b29df0b8a79e"
   integrity sha512-li+x9GN3HCwuOK5fXOPFnmjAtPl6N0GsRXZJ6TBStjGrO7pht5c4rRv//pGF7ZUaO2Wr1e+BFv2GsgwBEujA0Q==

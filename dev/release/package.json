@@ -22,9 +22,9 @@
     "request-promise-native": "^1.0.7"
   },
   "devDependencies": {
-    "@types/fs-extra": "^8.0.1",
-    "@types/mkdirp": "^0.5.2",
-    "@types/request-promise-native": "^1.0.17",
+    "@types/fs-extra": "8.0.1",
+    "@types/mkdirp": "0.5.2",
+    "@types/request-promise-native": "1.0.17",
     "typescript": "^3.6.4"
   }
 }

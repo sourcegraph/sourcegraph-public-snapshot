@@ -378,7 +378,7 @@
     "@types/connect" "*"
     "@types/node" "*"
 
-"@types/bull@^3.10.3":
+"@types/bull@3.10.3":
   version "3.10.3"
   resolved "https://registry.npmjs.org/@types/bull/-/bull-3.10.3.tgz#b33e0c8008dfd4d99beb3906731799a9232969c0"
   integrity sha512-6n4YcNUGBWzAq+l6oZzpUTU+pg5eqPEg4IQNpyQkVsxXLl1tWf5ztYN+ddF9Ale9Z92cPZVOvjpDOkpQJFBs5Q==
@@ -405,7 +405,7 @@
     "@types/node" "*"
     "@types/range-parser" "*"
 
-"@types/express-winston@^3.0.4":
+"@types/express-winston@3.0.4":
   version "3.0.4"
   resolved "https://registry.npmjs.org/@types/express-winston/-/express-winston-3.0.4.tgz#0818399a094374f16c39bcba24ebcea3891791c6"
   integrity sha512-fCvI4nTs/oYhq7jACnPurepOPMKz//bNuCwMIRCcESix9jEuky93H5KwkyKeEPGNZfQzR3zCUbeGWs6/jvV7Fg==
@@ -441,7 +441,7 @@
     "@types/tough-cookie" "*"
     form-data "^2.5.0"
 
-"@types/ioredis@*", "@types/ioredis@^4.0.18":
+"@types/ioredis@*", "@types/ioredis@4.0.18":
   version "4.0.18"
   resolved "https://registry.npmjs.org/@types/ioredis/-/ioredis-4.0.18.tgz#6c48f43cb03992960d724ab9e549d581d12e3a76"
   integrity sha512-iDIRGPGP4LwoeiKNxQcI38ZA5T8SC+MbGCiiNFJ+LNy9tdegj6f9PAZ7se4tiWJhUHbf25kEJt7k3YfmYjWKZg==
@@ -468,7 +468,7 @@
     "@types/istanbul-lib-coverage" "*"
     "@types/istanbul-lib-report" "*"
 
-"@types/jaeger-client@^3.15.1":
+"@types/jaeger-client@3.15.1":
   version "3.15.1"
   resolved "https://registry.npmjs.org/@types/jaeger-client/-/jaeger-client-3.15.1.tgz#1105852053ca5aad35315d99517366273715b5f8"
   integrity sha512-7NPTwEbw5sBU68O3B9qLroAXQ3gkxjbaWCXU5Sa82/1opUg1BDgpVSLOo70npUfay4kIHRKuVhcx/Tp37g0Cxw==
@@ -503,7 +503,7 @@
   resolved "https://registry.npmjs.org/@types/lodash/-/lodash-4.14.142.tgz#52d5daff878e36e72e299bb9c5871fd6aee55829"
   integrity sha512-ZhNS7c4D4WQ49Dr1FftQj7SwngRswOnPfxktmqSy5BettRCuum2q784jRwNTYfxH00r8+fEgRz6Da8j5DHNd1Q==
 
-"@types/logform@*", "@types/logform@^1.2.0":
+"@types/logform@*", "@types/logform@1.2.0":
   version "1.2.0"
   resolved "https://registry.npmjs.org/@types/logform/-/logform-1.2.0.tgz#4ead916c7eb1ee99d726bfa849b6a2ee5ea50e3e"
   integrity sha512-E8cLzW+PmqHI//4HLR+ZvE3cyzqVjsncYBx1O14P07oVJj3ezhmiL/azlgkXKLFyCWAeKsPQdjHNg/NEhBF5Ow==
@@ -530,14 +530,14 @@
   resolved "https://registry.npmjs.org/@types/node/-/node-12.7.11.tgz#be879b52031cfb5d295b047f5462d8ef1a716446"
   integrity sha512-Otxmr2rrZLKRYIybtdG/sgeO+tHY20GxeDjcGmUnmmlCWyEnv2a2x1ZXBo3BTec4OiTXMQCiazB8NMBf0iRlFw==
 
-"@types/on-finished@^2.3.1":
+"@types/on-finished@2.3.1":
   version "2.3.1"
   resolved "https://registry.npmjs.org/@types/on-finished/-/on-finished-2.3.1.tgz#4537f9f2b47b3ba0b92c14a4bcc0f755aeda3484"
   integrity sha512-mzVYaYcFs5Jd2n/O6uYIRUsFRR1cHyZLRvkLCU0E7+G5WhY0qBDAR5fUCeZbvecYOSh9ikhlesyi2UfI8B9ckQ==
   dependencies:
     "@types/node" "*"
 
-"@types/p-timeout@^1.2.2":
+"@types/p-timeout@1.2.2":
   version "1.2.2"
   resolved "https://registry.npmjs.org/@types/p-timeout/-/p-timeout-1.2.2.tgz#98a1dcc6c1a11d8293dc3db36c7ed9aa01b8653c"
   integrity sha512-F4aG8Vq5ZchL1ZCeJY2kop8j+evKNPE08ZYK1xNP79tpnydTpNuZ2gOpDEcyWGaq76XT33y4387UKyFcU7EWag==
@@ -597,7 +597,7 @@
   resolved "https://registry.npmjs.org/@types/tough-cookie/-/tough-cookie-2.3.5.tgz#9da44ed75571999b65c37b60c9b2b88db54c585d"
   integrity sha512-SCcK7mvGi3+ZNz833RRjFIxrn4gI1PPR3NtuIS+6vMkvmsGjosqTJwRt5bAEFLRz+wtJMWv8+uOnZf2hi2QXTg==
 
-"@types/triple-beam@^1.3.0":
+"@types/triple-beam@1.3.0":
   version "1.3.0"
   resolved "https://registry.npmjs.org/@types/triple-beam/-/triple-beam-1.3.0.tgz#56d9a2d9e4fbd7bc363825d2521868537e4606ee"
   integrity sha512-tl34wMtk3q+fSdRSJ+N83f47IyXLXPPuLjHm7cmAx0fE2Wml2TZCQV3FmQdSR5J6UEGV3qafG054e0cVVFCqPA==
