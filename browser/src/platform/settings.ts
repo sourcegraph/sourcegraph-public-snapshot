@@ -16,7 +16,7 @@ import { isErrorLike } from '../../../shared/src/util/errors'
 import { LocalStorageSubject } from '../../../shared/src/util/LocalStorageSubject'
 import { observeStorageKey, storage } from '../browser/storage'
 import { isInPage } from '../context'
-import { isAjaxError } from '../../../shared/src/backend/fetch'
+import { isHTTPStatusError } from '../../../shared/src/backend/fetch'
 
 const inPageClientSettingsKey = 'sourcegraphClientSettings'
 
@@ -167,7 +167,7 @@ export const checkUserLoggedInAndFetchSettings = (
         map(settings => ({ userLoggedIn: true, settings })),
         catchError(
             (err): ObservableInput<{ userLoggedIn: false }> => {
-                if (isAjaxError(err) && err.response.status === 401) {
+                if (isHTTPStatusError(err) && err.response.status === 401) {
                     return [{ userLoggedIn: false }]
                 }
                 // Workaround for https://github.com/mozilla/webextension-polyfill/issues/210 in the browser extension
