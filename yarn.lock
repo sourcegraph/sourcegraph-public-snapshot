@@ -2301,10 +2301,10 @@
   resolved "https://registry.npmjs.org/@types/d3-selection/-/d3-selection-1.4.1.tgz#fa1f8710a6b5d7cfe5c6caa61d161be7cae4a022"
   integrity sha512-bv8IfFYo/xG6dxri9OwDnK3yCagYPeRIjTlrcdYJSx+FDWlCeBDepIHUpqROmhPtZ53jyna0aUajZRk0I3rXNA==
 
-"@types/d3-shape@*", "@types/d3-shape@1.3.1":
-  version "1.3.1"
-  resolved "https://registry.npmjs.org/@types/d3-shape/-/d3-shape-1.3.1.tgz#1b4f92b7efd7306fe2474dc6ee94c0f0ed2e6ab6"
-  integrity sha512-usqdvUvPJ7AJNwpd2drOzRKs1ELie53p2m2GnPKr076/ADM579jVTJ5dPsoZ5E/CMNWk8lvPWYQSvilpp6jjwg==
+"@types/d3-shape@*", "@types/d3-shape@1.3.2":
+  version "1.3.2"
+  resolved "https://registry.npmjs.org/@types/d3-shape/-/d3-shape-1.3.2.tgz#a41d9d6b10d02e221696b240caf0b5d0f5a588ec"
+  integrity sha512-LtD8EaNYCaBRzHzaAiIPrfcL3DdIysc81dkGlQvv7WQP3+YXV7b0JJTtR1U3bzeRieS603KF4wUo+ZkJVenh8w==
   dependencies:
     "@types/d3-path" "*"
 
