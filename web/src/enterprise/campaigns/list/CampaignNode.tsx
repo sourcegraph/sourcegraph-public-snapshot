@@ -24,8 +24,7 @@ export const CampaignNode: React.FunctionComponent<Props> = ({ node }) => (
                 </h3>
                 <Markdown
                     className="text-truncate"
-                    dangerousInnerHTML={renderMarkdown(node.description)}
-                    plainText={true}
+                    dangerousInnerHTML={renderMarkdown(node.description, { allowedTags: [], allowedAttributes: {} })}
                 ></Markdown>
             </div>
         </div>

@@ -42,7 +42,7 @@ export const highlightCodeSafe = (code: string, language?: string): string => {
  * Renders the given markdown to HTML, highlighting code and sanitizing dangerous HTML.
  * Can throw an exception on parse errors.
  */
-export const renderMarkdown = (markdown: string): string => {
+export const renderMarkdown = (markdown: string, sanitizeOptions: sanitize.IOptions = {}): string => {
     const rendered = marked(markdown, {
         gfm: true,
         breaks: true,
@@ -67,5 +67,6 @@ export const renderMarkdown = (markdown: string): string => {
             h5: ['id'],
             h6: ['id'],
         },
+        ...sanitizeOptions,
     })
 }
