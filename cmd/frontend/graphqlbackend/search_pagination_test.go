@@ -301,7 +301,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 		repoRevs("5", "master"),
 	}
 	var searchedBatches [][]*search.RepositoryRevisions
-	executor := func(batch []*search.RepositoryRevisions) (results []searchResultResolver, common *searchResultsCommon, err error) {
+	resultsExecutor := func(batch []*search.RepositoryRevisions) (results []searchResultResolver, common *searchResultsCommon, err error) {
 		searchedBatches = append(searchedBatches, batch)
 		common = &searchResultsCommon{}
 		for _, repoRev := range batch {
@@ -319,10 +319,14 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 		}
 		return
 	}
+	noResultsExecutor := func(batch []*search.RepositoryRevisions) (results []searchResultResolver, common *searchResultsCommon, err error) {
+		return nil, &searchResultsCommon{}, nil
+	}
 	ctx := context.Background()
 
 	tests := []struct {
 		name                string
+		executor            executor
 		request             *searchPaginationInfo
 		wantSearchedBatches [][]*search.RepositoryRevisions
 		wantCursor          *searchCursor
@@ -440,6 +444,18 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 				resultCount: 1,
 			},
 		},
+		{
+			name:     "no results",
+			executor: noResultsExecutor,
+			request: &searchPaginationInfo{
+				cursor: &searchCursor{},
+				limit:  1,
+			},
+			wantCursor: &searchCursor{RepositoryOffset: 1, ResultOffset: 0, Finished: true},
+			wantCommon: &searchResultsCommon{
+				partial: map[api.RepoName]struct{}{},
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -451,6 +467,10 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 				searchBucketMin:     4,
 				searchBucketMax:     10,
 				mockNumTotalRepos:   func() int { return len(searchRepos) },
+			}
+			executor := resultsExecutor
+			if test.executor != nil {
+				executor = test.executor
 			}
 			cursor, results, common, err := plan.execute(ctx, executor)
 			if !cmp.Equal(test.wantCursor, cursor) {
