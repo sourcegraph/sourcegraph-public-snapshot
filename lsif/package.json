@@ -17,7 +17,7 @@
     "express-winston": "^3.4.0",
     "got": "^9.6.0",
     "ioredis": "^4.14.0",
-    "jaeger-client": "^3.17.0",
+    "jaeger-client": "^3.17.1",
     "json5": "^2.1.1",
     "lightstep-tracer": "^0.22.3",
     "lodash": "^4.17.15",
