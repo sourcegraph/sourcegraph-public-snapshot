@@ -448,12 +448,12 @@ func sliceSearchResults(results []searchResultResolver, common *searchResultsCom
 		repo, _ := r.searchResultURIs()
 		if repo != lastResultRepo {
 			final.resultOffset = 0
-			final.lastRepoConsumed = reposByName[repo]
 		} else {
 			final.resultOffset++
 		}
 		lastResultRepo = repo
 	}
+	final.lastRepoConsumed = reposByName[lastResultRepo]
 	nextRepo, _ := results[limit].searchResultURIs()
 	if nextRepo != lastResultRepo {
 		final.resultOffset = 0
