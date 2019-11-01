@@ -81,7 +81,7 @@
     "@types/chai": "4.2.4",
     "@types/chai-as-promised": "7.1.2",
     "@types/chalk": "2.2.0",
-    "@types/chrome": "0.0.89",
+    "@types/chrome": "0.0.91",
     "@types/classnames": "2.2.9",
     "@types/d3-axis": "1.0.12",
     "@types/d3-scale": "2.1.1",
