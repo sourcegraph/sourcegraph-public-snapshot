@@ -355,9 +355,13 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 	// ones.
 	sliced := sliceSearchResults(results, common, resultOffset, int(p.pagination.limit))
 	nextCursor := &searchCursor{ResultOffset: sliced.resultOffset}
-	for globalOffset, repo := range p.repositories {
-		if repo.Repo == sliced.lastRepoConsumed {
-			nextCursor.RepositoryOffset = int32(globalOffset)
+
+	if len(sliced.results) > 0 {
+		lastRepoConsumedName, _ := sliced.results[len(sliced.results)-1].searchResultURIs()
+		for globalOffset, repo := range p.repositories {
+			if string(repo.Repo.Name) == lastRepoConsumedName {
+				nextCursor.RepositoryOffset = int32(globalOffset)
+			}
 		}
 	}
 	lastRepoConsumedPartially := sliced.resultOffset != 0
@@ -384,15 +388,6 @@ type slicedSearchResults struct {
 	//
 	resultOffset int32
 
-	// lastRepoConsumed indicates the last repo whose results were consumed
-	// within the input result set, or nil if there were no results after
-	// slicing.
-	//
-	// Whether or not this repository was consumed only partially can be
-	// determined by checking the resultOffset. If it is zero, the repository
-	// was consumed fully.
-	lastRepoConsumed *types.Repo
-
 	// limitHit indicates if the limit was hit and results were truncated.
 	limitHit bool
 }
@@ -407,14 +402,6 @@ func sliceSearchResults(results []searchResultResolver, common *searchResultsCom
 		results = results[offset:]
 		final.results = results
 		final.common = common
-		if len(results) > 0 {
-			lastRepoConsumedName, _ := results[len(results)-1].searchResultURIs()
-			for _, repo := range common.repos {
-				if string(repo.Name) == lastRepoConsumedName {
-					final.lastRepoConsumed = repo
-				}
-			}
-		}
 		return
 	}
 	final.limitHit = true
@@ -454,7 +441,6 @@ func sliceSearchResults(results []searchResultResolver, common *searchResultsCom
 		}
 		lastResultRepo = repo
 	}
-	final.lastRepoConsumed = reposByName[lastResultRepo]
 	nextRepo, _ := results[limit].searchResultURIs()
 	if nextRepo != lastResultRepo {
 		final.resultOffset = 0
