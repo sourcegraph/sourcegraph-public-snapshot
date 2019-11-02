@@ -8,7 +8,7 @@ An LSIF indexer is a command line tool that analyzes your project's source code 
 
 1. Install the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) for uploading LSIF data on your CI machines.
 1. Go to https://lsif.dev to find an LSIF indexer for your language and install the command-line tool on your CI machines.
-1. Add a daily step to your CI that runs the LSIF indexer on a project within your repository and generates an LSIF file. See [Recommended upload frequency](#recommended-upload-frequency) below.
+1. Add a daily step to your CI that runs the LSIF indexer on a project within your repository and generates an LSIF file.
 1. Upload that generated LSIF file to your Sourcegraph instance:
 
 From the command-line:
