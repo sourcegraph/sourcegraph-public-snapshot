@@ -1,7 +1,5 @@
 # LSIF in continuous integration
 
-*(Documentation Incomplete)*
-
 ## LSIF indexers
 
 An LSIF indexer is a command line tool that analyzes your project's source code and generates a file in LSIF format containing all the definitions, references, and hover documentation in your project. That LSIF file is later uploaded to Sourcegraph to provide code intelligence.
