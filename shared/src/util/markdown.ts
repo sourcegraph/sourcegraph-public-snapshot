@@ -41,31 +41,46 @@ export const highlightCodeSafe = (code: string, language?: string): string => {
 /**
  * Renders the given markdown to HTML, highlighting code and sanitizing dangerous HTML.
  * Can throw an exception on parse errors.
+ *
+ * @param markdown The markdown to render
+ * @param options Options object for passing additional parameters
  */
-export const renderMarkdown = (markdown: string): string => {
+export const renderMarkdown = (
+    markdown: string,
+    options: {
+        /** Strip off any HTML and return a plain text string, useful for previews */
+
+        plainText?: boolean
+    } = {}
+): string => {
     const rendered = marked(markdown, {
         gfm: true,
         breaks: true,
         sanitize: false,
         highlight: (code, language) => highlightCodeSafe(code, language),
     })
-    return sanitize(rendered, {
-        // Defaults: https://sourcegraph.com/github.com/punkave/sanitize-html@90aac2665011be6fa21a8864d21c604ee984294f/-/blob/src/index.js#L571-589
+    return sanitize(
+        rendered,
+        options.plainText
+            ? { allowedTags: [], allowedAttributes: {} }
+            : {
+                  // Defaults: https://sourcegraph.com/github.com/punkave/sanitize-html@90aac2665011be6fa21a8864d21c604ee984294f/-/blob/src/index.js#L571-589
 
-        // Allow highligh.js styles, e.g.
-        // <span class="hljs-keyword">
-        // <code class="language-javascript">
-        allowedTags: [...without(sanitize.defaults.allowedTags, 'iframe'), 'h1', 'h2', 'span', 'img'],
-        allowedAttributes: {
-            ...sanitize.defaults.allowedAttributes,
-            span: ['class'],
-            code: ['class'],
-            h1: ['id'],
-            h2: ['id'],
-            h3: ['id'],
-            h4: ['id'],
-            h5: ['id'],
-            h6: ['id'],
-        },
-    })
+                  // Allow highligh.js styles, e.g.
+                  // <span class="hljs-keyword">
+                  // <code class="language-javascript">
+                  allowedTags: [...without(sanitize.defaults.allowedTags, 'iframe'), 'h1', 'h2', 'span', 'img'],
+                  allowedAttributes: {
+                      ...sanitize.defaults.allowedAttributes,
+                      span: ['class'],
+                      code: ['class'],
+                      h1: ['id'],
+                      h2: ['id'],
+                      h3: ['id'],
+                      h4: ['id'],
+                      h5: ['id'],
+                      h6: ['id'],
+                  },
+              }
+    )
 }
