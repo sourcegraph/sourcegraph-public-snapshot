@@ -15,7 +15,7 @@ describe('XrepoDatabase', () => {
 
     beforeAll(async () => {
         ;({ connection, cleanup } = await createCleanPostgresDatabase())
-        storageRoot = await createStorageRoot('xrepo')
+        storageRoot = await createStorageRoot()
         xrepoDatabase = new XrepoDatabase(storageRoot, connection)
     })
 

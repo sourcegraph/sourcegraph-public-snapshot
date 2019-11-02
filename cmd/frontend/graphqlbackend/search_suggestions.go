@@ -334,7 +334,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		switch s := s.result.(type) {
 		case *RepositoryResolver:
 			k.repoName = s.repo.Name
-		case *gitTreeEntryResolver:
+		case *GitTreeEntryResolver:
 			k.repoName = s.commit.repo.repo.Name
 			// We explicitely do not use GitCommitResolver.OID() to get the OID here
 			// because it could significantly slow down search suggestions from zoekt as

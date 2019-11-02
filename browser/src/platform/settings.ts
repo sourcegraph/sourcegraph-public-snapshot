@@ -1,7 +1,7 @@
 import { applyEdits, parse as parseJSONC } from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
-import { from, Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { from, Observable, ObservableInput } from 'rxjs'
+import { map, catchError } from 'rxjs/operators'
 import { SettingsEdit } from '../../../shared/src/api/client/services/settings'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -16,6 +16,7 @@ import { isErrorLike } from '../../../shared/src/util/errors'
 import { LocalStorageSubject } from '../../../shared/src/util/LocalStorageSubject'
 import { observeStorageKey, storage } from '../browser/storage'
 import { isInPage } from '../context'
+import { isHTTPStatusError } from '../../../shared/src/backend/fetch'
 
 const inPageClientSettingsKey = 'sourcegraphClientSettings'
 
@@ -152,6 +153,31 @@ export function fetchViewerSettings(
         // tslint:enable deprecation
     )
 }
+
+/**
+ * Fetches initial user settings, checking whether the user is logged in by
+ * catching Ajax errors with a 401 status code.
+ */
+export const checkUserLoggedInAndFetchSettings = (
+    requestGraphQL: PlatformContext['requestGraphQL']
+): Observable<
+    { userLoggedIn: false } | { userLoggedIn: true; settings: Pick<GQL.ISettingsCascade, 'subjects' | 'final'> }
+> =>
+    fetchViewerSettings(requestGraphQL).pipe(
+        map(settings => ({ userLoggedIn: true, settings })),
+        catchError(
+            (err): ObservableInput<{ userLoggedIn: false }> => {
+                if (isHTTPStatusError(err) && err.response.status === 401) {
+                    return [{ userLoggedIn: false }]
+                }
+                // Workaround for https://github.com/mozilla/webextension-polyfill/issues/210 in the browser extension
+                if (isErrorLike(err) && err.message.includes('failed with 401')) {
+                    return [{ userLoggedIn: false }]
+                }
+                throw err
+            }
+        )
+    )
 
 /**
  * Applies an edit and persists the result to client settings.

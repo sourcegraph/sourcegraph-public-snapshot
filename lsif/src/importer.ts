@@ -22,6 +22,9 @@ import {
     ReferenceModel,
     ResultChunkModel,
     DocumentIdRangeId,
+    entities,
+} from './database.models'
+import {
     DefinitionResultId,
     MonikerId,
     DefinitionReferenceResultId,
@@ -29,8 +32,7 @@ import {
     ReferenceResultId,
     PackageInformationId,
     HoverResultId,
-    entities,
-} from './database.models'
+} from './database.types'
 import { TracingContext, logAndTraceCall } from './tracing'
 
 /**

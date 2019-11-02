@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 )
 
 // Alert implements the GraphQL type Alert.
@@ -61,20 +60,14 @@ func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
 	return alerts, nil
 }
 
-// getConfigWarnings identifies problems with the configuration that a site
-// admin should address, but do not prevent Sourcegraph from running.
-func getConfigWarnings() (problems conf.Problems, err error) {
-	var c conf.Unified
-	if err := jsonc.Unmarshal(globals.ConfigurationServerFrontendOnly.Raw().Critical, &c.Critical); err != nil {
-		return nil, err
-	}
-	if c.Critical.ExternalURL == "" {
-		problems = append(problems, conf.NewCriticalProblem("`externalURL` was empty and it is required to be configured for Sourcegraph to work correctly."))
-	}
-	return problems, nil
-}
-
 func init() {
+	conf.ContributeWarning(func(c conf.Unified) (problems conf.Problems) {
+		if c.Critical.ExternalURL == "" {
+			problems = append(problems, conf.NewCriticalProblem("`externalURL` was empty and it is required to be configured for Sourcegraph to work correctly."))
+		}
+		return problems
+	})
+
 	// Warn about invalid site configuration.
 	AlertFuncs = append(AlertFuncs, func(args AlertFuncArgs) []*Alert {
 		// 🚨 SECURITY: Only the site admin cares about this. Leaking a boolean wouldn't be a
@@ -94,7 +87,7 @@ func init() {
 			}
 		}
 
-		configWarnings, err := getConfigWarnings()
+		warnings, err := conf.GetWarnings()
 		if err != nil {
 			return []*Alert{
 				{
@@ -103,7 +96,7 @@ func init() {
 				},
 			}
 		}
-		problems = append(problems, configWarnings...)
+		problems = append(problems, warnings...)
 
 		if len(problems) == 0 {
 			return nil
@@ -126,6 +119,15 @@ func init() {
 				TypeValue: AlertTypeWarning,
 				MessageValue: `[**Update site configuration**](/site-admin/configuration) to resolve problems:` +
 					"\n* " + strings.Join(siteProblems.Messages(), "\n* "),
+			})
+		}
+
+		externalServiceProblems := problems.ExternalService()
+		if len(externalServiceProblems) > 0 {
+			alerts = append(alerts, &Alert{
+				TypeValue: AlertTypeWarning,
+				MessageValue: `[**Update external service configuration**](/site-admin/external-services) to resolve problems:` +
+					"\n* " + strings.Join(externalServiceProblems.Messages(), "\n* "),
 			})
 		}
 		return alerts

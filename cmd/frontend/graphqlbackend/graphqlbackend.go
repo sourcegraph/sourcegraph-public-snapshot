@@ -85,11 +85,6 @@ func (r *NodeResolver) ToCampaignPlan() (CampaignPlanResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToChangeset() (ChangesetResolver, bool) {
-	n, ok := r.Node.(ChangesetResolver)
-	return n, ok
-}
-
 func (r *NodeResolver) ToExternalChangeset() (ExternalChangesetResolver, bool) {
 	n, ok := r.Node.(ExternalChangesetResolver)
 	return n, ok
