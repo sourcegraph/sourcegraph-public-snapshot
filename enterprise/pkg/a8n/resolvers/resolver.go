@@ -425,7 +425,10 @@ func (r *Resolver) PreviewCampaignPlan(ctx context.Context, args graphqlbackend.
 		}
 	}
 
-	plan := &a8n.CampaignPlan{CampaignType: typeName, Arguments: specArgs}
+	plan := &a8n.CampaignPlan{
+		CampaignType: typeName,
+		Arguments:    string(args.Specification.Arguments),
+	}
 	if err := r.store.CreateCampaignPlan(ctx, plan); err != nil {
 		return nil, err
 	}

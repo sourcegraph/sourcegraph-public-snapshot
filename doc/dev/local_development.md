@@ -19,7 +19,7 @@ Have a look around, our code is on [GitHub](https://sourcegraph.com/github.com/s
 
 ## Environment
 
-Sourcegraph server is a collection of smaller binaries. The development server, [dev/launch.sh](https://github.com/sourcegraph/sourcegraph/blob/master/dev/launch.sh), initializes the environment and starts a process manager that runs all of the binaries. See the [Architecture doc](architecture.md) for a full description of what each of these services does. The sections below describe the dependencies you need to run `dev/launch.sh`.
+Sourcegraph server is a collection of smaller binaries. The development server, [dev/launch.sh](https://github.com/sourcegraph/sourcegraph/blob/master/dev/launch.sh), initializes the environment and starts a process manager that runs all of the binaries. See the [Architecture doc](architecture/index.md) for a full description of what each of these services does. The sections below describe the dependencies you need to run `dev/launch.sh`.
 
 ## Step 1: Install dependencies
 

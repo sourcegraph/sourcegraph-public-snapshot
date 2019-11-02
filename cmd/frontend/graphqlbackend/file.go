@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-func (r *gitTreeEntryResolver) Content(ctx context.Context) (string, error) {
+func (r *GitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
@@ -31,7 +31,7 @@ func (r *gitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 	return string(contents), nil
 }
 
-func (r *gitTreeEntryResolver) RichHTML(ctx context.Context) (string, error) {
+func (r *GitTreeEntryResolver) RichHTML(ctx context.Context) (string, error) {
 	switch path.Ext(r.Path()) {
 	case ".md", ".mdown", ".markdown", ".markdn":
 		break
@@ -76,7 +76,7 @@ func (*schemaResolver) HighlightCode(ctx context.Context, args *struct {
 	return string(html), nil
 }
 
-func (r *gitTreeEntryResolver) Binary(ctx context.Context) (bool, error) {
+func (r *GitTreeEntryResolver) Binary(ctx context.Context) (bool, error) {
 	content, err := r.Content(ctx)
 	if err != nil {
 		return false, err
@@ -92,7 +92,7 @@ type highlightedFileResolver struct {
 func (h *highlightedFileResolver) Aborted() bool { return h.aborted }
 func (h *highlightedFileResolver) HTML() string  { return h.html }
 
-func (r *gitTreeEntryResolver) Highlight(ctx context.Context, args *struct {
+func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *struct {
 	DisableTimeout bool
 	IsLightTheme   bool
 }) (*highlightedFileResolver, error) {

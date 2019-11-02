@@ -348,7 +348,7 @@ func TestCampaigns(t *testing.T) {
 	in := fmt.Sprintf(
 		`[{repository: %q, externalID: %q}, {repository: %q, externalID: %q}]`,
 		graphqlGithubRepoID, "999",
-		graphqlBBSRepoID, "3",
+		graphqlBBSRepoID, "2",
 	)
 
 	mustExec(ctx, t, s, nil, &result, fmt.Sprintf(`
@@ -398,16 +398,16 @@ func TestCampaigns(t *testing.T) {
 				Repository: struct{ ID string }{ID: graphqlBBSRepoID},
 				CreatedAt:  now.Format(time.RFC3339),
 				UpdatedAt:  now.Format(time.RFC3339),
-				Title:      "attacker: Simplify timeout configuration",
-				Body:       "This commit simplifies the timeout configuration internally to make use\r\nof the `http.Client.Timeout` field which didn't exist when this code was\r\noriginally written.\r\n\r\nIt also fixes #396: a test flake of `TestTimeout`.",
-				State:      "OPEN",
+				Title:      "Release testing pr",
+				Body:       "* Remove dump.go\r\n* make make make",
+				State:      "MERGED",
 				ExternalURL: struct{ URL, ServiceType string }{
-					URL:         "https://bitbucket.sgdev.org/projects/SOUR/repos/vegeta/pull-requests/3",
+					URL:         "https://bitbucket.sgdev.org/projects/SOUR/repos/vegeta/pull-requests/2",
 					ServiceType: "bitbucketServer",
 				},
-				ReviewState: "CHANGES_REQUESTED",
+				ReviewState: "PENDING",
 				Events: ChangesetEventConnection{
-					TotalCount: 0,
+					TotalCount: 9,
 				},
 			},
 		}

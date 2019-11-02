@@ -836,6 +836,9 @@ type Activity struct {
 	Commit *Commit `json:"commit,omitempty"`
 }
 
+// Key is a unique key identifying this activity in the context of its pull request.
+func (a *Activity) Key() string { return strconv.Itoa(a.ID) }
+
 // ActivityAction defines the action taken in an Activity.
 type ActivityAction string
 
@@ -846,7 +849,8 @@ const (
 	DeclinedActivityAction   ActivityAction = "DECLINED"
 	ReviewedActivityAction   ActivityAction = "REVIEWED"
 	OpenedActivityAction     ActivityAction = "OPENED"
-	RepenedActivityAction    ActivityAction = "REOPENED"
+	ReopenedActivityAction   ActivityAction = "REOPENED"
+	RescopedActivityAction   ActivityAction = "RESCOPED"
 	UpdatedActivityAction    ActivityAction = "UPDATED"
 	CommentedActivityAction  ActivityAction = "COMMENTED"
 	MergedActivityAction     ActivityAction = "MERGED"

@@ -19,6 +19,7 @@ Currently, all repositories belonging the user configured will be synced.
 In addition, there is one more field for configuring which repositories are mirrored:
 
 - [`teams`](bitbucket_cloud.md#configuration)<br>A list of teams that the configured user has access to whose repositories should be synced.
+- [`exclude`](bitbucket_cloud.md#configuration)<br>A list of repositories to exclude which takes precedence over the `teams` field.
 
 ### HTTPS cloning
 

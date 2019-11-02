@@ -50,8 +50,9 @@ var ignoreLegacyKubernetesFields = map[string]struct{}{
 type problemKind string
 
 const (
-	problemCritical problemKind = "CriticalConfig"
-	problemSite     problemKind = "SiteConfig"
+	problemCritical        problemKind = "CriticalConfig"
+	problemSite            problemKind = "SiteConfig"
+	problemExternalService problemKind = "ExternalService"
 )
 
 // Problem contains kind and description of a specific configuration problem.
@@ -76,6 +77,14 @@ func NewSiteProblem(msg string) *Problem {
 	}
 }
 
+// NewExternalServiceProblem creates a new external service config problem with given message.
+func NewExternalServiceProblem(msg string) *Problem {
+	return &Problem{
+		kind:        problemExternalService,
+		description: msg,
+	}
+}
+
 // IsCritical returns true if the problem is about critical config.
 func (p Problem) IsCritical() bool {
 	return p.kind == problemCritical
@@ -84,6 +93,11 @@ func (p Problem) IsCritical() bool {
 // IsSite returns true if the problem is about site config.
 func (p Problem) IsSite() bool {
 	return p.kind == problemSite
+}
+
+// IsExternalService returns true if the problem is about external service config.
+func (p Problem) IsExternalService() bool {
+	return p.kind == problemExternalService
 }
 
 func (p Problem) String() string {
@@ -115,6 +129,11 @@ func NewSiteProblems(messages ...string) Problems {
 	return newProblems(problemSite, messages...)
 }
 
+// NewExternalServiceProblems converts a list of messages into external service config problems.
+func NewExternalServiceProblems(messages ...string) Problems {
+	return newProblems(problemExternalService, messages...)
+}
+
 // Messages returns the list of problems in strings.
 func (ps Problems) Messages() []string {
 	if len(ps) == 0 {
@@ -142,6 +161,16 @@ func (ps Problems) Critical() (problems Problems) {
 func (ps Problems) Site() (problems Problems) {
 	for i := range ps {
 		if ps[i].IsSite() {
+			problems = append(problems, ps[i])
+		}
+	}
+	return problems
+}
+
+// ExternalService returns all external service config problems in the list.
+func (ps Problems) ExternalService() (problems Problems) {
+	for i := range ps {
+		if ps[i].IsExternalService() {
 			problems = append(problems, ps[i])
 		}
 	}

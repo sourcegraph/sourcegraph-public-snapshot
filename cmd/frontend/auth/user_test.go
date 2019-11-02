@@ -462,7 +462,7 @@ type mockParams struct {
 	createUserAndSaveErr    error
 	associateUserAndSaveErr error
 	getByVerifiedEmailErr   error
-	getByUsernameErr        error
+	getByUsernameErr        error //nolint:structcheck
 	getByIDErr              error
 	updateErr               error
 }

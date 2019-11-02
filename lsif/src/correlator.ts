@@ -2,17 +2,15 @@ import RelateUrl from 'relateurl'
 import { mustGet, mustGetFromEither } from './util'
 import { DefaultMap } from './default-map'
 import { Hover, MarkupContent } from 'vscode-languageserver-types'
+import { MonikerData, PackageInformationData, RangeData } from './database.models'
 import {
-    MonikerData,
-    PackageInformationData,
-    RangeData,
     MonikerId,
     HoverResultId,
     ReferenceResultId,
     DefinitionResultId,
     DocumentId,
     PackageInformationId,
-} from './database.models'
+} from './database.types'
 import {
     Id,
     VertexLabels,

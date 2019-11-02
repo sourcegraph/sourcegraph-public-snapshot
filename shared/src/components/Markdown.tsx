@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as React from 'react'
 
 interface Props {
@@ -10,7 +11,7 @@ interface Props {
 export const Markdown: React.FunctionComponent<Props> = (props: Props) => (
     <div
         ref={props.refFn}
-        className={`markdown ${props.className}`}
+        className={classNames(props.className, 'markdown')}
         dangerouslySetInnerHTML={{ __html: props.dangerousInnerHTML }}
     />
 )

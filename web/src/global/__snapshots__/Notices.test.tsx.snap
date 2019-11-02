@@ -10,7 +10,7 @@ exports[`Notices shows notices for location 1`] = `
     className="alert bg-transparent border "
   >
     <div
-      className="markdown undefined"
+      className="markdown"
       dangerouslySetInnerHTML={
         Object {
           "__html": "<p>a</p>
@@ -26,7 +26,7 @@ exports[`Notices shows notices for location 1`] = `
       className="dismissible-alert__content"
     >
       <div
-        className="markdown undefined"
+        className="markdown"
         dangerouslySetInnerHTML={
           Object {
             "__html": "<p>a</p>

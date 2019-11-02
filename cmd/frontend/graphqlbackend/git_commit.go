@@ -124,7 +124,7 @@ func (r *GitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.R
 func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 	Path      string
 	Recursive bool
-}) (*gitTreeEntryResolver, error) {
+}) (*GitTreeEntryResolver, error) {
 	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.repo)
 	if err != nil {
 		return nil, err
@@ -136,7 +136,7 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 	if !stat.Mode().IsDir() {
 		return nil, fmt.Errorf("not a directory: %q", args.Path)
 	}
-	return &gitTreeEntryResolver{
+	return &GitTreeEntryResolver{
 		commit:      r,
 		stat:        stat,
 		isRecursive: args.Recursive,
@@ -145,7 +145,7 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 
 func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 	Path string
-}) (*gitTreeEntryResolver, error) {
+}) (*GitTreeEntryResolver, error) {
 	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.repo)
 	if err != nil {
 		return nil, err
@@ -157,7 +157,7 @@ func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 	if !stat.Mode().IsRegular() {
 		return nil, fmt.Errorf("not a blob: %q", args.Path)
 	}
-	return &gitTreeEntryResolver{
+	return &GitTreeEntryResolver{
 		commit: r,
 		stat:   stat,
 	}, nil
@@ -165,7 +165,7 @@ func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 
 func (r *GitCommitResolver) File(ctx context.Context, args *struct {
 	Path string
-}) (*gitTreeEntryResolver, error) {
+}) (*GitTreeEntryResolver, error) {
 	return r.Blob(ctx, args)
 }
 

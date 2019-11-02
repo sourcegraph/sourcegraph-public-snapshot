@@ -24,8 +24,8 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 	return &OrgResolver{org: org}, nil
 }
 
-// Org is DEPRECATED (but still in use by sourcegraph/src). Use Node to look up an org by its
-// graphql.ID instead.
+// Deprecated: Org is only in use by sourcegraph/src. Use Node to look up an
+// org by its graphql.ID instead.
 func (r *schemaResolver) Org(ctx context.Context, args *struct {
 	ID graphql.ID
 }) (*OrgResolver, error) {

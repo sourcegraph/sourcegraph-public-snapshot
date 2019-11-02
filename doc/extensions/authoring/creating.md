@@ -21,7 +21,7 @@ You can use any build tool you wish, so long as it meets these requirements.
 
 The easiest way to get an extension ready to publish is to use the [Sourcegraph extension creator](https://github.com/sourcegraph/create-extension):
 
-```shell
+```bash
 mkdir my-extension
 cd my-extension
 npm init sourcegraph-extension
@@ -29,7 +29,7 @@ npm init sourcegraph-extension
 
 Follow the prompts, and when complete, you'll have the following files:
 
-```shell
+```bash
 ├── README.md
 ├── node_modules
 ├── package-lock.json

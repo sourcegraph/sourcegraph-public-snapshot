@@ -224,7 +224,7 @@ func TestBitbucketServerSource_LoadChangesets(t *testing.T) {
 			name: "found",
 			cs: []*Changeset{
 				{Repo: repo, Changeset: &a8n.Changeset{ExternalID: "2"}},
-				{Repo: repo, Changeset: &a8n.Changeset{ExternalID: "3"}},
+				{Repo: repo, Changeset: &a8n.Changeset{ExternalID: "4"}},
 			},
 		},
 		{

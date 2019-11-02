@@ -12,7 +12,7 @@ import (
 )
 
 func importPathToDir(importPath string) string {
-	pkgs, err := packages.Load(&packages.Config{Mode: packages.LoadFiles}, importPath)
+	pkgs, err := packages.Load(&packages.Config{Mode: packages.NeedFiles}, importPath)
 	if err != nil || len(pkgs) == 0 || len(pkgs[0].GoFiles) == 0 {
 		log.Fatal("Failed to find templates directory: ", err)
 	}

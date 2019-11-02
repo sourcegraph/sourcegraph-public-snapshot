@@ -1,5 +1,6 @@
 import rmfr from 'rmfr'
-import { XrepoDatabase, MAX_TRAVERSAL_LIMIT } from './xrepo'
+import { XrepoDatabase } from './xrepo'
+import { MAX_TRAVERSAL_LIMIT } from './constants'
 import { createCleanPostgresDatabase, createCommit, truncatePostgresTables, createStorageRoot } from './test-utils'
 import { Connection } from 'typeorm'
 import { fail } from 'assert'
@@ -14,7 +15,7 @@ describe('XrepoDatabase', () => {
 
     beforeAll(async () => {
         ;({ connection, cleanup } = await createCleanPostgresDatabase())
-        storageRoot = await createStorageRoot('xrepo')
+        storageRoot = await createStorageRoot()
         xrepoDatabase = new XrepoDatabase(storageRoot, connection)
     })
 

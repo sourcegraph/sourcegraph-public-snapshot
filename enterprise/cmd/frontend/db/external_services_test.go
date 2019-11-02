@@ -325,6 +325,62 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			),
 		},
 		{
+			kind: "BITBUCKETCLOUD",
+			desc: "empty exclude",
+			config: `
+			{
+				"url": "https://bitbucket.org/",
+				"username": "admin",
+				"appPassword": "app-password",
+				"exclude": []
+			}`,
+			assert: equals("<nil>"),
+		},
+		{
+			kind:   "BITBUCKETCLOUD",
+			desc:   "invalid empty exclude item",
+			config: `{"exclude": [{}]}`,
+			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
+		},
+		{
+			kind:   "BITBUCKETCLOUD",
+			desc:   "invalid exclude item",
+			config: `{"exclude": [{"foo": "bar"}]}`,
+			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
+		},
+		{
+			kind:   "BITBUCKETCLOUD",
+			desc:   "invalid exclude item name",
+			config: `{"exclude": [{"name": "bar"}]}`,
+			assert: includes(`exclude.0.name: Does not match pattern '^[\w-]+/[\w.-]+$'`),
+		},
+		{
+			kind:   "BITBUCKETCLOUD",
+			desc:   "invalid additional exclude item properties",
+			config: `{"exclude": [{"id": 1234, "bar": "baz"}]}`,
+			assert: includes(`exclude.0: Additional property bar is not allowed`),
+		},
+		{
+			kind: "BITBUCKETCLOUD",
+			desc: "both name and uuid can be specified in exclude",
+			config: `
+			{
+				"url": "https://bitbucket.org/",
+				"username": "admin",
+				"appPassword": "app-password",
+				"exclude": [
+					{"name": "foo/bar", "uuid": "{fceb73c7-cef6-4abe-956d-e471281126bc}"}
+				]
+			}`,
+			assert: equals(`<nil>`),
+		},
+		{
+			kind:   "BITBUCKETCLOUD",
+			desc:   "invalid exclude pattern",
+			config: `{"exclude": [{"pattern": "["}]}`,
+			assert: includes(`exclude.0.pattern: Does not match format 'regex'`),
+		},
+		{
 			kind: "BITBUCKETSERVER",
 			desc: "valid with url, username, token, repositoryQuery",
 			config: `

@@ -48,13 +48,13 @@ func (r *lsifDumpResolver) ID() graphql.ID {
 	return marshalLSIFDumpGQLID(r.lsifDump.Repository, r.lsifDump.ID)
 }
 
-func (r *lsifDumpResolver) ProjectRoot() *gitTreeEntryResolver {
+func (r *lsifDumpResolver) ProjectRoot() *GitTreeEntryResolver {
 	commitResolver := &GitCommitResolver{
 		repo: &RepositoryResolver{repo: r.repo},
 		oid:  GitObjectID(r.lsifDump.Commit),
 	}
 
-	return &gitTreeEntryResolver{
+	return &GitTreeEntryResolver{
 		commit: commitResolver,
 		stat:   createFileInfo(r.lsifDump.Root, true),
 	}

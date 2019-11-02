@@ -356,22 +356,6 @@ func (p *Provider) fetchUserRepos(ctx context.Context, userAccount *extsvc.Exter
 	return canAccess, isPublic, nil
 }
 
-// fetchUserRepo fetches whether the given user can access the given repo from the GitHub API.
-func (p *Provider) fetchUserRepo(ctx context.Context, userAccount *extsvc.ExternalAccount, repoID string) (canAccess bool, isPublic bool, err error) {
-	_, tok, err := github.GetExternalAccountData(&userAccount.ExternalAccountData)
-	if err != nil {
-		return false, false, err
-	}
-	ghRepo, err := p.client.GetRepositoryByNodeIDNoCache(ctx, tok.AccessToken, repoID)
-	if err != nil {
-		if err == github.ErrNotFound {
-			return false, false, nil
-		}
-		return false, false, err
-	}
-	return true, !ghRepo.IsPrivate, nil
-}
-
 // FetchAccount implements the authz.Provider interface. It always returns nil, because the GitHub
 // API doesn't currently provide a way to fetch user by external SSO account.
 func (p *Provider) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.ExternalAccount) (mine *extsvc.ExternalAccount, err error) {

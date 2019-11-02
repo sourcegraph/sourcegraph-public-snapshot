@@ -101,6 +101,7 @@ export class SearchPage extends React.Component<Props, State> {
                             <QueryBuilder
                                 onFieldsQueryChange={this.onBuilderQueryChange}
                                 isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                                patternType={this.props.patternType}
                             />
                         </>
                     ) : (
@@ -108,6 +109,7 @@ export class SearchPage extends React.Component<Props, State> {
                             <QueryBuilder
                                 onFieldsQueryChange={this.onBuilderQueryChange}
                                 isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                                patternType={this.props.patternType}
                             />
                             <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />
                             <div className="search-page__input-sub-container">

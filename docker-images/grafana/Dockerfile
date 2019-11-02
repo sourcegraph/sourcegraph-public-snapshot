@@ -1,4 +1,4 @@
-FROM alpine:3.9@sha256:644fcb1a676b5165371437feaa922943aaf7afcfa8bfee4472f6860aad1ef2a0 as builder
+FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a as builder
 
 RUN apk add --no-cache bash=4.4.19-r1 git=2.20.1-r0 openssh=7.9_p1-r6 build-base=0.5-r1
 
@@ -20,7 +20,7 @@ RUN ./build.sh
 # temporary fix for status_code <-> code label discrepancy in metrics (lsif code base uses status_code, rest uses code)
 RUN sed -i -e 's/{code=~/{status_code=~/g' lsif.json
 
-FROM grafana/grafana:6.4.2@sha256:8c2238eea9d3d39aeb6174db2e30b233fd2546128ec1fa1bc64f8058afd51e68 as production
+FROM grafana/grafana:6.4.2@sha256:41333de8ca11b15f405d8a67bdb5034b138ad3a539de3e549e768d24dfea2b72 as production
 
 LABEL org.opencontainers.image.url=https://sourcegraph.com/
 LABEL org.opencontainers.image.source=https://github.com/sourcegraph/sourcegraph/

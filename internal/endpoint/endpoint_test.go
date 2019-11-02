@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestNew(t *testing.T) {
@@ -92,5 +94,25 @@ func TestEndpoints(t *testing.T) {
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("m.Endpoints() unexpected return:\ngot:  %v\nwant: %v", got, want)
+	}
+}
+
+func TestK8sURL(t *testing.T) {
+	endpoint := "endpoint.service"
+	cases := map[string]string{
+		"k8s+http://searcher:3181":          "http://endpoint.service:3181",
+		"k8s+http://searcher":               "http://endpoint.service",
+		"k8s+http://searcher.namespace:123": "http://endpoint.service:123",
+		"k8s+rpc://indexed-search:6070":     "endpoint.service:6070",
+	}
+	for rawurl, want := range cases {
+		u, err := parseURL(rawurl)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := u.endpointURL(endpoint)
+		if got != want {
+			t.Errorf("mismatch on %s (-want +got):\n%s", rawurl, cmp.Diff(want, got))
+		}
 	}
 }

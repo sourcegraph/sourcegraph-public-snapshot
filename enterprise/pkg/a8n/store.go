@@ -1737,33 +1737,9 @@ func scanChangesetEvent(e *a8n.ChangesetEvent, s scanner) error {
 		return err
 	}
 
-	switch e.Kind {
-	case a8n.ChangesetEventKindGitHubAssigned:
-		e.Metadata = new(github.AssignedEvent)
-	case a8n.ChangesetEventKindGitHubClosed:
-		e.Metadata = new(github.ClosedEvent)
-	case a8n.ChangesetEventKindGitHubCommented:
-		e.Metadata = new(github.IssueComment)
-	case a8n.ChangesetEventKindGitHubRenamedTitle:
-		e.Metadata = new(github.RenamedTitleEvent)
-	case a8n.ChangesetEventKindGitHubMerged:
-		e.Metadata = new(github.MergedEvent)
-	case a8n.ChangesetEventKindGitHubReviewed:
-		e.Metadata = new(github.PullRequestReview)
-	case a8n.ChangesetEventKindGitHubReviewCommented:
-		e.Metadata = new(github.PullRequestReviewComment)
-	case a8n.ChangesetEventKindGitHubReopened:
-		e.Metadata = new(github.ReopenedEvent)
-	case a8n.ChangesetEventKindGitHubReviewDismissed:
-		e.Metadata = new(github.ReviewDismissedEvent)
-	case a8n.ChangesetEventKindGitHubReviewRequestRemoved:
-		e.Metadata = new(github.ReviewRequestRemovedEvent)
-	case a8n.ChangesetEventKindGitHubReviewRequested:
-		e.Metadata = new(github.ReviewRequestedEvent)
-	case a8n.ChangesetEventKindGitHubUnassigned:
-		e.Metadata = new(github.UnassignedEvent)
-	default:
-		panic(errors.Errorf("unknown changeset event kind for %T", e))
+	e.Metadata, err = a8n.NewChangesetEventMetadata(e.Kind)
+	if err != nil {
+		return err
 	}
 
 	if err = json.Unmarshal(metadata, e.Metadata); err != nil {
@@ -1788,24 +1764,13 @@ func scanCampaign(c *a8n.Campaign, s scanner) error {
 }
 
 func scanCampaignPlan(c *a8n.CampaignPlan, s scanner) error {
-	var arguments json.RawMessage
-
-	err := s.Scan(
+	return s.Scan(
 		&c.ID,
 		&c.CampaignType,
-		&arguments,
+		&c.Arguments,
 		&c.CreatedAt,
 		&c.UpdatedAt,
 	)
-	if err != nil {
-		return err
-	}
-
-	if err = json.Unmarshal(arguments, &c.Arguments); err != nil {
-		return errors.Wrap(err, "scanCampaignPlan: failed to unmarshal arguments")
-	}
-
-	return nil
 }
 
 func scanCampaignJob(c *a8n.CampaignJob, s scanner) error {

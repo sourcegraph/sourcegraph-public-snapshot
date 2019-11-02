@@ -14,7 +14,7 @@ The other option is to deploy and run Sourcegraph on a cloud provider. For an ex
 
 Get the Docker container ID for Sourcegraph:
 
-```shell
+```bash
 docker ps
 CONTAINER ID        IMAGE
 d039ec989761        sourcegraph/server:VERSION
@@ -22,7 +22,7 @@ d039ec989761        sourcegraph/server:VERSION
 
 Open a PostgreSQL interactive terminal:
 
-```shell
+```bash
 docker container exec -it d039ec989761 psql -U postgres sourcegraph
 ```
 
@@ -36,7 +36,7 @@ SELECT * FROM users;
 
 Get the id of one `pgsql` Pod:
 
-```shell
+```bash
 kubectl get pods -l app=pgsql
 NAME                     READY     STATUS    RESTARTS   AGE
 pgsql-76a4bfcd64-rt4cn   2/2       Running   0          19m
@@ -44,7 +44,7 @@ pgsql-76a4bfcd64-rt4cn   2/2       Running   0          19m
 
 Open a PostgreSQL interactive terminal:
 
-```shell
+```bash
 kubectl exec -it pgsql-76a4bfcd64-rt4cn -- psql -U sg
 ```
 
