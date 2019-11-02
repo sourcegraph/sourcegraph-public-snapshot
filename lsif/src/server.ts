@@ -8,6 +8,7 @@ import promClient from 'prom-client'
 import uuid from 'uuid'
 import { httpUploadDurationHistogram, httpQueryDurationHistogram, queueSizeGauge } from './server.metrics'
 import { chunk } from 'lodash'
+import cors from 'cors'
 import {
     connectionCacheCapacityGauge,
     documentCacheCapacityGauge,
@@ -177,6 +178,7 @@ async function main(logger: Logger): Promise<void> {
     const scriptedClient = await defineRedisCommands(queue.client)
 
     const app = express()
+    app.use(cors())
 
     if (tracer !== undefined) {
         app.use(tracingMiddleware({ tracer }))
