@@ -11,6 +11,8 @@ An LSIF indexer is a command line tool that analyzes your project's source code 
 1. Add a daily step to your CI that runs the LSIF indexer on a project within your repository and generates an LSIF file. See [Recommended upload frequency](#recommended-upload-frequency) below.
 1. Upload that generated LSIF file to your Sourcegraph instance:
 
+From the command-line:
+
 ```
 $ src \
   -endpoint=https://sourcegraph.example.com \
