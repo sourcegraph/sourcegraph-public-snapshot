@@ -22,10 +22,12 @@ $ src \
   -commit=$(git rev-parse HEAD | tr -d "\n") \
   -root=<project directory with a trailing slash> (omit when the project root is the same as the repository root)
   -file=<LSIF file (e.g. data.lsif)>
+  -skip-validation (only available on Sourcegraph.com and 3.10+)
 ```
 
 > - If you're uploading to Sourcegraph.com, you must authenticate your upload by passing a GitHub access token with [`public_repo` scope](https://developer.github.com/apps/building-oauth-apps/understanding-scopes-for-oauth-apps/#available-scopes) as `-github-token=abc...`. You can create one at https://github.com/settings/tokens
 > - If you generated LSIF data for a project in a subdirectory (e.g. you're in a monorepo), then set `-root` to the relative path to the project's subdirectory, including the trailing slash.
+> - `-skip-validation` skips the sanity checks upon upload, resulting in a faster upload to help reduce the chance that a timeout will occur
 
 If successful, you'll see the following message:
 
