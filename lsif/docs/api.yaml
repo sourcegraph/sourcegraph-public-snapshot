@@ -231,7 +231,7 @@ paths:
           description: Not found
   /jobs/stats:
     get:
-      description: Get the current counts of jobs by their status.
+      description: Get the current counts of jobs by their state.
       tags:
         - Jobs
       responses:
@@ -241,24 +241,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Stats'
-  /jobs/{status}:
+  /jobs/{state}:
     get:
-      description: Get LSIF jobs by status.
+      description: Get LSIF jobs by state.
       tags:
         - Jobs
       parameters:
-        - name: status
+        - name: state
           in: path
-          description: The target job status.
+          description: The target job state.
           required: true
           schema:
             type: string
             enum:
-              - active
+              - processing
+              - errored
+              - completed
               - queued
               - scheduled
-              - completed
-              - failed
         - name: query
           in: query
           description: A search query applied over job type, job arguments, and failure (reason and stacktrace) properties.
@@ -461,29 +461,29 @@ components:
       additionalProperties: false
     Stats:
       type: object
-      description: An object containing the counts of jobs by status.
+      description: An object containing the counts of jobs by state.
       properties:
-        active:
+        processingCount:
           type: number
-          description: The number of active jobs.
-        queued:
+          description: The number of jobs being processed.
+        erroredCount:
           type: number
-          description: The number of queued jobs.
-        scheduled:
-          type: number
-          description: The number of scheduled jobs.
-        completed:
+          description: The number of errored jobs.
+        completedCount:
           type: number
           description: The number of completed jobs.
-        failed:
+        queuedCount:
           type: number
-          description: The number of failed jobs.
+          description: The number of queued jobs.
+        scheduledCount:
+          type: number
+          description: The number of scheduled jobs.
       required:
-        - active
+        - processing
+        - errored
+        - completed
         - queued
         - scheduled
-        - completed
-        - failed
       additionalProperties: false
     Jobs:
       type: object
@@ -491,7 +491,7 @@ components:
       properties:
         jobs:
           type: array
-          description: A list of jobs with a particular status.
+          description: A list of jobs with a particular state.
           items:
             $ref: '#/components/schemas/Job'
         totalCount:
@@ -523,15 +523,15 @@ components:
               - type: string
               - type: number
               - type: boolean
-        status:
+        state:
           type: string
-          description: The job's current status.
+          description: The job's current state.
           enum:
-            - active
+            - processing
+            - errored
+            - completed
             - queued
             - scheduled
-            - completed
-            - failed
         progress:
           type: number
           description: A percentage progress of the job (0-100%).
@@ -560,7 +560,7 @@ components:
         - id
         - name
         - args
-        - status
+        - state
         - progress
         - failedReason
         - stacktrace
