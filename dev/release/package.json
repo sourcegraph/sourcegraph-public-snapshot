@@ -16,7 +16,7 @@
     "@octokit/rest": "^16.34.0",
     "@slack/web-api": "^5.3.0",
     "fs-extra": "^8.1.0",
-    "googleapis": "39",
+    "googleapis": "44",
     "mkdirp": "^0.5.1",
     "open": "^7.0.0",
     "request-promise-native": "^1.0.7"
