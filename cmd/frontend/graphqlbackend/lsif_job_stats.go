@@ -10,10 +10,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
-const singletonLSIFJobStatsGQLID = "lsifJobStats"
+const lsifJobStatsGQLID = "lsifJobStats"
 
 func (r *schemaResolver) LSIFJobStats(ctx context.Context) (*lsifJobStatsResolver, error) {
-	return lsifJobStatsByGQLID(ctx, marshalLSIFJobStatsGQLID(singletonLSIFJobStatsGQLID))
+	return lsifJobStatsByGQLID(ctx, marshalLSIFJobStatsGQLID(lsifJobStatsGQLID))
 }
 
 func lsifJobStatsByGQLID(ctx context.Context, id graphql.ID) (*lsifJobStatsResolver, error) {
@@ -21,7 +21,7 @@ func lsifJobStatsByGQLID(ctx context.Context, id graphql.ID) (*lsifJobStatsResol
 	if err != nil {
 		return nil, err
 	}
-	if lsifJobStatsID != singletonLSIFJobStatsGQLID {
+	if lsifJobStatsID != lsifJobStatsGQLID {
 		return nil, fmt.Errorf("lsif job stats not found: %q", lsifJobStatsID)
 	}
 
@@ -38,7 +38,7 @@ type lsifJobStatsResolver struct {
 }
 
 func (r *lsifJobStatsResolver) ID() graphql.ID {
-	return marshalLSIFJobStatsGQLID(singletonLSIFJobStatsGQLID)
+	return marshalLSIFJobStatsGQLID(lsifJobStatsGQLID)
 }
 
 func (r *lsifJobStatsResolver) Active() int32    { return r.stats.Active }
