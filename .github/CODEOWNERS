@@ -221,7 +221,8 @@ Dockerfile @sourcegraph/distribution
 README.md @sqs
 /doc/ @sourcegraph/distribution @ryan-blunden
 /doc/dev/ @nicksnyder
-/doc/dev/product/ @christinaforney
+/doc/team/product-dev/ @nicksnyder
+/doc/team/product-dev/product/ @christinaforney
 
 # Browser extensions
 /browser/ @sourcegraph/web

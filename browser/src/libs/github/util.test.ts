@@ -69,7 +69,7 @@ type GithubDiffPage = 'commit' | 'pull-request' | 'pull-request-discussion'
 describe('getDiffFileName()', () => {
     const tests: Record<GithubVersion, Record<GithubDiffPage, string>> = {
         'github.com': {
-            commit: 'doc/dev/incidents.md',
+            commit: 'doc/team/product-dev/incidents.md',
             'pull-request-discussion': 'web/src/regression/util/TestResourceManager.ts',
             'pull-request': 'packages/sourcegraph-extension-api/src/sourcegraph.d.ts',
         },

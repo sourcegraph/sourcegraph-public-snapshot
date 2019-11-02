@@ -11,7 +11,7 @@ Schedule: 10:30-11:30am PST/PDT Monday (link in the calendar event)
 1.  Publicity
 1.  Ops and on-call review
 1.  Product and development updates
-    - All information presented must accessible in written form from the [product roadmap](https://docs.sourcegraph.com/dev/roadmap). If it's important enough to be presented at team meeting, it's important enough to be written down. (It doesn't need to be perfectly spec'd---it's OK if it's written down in a file on a branch, in draft form, etc.)
+    - All information presented must accessible in written form from the [product roadmap](https://docs.sourcegraph.com/team/roadmap). If it's important enough to be presented at team meeting, it's important enough to be written down. (It doesn't need to be perfectly spec'd---it's OK if it's written down in a file on a branch, in draft form, etc.)
     - Each row in the current month's product roadmap table is presented by the team members listed, in the same order (top to bottom) as the table.
     - When deciding what to say about your work, consider the following.
       - What is the goal of the project? What problem does it solve?
