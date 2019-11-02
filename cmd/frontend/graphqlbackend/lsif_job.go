@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
 
 	graphql "github.com/graph-gophers/graphql-go"
@@ -25,7 +26,7 @@ func lsifJobByGQLID(ctx context.Context, id graphql.ID) (*lsifJobResolver, error
 		return nil, err
 	}
 
-	path := fmt.Sprintf("/jobs/%s", jobID)
+	path := fmt.Sprintf("/jobs/%s", url.PathEscape(jobID))
 
 	var lsifJob *types.LSIFJob
 	if err := lsif.TraceRequestAndUnmarshalPayload(ctx, path, nil, &lsifJob); err != nil {
