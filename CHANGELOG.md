@@ -21,7 +21,6 @@ All notable changes to Sourcegraph are documented in this file.
 
 - **Kubernetes Migration:** The [Kubernetes deployment](https://github.com/sourcegraph/deploy-sourcegraph) manifest for indexed-search services has changed from a Normal Service to a Headless Service. This is to enable Sourcegraph to individually resolve indexed-search pods. Services are immutable, so please follow the [migration guide](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/docs/migrate.md#310).
 - Fields of type `String` in our GraphQL API that contain [JSONC](https://komkom.github.io/) now have the custom scalar type `JSONCString`. [#6209](https://github.com/sourcegraph/sourcegraph/pull/6209)
-- The GraphQL `PageInfo` object now returns a `String` instead of an `ID` for its `endCursor`, and likewise for the `after` search field. Users of the experimental paginated search API introduced in 3.9 may need to update their usages to replace `ID` cursor types with `String` ones.
 - `ZOEKT_HOST` environment variable has been deprecated. Please use `INDEXED_SEARCH_SERVERS` instead. `ZOEKT_HOST` will be removed in 3.12.
 
 ### Fixed
@@ -34,10 +33,17 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## 3.9.4
 
+### Changed
+
+- The experimental search pagination API's `PageInfo` object now returns a `String` instead of an `ID` for its `endCursor`, and likewise for the `after` search field. Experimental paginated search API users may need to update their usages to replace `ID` cursor types with `String` ones.
+
 ### Fixed
 
 - The experimental search pagination API no longer omits a single repository worth of results at the end of the result set. [#6286](https://github.com/sourcegraph/sourcegraph/issues/6286)
 - The experimental search pagination API no longer produces search cursors that can get "stuck". [#6287](https://github.com/sourcegraph/sourcegraph/issues/6287)
+- In literal search mode, searching for quoted strings now works as expected. [#6255](https://github.com/sourcegraph/sourcegraph/issues/6255)
+- In literal search mode, quoted field values now work as expected. [#6271](https://github.com/sourcegraph/sourcegraph/pull/6271)
+- `type:path` search queries now correctly work in indexed search again. [#6220](https://github.com/sourcegraph/sourcegraph/issues/6220)
 
 ## 3.9.3
 

@@ -56,7 +56,7 @@ If you are running Sourcegraph as single server behind a firewall you can add an
 ```bash script
 docker run --publish 7080:7080 --publish 2633:2633 --publish 3370:3370 \
   --rm --volume ~/.sourcegraph/config:/etc/sourcegraph \
-  --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.9.3
+  --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.9.4
 ```
 
 ### Docker images
