@@ -44,9 +44,15 @@ export const highlightCodeSafe = (code: string, language?: string): string => {
  *
  * @param markdown The markdown to render
  * @param options Options object for passing additional parameters
- * @param options.plainText Strip off any HTML and return a plain text string, useful for previews
  */
-export const renderMarkdown = (markdown: string, options: { plainText?: boolean } = {}): string => {
+export const renderMarkdown = (
+    markdown: string,
+    options: {
+        /** Strip off any HTML and return a plain text string, useful for previews */
+
+        plainText?: boolean
+    } = {}
+): string => {
     const rendered = marked(markdown, {
         gfm: true,
         breaks: true,
