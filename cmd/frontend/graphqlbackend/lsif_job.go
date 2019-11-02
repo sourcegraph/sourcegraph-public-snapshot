@@ -39,7 +39,7 @@ func lsifJobByGQLID(ctx context.Context, id graphql.ID) (*lsifJobResolver, error
 func (r *lsifJobResolver) ID() graphql.ID         { return marshalLSIFJobGQLID(r.lsifJob.ID) }
 func (r *lsifJobResolver) Name() string           { return r.lsifJob.Name }
 func (r *lsifJobResolver) Args() JSONValue        { return JSONValue{r.lsifJob.Args} }
-func (r *lsifJobResolver) Status() string         { return strings.ToUpper(r.lsifJob.Status) }
+func (r *lsifJobResolver) State() string          { return strings.ToUpper(r.lsifJob.State) }
 func (r *lsifJobResolver) Progress() float64      { return r.lsifJob.Progress }
 func (r *lsifJobResolver) FailedReason() *string  { return r.lsifJob.FailedReason }
 func (r *lsifJobResolver) Stacktrace() *[]string  { return r.lsifJob.Stacktrace }
