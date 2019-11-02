@@ -46,7 +46,7 @@
     "@types/bloomfilter": "0.0.0",
     "@types/body-parser": "1.17.0",
     "@types/bull": "3.10.5",
-    "@types/cors": "^2.8.6",
+    "@types/cors": "2.8.6",
     "@types/express": "4.17.2",
     "@types/express-winston": "3.0.4",
     "@types/got": "9.6.8",
