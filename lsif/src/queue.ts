@@ -16,17 +16,17 @@ export const QUEUE_PREFIX = `bull:${QUEUE_NAME}:`
 /**
  * The names of queues as defined in Bull.
  */
-export type QueueTypes = 'active' | 'wait' | 'delayed' | 'completed' | 'failed'
+export type QueueTypes = 'active' | 'failed' | 'completed' | 'wait' | 'delayed'
 
 /**
- * A mapping from job statuses to queue names.
+ * A mapping from job states to queue names.
  */
 export const queueTypes = new Map<string, QueueTypes>([
-    ['active', 'active'],
+    ['processing', 'active'],
+    ['errored', 'failed'],
+    ['completed', 'completed'],
     ['queued', 'wait'],
     ['scheduled', 'delayed'],
-    ['completed', 'completed'],
-    ['failed', 'failed'],
 ])
 
 /**

@@ -57,15 +57,16 @@ Returns a particular dump by its identifier. The resulting dump must belong to t
 
 ### GET `/jobs/stats`
 
-Retrieve the current counts of jobs in each status.
+Retrieve the current counts of jobs in each state.
 
-### GET `/jobs/{status}?search={search}&limit={limit}&offset={offset}`
+### GET `/jobs/{state}?query={query}&limit={limit}&offset={offset}`
 
-- `status`: the job status (`active`, `queued`, `scheduled`, `completed`, or `failed`)
+- `state`: the job state (`processing`, `errored`, `completed`, `queued`, or `scheduled`)
+- `query`: a search query
 - `limit`: the maximum number of jobs to return
 - `offset`: the number of jobs seen previously
 
-Returns the jobs with the given status. If a search term is given, then only jobs matching that search term are returned. If no search term is given, then the response will also contain a total count.
+Returns the jobs with the given state. If a search term is given, then only jobs matching that search term are returned. If no search term is given, then the response will also contain a total count.
 
 ### GET `/jobs/{id}`
 
