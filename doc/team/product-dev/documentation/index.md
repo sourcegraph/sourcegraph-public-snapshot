@@ -37,8 +37,9 @@ The documentation is organized into the following top-level directories:
   - [`external_service/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/admin/external_service) for external service-related documentation *for site admins* (vs. `integration/` for the general audience)
 - [`extensions/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/extensions) for Sourcegraph extensions
 - [`integration/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/integration) for integrations with other products, targeted at the general audience (vs. `admin/external_service/` for site admin-specific docs)
-- [`api/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/dev) for the Sourcegraph GraphQL API
+- [`api/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/api) for the Sourcegraph GraphQL API
 - [`dev/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/dev) for contributors
+- [`team/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/team) for Sourcegraph teammates
 
 There is no global index or nav, so all docs should be linked from their parent index page. Every new document should be cross-linked to its related documentation, and linked from its topic-related index, when it exists.
 

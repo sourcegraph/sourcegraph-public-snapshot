@@ -1,6 +1,6 @@
 # Customer support
 
-This doc is for both Sourcegraph teammates providing support, and for Sourcegraph customers to understand how to request support.
+This document is for both Sourcegraph teammates providing support, and for Sourcegraph customers to understand how to request support.
 
 ## How to get support (for customers)
 

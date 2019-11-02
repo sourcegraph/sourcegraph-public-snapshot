@@ -11,22 +11,20 @@ Sourcegraph is an [open product, an open company, and open source](product-dev/o
 >
 > Having our processes documented means we can iterate and improve on them more easily. It also helps teammates spin up quickly and take on more responsibility. To reinforce usage of these docs, refer people to relevant doc sections instead of typing out bespoke answers to questions, updating the docs as needed, in cases where the answer should be documented.
 
-## [The GraphBook (Sourcegraph teammate handbook)](graphbook/index.md)
+## [The Graphbook (Sourcegraph teammate handbook)](graphbook/index.md)
 
 - [Weekly team meeting](graphbook/team_meeting.md)
 
-## Product and development
+## [Product and development](product-dev/index.md)
 
 - [Roadmap](roadmap/index.md)
 - [Developing or contributing to Sourcegraph itself](../dev/index.md)
 - [Internal product and dev team documentation](product-dev/index.md)
 
-## Go-to-market
+## [Go-to-market](gtm/index.md)
 
-- [Customer support](gtm/support/index.md)
 - [Developer relations](gtm/devrel/index.md)
-  - Liveblogging events (coming soon)
-  - Writing case studies (coming soon)
+- [Customer support](gtm/support/index.md)
 - More coming soon
 
 ## Design

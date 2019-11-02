@@ -1,4 +1,4 @@
-# Sourcegraph product and dev team documentation
+# Sourcegraph product and development team documentation
 
 This section concerns working on the Sourcegraph dev team and internal processes. For documentation on how to develop or contribute to Sourcegraph itself, see our [contributing to Sourcegraph docs](../../dev/).
 
