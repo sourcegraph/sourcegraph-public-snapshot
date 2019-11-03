@@ -194,3 +194,7 @@ A **technical overview** is a description of what a certain feature is, and what
 through the process of how to use it systematically.
 
 - Live example (from GitLab): [GitLab Workflow, an overview](https://about.gitlab.com/2016/10/25/gitlab-workflow-an-overview/)
+
+## License notice
+
+Portions of this documentation are derived from [GitLab documentation](https://docs.gitlab.com) (see [license](https://gitlab.com/gitlab-com/www-gitlab-com/blob/master/LICENCE)).
