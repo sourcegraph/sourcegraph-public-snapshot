@@ -1037,10 +1037,16 @@ func testStore(db *sql.DB) func(*testing.T) {
 			campaignJobs := make([]*a8n.CampaignJob, 0, 3)
 
 			t.Run("Create", func(t *testing.T) {
+				var repoID int32
+				err := tx.QueryRow("INSERT INTO repo(name) VALUES ('github.com/foo/bar') RETURNING id").Scan(&repoID)
+				if err != nil {
+					t.Fatal(err)
+				}
+
 				for i := 0; i < cap(campaignJobs); i++ {
 					c := &a8n.CampaignJob{
 						CampaignPlanID: int64(i + 1),
-						RepoID:         1,
+						RepoID:         repoID,
 						Diff:           "+ foobar - barfoo",
 						Error:          "only set on error",
 						StartedAt:      now,

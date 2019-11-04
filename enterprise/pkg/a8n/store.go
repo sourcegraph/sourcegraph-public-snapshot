@@ -1362,32 +1362,41 @@ func (s *Store) CreateCampaignJob(ctx context.Context, c *a8n.CampaignJob) error
 	})
 }
 
+const selectCampaignJob = `
+SELECT
+  job.id,
+  job.campaign_plan_id,
+  job.repo_id,
+  repo.name,
+  job.rev,
+  job.diff,
+  job.error,
+  job.started_at,
+  job.finished_at,
+  job.created_at,
+  job.updated_at
+FROM campaign_jobs AS job, repo
+WHERE job.repo_id = repo.id
+`
+
 var createCampaignJobQueryFmtstr = `
 -- source: pkg/a8n/store.go:CreateCampaignJob
-INSERT INTO campaign_jobs (
-  campaign_plan_id,
-  repo_id,
-  rev,
-  diff,
-  error,
-  started_at,
-  finished_at,
-  created_at,
-  updated_at
+WITH inserted AS (
+	INSERT INTO campaign_jobs (
+	  campaign_plan_id,
+	  repo_id,
+	  rev,
+	  diff,
+	  error,
+	  started_at,
+	  finished_at,
+	  created_at,
+	  updated_at
+	)
+	VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+	RETURNING *
 )
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-RETURNING
-  id,
-  campaign_plan_id,
-  repo_id,
-  rev,
-  diff,
-  error,
-  started_at,
-  finished_at,
-  created_at,
-  updated_at
-`
+` + selectCampaignJob
 
 func (s *Store) createCampaignJobQuery(c *a8n.CampaignJob) (*sqlf.Query, error) {
 	if c.CreatedAt.IsZero() {
@@ -1427,30 +1436,22 @@ func (s *Store) UpdateCampaignJob(ctx context.Context, c *a8n.CampaignJob) error
 
 var updateCampaignJobQueryFmtstr = `
 -- source: pkg/a8n/store.go:UpdateCampaignJob
-UPDATE campaign_jobs
-SET (
-  campaign_plan_id,
-  repo_id,
-  rev,
-  diff,
-  error,
-  started_at,
-  finished_at,
-  updated_at
-) = (%s, %s, %s, %s, %s, %s, %s, %s)
-WHERE id = %s
-RETURNING
-  id,
-  campaign_plan_id,
-  repo_id,
-  rev,
-  diff,
-  error,
-  started_at,
-  finished_at,
-  created_at,
-  updated_at
-`
+WITH updated AS (
+	UPDATE campaign_jobs
+	SET (
+	  campaign_plan_id,
+	  repo_id,
+	  rev,
+	  diff,
+	  error,
+	  started_at,
+	  finished_at,
+	  updated_at
+	) = (%s, %s, %s, %s, %s, %s, %s, %s)
+	WHERE id = %s
+	RETURNING *
+)
+` + selectCampaignJob
 
 func (s *Store) updateCampaignJobQuery(c *a8n.CampaignJob) (*sqlf.Query, error) {
 	c.UpdatedAt = s.now()
@@ -1546,19 +1547,8 @@ func (s *Store) GetCampaignJob(ctx context.Context, opts GetCampaignJobOpts) (*a
 
 var getCampaignJobsQueryFmtstr = `
 -- source: pkg/a8n/store.go:GetCampaignJob
-SELECT
-  id,
-  campaign_plan_id,
-  repo_id,
-  rev,
-  diff,
-  error,
-  started_at,
-  finished_at,
-  created_at,
-  updated_at
-FROM campaign_jobs
-WHERE %s
+` + selectCampaignJob + `
+%s
 LIMIT 1
 `
 
@@ -1608,19 +1598,8 @@ func (s *Store) ListCampaignJobs(ctx context.Context, opts ListCampaignJobsOpts)
 
 var listCampaignJobsQueryFmtstr = `
 -- source: pkg/a8n/store.go:ListCampaignJobs
-SELECT
-  id,
-  campaign_plan_id,
-  repo_id,
-  rev,
-  diff,
-  error,
-  started_at,
-  finished_at,
-  created_at,
-  updated_at
-FROM campaign_jobs
-WHERE %s
+` + selectCampaignJob + `
+%s
 ORDER BY id ASC
 LIMIT %s
 `
@@ -1632,15 +1611,15 @@ func listCampaignJobsQuery(opts *ListCampaignJobsOpts) *sqlf.Query {
 	opts.Limit++
 
 	preds := []*sqlf.Query{
-		sqlf.Sprintf("id >= %s", opts.Cursor),
+		sqlf.Sprintf("job.id >= %s", opts.Cursor),
 	}
 
 	if opts.CampaignPlanID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaign_plan_id = %s", opts.CampaignPlanID))
+		preds = append(preds, sqlf.Sprintf("job.campaign_plan_id = %s", opts.CampaignPlanID))
 	}
 
 	if !opts.FinishedBefore.IsZero() {
-		preds = append(preds, sqlf.Sprintf("finished_at <= %s", opts.FinishedBefore))
+		preds = append(preds, sqlf.Sprintf("job.finished_at <= %s", opts.FinishedBefore))
 	}
 
 	return sqlf.Sprintf(
@@ -1783,6 +1762,7 @@ func scanCampaignJob(c *a8n.CampaignJob, s scanner) error {
 		&c.ID,
 		&c.CampaignPlanID,
 		&c.RepoID,
+		&c.RepoName,
 		&c.Rev,
 		&c.Diff,
 		&c.Error,
