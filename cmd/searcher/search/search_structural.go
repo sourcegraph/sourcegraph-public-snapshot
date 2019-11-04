@@ -17,8 +17,6 @@ func ToFileMatch(combyMatches []comby.FileMatch) (matches []protocol.FileMatch) 
 				LineNumber: r.Range.Start.Line - 1,
 				// XXX sigh. assume one match per line.
 				OffsetAndLengths: [][2]int{{r.Range.Start.Column - 1, len(r.Matched)}},
-				// XXX
-				Preview: "derp",
 			}
 			lineMatches = append(lineMatches, lineMatch)
 		}
@@ -32,8 +30,8 @@ func ToFileMatch(combyMatches []comby.FileMatch) (matches []protocol.FileMatch) 
 	return matches
 }
 
-func structuralSearch(ctx context.Context, zipPath string, pattern string, includePatterns []string, fileMatchLimit int) (matches []protocol.FileMatch, limitHit bool, err error) {
-	fmt.Printf("Only files: %d [%s]\n", len(includePatterns), strings.Join(includePatterns, ","))
+func structuralSearch(ctx context.Context, zipPath string, pattern string, includePatterns []string, repo string, fileMatchLimit int) (matches []protocol.FileMatch, limitHit bool, err error) {
+	fmt.Printf("structural search, repo %s, only do files: %d [%s]\n", repo, len(includePatterns), strings.Join(includePatterns, ","))
 
 	args := comby.Args{
 		Input:         comby.ZipPath(zipPath),
@@ -54,6 +52,5 @@ func structuralSearch(ctx context.Context, zipPath string, pattern string, inclu
 	if err != nil {
 		return nil, false, err
 	}
-
 	return matches, false, err
 }

@@ -24,7 +24,9 @@ func exists() bool {
 
 func rawArgs(args Args) (rawArgs []string) {
 	rawArgs = append(rawArgs, args.MatchTemplate, args.RewriteTemplate)
-	rawArgs = append(rawArgs, args.FilePatterns...)
+	if len(args.FilePatterns) > 0 {
+		rawArgs = append(rawArgs, "-f", strings.Join(args.FilePatterns, ","))
+	}
 	rawArgs = append(rawArgs, "-json-lines")
 
 	if args.MatchOnly {
@@ -63,7 +65,7 @@ func PipeTo(args Args, w io.Writer) (err error) {
 	}
 
 	rawArgs := rawArgs(args)
-	log15.Info("running comby", "args", strings.Join(rawArgs, ","))
+	log15.Info("running comby", "args", strings.Join(rawArgs, " "))
 
 	cmd := exec.Command(combyPath, rawArgs...)
 
@@ -93,9 +95,10 @@ func PipeTo(args Args, w io.Writer) (err error) {
 
 	if err := cmd.Wait(); err != nil {
 		if stderrMsg != nil {
-			log15.Error("failed to execute comby command", "error", string(stderrMsg))
-			return fmt.Errorf("comby error: %s", string(stderrMsg))
-			// return nil
+			log15.Error("failed to execute comby command", "error", string(stderrMsg), "XXX", strings.Join(rawArgs, " "), "XXX")
+			// return fmt.Errorf("comby error: %s", string(stderrMsg))
+			// 16:28:26               searcher | ERROR failed to execute comby command, error: No such file or directory: cmd/thyme/main.go. Comby interprets patterns containing '/' as file paths. If a pattern does not contain '/' (like '.ml'), it is considered a pattern where file endings must match the pattern. Please supply only valid file paths or patterns.
+			return nil
 		}
 		log15.Error("failed to wait for executing comby command", "error", string(err.(*exec.ExitError).Stderr))
 		return err

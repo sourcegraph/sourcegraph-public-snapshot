@@ -53,3 +53,8 @@ type FileMatch struct {
 	URI     string  `json:"uri"`
 	Matches []Match `json:"matches"`
 }
+
+type FileDiff struct {
+	URI  string   `json:"uri"`
+	Diff []string `json:"diff"`
+}

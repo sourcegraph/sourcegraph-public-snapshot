@@ -569,8 +569,11 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			textSearchLimiter.SetLimit(len(eps) * 32)
 		}
 
-		originalIncludes := args.Pattern.IncludePatterns
 		for _, repoRev := range searcherRepos {
+			args := *args
+			patternCopy := *args.Pattern
+			var includePatternsCopy []string
+
 			if len(repoRev.Revs) == 0 {
 				continue
 			}
@@ -585,19 +588,20 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 				break
 			}
 
+			if args.Pattern.IsStructuralPat && searcherReposFilteredFiles != nil {
+				// Modify the search query to only run for the filtered files
+				if v, ok := searcherReposFilteredFiles[string(repoRev.Repo.Name)]; ok {
+					args.Pattern = &patternCopy
+					includePatternsCopy = make([]string, len(args.Pattern.IncludePatterns))
+					copy(includePatternsCopy, args.Pattern.IncludePatterns)
+					args.Pattern.IncludePatterns = append(includePatternsCopy, v...)
+				}
+			}
+
 			wg.Add(1)
 			go func(ctx context.Context, done context.CancelFunc, repoRev *search.RepositoryRevisions) {
 				defer wg.Done()
 				defer done()
-
-				if args.Pattern.IsStructuralPat && searcherReposFilteredFiles != nil {
-					// Modify the search query to only run for the filtered files
-					if v, ok := searcherReposFilteredFiles[string(repoRev.Repo.Name)]; ok {
-						args.Pattern.IncludePatterns = append(originalIncludes, v...)
-					} else {
-						args.Pattern.IncludePatterns = originalIncludes
-					}
-				}
 
 				rev := repoRev.RevSpecs()[0] // TODO(sqs): search multiple revs
 				matches, repoLimitHit, err := searchFilesInRepo(ctx, args.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), rev, args.Pattern, fetchTimeout)
@@ -667,16 +671,6 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		}
 
 		if args.Pattern.IsStructuralPat {
-			// For structural search, we run callSearcherOverRepos
-			// over the set of repos and files known to contain
-			// parts of the pattern as determined by Zoekt.
-			// callSearcherOverRepos must acquire the lock, so we
-			// must release the lock held by Zoekt at this point.
-			// The Zoekt part of the search is done here as far as
-			// structural search is concerned, so the lock can be
-			// freely released.
-			mu.Unlock()
-
 			// A partition of {repo name => file list} that we will build from Zoekt matches
 			partition := make(map[string][]string)
 			var repos []*search.RepositoryRevisions
@@ -684,7 +678,6 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			for _, m := range matches {
 				name := string(m.repo.Name)
 				partition[name] = append(partition[name], m.JPath)
-				fmt.Printf("adding %s -> %s\n", name, m.JPath)
 			}
 
 			// Filter Zoekt repos that didn't contain matches
@@ -696,6 +689,15 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 				}
 			}
 
+			// For structural search, we run callSearcherOverRepos
+			// over the set of repos and files known to contain
+			// parts of the pattern as determined by Zoekt.
+			// callSearcherOverRepos must acquire the lock, so we
+			// must release the lock held by Zoekt at this point.
+			// The Zoekt part of the search is done here as far as
+			// structural search is concerned, so the lock can be
+			// freely released.
+			mu.Unlock()
 			err := callSearcherOverRepos(repos, partition)
 			mu.Lock()
 			if err != nil {
