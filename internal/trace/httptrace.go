@@ -135,7 +135,7 @@ func Middleware(next http.Handler) http.Handler {
 
 		// if it's not a graphql request, then this includes graphql_err=false in the log entry
 		gqlErr := false
-		span.Context().ForeachBaggageItem(func(k string, v string) bool {
+		span.Context().ForeachBaggageItem(func(k, v string) bool {
 			if k == "graphql.error" {
 				gqlErr = true
 				return false
