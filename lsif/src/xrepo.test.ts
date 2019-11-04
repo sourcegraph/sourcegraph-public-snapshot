@@ -379,8 +379,8 @@ describe('XrepoDatabase', () => {
         const ce = createCommit('e')
         const cf = createCommit('f')
 
-        const updatePackages = async (commit: string, root: string, identifiers: string[]): Promise<LsifDump> =>
-            await xrepoDatabase.addPackagesAndReferences(
+        const updatePackages = (commit: string, root: string, identifiers: string[]): Promise<LsifDump> =>
+            xrepoDatabase.addPackagesAndReferences(
                 'foo',
                 commit,
                 root,
@@ -426,8 +426,8 @@ describe('XrepoDatabase', () => {
     })
 
     it('should re-query if bloom filter prunes too many results', async () => {
-        const updatePackages = async (commit: string, root: string, identifiers: string[]): Promise<LsifDump> =>
-            await xrepoDatabase.addPackagesAndReferences(
+        const updatePackages = (commit: string, root: string, identifiers: string[]): Promise<LsifDump> =>
+            xrepoDatabase.addPackagesAndReferences(
                 'foo',
                 commit,
                 root,

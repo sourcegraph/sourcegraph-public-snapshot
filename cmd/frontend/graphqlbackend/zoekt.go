@@ -372,8 +372,8 @@ func fileRe(pattern string, queryIsCaseSensitive bool) (zoektquery.Q, error) {
 }
 
 func splitOnHolesPattern() string {
-	word := `\w`
-	whitespaceAndOptionalWord := `[ ]+(\w+)?`
+	word := `\w+`
+	whitespaceAndOptionalWord := `[ ]+(` + word + `)?`
 	holeAnything := `:\[` + word + `\]`
 	holeAlphanum := `:\[\[` + word + `\]\]`
 	holeWithPunctuation := `:\[` + word + `\.\]`

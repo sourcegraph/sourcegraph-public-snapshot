@@ -279,7 +279,7 @@ export class Backend {
         )
         return (await db.monikerResults(model, moniker, ctx)).map(loc =>
             mapLocation(
-                uri => createRemoteUri(packageEntity, uri),
+                uri => createRemoteUri(packageEntity.dump, uri),
                 this.locationFromDatabase(packageEntity.dump.root, loc)
             )
         )
@@ -288,13 +288,13 @@ export class Backend {
     /**
      * Find the references of the target moniker outside of the current database. If the moniker
      * has attached package information, then the cross-repo database is queried for the packages
-     * that require this particular moniker identifier. These databases are opened, and their
+     * that require this particular moniker identifier. These dumps are opened, and their
      * references tables are queried for the target moniker.
      *
      * @param dumpId The ID of the dump for which this database answers queries.
      * @param moniker The target moniker.
      * @param packageInformation The target package.
-     * @param limit The maximum number of remote repositodumpsries to search.
+     * @param limit The maximum number of remote dumps to search.
      * @param offset The number of remote dumps to skip.
      * @param ctx The tracing context.
      */
@@ -336,7 +336,10 @@ export class Backend {
             )
 
             const references = (await db.monikerResults(ReferenceModel, moniker, ctx)).map(loc =>
-                mapLocation(uri => createRemoteUri(reference, uri), this.locationFromDatabase(reference.dump.root, loc))
+                mapLocation(
+                    uri => createRemoteUri(reference.dump, uri),
+                    this.locationFromDatabase(reference.dump.root, loc)
+                )
             )
             locations = locations.concat(references)
         }
@@ -362,34 +365,15 @@ export class Backend {
         paginationContext: ReferencePaginationContext = { limit: 10 },
         ctx: TracingContext = {}
     ): Promise<{ locations: lsp.Location[]; cursor?: ReferencePaginationCursor }> {
-        const limit = paginationContext.limit
-        const cursor = paginationContext.cursor
-        const offset = (cursor && cursor.offset) || 0
-
-        // If we have a pagination cursor, we need to return a subsequent page of results.
-        // The user has already received all local references on a previous page, so we can
-        // skip all of the code following this if block. We get the current page by decoding
-        // the cursor to get a moniker and package information object, then call the
-        // `remoteReferences` method with an updated offset parameter.
-
-        if (cursor) {
-            const moniker = { scheme: cursor.scheme, identifier: cursor.identifier }
-            const packageInformation = { name: cursor.name, version: cursor.version }
-
-            const { locations, count, newOffset } = await this.remoteReferences(
-                cursor.dumpId,
-                moniker,
-                packageInformation,
-                limit,
-                offset,
-                ctx
-            )
-
-            return {
-                locations,
-                // Return a cursor for the next page of results (if there are any)
-                cursor: newOffset < count ? { ...cursor, offset: newOffset } : undefined,
+        if (paginationContext.cursor) {
+            // Continue from previous page
+            const results = await this.performRemoteReferences(paginationContext.limit, paginationContext.cursor, ctx)
+            if (results) {
+                return results
             }
+
+            // Do not fall through
+            return { locations: [] }
         }
 
         const { database, dump, ctx: newCtx } = await this.loadClosestDatabase(repository, commit, path, ctx)
@@ -443,36 +427,24 @@ export class Backend {
                     continue
                 }
 
-                const { locations: remoteResults, count, newOffset } = await this.remoteReferences(
-                    dump.id,
-                    moniker,
-                    packageInformation,
-                    limit,
-                    offset,
-                    ctx
-                )
+                // Build pagination cursor that will start scanning results from
+                // the beginning of the result set.
+                const cursor = {
+                    dumpId: dump.id,
+                    scheme: moniker.scheme,
+                    identifier: moniker.identifier,
+                    name: packageInformation.name,
+                    version: packageInformation.version,
+                    offset: 0,
+                }
 
-                if (remoteResults) {
-                    // Construct a pagination cursor that can be used to request the next
-                    // page of results. We've already returned all local references as well
-                    // as the first page of remote references. The next page of result will
-                    // be the continuation of remote references. We need to store all the
-                    // data required for a subsequent call to the `remoteReferences` method.
+                const results = await this.performRemoteReferences(paginationContext.limit, cursor, ctx)
 
-                    const cursor = {
-                        dumpId: dump.id,
-                        scheme: moniker.scheme,
-                        identifier: moniker.identifier,
-                        name: packageInformation.name,
-                        version: packageInformation.version,
-                        offset: newOffset,
-                    }
-
+                if (results) {
                     return {
+                        ...results,
                         // TODO - determine source of duplication (and below)
-                        locations: uniqWith(locations.concat(remoteResults), isEqual),
-                        // Don't return a cursor if we've hit the end of the result set
-                        cursor: newOffset < count ? cursor : undefined,
+                        locations: uniqWith(locations.concat(results.locations), isEqual),
                     }
                 }
             }
@@ -480,6 +452,46 @@ export class Backend {
 
         // TODO - determine source of duplication
         return { locations: uniqWith(locations, isEqual) }
+    }
+
+    /**
+     * Perform a remote reference lookup on remote dumps. The offset into the result set depends
+     * on the exact values of the pagination cursor. This method returns the new cursor.
+     *
+     * @param limit The maximum number of dumps to open.
+     * @param cursor The pagination cursor.
+     * @param ctx The tracing context.
+     */
+    private async performRemoteReferences(
+        limit: number,
+        cursor: ReferencePaginationCursor,
+        ctx: TracingContext = {}
+    ): Promise<{ locations: lsp.Location[]; cursor?: ReferencePaginationCursor } | undefined> {
+        const moniker = { scheme: cursor.scheme, identifier: cursor.identifier }
+        const packageInformation = { name: cursor.name, version: cursor.version }
+
+        const { locations, count, newOffset } = await this.remoteReferences(
+            cursor.dumpId,
+            moniker,
+            packageInformation,
+            limit,
+            cursor.offset,
+            ctx
+        )
+
+        if (locations.length > 0) {
+            let newCursor: ReferencePaginationCursor | undefined
+            if (newOffset < count) {
+                newCursor = {
+                    ...cursor,
+                    offset: newOffset,
+                }
+            }
+
+            return { locations, cursor: newCursor }
+        }
+
+        return undefined
     }
 
     /**
@@ -499,7 +511,7 @@ export class Backend {
         ctx: TracingContext = {}
     ): Promise<lsp.Hover | null> {
         const { database, dump, ctx: newCtx } = await this.loadClosestDatabase(repository, commit, path, ctx)
-        return await database.hover(this.pathToDatabase(dump.root, path), position, newCtx)
+        return database.hover(this.pathToDatabase(dump.root, path), position, newCtx)
     }
 
     /**
@@ -515,13 +527,13 @@ export class Backend {
      * @param file One of the files in the dump.
      * @param ctx The tracing context.
      */
-    private async loadClosestDatabase(
+    private loadClosestDatabase(
         repository: string,
         commit: string,
         file: string,
         ctx: TracingContext = {}
     ): Promise<{ database: Database; dump: LsifDump; ctx: TracingContext }> {
-        return await logAndTraceCall(ctx, 'loading closest database', async ctx => {
+        return logAndTraceCall(ctx, 'loading closest database', async ctx => {
             // Determine the closest commit that we actually have LSIF data for. If the commit is
             // not tracked, then commit data is requested from gitserver and insert the ancestors
             // data for this commit.

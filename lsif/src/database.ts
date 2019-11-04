@@ -7,7 +7,7 @@ import { databaseQueryDurationHistogram, databaseQueryErrorsCounter } from './da
 import { DefaultMap } from './default-map'
 import { gunzipJSON } from './encoding'
 import { isEqual, uniqWith } from 'lodash'
-import { PackageModel, DumpId } from './xrepo.models'
+import { DumpId, LsifDump } from './xrepo.models'
 import {
     DefinitionModel,
     DocumentData,
@@ -88,7 +88,7 @@ export class Database {
             // lsif-tsc to handle node_modules inclusion (or somehow blacklist it on import).
 
             if (!definitionResults.some(v => v.documentPath.includes('node_modules'))) {
-                return await this.convertRangesToLspLocations(path, document, definitionResults)
+                return this.convertRangesToLspLocations(path, document, definitionResults)
             }
         }
 
@@ -319,7 +319,7 @@ export class Database {
             }
         }
 
-        return await this.resultChunkCache.withValue(`${this.databasePath}::${index}`, factory, resultChunk =>
+        return this.resultChunkCache.withValue(`${this.databasePath}::${index}`, factory, resultChunk =>
             Promise.resolve(resultChunk.data)
         )
     }
@@ -345,8 +345,8 @@ export class Database {
      *
      * @param callback The function invoke with the SQLite connection.
      */
-    private async withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
-        return await this.connectionCache.withConnection(this.databasePath, entities, connection =>
+    private withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
+        return this.connectionCache.withConnection(this.databasePath, entities, connection =>
             instrument(databaseQueryDurationHistogram, databaseQueryErrorsCounter, () => callback(connection))
         )
     }
@@ -445,12 +445,12 @@ export function sortMonikers(monikers: MonikerData[]): MonikerData[] {
  * Construct a URI that can be used by the frontend to switch to another
  * directory.
  *
- * @param pkg The target package.
+ * @param dump The target dump.
  * @param path The path relative to the project root.
  */
-export function createRemoteUri(pkg: PackageModel, path: string): string {
-    const url = new URL(`git://${pkg.dump.repository}`)
-    url.search = pkg.dump.commit
+export function createRemoteUri(dump: LsifDump, path: string): string {
+    const url = new URL(`git://${dump.repository}`)
+    url.search = dump.commit
     url.hash = path
     return url.href
 }

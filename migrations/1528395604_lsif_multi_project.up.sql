@@ -21,7 +21,7 @@ CREATE OR REPLACE FUNCTION closest_dump(repository text, "commit" text, path tex
             -- lineage is a recursively defined CTE that returns all ancestor an descendants
             -- of the given commit for the given repository. This happens to evaluate in
             -- Postgres as a lazy generator, which allows us to pull the "next" closest commit
-            -- in either direction from the source commit a sneeded.
+            -- in either direction from the source commit as needed.
             WITH RECURSIVE lineage(id, repository, "commit", parent_commit, direction) AS (
                 SELECT l.* FROM (
                     -- seed recursive set with commit looking in ancestor direction

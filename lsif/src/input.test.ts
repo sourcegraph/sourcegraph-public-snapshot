@@ -1,5 +1,5 @@
 import * as zlib from 'mz/zlib'
-import { parseJsonLines, readGzippedJsonElements, splitLines, validateLsifElements } from './input'
+import { parseJsonLines, readGzippedJsonElements, splitLines } from './input'
 import { Readable } from 'stream'
 
 describe('readGzippedJsonElements', () => {
@@ -30,24 +30,6 @@ describe('readGzippedJsonElements', () => {
 
         const input = Readable.from(lines.join('\n'))
         await expect(consume(readGzippedJsonElements(input))).rejects.toThrowError(new Error('incorrect header check'))
-    })
-})
-
-describe('validateLsifElements', () => {
-    it('should reject invalid LSIF', async () => {
-        const lines = [
-            { id: 1, type: 'vertex', label: 'whatisthis', languageId: 'typescript', uri: 'foo.ts' },
-            { id: 2, type: 'vertex', label: 'document' },
-            { id: 3, type: 'vertex', label: 'document', languageId: 'typescript', uri: 'baz.ts' },
-        ]
-
-        const input = generate(lines)
-        const promise = consume(validateLsifElements(input))
-        await expect(promise).rejects.toThrowError(
-            new Error(
-                'Invalid LSIF element at index #1 ({"id":1,"type":"vertex","label":"whatisthis","languageId":"typescript","uri":"foo.ts"}): should NOT have additional properties'
-            )
-        )
     })
 })
 

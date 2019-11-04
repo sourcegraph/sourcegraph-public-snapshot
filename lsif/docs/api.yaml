@@ -47,12 +47,6 @@ paths:
           required: false
           schema:
             type: string
-        - name: skipValidation
-          in: query
-          description: If true, skip JSON schema validation of the input.
-          required: false
-          schema:
-            type: boolean
         - name: blocking
           in: query
           description: If true, block the request until the upload is processed.
