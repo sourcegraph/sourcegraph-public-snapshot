@@ -293,7 +293,7 @@ func (r *fileDiffResolver) OldFile() *GitTreeEntryResolver {
 	}
 	return &GitTreeEntryResolver{
 		commit: r.cmp.base,
-		stat:   createFileInfo(r.fileDiff.OrigName, false),
+		stat:   CreateFileInfo(r.fileDiff.OrigName, false),
 	}
 }
 
@@ -303,7 +303,7 @@ func (r *fileDiffResolver) NewFile() *GitTreeEntryResolver {
 	}
 	return &GitTreeEntryResolver{
 		commit: r.cmp.head,
-		stat:   createFileInfo(r.fileDiff.NewName, false),
+		stat:   CreateFileInfo(r.fileDiff.NewName, false),
 	}
 }
 

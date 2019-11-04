@@ -56,7 +56,7 @@ func (r *lsifDumpResolver) ProjectRoot() *GitTreeEntryResolver {
 
 	return &GitTreeEntryResolver{
 		commit: commitResolver,
-		stat:   createFileInfo(r.lsifDump.Root, true),
+		stat:   CreateFileInfo(r.lsifDump.Root, true),
 	}
 }
 
