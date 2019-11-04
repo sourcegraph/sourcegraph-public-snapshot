@@ -110,12 +110,12 @@ func (r *RepositoryResolver) CloneInProgress(ctx context.Context) (bool, error) 
 	return r.MirrorInfo().CloneInProgress(ctx)
 }
 
-type repositoryCommitArgs struct {
+type RepositoryCommitArgs struct {
 	Rev          string
 	InputRevspec *string
 }
 
-func (r *RepositoryResolver) Commit(ctx context.Context, args *repositoryCommitArgs) (*GitCommitResolver, error) {
+func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitArgs) (*GitCommitResolver, error) {
 	commitID, err := backend.Repos.ResolveRev(ctx, r.repo, args.Rev)
 	if err != nil {
 		if gitserver.IsRevisionNotFound(err) {
@@ -301,7 +301,7 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 			return nil, err
 		}
 		r := &RepositoryResolver{repo: repo}
-		return r.Commit(ctx, &repositoryCommitArgs{Rev: targetRef})
+		return r.Commit(ctx, &RepositoryCommitArgs{Rev: targetRef})
 	}
 
 	// If we already created the commit
