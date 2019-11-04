@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-func (r *gitTreeEntryResolver) Blame(ctx context.Context,
+func (r *GitTreeEntryResolver) Blame(ctx context.Context,
 	args *struct {
 		StartLine int32
 		EndLine   int32

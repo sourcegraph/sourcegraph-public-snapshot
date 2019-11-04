@@ -20,7 +20,6 @@ import (
 
 const (
 	testRepoA = "testrepo-A"
-	testRepoB = "testrepo-B"
 	testRepoC = "testrepo-C"
 )
 

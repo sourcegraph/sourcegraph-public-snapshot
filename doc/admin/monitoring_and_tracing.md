@@ -27,7 +27,7 @@ This URL will show the home dashboard and from there you can add, modify and del
 If you're using the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph),  
 you can access Grafana directly using Kubernetes port forwarding to your local machine:
 
-```shell script
+```bash script
 kubectl port-forward svc/grafana 3370:30070
 ``` 
 
@@ -39,9 +39,10 @@ Therefore, if accessing Grafana locally, the URL will be http://localhost:3370/-
 such as [sshuttle](https://github.com/sshuttle/sshuttle) is required to establish a secure connection to Grafana.
 To access the remote server using `sshuttle` from your local machine:
 
-```sh
+```bash script
 sshuttle -r user@host 0/0
 ```
+
 Then simply visit http://host:3370 in your browser.
 
 ### Docker images
@@ -64,7 +65,7 @@ The environment variable `PROMETHEUS_ADDITIONAL_FLAGS` can be used to pass on ad
 
 We are running our own image of Grafana which contains a standard Grafana installation packaged together with provisioned dashboards.
 
-> Note: Our Grafana instance runs in anonymous mode with all authentication turned off. Please be careful when exposing it directly.
+> NOTE: Our Grafana instance runs in anonymous mode with all authentication turned off. Please be careful when exposing it directly.
 
 A directory containing dashboard json specifications can be mounted in the docker container at
 `/sg_grafana_additional_dashboards` and they will be picked up automatically. Changes to files in that directory

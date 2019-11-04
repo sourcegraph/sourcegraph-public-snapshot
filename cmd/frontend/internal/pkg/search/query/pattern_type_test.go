@@ -43,6 +43,11 @@ func TestConvertToLiteral(t *testing.T) {
 		{`\`, `"\\"`},
 		{`foo\d "bar*"`, `"foo\\d \"bar*\""`},
 		{`\d`, `"\\d"`},
+		{`type:commit message:"a commit message" after:"10 days ago"`, `message:"a commit message" after:"10 days ago" type:commit`},
+		{`type:commit message:"a commit message" after:"10 days ago" test`, `message:"a commit message" after:"10 days ago" type:commit "test"`},
+		{`type:commit message:"a commit message" after:"10 days ago" test test2`, `message:"a commit message" after:"10 days ago" type:commit "test test2"`},
+		{`type:commit message:"a commit message" test after:"10 days ago" test2`, `message:"a commit message" after:"10 days ago" type:commit "test  test2"`},
+		{`type:commit message:'a commit message' test after:'10 days ago' test2`, `message:'a commit message' after:'10 days ago' type:commit "test  test2"`},
 	}
 
 	for _, test := range tests {
@@ -82,6 +87,12 @@ func TestTokenize(t *testing.T) {
 		{`f:a "r:b"`, []string{`f:a`, " ", `"r:b"`}},
 		{"//", []string{"//"}},
 		{"/**/", []string{"/**/"}},
+		{`type:commit message:"a commit message"`, []string{"message:\"a commit message\"", "type:commit", " "}},
+		{`type:commit message:"a commit message" after:"10 days ago"`, []string{"message:\"a commit message\"", "after:\"10 days ago\"", "type:commit", "  "}},
+		{`type:commit message:"a commit message" test after:"10 days ago"`, []string{"message:\"a commit message\"", "after:\"10 days ago\"", "type:commit", "  ", "test", " "}},
+		{`type:commit message:"a commit message" after:"10 days ago" test`, []string{"message:\"a commit message\"", "after:\"10 days ago\"", "type:commit", "   ", "test"}},
+		{`type:commit message:"a commit message" after:"10 days ago" test test2`, []string{"message:\"a commit message\"", "after:\"10 days ago\"", "type:commit", "   ", "test", " ", "test2"}},
+		{`type:commit message:'a commit message' after:'10 days ago' test test2`, []string{"message:'a commit message'", "after:'10 days ago'", "type:commit", "   ", "test", " ", "test2"}},
 	}
 
 	for _, test := range tests {

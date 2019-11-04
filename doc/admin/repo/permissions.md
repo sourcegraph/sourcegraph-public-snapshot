@@ -2,13 +2,11 @@
 
 Sourcegraph can be configured to enforce repository permissions from code hosts.
 
-Currently, GitHub, GitHub Enterprise, GitLab and Bitbucket Server permissions are supported. Check the [roadmap](../../dev/roadmap.md) for plans to
-support other code hosts. If your desired code host is not yet on the roadmap, please [open a
-feature request](https://github.com/sourcegraph/sourcegraph/issues/new?template=feature_request.md).
+Currently, GitHub, GitHub Enterprise, GitLab and Bitbucket Server permissions are supported. Check the [roadmap](../../dev/roadmap/index.md) for plans to support other code hosts. If your desired code host is not yet on the roadmap, please [open a feature request](https://github.com/sourcegraph/sourcegraph/issues/new?template=feature_request.md).
 
 ## GitHub
 
-Prerequisite: [Add GitHub as an authentication provider.](../auth.md#github)
+Prerequisite: [Add GitHub as an authentication provider.](../auth/index.md#github)
 
 Then, [add or edit a GitHub external service](../external_service/github.md#repository-syncing) and include the `authorization` field:
 
@@ -34,7 +32,7 @@ GitLab permissions can be configured in three ways:
 
 ### OAuth application
 
-Prerequisite: [Add GitLab as an authentication provider.](../auth.md#gitlab)
+Prerequisite: [Add GitLab as an authentication provider.](../auth/index.md#gitlab)
 
 Then, [add or edit a GitLab external service](../external_service/gitlab.md#repository-syncing) and include the `authorization` field:
 
@@ -53,7 +51,7 @@ Then, [add or edit a GitLab external service](../external_service/gitlab.md#repo
 
 ### Sudo access token
 
-Prerequisite: Add the [SAML](../auth.md#saml) or [OpenID Connect](../auth.md#openid-connect)
+Prerequisite: Add the [SAML](../auth/index.md#saml) or [OpenID Connect](../auth/index.md#openid-connect)
 authentication provider you use to sign into GitLab.
 
 Then, [add or edit a GitLab external service](../external_service/gitlab.md#repository-syncing) and include the `authorization` field:
@@ -107,7 +105,7 @@ Enforcing Bitbucket Server permissions can be configured via the `authorization`
 ### Prerequisites
 
 1. You have **fewer than 2500 repositories** on your Bitbucket Server instance.
-1. You have the exact same user accounts, **with matching usernames**, in Sourcegraph and Bitbucket Server. This can be accomplished by configuring an [external authentication provider](../auth.md) that mirrors user accounts from a central directory like LDAP or Active Directory. The same should be done on Bitbucket Server with [external user directories](https://confluence.atlassian.com/bitbucketserver/external-user-directories-776640394.html).
+1. You have the exact same user accounts, **with matching usernames**, in Sourcegraph and Bitbucket Server. This can be accomplished by configuring an [external authentication provider](../auth/index.md) that mirrors user accounts from a central directory like LDAP or Active Directory. The same should be done on Bitbucket Server with [external user directories](https://confluence.atlassian.com/bitbucketserver/external-user-directories-776640394.html).
 1. Ensure you have set `auth.enableUsernameChanges` to **`false`** in the [Critical site config](../config/critical_config.md) to prevent users from changing their usernames and **escalating their privileges**.
 
 

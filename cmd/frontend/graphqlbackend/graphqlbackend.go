@@ -85,11 +85,6 @@ func (r *NodeResolver) ToCampaignPlan() (CampaignPlanResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToChangeset() (ChangesetResolver, bool) {
-	n, ok := r.Node.(ChangesetResolver)
-	return n, ok
-}
-
 func (r *NodeResolver) ToExternalChangeset() (ExternalChangesetResolver, bool) {
 	n, ok := r.Node.(ExternalChangesetResolver)
 	return n, ok
@@ -177,6 +172,21 @@ func (r *NodeResolver) ToSite() (*siteResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToLSIFDump() (*lsifDumpResolver, bool) {
+	n, ok := r.Node.(*lsifDumpResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToLSIFJobStats() (*lsifJobStatsResolver, bool) {
+	n, ok := r.Node.(*lsifJobStatsResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToLSIFJob() (*lsifJobResolver, bool) {
+	n, ok := r.Node.(*lsifJobResolver)
+	return n, ok
+}
+
 // schemaResolver handles all GraphQL queries for Sourcegraph.  To do this, it
 // uses subresolvers, some of which are globals and some of which are fields on
 // schemaResolver.
@@ -252,6 +262,12 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return savedSearchByID(ctx, id)
 	case "Site":
 		return siteByGQLID(ctx, id)
+	case "LSIFDump":
+		return lsifDumpByGQLID(ctx, id)
+	case "LSIFJobStats":
+		return lsifJobStatsByGQLID(ctx, id)
+	case "LSIFJob":
+		return lsifJobByGQLID(ctx, id)
 	default:
 		return nil, errors.New("invalid id")
 	}

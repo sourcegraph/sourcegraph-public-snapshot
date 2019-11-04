@@ -15,7 +15,7 @@ setLinkComponent(({ to, children, ...props }) => (
     </a>
 ))
 
-function init(): void {
+async function init(): Promise<void> {
     console.log('Sourcegraph native integration is running')
     const sourcegraphURL = window.SOURCEGRAPH_URL
     if (!sourcegraphURL) {
@@ -40,7 +40,7 @@ function init(): void {
     window.localStorage.setItem('SOURCEGRAPH_URL', sourcegraphURL)
     window.SOURCEGRAPH_URL = sourcegraphURL
     // TODO handle subscription
-    injectCodeIntelligence({ sourcegraphURL, assetsURL }, IS_EXTENSION)
+    await injectCodeIntelligence({ sourcegraphURL, assetsURL }, IS_EXTENSION)
 }
 
-init()
+init().catch(console.error.bind(console))

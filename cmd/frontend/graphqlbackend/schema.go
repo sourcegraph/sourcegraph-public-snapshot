@@ -619,23 +619,8 @@ input CreateChangesetInput {
     externalID: String!
 }
 
-# Basic fields of a changeset.
-interface Changeset {
-    # The repository changed by the changeset.
-    repository: Repository!
-
-    # The title of the changeset.
-    title: String!
-
-    # The body of the changeset.
-    body: String!
-
-    # The diff of the changeset.
-    diff: RepositoryDiff!
-}
-
 # Preview of a changeset planned to be created.
-type ChangesetPlan implements Changeset {
+type ChangesetPlan {
     # The repository changed by the changeset.
     repository: Repository!
 
@@ -646,11 +631,11 @@ type ChangesetPlan implements Changeset {
     body: String!
 
     # The diff of the changeset.
-    diff: RepositoryDiff!
+    diff: PreviewRepositoryDiff!
 }
 
 # A changeset in a code host (e.g. a PR on Github)
-type ExternalChangeset implements Changeset & Node {
+type ExternalChangeset implements Node {
     # The unique ID for the changeset.
     id: ID!
 
@@ -685,7 +670,8 @@ type ExternalChangeset implements Changeset & Node {
     reviewState: ChangesetReviewState!
 
     # The diff of this changeset.
-    diff: RepositoryDiff!
+    # Only returned if the changeset has not been merged or closed.
+    diff: RepositoryComparison
 }
 
 # A list of changesets.
@@ -1227,7 +1213,7 @@ type Query {
         #
         # A future request can be made for more results by passing in the
         # 'SearchResults.pageInfo.endCursor' that is returned.
-        after: ID
+        after: String
 
         # (experimental) Sourcegraph 3.9 added support for cursor-based paginated
         # search requests when this field is specified. For details, see
@@ -1236,9 +1222,6 @@ type Query {
         # When specified, indicates that this request should be paginated and
         # the first N results (relative to the cursor) should be returned. i.e.
         # how many results to return per page. It must be in the range of 0-5000.
-        #
-        # A future request can be made for more results by passing in the
-        # 'SearchResults.pageInfo.endCursor' that is returned.
         first: Int
     ): Search
     # All saved searches configured for the current user, merged from all configurations.
@@ -1263,6 +1246,58 @@ type Query {
 
     # Look up a namespace by ID.
     namespace(id: ID!): Namespace
+
+    # Lookup an LSIF dump by ID.
+    lsifDump(id: ID!): LSIFDump
+
+    # Retrieve the LSIF dumps for a repository.
+    lsifDumps(
+        # The repository ID that this LSIF dump belongs to.
+        repository: ID!
+
+        # An (optional) search query that searches over the commit and root properties.
+        query: String
+
+        # When specified, indicates that this request should be paginated and
+        # the first N results (relative to the cursor) should be returned. i.e.
+        # how many results to return per page. It must be in the range of 0-5000.
+        first: Int
+
+        # When specified, indicates that this request should be paginated and
+        # to fetch results starting at this cursor.
+        #
+        # A future request can be made for more results by passing in the
+        # 'LSIFDumpConnection.pageInfo.endCursor' that is returned.
+        after: String
+    ): LSIFDumpConnection!
+
+    # Retrieve counts of jobs by state in the LSIF work queue.
+    lsifJobStats: LSIFJobStats!
+
+    # Look up an LSIF job by ID.
+    lsifJob(id: ID!): LSIFJob
+
+    # Search for LSIF jobs by state and query term.
+    lsifJobs(
+        # The state of returned jobs.
+        state: LSIFJobState!
+
+        # An (optional) search query that searches over the job name, failure
+        # properties (reason and stacktrace) and the job's arguments.
+        query: String
+
+        # When specified, indicates that this request should be paginated and
+        # the first N results (relative to the cursor) should be returned. i.e.
+        # how many results to return per page. It must be in the range of 0-5000.
+        first: Int
+
+        # When specified, indicates that this request should be paginated and
+        # to fetch results starting at this cursor.
+        #
+        # A future request can be made for more results by passing in the
+        # 'LSIFJobConnection.pageInfo.endCursor' that is returned.
+        after: String
+    ): LSIFJobConnection!
 }
 
 # The version of the search syntax.
@@ -1888,25 +1923,53 @@ type GitRefConnection {
 }
 
 # A not-yet-committed preview of a diff on a repository.
-type PreviewRepositoryDiff implements RepositoryDiff {
+type PreviewRepositoryDiff {
     # The repository that this diff is targeting.
     baseRepository: Repository!
 
-    # The file diffs for each changed file.
-    fileDiffs(first: Int): FileDiffConnection!
+    # The preview of the file diffs for each file in the diff.
+    fileDiffs(first: Int): PreviewFileDiffConnection!
 }
 
-# Any diff on a concrete repository.
-interface RepositoryDiff {
-    # The repository that this diff is targeting.
-    baseRepository: Repository!
+# A list of file diffs that might be applied.
+type PreviewFileDiffConnection {
+    # A list of file diffs that might be applied.
+    nodes: [PreviewFileDiff!]!
+    # The total count of file diffs in the connection, if available. This total count may be larger than the number
+    # of nodes in this object when the result is paginated.
+    totalCount: Int
+    # Pagination information.
+    pageInfo: PageInfo!
+    # The diff stat for the file diffs in this object, which may be a subset of the entire diff if the result is
+    # paginated.
+    diffStat: DiffStat!
+    # The raw diff for the file diffs in this object, which may be a subset of the entire diff if the result is
+    # paginated.
+    rawDiff: String!
+}
 
-    # The file diffs for each changed file.
-    fileDiffs(first: Int): FileDiffConnection!
+# A diff for a single file that has not been applied yet.
+# Subset of the FileDiff type.
+type PreviewFileDiff {
+    # The old (original) path of the file, or null if the file was added.
+    oldPath: String
+    # The old file, or null if the file was created (oldFile.path == oldPath).
+    oldFile: File2
+    # The new path of the file if the diff was applied, or null if the file was deleted.
+    newPath: String
+    # Hunks that were would be changed from old to new.
+    hunks: [FileDiffHunk!]!
+    # The diff stat for the whole file.
+    stat: DiffStat!
+    # FOR INTERNAL USE ONLY.
+    #
+    # An identifier for the file diff that is unique among all other file diffs in the list that
+    # contains it.
+    internalID: String!
 }
 
 # The differences between two concrete Git commits in a repository.
-type RepositoryComparison implements RepositoryDiff {
+type RepositoryComparison {
     # The repository that is the base (left-hand side) of this comparison.
     baseRepository: Repository!
 
@@ -2236,7 +2299,7 @@ type PhabricatorRepo {
 # Pagination information. See https://facebook.github.io/relay/graphql/connections.htm#sec-undefined.PageInfo.
 type PageInfo {
     # When paginating forwards, the cursor to continue.
-    endCursor: ID
+    endCursor: String
     # When paginating forwards, are there more items?
     hasNextPage: Boolean!
 }
@@ -3866,6 +3929,119 @@ type RegistryExtensionConnection {
     # In order to be able to return local extensions even when the remote registry is unreachable, errors are
     # recorded here instead of in the top-level GraphQL errors list.
     error: String
+}
+
+# Metadata about an LSIF upload.
+type LSIFDump implements Node {
+    # An opaque GraphQL ID representing this LSIF dump.
+    id: ID!
+
+    # The project for which this dump provides code intelligence.
+    projectRoot: GitTree!
+
+    # Whether or not this dump provides intelligence for the tip of the default branch. Find reference queries
+    # will return symbols from remote repositories only when this property is true. This property is updated
+    # asynchronously and is eventually consistent with the git data known by the Sourcegraph instance.
+    isLatestForRepo: Boolean!
+
+    # The time the dump was uploaded.
+    uploadedAt: DateTime!
+}
+
+# A list of LSIF dumps.
+type LSIFDumpConnection {
+    # A list of LSIF dumps.
+    nodes: [LSIFDump!]!
+
+    # The total number of dumps for this repository.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# The state an LSIF job can be in.
+enum LSIFJobState {
+    # The LSIF worker is processing this job.
+    PROCESSING
+
+    # The LSIF worker failed to process this job.
+    ERRORED
+
+    # The LSIF worker processed this job successfully.
+    COMPLETED
+
+    # This job is queued to be processed later.
+    QUEUED
+
+    # This job is scheduled to be queued at a specific time.
+    SCHEDULED
+}
+
+# Counts of LISF jobs by state.
+type LSIFJobStats implements Node {
+    # An opaque GraphQL ID.
+    id: ID!
+
+    # How many jobs are currently being processed.
+    processingCount: Int!
+
+    # How many jobs have errored.
+    erroredCount: Int!
+
+    # How many jobs have completed.
+    completedCount: Int!
+
+    # How many jobs are queued.
+    queuedCount: Int!
+
+    # How many jobs are scheduled.
+    scheduledCount: Int!
+}
+
+# A queued, active, or completed LSIF job.
+type LSIFJob implements Node {
+    # The ID.
+    id: ID!
+
+    # The job type (convert, or clean-old-jobs).
+    name: String!
+
+    # The job's arguments.
+    args: JSONValue!
+
+    # The job's current state.
+    state: LSIFJobState!
+
+    # The current job progress (0 to 100).
+    progress: Float!
+
+    # If the job failed, its failure message.
+    failedReason: String
+
+    # If the job failed, its stacktrace.
+    stacktrace: [String!]
+
+    # The time the job was queued.
+    timestamp: DateTime!
+
+    # The time the job was processed.
+    processedOn: DateTime
+
+    # The time the job was finished.
+    finishedOn: DateTime
+}
+
+# A list of LSIF jobs.
+type LSIFJobConnection {
+    # A list of LSIF jobs.
+    nodes: [LSIFJob!]!
+
+    # The total number of jobs in this result set.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
 }
 
 # Mutations that are only used on Sourcegraph.com.

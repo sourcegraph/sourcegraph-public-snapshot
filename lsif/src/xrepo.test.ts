@@ -1,5 +1,6 @@
 import rmfr from 'rmfr'
-import { XrepoDatabase, MAX_TRAVERSAL_LIMIT } from './xrepo'
+import { XrepoDatabase } from './xrepo'
+import { MAX_TRAVERSAL_LIMIT } from './constants'
 import { createCleanPostgresDatabase, createCommit, truncatePostgresTables, createStorageRoot } from './test-utils'
 import { Connection } from 'typeorm'
 import { fail } from 'assert'
@@ -14,7 +15,7 @@ describe('XrepoDatabase', () => {
 
     beforeAll(async () => {
         ;({ connection, cleanup } = await createCleanPostgresDatabase())
-        storageRoot = await createStorageRoot('xrepo')
+        storageRoot = await createStorageRoot()
         xrepoDatabase = new XrepoDatabase(storageRoot, connection)
     })
 
@@ -458,9 +459,9 @@ describe('XrepoDatabase', () => {
         }
 
         const updateVisibility = async (visibleA: boolean, visibleB: boolean, visibleC: boolean) => {
-            dumpa.visible_at_tip = visibleA
-            dumpb.visible_at_tip = visibleB
-            dumpc.visible_at_tip = visibleC
+            dumpa.visibleAtTip = visibleA
+            dumpb.visibleAtTip = visibleB
+            dumpc.visibleAtTip = visibleC
             await connection.getRepository(LsifDump).save(dumpa)
             await connection.getRepository(LsifDump).save(dumpb)
             await connection.getRepository(LsifDump).save(dumpc)

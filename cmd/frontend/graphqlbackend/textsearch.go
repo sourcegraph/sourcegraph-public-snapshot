@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -65,21 +66,25 @@ type fileMatchResolver struct {
 	inputRev *string
 }
 
+func (fm *fileMatchResolver) Equal(other *fileMatchResolver) bool {
+	return reflect.DeepEqual(fm, other)
+}
+
 func (fm *fileMatchResolver) Key() string {
 	return fm.uri
 }
 
-func (fm *fileMatchResolver) File() *gitTreeEntryResolver {
+func (fm *fileMatchResolver) File() *GitTreeEntryResolver {
 	// NOTE(sqs): Omits other commit fields to avoid needing to fetch them
 	// (which would make it slow). This GitCommitResolver will return empty
 	// values for all other fields.
-	return &gitTreeEntryResolver{
+	return &GitTreeEntryResolver{
 		commit: &GitCommitResolver{
 			repo:     &RepositoryResolver{repo: fm.repo},
 			oid:      GitObjectID(fm.commitID),
 			inputRev: fm.inputRev,
 		},
-		stat: createFileInfo(fm.JPath, false),
+		stat: CreateFileInfo(fm.JPath, false),
 	}
 }
 

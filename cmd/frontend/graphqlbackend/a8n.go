@@ -63,10 +63,6 @@ type CreateChangesetsArgs struct {
 	}
 }
 
-type RepoSearcher interface {
-	SearchRepos(ctx context.Context, query string) ([]*RepositoryResolver, error)
-}
-
 type A8NResolver interface {
 	CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (CampaignResolver, error)
 	UpdateCampaign(ctx context.Context, args *UpdateCampaignArgs) (CampaignResolver, error)
@@ -84,9 +80,6 @@ type A8NResolver interface {
 	PreviewCampaignPlan(ctx context.Context, args PreviewCampaignPlanArgs) (CampaignPlanResolver, error)
 	CampaignPlanByID(ctx context.Context, id graphql.ID) (CampaignPlanResolver, error)
 	CancelCampaignPlan(ctx context.Context, args CancelCampaignPlanArgs) (*EmptyResponse, error)
-
-	HasRepoSearcher() bool
-	SetRepoSearcher(RepoSearcher)
 }
 
 var onlyInEnterprise = errors.New("campaigns and changesets are only available in enterprise")
@@ -101,9 +94,6 @@ func (r *schemaResolver) AddChangesetsToCampaign(ctx context.Context, args *AddC
 func (r *schemaResolver) PreviewCampaignPlan(ctx context.Context, args PreviewCampaignPlanArgs) (CampaignPlanResolver, error) {
 	if r.a8nResolver == nil {
 		return nil, onlyInEnterprise
-	}
-	if !r.a8nResolver.HasRepoSearcher() {
-		r.a8nResolver.SetRepoSearcher(r)
 	}
 	return r.a8nResolver.PreviewCampaignPlan(ctx, args)
 }
@@ -191,13 +181,6 @@ type CampaignsConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
-type ChangesetResolver interface {
-	Title() (string, error)
-	Body() (string, error)
-	Repository(ctx context.Context) (*RepositoryResolver, error)
-	Diff(ctx context.Context) (*RepositoryComparisonResolver, error)
-}
-
 type ExternalChangesetsConnectionResolver interface {
 	Nodes(ctx context.Context) ([]ExternalChangesetResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
@@ -217,8 +200,6 @@ type ExternalChangesetResolver interface {
 	Campaigns(ctx context.Context, args *struct{ graphqlutil.ConnectionArgs }) (CampaignsConnectionResolver, error)
 	Events(ctx context.Context, args *struct{ graphqlutil.ConnectionArgs }) (ChangesetEventsConnectionResolver, error)
 	Diff(ctx context.Context) (*RepositoryComparisonResolver, error)
-	ToChangesetPlan() (ChangesetPlanResolver, bool)
-	ToExternalChangeset() (ExternalChangesetResolver, bool)
 }
 
 type ChangesetPlansConnectionResolver interface {
@@ -231,8 +212,7 @@ type ChangesetPlanResolver interface {
 	Title() (string, error)
 	Body() (string, error)
 	Repository(ctx context.Context) (*RepositoryResolver, error)
-	Diff(ctx context.Context) (*RepositoryComparisonResolver, error)
-	ToExternalChangeset() (ExternalChangesetResolver, bool)
+	Diff(ctx context.Context) (PreviewRepositoryDiff, error)
 }
 
 type ChangesetEventsConnectionResolver interface {
@@ -288,4 +268,32 @@ type CampaignPlanResolver interface {
 	Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) ChangesetPlansConnectionResolver
 
 	RepositoryDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (PreviewRepositoryDiffConnectionResolver, error)
+}
+
+type PreviewFileDiff interface {
+	OldPath() *string
+	NewPath() *string
+	Hunks() []*DiffHunk
+	Stat() *DiffStat
+	OldFile() *GitTreeEntryResolver
+	InternalID() string
+}
+
+type PreviewFileDiffConnection interface {
+	Nodes(ctx context.Context) ([]PreviewFileDiff, error)
+	TotalCount(ctx context.Context) (*int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	DiffStat(ctx context.Context) (*DiffStat, error)
+	RawDiff(ctx context.Context) (string, error)
+}
+
+type PreviewRepositoryDiff interface {
+	BaseRepository() *RepositoryResolver
+	FileDiffs(*graphqlutil.ConnectionArgs) PreviewFileDiffConnection
+}
+
+type PreviewRepositoryDiffConnectionResolver interface {
+	Nodes(ctx context.Context) ([]PreviewRepositoryDiff, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }

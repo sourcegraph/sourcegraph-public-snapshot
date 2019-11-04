@@ -8,6 +8,7 @@ import promClient from 'prom-client'
 import uuid from 'uuid'
 import { httpUploadDurationHistogram, httpQueryDurationHistogram, queueSizeGauge } from './server.metrics'
 import { chunk } from 'lodash'
+import cors from 'cors'
 import {
     connectionCacheCapacityGauge,
     documentCacheCapacityGauge,
@@ -177,6 +178,7 @@ async function main(logger: Logger): Promise<void> {
     const scriptedClient = await defineRedisCommands(queue.client)
 
     const app = express()
+    app.use(cors())
 
     if (tracer !== undefined) {
         app.use(tracingMiddleware({ tracer }))
@@ -447,7 +449,7 @@ function dumpEndpoints(backend: Backend, logger: Logger, tracer: Tracer | undefi
                 const { repository } = req.params
                 const { query } = req.query
                 const { limit, offset } = limitOffset(req, DEFAULT_DUMP_PAGE_SIZE)
-                const { dumps, totalCount } = await backend.dumps(repository, query, limit, offset)
+                const { dumps, totalCount } = await backend.dumps(decodeURIComponent(repository), query, limit, offset)
 
                 if (offset + dumps.length < totalCount) {
                     res.set('Link', nextLink(req, { limit, offset: offset + dumps.length }))
@@ -464,7 +466,7 @@ function dumpEndpoints(backend: Backend, logger: Logger, tracer: Tracer | undefi
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { repository, id } = req.params
                 const dump = await backend.dump(parseInt(id, 10))
-                if (!dump || dump.repository !== repository) {
+                if (!dump || dump.repository !== decodeURIComponent(repository)) {
                     throw Object.assign(new Error('LSIF dump not found'), { status: 404 })
                 }
 
@@ -499,32 +501,32 @@ function jobEndpoints(
                 const counts = await queue.getJobCounts()
 
                 res.send({
-                    active: counts.active,
-                    queued: counts.waiting,
-                    scheduled: counts.delayed,
-                    completed: counts.completed,
-                    failed: counts.failed,
+                    processingCount: counts.active,
+                    erroredCount: counts.failed,
+                    completedCount: counts.completed,
+                    queuedCount: counts.waiting,
+                    scheduledCount: counts.delayed,
                 })
             }
         )
     )
 
     router.get(
-        `/jobs/:status(${Array.from(queueTypes.keys()).join('|')})`,
+        `/jobs/:state(${Array.from(queueTypes.keys()).join('|')})`,
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
-                const { status } = req.params
-                const { search } = req.query
+                const { state } = req.params
+                const { query } = req.query
                 const { limit, offset } = limitOffset(req, DEFAULT_JOB_PAGE_SIZE)
 
-                const queueName = queueTypes.get(status)
+                const queueName = queueTypes.get(state)
                 if (!queueName) {
-                    throw new Error(`Unknown job status ${status}`)
+                    throw new Error(`Unknown job state ${state}`)
                 }
 
-                if (!search) {
+                if (!query) {
                     const rawJobs = await queue.getJobs([queueName], offset, offset + limit - 1)
-                    const jobs = rawJobs.map(job => formatJob(job, status))
+                    const jobs = rawJobs.map(job => formatJob(job, state))
                     const totalCount = (await queue.getJobCountByTypes([queueName])) as never
 
                     if (offset + jobs.length < totalCount) {
@@ -536,7 +538,7 @@ function jobEndpoints(
                     const [payloads, nextOffset] = await scriptedClient.searchJobs([
                         QUEUE_PREFIX,
                         queueName,
-                        search,
+                        query,
                         offset,
                         limit,
                         MAX_JOB_SEARCH,
@@ -546,7 +548,7 @@ function jobEndpoints(
                         // Convert each hgetall response into a map
                         .map(payload => new Map(chunk(payload, 2) as [string, string][]))
                         // Format each job
-                        .map(payload => formatJobFromMap(payload, status))
+                        .map(payload => formatJobFromMap(payload, state))
 
                     if (nextOffset) {
                         res.set('Link', nextLink(req, { limit, offset: nextOffset }))

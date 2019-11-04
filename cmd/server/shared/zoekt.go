@@ -11,9 +11,12 @@ func maybeZoektProcFile() []string {
 	if os.Getenv("ZOEKT_HOST") != "" {
 		return nil
 	}
+	if os.Getenv("INDEXED_SEARCH_SERVERS") != "" {
+		return nil
+	}
 
 	defaultHost := "127.0.0.1:3070"
-	SetDefaultEnv("ZOEKT_HOST", defaultHost)
+	SetDefaultEnv("INDEXED_SEARCH_SERVERS", defaultHost)
 
 	frontendInternalHost := os.Getenv("SRC_FRONTEND_INTERNAL")
 	indexDir := filepath.Join(DataDir, "zoekt/index")

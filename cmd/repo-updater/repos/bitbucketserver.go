@@ -121,6 +121,11 @@ func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Change
 			return err
 		}
 
+		err = s.client.LoadPullRequestActivities(ctx, pr)
+		if err != nil {
+			return err
+		}
+
 		cs[i].Changeset.Metadata = pr
 	}
 

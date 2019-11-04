@@ -11,7 +11,6 @@ import { XrepoDatabase } from './xrepo'
 import { Tracer, FORMAT_TEXT_MAP, Span, followsFrom } from 'opentracing'
 import { createTracer, TracingContext, logAndTraceCall, addTags } from './tracing'
 import { waitForConfiguration, ConfigurationFetcher } from './config'
-import { discoverAndUpdateCommit, discoverAndUpdateTips } from './commits'
 import { jobDurationHistogram, jobDurationErrorsCounter } from './worker.metrics'
 import { Job, JobStatusClean, Queue } from 'bull'
 import { createQueue } from './queue'
@@ -127,8 +126,7 @@ const createConvertJobProcessor = (xrepoDatabase: XrepoDatabase, fetchConfigurat
     })
 
     // Update commit parentage information for this commit
-    await discoverAndUpdateCommit({
-        xrepoDatabase,
+    await xrepoDatabase.discoverAndUpdateCommit({
         repository,
         commit,
         gitserverUrls: fetchConfiguration().gitServers,
@@ -154,8 +152,7 @@ const createUpdateTipsJobProcessor = (xrepoDatabase: XrepoDatabase, fetchConfigu
     args: { [K: string]: any },
     ctx: TracingContext
 ): Promise<void> =>
-    discoverAndUpdateTips({
-        xrepoDatabase,
+    xrepoDatabase.discoverAndUpdateTips({
         gitserverUrls: fetchConfiguration().gitServers,
         ctx,
     })

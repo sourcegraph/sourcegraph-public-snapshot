@@ -81,7 +81,7 @@ Unscoped search results over large repository sets may trail latest default bran
 
 ### Max file size
 
-By default, files larger than 1 MB are excluded from search results. Use the [search.largeFiles](../../admin/config/site_config/index.md#search-largeFiles) keyword to specify files to be indexed and searched regardless of size.
+By default, files larger than 1 MB are excluded from search results. Use the [search.largeFiles](../../admin/config/site_config.md#search-largeFiles) keyword to specify files to be indexed and searched regardless of size.
 
 ---
 

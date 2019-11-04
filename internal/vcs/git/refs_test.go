@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -88,7 +89,8 @@ func TestRepository_Branches_MergedInto(t *testing.T) {
 				t.Errorf("%s: Branches: %s", label, err)
 				continue
 			}
-			if !reflect.DeepEqual(branches, mergedInto) {
+			if !cmp.Equal(mergedInto, branches) {
+				t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(mergedInto, branches))
 			}
 		}
 	}

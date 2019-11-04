@@ -19,10 +19,9 @@ import {
     ResultChunkData,
     ResultChunkModel,
     DocumentPathRangeId,
-    DefinitionReferenceResultId,
-    RangeId,
     entities,
 } from './database.models'
+import { DefinitionReferenceResultId, RangeId } from './database.types'
 import { TracingContext, logSpan } from './tracing'
 
 /**

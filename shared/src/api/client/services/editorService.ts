@@ -121,6 +121,15 @@ export interface EditorService {
     removeAllEditors(): void
 }
 
+const EEDITORNOTFOUND = 'EditorNotFoundError'
+class EditorNotFoundError extends Error {
+    public readonly name = EEDITORNOTFOUND
+    public readonly code = EEDITORNOTFOUND
+    constructor(editorId: string) {
+        super(`editor not found: ${editorId}`)
+    }
+}
+
 /**
  * Creates a {@link EditorService} instance.
  */
@@ -141,7 +150,7 @@ export function createEditorService(modelService: Pick<ModelService, 'removeMode
     const getEditor = (editorId: EditorId['editorId']): CodeEditor => {
         const editor = editors.get(editorId)
         if (!editor) {
-            throw new Error(`editor not found: ${editorId}`)
+            throw new EditorNotFoundError(editorId)
         }
         return editor
     }

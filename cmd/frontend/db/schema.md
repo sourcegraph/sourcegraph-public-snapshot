@@ -49,13 +49,12 @@ Foreign-key constraints:
 ---------------+--------------------------+-------------------------------------------------------------
  id            | bigint                   | not null default nextval('campaign_plans_id_seq'::regclass)
  campaign_type | text                     | not null
- arguments     | jsonb                    | not null default '{}'::jsonb
  created_at    | timestamp with time zone | not null default now()
  updated_at    | timestamp with time zone | not null default now()
+ arguments     | text                     | not null
 Indexes:
     "campaign_plans_pkey" PRIMARY KEY, btree (id)
 Check constraints:
-    "campaign_plans_arguments_check" CHECK (jsonb_typeof(arguments) = 'object'::text)
     "campaign_plans_campaign_type_check" CHECK (campaign_type <> ''::text)
 Referenced by:
     TABLE "campaign_jobs" CONSTRAINT "campaign_jobs_campaign_plan_id_fkey" FOREIGN KEY (campaign_plan_id) REFERENCES campaign_plans(id) ON DELETE CASCADE DEFERRABLE

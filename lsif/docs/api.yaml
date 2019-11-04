@@ -1,0 +1,570 @@
+openapi: 3.0.0
+info:
+  title: LSIF Server
+  description: An internal Sourcegraph microservice that serves LSIF-powered code intelligence.
+  version: 1.0.0
+  contact:
+    name: Eric Fritz
+    email: eric@sourcegraph.com
+    url: https://sourcegraph.com
+servers:
+  - url: http://localhost:3186
+tags:
+  - name: LSIF
+    description: LSIF operations
+  - name: Dumps
+    description: Dump operations
+  - name: Jobs
+    description: Job operations
+paths:
+  /upload:
+    post:
+      description: Upload LSIF data for a particular commit and directory. Exactly one file must be uploaded, and it is assumed to be the gzipped output of an LSIF indexer.
+      tags:
+        - LSIF
+      requestBody:
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      parameters:
+        - name: repository
+          in: query
+          description: The repository name.
+          required: true
+          schema:
+            type: string
+        - name: commit
+          in: query
+          description: The 40-character commit hash.
+          required: true
+          schema:
+            type: string
+        - name: root
+          in: query
+          description: The root-relative path of the dump.
+          required: false
+          schema:
+            type: string
+        - name: skipValidation
+          in: query
+          description: If true, skip JSON schema validation of the input.
+          required: false
+          schema:
+            type: boolean
+        - name: blocking
+          in: query
+          description: If true, block the request until the upload is processed.
+          required: false
+          schema:
+            type: boolean
+        - name: maxWait
+          in: query
+          description: The maximum time (in seconds) that request will block. The job will continue asynchronously if this much time has elapesed.
+          required: false
+          schema:
+            type: number
+      responses:
+        '201':
+          description: Processed (synchronously)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadResponse'
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadResponse'
+  /exists:
+    get:
+      description: Determine if LSIF data exists for a file within a particular commit. This endpoint will return true if there is a nearby commit (direct ancestor or descendant) with LSIF data for the same file if the exact commit does not have available LSIF data.
+      tags:
+        - LSIF
+      parameters:
+        - name: repository
+          in: query
+          description: The repository name.
+          required: true
+          schema:
+            type: string
+        - name: commit
+          in: query
+          description: The 40-character commit hash.
+          required: true
+          schema:
+            type: string
+        - name: file
+          in: query
+          description: The file path within the repository (relative to the repository root).
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: boolean
+  /request:
+    post:
+      description: Answer a definitions, references, or hover LSP request. This endpoint will use a nearby commit (direct ancestor or descendant) with LSIF data for the same file if the exact commit does not have available LSIF data.
+      tags:
+        - LSIF
+      parameters:
+        - name: repository
+          in: query
+          description: The repository name.
+          required: true
+          schema:
+            type: string
+        - name: commit
+          in: query
+          description: The 40-character commit hash.
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: The maximum number of remote dumps to search for remote references per page. This parameter is only read on references request.
+          required: false
+          schema:
+            type: number
+            default: 10
+        - name: cursor
+          in: query
+          description: The end cursor given in the response of a previous page.
+          required: false
+          schema:
+            type: string
+      requestBody:
+        description: The LSP request, including the type of data being requested and the source location.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LSPRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/Locations'
+                  - $ref: '#/components/schemas/Hover'
+  /dumps/{repository}:
+    get:
+      description: Get the LSIF dumps uploaded for a repository ordered by their upload time (newest first).
+      tags:
+        - Dumps
+      parameters:
+        - name: repository
+          in: path
+          description: The url-encoded repository name.
+          required: true
+          example: github.com%2Fsourcegraph%2Flsif-go
+          schema:
+            type: string
+        - name: query
+          in: query
+          description: A search query applied over the commit and root properties.
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: The maximum number of dumps to return in one page.
+          required: false
+          schema:
+            type: number
+            default: 50
+        - name: offset
+          in: query
+          description: The number of dumps seen on previous pages.
+          required: false
+          schema:
+            type: number
+            default: 0
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dumps'
+          headers:
+            Link:
+              description: If there are more results, this header includes the URL of the next page with relation type *next*. See [RFC 5988](https://tools.ietf.org/html/rfc5988).
+              schema:
+                type: string
+  /dumps/{repository}/{id}:
+    get:
+      description: Get an LSIF dump by its identifier.
+      tags:
+        - Dumps
+      parameters:
+        - name: repository
+          in: path
+          description: The url-encoded repository name.
+          required: true
+          example: github.com%2Fsourcegraph%2Flsif-go
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: The dump identifier.
+          required: true
+          schema:
+            type: number
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dump'
+        '404':
+          description: Not found
+  /jobs/stats:
+    get:
+      description: Get the current counts of jobs by their state.
+      tags:
+        - Jobs
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stats'
+  /jobs/{state}:
+    get:
+      description: Get LSIF jobs by state.
+      tags:
+        - Jobs
+      parameters:
+        - name: state
+          in: path
+          description: The target job state.
+          required: true
+          schema:
+            type: string
+            enum:
+              - processing
+              - errored
+              - completed
+              - queued
+              - scheduled
+        - name: query
+          in: query
+          description: A search query applied over job type, job arguments, and failure (reason and stacktrace) properties.
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: The maximum number of jobs to return in one page.
+          required: false
+          schema:
+            type: number
+            default: 50
+        - name: offset
+          in: query
+          description: The number of jobs seen on previous pages.
+          required: false
+          schema:
+            type: number
+            default: 0
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Jobs'
+          headers:
+            Link:
+              description: If there are more results, this header includes the URL of the next page with relation type *next*. See [RFC 5988](https://tools.ietf.org/html/rfc5988).
+              schema:
+                type: string
+  /jobs/{id}:
+    get:
+      description: Get an LSIF job by its identifier.
+      tags:
+        - Jobs
+      parameters:
+        - name: id
+          in: path
+          description: The job identifier.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        '404':
+          description: Not Found
+components:
+  schemas:
+    Position:
+      type: object
+      description: A cursor position in a source file.
+      properties:
+        line:
+          type: number
+          description: The (zero-index) line index.
+        character:
+          type: number
+          description: The (zero-index) character index.
+      required:
+        - line
+        - character
+      additionalProperties: false
+    Range:
+      type: object
+      description: A closed range of positions in a source file.
+      properties:
+        start:
+          $ref: '#/components/schemas/Position'
+        end:
+          $ref: '#/components/schemas/Position'
+      required:
+        - start
+        - end
+      additionalProperties: false
+    Location:
+      type: object
+      description: A position in a file of a code base.
+      properties:
+        uri:
+          type: string
+          description: The root-relative path to the file.
+        range:
+          $ref: '#/components/schemas/Range'
+      required:
+        - uri
+        - range
+      additionalProperties: false
+    UploadResponse:
+      type: object
+      description: A payload indicating the job that will process this dump.
+      properties:
+        id:
+          type: string
+          description: The job identifier.
+      required:
+        - id
+      additionalProperties: false
+    LSPRequest:
+      type: object
+      description: A payload indicating the type of requested LSP data.
+      properties:
+        method:
+          type: string
+          description: The request type.
+          enum:
+            - definitions
+            - references
+            - hover
+        path:
+          type: string
+          description: The root-relative path to the file containing the hover position.
+        position:
+          $ref: '#/components/schemas/Position'
+      required:
+        - path
+        - position
+      additionalProperties: false
+    Locations:
+      type: array
+      description: A list of definition or reference locations.
+      items:
+        $ref: '#/components/schemas/Location'
+    Hover:
+      type: object
+      description: The text associated with a position in a source file.
+      properties:
+        contents:
+          type: object
+          description: The hover text wrapper.
+          properties:
+            kind:
+              type: string
+              description: An indicator for the format of the value property. Currently only markdown is supported.
+              enum:
+                - markdown
+            value:
+              type: string
+              description: The raw markdown text.
+          required:
+            - kind
+            - value
+          additionalProperties: false
+        range:
+          $ref: '#/components/schemas/Range'
+      required:
+        - contents
+      additionalProperties: false
+    Dumps:
+      type: object
+      description: A paginated wrapper for a list of dumps.
+      properties:
+        dumps:
+          type: array
+          description: A list of LSIF dumps for a repository.
+          items:
+            $ref: '#/components/schemas/Dump'
+        totalCount:
+          type: number
+          descrpition: The total number of dumps in this result set.
+      required:
+        - dumps
+        - totalCount
+      additionalProperties: false
+    Dump:
+      type: object
+      description: An LSIF dump.
+      properties:
+        id:
+          type: number
+          description: A unique identifier.
+        repository:
+          type: string
+          description: The repository name.
+        commit:
+          type: string
+          description: The 40-character commit hash.
+        root:
+          type: string
+          description: The root-relative path of the dump.
+        visibleAtTip:
+          type: boolean
+          description: Whether or not this dump can provide global reference code intelligence.
+        uploadedAt:
+          type: string
+          description: An ISO 8601-formatted time that the dump was created.
+      required:
+        - id
+        - repository
+        - commit
+        - root
+        - visibleAtTip
+        - uploadedAt
+      additionalProperties: false
+    Stats:
+      type: object
+      description: An object containing the counts of jobs by state.
+      properties:
+        processingCount:
+          type: number
+          description: The number of jobs being processed.
+        erroredCount:
+          type: number
+          description: The number of errored jobs.
+        completedCount:
+          type: number
+          description: The number of completed jobs.
+        queuedCount:
+          type: number
+          description: The number of queued jobs.
+        scheduledCount:
+          type: number
+          description: The number of scheduled jobs.
+      required:
+        - processing
+        - errored
+        - completed
+        - queued
+        - scheduled
+      additionalProperties: false
+    Jobs:
+      type: object
+      description: A paginated wrapper for a list of jobs.
+      properties:
+        jobs:
+          type: array
+          description: A list of jobs with a particular state.
+          items:
+            $ref: '#/components/schemas/Job'
+        totalCount:
+          type: number
+          description: The total number of jobs in this result set.
+      required:
+        - jobs
+      additionalProperties: false
+    Job:
+      type: object
+      description: An LSIF job.
+      properties:
+        id:
+          type: string
+          description: A unique identifier.
+        name:
+          type: string
+          description: The type of job.
+          enum:
+            - convert
+            - update-tips
+            - clean-old-jobs
+            - clean-failed-jobs
+        args:
+          type: object
+          description: The arguments passed to the job.
+          additionalProperties:
+            oneOf:
+              - type: string
+              - type: number
+              - type: boolean
+        state:
+          type: string
+          description: The job's current state.
+          enum:
+            - processing
+            - errored
+            - completed
+            - queued
+            - scheduled
+        progress:
+          type: number
+          description: A percentage progress of the job (0-100%).
+        failedReason:
+          type: string
+          description: A brief description of why the job failed.
+          nullable: true
+        stacktrace:
+          type: array
+          description: The stacktrace that caused an exception.
+          items:
+            type: string
+          nullable: true
+        timestamp:
+          type: string
+          description: An ISO 8601-formatted time that the job was queued.
+        processedOn:
+          type: string
+          description: An ISO 8601-formatted time that the job was processed.
+          nullable: true
+        finishedOn:
+          type: string
+          description: An ISO 8601-formatted time that the job was completed.
+          nullable: true
+      required:
+        - id
+        - name
+        - args
+        - state
+        - progress
+        - failedReason
+        - stacktrace
+        - timestamp
+        - processedOn
+        - finishedOn
+      additionalProperties: false

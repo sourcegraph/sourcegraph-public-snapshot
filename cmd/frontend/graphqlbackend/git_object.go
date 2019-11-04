@@ -61,7 +61,7 @@ func (o *gitObject) AbbreviatedOID(ctx context.Context) (string, error) {
 }
 
 func (o *gitObject) Commit(ctx context.Context) (*GitCommitResolver, error) {
-	return o.repo.Commit(ctx, &repositoryCommitArgs{Rev: string(o.oid)})
+	return o.repo.Commit(ctx, &RepositoryCommitArgs{Rev: string(o.oid)})
 }
 func (o *gitObject) Type(context.Context) (gitObjectType, error) { return o.typ, nil }
 
@@ -111,7 +111,7 @@ func (o *gitObjectResolver) Commit(ctx context.Context) (*GitCommitResolver, err
 	if err != nil {
 		return nil, err
 	}
-	return o.repo.Commit(ctx, &repositoryCommitArgs{Rev: string(oid)})
+	return o.repo.Commit(ctx, &RepositoryCommitArgs{Rev: string(oid)})
 }
 
 func (o *gitObjectResolver) Type(ctx context.Context) (gitObjectType, error) {

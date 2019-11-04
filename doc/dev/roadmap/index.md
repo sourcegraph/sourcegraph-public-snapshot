@@ -31,7 +31,7 @@ Our current product priorities are:
 
 Sourcegraph is intuitive to use for a wide range of roles, from developers to PMs, engineering managers, data analysts, and more. It adds value to this wide range of roles by making more information about code available, such as language statistics and dependency graphs. [Search has an improved UI](https://docs.google.com/document/d/1Vo7HlwO_HgrK8O-VEIZ9wHuSyHdEA0zk9qucNCoF0jg/edit?usp=sharing) that makes it more accessible, easier to use, and faster to drill down on what you're looking for.
 
-Improving upon on our [basic code intelligence](../../user/code_intelligence.md) that works for every language, Sourcegraph provides precise code intelligence for a subset of common languages including Go, TypeScript, C/C++, Java, and C#.
+Improving upon on our [basic code intelligence](../../user/code_intelligence/index.md) that works for every language, Sourcegraph provides precise code intelligence for a subset of common languages including Go, TypeScript, C/C++, Java, and C#.
 
 ### Enhanced scalablity, reliability, and security
 
