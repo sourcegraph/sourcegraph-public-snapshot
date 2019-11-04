@@ -29,6 +29,7 @@ async function testLogin(
         loginToAuthProvider,
     }: {
         sourcegraphBaseUrl: string
+
         managementConsoleUrl: string
         managementConsolePassword: string
         authProvider: (GitHubAuthProvider | GitLabAuthProvider | SAMLAuthProvider | OpenIDConnectAuthProvider) & {
@@ -60,6 +61,14 @@ async function testLogin(
     } catch (err) {
         throw new Error('unsuccessful login')
     }
+
+    await (await driver.page.waitForSelector('.e2e-user-nav-item-toggle')).click()
+    await (await driver.findElementWithText('Sign out', { wait: { timeout: 2000 } })).click()
+    await driver.findElementWithText('Signed out of Sourcegraph', { wait: { timeout: 2000 } })
+    await driver.page.goto(sourcegraphBaseUrl)
+    // >>>>>> TODO: this assumes > 1 auth provider
+    await driver.findElementWithText('Sign in', { wait: { timeout: 5000 } })
+    await driver.findElementWithText('Forgot password?', { wait: { timeout: 5000 } })
 }
 
 async function loginToOkta(driver: Driver, username: string, password: string): Promise<void> {
@@ -136,61 +145,69 @@ describe('Auth regression test suite', () => {
         }
     }, 10 * 1000)
 
-    test('Sign in via GitHub', async () => {
-        await testLogin(driver, resourceManager, {
-            ...config,
-            managementConsolePassword,
-            authProvider: {
-                type: 'github',
-                displayName: '[TEST] GitHub.com',
-                clientID: config.gitHubClientID,
-                clientSecret: config.gitHubClientSecret,
-                allowSignup: true,
-            },
-            loginToAuthProvider: async () => {
-                await driver.page.waitForSelector('#login_field')
-                await driver.replaceText({
-                    selector: '#login_field',
-                    newText: 'sg-e2e-regression-test-amy',
-                    selectMethod: 'keyboard',
-                    enterTextMethod: 'paste',
-                })
-                await driver.replaceText({
-                    selector: '#password',
-                    newText: config.gitHubUserAmyPassword,
-                    selectMethod: 'keyboard',
-                    enterTextMethod: 'paste',
-                })
-                await driver.page.keyboard.press('Enter')
-            },
-        })
-    })
+    test(
+        'Sign in via GitHub',
+        async () => {
+            await testLogin(driver, resourceManager, {
+                ...config,
+                managementConsolePassword,
+                authProvider: {
+                    type: 'github',
+                    displayName: '[TEST] GitHub.com',
+                    clientID: config.gitHubClientID,
+                    clientSecret: config.gitHubClientSecret,
+                    allowSignup: true,
+                },
+                loginToAuthProvider: async () => {
+                    await driver.page.waitForSelector('#login_field')
+                    await driver.replaceText({
+                        selector: '#login_field',
+                        newText: 'sg-e2e-regression-test-amy',
+                        selectMethod: 'keyboard',
+                        enterTextMethod: 'paste',
+                    })
+                    await driver.replaceText({
+                        selector: '#password',
+                        newText: config.gitHubUserAmyPassword,
+                        selectMethod: 'keyboard',
+                        enterTextMethod: 'paste',
+                    })
+                    await driver.page.keyboard.press('Enter')
+                },
+            })
+        },
+        20 * 1000
+    )
 
-    test('Sign in with GitLab', async () => {
-        await testLogin(driver, resourceManager, {
-            ...config,
-            managementConsolePassword,
-            authProvider: {
-                type: 'gitlab',
-                displayName: '[TEST] GitLab.com',
-                clientID: config.gitLabClientID,
-                clientSecret: config.gitLabClientSecret,
-                allowSignup: true,
-            },
-            loginToAuthProvider: async () => {
-                await driver.page.waitForSelector('input[name="user[login]"]', { timeout: 2000 })
-                await driver.replaceText({
-                    selector: '#user_login',
-                    newText: 'sg-e2e-regression-test-amy',
-                })
-                await driver.replaceText({
-                    selector: '#user_password',
-                    newText: config.gitLabUserAmyPassword,
-                })
-                await (await driver.page.waitForSelector('input[data-qa-selector="sign_in_button"]')).click()
-            },
-        })
-    })
+    test(
+        'Sign in with GitLab',
+        async () => {
+            await testLogin(driver, resourceManager, {
+                ...config,
+                managementConsolePassword,
+                authProvider: {
+                    type: 'gitlab',
+                    displayName: '[TEST] GitLab.com',
+                    clientID: config.gitLabClientID,
+                    clientSecret: config.gitLabClientSecret,
+                    allowSignup: true,
+                },
+                loginToAuthProvider: async () => {
+                    await driver.page.waitForSelector('input[name="user[login]"]', { timeout: 2000 })
+                    await driver.replaceText({
+                        selector: '#user_login',
+                        newText: 'sg-e2e-regression-test-amy',
+                    })
+                    await driver.replaceText({
+                        selector: '#user_password',
+                        newText: config.gitLabUserAmyPassword,
+                    })
+                    await (await driver.page.waitForSelector('input[data-qa-selector="sign_in_button"]')).click()
+                },
+            })
+        },
+        20 * 1000
+    )
 
     test(
         'Sign in with Okta SAML',
@@ -209,19 +226,23 @@ describe('Auth regression test suite', () => {
         20 * 1000
     )
 
-    test('Sign in with Okta OpenID Connect', async () => {
-        await testLogin(driver, resourceManager, {
-            ...config,
-            managementConsolePassword,
-            authProvider: {
-                type: 'openidconnect',
-                displayName: '[TEST] Okta OpenID Connect',
-                issuer: 'https://dev-433675.oktapreview.com',
-                clientID: '0oao8w32qpPNB8tnU0h7',
-                clientSecret: 'pHCg8h8Dr0yaBzBEqBGM4NWjXSAzLqp8OtcYGUqA',
-                requireEmailDomain: 'sourcegraph.com',
-            },
-            loginToAuthProvider: () => loginToOkta(driver, oktaUserAmy, config.oktaUserAmyPassword),
-        })
-    })
+    test(
+        'Sign in with Okta OpenID Connect',
+        async () => {
+            await testLogin(driver, resourceManager, {
+                ...config,
+                managementConsolePassword,
+                authProvider: {
+                    type: 'openidconnect',
+                    displayName: '[TEST] Okta OpenID Connect',
+                    issuer: 'https://dev-433675.oktapreview.com',
+                    clientID: '0oao8w32qpPNB8tnU0h7',
+                    clientSecret: 'pHCg8h8Dr0yaBzBEqBGM4NWjXSAzLqp8OtcYGUqA',
+                    requireEmailDomain: 'sourcegraph.com',
+                },
+                loginToAuthProvider: () => loginToOkta(driver, oktaUserAmy, config.oktaUserAmyPassword),
+            })
+        },
+        20 * 1000
+    )
 })
