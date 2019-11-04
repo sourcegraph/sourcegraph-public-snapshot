@@ -269,8 +269,8 @@ export class XrepoDatabase {
      * @param repository The repository name.
      * @param commits The commit parentage data.
      */
-    public async updateCommits(repository: string, commits: [string, string][]): Promise<void> {
-        return await this.withTransactionalEntityManager(async entityManager => {
+    public updateCommits(repository: string, commits: [string, string][]): Promise<void> {
+        return this.withTransactionalEntityManager(async entityManager => {
             const commitInserter = new TableInserter(
                 entityManager,
                 Commit,

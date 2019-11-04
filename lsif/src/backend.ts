@@ -502,7 +502,7 @@ export class Backend {
         ctx: TracingContext = {}
     ): Promise<lsp.Hover | null> {
         const { database, dump, ctx: newCtx } = await this.loadClosestDatabase(repository, commit, path, ctx)
-        return await database.hover(this.pathToDatabase(dump.root, path), position, newCtx)
+        return database.hover(this.pathToDatabase(dump.root, path), position, newCtx)
     }
 
     /**
@@ -518,13 +518,13 @@ export class Backend {
      * @param file One of the files in the dump.
      * @param ctx The tracing context.
      */
-    private async loadClosestDatabase(
+    private loadClosestDatabase(
         repository: string,
         commit: string,
         file: string,
         ctx: TracingContext = {}
     ): Promise<{ database: Database; dump: LsifDump; ctx: TracingContext }> {
-        return await logAndTraceCall(ctx, 'loading closest database', async ctx => {
+        return logAndTraceCall(ctx, 'loading closest database', async ctx => {
             // Determine the closest commit that we actually have LSIF data for. If the commit is
             // not tracked, then commit data is requested from gitserver and insert the ancestors
             // data for this commit.
