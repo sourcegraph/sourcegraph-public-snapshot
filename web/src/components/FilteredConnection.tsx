@@ -569,6 +569,11 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                                             connectionOrError: c,
                                             connectionQuery: query,
                                             loading: false,
+                                            // If our response has a page info object, try to pull the end cursor out of
+                                            // it so we can pass it to the subsequent request.
+                                            ...(c && !isErrorLike(c) && c.pageInfo
+                                                ? { after: c.pageInfo.endCursor || undefined }
+                                                : {}),
                                         }
                                     }
                                 ),
@@ -595,23 +600,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                         }
                     })
                 )
-                .subscribe(
-                    stateUpdate => {
-                        // If our response has a page info object, try to pull the end cursor out of
-                        // it so we can pass it to the subsequent request.
-                        let additionalUpdates = {}
-                        const c = stateUpdate.connectionOrError
-                        if (c && !isErrorLike(c) && c.pageInfo) {
-                            additionalUpdates = { after: c.pageInfo.endCursor || undefined }
-                        }
-
-                        this.setState({
-                            ...stateUpdate,
-                            ...additionalUpdates,
-                        })
-                    },
-                    err => console.error(err)
-                )
+                .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
         )
 
         this.subscriptions.add(
