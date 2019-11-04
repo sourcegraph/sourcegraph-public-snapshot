@@ -15,14 +15,12 @@ import {
     resultChunkCacheCapacityGauge,
 } from './cache.metrics'
 import { dbFilename, dbFilenameOld, ensureDirectory, readEnvInt } from './util'
-import { createGzip } from 'mz/zlib'
 import { createPostgresConnection } from './connection'
 import { Backend, ReferencePaginationCursor } from './backend'
 import { logger as loggingMiddleware } from 'express-winston'
 import { Logger } from 'winston'
-import { pipeline as _pipeline, Readable } from 'stream'
+import { pipeline as _pipeline } from 'stream'
 import { promisify } from 'util'
-import { readGzippedJsonElements, stringifyJsonLines, validateLsifElements } from './input'
 import { wrap } from 'async-middleware'
 import { XrepoDatabase } from './xrepo'
 import { createTracer, logAndTraceCall, TracingContext, addTags } from './tracing'
@@ -303,27 +301,21 @@ function lsifEndpoints(backend: Backend, queue: Queue, logger: Logger, tracer: T
         '/upload',
         wrap(
             async (req: express.Request & { span?: Span }, res: express.Response): Promise<void> => {
-                const { repository, commit, root, skipValidation: skipValidationRaw, blocking, maxWait } = req.query
-                const skipValidation = skipValidationRaw === 'true'
+                const { repository, commit, root, blocking, maxWait } = req.query
                 const timeout = parseInt(maxWait, 10) || 0
                 checkRepository(repository)
                 checkCommit(commit)
 
-                const ctx = createTracingContext(logger, req, { repository, commit, root })
+                const ctx = createTracingContext(logger, req, {
+                    repository,
+                    commit,
+                    root,
+                })
                 const filename = path.join(STORAGE_ROOT, constants.UPLOADS_DIR, uuid.v4())
                 const output = fs.createWriteStream(filename)
 
                 try {
-                    await logAndTraceCall(ctx, 'uploading dump', async () => {
-                        await pipeline(
-                            skipValidation
-                                ? req
-                                : Readable.from(
-                                      stringifyJsonLines(validateLsifElements(readGzippedJsonElements(req)))
-                                  ).pipe(createGzip()),
-                            output
-                        )
-                    })
+                    await logAndTraceCall(ctx, 'uploading dump', () => pipeline(req, output))
                 } catch (e) {
                     throw Object.assign(e, { status: 422 })
                 }
