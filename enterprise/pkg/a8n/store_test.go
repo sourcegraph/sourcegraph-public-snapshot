@@ -1043,6 +1043,8 @@ func testStore(db *sql.DB) func(*testing.T) {
 						RepoID:         1,
 						Diff:           "+ foobar - barfoo",
 						Error:          "only set on error",
+						StartedAt:      now,
+						FinishedAt:     now.Add(time.Second),
 					}
 
 					want := c.Clone()
@@ -1157,6 +1159,34 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 						cursor = next
 					}
+				}
+
+				{
+					opts := ListCampaignJobsOpts{FinishedBefore: now.Add(time.Second)}
+					have, _, err := s.ListCampaignJobs(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					want := campaignJobs
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatalf("opts: %+v, diff: %s", opts, diff)
+					}
+
+				}
+
+				{
+					opts := ListCampaignJobsOpts{FinishedBefore: now}
+					have, _, err := s.ListCampaignJobs(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					want := []*a8n.CampaignJob{}
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatalf("opts: %+v, diff: %s", opts, diff)
+					}
+
 				}
 			})
 

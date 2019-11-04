@@ -1579,6 +1579,7 @@ func getCampaignJobQuery(opts *GetCampaignJobOpts) *sqlf.Query {
 // listing code mods.
 type ListCampaignJobsOpts struct {
 	CampaignPlanID int64
+	FinishedBefore time.Time
 	Cursor         int64
 	Limit          int
 }
@@ -1636,6 +1637,10 @@ func listCampaignJobsQuery(opts *ListCampaignJobsOpts) *sqlf.Query {
 
 	if opts.CampaignPlanID != 0 {
 		preds = append(preds, sqlf.Sprintf("campaign_plan_id = %s", opts.CampaignPlanID))
+	}
+
+	if !opts.FinishedBefore.IsZero() {
+		preds = append(preds, sqlf.Sprintf("finished_at <= %s", opts.FinishedBefore))
 	}
 
 	return sqlf.Sprintf(
