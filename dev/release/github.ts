@@ -1,6 +1,6 @@
 import Octokit from '@octokit/rest'
 import { readLine } from './util'
-import { readFile } from 'fs-extra'
+import { readFile } from 'mz/fs'
 
 export async function ensureTrackingIssue({
     version,
