@@ -7,7 +7,7 @@ import { databaseQueryDurationHistogram, databaseQueryErrorsCounter } from './da
 import { DefaultMap } from './default-map'
 import { gunzipJSON } from './encoding'
 import { isEqual, uniqWith } from 'lodash'
-import { PackageModel, DumpId } from './xrepo.models'
+import { DumpId, LsifDump } from './xrepo.models'
 import {
     DefinitionModel,
     DocumentData,
@@ -445,12 +445,12 @@ export function sortMonikers(monikers: MonikerData[]): MonikerData[] {
  * Construct a URI that can be used by the frontend to switch to another
  * directory.
  *
- * @param pkg The target package.
+ * @param dump The target dump.
  * @param path The path relative to the project root.
  */
-export function createRemoteUri(pkg: PackageModel, path: string): string {
-    const url = new URL(`git://${pkg.dump.repository}`)
-    url.search = pkg.dump.commit
+export function createRemoteUri(dump: LsifDump, path: string): string {
+    const url = new URL(`git://${dump.repository}`)
+    url.search = dump.commit
     url.hash = path
     return url.href
 }

@@ -115,23 +115,16 @@ describe('comparePosition', () => {
 
 describe('createRemoteUri', () => {
     it('should generate a URI to another project', () => {
-        const pkg = {
+        const dump = {
             id: 0,
-            scheme: '',
-            name: '',
-            version: '',
-            dump: {
-                id: 0,
-                repository: 'github.com/sourcegraph/codeintellify',
-                commit: 'deadbeef',
-                root: '',
-                visibleAtTip: false,
-                uploadedAt: new Date(),
-            },
-            dump_id: 0,
+            repository: 'github.com/sourcegraph/codeintellify',
+            commit: 'deadbeef',
+            root: '',
+            visibleAtTip: false,
+            uploadedAt: new Date(),
         }
 
-        const uri = createRemoteUri(pkg, 'src/position.ts')
+        const uri = createRemoteUri(dump, 'src/position.ts')
         expect(uri).toEqual('git://github.com/sourcegraph/codeintellify?deadbeef#src/position.ts')
     })
 })

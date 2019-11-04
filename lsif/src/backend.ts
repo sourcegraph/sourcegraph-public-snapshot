@@ -279,7 +279,7 @@ export class Backend {
         )
         return (await db.monikerResults(model, moniker, ctx)).map(loc =>
             mapLocation(
-                uri => createRemoteUri(packageEntity, uri),
+                uri => createRemoteUri(packageEntity.dump, uri),
                 this.locationFromDatabase(packageEntity.dump.root, loc)
             )
         )
@@ -288,13 +288,13 @@ export class Backend {
     /**
      * Find the references of the target moniker outside of the current database. If the moniker
      * has attached package information, then the cross-repo database is queried for the packages
-     * that require this particular moniker identifier. These databases are opened, and their
+     * that require this particular moniker identifier. These dumps are opened, and their
      * references tables are queried for the target moniker.
      *
      * @param dumpId The ID of the dump for which this database answers queries.
      * @param moniker The target moniker.
      * @param packageInformation The target package.
-     * @param limit The maximum number of remote repositodumpsries to search.
+     * @param limit The maximum number of remote dumps to search.
      * @param offset The number of remote dumps to skip.
      * @param ctx The tracing context.
      */
@@ -336,7 +336,10 @@ export class Backend {
             )
 
             const references = (await db.monikerResults(ReferenceModel, moniker, ctx)).map(loc =>
-                mapLocation(uri => createRemoteUri(reference, uri), this.locationFromDatabase(reference.dump.root, loc))
+                mapLocation(
+                    uri => createRemoteUri(reference.dump, uri),
+                    this.locationFromDatabase(reference.dump.root, loc)
+                )
             )
             locations = locations.concat(references)
         }
