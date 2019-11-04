@@ -305,8 +305,8 @@ export class Backend {
         limit: number,
         offset: number,
         ctx: TracingContext = {}
-    ): Promise<{ locations: lsp.Location[]; count: number }> {
-        const { references, count } = await this.xrepoDatabase.getReferences({
+    ): Promise<{ locations: lsp.Location[]; count: number; newOffset: number }> {
+        const { references, count, newOffset } = await this.xrepoDatabase.getReferences({
             scheme: moniker.scheme,
             identifier: moniker.identifier,
             name: packageInformation.name,
@@ -341,7 +341,7 @@ export class Backend {
             locations = locations.concat(references)
         }
 
-        return { locations, count }
+        return { locations, count, newOffset }
     }
 
     /**
@@ -376,7 +376,7 @@ export class Backend {
             const moniker = { scheme: cursor.scheme, identifier: cursor.identifier }
             const packageInformation = { name: cursor.name, version: cursor.version }
 
-            const { locations, count } = await this.remoteReferences(
+            const { locations, count, newOffset } = await this.remoteReferences(
                 cursor.dumpId,
                 moniker,
                 packageInformation,
@@ -388,7 +388,7 @@ export class Backend {
             return {
                 locations,
                 // Return a cursor for the next page of results (if there are any)
-                cursor: offset + limit < count ? { ...cursor, offset: offset + limit } : undefined,
+                cursor: newOffset < count ? { ...cursor, offset: newOffset } : undefined,
             }
         }
 
@@ -443,7 +443,7 @@ export class Backend {
                     continue
                 }
 
-                const { locations: remoteResults, count } = await this.remoteReferences(
+                const { locations: remoteResults, count, newOffset } = await this.remoteReferences(
                     dump.id,
                     moniker,
                     packageInformation,
@@ -465,14 +465,14 @@ export class Backend {
                         identifier: moniker.identifier,
                         name: packageInformation.name,
                         version: packageInformation.version,
-                        offset: offset + limit,
+                        offset: newOffset,
                     }
 
                     return {
                         // TODO - determine source of duplication (and below)
                         locations: uniqWith(locations.concat(remoteResults), isEqual),
                         // Don't return a cursor if we've hit the end of the result set
-                        cursor: offset + limit < count ? cursor : undefined,
+                        cursor: newOffset < count ? cursor : undefined,
                     }
                 }
             }
