@@ -366,8 +366,8 @@ interface FilteredConnectionState<C extends Connection<N>, N> extends Connection
     queried: boolean
 
     /**
-     * When `cursorPaging` is true, this mains the set of node that should be prepended to a subsequent
-     * result set. This list iss cleared when the query or active filters change, and is updated to reflect
+     * When `cursorPaging` is true, this is the set of node that should be prepended to a subsequent
+     * result set. This list is cleared when the query or active filters change, and is updated to reflect
      * the results of a new page after each successful request.
      */
     previousPage: N[]
@@ -442,9 +442,9 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
 
         const q = new URLSearchParams(this.props.location.search)
 
-        // Note: Do not set `after` from the URL, as this doesn't track the number
-        // of results on the previous page. This makes the count look broken when
-        // coming to a page in the middle of a set of results.
+        // Note: in the initial state, do not set `after` from the URL, as this doesn't
+        // track the number of results on the previous page. This makes the count look
+        // broken when coming to a page in the middle of a set of results.
         //
         // For example:
         //   (1) come to page with first = 20
@@ -518,10 +518,10 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                                 search: this.urlQuery({
                                     query,
                                     filter,
-                                    // IF we've made a request, update the variable to be the number of
+                                    // If we've made a request, update the variable to be the number of
                                     // results visible from previous requests. If we haven't made a request
-                                    // yet, pass the value we extracted from the URL so we don't clear it
-                                    // prematurely.
+                                    // yet, pass the original `previousPagesCount` value we extracted from
+                                    // the URL so we don't clear it prematurely.
                                     previousPagesCount: this.state.queried
                                         ? this.state.previousPage.length
                                         : this.state.previousPagesCount,
@@ -538,6 +538,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
 
                         const result = this.props
                             .queryConnection({
+                                // Load the correct number of initial visible results, or request the next page
                                 first: this.state.first + ((!this.state.queried && this.state.previousPagesCount) || 0),
                                 after: this.state.after,
                                 query,
@@ -556,6 +557,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                                                 this.setState(
                                                     state => ({ previousPage: state.previousPage.concat(c.nodes) }),
                                                     () => {
+                                                        // Update the connection's nodes to the concatenated set of results.
                                                         c.nodes = this.state.previousPage
                                                         resolve()
                                                     }
@@ -591,22 +593,25 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                         if (this.props.onUpdate) {
                             this.props.onUpdate(connectionOrError)
                         }
-
-                        // If our response has a page info object, try to pull the end cursor out of
-                        // it so we can pass it to the subsequent request.
-                        //
-                        // TODO - outdated?
-                        //
-                        // We'll either update or unset the after cursor here so it is not used twice.
-                        if (connectionOrError && !isErrorLike(connectionOrError) && connectionOrError.pageInfo) {
-                            this.setState({ after: connectionOrError.pageInfo.endCursor || undefined })
-                        } else {
-                            // TODO - necessary?
-                            resetCursor()
-                        }
                     })
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
+                .subscribe(
+                    stateUpdate => {
+                        // If our response has a page info object, try to pull the end cursor out of
+                        // it so we can pass it to the subsequent request.
+                        let additionalUpdates = {}
+                        const c = stateUpdate.connectionOrError
+                        if (c && !isErrorLike(c) && c.pageInfo) {
+                            additionalUpdates = { after: c.pageInfo.endCursor || undefined }
+                        }
+
+                        this.setState({
+                            ...stateUpdate,
+                            ...additionalUpdates,
+                        })
+                    },
+                    err => console.error(err)
+                )
         )
 
         this.subscriptions.add(
