@@ -1781,8 +1781,8 @@ func scanCampaignJob(c *a8n.CampaignJob, s scanner) error {
 		&c.Rev,
 		&c.Diff,
 		&c.Error,
-		&c.StartedAt,
-		&c.FinishedAt,
+		&dbutil.NullTime{Time: &c.StartedAt},
+		&dbutil.NullTime{Time: &c.FinishedAt},
 		&c.CreatedAt,
 		&c.UpdatedAt,
 	)
