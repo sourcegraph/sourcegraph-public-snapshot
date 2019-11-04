@@ -42,7 +42,7 @@ const lineage_ancestors = `
  * is available earlier in the query. The CTE `lineage_ancestors` (defined above) can be used
  * as such a CTE definition.
  */
-const ctes = `
+const visibleDumps = `
     -- Limit the visibility to the maximum traversal depth and approximate
     -- each commit's depth by its row number.
     limited_lineage AS (
