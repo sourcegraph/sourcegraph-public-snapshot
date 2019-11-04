@@ -301,7 +301,8 @@ function lsifEndpoints(backend: Backend, queue: Queue, logger: Logger, tracer: T
         '/upload',
         wrap(
             async (req: express.Request & { span?: Span }, res: express.Response): Promise<void> => {
-                const { repository, commit, root, blocking, maxWait } = req.query
+                const { repository, commit, root: rootRaw, blocking, maxWait } = req.query
+                const root = normalizeRoot(rootRaw)
                 const timeout = parseInt(maxWait, 10) || 0
                 checkRepository(repository)
                 checkCommit(commit)
@@ -322,7 +323,7 @@ function lsifEndpoints(backend: Backend, queue: Queue, logger: Logger, tracer: T
 
                 // Enqueue convert job
                 logger.debug('enqueueing convert job', { repository, commit, root })
-                const args = { repository, commit, root: root || '', filename }
+                const args = { repository, commit, root, filename }
                 const job = await enqueue(queue, 'convert', args, {}, tracer, ctx.span)
 
                 if (blocking) {
@@ -635,6 +636,26 @@ function checkMethod(method: string, supportedMethods: string[]): void {
             status: 422,
         })
     }
+}
+
+/**
+ * Adds a trailing slash to a root unless it refers to the top level.
+ *
+ * - 'foo' -> 'foo/'
+ * - 'foo/' -> 'foo/'
+ * - '/' -> ''
+ * - '' -> ''
+ */
+function normalizeRoot(root: any): string {
+    if (root === undefined || root === '/' || root === '') {
+        return ''
+    }
+    if (typeof root !== 'string') {
+        throw Object.assign(new Error('root must be a string'), {
+            status: 422,
+        })
+    }
+    return root.endsWith('/') ? root : root + '/'
 }
 
 /**

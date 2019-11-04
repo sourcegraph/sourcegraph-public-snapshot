@@ -43,7 +43,8 @@ paths:
             type: string
         - name: root
           in: query
-          description: The root-relative path of the dump.
+          description: The path to the directory associated with the dump, relative to the repository root.
+          example: cmd/project1
           required: false
           schema:
             type: string
