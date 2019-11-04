@@ -6,6 +6,8 @@
 # precedence.
 
 # Top-level catch-alls (these are weaker confidence and might need to be reassigned at some point)
+*.ts @sourcegraph/web
+*.tsx @sourcegraph/web
 /enterprise/cmd/frontend @beyang @slimsag
 /enterprise/cmd/server @beyang @slimsag
 /enterprise/dev @beyang
