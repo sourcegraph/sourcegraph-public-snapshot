@@ -15,7 +15,7 @@ import (
 // used for the (ExternalRepoSpec).ServiceID field (and passed to XyzExternalRepoSpec) instead of a non-normalized
 // base URL.
 //
-// DEPRECATED in favor of externalservice.NormalizeBaseURL
+// Deprecated: use externalservice.NormalizeBaseURL instead.
 func NormalizeBaseURL(baseURL *url.URL) *url.URL {
 	baseURL.Host = strings.ToLower(baseURL.Host)
 	if !strings.HasSuffix(baseURL.Path, "/") {

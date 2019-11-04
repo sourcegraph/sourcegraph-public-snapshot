@@ -9,6 +9,15 @@ export interface ExtDocumentsAPI extends ProxyValue {
     $acceptDocumentData(modelUpdates: readonly TextModelUpdate[]): void
 }
 
+const EDOCUMENTNOTFOUND = 'DocumentNotFoundError'
+class DocumentNotFoundError extends Error {
+    public readonly name = EDOCUMENTNOTFOUND
+    public readonly code = EDOCUMENTNOTFOUND
+    constructor(resource: string) {
+        super(`document not found: ${resource}`)
+    }
+}
+
 /** @internal */
 export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
     public readonly [proxyValueSymbol] = true
@@ -25,7 +34,7 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
     public get(resource: string): ExtDocument {
         const doc = this.documents.get(resource)
         if (!doc) {
-            throw new Error(`document not found: ${resource}`)
+            throw new DocumentNotFoundError(resource)
         }
         return doc
     }

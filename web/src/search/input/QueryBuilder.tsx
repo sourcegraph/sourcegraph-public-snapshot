@@ -2,8 +2,10 @@ import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import * as React from 'react'
 import { InfoDropdown } from './InfoDropdown'
 import { QueryBuilderInputRow } from './QueryBuilderInputRow'
+import { PatternTypeProps } from '..'
+import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 
-interface Props {
+interface Props extends Omit<PatternTypeProps, 'togglePatternType'> {
     /**
      * Called when there is a change to the query synthesized from this
      * component's fields.
@@ -83,7 +85,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
                             fieldsQueryParts.push(inputValue)
                         } else if (inputField === 'exactMatch') {
                             // Exact matches don't have a literal field operator (e.g. exactMatch:) in the query.
-                            fieldsQueryParts.push(formatFieldForQuery('', inputValue, true))
+                            fieldsQueryParts.push(formatExactMatchField(inputValue, this.props.patternType))
                         } else if (inputField === 'type' && inputValue === 'code') {
                             // code searches don't need to be specified.
                             continue
@@ -392,7 +394,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
 
 /**
  *
- * @param alwaysQuote if true, the value will always be wrapped in quotes. Used for fields like exactMatch.
+ * @param alwaysQuote if true, the value will always be wrapped in quotes.
  */
 function formatFieldForQuery(field: string, value: string, alwaysQuote?: boolean): string {
     // The user shouldn't include the 'repo:' (or other field name) in the value, but
@@ -409,4 +411,18 @@ function formatFieldForQuery(field: string, value: string, alwaysQuote?: boolean
     }
 
     return field ? `${field}:${value}` : value
+}
+
+/**
+ * Formats the value passed to the exact match field, wrapping it with quotes depending on whether
+ * it's in regexp or literal mode.
+ * @param value the value passed to the exactMatch
+ * @param patternType the current patternType
+ */
+function formatExactMatchField(value: string, patternType: SearchPatternType): string {
+    if (patternType === SearchPatternType.literal) {
+        return value
+    }
+
+    return JSON.stringify(value)
 }

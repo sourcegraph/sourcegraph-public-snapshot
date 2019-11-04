@@ -8,7 +8,7 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
     className="registry-extension-overview-page__readme mr-3"
   >
     <div
-      className="markdown undefined"
+      className="markdown"
       dangerouslySetInnerHTML={
         Object {
           "__html": "<p><strong>A</strong></p>

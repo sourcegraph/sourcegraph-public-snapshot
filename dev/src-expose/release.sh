@@ -9,8 +9,8 @@ echo "src-expose built from https://github.com/sourcegraph/sourcegraph" > info.t
 echo >> info.txt
 git log -n1 >> info.txt
 mkdir linux-amd64 darwin-amd64
-CGO_ENABLED=0 GOOS=linux go build -o linux-amd64/src-expose github.com/sourcegraph/sourcegraph/dev/src-expose
-CGO_ENABLED=0 GOOS=darwin go build -o darwin-amd64/src-expose github.com/sourcegraph/sourcegraph/dev/src-expose
+CGO_ENABLED=0 GOOS=linux go build -trimpath -o linux-amd64/src-expose github.com/sourcegraph/sourcegraph/dev/src-expose
+CGO_ENABLED=0 GOOS=darwin go build -trimpath -o darwin-amd64/src-expose github.com/sourcegraph/sourcegraph/dev/src-expose
 cd -
 rm -rf src-expose/latest
 cp -r "src-expose/$(git rev-parse HEAD)" src-expose/latest

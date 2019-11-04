@@ -2,15 +2,17 @@ package query
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
+
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
-var fieldRx = regexp.MustCompile(`^-?[a-zA-Z]+:`)
+var fieldRx = lazyregexp.New(`^-?[a-zA-Z]+:`)
 
 // ConvertToLiteral quotes the input query for literal search.
 func ConvertToLiteral(input string) string {
 	tokens := tokenize(input)
+
 	// Sort the tokens into fields and non-fields.
 	var fields, nonFields []string
 	for _, t := range tokens {
@@ -41,10 +43,16 @@ func ConvertToLiteral(input string) string {
 	return input
 }
 
-var tokenRx = regexp.MustCompile(`("([^"\\]|[\\].)*"|\s+|\S+)`)
+var fieldWithQuotedTokenValue = lazyregexp.New(`(\b-?[a-zA-Z]+:("([^"\\]|[\\].)*"|'([^'\\]|[\\].)*'))`)
+var tokenRx = lazyregexp.New(`("([^"\\]|[\\].)*"|\s+|\S+)`)
 
 // tokenize returns a slice of the double-quoted strings, contiguous chunks
 // of non-whitespace, and contiguous chunks of whitespace in the input.
 func tokenize(input string) []string {
-	return tokenRx.FindAllString(input, -1)
+	// Find all tokens with quoted values, and then remove them from the original input
+	matchedTokens := fieldWithQuotedTokenValue.FindAllString(input, -1)
+	modifiedInput := fieldWithQuotedTokenValue.ReplaceAllString(input, "")
+
+	// Find all remaining tokens
+	return append(matchedTokens, tokenRx.FindAllString(modifiedInput, -1)...)
 }

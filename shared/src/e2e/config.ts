@@ -17,6 +17,7 @@ export interface Config {
     includeAdminOnboarding: boolean
     testUserPassword: string
     noCleanup: boolean
+    logStatusMessages: boolean
     logBrowserConsole: boolean
     slowMo: number
     headless: boolean
@@ -105,7 +106,7 @@ const configFields: ConfigFields = {
         envVar: 'NO_CLEANUP',
         parser: parseBool,
         description:
-            "If true, regression tests will not clean up users, external services, or other resources they create. Set this to true if running against a dev instance (as it'll make test runs faster). Set to false if running against production",
+            "If true, regression tests will not clean up users, external services, or other resources they create. Set this to true if running against a dev instance (as it'll make test runs faster). Set to false if running against production.",
     },
     keepBrowser: {
         envVar: 'KEEP_BROWSER',
@@ -116,8 +117,14 @@ const configFields: ConfigFields = {
     logBrowserConsole: {
         envVar: 'LOG_BROWSER_CONSOLE',
         parser: parseBool,
-        description: 'If true, log browser console to stdout',
+        description: 'If true, log browser console to stdout.',
         defaultValue: false,
+    },
+    logStatusMessages: {
+        envVar: 'LOG_STATUS_MESSAGES',
+        parser: parseBool,
+        description:
+            'If true, logs status messages to console. This does not log the browser console (use LOG_BROWSER_CONSOLE for that).',
     },
     slowMo: {
         envVar: 'SLOWMO',

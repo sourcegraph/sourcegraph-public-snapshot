@@ -2,7 +2,7 @@
   "name": "management-console",
   "private": true,
   "dependencies": {
-    "react": "^16.10.2",
+    "react": "^16.11.0",
     "rxjs": "^6.5.3"
   },
   "scripts": {
@@ -11,7 +11,7 @@
   },
   "devDependencies": {
     "monaco-editor": "^0.17.1",
-    "node-sass": "^4.12.0",
+    "node-sass": "^4.13.0",
     "parcel-bundler": "^1.12.4",
     "typescript": "^3.6.3"
   }

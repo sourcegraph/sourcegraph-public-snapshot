@@ -1,10 +1,10 @@
 package repotrackutil
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 var trackedRepo = []string{
@@ -13,7 +13,7 @@ var trackedRepo = []string{
 	"github.com/golang/go",
 	"sourcegraph/sourcegraph",
 }
-var trackedRepoRe = regexp.MustCompile(`\b(` + strings.Join(trackedRepo, "|") + `)\b`)
+var trackedRepoRe = lazyregexp.New(`\b(` + strings.Join(trackedRepo, "|") + `)\b`)
 
 // GetTrackedRepo guesses which repo a request URL path is for. It only looks
 // at a certain subset of repos for its guess.

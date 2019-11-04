@@ -2,7 +2,6 @@ package ui
 
 import (
 	"net/http"
-	"regexp"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -13,9 +12,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
-var goSymbolReg = regexp.MustCompile("/info/GoPackage/(.+)$")
+var goSymbolReg = lazyregexp.New("/info/GoPackage/(.+)$")
 
 // serveRepoLanding simply redirects the old (sourcegraph.com/<repo>/-/info) repo landing page
 // URLs directly to the repo itself (sourcegraph.com/<repo>).

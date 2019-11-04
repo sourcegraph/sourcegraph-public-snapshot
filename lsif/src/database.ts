@@ -19,10 +19,9 @@ import {
     ResultChunkData,
     ResultChunkModel,
     DocumentPathRangeId,
-    DefinitionReferenceResultId,
-    RangeId,
     entities,
 } from './database.models'
+import { DefinitionReferenceResultId, RangeId } from './database.types'
 import { TracingContext, logSpan } from './tracing'
 
 /**
@@ -212,7 +211,7 @@ export class Database {
      */
     public async monikerResults(
         model: typeof DefinitionModel | typeof ReferenceModel,
-        moniker: MonikerData,
+        moniker: Pick<MonikerData, 'scheme' | 'identifier'>,
         ctx: TracingContext
     ): Promise<lsp.Location[]> {
         const results = await this.withConnection(connection =>

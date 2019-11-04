@@ -22,6 +22,9 @@ import {
     ReferenceModel,
     ResultChunkModel,
     DocumentIdRangeId,
+    entities,
+} from './database.models'
+import {
     DefinitionResultId,
     MonikerId,
     DefinitionReferenceResultId,
@@ -29,8 +32,7 @@ import {
     ReferenceResultId,
     PackageInformationId,
     HoverResultId,
-    entities,
-} from './database.models'
+} from './database.types'
 import { TracingContext, logAndTraceCall } from './tracing'
 
 /**
@@ -101,7 +103,7 @@ export async function importLsif(
     ctx: TracingContext
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
     // Correlate input data into in-memory maps
-    const correlator = new Correlator()
+    const correlator = new Correlator(ctx)
     await logAndTraceCall(ctx, 'correlating LSIF data', async () => {
         for await (const element of readGzippedJsonElements(input) as AsyncIterable<Vertex | Edge>) {
             correlator.insert(element)

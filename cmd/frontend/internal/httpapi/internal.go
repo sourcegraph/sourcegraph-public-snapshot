@@ -1,10 +1,9 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -190,20 +189,71 @@ func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func serveReposList(w http.ResponseWriter, r *http.Request) error {
-	var err error
-	var res []*types.Repo
-	if envvar.SourcegraphDotComMode() {
-		res, err = backend.Repos.ListDefault(r.Context())
+type reposListServer struct {
+	// SourcegraphDotComMode is true if this instance of Sourcegraph is http://sourcegraph.com
+	SourcegraphDotComMode bool
+
+	// Repos is the subset of backend.Repos methods we use. Declared as an
+	// interface for testing.
+	Repos interface {
+		// ListDefault returns the repositories to index on Sourcegraph.com
+		ListDefault(context.Context) ([]*types.Repo, error)
+		// List returns a list of repositories
+		List(context.Context, db.ReposListOptions) ([]*types.Repo, error)
+	}
+
+	// Indexers is the subset of searchbackend.Indexers methods we
+	// use. reposListServer is used by indexed-search to get the list of
+	// repositories to index. These methods are used to return the correct
+	// subset for horizontal indexed search. Declared as an interface for
+	// testing.
+	Indexers interface {
+		// ReposSubset returns the subset of repoNames that hostname should
+		// index.
+		ReposSubset(ctx context.Context, hostname string, indexed map[string]struct{}, repoNames []string) ([]string, error)
+		// Enabled is true if horizontal indexed search is enabled.
+		Enabled() bool
+	}
+}
+
+// Deprecated: serveList used to be used by Zoekt to get the list of
+// repositories to index. Can be removed in 3.11.
+func (h *reposListServer) serveList(w http.ResponseWriter, r *http.Request) error {
+	var opt struct {
+		Hostname string
+		db.ReposListOptions
+	}
+	if err := json.NewDecoder(r.Body).Decode(&opt); err != nil {
+		return err
+	}
+
+	var names []string
+	if h.SourcegraphDotComMode {
+		res, err := h.Repos.ListDefault(r.Context())
+		if err != nil {
+			return errors.Wrap(err, "listing repos")
+		}
+		names = make([]string, len(res))
+		for i, r := range res {
+			names[i] = string(r.Name)
+		}
 	} else {
-		var opt db.ReposListOptions
-		if err := json.NewDecoder(r.Body).Decode(&opt); err != nil {
+		res, err := h.Repos.List(r.Context(), opt.ReposListOptions)
+		if err != nil {
+			return errors.Wrap(err, "listing repos")
+		}
+		names = make([]string, len(res))
+		for i, r := range res {
+			names[i] = string(r.Name)
+		}
+	}
+
+	if h.Indexers.Enabled() {
+		var err error
+		names, err = h.Indexers.ReposSubset(r.Context(), opt.Hostname, map[string]struct{}{}, names)
+		if err != nil {
 			return err
 		}
-		res, err = backend.Repos.List(r.Context(), opt)
-	}
-	if err != nil {
-		return errors.Wrap(err, "listing repos")
 	}
 
 	// BACKCOMPAT: Add a Name field that serializes to `URI` because
@@ -212,24 +262,77 @@ func serveReposList(w http.ResponseWriter, r *http.Request) error {
 	// "repo name".
 	type repoWithBackcompatURIField struct {
 		Name string `json:"URI"`
-		// The Repo field has been removed because the only caller of
-		// this handler (zoekt-sourcegraph-indexserver) wasn't using
-		// it.
 	}
-	res2 := make([]repoWithBackcompatURIField, len(res))
-	for i, repo := range res {
-		res2[i] = repoWithBackcompatURIField{
-			Name: string(repo.Name),
-		}
+	res := make([]repoWithBackcompatURIField, len(names))
+	for i, name := range names {
+		res[i].Name = name
 	}
 
-	data, err := json.Marshal(res2)
+	data, err := json.Marshal(res)
 	if err != nil {
 		return err
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write(data)
+	_, _ = w.Write(data)
 	return nil
+}
+
+// serveIndex is used by zoekt to get the list of repositories for it to
+// index.
+func (h *reposListServer) serveIndex(w http.ResponseWriter, r *http.Request) error {
+	var opt struct {
+		// Hostname is used to determine the subset of repos to return
+		Hostname string
+		// Indexed is the repository names of indexed repos by Hostname.
+		Indexed []string
+	}
+	if err := json.NewDecoder(r.Body).Decode(&opt); err != nil {
+		return err
+	}
+
+	var names []string
+	if h.SourcegraphDotComMode {
+		res, err := h.Repos.ListDefault(r.Context())
+		if err != nil {
+			return errors.Wrap(err, "listing repos")
+		}
+		names = make([]string, len(res))
+		for i, r := range res {
+			names[i] = string(r.Name)
+		}
+	} else {
+		trueP := true
+		res, err := h.Repos.List(r.Context(), db.ReposListOptions{Index: &trueP, Enabled: true})
+		if err != nil {
+			return errors.Wrap(err, "listing repos")
+		}
+		names = make([]string, len(res))
+		for i, r := range res {
+			names[i] = string(r.Name)
+		}
+	}
+
+	if h.Indexers.Enabled() {
+		indexed := make(map[string]struct{}, len(opt.Indexed))
+		for _, name := range opt.Indexed {
+			indexed[name] = struct{}{}
+		}
+
+		var err error
+		names, err = h.Indexers.ReposSubset(r.Context(), opt.Hostname, indexed, names)
+		if err != nil {
+			return err
+		}
+	}
+
+	data := struct {
+		RepoNames []string
+	}{
+		RepoNames: names,
+	}
+
+	w.WriteHeader(http.StatusOK)
+	return json.NewEncoder(w).Encode(&data)
 }
 
 func serveReposListEnabled(w http.ResponseWriter, r *http.Request) error {

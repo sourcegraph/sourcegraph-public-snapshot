@@ -4,7 +4,7 @@
 
 import { Driver } from '../../../shared/src/e2e/driver'
 import { getConfig } from '../../../shared/src/e2e/config'
-import { getTestFixtures } from './util/init'
+import { getTestTools } from './util/init'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { GraphQLClient } from './util/GraphQLClient'
 import { ensureTestExternalService } from './util/api'
@@ -139,6 +139,7 @@ describe('Search regression test suite', () => {
         'sourcegraphBaseUrl',
         'noCleanup',
         'testUserPassword',
+        'logStatusMessages',
         'logBrowserConsole',
         'slowMo',
         'headless',
@@ -151,7 +152,7 @@ describe('Search regression test suite', () => {
         let resourceManager: TestResourceManager
         beforeAll(
             async () => {
-                ;({ driver, gqlClient, resourceManager } = await getTestFixtures(config))
+                ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
                 resourceManager.add(
                     'User',
                     testUsername,
@@ -160,16 +161,20 @@ describe('Search regression test suite', () => {
                 resourceManager.add(
                     'External service',
                     testExternalServiceInfo.uniqueDisplayName,
-                    await ensureTestExternalService(gqlClient, {
-                        ...testExternalServiceInfo,
-                        config: {
-                            url: 'https://github.com',
-                            token: config.gitHubToken,
-                            repos: testRepoSlugs,
-                            repositoryQuery: ['none'],
+                    await ensureTestExternalService(
+                        gqlClient,
+                        {
+                            ...testExternalServiceInfo,
+                            config: {
+                                url: 'https://github.com',
+                                token: config.gitHubToken,
+                                repos: testRepoSlugs,
+                                repositoryQuery: ['none'],
+                            },
+                            waitForRepos: testRepoSlugs.map(slug => 'github.com/' + slug),
                         },
-                        waitForRepos: testRepoSlugs.map(slug => 'github.com/' + slug),
-                    })
+                        config
+                    )
                 )
             },
             // Cloning the repositories takes ~1 minute, so give initialization 2 minutes

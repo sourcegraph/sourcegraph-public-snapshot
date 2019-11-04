@@ -1,0 +1,6 @@
+BEGIN;
+
+DROP TABLE IF EXISTS campaign_jobs;
+
+COMMIT;
+

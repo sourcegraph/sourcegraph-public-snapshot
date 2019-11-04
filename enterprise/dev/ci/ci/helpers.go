@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 // Config is the set of configuration parameters that determine the structure of the CI build. These
@@ -27,6 +27,7 @@ type Config struct {
 	taggedRelease       bool
 	releaseBranch       bool
 	isBextReleaseBranch bool
+	isRenovateBranch    bool
 	patch               bool
 	patchNoTest         bool
 	isQuick             bool
@@ -75,8 +76,9 @@ func ComputeConfig() Config {
 		mustIncludeCommit: mustIncludeCommits,
 
 		taggedRelease:       taggedRelease,
-		releaseBranch:       regexp.MustCompile(`^[0-9]+\.[0-9]+$`).MatchString(branch),
+		releaseBranch:       lazyregexp.New(`^[0-9]+\.[0-9]+$`).MatchString(branch),
 		isBextReleaseBranch: branch == "bext/release",
+		isRenovateBranch:    strings.HasPrefix(branch, "renovate/"),
 		patch:               patch,
 		patchNoTest:         patchNoTest,
 		isQuick:             isQuick,

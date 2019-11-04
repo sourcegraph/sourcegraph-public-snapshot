@@ -5,6 +5,7 @@ import { readEnvInt } from './util'
 import { Logger } from 'winston'
 import { Configuration } from './config'
 import pRetry from 'p-retry'
+import { TlsOptions } from 'tls'
 
 /**
  * The minimum migration version required by this instance of the LSIF process.
@@ -13,7 +14,7 @@ import pRetry from 'p-retry'
  * version prior to making use of the DB (which the frontend may still be
  * migrating).
  */
-const MINIMUM_MIGRATION_VERSION = 1528395606
+const MINIMUM_MIGRATION_VERSION = 1528395607
 
 /**
  * How many times to try to check the current database migration version on startup.
@@ -72,13 +73,21 @@ export async function createPostgresConnection(configuration: Configuration, log
     // Parse current PostgresDSN into connection options usable by
     // the typeorm postgres adapter.
     const url = new URL(configuration.postgresDSN)
+
+    // TODO(efritz) - handle allow, prefer, require, 'verify-ca', and 'verify-full'
+    const sslModes: { [K: string]: boolean | TlsOptions } = {
+        disable: false,
+    }
+
+    const sslMode = url.searchParams.get('sslmode')
+
     const connectionOptions = {
         host: url.hostname,
         port: parseInt(url.port, 10) || 5432,
-        username: url.username,
-        password: url.password,
-        database: url.pathname.substring(1),
-        ssl: url.searchParams.get('sslmode') === 'disable' ? false : undefined,
+        username: decodeURIComponent(url.username),
+        password: decodeURIComponent(url.password),
+        database: decodeURIComponent(url.pathname).substring(1),
+        ssl: sslMode ? sslModes[sslMode] : undefined,
     }
 
     // Get a working connection

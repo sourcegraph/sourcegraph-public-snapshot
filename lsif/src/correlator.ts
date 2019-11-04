@@ -2,17 +2,15 @@ import RelateUrl from 'relateurl'
 import { mustGet, mustGetFromEither } from './util'
 import { DefaultMap } from './default-map'
 import { Hover, MarkupContent } from 'vscode-languageserver-types'
+import { MonikerData, PackageInformationData, RangeData } from './database.models'
 import {
-    MonikerData,
-    PackageInformationData,
-    RangeData,
     MonikerId,
     HoverResultId,
     ReferenceResultId,
     DefinitionResultId,
     DocumentId,
     PackageInformationId,
-} from './database.models'
+} from './database.types'
 import {
     Id,
     VertexLabels,
@@ -34,6 +32,9 @@ import {
     RangeId,
 } from 'lsif-protocol'
 import { DisjointSet } from './disjoint-set'
+import { TracingContext } from './tracing'
+import { createSilentLogger } from './logging'
+import { Logger } from 'winston'
 
 /**
  * Identifiers of result set vertices.
@@ -93,6 +94,7 @@ export class Correlator {
     public hoverData = new Map<HoverResultId, string>()
     public monikerData = new Map<MonikerId, MonikerData>()
     public packageInformationData = new Map<PackageInformationId, PackageInformationData>()
+    public unsupportedVertexes = new Set<Id>()
 
     // Edge data
     public nextData = new Map<RangeId | ResultSetId, ResultSetId>()
@@ -119,6 +121,12 @@ export class Correlator {
      * The set of exported moniker identifiers that have package information attached.
      */
     public exportedMonikers = new Set<MonikerId>()
+
+    private logger: Logger
+
+    constructor({ logger = createSilentLogger() }: TracingContext = {}) {
+        this.logger = logger
+    }
 
     /**
      * Process a single vertex or edge.
@@ -191,6 +199,19 @@ export class Correlator {
                         name: element.name,
                         version: element.version || null,
                     })
+                    break
+
+                default:
+                    // Some vertex labels are not yet supported:
+                    //
+                    // - typeDefinitionResult
+                    // - implementationResult
+                    // - ... others in the future
+                    //
+                    // We keep track of these unsupported vertexes so that we
+                    // don't mistake it for a missing vertex later when visiting
+                    // edges.
+                    this.unsupportedVertexes.add(element.id)
                     break
             }
         }
@@ -306,7 +327,12 @@ export class Correlator {
             return
         }
 
-        throw new Error(`Unknown definition or reference result ${edge.outV}.`)
+        if (this.unsupportedVertexes.has(edge.outV)) {
+            this.logger.debug('Skipping edge from an unsupported vertex', { edge })
+            return
+        }
+
+        throw new Error(`Item edge references a nonexistent vertex ${JSON.stringify(edge)}`)
     }
 
     /**

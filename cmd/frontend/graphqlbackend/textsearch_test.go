@@ -95,6 +95,21 @@ func TestQueryToZoektQuery(t *testing.T) {
 			},
 			Query: `foo case:yes f:\.go$ f:\.yaml$ -f:\bvendor\b`,
 		},
+		{
+			Name: "path matches only",
+			Pattern: &search.PatternInfo{
+				IsRegExp:                     true,
+				IsCaseSensitive:              false,
+				Pattern:                      "test",
+				IncludePatterns:              []string{},
+				ExcludePattern:               ``,
+				PathPatternsAreRegExps:       true,
+				PathPatternsAreCaseSensitive: true,
+				PatternMatchesContent:        false,
+				PatternMatchesPath:           true,
+			},
+			Query: `f:test`,
+		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
@@ -132,17 +147,17 @@ func TestStructuralPatToZoektQuery(t *testing.T) {
 		{
 			Name:    "Substring between holes",
 			Pattern: ":[1] substring :[2]",
-			Want:    `(and case_file_substr:" substring ")`,
+			Want:    `(and case_content_substr:" substring ")`,
 		},
 		{
 			Name:    "Substring before and after different hole kinds",
 			Pattern: "prefix :[[1]] :[2.] suffix",
-			Want:    `(and case_file_substr:"prefix " case_file_substr:" " case_file_substr:" suffix")`,
+			Want:    `(and case_content_substr:"prefix " case_content_substr:" " case_content_substr:" suffix")`,
 		},
 		{
 			Name:    "Substrings covering all hole kinds.",
 			Pattern: `1. :[1] 2. :[[2]] 3. :[3.] 4. :[4\n] 5. :[ ] 6. :[ 6] done.`,
-			Want:    `(and case_file_substr:"1. " case_file_substr:" 2. " case_file_substr:" 3. " case_file_substr:" 4. " case_file_substr:" 5. " case_file_substr:" 6. " case_file_substr:" done.")`,
+			Want:    `(and case_content_substr:"1. " case_content_substr:" 2. " case_content_substr:" 3. " case_content_substr:" 4. " case_content_substr:" 5. " case_content_substr:" 6. " case_content_substr:" done.")`,
 		},
 		{
 			Name: "Substrings across multiple lines.",
@@ -150,7 +165,7 @@ func TestStructuralPatToZoektQuery(t *testing.T) {
 multiple
 lines
  :[2]`,
-			Want: `(and case_file_substr:" spans\nmultiple\nlines\n ")`,
+			Want: `(and case_content_substr:" spans\nmultiple\nlines\n ")`,
 		},
 	}
 	for _, tt := range cases {
@@ -353,6 +368,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 		Zoekt:        zoekt,
 		SearcherURLs: endpoint.Static("test"),
 	}
+
 	_, _, err = searchFilesInRepos(context.Background(), args)
 	if !gitserver.IsRevisionNotFound(errors.Cause(err)) {
 		t.Fatalf("searching non-existent rev expected to fail with RevisionNotFoundError got: %v", err)
@@ -735,9 +751,12 @@ func Test_zoektIndexedRepos(t *testing.T) {
 	makeIndexed := func(repos []*search.RepositoryRevisions) []*search.RepositoryRevisions {
 		var indexed []*search.RepositoryRevisions
 		for _, r := range repos {
-			rev := *r
+			rev := &search.RepositoryRevisions{
+				Repo: r.Repo,
+				Revs: r.Revs,
+			}
 			rev.SetIndexedHEADCommit("deadbeef")
-			indexed = append(indexed, &rev)
+			indexed = append(indexed, rev)
 		}
 		return indexed
 	}

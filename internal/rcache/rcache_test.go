@@ -8,37 +8,32 @@ import (
 func TestCache_namespace(t *testing.T) {
 	SetupForTest(t)
 
-	type kvTTL struct {
-		k   string
-		v   string
-		ttl int
-	}
 	type testcase struct {
 		prefix  string
-		entries []kvTTL
+		entries map[string]string
 	}
 
 	cases := []testcase{
 		{
 			prefix: "a",
-			entries: []kvTTL{
-				{k: "k0", v: "v0", ttl: -1},
-				{k: "k1", v: "v1", ttl: 123},
-				{k: "k2", v: "v2", ttl: 456},
+			entries: map[string]string{
+				"k0": "v0",
+				"k1": "v1",
+				"k2": "v2",
 			},
 		}, {
 			prefix: "b",
-			entries: []kvTTL{
-				{k: "k0", v: "v0", ttl: 234},
-				{k: "k1", v: "v1", ttl: -1},
-				{k: "k2", v: "v2", ttl: -1},
+			entries: map[string]string{
+				"k0": "v0",
+				"k1": "v1",
+				"k2": "v2",
 			},
 		}, {
 			prefix: "c",
-			entries: []kvTTL{
-				{k: "k0", v: "v0", ttl: -1},
-				{k: "k1", v: "v1", ttl: 123},
-				{k: "k2", v: "v2", ttl: -1},
+			entries: map[string]string{
+				"k0": "v0",
+				"k1": "v1",
+				"k2": "v2",
 			},
 		},
 	}
@@ -46,19 +41,19 @@ func TestCache_namespace(t *testing.T) {
 	caches := make([]*Cache, len(cases))
 	for i, test := range cases {
 		caches[i] = New(test.prefix)
-		for _, entry := range test.entries {
-			caches[i].Set(entry.k, []byte(entry.v))
+		for k, v := range test.entries {
+			caches[i].Set(k, []byte(v))
 		}
 	}
 	for i, test := range cases {
 		// test all the keys that should be present are found
-		for _, entry := range test.entries {
-			b, ok := caches[i].Get(entry.k)
+		for k, v := range test.entries {
+			b, ok := caches[i].Get(k)
 			if !ok {
 				t.Fatalf("error getting entry from redis (prefix=%s)", test.prefix)
 			}
-			if string(b) != entry.v {
-				t.Errorf("expected %s, got %s", entry.v, string(b))
+			if string(b) != v {
+				t.Errorf("expected %s, got %s", v, string(b))
 			}
 		}
 

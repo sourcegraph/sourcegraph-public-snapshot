@@ -11,7 +11,6 @@ import (
 	"strings"
 	"sync"
 
-	graphql "github.com/graph-gophers/graphql-go"
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/neelance/parallel"
@@ -31,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -55,7 +55,7 @@ type searchArgs struct {
 	Version     string
 	PatternType *string
 	Query       string
-	After       *graphql.ID
+	After       *string
 	First       *int32
 }
 
@@ -65,6 +65,14 @@ type searchImplementer interface {
 	//lint:ignore U1000 is used by graphql via reflection
 	Stats(context.Context) (*searchResultsStats, error)
 }
+
+type SearchType int
+
+const (
+	SearchTypeRegex SearchType = iota
+	SearchTypeLiteral
+	SearchTypeStructural
+)
 
 // Search provides search results and suggestions.
 func (r *schemaResolver) Search(args *searchArgs) (searchImplementer, error) {
@@ -77,7 +85,7 @@ func (r *schemaResolver) Search(args *searchArgs) (searchImplementer, error) {
 	}
 
 	var queryString string
-	if searchType == "literal" {
+	if searchType == SearchTypeLiteral {
 		queryString = query.ConvertToLiteral(args.Query)
 	} else {
 		queryString = args.Query
@@ -121,45 +129,44 @@ func (r *schemaResolver) Search(args *searchArgs) (searchImplementer, error) {
 // patternType parameters passed to the search endpoint (literal search is the
 // default in V2), and the `patternType:` filter in the input query string which
 // overrides the searchType, if present.
-func detectSearchType(version string, patternType *string, input string) (string, error) {
-	var searchType string
+func detectSearchType(version string, patternType *string, input string) (SearchType, error) {
+	var searchType SearchType
 	if patternType != nil {
 		switch *patternType {
-		case "regexp", "literal", "structural":
-			searchType = *patternType
+		case "literal":
+			searchType = SearchTypeLiteral
+		case "regexp":
+			searchType = SearchTypeRegex
+		case "structural":
+			searchType = SearchTypeStructural
 		default:
-			return "", fmt.Errorf("unrecognized patternType: %v", patternType)
+			return -1, fmt.Errorf("unrecognized patternType: %v", patternType)
 		}
 	} else {
 		switch version {
 		case "V1":
-			searchType = "regexp"
+			searchType = SearchTypeRegex
 		case "V2":
-			searchType = "literal"
+			searchType = SearchTypeLiteral
 		default:
-			return "", fmt.Errorf("unrecognized version: %v", version)
+			return -1, fmt.Errorf("unrecognized version: %v", version)
 		}
 	}
 
-	parseTree, err := query.Parse(input)
-	if err != nil {
-		return "", err
-	}
+	// The patterntype field is Singular, but not enforced since we do not
+	// properly parse the input. The regex extraction, takes the left-most
+	// "patterntype:value" match.
+	var patternTypeRegex = lazyregexp.New(`patterntype:([a-zA-Z"']+)`)
+	patternFromField := patternTypeRegex.FindStringSubmatch(input)
+	if len(patternFromField) > 1 {
+		extracted := patternFromField[1]
+		if match, _ := regexp.MatchString("regex", extracted); match {
+			searchType = SearchTypeRegex
+		} else if match, _ := regexp.MatchString("literal", extracted); match {
+			searchType = SearchTypeLiteral
 
-	patternTypes := parseTree.Values(query.FieldPatternType)
-
-	// Override the searchType if the query explicitly specifies one. If
-	// there are multiple patternTypes, use the last one we encounter.
-	// Since this field is Singular, the validation check on the
-	// parse tree wil reject patterns with duplicate fields.
-	for _, pat := range patternTypes {
-		switch pat {
-		case "regex", "regexp":
-			searchType = "regexp"
-		case "literal":
-			searchType = "literal"
-		case "structural":
-			searchType = "structural"
+		} else if match, _ := regexp.MatchString("structural", extracted); match {
+			searchType = SearchTypeStructural
 		}
 	}
 
@@ -182,7 +189,7 @@ type searchResolver struct {
 	query         *query.Query          // the parsed search query
 	originalQuery string                // the raw string of the original search query
 	pagination    *searchPaginationInfo // pagination information, or nil if the request is not paginated.
-	patternType   string
+	patternType   SearchType
 
 	// Cached resolveRepositories results.
 	reposMu                   sync.Mutex
@@ -763,6 +770,33 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 	return suggestions, nil
 }
 
+// SearchRepos searches for the provided query but only the the unique list of
+// repositories belonging to the search results.
+// It's used by a8n to search.
+func SearchRepos(ctx context.Context, plainQuery string) ([]*RepositoryResolver, error) {
+	queryString := query.ConvertToLiteral(plainQuery)
+
+	q, err := query.ParseAndCheck(queryString)
+	if err != nil {
+		return nil, err
+	}
+
+	sr := &searchResolver{
+		query:         q,
+		originalQuery: plainQuery,
+		pagination:    nil,
+		patternType:   SearchTypeLiteral,
+		zoekt:         search.Indexed(),
+		searcherURLs:  search.SearcherURLs(),
+	}
+
+	results, err := sr.Results(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return results.Repositories(), nil
+}
+
 func unionRegExps(patterns []string) string {
 	if len(patterns) == 0 {
 		return ""
@@ -801,7 +835,7 @@ func (e *badRequestError) Cause() error {
 
 // searchSuggestionResolver is a resolver for the GraphQL union type `SearchSuggestion`
 type searchSuggestionResolver struct {
-	// result is either a RepositoryResolver or a gitTreeEntryResolver
+	// result is either a RepositoryResolver or a GitTreeEntryResolver
 	result interface{}
 	// score defines how well this item matches the query for sorting purposes
 	score int
@@ -816,18 +850,18 @@ func (r *searchSuggestionResolver) ToRepository() (*RepositoryResolver, bool) {
 	return res, ok
 }
 
-func (r *searchSuggestionResolver) ToFile() (*gitTreeEntryResolver, bool) {
-	res, ok := r.result.(*gitTreeEntryResolver)
+func (r *searchSuggestionResolver) ToFile() (*GitTreeEntryResolver, bool) {
+	res, ok := r.result.(*GitTreeEntryResolver)
 	return res, ok
 }
 
-func (r *searchSuggestionResolver) ToGitBlob() (*gitTreeEntryResolver, bool) {
-	res, ok := r.result.(*gitTreeEntryResolver)
+func (r *searchSuggestionResolver) ToGitBlob() (*GitTreeEntryResolver, bool) {
+	res, ok := r.result.(*GitTreeEntryResolver)
 	return res, ok && res.stat.Mode().IsRegular()
 }
 
-func (r *searchSuggestionResolver) ToGitTree() (*gitTreeEntryResolver, bool) {
-	res, ok := r.result.(*gitTreeEntryResolver)
+func (r *searchSuggestionResolver) ToGitTree() (*GitTreeEntryResolver, bool) {
+	res, ok := r.result.(*GitTreeEntryResolver)
 	return res, ok && res.stat.Mode().IsDir()
 }
 
@@ -847,14 +881,14 @@ func (r *searchSuggestionResolver) ToLanguage() (*languageResolver, bool) {
 // newSearchResultResolver returns a new searchResultResolver wrapping the
 // given result.
 //
-// A panic occurs if the type of result is not a *RepositoryResolver, *gitTreeEntryResolver,
+// A panic occurs if the type of result is not a *RepositoryResolver, *GitTreeEntryResolver,
 // *searchSymbolResult or *languageResolver.
 func newSearchResultResolver(result interface{}, score int) *searchSuggestionResolver {
 	switch r := result.(type) {
 	case *RepositoryResolver:
 		return &searchSuggestionResolver{result: r, score: score, length: len(r.repo.Name), label: string(r.repo.Name)}
 
-	case *gitTreeEntryResolver:
+	case *GitTreeEntryResolver:
 		return &searchSuggestionResolver{result: r, score: score, length: len(r.Path()), label: r.Path()}
 
 	case *searchSymbolResult:

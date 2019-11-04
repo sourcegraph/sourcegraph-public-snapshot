@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"path"
+	"reflect"
 	"regexp"
 	"sort"
 	"strconv"
@@ -30,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -87,6 +89,10 @@ func (c *searchResultsCommon) Timedout() []*RepositoryResolver {
 
 func (c *searchResultsCommon) IndexUnavailable() bool {
 	return c.indexUnavailable
+}
+
+func (c *searchResultsCommon) Equal(other *searchResultsCommon) bool {
+	return reflect.DeepEqual(c, other)
 }
 
 func RepositoryResolvers(repos types.Repos) []*RepositoryResolver {
@@ -180,22 +186,22 @@ func (sr *searchResultsResolver) ElapsedMilliseconds() int32 {
 // commonFileFilters are common filters used. It is used by DynamicFilters to
 // propose them if they match shown results.
 var commonFileFilters = []struct {
-	Regexp *regexp.Regexp
+	Regexp *lazyregexp.Regexp
 	Filter string
 }{
 	// Exclude go tests
 	{
-		Regexp: regexp.MustCompile(`_test\.go$`),
+		Regexp: lazyregexp.New(`_test\.go$`),
 		Filter: `-file:_test\.go$`,
 	},
 	// Exclude go vendor
 	{
-		Regexp: regexp.MustCompile(`(^|/)vendor/`),
+		Regexp: lazyregexp.New(`(^|/)vendor/`),
 		Filter: `-file:(^|/)vendor/`,
 	},
 	// Exclude node_modules
 	{
-		Regexp: regexp.MustCompile(`(^|/)node_modules/`),
+		Regexp: lazyregexp.New(`(^|/)node_modules/`),
 		Filter: `-file:(^|/)node_modules/`,
 	},
 }
@@ -521,7 +527,7 @@ func longer(N int, dt time.Duration) time.Duration {
 	return dt2
 }
 
-var decimalRx = regexp.MustCompile(`\d+\.\d+`)
+var decimalRx = lazyregexp.New(`\d+\.\d+`)
 
 // roundStr rounds the first number containing a decimal within a string
 func roundStr(s string) string {
@@ -815,7 +821,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 
 	options := &getPatternInfoOptions{}
-	if r.patternType == "structural" {
+	if r.patternType == SearchTypeStructural {
 		options = &getPatternInfoOptions{performStructuralSearch: true}
 	}
 	p, err := r.getPatternInfo(options)
@@ -1071,7 +1077,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		alert = r.alertForMissingRepoRevs(missingRepoRevs)
 	}
 
-	if len(results) == 0 && strings.Contains(r.originalQuery, `"`) && r.patternType == "literal" {
+	if len(results) == 0 && strings.Contains(r.originalQuery, `"`) && r.patternType == SearchTypeLiteral {
 		alert, err = r.alertForQuotesInQueryInLiteralMode(ctx)
 	}
 

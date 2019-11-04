@@ -24,7 +24,7 @@ func gitCommitByID(ctx context.Context, id graphql.ID) (*GitCommitResolver, erro
 	if err != nil {
 		return nil, err
 	}
-	return repo.Commit(ctx, &repositoryCommitArgs{Rev: string(commitID)})
+	return repo.Commit(ctx, &RepositoryCommitArgs{Rev: string(commitID)})
 }
 
 type GitCommitResolver struct {
@@ -101,7 +101,7 @@ func (r *GitCommitResolver) Parents(ctx context.Context) ([]*GitCommitResolver, 
 	resolvers := make([]*GitCommitResolver, len(r.parents))
 	for i, parent := range r.parents {
 		var err error
-		resolvers[i], err = r.repo.Commit(ctx, &repositoryCommitArgs{Rev: string(parent)})
+		resolvers[i], err = r.repo.Commit(ctx, &RepositoryCommitArgs{Rev: string(parent)})
 		if err != nil {
 			return nil, err
 		}
@@ -124,7 +124,7 @@ func (r *GitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.R
 func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 	Path      string
 	Recursive bool
-}) (*gitTreeEntryResolver, error) {
+}) (*GitTreeEntryResolver, error) {
 	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.repo)
 	if err != nil {
 		return nil, err
@@ -136,7 +136,7 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 	if !stat.Mode().IsDir() {
 		return nil, fmt.Errorf("not a directory: %q", args.Path)
 	}
-	return &gitTreeEntryResolver{
+	return &GitTreeEntryResolver{
 		commit:      r,
 		stat:        stat,
 		isRecursive: args.Recursive,
@@ -145,7 +145,7 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 
 func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 	Path string
-}) (*gitTreeEntryResolver, error) {
+}) (*GitTreeEntryResolver, error) {
 	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.repo)
 	if err != nil {
 		return nil, err
@@ -157,7 +157,7 @@ func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 	if !stat.Mode().IsRegular() {
 		return nil, fmt.Errorf("not a blob: %q", args.Path)
 	}
-	return &gitTreeEntryResolver{
+	return &GitTreeEntryResolver{
 		commit: r,
 		stat:   stat,
 	}, nil
@@ -165,7 +165,7 @@ func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 
 func (r *GitCommitResolver) File(ctx context.Context, args *struct {
 	Path string
-}) (*gitTreeEntryResolver, error) {
+}) (*GitTreeEntryResolver, error) {
 	return r.Blob(ctx, args)
 }
 

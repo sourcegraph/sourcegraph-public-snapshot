@@ -10,11 +10,16 @@ import { zip, timer, concat, throwError, defer } from 'rxjs'
 import { CloneInProgressError, ECLONEINPROGESS } from '../../../../shared/src/backend/errors'
 import { isErrorLike } from '../../../../shared/src/util/errors'
 import { ResourceDestructor } from './TestResourceManager'
+import { Config } from '../../../../shared/src/e2e/config'
 
 /**
  * Wait until all repositories in the list exist.
  */
-export async function waitForRepos(gqlClient: GraphQLClient, ensureRepos: string[]): Promise<void> {
+export async function waitForRepos(
+    gqlClient: GraphQLClient,
+    ensureRepos: string[],
+    config?: Partial<Pick<Config, 'logStatusMessages'>>
+): Promise<void> {
     await zip(
         // List of Observables that complete after each repository is successfully fetched.
         ...ensureRepos.map(repoName =>
@@ -48,6 +53,9 @@ export async function waitForRepos(gqlClient: GraphQLClient, ensureRepos: string
                                 delayWhen(error => {
                                     if (isErrorLike(error) && error.code === ECLONEINPROGESS) {
                                         // Delay retry by 2s.
+                                        if (config && config.logStatusMessages) {
+                                            console.log(`Waiting for ${repoName} to finish cloning...`)
+                                        }
                                         return timer(2 * 1000)
                                     }
                                     // Throw all errors other than ECLONEINPROGRESS
@@ -147,7 +155,8 @@ export async function ensureTestExternalService(
         uniqueDisplayName: string
         config: Record<string, any>
         waitForRepos?: string[]
-    }
+    },
+    e2eConfig?: Partial<Pick<Config, 'logStatusMessages'>>
 ): Promise<ResourceDestructor> {
     if (!options.uniqueDisplayName.startsWith('[TEST]')) {
         throw new Error(
@@ -186,7 +195,7 @@ export async function ensureTestExternalService(
     )
 
     if (options.waitForRepos && options.waitForRepos.length > 0) {
-        await waitForRepos(gqlClient, options.waitForRepos)
+        await waitForRepos(gqlClient, options.waitForRepos, e2eConfig)
     }
 
     return destroy
@@ -328,6 +337,76 @@ export function getManagementConsoleState(gqlClient: GraphQLClient): Promise<GQL
         .pipe(
             map(dataOrThrowErrors),
             map(({ site }) => site.managementConsoleState)
+        )
+        .toPromise()
+}
+
+export async function setUserEmailVerified(
+    gqlClient: GraphQLClient,
+    username: string,
+    email: string,
+    verified: boolean
+): Promise<void> {
+    const user = await getUser(gqlClient, username)
+    if (!user) {
+        throw new Error(`User ${username} does not exist`)
+    }
+    await gqlClient
+        .mutateGraphQL(
+            gql`
+                mutation SetUserEmailVerified($user: ID!, $email: String!, $verified: Boolean!) {
+                    setUserEmailVerified(user: $user, email: $email, verified: $verified) {
+                        alwaysNil
+                    }
+                }
+            `,
+            { user: user.id, email, verified }
+        )
+        .pipe(map(dataOrThrowErrors))
+        .toPromise()
+}
+
+export function getViewerSettings(gqlClient: GraphQLClient): Promise<GQL.ISettingsCascade> {
+    return gqlClient
+        .queryGraphQL(
+            gql`
+                query ViewerSettings {
+                    viewerSettings {
+                        ...SettingsCascadeFields
+                    }
+                }
+
+                fragment SettingsCascadeFields on SettingsCascade {
+                    subjects {
+                        __typename
+                        ... on Org {
+                            id
+                            name
+                            displayName
+                        }
+                        ... on User {
+                            id
+                            username
+                            displayName
+                        }
+                        ... on Site {
+                            id
+                            siteID
+                        }
+                        latestSettings {
+                            id
+                            contents
+                        }
+                        settingsURL
+                        viewerCanAdminister
+                    }
+                    final
+                }
+            `
+        )
+        .pipe(
+            map(dataOrThrowErrors),
+            map(data => data.viewerSettings)
         )
         .toPromise()
 }

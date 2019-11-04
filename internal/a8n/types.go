@@ -1,12 +1,75 @@
 package a8n
 
 import (
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
+
+type CampaignType struct {
+	// TODO(a8n): This should probably be an `interface{}` and then have
+	// concrete implementations such as `CombyArguments`
+	Parameters []string
+	ServiceURL string
+}
+
+var CampaignTypes = map[string]CampaignType{
+	"comby": {
+		Parameters: []string{"scopeQuery", "matchTemplate", "rewriteTemplate"},
+		ServiceURL: env.Get("COMBY_URL", "http://replacer:3185", "replacer server URL"),
+	},
+}
+
+// A CampaignPlan represents the application of a CampaignType to the Arguments
+// over multiple repositories.
+type CampaignPlan struct {
+	ID int64
+
+	CampaignType string
+
+	// Arguments is a JSONC string
+	Arguments string
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+// Clone returns a clone of a CampaignPlan.
+func (c *CampaignPlan) Clone() *CampaignPlan {
+	cc := *c
+	return &cc
+}
+
+// A CampaignJob is the application of a CampaignType over CampaignPlan arguments in
+// a specific repository at a specific revision.
+type CampaignJob struct {
+	ID             int64
+	CampaignPlanID int64
+
+	RepoID int32
+	Rev    api.CommitID
+
+	Diff string
+
+	StartedAt  time.Time
+	FinishedAt time.Time
+
+	Error string
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+// Clone returns a clone of a CampaignJob.
+func (c *CampaignJob) Clone() *CampaignJob {
+	cc := *c
+	return &cc
+}
 
 // A Campaign of changesets over multiple Repos over time.
 type Campaign struct {
@@ -19,6 +82,7 @@ type Campaign struct {
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 	ChangesetIDs    []int64
+	CampaignPlanID  int64
 }
 
 // Clone returns a clone of a Campaign.
@@ -49,6 +113,29 @@ func (s ChangesetState) Valid() bool {
 		return false
 	}
 }
+
+// BackgroundProcessStatus defines the status of a background process.
+type BackgroundProcessStatus struct {
+	Completed     int32
+	Pending       int32
+	ProcessState  BackgroundProcessState
+	ProcessErrors []string
+}
+
+func (b BackgroundProcessStatus) CompletedCount() int32         { return b.Completed }
+func (b BackgroundProcessStatus) PendingCount() int32           { return b.Pending }
+func (b BackgroundProcessStatus) State() BackgroundProcessState { return b.ProcessState }
+func (b BackgroundProcessStatus) Errors() []string              { return b.ProcessErrors }
+
+// BackgroundProcessState defines the possible states of a background process.
+type BackgroundProcessState string
+
+// BackgroundProcessState constants
+const (
+	BackgroundProcessStateProcessing BackgroundProcessState = "PROCESSING"
+	BackgroundProcessStateErrored    BackgroundProcessState = "ERRORED"
+	BackgroundProcessStateDone       BackgroundProcessState = "DONE"
+)
 
 // ChangesetReviewState defines the possible states of a Changeset's review.
 type ChangesetReviewState string
@@ -203,7 +290,7 @@ func (t *Changeset) Events() (events []*ChangesetEvent) {
 		for _, ti := range m.TimelineItems {
 			ev := ChangesetEvent{ChangesetID: t.ID}
 
-			switch e := ev.Metadata.(type) {
+			switch e := ti.Item.(type) {
 			case *github.PullRequestReviewThread:
 				for _, c := range e.Comments {
 					ev := ev
@@ -219,8 +306,45 @@ func (t *Changeset) Events() (events []*ChangesetEvent) {
 				events = append(events, &ev)
 			}
 		}
+
+	case *bitbucketserver.PullRequest:
+		events = make([]*ChangesetEvent, 0, len(m.Activities))
+		for _, a := range m.Activities {
+			events = append(events, &ChangesetEvent{
+				ChangesetID: t.ID,
+				Key:         a.Key(),
+				Kind:        ChangesetEventKindFor(&a),
+				Metadata:    a,
+			})
+		}
 	}
 	return events
+}
+
+// HeadRefOid returns the git ObjectID of the HEAD reference associated with
+// the Changeset on the codehost.
+func (t *Changeset) HeadRefOid() (string, error) {
+	switch m := t.Metadata.(type) {
+	case *github.PullRequest:
+		return m.HeadRefOid, nil
+	case *bitbucketserver.PullRequest:
+		return m.FromRef.ID, nil
+	default:
+		return "", errors.New("unknown changeset type")
+	}
+}
+
+// BaseRefOid returns the git ObjectID of the base reference associated with the
+// Changeset on the codehost.
+func (t *Changeset) BaseRefOid() (string, error) {
+	switch m := t.Metadata.(type) {
+	case *github.PullRequest:
+		return m.BaseRefOid, nil
+	case *bitbucketserver.PullRequest:
+		return m.ToRef.ID, nil
+	default:
+		return "", errors.New("unknown changeset type")
+	}
 }
 
 // SelectReviewState computes the single review state for a given set of
@@ -734,9 +858,48 @@ func ChangesetEventKindFor(e interface{}) ChangesetEventKind {
 		return ChangesetEventKindGitHubReviewRequested
 	case *github.UnassignedEvent:
 		return ChangesetEventKindGitHubUnassigned
+	case *bitbucketserver.Activity:
+		return ChangesetEventKind("bitbucketserver:" + strings.ToLower(string(e.Action)))
 	default:
 		panic(errors.Errorf("unknown changeset event kind for %T", e))
 	}
+}
+
+// NewChangesetEventMetadata returns a new metadata object for the given
+// ChangesetEventKind.
+func NewChangesetEventMetadata(k ChangesetEventKind) (interface{}, error) {
+	switch {
+	case strings.HasPrefix(string(k), "bitbucketserver"):
+		return new(bitbucketserver.Activity), nil
+	case strings.HasPrefix(string(k), "github"):
+		switch k {
+		case ChangesetEventKindGitHubAssigned:
+			return new(github.AssignedEvent), nil
+		case ChangesetEventKindGitHubClosed:
+			return new(github.ClosedEvent), nil
+		case ChangesetEventKindGitHubCommented:
+			return new(github.IssueComment), nil
+		case ChangesetEventKindGitHubRenamedTitle:
+			return new(github.RenamedTitleEvent), nil
+		case ChangesetEventKindGitHubMerged:
+			return new(github.MergedEvent), nil
+		case ChangesetEventKindGitHubReviewed:
+			return new(github.PullRequestReview), nil
+		case ChangesetEventKindGitHubReviewCommented:
+			return new(github.PullRequestReviewComment), nil
+		case ChangesetEventKindGitHubReopened:
+			return new(github.ReopenedEvent), nil
+		case ChangesetEventKindGitHubReviewDismissed:
+			return new(github.ReviewDismissedEvent), nil
+		case ChangesetEventKindGitHubReviewRequestRemoved:
+			return new(github.ReviewRequestRemovedEvent), nil
+		case ChangesetEventKindGitHubReviewRequested:
+			return new(github.ReviewRequestedEvent), nil
+		case ChangesetEventKindGitHubUnassigned:
+			return new(github.UnassignedEvent), nil
+		}
+	}
+	return nil, errors.Errorf("unknown changeset event kind %q", k)
 }
 
 // ChangesetEventKind defines the kind of a ChangesetEvent. This type is unexported
@@ -759,16 +922,16 @@ const (
 	ChangesetEventKindGitHubReviewCommented      ChangesetEventKind = "github:review_commented"
 	ChangesetEventKindGitHubUnassigned           ChangesetEventKind = "github:unassigned"
 
-	// TODO: Full set of Bitbucket Server pull request actions:
-	//   - APPROVED
-	//   - COMMENTED
-	//   - DECLINED
-	//   - MERGED
-	//   - OPENED
-	//   - REOPENED
-	//   - RESCOPED
-	//   - UNAPPROVED
-	//   - UPDATED
+	ChangesetEventKindBitbucketServerApproved   ChangesetEventKind = "bitbucketserver:approved"
+	ChangesetEventKindBitbucketServerUnapproved ChangesetEventKind = "bitbucketserver:unapproved"
+	ChangesetEventKindBitbucketServerDeclined   ChangesetEventKind = "bitbucketserver:declined"
+	ChangesetEventKindBitbucketServerReviewed   ChangesetEventKind = "bitbucketserver:reviewed"
+	ChangesetEventKindBitbucketServerOpened     ChangesetEventKind = "bitbucketserver:opened"
+	ChangesetEventKindBitbucketServerReopened   ChangesetEventKind = "bitbucketserver:reopened"
+	ChangesetEventKindBitbucketServerRescoped   ChangesetEventKind = "bitbucketserver:rescoped"
+	ChangesetEventKindBitbucketServerUpdated    ChangesetEventKind = "bitbucketserver:updated"
+	ChangesetEventKindBitbucketServerCommented  ChangesetEventKind = "bitbucketserver:commented"
+	ChangesetEventKindBitbucketServerMerged     ChangesetEventKind = "bitbucketserver:merged"
 )
 
 func unixMilliToTime(ms int64) time.Time {

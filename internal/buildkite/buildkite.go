@@ -34,6 +34,16 @@ type Step struct {
 	ArtifactPaths    string                 `json:"artifact_paths,omitempty"`
 	ConcurrencyGroup string                 `json:"concurrency_group,omitempty"`
 	Concurrency      int                    `json:"concurrency,omitempty"`
+	SoftFail         bool                   `json:"soft_fail,omitempty"`
+	Retry            *RetryOptions          `json:"retry,omitempty"`
+}
+
+type RetryOptions struct {
+	Automatic *AutomaticRetryOptions `json:"automatic,omitempty"`
+}
+
+type AutomaticRetryOptions struct {
+	Limit int `json:"limit,omitempty"`
 }
 
 var Plugins = make(map[string]interface{})
@@ -121,6 +131,22 @@ func Concurrency(limit int) StepOpt {
 func Env(name, value string) StepOpt {
 	return func(step *Step) {
 		step.Env[name] = value
+	}
+}
+
+func SoftFail(softFail bool) StepOpt {
+	return func(step *Step) {
+		step.SoftFail = softFail
+	}
+}
+
+func AutomaticRetry(limit int) StepOpt {
+	return func(step *Step) {
+		step.Retry = &RetryOptions{
+			Automatic: &AutomaticRetryOptions{
+				Limit: limit,
+			},
+		}
 	}
 }
 

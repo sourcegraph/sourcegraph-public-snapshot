@@ -25,21 +25,15 @@ export const asError = (err: any): Error => {
 }
 
 /**
- * An Error that aggregates multiple errors
- */
-interface AggregateError extends Error {
-    name: 'AggregateError'
-    errors: Error[]
-}
-
-/**
  * DEPRECATED: use dataOrThrowErrors instead
  * Creates an aggregate error out of multiple provided error likes
  *
  * @param errors The errors or ErrorLikes to aggregate
  */
-export const createAggregateError = (errors: ErrorLike[] = []): AggregateError =>
-    Object.assign(new Error(errors.map(e => e.message).join('\n')), {
-        name: 'AggregateError' as const,
-        errors: errors.map(asError),
-    })
+export const createAggregateError = (errors: ErrorLike[] = []): Error =>
+    errors.length === 1
+        ? asError(errors[0])
+        : Object.assign(new Error(errors.map(e => e.message).join('\n')), {
+              name: 'AggregateError' as const,
+              errors: errors.map(asError),
+          })

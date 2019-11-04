@@ -44,7 +44,7 @@ async function init(): Promise<void> {
     // so we do not need to do this here.
     if (!window.SOURCEGRAPH_BUNDLE_URL && !window.localStorage.getItem('SOURCEGRAPH_BUNDLE_URL')) {
         injectExtensionMarker()
-        injectCodeIntelligence({ sourcegraphURL, assetsURL }, IS_EXTENSION)
+        await injectCodeIntelligence({ sourcegraphURL, assetsURL }, IS_EXTENSION)
         metaClickOverride()
         return
     }
@@ -60,7 +60,7 @@ async function init(): Promise<void> {
     window.localStorage.setItem('SOURCEGRAPH_URL', sourcegraphURL)
     metaClickOverride()
     injectExtensionMarker()
-    injectCodeIntelligence({ sourcegraphURL, assetsURL }, IS_EXTENSION)
+    await injectCodeIntelligence({ sourcegraphURL, assetsURL }, IS_EXTENSION)
 }
 
 init().catch(err => console.error('Error initializing Phabricator integration', err))

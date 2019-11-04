@@ -22,7 +22,7 @@ Loading configuration in this manner has two important drawbacks:
 
 Set the environment variable below on all `frontend` containers (cluster deployment) or on the `server` container (single-container Docker deployment):
 
-```sh
+```bash
 CRITICAL_CONFIG_FILE=critical.json
 ```
 
@@ -30,7 +30,7 @@ CRITICAL_CONFIG_FILE=critical.json
 
 You should also add to the `management-console` container (cluster deployment) or to the `server` container (single-container Docker deployment) the following:
 
-```sh
+```bash
 DISABLE_CONFIG_UPDATES=true
 ```
 
@@ -38,7 +38,7 @@ DISABLE_CONFIG_UPDATES=true
 
 Set the environment variable below on all `frontend` containers (cluster deployment) or on the `server` container (single-container Docker deployment):
 
-```sh
+```bash
 SITE_CONFIG_FILE=site.json
 ```
 
@@ -50,7 +50,7 @@ If you want to _allow_ edits to be made through the web UI (which will be overwr
 
 Set the environment variable below on all `frontend` containers (cluster deployment) or on the `server` container (single-container Docker deployment):
 
-```sh
+```bash
 EXTSVC_CONFIG_FILE=extsvc.json
 ```
 

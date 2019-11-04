@@ -7,7 +7,7 @@ import { PageTitle } from '../../../components/PageTitle'
 import { UserAvatar } from '../../../user/UserAvatar'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { CampaignsIcon } from '../icons'
-import { ChangesetNode } from './changesets/ChangesetNode'
+import { ExternalChangesetNode } from './changesets/ExternalChangesetNode'
 import { noop, upperFirst } from 'lodash'
 import { Form } from '../../../components/Form'
 import { fetchCampaignById, updateCampaign, deleteCampaign, createCampaign, queryChangesets } from './backend'
@@ -19,6 +19,8 @@ import { CampaignBurndownChart } from './BurndownChart'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 import { AddChangesetForm } from './AddChangesetForm'
 import { Subject } from 'rxjs'
+import { Markdown } from '../../../../../shared/src/components/Markdown'
+import { renderMarkdown } from '../../../../../shared/src/util/markdown'
 
 interface Props {
     /**
@@ -258,7 +260,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             disabled={mode === 'saving'}
                         />
                     ) : (
-                        <div className="card-body">{campaign!.description}</div>
+                        <div className="card-body">
+                            <Markdown dangerousInnerHTML={renderMarkdown(campaign!.description)}></Markdown>
+                        </div>
                     )}
                 </div>
             </Form>
@@ -277,10 +281,10 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
                     <AddChangesetForm campaignID={campaign.id} onAdd={nextChangesetUpdate} />
 
-                    <FilteredConnection<GQL.IChangeset>
+                    <FilteredConnection<GQL.IExternalChangeset>
                         className="mt-2"
                         updates={changesetUpdates}
-                        nodeComponent={ChangesetNode}
+                        nodeComponent={ExternalChangesetNode}
                         queryConnection={queryChangesetsConnection}
                         hideSearch={true}
                         defaultFirst={15}
