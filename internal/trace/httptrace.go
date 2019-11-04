@@ -133,6 +133,17 @@ func Middleware(next http.Handler) http.Handler {
 		requestDuration.With(labels).Observe(m.Duration.Seconds())
 		requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
 
+		// if it's not a graphql request, then this includes graphql_err=false in the log entry
+		gqlErr := false
+		span.Context().ForeachBaggageItem(func(k string, v string) bool {
+			if k == "graphql.error" {
+				gqlErr = true
+				return false
+			}
+			// keep looking
+			return true
+		})
+
 		log15.Debug("TRACE HTTP",
 			"method", r.Method,
 			"url", r.URL.String(),
@@ -144,6 +155,7 @@ func Middleware(next http.Handler) http.Handler {
 			"written", m.Written,
 			"code", m.Code,
 			"duration", m.Duration,
+			"graphql_err", strconv.FormatBool(gqlErr),
 		)
 
 		// Notify sentry if the status code indicates our system had an error (e.g. 5xx).
