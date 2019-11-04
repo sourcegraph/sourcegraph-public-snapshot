@@ -50,10 +50,10 @@ export async function getTrackingIssueURL(octokit: Octokit, version: string): Pr
     const title = issueTitle(version)
     const resp = await octokit.search.issuesAndPullRequests({
         per_page: 100,
-        q: `type:issue repo:sourcegraph/sourcegraph ${JSON.stringify(title)}`,
+        q: `type:issue repo:sourcegraph/sourcegraph is:open ${JSON.stringify(title)}`,
     })
 
-    const matchingIssues = resp.data.items.filter(issue => issue.title === title && issue.closed_at === null)
+    const matchingIssues = resp.data.items.filter(issue => issue.title === title)
     if (matchingIssues.length === 0) {
         return null
     }

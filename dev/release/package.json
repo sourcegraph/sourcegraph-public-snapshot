@@ -9,6 +9,7 @@
     "build": "tsc",
     "watch": "tsc -w",
     "typecheck": "tsc --noEmit",
+    "tslint": "../../node_modules/.bin/tslint --project tsconfig.json --config ../../tslint.config.js '*.ts'",
     "eslint": "../../node_modules/.bin/eslint '*.ts'"
   },
   "dependencies": {
