@@ -14,7 +14,8 @@ import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { showDotComMarketing } from '../util/features'
 import { NavLinks } from './NavLinks'
-import { ThemeProps, ThemePreferenceProps } from '../../../shared/src/theme'
+import { ThemeProps } from '../../../shared/src/theme'
+import { ThemePreferenceProps } from '../search/theme'
 
 interface Props
     extends SettingsCascadeProps,

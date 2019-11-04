@@ -42,7 +42,8 @@ import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { parseBrowserRepoURL } from './util/url'
 import LiteralSearchToast from './marketing/LiteralSearchToast'
-import { ThemeProps, ThemePreferenceProps } from '../../shared/src/theme'
+import { ThemeProps } from '../../shared/src/theme'
+import { ThemePreferenceProps } from './search/theme'
 
 export interface LayoutProps
     extends RouteComponentProps<any>,

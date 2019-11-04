@@ -5,7 +5,7 @@ import renderer from 'react-test-renderer'
 import { setLinkComponent } from '../../../shared/src/components/Link'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { UserNavItem } from './UserNavItem'
-import { ThemePreference } from '../../../shared/src/theme'
+import { ThemePreference } from '../search/theme'
 
 describe('UserNavItem', () => {
     setLinkComponent((props: any) => <a {...props} />)
