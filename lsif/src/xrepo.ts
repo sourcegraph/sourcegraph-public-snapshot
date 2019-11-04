@@ -697,7 +697,7 @@ export class XrepoDatabase {
  * commit occurs in `lineage` (within the given traversal limit) and whose root does not
  * overlap another visible dump.
  *
- * @param limit The maximum
+ * @param limit The maximum number of dumps that can be extracted from `lineage`.
  */
 function visibleDumps(limit: number = MAX_TRAVERSAL_LIMIT): string {
     return `
