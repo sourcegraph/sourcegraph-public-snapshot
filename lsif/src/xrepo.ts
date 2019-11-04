@@ -567,8 +567,15 @@ export class XrepoDatabase {
     }): Promise<{ references: ReferenceModel[]; count: number; newOffset: number }> {
         const references: ReferenceModel[] = []
         while (references.length < limit && offset < count) {
+            const page = await getPage(offset)
+            if (page.length === 0) {
+                // Shouldn't happen, but just in case of a bug we
+                // don't want this to throw up into an infinite loop.
+                break
+            }
+
             const { references: filtered, scanned } = await this.applyBloomFilter(
-                await getPage(offset),
+                page,
                 identifier,
                 limit - references.length
             )
