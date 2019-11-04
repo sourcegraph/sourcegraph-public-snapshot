@@ -273,8 +273,8 @@ type CampaignPlanResolver interface {
 type PreviewFileDiff interface {
 	OldPath() *string
 	NewPath() *string
-	Hunks() []FileDiffHunk
-	Stat() DiffStat
+	Hunks() []*DiffHunk
+	Stat() *DiffStat
 	OldFile() *GitTreeEntryResolver
 	InternalID() string
 }
@@ -283,7 +283,7 @@ type PreviewFileDiffConnection interface {
 	Nodes(ctx context.Context) ([]PreviewFileDiff, error)
 	TotalCount(ctx context.Context) (*int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
-	DiffStat(ctx context.Context) (DiffStat, error)
+	DiffStat(ctx context.Context) (*DiffStat, error)
 	RawDiff(ctx context.Context) (string, error)
 }
 
