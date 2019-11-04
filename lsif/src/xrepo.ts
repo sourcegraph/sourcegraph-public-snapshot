@@ -229,7 +229,7 @@ export class XrepoDatabase {
         `
 
         await this.withConnection(connection =>
-            connection.query(lineage_ancestors + ctes + query, [repository, commit, MAX_TRAVERSAL_LIMIT])
+            connection.query(lineage_ancestors + visibleDumps + query, [repository, commit, MAX_TRAVERSAL_LIMIT])
         )
     }
 
