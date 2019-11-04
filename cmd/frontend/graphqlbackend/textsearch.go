@@ -84,7 +84,7 @@ func (fm *fileMatchResolver) File() *GitTreeEntryResolver {
 			oid:      GitObjectID(fm.commitID),
 			inputRev: fm.inputRev,
 		},
-		stat: createFileInfo(fm.JPath, false),
+		stat: CreateFileInfo(fm.JPath, false),
 	}
 }
 
