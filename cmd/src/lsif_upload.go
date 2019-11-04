@@ -36,13 +36,12 @@ Examples:
 		fmt.Println(usage)
 	}
 	var (
-		repoFlag           = flagSet.String("repo", "", `The name of the repository. (required)`)
-		commitFlag         = flagSet.String("commit", "", `The 40-character hash of the commit. (required)`)
-		fileFlag           = flagSet.String("file", "", `The path to the LSIF dump file. (required)`)
-		githubTokenFlag    = flagSet.String("github-token", "", `A GitHub access token with 'public_repo' scope that Sourcegraph uses to verify you have access to the repository.`)
-		rootFlag           = flagSet.String("root", "", `The path in the repository that matches the LSIF projectRoot (e.g. cmd/)`)
-		skipValidationFlag = flagSet.Bool("skip-validation", false, `Whether or not to perform input validation on the server (much faster)`)
-		apiFlags           = newAPIFlags(flagSet)
+		repoFlag        = flagSet.String("repo", "", `The name of the repository. (required)`)
+		commitFlag      = flagSet.String("commit", "", `The 40-character hash of the commit. (required)`)
+		fileFlag        = flagSet.String("file", "", `The path to the LSIF dump file. (required)`)
+		githubTokenFlag = flagSet.String("github-token", "", `A GitHub access token with 'public_repo' scope that Sourcegraph uses to verify you have access to the repository.`)
+		rootFlag        = flagSet.String("root", "", `The path in the repository that matches the LSIF projectRoot (e.g. cmd/)`)
+		apiFlags        = newAPIFlags(flagSet)
 	)
 
 	handler := func(args []string) error {
@@ -73,9 +72,6 @@ Examples:
 		}
 		if *rootFlag != "" {
 			qs.Add("root", *rootFlag)
-		}
-		if *skipValidationFlag == true {
-			qs.Add("skipValidation", "true")
 		}
 
 		url, err := url.Parse(cfg.Endpoint + "/.api/lsif/upload")
