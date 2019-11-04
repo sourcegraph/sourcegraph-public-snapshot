@@ -365,34 +365,15 @@ export class Backend {
         paginationContext: ReferencePaginationContext = { limit: 10 },
         ctx: TracingContext = {}
     ): Promise<{ locations: lsp.Location[]; cursor?: ReferencePaginationCursor }> {
-        const limit = paginationContext.limit
-        const cursor = paginationContext.cursor
-        const offset = (cursor && cursor.offset) || 0
-
-        // If we have a pagination cursor, we need to return a subsequent page of results.
-        // The user has already received all local references on a previous page, so we can
-        // skip all of the code following this if block. We get the current page by decoding
-        // the cursor to get a moniker and package information object, then call the
-        // `remoteReferences` method with an updated offset parameter.
-
-        if (cursor) {
-            const moniker = { scheme: cursor.scheme, identifier: cursor.identifier }
-            const packageInformation = { name: cursor.name, version: cursor.version }
-
-            const { locations, count } = await this.remoteReferences(
-                cursor.dumpId,
-                moniker,
-                packageInformation,
-                limit,
-                offset,
-                ctx
-            )
-
-            return {
-                locations,
-                // Return a cursor for the next page of results (if there are any)
-                cursor: offset + limit < count ? { ...cursor, offset: offset + limit } : undefined,
+        if (paginationContext.cursor) {
+            // Continue from previous page
+            const results = await this.performRemoteReferences(paginationContext.limit, paginationContext.cursor, ctx)
+            if (results) {
+                return results
             }
+
+            // Do not fall through
+            return { locations: [] }
         }
 
         const { database, dump, ctx: newCtx } = await this.loadClosestDatabase(repository, commit, path, ctx)
@@ -446,36 +427,24 @@ export class Backend {
                     continue
                 }
 
-                const { locations: remoteResults, count } = await this.remoteReferences(
-                    dump.id,
-                    moniker,
-                    packageInformation,
-                    limit,
-                    offset,
-                    ctx
-                )
+                // Build pagination cursor that will start scanning results from
+                // the beginning of the result set.
+                const cursor = {
+                    dumpId: dump.id,
+                    scheme: moniker.scheme,
+                    identifier: moniker.identifier,
+                    name: packageInformation.name,
+                    version: packageInformation.version,
+                    offset: 0,
+                }
 
-                if (remoteResults) {
-                    // Construct a pagination cursor that can be used to request the next
-                    // page of results. We've already returned all local references as well
-                    // as the first page of remote references. The next page of result will
-                    // be the continuation of remote references. We need to store all the
-                    // data required for a subsequent call to the `remoteReferences` method.
+                const results = await this.performRemoteReferences(paginationContext.limit, cursor, ctx)
 
-                    const cursor = {
-                        dumpId: dump.id,
-                        scheme: moniker.scheme,
-                        identifier: moniker.identifier,
-                        name: packageInformation.name,
-                        version: packageInformation.version,
-                        offset: offset + limit,
-                    }
-
+                if (results) {
                     return {
+                        ...results,
                         // TODO - determine source of duplication (and below)
-                        locations: uniqWith(locations.concat(remoteResults), isEqual),
-                        // Don't return a cursor if we've hit the end of the result set
-                        cursor: offset + limit < count ? cursor : undefined,
+                        locations: uniqWith(locations.concat(results.locations), isEqual),
                     }
                 }
             }
@@ -483,6 +452,46 @@ export class Backend {
 
         // TODO - determine source of duplication
         return { locations: uniqWith(locations, isEqual) }
+    }
+
+    /**
+     * Perform a remote reference lookup on remote dumps. The offset into the result set depends
+     * on the exact values of the pagination cursor. This method returns the new cursor.
+     *
+     * @param limit The maximum number of dumps to open.
+     * @param cursor The pagination cursor.
+     * @param ctx The tracing context.
+     */
+    private async performRemoteReferences(
+        limit: number,
+        cursor: ReferencePaginationCursor,
+        ctx: TracingContext = {}
+    ): Promise<{ locations: lsp.Location[]; cursor?: ReferencePaginationCursor } | undefined> {
+        const moniker = { scheme: cursor.scheme, identifier: cursor.identifier }
+        const packageInformation = { name: cursor.name, version: cursor.version }
+
+        const { locations, count } = await this.remoteReferences(
+            cursor.dumpId,
+            moniker,
+            packageInformation,
+            limit,
+            cursor.offset,
+            ctx
+        )
+
+        if (locations.length > 0) {
+            let newCursor: ReferencePaginationCursor | undefined
+            if (cursor.offset + limit < count) {
+                newCursor = {
+                    ...cursor,
+                    offset: cursor.offset + limit,
+                }
+            }
+
+            return { locations, cursor: newCursor }
+        }
+
+        return undefined
     }
 
     /**
