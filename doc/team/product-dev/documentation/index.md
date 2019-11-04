@@ -72,6 +72,10 @@ If you indeed need to change a document's location, do NOT remove the old
 document, but rather replace all of its contents with a new line:
 
 ```
+---
+ignoreDisconnectedPageCheck: true
+---
+
 This document was moved to [another location](path/to/new_doc.md).
 ```
 
@@ -86,7 +90,11 @@ For example, if you were to move `doc/user/search/queries.md` to
 1.  Replace the contents of `doc/user/search/queries.md` with:
 
     ```
-    This document was moved to [another location](query_syntax.md).
+    ---
+ignoreDisconnectedPageCheck: true
+---
+
+This document was moved to [another location](query_syntax.md).
     ```
 
 1.  Find and replace any occurrences of the old location with the new one.

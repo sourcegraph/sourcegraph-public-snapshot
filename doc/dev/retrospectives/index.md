@@ -1,1 +1,5 @@
-This document was moved to [another location](/team/product-dev/retrospectives/index.md).
+---
+ignoreDisconnectedPageCheck: true
+---
+
+This document was moved to [another location](../../retrospectives/index.md).
