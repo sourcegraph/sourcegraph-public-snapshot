@@ -415,7 +415,7 @@ describe('XrepoDatabase', () => {
                 offset: 0,
             })
 
-            return references.map(referennce => referennce.dump_id).sort()
+            return references.map(reference => reference.dump_id).sort()
         }
 
         await xrepoDatabase.updateCommits('foo', [[ca, ''], [cb, ca], [cc, cb], [cd, cc], [ce, cd], [cf, ce]])
@@ -423,6 +423,55 @@ describe('XrepoDatabase', () => {
 
         // only references containing identifier y
         expect(await getReferencedDumpIds()).toEqual([dumpa.id, dumpb.id, dumpf.id])
+    })
+
+    it('should re-query if bloom filter prunes too many results', async () => {
+        const updatePackages = (commit: string, root: string, identifiers: string[]): Promise<LsifDump> =>
+            xrepoDatabase.addPackagesAndReferences(
+                'foo',
+                commit,
+                root,
+                [],
+                [
+                    {
+                        package: {
+                            scheme: 'npm',
+                            name: 'p1',
+                            version: '0.1.0',
+                        },
+                        identifiers,
+                    },
+                ]
+            )
+
+        const dumps = []
+        for (let i = 0; i < 250; i++) {
+            // Spread out uses of `y` so that we pull back a series of pages that are
+            // empty and half-empty after being filtered by the bloom filter. We will
+            // have to empty pages (i < 100) followed by three pages where very third
+            // uses the identifier. In all, there are fifty uses spread over 5 pages.
+            const isUse = i >= 100 && i % 3 === 0
+
+            const dump = await updatePackages(createCommit('0'), `r${i}`, ['x', isUse ? 'y' : 'z'])
+            dump.visibleAtTip = true
+            await connection.getRepository(LsifDump).save(dump)
+
+            if (isUse) {
+                // Save use ids
+                dumps.push(dump.id)
+            }
+        }
+
+        const { references } = await xrepoDatabase.getReferences({
+            scheme: 'npm',
+            name: 'p1',
+            version: '0.1.0',
+            identifier: 'y',
+            limit: 50,
+            offset: 0,
+        })
+
+        expect(references.map(reference => reference.dump_id).sort()).toEqual(dumps)
     })
 
     it('references only returned if dumps visible at tip', async () => {

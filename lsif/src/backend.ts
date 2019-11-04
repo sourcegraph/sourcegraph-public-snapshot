@@ -305,8 +305,8 @@ export class Backend {
         limit: number,
         offset: number,
         ctx: TracingContext = {}
-    ): Promise<{ locations: lsp.Location[]; count: number }> {
-        const { references, count } = await this.xrepoDatabase.getReferences({
+    ): Promise<{ locations: lsp.Location[]; count: number; newOffset: number }> {
+        const { references, count, newOffset } = await this.xrepoDatabase.getReferences({
             scheme: moniker.scheme,
             identifier: moniker.identifier,
             name: packageInformation.name,
@@ -344,7 +344,7 @@ export class Backend {
             locations = locations.concat(references)
         }
 
-        return { locations, count }
+        return { locations, count, newOffset }
     }
 
     /**
@@ -470,7 +470,7 @@ export class Backend {
         const moniker = { scheme: cursor.scheme, identifier: cursor.identifier }
         const packageInformation = { name: cursor.name, version: cursor.version }
 
-        const { locations, count } = await this.remoteReferences(
+        const { locations, count, newOffset } = await this.remoteReferences(
             cursor.dumpId,
             moniker,
             packageInformation,
@@ -481,10 +481,10 @@ export class Backend {
 
         if (locations.length > 0) {
             let newCursor: ReferencePaginationCursor | undefined
-            if (cursor.offset + limit < count) {
+            if (newOffset < count) {
                 newCursor = {
                     ...cursor,
-                    offset: cursor.offset + limit,
+                    offset: newOffset,
                 }
             }
 

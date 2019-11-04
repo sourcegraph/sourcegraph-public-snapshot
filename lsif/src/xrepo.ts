@@ -464,7 +464,7 @@ export class XrepoDatabase {
      *
      * @param args Parameter bag.
      */
-    public async getReferences({
+    public getReferences({
         scheme,
         name,
         version,
@@ -484,31 +484,125 @@ export class XrepoDatabase {
         limit: number
         /** The number of repository records to skip. */
         offset: number
-    }): Promise<{ references: ReferenceModel[]; count: number }> {
-        // Return all active uses of the target package
-        const [results, count] = await this.withConnection(connection =>
-            connection
+    }): Promise<{ references: ReferenceModel[]; count: number; newOffset: number }> {
+        // We do this inside of a transaction so that we get consistent results from multiple
+        // distinct queries: one count query and one or more select queries, depending on the
+        // sparsity of the use of the given identifier.
+        return this.withTransactionalEntityManager(async entityManager => {
+            // Create a base query that selects all active uses of the target package. This
+            // is used as the common prefix for both the count and the getPage queries.
+            const baseQuery = entityManager
                 .getRepository(ReferenceModel)
                 .createQueryBuilder('reference')
                 .leftJoinAndSelect('reference.dump', 'dump')
                 .where({ scheme, name, version })
                 .andWhere('dump.visible_at_tip = true')
-                .orderBy('dump.repository')
-                .addOrderBy('dump.root')
-                .limit(limit)
-                .offset(offset)
-                .getManyAndCount()
-        )
 
-        // Test the bloom filter of each reference model concurrently
-        const keepFlags = await Promise.all(results.map(result => testFilter(result.filter, identifier)))
+            // Get pagination count
+            const count = await baseQuery.getCount()
 
-        for (const flag of keepFlags) {
-            // Record hit and miss counts
-            bloomFilterEventsCounter.labels(flag ? 'hit' : 'miss').inc()
+            // Construct method to select a page of possible references
+            const getPage = (offset: number): Promise<ReferenceModel[]> =>
+                baseQuery
+                    .orderBy('dump.repository')
+                    .addOrderBy('dump.root')
+                    .limit(limit)
+                    .offset(offset)
+                    .getMany()
+
+            // Invoke getPage with increasing offsets until we get a page size's worth of
+            // references that actually use the given identifier as indicated by result of
+            // the bloom filter query.
+            return this.gatherReferences({ getPage, identifier, offset, limit, count })
+        })
+    }
+
+    /**
+     * Select a page of possible results via the `getPage` function and collect the references that include
+     * a use of the given identifier. As the given results may depend on the target package but not import
+     * the given identifier, the remaining set of references may small (or empty). In order to get a full
+     * page of results, we repeat the process until we have the proper number of results.
+     *
+     * @param args Parameter bag.
+     */
+    private async gatherReferences({
+        getPage,
+        identifier,
+        offset,
+        limit,
+        count,
+    }: {
+        /** The function to invoke to query the next set of references. */
+        getPage: (offset: number) => Promise<ReferenceModel[]>
+        /** The identifier to test. */
+        identifier: string
+        /** The maximum number of repository records to return. */
+        offset: number
+        /** The number of repository records to skip. */
+        limit: number
+        /** The total number of results that can be returned. */
+        count: number
+    }): Promise<{ references: ReferenceModel[]; count: number; newOffset: number }> {
+        const references: ReferenceModel[] = []
+        while (references.length < limit && offset < count) {
+            const page = await getPage(offset)
+            if (page.length === 0) {
+                // Shouldn't happen, but just in case of a bug we
+                // don't want this to throw up into an infinite loop.
+                break
+            }
+
+            const { references: filtered, scanned } = await this.applyBloomFilter(
+                page,
+                identifier,
+                limit - references.length
+            )
+
+            for (const reference of filtered) {
+                references.push(reference)
+            }
+
+            offset += scanned
         }
 
-        return { references: results.filter((_, i) => keepFlags[i]), count }
+        return { references, count, newOffset: offset }
+    }
+
+    /**
+     * Filter out the references which do not contain the given identifier in their bloom filter. Returns at most
+     * `limit` values in the return array and also the number of references that were checked (left to right).
+     *
+     * @param references The set of references to filter.
+     * @param identifier The identifier to test.
+     * @param limit The maximum number of references to return.
+     */
+    private async applyBloomFilter(
+        references: ReferenceModel[],
+        identifier: string,
+        limit: number
+    ): Promise<{ references: ReferenceModel[]; scanned: number }> {
+        const keepFlags = await Promise.all(references.map(result => testFilter(result.filter, identifier)))
+
+        const filtered = []
+        for (const [index, flag] of keepFlags.entries()) {
+            // Record hit and miss counts
+            bloomFilterEventsCounter.labels(flag ? 'hit' : 'miss').inc()
+
+            if (flag) {
+                filtered.push(references[index])
+
+                if (filtered.length >= limit) {
+                    // We got enough - stop scanning here and return the number of
+                    // results we actually went through so we can compute an offset
+                    // for the next page of results that don't skip the remainder
+                    // of this result set.
+                    return { references: filtered, scanned: index + 1 }
+                }
+            }
+        }
+
+        // We scanned the entire set of references
+        return { references: filtered, scanned: references.length }
     }
 
     /**
