@@ -2256,11 +2256,6 @@
   resolved "https://registry.npmjs.org/@types/classnames/-/classnames-2.2.9.tgz#d868b6febb02666330410fe7f58f3c4b8258be7b"
   integrity sha512-MNl+rT5UmZeilaPxAVs6YaPC2m6aA8rofviZbhbxpPpl61uKodfdQVsBtgJGTqGizEf02oW3tsVe7FYB8kK14A==
 
-"@types/cli-color@^0.3.29":
-  version "0.3.29"
-  resolved "https://registry.npmjs.org/@types/cli-color/-/cli-color-0.3.29.tgz#c83a71fe02c8c7e1ccec048dd6a2458d1f6c96ea"
-  integrity sha1-yDpx/gLIx+HM7ASN1qJFjR9sluo=
-
 "@types/connect-history-api-fallback@*":
   version "1.3.2"
   resolved "https://registry.npmjs.org/@types/connect-history-api-fallback/-/connect-history-api-fallback-1.3.2.tgz#40a497500238ebf30ae28fdf687c2f92969f2635"
@@ -2499,7 +2494,7 @@
   resolved "https://registry.npmjs.org/@types/json-schema/-/json-schema-7.0.3.tgz#bdfd69d61e464dcc81b25159c270d75a73c1a636"
   integrity sha512-Il2DtDVRGDcqjDtE+rF8iqg1CArehSK84HZJCT7AMITlyXRBpuPhqGLDQMowraqqu1coEaimg4ZOqggt6L6L+A==
 
-"@types/lodash@4.14.144", "@types/lodash@^4.14.121":
+"@types/lodash@4.14.144":
   version "4.14.144"
   resolved "https://registry.npmjs.org/@types/lodash/-/lodash-4.14.144.tgz#12e57fc99064bce45e5ab3c8bc4783feb75eab8e"
   integrity sha512-ogI4g9W5qIQQUhXAclq6zhqgqNUr7UlFaqDHbch7WLSLeeM/7d3CRaw7GLajxvyFvhJqw4Rpcz5bhoaYtIx6Tg==
@@ -2525,11 +2520,6 @@
   version "3.0.3"
   resolved "https://registry.npmjs.org/@types/minimatch/-/minimatch-3.0.3.tgz#3dca0e3f33b200fc7d1139c0cd96c1268cadfd9d"
   integrity sha512-tHq6qdbT9U1IRSGf14CL0pUlULksvY9OZ+5eEgl1N7t+OA3tGvNpxJCzuKQlsNgCVwbAs670L1vcVQi8j9HjnA==
-
-"@types/minimist@^1.2.0":
-  version "1.2.0"
-  resolved "https://registry.npmjs.org/@types/minimist/-/minimist-1.2.0.tgz#69a23a3ad29caf0097f06eda59b361ee2f0639f6"
-  integrity sha1-aaI6OtKcrwCX8G7aWbNh7i8GOfY=
 
 "@types/mkdirp-promise@5.0.0":
   version "5.0.0"
@@ -2557,12 +2547,7 @@
   dependencies:
     "@types/node" "*"
 
-"@types/node@*", "@types/node@^11.10.4":
-  version "11.13.21"
-  resolved "https://registry.npmjs.org/@types/node/-/node-11.13.21.tgz#afcf913437eeb1f9e1994a62a03b1762ee4600d3"
-  integrity sha512-fLwcSjMmDnjfk4FP7/QDiNzXSCEOGNvEe9eA6vaITmC784+Gm70wF7woaFQxUb2CpMjgLBhSPyhH0oIe1JS2uw==
-
-"@types/node@10.12.21":
+"@types/node@*", "@types/node@10.12.21", "@types/node@>=4.5.0":
   version "10.12.21"
   resolved "https://registry.npmjs.org/@types/node/-/node-10.12.21.tgz#7e8a0c34cf29f4e17a36e9bd0ea72d45ba03908e"
   integrity sha512-CBgLNk4o3XMnqMc0rhb6lc77IwShMEglz05deDcn2lQxyXEZivfwgYJu7SMha9V5XcrP6qZuevTHV/QrN2vjKQ==
@@ -10856,17 +10841,13 @@ json-schema-ref-parser@^7.1.2:
     js-yaml "^3.13.1"
     ono "^5.1.0"
 
-json-schema-to-typescript@^6.1.3:
-  version "6.1.3"
-  resolved "https://registry.npmjs.org/json-schema-to-typescript/-/json-schema-to-typescript-6.1.3.tgz#245364e8564263e53738320b46227f304491cc77"
-  integrity sha512-6nG2EPSyu3Po0FYsMEw/RpJDd6dqBr8DYIbqPZsxrRFE8g0Mxzbt6L6vlKJYrcPe9707INivn4NPJfemlXSLKw==
+json-schema-to-typescript@^7.1.0:
+  version "7.1.0"
+  resolved "https://registry.npmjs.org/json-schema-to-typescript/-/json-schema-to-typescript-7.1.0.tgz#c98a8647718551a40f324448f53508d73c087911"
+  integrity sha512-7tQyQzR+0NyI2iPjkqLLe4ncaxov1oIAFRM+BI8DDs7wxVIXsd0GWoZJIPsNQePIDr7N/LCkYtkEEDvY7dhGzA==
   dependencies:
-    "@types/cli-color" "^0.3.29"
     "@types/json-schema" "^7.0.3"
-    "@types/lodash" "^4.14.121"
-    "@types/minimist" "^1.2.0"
-    "@types/mz" "0.0.32"
-    "@types/node" "^11.10.4"
+    "@types/node" ">=4.5.0"
     "@types/prettier" "^1.16.1"
     cli-color "^1.4.0"
     json-schema-ref-parser "^6.1.0"
@@ -10874,7 +10855,7 @@ json-schema-to-typescript@^6.1.3:
     lodash "^4.17.11"
     minimist "^1.2.0"
     mz "^2.7.0"
-    prettier "^1.16.4"
+    prettier "^1.18.2"
     stdin "0.0.1"
 
 json-schema-traverse@^0.3.0:
@@ -13947,7 +13928,7 @@ prepend-http@^2.0.0:
   resolved "https://registry.npmjs.org/prepend-http/-/prepend-http-2.0.0.tgz#e92434bfa5ea8c19f41cdfd401d741a3c819d897"
   integrity sha1-6SQ0v6XqjBn0HN/UAddBo8gZ2Jc=
 
-prettier@^1.16.4, prettier@^1.18.2:
+prettier@^1.18.2:
   version "1.18.2"
   resolved "https://registry.npmjs.org/prettier/-/prettier-1.18.2.tgz#6823e7c5900017b4bd3acf46fe9ac4b4d7bda9ea"
   integrity sha512-OeHeMc0JhFE9idD4ZdtNibzY0+TPHSpSSb9h8FqtP+YnoZZ1sl8Vc9b1sasjfymH3SonAF4QcA2+mzHPhMvIiw==
