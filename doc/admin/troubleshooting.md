@@ -23,7 +23,7 @@ See [sourcegraph/sourcegraph#398](https://github.com/sourcegraph/sourcegraph/iss
 
 ### Submitting a metrics dump
 
-When you encounter performance or instability problem with Sourcegraph, we may ask you to submit a metrics dump to us. This allows us to inspect the performance and health of various parts of your Sourcegraph instance in the past and can often be the most effective way for us to identify the cause of your issue.
+If you encounter performance or instability issues with Sourcegraph, we may ask you to submit a metrics dump to us. This allows us to inspect the performance and health of various parts of your Sourcegraph instance in the past and can often be the most effective way for us to identify the cause of your issue.
 
 The metrics dump includes non-sensitive aggregate statistics of Sourcegraph like CPU & memory usage, number of successful and error requests between Sourcegraph services, and more. It does NOT contain sensitive information like code, repository names, user names, etc.
 
