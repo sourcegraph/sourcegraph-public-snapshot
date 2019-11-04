@@ -167,6 +167,11 @@ lines
  :[2]`,
 			Want: `(and case_content_substr:" spans\nmultiple\nlines\n ")`,
 		},
+		{
+			Name:    "Allow alphanumeric identifiers in holes",
+			Pattern: "sub :[alphanum_ident_123] string",
+			Want:    `(and case_content_substr:"sub " case_content_substr:" string")`,
+		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
