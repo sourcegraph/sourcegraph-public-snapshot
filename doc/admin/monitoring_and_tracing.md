@@ -33,7 +33,7 @@ kubectl port-forward svc/grafana 3370:30070
 
 ### Single-container server deployments
 
-For simplicity, Garafana does not require authentication, as the port binding of 3370 is limited to connections from localhost.
+For simplicity, Garafana does not require authentication, as the port binding of 3370 is restricted to connections from localhost only.
 
 Therefore, if accessing Grafana locally, the URL will be http://localhost:3370/-/debug/grafana. If Sourcegraph is deployed to a remote server, then access via an SSH tunnel using a tool
 such as [sshuttle](https://github.com/sshuttle/sshuttle) is required to establish a secure connection to Grafana.
