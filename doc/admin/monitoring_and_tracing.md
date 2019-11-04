@@ -42,7 +42,7 @@ To access the remote server using `sshuttle` from your local machine:
 ```sh
 sshuttle -r user@host 0/0
 ```
-Then simply visit ... in your browser.
+Then simply visit http://host:3370 in your browser.
 
 ### Docker images
 
