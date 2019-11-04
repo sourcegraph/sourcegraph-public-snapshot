@@ -529,7 +529,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                                     previousPagesCount: this.state.queried
                                         ? shouldRefresh
                                             ? 0
-                                            : this.state.previousPage.length 
+                                            : this.state.previousPage.length
                                         : this.state.previousPagesCount,
                                 }),
                                 hash: this.props.location.hash,
@@ -552,7 +552,6 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                             })
                             .pipe(
                                 catchError(error => [asError(error)]),
-                                tap(() => this.setState({ queried: true })),
                                 mergeMap(
                                     async (c: C | ErrorLike): Promise<PartialStateUpdate> => {
                                         // If we're paging with cursors and we have a new set of results,
@@ -566,6 +565,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                                                             ? c.nodes
                                                             : state.previousPage.concat(c.nodes),
                                                         after: (c.pageInfo && c.pageInfo.endCursor) || undefined,
+                                                        queried: true,
                                                     }),
                                                     () => {
                                                         // Update the connection's nodes to the concatenated set of results.
