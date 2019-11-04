@@ -138,10 +138,8 @@ func Middleware(next http.Handler) http.Handler {
 		span.Context().ForeachBaggageItem(func(k, v string) bool {
 			if k == "graphql.error" {
 				gqlErr = true
-				return false
 			}
-			// keep looking
-			return true
+			return !gqlErr
 		})
 
 		log15.Debug("TRACE HTTP",
