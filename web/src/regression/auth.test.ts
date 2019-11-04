@@ -16,6 +16,8 @@ import {
     OpenIDConnectAuthProvider,
 } from '../schema/critical.schema'
 
+const oktaUserAmy = 'beyang+sg-e2e-regression-test-amy@sourcegraph.com'
+
 async function testLogin(
     driver: Driver,
     resourceManager: TestResourceManager,
@@ -58,6 +60,19 @@ async function testLogin(
     } catch (err) {
         throw new Error('unsuccessful login')
     }
+}
+
+async function loginToOkta(driver: Driver, username: string, password: string): Promise<void> {
+    await driver.page.waitForSelector('#okta-signin-username')
+    await driver.replaceText({
+        selector: '#okta-signin-username',
+        newText: username,
+    })
+    await driver.replaceText({
+        selector: '#okta-signin-password',
+        newText: password,
+    })
+    await (await driver.page.waitForSelector('#okta-signin-submit')).click()
 }
 
 describe('Auth regression test suite', () => {
@@ -188,20 +203,25 @@ describe('Auth regression test suite', () => {
                     displayName: '[TEST] Okta SAML',
                     identityProviderMetadataURL: config.oktaMetadataUrl,
                 },
-                loginToAuthProvider: async () => {
-                    await driver.page.waitForSelector('#okta-signin-username')
-                    await driver.replaceText({
-                        selector: '#okta-signin-username',
-                        newText: 'beyang+sg-e2e-regression-test-amy@sourcegraph.com',
-                    })
-                    await driver.replaceText({
-                        selector: '#okta-signin-password',
-                        newText: config.oktaUserAmyPassword,
-                    })
-                    await (await driver.page.waitForSelector('#okta-signin-submit')).click()
-                },
+                loginToAuthProvider: () => loginToOkta(driver, oktaUserAmy, config.oktaUserAmyPassword),
             })
         },
         20 * 1000
     )
+
+    test('Sign in with Okta OpenID Connect', async () => {
+        await testLogin(driver, resourceManager, {
+            ...config,
+            managementConsolePassword,
+            authProvider: {
+                type: 'openidconnect',
+                displayName: '[TEST] Okta OpenID Connect',
+                issuer: 'https://dev-433675.oktapreview.com',
+                clientID: '0oao8w32qpPNB8tnU0h7',
+                clientSecret: 'pHCg8h8Dr0yaBzBEqBGM4NWjXSAzLqp8OtcYGUqA',
+                requireEmailDomain: 'sourcegraph.com',
+            },
+            loginToAuthProvider: () => loginToOkta(driver, oktaUserAmy, config.oktaUserAmyPassword),
+        })
+    })
 })
