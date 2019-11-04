@@ -39,7 +39,7 @@ const lineage_ancestors = `
 /**
  * A set of CTE definitions that prune LSIF dump identifiers so that only the ones that
  * are visible from a source commit remain. This assumes that a CTE definition `lineage`
- * is available earlier in the query. The CTE `lineage_fanout` (defined above) can be used
+ * is available earlier in the query. The CTE `lineage_ancestors` (defined above) can be used
  * as such a CTE definition.
  */
 const ctes = `
