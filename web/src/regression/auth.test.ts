@@ -41,18 +41,18 @@ async function testLogin(
         await createAuthProviderGUI(driver, managementConsoleUrl, managementConsolePassword, authProvider)
     )
     await driver.page.goto(sourcegraphBaseUrl + '/-/sign-out')
+    await driver.newPage()
     await driver.page.goto(sourcegraphBaseUrl)
     await driver.page.reload()
-    await driver.page.waitForNavigation()
     await (await driver.findElementWithText('Sign in with ' + authProvider.displayName, {
         tagName: 'a',
-        wait: true,
+        wait: { timeout: 3000 },
     })).click()
     await loginToAuthProvider()
     try {
         await driver.page.waitForFunction(
             url => document.location.href === url,
-            { timeout: 2000 },
+            { timeout: 5 * 1000 },
             sourcegraphBaseUrl + '/search'
         )
     } catch (err) {
@@ -79,7 +79,9 @@ describe('Auth regression test suite', () => {
         'gitHubUserAmyPassword',
         'gitLabClientID',
         'gitLabClientSecret',
-        'gitLabUserAmyPassword'
+        'gitLabUserAmyPassword',
+        'oktaUserAmyPassword',
+        'oktaMetadataUrl'
     )
 
     let driver: Driver
@@ -174,4 +176,32 @@ describe('Auth regression test suite', () => {
             },
         })
     })
+
+    test(
+        'Sign in with Okta SAML',
+        async () => {
+            await testLogin(driver, resourceManager, {
+                ...config,
+                managementConsolePassword,
+                authProvider: {
+                    type: 'saml',
+                    displayName: '[TEST] Okta SAML',
+                    identityProviderMetadataURL: config.oktaMetadataUrl,
+                },
+                loginToAuthProvider: async () => {
+                    await driver.page.waitForSelector('#okta-signin-username')
+                    await driver.replaceText({
+                        selector: '#okta-signin-username',
+                        newText: 'beyang+sg-e2e-regression-test-amy@sourcegraph.com',
+                    })
+                    await driver.replaceText({
+                        selector: '#okta-signin-password',
+                        newText: config.oktaUserAmyPassword,
+                    })
+                    await (await driver.page.waitForSelector('#okta-signin-submit')).click()
+                },
+            })
+        },
+        20 * 1000
+    )
 })
