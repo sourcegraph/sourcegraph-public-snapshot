@@ -15,6 +15,8 @@ export interface Config {
     gitLabClientID: string
     gitLabClientSecret: string
     gitLabUserAmyPassword: string
+    oktaUserAmyPassword: string
+    oktaMetadataUrl: string
     sourcegraphBaseUrl: string
     managementConsoleUrl: string
     includeAdminOnboarding: boolean
@@ -94,6 +96,14 @@ const configFields: ConfigFields = {
     gitLabUserAmyPassword: {
         envVar: 'GITLAB_USER_AMY_PASSWORD',
         description: 'Password of the GitLab user sg-e2e-regression-test-amy, used to log in to Sourcegraph.',
+    },
+    oktaMetadataUrl: {
+        envVar: 'OKTA_METADATA_URL',
+        description: 'URL of the Okta SAML IdP metadata.',
+    },
+    oktaUserAmyPassword: {
+        envVar: 'OKTA_USER_AMY_PASSWORD',
+        description: 'Password of the Okta user, beyang+sg-e2e-regression-test-amy@sourcegraph.com',
     },
     sourcegraphBaseUrl: {
         envVar: 'SOURCEGRAPH_BASE_URL',
