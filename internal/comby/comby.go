@@ -135,7 +135,7 @@ func Matches(args Args) (matches []FileMatch, err error) {
 	}
 
 	if len(matches) > 0 {
-		log15.Info("comby invocation found %d file matches", len(matches))
+		log15.Info("comby invocation", "num_matches", fmt.Sprintf("%d", len(matches)))
 	}
 	return matches, nil
 }
