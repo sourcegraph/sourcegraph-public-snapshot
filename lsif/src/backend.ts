@@ -588,6 +588,8 @@ export class Backend {
                         offset: newOffset,
                     }
                 } else {
+                    // Determine if there are any valid remote dumps we will open if
+                    // we move onto a next page.
                     const { totalCount } = await this.xrepoDatabase.getReferences({
                         repository,
                         scheme: moniker.scheme,
@@ -597,6 +599,11 @@ export class Backend {
                         limit: 1,
                         offset: 0,
                     })
+
+                    // Only construct a cursor that will be valid on a subsequent
+                    // request. We don't want the situation where there are no uses
+                    // of a symbol outside of the current repository and we give a
+                    // "load more" option that yields no additional results.
 
                     if (totalCount > 0) {
                         newCursor = {
