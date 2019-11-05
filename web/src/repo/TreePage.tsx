@@ -49,7 +49,7 @@ const TreeEntry: React.FunctionComponent<{
 }> = ({ isDir, name, parentPath, url }) => {
     const filePath = parentPath ? parentPath + '/' + name : name
     return (
-        <Link to={url} className="tree-entry" title={filePath}>
+        <Link to={url} className={`tree-entry ${isDir ? 'font-weight-bold' : ''}`} title={filePath}>
             {name}
             {isDir && '/'}
         </Link>
