@@ -32,3 +32,29 @@ type Args struct {
 	// NumWorkers is the number of worker processes to fork in parallel
 	NumWorkers int
 }
+
+type Location struct {
+	Offset int `json:"offset"`
+	Line   int `json:"line"`
+	Column int `json:"column"`
+}
+
+type Range struct {
+	Start Location `json:"start"`
+	End   Location `json:"end"`
+}
+
+type Match struct {
+	Range   Range  `json:"range"`
+	Matched string `json:"matched"`
+}
+
+type FileMatch struct {
+	URI     string  `json:"uri"`
+	Matches []Match `json:"matches"`
+}
+
+type FileDiff struct {
+	URI  string   `json:"uri"`
+	Diff []string `json:"diff"`
+}

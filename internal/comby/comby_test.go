@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"io"
 	"io/ioutil"
 	"os"
@@ -14,6 +15,60 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/store"
 )
+
+func TestMatchesUnmarshalling(t *testing.T) {
+	// If we are not on CI skip the test if comby is not installed.
+	if os.Getenv("CI") == "" && !exists() {
+		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
+	}
+
+	files := map[string]string{
+		"main.go": `package main
+
+import "fmt"
+
+func main() {
+	fmt.Println("Hello foo")
+}
+`,
+	}
+
+	zipPath, cleanup, err := newZip(files)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup()
+
+	cases := []struct {
+		args Args
+		want string
+	}{
+		{
+			args: Args{
+				Input:         ZipPath(zipPath),
+				MatchTemplate: "func",
+				MatchOnly:     true,
+				FilePatterns:  []string{".go"},
+				Matcher:       ".go",
+			},
+			want: `[{"uri":"main.go","matches":[{"range":{"start":{"offset":28,"line":5,"column":1},"end":{"offset":32,"line":5,"column":5}},"matched":"func"}]}]`},
+	}
+
+	for _, test := range cases {
+		m, _ := Matches(test.args)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, _ := json.Marshal(m)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(got[:]) != test.want {
+			t.Errorf("got %v, want %v", string(got[:]), test.want)
+			continue
+		}
+	}
+}
 
 func TestMatchesInZip(t *testing.T) {
 	// If we are not on CI skip the test if comby is not installed.

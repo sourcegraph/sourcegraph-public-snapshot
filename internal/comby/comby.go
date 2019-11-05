@@ -1,6 +1,9 @@
 package comby
 
 import (
+	"bufio"
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -22,6 +25,9 @@ func exists() bool {
 func rawArgs(args Args) (rawArgs []string) {
 	rawArgs = append(rawArgs, args.MatchTemplate, args.RewriteTemplate)
 	rawArgs = append(rawArgs, args.FilePatterns...)
+	if len(args.FilePatterns) > 0 {
+		rawArgs = append(rawArgs, "-f", strings.Join(args.FilePatterns, ","))
+	}
 	rawArgs = append(rawArgs, "-json-lines")
 
 	if args.MatchOnly {
@@ -98,4 +104,38 @@ func PipeTo(args Args, w io.Writer) (err error) {
 	}
 
 	return nil
+}
+
+func Matches(args Args) (matches []FileMatch, err error) {
+	b := new(bytes.Buffer)
+	w := bufio.NewWriter(b)
+
+	err = PipeTo(args, w)
+	if err != nil {
+		return nil, err
+	}
+
+	scanner := bufio.NewScanner(b)
+	// increase the scanner buffer size for potentially long lines
+	scanner.Buffer(make([]byte, 100), 10*bufio.MaxScanTokenSize)
+	for scanner.Scan() {
+		b := scanner.Bytes()
+		if err := scanner.Err(); err != nil {
+			// warn on scanner errors and skip
+			log15.Warn("comby error: skipping scanner error line: %v", err)
+			continue
+		}
+		var m *FileMatch
+		if err := json.Unmarshal(b, &m); err != nil {
+			// warn on decode errors and skip
+			log15.Warn("comby error: skipping unmarshaling error: %v", err)
+			continue
+		}
+		matches = append(matches, *m)
+	}
+
+	if len(matches) > 0 {
+		log15.Info("comby invocation found %d file matches", len(matches))
+	}
+	return matches, nil
 }
