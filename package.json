@@ -94,7 +94,7 @@
     "@types/he": "1.1.0",
     "@types/highlight.js": "9.12.3",
     "@types/is-absolute-url": "3.0.0",
-    "@types/jest": "24.0.21",
+    "@types/jest": "24.0.22",
     "@types/jsdom": "12.2.4",
     "@types/lodash": "4.14.144",
     "@types/marked": "0.7.0",
