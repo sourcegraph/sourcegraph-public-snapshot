@@ -268,7 +268,7 @@ type FilterAndValue = string
 /**
  * If a filter value is being typed, try to get its filter type.
  * E.g: with "|"" being the cursor: "repo:| lang:go" => "repo"
- * Checks if the word is a valid filter, else returns false.
+ * Checks if the word is a valid filter, else returns [false].
  */
 export const getFilterTypedBeforeCursor = ({
     query,
@@ -281,7 +281,7 @@ export const getFilterTypedBeforeCursor = ({
 }
 
 /**
- * Returns true if word being typed is not a filter or filter value.
+ * Returns true if word being typed is not a filter value.
  * E.g: where "|" is cursor
  *     "QueryInput lang:|" => false
  *     "archived:Yes QueryInp|" => true

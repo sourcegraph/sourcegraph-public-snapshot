@@ -1,4 +1,11 @@
-import { getSearchTypeFromQuery, toggleSearchType, filterSearchSuggestions, insertSuggestionInQuery } from './helpers'
+import {
+    getSearchTypeFromQuery,
+    toggleSearchType,
+    filterSearchSuggestions,
+    insertSuggestionInQuery,
+    getFilterTypedBeforeCursor,
+    isFuzzyWordSearch,
+} from './helpers'
 import { SearchType } from './results/SearchResults'
 import { searchFilterSuggestions, filterAliases } from './searchFilterSuggestions'
 import { startsWith } from 'lodash/fp'
@@ -140,10 +147,24 @@ describe('search/helpers', () => {
     })
 
     describe('getFilterTypedBeforeCursor', () => {
-        throw new Error('Not Implemented')
+        const query = 'archived:yes QueryInput'
+        it('returns values when a filter value is being typed', () => {
+            expect(getFilterTypedBeforeCursor({ query, cursorPosition: 10 })).toStrictEqual(['archived:y', 'archived'])
+        })
+        it('returns values when a filter is selected but no value char is typed yet', () => {
+            expect(getFilterTypedBeforeCursor({ query, cursorPosition: 9 })).toStrictEqual(['archived:', 'archived'])
+            getFilterTypedBeforeCursor({ query, cursorPosition: 9 })
+        })
+        it('does not return a value if typed whitespace char', () => {
+            expect(getFilterTypedBeforeCursor({ query, cursorPosition: 13 })).toStrictEqual([false])
+        })
     })
 
     describe('isFuzzyWordSearch', () => {
-        throw new Error('Not Implemented')
+        const query = 'Query lang:g'
+        it('returns false if typing a filter value', () =>
+            expect(isFuzzyWordSearch({ query, cursorPosition: 12 })).toBe(false))
+        it('returns true if typing a non filter type or value', () =>
+            expect(isFuzzyWordSearch({ query, cursorPosition: 5 })).toBe(true))
     })
 })
