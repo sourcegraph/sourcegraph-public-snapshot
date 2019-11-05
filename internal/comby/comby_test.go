@@ -46,7 +46,6 @@ func main() {
 			args: Args{
 				Input:         ZipPath(zipPath),
 				MatchTemplate: "func",
-				MatchOnly:     true,
 				FilePatterns:  []string{".go"},
 				Matcher:       ".go",
 			},

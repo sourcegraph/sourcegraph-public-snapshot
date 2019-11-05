@@ -106,9 +106,12 @@ func PipeTo(args Args, w io.Writer) (err error) {
 	return nil
 }
 
+// Matches returns all matches in all files for which comby finds matches.
 func Matches(args Args) (matches []FileMatch, err error) {
 	b := new(bytes.Buffer)
 	w := bufio.NewWriter(b)
+
+	args.MatchOnly = true
 
 	err = PipeTo(args, w)
 	if err != nil {
