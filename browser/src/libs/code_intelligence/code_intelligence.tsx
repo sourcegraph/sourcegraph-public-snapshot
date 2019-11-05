@@ -850,8 +850,8 @@ export function handleCodeHost({
 
 const SHOW_DEBUG = (): boolean => localStorage.getItem('debug') !== null
 
-export const determineCodeHost = (): CodeHost | undefined =>
-    [bitbucketServerCodeHost, githubCodeHost, gitlabCodeHost, phabricatorCodeHost].find(codeHost => codeHost.check())
+const CODE_HOSTS: CodeHost[] = [bitbucketServerCodeHost, githubCodeHost, gitlabCodeHost, phabricatorCodeHost]
+export const determineCodeHost = (): CodeHost | undefined => CODE_HOSTS.find(codeHost => codeHost.check())
 
 export async function injectCodeIntelligenceToCodeHost(
     mutations: Observable<MutationRecordLike[]>,
