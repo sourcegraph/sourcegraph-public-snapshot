@@ -184,7 +184,7 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
         )
     }
 
-    private setTableContainerElement = (ref: HTMLElement | null) => {
+    private setTableContainerElement = (ref: HTMLElement | null): void => {
         this.tableContainerElement = ref
     }
 

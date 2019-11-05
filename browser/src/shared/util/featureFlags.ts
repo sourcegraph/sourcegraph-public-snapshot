@@ -59,12 +59,12 @@ const browserExtensionFeatureFlags = createFeatureFlagStorage({
 })
 
 const inPageFeatureFlags = createFeatureFlagStorage({
-    // eslint-disable-next-line require-await
+    // eslint-disable-next-line @typescript-eslint/require-await
     get: async key => {
         const value = localStorage.getItem(key)
         return value === null ? undefined : value === 'true'
     },
-    // eslint-disable-next-line require-await
+    // eslint-disable-next-line @typescript-eslint/require-await
     set: async (key, val) => {
         localStorage.setItem(key, val.toString())
     },

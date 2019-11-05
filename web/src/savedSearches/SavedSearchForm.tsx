@@ -66,7 +66,7 @@ export class SavedSearchForm extends React.Component<Props, State> {
         }
     }
 
-    private handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    private handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
         this.props.onSubmit(this.state.values)
     }

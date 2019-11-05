@@ -202,7 +202,7 @@ export class TabsWithLocalStorageViewStatePersistence<ID extends string, T exten
         )
     }
 
-    private onSelectTab = (tab: ID) => {
+    private onSelectTab = (tab: ID): void => {
         if (this.props.onSelectTab) {
             this.props.onSelectTab(tab)
         }

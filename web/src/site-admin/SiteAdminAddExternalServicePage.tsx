@@ -151,7 +151,7 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
         }
     }
 
-    private onChange = (input: GQL.IAddExternalServiceInput) => {
+    private onChange = (input: GQL.IAddExternalServiceInput): void => {
         this.setState({
             displayName: input.displayName,
             config: input.config,

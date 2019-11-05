@@ -205,7 +205,7 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
 
         private onSubmit: React.FormEventHandler<HTMLFormElement> = e => this.submits.next(e)
 
-        private onDidDelete = () => {
+        private onDidDelete = (): void => {
             this.props.history.push('/extensions')
             this.props.onDidUpdateExtension()
         }

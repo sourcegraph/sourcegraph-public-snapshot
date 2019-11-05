@@ -225,7 +225,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
         )
     }
 
-    public runAction = (e: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>) => {
+    public runAction = (e: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>): void => {
         const action = (isAltEvent(e) && this.props.altAction) || this.props.action
 
         if (!action.command) {

@@ -244,9 +244,9 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
     private onQueryChangeEvent: React.FormEventHandler<HTMLInputElement> = e =>
         this.onQueryChange({ query: e.currentTarget.value })
 
-    private onQueryChangeImmediate = (query: string) => this.queryChanges.next({ query, immediate: true })
+    private onQueryChangeImmediate = (query: string): void => this.queryChanges.next({ query, immediate: true })
 
-    private onQueryChange = ({ query, immediate }: { query: string; immediate?: boolean }) =>
+    private onQueryChange = ({ query, immediate }: { query: string; immediate?: boolean }): void =>
         this.queryChanges.next({ query, immediate })
 
     private queryRegistryExtensions = (args: { query?: string }): Observable<ExtensionsResult> =>

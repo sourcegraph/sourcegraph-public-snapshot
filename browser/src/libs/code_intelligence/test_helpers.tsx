@@ -12,7 +12,7 @@ export interface GraphQLResponseMap {
 
 export const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
     SiteProductVersion: () =>
-        // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         of({
             data: {
                 site: {
@@ -24,7 +24,7 @@ export const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
             errors: undefined,
         } as SuccessGraphQLResult<IQuery>),
     CurrentUSer: () =>
-        // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         of({
             data: {
                 currentUser: {
@@ -41,7 +41,7 @@ export const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
         } as SuccessGraphQLResult<IQuery>),
 
     ResolveRev: () =>
-        // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         of({
             data: {
                 repository: {
@@ -56,7 +56,7 @@ export const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
             errors: undefined,
         } as SuccessGraphQLResult<IQuery>),
     BlobContent: () =>
-        // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         of({
             data: {
                 repository: {
@@ -70,7 +70,7 @@ export const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
             errors: undefined,
         } as SuccessGraphQLResult<IQuery>),
     ResolveRepo: variables =>
-        // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         of({
             data: {
                 repository: {

@@ -115,11 +115,9 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMi
         )
     }
 
-    private updateMirrorRepository = () => {
-        const p = updateMirrorRepository({ repository: this.props.repo.id })
-            .toPromise()
-            .then(result => this.props.onDidUpdateRepository())
-        return p
+    private updateMirrorRepository = async (): Promise<void> => {
+        await updateMirrorRepository({ repository: this.props.repo.id }).toPromise()
+        this.props.onDidUpdateRepository()
     }
 }
 
@@ -226,7 +224,7 @@ class CheckMirrorRepositoryConnectionActionContainer extends React.PureComponent
         )
     }
 
-    private checkMirrorRepositoryConnection = () => this.checkRequests.next()
+    private checkMirrorRepositoryConnection = (): void => this.checkRequests.next()
 }
 
 interface Props extends RouteComponentProps<any> {
@@ -350,10 +348,10 @@ export class RepoSettingsMirrorPage extends React.PureComponent<Props, State> {
         )
     }
 
-    private onDidUpdateRepository = () => {
+    private onDidUpdateRepository = (): void => {
         this.repoUpdates.next()
         this.props.onDidUpdateRepository({})
     }
 
-    private onDidUpdateReachability = (reachable: boolean | undefined) => this.setState({ reachable })
+    private onDidUpdateReachability = (reachable: boolean | undefined): void => this.setState({ reachable })
 }

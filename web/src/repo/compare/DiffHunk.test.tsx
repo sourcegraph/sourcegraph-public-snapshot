@@ -9,7 +9,7 @@ import { DiffHunk } from './DiffHunk'
 describe('DiffHunk', () => {
     const history = H.createMemoryHistory()
 
-    // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     const hunk = {
         oldRange: { startLine: 159, lines: 7 },
         oldNoNewlineAt: false,

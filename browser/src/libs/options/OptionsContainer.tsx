@@ -143,19 +143,19 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
         )
     }
 
-    private handleURLChange = (value: string) => {
+    private handleURLChange = (value: string): void => {
         this.setState({ sourcegraphURL: value })
     }
 
-    private handleURLSubmit = async () => {
+    private handleURLSubmit = async (): Promise<void> => {
         await this.props.setSourcegraphURL(this.state.sourcegraphURL)
     }
 
-    private handleSettingsClick = () => {
+    private handleSettingsClick = (): void => {
         this.setState(state => ({
             isSettingsOpen: !state.isSettingsOpen,
         }))
     }
 
-    private handleToggleActivationClick = (value: boolean) => this.activationClicks.next(value)
+    private handleToggleActivationClick = (value: boolean): void => this.activationClicks.next(value)
 }

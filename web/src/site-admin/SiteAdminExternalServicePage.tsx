@@ -153,7 +153,7 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
         )
     }
 
-    private onChange = (input: GQL.IAddExternalServiceInput) => {
+    private onChange = (input: GQL.IAddExternalServiceInput): void => {
         this.setState(state => {
             if (isExternalService(state.externalServiceOrError)) {
                 return { ...state, externalServiceOrError: { ...state.externalServiceOrError, ...input } }
@@ -162,7 +162,7 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
         })
     }
 
-    private onSubmit = (event?: React.FormEvent<HTMLFormElement>) => {
+    private onSubmit = (event?: React.FormEvent<HTMLFormElement>): void => {
         if (event) {
             event.preventDefault()
         }

@@ -140,6 +140,6 @@ export class RepositoryCommitsPage extends React.PureComponent<Props> {
         )
     }
 
-    private queryCommits = (args: FilteredConnectionQueryArgs) =>
+    private queryCommits = (args: FilteredConnectionQueryArgs): Observable<GQL.IGitCommitConnection> =>
         fetchGitCommits({ ...args, repo: this.props.repo.id, revspec: this.props.commitID })
 }

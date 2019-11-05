@@ -312,9 +312,9 @@ export class BlobPage extends React.PureComponent<Props, State> {
         )
     }
 
-    private onDidUpdateLineWrap = (value: boolean) => this.setState({ wrapCode: value })
+    private onDidUpdateLineWrap = (value: boolean): void => this.setState({ wrapCode: value })
 
-    private onExtendHighlightingTimeoutClick = () => this.extendHighlightingTimeoutClicks.next()
+    private onExtendHighlightingTimeoutClick = (): void => this.extendHighlightingTimeoutClicks.next()
 
     private getPageTitle(): string {
         const repoNameSplit = this.props.repoName.split('/')

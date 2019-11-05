@@ -273,12 +273,12 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         )
     }
 
-    private onSave = (value: string) => {
+    private onSave = (value: string): void => {
         eventLogger.log('SiteConfigurationSaved')
         this.remoteUpdates.next(value)
     }
 
-    private reloadSite = () => {
+    private reloadSite = (): void => {
         eventLogger.log('SiteReloaded')
         this.siteReloads.next()
     }

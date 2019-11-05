@@ -1,7 +1,7 @@
 import * as H from 'history'
 import InformationVariantIcon from 'mdi-react/InformationVariantIcon'
 import * as React from 'react'
-import { throwError } from 'rxjs'
+import { throwError, Observable } from 'rxjs'
 import { catchError, map, tap } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
@@ -58,7 +58,7 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
         )
     }
 
-    private onSubmit = (title: string, contents: string) => {
+    private onSubmit = (title: string, contents: string): Observable<void> => {
         eventLogger.log('CreatedDiscussion')
 
         const lpr = parseHash(window.location.hash)
@@ -108,5 +108,5 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
         )
     }
 
-    private onTitleChange = (newTitle: string) => this.setState({ title: newTitle })
+    private onTitleChange = (newTitle: string): void => this.setState({ title: newTitle })
 }

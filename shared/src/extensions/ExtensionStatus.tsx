@@ -136,7 +136,7 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
         )
     }
 
-    private setSideloadedExtensionURL = () => {
+    private setSideloadedExtensionURL = (): void => {
         const url = window.prompt(
             'Parcel dev server URL:',
             this.state.sideloadedExtensionURL || 'http://localhost:1234'
@@ -144,7 +144,7 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
         this.props.platformContext.sideloadedExtensionURL.next(url)
     }
 
-    private clearSideloadedExtensionURL = () => {
+    private clearSideloadedExtensionURL = (): void => {
         this.props.platformContext.sideloadedExtensionURL.next(null)
     }
 }

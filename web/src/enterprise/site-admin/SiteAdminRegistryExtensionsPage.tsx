@@ -126,7 +126,7 @@ class RegistryExtensionNodeSiteAdminRow extends React.PureComponent<
         )
     }
 
-    private deleteExtension = () => this.deletes.next()
+    private deleteExtension = (): void => this.deletes.next()
 }
 
 interface Props extends RouteComponentProps<{}> {}
@@ -252,5 +252,5 @@ export class SiteAdminRegistryExtensionsPage extends React.PureComponent<Props> 
             })
         )
 
-    private onDidUpdateRegistryExtension = () => this.updates.next()
+    private onDidUpdateRegistryExtension = (): void => this.updates.next()
 }

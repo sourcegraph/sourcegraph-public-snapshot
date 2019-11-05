@@ -263,7 +263,7 @@ class _ProductSubscriptionForm extends React.Component<Props & ReactStripeElemen
 
     private onBillingPlanIDChange = (value: string | null): void => this.setState({ billingPlanID: value })
     private onUserCountChange = (value: number | null): void => this.setState({ userCount: value })
-    private onPaymentValidityChange = (value: boolean) => this.setState({ paymentValidity: value })
+    private onPaymentValidityChange = (value: boolean): void => this.setState({ paymentValidity: value })
 
     private onSubmit: React.FormEventHandler = e => {
         e.preventDefault()

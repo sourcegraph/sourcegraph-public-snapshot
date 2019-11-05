@@ -47,6 +47,7 @@ class JSDOMEnvironment {
     global.addEventListener('error', this.errorEventListener)
     // However, don't report them as uncaught if the user listens to 'error' event.
     // In that case, we assume the might have custom error handling logic.
+    /* eslint-disable @typescript-eslint/unbound-method */
     const originalAddListener = global.addEventListener
     const originalRemoveListener = global.removeEventListener
     global.addEventListener = function(...args) {
@@ -61,6 +62,7 @@ class JSDOMEnvironment {
       }
       return originalRemoveListener.apply(this, args)
     }
+    /* eslint-enable @typescript-eslint/unbound-method */
     this.moduleMocker = new ModuleMocker(global)
     const timerConfig = {
       idToRef: id => id,

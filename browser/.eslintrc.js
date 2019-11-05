@@ -5,11 +5,5 @@ module.exports = {
     ...baseConfig.parserOptions,
     project: 'tsconfig.json',
   },
-  rules: {
-    'no-console': ['error'],
-    'import/no-cycle': ['error'],
-    'no-return-await': ['error'],
-    'no-shadow': ['error', { allow: ['ctx'] }],
-  },
   overrides: baseConfig.overrides,
 }

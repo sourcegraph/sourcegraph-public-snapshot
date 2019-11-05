@@ -4,7 +4,7 @@ import { isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { Redirect } from 'react-router'
-import { combineLatest, Subject, Subscription, throwError } from 'rxjs'
+import { combineLatest, Subject, Subscription, throwError, Observable } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, repeatWhen, startWith, switchMap, tap } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
@@ -169,7 +169,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
             : '#' + hash.toString()
     }
 
-    private onSubmit = (title: string, contents: string) => {
+    private onSubmit = (title: string, contents: string): Observable<void> => {
         eventLogger.log('RepliedToDiscussion')
         if (!this.state.thread) {
             throw new Error('no thread')
@@ -181,19 +181,19 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
         )
     }
 
-    private onCommentReport = (comment: GQL.IDiscussionComment, reason: string) =>
+    private onCommentReport = (comment: GQL.IDiscussionComment, reason: string): Observable<void> =>
         updateComment({ commentID: comment.id, report: reason }).pipe(
             tap(thread => this.setState({ thread })),
             map(thread => undefined)
         )
 
-    private onCommentClearReports = (comment: GQL.IDiscussionComment) =>
+    private onCommentClearReports = (comment: GQL.IDiscussionComment): Observable<void> =>
         updateComment({ commentID: comment.id, clearReports: true }).pipe(
             tap(thread => this.setState({ thread })),
             map(thread => undefined)
         )
 
-    private onCommentDelete = (comment: GQL.IDiscussionComment) =>
+    private onCommentDelete = (comment: GQL.IDiscussionComment): Observable<void> =>
         // TODO: Support deleting the whole thread, and/or fix this when it is deleting the 1st comment
         // in a thread. See https://github.com/sourcegraph/sourcegraph/issues/429.
         updateComment({ commentID: comment.id, delete: true }).pipe(

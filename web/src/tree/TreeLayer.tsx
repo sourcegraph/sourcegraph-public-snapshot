@@ -323,7 +323,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
         }
     }
 
-    private handleTreeClick = () => {
+    private handleTreeClick = (): void => {
         this.props.onSelect(this.node)
         const path = this.props.entryInfo ? this.props.entryInfo.path : ''
         this.props.onToggleExpand(path, !this.props.isExpanded, this.node)
@@ -334,7 +334,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
      * that shouldn't update URL on click w/o modifier key (but should retain
      * anchor element properties, like right click "Copy link address").
      */
-    private noopRowClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    private noopRowClick = (e: React.MouseEvent<HTMLAnchorElement>): void => {
         if (!e.altKey && !e.metaKey && !e.shiftKey && !e.ctrlKey) {
             e.preventDefault()
             e.stopPropagation()
@@ -345,12 +345,12 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
     /**
      * linkRowClick is the click handler for <Link>
      */
-    private linkRowClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    private linkRowClick = (e: React.MouseEvent<HTMLAnchorElement>): void => {
         this.props.setActiveNode(this.node)
         this.props.onSelect(this.node)
     }
 
-    private setChildNode = (node: TreeNode, index: number) => {
+    private setChildNode = (node: TreeNode, index: number): void => {
         this.node.childNodes[index] = node
     }
 }
