@@ -59,6 +59,7 @@ func (r *campaignPlanResolver) Changesets(
 	return &campaignJobsConnectionResolver{
 		store:        r.store,
 		campaignPlan: r.campaignPlan,
+		limit:        int(args.GetFirst()),
 	}
 }
 
@@ -69,12 +70,14 @@ func (r *campaignPlanResolver) RepositoryDiffs(
 	return &campaignJobsConnectionResolver{
 		store:        r.store,
 		campaignPlan: r.campaignPlan,
+		limit:        int(args.GetFirst()),
 	}, nil
 }
 
 type campaignJobsConnectionResolver struct {
 	store        *ee.Store
 	campaignPlan *a8n.CampaignPlan
+	limit        int
 
 	// cache results because they are used by multiple fields
 	once sync.Once
@@ -99,6 +102,7 @@ func (r *campaignJobsConnectionResolver) compute(ctx context.Context) ([]*a8n.Ca
 	r.once.Do(func() {
 		r.jobs, r.next, r.err = r.store.ListCampaignJobs(ctx, ee.ListCampaignJobsOpts{
 			CampaignPlanID: r.campaignPlan.ID,
+			Limit:          r.limit,
 		})
 		// TODO(a8n): To avoid n+1 queries, we could preload all repositories here
 		// and save them

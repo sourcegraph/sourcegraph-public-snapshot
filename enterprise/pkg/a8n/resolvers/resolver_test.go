@@ -932,7 +932,7 @@ func TestCampaignPlanResolver(t *testing.T) {
               state
               errors
             }
-            changesets {
+            changesets(first: %d) {
               nodes {
                 title
                 body
@@ -980,7 +980,7 @@ func TestCampaignPlanResolver(t *testing.T) {
           }
         }
       }
-	`, marshalCampaignPlanID(plan.ID)))
+	`, marshalCampaignPlanID(plan.ID), len(jobs)))
 
 	if have, want := response.Node.CampaignType, plan.CampaignType; have != want {
 		t.Fatalf("have CampaignType %q, want %q", have, want)
