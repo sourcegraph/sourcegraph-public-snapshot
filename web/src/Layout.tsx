@@ -21,7 +21,6 @@ import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
-import { KEYBOARD_SHORTCUT_SHOW_HELP, KeyboardShortcutsProps } from '../../shared/src/keyboardShortcuts'
 import { KeyboardShortcutsHelp } from './keyboardShortcuts/KeyboardShortcutsHelp'
 import { IntegrationsToast } from './marketing/IntegrationsToast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
@@ -44,6 +43,7 @@ import { parseBrowserRepoURL } from './util/url'
 import LiteralSearchToast from './marketing/LiteralSearchToast'
 import { ThemeProps } from '../../shared/src/theme'
 import { ThemePreferenceProps } from './search/theme'
+import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_SHOW_HELP } from './keyboardShortcuts/keyboardShortcuts'
 
 export interface LayoutProps
     extends RouteComponentProps<any>,
