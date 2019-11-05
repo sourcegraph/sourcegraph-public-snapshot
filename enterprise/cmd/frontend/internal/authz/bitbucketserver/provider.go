@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -26,7 +27,7 @@ type Provider struct {
 	store    *store
 }
 
-var _ authz.Provider = ((*Provider)(nil))
+var _ authz.Provider = (*Provider)(nil)
 
 var clock = func() time.Time { return time.Now().UTC().Truncate(time.Microsecond) }
 
@@ -102,10 +103,11 @@ func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, 
 		userName = user.Name
 	}
 
-	ps := &Permissions{
-		UserID: userID,
-		Perm:   authz.Read,
-		Type:   "repos",
+	ps := &iauthz.UserPermissions{
+		UserID:   userID,
+		Perm:     authz.Read,
+		Type:     iauthz.PermRepos,
+		Provider: iauthz.ProviderBitbucketServer,
 	}
 
 	err = p.store.LoadPermissions(ctx, ps, p.update(userName))
@@ -113,16 +115,17 @@ func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, 
 		return nil, err
 	}
 
-	return ps.Authorized(repos), nil
+	return ps.AuthorizedRepos(repos), nil
 }
 
 // UpdatePermissions forces an update of the permissions of the given
 // user.
 func (p *Provider) UpdatePermissions(ctx context.Context, u *types.User) error {
-	ps := &Permissions{
-		UserID: u.ID,
-		Perm:   authz.Read,
-		Type:   "repos",
+	ps := &iauthz.UserPermissions{
+		UserID:   u.ID,
+		Perm:     authz.Read,
+		Type:     iauthz.PermRepos,
+		Provider: iauthz.ProviderBitbucketServer,
 	}
 
 	return p.store.UpdatePermissions(ctx, ps, p.update(u.Username))
