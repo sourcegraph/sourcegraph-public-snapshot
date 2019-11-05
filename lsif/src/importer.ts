@@ -620,8 +620,8 @@ function gatherDocument(correlator: Correlator, currentDocumentId: DocumentId, p
     for (const id of mustGet(correlator.containsData, currentDocumentId, 'contains')) {
         const range = mustGet(correlator.rangeData, id, 'range')
         addHover(range.hoverResultId)
-        for (const id of range.monikerIds) {
-            addMoniker(id)
+        for (const monikerId of range.monikerIds) {
+            addMoniker(monikerId)
         }
 
         document.ranges.set(id, range)

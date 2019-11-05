@@ -83,22 +83,22 @@ export async function gunzipJSON<T>(value: Buffer): Promise<T> {
  * @param value The value to jsonify.
  */
 function dumpJSON<T>(value: T): string {
-    return JSON.stringify(value, (_, value) => {
-        if (value instanceof Map) {
+    return JSON.stringify(value, (_, oldValue) => {
+        if (oldValue instanceof Map) {
             return {
                 type: 'map',
-                value: [...value],
+                value: [...oldValue],
             }
         }
 
-        if (value instanceof Set) {
+        if (oldValue instanceof Set) {
             return {
                 type: 'set',
-                value: [...value],
+                value: [...oldValue],
             }
         }
 
-        return value
+        return oldValue
     })
 }
 
@@ -109,17 +109,17 @@ function dumpJSON<T>(value: T): string {
  * @param value The value to unmarshal.
  */
 function parseJSON<T>(value: string): T {
-    return JSON.parse(value, (_, value) => {
-        if (typeof value === 'object' && value !== null) {
-            if (value.type === 'map') {
-                return new Map(value.value)
+    return JSON.parse(value, (_, oldValue) => {
+        if (typeof oldValue === 'object' && oldValue !== null) {
+            if (oldValue.type === 'map') {
+                return new Map(oldValue.value)
             }
 
-            if (value.type === 'set') {
-                return new Set(value.value)
+            if (oldValue.type === 'set') {
+                return new Set(oldValue.value)
             }
         }
 
-        return value
+        return oldValue
     })
 }

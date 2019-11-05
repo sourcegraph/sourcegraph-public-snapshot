@@ -257,10 +257,9 @@ export class GenericCache<K, V> {
      * @param value The cache entry's resolved value.
      */
     private async resolved(entry: CacheEntry<K, V>, value: V): Promise<void> {
-        const size = this.sizeFunction(value)
-        this.size += size
-        entry.size = size
-        this.metrics.sizeGauge.inc(size)
+        entry.size = this.sizeFunction(value)
+        this.size += entry.size
+        this.metrics.sizeGauge.inc(entry.size)
 
         let node = this.lruList.tail
         while (this.size > this.max && node) {
