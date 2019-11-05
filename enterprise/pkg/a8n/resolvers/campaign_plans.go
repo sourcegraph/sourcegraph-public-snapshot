@@ -66,7 +66,6 @@ func (r *campaignPlanResolver) RepositoryDiffs(
 	ctx context.Context,
 	args *graphqlutil.ConnectionArgs,
 ) (graphqlbackend.ChangesetPlansConnectionResolver, error) {
-	// TODO(a8n): We should cache this resolver. See `Changesets` method above
 	return &campaignJobsConnectionResolver{
 		store:        r.store,
 		campaignPlan: r.campaignPlan,
@@ -91,11 +90,7 @@ func (r *campaignJobsConnectionResolver) Nodes(ctx context.Context) ([]graphqlba
 	}
 	resolvers := make([]graphqlbackend.ChangesetPlanResolver, 0, len(jobs))
 	for _, j := range jobs {
-		resolvers = append(resolvers, &campaignJobResolver{
-			store:        r.store,
-			job:          j,
-			campaignPlan: r.campaignPlan,
-		})
+		resolvers = append(resolvers, &campaignJobResolver{job: j})
 	}
 	return resolvers, nil
 }
@@ -126,9 +121,7 @@ func (r *campaignJobsConnectionResolver) PageInfo(ctx context.Context) (*graphql
 }
 
 type campaignJobResolver struct {
-	store        *ee.Store
-	job          *a8n.CampaignJob
-	campaignPlan *a8n.CampaignPlan
+	job *a8n.CampaignJob
 
 	// cache repo because it's called more than one time
 	once   sync.Once
