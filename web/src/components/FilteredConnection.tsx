@@ -10,15 +10,13 @@ import {
     distinctUntilChanged,
     filter,
     map,
-    publishReplay,
-    refCount,
     skip,
     startWith,
     switchMap,
     takeUntil,
     tap,
-    mergeMap,
     scan,
+    share,
 } from 'rxjs/operators'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
@@ -365,13 +363,6 @@ interface FilteredConnectionState<C extends Connection<N>, N> extends Connection
      * of the result set's initial request. See `ConnectionStateCommon.previousPagesCount` for more info.
      */
     queried: boolean
-
-    /**
-     * When `cursorPaging` is true, this is the set of node that should be prepended to a subsequent
-     * result set. This list is cleared when the query or active filters change, and is updated to reflect
-     * the results of a new page after each successful request.
-     */
-    previousPage: N[]
 }
 
 /**
@@ -458,7 +449,6 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         this.state = {
             loading: true,
             queried: false,
-            previousPage: [],
             query: (!this.props.hideSearch && q.get(QUERY_KEY)) || '',
             activeFilter: getFilterFromURL(q, this.props.filters),
             first: parseQueryInt(q, 'first') || this.props.defaultFirst!,
@@ -516,32 +506,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                             shouldRefresh: false,
                         }
                     ),
-                    tap(({ query, filter, shouldRefresh }) => {
-                        if (this.props.shouldUpdateURLQuery) {
-                            this.props.history.replace({
-                                search: this.urlQuery({
-                                    query,
-                                    filter,
-                                    // If we've made a request, update the variable to be the number of
-                                    // results visible from previous requests. If we haven't made a request
-                                    // yet, pass the original `previousPagesCount` value we extracted from
-                                    // the URL so we don't clear it prematurely.
-                                    previousPagesCount: this.state.queried
-                                        ? shouldRefresh
-                                            ? 0
-                                            : this.state.previousPage.length
-                                        : this.state.previousPagesCount,
-                                }),
-                                hash: this.props.location.hash,
-                            })
-                        }
-                    }),
                     switchMap(({ query, filter, shouldRefresh }) => {
-                        type PartialStateUpdate = Pick<
-                            FilteredConnectionState<C, N>,
-                            'connectionOrError' | 'loading' | 'connectionQuery'
-                        >
-
                         const result = this.props
                             .queryConnection({
                                 // Load the correct number of initial visible results, or request the next page
@@ -552,42 +517,17 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                             })
                             .pipe(
                                 catchError(error => [asError(error)]),
-                                mergeMap(
-                                    async (c: C | ErrorLike): Promise<PartialStateUpdate> => {
-                                        // If we're paging with cursors and we have a new set of results,
-                                        // append them onto the currently visible result set and return
-                                        // the new concatenated set of results.
-                                        if (c && !isErrorLike(c) && this.props.cursorPaging) {
-                                            await new Promise(resolve => {
-                                                this.setState(
-                                                    state => ({
-                                                        previousPage: shouldRefresh
-                                                            ? c.nodes
-                                                            : state.previousPage.concat(c.nodes),
-                                                        after: (c.pageInfo && c.pageInfo.endCursor) || undefined,
-                                                        queried: true,
-                                                    }),
-                                                    () => {
-                                                        // Update the connection's nodes to the concatenated set of results.
-                                                        c.nodes = this.state.previousPage
-                                                        resolve()
-                                                    }
-                                                )
-                                            })
-                                        }
-
-                                        return {
-                                            connectionOrError: c,
-                                            connectionQuery: query,
-                                            loading: false,
-                                        }
-                                    }
+                                map(
+                                    (connectionOrError): PartialStateUpdate => ({
+                                        connectionOrError,
+                                        connectionQuery: query,
+                                        loading: false,
+                                    })
                                 ),
-                                publishReplay<PartialStateUpdate>(),
-                                refCount()
+                                share()
                             )
 
-                        return shouldRefresh
+                        return (shouldRefresh
                             ? merge(
                                   result,
                                   of({ connectionOrError: undefined, loading: true }).pipe(
@@ -596,16 +536,67 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                                   )
                               )
                             : result
+                        ).pipe(map(stateUpdate => ({ shouldRefresh, ...stateUpdate })))
                     }),
-                    tap(({ connectionOrError }) => {
+                    scan<PartialStateUpdate & { shouldRefresh: boolean }, PartialStateUpdate & { previousPage: N[] }>(
+                        ({ previousPage }, { shouldRefresh, connectionOrError, ...rest }) => {
+                            if (
+                                connectionOrError &&
+                                !isErrorLike(connectionOrError) &&
+                                this.props.cursorPaging &&
+                                !shouldRefresh
+                            ) {
+                                const nodes = previousPage.concat(connectionOrError.nodes)
+                                connectionOrError.nodes = nodes
+                                return {
+                                    previousPage: nodes,
+                                    after:
+                                        (connectionOrError.pageInfo && connectionOrError.pageInfo.endCursor) ||
+                                        undefined,
+                                    connectionOrError,
+                                    ...rest,
+                                }
+                            }
+                            return {
+                                previousPage: [],
+                                after: undefined,
+                                connectionOrError,
+                                previousPagesCount: 0,
+                                ...rest,
+                            }
+                        },
+                        {
+                            previousPage: [],
+                            after: undefined,
+                            connectionOrError: undefined,
+                            connectionQuery: undefined,
+                            loading: true,
+                        }
+                    )
+                )
+                .subscribe(
+                    ({ connectionOrError, previousPage, ...rest }) => {
+                        if (this.props.shouldUpdateURLQuery) {
+                            this.props.history.replace({
+                                search: this.urlQuery({
+                                    previousPagesCount: previousPage.length,
+                                }),
+                                hash: this.props.location.hash,
+                            })
+                        }
                         if (this.props.onUpdate) {
                             this.props.onUpdate(connectionOrError)
                         }
-                    })
+                        this.setState({ connectionOrError, ...rest })
+                    },
+                    err => console.error(err)
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
         )
 
+        type PartialStateUpdate = Pick<
+            FilteredConnectionState<C, N>,
+            'connectionOrError' | 'connectionQuery' | 'loading' | 'after'
+        >
         this.subscriptions.add(
             this.showMoreClicks
                 .pipe(
