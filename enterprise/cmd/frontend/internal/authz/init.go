@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -74,9 +75,25 @@ func ProvidersFromConfig(
 
 func init() {
 	conf.ContributeWarning(func(cfg conf.Unified) (problems conf.Problems) {
-		_, _, seriousProblems, warnings := ProvidersFromConfig(context.Background(), &cfg, db.ExternalServices, dbconn.Global)
+		_, providers, seriousProblems, warnings := ProvidersFromConfig(context.Background(), &cfg, db.ExternalServices, dbconn.Global)
+
+		// Report any authz provider problems in external configs.
 		problems = append(problems, conf.NewExternalServiceProblems(seriousProblems...)...)
 		problems = append(problems, conf.NewExternalServiceProblems(warnings...)...)
+
+		// Warn the admin when both code host authz provider and the Sourcegraph authz provider are configured.
+		if cfg.SiteConfiguration.AuthzExplicitPermission != nil &&
+			cfg.SiteConfiguration.AuthzExplicitPermission.Enabled && len(providers) > 0 {
+			serviceTypes := make([]string, len(providers))
+			for i := range providers {
+				serviceTypes[i] = `"` + providers[i].ServiceType() + `"`
+			}
+			msg := fmt.Sprintf(
+				"The explicit permission model (`authz.explicitPermission`) cannot be enabled when %s authorization providers are in use. Blocking access to all repositories until the conflict is revsolved.",
+				strings.Join(serviceTypes, ", "))
+			problems = append(problems, conf.NewSiteProblem(msg))
+		}
+
 		return problems
 	})
 }
