@@ -79,20 +79,17 @@ export async function createPostgresConnection(configuration: Configuration, log
         disable: false,
     }
 
+    const host = url.hostname
+    const port = parseInt(url.port, 10) || 5432
+    const username = decodeURIComponent(url.username)
+    const password = decodeURIComponent(url.password)
+    const database = decodeURIComponent(url.pathname).substring(1) || username
     const sslMode = url.searchParams.get('sslmode')
-
-    const connectionOptions = {
-        host: url.hostname,
-        port: parseInt(url.port, 10) || 5432,
-        username: decodeURIComponent(url.username),
-        password: decodeURIComponent(url.password),
-        database: decodeURIComponent(url.pathname).substring(1),
-        ssl: sslMode ? sslModes[sslMode] : undefined,
-    }
+    const ssl = sslMode ? sslModes[sslMode] : undefined
 
     // Get a working connection
     const connection = await connect(
-        connectionOptions,
+        { host, port, username, password, database, ssl },
         logger
     )
 
