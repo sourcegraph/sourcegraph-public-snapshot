@@ -263,16 +263,21 @@ export const insertSuggestionInQuery = (
     }
 }
 
+type FilterAndValue = string
+
 /**
  * If a filter value is being typed, try to get its filter type.
  * E.g: with "|"" being the cursor: "repo:| lang:go" => "repo"
  * Checks if the word is a valid filter, else returns false.
  */
-export const getFilterTypedBeforeCursor = ({ query, cursorPosition }: SearchQueryCursor): SuggestionTypes | false => {
+export const getFilterTypedBeforeCursor = ({
+    query,
+    cursorPosition,
+}: SearchQueryCursor): [FilterAndValue, SuggestionTypes] | [false] => {
     const firstPart = getStringBeforeCursor(query, cursorPosition)
     // get string before ":" char until a space is found or start of string
-    const [, word] = firstPart.match(/([^\s:]+)?:(\S?)+$/) || []
-    return isValidFilter(word) ? word : false
+    const [filterAndValue, filter] = firstPart.match(/([^\s:]+)?:(\S?)+$/) || []
+    return isValidFilter(filter) ? [filterAndValue.trim(), filter] : [false]
 }
 
 /**

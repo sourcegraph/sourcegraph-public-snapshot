@@ -16,7 +16,7 @@ import {
 } from 'rxjs/operators'
 import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
-import { Suggestion, SuggestionItem, SuggestionTypes, createSuggestion } from './Suggestion'
+import { Suggestion, SuggestionItem, SuggestionTypes, createSuggestion, fuzzySearchFilters } from './Suggestion'
 import RegexpToggle from './RegexpToggle'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 import { PatternTypeProps } from '..'
@@ -146,28 +146,21 @@ export class QueryInput extends React.Component<Props, State> {
                             .filter(s => !!s)
                             .join(' ')
 
-                        return fetchSuggestions(fullQuery).pipe(
-                            map(createSuggestion),
-                            filter(isDefined),
-                            filter(suggestion => {
-                                const filterBeforeCursor = getFilterTypedBeforeCursor(queryCursor)
-                                // only show fuzzy-suggestions that are relevant to the typed filter
-                                switch (filterBeforeCursor) {
-                                    case SuggestionTypes.repo:
-                                        return suggestion.type === SuggestionTypes.repo
-                                    default:
-                                        return true
-                                }
-                            }),
-                            toArray(),
-                            map(suggestions => ({
-                                suggestions: {
-                                    cursorPosition: queryCursor.cursorPosition,
-                                    values: filterSuggestions.values.concat(suggestions),
-                                },
-                            })),
-                            catchError(() => [{ suggestions: filterSuggestions }])
-                        )
+                        const [filterAndValue, filterBeforeCursor] = getFilterTypedBeforeCursor(queryCursor)
+
+                        if (filterAndValue && filterBeforeCursor) {
+                            if (!fuzzySearchFilters.includes(filterBeforeCursor)) {
+                                return [{ suggestions: filterSuggestions }]
+                            }
+                            return this.fetchFuzzySuggestions(
+                                filterAndValue,
+                                filterBeforeCursor,
+                                queryCursor,
+                                filterSuggestions
+                            )
+                        }
+
+                        return this.fetchFuzzySuggestions(fullQuery, false, queryCursor, filterSuggestions)
                     }),
                     // Abort suggestion display on route change or suggestion hiding
                     takeUntil(this.suggestionsHidden),
@@ -273,9 +266,9 @@ export class QueryInput extends React.Component<Props, State> {
         })
         return (
             <Downshift
-                scrollIntoView={this.scrollIntoView}
+                scrollIntoView={this.downshiftScrollIntoView}
                 onSelect={this.onSuggestionSelect}
-                itemToString={this.itemToString}
+                itemToString={this.downshiftItemToString}
             >
                 {({ getInputProps, getItemProps, getMenuProps, highlightedIndex }) => {
                     const { onChange: downshiftChange, onKeyDown } = getInputProps()
@@ -337,16 +330,52 @@ export class QueryInput extends React.Component<Props, State> {
         )
     }
 
-    private itemToString = (suggestion?: Suggestion) => (suggestion ? suggestion.title : '')
+    /**
+     * Used at inputValues listener in constructor.
+     * Dos a fuzzy search and formats suggestions for display.
+     */
+    private fetchFuzzySuggestions = (
+        query: string,
+        filterBeforeCursor: SuggestionTypes | false,
+        queryCursor: SearchQueryCursor,
+        filterSuggestions: ComponentSuggestions
+    ) =>
+        fetchSuggestions(query).pipe(
+            map(createSuggestion),
+            filter(isDefined),
+            filter(suggestion => {
+                // only show fuzzy-suggestions that are relevant to the typed filter
+                switch (filterBeforeCursor) {
+                    case SuggestionTypes.repo:
+                        console.log('suggestion.type: ', suggestion.type)
+                        return suggestion.type === SuggestionTypes.repo
+                    default:
+                        return true
+                }
+            }),
+            toArray(),
+            map(suggestions => ({
+                suggestions: {
+                    cursorPosition: queryCursor.cursorPosition,
+                    values: filterSuggestions.values.concat(suggestions),
+                },
+            })),
+            catchError(() => [{ suggestions: filterSuggestions }])
+        )
 
-    private scrollIntoView = (node: HTMLElement, menuNode: HTMLElement) => {
+    /**
+     * this.render() -> <downshift>
+     */
+    private downshiftItemToString = (suggestion?: Suggestion) => (suggestion ? suggestion.title : '')
+
+    private downshiftScrollIntoView = (node: HTMLElement, menuNode: HTMLElement) => {
         scrollIntoView(menuNode, node)
     }
 
     private onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
         // ArrowDown to show all available suggestions
         if (!this.props.value && event.key === Key.ArrowDown) {
-            this.setState(state => ({ suggestions: this.getSuggestions(searchFilterSuggestions) }))
+            this.setState({ suggestions: this.getSuggestions(searchFilterSuggestions) })
         }
     }
 
@@ -401,7 +430,6 @@ export class QueryInput extends React.Component<Props, State> {
             }
 
             const { cursorPosition } = state.suggestions
-            const isValueSuggestion = suggestion.type !== SuggestionTypes.filters
             const { query: newQuery, cursorPosition: newCursorPosition } = insertSuggestionInQuery(
                 props.value,
                 suggestion,
@@ -410,14 +438,19 @@ export class QueryInput extends React.Component<Props, State> {
 
             props.onChange(newQuery)
 
+            const isValueSuggestion = suggestion.type !== SuggestionTypes.filters
+
+            // If a filter was selected, show filter value suggestions
+            if (!isValueSuggestion) {
+                this.inputValues.next({
+                    cursorPosition: newCursorPosition,
+                    query: newQuery,
+                })
+            }
+
             return {
                 cursorPosition: newCursorPosition,
-                suggestions: isValueSuggestion
-                    ? hiddenSuggestions
-                    : this.getSuggestions(searchFilterSuggestions, {
-                          query: newQuery,
-                          cursorPosition: newCursorPosition,
-                      }),
+                suggestions: hiddenSuggestions,
             }
         })
     }
