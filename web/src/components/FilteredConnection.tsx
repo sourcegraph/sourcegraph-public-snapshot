@@ -10,13 +10,13 @@ import {
     distinctUntilChanged,
     filter,
     map,
-    publishReplay,
-    refCount,
     skip,
     startWith,
     switchMap,
     takeUntil,
     tap,
+    scan,
+    share,
 } from 'rxjs/operators'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
@@ -80,6 +80,14 @@ interface ConnectionDisplayProps {
 
     /** The component displayed when the list of nodes is empty. */
     emptyElement?: JSX.Element
+
+    /**
+     * Set to true when the GraphQL response is expected to emit an `PageInfo.endCursor` value when
+     * there is a subsequent page of results. This will request the next page of results and append
+     * them onto the existing list of results instead of requesting twice as many results and
+     * replacing the existing results.
+     */
+    cursorPaging?: boolean
 }
 
 /**
@@ -110,6 +118,17 @@ interface ConnectionStateCommon {
 
     connectionQuery?: string
 
+    /** The `PageInfo.endCursor` value from the previous request. */
+    after?: string
+
+    /**
+     * The number of results that were visible from previous requests. The initial request of
+     * a result set will load `visible` items, then will request `first` items on each subsequent
+     * request. This has the effect of loading the correct number of visible results when a URL
+     * is copied during pagination. This value is only useful with cursor-based paging.
+     */
+    visible?: number
+
     /**
      * Whether the connection is loading. It is not equivalent to connection === undefined because we preserve the
      * old data for ~250msec while loading to reduce jitter.
@@ -135,11 +154,12 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
         const HeadComponent = this.props.headComponent
         const FootComponent = this.props.footComponent
 
-        const hasNextPage =
-            this.props.connection &&
-            ((this.props.connection.pageInfo && this.props.connection.pageInfo.hasNextPage) ||
-                (typeof this.props.connection.totalCount === 'number' &&
-                    this.props.connection.nodes.length < this.props.connection.totalCount))
+        const hasNextPage = this.props.connection
+            ? this.props.connection.pageInfo
+                ? this.props.connection.pageInfo.hasNextPage
+                : typeof this.props.connection.totalCount === 'number' &&
+                  this.props.connection.nodes.length < this.props.connection.totalCount
+            : false
 
         let totalCount: number | null = null
         if (this.props.connection) {
@@ -307,6 +327,7 @@ interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}>
  */
 export interface FilteredConnectionQueryArgs {
     first?: number
+    after?: string
     query?: string
 }
 
@@ -361,9 +382,10 @@ export interface Connection<N> {
 
     /**
      * If set, indicates whether there is a next page. Not all GraphQL XyzConnection types return
-     * pageInfo (if not, then they generally all do return totalCount).
+     * pageInfo (if not, then they generally all do return totalCount). If there is a cursor to use
+     * on a subsequent request it is also provided here.
      */
-    pageInfo?: { hasNextPage: boolean }
+    pageInfo?: { hasNextPage: boolean; endCursor?: string | null }
 
     /**
      * If set, this error is displayed. Even when there is an error, the results are still displayed.
@@ -404,11 +426,25 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         super(props)
 
         const q = new URLSearchParams(this.props.location.search)
+
+        // Note: in the initial state, do not set `after` from the URL, as this doesn't
+        // track the number of results on the previous page. This makes the count look
+        // broken when coming to a page in the middle of a set of results.
+        //
+        // For example:
+        //   (1) come to page with first = 20
+        //   (2) set first and after cursor in URL
+        //   (3) reload page; will skip 20 results but will display (first 20 of X)
+        //
+        // Instead, we use `ConnectionStateCommon.visible` to load the correct number of
+        // visible results on the initial request.
+
         this.state = {
             loading: true,
             query: (!this.props.hideSearch && q.get(QUERY_KEY)) || '',
             activeFilter: getFilterFromURL(q, this.props.filters),
             first: parseQueryInt(q, 'first') || this.props.defaultFirst!,
+            visible: parseQueryInt(q, 'visible') || 0,
         }
     }
 
@@ -443,50 +479,56 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
             this.activeFilterChanges.subscribe(filter => this.setState({ activeFilter: filter }))
         )
 
-        // Track the last query and filter we used. We only want to show the loader if these change,
-        // not when a refresh is requested for the same query/filter (or else there would be jitter).
-        let lastQuery: string | undefined
-        let lastFilter: FilteredConnectionFilter | undefined
         this.subscriptions.add(
             combineLatest([queryChanges, activeFilterChanges, refreshRequests.pipe(startWith<void>(undefined))])
                 .pipe(
-                    tap(([query, filter]) => {
-                        if (this.props.shouldUpdateURLQuery) {
-                            this.props.history.replace({
-                                search: this.urlQuery({ query, filter }),
-                                hash: this.props.location.hash,
-                            })
+                    // Track whether the query or the active filter changed
+                    scan<
+                        [string, FilteredConnectionFilter | undefined, void],
+                        {
+                            query: string
+                            filter: FilteredConnectionFilter | undefined
+                            shouldRefresh: boolean
+                            queryCount: number
                         }
-                    }),
-                    switchMap(([query, filter]) => {
-                        type PartialStateUpdate = Pick<
-                            FilteredConnectionState<C, N>,
-                            'connectionOrError' | 'loading' | 'connectionQuery'
-                        >
-
+                    >(
+                        ({ query, filter, queryCount }, [currentQuery, currentFilter]) => ({
+                            query: currentQuery,
+                            filter: currentFilter,
+                            shouldRefresh: query !== currentQuery || filter !== currentFilter,
+                            queryCount: queryCount + 1,
+                        }),
+                        {
+                            query: this.state.query,
+                            filter: undefined,
+                            shouldRefresh: false,
+                            queryCount: 0,
+                        }
+                    ),
+                    switchMap(({ query, filter, shouldRefresh, queryCount }) => {
                         const result = this.props
                             .queryConnection({
-                                first: this.state.first,
+                                // If this is our first query and we were supplied a value for `visible`,
+                                // load that many results. If we weren't given such a value or this is a
+                                // subsequent request, only ask for one page of results.
+                                first: (queryCount === 1 && this.state.visible) || this.state.first,
+                                after: shouldRefresh ? undefined : this.state.after,
                                 query,
                                 ...(filter ? filter.args : {}),
                             })
                             .pipe(
                                 catchError(error => [asError(error)]),
                                 map(
-                                    (c): PartialStateUpdate => ({
-                                        connectionOrError: c,
+                                    (connectionOrError): PartialStateUpdate => ({
+                                        connectionOrError,
                                         connectionQuery: query,
                                         loading: false,
                                     })
                                 ),
-                                publishReplay<PartialStateUpdate>(),
-                                refCount()
+                                share()
                             )
 
-                        const showLoading = query !== lastQuery || filter !== lastFilter
-                        lastQuery = query
-                        lastFilter = filter
-                        return showLoading
+                        return (shouldRefresh
                             ? merge(
                                   result,
                                   of({ connectionOrError: undefined, loading: true }).pipe(
@@ -495,20 +537,72 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                                   )
                               )
                             : result
+                        ).pipe(map(stateUpdate => ({ shouldRefresh, ...stateUpdate })))
                     }),
-                    tap(({ connectionOrError }) => {
+                    scan<PartialStateUpdate & { shouldRefresh: boolean }, PartialStateUpdate & { previousPage: N[] }>(
+                        ({ previousPage }, { shouldRefresh, connectionOrError, ...rest }) => {
+                            let nodes: N[] = previousPage
+                            let after: string | undefined
+
+                            if (this.props.cursorPaging && connectionOrError && !isErrorLike(connectionOrError)) {
+                                if (!shouldRefresh) {
+                                    connectionOrError.nodes = previousPage.concat(connectionOrError.nodes)
+                                }
+
+                                const pageInfo = connectionOrError.pageInfo
+                                nodes = connectionOrError.nodes
+                                after = (pageInfo && pageInfo.endCursor) || undefined
+                            }
+
+                            return {
+                                connectionOrError,
+                                previousPage: nodes,
+                                after,
+                                ...rest,
+                            }
+                        },
+                        {
+                            previousPage: [],
+                            after: undefined,
+                            connectionOrError: undefined,
+                            connectionQuery: undefined,
+                            loading: true,
+                        }
+                    )
+                )
+                .subscribe(
+                    ({ connectionOrError, previousPage, ...rest }) => {
+                        if (this.props.shouldUpdateURLQuery) {
+                            this.props.history.replace({
+                                search: this.urlQuery({ visible: previousPage.length }),
+                                hash: this.props.location.hash,
+                            })
+                        }
                         if (this.props.onUpdate) {
                             this.props.onUpdate(connectionOrError)
                         }
-                    })
+                        this.setState({ connectionOrError, ...rest })
+                    },
+                    err => console.error(err)
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
         )
 
+        type PartialStateUpdate = Pick<
+            FilteredConnectionState<C, N>,
+            'connectionOrError' | 'connectionQuery' | 'loading' | 'after'
+        >
         this.subscriptions.add(
             this.showMoreClicks
-                .pipe(map(() => this.state.first * 2))
-                .subscribe(first => this.setState({ first, loading: true }, () => refreshRequests.next()))
+                .pipe(
+                    map(() =>
+                        // If we're doing cursor paging, we rely on the `endCursor` from the previous
+                        // response's `PageInfo` object to make our next request. Otherwise, we'll
+                        // fallback to our legacy 'request-more' paging technique and not supply a
+                        // cursor to the subsequent request.
+                        ({ first: this.props.cursorPaging ? this.state.first : this.state.first * 2 })
+                    )
+                )
+                .subscribe(({ first }) => this.setState({ first, loading: true }, () => refreshRequests.next()))
         )
 
         if (this.props.updates) {
@@ -546,7 +640,12 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         this.componentUpdates.next(this.props)
     }
 
-    private urlQuery(arg: { first?: number; query?: string; filter?: FilteredConnectionFilter }): string {
+    private urlQuery(arg: {
+        first?: number
+        query?: string
+        filter?: FilteredConnectionFilter
+        visible?: number
+    }): string {
         if (!arg.first) {
             arg.first = this.state.first
         }
@@ -560,11 +659,15 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         if (arg.query) {
             q.set(QUERY_KEY, arg.query)
         }
+
         if (arg.first !== this.props.defaultFirst) {
             q.set('first', String(arg.first))
         }
         if (arg.filter && this.props.filters && arg.filter !== this.props.filters[0]) {
             q.set('filter', arg.filter.id)
+        }
+        if (arg.visible !== arg.first) {
+            q.set('visible', String(arg.visible))
         }
         return q.toString()
     }
