@@ -91,13 +91,10 @@ function findElementMatchingRegexpsInDocument(tag: string, regexps: string[]): H
     return null
 }
 
-function findElementMatchingRegexpsInDocumentDebuggingExpressions(tag: string, regexps: string[]): string[] {
-    return regexps.map(
-        r =>
-            `Array.from(document.querySelectorAll(${JSON.stringify(
-                tag
-            )})).filter(e => e.innerText && e.innerText.match(/${r}/))`
-    )
+function getDebugExpressionFromRegexp(tag: string, regexp: string): string {
+    return `Array.from(document.querySelectorAll(${JSON.stringify(
+        tag
+    )})).filter(e => e.innerText && e.innerText.match(/${regexp}/))`
 }
 
 export class Driver {
@@ -474,7 +471,7 @@ export class Driver {
         const regexps = findElementRegexpStrings(text, { fuzziness })
 
         const notFoundErr = (underlying?: Error): Error => {
-            const debuggingExpressions = findElementMatchingRegexpsInDocumentDebuggingExpressions(tag, regexps)
+            const debuggingExpressions = regexps.map(r => getDebugExpressionFromRegexp(tag, r))
             return new Error(
                 `Could not find element with text ${JSON.stringify(text)}, options: ${JSON.stringify(options)}` +
                     (underlying ? `. Underlying error was: ${JSON.stringify(underlying.message)}.` : '') +
