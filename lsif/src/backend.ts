@@ -315,15 +315,36 @@ export class Backend {
             offset,
         })
 
+        const dumps = references.map(r => r.dump)
+        const locations = await this.locationsFromRemoteReferences(dumpId, moniker, dumps, true, ctx)
+        return { locations, count, newOffset }
+    }
+
+    /**
+     * Query the given dumps for references to the given moniker.
+     *
+     * @param dumpId The ID of the dump for which this database answers queries.
+     * @param moniker The target moniker.
+     * @param dumps The dumps to open.
+     * @param remote Whether or not to construct remote URIs.
+     * @param ctx The tracing context.
+     */
+    private async locationsFromRemoteReferences(
+        dumpId: DumpId,
+        moniker: Pick<MonikerData, 'scheme' | 'identifier'>,
+        dumps: LsifDump[],
+        remote: boolean,
+        ctx: TracingContext = {}
+    ): Promise<lsp.Location[]> {
         logSpan(ctx, 'package_references', {
-            references: references.map(r => ({ repository: r.dump.repository, commit: r.dump.commit })),
+            references: dumps.map(d => ({ repository: d.repository, commit: d.commit })),
         })
 
         let locations: lsp.Location[] = []
-        for (const reference of references) {
+        for (const dump of dumps) {
             // Skip the remote reference that show up for ourselves - we've already gathered
             // these in the previous step of the references query.
-            if (reference.dump.id === dumpId) {
+            if (dump.id === dumpId) {
                 continue
             }
 
@@ -331,20 +352,17 @@ export class Backend {
                 this.connectionCache,
                 this.documentCache,
                 this.resultChunkCache,
-                reference.dump.id,
-                dbFilename(this.storageRoot, reference.dump.id, reference.dump.repository, reference.dump.commit)
+                dump.id,
+                dbFilename(this.storageRoot, dump.id, dump.repository, dump.commit)
             )
 
             const references = (await db.monikerResults(ReferenceModel, moniker, ctx)).map(loc =>
-                mapLocation(
-                    uri => createRemoteUri(reference.dump, uri),
-                    this.locationFromDatabase(reference.dump.root, loc)
-                )
+                mapLocation(uri => createRemoteUri(dump, uri), this.locationFromDatabase(dump.root, loc))
             )
             locations = locations.concat(references)
         }
 
-        return { locations, count, newOffset }
+        return locations
     }
 
     /**
