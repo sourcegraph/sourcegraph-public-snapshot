@@ -2660,10 +2660,10 @@
     "@types/history" "*"
     "@types/react" "*"
 
-"@types/react-stripe-elements@1.3.4":
-  version "1.3.4"
-  resolved "https://registry.npmjs.org/@types/react-stripe-elements/-/react-stripe-elements-1.3.4.tgz#d1736fd4111c1c695d697fbc881409fbf356500c"
-  integrity sha512-qtj31iRy1reUASk3aT3Cyu069m3hsAIKl4fNa2tR1axVQ/HndgFAok21DQY8IzRrN9Wv8/pwUa0ou/9B10VSLg==
+"@types/react-stripe-elements@1.3.5":
+  version "1.3.5"
+  resolved "https://registry.npmjs.org/@types/react-stripe-elements/-/react-stripe-elements-1.3.5.tgz#278d91eecab409a286e1a88dd94470985a930cef"
+  integrity sha512-zqQ3qA4ulSjq+5KwD/en58vXvgmzkmoNKsBvFvEdxg6sfrOGfINsQzqhu2ddOlim/VxcY8FNj3WiKRYF7U9I0Q==
   dependencies:
     "@types/react" "*"
     "@types/stripe-v3" "*"
