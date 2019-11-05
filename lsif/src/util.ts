@@ -125,11 +125,11 @@ export function dbFilename(storageRoot: string, id: number, repository: string, 
 /**
  * Ensure the directory exists.
  *
- * @param path The directory path.
+ * @param directoryPath The directory path.
  */
-export async function ensureDirectory(path: string): Promise<void> {
+export async function ensureDirectory(directoryPath: string): Promise<void> {
     try {
-        await fs.mkdir(path)
+        await fs.mkdir(directoryPath)
     } catch (e) {
         if (!hasErrorCode(e, 'EEXIST')) {
             throw e
@@ -140,11 +140,11 @@ export async function ensureDirectory(path: string): Promise<void> {
 /**
  * Delete the file if it exists. Throws errors that are not ENOENT.
  *
- * @param path The path to delete.
+ * @param filePath The path to delete.
  */
-export async function tryDeleteFile(path: string): Promise<boolean> {
+export async function tryDeleteFile(filePath: string): Promise<boolean> {
     try {
-        await fs.unlink(path)
+        await fs.unlink(filePath)
         return true
     } catch (error) {
         if (!hasErrorCode(error, 'ENOENT')) {

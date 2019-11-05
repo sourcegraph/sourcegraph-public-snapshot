@@ -379,7 +379,7 @@ function lsifEndpoints(backend: Backend, queue: Queue, logger: Logger, tracer: T
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { repository, commit } = req.query
-                const { path, position, method } = req.body
+                const { path: filePath, position, method } = req.body
                 checkRepository(repository)
                 checkCommit(commit)
                 checkMethod(method, ['definitions', 'references', 'hover'])
@@ -388,11 +388,11 @@ function lsifEndpoints(backend: Backend, queue: Queue, logger: Logger, tracer: T
 
                 switch (method) {
                     case 'definitions':
-                        res.json(await backend.definitions(repository, commit, path, position, ctx))
+                        res.json(await backend.definitions(repository, commit, filePath, position, ctx))
                         break
 
                     case 'hover':
-                        res.json(await backend.hover(repository, commit, path, position, ctx))
+                        res.json(await backend.hover(repository, commit, filePath, position, ctx))
                         break
 
                     case 'references': {
@@ -403,7 +403,7 @@ function lsifEndpoints(backend: Backend, queue: Queue, logger: Logger, tracer: T
                         const { locations, cursor: endCursor } = await backend.references(
                             repository,
                             commit,
-                            path,
+                            filePath,
                             position,
                             { limit, cursor: startCursor },
                             ctx

@@ -494,18 +494,17 @@ describe('XrepoDatabase', () => {
         const dumpb = await xrepoDatabase.addPackagesAndReferences('foo', cb, '', [], references)
         const dumpc = await xrepoDatabase.addPackagesAndReferences('foo', cc, '', [], references)
 
-        const getReferencedDumpIds = async () => {
-            const { references } = await xrepoDatabase.getReferences({
+        const getReferencedDumpIds = async () =>
+            (await xrepoDatabase.getReferences({
                 scheme: 'npm',
                 name: 'p1',
                 version: '0.1.0',
                 identifier: 'y',
                 limit: 50,
                 offset: 0,
-            })
-
-            return references.map(reference => reference.dump_id).sort()
-        }
+            })).references
+                .map(reference => reference.dump_id)
+                .sort()
 
         const updateVisibility = async (visibleA: boolean, visibleB: boolean, visibleC: boolean) => {
             dumpa.visibleAtTip = visibleA
