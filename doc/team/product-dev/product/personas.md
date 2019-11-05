@@ -60,7 +60,10 @@ for other developers.
 
 #### Common objections
 
-TBD
+- I don't know why I need code search (for people who don't have the problems stated above)
+- I and/or my team needs code search, but the rest of my organization doesn't need it
+- I don't know how to spread it to the rest of my company
+- The price is too high for my budget
 
 #### Personally rewarded by
 
@@ -115,7 +118,7 @@ Nobody else at my company is using Sourcegraph, so it's not worth the maintenanc
 
 #### Common objections
 
-TBD
+- TBD
 
 #### Personally rewarded by
 
@@ -247,11 +250,11 @@ Atlassian suite: Bitbucket, Jira, Confluence, etc.
 
 #### Common objections
 
-TBD
+- Code search isn't one of our top priorities
 
 #### Personally rewarded by
 
-TBD
+- TBD
 
 #### Examples
 
@@ -295,7 +298,7 @@ I'm not confident my developers would use this, and I don't see direct/immediate
 
 #### Personally rewarded by
 
-TBD
+- TBD
 
 #### Examples
 
