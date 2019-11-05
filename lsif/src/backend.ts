@@ -512,7 +512,7 @@ export class Backend {
                 }
 
                 // Build pagination cursor that will start scanning results from
-                // the beginning of the result set: first, scan dumps of the same
+                // the beginning of the set of results: first, scan dumps of the same
                 // repository, then scan dumps from remote repositories.
 
                 const cursor = {
@@ -549,7 +549,7 @@ export class Backend {
 
     /**
      * Perform a remote reference lookup on the dumps of the same repository, then on dumps of
-     * other repositories. The offset into the result set (as well as the target set of dumps)
+     * other repositories. The offset into the set of results (as well as the target set of dumps)
      * depends on the exact values of the pagination cursor. This method returns the new cursor.
      *
      * @param repository The repository name.
