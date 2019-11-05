@@ -8,26 +8,21 @@ An LSIF indexer is a command line tool that analyzes your project's source code 
 
 1. Install the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) for uploading LSIF data on your CI machines.
 1. Go to https://lsif.dev to find an LSIF indexer for your language and install the command-line tool on your CI machines.
-1. Add a daily step to your CI that runs the LSIF indexer on a project within your repository and generates an LSIF file.
-1. Upload that generated LSIF file to your Sourcegraph instance:
+1. Add a daily step to your CI that:
+  - Runs the LSIF indexer on a project within your repository and generates an LSIF file in the project directory (see docs for your LSIF indexer).
+  - Uploads that generated LSIF file to your Sourcegraph instance using the following command:
 
-From the command-line:
+Make sure the current working directory is somewhere inside your repository, then run:
 
 ```
 $ src \
   -endpoint=https://sourcegraph.example.com \
   lsif upload \
   -github-token=abc... (only needed when uploading to Sourcegraph.com) \
-  -repo=github.com/<user>/<reponame> \
-  -commit=$(git rev-parse HEAD | tr -d "\n") \
-  -root=<project directory with a trailing slash> (omit when the project root is the same as the repository root)
-  -file=<LSIF file (e.g. data.lsif)>
-  -skip-validation (only available on Sourcegraph.com and 3.10+)
+  -file=<LSIF file (e.g. ./cmd/dump.lsif)>
 ```
 
-> - If you're uploading to Sourcegraph.com, you must authenticate your upload by passing a GitHub access token with [`public_repo` scope](https://developer.github.com/apps/building-oauth-apps/understanding-scopes-for-oauth-apps/#available-scopes) as `-github-token=abc...`. You can create one at https://github.com/settings/tokens
-> - If you generated LSIF data for a project in a subdirectory (e.g. you're in a monorepo), then set `-root` to the relative path to the project's subdirectory, including the trailing slash.
-> - `-skip-validation` skips the sanity checks upon upload, resulting in a faster upload to help reduce the chance that a timeout will occur
+> If you're uploading to Sourcegraph.com, you must authenticate your upload by passing a GitHub access token with [`public_repo` scope](https://developer.github.com/apps/building-oauth-apps/understanding-scopes-for-oauth-apps/#available-scopes) as `-github-token=abc...`. You can create one at https://github.com/settings/tokens
 
 If successful, you'll see the following message:
 
