@@ -787,6 +787,19 @@ func TestCampaignPlanResolver(t *testing.T) {
 		return now.UTC().Truncate(time.Microsecond)
 	}
 
+	// For testing purposes they all share the same rev, across repos
+	testingRev := api.CommitID("24f7ca7c1190835519e261d7eefa09df55ceea4f")
+
+	backend.Mocks.Repos.ResolveRev = func(_ context.Context, _ *types.Repo, _ string) (api.CommitID, error) {
+		return testingRev, nil
+	}
+	defer func() { backend.Mocks.Repos.ResolveRev = nil }()
+
+	backend.Mocks.Repos.GetCommit = func(_ context.Context, _ *types.Repo, _ api.CommitID) (*git.Commit, error) {
+		return &git.Commit{ID: testingRev}, nil
+	}
+	defer func() { backend.Mocks.Repos.GetCommit = nil }()
+
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
 	var rs []*repos.Repo
@@ -815,19 +828,6 @@ func TestCampaignPlanResolver(t *testing.T) {
 		rs = append(rs, repo)
 	}
 
-	// For testing purposes they all share the same rev, across repos
-	rev := api.CommitID("24f7ca7c1190835519e261d7eefa09df55ceea4f")
-
-	backend.Mocks.Repos.ResolveRev = func(_ context.Context, _ *types.Repo, _ string) (api.CommitID, error) {
-		return rev, nil
-	}
-	defer func() { backend.Mocks.Repos.ResolveRev = nil }()
-
-	backend.Mocks.Repos.GetCommit = func(_ context.Context, _ *types.Repo, _ api.CommitID) (*git.Commit, error) {
-		return &git.Commit{ID: rev}, nil
-	}
-	defer func() { backend.Mocks.Repos.GetCommit = nil }()
-
 	store := ee.NewStoreWithClock(dbconn.Global, clock)
 
 	plan := &a8n.CampaignPlan{
@@ -846,7 +846,7 @@ func TestCampaignPlanResolver(t *testing.T) {
 			StartedAt:      now,
 			FinishedAt:     now,
 			RepoID:         int32(repo.ID),
-			Rev:            rev,
+			Rev:            testingRev,
 			Diff:           testDiff,
 		}
 
@@ -858,6 +858,7 @@ func TestCampaignPlanResolver(t *testing.T) {
 	}
 
 	type DiffRange struct{ StartLine, Lines int }
+
 	type FileDiffHunk struct {
 		Body, Section      string
 		OldNoNewlineAt     bool
@@ -887,12 +888,11 @@ func TestCampaignPlanResolver(t *testing.T) {
 	type Repository struct {
 		Name string
 	}
+
 	type ChangesetPlan struct {
 		Title, Body string
-		Repository  struct {
-			Name, URL string
-		}
-		Diff struct {
+		Repository  struct{ Name, URL string }
+		Diff        struct {
 			FileDiffs      FileDiffs
 			BaseRepository Repository
 		}
@@ -910,14 +910,14 @@ func TestCampaignPlanResolver(t *testing.T) {
 	type Response struct {
 		Node CampaignPlan
 	}
-	var response Response
 
 	sr := &Resolver{store: store}
-
 	s, err := graphqlbackend.NewSchema(sr)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	var response Response
 
 	mustExec(ctx, t, s, nil, &response, fmt.Sprintf(`
       query {
