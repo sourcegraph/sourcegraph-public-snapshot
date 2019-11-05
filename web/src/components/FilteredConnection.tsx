@@ -508,6 +508,9 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                     switchMap(({ query, filter, shouldRefresh, queryCount }) => {
                         const result = this.props
                             .queryConnection({
+                                // If this is our first query and we were supplied a value for `visible`,
+                                // load that many results. If we weren't given such a value or this is a
+                                // subsequent request, only ask for one page of results.
                                 first: (queryCount === 1 && this.state.visible) || this.state.first,
                                 after: shouldRefresh ? undefined : this.state.after,
                                 query,
@@ -538,7 +541,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                     }),
                     scan<PartialStateUpdate & { shouldRefresh: boolean }, PartialStateUpdate & { previousPage: N[] }>(
                         ({ previousPage }, { shouldRefresh, connectionOrError, ...rest }) => {
-                            let nodes: N[] = []
+                            let nodes: N[] = previousPage
                             let after: string | undefined
 
                             if (this.props.cursorPaging && connectionOrError && !isErrorLike(connectionOrError)) {
