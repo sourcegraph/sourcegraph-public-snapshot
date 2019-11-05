@@ -5,7 +5,7 @@
   <vendor email="hi@sourcegraph.com" url="https://sourcegraph.com">Sourcegraph</vendor>
 
   <description><![CDATA[
-      Sourcegraph for JetBrains IDEs (IntelliJ, PyCharm, Goglang, etc.)<br>
+      Sourcegraph for JetBrains IDEs (IntelliJ, PyCharm, GoLand, etc.)<br>
     ]]></description>
 
   <change-notes><![CDATA[
@@ -13,6 +13,9 @@
     <li>v1.1.2 - Minor bug fixes around searching.
         <ul>
           <li>Fixed an error that occurred when trying to search with no selection.</li>
+        </ul>
+        <ul>
+          <li>The git remote used for repository detection is now `sourcegraph` and then `origin`, instead of the previously poor choice of just the first git remote.</li>
         </ul>
       </li>
       <li>v1.1.1 - Fixed search shortcut.

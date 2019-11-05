@@ -4,30 +4,31 @@ import java.io.*;
 import java.util.Properties;
 
 public class Util {
-    public static String VERSION = "v1.1.1";
-
-    // gitRemotes returns the names of all git remotes, e.g. ["origin", "foobar"]
-    public static String[] gitRemotes(String repoDir) throws IOException {
-        return exec("git remote", repoDir).split("[\\r\\n]+");
-    }
+    public static String VERSION = "v1.1.2";
 
     // gitRemoteURL returns the remote URL for the given remote name.
     // e.g. "origin" -> "git@github.com:foo/bar"
-    public static String gitRemoteURL(String repoDir, String remoteName) throws IOException {
-        return exec("git remote get-url " + remoteName, repoDir).trim();
+    public static String gitRemoteURL(String repoDir, String remoteName) throws Exception {
+        String s = exec("git remote get-url " + remoteName, repoDir).trim();
+        if (s.isEmpty()) {
+            throw new Exception("no such remote");
+        }
+        return s;
     }
 
-    // gitDefaultRemoteURL returns the remote URL of the first Git remote
-    // found. An exception is thrown if there is not one.
-    public static String gitDefaultRemoteURL(String repoDir) throws Exception {
-        String[] remotes = gitRemotes(repoDir);
-        if (remotes.length == 0) {
-            throw new Exception("no configured git remotes");
+    // configuredGitRemoteURL returns the URL of the "sourcegraph" remote, if
+    // configured, or else the URL of the "origin" remote. An exception is
+    // thrown if neither exists.
+    public static String configuredGitRemoteURL(String repoDir) throws Exception {
+        try {
+            return gitRemoteURL(repoDir, "sourcegraph");
+        } catch (Exception err) {
+            try {
+                return gitRemoteURL(repoDir, "origin");
+            } catch (Exception err2) {
+                throw new Exception("no configured git remote \"sourcegraph\" or \"origin\"");
+            }
         }
-        if (remotes.length > 1) {
-            Logger.getInstance(Util.class).info("using first git remote: " + remotes[0]);
-        }
-        return gitRemoteURL(repoDir, remotes[0]);
     }
 
     // gitRootDir returns the repository root directory for any directory
@@ -88,7 +89,7 @@ public class Util {
 
             // Determine file path, relative to repository root.
             fileRel = fileName.substring(repoRoot.length()+1);
-            remoteURL = gitDefaultRemoteURL(repoRoot);
+            remoteURL = configuredGitRemoteURL(repoRoot);
             branch = gitBranch(repoRoot);
         } catch (Exception err) {
             Logger.getInstance(Util.class).info(err);

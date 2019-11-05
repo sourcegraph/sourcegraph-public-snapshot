@@ -1,6 +1,6 @@
 # Sourcegraph for JetBrains IDEs [![JetBrains Plugin](https://img.shields.io/badge/JetBrains-Sourcegraph-green.svg)](https://plugins.jetbrains.com/plugin/9682-sourcegraph)
 
-The Sourcegraph plugin for JetBrains IDEs enables you to quickly open and search code on Sourcegraph.com easily and efficiently in JetBrains IDEs such as IntelliJ. This plugin works with most JetBrains IDEs:
+The Sourcegraph plugin for JetBrains IDEs enables you to quickly open and search code on Sourcegraph easily and efficiently in JetBrains IDEs such as IntelliJ. This plugin works with most JetBrains IDEs:
 
 - IntelliJ IDEA
 - IntelliJ IDEA Community Edition
@@ -11,7 +11,7 @@ The Sourcegraph plugin for JetBrains IDEs enables you to quickly open and search
 - RubyMine
 - AppCode
 - CLion
-- Gogland
+- GoLand
 - DataGrip
 - Rider
 - Android Studio
@@ -45,6 +45,7 @@ The plugin is configurable by creating a `sourcegraph-jetbrains.properties` in y
 url = https://sourcegraph.com
 ```
 
+By default, the plugin will use the `origin` git remote to determine which repository on Sourcegraph corresponds to the local repository. You may configure this by adding a `sourcegraph` remote which will take priority.
 
 ## Questions & Feedback
 
@@ -73,7 +74,19 @@ Please file an issue: https://github.com/sourcegraph/sourcegraph-jetbrains/issue
 
 ## Version History
 
-- v1.1.2 - Fixed an error that occurred when trying to search with no selection.
-- v1.1.1 - Fixed search shortcut; Updated the search URL to reflect a recent Sourcegraph.com change.
-- v1.1.0 - Added support for using the plugin with on-premises Sourcegraph instances.
-- v1.0.0 - Initial Release; basic Open File & Search functionality.
+#### v1.1.2
+
+- Fixed an error that occurred when trying to search with no selection.
+- The git remote used for repository detection is now `sourcegraph` and then `origin`, instead of the previously poor choice of just the first git remote.
+
+#### v1.1.1
+
+- Fixed search shortcut; Updated the search URL to reflect a recent Sourcegraph.com change.
+
+#### v1.1.0
+
+- Added support for using the plugin with on-premises Sourcegraph instances.
+
+#### v1.0.0
+
+- Initial Release; basic Open File & Search functionality.
