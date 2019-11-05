@@ -627,21 +627,18 @@ export class XrepoDatabase {
             // Construct method to select a page of possible references. We first perform
             // the query defined above that returns reference identifiers, then perform a
             // second query to select the models by id so that we load the relationships.
-            const getPage = async (offset: number): Promise<ReferenceModel[]> =>
-                entityManager
-                    .getRepository(ReferenceModel)
-                    .findByIds(
-                        extractIds(
-                            await entityManager.query(referenceIdsQuery, [
-                                scheme,
-                                name,
-                                version,
-                                visible_ids,
-                                offset,
-                                limit,
-                            ])
-                        )
-                    )
+            const getPage = async (offset: number): Promise<ReferenceModel[]> => {
+                const args = [scheme, name, version, visible_ids, offset, limit]
+                const results = await entityManager.query(referenceIdsQuery, args)
+                const referenceIds = extractIds(results)
+                const references = await entityManager.getRepository(ReferenceModel).findByIds(referenceIds)
+
+                // findByIds doesn't return models in the same order as they were requested,
+                // so we need to sort them here before returning. This sorts the models by
+                // the index of the model's id in `referenceIds`.
+                const indexes = new Map(referenceIds.map((v, i) => [v, i]))
+                return references.sort((a, b) => (indexes.get(a.id) || -1) - (indexes.get(b.id) || -1))
+            }
 
             // Invoke getPage with increasing offsets until we get a page size's worth of
             // references that actually use the given identifier as indicated by result of
