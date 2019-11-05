@@ -48,7 +48,7 @@
     "@types/cors": "2.8.6",
     "@types/express": "4.17.2",
     "@types/express-winston": "3.0.4",
-    "@types/got": "9.6.8",
+    "@types/got": "9.6.9",
     "@types/ioredis": "4.0.18",
     "@types/jaeger-client": "3.15.1",
     "@types/jest": "24.0.21",
