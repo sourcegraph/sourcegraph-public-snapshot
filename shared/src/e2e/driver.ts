@@ -9,6 +9,7 @@ import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
 import { IMutation, IQuery, ExternalServiceKind } from '../graphql/schema'
 import { readEnvBoolean, retry } from './e2e-test-utils'
 import * as path from 'path'
+import { escapeRegExp } from 'lodash'
 
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.
@@ -61,7 +62,7 @@ function findElementRegexpStrings(
 ): string[] {
     //  Escape regexp special chars. Copied from
     //  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions
-    const escapedText = text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const escapedText = escapeRegExp(text)
     const regexps = [`^${escapedText}$`]
     if (fuzziness === 'exact') {
         return regexps
@@ -71,7 +72,6 @@ function findElementRegexpStrings(
         return regexps
     }
     regexps.push(`^\\s+${escapedText}\\b`)
-    regexps.push(`^\\s+${escapedText}$`)
     if (fuzziness === 'space-prefix') {
         return regexps
     }

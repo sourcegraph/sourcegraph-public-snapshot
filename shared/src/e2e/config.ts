@@ -65,12 +65,14 @@ const configFields: ConfigFields = {
     },
     gitHubClientID: {
         envVar: 'GITHUB_CLIENT_ID',
-        description: 'Client ID of the GitHub app to use to authenticate to Sourcegraph.',
+        description:
+            'Client ID of the GitHub app to use to authenticate to Sourcegraph. Follow these instructions to obtain: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/',
         defaultValue: 'cf9491b706c4c3b1f956', // "Local dev sign-in via GitHub" OAuth app from github.com/sourcegraph
     },
     gitHubClientSecret: {
         envVar: 'GITHUB_CLIENT_SECRET',
-        description: 'Cilent secret of the GitHub app to use to authenticate to Sourcegraph.',
+        description:
+            'Cilent secret of the GitHub app to use to authenticate to Sourcegraph. Follow these instructions to obtain: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/',
     },
     gitHubToken: {
         envVar: 'GITHUB_TOKEN',
@@ -87,11 +89,13 @@ const configFields: ConfigFields = {
     },
     gitLabClientID: {
         envVar: 'GITLAB_CLIENT_ID',
-        description: 'Application ID of the GitLab OAuth app used to authenticate Sourcegraph.',
+        description:
+            'Application ID of the GitLab OAuth app used to authenticate Sourcegraph. Follow these instructions to obtain: https://docs.gitlab.com/ee/integration/oauth_provider.html',
     },
     gitLabClientSecret: {
         envVar: 'GITLAB_CLIENT_SECRET',
-        description: 'Secret of the GitLab OAuth app used to authenticate Sourcegraph',
+        description:
+            'Secret of the GitLab OAuth app used to authenticate Sourcegraph. Follow these instructions to obtain: https://docs.gitlab.com/ee/integration/oauth_provider.html',
     },
     gitLabUserAmyPassword: {
         envVar: 'GITLAB_USER_AMY_PASSWORD',
