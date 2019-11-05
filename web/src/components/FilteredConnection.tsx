@@ -123,7 +123,7 @@ interface ConnectionStateCommon {
 
     /**
      * The number of results that were visible from previous requests. The initial request of
-     * a result set will load `visible items, then will request `first` items on each subsequent
+     * a result set will load `visible` items, then will request `first` items on each subsequent
      * request. This has the effect of loading the correct number of visible results when a URL
      * is copied during pagination. This value is only useful with cursor-based paging.
      */
