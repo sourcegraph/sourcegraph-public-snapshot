@@ -15,11 +15,11 @@ import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
-import { ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 import { RepositoryCompareCommitsPage } from './RepositoryCompareCommitsPage'
 import { RepositoryCompareDiffPage } from './RepositoryCompareDiffPage'
+import { ThemeProps } from '../../../../shared/src/theme'
 
 function queryRepositoryComparison(args: {
     repo: GQL.ID

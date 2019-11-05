@@ -4,9 +4,10 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { KeyboardShortcut } from '../keyboardShortcuts/keyboardShortcuts'
-import { ThemePreference, ThemePreferenceProps, ThemeProps } from '../theme'
+import { KeyboardShortcut } from '../../../shared/src/keyboardShortcuts'
+import { ThemeProps } from '../../../shared/src/theme'
 import { UserAvatar } from '../user/UserAvatar'
+import { ThemePreferenceProps, ThemePreference } from '../search/theme'
 
 interface Props extends ThemeProps, ThemePreferenceProps {
     location: H.Location

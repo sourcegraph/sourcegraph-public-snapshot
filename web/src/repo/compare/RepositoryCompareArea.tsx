@@ -27,13 +27,13 @@ import {
 import { getHover } from '../../backend/features'
 import { HeroPage } from '../../components/HeroPage'
 import { WebHoverOverlay } from '../../components/shared'
-import { ThemeProps } from '../../theme'
 import { EventLoggerProps } from '../../tracking/eventLogger'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { RepositoryCompareHeader } from './RepositoryCompareHeader'
 import { RepositoryCompareOverviewPage } from './RepositoryCompareOverviewPage'
+import { ThemeProps } from '../../../../shared/src/theme'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage

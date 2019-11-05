@@ -17,7 +17,6 @@ import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
 import { searchQueryForRepoRev, PatternTypeProps } from '../search'
 import { queryUpdates } from '../search/input/QueryInput'
-import { ThemeProps } from '../theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL, ParsedRepoRev, parseRepoRev } from '../util/url'
@@ -27,6 +26,7 @@ import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecyclePro
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { RepoRevContainer, RepoRevContainerRoute } from './RepoRevContainer'
 import { RepositoryNotFoundPage } from './RepositoryNotFoundPage'
+import { ThemeProps } from '../../../shared/src/theme'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.

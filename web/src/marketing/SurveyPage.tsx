@@ -8,11 +8,11 @@ import { FeedbackText } from '../components/FeedbackText'
 import { Form } from '../components/Form'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
-import { ThemeProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { submitSurvey } from './backend'
 import { SurveyCTA } from './SurveyToast'
 import { Subscription } from 'rxjs'
+import { ThemeProps } from '../../../shared/src/theme'
 interface SurveyFormProps {
     location: H.Location
     history: H.History

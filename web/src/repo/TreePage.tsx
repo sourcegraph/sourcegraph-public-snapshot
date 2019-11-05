@@ -34,12 +34,12 @@ import { searchQueryForRepoRev, PatternTypeProps } from '../search'
 import { submitSearch } from '../search/helpers'
 import { QueryInput } from '../search/input/QueryInput'
 import { SearchButton } from '../search/input/SearchButton'
-import { ThemeProps } from '../theme'
 import { eventLogger, EventLoggerProps } from '../tracking/eventLogger'
 import { basename } from '../util/path'
 import { fetchTree } from './backend'
 import { GitCommitNode, GitCommitNodeProps } from './commits/GitCommitNode'
 import { gitCommitFragment } from './commits/RepositoryCommitsPage'
+import { ThemeProps } from '../../../shared/src/theme'
 
 const TreeEntry: React.FunctionComponent<{
     isDir: boolean

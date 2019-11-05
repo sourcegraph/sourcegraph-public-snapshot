@@ -8,13 +8,14 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { authRequired } from '../auth'
-import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
+import { KeyboardShortcutsProps } from '../../../shared/src/keyboardShortcuts'
 import { parseSearchURLQuery, PatternTypeProps } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
-import { ThemePreferenceProps, ThemeProps } from '../theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { showDotComMarketing } from '../util/features'
 import { NavLinks } from './NavLinks'
+import { ThemeProps } from '../../../shared/src/theme'
+import { ThemePreferenceProps } from '../search/theme'
 
 interface Props
     extends SettingsCascadeProps,

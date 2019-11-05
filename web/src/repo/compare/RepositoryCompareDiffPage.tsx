@@ -12,10 +12,10 @@ import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { createAggregateError } from '../../../../shared/src/util/errors'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
 import { queryGraphQL } from '../../backend/graphql'
-import { ThemeProps } from '../../theme'
 import { FileDiffConnection } from './FileDiffConnection'
 import { FileDiffNode } from './FileDiffNode'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
+import { ThemeProps } from '../../../../shared/src/theme'
 
 export function queryRepositoryComparisonFileDiffs(args: {
     repo: GQL.ID

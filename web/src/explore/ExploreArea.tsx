@@ -3,10 +3,10 @@ import * as React from 'react'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SettingsCascadeOrError } from '../../../shared/src/settings/settings'
-import { ThemeProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { ComponentDescriptor } from '../util/contributions'
 import { PatternTypeProps } from '../search'
+import { ThemeProps } from '../../../shared/src/theme'
 
 /**
  * Properties passed to all section components in the explore area.

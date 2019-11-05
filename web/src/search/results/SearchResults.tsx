@@ -14,7 +14,7 @@ import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryServic
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { PageTitle } from '../../components/PageTitle'
 import { Settings } from '../../schema/settings.schema'
-import { ThemeProps } from '../../theme'
+import { ThemeProps } from '../../../../shared/src/theme'
 import { EventLogger } from '../../tracking/eventLogger'
 import {
     isSearchResults,

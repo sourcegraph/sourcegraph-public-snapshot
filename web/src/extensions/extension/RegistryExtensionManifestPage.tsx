@@ -7,9 +7,9 @@ import { ConfiguredRegistryExtension } from '../../../../shared/src/extensions/e
 import extensionSchemaJSON from '../../../../shared/src/schema/extension.schema.json'
 import { PageTitle } from '../../components/PageTitle'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
-import { ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
+import { ThemeProps } from '../../../../shared/src/theme'
 export const ExtensionNoManifestAlert: React.FunctionComponent<{
     extension: ConfiguredRegistryExtension
 }> = ({ extension }) => (

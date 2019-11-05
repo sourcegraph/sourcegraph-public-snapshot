@@ -19,10 +19,10 @@ import { PlatformContextProps } from '../../../../../shared/src/platform/context
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
 import { AbsoluteRepoFile, ModeSpec, parseHash, PositionSpec } from '../../../../../shared/src/util/url'
 import { isDiscussionsEnabled } from '../../../discussions'
-import { ThemeProps } from '../../../theme'
 import { RepoHeaderContributionsLifecycleProps } from '../../RepoHeader'
 import { RepoRevSidebarCommits } from '../../RepoRevSidebarCommits'
 import { DiscussionsTree } from '../discussions/DiscussionsTree'
+import { ThemeProps } from '../../../../../shared/src/theme'
 interface Props
     extends AbsoluteRepoFile,
         Partial<PositionSpec>,

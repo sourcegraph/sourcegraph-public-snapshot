@@ -3,15 +3,15 @@ import FileIcon from 'mdi-react/FileIcon'
 import * as React from 'react'
 import { cleanup, fireEvent, getByTestId, getByText, render } from '@testing-library/react'
 import sinon from 'sinon'
-import {
-    HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
-    MULTIPLE_MATCH_RESULT,
-    NOOP_SETTINGS_CASCADE,
-} from '../../../web/src/search/testHelpers'
 import { FileMatchChildren } from './FileMatchChildren'
 import { setLinkComponent } from './Link'
 import { RepoFileLink } from './RepoFileLink'
 import { ResultContainer } from './ResultContainer'
+import {
+    MULTIPLE_MATCH_RESULT,
+    HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
+    NOOP_SETTINGS_CASCADE,
+} from '../util/searchTestHelpers'
 
 describe('ResultContainer', () => {
     setLinkComponent((props: any) => <a {...props} />)

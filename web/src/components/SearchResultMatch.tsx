@@ -12,8 +12,8 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { highlightNode } from '../../../shared/src/util/dom'
 import { renderMarkdown } from '../discussions/backend'
 import { highlightCode } from '../search/backend'
-import { ThemeProps } from '../theme'
 import { HighlightRange } from './SearchResult'
+import { ThemeProps } from '../../../shared/src/theme'
 
 interface SearchResultMatchProps extends ThemeProps {
     item: GQL.ISearchResultMatch

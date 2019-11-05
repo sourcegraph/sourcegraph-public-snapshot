@@ -4,8 +4,8 @@ import React from 'react'
 import { ResultContainer } from '../../../shared/src/components/ResultContainer'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { renderMarkdown } from '../../../shared/src/util/markdown'
-import { ThemeProps } from '../theme'
 import { SearchResultMatch } from './SearchResultMatch'
+import { ThemeProps } from '../../../shared/src/theme'
 
 export interface HighlightRange {
     /**

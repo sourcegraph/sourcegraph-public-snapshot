@@ -2,7 +2,7 @@ import * as H from 'history'
 import React from 'react'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PageTitle } from '../components/PageTitle'
-import { ThemeProps } from '../theme'
+import { ThemeProps } from '../../../shared/src/theme'
 import { ExternalServiceCard } from '../components/ExternalServiceCard'
 import {
     AddExternalServiceMetadata,

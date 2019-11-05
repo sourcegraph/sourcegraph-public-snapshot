@@ -15,12 +15,13 @@ import {
     KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE,
     KEYBOARD_SHORTCUT_SWITCH_THEME,
     KeyboardShortcutsProps,
-} from '../keyboardShortcuts/keyboardShortcuts'
-import { ThemePreferenceProps, ThemeProps } from '../theme'
+} from '../../../shared/src/keyboardShortcuts'
+import { ThemeProps } from '../../../shared/src/theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { fetchAllStatusMessages, StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { UserNavItem } from './UserNavItem'
 import { CampaignsNavItem } from '../enterprise/campaigns/global/nav/CampaignsNavItem'
+import { ThemePreferenceProps } from '../search/theme'
 
 interface Props
     extends SettingsCascadeProps,

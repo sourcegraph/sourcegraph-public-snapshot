@@ -6,10 +6,10 @@ import { setLinkComponent } from '../../../shared/src/components/Link'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
-import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
-import { ThemePreference } from '../theme'
+import { KeyboardShortcutsProps } from '../../../shared/src/keyboardShortcuts'
 import { eventLogger } from '../tracking/eventLogger'
 import { NavLinks } from './NavLinks'
+import { ThemePreference } from '../search/theme'
 
 // Renders a human-readable list of the NavLinks' contents so that humans can more easily diff
 // snapshots to see what actually changed.

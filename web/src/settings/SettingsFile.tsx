@@ -7,7 +7,7 @@ import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SaveToolbar } from '../components/SaveToolbar'
 import { settingsActions } from '../site-admin/configHelpers'
-import { ThemeProps } from '../theme'
+import { ThemeProps } from '../../../shared/src/theme'
 import { eventLogger } from '../tracking/eventLogger'
 
 interface Props extends ThemeProps {
