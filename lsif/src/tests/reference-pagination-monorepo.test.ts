@@ -120,7 +120,6 @@ describe('Backend', () => {
                     )
                 )
 
-            // TODO - test pagination as well
             const { locations, cursor } = await fetch()
             expect(cursor).toBeUndefined()
 
@@ -130,5 +129,62 @@ describe('Backend', () => {
             }
             expect(locations).toHaveLength(1 + 5 * refs.length)
         }
+    })
+
+    it('should find all refs of `add` from monorepo', async () => {
+        const backend = ctx.backend
+        if (!backend) {
+            fail('failed beforeAll')
+            return
+        }
+
+        // Add external references
+        const repos = ['ext1', 'ext2', 'ext3', 'ext4', 'ext5']
+        const filename = 'reference-pagination-monorepo/data/f-ref.lsif.gz'
+        await Promise.all(repos.map(r => ctx.convertTestData(r, createCommit(r), 'f/', filename)))
+
+        const fetch = async (paginationContext?: ReferencePaginationContext) =>
+            filterNodeModules(
+                await backend.references(
+                    repository,
+                    c3,
+                    'a/src/index.ts',
+                    {
+                        line: 0,
+                        character: 17,
+                    },
+                    paginationContext
+                )
+            )
+
+        const { locations: locations0, cursor: cursor0 } = await fetch({ limit: 50 }) // all local
+        const { locations: locations1, cursor: cursor1 } = await fetch({ limit: 50, cursor: cursor0 }) // all remote
+
+        const { locations: locations2, cursor: cursor2 } = await fetch({ limit: 2 }) // b, c
+        const { locations: locations3, cursor: cursor3 } = await fetch({ limit: 2, cursor: cursor2 }) // e
+        const { locations: locations4, cursor: cursor4 } = await fetch({ limit: 2, cursor: cursor3 }) // ext1, ext2
+        const { locations: locations5, cursor: cursor5 } = await fetch({ limit: 2, cursor: cursor4 }) // ext3, ext4
+        const { locations: locations6, cursor: cursor6 } = await fetch({ limit: 2, cursor: cursor5 }) // ext5
+
+        // Ensure paging through result sets gets us everything
+        expect(locations0).toEqual(locations2.concat(...locations3))
+        expect(locations1).toEqual(locations4.concat(...locations5, ...locations6))
+
+        // Ensure cursor is not provided at the end of a result set
+        expect(cursor1).toBeUndefined()
+        expect(cursor6).toBeUndefined()
+
+        const extractRepos = (references: lsp.Location[]): string[] =>
+            // extract the repo name from git://{repo}?{commit}#{path}, or return '' (indicating a local repo)
+            Array.from(new Set(references.map(r => (r.uri.match(/git:\/\/([^?]+)\?.+/) || ['', ''])[1]))).sort()
+
+        // Ensure paging gets us expected results per page
+        expect(extractRepos(locations0)).toEqual([''])
+        expect(extractRepos(locations1)).toEqual(['ext1', 'ext2', 'ext3', 'ext4', 'ext5'])
+        expect(extractRepos(locations2)).toEqual([''])
+        expect(extractRepos(locations3)).toEqual([''])
+        expect(extractRepos(locations4)).toEqual(['ext1', 'ext2'])
+        expect(extractRepos(locations5)).toEqual(['ext3', 'ext4'])
+        expect(extractRepos(locations6)).toEqual(['ext5'])
     })
 })
