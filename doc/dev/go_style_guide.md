@@ -1,6 +1,6 @@
 # Go style guide
 
-This file documents the style used in Sourcegraph's code. For non-code text, see the overall [style guide](style_guide.md).
+This file documents the style used in Sourcegraph's code. For non-code text, see the overall [style guide](..../../team/style_guide.md).
 
 For all things not covered in this document, defer to
 [Go Code Review Comments](https://code.google.com/p/go-wiki/wiki/CodeReviewComments)

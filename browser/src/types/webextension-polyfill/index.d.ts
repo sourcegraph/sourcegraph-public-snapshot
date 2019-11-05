@@ -175,11 +175,13 @@ declare namespace browser.browserAction {
         color: string | ColorArray | null
     }
     function setBadgeTextColor(details: SetBadgeTextColorDetails & { tabId?: number }): void
-    // tslint:disable-next-line:unified-signatures a union type would allow specifying both, which is not allowed.
+    // a union type would allow specifying both, which is not allowed.
+    // eslint-disable-next-line @typescript-eslint/unified-signatures
     function setBadgeTextColor(details: SetBadgeTextColorDetails & { windowId?: number }): void
 
     function getBadgeTextColor(details: { tabId?: string }): Promise<ColorArray>
-    // tslint:disable-next-line:unified-signatures a union type would allow specifying both, which is not allowed.
+    // a union type would allow specifying both, which is not allowed.
+    // eslint-disable-next-line @typescript-eslint/unified-signatures
     function getBadgeTextColor(details: { windowId?: string }): Promise<ColorArray>
 
     function enable(tabId?: number): void

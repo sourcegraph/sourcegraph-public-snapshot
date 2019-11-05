@@ -10,7 +10,6 @@ import '../sentry'
 import React from 'react'
 import { render } from 'react-dom'
 import '../enterprise.scss'
-import { KEYBOARD_SHORTCUTS } from '../keyboardShortcuts/keyboardShortcuts'
 import { SourcegraphWebApp } from '../SourcegraphWebApp'
 import { enterpriseExploreSections } from './explore/exploreSections'
 import { enterpriseExtensionAreaHeaderNavItems } from './extensions/extension/extensionAreaHeaderNavItems'
@@ -29,6 +28,7 @@ import { enterpriseUserAreaHeaderNavItems } from './user/navitems'
 import { enterpriseUserAreaRoutes } from './user/routes'
 import { enterpriseUserSettingsAreaRoutes } from './user/settings/routes'
 import { enterpriseUserSettingsSideBarItems } from './user/settings/sidebaritems'
+import { KEYBOARD_SHORTCUTS } from '../keyboardShortcuts/keyboardShortcuts'
 
 window.addEventListener('DOMContentLoaded', () => {
     render(

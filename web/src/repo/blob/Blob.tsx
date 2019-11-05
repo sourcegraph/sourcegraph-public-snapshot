@@ -33,7 +33,7 @@ import {
 import { getHover } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
 import { isDiscussionsEnabled } from '../../discussions'
-import { ThemeProps } from '../../theme'
+import { ThemeProps } from '../../../../shared/src/theme'
 import { EventLoggerProps } from '../../tracking/eventLogger'
 import { DiscussionsGutterOverlay } from './discussions/DiscussionsGutterOverlay'
 import { LineDecorationAttachment } from './LineDecorationAttachment'
@@ -122,19 +122,19 @@ export class Blob extends React.Component<BlobProps, BlobState> {
 
     /** Emits whenever the ref callback for the code element is called */
     private codeViewElements = new Subject<HTMLElement | null>()
-    private nextCodeViewElement = (element: HTMLElement | null) => this.codeViewElements.next(element)
+    private nextCodeViewElement = (element: HTMLElement | null): void => this.codeViewElements.next(element)
 
     /** Emits whenever the ref callback for the blob element is called */
     private blobElements = new Subject<HTMLElement | null>()
-    private nextBlobElement = (element: HTMLElement | null) => this.blobElements.next(element)
+    private nextBlobElement = (element: HTMLElement | null): void => this.blobElements.next(element)
 
     /** Emits whenever the ref callback for the hover element is called */
     private hoverOverlayElements = new Subject<HTMLElement | null>()
-    private nextOverlayElement = (element: HTMLElement | null) => this.hoverOverlayElements.next(element)
+    private nextOverlayElement = (element: HTMLElement | null): void => this.hoverOverlayElements.next(element)
 
     /** Emits when the close button was clicked */
     private closeButtonClicks = new Subject<MouseEvent>()
-    private nextCloseButtonClick = (event: MouseEvent) => this.closeButtonClicks.next(event)
+    private nextCloseButtonClick = (event: MouseEvent): void => this.closeButtonClicks.next(event)
 
     /** Subscriptions to be disposed on unmout */
     private subscriptions = new Subscription()

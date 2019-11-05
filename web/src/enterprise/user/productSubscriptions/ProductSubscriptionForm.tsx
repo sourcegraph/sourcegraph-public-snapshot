@@ -8,7 +8,6 @@ import { catchError, map, startWith, switchMap } from 'rxjs/operators'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { Form } from '../../../components/Form'
-import { ThemeProps } from '../../../theme'
 import { StripeWrapper } from '../../dotcom/billing/StripeWrapper'
 import { ProductPlanFormControl } from '../../dotcom/productPlans/ProductPlanFormControl'
 import { ProductSubscriptionUserCountFormControl } from '../../dotcom/productPlans/ProductSubscriptionUserCountFormControl'
@@ -16,6 +15,7 @@ import { LicenseGenerationKeyWarning } from '../../productSubscription/LicenseGe
 import { NewProductSubscriptionPaymentSection } from './NewProductSubscriptionPaymentSection'
 import { PaymentTokenFormControl } from './PaymentTokenFormControl'
 import { productSubscriptionInputForLocationHash } from './UserSubscriptionsNewProductSubscriptionPage'
+import { ThemeProps } from '../../../../../shared/src/theme'
 
 /**
  * The form data that is submitted by the ProductSubscriptionForm component.
@@ -263,7 +263,7 @@ class _ProductSubscriptionForm extends React.Component<Props & ReactStripeElemen
 
     private onBillingPlanIDChange = (value: string | null): void => this.setState({ billingPlanID: value })
     private onUserCountChange = (value: number | null): void => this.setState({ userCount: value })
-    private onPaymentValidityChange = (value: boolean) => this.setState({ paymentValidity: value })
+    private onPaymentValidityChange = (value: boolean): void => this.setState({ paymentValidity: value })
 
     private onSubmit: React.FormEventHandler = e => {
         e.preventDefault()

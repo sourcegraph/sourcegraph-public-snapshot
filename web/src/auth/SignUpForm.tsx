@@ -130,23 +130,23 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
         )
     }
 
-    private onEmailFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    private onEmailFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         this.setState({ email: e.target.value })
     }
 
-    private onUsernameFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    private onUsernameFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         this.setState({ username: e.target.value })
     }
 
-    private onPasswordFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    private onPasswordFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         this.setState({ password: e.target.value })
     }
 
-    private onRequestTrialFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    private onRequestTrialFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         this.setState({ requestedTrial: e.target.checked })
     }
 
-    private handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    private handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
         if (this.state.loading) {
             return

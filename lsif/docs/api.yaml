@@ -43,16 +43,11 @@ paths:
             type: string
         - name: root
           in: query
-          description: The root-relative path of the dump.
+          description: The path to the directory associated with the dump, relative to the repository root.
+          example: cmd/project1
           required: false
           schema:
             type: string
-        - name: skipValidation
-          in: query
-          description: If true, skip JSON schema validation of the input.
-          required: false
-          schema:
-            type: boolean
         - name: blocking
           in: query
           description: If true, block the request until the upload is processed.

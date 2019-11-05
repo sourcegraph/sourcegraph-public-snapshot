@@ -5,7 +5,6 @@
   "license": "MIT",
   "version": "0.1.0",
   "dependencies": {
-    "ajv": "^6.10.2",
     "async-middleware": "^1.2.1",
     "bloomfilter": "^0.0.18",
     "body-parser": "^1.19.0",
@@ -45,14 +44,14 @@
     "@sourcegraph/tsconfig": "^4.0.0",
     "@types/bloomfilter": "0.0.0",
     "@types/body-parser": "1.17.0",
-    "@types/bull": "3.10.5",
+    "@types/bull": "3.10.6",
     "@types/cors": "2.8.6",
     "@types/express": "4.17.2",
     "@types/express-winston": "3.0.4",
-    "@types/got": "9.6.8",
+    "@types/got": "9.6.9",
     "@types/ioredis": "4.0.18",
     "@types/jaeger-client": "3.15.1",
-    "@types/jest": "24.0.21",
+    "@types/jest": "24.0.22",
     "@types/json5": "0.0.30",
     "@types/lodash": "4.14.144",
     "@types/logform": "1.2.0",
@@ -73,7 +72,7 @@
     "sinon": "^7.5.0",
     "source-map-support": "^0.5.16",
     "tsc-watch": "^4.0.0",
-    "tslint": "^5.20.0",
+    "tslint": "^5.20.1",
     "typescript": "^3.5.3",
     "typescript-json-schema": "^0.40.0"
   },
@@ -86,7 +85,6 @@
     "tslint": "../node_modules/.bin/tslint -p tsconfig.json",
     "eslint": "../node_modules/.bin/eslint 'src/**/*.ts?(x)'",
     "run:server": "tsc-watch --onFirstSuccess \"yarn postbuild\" --onSuccess \"node -r source-map-support/register out/server.js\" --noClear",
-    "run:worker": "tsc-watch --onFirstSuccess \"yarn postbuild\" --onSuccess \"node -r source-map-support/register out/worker.js\" --noClear",
-    "schema": "typescript-json-schema ./node_modules/lsif-protocol/lib/protocol.d.ts '*' -o src/lsif.schema.json --titles --ignoreErrors --noExtraProps --required --strictNullChecks"
+    "run:worker": "tsc-watch --onFirstSuccess \"yarn postbuild\" --onSuccess \"node -r source-map-support/register out/worker.js\" --noClear"
   }
 }

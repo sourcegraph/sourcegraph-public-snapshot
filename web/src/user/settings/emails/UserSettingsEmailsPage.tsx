@@ -78,7 +78,7 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
         )
     }
 
-    private remove = () => {
+    private remove = (): void => {
         if (!window.confirm(`Remove the email address ${this.props.node.email}?`)) {
             return
         }
@@ -117,8 +117,8 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
             )
     }
 
-    private setAsVerified = () => this.setVerified(true)
-    private setAsUnverified = () => this.setVerified(false)
+    private setAsVerified = (): void => this.setVerified(true)
+    private setAsUnverified = (): void => this.setVerified(false)
 
     private setVerified(verified: boolean): void {
         this.setState({
@@ -241,5 +241,5 @@ export class UserSettingsEmailsPage extends React.Component<Props, State> {
             })
         )
 
-    private onDidUpdateUserEmail = () => this.userEmailUpdates.next()
+    private onDidUpdateUserEmail = (): void => this.userEmailUpdates.next()
 }

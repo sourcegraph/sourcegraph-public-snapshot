@@ -16,11 +16,11 @@ import { queryGraphQL } from '../../backend/graphql'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { NamespaceProps } from '../../namespaces'
-import { ThemeProps } from '../../theme'
 import { RouteDescriptor } from '../../util/contributions'
 import { OrgAreaHeaderNavItem, OrgHeader } from './OrgHeader'
 import { OrgInvitationPage } from './OrgInvitationPage'
 import { PatternTypeProps } from '../../search'
+import { ThemeProps } from '../../../../shared/src/theme'
 
 function queryOrganization(args: { name: string }): Observable<GQL.IOrg | null> {
     return queryGraphQL(
@@ -219,7 +219,7 @@ export class OrgArea extends React.Component<Props> {
         )
     }
 
-    private onDidRespondToInvitation = () => this.refreshRequests.next()
+    private onDidRespondToInvitation = (): void => this.refreshRequests.next()
 
-    private onDidUpdateOrganization = () => this.refreshRequests.next()
+    private onDidUpdateOrganization = (): void => this.refreshRequests.next()
 }

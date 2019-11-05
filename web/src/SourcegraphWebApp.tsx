@@ -29,7 +29,6 @@ import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
-import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { Layout, LayoutProps } from './Layout'
 import { updateUserSessionStores } from './marketing/util'
 import { OrgAreaRoute } from './org/area/OrgArea'
@@ -43,7 +42,6 @@ import { LayoutRouteProps } from './routes'
 import { search } from './search/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import { ThemePreference } from './theme'
 import { eventLogger } from './tracking/eventLogger'
 import { withActivation } from './tracking/withActivation'
 import { UserAreaRoute } from './user/area/UserArea'
@@ -51,6 +49,8 @@ import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { parseSearchURLPatternType } from './search'
+import { ThemePreference } from './search/theme'
+import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     exploreSections: readonly ExploreSectionDescriptor[]
@@ -319,15 +319,15 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         )
     }
 
-    private onThemePreferenceChange = (themePreference: ThemePreference) => {
+    private onThemePreferenceChange = (themePreference: ThemePreference): void => {
         this.setState({ themePreference })
     }
 
-    private onNavbarQueryChange = (navbarSearchQuery: string) => {
+    private onNavbarQueryChange = (navbarSearchQuery: string): void => {
         this.setState({ navbarSearchQuery })
     }
 
-    private togglePatternType = () => {
+    private togglePatternType = (): void => {
         const currentPatternType = this.state.searchPatternType
         this.setState({
             searchPatternType:

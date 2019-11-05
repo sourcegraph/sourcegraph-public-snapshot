@@ -42,7 +42,7 @@ export class SurveyCTA extends React.PureComponent<SurveyCTAProps> {
         )
     }
 
-    private onClick = (score: number) => {
+    private onClick = (score: number): void => {
         eventLogger.log('SurveyButtonClicked', { marketing: { nps_score: score } })
         if (this.props.onClick) {
             this.props.onClick(score)

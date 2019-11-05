@@ -4,9 +4,10 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { KeyboardShortcut } from '../keyboardShortcuts/keyboardShortcuts'
-import { ThemePreference, ThemePreferenceProps, ThemeProps } from '../theme'
+import { KeyboardShortcut } from '../../../shared/src/keyboardShortcuts'
+import { ThemeProps } from '../../../shared/src/theme'
 import { UserAvatar } from '../user/UserAvatar'
+import { ThemePreferenceProps, ThemePreference } from '../search/theme'
 
 interface Props extends ThemeProps, ThemePreferenceProps {
     location: H.Location
@@ -156,13 +157,13 @@ export class UserNavItem extends React.PureComponent<Props, State> {
         )
     }
 
-    private toggleIsOpen = () => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
+    private toggleIsOpen = (): void => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
 
     private onThemeChange: React.ChangeEventHandler<HTMLSelectElement> = event => {
         this.props.onThemePreferenceChange(event.target.value as ThemePreference)
     }
 
-    private onThemeCycle = () => {
+    private onThemeCycle = (): void => {
         this.props.onThemePreferenceChange(
             this.props.themePreference === ThemePreference.Dark ? ThemePreference.Light : ThemePreference.Dark
         )

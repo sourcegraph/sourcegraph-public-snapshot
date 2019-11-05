@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -21,6 +22,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/endpoint"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 )
 
@@ -989,6 +992,81 @@ func TestSearchResultsHydration(t *testing.T) {
 		case *RepositoryResolver:
 			assertRepoResolverHydrated(ctx, t, r, hydratedRepo)
 		}
+	}
+}
+
+// Tests that indexed repos are filtered in structural search
+func TestStructuralSearchRepoFilter(t *testing.T) {
+	repoName := "indexed/one"
+	indexedFileName := "indexed.go"
+
+	indexedRepo := &types.Repo{Name: api.RepoName(repoName)}
+
+	unindexedRepo := &types.Repo{Name: api.RepoName("unindexed/one")}
+
+	db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
+		return []*types.Repo{indexedRepo, unindexedRepo}, nil
+	}
+	defer func() { db.Mocks = db.MockStores{} }()
+
+	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
+		repoName := repo.Name
+		switch repoName {
+		case "indexed/one":
+			return []*fileMatchResolver{{JPath: indexedFileName}}, false, nil
+		case "unindexed/one":
+			return []*fileMatchResolver{{JPath: "unindexed.go"}}, false, nil
+		default:
+			return nil, false, errors.New("Unexpected repo")
+		}
+	}
+	defer func() { mockSearchFilesInRepo = nil }()
+
+	zoektRepo := &zoekt.RepoListEntry{
+		Repository: zoekt.Repository{
+			Name:     string(indexedRepo.Name),
+			Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
+		},
+	}
+
+	zoektFileMatches := []zoekt.FileMatch{{
+		FileName:   indexedFileName,
+		Repository: string(indexedRepo.Name),
+		LineMatches: []zoekt.LineMatch{
+			{
+				Line: nil,
+			},
+		},
+	}}
+
+	z := &searchbackend.Zoekt{
+		Client: &fakeSearcher{
+			repos:  &zoekt.RepoList{Repos: []*zoekt.RepoListEntry{zoektRepo}},
+			result: &zoekt.SearchResult{Files: zoektFileMatches},
+		},
+		DisableCache: true,
+	}
+
+	ctx := context.Background()
+
+	q, err := query.ParseAndCheck(`patterntype:structural index:only foo`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resolver := &searchResolver{
+		query:        q,
+		patternType:  SearchTypeStructural,
+		zoekt:        z,
+		searcherURLs: endpoint.Static("test"),
+	}
+	results, err := resolver.Results(ctx)
+	if err != nil {
+		t.Fatal("Results:", err)
+	}
+
+	fm, _ := results.Results()[0].ToFileMatch()
+	if fm.JPath != indexedFileName {
+		t.Fatalf("wrong indexed filename. want=%s, have=%s\n", indexedFileName, fm.JPath)
 	}
 }
 

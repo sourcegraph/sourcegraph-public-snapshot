@@ -20,9 +20,9 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { mutateGraphQL, queryGraphQL } from '../../../backend/graphql'
 import { PageTitle } from '../../../components/PageTitle'
-import { ThemeProps } from '../../../theme'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { ProductSubscriptionForm, ProductSubscriptionFormData } from './ProductSubscriptionForm'
+import { ThemeProps } from '../../../../../shared/src/theme'
 
 interface Props extends RouteComponentProps<{ subscriptionUUID: string }>, ThemeProps {
     user: GQL.IUser
@@ -196,7 +196,7 @@ export class UserSubscriptionsEditProductSubscriptionPage extends React.Componen
             })
         )
 
-    private onSubmit = (args: ProductSubscriptionFormData) => {
+    private onSubmit = (args: ProductSubscriptionFormData): void => {
         this.submits.next(args)
     }
 }

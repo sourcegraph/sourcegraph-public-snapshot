@@ -17,7 +17,7 @@ import { queryGraphQL } from '../../backend/graphql'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { NamespaceProps } from '../../namespaces'
-import { ThemeProps } from '../../theme'
+import { ThemeProps } from '../../../../shared/src/theme'
 import { RouteDescriptor } from '../../util/contributions'
 import { UserSettingsAreaRoute } from '../settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from '../settings/UserSettingsSidebar'
@@ -229,5 +229,7 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
         )
     }
 
-    private onDidUpdateUser = () => this.refreshRequests.next()
+    private onDidUpdateUser = (): void => {
+        this.refreshRequests.next()
+    }
 }

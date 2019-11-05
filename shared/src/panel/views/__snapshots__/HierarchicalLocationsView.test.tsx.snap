@@ -147,7 +147,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
       onMouseUp={[Function]}
     />
     <div
-      className="list-group list-group-flush hierarchical-locations-view__list"
+      className="list-group list-group-flush hierarchical-locations-view__list e2e-hierarchical-locations-view-list"
     >
       <span
         className="list-group-item hierarchical-locations-view__item active"

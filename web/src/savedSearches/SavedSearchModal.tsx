@@ -30,12 +30,12 @@ export class SavedSearchModal extends React.Component<Props, State> {
         }
     }
 
-    private onLocationChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    private onLocationChange = (event: React.ChangeEvent<HTMLSelectElement>): void => {
         const locationType = event.target.value
         this.setState({ saveLocation: locationType as UserOrOrg })
     }
 
-    private onOrganizationChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    private onOrganizationChange = (event: React.ChangeEvent<HTMLSelectElement>): void => {
         const orgName = event.target.value
         this.setState({ organization: orgName })
     }
@@ -87,7 +87,7 @@ export class SavedSearchModal extends React.Component<Props, State> {
         )
     }
 
-    private onSubmit = () => {
+    private onSubmit = (): void => {
         if (this.props.query && this.props.authenticatedUser) {
             const encodedQuery = encodeURIComponent(this.props.query)
             this.props.history.push(

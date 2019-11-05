@@ -118,7 +118,7 @@ export class SiteAdminCustomerBillingLink extends React.PureComponent<Props, Sta
         )
     }
 
-    private setCustomerBilling = () => this.updates.next()
+    private setCustomerBilling = (): void => this.updates.next()
 }
 
 function setCustomerBilling(args: GQL.ISetUserBillingOnDotcomMutationArguments): Observable<void> {

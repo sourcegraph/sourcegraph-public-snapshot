@@ -6,12 +6,13 @@ import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuIcon from 'mdi-react/MenuIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import React, { useCallback, useMemo, useState } from 'react'
+// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
 // @ts-ignore
 import TooltipPopoverWrapper from 'reactstrap/lib/TooltipPopoverWrapper'
 import { Subscription } from 'rxjs'
 import stringScore from 'string-score'
 import { Key } from 'ts-key-enum'
-import { KeyboardShortcut } from '../../../web/src/keyboardShortcuts/keyboardShortcuts'
+import { KeyboardShortcut } from '../keyboardShortcuts'
 import { ActionItem, ActionItemAction } from '../actions/ActionItem'
 import { ContributableMenu, Contributions, Evaluated } from '../api/protocol'
 import { HighlightedMatches } from '../components/HighlightedMatches'
@@ -115,7 +116,9 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
     private subscriptions = new Subscription()
 
     private selectedItem: ActionItem | null = null
-    private setSelectedItem = (e: ActionItem | null) => (this.selectedItem = e)
+    private setSelectedItem = (e: ActionItem | null): void => {
+        this.selectedItem = e
+    }
 
     public componentDidMount(): void {
         this.subscriptions.add(
@@ -248,7 +251,7 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
         this.setState(prevState => ({ selectedIndex: prevState.selectedIndex + delta }))
     }
 
-    private onActionDidExecute = (actionID: string) => {
+    private onActionDidExecute = (actionID: string): void => {
         const KEEP_RECENT_ACTIONS = 10
         this.setState(prevState => {
             const { recentActions } = prevState

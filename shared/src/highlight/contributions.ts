@@ -16,6 +16,7 @@ export function registerHighlightContributions(): void {
     }
     registered = true
     /* eslint-disable @typescript-eslint/no-require-imports */
+    /* eslint-disable @typescript-eslint/no-var-requires */
     registerLanguage('go', require('highlight.js/lib/languages/go'))
     registerLanguage('javascript', require('highlight.js/lib/languages/javascript'))
     registerLanguage('typescript', require('highlight.js/lib/languages/typescript'))
@@ -44,4 +45,5 @@ export function registerHighlightContributions(): void {
     registerLanguage('kotlin', require('highlight.js/lib/languages/kotlin'))
     registerLanguage('dart', require('highlight.js/lib/languages/dart'))
     /* eslint-enable @typescript-eslint/no-require-imports */
+    /* eslint-enable @typescript-eslint/no-var-requires */
 }

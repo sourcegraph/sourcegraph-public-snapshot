@@ -19,10 +19,10 @@ import { PlatformContextProps } from '../../../../../shared/src/platform/context
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
 import { AbsoluteRepoFile, ModeSpec, parseHash, PositionSpec } from '../../../../../shared/src/util/url'
 import { isDiscussionsEnabled } from '../../../discussions'
-import { ThemeProps } from '../../../theme'
 import { RepoHeaderContributionsLifecycleProps } from '../../RepoHeader'
 import { RepoRevSidebarCommits } from '../../RepoRevSidebarCommits'
 import { DiscussionsTree } from '../discussions/DiscussionsTree'
+import { ThemeProps } from '../../../../../shared/src/theme'
 interface Props
     extends AbsoluteRepoFile,
         Partial<PositionSpec>,
@@ -124,7 +124,7 @@ export class BlobPanel extends React.PureComponent<Props> {
                                 // This disable directive is necessary because TypeScript is not yet smart
                                 // enough to know that (typeof params & typeof extraParams) is P.
                                 //
-                                // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
+                                // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
                                 locationProvider: registry.getLocations({ ...params, ...extraParams } as P).pipe(
                                     map(locationsObservable =>
                                         locationsObservable.pipe(

@@ -3,7 +3,7 @@ import { OAuth2Client } from 'googleapis-common'
 import open from 'open'
 import { Credentials } from 'google-auth-library'
 import { readLine } from './util'
-import { readFile, writeFile } from 'fs-extra'
+import { readFile, writeFile } from 'mz/fs'
 
 const SCOPES = ['https://www.googleapis.com/auth/calendar.events']
 const TOKEN_PATH = '.secrets/google-calendar-token.json'

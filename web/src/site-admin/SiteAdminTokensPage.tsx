@@ -99,5 +99,5 @@ export class SiteAdminTokensPage extends React.PureComponent<Props, State> {
             })
         )
 
-    private onDidUpdateAccessToken = () => this.accessTokenUpdates.next()
+    private onDidUpdateAccessToken = (): void => this.accessTokenUpdates.next()
 }

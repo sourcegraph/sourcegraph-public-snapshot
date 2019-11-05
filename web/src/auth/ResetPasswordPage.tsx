@@ -73,11 +73,11 @@ class ResetPasswordInitForm extends React.PureComponent<{}, ResetPasswordInitFor
         )
     }
 
-    private onEmailFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    private onEmailFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         this.setState({ email: e.target.value })
     }
 
-    private handleSubmitResetPasswordInit = (e: React.FormEvent<HTMLFormElement>) => {
+    private handleSubmitResetPasswordInit = (e: React.FormEvent<HTMLFormElement>): void => {
         e.preventDefault()
         this.setState({ submitOrError: 'loading' })
         fetch('/-/reset-password-init', {
@@ -169,11 +169,11 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
         )
     }
 
-    private onPasswordFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    private onPasswordFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         this.setState({ password: e.target.value })
     }
 
-    private handleSubmitResetPassword = (e: React.FormEvent<HTMLFormElement>) => {
+    private handleSubmitResetPassword = (e: React.FormEvent<HTMLFormElement>): void => {
         e.preventDefault()
         this.setState({ submitOrError: 'loading' })
         fetch('/-/reset-password-code', {

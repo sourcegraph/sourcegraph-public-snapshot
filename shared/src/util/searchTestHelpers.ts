@@ -1,6 +1,6 @@
 import { of } from 'rxjs'
 import sinon from 'sinon'
-import { Controller } from '../../../shared/src/extensions/controller'
+import { Controller } from '../extensions/controller'
 
 export const RESULT = {
     __typename: 'FileMatch',

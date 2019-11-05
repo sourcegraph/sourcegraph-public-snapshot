@@ -19,7 +19,7 @@ export class FileDiffConnection extends React.PureComponent<Props> {
         return <FilteredFileDiffConnection {...this.props} onUpdate={this.onUpdate} />
     }
 
-    private onUpdate = (fileDiffsOrError: Connection<GQL.IFileDiff> | ErrorLike | undefined) => {
+    private onUpdate = (fileDiffsOrError: Connection<GQL.IFileDiff> | ErrorLike | undefined): void => {
         const nodeProps = this.props.nodeComponentProps!
 
         // TODO(sqs): This reports to extensions that these files are empty. This is wrong, but we don't have any

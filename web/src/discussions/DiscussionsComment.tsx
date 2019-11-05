@@ -189,7 +189,7 @@ export class DiscussionsComment extends React.PureComponent<Props> {
         )
     }
 
-    private setScrollToElement = (ref: HTMLElement | null) => {
+    private setScrollToElement = (ref: HTMLElement | null): void => {
         this.scrollToElement = ref
     }
 }

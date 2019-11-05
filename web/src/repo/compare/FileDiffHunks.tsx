@@ -13,7 +13,7 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { isDefined } from '../../../../shared/src/util/types'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec, toURIWithPath } from '../../../../shared/src/util/url'
-import { ThemeProps } from '../../theme'
+import { ThemeProps } from '../../../../shared/src/theme'
 import { DiffHunk } from './DiffHunk'
 import { diffDomFunctions } from './dom-functions'
 
@@ -62,23 +62,23 @@ interface FileDiffHunksState {
 export class FileDiffHunks extends React.Component<FileHunksProps, FileDiffHunksState> {
     /** Emits whenever the ref callback for the code element is called */
     private codeElements = new Subject<HTMLElement | null>()
-    private nextCodeElement = (element: HTMLElement | null) => this.codeElements.next(element)
+    private nextCodeElement = (element: HTMLElement | null): void => this.codeElements.next(element)
 
     /** Emits whenever the ref callback for the blob element is called */
     private blobElements = new Subject<HTMLElement | null>()
-    private nextBlobElement = (element: HTMLElement | null) => this.blobElements.next(element)
+    private nextBlobElement = (element: HTMLElement | null): void => this.blobElements.next(element)
 
     /** Emits whenever something is hovered in the code */
     private codeMouseOvers = new Subject<React.MouseEvent<HTMLElement>>()
-    private nextCodeMouseOver = (event: React.MouseEvent<HTMLElement>) => this.codeMouseOvers.next(event)
+    private nextCodeMouseOver = (event: React.MouseEvent<HTMLElement>): void => this.codeMouseOvers.next(event)
 
     /** Emits whenever something is hovered in the code */
     private codeMouseMoves = new Subject<React.MouseEvent<HTMLElement>>()
-    private nextCodeMouseMove = (event: React.MouseEvent<HTMLElement>) => this.codeMouseMoves.next(event)
+    private nextCodeMouseMove = (event: React.MouseEvent<HTMLElement>): void => this.codeMouseMoves.next(event)
 
     /** Emits whenever something is clicked in the code */
     private codeClicks = new Subject<React.MouseEvent<HTMLElement>>()
-    private nextCodeClick = (event: React.MouseEvent<HTMLElement>) => {
+    private nextCodeClick = (event: React.MouseEvent<HTMLElement>): void => {
         event.persist()
         this.codeClicks.next(event)
     }

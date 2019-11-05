@@ -15,10 +15,10 @@ import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared
 import { queryGraphQL } from '../../backend/graphql'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
-import { ThemeProps } from '../../theme'
 import { RouteDescriptor } from '../../util/contributions'
 import { ExtensionsAreaRouteContext } from '../ExtensionsArea'
 import { ExtensionAreaHeader, ExtensionAreaHeaderNavItem } from './ExtensionAreaHeader'
+import { ThemeProps } from '../../../../shared/src/theme'
 
 export const registryExtensionFragment = gql`
     fragment RegistryExtensionFields on RegistryExtension {
@@ -218,7 +218,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
         )
     }
 
-    private onDidUpdateExtension = () => this.refreshRequests.next()
+    private onDidUpdateExtension = (): void => this.refreshRequests.next()
 }
 
 function queryExtension(extensionID: string): Observable<ConfiguredRegistryExtension> {

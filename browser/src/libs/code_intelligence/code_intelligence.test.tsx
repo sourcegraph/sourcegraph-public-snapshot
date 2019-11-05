@@ -209,7 +209,7 @@ describe('code_intelligence', () => {
                         requestGraphQL: mockRequestGraphQL({
                             ...DEFAULT_GRAPHQL_RESPONSES,
                             ResolveRepo: variables =>
-                                // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
+                                // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
                                 of({
                                     data: {
                                         repository: {

@@ -405,7 +405,7 @@ export class CriticalConfigEditor extends React.PureComponent<Props, State> {
      * Private helper that stores a reference to the Monaco editor after it's mounted.
      * This is used to run the "Quick configure" actions.
      */
-    private editorWillMount = (editor: _monaco.editor.IStandaloneCodeEditor, model: _monaco.editor.IModel) => {
+    private editorWillMount = (editor: _monaco.editor.IStandaloneCodeEditor, model: _monaco.editor.IModel): void => {
         this.configEditor = editor
         if (CriticalConfigEditor.isStandaloneCodeEditor(editor)) {
             for (const { id, label, run } of quickConfigureActions) {
@@ -446,9 +446,9 @@ export class CriticalConfigEditor extends React.PureComponent<Props, State> {
         this.setState({ hasLoadedEditor: true })
     }
 
-    private onDidContentChange = (content: string) => this.setState({ content })
+    private onDidContentChange = (content: string): void => this.setState({ content })
 
-    private onDidSave = () => {
+    private onDidSave = (): void => {
         this.setState(
             {
                 showSaving: true,

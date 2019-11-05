@@ -10,9 +10,9 @@ import { ExtensionsControllerProps } from '../../../../shared/src/extensions/con
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
-import { ThemeProps } from '../../theme'
 import { DiffStat } from './DiffStat'
 import { FileDiffHunks } from './FileDiffHunks'
+import { ThemeProps } from '../../../../shared/src/theme'
 
 export interface FileDiffNodeProps extends PlatformContextProps, ExtensionsControllerProps, ThemeProps {
     node: GQL.IFileDiff
@@ -116,5 +116,5 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
         )
     }
 
-    private toggleExpand = () => this.setState(prevState => ({ expanded: !prevState.expanded }))
+    private toggleExpand = (): void => this.setState(prevState => ({ expanded: !prevState.expanded }))
 }

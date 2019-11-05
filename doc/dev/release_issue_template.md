@@ -140,5 +140,5 @@ Run a find replace on:
 
 - [ ] Scrub the retrospective Google doc for any priviledged customer data.
 - [ ] [Convert to Markdown](https://gsuite.google.com/marketplace/app/docs_to_markdown/700168918607).
-- [ ] Add a new retrospective page in `sourcegraph/doc/dev/retrospectives`.
+- [ ] Add a new retrospective page in `sourcegraph/doc../../team/product-dev/retrospectives`.
 - [ ] Add a link to it on `retrospectives/index.md` and in the left nav (`sourcegraph/doc/_resources/templates/doc.html`)

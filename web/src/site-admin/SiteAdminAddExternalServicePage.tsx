@@ -10,7 +10,7 @@ import { renderMarkdown } from '../../../shared/src/util/markdown'
 import { mutateGraphQL } from '../backend/graphql'
 import { PageTitle } from '../components/PageTitle'
 import { refreshSiteFlags } from '../site/backend'
-import { ThemeProps } from '../theme'
+import { ThemeProps } from '../../../shared/src/theme'
 import { ExternalServiceCard } from '../components/ExternalServiceCard'
 import { ExternalServiceVariant, getExternalService } from './externalServices'
 import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
@@ -151,7 +151,7 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
         }
     }
 
-    private onChange = (input: GQL.IAddExternalServiceInput) => {
+    private onChange = (input: GQL.IAddExternalServiceInput): void => {
         this.setState({
             displayName: input.displayName,
             config: input.config,

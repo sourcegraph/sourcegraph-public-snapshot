@@ -1,5 +1,5 @@
 import { Connection, createConnection as _createConnection } from 'typeorm'
-import { entities } from './xrepo.models'
+import * as xrepo from './xrepo.models'
 import { PostgresConnectionCredentialsOptions } from 'typeorm/driver/postgres/PostgresConnectionCredentialsOptions'
 import { readEnvInt } from './util'
 import { Logger } from 'winston'
@@ -79,20 +79,17 @@ export async function createPostgresConnection(configuration: Configuration, log
         disable: false,
     }
 
+    const host = url.hostname
+    const port = parseInt(url.port, 10) || 5432
+    const username = decodeURIComponent(url.username)
+    const password = decodeURIComponent(url.password)
+    const database = decodeURIComponent(url.pathname).substring(1) || username
     const sslMode = url.searchParams.get('sslmode')
-
-    const connectionOptions = {
-        host: url.hostname,
-        port: parseInt(url.port, 10) || 5432,
-        username: decodeURIComponent(url.username),
-        password: decodeURIComponent(url.password),
-        database: decodeURIComponent(url.pathname).substring(1),
-        ssl: sslMode ? sslModes[sslMode] : undefined,
-    }
+    const ssl = sslMode ? sslModes[sslMode] : undefined
 
     // Get a working connection
     const connection = await connect(
-        connectionOptions,
+        { host, port, username, password, database, ssl },
         logger
     )
 
@@ -113,17 +110,18 @@ export async function createPostgresConnection(configuration: Configuration, log
  * @param logger The logger instance.
  */
 function connect(connectionOptions: PostgresConnectionCredentialsOptions, logger: Logger): Promise<Connection> {
-    const connect = (): Promise<Connection> => {
-        logger.debug('connecting to cross-repository database')
-        return connectPostgres(connectionOptions, '')
-    }
-
-    return pRetry(connect, {
-        factor: 1,
-        retries: MAX_CONNECTION_RETRIES,
-        minTimeout: CONNECTION_RETRY_INTERVAL * 1000,
-        maxTimeout: CONNECTION_RETRY_INTERVAL * 1000,
-    })
+    return pRetry(
+        () => {
+            logger.debug('connecting to cross-repository database')
+            return connectPostgres(connectionOptions, '')
+        },
+        {
+            factor: 1,
+            retries: MAX_CONNECTION_RETRIES,
+            minTimeout: CONNECTION_RETRY_INTERVAL * 1000,
+            maxTimeout: CONNECTION_RETRY_INTERVAL * 1000,
+        }
+    )
 }
 
 /**
@@ -139,7 +137,7 @@ export function connectPostgres(
     return _createConnection({
         type: 'postgres',
         name: `xrepo${suffix}`,
-        entities,
+        entities: xrepo.entities,
         logging: ['error', 'warn'],
         maxQueryExecutionTime: 1000,
         ...connectionOptions,

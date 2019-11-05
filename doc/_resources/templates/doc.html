@@ -94,6 +94,8 @@
                             <li class="content-nav-no-hover">
                                 <ul class="content-nav-section-subsection">
                                     <li><a href="/user/code_intelligence/lsif">LSIF</a></li>
+                                    <li><a href="/user/code_intelligence/lsif_in_ci">LSIF in CI</a></li>
+                                    <li><a href="/user/code_intelligence/lsif_on_github">LSIF on GitHub</a></li>
                                     <li><a href="/user/code_intelligence/language_servers">Language servers</a></li>
                                 </ul>
                             </li>
@@ -315,61 +317,28 @@
                             </svg>
                     </div>
                     <li class="content-nav-no-hover">
-                        <a class="content-nav-section-header" href="/dev">Sourcegraph development documentation</a>
+                        <a class="content-nav-section-header" href="/dev">Open source development documentation</a>
                         <ul class="content-nav-section-group">
-                            <li><a href="/dev/code_style_guide">Code style guide</a></li>
-                            <li><a href="/dev/goals">Company goals</a></li>
+                            <li><a href="/dev/go_style_guide">Go style guide</a></li>
                             <li><a href="/dev/graphql_api">Developing the Sourcegraph GraphQL API</a></li>
                             <li><a href="/dev/web_app">Developing the Sourcegraph web app</a></li>
                             <li><a href="/dev/local_development">Getting started with developing Sourcegraph</a></li>
-                            <li><a href="/dev/incidents">Incidents</a></li>
-                            <li><a href="/dev/issues">Issues</a></li>
                             <li><a href="/dev/release_issue_template">MAJOR.MINOR release (YYYY-MM-20)</a></li>
                             <li><a href="/dev/patch_release_issue_template">MAJOR.MINOR.PATCH release</a></li>
                             <li><a href="/dev/devrel_release_issue_template">MAJOR.MINOR release: DevRel tasks</a></li>
                             <li><a href="/dev/architecture-mermaid">N# Sourcegraph Architecture diagram</a></li>
                             <li><a href="/dev/postgresql">PostgreSQL storage tips</a></li>
                             <li><a href="/dev/phabricator_gitolite">Print info from Gitolite</a></li>
-                            <li><a href="/dev/product">Product</a></li>
-                            <li><a href="/dev/rfcs">RFCs</a></li>
-                            <li><a href="/dev/releases">Releases</a></li>
-                            <li><a href="/dev/retrospectives">Retrospectives</a></li>
-                            <li class="content-nav-no-hover">
-                                <ul class="content-nav-section-subsection">
-                                    <li><a href="/dev/retrospectives/3_0">3.0 Retrospective</a></li>
-                                    <li><a href="/dev/retrospectives/3_0_beta">3.0 beta retrospective</a></li>
-                                    <li><a href="/dev/retrospectives/3_2">3.2 retrospective</a></li>
-                                    <li><a href="/dev/retrospectives/3_3">3.3 retrospective</a></li>
-                                    <li><a href="/dev/retrospectives/customer_license_expiration">Customer license expiration P0 retrospective</a></li>
-                                    <li><a href="/dev/retrospectives/postgresql_upgrade">Tomás’ notes on the PostgreSQL upgrade</a></li>
-                                    <li><a href="/dev/retrospectives/3_4">3.4 retrospective</a></li>
-                                    <li><a href="/dev/retrospectives/3_5">3.5 retrospective</a></li>
-                                    <li><a href="/dev/retrospectives/3_6">3.6 retrospective</a></li>
-                                    <li><a href="/dev/retrospectives/3_7">3.7 retrospective</a></li>
-                                    <li><a href="/dev/retrospectives/3_8">3.8 retrospective</a></li>
-                                </ul>
-                            </li>
                             <li><a href="/dev/architecture">Sourcegraph Architecture Overview</a></li>
                             <li><a href="/dev/conduct">Sourcegraph Community Code of Conduct</a></li>
-                            <li><a href="/dev/documentation">Sourcegraph documentation guidelines</a></li>
-                            <li class="content-nav-no-hover">
-                                <ul class="content-nav-section-subsection">
-                                    <li><a href="/dev/documentation/site">Documentation site</a></li>
-                                    <li><a href="/dev/documentation/structure">Documentation structure</a></li>
-                                    <li><a href="/dev/documentation/style_guide">Documentation style guide</a></li>
-                                </ul>
-                            </li>
                             <li><a href="/dev/faq">Sourcegraph open-source project FAQ</a></li>
-                            <li><a href="/dev/roadmap">Sourcegraph roadmap</a></li>
-                            <li><a href="/dev/style_guide">Sourcegraph style guide</a></li>
-                            <li><a href="/dev/open_source_open_company">Sourcegraph: open product, open company, open source</a></li>
                             <li><a href="/dev/telemetry">Telemetry</a></li>
                             <li><a href="/dev/testing">Testing</a></li>
                             <li><a href="/dev/typescript">TypeScript development guide</a></li>
                         </ul>
                     </li>
                 </ul>
-                <ul class="content-nav-section expandable" data-nav-section="graphbook">
+                <ul class="content-nav-section expandable" data-nav-section="team">
                     <button class="content-nav-button"></button>
                     <div class="close--icon">
                         <svg class="mdi-icon material-icons" width="24" height="24" fill="#000" viewBox="0 0 24 24">
@@ -377,9 +346,48 @@
                             </svg>
                     </div>
                     <li class="content-nav-no-hover">
-                        <a class="content-nav-section-header" href="/graphbook">Graphbook</a>
+                        <a class="content-nav-section-header" href="/team">Team documentation</a>
                         <ul class="content-nav-section-group">
-                            <li><a href="/graphbook/communication">Communication</a></li>
+                            <li><a href="/team/roadmap">Product roadmap</a></li>
+                            <li><a href="/team/graphbook">Graphbook (teammate handbook)</a></li>
+                            <li class="content-nav-no-hover">
+                                <ul class="content-nav-section-subsection">
+                                    <li><a href="/team/graphbook/team_meeting">Weekly team meeting</a></li>
+                                </ul>
+                            </li>
+                            <li><a href="/team/product-dev">Product and dev teams</a></li>
+                            <li class="content-nav-no-hover">
+                                <ul class="content-nav-section-subsection">
+                                    <li><a href="/team/product-dev/open_source_open_company">Sourcegraph: open product, open company, open source</a></li>
+                                    <li><a href="/team/product-dev/product">Product planning</a></li>
+                                    <li><a href="/team/product-dev/rfcs">RFCs</a></li>
+                                    <li><a href="/team/product-dev/issues">Issue triage</a></li>
+                                    <li><a href="/team/product-dev/releases">Release process and schedule</a></li>
+                                    <li><a href="/team/product-dev/retrospectives">Retrospectives</a></li>
+                                    <li><a href="/team/product-dev/documentation">Sourcegraph documentation guidelines</a></li>
+                                    <li class="content-nav-no-hover">
+                                        <ul class="content-nav-section-subsection">
+                                            <li><a href="/team/product-dev/documentation/site">Documentation site</a></li>
+                                            <li><a href="/team/product-dev/documentation/structure">Documentation structure</a></li>
+                                            <li><a href="/team/product-dev/documentation/style_guide">Documentation style guide</a></li>
+                                            <li><a href="/team/product-dev/documentation/separate_website">Setting up separate websites</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="/team/product-dev/incidents">Incident response</a></li>
+                                </ul>
+                            </li>
+                            <li><a href="/team/gtm">Go to market</a></li>
+                            <li class="content-nav-no-hover">
+                                <ul class="content-nav-section-subsection">
+                                    <li><a href="/team/gtm/devrel">Developer relations</a></li>
+                                    <li><a href="/team/gtm/support">Customer support</a></li>
+                                    <li class="content-nav-no-hover">
+                                        <ul class="content-nav-section-subsection">
+                                            <li><a href="/team/gtm/support/diagnostics">Diagnostic questions</a></li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                 </ul>

@@ -8,7 +8,7 @@ import {
 import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { propertyIsDefined } from '../../../../shared/src/util/types'
-import { ThemeProps } from '../../theme'
+import { ThemeProps } from '../../../../shared/src/theme'
 
 const DiffBoundary: React.FunctionComponent<{
     /** The "lines" property is set for end boundaries (only for start boundaries and between hunks). */
@@ -62,19 +62,19 @@ export const DiffHunk: React.FunctionComponent<
                 .split('\n')
                 .slice(0, -1)
                 .map((line, i) => {
-                    if (line[0] !== '+') {
+                    if (!line.startsWith('+')) {
                         oldLine++
                     }
-                    if (line[0] !== '-') {
+                    if (!line.startsWith('-')) {
                         newLine++
                     }
                     const oldAnchor = `${fileDiffAnchor}L${oldLine - 1}`
                     const newAnchor = `${fileDiffAnchor}R${newLine - 1}`
                     const decorationsForLine = [
                         // If the line was deleted, look for decorations in the base rev
-                        ...((line[0] === '-' && decorations.base.get(oldLine - 1)) || []),
+                        ...((line.startsWith('-') && decorations.base.get(oldLine - 1)) || []),
                         // If the line wasn't deleted, look for decorations in the head rev
-                        ...((line[0] !== '-' && decorations.head.get(newLine - 1)) || []),
+                        ...((!line.startsWith('-') && decorations.head.get(newLine - 1)) || []),
                     ]
                     const lineStyle = decorationsForLine
                         .filter(decoration => decoration.isWholeLine)
@@ -83,18 +83,18 @@ export const DiffHunk: React.FunctionComponent<
                     return (
                         <tr
                             key={i}
-                            className={`diff-hunk__line ${line[0] === ' ' ? 'diff-hunk__line--both' : ''} ${
-                                line[0] === '-' ? 'diff-hunk__line--deletion' : ''
-                            } ${line[0] === '+' ? 'diff-hunk__line--addition' : ''} ${
-                                (line[0] !== '+' && location.hash === '#' + oldAnchor) ||
-                                (line[0] !== '-' && location.hash === '#' + newAnchor)
+                            className={`diff-hunk__line ${line.startsWith(' ') ? 'diff-hunk__line--both' : ''} ${
+                                line.startsWith('-') ? 'diff-hunk__line--deletion' : ''
+                            } ${line.startsWith('+') ? 'diff-hunk__line--addition' : ''} ${
+                                (!line.startsWith('+') && location.hash === '#' + oldAnchor) ||
+                                (!line.startsWith('-') && location.hash === '#' + newAnchor)
                                     ? 'diff-hunk__line--active'
                                     : ''
                             }`}
                         >
                             {lineNumbers && (
                                 <>
-                                    {line[0] !== '+' ? (
+                                    {!line.startsWith('+') ? (
                                         <td
                                             className="diff-hunk__num"
                                             data-line={oldLine - 1}
@@ -106,7 +106,7 @@ export const DiffHunk: React.FunctionComponent<
                                         <td className="diff-hunk__num diff-hunk__num--empty" />
                                     )}
 
-                                    {line[0] !== '-' ? (
+                                    {!line.startsWith('-') ? (
                                         <td
                                             className="diff-hunk__num"
                                             data-line={newLine - 1}

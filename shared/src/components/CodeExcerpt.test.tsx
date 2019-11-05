@@ -22,12 +22,13 @@ jest.mock('react-visibility-sensor', (): typeof _VisibilitySensor => ({ children
 
 import { cleanup, getAllByText, getByText, render } from '@testing-library/react'
 import { of } from 'rxjs'
+
+import { CodeExcerpt } from './CodeExcerpt'
 import {
     HIGHLIGHTED_FILE_LINES,
     HIGHLIGHTED_FILE_LINES_REQUEST,
     HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
-} from '../../../web/src/search/testHelpers'
-import { CodeExcerpt } from './CodeExcerpt'
+} from '../util/searchTestHelpers'
 
 describe('CodeExcerpt', () => {
     afterAll(cleanup)

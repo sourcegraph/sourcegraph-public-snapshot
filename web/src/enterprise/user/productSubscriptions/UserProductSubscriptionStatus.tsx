@@ -94,5 +94,6 @@ export class UserProductSubscriptionStatus extends React.PureComponent<Props, St
         )
     }
 
-    private toggleShowLicenseKey = () => this.setState(prevState => ({ showLicenseKey: !prevState.showLicenseKey }))
+    private toggleShowLicenseKey = (): void =>
+        this.setState(prevState => ({ showLicenseKey: !prevState.showLicenseKey }))
 }

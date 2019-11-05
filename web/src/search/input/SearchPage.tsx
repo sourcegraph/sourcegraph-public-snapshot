@@ -8,7 +8,7 @@ import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { Notices } from '../../global/Notices'
 import { QuickLink, Settings } from '../../schema/settings.schema'
-import { ThemePreferenceProps, ThemeProps } from '../../theme'
+import { ThemeProps } from '../../../../shared/src/theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { limitString } from '../../util'
 import { submitSearch } from '../helpers'
@@ -17,6 +17,7 @@ import { QueryBuilder } from './QueryBuilder'
 import { QueryInput } from './QueryInput'
 import { SearchButton } from './SearchButton'
 import { ISearchScope, SearchFilterChips } from './SearchFilterChips'
+import { ThemePreferenceProps } from '../theme'
 
 interface Props extends SettingsCascadeProps, ThemeProps, ThemePreferenceProps, ActivationProps, PatternTypeProps {
     authenticatedUser: GQL.IUser | null
@@ -131,11 +132,11 @@ export class SearchPage extends React.Component<Props, State> {
         )
     }
 
-    private onUserQueryChange = (userQuery: string) => {
+    private onUserQueryChange = (userQuery: string): void => {
         this.setState({ userQuery })
     }
 
-    private onBuilderQueryChange = (builderQuery: string) => {
+    private onBuilderQueryChange = (builderQuery: string): void => {
         this.setState({ builderQuery })
     }
 

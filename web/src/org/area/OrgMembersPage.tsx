@@ -118,7 +118,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
         )
     }
 
-    private remove = () => this.removes.next()
+    private remove = (): void => this.removes.next()
 }
 
 interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {}
@@ -204,9 +204,9 @@ export class OrgMembersPage extends React.PureComponent<Props, State> {
         )
     }
 
-    private onDidUpdateUser = () => this.userUpdates.next()
+    private onDidUpdateUser = (): void => this.userUpdates.next()
 
-    private onDidUpdateOrganizationMembers = () => this.userUpdates.next()
+    private onDidUpdateOrganizationMembers = (): void => this.userUpdates.next()
 
     private fetchOrgMembers = (): Observable<GQL.IUserConnection> =>
         queryGraphQL(

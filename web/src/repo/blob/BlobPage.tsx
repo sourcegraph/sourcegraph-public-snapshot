@@ -23,7 +23,6 @@ import { queryGraphQL } from '../../backend/graphql'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
 import { isDiscussionsEnabled } from '../../discussions'
-import { ThemeProps } from '../../theme'
 import { eventLogger, EventLoggerProps } from '../../tracking/eventLogger'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
@@ -34,6 +33,7 @@ import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { Blob } from './Blob'
 import { BlobPanel } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
+import { ThemeProps } from '../../../../shared/src/theme'
 
 export function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean; disableTimeout: boolean }): string {
     return makeRepoURI(parsed) + parsed.isLightTheme + parsed.disableTimeout
@@ -312,9 +312,9 @@ export class BlobPage extends React.PureComponent<Props, State> {
         )
     }
 
-    private onDidUpdateLineWrap = (value: boolean) => this.setState({ wrapCode: value })
+    private onDidUpdateLineWrap = (value: boolean): void => this.setState({ wrapCode: value })
 
-    private onExtendHighlightingTimeoutClick = () => this.extendHighlightingTimeoutClicks.next()
+    private onExtendHighlightingTimeoutClick = (): void => this.extendHighlightingTimeoutClicks.next()
 
     private getPageTitle(): string {
         const repoNameSplit = this.props.repoName.split('/')

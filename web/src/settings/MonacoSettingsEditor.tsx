@@ -6,7 +6,7 @@ import { distinctUntilChanged, distinctUntilKeyChanged, map, startWith } from 'r
 import jsonSchemaMetaSchema from '../../../schema/json-schema-draft-07.schema.json'
 import settingsSchema from '../../../schema/settings.schema.json'
 import { BuiltinTheme, MonacoEditor } from '../components/MonacoEditor'
-import { ThemeProps } from '../theme'
+import { ThemeProps } from '../../../shared/src/theme'
 import { eventLogger } from '../tracking/eventLogger'
 
 const isLightThemeToMonacoTheme = (isLightTheme: boolean): BuiltinTheme => (isLightTheme ? 'vs' : 'sourcegraph-dark')
@@ -138,7 +138,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
         )
     }
 
-    private editorWillMount = (e: typeof monaco) => {
+    private editorWillMount = (e: typeof monaco): void => {
         this.monaco = e
         if (e) {
             this.onDidEditorMount()

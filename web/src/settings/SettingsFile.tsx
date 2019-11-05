@@ -7,7 +7,7 @@ import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SaveToolbar } from '../components/SaveToolbar'
 import { settingsActions } from '../site-admin/configHelpers'
-import { ThemeProps } from '../theme'
+import { ThemeProps } from '../../../shared/src/theme'
 import { eventLogger } from '../tracking/eventLogger'
 
 interface Props extends ThemeProps {
@@ -200,7 +200,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         )
     }
 
-    private monacoRef = (monacoValue: typeof _monaco | null) => {
+    private monacoRef = (monacoValue: typeof _monaco | null): void => {
         this.monaco = monacoValue
         if (this.monaco) {
             this.subscriptions.add(
@@ -245,7 +245,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         return this.props.settings ? this.props.settings.id : null
     }
 
-    private discard = () => {
+    private discard = (): void => {
         if (
             this.getPropsSettingsContentsOrEmpty() === this.state.contents ||
             window.confirm('Discard settings edits?')
@@ -261,14 +261,14 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         }
     }
 
-    private onEditorChange = (newValue: string) => {
+    private onEditorChange = (newValue: string): void => {
         if (newValue !== this.getPropsSettingsContentsOrEmpty()) {
             this.setState({ editingLastID: this.getPropsSettingsID() })
         }
         this.setState({ contents: newValue })
     }
 
-    private save = () => {
+    private save = (): void => {
         eventLogger.log('SettingsFileSaved')
         this.setState({ saving: true }, () => {
             this.props.onDidCommit(this.getPropsSettingsID(), this.state.contents!)

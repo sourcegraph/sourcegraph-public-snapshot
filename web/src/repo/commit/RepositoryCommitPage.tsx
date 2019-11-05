@@ -22,13 +22,13 @@ import { getHover } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
 import { WebHoverOverlay } from '../../components/shared'
-import { ThemeProps } from '../../theme'
 import { eventLogger, EventLoggerProps } from '../../tracking/eventLogger'
 import { GitCommitNode } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { FileDiffConnection } from '../compare/FileDiffConnection'
 import { FileDiffNode } from '../compare/FileDiffNode'
 import { queryRepositoryComparisonFileDiffs } from '../compare/RepositoryCompareDiffPage'
+import { ThemeProps } from '../../../../shared/src/theme'
 
 const queryCommit = memoizeObservable(
     (args: { repo: GQL.ID; revspec: string }): Observable<GQL.IGitCommit> =>
@@ -84,16 +84,16 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
 
     /** Emits whenever the ref callback for the hover element is called */
     private hoverOverlayElements = new Subject<HTMLElement | null>()
-    private nextOverlayElement = (element: HTMLElement | null) => this.hoverOverlayElements.next(element)
+    private nextOverlayElement = (element: HTMLElement | null): void => this.hoverOverlayElements.next(element)
 
     /** Emits whenever the ref callback for the hover element is called */
     private repositoryCommitPageElements = new Subject<HTMLElement | null>()
-    private nextRepositoryCommitPageElement = (element: HTMLElement | null) =>
+    private nextRepositoryCommitPageElement = (element: HTMLElement | null): void =>
         this.repositoryCommitPageElements.next(element)
 
     /** Emits when the close button was clicked */
     private closeButtonClicks = new Subject<MouseEvent>()
-    private nextCloseButtonClick = (event: MouseEvent) => this.closeButtonClicks.next(event)
+    private nextCloseButtonClick = (event: MouseEvent): void => this.closeButtonClicks.next(event)
 
     private subscriptions = new Subscription()
     private hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>

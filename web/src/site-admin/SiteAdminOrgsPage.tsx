@@ -86,7 +86,7 @@ class OrgNode extends React.PureComponent<OrgNodeProps, OrgNodeState> {
         )
     }
 
-    private deleteOrg = () => {
+    private deleteOrg = (): void => {
         if (!window.confirm(`Delete the organization ${this.props.node.name}?`)) {
             return
         }
@@ -170,5 +170,5 @@ export class SiteAdminOrgsPage extends React.Component<Props, State> {
         )
     }
 
-    private onDidUpdateOrg = () => this.orgUpdates.next()
+    private onDidUpdateOrg = (): void => this.orgUpdates.next()
 }

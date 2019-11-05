@@ -6,7 +6,6 @@ import { map } from 'rxjs/operators'
 import { PanelViewWithComponent, ViewProviderRegistrationOptions } from '../api/client/services/view'
 import { ContributableMenu, ContributableViewContainer } from '../api/protocol/contribution'
 import { ExtensionsControllerProps } from '../extensions/controller'
-import { ThemeProps } from '../../../web/src/theme'
 import { ActionsNavItems } from '../actions/ActionsNavItems'
 import { ActivationProps } from '../components/activation/Activation'
 import { FetchFileCtx } from '../components/CodeExcerpt'
@@ -17,6 +16,7 @@ import { SettingsCascadeProps } from '../settings/settings'
 import { TelemetryProps } from '../telemetry/telemetryService'
 import { EmptyPanelView } from './views/EmptyPanelView'
 import { PanelView } from './views/PanelView'
+import { ThemeProps } from '../theme'
 
 interface Props
     extends ExtensionsControllerProps,

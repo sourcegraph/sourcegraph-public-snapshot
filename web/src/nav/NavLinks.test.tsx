@@ -6,10 +6,10 @@ import { setLinkComponent } from '../../../shared/src/components/Link'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
-import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
-import { ThemePreference } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { NavLinks } from './NavLinks'
+import { ThemePreference } from '../search/theme'
+import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
 
 // Renders a human-readable list of the NavLinks' contents so that humans can more easily diff
 // snapshots to see what actually changed.
@@ -48,7 +48,7 @@ describe('NavLinks', () => {
     const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => undefined }
     const KEYBOARD_SHORTCUTS: KeyboardShortcutsProps['keyboardShortcuts'] = []
     const SETTINGS_CASCADE: SettingsCascadeProps['settingsCascade'] = { final: null, subjects: null }
-    // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     const USER = { username: 'u' } as GQL.IUser
     const history = H.createMemoryHistory({ keyLength: 0 })
     const commonProps = {

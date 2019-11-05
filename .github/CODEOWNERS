@@ -6,6 +6,8 @@
 # precedence.
 
 # Top-level catch-alls (these are weaker confidence and might need to be reassigned at some point)
+*.ts @sourcegraph/web
+*.tsx @sourcegraph/web
 /enterprise/cmd/frontend @beyang @slimsag
 /enterprise/cmd/server @beyang @slimsag
 /enterprise/dev @beyang
@@ -221,7 +223,8 @@ Dockerfile @sourcegraph/distribution
 README.md @sqs
 /doc/ @sourcegraph/distribution @ryan-blunden
 /doc/dev/ @nicksnyder
-/doc/dev/product/ @christinaforney
+/doc/team/product-dev/ @nicksnyder
+/doc/team/product-dev/product/ @christinaforney
 
 # Browser extensions
 /browser/ @sourcegraph/web

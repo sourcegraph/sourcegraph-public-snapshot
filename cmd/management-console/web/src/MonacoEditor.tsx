@@ -166,11 +166,11 @@ export class MonacoEditor extends React.Component<Props, {}> {
         this.editor = null
     }
 
-    private onDidCreateEditor = (editor: monaco.editor.IStandaloneCodeEditor) => {
+    private onDidCreateEditor = (editor: monaco.editor.IStandaloneCodeEditor): void => {
         this.editor = editor
     }
 
-    private onDidCreateModel = (model: monaco.editor.IModel) => {
+    private onDidCreateModel = (model: monaco.editor.IModel): void => {
         this.model = model
 
         // Necessary to wrap in setTimeout or else _standaloneKeyBindingService

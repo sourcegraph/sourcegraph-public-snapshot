@@ -83,7 +83,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
         )
     }
 
-    private onDelete = () => {
+    private onDelete = (): void => {
         if (!window.confirm(`Delete the external service ${this.props.savedSearch.description}?`)) {
             return
         }
@@ -103,9 +103,6 @@ export class SavedSearchListPage extends React.Component<Props, State> {
     private refreshRequests = new Subject<void>()
 
     public state: State = {}
-    constructor(props: Props) {
-        super(props)
-    }
 
     public componentDidMount(): void {
         this.subscriptions.add(
@@ -171,7 +168,7 @@ export class SavedSearchListPage extends React.Component<Props, State> {
         )
     }
 
-    private onDelete = () => {
+    private onDelete = (): void => {
         this.refreshRequests.next()
     }
 }

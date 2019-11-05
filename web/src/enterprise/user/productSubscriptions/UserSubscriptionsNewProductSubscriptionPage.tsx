@@ -11,10 +11,10 @@ import { asError, createAggregateError, ErrorLike } from '../../../../../shared/
 import { mutateGraphQL } from '../../../backend/graphql'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
-import { ThemeProps } from '../../../theme'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { BackToAllSubscriptionsLink } from './BackToAllSubscriptionsLink'
 import { ProductSubscriptionForm, ProductSubscriptionFormData } from './ProductSubscriptionForm'
+import { ThemeProps } from '../../../../../shared/src/theme'
 
 interface Props extends RouteComponentProps<{}>, ThemeProps {
     /**
@@ -110,7 +110,7 @@ export class UserSubscriptionsNewProductSubscriptionPage extends React.Component
         )
     }
 
-    private onSubmit = (args: ProductSubscriptionFormData) => {
+    private onSubmit = (args: ProductSubscriptionFormData): void => {
         this.submits.next(args)
     }
 }

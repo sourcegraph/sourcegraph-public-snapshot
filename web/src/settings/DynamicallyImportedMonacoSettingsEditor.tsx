@@ -6,7 +6,7 @@ import { Subscription } from 'rxjs'
 import { SaveToolbar } from '../components/SaveToolbar'
 import * as _monacoSettingsEditorModule from './MonacoSettingsEditor' // type only
 import { EditorAction } from '../site-admin/configHelpers'
-import { ThemeProps } from '../theme'
+import { ThemeProps } from '../../../shared/src/theme'
 
 /**
  * Converts a Monaco/vscode style Disposable object to a simple function that can be added to a rxjs Subscription
@@ -124,14 +124,14 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
         )
     }
 
-    private onSave = () => {
+    private onSave = (): void => {
         const value = this.effectiveValue
         if (this.props.onSave) {
             this.props.onSave(value)
         }
     }
 
-    private onChange = (newValue: string) => {
+    private onChange = (newValue: string): void => {
         this.setState({ value: newValue }, () => {
             if (this.props.onChange) {
                 this.props.onChange(newValue)
@@ -142,7 +142,7 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
         })
     }
 
-    private discard = () => {
+    private discard = (): void => {
         if (
             this.state.value === undefined ||
             this.props.value === this.state.value ||

@@ -165,7 +165,7 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
         )
     }
 
-    private deleteExternalAccount = () => this.deletes.next()
+    private deleteExternalAccount = (): void => this.deletes.next()
 
-    private toggleShowData = () => this.setState(prev => ({ showData: !prev.showData }))
+    private toggleShowData = (): void => this.setState(prev => ({ showData: !prev.showData }))
 }

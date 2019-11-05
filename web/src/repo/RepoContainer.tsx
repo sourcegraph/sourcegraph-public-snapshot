@@ -17,7 +17,6 @@ import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
 import { searchQueryForRepoRev, PatternTypeProps } from '../search'
 import { queryUpdates } from '../search/input/QueryInput'
-import { ThemeProps } from '../theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL, ParsedRepoRev, parseRepoRev } from '../util/url'
@@ -27,6 +26,7 @@ import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecyclePro
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { RepoRevContainer, RepoRevContainerRoute } from './RepoRevContainer'
 import { RepositoryNotFoundPage } from './RepositoryNotFoundPage'
+import { ThemeProps } from '../../../shared/src/theme'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -315,7 +315,8 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                                         path={context.routePrefix + path}
                                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                         exact={exact}
-                                        // eslint-disable-next-line react/jsx-no-bind RouteProps.render is an exception
+                                        // RouteProps.render is an exception
+                                        // eslint-disable-next-line react/jsx-no-bind
                                         render={routeComponentProps => render({ ...context, ...routeComponentProps })}
                                     />
                                 )
@@ -328,15 +329,16 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
         )
     }
 
-    private onDidUpdateRepository = (update: Partial<GQL.IRepository>) => this.repositoryUpdates.next(update)
+    private onDidUpdateRepository = (update: Partial<GQL.IRepository>): void => this.repositoryUpdates.next(update)
 
     private onDidUpdateExternalLinks = (externalLinks: GQL.IExternalLink[] | undefined): void =>
         this.setState({ externalLinks })
 
     private onResolvedRevOrError = (v: ResolvedRev | ErrorLike | undefined): void => this.revResolves.next(v)
 
-    private onRepoHeaderContributionsLifecyclePropsChange = (lifecycleProps: RepoHeaderContributionsLifecycleProps) =>
-        this.setState({ repoHeaderContributionsLifecycleProps: lifecycleProps })
+    private onRepoHeaderContributionsLifecyclePropsChange = (
+        lifecycleProps: RepoHeaderContributionsLifecycleProps
+    ): void => this.setState({ repoHeaderContributionsLifecycleProps: lifecycleProps })
 }
 
 /**

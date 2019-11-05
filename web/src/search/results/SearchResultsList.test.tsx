@@ -14,7 +14,7 @@ import {
     MULTIPLE_SEARCH_REQUEST,
     RESULT,
     SEARCH_REQUEST,
-} from '../testHelpers'
+} from '../../../../shared/src/util/searchTestHelpers'
 import { SearchResultsList, SearchResultsListProps } from './SearchResultsList'
 
 let VISIBILITY_CHANGED_CALLBACKS: ((isVisible: boolean) => void)[] = []
