@@ -5,7 +5,6 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"encoding/json"
 	"io"
 	"io/ioutil"
 	"os"
@@ -51,7 +50,8 @@ func main() {
 				FilePatterns:  []string{".go"},
 				Matcher:       ".go",
 			},
-			want: `[{"uri":"main.go","matches":[{"range":{"start":{"offset":28,"line":5,"column":1},"end":{"offset":32,"line":5,"column":5}},"matched":"func"}]}]`},
+			want: "func",
+		},
 	}
 
 	for _, test := range cases {
@@ -59,12 +59,9 @@ func main() {
 		if err != nil {
 			t.Fatal(err)
 		}
-		got, _ := json.Marshal(m)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if string(got[:]) != test.want {
-			t.Errorf("got %v, want %v", string(got[:]), test.want)
+		got := m[0].Matches[0].Matched
+		if got != test.want {
+			t.Errorf("got %v, want %v", got, test.want)
 			continue
 		}
 	}
