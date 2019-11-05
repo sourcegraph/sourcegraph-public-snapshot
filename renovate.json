@@ -13,7 +13,11 @@
       "labels": ["bot", "npm", "nightly"]
     },
     {
-      "paths": ["lsif/**"],
+      "paths": ["dev/release/*"],
+      "reviewers": ["beyang"]
+    },
+    {
+      "paths": ["lsif/*"],
       "reviewers": ["team:code-intel"]
     }
   ]
