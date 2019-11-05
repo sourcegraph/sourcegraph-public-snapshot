@@ -55,33 +55,6 @@ interface FindElementOptions {
     fuzziness?: 'exact' | 'prefix' | 'space-prefix' | 'contains'
 }
 
-/**
- * Returns XPath queries used to locate a DOM element by text.
- */
-function getFindElementQueries(
-    text: string,
-    { tagName, fuzziness = 'space-prefix' }: Pick<FindElementOptions, 'tagName' | 'fuzziness'>
-): string[] {
-    const tag = tagName || '*'
-    const queries = [`//${tag}[text() = ${JSON.stringify(text)}]`]
-    if (fuzziness === 'exact') {
-        return queries
-    }
-    queries.push(`//${tag}[starts-with(text(), ${JSON.stringify(text)})]`)
-    if (fuzziness === 'prefix') {
-        return queries
-    }
-    queries.push(`//${tag}[starts-with(text(), ${JSON.stringify(' ' + text)})]`)
-    if (fuzziness === 'space-prefix') {
-        return queries
-    }
-    queries.push(
-        `//${tag}[contains(text(), ${JSON.stringify(text)})]`,
-        `//${tag}[contains(., ${JSON.stringify(text)})]`
-    )
-    return queries
-}
-
 function findElementRegexpStrings(
     text: string,
     { fuzziness = 'space-prefix' }: Pick<FindElementOptions, 'fuzziness'>
