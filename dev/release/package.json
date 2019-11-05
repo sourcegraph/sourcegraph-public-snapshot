@@ -19,7 +19,7 @@
     "googleapis": "39",
     "mkdirp": "^0.5.1",
     "open": "^7.0.0",
-    "request-promise-native": "^1.0.7"
+    "request-promise-native": "^1.0.8"
   },
   "devDependencies": {
     "@types/fs-extra": "8.0.1",

@@ -33,31 +33,17 @@ kubectl port-forward svc/grafana 3370:30070
 
 ### Single-container server deployments
 
-If you are running Sourcegraph as a single server in a droplet or otherwise exposed to the open internet then publishing
-an additional docker port is not recommended since the embedded Grafana runs in anonymous mode. In this case we suggest using
-the tools `sshuttle` and `socat` to create a secure connection. Log into your remote server using ssh 
-and run these commands: 
+For simplicity, Garafana does not require authentication, as the port binding of 3370 is restricted to connections from localhost only.
+
+Therefore, if accessing Grafana locally, the URL will be http://localhost:3370/-/debug/grafana. If Sourcegraph is deployed to a remote server, then access via an SSH tunnel using a tool
+such as [sshuttle](https://github.com/sshuttle/sshuttle) is required to establish a secure connection to Grafana.
+To access the remote server using `sshuttle` from your local machine:
 
 ```bash script
-docker exec -t XXX_CONTAINER_ID_XXXX apk add --no-cache socat
-socat tcp-listen:3370,reuseaddr,fork system:"docker exec -i 7298cae012eb socat stdio 'tcp:localhost:3370'"
+sshuttle -r user@host 0/0
 ```
 
-On your local machine start a `sshuttle` session to your remote server
-
-```bash script
-sshuttle -r xxx_user_xxx@sxxx_remote_server_xxx 0/0
-```
-
-### Single-container server deployments (with firewall)
-
-If you are running Sourcegraph as single server behind a firewall you can add an additional publish flag for the Grafana port 3370:
-
-```bash script
-docker run --publish 7080:7080 --publish 2633:2633 --publish 3370:3370 \
-  --rm --volume ~/.sourcegraph/config:/etc/sourcegraph \
-  --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.9.4
-```
+Then simply visit http://host:3370 in your browser.
 
 ### Docker images
 

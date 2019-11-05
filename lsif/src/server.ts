@@ -8,20 +8,19 @@ import promClient from 'prom-client'
 import uuid from 'uuid'
 import { httpUploadDurationHistogram, httpQueryDurationHistogram, queueSizeGauge } from './server.metrics'
 import { chunk } from 'lodash'
+import cors from 'cors'
 import {
     connectionCacheCapacityGauge,
     documentCacheCapacityGauge,
     resultChunkCacheCapacityGauge,
 } from './cache.metrics'
 import { dbFilename, dbFilenameOld, ensureDirectory, readEnvInt } from './util'
-import { createGzip } from 'mz/zlib'
 import { createPostgresConnection } from './connection'
 import { Backend, ReferencePaginationCursor } from './backend'
 import { logger as loggingMiddleware } from 'express-winston'
 import { Logger } from 'winston'
-import { pipeline as _pipeline, Readable } from 'stream'
+import { pipeline as _pipeline } from 'stream'
 import { promisify } from 'util'
-import { readGzippedJsonElements, stringifyJsonLines, validateLsifElements } from './input'
 import { wrap } from 'async-middleware'
 import { XrepoDatabase } from './xrepo'
 import { createTracer, logAndTraceCall, TracingContext, addTags } from './tracing'
@@ -177,6 +176,7 @@ async function main(logger: Logger): Promise<void> {
     const scriptedClient = await defineRedisCommands(queue.client)
 
     const app = express()
+    app.use(cors())
 
     if (tracer !== undefined) {
         app.use(tracingMiddleware({ tracer }))
@@ -301,34 +301,29 @@ function lsifEndpoints(backend: Backend, queue: Queue, logger: Logger, tracer: T
         '/upload',
         wrap(
             async (req: express.Request & { span?: Span }, res: express.Response): Promise<void> => {
-                const { repository, commit, root, skipValidation: skipValidationRaw, blocking, maxWait } = req.query
-                const skipValidation = skipValidationRaw === 'true'
+                const { repository, commit, root: rootRaw, blocking, maxWait } = req.query
+                const root = normalizeRoot(rootRaw)
                 const timeout = parseInt(maxWait, 10) || 0
                 checkRepository(repository)
                 checkCommit(commit)
 
-                const ctx = createTracingContext(logger, req, { repository, commit, root })
+                const ctx = createTracingContext(logger, req, {
+                    repository,
+                    commit,
+                    root,
+                })
                 const filename = path.join(STORAGE_ROOT, constants.UPLOADS_DIR, uuid.v4())
                 const output = fs.createWriteStream(filename)
 
                 try {
-                    await logAndTraceCall(ctx, 'uploading dump', async () => {
-                        await pipeline(
-                            skipValidation
-                                ? req
-                                : Readable.from(
-                                      stringifyJsonLines(validateLsifElements(readGzippedJsonElements(req)))
-                                  ).pipe(createGzip()),
-                            output
-                        )
-                    })
+                    await logAndTraceCall(ctx, 'uploading dump', () => pipeline(req, output))
                 } catch (e) {
                     throw Object.assign(e, { status: 422 })
                 }
 
                 // Enqueue convert job
                 logger.debug('enqueueing convert job', { repository, commit, root })
-                const args = { repository, commit, root: root || '', filename }
+                const args = { repository, commit, root, filename }
                 const job = await enqueue(queue, 'convert', args, {}, tracer, ctx.span)
 
                 if (blocking) {
@@ -499,32 +494,32 @@ function jobEndpoints(
                 const counts = await queue.getJobCounts()
 
                 res.send({
-                    active: counts.active,
-                    queued: counts.waiting,
-                    scheduled: counts.delayed,
-                    completed: counts.completed,
-                    failed: counts.failed,
+                    processingCount: counts.active,
+                    erroredCount: counts.failed,
+                    completedCount: counts.completed,
+                    queuedCount: counts.waiting,
+                    scheduledCount: counts.delayed,
                 })
             }
         )
     )
 
     router.get(
-        `/jobs/:status(${Array.from(queueTypes.keys()).join('|')})`,
+        `/jobs/:state(${Array.from(queueTypes.keys()).join('|')})`,
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
-                const { status } = req.params
-                const { search } = req.query
+                const { state } = req.params
+                const { query } = req.query
                 const { limit, offset } = limitOffset(req, DEFAULT_JOB_PAGE_SIZE)
 
-                const queueName = queueTypes.get(status)
+                const queueName = queueTypes.get(state)
                 if (!queueName) {
-                    throw new Error(`Unknown job status ${status}`)
+                    throw new Error(`Unknown job state ${state}`)
                 }
 
-                if (!search) {
+                if (!query) {
                     const rawJobs = await queue.getJobs([queueName], offset, offset + limit - 1)
-                    const jobs = rawJobs.map(job => formatJob(job, status))
+                    const jobs = rawJobs.map(job => formatJob(job, state))
                     const totalCount = (await queue.getJobCountByTypes([queueName])) as never
 
                     if (offset + jobs.length < totalCount) {
@@ -536,7 +531,7 @@ function jobEndpoints(
                     const [payloads, nextOffset] = await scriptedClient.searchJobs([
                         QUEUE_PREFIX,
                         queueName,
-                        search,
+                        query,
                         offset,
                         limit,
                         MAX_JOB_SEARCH,
@@ -546,7 +541,7 @@ function jobEndpoints(
                         // Convert each hgetall response into a map
                         .map(payload => new Map(chunk(payload, 2) as [string, string][]))
                         // Format each job
-                        .map(payload => formatJobFromMap(payload, status))
+                        .map(payload => formatJobFromMap(payload, state))
 
                     if (nextOffset) {
                         res.set('Link', nextLink(req, { limit, offset: nextOffset }))
@@ -641,6 +636,26 @@ function checkMethod(method: string, supportedMethods: string[]): void {
             status: 422,
         })
     }
+}
+
+/**
+ * Adds a trailing slash to a root unless it refers to the top level.
+ *
+ * - 'foo' -> 'foo/'
+ * - 'foo/' -> 'foo/'
+ * - '/' -> ''
+ * - '' -> ''
+ */
+function normalizeRoot(root: any): string {
+    if (root === undefined || root === '/' || root === '') {
+        return ''
+    }
+    if (typeof root !== 'string') {
+        throw Object.assign(new Error('root must be a string'), {
+            status: 422,
+        })
+    }
+    return root.endsWith('/') ? root : root + '/'
 }
 
 /**

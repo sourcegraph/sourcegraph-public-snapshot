@@ -19,6 +19,8 @@ import { CampaignBurndownChart } from './BurndownChart'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 import { AddChangesetForm } from './AddChangesetForm'
 import { Subject } from 'rxjs'
+import { Markdown } from '../../../../../shared/src/components/Markdown'
+import { renderMarkdown } from '../../../../../shared/src/util/markdown'
 
 interface Props {
     /**
@@ -258,7 +260,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             disabled={mode === 'saving'}
                         />
                     ) : (
-                        <div className="card-body">{campaign!.description}</div>
+                        <div className="card-body">
+                            <Markdown dangerousInnerHTML={renderMarkdown(campaign!.description)}></Markdown>
+                        </div>
                     )}
                 </div>
             </Form>

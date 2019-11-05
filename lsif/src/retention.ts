@@ -15,14 +15,14 @@ import * as constants from './constants'
  * @param maximumSizeBytes The maximum number of bytes.
  * @param ctx The tracing context.
  */
-export async function purgeOldDumps(
+export function purgeOldDumps(
     storageRoot: string,
     xrepoDatabase: XrepoDatabase,
     maximumSizeBytes: number,
     { logger = createSilentLogger() }: TracingContext = {}
 ): Promise<void> {
     if (maximumSizeBytes < 0) {
-        return
+        return Promise.resolve()
     }
 
     const purge = async (): Promise<void> => {
@@ -58,7 +58,7 @@ export async function purgeOldDumps(
     // choose more dumps than necessary to purge. This can happen if the directory
     // size check and the selection of a purgeable dump are interleaved between
     // multiple workers.
-    return await withLock(xrepoDatabase, 'retention', purge)
+    return withLock(xrepoDatabase, 'retention', purge)
 }
 
 /**

@@ -1,15 +1,5 @@
-import * as definitionsSchema from './lsif.schema.json'
-import Ajv from 'ajv'
-import { Edge, Vertex } from 'lsif-protocol'
 import { Readable } from 'stream'
 import { createGunzip } from 'zlib'
-
-/**
- * A JSON schema validation function that accepts an LSIF vertex or edge.
- */
-const lsifElementValidator = new Ajv().addSchema({ $id: 'defs.json', ...definitionsSchema }).compile({
-    oneOf: [{ $ref: 'defs.json#/definitions/Vertex' }, { $ref: 'defs.json#/definitions/Edge' }],
-})
 
 /**
  * Yield parsed JSON elements from a stream containing the gzipped JSON lines.
@@ -19,36 +9,6 @@ const lsifElementValidator = new Ajv().addSchema({ $id: 'defs.json', ...definiti
 export async function* readGzippedJsonElements(input: Readable): AsyncIterable<unknown> {
     for await (const element of parseJsonLines(splitLines(input.pipe(createGunzip())))) {
         yield element
-    }
-}
-
-/**
- * Reads the input stream of parsed LSIF lines and validates it using JSON schema.
- * If it is not a valid vertex or edge, an error is thrown with the line index and
- * content as context. Yields the validated items.
- *
- * @param parsedLines The parsed JSON lines.
- */
-export async function* validateLsifElements(parsedLines: AsyncIterable<unknown>): AsyncIterable<Edge | Vertex> {
-    let index = 0
-    for await (const element of parsedLines) {
-        index++
-
-        if (!lsifElementValidator(element) && lsifElementValidator.errors) {
-            // TODO - schema messages are not good due to oneOf
-            // only take the first error for now to give the user
-            // something to work with.
-            throw Object.assign(
-                new Error(
-                    `Invalid LSIF element at index #${index} (${JSON.stringify(element)}): ${
-                        lsifElementValidator.errors[0].message
-                    }`
-                ),
-                { element, index }
-            )
-        }
-
-        yield element as Vertex | Edge
     }
 }
 
@@ -75,17 +35,6 @@ export async function* splitLines(input: AsyncIterable<string | Buffer>): AsyncI
     }
 
     yield buffer
-}
-
-/**
- * JSON stringifies an iterable of objects and yields them with trailing newlines.
- *
- * @param elements The iterable of objects to stringify.
- */
-export async function* stringifyJsonLines(elements: AsyncIterable<unknown>): AsyncIterable<string> {
-    for await (const element of elements) {
-        yield JSON.stringify(element) + '\n'
-    }
 }
 
 /**

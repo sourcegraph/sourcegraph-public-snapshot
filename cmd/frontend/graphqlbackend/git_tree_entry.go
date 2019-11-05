@@ -189,7 +189,7 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 	return "", nil
 }
 
-func createFileInfo(path string, isDir bool) os.FileInfo {
+func CreateFileInfo(path string, isDir bool) os.FileInfo {
 	return fileInfo{path: path, isDir: isDir}
 }
 

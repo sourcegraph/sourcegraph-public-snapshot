@@ -7,7 +7,7 @@ Sourcegraph by default provides its own PostgreSQL and Redis databases for data 
 
 ## Using your own PostgreSQL server
 
-You can use your own PostgreSQL server with Sourcegraph if you wish. For example, you may prefer this if you already have existing backup infrastructure around your own PostgreSQL server.
+You can use your own PostgreSQL v9.6+ server with Sourcegraph if you wish. For example, you may prefer this if you already have existing backup infrastructure around your own PostgreSQL server, wish to use Amazon RDS, etc.
 
 Simply add the standard PostgreSQL environment variables to your `docker run` command and Sourcegraph will use that PostgreSQL server instead of its built-in one. For example:
 

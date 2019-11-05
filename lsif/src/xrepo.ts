@@ -178,44 +178,22 @@ export class XrepoDatabase {
     public async updateDumpsVisibleFromTip(repository: string, commit: string): Promise<void> {
         const query = `
             -- Get all ancestors of the tip
-            WITH RECURSIVE ancestors(id, repository, "commit", parent) AS (
+            WITH RECURSIVE lineage(id, repository, "commit", parent) AS (
                 SELECT c.* FROM lsif_commits c WHERE c.repository = $1 AND c."commit" = $2
                 UNION
-                SELECT c.* FROM ancestors a JOIN lsif_commits c ON a.repository = c.repository AND a.parent = c."commit"
+                SELECT c.* FROM lineage a JOIN lsif_commits c ON a.repository = c.repository AND a.parent = c."commit"
             ),
-            -- Limit the visibility to the maximum traversal depth and approximate
-            -- each commit's depth by its row number.
-            limited_ancestors AS (
-                SELECT a.*, row_number() OVER() as n from ancestors a LIMIT $3
-            ),
-            -- Correlate commits to dumps and filter out commits without LSIF data
-            ancestors_with_dumps AS (
-                SELECT a.*, d.root, d.id as dump_id FROM limited_ancestors a
-                JOIN lsif_dumps d ON d.repository = a.repository AND d."commit" = a."commit"
-            ),
-            visible_ids AS (
-                -- Remove dumps where there exists another visible dump of smaller depth with an overlapping root.
-                -- Such dumps would not be returned with a closest commit query so we don't want to return results
-                -- for them in global find-reference queries either.
-                SELECT DISTINCT t1.dump_id as id FROM ancestors_with_dumps t1 WHERE NOT EXISTS (
-                    SELECT 1 FROM ancestors_with_dumps t2
-                    WHERE t2.n < t1.n AND (
-                        t2.root LIKE (t1.root || '%') OR
-                        t1.root LIKE (t2.root || '%')
-                    )
-                )
-            )
+            ${visibleDumps()}
 
             -- Update dump records by:
             --   (1) unsetting the visibility flag of all previously visible dumps, and
             --   (2) setting the visibility flag of all currently visible dumps
-
             UPDATE lsif_dumps d
             SET visible_at_tip = id IN (SELECT * from visible_ids)
             WHERE d.repository = $1 AND (d.id IN (SELECT * from visible_ids) OR d.visible_at_tip)
         `
 
-        await this.withConnection(connection => connection.query(query, [repository, commit, MAX_TRAVERSAL_LIMIT]))
+        await this.withConnection(connection => connection.query(query, [repository, commit]))
     }
 
     /**
@@ -269,8 +247,8 @@ export class XrepoDatabase {
      * @param repository The repository name.
      * @param commits The commit parentage data.
      */
-    public async updateCommits(repository: string, commits: [string, string][]): Promise<void> {
-        return await this.withTransactionalEntityManager(async entityManager => {
+    public updateCommits(repository: string, commits: [string, string][]): Promise<void> {
+        return this.withTransactionalEntityManager(async entityManager => {
             const commitInserter = new TableInserter(
                 entityManager,
                 Commit,
@@ -486,7 +464,7 @@ export class XrepoDatabase {
      *
      * @param args Parameter bag.
      */
-    public async getReferences({
+    public getReferences({
         scheme,
         name,
         version,
@@ -506,31 +484,125 @@ export class XrepoDatabase {
         limit: number
         /** The number of repository records to skip. */
         offset: number
-    }): Promise<{ references: ReferenceModel[]; count: number }> {
-        // Return all active uses of the target package
-        const [results, count] = await this.withConnection(connection =>
-            connection
+    }): Promise<{ references: ReferenceModel[]; count: number; newOffset: number }> {
+        // We do this inside of a transaction so that we get consistent results from multiple
+        // distinct queries: one count query and one or more select queries, depending on the
+        // sparsity of the use of the given identifier.
+        return this.withTransactionalEntityManager(async entityManager => {
+            // Create a base query that selects all active uses of the target package. This
+            // is used as the common prefix for both the count and the getPage queries.
+            const baseQuery = entityManager
                 .getRepository(ReferenceModel)
                 .createQueryBuilder('reference')
                 .leftJoinAndSelect('reference.dump', 'dump')
                 .where({ scheme, name, version })
                 .andWhere('dump.visible_at_tip = true')
-                .orderBy('dump.repository')
-                .addOrderBy('dump.root')
-                .limit(limit)
-                .offset(offset)
-                .getManyAndCount()
-        )
 
-        // Test the bloom filter of each reference model concurrently
-        const keepFlags = await Promise.all(results.map(result => testFilter(result.filter, identifier)))
+            // Get pagination count
+            const count = await baseQuery.getCount()
 
-        for (const flag of keepFlags) {
-            // Record hit and miss counts
-            bloomFilterEventsCounter.labels(flag ? 'hit' : 'miss').inc()
+            // Construct method to select a page of possible references
+            const getPage = (offset: number): Promise<ReferenceModel[]> =>
+                baseQuery
+                    .orderBy('dump.repository')
+                    .addOrderBy('dump.root')
+                    .limit(limit)
+                    .offset(offset)
+                    .getMany()
+
+            // Invoke getPage with increasing offsets until we get a page size's worth of
+            // references that actually use the given identifier as indicated by result of
+            // the bloom filter query.
+            return this.gatherReferences({ getPage, identifier, offset, limit, count })
+        })
+    }
+
+    /**
+     * Select a page of possible results via the `getPage` function and collect the references that include
+     * a use of the given identifier. As the given results may depend on the target package but not import
+     * the given identifier, the remaining set of references may small (or empty). In order to get a full
+     * page of results, we repeat the process until we have the proper number of results.
+     *
+     * @param args Parameter bag.
+     */
+    private async gatherReferences({
+        getPage,
+        identifier,
+        offset,
+        limit,
+        count,
+    }: {
+        /** The function to invoke to query the next set of references. */
+        getPage: (offset: number) => Promise<ReferenceModel[]>
+        /** The identifier to test. */
+        identifier: string
+        /** The maximum number of repository records to return. */
+        offset: number
+        /** The number of repository records to skip. */
+        limit: number
+        /** The total number of results that can be returned. */
+        count: number
+    }): Promise<{ references: ReferenceModel[]; count: number; newOffset: number }> {
+        const references: ReferenceModel[] = []
+        while (references.length < limit && offset < count) {
+            const page = await getPage(offset)
+            if (page.length === 0) {
+                // Shouldn't happen, but just in case of a bug we
+                // don't want this to throw up into an infinite loop.
+                break
+            }
+
+            const { references: filtered, scanned } = await this.applyBloomFilter(
+                page,
+                identifier,
+                limit - references.length
+            )
+
+            for (const reference of filtered) {
+                references.push(reference)
+            }
+
+            offset += scanned
         }
 
-        return { references: results.filter((_, i) => keepFlags[i]), count }
+        return { references, count, newOffset: offset }
+    }
+
+    /**
+     * Filter out the references which do not contain the given identifier in their bloom filter. Returns at most
+     * `limit` values in the return array and also the number of references that were checked (left to right).
+     *
+     * @param references The set of references to filter.
+     * @param identifier The identifier to test.
+     * @param limit The maximum number of references to return.
+     */
+    private async applyBloomFilter(
+        references: ReferenceModel[],
+        identifier: string,
+        limit: number
+    ): Promise<{ references: ReferenceModel[]; scanned: number }> {
+        const keepFlags = await Promise.all(references.map(result => testFilter(result.filter, identifier)))
+
+        const filtered = []
+        for (const [index, flag] of keepFlags.entries()) {
+            // Record hit and miss counts
+            bloomFilterEventsCounter.labels(flag ? 'hit' : 'miss').inc()
+
+            if (flag) {
+                filtered.push(references[index])
+
+                if (filtered.length >= limit) {
+                    // We got enough - stop scanning here and return the number of
+                    // results we actually went through so we can compute an offset
+                    // for the next page of results that don't skip the remainder
+                    // of this result set.
+                    return { references: filtered, scanned: index + 1 }
+                }
+            }
+        }
+
+        // We scanned the entire set of references
+        return { references: filtered, scanned: references.length }
     }
 
     /**
@@ -711,4 +783,39 @@ export class XrepoDatabase {
 
         return tips
     }
+}
+
+/**
+ * Return a set of CTE definitions assuming the definition of a previous CTE named `lineage`.
+ * This creates the CTE `visible_ids`, which gathers the set of LSIF dump identifiers whose
+ * commit occurs in `lineage` (within the given traversal limit) and whose root does not
+ * overlap another visible dump.
+ *
+ * @param limit The maximum number of dumps that can be extracted from `lineage`.
+ */
+function visibleDumps(limit: number = MAX_TRAVERSAL_LIMIT): string {
+    return `
+        -- Limit the visibility to the maximum traversal depth and approximate
+        -- each commit's depth by its row number.
+        limited_lineage AS (
+            SELECT a.*, row_number() OVER() as n from lineage a LIMIT ${limit}
+        ),
+        -- Correlate commits to dumps and filter out commits without LSIF data
+        lineage_with_dumps AS (
+            SELECT a.*, d.root, d.id as dump_id FROM limited_lineage a
+            JOIN lsif_dumps d ON d.repository = a.repository AND d."commit" = a."commit"
+        ),
+        visible_ids AS (
+            -- Remove dumps where there exists another visible dump of smaller depth with an overlapping root.
+            -- Such dumps would not be returned with a closest commit query so we don't want to return results
+            -- for them in global find-reference queries either.
+            SELECT DISTINCT t1.dump_id as id FROM lineage_with_dumps t1 WHERE NOT EXISTS (
+                SELECT 1 FROM lineage_with_dumps t2
+                WHERE t2.n < t1.n AND (
+                    t2.root LIKE (t1.root || '%') OR
+                    t1.root LIKE (t2.root || '%')
+                )
+            )
+        )
+    `
 }
