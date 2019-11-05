@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"fmt"
 	"sync"
@@ -12,6 +13,7 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -80,34 +82,59 @@ type campaignJobsConnectionResolver struct {
 	limit        int
 
 	// cache results because they are used by multiple fields
-	once sync.Once
-	jobs []*a8n.CampaignJob
-	next int64
-	err  error
+	once      sync.Once
+	jobs      []*a8n.CampaignJob
+	reposByID map[int32]*repos.Repo
+	next      int64
+	err       error
 }
 
 func (r *campaignJobsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ChangesetPlanResolver, error) {
-	jobs, _, err := r.compute(ctx)
+	jobs, reposByID, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	resolvers := make([]graphqlbackend.ChangesetPlanResolver, 0, len(jobs))
 	for _, j := range jobs {
-		resolvers = append(resolvers, &campaignJobResolver{job: j})
+		repo, ok := reposByID[j.RepoID]
+		if !ok {
+			return nil, fmt.Errorf("failed to load repo %d", j.RepoID)
+		}
+
+		resolvers = append(resolvers, &campaignJobResolver{job: j, preloadedRepo: repo})
 	}
 	return resolvers, nil
 }
 
-func (r *campaignJobsConnectionResolver) compute(ctx context.Context) ([]*a8n.CampaignJob, int64, error) {
+func (r *campaignJobsConnectionResolver) compute(ctx context.Context) ([]*a8n.CampaignJob, map[int32]*repos.Repo, int64, error) {
 	r.once.Do(func() {
 		r.jobs, r.next, r.err = r.store.ListCampaignJobs(ctx, ee.ListCampaignJobsOpts{
 			CampaignPlanID: r.campaignPlan.ID,
 			Limit:          r.limit,
 		})
-		// TODO(a8n): To avoid n+1 queries, we could preload all repositories here
-		// and save them
+		if r.err != nil {
+			return
+		}
+
+		reposStore := repos.NewDBStore(r.store.DB(), sql.TxOptions{})
+		repoIDs := make([]uint32, len(r.jobs))
+		for i, j := range r.jobs {
+			repoIDs[i] = uint32(j.RepoID)
+		}
+
+		rs, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: repoIDs})
+		if err != nil {
+			r.err = err
+			return
+		}
+
+		r.reposByID = make(map[int32]*repos.Repo, len(rs))
+		for _, repo := range rs {
+			r.reposByID[int32(repo.ID)] = repo
+		}
 	})
-	return r.jobs, r.next, r.err
+	return r.jobs, r.reposByID, r.next, r.err
 }
 
 func (r *campaignJobsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
@@ -117,7 +144,7 @@ func (r *campaignJobsConnectionResolver) TotalCount(ctx context.Context) (int32,
 }
 
 func (r *campaignJobsConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	_, next, err := r.compute(ctx)
+	_, _, next, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +152,8 @@ func (r *campaignJobsConnectionResolver) PageInfo(ctx context.Context) (*graphql
 }
 
 type campaignJobResolver struct {
-	job *a8n.CampaignJob
+	job           *a8n.CampaignJob
+	preloadedRepo *repos.Repo
 
 	// cache repo because it's called more than one time
 	once   sync.Once
@@ -139,9 +167,13 @@ func (r *campaignJobResolver) Body() (string, error)  { return "Body placeholder
 
 func (r *campaignJobResolver) computeRepoCommit(ctx context.Context) (*graphqlbackend.RepositoryResolver, *graphqlbackend.GitCommitResolver, error) {
 	r.once.Do(func() {
-		r.repo, r.err = graphqlbackend.RepositoryByIDInt32(ctx, api.RepoID(r.job.RepoID))
-		if r.err != nil {
-			return
+		if r.preloadedRepo != nil {
+			r.repo = newRepositoryResolver(r.preloadedRepo)
+		} else {
+			r.repo, r.err = graphqlbackend.RepositoryByIDInt32(ctx, api.RepoID(r.job.RepoID))
+			if r.err != nil {
+				return
+			}
 		}
 		args := &graphqlbackend.RepositoryCommitArgs{Rev: string(r.job.Rev)}
 		r.commit, r.err = r.repo.Commit(ctx, args)
