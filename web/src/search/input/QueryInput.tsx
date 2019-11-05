@@ -27,7 +27,8 @@ import {
     SearchQueryCursor,
     filterSearchSuggestions,
     insertSuggestionInQuery,
-    isTypingWordAndNotFilterValue,
+    isFuzzyWordSearch,
+    getFilterTypedBeforeCursor,
 } from '../helpers'
 import { fetchSuggestions } from '../backend'
 import { isDefined } from '../../../../shared/src/util/types'
@@ -148,6 +149,16 @@ export class QueryInput extends React.Component<Props, State> {
                         return fetchSuggestions(fullQuery).pipe(
                             map(createSuggestion),
                             filter(isDefined),
+                            filter(suggestion => {
+                                const filterBeforeCursor = getFilterTypedBeforeCursor(queryCursor)
+                                // only show fuzzy-suggestions that are relevant to the typed filter
+                                switch (filterBeforeCursor) {
+                                    case SuggestionTypes.repo:
+                                        return suggestion.type === SuggestionTypes.repo
+                                    default:
+                                        return true
+                                }
+                            }),
                             toArray(),
                             map(suggestions => ({
                                 suggestions: {
@@ -155,10 +166,7 @@ export class QueryInput extends React.Component<Props, State> {
                                     values: filterSuggestions.values.concat(suggestions),
                                 },
                             })),
-                            catchError((err: Error) => {
-                                console.error(err)
-                                return [{ suggestions: filterSuggestions }]
-                            })
+                            catchError(() => [{ suggestions: filterSuggestions }])
                         )
                     }),
                     // Abort suggestion display on route change or suggestion hiding
@@ -257,7 +265,9 @@ export class QueryInput extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         const showSuggestions = this.state.suggestions.values.length > 0
-        const showUrlLabel = this.isFuzzyWordSearch({
+        // If last typed word is not a filter type,
+        // suggestions should show url label and redirect on select.
+        const showUrlLabel = isFuzzyWordSearch({
             query: this.props.value,
             cursorPosition: this.state.suggestions.cursorPosition,
         })
@@ -327,16 +337,6 @@ export class QueryInput extends React.Component<Props, State> {
         )
     }
 
-    /**
-     * If last typed word is not a filter type,
-     * suggestions should show url label and redirect on select
-     */
-    private isFuzzyWordSearch = (queryCursor: SearchQueryCursor) => {
-        const firstPart = queryCursor.query.substring(0, queryCursor.cursorPosition)
-        const isTypingFirstWord = Boolean(firstPart.match(/^(\s?)+[^:\s]+$/))
-        return isTypingFirstWord || isTypingWordAndNotFilterValue(firstPart)
-    }
-
     private itemToString = (suggestion?: Suggestion) => (suggestion ? suggestion.title : '')
 
     private scrollIntoView = (node: HTMLElement, menuNode: HTMLElement) => {
@@ -387,7 +387,7 @@ export class QueryInput extends React.Component<Props, State> {
 
             // if separate word is being typed and suggestion with url is selected
             if (
-                this.isFuzzyWordSearch({
+                isFuzzyWordSearch({
                     query: props.value,
                     cursorPosition: state.suggestions.cursorPosition,
                 }) &&

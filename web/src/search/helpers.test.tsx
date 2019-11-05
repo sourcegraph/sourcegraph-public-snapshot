@@ -138,4 +138,12 @@ describe('search/helpers', () => {
             })
         })
     })
+
+    describe('getFilterTypedBeforeCursor', () => {
+        throw new Error('Not Implemented')
+    })
+
+    describe('isFuzzyWordSearch', () => {
+        throw new Error('Not Implemented')
+    })
 })

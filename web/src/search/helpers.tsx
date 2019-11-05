@@ -149,8 +149,12 @@ export const toggleSearchFilterAndReplaceSampleRepogroup = (query: string, searc
     return newQuery
 }
 
-const isValidFilter = (filter: string): filter is FiltersSuggestionTypes =>
+export const getStringBeforeCursor = (query: string, cursorPosition: number): string =>
+    query.substring(0, cursorPosition)
+
+export const isValidFilter = (filter: string = ''): filter is FiltersSuggestionTypes =>
     Object.prototype.hasOwnProperty.call(SuggestionTypes, filter)
+
 const isValidFilterAlias = (alias: string): alias is keyof typeof filterAliases =>
     Object.prototype.hasOwnProperty.call(filterAliases, alias)
 
@@ -169,7 +173,7 @@ export const filterSearchSuggestions = (
     cursorPosition: number,
     filterSuggestions: SearchFilterSuggestions
 ): Suggestion[] => {
-    const textUntilCursor = query.substring(0, cursorPosition)
+    const textUntilCursor = getStringBeforeCursor(query, cursorPosition)
     const [lastWord] = textUntilCursor.match(/([^\s]+)$/) || ['']
     const [filterQuery, valueQuery] = lastWord.replace(/^-/, '').split(':')
     const resolvedFilter = isValidFilterAlias(filterQuery) ? filterAliases[filterQuery] : filterQuery
@@ -257,4 +261,28 @@ export const insertSuggestionInQuery = (
         query: newFirstPart + lastPart,
         cursorPosition: newFirstPart.length,
     }
+}
+
+/**
+ * If a filter value is being typed, try to get its filter type.
+ * E.g: with "|"" being the cursor: "repo:| lang:go" => "repo"
+ * Checks if the word is a valid filter, else returns false.
+ */
+export const getFilterTypedBeforeCursor = ({ query, cursorPosition }: SearchQueryCursor): SuggestionTypes | false => {
+    const firstPart = getStringBeforeCursor(query, cursorPosition)
+    // get string before ":" char until a space is found or start of string
+    const [, word] = firstPart.match(/([^\s:]+)?:(\S?)+$/) || []
+    return isValidFilter(word) ? word : false
+}
+
+/**
+ * Returns true if word being typed is not a filter or filter value.
+ * E.g: where "|" is cursor
+ *     "QueryInput lang:|" => false
+ *     "archived:Yes QueryInp|" => true
+ */
+export const isFuzzyWordSearch = (queryCursor: SearchQueryCursor): boolean => {
+    const firstPart = getStringBeforeCursor(queryCursor.query, queryCursor.cursorPosition)
+    const isTypingFirstWord = Boolean(firstPart.match(/^(\s?)+[^:\s]+$/))
+    return isTypingFirstWord || isTypingWordAndNotFilterValue(firstPart)
 }
