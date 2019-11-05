@@ -111,6 +111,14 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header", "github", "gitlab"})
 }
 
+// AuthzExplicitPermission description: Settings for explicit permission model, which allow the site admin to explicitly manage repository permissions via GraphQL APIs. This permission model cannot be enabled when any other code host authorization provider is in use.
+type AuthzExplicitPermission struct {
+	// BindID description: The type of identifier to identify a user. The default is "email", which uses the email address to identify a user. Use "username" to use username to identify a user. Change of this setting will wipe out any permissions that are not yet granted to an actual user.
+	BindID string `json:"bindID,omitempty"`
+	// Enabled description: Whether explicit permission model is enabled. All of authorization providers configured in the external services must be disabled before enabling this.
+	Enabled bool `json:"enabled,omitempty"`
+}
+
 // BitbucketCloudConnection description: Configuration for a connection to Bitbucket Cloud.
 type BitbucketCloudConnection struct {
 	// AppPassword description: The app password to use when authenticating to the Bitbucket Cloud. Also set the corresponding "username" field.
@@ -856,6 +864,8 @@ type Settings struct {
 type SiteConfiguration struct {
 	// AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
 	AuthAccessTokens *AuthAccessTokens `json:"auth.accessTokens,omitempty"`
+	// AuthzExplicitPermission description: Settings for explicit permission model, which allow the site admin to explicitly manage repository permissions via GraphQL APIs. This permission model cannot be enabled when any other code host authorization provider is in use.
+	AuthzExplicitPermission *AuthzExplicitPermission `json:"authz.explicitPermission,omitempty"`
 	// Branding description: Customize Sourcegraph homepage logo and search icon.
 	//
 	// Only available in Sourcegraph Enterprise.

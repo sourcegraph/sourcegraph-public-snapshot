@@ -187,6 +187,30 @@ const SiteSchemaJSON = `{
       ],
       "group": "Security"
     },
+    "authz.explicitPermission": {
+      "description": "Settings for explicit permission model, which allow the site admin to explicitly manage repository permissions via GraphQL APIs. This permission model cannot be enabled when any other code host authorization provider is in use.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "description": "Whether explicit permission model is enabled. All of authorization providers configured in the external services must be disabled before enabling this.",
+          "type": "boolean",
+          "default": false
+        },
+        "bindID": {
+          "description": "The type of identifier to identify a user. The default is \"email\", which uses the email address to identify a user. Use \"username\" to use username to identify a user. Change of this setting will wipe out any permissions that are not yet granted to an actual user.",
+          "type": "string",
+          "enum": ["email", "username"],
+          "default": "email"
+        }
+      },
+      "default": {
+        "enabled": true,
+        "bindID": "email"
+      },
+      "examples": [{ "bindID": "email" }, { "bindID": "username" }],
+      "group": "Security"
+    },
     "branding": {
       "description": "Customize Sourcegraph homepage logo and search icon.\n\nOnly available in Sourcegraph Enterprise.",
       "type": "object",
