@@ -60,3 +60,7 @@ export interface KeyboardShortcutsProps {
     /** The global map of keybindings and their associated actions. */
     keyboardShortcuts: KeyboardShortcut[]
 }
+
+export const keysCodes = {
+    space: 32,
+}
