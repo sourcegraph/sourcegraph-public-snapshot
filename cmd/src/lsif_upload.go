@@ -10,6 +10,9 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 
 	"github.com/kballard/go-shellquote"
 	"github.com/mattn/go-isatty"
@@ -36,28 +39,84 @@ Examples:
 		fmt.Println(usage)
 	}
 	var (
-		repoFlag        = flagSet.String("repo", "", `The name of the repository. (required)`)
-		commitFlag      = flagSet.String("commit", "", `The 40-character hash of the commit. (required)`)
-		fileFlag        = flagSet.String("file", "", `The path to the LSIF dump file. (required)`)
+		repoFlag        = flagSet.String("repo", "", `The name of the repository. By default, derived from the origin remote.`)
+		commitFlag      = flagSet.String("commit", "", `The 40-character hash of the commit. Defaults to the currently checked-out commit.`)
+		fileFlag        = flagSet.String("file", "./dump.lsif", `The path to the LSIF dump file.`)
 		githubTokenFlag = flagSet.String("github-token", "", `A GitHub access token with 'public_repo' scope that Sourcegraph uses to verify you have access to the repository.`)
-		rootFlag        = flagSet.String("root", "", `The path in the repository that matches the LSIF projectRoot (e.g. cmd/)`)
+		rootFlag        = flagSet.String("root", "", `The path in the repository that matches the LSIF projectRoot (e.g. cmd/project1). Defaults to the empty string, which refers to the top level of the repository.`)
 		apiFlags        = newAPIFlags(flagSet)
 	)
 
 	handler := func(args []string) error {
 		flagSet.Parse(args)
 
-		ensureSet := func(value *string, argName string) {
-			if value == nil || *value == "" {
-				fmt.Printf("src lsif: no %s supplied\n", argName)
-				fmt.Printf("Run 'src lsif help' for usage.\n")
+		if repoFlag == nil || *repoFlag == "" {
+			remoteURL, err := exec.Command("git", "remote", "get-url", "origin").Output()
+			if err != nil {
+				fmt.Println(err)
+				fmt.Println("Unable to detect repository from environment.")
+				fmt.Println("Either cd into a git repository or set -repo explicitly.")
+				os.Exit(1)
+			}
+			*repoFlag, err = parseRemoteURL(strings.TrimSpace(string(remoteURL)))
+			if err != nil {
+				fmt.Println(err)
+				fmt.Println("Set -repo explicitly.")
 				os.Exit(1)
 			}
 		}
+		fmt.Println("Repository: " + *repoFlag)
 
-		ensureSet(repoFlag, "repository")
-		ensureSet(commitFlag, "commit")
-		ensureSet(fileFlag, "dump file")
+		if commitFlag == nil || *commitFlag == "" {
+			commit, err := exec.Command("git", "rev-parse", "HEAD").Output()
+			if err != nil {
+				fmt.Println(err)
+				fmt.Println("Unable to detect commit from environment.")
+				fmt.Println("Either cd into a git repository or set -commit explicitly.")
+				os.Exit(1)
+			}
+			*commitFlag = strings.TrimSpace(string(commit))
+		}
+		fmt.Println("Commit: " + *commitFlag)
+
+		if _, err := os.Stat(*fileFlag); os.IsNotExist(err) {
+			fmt.Println("File does not exist: " + *fileFlag)
+			fmt.Println("Either cd to the directory where it was generated or set -file explicitly.")
+			os.Exit(1)
+		}
+		fmt.Println("File: " + *fileFlag)
+
+		if rootFlag == nil || *rootFlag == "" {
+			checkError := func(err error) {
+				if err != nil {
+					fmt.Println(err)
+					fmt.Println("Unable to detect root of LSIF dump from environment.")
+					fmt.Println("Either cd into a git repository or set -root explicitly.")
+					os.Exit(1)
+				}
+			}
+
+			topLevel, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
+			checkError(err)
+
+			absFile, err := filepath.Abs(*fileFlag)
+			checkError(err)
+
+			rel, err := filepath.Rel(strings.TrimSpace(string(topLevel)), absFile)
+			checkError(err)
+
+			*rootFlag = filepath.Dir(rel)
+		}
+
+		*rootFlag = filepath.Clean(*rootFlag)
+		if strings.HasPrefix(*rootFlag, "..") {
+			fmt.Println("-root is outside the repository: " + *rootFlag)
+			os.Exit(1)
+		}
+		if *rootFlag == "." {
+			*rootFlag = ""
+		}
+		fmt.Println("Root: " + *rootFlag)
 
 		// First, build the URL which is used to both make the request
 		// and to emit a cURL command. This is a little different than
@@ -178,4 +237,28 @@ func gzipReader(r io.Reader) (io.Reader, <-chan error) {
 	}()
 
 	return pr, ch
+}
+
+// parseRemoteURL takes remote URLs such as:
+//
+// git@github.com:gorilla/mux.git
+// https://github.com/gorilla/mux.git
+//
+// and returns:
+//
+// github.com/gorilla/mux
+func parseRemoteURL(urlString string) (string, error) {
+	if strings.HasPrefix(urlString, "git@") {
+		parts := strings.Split(urlString, ":")
+		if len(parts) != 2 {
+			return "", fmt.Errorf("unrecognized remote URL: %s", urlString)
+		}
+		return strings.TrimPrefix(parts[0], "git@") + "/" + strings.TrimSuffix(parts[1], ".git"), nil
+	}
+
+	remoteURL, err := url.Parse(urlString)
+	if err != nil {
+		return "", fmt.Errorf("unrecognized remote URL: %s", urlString)
+	}
+	return remoteURL.Hostname() + strings.TrimSuffix(remoteURL.Path, ".git"), nil
 }
