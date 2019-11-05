@@ -97,7 +97,7 @@
     "@types/jest": "24.0.21",
     "@types/jsdom": "12.2.4",
     "@types/lodash": "4.14.144",
-    "@types/marked": "0.6.5",
+    "@types/marked": "0.7.0",
     "@types/mini-css-extract-plugin": "0.8.0",
     "@types/mkdirp-promise": "5.0.0",
     "@types/mockdate": "2.0.0",
