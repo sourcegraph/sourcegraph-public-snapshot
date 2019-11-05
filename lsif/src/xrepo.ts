@@ -634,10 +634,12 @@ export class XrepoDatabase {
                 const references = await entityManager.getRepository(ReferenceModel).findByIds(referenceIds)
 
                 // findByIds doesn't return models in the same order as they were requested,
-                // so we need to sort them here before returning. This sorts the models by
-                // the index of the model's id in `referenceIds`.
-                const indexes = new Map(referenceIds.map((v, i) => [v, i]))
-                return references.sort((a, b) => (indexes.get(a.id) || -1) - (indexes.get(b.id) || -1))
+                // so we need to sort them here before returning.
+
+                const modelsById = new Map(references.map(r => [r.id, r]))
+                return referenceIds
+                    .map(id => modelsById.get(id))
+                    .filter(<T>(x: T | undefined): x is T => x !== undefined)
             }
 
             // Invoke getPage with increasing offsets until we get a page size's worth of
