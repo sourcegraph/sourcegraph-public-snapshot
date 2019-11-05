@@ -168,7 +168,7 @@ export class XrepoDatabase {
      * `visible_at_tip` flags. Unset the flag for each invisible dump for this repository.
      * This will traverse all ancestor commits but not descendants, as the given commit
      * is assumed to be the tip of the default branch. For each dump that is filtered out
-     * of the result set, there must be a dump with a smaller depth from the given commit
+     * of the set of results, there must be a dump with a smaller depth from the given commit
      * that has a root that overlaps with the filtered dump. The other such dump is
      * necessarily a dump associated with a closer commit for the same root.
      *
@@ -503,7 +503,7 @@ export class XrepoDatabase {
                 .andWhere('dump.repository != :repository', { repository })
                 .andWhere('dump.visible_at_tip = true')
 
-            // Get total number of items in this result set
+            // Get total number of items in this set of results
             const totalCount = await baseQuery.getCount()
 
             // Construct method to select a page of possible references
@@ -620,7 +620,7 @@ export class XrepoDatabase {
             // as a parameter.
             const visible_ids = extractIds(await entityManager.query(visibleIdsQuery, [repository, commit]))
 
-            // Get total number of items in this result set
+            // Get total number of items in this set of results
             const rawCount = await entityManager.query(countQuery, [scheme, name, version, visible_ids])
             const totalCount = parseInt((rawCount as { count: string }[])[0].count, 10)
 
@@ -681,7 +681,7 @@ export class XrepoDatabase {
         /** The number of repository records to skip. */
         limit: number
         /**
-         * The total number of items in this result set. Alternatively, the maximum
+         * The total number of items in this set of results. Alternatively, the maximum
          * number of items that can be returned by `getPage` starting from offset zero.
          */
         totalCount: number
@@ -739,7 +739,7 @@ export class XrepoDatabase {
                     // We got enough - stop scanning here and return the number of
                     // results we actually went through so we can compute an offset
                     // for the next page of results that don't skip the remainder
-                    // of this result set.
+                    // of this set of results.
                     return { references: filtered, scanned: index + 1 }
                 }
             }
