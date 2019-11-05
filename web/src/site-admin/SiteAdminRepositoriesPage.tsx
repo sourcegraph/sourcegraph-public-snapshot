@@ -5,7 +5,7 @@ import SettingsIcon from 'mdi-react/SettingsIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
-import { Subject } from 'rxjs'
+import { Subject, Observable } from 'rxjs'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { RepoLink } from '../../../shared/src/components/RepoLink'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -174,8 +174,8 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props> {
         )
     }
 
-    private queryRepositories = (args: FilteredConnectionQueryArgs) =>
+    private queryRepositories = (args: FilteredConnectionQueryArgs): Observable<GQL.IRepositoryConnection> =>
         fetchAllRepositoriesAndPollIfEmptyOrAnyCloning({ ...args })
 
-    private onDidUpdateRepository = () => this.repositoryUpdates.next()
+    private onDidUpdateRepository = (): void => this.repositoryUpdates.next()
 }

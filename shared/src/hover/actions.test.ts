@@ -60,7 +60,7 @@ const requestGraphQL: PlatformContext['requestGraphQL'] = <R extends IQuery | IM
 }: {
     variables: { [key: string]: any }
 }) =>
-    // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     of({
         data: {
             repository: {
@@ -105,7 +105,7 @@ describe('getHoverActionsContext', () => {
                         FIXTURE_HOVER_CONTEXT
                     )
                 )
-                // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
+                // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
             ).toBe(`a ${LOADER_DELAY - 1}ms (bc)d`, {
                 a: {
                     'goToDefinition.showLoading': false,
@@ -169,7 +169,7 @@ describe('getHoverActionsContext', () => {
                         FIXTURE_HOVER_CONTEXT
                     )
                 )
-                // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
+                // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
             ).toBe('a(bc)', {
                 a: {
                     'goToDefinition.showLoading': false,
@@ -236,7 +236,7 @@ describe('getDefinitionURL', () => {
             }: {
                 [key: string]: any
             }): Observable<SuccessGraphQLResult<R>> =>
-                // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
+                // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
                 of({
                     data: {
                         repository: {

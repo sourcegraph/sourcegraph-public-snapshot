@@ -65,7 +65,7 @@ class ExternalServiceNode extends React.PureComponent<ExternalServiceNodeProps, 
         )
     }
 
-    private deleteExternalService = () => {
+    private deleteExternalService = (): void => {
         if (!window.confirm(`Delete the external service ${this.props.node.displayName}?`)) {
             return
         }
@@ -130,7 +130,7 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, {}
         eventLogger.logViewEvent('SiteAdminExternalServices')
     }
 
-    private completeConnectedCodeHostActivation = (externalServices: GQL.IExternalServiceConnection) => {
+    private completeConnectedCodeHostActivation = (externalServices: GQL.IExternalServiceConnection): void => {
         if (this.props.activation && externalServices.totalCount > 0) {
             this.props.activation.update({ ConnectedCodeHost: true })
         }
@@ -204,5 +204,5 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, {}
         )
     }
 
-    private onDidUpdateExternalServices = () => this.updates.next()
+    private onDidUpdateExternalServices = (): void => this.updates.next()
 }

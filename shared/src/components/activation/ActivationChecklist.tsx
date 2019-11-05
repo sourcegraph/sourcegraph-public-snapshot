@@ -15,7 +15,7 @@ interface ActivationChecklistItemProps extends ActivationStep {
  * A single item in the activation checklist.
  */
 export class ActivationChecklistItem extends React.PureComponent<ActivationChecklistItemProps, {}> {
-    private onClick = (e: React.MouseEvent<HTMLElement>) => {
+    private onClick = (e: React.MouseEvent<HTMLElement>): void => {
         if (this.props.onClick) {
             this.props.onClick(e, this.props.history)
         }

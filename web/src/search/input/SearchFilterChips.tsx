@@ -155,7 +155,7 @@ export class SearchFilterChips extends React.PureComponent<Props> {
         return scopes
     }
 
-    private onSearchScopeClicked = (value: string) => {
+    private onSearchScopeClicked = (value: string): void => {
         eventLogger.log('SearchScopeClicked', {
             search_filter: {
                 value,

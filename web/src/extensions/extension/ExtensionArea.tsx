@@ -218,7 +218,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
         )
     }
 
-    private onDidUpdateExtension = () => this.refreshRequests.next()
+    private onDidUpdateExtension = (): void => this.refreshRequests.next()
 }
 
 function queryExtension(extensionID: string): Observable<ConfiguredRegistryExtension> {

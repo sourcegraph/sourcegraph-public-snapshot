@@ -283,7 +283,7 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
         )
     }
 
-    private toggleShowGenerate = () => this.setState(prevState => ({ showGenerate: !prevState.showGenerate }))
+    private toggleShowGenerate = (): void => this.setState(prevState => ({ showGenerate: !prevState.showGenerate }))
 
     private queryProductSubscription = (uuid: string): Observable<GQL.IProductSubscription> =>
         queryGraphQL(
@@ -392,14 +392,14 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
             })
         )
 
-    private archiveProductSubscription = () => this.archivals.next()
+    private archiveProductSubscription = (): void => this.archivals.next()
 
-    private onDidUpdateProductLicense = () => {
+    private onDidUpdateProductLicense = (): void => {
         this.licenseUpdates.next()
         this.toggleShowGenerate()
     }
 
-    private onDidUpdate = () => this.updates.next()
+    private onDidUpdate = (): void => this.updates.next()
 }
 
 function archiveProductSubscription(args: GQL.IArchiveProductSubscriptionOnDotcomMutationArguments): Observable<void> {

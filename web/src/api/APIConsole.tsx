@@ -140,7 +140,7 @@ export class APIConsole extends React.PureComponent<Props, State> {
      * Renders the API console once GraphiQL has loaded. This method should
      * only be invoked once this.state.graphiqlOrError is loaded successfully.
      */
-    private renderGraphiQL = () => {
+    private renderGraphiQL = (): JSX.Element => {
         if (!this.state.graphiqlOrError || isErrorLike(this.state.graphiqlOrError)) {
             throw new Error('renderGraphiQL called illegally')
         }
@@ -186,12 +186,13 @@ export class APIConsole extends React.PureComponent<Props, State> {
     // Update state.parameters when query/variables/operation name are changed
     // so that we can update the browser URL.
 
-    private onEditQuery = (newQuery: string) => this.updateStateParameters(params => ({ ...params, query: newQuery }))
+    private onEditQuery = (newQuery: string): void =>
+        this.updateStateParameters(params => ({ ...params, query: newQuery }))
 
-    private onEditVariables = (newVariables: string) =>
+    private onEditVariables = (newVariables: string): void =>
         this.updateStateParameters(params => ({ ...params, variables: newVariables }))
 
-    private onEditOperationName = (newOperationName: string) =>
+    private onEditOperationName = (newOperationName: string): void =>
         this.updateStateParameters(params => ({ ...params, operationName: newOperationName }))
 
     private updateStateParameters(update: (params: Parameters) => Parameters): void {
@@ -209,13 +210,13 @@ export class APIConsole extends React.PureComponent<Props, State> {
     private setGraphiQLRef = (ref: _graphiqlModule.default | null): void => {
         this.graphiQLRef = ref
     }
-    private handlePrettifyQuery = () => {
+    private handlePrettifyQuery = (): void => {
         if (!this.graphiQLRef) {
             return
         }
         this.graphiQLRef.handlePrettifyQuery()
     }
-    private handleToggleHistory = () => {
+    private handleToggleHistory = (): void => {
         if (!this.graphiQLRef) {
             return
         }

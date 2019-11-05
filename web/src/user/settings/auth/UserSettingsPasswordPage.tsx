@@ -37,7 +37,9 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
     private subscriptions = new Subscription()
 
     private newPasswordConfirmationField: HTMLInputElement | null = null
-    private setNewPasswordConfirmationField = (e: HTMLInputElement | null) => (this.newPasswordConfirmationField = e)
+    private setNewPasswordConfirmationField = (e: HTMLInputElement | null): void => {
+        this.newPasswordConfirmationField = e
+    }
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('UserSettingsPassword')
@@ -162,15 +164,15 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
         )
     }
 
-    private onOldPasswordFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    private onOldPasswordFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         this.setState({ oldPassword: e.target.value })
     }
 
-    private onNewPasswordFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    private onNewPasswordFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         this.setState({ newPassword: e.target.value }, () => this.validateForm())
     }
 
-    private onNewPasswordConfirmationFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    private onNewPasswordConfirmationFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         this.setState({ newPasswordConfirmation: e.target.value }, () => this.validateForm())
     }
 
@@ -184,11 +186,11 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
         }
     }
 
-    private handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    private handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         this.submits.next(event)
     }
 
-    private handleError = (err: Error) => {
+    private handleError = (err: Error): [] => {
         console.error(err)
         this.setState({ loading: false, saved: false, error: err })
         return []

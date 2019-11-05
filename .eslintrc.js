@@ -13,7 +13,7 @@ const config = {
     ecmaFeatures: {
       jsx: true,
     },
-    project: 'tsconfig.json',
+    project: __dirname + '/tsconfig.json',
   },
   settings: {
     react: {

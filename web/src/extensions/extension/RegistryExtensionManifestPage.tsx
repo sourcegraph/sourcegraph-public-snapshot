@@ -110,7 +110,7 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
         )
     }
 
-    private onViewModeButtonClick = () => {
+    private onViewModeButtonClick = (): void => {
         this.setState(
             prevState => ({ viewMode: prevState.viewMode === ViewMode.Rich ? ViewMode.Plain : ViewMode.Rich }),
             () => RegistryExtensionManifestPage.setViewMode(this.state.viewMode)

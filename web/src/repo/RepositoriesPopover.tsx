@@ -105,5 +105,6 @@ export class RepositoriesPopover extends React.PureComponent<Props> {
         )
     }
 
-    private queryRepositories = (args: FilteredConnectionQueryArgs) => fetchRepositories({ ...args })
+    private queryRepositories = (args: FilteredConnectionQueryArgs): Observable<GQL.IRepositoryConnection> =>
+        fetchRepositories({ ...args })
 }

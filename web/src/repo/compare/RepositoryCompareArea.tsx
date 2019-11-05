@@ -82,16 +82,16 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
 
     /** Emits whenever the ref callback for the hover element is called */
     private hoverOverlayElements = new Subject<HTMLElement | null>()
-    private nextOverlayElement = (element: HTMLElement | null) => this.hoverOverlayElements.next(element)
+    private nextOverlayElement = (element: HTMLElement | null): void => this.hoverOverlayElements.next(element)
 
     /** Emits whenever the ref callback for the hover element is called */
     private repositoryCompareAreaElements = new Subject<HTMLElement | null>()
-    private nextRepositoryCompareAreaElement = (element: HTMLElement | null) =>
+    private nextRepositoryCompareAreaElement = (element: HTMLElement | null): void =>
         this.repositoryCompareAreaElements.next(element)
 
     /** Emits when the close button was clicked */
     private closeButtonClicks = new Subject<MouseEvent>()
-    private nextCloseButtonClick = (event: MouseEvent) => this.closeButtonClicks.next(event)
+    private nextCloseButtonClick = (event: MouseEvent): void => this.closeButtonClicks.next(event)
 
     private subscriptions = new Subscription()
     private hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>

@@ -173,17 +173,17 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
         )
     }
 
-    private handleChange = ({ target: { value } }: React.ChangeEvent<HTMLInputElement>) => {
+    private handleChange = ({ target: { value } }: React.ChangeEvent<HTMLInputElement>): void => {
         this.changes.next(value)
     }
 
-    private handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    private handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
 
         this.submits.next()
     }
 
-    private requestServerURLPermissions = () => this.props.requestPermissions(this.props.value)
+    private requestServerURLPermissions = (): void => this.props.requestPermissions(this.props.value)
 
     private get isUpdating(): boolean {
         if (typeof this.props.overrideUpdatingState !== 'undefined') {

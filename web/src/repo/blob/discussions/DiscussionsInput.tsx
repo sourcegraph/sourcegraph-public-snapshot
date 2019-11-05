@@ -75,24 +75,24 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()
 
     private submits = new Subject<React.FormEvent<HTMLFormElement>>()
-    private nextSubmit = (e: React.FormEvent<HTMLFormElement>) => this.submits.next(e)
+    private nextSubmit = (e: React.FormEvent<HTMLFormElement>): void => this.submits.next(e)
 
     private titleInputChanges = new Subject<string>()
-    private nextTitleInputChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+    private nextTitleInputChange = (e: React.ChangeEvent<HTMLInputElement>): void =>
         this.titleInputChanges.next(e.currentTarget.value)
 
     private textAreaKeyDowns = new Subject<React.KeyboardEvent<HTMLTextAreaElement>>()
-    private nextTextAreaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    private nextTextAreaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
         this.textAreaKeyDowns.next(e)
     }
 
     private valueChanges = new Subject<string>()
-    private nextTextAreaChange = (value: string) => {
+    private nextTextAreaChange = (value: string): void => {
         this.valueChanges.next(value)
     }
 
     private tabChanges = new Subject<string>()
-    private nextTabChange = (tab: string) => this.tabChanges.next(tab)
+    private nextTabChange = (tab: string): void => this.tabChanges.next(tab)
 
     private textAreaRef = React.createRef<HTMLTextAreaElement>()
 

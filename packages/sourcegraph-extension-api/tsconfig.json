@@ -1,4 +1,7 @@
 {
   "extends": "../../tsconfig.json",
-  "files": ["src/sourcegraph.d.ts"],
+  "compilerOptions": {
+    "allowJs": true,
+  },
+  "files": ["src/sourcegraph.d.ts", "src/index.js"],
 }

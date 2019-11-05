@@ -102,7 +102,7 @@ export class ActionContainer extends React.PureComponent<Props, State> {
         )
     }
 
-    private onClick = () => {
+    private onClick = (): void => {
         this.setState({
             error: undefined,
             loading: true,

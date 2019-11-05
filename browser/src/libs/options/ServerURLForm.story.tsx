@@ -25,13 +25,13 @@ class Container extends React.Component<{}, { value: string; status: ServerURLFo
         )
     }
 
-    private onChange = (value: string) => {
+    private onChange = (value: string): void => {
         this.setState({ value })
 
         action('URL Changed')(value)
     }
 
-    private onSubmit = () => {
+    private onSubmit = (): void => {
         action('Form submitted')(this.state.value)
     }
 }

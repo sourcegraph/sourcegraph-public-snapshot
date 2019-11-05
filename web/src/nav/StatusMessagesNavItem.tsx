@@ -116,7 +116,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
 
     public state: State = { isOpen: false, messagesOrError: [] }
 
-    private toggleIsOpen = () => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
+    private toggleIsOpen = (): void => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
 
     public componentDidMount(): void {
         this.subscriptions.add(

@@ -273,7 +273,7 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
         )
     }
 
-    private onChartIndexChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    private onChartIndexChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         switch (e.target.value as keyof ChartOptions) {
             case 'daus':
                 eventLogger.log('DAUsChartSelected')

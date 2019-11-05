@@ -112,7 +112,7 @@ export class NotificationItem extends React.PureComponent<Props, State> {
         )
     }
 
-    private onDismiss = () => this.props.onDismiss(this.props.notification)
+    private onDismiss = (): void => this.props.onDismiss(this.props.notification)
 }
 
 /**

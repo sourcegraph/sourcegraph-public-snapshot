@@ -132,11 +132,11 @@ export class SearchPage extends React.Component<Props, State> {
         )
     }
 
-    private onUserQueryChange = (userQuery: string) => {
+    private onUserQueryChange = (userQuery: string): void => {
         this.setState({ userQuery })
     }
 
-    private onBuilderQueryChange = (builderQuery: string) => {
+    private onBuilderQueryChange = (builderQuery: string): void => {
         this.setState({ builderQuery })
     }
 

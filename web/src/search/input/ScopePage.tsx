@@ -226,7 +226,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
         )
     }
 
-    private onQueryChange = (query: string) => this.setState({ query })
+    private onQueryChange = (query: string): void => this.setState({ query })
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()

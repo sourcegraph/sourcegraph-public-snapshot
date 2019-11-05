@@ -28,7 +28,7 @@ export class SiteAdminManagementConsolePassword extends React.Component<Props, S
 
     /** Emits when the "Dismiss forever" button was clicked */
     private dismissForeverClicks = new Subject<React.MouseEvent>()
-    private nextDismissForeverClick = (event: React.MouseEvent) => this.dismissForeverClicks.next(event)
+    private nextDismissForeverClick = (event: React.MouseEvent): void => this.dismissForeverClicks.next(event)
 
     public componentDidMount(): void {
         this.subscriptions.add(

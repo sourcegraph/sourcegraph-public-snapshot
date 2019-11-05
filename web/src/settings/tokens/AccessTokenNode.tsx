@@ -173,7 +173,7 @@ export class AccessTokenNode extends React.PureComponent<AccessTokenNodeProps, A
         )
     }
 
-    private deleteAccessToken = () => this.deletes.next()
+    private deleteAccessToken = (): void => this.deletes.next()
 }
 
 export class FilteredAccessTokenConnection extends FilteredConnection<

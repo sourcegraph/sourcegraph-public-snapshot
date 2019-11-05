@@ -91,5 +91,5 @@ export class RegistryExtensionDeleteButton extends React.PureComponent<
         )
     }
 
-    private deleteExtension = () => this.deletes.next()
+    private deleteExtension = (): void => this.deletes.next()
 }

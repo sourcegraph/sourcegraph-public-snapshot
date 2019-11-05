@@ -104,5 +104,5 @@ export class SiteAdminProductSubscriptionsPage extends React.Component<Props> {
             })
         )
 
-    private onDidUpdateProductSubscription = () => this.updates.next()
+    private onDidUpdateProductSubscription = (): void => this.updates.next()
 }

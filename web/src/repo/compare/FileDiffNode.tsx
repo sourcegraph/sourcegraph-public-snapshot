@@ -116,5 +116,5 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
         )
     }
 
-    private toggleExpand = () => this.setState(prevState => ({ expanded: !prevState.expanded }))
+    private toggleExpand = (): void => this.setState(prevState => ({ expanded: !prevState.expanded }))
 }

@@ -71,7 +71,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
 
     private onInputChange = (key: keyof QueryBuilderState['fields']) => (
         event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-    ) => {
+    ): void => {
         const { value } = event.target
         this.setState(
             ({ fields }) => {
@@ -104,7 +104,7 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
         )
     }
 
-    private onTypeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    private onTypeChange = (event: React.ChangeEvent<HTMLSelectElement>): void => {
         this.onInputChange('type')(event)
 
         const searchType = event.target.value
@@ -381,13 +381,13 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
         )
     }
 
-    private toggleShowQueryBuilder = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    private toggleShowQueryBuilder = (e: React.MouseEvent<HTMLAnchorElement>): void => {
         e.preventDefault()
         localStorage.setItem(QUERY_BUILDER_KEY, (!this.state.showQueryBuilder).toString())
         this.setState(prevState => ({ showQueryBuilder: !prevState.showQueryBuilder }))
     }
 
-    private onCaseChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    private onCaseChange = (event: React.ChangeEvent<HTMLSelectElement>): void => {
         this.onInputChange('case')(event)
     }
 }

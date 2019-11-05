@@ -205,7 +205,7 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
     private fetchChildContents = (path: string): void => {
         this.rowHovers.next(path)
     }
-    private setChildNode = (node: TreeNode, index: number) => {
+    private setChildNode = (node: TreeNode, index: number): void => {
         this.node.childNodes[index] = node
     }
 }

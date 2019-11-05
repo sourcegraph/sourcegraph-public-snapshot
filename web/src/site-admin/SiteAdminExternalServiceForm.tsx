@@ -98,7 +98,7 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
         this.props.onChange({ ...this.props.input, displayName: event.currentTarget.value })
     }
 
-    private onConfigChange = (config: string) => {
+    private onConfigChange = (config: string): void => {
         this.props.onChange({ ...this.props.input, config })
     }
 }

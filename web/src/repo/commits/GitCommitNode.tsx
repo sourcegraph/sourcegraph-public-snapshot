@@ -192,7 +192,7 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
         )
     }
 
-    private toggleShowCommitMessageBody = () => {
+    private toggleShowCommitMessageBody = (): void => {
         eventLogger.log('CommitBodyToggled')
         this.setState(prevState => ({ showCommitMessageBody: !prevState.showCommitMessageBody }))
     }

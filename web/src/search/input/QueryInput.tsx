@@ -342,12 +342,12 @@ export class QueryInput extends React.Component<Props, State> {
         this.inputValues.next(event.currentTarget.value)
     }
 
-    private onInputFocus: React.FocusEventHandler<HTMLInputElement> = () => {
+    private onInputFocus: React.FocusEventHandler<HTMLInputElement> = (): void => {
         this.inputFocuses.next()
         this.setState({ inputFocused: true })
     }
 
-    private onInputBlur: React.FocusEventHandler<HTMLInputElement> = () => {
+    private onInputBlur: React.FocusEventHandler<HTMLInputElement> = (): void => {
         this.suggestionsHidden.next()
         this.setState({ inputFocused: false, hideSuggestions: true })
     }
