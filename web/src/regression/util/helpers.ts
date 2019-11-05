@@ -106,7 +106,7 @@ export async function createAuthProviderGUI(
     managementConsoleUrl: string,
     managementConsolePassword: string,
     authProvider: GitHubAuthProvider | GitLabAuthProvider | OpenIDConnectAuthProvider | SAMLAuthProvider
-): Promise<() => Promise<void>> {
+): Promise<ResourceDestructor> {
     const authHeaders = {
         Authorization: `Basic ${new Buffer(`:${managementConsolePassword}`).toString('base64')}`,
     }
