@@ -123,12 +123,11 @@ interface ConnectionStateCommon {
 
     /**
      * The number of results that were visible from previous requests. The initial request of
-     * a result set will load `first + previousPagesCount` items, then will request `first`
-     * items on each subsequent request. This has the effect of loading the correct number of
-     * visible results when a URL is copied during pagination. This value is only useful with
-     * cursor-based paging.
+     * a result set will load `visible items, then will request `first` items on each subsequent
+     * request. This has the effect of loading the correct number of visible results when a URL
+     * is copied during pagination. This value is only useful with cursor-based paging.
      */
-    previousPagesCount?: number
+    visible?: number
 
     /**
      * Whether the connection is loading. It is not equivalent to connection === undefined because we preserve the
@@ -357,12 +356,6 @@ interface FilteredConnectionState<C extends Connection<N>, N> extends Connection
 
     /** The fetched connection data or an error (if an error occurred). */
     connectionOrError?: C | ErrorLike
-
-    /**
-     * Whether a query has been made. We use this to track whether or not to adjust the `first` parameter
-     * of the result set's initial request. See `ConnectionStateCommon.previousPagesCount` for more info.
-     */
-    queried: boolean
 }
 
 /**
@@ -443,16 +436,15 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         //   (2) set first and after cursor in URL
         //   (3) reload page; will skip 20 results but will display (first 20 of X)
         //
-        // Instead, we use `ConnectionStateCommon.previousPagesCount` to load the
-        // correct number of visible results on the initial request.
+        // Instead, we use `ConnectionStateCommon.visible` to load the correct number of
+        // visible results on the initial request.
 
         this.state = {
             loading: true,
-            queried: false,
             query: (!this.props.hideSearch && q.get(QUERY_KEY)) || '',
             activeFilter: getFilterFromURL(q, this.props.filters),
             first: parseQueryInt(q, 'first') || this.props.defaultFirst!,
-            previousPagesCount: parseQueryInt(q, 'previousPagesCount') || 0,
+            visible: parseQueryInt(q, 'visible') || 0,
         }
     }
 
@@ -493,24 +485,30 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                     // Track whether the query or the active filter changed
                     scan<
                         [string, FilteredConnectionFilter | undefined, void],
-                        { query: string; filter: FilteredConnectionFilter | undefined; shouldRefresh: boolean }
+                        {
+                            query: string
+                            filter: FilteredConnectionFilter | undefined
+                            shouldRefresh: boolean
+                            queryCount: number
+                        }
                     >(
-                        ({ query, filter }, [currentQuery, currentFilter]) => ({
+                        ({ query, filter, queryCount }, [currentQuery, currentFilter]) => ({
                             query: currentQuery,
                             filter: currentFilter,
                             shouldRefresh: query !== currentQuery || filter !== currentFilter,
+                            queryCount: queryCount + 1,
                         }),
                         {
                             query: this.state.query,
                             filter: undefined,
                             shouldRefresh: false,
+                            queryCount: 0,
                         }
                     ),
-                    switchMap(({ query, filter, shouldRefresh }) => {
+                    switchMap(({ query, filter, shouldRefresh, queryCount }) => {
                         const result = this.props
                             .queryConnection({
-                                // Load the correct number of initial visible results, or request the next page
-                                first: this.state.first + ((!this.state.queried && this.state.previousPagesCount) || 0),
+                                first: (queryCount === 1 && this.state.visible) || this.state.first,
                                 after: shouldRefresh ? undefined : this.state.after,
                                 query,
                                 ...(filter ? filter.args : {}),
@@ -540,28 +538,23 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                     }),
                     scan<PartialStateUpdate & { shouldRefresh: boolean }, PartialStateUpdate & { previousPage: N[] }>(
                         ({ previousPage }, { shouldRefresh, connectionOrError, ...rest }) => {
-                            if (
-                                connectionOrError &&
-                                !isErrorLike(connectionOrError) &&
-                                this.props.cursorPaging &&
-                                !shouldRefresh
-                            ) {
-                                const nodes = previousPage.concat(connectionOrError.nodes)
-                                connectionOrError.nodes = nodes
-                                return {
-                                    previousPage: nodes,
-                                    after:
-                                        (connectionOrError.pageInfo && connectionOrError.pageInfo.endCursor) ||
-                                        undefined,
-                                    connectionOrError,
-                                    ...rest,
+                            let nodes: N[] = []
+                            let after: string | undefined
+
+                            if (this.props.cursorPaging && connectionOrError && !isErrorLike(connectionOrError)) {
+                                if (!shouldRefresh) {
+                                    connectionOrError.nodes = previousPage.concat(connectionOrError.nodes)
                                 }
+
+                                const pageInfo = connectionOrError.pageInfo
+                                nodes = connectionOrError.nodes
+                                after = (pageInfo && pageInfo.endCursor) || undefined
                             }
+
                             return {
-                                previousPage: [],
-                                after: undefined,
                                 connectionOrError,
-                                previousPagesCount: 0,
+                                previousPage: nodes,
+                                after,
                                 ...rest,
                             }
                         },
@@ -578,9 +571,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                     ({ connectionOrError, previousPage, ...rest }) => {
                         if (this.props.shouldUpdateURLQuery) {
                             this.props.history.replace({
-                                search: this.urlQuery({
-                                    previousPagesCount: previousPage.length,
-                                }),
+                                search: this.urlQuery({ visible: previousPage.length }),
                                 hash: this.props.location.hash,
                             })
                         }
@@ -650,7 +641,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         first?: number
         query?: string
         filter?: FilteredConnectionFilter
-        previousPagesCount?: number
+        visible?: number
     }): string {
         if (!arg.first) {
             arg.first = this.state.first
@@ -672,8 +663,8 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         if (arg.filter && this.props.filters && arg.filter !== this.props.filters[0]) {
             q.set('filter', arg.filter.id)
         }
-        if (arg.previousPagesCount !== 0) {
-            q.set('previousPagesCount', String(arg.previousPagesCount))
+        if (arg.visible !== arg.first) {
+            q.set('visible', String(arg.visible))
         }
         return q.toString()
     }
