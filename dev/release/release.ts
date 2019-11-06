@@ -1,8 +1,8 @@
 import { ensureEvent, getClient, EventOptions } from './google-calendar'
-import { addTime } from './util'
 import { postMessage } from './slack'
 import { ensureTrackingIssue, getTrackingIssueURL, getAuthenticatedGitHubClient } from './github'
 import * as persistedConfig from './config.json'
+import { addHours, subMinutes } from 'date-fns'
 
 interface Config {
     teamEmail: string
@@ -58,7 +58,7 @@ const steps: Step[] = [
                 {
                     title: 'TEST EVENT',
                     startDateTime: new Date(c.releaseDateTime).toISOString(),
-                    endDateTime: addTime(new Date(c.releaseDateTime), 1).toISOString(),
+                    endDateTime: addHours(new Date(c.releaseDateTime), 1).toISOString(),
                 },
                 googleCalendar
             )
@@ -73,39 +73,39 @@ const steps: Step[] = [
                     title: 'Release captain reminder: 5 working days before release',
                     description: 'See the release tracking issue for TODOs',
                     startDateTime: new Date(c.fiveWorkingDaysBeforeRelease).toISOString(),
-                    endDateTime: addTime(new Date(c.fiveWorkingDaysBeforeRelease), 1).toISOString(),
+                    endDateTime: addHours(new Date(c.fiveWorkingDaysBeforeRelease), 1).toISOString(),
                 },
                 {
                     title: 'Release captain reminder: 4 working days before release',
                     description: 'See the release tracking issue for TODOs',
                     startDateTime: new Date(c.fourWorkingDaysBeforeRelease).toISOString(),
-                    endDateTime: addTime(new Date(c.fourWorkingDaysBeforeRelease), 1).toISOString(),
+                    endDateTime: addHours(new Date(c.fourWorkingDaysBeforeRelease), 1).toISOString(),
                 },
                 {
                     title: 'Release captain reminder: 3 working days before release',
                     description: 'See the release tracking issue for TODOs',
                     startDateTime: new Date(c.threeWorkingDaysBeforeRelease).toISOString(),
-                    endDateTime: addTime(new Date(c.threeWorkingDaysBeforeRelease), 1).toISOString(),
+                    endDateTime: addHours(new Date(c.threeWorkingDaysBeforeRelease), 1).toISOString(),
                 },
                 {
                     title: 'Release captain reminder: 1 working day before release',
                     description: 'See the release tracking issue for TODOs',
                     startDateTime: new Date(c.oneWorkingDayBeforeRelease).toISOString(),
-                    endDateTime: addTime(new Date(c.oneWorkingDayBeforeRelease), 1).toISOString(),
+                    endDateTime: addHours(new Date(c.oneWorkingDayBeforeRelease), 1).toISOString(),
                 },
                 {
                     title: `Cut release branch ${c.version}`,
                     anyoneCanAddSelf: true,
                     attendees: [c.teamEmail],
                     startDateTime: new Date(c.fourWorkingDaysBeforeRelease).toISOString(),
-                    endDateTime: addTime(new Date(c.fourWorkingDaysBeforeRelease), 1).toISOString(),
+                    endDateTime: addHours(new Date(c.fourWorkingDaysBeforeRelease), 1).toISOString(),
                 },
                 {
                     title: `Release Sourcegraph ${c.version}`,
                     anyoneCanAddSelf: true,
                     attendees: [c.teamEmail],
                     startDateTime: new Date(c.releaseDateTime).toISOString(),
-                    endDateTime: addTime(new Date(c.releaseDateTime), 1).toISOString(),
+                    endDateTime: addHours(new Date(c.releaseDateTime), 1).toISOString(),
                 },
                 {
                     title: `Reminder to submit feedback for ${c.version} Engineering Retrospective`,
@@ -113,13 +113,13 @@ const steps: Step[] = [
                     anyoneCanAddSelf: true,
                     attendees: [c.teamEmail],
                     startDateTime: new Date(c.retrospectiveReminderDateTime).toISOString(),
-                    endDateTime: addTime(new Date(c.retrospectiveReminderDateTime), 1).toISOString(),
+                    endDateTime: addHours(new Date(c.retrospectiveReminderDateTime), 1).toISOString(),
                 },
                 {
                     title: 'Release captain reminder: set up Retrospective Zoom',
                     description:
                         'Go to https://zoom.us/, click "Host a meeting > With Video On", and add the link to the Retrospective calendar event',
-                    startDateTime: addTime(new Date(c.retrospectiveDateTime), 0, -15).toISOString(),
+                    startDateTime: subMinutes(new Date(c.retrospectiveDateTime), 15).toISOString(),
                     endDateTime: new Date(c.retrospectiveDateTime).toISOString(),
                 },
                 {
@@ -128,7 +128,7 @@ const steps: Step[] = [
                     anyoneCanAddSelf: true,
                     attendees: [c.teamEmail],
                     startDateTime: new Date(c.retrospectiveDateTime).toISOString(),
-                    endDateTime: addTime(new Date(c.retrospectiveDateTime), 1).toISOString(),
+                    endDateTime: addHours(new Date(c.retrospectiveDateTime), 1).toISOString(),
                 },
             ]
 
@@ -248,6 +248,4 @@ async function main(): Promise<void> {
     await run(config, step as StepID)
 }
 
-main()
-    .then(() => undefined)
-    .catch(err => console.error(err))
+main().catch(err => console.error(err))

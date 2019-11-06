@@ -68,8 +68,12 @@ export class SiteAdminProductLicensesPage extends React.Component<Props> {
         )
     }
 
-    private queryLicenses = (args: { first?: number; query?: string }): Observable<GQL.IProductLicenseConnection> =>
-        args.query
+    private queryLicenses = (args: { first?: number; query?: string }): Observable<GQL.IProductLicenseConnection> => {
+        const vars: GQL.IProductLicensesOnDotcomQueryArguments = {
+            first: args.first,
+            licenseKeySubstring: args.query,
+        }
+        return args.query
             ? queryGraphQL(
                   gql`
                       query ProductLicenses($first: Int, $licenseKeySubstring: String) {
@@ -87,10 +91,7 @@ export class SiteAdminProductLicensesPage extends React.Component<Props> {
                       }
                       ${siteAdminProductLicenseFragment}
                   `,
-                  {
-                      first: args.first,
-                      licenseKeySubstring: args.query,
-                  } as GQL.IProductLicensesOnDotcomQueryArguments
+                  vars
               ).pipe(
                   map(({ data, errors }) => {
                       if (!data || !data.dotcom || !data.dotcom.productLicenses || (errors && errors.length > 0)) {
@@ -105,6 +106,7 @@ export class SiteAdminProductLicensesPage extends React.Component<Props> {
                   totalCount: 0,
                   pageInfo: { __typename: 'PageInfo' as const, hasNextPage: false, endCursor: null },
               })
+    }
 
-    private onDidUpdateProductLicense = () => this.updates.next()
+    private onDidUpdateProductLicense = (): void => this.updates.next()
 }

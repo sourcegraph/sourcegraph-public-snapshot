@@ -196,7 +196,7 @@ export class UserSubscriptionsEditProductSubscriptionPage extends React.Componen
             })
         )
 
-    private onSubmit = (args: ProductSubscriptionFormData) => {
+    private onSubmit = (args: ProductSubscriptionFormData): void => {
         this.submits.next(args)
     }
 }

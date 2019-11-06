@@ -18,10 +18,6 @@ export default class RegexpToggle extends React.Component<RegexpToggleProps> {
     private subscriptions = new Subscription()
     private toggleCheckbox = React.createRef<HTMLDivElement>()
 
-    constructor(props: RegexpToggleProps) {
-        super(props)
-    }
-
     public componentDidMount(): void {
         this.subscriptions.add(
             fromEvent<KeyboardEvent>(window, 'keydown')

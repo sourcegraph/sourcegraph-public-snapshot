@@ -1,13 +1,7 @@
 import * as readline from 'readline'
-import { readFile, writeFile, mkdirp } from 'fs-extra'
+import { readFile, writeFile } from 'mz/fs'
+import mkdirp from 'mkdirp-promise'
 import * as path from 'path'
-
-export function addTime(dateTime: Date, numHours: number, numMinutes: number = 0): Date {
-    const newDate = new Date(dateTime)
-    newDate.setHours(dateTime.getHours() + numHours)
-    newDate.setMinutes(dateTime.getMinutes() + numMinutes)
-    return newDate
-}
 
 export async function readLine(prompt: string, cacheFile?: string): Promise<string> {
     if (!cacheFile) {
@@ -24,15 +18,12 @@ export async function readLine(prompt: string, cacheFile?: string): Promise<stri
     }
 }
 
-function readLineNoCache(prompt: string): Promise<string> {
+async function readLineNoCache(prompt: string): Promise<string> {
     const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout,
     })
-    return new Promise<string>(resolve =>
-        rl.question(prompt, userInput => {
-            rl.close()
-            resolve(userInput)
-        })
-    )
+    const userInput = await new Promise<string>(resolve => rl.question(prompt, resolve))
+    rl.close()
+    return userInput
 }

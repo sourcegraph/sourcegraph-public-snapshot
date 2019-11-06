@@ -59,12 +59,12 @@ type lsifJobConnectionResolver struct {
 	// cache results because they are used by multiple fields
 	once       sync.Once
 	jobs       []*types.LSIFJob
-	totalCount int
+	totalCount *int
 	nextURL    string
 	err        error
 }
 
-func (r *lsifJobConnectionResolver) compute(ctx context.Context) ([]*types.LSIFJob, int, string, error) {
+func (r *lsifJobConnectionResolver) compute(ctx context.Context) ([]*types.LSIFJob, *int, string, error) {
 	r.once.Do(func() {
 		var path string
 		if r.opt.NextURL == nil {
@@ -91,7 +91,7 @@ func (r *lsifJobConnectionResolver) compute(ctx context.Context) ([]*types.LSIFJ
 
 		payload := struct {
 			Jobs       []*types.LSIFJob `json:"jobs"`
-			TotalCount int              `json:"totalCount"`
+			TotalCount *int             `json:"totalCount"`
 		}{
 			Jobs: []*types.LSIFJob{},
 		}
@@ -124,9 +124,14 @@ func (r *lsifJobConnectionResolver) Nodes(ctx context.Context) ([]*lsifJobResolv
 	return l, nil
 }
 
-func (r *lsifJobConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+func (r *lsifJobConnectionResolver) TotalCount(ctx context.Context) (*int32, error) {
 	_, count, _, err := r.compute(ctx)
-	return int32(count), err
+	if count == nil || err != nil {
+		return nil, err
+	}
+
+	c := int32(*count)
+	return &c, nil
 }
 
 func (r *lsifJobConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {

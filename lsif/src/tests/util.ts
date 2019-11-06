@@ -59,13 +59,20 @@ export class BackendTestContext {
      * @param commit The commit.
      * @param root The root of the dump.
      * @param filename The filename of the (gzipped) LSIF dump.
+     * @param updateCommits Whether not to update commits.
      */
-    public convertTestData(repository: string, commit: string, root: string, filename: string): Promise<void> {
+    public convertTestData(
+        repository: string,
+        commit: string,
+        root: string,
+        filename: string,
+        updateCommits: boolean = true
+    ): Promise<void> {
         if (!this.xrepoDatabase || !this.storageRoot) {
             return Promise.resolve()
         }
 
-        return convertTestData(this.xrepoDatabase, this.storageRoot, repository, commit, root, filename)
+        return convertTestData(this.xrepoDatabase, this.storageRoot, repository, commit, root, filename, updateCommits)
     }
 
     /**

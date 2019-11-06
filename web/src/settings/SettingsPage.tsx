@@ -34,7 +34,7 @@ export class SettingsPage extends React.PureComponent<Props, State> {
         )
     }
 
-    private onDidCommit = async (lastID: number | null, contents: string) => {
+    private onDidCommit = async (lastID: number | null, contents: string): Promise<void> => {
         this.setState({ commitError: undefined })
 
         // When updating settings for a settings subject that is in the viewer's settings cascade (i.e., if the

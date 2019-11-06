@@ -25,7 +25,7 @@ Sourcegraph server is a collection of smaller binaries. The development server, 
 
 Sourcegraph has the following dependencies:
 
-- [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+- [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) (v2.18 or higher)
 - [Go](https://golang.org/doc/install) (v1.13 or higher)
 - [Node JS](https://nodejs.org/en/download/) (version 8 or 10)
 - [make](https://www.gnu.org/software/make/)

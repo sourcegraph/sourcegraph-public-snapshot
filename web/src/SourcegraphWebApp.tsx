@@ -319,15 +319,15 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         )
     }
 
-    private onThemePreferenceChange = (themePreference: ThemePreference) => {
+    private onThemePreferenceChange = (themePreference: ThemePreference): void => {
         this.setState({ themePreference })
     }
 
-    private onNavbarQueryChange = (navbarSearchQuery: string) => {
+    private onNavbarQueryChange = (navbarSearchQuery: string): void => {
         this.setState({ navbarSearchQuery })
     }
 
-    private togglePatternType = () => {
+    private togglePatternType = (): void => {
         const currentPatternType = this.state.searchPatternType
         this.setState({
             searchPatternType:

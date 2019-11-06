@@ -277,23 +277,23 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
         )
     }
 
-    private onUsernameFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    private onUsernameFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         this.setState({ username: e.target.value })
     }
 
-    private onDisplayNameFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    private onDisplayNameFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         this.setState({ displayName: e.target.value })
     }
 
-    private onAvatarURLFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    private onAvatarURLFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         this.setState({ avatarURL: e.target.value })
     }
 
-    private handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    private handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         this.submits.next(event)
     }
 
-    private handleError = (err: Error) => {
+    private handleError = (err: Error): [] => {
         console.error(err)
         this.setState({ loading: false, saved: false, error: err })
         return []

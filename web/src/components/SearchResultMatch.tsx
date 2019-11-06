@@ -203,7 +203,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
         )
     }
 
-    private setTableContainerElement = (ref: HTMLElement | null) => {
+    private setTableContainerElement = (ref: HTMLElement | null): void => {
         this.tableContainerElement = ref
     }
 }

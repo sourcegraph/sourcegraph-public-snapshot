@@ -96,7 +96,7 @@ export class ExtensionToggle extends React.PureComponent<Props> {
         )
     }
 
-    private onToggle = (enabled: boolean) => {
+    private onToggle = (enabled: boolean): void => {
         this.toggles.next(enabled)
     }
 }

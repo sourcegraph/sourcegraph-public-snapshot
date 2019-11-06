@@ -13,8 +13,6 @@ import * as constants from './constants'
 
 /**
  * Create a temporary directory with a subdirectory for dbs.
- *
- * @param prefix The temporary path prefix.
  */
 export async function createStorageRoot(): Promise<string> {
     const tempPath = await fs.mkdtemp('test-', { encoding: 'utf8' })
@@ -98,7 +96,7 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
 
         try {
             await cleanup()
-        } catch (error) {
+        } catch (_) {
             // If a new error occurs, swallow it
         }
 
@@ -132,6 +130,7 @@ export async function truncatePostgresTables(connection: Connection): Promise<vo
  * @param commit The commit.
  * @param root The root of the dump.
  * @param filename The filename of the (gzipped) LSIF dump.
+ * @param updateCommits Whether not to update commits.
  */
 export async function convertTestData(
     xrepoDatabase: XrepoDatabase,
@@ -139,7 +138,8 @@ export async function convertTestData(
     repository: string,
     commit: string,
     root: string,
-    filename: string
+    filename: string,
+    updateCommits: boolean = true
 ): Promise<void> {
     // Create a filesystem read stream for the given test file. This will cover
     // the cases where `yarn test` is run from the root or from the lsif directory.
@@ -149,8 +149,11 @@ export async function convertTestData(
     const { packages, references } = await convertLsif(input, tmp)
     const dump = await xrepoDatabase.addPackagesAndReferences(repository, commit, root, packages, references)
     await fs.rename(tmp, dbFilename(storageRoot, dump.id, repository, commit))
-    await xrepoDatabase.updateCommits(repository, [[commit, '']])
-    await xrepoDatabase.updateDumpsVisibleFromTip(repository, commit)
+
+    if (updateCommits) {
+        await xrepoDatabase.updateCommits(repository, [[commit, '']])
+        await xrepoDatabase.updateDumpsVisibleFromTip(repository, commit)
+    }
 }
 
 /**
@@ -179,7 +182,7 @@ export function createLocation(
  * Create an LSP location with a remote URI.
  *
  * @param repository The repository name.
- * @param path The document path.
+ * @param documentPath The document path.
  * @param startLine The starting line.
  * @param startCharacter The starting character.
  * @param endLine The ending line.
@@ -187,7 +190,7 @@ export function createLocation(
  */
 export function createRemoteLocation(
     repository: string,
-    path: string,
+    documentPath: string,
     startLine: number,
     startCharacter: number,
     endLine: number,
@@ -195,7 +198,7 @@ export function createRemoteLocation(
 ): lsp.Location {
     const url = new URL(`git://${repository}`)
     url.search = createCommit(repository)
-    url.hash = path
+    url.hash = documentPath
 
     return createLocation(url.href, startLine, startCharacter, endLine, endCharacter)
 }

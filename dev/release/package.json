@@ -9,22 +9,16 @@
     "build": "tsc",
     "watch": "tsc -w",
     "typecheck": "tsc --noEmit",
-    "tslint": "../node_modules/.bin/tslint -p tsconfig.json",
-    "eslint": "../node_modules/.bin/eslint 'src/**/*.ts?(x)'"
+    "tslint": "../../node_modules/.bin/tslint --project tsconfig.json --config ../../tslint.config.js '*.ts'",
+    "eslint": "../../node_modules/.bin/eslint '*.ts'"
   },
   "dependencies": {
     "@octokit/rest": "^16.34.0",
     "@slack/web-api": "^5.3.0",
-    "fs-extra": "^8.1.0",
-    "googleapis": "39",
-    "mkdirp": "^0.5.1",
-    "open": "^7.0.0",
-    "request-promise-native": "^1.0.8"
+    "googleapis": "^44.0.0",
+    "open": "^7.0.0"
   },
   "devDependencies": {
-    "@types/fs-extra": "8.0.1",
-    "@types/mkdirp": "0.5.2",
-    "@types/request-promise-native": "1.0.17",
     "typescript": "^3.6.4"
   }
 }

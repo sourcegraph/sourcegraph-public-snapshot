@@ -49,7 +49,7 @@ const TreeEntry: React.FunctionComponent<{
 }> = ({ isDir, name, parentPath, url }) => {
     const filePath = parentPath ? parentPath + '/' + name : name
     return (
-        <Link to={url} className="tree-entry" title={filePath}>
+        <Link to={url} className={`tree-entry ${isDir ? 'font-weight-bold' : ''}`} title={filePath}>
             {name}
             {isDir && '/'}
         </Link>
@@ -355,7 +355,7 @@ export class TreePage extends React.PureComponent<Props, State> {
         )
     }
 
-    private onQueryChange = (query: string) => this.setState({ query })
+    private onQueryChange = (query: string): void => this.setState({ query })
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
@@ -376,7 +376,7 @@ export class TreePage extends React.PureComponent<Props, State> {
         return `${repoStr}`
     }
 
-    private queryCommits = (args: { first?: number }) =>
+    private queryCommits = (args: { first?: number }): Observable<GQL.IGitCommitConnection> =>
         fetchTreeCommits({
             ...args,
             repo: this.props.repoID,

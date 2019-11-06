@@ -66,7 +66,8 @@ export const File: React.FunctionComponent<FileProps> = props => (
                     data-tree-path={props.entryInfo.path}
                     draggable={false}
                     title={props.entryInfo.path}
-                    // eslint-disable-next-line react/forbid-dom-props (needed because of dynamic styling)
+                    // needed because of dynamic styling
+                    // eslint-disable-next-line react/forbid-dom-props
                     style={treePadding(props.depth, false)}
                     tabIndex={-1}
                 >

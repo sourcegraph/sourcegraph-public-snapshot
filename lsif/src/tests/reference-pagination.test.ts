@@ -46,10 +46,10 @@ describe('Backend', () => {
         const { locations: locations3, cursor: cursor3 } = await fetch({ limit: 3, cursor: cursor2 }) // b6, b7, b8
         const { locations: locations4, cursor: cursor4 } = await fetch({ limit: 3, cursor: cursor3 }) // b9
 
-        // Ensure paging through result sets gets us everything
+        // Ensure paging through sets of results gets us everything
         expect(locations0).toEqual(locations1.concat(...locations2, ...locations3, ...locations4))
 
-        // Ensure cursor is not provided at the end of a result set
+        // Ensure cursor is not provided at the end of a set of results
         expect(cursor0).toBeUndefined()
         expect(cursor4).toBeUndefined()
 

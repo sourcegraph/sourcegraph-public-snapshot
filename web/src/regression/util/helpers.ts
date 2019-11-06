@@ -7,7 +7,15 @@ import { Key } from 'ts-key-enum'
 import { deleteUser } from './api'
 import { Config } from '../../../../shared/src/e2e/config'
 import { ResourceDestructor } from './TestResourceManager'
+import * as jsonc from '@sqs/jsonc-parser'
+import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import * as puppeteer from 'puppeteer'
+import {
+    GitHubAuthProvider,
+    GitLabAuthProvider,
+    OpenIDConnectAuthProvider,
+    SAMLAuthProvider,
+} from '../../schema/critical.schema'
 
 /**
  * Create the user with the specified password. Returns a destructor that destroys the test user.
@@ -86,4 +94,70 @@ async function createTestUser(
 
 export async function clickAndWaitForNavigation(handle: puppeteer.ElementHandle, page: puppeteer.Page): Promise<void> {
     await Promise.all([handle.click(), page.waitForNavigation()])
+}
+
+/**
+ * Navigate to the management console GUI and add the specified authentication provider. Returns a
+ * function that restores the critical site config to its previous value (before adding the
+ * authentication provider).
+ */
+export async function createAuthProviderGUI(
+    driver: Driver,
+    managementConsoleUrl: string,
+    managementConsolePassword: string,
+    authProvider: GitHubAuthProvider | GitLabAuthProvider | OpenIDConnectAuthProvider | SAMLAuthProvider
+): Promise<ResourceDestructor> {
+    const authHeaders = {
+        Authorization: `Basic ${new Buffer(`:${managementConsolePassword}`).toString('base64')}`,
+    }
+
+    await driver.page.setExtraHTTPHeaders(authHeaders)
+    await driver.goToURLWithInvalidTLS(managementConsoleUrl)
+
+    const oldCriticalConfig = await driver.page.evaluate(async managementConsoleUrl => {
+        const res = await fetch(managementConsoleUrl + '/api/get', { method: 'GET' })
+        return (await res.json()).Contents
+    }, managementConsoleUrl)
+    const parsedOldConfig = jsonc.parse(oldCriticalConfig)
+    const authProviders = parsedOldConfig['auth.providers'] as any[]
+    if (
+        authProviders.filter(p => p.type === authProvider.type && p.displayName === authProvider.displayName).length > 0
+    ) {
+        return () => Promise.resolve()
+    }
+
+    const newCriticalConfig = jsonc.applyEdits(
+        oldCriticalConfig,
+        jsoncEdit.setProperty(oldCriticalConfig, ['auth.providers', -1], authProvider, {
+            eol: '\n',
+            insertSpaces: true,
+            tabSize: 2,
+        })
+    )
+    await driver.replaceText({
+        selector: '.monaco-editor',
+        newText: newCriticalConfig,
+        selectMethod: 'keyboard',
+        enterTextMethod: 'paste',
+    })
+    await (await driver.findElementWithText('Save changes')).click()
+    await driver.findElementWithText('Saved!', { wait: { timeout: 1000 } })
+    await driver.page.setExtraHTTPHeaders({})
+
+    return async () => {
+        await driver.page.setExtraHTTPHeaders(authHeaders)
+        await driver.goToURLWithInvalidTLS(managementConsoleUrl)
+
+        await driver.replaceText({
+            selector: '.monaco-editor',
+            newText: oldCriticalConfig,
+            selectMethod: 'keyboard',
+            enterTextMethod: 'paste',
+        })
+
+        await (await driver.findElementWithText('Save changes')).click()
+        await driver.findElementWithText('Saved!', { wait: { timeout: 500 } })
+
+        await driver.page.setExtraHTTPHeaders({})
+    }
 }

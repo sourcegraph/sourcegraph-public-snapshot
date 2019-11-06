@@ -166,7 +166,7 @@ export class SettingsArea extends React.Component<Props, State> {
         )
     }
 
-    private onUpdate = () => this.refreshRequests.next()
+    private onUpdate = (): void => this.refreshRequests.next()
 
     private getMergedSettingsJSONSchema(cascade: Pick<GQL.ISettingsCascade, 'subjects'>): Observable<{ $id: string }> {
         return queryConfiguredRegistryExtensions(

@@ -124,7 +124,7 @@ export class SavedSearchUpdateForm extends React.Component<Props, State> {
         )
     }
 
-    private onSubmit = (fields: SavedQueryFields) => {
+    private onSubmit = (fields: SavedQueryFields): void => {
         this.submits.next(fields)
     }
 }

@@ -209,10 +209,8 @@ type ChangesetPlansConnectionResolver interface {
 }
 
 type ChangesetPlanResolver interface {
-	Title() (string, error)
-	Body() (string, error)
 	Repository(ctx context.Context) (*RepositoryResolver, error)
-	Diff(ctx context.Context) (PreviewRepositoryDiff, error)
+	FileDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (PreviewFileDiffConnection, error)
 }
 
 type ChangesetEventsConnectionResolver interface {
@@ -266,8 +264,6 @@ type CampaignPlanResolver interface {
 	Status() BackgroundProcessStatus
 
 	Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) ChangesetPlansConnectionResolver
-
-	RepositoryDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (PreviewRepositoryDiffConnectionResolver, error)
 }
 
 type PreviewFileDiff interface {
@@ -285,15 +281,4 @@ type PreviewFileDiffConnection interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 	DiffStat(ctx context.Context) (*DiffStat, error)
 	RawDiff(ctx context.Context) (string, error)
-}
-
-type PreviewRepositoryDiff interface {
-	BaseRepository() *RepositoryResolver
-	FileDiffs(*graphqlutil.ConnectionArgs) PreviewFileDiffConnection
-}
-
-type PreviewRepositoryDiffConnectionResolver interface {
-	Nodes(ctx context.Context) ([]PreviewRepositoryDiff, error)
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }

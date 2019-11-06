@@ -28,7 +28,15 @@ import { Span, Tracer } from 'opentracing'
 import { default as tracingMiddleware } from 'express-opentracing'
 import { waitForConfiguration } from './config'
 import { createLogger } from './logging'
-import { enqueue, createQueue, ensureOnlyRepeatableJob, queueTypes, QUEUE_PREFIX } from './queue'
+import {
+    enqueue,
+    createQueue,
+    ensureOnlyRepeatableJob,
+    queueTypes,
+    QUEUE_PREFIX,
+    statesByQueue,
+    ApiJobState,
+} from './queue'
 import { Connection } from 'typeorm'
 import { LsifDump } from './xrepo.models'
 import * as constants from './constants'
@@ -379,7 +387,7 @@ function lsifEndpoints(backend: Backend, queue: Queue, logger: Logger, tracer: T
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { repository, commit } = req.query
-                const { path, position, method } = req.body
+                const { path: filePath, position, method } = req.body
                 checkRepository(repository)
                 checkCommit(commit)
                 checkMethod(method, ['definitions', 'references', 'hover'])
@@ -388,11 +396,11 @@ function lsifEndpoints(backend: Backend, queue: Queue, logger: Logger, tracer: T
 
                 switch (method) {
                     case 'definitions':
-                        res.json(await backend.definitions(repository, commit, path, position, ctx))
+                        res.json(await backend.definitions(repository, commit, filePath, position, ctx))
                         break
 
                     case 'hover':
-                        res.json(await backend.hover(repository, commit, path, position, ctx))
+                        res.json(await backend.hover(repository, commit, filePath, position, ctx))
                         break
 
                     case 'references': {
@@ -403,7 +411,7 @@ function lsifEndpoints(backend: Backend, queue: Queue, logger: Logger, tracer: T
                         const { locations, cursor: endCursor } = await backend.references(
                             repository,
                             commit,
-                            path,
+                            filePath,
                             position,
                             { limit, cursor: startCursor },
                             ctx
@@ -440,9 +448,16 @@ function dumpEndpoints(backend: Backend, logger: Logger, tracer: Tracer | undefi
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { repository } = req.params
-                const { query } = req.query
+                const { query, visibleAtTip: visibleAtTipRaw } = req.query
                 const { limit, offset } = limitOffset(req, DEFAULT_DUMP_PAGE_SIZE)
-                const { dumps, totalCount } = await backend.dumps(decodeURIComponent(repository), query, limit, offset)
+                const visibleAtTip = visibleAtTipRaw === 'true'
+                const { dumps, totalCount } = await backend.dumps(
+                    decodeURIComponent(repository),
+                    query,
+                    visibleAtTip,
+                    limit,
+                    offset
+                )
 
                 if (offset + dumps.length < totalCount) {
                     res.set('Link', nextLink(req, { limit, offset: offset + dumps.length }))
@@ -508,7 +523,7 @@ function jobEndpoints(
         `/jobs/:state(${Array.from(queueTypes.keys()).join('|')})`,
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
-                const { state } = req.params
+                const { state } = req.params as { state: ApiJobState }
                 const { query } = req.query
                 const { limit, offset } = limitOffset(req, DEFAULT_JOB_PAGE_SIZE)
 
@@ -564,7 +579,13 @@ function jobEndpoints(
                     })
                 }
 
-                res.send(formatJob(job, await job.getState()))
+                const rawState = await job.getState()
+                const state = statesByQueue.get(rawState === 'waiting' ? 'wait' : rawState)
+                if (!state) {
+                    throw new Error(`Unknown job state ${state}.`)
+                }
+
+                res.send(formatJob(job, state))
             }
         )
     )

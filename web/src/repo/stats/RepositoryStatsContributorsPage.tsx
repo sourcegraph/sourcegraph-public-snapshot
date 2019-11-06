@@ -391,7 +391,9 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
         this.setState(this.getDerivedProps())
     }
 
-    private queryRepositoryContributors = (args: { first?: number }) => {
+    private queryRepositoryContributors = (args: {
+        first?: number
+    }): Observable<GQL.IRepositoryContributorConnection> => {
         const { revisionRange, after, path } = this.getDerivedProps()
         return queryRepositoryContributors({
             ...args,

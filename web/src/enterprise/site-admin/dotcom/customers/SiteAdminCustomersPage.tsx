@@ -127,5 +127,5 @@ export class SiteAdminProductCustomersPage extends React.Component<Props> {
             })
         )
 
-    private onUserUpdate = () => this.updates.next()
+    private onUserUpdate = (): void => this.updates.next()
 }
