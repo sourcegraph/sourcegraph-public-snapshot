@@ -666,7 +666,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         if (arg.filter && this.props.filters && arg.filter !== this.props.filters[0]) {
             q.set('filter', arg.filter.id)
         }
-        if (arg.visible !== arg.first) {
+        if (arg.visible !== 0 && arg.visible !== arg.first) {
             q.set('visible', String(arg.visible))
         }
         return q.toString()
