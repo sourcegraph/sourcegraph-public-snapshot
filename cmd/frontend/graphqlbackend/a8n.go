@@ -210,8 +210,6 @@ type ChangesetPlansConnectionResolver interface {
 
 type ChangesetPlanResolver interface {
 	Repository(ctx context.Context) (*RepositoryResolver, error)
-	BaseRepository(ctx context.Context) (*RepositoryResolver, error)
-	Diff(ctx context.Context) ChangesetPlanResolver
 	FileDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (PreviewFileDiffConnection, error)
 }
 
@@ -266,8 +264,6 @@ type CampaignPlanResolver interface {
 	Status() BackgroundProcessStatus
 
 	Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) ChangesetPlansConnectionResolver
-
-	RepositoryDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (ChangesetPlansConnectionResolver, error)
 }
 
 type PreviewFileDiff interface {

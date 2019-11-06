@@ -65,17 +65,6 @@ func (r *campaignPlanResolver) Changesets(
 	}
 }
 
-func (r *campaignPlanResolver) RepositoryDiffs(
-	ctx context.Context,
-	args *graphqlutil.ConnectionArgs,
-) (graphqlbackend.ChangesetPlansConnectionResolver, error) {
-	return &campaignJobsConnectionResolver{
-		store:        r.store,
-		campaignPlan: r.campaignPlan,
-		limit:        int(args.GetFirst()),
-	}, nil
-}
-
 type campaignJobsConnectionResolver struct {
 	store        *ee.Store
 	campaignPlan *a8n.CampaignPlan
@@ -181,15 +170,6 @@ func (r *campaignJobResolver) computeRepoCommit(ctx context.Context) (*graphqlba
 func (r *campaignJobResolver) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
 	repo, _, err := r.computeRepoCommit(ctx)
 	return repo, err
-}
-
-func (r *campaignJobResolver) BaseRepository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
-	repo, _, err := r.computeRepoCommit(ctx)
-	return repo, err
-}
-
-func (r *campaignJobResolver) Diff(ctx context.Context) graphqlbackend.ChangesetPlanResolver {
-	return r
 }
 
 func (r *campaignJobResolver) FileDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.PreviewFileDiffConnection, error) {
