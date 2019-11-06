@@ -16,6 +16,7 @@ func ToFileMatch(combyMatches []comby.FileMatch) (matches []protocol.FileMatch) 
 			lineMatch := protocol.LineMatch{
 				LineNumber:       r.Range.Start.Line - 1,
 				OffsetAndLengths: [][2]int{{r.Range.Start.Column - 1, len(r.Matched)}},
+				Preview:          r.Matched,
 			}
 			lineMatches = append(lineMatches, lineMatch)
 		}
