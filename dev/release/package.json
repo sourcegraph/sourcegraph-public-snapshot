@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@octokit/rest": "^16.34.0",
-    "@slack/web-api": "^5.3.0",
+    "@slack/web-api": "^5.4.0",
     "googleapis": "^44.0.0",
     "open": "^7.0.0"
   },
