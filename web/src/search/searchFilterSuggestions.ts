@@ -37,6 +37,14 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
                 description: 'regex-pattern (include results from repos that contain a matching file)',
             },
             {
+                title: 'repohasfile',
+                description: 'regex-pattern (include results from repos that contain a matching file)',
+            },
+            {
+                title: '-repohasfile',
+                description: 'regex-pattern (exclude results from repositories that contain a matching file)',
+            },
+            {
                 title: 'repohascommitafter',
                 description: '"string specifying time frame" (filter out stale repositories without recent commits)',
             },
