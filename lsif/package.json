@@ -8,7 +8,7 @@
     "async-middleware": "^1.2.1",
     "bloomfilter": "^0.0.18",
     "body-parser": "^1.19.0",
-    "bull": "^3.11.0",
+    "bull": "^3.12.0",
     "cors": "^2.8.5",
     "crc-32": "^1.2.0",
     "delay": "^4.3.0",
