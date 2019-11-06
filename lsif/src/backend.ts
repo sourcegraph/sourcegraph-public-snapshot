@@ -590,7 +590,7 @@ export class Backend {
                 } else {
                     // Determine if there are any valid remote dumps we will open if
                     // we move onto a next page.
-                    const { totalCount } = await this.xrepoDatabase.getReferences({
+                    const { totalCount: remoteTotalCount } = await this.xrepoDatabase.getReferences({
                         repository,
                         scheme: moniker.scheme,
                         name: packageInformation.name,
@@ -605,7 +605,7 @@ export class Backend {
                     // of a symbol outside of the current repository and we give a
                     // "load more" option that yields no additional results.
 
-                    if (totalCount > 0) {
+                    if (remoteTotalCount > 0) {
                         newCursor = {
                             ...cursor,
                             phase: 'remote-repo',
