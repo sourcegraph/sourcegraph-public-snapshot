@@ -11,6 +11,8 @@ import { switchMap, tap } from 'rxjs/operators'
 import { Subject, Subscription, Observable } from 'rxjs'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { sortBy } from 'lodash'
+import { ErrorLike } from '@sourcegraph/codeintellify/lib/errors'
+import { isErrorLike } from '../../../../shared/src/util/errors'
 
 interface LsifDumpNodeProps {
     node: GQL.ILSIFDump
@@ -47,13 +49,15 @@ interface Props extends RouteComponentProps<any> {
     repo: GQL.IRepository
 }
 
-type State = { loading: true } | { dumps: GQL.ILSIFDump[] } | { error: Error }
+type State = {
+    dumpsOrError: GQL.ILSIFDump[] | ErrorLike | null
+}
 
 /**
  * The repository settings code intelligence page.
  */
 export class RepoSettingsCodeIntelligencePage extends React.PureComponent<Props, State> {
-    public state: State = { loading: true }
+    public state: State = { dumpsOrError: null }
 
     private updates = new Subject<void>()
     private subscriptions = new Subscription()
@@ -64,15 +68,13 @@ export class RepoSettingsCodeIntelligencePage extends React.PureComponent<Props,
         this.subscriptions.add(
             this.updates
                 .pipe(
-                    tap(() => this.setState({ loading: true })),
+                    tap(() => this.setState({ dumpsOrError: null })),
                     switchMap(() => this.queryLatestDumps())
                 )
                 .subscribe(
                     ({ nodes }: { nodes: GQL.ILSIFDump[] }) =>
-                        this.setState({
-                            latestDumps: sortBy(nodes, node => node.projectRoot.path),
-                        }),
-                    error => this.setState({ error })
+                        this.setState({ dumpsOrError: sortBy(nodes, node => node.projectRoot.path) }),
+                    error => this.setState({ dumpsOrError: error })
                 )
         )
         this.updates.next()
@@ -99,18 +101,20 @@ export class RepoSettingsCodeIntelligencePage extends React.PureComponent<Props,
                         <em>Find Reference</em> requests.
                     </p>
 
-                    {'loading' in this.state && <LoadingSpinner className="icon-inline" />}
-                    {'error' in this.state && (
+                    {this.state.dumpsOrError === null && <LoadingSpinner className="icon-inline" />}
+                    {this.state.dumpsOrError !== null && isErrorLike(this.state.dumpsOrError) && (
                         <div className="alert alert-danger">
                             Error getting repository index status:
                             <br />
-                            <code>{this.state.error.message}</code>
+                            <code>{this.state.dumpsOrError.message}</code>
                         </div>
                     )}
-                    {'dumps' in this.state && this.state.dumps.length > 0 ? (
-                        this.state.dumps.map((dump, i) => <LsifDumpNode key={i} node={dump} />)
+                    {this.state.dumpsOrError !== null &&
+                    !isErrorLike(this.state.dumpsOrError) &&
+                    this.state.dumpsOrError.length > 0 ? (
+                        this.state.dumpsOrError.map((dump, i) => <LsifDumpNode key={i} node={dump} />)
                     ) : (
-                        <p>No dumps are recent enough to be used at the tip of the default branch.</p>
+                        <p>No uploads are recent enough to be used at the tip of the default branch.</p>
                     )}
                 </div>
 
