@@ -49,7 +49,7 @@ interface Props extends RouteComponentProps<any> {
     repo: GQL.IRepository
 }
 
-type State = {
+interface State = {
     dumpsOrError: GQL.ILSIFDump[] | ErrorLike | null
 }
 
