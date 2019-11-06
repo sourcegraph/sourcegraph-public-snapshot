@@ -335,6 +335,16 @@ export class QueryInput extends React.Component<Props, State> {
     }
 
     /**
+     * Makes any modification to the query which will only be used
+     * for fetching suggesitons. It does not mutate the query in state.
+     */
+    private formatQueryForFuzzySearch(query: string): string {
+        // Use search results from `file` filter when suggesting for `repohasfile` filter.
+        // Also requires the filter type to be in ./Suggestion.tsx->fuzzySearchFilters
+        return query.replace(SuggestionTypes.repohasfile, 'file')
+    }
+
+    /**
      * Used at inputValues listener in constructor.
      * Dos a fuzzy search and formats suggestions for display.
      */
@@ -344,7 +354,7 @@ export class QueryInput extends React.Component<Props, State> {
         queryCursor: SearchQueryCursor,
         filterSuggestions: ComponentSuggestions
     ): ObservableInput<SuggestionsStateUpdate> =>
-        fetchSuggestions(query).pipe(
+        fetchSuggestions(this.formatQueryForFuzzySearch(query)).pipe(
             map(createSuggestion),
             filter(isDefined),
             filter(suggestion => {

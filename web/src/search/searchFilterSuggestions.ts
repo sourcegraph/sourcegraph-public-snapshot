@@ -37,10 +37,6 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
                 description: 'regex-pattern (include results from repos that contain a matching file)',
             },
             {
-                value: 'repohasfile',
-                description: 'regex-pattern (include results from repos that contain a matching file)',
-            },
-            {
                 value: '-repohasfile',
                 description: 'regex-pattern (exclude results from repositories that contain a matching file)',
             },

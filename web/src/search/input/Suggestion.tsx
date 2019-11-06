@@ -28,7 +28,12 @@ export enum SuggestionTypes {
 /**
  * Filters which use fuzzy-search for their suggestion values
  */
-export const fuzzySearchFilters = [SuggestionTypes.repo, SuggestionTypes.repogroup, SuggestionTypes.file]
+export const fuzzySearchFilters = [
+    SuggestionTypes.repo,
+    SuggestionTypes.repogroup,
+    SuggestionTypes.file,
+    SuggestionTypes.repohasfile,
+]
 
 /**
  * dir and symbol are fetched/suggested by the fuzzy-search
