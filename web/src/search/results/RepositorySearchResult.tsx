@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { RepositoryIcon } from '../../../../shared/src/components/icons' // TODO: Switch to mdi icon
+import { RepositoryIcon } from '../../../../shared/src/components/icons'
 import { RepoLink } from '../../../../shared/src/components/RepoLink'
 import { ResultContainer } from '../../../../shared/src/components/ResultContainer'
 import * as GQL from '../../../../shared/src/graphql/schema'

@@ -3,7 +3,7 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { CircleChevronLeftIcon } from '../../../shared/src/components/icons' // TODO: Switch to mdi icon
+import { CircleChevronLeftIcon } from '../../../shared/src/components/icons'
 import { TabsWithLocalStorageViewStatePersistence } from '../../../shared/src/components/Tabs'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'

@@ -12,7 +12,7 @@ import { debounceTime, distinctUntilChanged, filter, first, map, skip, skipUntil
 import { parseSearchURLQuery, PatternTypeProps } from '..'
 import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
 import { FileMatch } from '../../../../shared/src/components/FileMatch'
-import { RepositoryIcon } from '../../../../shared/src/components/icons' // TODO: Switch to mdi icon
+import { RepositoryIcon } from '../../../../shared/src/components/icons'
 import { displayRepoName } from '../../../../shared/src/components/RepoFileLink'
 import { VirtualList } from '../../../../shared/src/components/VirtualList'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'

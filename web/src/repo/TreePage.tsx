@@ -15,7 +15,7 @@ import { ActionItem } from '../../../shared/src/actions/ActionItem'
 import { ActionsContainer } from '../../../shared/src/actions/ActionsContainer'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
-import { RepositoryIcon } from '../../../shared/src/components/icons' // TODO: Switch to mdi icon
+import { RepositoryIcon } from '../../../shared/src/components/icons'
 import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { gql } from '../../../shared/src/graphql/graphql'
