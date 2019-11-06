@@ -94,7 +94,7 @@ export class XrepoDatabase {
                 .getRepository(LsifDump)
                 .createQueryBuilder()
                 .where({ repository })
-                .orderBy('uploaded_at')
+                .orderBy('uploaded_at', 'DESC')
                 .limit(limit)
                 .offset(offset)
 
