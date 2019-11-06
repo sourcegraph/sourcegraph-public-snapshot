@@ -233,8 +233,11 @@ export const insertSuggestionInQuery = (
         const lastWordOfFirstPartMatch = firstPart.match(/\s+(\S?)+$/)
         const isSeparateWordSuggestion = isTypingWordAndNotFilterValue(firstPart)
 
-        // If a fuzzy-search suggestion was selected but it
-        // doesn't have a URL then it's just appended to the query
+        // A fuzzy-search suggestion was selected but it doesn't have a URL...
+        // This prevents the selected suggestion replacing a previous value in query.
+        // e.g: (with "|" being the cursor)
+        // without: "archived:Yes Query|" -> selection -> "archived:QueryInput"
+        // with: "archived:Yes Query|" -> selection -> "archived:Yes QueryInput"
         if (
             !isFiltersSuggestion &&
             isSeparateWordSuggestion &&
