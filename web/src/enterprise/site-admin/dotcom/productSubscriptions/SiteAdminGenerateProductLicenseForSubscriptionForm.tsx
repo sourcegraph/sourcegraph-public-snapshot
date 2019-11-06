@@ -246,7 +246,7 @@ export class SiteAdminGenerateProductLicenseForSubscriptionForm extends React.Co
         })
     }
 
-    private dismissAlert = () => this.setState(this.emptyState)
+    private dismissAlert = (): void => this.setState(this.emptyState)
 }
 
 /**

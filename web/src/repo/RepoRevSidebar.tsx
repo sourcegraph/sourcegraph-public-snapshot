@@ -136,7 +136,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
         )
     }
 
-    private onSidebarToggle = () => {
+    private onSidebarToggle = (): void => {
         if (this.state.showSidebar) {
             localStorage.setItem(RepoRevSidebar.HIDDEN_STORAGE_KEY, 'true')
         } else {
@@ -145,7 +145,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
         this.setState(state => ({ showSidebar: !state.showSidebar }))
     }
 
-    private onSelectTab = (tab: string) => {
+    private onSelectTab = (tab: string): void => {
         if (tab === 'symbols') {
             eventLogger.log('SidebarSymbolsTabSelected')
         } else if (tab === 'files') {

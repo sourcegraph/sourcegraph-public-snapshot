@@ -84,5 +84,5 @@ export class SavedSearchCreateForm extends React.Component<Props, State> {
         )
     }
 
-    private onSubmit = (fields: Omit<SavedQueryFields, 'id'>) => this.submits.next(fields)
+    private onSubmit = (fields: Omit<SavedQueryFields, 'id'>): void => this.submits.next(fields)
 }

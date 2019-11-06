@@ -28,7 +28,7 @@ const animationDurationMillis = 3260
  */
 export class ActivationDropdown extends React.PureComponent<Props, State> {
     public state: State = { isOpen: false, animate: false, displayEvenIfFullyCompleted: false }
-    private toggleIsOpen = () => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
+    private toggleIsOpen = (): void => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 

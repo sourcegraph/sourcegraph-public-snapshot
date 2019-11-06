@@ -138,7 +138,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
         )
     }
 
-    private editorWillMount = (e: typeof monaco) => {
+    private editorWillMount = (e: typeof monaco): void => {
         this.monaco = e
         if (e) {
             this.onDidEditorMount()

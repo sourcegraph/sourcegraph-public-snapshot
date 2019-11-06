@@ -114,5 +114,5 @@ export function logAndTraceCall<T>(
     name: string,
     f: (ctx: TracingContext) => Promise<T> | T
 ): Promise<T> {
-    return logCall(name, logger, () => traceCall(name, span, span => f({ logger, span })))
+    return logCall(name, logger, () => traceCall(name, span, childSpan => f({ logger, span: childSpan })))
 }

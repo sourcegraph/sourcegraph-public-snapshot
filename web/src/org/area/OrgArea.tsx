@@ -219,7 +219,7 @@ export class OrgArea extends React.Component<Props> {
         )
     }
 
-    private onDidRespondToInvitation = () => this.refreshRequests.next()
+    private onDidRespondToInvitation = (): void => this.refreshRequests.next()
 
-    private onDidUpdateOrganization = () => this.refreshRequests.next()
+    private onDidUpdateOrganization = (): void => this.refreshRequests.next()
 }

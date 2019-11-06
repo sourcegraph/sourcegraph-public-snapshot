@@ -96,7 +96,7 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
 
         try {
             await cleanup()
-        } catch (error) {
+        } catch (_) {
             // If a new error occurs, swallow it
         }
 
@@ -182,7 +182,7 @@ export function createLocation(
  * Create an LSP location with a remote URI.
  *
  * @param repository The repository name.
- * @param path The document path.
+ * @param documentPath The document path.
  * @param startLine The starting line.
  * @param startCharacter The starting character.
  * @param endLine The ending line.
@@ -190,7 +190,7 @@ export function createLocation(
  */
 export function createRemoteLocation(
     repository: string,
-    path: string,
+    documentPath: string,
     startLine: number,
     startCharacter: number,
     endLine: number,
@@ -198,7 +198,7 @@ export function createRemoteLocation(
 ): lsp.Location {
     const url = new URL(`git://${repository}`)
     url.search = createCommit(repository)
-    url.hash = path
+    url.hash = documentPath
 
     return createLocation(url.href, startLine, startCharacter, endLine, endCharacter)
 }

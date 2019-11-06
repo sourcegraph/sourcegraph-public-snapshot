@@ -9,7 +9,6 @@ import { getConfig } from '../../../shared/src/e2e/config'
 import { getTestTools } from './util/init'
 import { ensureLoggedInOrCreateTestUser } from './util/helpers'
 import { setUserSiteAdmin, getUser, ensureNoTestExternalServices } from './util/api'
-import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 import * as GQL from '../../../shared/src/graphql/schema'
 
 describe('External services regression test suite', () => {
@@ -70,14 +69,10 @@ describe('External services regression test suite', () => {
             externalServiceName,
             await (async () => {
                 await driver.page.goto(config.sourcegraphBaseUrl + '/site-admin/external-services')
-                await retry(() => driver.clickElementWithText('Add external service'), {
-                    retries: 3,
-                    maxRetryTime: 500,
-                })
-                await retry(() => driver.clickElementWithText('Add GitHub.com repositories.'), {
-                    retries: 3,
-                    maxRetryTime: 500,
-                })
+                await (await driver.findElementWithText('Add external service', { wait: { timeout: 500 } })).click()
+                await (await driver.findElementWithText('Add GitHub.com repositories.', {
+                    wait: { timeout: 500 },
+                })).click()
                 const repoSlugs = ['gorilla/mux']
                 const githubConfig = `{
                     "url": "https://github.com",
@@ -97,10 +92,10 @@ describe('External services regression test suite', () => {
                     selectMethod: 'keyboard',
                     enterTextMethod: 'paste',
                 })
-                await retry(() => driver.clickElementWithText('Add external service', { tagName: 'button' }), {
-                    retries: 3,
-                    maxRetryTime: 500,
-                })
+                await (await driver.findElementWithText('Add external service', {
+                    tagName: 'button',
+                    wait: { timeout: 500 },
+                })).click()
                 return () =>
                     ensureNoTestExternalServices(gqlClient, {
                         kind: GQL.ExternalServiceKind.GITHUB,

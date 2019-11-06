@@ -320,7 +320,7 @@ export class Tree extends React.PureComponent<Props, State> {
         )
     }
 
-    private setChildNode = (node: TreeNode, index: number) => {
+    private setChildNode = (node: TreeNode, index: number): void => {
         this.node.childNodes[index] = node
     }
 

@@ -76,7 +76,7 @@ interface State {
 export class SearchResultsList extends React.PureComponent<SearchResultsListProps, State> {
     /** Emits when a result was either scrolled into or out of the page */
     private visibleItemChanges = new Subject<{ isVisible: boolean; index: number }>()
-    private nextItemVisibilityChange = (isVisible: boolean, index: number) =>
+    private nextItemVisibilityChange = (isVisible: boolean, index: number): void =>
         this.visibleItemChanges.next({ isVisible, index })
 
     /** Emits with the index of the first visible result on the page */
@@ -84,14 +84,17 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
 
     /** Refrence to the current scrollable list element */
     private scrollableElementRef: HTMLElement | null = null
-    private setScrollableElementRef = (ref: HTMLElement | null) => (this.scrollableElementRef = ref)
+    private setScrollableElementRef = (ref: HTMLElement | null): void => {
+        this.scrollableElementRef = ref
+    }
 
     /** Emits with the <VirtualList> elements */
     private virtualListContainerElements = new Subject<HTMLElement | null>()
-    private nextVirtualListContainerElement = (ref: HTMLElement | null) => this.virtualListContainerElements.next(ref)
+    private nextVirtualListContainerElement = (ref: HTMLElement | null): void =>
+        this.virtualListContainerElements.next(ref)
 
     private jumpToTopClicks = new Subject<void>()
-    private nextJumpToTopClick = () => this.jumpToTopClicks.next()
+    private nextJumpToTopClick = (): void => this.jumpToTopClicks.next()
 
     private componentUpdates = new Subject<SearchResultsListProps>()
 
@@ -528,7 +531,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
     }
 
     /** onBottomHit increments the amount of results to be shown when we have scrolled to the bottom of the list. */
-    private onBottomHit = (limit: number): (() => void) => () =>
+    private onBottomHit = (limit: number) => (): void =>
         this.setState(({ resultsShown }) => ({
             resultsShown: Math.min(limit, resultsShown + 10),
         }))
@@ -566,5 +569,5 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         })
     }
 
-    private logEvent = () => eventLogger.log('SearchResultClicked')
+    private logEvent = (): void => eventLogger.log('SearchResultClicked')
 }

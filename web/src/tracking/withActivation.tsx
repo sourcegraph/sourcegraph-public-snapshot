@@ -250,7 +250,7 @@ export const withActivation = <P extends ActivationProps>(Component: React.Compo
             return undefined
         }
 
-        private refetchCompletionStatus = () => this.refetches.next()
+        private refetchCompletionStatus = (): void => this.refetches.next()
 
         private updateCompletionStatus = (update: Partial<ActivationCompletionStatus>): void =>
             this.updates.next(update)

@@ -107,7 +107,7 @@ describe('Core functionality regression test suite', () => {
             selectMethod: 'keyboard',
             enterTextMethod: 'type',
         })
-        await driver.clickElementWithText('Save changes')
+        await (await driver.findElementWithText('Save changes')).click()
         await driver.page.waitForFunction(
             () => document.evaluate("//*[text() = ' Saving...']", document).iterateNext() === null
         )
@@ -129,7 +129,7 @@ describe('Core functionality regression test suite', () => {
             selectMethod: 'keyboard',
             enterTextMethod: 'paste',
         })
-        await driver.clickElementWithText('Save changes')
+        await (await driver.findElementWithText('Save changes')).click()
         await driver.page.waitForFunction(
             () => document.evaluate("//*[text() = ' Saving...']", document).iterateNext() === null
         )
@@ -161,7 +161,7 @@ describe('Core functionality regression test suite', () => {
             newText: aviURL,
             enterTextMethod: 'paste',
         })
-        await driver.clickElementWithText('Update profile')
+        await (await driver.findElementWithText('Update profile')).click()
         await driver.page.reload()
         await driver.page.waitForFunction(
             displayName => {
@@ -183,27 +183,27 @@ describe('Core functionality regression test suite', () => {
         const testEmail = 'sg-test-account@protonmail.com'
         await driver.page.goto(driver.sourcegraphBaseUrl + `/users/${testUsername}/settings/emails`)
         await driver.replaceText({ selector: '.e2e-user-email-add-input', newText: 'sg-test-account@protonmail.com' })
-        await driver.clickElementWithText('Add')
-        await driver.waitForElementWithText(testEmail)
+        await (await driver.findElementWithText('Add')).click()
+        await driver.findElementWithText(testEmail, { wait: true })
         await driver.findElementWithText('Verification pending')
         await setUserEmailVerified(gqlClient, testUsername, testEmail, true)
         await driver.page.reload()
-        await driver.waitForElementWithText('Verified')
+        await driver.findElementWithText('Verified', { wait: true })
     })
 
     test('2.2.4 Access tokens work and invalid access tokens return "401 Unauthorized"', async () => {
         await driver.page.goto(config.sourcegraphBaseUrl + `/users/${testUsername}/settings/tokens`)
-        await driver.waitForElementWithText('Generate new token', undefined, { timeout: 5000 })
-        await driver.clickElementWithText('Generate new token')
-        await driver.waitForElementWithText('New access token')
+        await (await driver.findElementWithText('Generate new token', { wait: { timeout: 5000 } })).click()
+        await driver.findElementWithText('New access token', { wait: { timeout: 1000 } })
         await driver.replaceText({
             selector: '.e2e-create-access-token-description',
             newText: 'test-regression',
         })
-        await driver.waitForElementWithText('Generate token')
-        await driver.clickElementWithText('Generate token')
-        await driver.waitForElementWithText("Copy the new access token now. You won't be able to see it again.")
-        await driver.clickElementWithText('Copy')
+        await (await driver.findElementWithText('Generate token', { wait: { timeout: 1000 } })).click()
+        await driver.findElementWithText("Copy the new access token now. You won't be able to see it again.", {
+            wait: { timeout: 1000 },
+        })
+        await (await driver.findElementWithText('Copy')).click()
         const token = await driver.page.evaluate(() => {
             const tokenEl = document.querySelector('.e2e-access-token')
             if (!tokenEl) {
@@ -288,10 +288,17 @@ describe('Core functionality regression test suite', () => {
         })
 
         await driver.page.goto(config.sourcegraphBaseUrl + '/search')
-        await driver.waitForElementWithText(quicklinkInfo.name)
-        await driver.clickElementWithText(quicklinkInfo.name, { hover: true })
-        await driver.waitForElementWithText(quicklinkInfo.description)
-        await driver.clickElementWithText(quicklinkInfo.name)
+        await (await driver.findElementWithText(quicklinkInfo.name, {
+            tagName: 'a',
+            wait: { timeout: 1000 },
+        })).hover()
+        await driver.findElementWithText(quicklinkInfo.description, {
+            wait: { timeout: 1000 },
+        })
+        await (await driver.findElementWithText(quicklinkInfo.name, {
+            tagName: 'a',
+            wait: { timeout: 1000 },
+        })).click()
         await driver.page.waitForNavigation()
         expect(driver.page.url()).toEqual(quicklinkInfo.url)
     })

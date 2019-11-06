@@ -139,7 +139,7 @@ export class ResultContainer extends React.PureComponent<Props, State> {
         )
     }
 
-    private toggle = () => {
+    private toggle = (): void => {
         this.setState(state => ({ expanded: !state.expanded }))
     }
 }

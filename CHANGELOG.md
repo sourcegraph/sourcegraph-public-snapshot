@@ -22,6 +22,7 @@ All notable changes to Sourcegraph are documented in this file.
 - **Kubernetes Migration:** The [Kubernetes deployment](https://github.com/sourcegraph/deploy-sourcegraph) manifest for indexed-search services has changed from a Normal Service to a Headless Service. This is to enable Sourcegraph to individually resolve indexed-search pods. Services are immutable, so please follow the [migration guide](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/docs/migrate.md#310).
 - Fields of type `String` in our GraphQL API that contain [JSONC](https://komkom.github.io/) now have the custom scalar type `JSONCString`. [#6209](https://github.com/sourcegraph/sourcegraph/pull/6209)
 - `ZOEKT_HOST` environment variable has been deprecated. Please use `INDEXED_SEARCH_SERVERS` instead. `ZOEKT_HOST` will be removed in 3.12.
+- Directory names on the repository tree page are now shown in bold to improve readability.
 
 ### Fixed
 

@@ -112,7 +112,7 @@ class UserSurveyResponseNode extends React.PureComponent<UserSurveyResponseNodeP
         displayAll: false,
     }
 
-    private showMoreClicked = () => this.setState(state => ({ displayAll: !state.displayAll }))
+    private showMoreClicked = (): void => this.setState(state => ({ displayAll: !state.displayAll }))
 
     public render(): JSX.Element | null {
         const responses = this.props.node.surveyResponses

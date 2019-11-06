@@ -122,7 +122,7 @@ export class SiteAdminProductSubscriptionBillingLink extends React.PureComponent
         )
     }
 
-    private setProductSubscriptionBilling = () => this.updates.next()
+    private setProductSubscriptionBilling = (): void => this.updates.next()
 }
 
 function setProductSubscriptionBilling(

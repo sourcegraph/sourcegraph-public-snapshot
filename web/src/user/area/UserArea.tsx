@@ -229,5 +229,7 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
         )
     }
 
-    private onDidUpdateUser = () => this.refreshRequests.next()
+    private onDidUpdateUser = (): void => {
+        this.refreshRequests.next()
+    }
 }

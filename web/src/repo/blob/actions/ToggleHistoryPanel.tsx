@@ -79,5 +79,5 @@ export class ToggleHistoryPanel extends React.PureComponent<{
         )
     }
 
-    private onClick = () => this.toggles.next()
+    private onClick = (): void => this.toggles.next()
 }

@@ -124,14 +124,14 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
         )
     }
 
-    private onSave = () => {
+    private onSave = (): void => {
         const value = this.effectiveValue
         if (this.props.onSave) {
             this.props.onSave(value)
         }
     }
 
-    private onChange = (newValue: string) => {
+    private onChange = (newValue: string): void => {
         this.setState({ value: newValue }, () => {
             if (this.props.onChange) {
                 this.props.onChange(newValue)
@@ -142,7 +142,7 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
         })
     }
 
-    private discard = () => {
+    private discard = (): void => {
         if (
             this.state.value === undefined ||
             this.props.value === this.state.value ||

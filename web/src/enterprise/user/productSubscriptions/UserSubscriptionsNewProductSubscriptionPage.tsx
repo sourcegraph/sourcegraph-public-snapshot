@@ -110,7 +110,7 @@ export class UserSubscriptionsNewProductSubscriptionPage extends React.Component
         )
     }
 
-    private onSubmit = (args: ProductSubscriptionFormData) => {
+    private onSubmit = (args: ProductSubscriptionFormData): void => {
         this.submits.next(args)
     }
 }

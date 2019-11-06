@@ -253,7 +253,7 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
         )
     }
 
-    private onClickShowMore = () => this.props.onShowMore()
+    private onClickShowMore = (): void => this.props.onShowMore()
 }
 
 /**
@@ -768,7 +768,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         )
     }
 
-    private setFilterRef = (e: HTMLInputElement | null) => {
+    private setFilterRef = (e: HTMLInputElement | null): void => {
         this.filterRef = e
         if (e && this.props.autoFocus) {
             // TODO(sqs): The 30 msec delay is needed, or else the input is not
@@ -777,7 +777,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         }
     }
 
-    private focusFilter = () => {
+    private focusFilter = (): void => {
         if (this.filterRef) {
             this.filterRef.focus()
         }
@@ -792,9 +792,9 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         this.queryInputChanges.next(e.currentTarget.value)
     }
 
-    private onDidSelectFilter = (filter: FilteredConnectionFilter) => this.activeFilterChanges.next(filter)
+    private onDidSelectFilter = (filter: FilteredConnectionFilter): void => this.activeFilterChanges.next(filter)
 
-    private onClickShowMore = () => {
+    private onClickShowMore = (): void => {
         this.showMoreClicks.next()
     }
 }

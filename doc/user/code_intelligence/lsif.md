@@ -6,68 +6,21 @@
 
 > For users who have a language server deployed, LSIF will take priority over the language server when LSIF data exists for a repository.
 
-## LSIF indexers
+## Generating and uploading LSIF data
 
-An LSIF indexer is a command line tool that analyzes your project's source code and generates a file in LSIF format containing all the definitions, references, and hover documentation in your project. That LSIF file is later uploaded to Sourcegraph to provide code intelligence.
+You can upload LSIF data to a Sourcegraph instance using your existing [continuous integration infrastructure](./lsif_in_ci.md), or using [GitHub Actions](./lsif_on_github.md).
 
-Several languages are currently supported:
+## Enabling LSIF
 
-- [TypeScript](https://github.com/Microsoft/lsif-node/tree/master/tsc)
-- [Go](https://github.com/sourcegraph/lsif-go)
-- [C/C++](https://github.com/sourcegraph/lsif-cpp)
-- [Python](https://github.com/sourcegraph/lsif-py), [Java](https://github.com/sourcegraph/lsif-java), and [OCaml](https://github.com/sourcegraph/merlin-to-coif) are early stage
-- LSIF indexers for more languages coming soon! See https://lsif.dev for more information.
-
-## Setting up LSIF code intelligence
-
-Install the LSIF indexer for your language (e.g. Go):
-
-```bash
-go get github.com/sourcegraph/lsif-go/cmd/lsif-go
-```
-
-Generate `data.lsif` in your project root (most LSIF indexers require a proper build environment: dependencies have been fetched, environment variables are set, etc.):
-
-```bash
-some-project-dir$ lsif-go --noContents --out=data.lsif
-```
-
-Then, upload `data.lsif` to your Sourcegraph instance via the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli):
-
-```bash
-some-project-dir$ src \
-  -endpoint=https://sourcegraph.example.com \
-  lsif upload \
-  -repo=github.com/<user>/<reponame> \
-  -commit=$(git rev-parse HEAD | tr -d "\n") \
-  -file=data.lsif
-```
-
-> If you're uploading to Sourcegraph.com, you must authenticate your upload by passing a GitHub access token with [`public_repo` scope](https://developer.github.com/apps/building-oauth-apps/understanding-scopes-for-oauth-apps/#available-scopes). You can create one at https://github.com/settings/tokens
-
-If successful, you'll see the following message:
-
-> Upload successful, queued for processing.
-
-If an error occurred, you'll see it in the response.
-
-Go to your global settings at `/site-admin/global-settings` and enable LSIF:
+Go to your global settings at https://sourcegraph.example.com/site-admin/global-settings and enable LSIF:
 
 ```json
-{
   "codeIntel.lsif": true
-}
 ```
 
 After uploading LSIF files, your Sourcegraph instance will use these files to power code intelligence so that when you visit a file in that repository on your Sourcegraph instance, the code intelligence should be more precise than it was out-of-the-box.
 
 When LSIF data does not exist for a particular file in a repository, Sourcegraph will fall back to out-of-the-box code intelligence.
-
-## Recommended setup
-
-Start with a periodic job (e.g. daily) in CI that generates and uploads LSIF data on the default branch for your repository.
-
-If you're noticing a lot of stale code intel between LSIF uploads or your CI doesn't support periodic jobs, you can set up a CI job that runs on every commit (including branches). The downsides to this are: more load on CI, more load on your Sourcegraph instance, and more rapid decrease in free disk space on your Sourcegraph instance.
 
 ## Stale code intelligence
 

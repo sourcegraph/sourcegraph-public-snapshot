@@ -6,6 +6,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { GitRefNode, queryGitRefs } from '../GitRef'
 import { RepositoryReleasesAreaPageProps } from './RepositoryReleasesArea'
+import { Observable } from 'rxjs'
 
 interface Props extends RepositoryReleasesAreaPageProps, RouteComponentProps<{}> {}
 
@@ -35,6 +36,6 @@ export class RepositoryReleasesTagsPage extends React.PureComponent<Props> {
         )
     }
 
-    private queryTags = (args: FilteredConnectionQueryArgs) =>
+    private queryTags = (args: FilteredConnectionQueryArgs): Observable<GQL.IGitRefConnection> =>
         queryGitRefs({ ...args, repo: this.props.repo.id, type: GQL.GitRefType.GIT_TAG })
 }

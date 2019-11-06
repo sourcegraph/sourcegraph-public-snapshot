@@ -180,8 +180,8 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
         )
     }
 
-    private promoteToSiteAdmin = () => this.setSiteAdmin(true)
-    private demoteFromSiteAdmin = () => this.setSiteAdmin(false)
+    private promoteToSiteAdmin = (): void => this.setSiteAdmin(true)
+    private demoteFromSiteAdmin = (): void => this.setSiteAdmin(false)
 
     private setSiteAdmin(siteAdmin: boolean): void {
         if (
@@ -212,7 +212,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
             )
     }
 
-    private randomizePassword = () => {
+    private randomizePassword = (): void => {
         if (
             !window.confirm(
                 `Reset the password for ${this.props.node.username} to a random password? The user must reset their password to sign in again.`
@@ -240,10 +240,10 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
             )
     }
 
-    private deleteUser = () => this.doDeleteUser(false)
-    private nukeUser = () => this.doDeleteUser(true)
+    private deleteUser = (): void => this.doDeleteUser(false)
+    private nukeUser = (): void => this.doDeleteUser(true)
 
-    private doDeleteUser = (hard: boolean) => {
+    private doDeleteUser = (hard: boolean): void => {
         let message = `Delete the user ${this.props.node.username}?`
         if (hard) {
             message = `Nuke the user ${this.props.node.username}?${nukeDetails}`
@@ -335,5 +335,5 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
         )
     }
 
-    private onDidUpdateUser = () => this.userUpdates.next()
+    private onDidUpdateUser = (): void => this.userUpdates.next()
 }

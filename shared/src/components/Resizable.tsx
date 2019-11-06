@@ -109,23 +109,25 @@ export class Resizable<C extends React.ReactElement<any>> extends React.PureComp
         )
     }
 
-    private setContainerRef = (e: HTMLElement | null) => (this.containerRef = e)
+    private setContainerRef = (e: HTMLElement | null): void => {
+        this.containerRef = e
+    }
 
-    private onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    private onMouseDown = (e: React.MouseEvent<HTMLDivElement>): void => {
         e.preventDefault()
         if (!this.state.resizing) {
             this.setState({ resizing: true })
         }
     }
 
-    private onMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
+    private onMouseUp = (e: React.MouseEvent<HTMLDivElement>): void => {
         e.preventDefault()
         if (this.state.resizing) {
             this.setState({ resizing: false })
         }
     }
 
-    private onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    private onMouseMove = (e: React.MouseEvent<HTMLDivElement>): void => {
         e.preventDefault()
         if (this.state.resizing && this.containerRef) {
             let size = isHorizontal(this.props.handlePosition)

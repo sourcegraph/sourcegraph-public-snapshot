@@ -92,7 +92,7 @@ export class Notifications extends React.PureComponent<Props, State> {
         )
     }
 
-    private onDismiss = (notification: Notification) => {
+    private onDismiss = (notification: Notification): void => {
         this.setState(prevState => ({ notifications: prevState.notifications.filter(n => n !== notification) }))
     }
 }

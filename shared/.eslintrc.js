@@ -1,11 +1,16 @@
+const baseConfig = require('../.eslintrc.js')
 module.exports = {
   extends: '../.eslintrc.js',
+  parserOptions: {
+    ...baseConfig.parserOptions,
+    project: 'tsconfig.json',
+  },
   rules: {
     'no-restricted-imports': [
       'error',
       {
         paths: [
-          ...require('../.eslintrc').rules['no-restricted-imports'][1].paths,
+          ...baseConfig.rules['no-restricted-imports'][1].paths,
           {
             name: 'react-router-dom',
             importNames: ['Link'],
@@ -16,5 +21,5 @@ module.exports = {
       },
     ],
   },
-  overrides: require('../.eslintrc').overrides,
+  overrides: baseConfig.overrides,
 }

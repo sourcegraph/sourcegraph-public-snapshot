@@ -507,12 +507,12 @@ export class XrepoDatabase {
             const totalCount = await baseQuery.getCount()
 
             // Construct method to select a page of possible references
-            const getPage = (offset: number): Promise<ReferenceModel[]> =>
+            const getPage = (pageOffset: number): Promise<ReferenceModel[]> =>
                 baseQuery
                     .orderBy('dump.repository')
                     .addOrderBy('dump.root')
                     .limit(limit)
-                    .offset(offset)
+                    .offset(pageOffset)
                     .getMany()
 
             // Invoke getPage with increasing offsets until we get a page size's worth of

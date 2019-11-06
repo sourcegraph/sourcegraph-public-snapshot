@@ -79,5 +79,5 @@ export class ToggleLineWrap extends React.PureComponent<
         )
     }
 
-    private onClick = () => this.updates.next(!this.state.value)
+    private onClick = (): void => this.updates.next(!this.state.value)
 }
