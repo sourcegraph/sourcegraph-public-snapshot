@@ -168,7 +168,7 @@ export class XrepoDatabase {
      * `visible_at_tip` flags. Unset the flag for each invisible dump for this repository.
      * This will traverse all ancestor commits but not descendants, as the given commit
      * is assumed to be the tip of the default branch. For each dump that is filtered out
-     * of the result set, there must be a dump with a smaller depth from the given commit
+     * of the set of results, there must be a dump with a smaller depth from the given commit
      * that has a root that overlaps with the filtered dump. The other such dump is
      * necessarily a dump associated with a closer commit for the same root.
      *
@@ -455,16 +455,18 @@ export class XrepoDatabase {
     }
 
     /**
-     * Find all repository/commit pairs that reference `value` in the given package. The
-     * returned results will include only dumps that have a dependency on the given package.
-     * The returned results may (but is not likely to) include a repository/commit pair that
-     * does not reference `value`. See cache.ts for configuration values that tune the bloom
-     * filter false positive rates. The total count of matching dumps (ignoring limit/offset)
-     * is also returned.
+     * Find all references pointing to the given identifier in the given package. The returned
+     * results may (but is not likely to) include a repository/commit pair that does not reference
+     * the given identifier. See cache.ts for configuration values that tune the bloom filter false
+     * positive rates. The total count of matching dumps, that ignores limit and offset, is also
+     * returned.
+     *
+     * This method does NOT include any dumps for the given repository.
      *
      * @param args Parameter bag.
      */
     public getReferences({
+        repository,
         scheme,
         name,
         version,
@@ -472,6 +474,8 @@ export class XrepoDatabase {
         limit,
         offset,
     }: {
+        /** The source repository of the search. */
+        repository: string
         /** The package manager scheme (e.g. npm, pip). */
         scheme: string
         /** The package name. */
@@ -484,7 +488,7 @@ export class XrepoDatabase {
         limit: number
         /** The number of repository records to skip. */
         offset: number
-    }): Promise<{ references: ReferenceModel[]; count: number; newOffset: number }> {
+    }): Promise<{ references: ReferenceModel[]; totalCount: number; newOffset: number }> {
         // We do this inside of a transaction so that we get consistent results from multiple
         // distinct queries: one count query and one or more select queries, depending on the
         // sparsity of the use of the given identifier.
@@ -496,10 +500,11 @@ export class XrepoDatabase {
                 .createQueryBuilder('reference')
                 .leftJoinAndSelect('reference.dump', 'dump')
                 .where({ scheme, name, version })
+                .andWhere('dump.repository != :repository', { repository })
                 .andWhere('dump.visible_at_tip = true')
 
-            // Get pagination count
-            const count = await baseQuery.getCount()
+            // Get total number of items in this set of results
+            const totalCount = await baseQuery.getCount()
 
             // Construct method to select a page of possible references
             const getPage = (pageOffset: number): Promise<ReferenceModel[]> =>
@@ -513,7 +518,142 @@ export class XrepoDatabase {
             // Invoke getPage with increasing offsets until we get a page size's worth of
             // references that actually use the given identifier as indicated by result of
             // the bloom filter query.
-            return this.gatherReferences({ getPage, identifier, offset, limit, count })
+            const { references, newOffset } = await this.gatherReferences({
+                getPage,
+                identifier,
+                offset,
+                limit,
+                totalCount,
+            })
+
+            return { references, totalCount, newOffset }
+        })
+    }
+
+    /**
+     * Find all references pointing to the given identifier in the given package within dumps of the
+     * given repository. The returned results may (but is not likely to) include a repository/commit
+     * pair that does not reference  the given identifier. See cache.ts for configuration values that
+     * tune the bloom filter false positive rates. The total count of matching dumps, that ignores limit
+     * and offset. is also returned.
+     *
+     * @param args Parameter bag.
+     */
+    public getSameRepoRemoteReferences({
+        repository,
+        commit,
+        scheme,
+        name,
+        version,
+        identifier,
+        limit,
+        offset,
+    }: {
+        /** The source repository of the search. */
+        repository: string
+        /** The commit of the references query. */
+        commit: string
+        /** The package manager scheme (e.g. npm, pip). */
+        scheme: string
+        /** The package name. */
+        name: string
+        /** The package version. */
+        version: string | null
+        /** The identifier to test. */
+        identifier: string
+        /** The maximum number of repository records to return. */
+        limit: number
+        /** The number of repository records to skip. */
+        offset: number
+    }): Promise<{ references: ReferenceModel[]; totalCount: number; newOffset: number }> {
+        const visibleIdsQuery = `
+            -- lineage is a recursively defined CTE that returns all ancestor an descendants
+            -- of the given commit for the given repository. This happens to evaluate in
+            -- Postgres as a lazy generator, which allows us to pull the "next" closest commit
+            -- in either direction from the source commit as needed.
+            WITH RECURSIVE lineage(id, repository, "commit", parent_commit, direction) AS (
+                SELECT l.* FROM (
+                    -- seed recursive set with commit looking in ancestor direction
+                    SELECT c.*, 'A' FROM lsif_commits c WHERE c.repository = $1 AND c."commit" = $2
+                    UNION
+                    -- seed recursive set with commit looking in descendant direction
+                    SELECT c.*, 'D' FROM lsif_commits c WHERE c.repository = $1 AND c."commit" = $2
+                ) l
+
+                UNION
+
+                SELECT * FROM (
+                    WITH l_inner AS (SELECT * FROM lineage)
+                    -- get next ancestor
+                    SELECT c.*, l.direction FROM l_inner l JOIN lsif_commits c ON l.direction = 'A' AND c.repository = l.repository AND c."commit" = l.parent_commit
+                    UNION
+                    -- get next descendant
+                    SELECT c.*, l.direction FROM l_inner l JOIN lsif_commits c ON l.direction = 'D' and c.repository = l.repository AND c.parent_commit = l."commit"
+                ) subquery
+            ),
+            ${visibleDumps()}
+            SELECT * FROM visible_ids
+        `
+
+        const countQuery = `
+            SELECT count(*) FROM lsif_references r
+            WHERE r.scheme = $1 AND r.name = $2 AND r.version = $3 AND r.dump_id = ANY($4)
+        `
+
+        const referenceIdsQuery = `
+            SELECT r.id FROM lsif_references r
+            LEFT JOIN lsif_dumps d on r.dump_id = d.id
+            WHERE r.scheme = $1 AND r.name = $2 AND r.version = $3 AND r.dump_id = ANY($4)
+            ORDER BY d.root OFFSET $5 LIMIT $6
+        `
+
+        // We do this inside of a transaction so that we get consistent results from multiple
+        // distinct queries: one count query and one or more select queries, depending on the
+        // sparsity of the use of the given identifier.
+        return this.withTransactionalEntityManager(async entityManager => {
+            // Extract numeric ids from query results that return objects
+            const extractIds = (results: { id: number }[]): number[] => results.map(r => r.id)
+
+            // We need the set of identifiers for visible lsif dumps for both the count
+            // and the getPage queries. The results of this query do not change based on
+            // the page size or offset, so we query it separately here and pass the result
+            // as a parameter.
+            const visible_ids = extractIds(await entityManager.query(visibleIdsQuery, [repository, commit]))
+
+            // Get total number of items in this set of results
+            const rawCount = await entityManager.query(countQuery, [scheme, name, version, visible_ids])
+            const totalCount = parseInt((rawCount as { count: string }[])[0].count, 10)
+
+            // Construct method to select a page of possible references. We first perform
+            // the query defined above that returns reference identifiers, then perform a
+            // second query to select the models by id so that we load the relationships.
+            const getPage = async (pageOffset: number): Promise<ReferenceModel[]> => {
+                const args = [scheme, name, version, visible_ids, pageOffset, limit]
+                const results = await entityManager.query(referenceIdsQuery, args)
+                const referenceIds = extractIds(results)
+                const references = await entityManager.getRepository(ReferenceModel).findByIds(referenceIds)
+
+                // findByIds doesn't return models in the same order as they were requested,
+                // so we need to sort them here before returning.
+
+                const modelsById = new Map(references.map(r => [r.id, r]))
+                return referenceIds
+                    .map(id => modelsById.get(id))
+                    .filter(<T>(x: T | undefined): x is T => x !== undefined)
+            }
+
+            // Invoke getPage with increasing offsets until we get a page size's worth of
+            // references that actually use the given identifier as indicated by result of
+            // the bloom filter query.
+            const { references, newOffset } = await this.gatherReferences({
+                getPage,
+                identifier,
+                offset,
+                limit,
+                totalCount,
+            })
+
+            return { references, totalCount, newOffset }
         })
     }
 
@@ -530,7 +670,7 @@ export class XrepoDatabase {
         identifier,
         offset,
         limit,
-        count,
+        totalCount,
     }: {
         /** The function to invoke to query the next set of references. */
         getPage: (offset: number) => Promise<ReferenceModel[]>
@@ -540,11 +680,14 @@ export class XrepoDatabase {
         offset: number
         /** The number of repository records to skip. */
         limit: number
-        /** The total number of results that can be returned. */
-        count: number
-    }): Promise<{ references: ReferenceModel[]; count: number; newOffset: number }> {
+        /**
+         * The total number of items in this set of results. Alternatively, the maximum
+         * number of items that can be returned by `getPage` starting from offset zero.
+         */
+        totalCount: number
+    }): Promise<{ references: ReferenceModel[]; newOffset: number }> {
         const references: ReferenceModel[] = []
-        while (references.length < limit && offset < count) {
+        while (references.length < limit && offset < totalCount) {
             const page = await getPage(offset)
             if (page.length === 0) {
                 // Shouldn't happen, but just in case of a bug we
@@ -565,7 +708,7 @@ export class XrepoDatabase {
             offset += scanned
         }
 
-        return { references, count, newOffset: offset }
+        return { references, newOffset: offset }
     }
 
     /**
@@ -581,6 +724,7 @@ export class XrepoDatabase {
         identifier: string,
         limit: number
     ): Promise<{ references: ReferenceModel[]; scanned: number }> {
+        // Test the bloom filter of each reference model concurrently
         const keepFlags = await Promise.all(references.map(result => testFilter(result.filter, identifier)))
 
         const filtered = []
@@ -595,7 +739,7 @@ export class XrepoDatabase {
                     // We got enough - stop scanning here and return the number of
                     // results we actually went through so we can compute an offset
                     // for the next page of results that don't skip the remainder
-                    // of this result set.
+                    // of this set of results.
                     return { references: filtered, scanned: index + 1 }
                 }
             }

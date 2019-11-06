@@ -419,7 +419,7 @@ components:
             $ref: '#/components/schemas/Dump'
         totalCount:
           type: number
-          descrpition: The total number of dumps in this result set.
+          descrpition: The total number of dumps in this set of results.
       required:
         - dumps
         - totalCount
@@ -491,7 +491,7 @@ components:
             $ref: '#/components/schemas/Job'
         totalCount:
           type: number
-          description: The total number of jobs in this result set.
+          description: The total number of jobs in this set of results.
       required:
         - jobs
       additionalProperties: false
