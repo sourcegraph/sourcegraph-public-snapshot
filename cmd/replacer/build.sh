@@ -4,8 +4,8 @@
 # this script is called with 'installComby' in the first argument (e.g., by CI).  
 # If this script is called without arguments, it simply builds replacer.
 function installComby() {
-    RELEASE_VERSION="0.7.0"
-    RELEASE_TAG="0.7.0"
+    RELEASE_VERSION="0.11.0"
+    RELEASE_TAG="0.11.0"
     RELEASE_URL="https://github.com/comby-tools/comby/releases"
 
     INSTALL_DIR=/usr/local/bin
