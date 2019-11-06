@@ -268,11 +268,11 @@ type FilterAndValue = string
  */
 export const getFilterTypedBeforeCursor = (
     queryCursor: SearchQueryCursor
-): [FilterAndValue, SuggestionTypes] | [false] => {
+): { filterAndValue?: FilterAndValue; filter?: SuggestionTypes } => {
     const firstPart = queryCursor.query.substring(0, queryCursor.cursorPosition)
     // get string before ":" char until a space is found or start of string
     const [filterAndValue, filter] = firstPart.match(/([^\s:]+)?:(\S?)+$/) || []
-    return isValidFilter(filter) ? [filterAndValue.trim(), filter] : [false]
+    return isValidFilter(filter) ? { filter, filterAndValue: filterAndValue.trim() } : {}
 }
 
 /**

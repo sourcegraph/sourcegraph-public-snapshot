@@ -150,7 +150,7 @@ export class QueryInput extends React.Component<Props, State> {
                             .filter(s => !!s)
                             .join(' ')
 
-                        const [filterAndValue, filterBeforeCursor] = getFilterTypedBeforeCursor(queryCursor)
+                        const { filterAndValue, filter: filterBeforeCursor } = getFilterTypedBeforeCursor(queryCursor)
 
                         if (filterAndValue && filterBeforeCursor) {
                             if (!fuzzySearchFilters.includes(filterBeforeCursor)) {

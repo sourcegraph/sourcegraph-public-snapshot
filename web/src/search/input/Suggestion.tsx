@@ -102,21 +102,21 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
     }
 }
 
-const SuggestionIcon: React.FunctionComponent<SuggestionIconProps> = ({ suggestion, children, ...passThru }) => {
+const SuggestionIcon: React.FunctionComponent<SuggestionIconProps> = ({ suggestion, children, ...props }) => {
     switch (suggestion.type) {
         case SuggestionTypes.filters:
-            return <FilterIcon {...passThru} />
+            return <FilterIcon {...props} />
         case SuggestionTypes.repo:
-            return <RepositoryIcon {...passThru} />
+            return <RepositoryIcon {...props} />
         case SuggestionTypes.file:
-            return <FileIcon {...passThru} />
+            return <FileIcon {...props} />
         case SuggestionTypes.lang:
-            return <LanguageIcon {...passThru} language={suggestion.title} {...passThru} />
+            return <LanguageIcon {...props} language={suggestion.title} {...props} />
         case SuggestionTypes.symbol:
             if (!suggestion.kind) {
                 return null
             }
-            return <SymbolIcon kind={suggestion.kind} {...passThru} />
+            return <SymbolIcon kind={suggestion.kind} {...props} />
         default:
             return null
     }

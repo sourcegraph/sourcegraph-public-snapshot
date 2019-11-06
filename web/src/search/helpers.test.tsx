@@ -149,14 +149,20 @@ describe('search/helpers', () => {
     describe('getFilterTypedBeforeCursor', () => {
         const query = 'archived:yes QueryInput'
         it('returns values when a filter value is being typed', () => {
-            expect(getFilterTypedBeforeCursor({ query, cursorPosition: 10 })).toStrictEqual(['archived:y', 'archived'])
+            expect(getFilterTypedBeforeCursor({ query, cursorPosition: 10 })).toStrictEqual({
+                filterAndValue: 'archived:y',
+                filter: 'archived',
+            })
         })
         it('returns values when a filter is selected but no value char is typed yet', () => {
-            expect(getFilterTypedBeforeCursor({ query, cursorPosition: 9 })).toStrictEqual(['archived:', 'archived'])
+            expect(getFilterTypedBeforeCursor({ query, cursorPosition: 9 })).toStrictEqual({
+                filterAndValue: 'archived:',
+                filter: 'archived',
+            })
             getFilterTypedBeforeCursor({ query, cursorPosition: 9 })
         })
         it('does not return a value if typed whitespace char', () => {
-            expect(getFilterTypedBeforeCursor({ query, cursorPosition: 13 })).toStrictEqual([false])
+            expect(getFilterTypedBeforeCursor({ query, cursorPosition: 13 })).toStrictEqual(false)
         })
     })
 
