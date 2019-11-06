@@ -71,7 +71,6 @@ async function testLogin(
     await (await driver.findElementWithText('Sign out', { wait: { timeout: 2000 } })).click()
     await driver.findElementWithText('Signed out of Sourcegraph', { wait: { timeout: 2000 } })
     await driver.page.goto(sourcegraphBaseUrl)
-    // >>>>>> TODO: this assumes > 1 auth provider
     await driver.findElementWithText('Sign in', { wait: { timeout: 5000 } })
     await driver.findElementWithText('Forgot password?', { wait: { timeout: 5000 } })
 }
