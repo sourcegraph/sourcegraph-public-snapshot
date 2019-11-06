@@ -9,6 +9,7 @@ import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
 import { IMutation, IQuery, ExternalServiceKind } from '../graphql/schema'
 import { readEnvBoolean, retry } from './e2e-test-utils'
 import * as path from 'path'
+import { escapeRegExp } from 'lodash'
 
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.
@@ -55,31 +56,45 @@ interface FindElementOptions {
     fuzziness?: 'exact' | 'prefix' | 'space-prefix' | 'contains'
 }
 
-/**
- * Returns XPath queries used to locate a DOM element by text.
- */
-function getFindElementQueries(
+function findElementRegexpStrings(
     text: string,
-    { tagName, fuzziness = 'space-prefix' }: Pick<FindElementOptions, 'tagName' | 'fuzziness'>
+    { fuzziness = 'space-prefix' }: Pick<FindElementOptions, 'fuzziness'>
 ): string[] {
-    const tag = tagName || '*'
-    const queries = [`//${tag}[text() = ${JSON.stringify(text)}]`]
+    //  Escape regexp special chars. Copied from
+    //  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions
+    const escapedText = escapeRegExp(text)
+    const regexps = [`^${escapedText}$`]
     if (fuzziness === 'exact') {
-        return queries
+        return regexps
     }
-    queries.push(`//${tag}[starts-with(text(), ${JSON.stringify(text)})]`)
+    regexps.push(`^${escapedText}\\b`)
     if (fuzziness === 'prefix') {
-        return queries
+        return regexps
     }
-    queries.push(`//${tag}[starts-with(text(), ${JSON.stringify(' ' + text)})]`)
+    regexps.push(`^\\s+${escapedText}\\b`)
     if (fuzziness === 'space-prefix') {
-        return queries
+        return regexps
     }
-    queries.push(
-        `//${tag}[contains(text(), ${JSON.stringify(text)})]`,
-        `//${tag}[contains(., ${JSON.stringify(text)})]`
-    )
-    return queries
+    regexps.push(escapedText)
+    return regexps
+}
+
+function findElementMatchingRegexpsInDocument(tag: string, regexps: string[]): HTMLElement | null {
+    for (const regexpString of regexps) {
+        const regexp = new RegExp(regexpString)
+        for (const el of document.querySelectorAll<HTMLElement>(tag)) {
+            if (el.innerText && el.innerText.match(regexp)) {
+                return el
+            }
+        }
+    }
+    return null
+}
+
+function getDebugExpressionFromRegexp(tag: string, regexp: string): string {
+    return `Array.from(document.querySelectorAll(${JSON.stringify(
+        tag
+    )})).filter(e => e.innerText && e.innerText.match(/${regexp}/))`
 }
 
 export class Driver {
@@ -440,102 +455,69 @@ export class Driver {
     }
 
     /**
-     * Wait for element with the specified text (and other attributes) to exist.
-     */
-    public async waitForElementWithText(
-        text: string,
-        { tagName, fuzziness }: FindElementOptions = {},
-        options?: PageFnOptions
-    ): Promise<puppeteer.ElementHandle<Element>> {
-        const queries = getFindElementQueries(text, { tagName, fuzziness })
-        const handle = await this.page.waitForFunction(
-            queries => {
-                for (const query of queries) {
-                    const found = document.evaluate(query, document).iterateNext()
-                    if (!found) {
-                        continue
-                    }
-                    return found
-                }
-                return null
-            },
-            options,
-            queries
-        )
-        if (handle) {
-            const element = handle.asElement()
-            if (element) {
-                return element
-            }
-        }
-        const lastQuery = queries[queries.length - 1]
-        throw new Error(
-            `Could not find element with text ${JSON.stringify(text)}${
-                tagName ? ' and tagName ' + tagName : ''
-            }. Last attempted XPath query was ${JSON.stringify(
-                lastQuery
-            )}. To debug try the following in the browser debug console: document.evaluate(${JSON.stringify(
-                lastQuery
-            )}, document).iterateNext()`
-        )
-    }
-
-    /**
-     * Finds the "best" element containing the text, where "best" is roughly defined as "what the
-     * user would click on if you told them to click on the text".
+     * Finds the first HTML element matching the text using the regular expressions returned in
+     * {@link findElementRegexpStrings}.
      *
-     * Returns a list of elements when it is unsure how to pick among candidates. It generally tries
-     * to prefer elements that more tightly wrap the text. Throws an error when no elements could be
-     * found.
-     *
-     * The caller should call `dispose` on the returned JSHandles when done.
+     * @param options specifies additional parameters for finding the element. If you want to wait
+     * until the element appears, specify the `wait` field (which can contain additional inner
+     * options for how long to wait).
      */
     public async findElementWithText(
         text: string,
-        { tagName, log, fuzziness }: FindElementOptions = {}
-    ): Promise<puppeteer.ElementHandle<Element>[]> {
-        const queries = getFindElementQueries(text, { tagName, fuzziness })
-        for (const query of queries) {
-            if (log) {
-                console.log(`locating xpath ${query}`)
-            }
-            const handles = await this.page.$x(query)
-            if (handles.length > 0) {
-                return handles
-            }
+        options: FindElementOptions & { wait?: PageFnOptions | boolean } = {}
+    ): Promise<puppeteer.ElementHandle<Element>> {
+        const { tagName, fuzziness, wait } = options
+        const tag = tagName || '*'
+        const regexps = findElementRegexpStrings(text, { fuzziness })
+
+        const notFoundErr = (underlying?: Error): Error => {
+            const debuggingExpressions = regexps.map(r => getDebugExpressionFromRegexp(tag, r))
+            return new Error(
+                `Could not find element with text ${JSON.stringify(text)}, options: ${JSON.stringify(options)}` +
+                    (underlying ? `. Underlying error was: ${JSON.stringify(underlying.message)}.` : '') +
+                    ` Debug expressions: ${debuggingExpressions.join('\n')}`
+            )
         }
 
-        const lastQuery = queries[queries.length - 1]
-        throw new Error(
-            `Could not find element with text ${JSON.stringify(text)}${
-                tagName ? ' and tag ' + tagName : ''
-            }. Last attempted XPath query was ${JSON.stringify(
-                lastQuery
-            )}. To debug try the following in the browser debug console: document.evaluate(${JSON.stringify(
-                lastQuery
-            )}, document).iterateNext()`
-        )
-    }
+        const handlePromise = wait
+            ? this.page
+                  .waitForFunction(
+                      findElementMatchingRegexpsInDocument,
+                      typeof wait === 'object' ? wait : {},
+                      tag,
+                      regexps
+                  )
+                  .catch(err => {
+                      throw notFoundErr(err)
+                  })
+            : this.page.evaluateHandle(findElementMatchingRegexpsInDocument, tag, regexps)
 
-    /**
-     * Click the element containing the text. The element is discovered using the
-     * `findElementWithText` method.
-     */
-    public async clickElementWithText(
-        text: string,
-        options: FindElementOptions & { hover?: boolean } = {}
-    ): Promise<void> {
-        const handles = await this.findElementWithText(text, options)
-        if (options.hover) {
-            await handles[0].hover()
-        } else {
-            await handles[0].click()
+        const el = (await handlePromise).asElement()
+        if (!el) {
+            throw notFoundErr()
         }
-        await Promise.all(handles.map(handle => handle.dispose()))
+        return el
     }
 
     public async waitUntilURL(url: string): Promise<void> {
         await this.page.waitForFunction(url => document.location.href === url, {}, url)
+    }
+
+    public async goToURLWithInvalidTLS(url: string): Promise<void> {
+        try {
+            await this.page.goto(url)
+        } catch (err) {
+            if (!err.message.includes('net::ERR_CERT_AUTHORITY_INVALID')) {
+                throw err
+            }
+            await this.page.waitForSelector('#details-button')
+            await this.page.click('#details-button')
+            await (await this.findElementWithText('Proceed to', {
+                tagName: 'a',
+                wait: { timeout: 2000 },
+            })).click()
+        }
+        await this.page.waitForSelector('.monaco-editor', { timeout: 2000 })
     }
 }
 
