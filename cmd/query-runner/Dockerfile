@@ -1,7 +1,15 @@
-# This Dockerfile was generated from github.com/sourcegraph/godockerize. It
-# was not written by a human, and as such looks janky. As you change this
-# file, please don't be scared to make it more pleasant / remove hadolint
-# ignores.
+FROM sourcegraph/builder:1be4c9ba43@sha256:0172c10814a1fc71adfe82c19c69bcf3f1496745c99e865e32836466b148778b as builder
+
+ARG VERSION="unknown"
+ENV VERSION ${VERSION}
+
+ENV OUTPUT_DIR=/output
+RUN mkdir -p ${OUTPUT_DIR}
+
+WORKDIR /src
+COPY . .
+
+RUN ./cmd/query-runner/build.sh
 
 FROM sourcegraph/alpine:3.9@sha256:e9264d4748e16de961a2b973cc12259dee1d33473633beccb1dfb8a0e62c6459
 
@@ -16,4 +24,4 @@ LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/comm
 
 USER sourcegraph
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/query-runner"]
-COPY query-runner /usr/local/bin/
+COPY --from=builder /output/query-runner /usr/local/bin/

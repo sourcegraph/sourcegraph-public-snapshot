@@ -2,6 +2,6 @@
 
 cd $(dirname "${BASH_SOURCE[0]}")/../..
 
-set -ex
+set -euxo pipefail
 
 ./cmd/frontend/pre-build.sh

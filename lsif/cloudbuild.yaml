@@ -1,0 +1,42 @@
+steps:
+  - id: 'download-sourcegraph'
+    name: 'gcr.io/cloud-builders/curl'
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        set -euxo pipefail &&
+        mkdir sourcegraph &&
+        curl -L https://github.com/sourcegraph/sourcegraph/archive/${_COMMIT_SHA}.tar.gz | tar xz -C sourcegraph --strip-components 1
+
+  - id: 'docker-build'
+    name: 'gcr.io/kaniko-project/executor:latest'
+    dir: 'sourcegraph'
+    args:
+      - '--dockerfile=lsif/Dockerfile'
+      - '--destination=${_IMAGE}'
+      - '--context=dir://lsif'
+
+      - '--cache=true'
+      - '--cache-ttl=6h'
+
+      - '--build-arg'
+      - 'COMMIT_SHA=${_COMMIT_SHA}'
+
+      - '--build-arg'
+      - 'DATE=${_DATE}'
+
+      - '--build-arg'
+      - 'VERSION=${_VERSION}'
+tags:
+  - 'lsif-server'
+  - '${_COMMIT_SHA}'
+# lsif-server runs expensive yarn commands, so we need a more powerful machine.
+options:
+  machineType: 'N1_HIGHCPU_8'
+timeout: 1200s
+substitutions:
+  '_IMAGE': 'us.gcr.io/sourcegraph-dev/lsif-server:latest'
+  '_COMMIT_SHA': 'unknown'
+  '_DATE': 'unknown'
+  '_VERSION': 'unknown'

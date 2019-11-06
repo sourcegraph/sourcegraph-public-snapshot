@@ -21,6 +21,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"golang.org/x/net/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -117,7 +118,9 @@ func (s *Service) search(ctx context.Context, args protocol.SearchArgs) (result 
 func (s *Service) getDBFile(ctx context.Context, args protocol.SearchArgs) (string, error) {
 	diskcacheFile, err := s.cache.OpenWithPath(ctx, fmt.Sprintf("%d-%s@%s", symbolsDBVersion, args.Repo, args.CommitID), func(fetcherCtx context.Context, tempDBFile string) error {
 		err := s.writeAllSymbolsToNewDB(fetcherCtx, tempDBFile, args.Repo, args.CommitID)
+		// TODO@ggilmore: 🚨 remove debugging statement 🚨
 		if err != nil {
+			log15.Info("!!!!!!!  symbols writeAllSymbolsToNewDB error", "error", err)
 			if err == context.Canceled {
 				log15.Error("Unable to parse repository symbols within the context", "repo", args.Repo, "commit", args.CommitID, "query", args.Query)
 			}
@@ -126,6 +129,8 @@ func (s *Service) getDBFile(ctx context.Context, args protocol.SearchArgs) (stri
 		return nil
 	})
 	if err != nil {
+		// TODO@ggilmore: 🚨 remove debugging statement
+		log15.Info("!!!!!!!  symbols openwithpath error", "error", err)
 		return "", err
 	}
 	defer diskcacheFile.File.Close()
@@ -293,14 +298,14 @@ func symbolInDBToSymbol(symbolInDB symbolInDB) protocol.Symbol {
 func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, repoName api.RepoName, commitID api.CommitID) error {
 	db, err := sqlx.Open("sqlite3_with_pcre", dbFile)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "when opening SQLite DB")
 	}
 	defer db.Close()
 
 	// Writing a bunch of rows into sqlite3 is much faster in a transaction.
 	tx, err := db.Beginx()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "when beginning a transaction")
 	}
 
 	// The column names are the lowercase version of fields in `symbolInDB`
@@ -322,28 +327,28 @@ func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, rep
 			filelimited BOOLEAN NOT NULL
 		)`)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "when creating table")
 	}
 
 	_, err = tx.Exec(`CREATE INDEX name_index ON symbols(name);`)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "when creating index on name")
 	}
 
 	_, err = tx.Exec(`CREATE INDEX path_index ON symbols(path);`)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "when creating index on path")
 	}
 
 	// `*lowercase_index` enables indexed case insensitive queries.
 	_, err = tx.Exec(`CREATE INDEX namelowercase_index ON symbols(namelowercase);`)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "when creating index on namelower")
 	}
 
 	_, err = tx.Exec(`CREATE INDEX pathlowercase_index ON symbols(pathlowercase);`)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "when creating index on pathlower")
 	}
 
 	insertStatement, err := tx.PrepareNamed(
@@ -352,21 +357,21 @@ func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, rep
 			"( name,  namelowercase,  path,  pathlowercase,  line,  kind,  language,  parent,  parentkind,  signature,  pattern,  filelimited)",
 			"(:name, :namelowercase, :path, :pathlowercase, :line, :kind, :language, :parent, :parentkind, :signature, :pattern, :filelimited)"))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "when preparing the insert statement")
 	}
 
 	err = s.parseUncached(ctx, repoName, commitID, func(symbol protocol.Symbol) error {
 		symbolInDBValue := symbolToSymbolInDB(symbol)
 		_, err := insertStatement.Exec(&symbolInDBValue)
-		return err
+		return errors.Wrap(err, "inserting a symbol")
 	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "parseUncached")
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "commit")
 	}
 
 	return nil

@@ -1,0 +1,50 @@
+steps:
+  - id: 'download-sourcegraph'
+    name: 'gcr.io/cloud-builders/curl'
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        set -euxo pipefail &&
+        mkdir sourcegraph &&
+        curl -L https://github.com/sourcegraph/sourcegraph/archive/${_COMMIT_SHA}.tar.gz | tar xz -C sourcegraph --strip-components 1
+
+  - id: 'docker-build'
+    name: 'gcr.io/kaniko-project/executor:latest'
+    dir: 'sourcegraph'
+    args:
+      - '--dockerfile=cmd/management-console/Dockerfile'
+      - '--destination=${_IMAGE}'
+      - '--context=dir://.'
+
+      - '--cache=true'
+      - '--cache-ttl=6h'
+
+      - '--build-arg'
+      - 'COMMIT_SHA=${_COMMIT_SHA}'
+
+      - '--build-arg'
+      - 'DATE=${_DATE}'
+
+      - '--build-arg'
+      - 'VERSION=${_VERSION}'
+
+      - '--build-arg'
+      - 'MANAGEMENT_CONSOLE_PKG=${_MANAGEMENT_CONSOLE_PKG}'
+
+      - '--build-arg'
+      - 'ENTERPRISE=${_ENTERPRISE}'
+tags:
+  - 'management-console'
+  - '${_COMMIT_SHA}'
+# The management-console runs expensive yarn commands, so we need a more powerful machine.
+options:
+  machineType: 'N1_HIGHCPU_8'
+timeout: 1200s
+substitutions:
+  '_IMAGE': 'us.gcr.io/sourcegraph-dev/management-console:latest'
+  '_COMMIT_SHA': 'unknown'
+  '_DATE': 'unknown'
+  '_VERSION': 'unknown'
+  '_MANAGEMENT_CONSOLE_PKG': 'github.com/sourcegraph/sourcegraph/cmd/management-console'
+  '_ENTERPRISE': 'false'

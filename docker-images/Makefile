@@ -1,6 +1,7 @@
 images += alpine
 images += prometheus
 images += grafana
+images += builder
 
 default:
 	@echo Possible targets: $(images)

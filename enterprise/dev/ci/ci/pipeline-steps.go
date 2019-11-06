@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	bk "github.com/sourcegraph/sourcegraph/internal/buildkite"
 )
@@ -123,6 +122,8 @@ func addDockerfileLint(pipeline *bk.Pipeline) {
 
 // End-to-end tests.
 func addE2E(c Config) func(*bk.Pipeline) {
+	image := fmt.Sprintf("%s:%s_candidate", gcrImageName("server"), c.version)
+
 	return func(pipeline *bk.Pipeline) {
 		opts := []bk.StepOpt{
 			// Avoid crashing the sourcegraph/server containers. See
@@ -130,7 +131,7 @@ func addE2E(c Config) func(*bk.Pipeline) {
 			bk.ConcurrencyGroup("e2e"),
 			bk.Concurrency(1),
 
-			bk.Env("IMAGE", "sourcegraph/server:"+c.version+"_candidate"),
+			bk.Env("IMAGE", image),
 			bk.Env("VERSION", c.version),
 			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
 			bk.Cmd("./dev/ci/e2e.sh"),
@@ -203,23 +204,29 @@ func wait(pipeline *bk.Pipeline) {
 
 // Build Sourcegraph Server Docker image candidate
 func addServerDockerImageCandidate(c Config) func(*bk.Pipeline) {
+	image := fmt.Sprintf("%s:%s_candidate", gcrImageName("server"), c.version)
+
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":docker:",
 			bk.Cmd("pushd enterprise"),
-			bk.Cmd("./cmd/server/pre-build.sh"),
-			bk.Env("IMAGE", "sourcegraph/server:"+c.version+"_candidate"),
+			bk.Env("IMAGE", image),
 			bk.Env("VERSION", c.version),
-			bk.Cmd("./cmd/server/build.sh"),
+			bk.Env("DOCKER_BUILDKIT", "1"),
+			bk.Cmd("./cmd/server/docker.sh"),
+			bk.Cmd("yes | gcloud auth configure-docker"),
+			bk.Cmd(fmt.Sprintf("docker push %s", image)),
 			bk.Cmd("popd"))
 	}
 }
 
 // Clean up Sourcegraph Server Docker image candidate
 func addCleanUpServerDockerImageCandidate(c Config) func(*bk.Pipeline) {
+	image := fmt.Sprintf("%s:%s_candidate", gcrImageName("server"), c.version)
+
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":sparkles:",
 			bk.SoftFail(true),
-			bk.Cmd("docker image rm -f sourcegraph/server:"+c.version+"_candidate"))
+			bk.Cmd(fmt.Sprintf("docker image rm -f %s", image)))
 	}
 }
 
@@ -227,27 +234,31 @@ func addCleanUpServerDockerImageCandidate(c Config) func(*bk.Pipeline) {
 // release", "release branch", "master branch", etc.)
 func addDockerImages(c Config) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		switch {
-		case c.taggedRelease:
-			for _, dockerImage := range allDockerImages {
-				addDockerImage(c, dockerImage, false)(pipeline)
-			}
-			pipeline.AddWait()
-		case c.releaseBranch:
-			addDockerImage(c, "server", false)(pipeline)
-			pipeline.AddWait()
-		case strings.HasPrefix(c.branch, "master-dry-run/"): // replicates `master` build but does not deploy
-			fallthrough
-		case c.branch == "master":
-			for _, dockerImage := range allDockerImages {
-				addDockerImage(c, dockerImage, true)(pipeline)
-			}
-			pipeline.AddWait()
-
-		case strings.HasPrefix(c.branch, "docker-images-patch/"):
-			addDockerImage(c, c.branch[20:], false)(pipeline)
-			pipeline.AddWait()
+		for _, dockerImage := range allDockerImages {
+			addDockerImage(c, dockerImage, false)(pipeline)
 		}
+		pipeline.AddWait()
+		// switch {
+		// case c.taggedRelease:
+		// 	for _, dockerImage := range allDockerImages {
+		// 		addDockerImage(c, dockerImage, false)(pipeline)
+		// 	}
+		// 	pipeline.AddWait()
+		// case c.releaseBranch:
+		// 	addDockerImage(c, "server", false)(pipeline)
+		// 	pipeline.AddWait()
+		// case strings.HasPrefix(c.branch, "master-dry-run/"): // replicates `master` build but does not deploy
+		// 	fallthrough
+		// case c.branch == "master":
+		// 	for _, dockerImage := range allDockerImages {
+		// 		addDockerImage(c, dockerImage, true)(pipeline)
+		// 	}
+		// 	pipeline.AddWait()
+
+		// case strings.HasPrefix(c.branch, "docker-images-patch/"):
+		// 	addDockerImage(c, c.branch[20:], false)(pipeline)
+		// 	pipeline.AddWait()
+		// }
 	}
 }
 
@@ -258,6 +269,8 @@ func addDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		cmds := []bk.StepOpt{
 			bk.Cmd(fmt.Sprintf(`echo "Building %s..."`, app)),
+			bk.Env("DOCKER_BUILDKIT", "1"),
+			bk.Cmd("yes | gcloud auth configure-docker"),
 		}
 
 		cmdDir := func() string {
@@ -274,60 +287,79 @@ func addDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 			return "enterprise/cmd/" + app
 		}()
 
-		preBuildScript := cmdDir + "/pre-build.sh"
-		if _, err := os.Stat(preBuildScript); err == nil {
-			cmds = append(cmds, bk.Cmd(preBuildScript))
-		}
+		gcrImage := gcrImageName(app)
 
-		baseImage := "sourcegraph/" + app
+		cmds = append(cmds,
+			bk.Env("IMAGE", fmt.Sprintf("%s:%s", gcrImage, c.version)),
+			bk.Env("VERSION", c.version),
+		)
 
-		getBuildScript := func() string {
-			buildScriptByApp := map[string]string{
-				"symbols": "env BUILD_TYPE=dist ./cmd/symbols/build.sh buildSymbolsDockerImage",
+		getBuildSteps := func() []bk.StepOpt {
+			buildStepsByApp := map[string][]bk.StepOpt{
+				"symbols": {
+					bk.Env("BUILD_TYPE", "dist"),
+					bk.Cmd("./cmd/symbols/docker.sh"),
+				},
 
 				// The server image was built prior to e2e tests in a previous step.
-				"server": fmt.Sprintf("docker tag %s:%s_candidate %s:%s", baseImage, c.version, baseImage, c.version),
+				"server": {
+					bk.Cmd(fmt.Sprintf("docker pull %s:%s_candidate", gcrImage, c.version)),
+					bk.Cmd(fmt.Sprintf("docker tag %s:%s_candidate %s:%s", gcrImage, c.version, gcrImage, c.version)),
+					bk.Cmd(fmt.Sprintf("yes | gcloud container images untag %s:%s_candidate", gcrImage, c.version)),
+				},
 			}
-			if buildScript, ok := buildScriptByApp[app]; ok {
-				return buildScript
+
+			if buildSteps, ok := buildStepsByApp[app]; ok {
+				return buildSteps
 			}
-			return cmdDir + "/build.sh"
+
+			return []bk.StepOpt{
+				bk.Cmd(cmdDir + "/docker.sh"),
+			}
 		}
 
 		cmds = append(cmds,
-			bk.Env("IMAGE", baseImage+":"+c.version),
-			bk.Env("VERSION", c.version),
-			bk.Cmd(getBuildScript()),
+			getBuildSteps()...,
 		)
 
-		cmds = append(cmds, bk.Cmd("yes | gcloud auth configure-docker"))
+		cmds = append(cmds,
+			bk.Cmd(fmt.Sprintf("docker push %s:%s", gcrImage, c.version)),
+		)
 
-		dockerHubImage := fmt.Sprintf("index.docker.io/%s", baseImage)
-		gcrImage := fmt.Sprintf("us.gcr.io/sourcegraph-dev/%s", strings.TrimPrefix(baseImage, "sourcegraph/"))
+		// dockerHubImage := dockerHubImageName(app)
+		//
+		// for _, image := range []string{dockerHubImage, gcrImage} {
+		// 	if app != "server" || c.taggedRelease || c.patch || c.patchNoTest {
+		// 		cmds = append(cmds,
+		// 			bk.Cmd(fmt.Sprintf("docker pull %s:%s", gcrImage, c.version)),
+		// 			bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:%s", gcrImage, c.version, image, c.version)),
+		// 			bk.Cmd(fmt.Sprintf("docker push %s:%s", image, c.version)),
+		// 		)
+		// 	}
 
-		for _, image := range []string{dockerHubImage, gcrImage} {
-			if app != "server" || c.taggedRelease || c.patch || c.patchNoTest {
-				cmds = append(cmds,
-					bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:%s", baseImage, c.version, image, c.version)),
-					bk.Cmd(fmt.Sprintf("docker push %s:%s", image, c.version)),
-				)
-			}
+		// 	if app == "server" && c.releaseBranch {
+		// 		cmds = append(cmds,
+		// 			bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:%s-insiders", gcrImage, c.version, image, c.branch)),
+		// 			bk.Cmd(fmt.Sprintf("docker push %s:%s-insiders", image, c.branch)),
+		// 		)
+		// 	}
 
-			if app == "server" && c.releaseBranch {
-				cmds = append(cmds,
-					bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:%s-insiders", baseImage, c.version, image, c.branch)),
-					bk.Cmd(fmt.Sprintf("docker push %s:%s-insiders", image, c.branch)),
-				)
-			}
-
-			if insiders {
-				cmds = append(cmds,
-					bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:insiders", baseImage, c.version, image)),
-					bk.Cmd(fmt.Sprintf("docker push %s:insiders", image)),
-				)
-			}
-		}
+		// 	if insiders {
+		// 		cmds = append(cmds,
+		// 			bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:insiders", gcrImage, c.version, image)),
+		// 			bk.Cmd(fmt.Sprintf("docker push %s:insiders", image)),
+		// 		)
+		// 	}
+		// }
 
 		pipeline.AddStep(":docker:", cmds...)
 	}
+}
+
+// func dockerHubImageName(app string) string {
+// 	return fmt.Sprintf("index.docker.io/sourcegraph/%s", app)
+// }
+
+func gcrImageName(app string) string {
+	return fmt.Sprintf("us.gcr.io/sourcegraph-dev/%s", app)
 }

@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 
-cd "$(dirname "${BASH_SOURCE[0]}")/.."
-set -ex
+cd $(dirname "${BASH_SOURCE[0]}")
+set -euxo pipefail
 
-docker build -f lsif/Dockerfile -t "$IMAGE" lsif \
-    --build-arg COMMIT_SHA \
-    --build-arg DATE \
-    --build-arg VERSION
+yarn
+yarn run build

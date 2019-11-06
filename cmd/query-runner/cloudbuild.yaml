@@ -1,0 +1,39 @@
+steps:
+  - id: 'download-sourcegraph'
+    name: 'gcr.io/cloud-builders/curl'
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        set -euxo pipefail &&
+        mkdir sourcegraph &&
+        curl -L https://github.com/sourcegraph/sourcegraph/archive/${_COMMIT_SHA}.tar.gz | tar xz -C sourcegraph --strip-components 1
+
+  - id: 'docker-build'
+    name: 'gcr.io/kaniko-project/executor:latest'
+    dir: 'sourcegraph'
+    args:
+      - '--dockerfile=cmd/query-runner/Dockerfile'
+      - '--destination=${_IMAGE}'
+      - '--context=dir://.'
+
+      - '--cache=true'
+      - '--cache-ttl=6h'
+
+      - '--build-arg'
+      - 'COMMIT_SHA=${_COMMIT_SHA}'
+
+      - '--build-arg'
+      - 'DATE=${_DATE}'
+
+      - '--build-arg'
+      - 'VERSION=${_VERSION}'
+tags:
+  - 'query-runner'
+  - '${_COMMIT_SHA}'
+timeout: 1200s
+substitutions:
+  '_IMAGE': 'us.gcr.io/sourcegraph-dev/query-runner:latest'
+  '_COMMIT_SHA': 'unknown'
+  '_DATE': 'unknown'
+  '_VERSION': 'unknown'
