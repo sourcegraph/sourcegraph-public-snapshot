@@ -19,15 +19,27 @@ export const QUEUE_PREFIX = `bull:${QUEUE_NAME}:`
 export type QueueTypes = 'active' | 'failed' | 'completed' | 'wait' | 'delayed'
 
 /**
+ * The names of job states in the API.
+ */
+export type ApiJobState = 'processing' | 'errored' | 'completed' | 'queued' | 'scheduled'
+
+/**
  * A mapping from job states to queue names.
  */
-export const queueTypes = new Map<string, QueueTypes>([
+export const queueTypes = new Map<ApiJobState, QueueTypes>([
     ['processing', 'active'],
     ['errored', 'failed'],
     ['completed', 'completed'],
     ['queued', 'wait'],
     ['scheduled', 'delayed'],
 ])
+
+/**
+ * A mapping from queue names to job states.
+ */
+export const statesByQueue = new Map(
+    Array.from(queueTypes.entries()).map(([state, queue]) => [queue, state] as [QueueTypes, ApiJobState])
+)
 
 /**
  * Creates a queue instance.
