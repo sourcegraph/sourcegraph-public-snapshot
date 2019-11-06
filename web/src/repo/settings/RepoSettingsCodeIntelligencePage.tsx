@@ -10,16 +10,13 @@ import { Link } from '../../../../shared/src/components/Link'
 import { switchMap, tap } from 'rxjs/operators'
 import { Subject, Subscription, Observable } from 'rxjs'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { sortBy } from 'lodash'
 
 interface LsifDumpNodeProps {
     node: GQL.ILSIFDump
 }
 
-interface LsifDumpNodeState {}
-
-class LsifDumpNode extends React.PureComponent<LsifDumpNodeProps, LsifDumpNodeState> {
-    public state: LsifDumpNodeState = {}
-
+class LsifDumpNode extends React.PureComponent<LsifDumpNodeProps, {}> {
     public render(): JSX.Element | null {
         return (
             <div className="lsif-dump list-group-item">
@@ -75,9 +72,9 @@ export class RepoSettingsCodeIntelligencePage extends React.PureComponent<Props,
                     switchMap(() => this.queryLatestDumps())
                 )
                 .subscribe(
-                    c =>
+                    ({ nodes }: { nodes: GQL.ILSIFDump[] }) =>
                         this.setState({
-                            latestDumps: c.nodes.sort((a, b) => a.projectRoot.path.localeCompare(b.projectRoot.path)),
+                            latestDumps: sortBy(nodes, node => node.projectRoot.path),
                             loading: false,
                         }),
                     error => this.setState({ error, loading: false })
@@ -119,9 +116,9 @@ export class RepoSettingsCodeIntelligencePage extends React.PureComponent<Props,
                     !this.state.loading &&
                     this.state.latestDumps &&
                     this.state.latestDumps.length > 0 ? (
-                        this.state.latestDumps.map((d, i) => <LsifDumpNode key={i} node={d} />)
+                        this.state.latestDumps.map((dump, i) => <LsifDumpNode key={i} node={dump} />)
                     ) : (
-                        <p>No dumps are marked as latest for this repository.</p>
+                        <p>No dumps are recent enough to be used at the tip of the default branch.</p>
                     )}
                 </div>
 
