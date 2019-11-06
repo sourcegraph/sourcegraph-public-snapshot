@@ -224,6 +224,9 @@ func TestRunner(t *testing.T) {
 			}
 
 			havePlan, err := store.GetCampaignPlan(ctx, ee.GetCampaignPlanOpts{ID: plan.ID})
+			if err == ee.ErrNoResults && tc.wantPlan == nil {
+				return
+			}
 			if err != nil {
 				t.Fatal(err)
 			}
