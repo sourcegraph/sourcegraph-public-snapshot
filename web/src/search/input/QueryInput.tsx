@@ -1,6 +1,6 @@
 import * as H from 'history'
 import * as React from 'react'
-import { fromEvent, Subject, Subscription } from 'rxjs'
+import { fromEvent, Subject, Subscription, Observable, ObservableInput } from 'rxjs'
 import {
     debounceTime,
     distinctUntilChanged,
@@ -22,7 +22,6 @@ import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 import { PatternTypeProps } from '..'
 import Downshift from 'downshift'
 import { searchFilterSuggestions, SearchFilterSuggestions } from '../searchFilterSuggestions'
-import { Key } from 'ts-key-enum'
 import {
     SearchQueryCursor,
     filterSearchSuggestions,
@@ -90,6 +89,10 @@ interface State {
      * and correctly position the cursor
      */
     cursorPosition: number
+}
+
+interface SuggestionsStateUpdate {
+    suggestions: ComponentSuggestions
 }
 
 const hiddenSuggestions: State['suggestions'] = { values: [], cursorPosition: 0 }
@@ -340,7 +343,7 @@ export class QueryInput extends React.Component<Props, State> {
         filterBeforeCursor: SuggestionTypes | false,
         queryCursor: SearchQueryCursor,
         filterSuggestions: ComponentSuggestions
-    ) =>
+    ): ObservableInput<SuggestionsStateUpdate> =>
         fetchSuggestions(query).pipe(
             map(createSuggestion),
             filter(isDefined),
@@ -367,13 +370,13 @@ export class QueryInput extends React.Component<Props, State> {
     /**
      * this.render() -> <downshift>
      */
-    private downshiftItemToString = (suggestion?: Suggestion) => (suggestion ? suggestion.title : '')
+    private downshiftItemToString = (suggestion?: Suggestion): string => (suggestion ? suggestion.title : '')
 
-    private downshiftScrollIntoView = (node: HTMLElement, menuNode: HTMLElement) => {
+    private downshiftScrollIntoView = (node: HTMLElement, menuNode: HTMLElement): void => {
         scrollIntoView(menuNode, node)
     }
 
-    private onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    private onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
         // Ctrl+Space to show all available suggestions
         if (!this.props.value && event.ctrlKey && event.keyCode === keysCodes.space) {
             this.setState({ suggestions: this.getSuggestions(searchFilterSuggestions) })
@@ -388,7 +391,7 @@ export class QueryInput extends React.Component<Props, State> {
         values: !searchFilterSuggestions ? [] : filterSearchSuggestions(query, cursorPosition, searchFilterSuggestions),
     })
 
-    private hideSuggestions = () => {
+    private hideSuggestions = (): void => {
         this.suggestionsHidden.next()
         this.setState({ suggestions: hiddenSuggestions })
     }
@@ -397,7 +400,7 @@ export class QueryInput extends React.Component<Props, State> {
      * if query only has one word and selected suggestion is not a filter: redirect to suggestion URL
      * else: add selected suggestion to query
      */
-    private onSuggestionSelect = (suggestion: Suggestion | undefined) => {
+    private onSuggestionSelect = (suggestion: Suggestion | undefined): void => {
         this.setState((state, props) => {
             if (!suggestion) {
                 return {
