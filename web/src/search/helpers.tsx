@@ -183,11 +183,11 @@ export const filterSearchSuggestions = (
         (valueQuery || lastWord.endsWith(':'))
     ) {
         const suggestionsToShow = filterSuggestions[resolvedFilter] || []
-        return suggestionsToShow.values.filter(suggestion => suggestion.title.startsWith(valueQuery))
+        return suggestionsToShow.values.filter(suggestion => suggestion.value.startsWith(valueQuery))
     }
 
     return filterSuggestions.filters.values
-        .filter(({ title }) => title.startsWith(resolvedFilter))
+        .filter(({ value }) => value.startsWith(resolvedFilter))
         .map(suggestion => ({
             ...suggestion,
             type: SuggestionTypes.filters,
@@ -242,13 +242,13 @@ export const insertSuggestionInQuery = (
             lastWordOfFirstPartMatch.index
         ) {
             // adds a space because a separate word was being typed
-            return firstPart.substring(0, lastWordOfFirstPartMatch.index) + ' ' + suggestion.title + lastPart
+            return firstPart.substring(0, lastWordOfFirstPartMatch.index) + ' ' + suggestion.value + lastPart
         }
 
         return (
             // join first part with the selected suggestion
             firstPart.substring(0, separatorIndex + 1) +
-            suggestion.title +
+            suggestion.value +
             (isFiltersSuggestion ? SUGGESTION_FILTER_SEPARATOR : '')
         )
     })()

@@ -370,7 +370,7 @@ export class QueryInput extends React.Component<Props, State> {
     /**
      * this.render() -> <downshift>
      */
-    private downshiftItemToString = (suggestion?: Suggestion): string => (suggestion ? suggestion.title : '')
+    private downshiftItemToString = (suggestion?: Suggestion): string => (suggestion ? suggestion.value : '')
 
     private downshiftScrollIntoView = (node: HTMLElement, menuNode: HTMLElement): void => {
         scrollIntoView(menuNode, node)

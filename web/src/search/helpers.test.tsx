@@ -106,15 +106,15 @@ describe('search/helpers', () => {
         describe('filterSearchSuggestions()', () => {
             test('filters suggestions for filters starting with "r"', () => {
                 const filtersStartingWithR = Object.keys(searchFilterSuggestions).filter(startsWith('r'))
-                expect(map(getFilterSuggestionStartingWithR(), 'title')).toEqual(
+                expect(map(getFilterSuggestionStartingWithR(), 'value')).toEqual(
                     expect.arrayContaining(filtersStartingWithR)
                 )
             })
 
             test('filters suggestions for filter aliases', () => {
                 forEach(filterAliases, (filter: string, alias: string) => {
-                    const [{ title }] = filterSearchSuggestions(alias, alias.length, searchFilterSuggestions)
-                    expect(title).toBe(filter)
+                    const [{ value }] = filterSearchSuggestions(alias, alias.length, searchFilterSuggestions)
+                    expect(value).toBe(filter)
                 })
             })
 
@@ -134,14 +134,14 @@ describe('search/helpers', () => {
 
         describe('insertSuggestionInQuery()', () => {
             describe('inserts suggestions for a filter name', () => {
-                const suggestion = getFilterSuggestionStartingWithR().filter(({ title }) => title === 'repo')[0]
+                const suggestion = getFilterSuggestionStartingWithR().filter(({ value: title }) => title === 'repo')[0]
                 const { query: newQuery } = insertSuggestionInQuery('test r test', suggestion, 6)
-                expect(newQuery).toBe(`test ${suggestion.title}: test`)
+                expect(newQuery).toBe(`test ${suggestion.value}: test`)
             })
             test('inserts suggestion for a filter value', () => {
                 const [suggestion] = getArchivedSuggestions()
                 const { query: newQuery } = insertSuggestionInQuery('test archived: test', suggestion, 14)
-                expect(newQuery).toBe(`test archived:${suggestion.title} test`)
+                expect(newQuery).toBe(`test archived:${suggestion.value} test`)
             })
         })
     })
@@ -162,7 +162,7 @@ describe('search/helpers', () => {
             getFilterTypedBeforeCursor({ query, cursorPosition: 9 })
         })
         it('does not return a value if typed whitespace char', () => {
-            expect(getFilterTypedBeforeCursor({ query, cursorPosition: 13 })).toStrictEqual(false)
+            expect(getFilterTypedBeforeCursor({ query, cursorPosition: 13 })).toStrictEqual({})
         })
     })
 
