@@ -572,7 +572,7 @@ function jobEndpoints(
                     })
                 }
 
-                let rawState = await job.getState()
+                const rawState = await job.getState()
                 const state = statesByQueue.get(rawState === 'waiting' ? 'wait' : rawState)
                 if (!state) {
                     throw new Error(`Unknown job state ${state}.`)
