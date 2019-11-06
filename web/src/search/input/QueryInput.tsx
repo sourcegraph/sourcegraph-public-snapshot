@@ -1,6 +1,6 @@
 import * as H from 'history'
 import * as React from 'react'
-import { fromEvent, Subject, Subscription, Observable, ObservableInput } from 'rxjs'
+import { fromEvent, Subject, Subscription, ObservableInput } from 'rxjs'
 import {
     debounceTime,
     distinctUntilChanged,
