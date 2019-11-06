@@ -1237,6 +1237,9 @@ type Query {
         # An (optional) search query that searches over the commit and root properties.
         query: String
 
+        # When specified, shows only dumps that are latest for the given repository.
+        isLatestForRepo: Boolean
+
         # When specified, indicates that this request should be paginated and
         # the first N results (relative to the cursor) should be returned. i.e.
         # how many results to return per page. It must be in the range of 0-5000.

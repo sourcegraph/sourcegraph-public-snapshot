@@ -16,10 +16,11 @@ import (
 )
 
 type LSIFDumpsListOptions struct {
-	Repository graphql.ID
-	Query      *string
-	Limit      *int32
-	NextURL    *string
+	Repository      graphql.ID
+	Query           *string
+	IsLatestForRepo *bool
+	Limit           *int32
+	NextURL         *string
 }
 
 // This method implements cursor-based forward pagination. The `after` parameter
@@ -31,13 +32,15 @@ type LSIFDumpsListOptions struct {
 
 func (r *schemaResolver) LSIFDumps(args *struct {
 	graphqlutil.ConnectionArgs
-	Repository graphql.ID
-	Query      *string
-	After      *string
+	Repository      graphql.ID
+	Query           *string
+	IsLatestForRepo *bool
+	After           *string
 }) (*lsifDumpConnectionResolver, error) {
 	opt := LSIFDumpsListOptions{
-		Repository: args.Repository,
-		Query:      args.Query,
+		Repository:      args.Repository,
+		Query:           args.Query,
+		IsLatestForRepo: args.IsLatestForRepo,
 	}
 	if args.First != nil {
 		if *args.First < 0 || *args.First > 5000 {
@@ -90,6 +93,9 @@ func (r *lsifDumpConnectionResolver) compute(ctx context.Context) ([]*types.LSIF
 		query := url.Values{}
 		if r.opt.Query != nil {
 			query.Set("query", *r.opt.Query)
+		}
+		if r.opt.IsLatestForRepo != nil && *r.opt.IsLatestForRepo {
+			query.Set("visibleAtTip", "true")
 		}
 		if r.opt.Limit != nil {
 			query.Set("limit", strconv.FormatInt(int64(*r.opt.Limit), 10))
