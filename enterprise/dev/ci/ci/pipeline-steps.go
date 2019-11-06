@@ -170,30 +170,30 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 			bk.ArtifactPaths("./puppeteer/*.png"))
 	}
 
-	pipeline.AddWait()
+	// pipeline.AddWait()
 
 	// Release to the Chrome Webstore
-	pipeline.AddStep(":rocket::chrome:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd browser"),
-		bk.Cmd("yarn -s run build"),
-		bk.Cmd("yarn release:chrome"),
-		bk.Cmd("popd"))
+	// pipeline.AddStep(":rocket::chrome:",
+	// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+	// 	bk.Cmd("pushd browser"),
+	// 	bk.Cmd("yarn -s run build"),
+	// 	bk.Cmd("yarn release:chrome"),
+	// 	bk.Cmd("popd"))
 
-	// Build and self sign the FF extension and upload it to ...
-	pipeline.AddStep(":rocket::firefox:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd browser"),
-		bk.Cmd("yarn release:ff"),
-		bk.Cmd("popd"))
+	// // Build and self sign the FF extension and upload it to ...
+	// pipeline.AddStep(":rocket::firefox:",
+	// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+	// 	bk.Cmd("pushd browser"),
+	// 	bk.Cmd("yarn release:ff"),
+	// 	bk.Cmd("popd"))
 
-	// Release to npm
-	pipeline.AddStep(":rocket::npm:",
-		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-		bk.Cmd("pushd browser"),
-		bk.Cmd("yarn -s run build"),
-		bk.Cmd("yarn release:npm"),
-		bk.Cmd("popd"))
+	// // Release to npm
+	// pipeline.AddStep(":rocket::npm:",
+	// 	bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+	// 	bk.Cmd("pushd browser"),
+	// 	bk.Cmd("yarn -s run build"),
+	// 	bk.Cmd("yarn release:npm"),
+	// 	bk.Cmd("popd"))
 }
 
 // Adds a Buildkite pipeline "Wait".

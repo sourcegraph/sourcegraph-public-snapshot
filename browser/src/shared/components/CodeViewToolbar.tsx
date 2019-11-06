@@ -40,7 +40,7 @@ export interface CodeViewToolbarProps
 }
 
 export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = props => (
-    <ul className={classNames('code-view-toolbar', props.className)}>
+    <ul className={classNames('code-view-toolbar e2e-code-view-toolbar', props.className)}>
         <ActionsNavItems
             {...props}
             listItemClass={classNames('code-view-toolbar__item', props.listItemClass)}

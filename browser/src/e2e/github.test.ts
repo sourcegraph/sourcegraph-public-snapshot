@@ -143,7 +143,7 @@ describe(`Sourcegraph ${startCase(BROWSER)} extension`, () => {
 
     test('injects toolbar for code views', async () => {
         await page.goto('https://github.com/gorilla/mux/blob/master/mux.go')
-        await page.waitForSelector('.code-view-toolbar')
+        await page.waitForSelector('.e2e-code-view-toolbar')
     })
 
     test('provides tooltips for single file', async () => {
@@ -151,6 +151,8 @@ describe(`Sourcegraph ${startCase(BROWSER)} extension`, () => {
 
         const element = await getTokenWithSelector(page, 'NewRouter', 'span.pl-en')
 
+        // Wait for the "View on Sourcegraph" button to be displayed
+        await page.waitForSelector('.e2e-code-view-toolbar')
         await clickElement(page, element)
 
         await page.waitForSelector('.e2e-tooltip-go-to-definition')
@@ -171,7 +173,8 @@ describe(`Sourcegraph ${startCase(BROWSER)} extension`, () => {
 
                 // Scrolls the element into view so that code view is in view.
                 await element.hover()
-                await page.waitForSelector('[data-path="regexp.go"] .code-view-toolbar .open-on-sourcegraph')
+                // Wait for all code views to be loaded
+                await page.waitForFunction('document.querySelectorAll(".e2e-code-view-toolbar").length === 4')
                 await clickElement(page, element)
                 await page.waitForSelector('.e2e-tooltip-go-to-definition')
             })
