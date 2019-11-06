@@ -170,7 +170,7 @@ paths:
           required: false
           schema:
             type: string
-        - name: visbleAtTip
+        - name: visibleAtTip
           in: query
           description: If true, only show dumps visible at tip.
           required: false
