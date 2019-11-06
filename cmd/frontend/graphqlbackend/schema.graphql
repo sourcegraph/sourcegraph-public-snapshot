@@ -631,12 +631,6 @@ type ChangesetPlan {
     # The repository changed by the changeset.
     repository: Repository!
 
-    # The title of the changeset.
-    title: String!
-
-    # The body of the changeset.
-    body: String!
-
     # The diff of the changeset.
     diff: PreviewRepositoryDiff!
 }

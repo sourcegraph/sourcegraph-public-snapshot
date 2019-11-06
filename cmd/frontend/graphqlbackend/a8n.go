@@ -209,8 +209,6 @@ type ChangesetPlansConnectionResolver interface {
 }
 
 type ChangesetPlanResolver interface {
-	Title() (string, error)
-	Body() (string, error)
 	Repository(ctx context.Context) (*RepositoryResolver, error)
 	BaseRepository(ctx context.Context) (*RepositoryResolver, error)
 	Diff(ctx context.Context) ChangesetPlanResolver

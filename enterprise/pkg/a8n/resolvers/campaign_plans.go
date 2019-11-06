@@ -162,9 +162,6 @@ type campaignJobResolver struct {
 	err    error
 }
 
-func (r *campaignJobResolver) Title() (string, error) { return "Title placeholder", nil }
-func (r *campaignJobResolver) Body() (string, error)  { return "Body placeholder", nil }
-
 func (r *campaignJobResolver) computeRepoCommit(ctx context.Context) (*graphqlbackend.RepositoryResolver, *graphqlbackend.GitCommitResolver, error) {
 	r.once.Do(func() {
 		if r.preloadedRepo != nil {

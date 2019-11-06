@@ -890,9 +890,8 @@ func TestCampaignPlanResolver(t *testing.T) {
 	}
 
 	type ChangesetPlan struct {
-		Title, Body string
-		Repository  struct{ Name, URL string }
-		Diff        struct {
+		Repository struct{ Name, URL string }
+		Diff       struct {
 			FileDiffs      FileDiffs
 			BaseRepository Repository
 		}
@@ -934,8 +933,6 @@ func TestCampaignPlanResolver(t *testing.T) {
             }
             changesets(first: %d) {
               nodes {
-                title
-                body
                 repository {
                   name
                 }
