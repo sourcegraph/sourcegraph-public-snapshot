@@ -10,7 +10,6 @@ import (
 	"github.com/RoaringBitmap/roaring"
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/pkg/errors"
 	"github.com/segmentio/fasthash/fnv1"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/permsstore"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
@@ -83,7 +82,7 @@ func (s *store) LoadPermissions(
 	now := s.clock()
 
 	// Load updated permissions from the database.
-	if err = s.load(ctx, p); err != nil {
+	if err = permsstore.Store.LoadUserPermissions(ctx, p); err != nil {
 		return err
 	}
 
@@ -111,7 +110,7 @@ func (s *store) UpdatePermissions(
 	if !s.block { // Non blocking code path
 		go func(expired *permsstore.UserPermissions) {
 			err := s.update(ctx, expired, update)
-			if err != nil && err != errLockNotAvailable {
+			if err != nil && err != permsstore.ErrLockNotAvailable {
 				log15.Error("bitbucketserver.authz.store.UpdatePermissions", "error", err)
 			}
 		}(&expired)
@@ -127,7 +126,7 @@ func (s *store) UpdatePermissions(
 	// Blocking code path
 	switch err = s.update(ctx, &expired, update); {
 	case err == nil:
-	case err == errLockNotAvailable:
+	case err == permsstore.ErrLockNotAvailable:
 		if p.Expired(s.hardTTL, now) {
 			return &StalePermissionsError{UserPermissions: p}
 		}
@@ -150,102 +149,6 @@ type StalePermissionsError struct {
 // Error implements the error interface.
 func (e StalePermissionsError) Error() string {
 	return fmt.Sprintf("%s:%s permissions for user=%d are stale and being updated", e.Perm, e.Type, e.UserID)
-}
-
-var errLockNotAvailable = errors.New("lock not available")
-
-// lock uses Postgres advisory locks to acquire an exclusive lock over the
-// given UserPermissions. Concurrent processes that call this method while a lock is
-// already held by another process will have errLockNotAvailable returned.
-func (s *store) lock(ctx context.Context, p *permsstore.UserPermissions) (err error) {
-	ctx, save := s.observe(ctx, "lock", "")
-	defer func() { save(&err, p.TracingFields()...) }()
-
-	if _, ok := s.db.(*sql.Tx); !ok {
-		return errors.Errorf("store.lock must be called inside a transaction")
-	}
-
-	q := lockQuery(p)
-
-	var rows *sql.Rows
-	rows, err = s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return err
-	}
-
-	if !rows.Next() {
-		return rows.Err()
-	}
-
-	locked := false
-	if err = rows.Scan(&locked); err != nil {
-		return err
-	}
-
-	if err = rows.Close(); err != nil {
-		return err
-	}
-
-	if !locked {
-		return errLockNotAvailable
-	}
-
-	return nil
-}
-
-var lockNamespace = int32(fnv1.HashString32("perms"))
-
-func lockQuery(p *permsstore.UserPermissions) *sqlf.Query {
-	// Postgres advisory lock ids are a global namespace within one database.
-	// It's very unlikely that another part of our application uses a lock
-	// namespace identicaly to this one. It's equally unlikely that there are
-	// lock id conflicts for different permissions, but if it'd happen, no safety
-	// guarantees would be violated, since those two different users would simply
-	// have to wait on the other's update to finish, using stale permissions until
-	// it would.
-	lockID := int32(fnv1.HashString32(fmt.Sprintf("%d:%s:%s", p.UserID, p.Perm, p.Type)))
-	return sqlf.Sprintf(
-		lockQueryFmtStr,
-		lockNamespace,
-		lockID,
-	)
-}
-
-const lockQueryFmtStr = `
--- source: enterprise/cmd/frontend/internal/authz/bitbucketserver/store.go:store.lock
-SELECT pg_try_advisory_xact_lock(%s, %s)
-`
-
-func (s *store) load(ctx context.Context, p *permsstore.UserPermissions) (err error) {
-	ctx, save := s.observe(ctx, "load", "")
-	defer func() { save(&err, p.TracingFields()...) }()
-
-	q := loadQuery(p)
-
-	var rows *sql.Rows
-	rows, err = s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return err
-	}
-
-	if !rows.Next() {
-		return rows.Err()
-	}
-
-	var ids []byte
-	if err = rows.Scan(&ids, &p.UpdatedAt); err != nil {
-		return err
-	}
-
-	if err = rows.Close(); err != nil {
-		return err
-	}
-
-	if p.IDs = roaring.NewBitmap(); len(ids) == 0 {
-		return nil
-	}
-
-	return p.IDs.UnmarshalBinary(ids)
 }
 
 func loadRepoIDsQuery(c *extsvc.CodeHost, externalIDs []uint32) (*sqlf.Query, error) {
@@ -313,25 +216,7 @@ func (s *store) loadRepoIDs(ctx context.Context, c *extsvc.CodeHost, externalIDs
 	return ids, nil
 }
 
-func loadQuery(p *permsstore.UserPermissions) *sqlf.Query {
-	return sqlf.Sprintf(
-		loadQueryFmtStr,
-		p.UserID,
-		p.Perm.String(),
-		p.Type,
-		p.Provider,
-	)
-}
-
-const loadQueryFmtStr = `
--- source: enterprise/cmd/frontend/internal/authz/bitbucketserver/store.go:store.load
-SELECT object_ids, updated_at
-FROM user_permissions
-WHERE user_id = %s
-AND permission = %s
-AND object_type = %s
-AND provider = %s
-`
+var lockNamespace = int32(fnv1.HashString32("perms"))
 
 func (s *store) update(ctx context.Context, p *permsstore.UserPermissions, update PermissionsUpdateFunc) (err error) {
 	_, save := s.observe(ctx, "update", "")
@@ -342,8 +227,8 @@ func (s *store) update(ctx context.Context, p *permsstore.UserPermissions, updat
 	ctx = context.Background()
 
 	// Open a transaction for concurrency control.
-	var tx *sql.Tx
-	if tx, err = s.tx(ctx); err != nil {
+	var tx *permsstore.Tx
+	if tx, err = permsstore.Store.Tx(ctx); err != nil {
 		return err
 	}
 
@@ -362,6 +247,15 @@ func (s *store) update(ctx context.Context, p *permsstore.UserPermissions, updat
 	// Make another store with this underlying transaction.
 	txs := store{db: tx, clock: s.clock}
 
+	// Postgres advisory lock ids are a global namespace within one database.
+	// It's very unlikely that another part of our application uses a lock
+	// namespace identicaly to this one. It's equally unlikely that there are
+	// lock id conflicts for different permissions, but if it'd happen, no safety
+	// guarantees would be violated, since those two different users would simply
+	// have to wait on the other's update to finish, using stale permissions until
+	// it would.
+	lockID := int32(fnv1.HashString32(fmt.Sprintf("%d:%s:%s", p.UserID, p.Perm, p.Type)))
+
 	// We're here because we need to update our permissions. In order
 	// to prevent multiple concurrent (and distributed) cache fills,
 	// which would hammer the upstream code host, we acquire an exclusive
@@ -370,14 +264,15 @@ func (s *store) update(ctx context.Context, p *permsstore.UserPermissions, updat
 	//
 	// If another processes is updating these permissions, we abort and return
 	// stale data.
-	if err = txs.lock(ctx, p); err != nil {
+	if err = permsstore.Store.Lock(ctx, tx, lockNamespace, lockID); err != nil {
 		return err
 	}
 
 	// We have acquired an exclusive lock over these permissions,
 	// but maybe another process already finished the cache fill event.
 	// If so, we don't have to update it again until it expires.
-	if err = txs.load(ctx, p); err != nil {
+	p.IDs, p.UpdatedAt, err = permsstore.Store.LoadIDsTx(ctx, tx, p.LoadQuery())
+	if err != nil {
 		return err
 	}
 
@@ -407,23 +302,12 @@ func (s *store) update(ctx context.Context, p *permsstore.UserPermissions, updat
 	return txs.upsert(ctx, p)
 }
 
-func (s *store) tx(ctx context.Context) (*sql.Tx, error) {
-	switch t := s.db.(type) {
-	case *sql.Tx:
-		return t, nil
-	case *sql.DB:
-		return t.BeginTx(ctx, nil)
-	default:
-		panic("can't open transaction with unknown implementation of dbutil.DB")
-	}
-}
-
 func (s *store) upsert(ctx context.Context, p *permsstore.UserPermissions) (err error) {
 	ctx, save := s.observe(ctx, "upsert", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
 	var q *sqlf.Query
-	if q, err = s.upsertQuery(p); err != nil {
+	if q, err = p.UpsertQuery(); err != nil {
 		return err
 	}
 
@@ -435,40 +319,6 @@ func (s *store) upsert(ctx context.Context, p *permsstore.UserPermissions) (err 
 
 	return rows.Close()
 }
-
-func (s *store) upsertQuery(p *permsstore.UserPermissions) (*sqlf.Query, error) {
-	ids, err := p.IDs.ToBytes()
-	if err != nil {
-		return nil, err
-	}
-
-	if p.UpdatedAt.IsZero() {
-		return nil, errors.New("UpdatedAt timestamp must be set")
-	}
-
-	return sqlf.Sprintf(
-		upsertQueryFmtStr,
-		p.UserID,
-		p.Perm.String(),
-		p.Type,
-		ids,
-		p.Provider,
-		p.UpdatedAt.UTC(),
-	), nil
-}
-
-const upsertQueryFmtStr = `
--- source: enterprise/cmd/frontend/internal/authz/bitbucketserver/store.go:store.upsert
-INSERT INTO user_permissions
-  (user_id, permission, object_type, object_ids, provider, updated_at)
-VALUES
-  (%s, %s, %s, %s, %s, %s)
-ON CONFLICT ON CONSTRAINT
-  user_permissions_perm_object_provider_unique
-DO UPDATE SET
-  object_ids = excluded.object_ids,
-  updated_at = excluded.updated_at
-`
 
 func (s *store) observe(ctx context.Context, family, title string) (context.Context, func(*error, ...otlog.Field)) {
 	began := s.clock()

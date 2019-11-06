@@ -9,6 +9,7 @@ import (
 	"github.com/RoaringBitmap/roaring"
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
@@ -20,14 +21,19 @@ var clock = func() time.Time { return time.Now().UTC().Truncate(time.Microsecond
 // Store is the unified interface for managing permissions explicitly in the database.
 // It is concurrent-safe and maintains the data consistency over 'user_permissions',
 // 'repo_permissions' and 'user_pending_permissions' tables.
-var Store = &store{
-	db:    dbconn.Global,
-	clock: clock,
-}
+var Store = NewStore(dbconn.Global, clock)
 
 type store struct {
 	db    dbutil.DB
 	clock func() time.Time
+}
+
+// NewStore initializes a new store with given parameters.
+func NewStore(db dbutil.DB, clock func() time.Time) *store {
+	return &store{
+		db:    db,
+		clock: clock,
+	}
 }
 
 // LoadUserPermissions loads stored user permissions into p. An error is returned
@@ -40,7 +46,7 @@ func (s *store) LoadUserPermissions(ctx context.Context, p *UserPermissions) (er
 	ctx, save := s.observe(ctx, "LoadUserPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
-	p.IDs, p.UpdatedAt, err = s.loadIDs(ctx, p.loadQuery())
+	p.IDs, p.UpdatedAt, err = s.loadIDs(ctx, p.LoadQuery())
 	return err
 }
 
@@ -89,13 +95,13 @@ func (s *store) UpsertRepoPermissions(ctx context.Context, p *RepoPermissions) (
 	}
 
 	// Open a transaction for data consistency.
-	var tx *sqlTx
-	if tx, err = s.tx(ctx); err != nil {
+	var tx *Tx
+	if tx, err = s.Tx(ctx); err != nil {
 		return err
 	}
 	defer func() {
 		// We need to use closure for a reference to the err.
-		tx.commitOrRollback(err)
+		tx.CommitOrRollback(err)
 	}()
 
 	// Make another store with this underlying transaction.
@@ -126,7 +132,7 @@ func (s *store) UpsertRepoPermissions(ctx context.Context, p *RepoPermissions) (
 			Type:     PermRepos,
 			Provider: p.Provider,
 		}
-		up.IDs, _, err = txs.loadIDs(ctx, up.loadQuery())
+		up.IDs, _, err = txs.loadIDs(ctx, up.LoadQuery())
 		if err != nil {
 			return err
 		}
@@ -139,7 +145,7 @@ func (s *store) UpsertRepoPermissions(ctx context.Context, p *RepoPermissions) (
 		up.IDs.RunOptimize()
 		up.UpdatedAt = txs.clock()
 
-		if q, err = up.upsertQuery(); err != nil {
+		if q, err = up.UpsertQuery(); err != nil {
 			return err
 		} else if err = txs.upsert(ctx, q); err != nil {
 			return err
@@ -173,13 +179,13 @@ func (s *store) UpsertPendingPermissions(
 	ctx = context.Background()
 
 	// Open a transaction for data consistency.
-	var tx *sqlTx
-	if tx, err = s.tx(ctx); err != nil {
+	var tx *Tx
+	if tx, err = s.Tx(ctx); err != nil {
 		return err
 	}
 	defer func() {
 		// We need to use closure for a reference to the err.
-		tx.commitOrRollback(err)
+		tx.CommitOrRollback(err)
 	}()
 
 	// Make another store with this underlying transaction.
@@ -276,13 +282,13 @@ func (s *store) RemovePendingPermissions(
 	ctx = context.Background()
 
 	// Open a transaction for data consistency.
-	var tx *sqlTx
-	if tx, err = s.tx(ctx); err != nil {
+	var tx *Tx
+	if tx, err = s.Tx(ctx); err != nil {
 		return err
 	}
 	defer func() {
 		// We need to use closure for a reference to the err.
-		tx.commitOrRollback(err)
+		tx.CommitOrRollback(err)
 	}()
 
 	// Make another store with this underlying transaction.
@@ -343,13 +349,13 @@ func (s *store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err
 	p.IDs.RunOptimize()
 
 	// Open a transaction for data consistency.
-	var tx *sqlTx
-	if tx, err = s.tx(ctx); err != nil {
+	var tx *Tx
+	if tx, err = s.Tx(ctx); err != nil {
 		return err
 	}
 	defer func() {
 		// We need to use closure for a reference to the err.
-		tx.commitOrRollback(err)
+		tx.CommitOrRollback(err)
 	}()
 
 	// Make another store with this underlying transaction.
@@ -373,7 +379,7 @@ func (s *store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err
 			Type:     PermRepos,
 			Provider: p.Provider,
 		}
-		up.IDs, _, err = txs.loadIDs(ctx, up.loadQuery())
+		up.IDs, _, err = txs.loadIDs(ctx, up.LoadQuery())
 		if err != nil {
 			return err
 		}
@@ -386,7 +392,7 @@ func (s *store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err
 		up.IDs.RunOptimize()
 		up.UpdatedAt = txs.clock()
 
-		if q, err = up.upsertQuery(); err != nil {
+		if q, err = up.UpsertQuery(); err != nil {
 			return err
 		} else if err = txs.upsert(ctx, q); err != nil {
 			return err
@@ -400,7 +406,7 @@ func (s *store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err
 			Type:     PermRepos,
 			Provider: p.Provider,
 		}
-		up.IDs, _, err = txs.loadIDs(ctx, up.loadQuery())
+		up.IDs, _, err = txs.loadIDs(ctx, up.LoadQuery())
 		if err != nil {
 			return err
 		}
@@ -413,7 +419,7 @@ func (s *store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err
 		up.IDs.RunOptimize()
 		up.UpdatedAt = txs.clock()
 
-		if q, err = up.upsertQuery(); err != nil {
+		if q, err = up.UpsertQuery(); err != nil {
 			return err
 		} else if err = txs.upsert(ctx, q); err != nil {
 			return err
@@ -453,13 +459,13 @@ func (s *store) SetPendingPermissions(
 	}
 
 	// Open a transaction for data consistency.
-	var tx *sqlTx
-	if tx, err = s.tx(ctx); err != nil {
+	var tx *Tx
+	if tx, err = s.Tx(ctx); err != nil {
 		return err
 	}
 	defer func() {
 		// We need to use closure for a reference to the err.
-		tx.commitOrRollback(err)
+		tx.CommitOrRollback(err)
 	}()
 
 	// Make another store with this underlying transaction.
@@ -539,13 +545,13 @@ func (s *store) GrantPendingPermissions(ctx context.Context, userID int32, p *Pe
 	}
 
 	// Open a transaction for data consistency.
-	var tx *sqlTx
-	if tx, err = s.tx(ctx); err != nil {
+	var tx *Tx
+	if tx, err = s.Tx(ctx); err != nil {
 		return err
 	}
 	defer func() {
 		// We need to use closure for a reference to the err.
-		tx.commitOrRollback(err)
+		tx.CommitOrRollback(err)
 	}()
 
 	// Make another store with this underlying transaction.
@@ -560,7 +566,7 @@ func (s *store) GrantPendingPermissions(ctx context.Context, userID int32, p *Pe
 		UpdatedAt: txs.clock(),
 	}
 	var q *sqlf.Query
-	if q, err = up.upsertQuery(); err != nil {
+	if q, err = up.UpsertQuery(); err != nil {
 		return err
 	}
 	if err = txs.upsert(ctx, q); err != nil {
@@ -617,19 +623,20 @@ func (s *store) upsert(ctx context.Context, q *sqlf.Query) (err error) {
 	return rows.Close()
 }
 
-// loadIDs runs the query and returns unmarshalled IDs and last updated time.
-func (s *store) loadIDs(ctx context.Context, q *sqlf.Query) (*roaring.Bitmap, time.Time, error) {
+// LoadIDsTx runs the query on given transaction object and returns unmarshalled
+// IDs and last updated time.
+func (s *store) LoadIDsTx(ctx context.Context, tx *Tx, q *sqlf.Query) (*roaring.Bitmap, time.Time, error) {
 	var err error
-	ctx, save := s.observe(ctx, "loadIDs", "")
+	ctx, save := s.observe(ctx, "LoadIDsTx", "")
 	defer func() {
 		save(&err,
-			otlog.String("Query.Query", q.Query(sqlf.PostgresBindVar)),
-			otlog.Object("Query.Args", q.Args()),
+			otlog.Object("tx", tx),
+			otlog.Object("q", q),
 		)
 	}()
 
 	var rows *sql.Rows
-	rows, err = s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err = tx.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, time.Time{}, err
 	}
@@ -658,19 +665,90 @@ func (s *store) loadIDs(ctx context.Context, q *sqlf.Query) (*roaring.Bitmap, ti
 	return bm, updatedAt, nil
 }
 
-func (s *store) tx(ctx context.Context) (*sqlTx, error) {
+// loadIDs runs the query and returns unmarshalled IDs and last updated time.
+func (s *store) loadIDs(ctx context.Context, q *sqlf.Query) (*roaring.Bitmap, time.Time, error) {
+	var err error
+	ctx, save := s.observe(ctx, "loadIDs", "")
+	defer func() { save(&err, otlog.Object("q", q)) }()
+
+	var tx *Tx
+	tx, err = s.Tx(ctx)
+	if err != nil {
+		return nil, time.Time{}, err
+	}
+	return s.LoadIDsTx(ctx, tx, q)
+}
+
+func (s *store) Tx(ctx context.Context) (*Tx, error) {
 	switch t := s.db.(type) {
 	case *sql.Tx:
-		return &sqlTx{t}, nil
+		return &Tx{t}, nil
 	case *sql.DB:
 		tx, err := t.BeginTx(ctx, nil)
 		if err != nil {
 			return nil, err
 		}
-		return &sqlTx{tx}, nil
+		return &Tx{tx}, nil
 	default:
 		panic(fmt.Sprintf("can't open transaction with unknown implementation of dbutil.DB: %T", t))
 	}
+}
+
+var ErrLockNotAvailable = errors.New("lock not available")
+
+// Lock uses Postgres advisory locks to acquire an exclusive lock over the
+// given namespace and lock ID on given transaction object. Concurrent
+// processes that call this method while a lock is  already held by another
+// process will have ErrLockNotAvailable returned.
+func (s *store) Lock(ctx context.Context, tx *Tx, namespace, id int32) (err error) {
+	ctx, save := s.observe(ctx, "lock", "")
+	defer func() {
+		save(&err,
+			otlog.Object("tx", tx),
+			otlog.Int32("namespace", namespace),
+			otlog.Int32("id", id),
+		)
+	}()
+
+	q := lockQuery(namespace, id)
+
+	var rows *sql.Rows
+	rows, err = tx.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return err
+	}
+
+	if !rows.Next() {
+		return rows.Err()
+	}
+
+	locked := false
+	if err = rows.Scan(&locked); err != nil {
+		return err
+	}
+
+	if err = rows.Close(); err != nil {
+		return err
+	}
+
+	if !locked {
+		return ErrLockNotAvailable
+	}
+
+	return nil
+}
+
+func lockQuery(namespace, id int32) *sqlf.Query {
+	const format = `
+-- source: enterprise/cmd/frontend/internal/authz/permsstore/store.go:lockQuery
+SELECT pg_try_advisory_xact_lock(%s, %s)
+`
+
+	return sqlf.Sprintf(
+		format,
+		namespace,
+		id,
+	)
 }
 
 func (s *store) observe(ctx context.Context, family, title string) (context.Context, func(*error, ...otlog.Field)) {

@@ -122,6 +122,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 			t.Fatal(err)
 		}
 
+		permsstore.Store = permsstore.NewStore(db, clock)
 		s := newStore(db, ttl, hardTTL, clock)
 		s.updates = make(chan *permsstore.UserPermissions)
 
