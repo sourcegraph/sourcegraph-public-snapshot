@@ -58,6 +58,8 @@
 // 1528395609_create_campaign_jobs_table.up.sql (551B)
 // 1528395610_change_campaign_plan_arguments_to_text.down.sql (191B)
 // 1528395610_change_campaign_plan_arguments_to_text.up.sql (254B)
+// 1528395611_validate_campaign_plan_completion_with_trigger.down.sql (303B)
+// 1528395611_validate_campaign_plan_completion_with_trigger.up.sql (1.236kB)
 
 package migrations
 
@@ -1286,6 +1288,46 @@ func _1528395610_change_campaign_plan_arguments_to_textUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395611_validate_campaign_plan_completion_with_triggerDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x8e\xc1\xae\x82\x30\x10\x45\xf7\xfd\x8a\xf9\x8f\xee\x1e\x14\x32\x0b\xda\x17\xa8\x09\xbb\xc9\x68\x11\xc7\x20\x12\xda\xf8\xfd\x26\x9a\x1a\xe2\x46\xd6\xf7\x9e\x93\xf3\x67\x6a\xb4\x5a\xa9\xb2\x75\xff\xe0\x5b\xac\x6b\xd3\x02\x56\x60\x7a\xec\x7c\x07\x69\x95\x91\x1e\x3c\x49\xe0\x34\xd0\x89\x6f\x0b\xcb\x38\xd3\x32\xf1\x4c\x12\xe9\x2c\xb3\xc4\xcb\x10\xc0\x59\xc8\x63\xd4\x6f\x59\x75\xb0\x85\x47\x67\x37\xb6\xdf\xa2\x5c\x82\xb6\x34\xfd\x86\xfc\x00\xd7\xfb\x31\x7e\xe3\x41\xef\x81\x62\xe2\x35\x0d\x81\x38\xed\xba\xe7\xa2\xd7\x5f\x15\xae\x69\xd0\x6b\xf5\x0c\x00\x00\xff\xff\x6a\xfb\x02\xf0\x2f\x01\x00\x00")
+
+func _1528395611_validate_campaign_plan_completion_with_triggerDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395611_validate_campaign_plan_completion_with_triggerDownSql,
+		"1528395611_validate_campaign_plan_completion_with_trigger.down.sql",
+	)
+}
+
+func _1528395611_validate_campaign_plan_completion_with_triggerDownSql() (*asset, error) {
+	bytes, err := _1528395611_validate_campaign_plan_completion_with_triggerDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395611_validate_campaign_plan_completion_with_trigger.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xcc, 0xcc, 0x7f, 0x89, 0xa4, 0x8, 0xf4, 0xd, 0xc8, 0x47, 0x98, 0xf4, 0x81, 0xe6, 0xc5, 0xef, 0x26, 0x6e, 0x93, 0x3b, 0x25, 0x1d, 0xfc, 0x70, 0x5b, 0x88, 0xf8, 0xc4, 0xd8, 0xd4, 0x9c, 0x4a}}
+	return a, nil
+}
+
+var __1528395611_validate_campaign_plan_completion_with_triggerUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x94\xcd\x6e\xe2\x30\x14\x85\xf7\x7e\x8a\x33\x52\xab\x12\xa9\xad\x66\x3d\x11\x8b\x34\xb9\x01\x4b\xa9\x8d\x1c\x47\xb0\xa3\x1e\x48\x49\x46\xa9\x61\x48\x18\x16\xd3\x79\xf7\x51\x12\x08\x7f\xfd\xdb\x20\x2c\xfb\x7e\x3e\xf7\xf8\xdc\x3c\xd0\x80\x0b\x97\x31\x5f\x91\xa7\x09\x5c\x04\x34\xc1\xcc\xbc\xac\x4c\xbe\xb0\xd3\x5f\xcb\x9f\xe5\xb4\x5b\xad\x0a\x63\xa7\xf9\x1c\x52\x9c\x9e\xe8\x9d\x9f\x70\xdc\x8f\x78\x65\x65\xd6\x55\x3a\x9f\x9a\xea\x92\x74\xd8\xfb\x98\xf1\x9c\xdb\xbc\xcc\xde\x81\x1c\x6d\x3a\x2e\x63\x77\x77\x18\x67\xa9\xc5\x36\xc5\x6c\x9d\x9a\x2a\x85\xc1\xd3\x2c\x33\x76\x91\x96\x69\xf5\x84\x6d\x5e\x65\x30\xb0\x4b\x0b\xbb\x29\x0a\x5c\xf4\xbb\x4d\xf1\xb2\x29\xab\x1a\xf4\xc7\x14\xf9\xbc\x46\x54\x99\xa9\xda\x1f\x53\x14\x58\x3e\xb7\xff\x4f\x4a\x6f\x4a\xd4\x72\x60\xd6\x29\xf6\x92\xee\x3b\xa7\xa5\x82\xa2\x51\xe4\xf9\x84\x30\x11\xbe\xe6\x52\x74\xf4\x73\xcb\x0f\xfd\xf6\x1c\x28\xd2\x89\x12\x31\xb4\xe2\x83\x01\x29\x78\x31\xbb\xfa\xbc\xf0\x8a\x05\xe4\x47\x9e\x22\x06\xec\x4c\x46\x6e\x2b\x97\xa1\xd3\xd6\xae\x9b\x40\x30\x60\xcc\xf5\xb0\xd5\xef\xc5\xe8\x31\x00\x88\x29\x22\x5f\x23\x54\xf2\xf1\xd4\xf1\x66\x77\x3c\x24\x45\x10\x34\xbe\xbf\x30\x90\xc7\x10\x52\x43\x24\x51\xd4\x1c\xf5\x44\x70\xe9\x72\xff\xcd\x5a\x06\x38\x8c\x75\x77\xfb\x32\x11\xba\x97\xcf\x1d\x70\xa1\x65\xd7\x49\x23\x69\xa7\xa4\xd5\x71\x14\xb2\xa3\xdb\xdd\xf7\x51\x9d\x0b\x97\xac\xe3\xb0\x9d\xc3\x78\x88\x7d\x68\xd1\xef\xe3\x3b\x5e\x5f\x0f\xa8\x6f\xfd\xbd\x0e\x07\x7a\x48\xa2\x69\x5e\x79\x3c\x26\xd0\xc4\xa7\x51\xf3\xe8\x37\xfe\xae\xe5\x51\x61\xec\x5f\x1e\xfc\xc0\xf5\x3f\x64\xa6\xc4\x35\x36\xb6\x43\xd5\x82\x6e\x6e\x1b\x00\xde\x34\xea\x16\xab\xd4\xce\x73\xbb\xa8\x9f\x94\x44\x00\x1e\x36\x02\xdb\xb8\xd4\x25\x2e\x23\x11\xb8\x5f\x0b\x4b\xe4\x89\x41\xe2\x0d\x08\xab\x62\xb5\x28\x7f\x17\x87\x2f\xc4\x3e\x76\xd5\x3a\x5f\x4c\x3f\x47\xb1\x07\x0a\xa5\xaa\x87\x38\x26\xa5\xeb\xd4\x27\xa3\xa0\xc9\xff\x61\x6a\x4b\x16\x4a\x05\xf2\xfc\x21\x94\x1c\x83\x26\xe4\x27\x9a\x30\x52\xd2\xa7\x20\x51\xf4\xa5\xb9\xa8\x15\xca\xc7\x47\xae\x5d\xf6\x3f\x00\x00\xff\xff\x45\x4a\xe2\x31\xd4\x04\x00\x00")
+
+func _1528395611_validate_campaign_plan_completion_with_triggerUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395611_validate_campaign_plan_completion_with_triggerUpSql,
+		"1528395611_validate_campaign_plan_completion_with_trigger.up.sql",
+	)
+}
+
+func _1528395611_validate_campaign_plan_completion_with_triggerUpSql() (*asset, error) {
+	bytes, err := _1528395611_validate_campaign_plan_completion_with_triggerUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395611_validate_campaign_plan_completion_with_trigger.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x86, 0x51, 0x96, 0x9, 0x2, 0x14, 0x3b, 0x1, 0xf1, 0x43, 0x3, 0x2c, 0xeb, 0xce, 0x70, 0x6b, 0x6e, 0xb4, 0xcd, 0x55, 0xe9, 0xde, 0xb1, 0xed, 0x56, 0xe7, 0x7f, 0x87, 0xdf, 0x81, 0x37, 0xed}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1435,6 +1477,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395609_create_campaign_jobs_table.up.sql":                             _1528395609_create_campaign_jobs_tableUpSql,
 	"1528395610_change_campaign_plan_arguments_to_text.down.sql":               _1528395610_change_campaign_plan_arguments_to_textDownSql,
 	"1528395610_change_campaign_plan_arguments_to_text.up.sql":                 _1528395610_change_campaign_plan_arguments_to_textUpSql,
+	"1528395611_validate_campaign_plan_completion_with_trigger.down.sql":       _1528395611_validate_campaign_plan_completion_with_triggerDownSql,
+	"1528395611_validate_campaign_plan_completion_with_trigger.up.sql":         _1528395611_validate_campaign_plan_completion_with_triggerUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1536,6 +1580,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395609_create_campaign_jobs_table.up.sql":                             {_1528395609_create_campaign_jobs_tableUpSql, map[string]*bintree{}},
 	"1528395610_change_campaign_plan_arguments_to_text.down.sql":               {_1528395610_change_campaign_plan_arguments_to_textDownSql, map[string]*bintree{}},
 	"1528395610_change_campaign_plan_arguments_to_text.up.sql":                 {_1528395610_change_campaign_plan_arguments_to_textUpSql, map[string]*bintree{}},
+	"1528395611_validate_campaign_plan_completion_with_trigger.down.sql":       {_1528395611_validate_campaign_plan_completion_with_triggerDownSql, map[string]*bintree{}},
+	"1528395611_validate_campaign_plan_completion_with_trigger.up.sql":         {_1528395611_validate_campaign_plan_completion_with_triggerUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
