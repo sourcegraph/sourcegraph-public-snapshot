@@ -35,6 +35,6 @@ export interface KeyboardShortcutsProps {
     keyboardShortcuts: KeyboardShortcut[]
 }
 
-export const keysCodes = {
+export const keyboardKeyCodes = {
     space: 32,
 }
