@@ -99,16 +99,18 @@ export class Backend {
      *
      * @param repository The repository.
      * @param query A search query.
+     * @param visibleAtTip If true, only return dumps visible at tip.
      * @param limit The maximum number of dumps to return.
      * @param offset The number of dumps to skip.
      */
     public dumps(
         repository: string,
         query: string,
+        visibleAtTip: boolean,
         limit: number,
         offset: number
     ): Promise<{ dumps: LsifDump[]; totalCount: number }> {
-        return this.xrepoDatabase.getDumps(repository, query, limit, offset)
+        return this.xrepoDatabase.getDumps(repository, query, visibleAtTip, limit, offset)
     }
 
     /**

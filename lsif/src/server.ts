@@ -448,9 +448,16 @@ function dumpEndpoints(backend: Backend, logger: Logger, tracer: Tracer | undefi
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { repository } = req.params
-                const { query } = req.query
+                const { query, visibleAtTip: visibleAtTipRaw } = req.query
                 const { limit, offset } = limitOffset(req, DEFAULT_DUMP_PAGE_SIZE)
-                const { dumps, totalCount } = await backend.dumps(decodeURIComponent(repository), query, limit, offset)
+                const visibleAtTip = visibleAtTipRaw === 'true'
+                const { dumps, totalCount } = await backend.dumps(
+                    decodeURIComponent(repository),
+                    query,
+                    visibleAtTip,
+                    limit,
+                    offset
+                )
 
                 if (offset + dumps.length < totalCount) {
                     res.set('Link', nextLink(req, { limit, offset: offset + dumps.length }))

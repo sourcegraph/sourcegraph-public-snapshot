@@ -170,6 +170,12 @@ paths:
           required: false
           schema:
             type: string
+        - name: visbleAtTip
+          in: query
+          description: If true, only show dumps visible at tip.
+          required: false
+          schema:
+            type: boolean
         - name: limit
           in: query
           description: The maximum number of dumps to return in one page.
