@@ -239,7 +239,7 @@ func (r *previewFileDiffConnectionResolver) Nodes(ctx context.Context) ([]graphq
 		return nil, err
 	}
 
-	if r.first != nil && len(fileDiffs) > int(*r.first) {
+	if r.first != nil && int(*r.first) <= len(fileDiffs) {
 		fileDiffs = fileDiffs[:*r.first]
 	}
 
