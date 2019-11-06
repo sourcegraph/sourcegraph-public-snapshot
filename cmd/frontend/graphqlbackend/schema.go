@@ -4011,7 +4011,7 @@ type LSIFJobConnection {
     nodes: [LSIFJob!]!
 
     # The total number of jobs in this result set.
-    totalCount: Int!
+    totalCount: Int
 
     # Pagination information.
     pageInfo: PageInfo!
