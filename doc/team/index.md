@@ -13,6 +13,7 @@ Sourcegraph is an [open product, an open company, and open source](product-dev/o
 
 ## [The Graphbook (Sourcegraph teammate handbook)](graphbook/index.md)
 
+- [Travel budgets](graphbook/travel.md)
 - [Weekly team meeting](graphbook/team_meeting.md)
 
 ## [Product and development](product-dev/index.md)
