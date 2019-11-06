@@ -22,6 +22,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
+func init() {
+	dbtesting.DBNameSuffix = "a8nrunnerdb"
+}
+
 func TestRunner(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
