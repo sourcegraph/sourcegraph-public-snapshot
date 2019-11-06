@@ -164,11 +164,37 @@ func TestRunner(t *testing.T) {
 		{
 			name:         "multi search results but getting a commit ID fails",
 			search:       yieldRepos(rs...),
-			commitID:     errorOnCall(yieldCommitIDs(revs), 2, "no commit ID found"),
+			commitID:     errorOnCall(yieldCommitIDs(revs), 2, errors.New("no commit ID found")),
 			campaignType: &testCampaignType{diff: testDiff},
 			runErr:       "no commit ID found",
 			wantPlan:     nil,
 			wantJobs:     wantNoJobs,
+		},
+		{
+			name:         "two search results but one repo has no default branch",
+			search:       yieldRepos(rs[0], rs[1]),
+			commitID:     errorOnCall(yieldCommitIDs(revs), 1, ErrNoDefaultBranch),
+			campaignType: &testCampaignType{diff: testDiff},
+			wantPlan: func() *a8n.CampaignPlan {
+				p := testPlan.Clone()
+				p.CreatedAt = now
+				p.UpdatedAt = now
+				return p
+			}(),
+			wantJobs: func(plan *a8n.CampaignPlan, rs []*repos.Repo, revs []string) []*a8n.CampaignJob {
+				return []*a8n.CampaignJob{
+					{
+						CampaignPlanID: plan.ID,
+						RepoID:         int32(rs[0].ID),
+						Diff:           testDiff,
+						Rev:            api.CommitID(revs[0]),
+						CreatedAt:      now,
+						UpdatedAt:      now,
+						StartedAt:      now,
+						FinishedAt:     now,
+					},
+				}
+			},
 		},
 		{
 			name:     "generating diff fails",
@@ -355,14 +381,14 @@ func yieldCommitIDs(ids []string) repoCommitID {
 	}
 }
 
-func errorOnCall(f repoCommitID, num int, msg string) repoCommitID {
+func errorOnCall(f repoCommitID, num int, err error) repoCommitID {
 	count := 0
 
 	return func(ctx context.Context, repo *graphqlbackend.RepositoryResolver) (api.CommitID, error) {
 		id := api.CommitID("invalid")
 
 		if count == num {
-			return id, errors.New(msg)
+			return id, err
 		}
 
 		count++

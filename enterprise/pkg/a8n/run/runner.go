@@ -50,6 +50,10 @@ type repoSearch func(ctx context.Context, query string) ([]*graphqlbackend.Repos
 // of the repository's default branch.
 type repoCommitID func(ctx context.Context, repo *graphqlbackend.RepositoryResolver) (api.CommitID, error)
 
+// ErrNoDefaultBranch is returned by a repoCommitID when no default branch
+// could be determined for a given repo.
+var ErrNoDefaultBranch = errors.New("could not determine default branch")
+
 // defaultRepoCommitID is an implementation of repoCommit that uses methods
 // defined on RepositoryResolver to talk to gitserver to determine a
 // repository's default branch target commit ID.
@@ -61,7 +65,7 @@ var defaultRepoCommitID = func(ctx context.Context, repo *graphqlbackend.Reposit
 		return commitID, err
 	}
 	if defaultBranch == nil {
-		return commitID, fmt.Errorf("no default branch for %q", repo.Name())
+		return commitID, ErrNoDefaultBranch
 	}
 
 	commit, err := defaultBranch.Target().Commit(ctx)
@@ -189,6 +193,9 @@ func (r *Runner) createPlanAndJobs(
 		}
 
 		rev, err := r.commitID(ctx, repo)
+		if err == ErrNoDefaultBranch {
+			continue
+		}
 		if err != nil {
 			return jobs, err
 		}
