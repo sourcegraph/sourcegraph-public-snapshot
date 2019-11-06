@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats2"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
@@ -18,7 +18,7 @@ func (r *siteResolver) UsageStatistics(ctx context.Context, args *struct {
 	if envvar.SourcegraphDotComMode() {
 		return nil, errors.New("site usage statistics are not available on sourcegraph.com")
 	}
-	opt := &usagestats.SiteUsageStatisticsOptions{}
+	opt := &usagestats2.SiteUsageStatisticsOptions{}
 	if args.Days != nil {
 		d := int(*args.Days)
 		opt.DayPeriods = &d
@@ -31,7 +31,7 @@ func (r *siteResolver) UsageStatistics(ctx context.Context, args *struct {
 		m := int(*args.Months)
 		opt.MonthPeriods = &m
 	}
-	activity, err := usagestats.GetSiteUsageStatistics(opt)
+	activity, err := usagestats2.GetSiteUsageStatistics(ctx, opt)
 	if err != nil {
 		return nil, err
 	}

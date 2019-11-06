@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats2"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -24,7 +25,7 @@ func (r *UserResolver) UsageStatistics(ctx context.Context) (*userUsageStatistic
 		return nil, errors.New("usage statistics are not available on sourcegraph.com")
 	}
 
-	stats, err := usagestats.GetByUserID(r.user.ID)
+	stats, err := usagestats2.GetByUserID(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
 	}

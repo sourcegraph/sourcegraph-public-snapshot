@@ -1,6 +1,7 @@
 package usagestats
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"reflect"
@@ -353,7 +354,7 @@ func TestUserUsageStatistics_DAUs_WAUs_MAUs(t *testing.T) {
 
 	mockTimeNow(now)
 	days, weeks, months := 7, 4, 3
-	siteActivity, err := GetSiteUsageStatistics(&SiteUsageStatisticsOptions{
+	siteActivity, err := GetSiteUsageStatistics(context.Background(), &SiteUsageStatisticsOptions{
 		DayPeriods:   &days,
 		WeekPeriods:  &weeks,
 		MonthPeriods: &months,
