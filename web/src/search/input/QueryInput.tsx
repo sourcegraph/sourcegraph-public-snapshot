@@ -367,9 +367,6 @@ export class QueryInput extends React.Component<Props, State> {
             catchError(() => [{ suggestions: filterSuggestions }])
         )
 
-    /**
-     * this.render() -> <downshift>
-     */
     private downshiftItemToString = (suggestion?: Suggestion): string => (suggestion ? suggestion.value : '')
 
     private downshiftScrollIntoView = (node: HTMLElement, menuNode: HTMLElement): void => {
