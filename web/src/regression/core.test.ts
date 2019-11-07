@@ -307,12 +307,6 @@ describe('Core functionality regression test suite', () => {
         expect(driver.page.url()).toEqual(quicklinkInfo.url)
     })
 
-    test('2.3.1 Organizations (admin user)', async () => {
-        // TODO(@sourcegraph/web)
-    })
-    test('2.3.2 Organizations (non-admin user)', async () => {
-        // TODO(@sourcegraph/web)
-    })
     test('2.4 Explore page', async () => {
         // TODO(@sourcegraph/web)
     })

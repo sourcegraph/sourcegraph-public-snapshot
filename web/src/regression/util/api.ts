@@ -2,15 +2,20 @@
  * Provides convenience functions for interacting with the Sourcegraph API from tests.
  */
 
-import { gql, dataOrThrowErrors } from '../../../../shared/src/graphql/graphql'
+import {
+    gql,
+    dataOrThrowErrors,
+    createInvalidGraphQLMutationResponseError,
+} from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { GraphQLClient } from './GraphQLClient'
 import { map, tap, retryWhen, delayWhen, take } from 'rxjs/operators'
-import { zip, timer, concat, throwError, defer } from 'rxjs'
+import { zip, timer, concat, throwError, defer, from, Observable } from 'rxjs'
 import { CloneInProgressError, ECLONEINPROGESS } from '../../../../shared/src/backend/errors'
 import { isErrorLike } from '../../../../shared/src/util/errors'
 import { ResourceDestructor } from './TestResourceManager'
 import { Config } from '../../../../shared/src/e2e/config'
+import { PlatformContext } from '../../../../shared/src/platform/context'
 
 /**
  * Wait until all repositories in the list exist.
@@ -109,6 +114,10 @@ export async function ensureNoTestExternalServices(
     }
 }
 
+/**
+ * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
+ * dependency-injected `requestGraphQL`.
+ */
 export function getExternalServices(
     gqlClient: GraphQLClient,
     options: {
@@ -201,6 +210,10 @@ export async function ensureTestExternalService(
     return destroy
 }
 
+/**
+ * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
+ * dependency-injected `requestGraphQL`.
+ */
 export async function getUser(gqlClient: GraphQLClient, username: string): Promise<GQL.IUser | null> {
     const user = await gqlClient
         .queryGraphQL(
@@ -249,6 +262,10 @@ export async function getUser(gqlClient: GraphQLClient, username: string): Promi
     return user
 }
 
+/**
+ * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
+ * dependency-injected `requestGraphQL`.
+ */
 export async function deleteUser(
     gqlClient: GraphQLClient,
     username: string,
@@ -287,6 +304,10 @@ export async function deleteUser(
         .toPromise()
 }
 
+/**
+ * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
+ * dependency-injected `requestGraphQL`.
+ */
 export async function setUserSiteAdmin(gqlClient: GraphQLClient, userID: GQL.ID, siteAdmin: boolean): Promise<void> {
     await gqlClient
         .mutateGraphQL(
@@ -302,6 +323,10 @@ export async function setUserSiteAdmin(gqlClient: GraphQLClient, userID: GQL.ID,
         .toPromise()
 }
 
+/**
+ * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
+ * dependency-injected `requestGraphQL`.
+ */
 export function currentProductVersion(gqlClient: GraphQLClient): Promise<string> {
     return gqlClient
         .queryGraphQL(
@@ -321,6 +346,10 @@ export function currentProductVersion(gqlClient: GraphQLClient): Promise<string>
         .toPromise()
 }
 
+/**
+ * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
+ * dependency-injected `requestGraphQL`.
+ */
 export function getManagementConsoleState(gqlClient: GraphQLClient): Promise<GQL.IManagementConsoleState> {
     return gqlClient
         .queryGraphQL(
@@ -341,6 +370,10 @@ export function getManagementConsoleState(gqlClient: GraphQLClient): Promise<GQL
         .toPromise()
 }
 
+/**
+ * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
+ * dependency-injected `requestGraphQL`.
+ */
 export async function setUserEmailVerified(
     gqlClient: GraphQLClient,
     username: string,
@@ -366,6 +399,10 @@ export async function setUserEmailVerified(
         .toPromise()
 }
 
+/**
+ * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
+ * dependency-injected `requestGraphQL`.
+ */
 export function getViewerSettings(gqlClient: GraphQLClient): Promise<GQL.ISettingsCascade> {
     return gqlClient
         .queryGraphQL(
@@ -409,4 +446,69 @@ export function getViewerSettings(gqlClient: GraphQLClient): Promise<GQL.ISettin
             map(data => data.viewerSettings)
         )
         .toPromise()
+}
+
+/**
+ * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
+ * dependency-injected `requestGraphQL`.
+ */
+export function deleteOrganization(
+    { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
+    organization: GQL.ID
+): Observable<void> {
+    return requestGraphQL<GQL.IMutation>({
+        request: gql`
+            mutation DeleteOrganization($organization: ID!) {
+                deleteOrganization(organization: $organization) {
+                    alwaysNil
+                }
+            }
+        `,
+        variables: { organization },
+        mightContainPrivateInfo: true,
+    }).pipe(
+        map(dataOrThrowErrors),
+        map(data => {
+            if (!data.deleteOrganization) {
+                throw createInvalidGraphQLMutationResponseError('DeleteOrganization')
+            }
+        })
+    )
+}
+
+/**
+ * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
+ * dependency-injected `requestGraphQL`.
+ */
+export function fetchAllOrganizations(
+    { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
+    args: { first?: number; query?: string }
+): Observable<GQL.IOrgConnection> {
+    return requestGraphQL<GQL.IQuery>({
+        request: gql`
+            query Organizations($first: Int, $query: String) {
+                organizations(first: $first, query: $query) {
+                    nodes {
+                        id
+                        name
+                        displayName
+                        createdAt
+                        latestSettings {
+                            createdAt
+                            contents
+                        }
+                        members {
+                            totalCount
+                        }
+                    }
+                    totalCount
+                }
+            }
+        `,
+        variables: args,
+        mightContainPrivateInfo: true,
+    }).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.organizations)
+    )
 }
