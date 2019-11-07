@@ -87,15 +87,15 @@ export class RepoSettingsCodeIntelligencePage extends React.PureComponent<Props,
     public render(): JSX.Element | null {
         return (
             <div className="repo-settings-code-intelligence-page">
-                <PageTitle title="Code Intelligence" />
-                <h2>Code Intelligence</h2>
+                <PageTitle title="Code intelligence" />
+                <h2>Code intelligence</h2>
                 <p>
                     Enable precise code intelligence by{' '}
                     <a href="https://docs.sourcegraph.com/user/code_intelligence/lsif">uploading LSIF data</a>.
                 </p>
 
                 <div className="lsif-dump-collection">
-                    <h3>Current LSIF Uploads</h3>
+                    <h3>Current LSIF uploads</h3>
                     <p>
                         These uploads provide code intelligence for the latest commit and are used in cross-repository{' '}
                         <em>Find Reference</em> requests.
@@ -119,7 +119,7 @@ export class RepoSettingsCodeIntelligencePage extends React.PureComponent<Props,
                 </div>
 
                 <div className="lsif-dump-collection">
-                    <h3>Historic LSIF Uploads</h3>
+                    <h3>Historic LSIF uploads</h3>
                     <p>These uploads provide code intelligence for older commits.</p>
 
                     <FilteredLsifDumpsConnection
