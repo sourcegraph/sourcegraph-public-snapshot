@@ -22,7 +22,7 @@ interface LsifDumpNodeProps {
 class LsifDumpNode extends React.PureComponent<LsifDumpNodeProps, {}> {
     public render(): JSX.Element | null {
         return (
-            <div className="lsif-dump list-group-item">
+            <div className="lsif-dump-node list-group-item">
                 <div className="lsif-dump__row lsif-dump__main">
                     <div className="lsif-dump__meta">
                         <div className="lsif-dump__meta-root">
