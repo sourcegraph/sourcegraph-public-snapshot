@@ -1,7 +1,7 @@
 import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { ChatIcon } from '../../../../../shared/src/components/icons' 
+import { ChatIcon } from '../../../../../shared/src/components/icons'
 import { LineOrPositionOrRange, RepoFile } from '../../../../../shared/src/util/url'
 import { eventLogger } from '../../../tracking/eventLogger'
 
