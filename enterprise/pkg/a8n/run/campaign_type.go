@@ -19,8 +19,8 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-// NewCampaignType returns a new Campaign for the given CampaignType and
-// arguments.
+// NewCampaignType returns a new CampaignType for the given campaign type name
+// and arguments.
 // Before the returned CampaignType can be passed to a Runner its Valid method
 // needs to be called.
 func NewCampaignType(campaignTypeName, args string) (CampaignType, error) {
@@ -112,7 +112,7 @@ func (c *comby) generateDiff(ctx context.Context, repo api.RepoName, commit api.
 			continue
 		}
 
-		raw := &cby.FileDiff{}
+		var raw cby.FileDiff
 		if err := json.Unmarshal(b, &raw); err != nil {
 			log15.Error("unmarshalling raw diff failed", "err", err)
 			continue
