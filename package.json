@@ -201,7 +201,7 @@
     "yarn-deduplicate": "^1.1.1"
   },
   "dependencies": {
-    "@hot-loader/react-dom": "^16.10.2",
+    "@hot-loader/react-dom": "^16.11.0",
     "@sentry/browser": "^5.7.1",
     "@slimsag/react-shortcuts": "^1.2.1",
     "@sourcegraph/codeintellify": "^6.2.2",
