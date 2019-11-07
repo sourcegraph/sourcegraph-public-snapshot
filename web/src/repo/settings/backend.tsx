@@ -63,13 +63,7 @@ export function fetchLsifDumps({
     after,
     query,
     isLatestForRepo,
-}: {
-    repository: string
-    first?: number
-    after?: string
-    query?: string
-    isLatestForRepo?: boolean
-}): Observable<GQL.ILSIFDumpConnection> {
+}: GQL.ILsifDumpsOnQueryArguments): Observable<GQL.ILSIFDumpConnection> {
     return queryGraphQL(
         gql`
             query LsifDumps($repository: ID!, $first: Int, $after: String, $query: String, $isLatestForRepo: Boolean) {

@@ -1,18 +1,8 @@
-@import './components/ActionContainer';
-
 .repo-settings-code-intelligence-page {
     width: 100%;
 }
 
-.lsif-dump-collection {
-    margin-top: 1.5rem;
-}
-
 .lsif-dump {
-    &__row {
-        width: 100%;
-    }
-
     &__main {
         display: flex;
         flex-wrap: wrap-reverse;
