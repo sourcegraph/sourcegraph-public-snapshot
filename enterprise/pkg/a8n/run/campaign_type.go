@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	cby "github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/httputil"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -25,6 +26,14 @@ import (
 func NewCampaignType(campaignTypeName, args string, cf *httpcli.Factory) (CampaignType, error) {
 	if strings.ToLower(campaignTypeName) != "comby" {
 		return nil, fmt.Errorf("unknown campaign type: %s", campaignTypeName)
+	}
+
+	if cf == nil {
+		cf = httpcli.NewFactory(
+			httpcli.NewMiddleware(httpcli.ContextErrorMiddleware),
+			httpcli.TracedTransportOpt,
+			httpcli.NewCachedTransportOpt(httputil.Cache, true),
+		)
 	}
 
 	cli, err := cf.Doer()
