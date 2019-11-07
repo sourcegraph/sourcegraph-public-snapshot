@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	cby "github.com/sourcegraph/sourcegraph/internal/comby"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -21,12 +22,17 @@ import (
 
 // NewCampaignType returns a new CampaignType for the given campaign type name
 // and arguments.
-func NewCampaignType(campaignTypeName, args string) (CampaignType, error) {
+func NewCampaignType(campaignTypeName, args string, cf *httpcli.Factory) (CampaignType, error) {
 	if strings.ToLower(campaignTypeName) != "comby" {
 		return nil, fmt.Errorf("unknown campaign type: %s", campaignTypeName)
 	}
 
-	ct := &comby{replacerURL: graphqlbackend.ReplacerURL}
+	cli, err := cf.Doer()
+	if err != nil {
+		return nil, err
+	}
+
+	ct := &comby{replacerURL: graphqlbackend.ReplacerURL, httpClient: cli}
 
 	if err := jsonc.Unmarshal(args, &ct.args); err != nil {
 		return nil, err
@@ -61,8 +67,10 @@ type combyArgs struct {
 }
 
 type comby struct {
-	args        combyArgs
+	args combyArgs
+
 	replacerURL string
+	httpClient  httpcli.Doer
 }
 
 func (c *comby) searchQuery() string { return c.args.ScopeQuery }
@@ -84,8 +92,7 @@ func (c *comby) generateDiff(ctx context.Context, repo api.RepoName, commit api.
 		return "", err
 	}
 
-	cl := &http.Client{}
-	resp, err := cl.Do(req.WithContext(ctx))
+	resp, err := c.httpClient.Do(req.WithContext(ctx))
 	if err != nil {
 		return "", err
 	}

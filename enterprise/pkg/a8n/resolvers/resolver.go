@@ -404,7 +404,7 @@ func (r *Resolver) PreviewCampaignPlan(ctx context.Context, args graphqlbackend.
 		return nil, errors.New("cannot create CampaignPlan without Type")
 	}
 
-	campaignType, err := run.NewCampaignType(typeName, specArgs)
+	campaignType, err := run.NewCampaignType(typeName, specArgs, r.httpFactory)
 	if err != nil {
 		return nil, err
 	}
