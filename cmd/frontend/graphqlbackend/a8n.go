@@ -261,7 +261,7 @@ type CampaignPlanResolver interface {
 	Type() string
 	Arguments() (JSONCString, error)
 
-	Status() BackgroundProcessStatus
+	Status(ctx context.Context) (BackgroundProcessStatus, error)
 
 	Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) ChangesetPlansConnectionResolver
 }
