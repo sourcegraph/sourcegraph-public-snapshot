@@ -31,7 +31,6 @@ import {
 } from '../helpers'
 import { fetchSuggestions } from '../backend'
 import { isDefined } from '../../../../shared/src/util/types'
-import { keyboardKeyCodes } from '../../keyboardShortcuts/keyboardShortcuts'
 
 /**
  * The query input field is clobbered and updated to contain this subject's values, as
@@ -385,7 +384,7 @@ export class QueryInput extends React.Component<Props, State> {
 
     private onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
         // Ctrl+Space to show all available suggestions
-        if (!this.props.value && event.ctrlKey && event.keyCode === keyboardKeyCodes.space) {
+        if (!this.props.value && event.ctrlKey && event.key === ' ') {
             this.setState({ suggestions: this.getSuggestions(searchFilterSuggestions) })
         }
     }
