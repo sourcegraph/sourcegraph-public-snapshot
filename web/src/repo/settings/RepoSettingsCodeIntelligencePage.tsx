@@ -13,7 +13,7 @@ const LsifDumpNode: FunctionComponent<{ node: GQL.ILSIFDump }> = ({ node }) => (
         <div className="lsif-dump__meta">
             <div className="lsif-dump__meta-root">
                 <code>{node.projectRoot.commit.abbreviatedOID}</code>
-                <span className="ml-1">
+                <span className="ml-2">
                     <Link to={node.projectRoot.url}>
                         <strong>{node.projectRoot.path}</strong>
                     </Link>
