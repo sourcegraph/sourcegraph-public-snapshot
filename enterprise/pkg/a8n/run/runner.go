@@ -174,10 +174,14 @@ func (r *Runner) createPlanAndJobs(
 	ctx context.Context,
 	plan *a8n.CampaignPlan,
 	rs []*graphqlbackend.RepositoryResolver,
-) (jobs []*a8n.CampaignJob, err error) {
-	tx, err := r.store.Transact(ctx)
+) ([]*a8n.CampaignJob, error) {
+	var (
+		err error
+		tx  *ee.Store
+	)
+	tx, err = r.store.Transact(ctx)
 	if err != nil {
-		return jobs, err
+		return nil, err
 	}
 	defer tx.Done(&err)
 
@@ -186,14 +190,17 @@ func (r *Runner) createPlanAndJobs(
 		return nil, err
 	}
 
+	jobs := make([]*a8n.CampaignJob, 0, len(rs))
 	for _, repo := range rs {
 		var repoID int32
-		if err := relay.UnmarshalSpec(repo.ID(), &repoID); err != nil {
+		if err = relay.UnmarshalSpec(repo.ID(), &repoID); err != nil {
 			return jobs, err
 		}
 
-		rev, err := r.commitID(ctx, repo)
+		var rev api.CommitID
+		rev, err = r.commitID(ctx, repo)
 		if err == ErrNoDefaultBranch {
+			err = nil
 			continue
 		}
 		if err != nil {
@@ -205,7 +212,7 @@ func (r *Runner) createPlanAndJobs(
 			RepoID:         repoID,
 			Rev:            rev,
 		}
-		if err := tx.CreateCampaignJob(ctx, job); err != nil {
+		if err = tx.CreateCampaignJob(ctx, job); err != nil {
 			return jobs, err
 		}
 		jobs = append(jobs, job)
