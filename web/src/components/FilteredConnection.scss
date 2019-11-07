@@ -1,4 +1,10 @@
 .filtered-connection {
+    &__control {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
     &__nodes {
         list-style-type: none;
         padding: 0;
