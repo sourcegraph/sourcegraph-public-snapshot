@@ -98,7 +98,7 @@ export const RepoSettingsCodeIntelligencePage: React.FunctionComponent<Props> = 
                     </div>
                 )}
                 {dumpsOrError !== undefined && !isErrorLike(dumpsOrError) && dumpsOrError.length > 0 ? (
-                    dumpsOrError.map((dump, i) => <LsifDumpNode key={`latest-${dump.id}`} node={dump} />)
+                    dumpsOrError.map(dump => <LsifDumpNode key={`latest-${dump.id}`} node={dump} />)
                 ) : (
                     <p>No uploads are recent enough to be used at the tip of the default branch.</p>
                 )}
