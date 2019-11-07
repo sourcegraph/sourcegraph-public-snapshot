@@ -26,7 +26,7 @@ func NewCampaignType(campaignTypeName, args string) (CampaignType, error) {
 		return nil, fmt.Errorf("unknown campaign type: %s", campaignTypeName)
 	}
 
-	ct := &comby{}
+	ct := &comby{replacerURL: graphqlbackend.ReplacerURL}
 
 	if err := jsonc.Unmarshal(args, &ct.args); err != nil {
 		return nil, err
@@ -61,12 +61,13 @@ type combyArgs struct {
 }
 
 type comby struct {
-	args combyArgs
+	args        combyArgs
+	replacerURL string
 }
 
 func (c *comby) searchQuery() string { return c.args.ScopeQuery }
 func (c *comby) generateDiff(ctx context.Context, repo api.RepoName, commit api.CommitID) (string, error) {
-	u, err := url.Parse(graphqlbackend.ReplacerURL)
+	u, err := url.Parse(c.replacerURL)
 	if err != nil {
 		return "", err
 	}
