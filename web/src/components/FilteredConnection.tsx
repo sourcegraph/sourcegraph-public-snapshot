@@ -116,7 +116,7 @@ interface ConnectionPropsCommon<N, NP = {}> extends ConnectionDisplayProps {
     nodeComponentProps?: NP
 
     /** An element rendered as a sibling of the filters. */
-    additionalFilterComponent?: React.ReactElement
+    additionalFilterElement?: React.ReactElement
 }
 
 /** State related to the ConnectionNodes component. */
@@ -731,7 +731,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                                 onDidSelectFilter={this.onDidSelectFilter}
                                 value={this.state.activeFilter.id}
                             >
-                                {this.props.additionalFilterComponent}
+                                {this.props.additionalFilterElement}
                             </FilteredConnectionFilterControl>
                         )}
                     </Form>
