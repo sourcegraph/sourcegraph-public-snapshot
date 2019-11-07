@@ -17,6 +17,7 @@ local standardDashboardOptions = {
     from: 'now-3h',
     to: 'now',
   },
+  timezone: 'utc',
 };
 
 // The standard options that are applied to the yaxes of a new panel.

@@ -47,38 +47,23 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo>
     of(undefined).pipe(
         map(getDiffPageInfo),
         // Resolve base commit ID.
-        switchMap(({ owner, projectName, mergeRequestID, diffID, baseCommitID, ...rest }) => {
+        switchMap(({ owner, projectName, mergeRequestID, diffID, baseCommitID, rawRepoName }) => {
             const gettingBaseCommitID = baseCommitID
                 ? // Commit was found in URL.
                   of(baseCommitID)
                 : // Commit needs to be fetched from the API.
                   getBaseCommitIDForMergeRequest({ owner, projectName, mergeRequestID, diffID })
 
-            return gettingBaseCommitID.pipe(map(baseCommitID => ({ baseCommitID, baseRev: baseCommitID, ...rest })))
+            return gettingBaseCommitID.pipe(map(baseCommitID => ({ baseCommitID, rawRepoName })))
         }),
-        map(info => {
-            // Head commit is found in the "View file @ ..." button in the code view.
-            const head = getHeadCommitIDFromCodeView(codeView)
-
-            return {
-                ...info,
-
-                rev: head,
-                commitID: head,
+        map(
+            ({ baseCommitID, rawRepoName }): FileInfo => {
+                // Head commit is found in the "View file @ ..." button in the code view.
+                const commitID = getHeadCommitIDFromCodeView(codeView)
+                const { filePath, baseFilePath } = getFilePathsFromCodeView(codeView)
+                return { baseCommitID, baseFilePath, commitID, filePath, rawRepoName }
             }
-        }),
-        map(info => ({
-            ...info,
-            // Find both head and base file path if the name has changed.
-            ...getFilePathsFromCodeView(codeView),
-        })),
-        map(info => ({
-            ...info,
-
-            // https://github.com/sourcegraph/browser-extensions/issues/185
-            headHasFileContents: true,
-            baseHasFileContents: true,
-        }))
+        )
     )
 
 /**
@@ -88,22 +73,15 @@ export const resolveCommitFileInfo = (codeView: HTMLElement): Observable<FileInf
     of(undefined).pipe(
         map(getCommitPageInfo),
         // Resolve base commit ID.
-        switchMap(({ owner, projectName, commitID, ...rest }) =>
+        switchMap(({ owner, projectName, commitID, rawRepoName }) =>
             getBaseCommitIDForCommit({ owner, projectName, commitID }).pipe(
-                map(baseCommitID => ({ owner, projectName, commitID, baseCommitID, ...rest }))
+                map(baseCommitID => ({ commitID, baseCommitID, rawRepoName }))
             )
         ),
-        map(info => ({ ...info, rev: info.commitID, baseRev: info.baseCommitID })),
-        map(info => ({
-            ...info,
-            // Find both head and base file path if the name has changed.
-            ...getFilePathsFromCodeView(codeView),
-        })),
-        map(info => ({
-            ...info,
-
-            // https://github.com/sourcegraph/browser-extensions/issues/185
-            headHasFileContents: true,
-            baseHasFileContents: true,
-        }))
+        map(
+            ({ commitID, baseCommitID, rawRepoName }): FileInfo => {
+                const { filePath, baseFilePath } = getFilePathsFromCodeView(codeView)
+                return { baseCommitID, baseFilePath, commitID, filePath, rawRepoName }
+            }
+        )
     )

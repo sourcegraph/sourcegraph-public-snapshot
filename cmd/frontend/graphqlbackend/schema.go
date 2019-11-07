@@ -460,21 +460,6 @@ type CampaignPlan implements Node {
 
     # The changesets that will be created by the campaign.
     changesets(first: Int): ChangesetPlanConnection!
-
-    # The combined diff of all changesets that will be created by the campaign.
-    repositoryDiffs(first: Int): PreviewRepositoryDiffConnection!
-}
-
-# A paginated list of repository diff previews.
-type PreviewRepositoryDiffConnection {
-    # A list of repository diffs.
-    nodes: [PreviewRepositoryDiff!]!
-
-    # The total number of repository diffs in the connection.
-    totalCount: Int!
-
-    # Pagination information.
-    pageInfo: PageInfo!
 }
 
 # A paginated list of repository diffs committed to git.
@@ -624,14 +609,8 @@ type ChangesetPlan {
     # The repository changed by the changeset.
     repository: Repository!
 
-    # The title of the changeset.
-    title: String!
-
-    # The body of the changeset.
-    body: String!
-
-    # The diff of the changeset.
-    diff: PreviewRepositoryDiff!
+    # The preview of the file diffs for each file in the diff.
+    fileDiffs(first: Int): PreviewFileDiffConnection!
 }
 
 # A changeset in a code host (e.g. a PR on Github)
@@ -1257,6 +1236,9 @@ type Query {
 
         # An (optional) search query that searches over the commit and root properties.
         query: String
+
+        # When specified, shows only dumps that are latest for the given repository.
+        isLatestForRepo: Boolean
 
         # When specified, indicates that this request should be paginated and
         # the first N results (relative to the cursor) should be returned. i.e.
@@ -1920,15 +1902,6 @@ type GitRefConnection {
     totalCount: Int!
     # Pagination information.
     pageInfo: PageInfo!
-}
-
-# A not-yet-committed preview of a diff on a repository.
-type PreviewRepositoryDiff {
-    # The repository that this diff is targeting.
-    baseRepository: Repository!
-
-    # The preview of the file diffs for each file in the diff.
-    fileDiffs(first: Int): PreviewFileDiffConnection!
 }
 
 # A list of file diffs that might be applied.
@@ -4038,7 +4011,7 @@ type LSIFJobConnection {
     nodes: [LSIFJob!]!
 
     # The total number of jobs in this result set.
-    totalCount: Int!
+    totalCount: Int
 
     # Pagination information.
     pageInfo: PageInfo!

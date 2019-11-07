@@ -12,6 +12,11 @@ export interface Config {
     gitHubToken: string
     gitHubUserBobPassword: string
     gitHubUserAmyPassword: string
+    gitLabClientID: string
+    gitLabClientSecret: string
+    gitLabUserAmyPassword: string
+    oktaUserAmyPassword: string
+    oktaMetadataUrl: string
     sourcegraphBaseUrl: string
     managementConsoleUrl: string
     includeAdminOnboarding: boolean
@@ -60,12 +65,14 @@ const configFields: ConfigFields = {
     },
     gitHubClientID: {
         envVar: 'GITHUB_CLIENT_ID',
-        description: 'Client ID of the GitHub app to use to authenticate to Sourcegraph.',
+        description:
+            'Client ID of the GitHub app to use to authenticate to Sourcegraph. Follow these instructions to obtain: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/',
         defaultValue: 'cf9491b706c4c3b1f956', // "Local dev sign-in via GitHub" OAuth app from github.com/sourcegraph
     },
     gitHubClientSecret: {
         envVar: 'GITHUB_CLIENT_SECRET',
-        description: 'Cilent secret of the GitHub app to use to authenticate to Sourcegraph.',
+        description:
+            'Cilent secret of the GitHub app to use to authenticate to Sourcegraph. Follow these instructions to obtain: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/',
     },
     gitHubToken: {
         envVar: 'GITHUB_TOKEN',
@@ -74,11 +81,33 @@ const configFields: ConfigFields = {
     },
     gitHubUserBobPassword: {
         envVar: 'GITHUB_USER_BOB_PASSWORD',
-        description: 'Password of the GitHub user sg-e2e-regression-test-bob, used to log into Sourcegraph.',
+        description: 'Password of the GitHub user sg-e2e-regression-test-bob, used to log in to Sourcegraph.',
     },
     gitHubUserAmyPassword: {
         envVar: 'GITHUB_USER_AMY_PASSWORD',
-        description: 'Password of the GitHub user sg-e2e-regression-test-amy, used to log into Sourcegraph.',
+        description: 'Password of the GitHub user sg-e2e-regression-test-amy, used to log in to Sourcegraph.',
+    },
+    gitLabClientID: {
+        envVar: 'GITLAB_CLIENT_ID',
+        description:
+            'Application ID of the GitLab OAuth app used to authenticate Sourcegraph. Follow these instructions to obtain: https://docs.gitlab.com/ee/integration/oauth_provider.html',
+    },
+    gitLabClientSecret: {
+        envVar: 'GITLAB_CLIENT_SECRET',
+        description:
+            'Secret of the GitLab OAuth app used to authenticate Sourcegraph. Follow these instructions to obtain: https://docs.gitlab.com/ee/integration/oauth_provider.html',
+    },
+    gitLabUserAmyPassword: {
+        envVar: 'GITLAB_USER_AMY_PASSWORD',
+        description: 'Password of the GitLab user sg-e2e-regression-test-amy, used to log in to Sourcegraph.',
+    },
+    oktaMetadataUrl: {
+        envVar: 'OKTA_METADATA_URL',
+        description: 'URL of the Okta SAML IdP metadata.',
+    },
+    oktaUserAmyPassword: {
+        envVar: 'OKTA_USER_AMY_PASSWORD',
+        description: 'Password of the Okta user, beyang+sg-e2e-regression-test-amy@sourcegraph.com',
     },
     sourcegraphBaseUrl: {
         envVar: 'SOURCEGRAPH_BASE_URL',

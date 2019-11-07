@@ -90,17 +90,7 @@ func (r *changesetResolver) Repository(ctx context.Context) (*graphqlbackend.Rep
 
 func (r *changesetResolver) repoResolver(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
 	if r.repo != nil {
-		return graphqlbackend.NewRepositoryResolver(&types.Repo{
-			ID:           api.RepoID(r.repo.ID),
-			ExternalRepo: r.repo.ExternalRepo,
-			Name:         api.RepoName(r.repo.Name),
-			RepoFields: &types.RepoFields{
-				URI:         r.repo.URI,
-				Description: r.repo.Description,
-				Language:    r.repo.Language,
-				Fork:        r.repo.Fork,
-			},
-		}), nil
+		return newRepositoryResolver(r.repo), nil
 	}
 	return graphqlbackend.RepositoryByIDInt32(ctx, api.RepoID(r.Changeset.RepoID))
 }
@@ -221,5 +211,19 @@ func (r *changesetResolver) Diff(ctx context.Context) (*graphqlbackend.Repositor
 	return graphqlbackend.NewRepositoryComparison(ctx, repo, &graphqlbackend.RepositoryComparisonInput{
 		Base: &base,
 		Head: &head,
+	})
+}
+
+func newRepositoryResolver(r *repos.Repo) *graphqlbackend.RepositoryResolver {
+	return graphqlbackend.NewRepositoryResolver(&types.Repo{
+		ID:           api.RepoID(r.ID),
+		ExternalRepo: r.ExternalRepo,
+		Name:         api.RepoName(r.Name),
+		RepoFields: &types.RepoFields{
+			URI:         r.URI,
+			Description: r.Description,
+			Language:    r.Language,
+			Fork:        r.Fork,
+		},
 	})
 }

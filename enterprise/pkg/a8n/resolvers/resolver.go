@@ -3,10 +3,7 @@ package resolvers
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"strings"
-	"sync"
-	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -17,11 +14,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
+	"github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n/run"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // Resolver is the GraphQL resolver of all things A8N.
@@ -402,104 +398,39 @@ func (r *Resolver) PreviewCampaignPlan(ctx context.Context, args graphqlbackend.
 		return nil, err
 	}
 
+	specArgs := string(args.Specification.Arguments)
 	typeName := strings.ToLower(args.Specification.Type)
 	if typeName == "" {
 		return nil, errors.New("cannot create CampaignPlan without Type")
 	}
-	campaignType, ok := a8n.CampaignTypes[typeName]
-	if !ok {
-		return nil, errors.New("campaign type does not exist. Don't know how to plan this campaign")
-	}
 
-	specArgs := make(map[string]string)
-	// TODO(a8n): This turns the JSONC into JSON. We need to preserve the JSONC.
-	if err := jsonc.Unmarshal(string(args.Specification.Arguments), &specArgs); err != nil {
-		return nil, err
-	}
-	if len(specArgs) != len(campaignType.Parameters) {
-		return nil, errors.New("not enough arguments for campaign type specified")
-	}
-	for _, param := range campaignType.Parameters {
-		if _, ok := specArgs[param]; !ok {
-			return nil, fmt.Errorf("missing argument in specification: %s", param)
-		}
-	}
-
-	plan := &a8n.CampaignPlan{
-		CampaignType: typeName,
-		Arguments:    string(args.Specification.Arguments),
-	}
-	if err := r.store.CreateCampaignPlan(ctx, plan); err != nil {
-		return nil, err
-	}
-
-	// Search repositories over which to execute code modification
-	repos, err := graphqlbackend.SearchRepos(ctx, specArgs["searchScope"])
+	campaignType, err := run.NewCampaignType(typeName, specArgs, r.httpFactory)
 	if err != nil {
 		return nil, err
 	}
 
-	var wg sync.WaitGroup
-	for _, repo := range repos {
-		job := &a8n.CampaignJob{
-			CampaignPlanID: plan.ID,
-			StartedAt:      time.Now().UTC(),
-		}
+	plan := &a8n.CampaignPlan{CampaignType: typeName, Arguments: specArgs}
 
-		err := relay.UnmarshalSpec(repo.ID(), &job.RepoID)
+	runner := run.New(r.store, campaignType, graphqlbackend.SearchRepos, nil)
+
+	if args.Wait {
+		err := runner.Run(ctx, plan)
 		if err != nil {
 			return nil, err
 		}
-
-		defaultBranch, err := repo.DefaultBranch(ctx)
+		err = runner.Wait()
 		if err != nil {
 			return nil, err
 		}
-		if defaultBranch != nil {
-			commit, err := defaultBranch.Target().Commit(ctx)
-			if err != nil {
-				return nil, err
-			}
-			job.Rev = api.CommitID(commit.OID())
-		}
-
-		err = r.store.CreateCampaignJob(ctx, job)
+	} else {
+		err := runner.Run(context.Background(), plan)
 		if err != nil {
 			return nil, err
 		}
-
-		wg.Add(1)
-		go func(plan *a8n.CampaignPlan, job *a8n.CampaignJob) {
-			// TODO(a8n): Do real work.
-			// Send request to service with Repo, Ref, Arguments.
-			// Receive diff.
-			job.Diff = bogusDiff
-			job.FinishedAt = time.Now()
-
-			err := r.store.UpdateCampaignJob(ctx, job)
-			if err != nil {
-				log15.Error("RunCampaign.UpdateCampaignJob failed", "err", err)
-			}
-
-			wg.Done()
-		}(plan, job)
 	}
-
-	// TODO(a8n): Implement this so that `if !args.Wait` this mutation is
-	// asynchronous
-	wg.Wait()
 
 	return &campaignPlanResolver{store: r.store, campaignPlan: plan}, nil
 }
-
-const bogusDiff = `diff --git a/README.md b/README.md
-index 323fae0..34a3ec2 100644
---- a/README.md
-+++ b/README.md
-@@ -1 +1 @@
--foobar
-+barfoo
-`
 
 func (r *Resolver) CancelCampaignPlan(ctx context.Context, args graphqlbackend.CancelCampaignPlanArgs) (*graphqlbackend.EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins may update campaigns for now

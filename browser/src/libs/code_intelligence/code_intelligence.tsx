@@ -446,10 +446,12 @@ export function handleCodeHost({
     sourcegraphURL,
     telemetryService,
     render,
+    minimalUI,
 }: CodeIntelligenceProps & {
     mutations: Observable<MutationRecordLike[]>
     sourcegraphURL: string
     render: typeof reactDOMRender
+    minimalUI?: boolean
 }): Subscription {
     const history = H.createBrowserHistory()
     const subscriptions = new Subscription()
@@ -496,7 +498,7 @@ export function handleCodeHost({
 
     // Inject UI components
     // Render command palette
-    if (codeHost.getCommandPaletteMount) {
+    if (codeHost.getCommandPaletteMount && !minimalUI) {
         subscriptions.add(
             addedElements
                 .pipe(
@@ -525,7 +527,7 @@ export function handleCodeHost({
     }
 
     // Render view on Sourcegraph button
-    if (codeHost.getViewContextOnSourcegraphMount && codeHost.getContext) {
+    if (codeHost.getViewContextOnSourcegraphMount && codeHost.getContext && !minimalUI) {
         const { getContext, viewOnSourcegraphButtonClassProps } = codeHost
         subscriptions.add(
             addedElements
@@ -709,7 +711,7 @@ export function handleCodeHost({
             }
 
             // Apply decorations coming from extensions
-            {
+            if (!minimalUI) {
                 let decorationsByLine: DecorationMapByLine = new Map()
                 const update = (decorations?: TextDocumentDecoration[] | null): void => {
                     try {
@@ -801,7 +803,7 @@ export function handleCodeHost({
             element.classList.add('sg-mounted')
 
             // Render toolbar
-            if (getToolbarMount) {
+            if (getToolbarMount && !minimalUI) {
                 const mount = getToolbarMount(element)
                 render(
                     <CodeViewToolbar
@@ -880,6 +882,12 @@ export async function injectCodeIntelligenceToCodeHost(
     // In the browser extension, observe whether the `disableExtension` storage flag is set.
     // In the native integration, this flag does not exist.
     const extensionDisabled = isExtension ? observeStorageKey('sync', 'disableExtension') : of(false)
+
+    // RFC 68: hide some UI features in the GitLab native integration.
+    // This can be overridden using the `sourcegraphMinimalUI` local storage flag.
+    const minimalUIStorageFlag = localStorage.getItem('sourcegraphMinimalUI')
+    const minimalUI =
+        minimalUIStorageFlag !== null ? minimalUIStorageFlag === 'true' : codeHost.type === 'gitlab' && !isExtension
     subscriptions.add(
         extensionDisabled.subscribe(disableExtension => {
             if (disableExtension) {
@@ -898,6 +906,7 @@ export async function injectCodeIntelligenceToCodeHost(
                     sourcegraphURL,
                     telemetryService,
                     render: reactDOMRender,
+                    minimalUI,
                 })
                 subscriptions.add(codeHostSubscription)
                 console.log(`${isExtension ? 'Browser extension' : 'Native integration'} is enabled`)

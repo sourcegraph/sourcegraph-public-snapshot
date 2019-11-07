@@ -1,4 +1,5 @@
 import { Job } from 'bull'
+import { ApiJobState } from './queue'
 
 /**
  * The representation of a job as returned by the API.
@@ -7,7 +8,7 @@ export interface ApiJob {
     id: string
     name: string
     args: object
-    state: string
+    state: ApiJobState
     progress: number
     failedReason: string | null
     stacktrace: string[] | null
@@ -44,7 +45,7 @@ const toMaybeInt = (value: string | undefined): number | null => (value ? parseI
  * @param job The job to format.
  * @param state The job's state.
  */
-export const formatJob = (job: Job, state: string): ApiJob => {
+export const formatJob = (job: Job, state: ApiJobState): ApiJob => {
     const payload = job.toJSON()
 
     return {
@@ -67,7 +68,7 @@ export const formatJob = (job: Job, state: string): ApiJob => {
  * @param values A map of values composing the job.
  * @param state The job's state.
  */
-export const formatJobFromMap = (values: Map<string, string>, state: string): ApiJob => {
+export const formatJobFromMap = (values: Map<string, string>, state: ApiJobState): ApiJob => {
     const rawData = values.get('data')
     const rawStacktrace = values.get('stacktrace')
 

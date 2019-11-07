@@ -407,6 +407,7 @@ describe('XrepoDatabase', () => {
 
         const getReferencedDumpIds = async () => {
             const { references } = await xrepoDatabase.getReferences({
+                repository: '',
                 scheme: 'npm',
                 name: 'p1',
                 version: '0.1.0',
@@ -463,6 +464,7 @@ describe('XrepoDatabase', () => {
         }
 
         const { references } = await xrepoDatabase.getReferences({
+            repository: 'bar',
             scheme: 'npm',
             name: 'p1',
             version: '0.1.0',
@@ -496,6 +498,7 @@ describe('XrepoDatabase', () => {
 
         const getReferencedDumpIds = async () =>
             (await xrepoDatabase.getReferences({
+                repository: '',
                 scheme: 'npm',
                 name: 'p1',
                 version: '0.1.0',

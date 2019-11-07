@@ -24,7 +24,12 @@ func marshalSurveyResponseID(id int32) graphql.ID { return relay.MarshalID("Surv
 
 func (s *surveyResponseResolver) User(ctx context.Context) (*UserResolver, error) {
 	if s.surveyResponse.UserID != nil {
-		return UserByIDInt32(ctx, *s.surveyResponse.UserID)
+		user, err := UserByIDInt32(ctx, *s.surveyResponse.UserID)
+		if err != nil && errcode.IsNotFound(err) {
+			// This can happen if the user has been deleted, see issue #4888 and #6454
+			return nil, nil
+		}
+		return user, err
 	}
 	return nil, nil
 }
