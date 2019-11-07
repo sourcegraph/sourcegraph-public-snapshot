@@ -460,8 +460,10 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
             startWith(this.state.query)
         )
 
-        // Emits `{ forceRefresh: false }` when loading a subsequent page (keeping the existing result set)
-        // Emits `{ forceRefresh: true }` on all other refresh conditions (clearing the existing result set)
+        /**
+         * Emits `{ forceRefresh: false }` when loading a subsequent page (keeping the existing result set),
+         * and emits `{ forceRefresh: true }` on all other refresh conditions (clearing the existing result set).
+         */
         const refreshRequests = new Subject<{ forceRefresh: boolean }>()
 
         this.subscriptions.add(
