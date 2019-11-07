@@ -18,9 +18,17 @@ export function checkIsGitlab(): boolean {
 
 const adjustOverlayPosition: CodeHost['adjustOverlayPosition'] = ({ top, left }) => {
     const header = document.querySelector('header')
-
+    if (header) {
+        top += header.getBoundingClientRect().height
+    }
+    // When running GitLab from source, we also need to take into account
+    // the debug header shown at the top of the page.
+    const debugHeader = document.querySelector('#js-peek.development')
+    if (debugHeader) {
+        top += debugHeader.getBoundingClientRect().height
+    }
     return {
-        top: header ? top + header.getBoundingClientRect().height : 0,
+        top,
         left,
     }
 }
