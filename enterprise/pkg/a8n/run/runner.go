@@ -136,7 +136,7 @@ func (r *Runner) Run(ctx context.Context, plan *a8n.CampaignPlan) error {
 			defer func() {
 				defer r.wg.Done()
 				job.FinishedAt = r.clock()
-				err = r.store.UpdateCampaignJob(ctx, job)
+				err := r.store.UpdateCampaignJob(ctx, job)
 				if err != nil {
 					log15.Error("UpdateCampaignJob failed", "err", err)
 				}
