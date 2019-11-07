@@ -21,22 +21,35 @@ import (
 
 // NewCampaignType returns a new CampaignType for the given campaign type name
 // and arguments.
-// Before the returned CampaignType can be passed to a Runner its Valid method
-// needs to be called.
 func NewCampaignType(campaignTypeName, args string) (CampaignType, error) {
-	switch strings.ToLower(campaignTypeName) {
-	case "comby":
-		return &comby{rawArgs: args}, nil
-	default:
+	if strings.ToLower(campaignTypeName) != "comby" {
 		return nil, fmt.Errorf("unknown campaign type: %s", campaignTypeName)
 	}
+
+	ct := &comby{}
+
+	if err := jsonc.Unmarshal(args, &ct.args); err != nil {
+		return nil, err
+	}
+
+	if ct.args.ScopeQuery == "" {
+		return nil, errors.New("missing argument in specification: scopeQuery")
+	}
+
+	if ct.args.MatchTemplate == "" {
+		return nil, errors.New("missing argument in specification: matchTemplate")
+	}
+
+	if ct.args.RewriteTemplate == "" {
+		return nil, errors.New("missing argument in specification: rewriteTemplate")
+	}
+
+	return ct, nil
 }
 
 // A CampaignType provides a search query, argument validation and generates a
 // diff in a given repository.
 type CampaignType interface {
-	Valid() error
-
 	searchQuery() string
 	generateDiff(context.Context, api.RepoName, api.CommitID) (string, error)
 }
@@ -48,28 +61,7 @@ type combyArgs struct {
 }
 
 type comby struct {
-	rawArgs string
-	args    combyArgs
-}
-
-func (c *comby) Valid() error {
-	if err := jsonc.Unmarshal(c.rawArgs, &c.args); err != nil {
-		return err
-	}
-
-	if c.args.ScopeQuery == "" {
-		return errors.New("missing argument in specification: scopeQuery")
-	}
-
-	if c.args.MatchTemplate == "" {
-		return errors.New("missing argument in specification: matchTemplate")
-	}
-
-	if c.args.RewriteTemplate == "" {
-		return errors.New("missing argument in specification: rewriteTemplate")
-	}
-
-	return nil
+	args combyArgs
 }
 
 func (c *comby) searchQuery() string { return c.args.ScopeQuery }

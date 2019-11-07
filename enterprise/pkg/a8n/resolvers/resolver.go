@@ -3,7 +3,6 @@ package resolvers
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"strings"
 
 	"github.com/graph-gophers/graphql-go"
@@ -408,9 +407,6 @@ func (r *Resolver) PreviewCampaignPlan(ctx context.Context, args graphqlbackend.
 	campaignType, err := run.NewCampaignType(typeName, specArgs)
 	if err != nil {
 		return nil, err
-	}
-	if err := campaignType.Valid(); err != nil {
-		return nil, fmt.Errorf("invalid specification: %s", err)
 	}
 
 	plan := &a8n.CampaignPlan{CampaignType: typeName, Arguments: specArgs}
