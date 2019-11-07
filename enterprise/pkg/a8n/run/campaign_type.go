@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	cby "github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -103,40 +104,40 @@ func (c *comby) generateDiff(ctx context.Context, repo api.RepoName, commit api.
 	scanner := bufio.NewScanner(resp.Body)
 	scanner.Buffer(make([]byte, 100), 10*bufio.MaxScanTokenSize)
 
-	type rawCodemodResult struct {
-		URI  string `json:"uri"`
-		Diff string
-	}
-
-	var diffs []*diff.FileDiff
+	var result strings.Builder
 	for scanner.Scan() {
-		var raw *rawCodemodResult
 		b := scanner.Bytes()
 		if err := scanner.Err(); err != nil {
 			log15.Info(fmt.Sprintf("Skipping codemod scanner error (line too long?): %s", err.Error()))
 			continue
 		}
+
+		raw := &cby.FileDiff{}
 		if err := json.Unmarshal(b, &raw); err != nil {
 			log15.Error("unmarshalling raw diff failed", "err", err)
 			continue
 		}
-		// TODO(a8n): Do we need to use `diff.ParseFileDiff` or can we just concatenate?
+
+		// TODO(a8n): We need to parse the raw diff and inject the `header`
+		// below because `go-diff` right now cannot parse multi-file diffs
+		// without `diff ...` separator lines between the single file diffs.
+		// Once that is fixed in `go-diff` we can simply concatenate
+		// `raw.Diff`s without having to parse them.
 		parsed, err := diff.ParseFileDiff([]byte(raw.Diff))
 		if err != nil {
 			log15.Error("parsing diff failed", "err", err)
 			continue
 		}
-		diffs = append(diffs, parsed)
+		if result.Len() != 0 {
+			// We already wrote a diff to the builder, so we need to add
+			// a newline
+			result.WriteRune('\n')
+		}
+
+		header := fmt.Sprintf("diff a/%s b/%s\n", parsed.OrigName, parsed.NewName)
+		result.WriteString(header)
+		result.WriteString(raw.Diff)
 	}
 
-	// TODO(a8n): The diffs returned by Comby and then produced by this are
-	// missing the "extended" fields in a `diff.FileDiff` that would allow
-	// `diff.Parse*` to parse the diffs properly again. We need to change the
-	// comby API so that it returns proper git diffs.
-	multiDiff, err := diff.PrintMultiFileDiff(diffs)
-	if err != nil {
-		return "", err
-	}
-
-	return string(multiDiff), nil
+	return result.String(), nil
 }
