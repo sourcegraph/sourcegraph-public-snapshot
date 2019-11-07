@@ -36,9 +36,6 @@ interface FilterProps {
 
     /** The ID of the active filter. */
     value: string
-
-    /** The component type to use to display additional filters. */
-    additionalFilterComponent?: React.ComponentType<{}>
 }
 
 interface FilterState {}
@@ -46,12 +43,10 @@ interface FilterState {}
 class FilteredConnectionFilterControl extends React.PureComponent<FilterProps, FilterState> {
     public render(): React.ReactFragment {
         return (
-            <RadioButtons
-                nodes={this.props.filters}
-                selected={this.props.value}
-                onChange={this.onChange}
-                additionalComponent={this.props.additionalFilterComponent}
-            />
+            <div className="filtered-connection__control">
+                <RadioButtons nodes={this.props.filters} selected={this.props.value} onChange={this.onChange} />
+                {this.props.children}
+            </div>
         )
     }
 
@@ -706,6 +701,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
             errors.push(this.state.connectionOrError.error)
         }
 
+        const AdditionalFilters = this.props.additionalFilterComponent
         const compactnessClass = `filtered-connection--${this.props.compact ? 'compact' : 'noncompact'}`
         return (
             <div
@@ -735,8 +731,10 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                                 filters={this.props.filters}
                                 onDidSelectFilter={this.onDidSelectFilter}
                                 value={this.state.activeFilter.id}
-                                additionalFilterComponent={this.props.additionalFilterComponent}
-                            />
+                            >
+                                {' '}
+                                {AdditionalFilters && <AdditionalFilters />}{' '}
+                            </FilteredConnectionFilterControl>
                         )}
                     </Form>
                 )}
