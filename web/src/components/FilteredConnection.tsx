@@ -291,6 +291,9 @@ interface FilteredConnectionDisplayProps extends ConnectionDisplayProps {
     /** Autofocuses the filter input field. */
     autoFocus?: boolean
 
+    /** Whether we will read initial filter and pagination state from the URL. */
+    shouldReadURLQuery?: boolean
+
     /** Whether we will update the URL query string to reflect the filter and pagination state or not. */
     shouldUpdateURLQuery?: boolean
 
@@ -411,6 +414,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
 > {
     public static defaultProps: Partial<FilteredConnectionProps<any, any>> = {
         defaultFirst: 20,
+        shouldReadURLQuery: true,
         shouldUpdateURLQuery: true,
     }
 
@@ -441,10 +445,10 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
 
         this.state = {
             loading: true,
-            query: (!this.props.hideSearch && q.get(QUERY_KEY)) || '',
-            activeFilter: getFilterFromURL(q, this.props.filters),
-            first: parseQueryInt(q, 'first') || this.props.defaultFirst!,
-            visible: parseQueryInt(q, 'visible') || 0,
+            query: (!this.props.hideSearch && this.props.shouldReadURLQuery && q.get(QUERY_KEY)) || '',
+            activeFilter: getFilterFromURL(q, !!this.props.shouldReadURLQuery, this.props.filters),
+            first: (this.props.shouldReadURLQuery && parseQueryInt(q, 'first')) || this.props.defaultFirst!,
+            visible: (this.props.shouldReadURLQuery && parseQueryInt(q, 'visible')) || 0,
         }
     }
 
@@ -828,13 +832,14 @@ function parseQueryInt(q: URLSearchParams, name: string): number | null {
 
 function getFilterFromURL(
     q: URLSearchParams,
+    shouldReadURLQuery: boolean,
     filters: FilteredConnectionFilter[] | undefined
 ): FilteredConnectionFilter | undefined {
     if (filters === undefined || filters.length === 0) {
         return undefined
     }
     const id = q.get('filter')
-    if (id !== null) {
+    if (shouldReadURLQuery && id !== null) {
         const filter = filters.find(f => f.id === id)
         if (filter) {
             return filter
