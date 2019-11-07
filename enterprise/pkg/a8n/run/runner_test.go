@@ -258,8 +258,8 @@ func TestRunner(t *testing.T) {
 			}
 
 			planIgnore := cmpopts.IgnoreFields(a8n.CampaignPlan{}, "ID")
-			if !cmp.Equal(havePlan, tc.wantPlan, planIgnore) {
-				t.Fatalf("CampaignPlan diff: %s", cmp.Diff(havePlan, tc.wantPlan, planIgnore))
+			if diff := cmp.Diff(havePlan, tc.wantPlan, planIgnore); diff != "" {
+				t.Fatalf("CampaignPlan diff: %s", diff)
 			}
 
 			haveJobs, _, err := store.ListCampaignJobs(ctx, ee.ListCampaignJobsOpts{
@@ -275,8 +275,7 @@ func TestRunner(t *testing.T) {
 
 			wantJobs := tc.wantJobs(plan, rs, revs)
 			jobIgnore := cmpopts.IgnoreFields(a8n.CampaignJob{}, "ID")
-			if !cmp.Equal(haveJobs, wantJobs, jobIgnore) {
-				diff := cmp.Diff(haveJobs, wantJobs, jobIgnore)
+			if diff := cmp.Diff(haveJobs, wantJobs, jobIgnore); diff != "" {
 				t.Fatalf("CampaignJobs diff: %s", diff)
 			}
 		})
