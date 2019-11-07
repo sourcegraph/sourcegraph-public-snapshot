@@ -61,7 +61,7 @@ export const RepoSettingsCodeIntelligencePage: React.FunctionComponent<Props> = 
             () =>
                 fetchLsifDumps({ repository: repo.id, isLatestForRepo: true, first: 5000 }).pipe(
                     map(({ nodes }: { nodes: GQL.ILSIFDump[] }) => sortBy(nodes, node => node.projectRoot.path)),
-                    catchError((error: ErrorLike) => [error])
+                    catchError((error): [ErrorLike] => [asError(error)])
                 ),
             [repo.id]
         )
