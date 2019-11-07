@@ -45,6 +45,11 @@ interface Props {
      * id of the currently selected RadioButtonNode.
      */
     selected?: string
+
+    /**
+     * The component type to render after the set of radio buttons.
+     */
+    additionalComponent?: React.ComponentType<{}>
 }
 
 /**
@@ -52,6 +57,8 @@ interface Props {
  */
 export class RadioButtons extends React.PureComponent<Props> {
     public render(): React.ReactFragment {
+        const AdditionalComponent = this.props.additionalComponent
+
         return (
             <div className="radio-buttons">
                 {this.props.nodes.map(n => (
@@ -69,6 +76,8 @@ export class RadioButtons extends React.PureComponent<Props> {
                         </small>
                     </label>
                 ))}
+
+                {AdditionalComponent && <AdditionalComponent />}
             </div>
         )
     }

@@ -36,13 +36,23 @@ interface FilterProps {
 
     /** The ID of the active filter. */
     value: string
+
+    /** The component type to use to display additional filters. */
+    additionalFilterComponent?: React.ComponentType<{}>
 }
 
 interface FilterState {}
 
 class FilteredConnectionFilterControl extends React.PureComponent<FilterProps, FilterState> {
     public render(): React.ReactFragment {
-        return <RadioButtons nodes={this.props.filters} selected={this.props.value} onChange={this.onChange} />
+        return (
+            <RadioButtons
+                nodes={this.props.filters}
+                selected={this.props.value}
+                onChange={this.onChange}
+                additionalComponent={this.props.additionalFilterComponent}
+            />
+        )
     }
 
     private onChange: React.ChangeEventHandler<HTMLInputElement> = e => {
@@ -109,6 +119,9 @@ interface ConnectionPropsCommon<N, NP = {}> extends ConnectionDisplayProps {
 
     /** Props to pass to each nodeComponent in addition to `{ node: N }`. */
     nodeComponentProps?: NP
+
+    /** The component type to use to display additional filters. */
+    additionalFilterComponent?: React.ComponentType<{}>
 }
 
 /** State related to the ConnectionNodes component. */
@@ -722,6 +735,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                                 filters={this.props.filters}
                                 onDidSelectFilter={this.onDidSelectFilter}
                                 value={this.state.activeFilter.id}
+                                additionalFilterComponent={this.props.additionalFilterComponent}
                             />
                         )}
                     </Form>
