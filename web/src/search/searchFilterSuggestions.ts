@@ -1,5 +1,6 @@
 import { Suggestion, SuggestionTypes, FiltersSuggestionTypes } from './input/Suggestion'
 import { assign } from 'lodash/fp'
+import { languageIcons } from '../../../shared/src/components/languageIcons'
 
 export type SearchFilterSuggestions = Record<
     FiltersSuggestionTypes,
@@ -152,29 +153,7 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
         ),
     },
     lang: {
-        values: [
-            { value: 'c' },
-            { value: 'cpp' },
-            { value: 'csharp' },
-            { value: 'css' },
-            { value: 'go' },
-            { value: 'haskell' },
-            { value: 'html' },
-            { value: 'java' },
-            { value: 'javascript' },
-            { value: 'lua' },
-            { value: 'markdown' },
-            { value: 'php' },
-            { value: 'python' },
-            { value: 'r' },
-            { value: 'ruby' },
-            { value: 'swift' },
-            { value: 'typescript' },
-        ].map(
-            assign({
-                type: SuggestionTypes.lang,
-            })
-        ),
+        values: Object.keys(languageIcons).map(value => ({ type: SuggestionTypes.lang, value })),
     },
     repogroup: {
         values: [],

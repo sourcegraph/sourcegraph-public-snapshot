@@ -14,39 +14,50 @@ import LanguagePhpIcon from 'mdi-react/LanguagePhpIcon'
 import LanguagePythonIcon from 'mdi-react/LanguagePythonIcon'
 import LanguageRIcon from 'mdi-react/LanguageRIcon'
 import LanguageSwiftIcon from 'mdi-react/LanguageSwiftIcon'
+import SassIcon from 'mdi-react/SassIcon'
 import LanguageTypescriptIcon from 'mdi-react/LanguageTypescriptIcon'
+import GraphqlIcon from 'mdi-react/GraphqlIcon'
+import PowershellIcon from 'mdi-react/PowershellIcon'
 import TranslateIcon from 'mdi-react/TranslateIcon'
 import MarkdownIcon from 'mdi-react/MarkdownIcon'
 import RubyIcon from 'mdi-react/RubyIcon'
+import JsonIcon from 'mdi-react/JsonIcon'
+import { MdiReactIconComponentType } from 'mdi-react'
 
 interface Props extends IconProps {
     language: string
 }
 
-const languageIconComponents = {
-    markdown: MarkdownIcon,
+/**
+ * Record of known valid language values for the `lang:` filter to their icon in suggestions.
+ */
+export const languageIcons: Record<string, MdiReactIconComponentType | undefined> = {
+    __proto__: null as any,
+
     c: LanguageCIcon,
     cpp: LanguageCppIcon,
     csharp: LanguageCsharpIcon,
     css: LanguageCss3Icon,
     go: LanguageGoIcon,
+    graphql: GraphqlIcon,
     haskell: LanguageHaskellIcon,
     html: LanguageHtml5Icon,
     java: LanguageJavaIcon,
     javascript: LanguageJavascriptIcon,
+    json: JsonIcon,
     lua: LanguageLuaIcon,
+    markdown: MarkdownIcon,
     php: LanguagePhpIcon,
+    powershell: PowershellIcon,
     python: LanguagePythonIcon,
     r: LanguageRIcon,
     ruby: RubyIcon,
+    sass: SassIcon,
     swift: LanguageSwiftIcon,
     typescript: LanguageTypescriptIcon,
 }
 
-const isValidLanguage = (language: string): language is keyof typeof languageIconComponents =>
-    Object.prototype.hasOwnProperty.call(languageIconComponents, language)
-
 export const LanguageIcon: React.FunctionComponent<Props> = ({ language, size }) => {
-    const LanguageIconComponent = isValidLanguage(language) ? languageIconComponents[language] : TranslateIcon
+    const LanguageIconComponent = languageIcons[language] || TranslateIcon
     return <LanguageIconComponent size={size} />
 }
