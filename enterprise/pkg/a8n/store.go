@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
@@ -875,6 +876,13 @@ func nullInt32Column(n int32) *int32 {
 	return &n
 }
 
+func nullTimeColumn(t time.Time) *time.Time {
+	if t.IsZero() {
+		return nil
+	}
+	return &t
+}
+
 // UpdateCampaign updates the given Campaign.
 func (s *Store) UpdateCampaign(ctx context.Context, c *a8n.Campaign) error {
 	q, err := s.updateCampaignQuery(c)
@@ -1289,6 +1297,45 @@ func getCampaignPlanQuery(opts *GetCampaignPlanOpts) *sqlf.Query {
 	return sqlf.Sprintf(getCampaignPlansQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
+// GetCampaignPlanStatus gets the a8n.BackgroundProcessStatus for a CampaignPlan
+func (s *Store) GetCampaignPlanStatus(ctx context.Context, id int64) (*a8n.BackgroundProcessStatus, error) {
+	q := sqlf.Sprintf(
+		getCampaignPlanStatussQueryFmtstr,
+		sqlf.Sprintf("campaign_plan_id = %s", id),
+	)
+
+	var status a8n.BackgroundProcessStatus
+	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		return 0, 0, scanBackgroundProcessStatus(&status, sc)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	status.ProcessState = a8n.BackgroundProcessStateCompleted
+	switch {
+	case status.Pending > 0:
+		status.ProcessState = a8n.BackgroundProcessStateProcessing
+	case status.Completed == status.Total && len(status.ProcessErrors) == 0:
+		status.ProcessState = a8n.BackgroundProcessStateCompleted
+	case status.Completed == status.Total && len(status.ProcessErrors) != 0:
+		status.ProcessState = a8n.BackgroundProcessStateErrored
+	}
+	return &status, nil
+}
+
+var getCampaignPlanStatussQueryFmtstr = `
+-- source: pkg/a8n/store.go:GetCampaignPlanStatus
+SELECT
+  COUNT(*) AS total,
+  COUNT(*) FILTER (WHERE finished_at IS NULL) AS pending,
+  COUNT(*) FILTER (WHERE finished_at IS NOT NULL) AS completed,
+  array_agg(error) FILTER (WHERE error != '') AS errors
+FROM campaign_jobs
+WHERE %s
+LIMIT 1
+`
+
 // ListCampaignPlansOpts captures the query options needed for
 // listing code mods.
 type ListCampaignPlansOpts struct {
@@ -1405,8 +1452,8 @@ func (s *Store) createCampaignJobQuery(c *a8n.CampaignJob) (*sqlf.Query, error) 
 		c.Rev,
 		c.Diff,
 		c.Error,
-		c.StartedAt,
-		c.FinishedAt,
+		nullTimeColumn(c.StartedAt),
+		nullTimeColumn(c.FinishedAt),
 		c.CreatedAt,
 		c.UpdatedAt,
 	), nil
@@ -1781,10 +1828,19 @@ func scanCampaignJob(c *a8n.CampaignJob, s scanner) error {
 		&c.Rev,
 		&c.Diff,
 		&c.Error,
-		&c.StartedAt,
-		&c.FinishedAt,
+		&dbutil.NullTime{Time: &c.StartedAt},
+		&dbutil.NullTime{Time: &c.FinishedAt},
 		&c.CreatedAt,
 		&c.UpdatedAt,
+	)
+}
+
+func scanBackgroundProcessStatus(b *a8n.BackgroundProcessStatus, s scanner) error {
+	return s.Scan(
+		&b.Total,
+		&b.Pending,
+		&b.Completed,
+		pq.Array(&b.ProcessErrors),
 	)
 }
 

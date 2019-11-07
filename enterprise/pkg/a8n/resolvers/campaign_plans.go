@@ -44,14 +44,8 @@ func (r *campaignPlanResolver) Arguments() (graphqlbackend.JSONCString, error) {
 	return graphqlbackend.JSONCString(r.campaignPlan.Arguments), nil
 }
 
-func (r *campaignPlanResolver) Status() graphqlbackend.BackgroundProcessStatus {
-	// TODO(a8n): Implement this
-	return a8n.BackgroundProcessStatus{
-		Completed:     0,
-		Pending:       99,
-		ProcessState:  a8n.BackgroundProcessStateErrored,
-		ProcessErrors: []string{"this is just a skeleton api"},
-	}
+func (r *campaignPlanResolver) Status(ctx context.Context) (graphqlbackend.BackgroundProcessStatus, error) {
+	return r.store.GetCampaignPlanStatus(ctx, r.campaignPlan.ID)
 }
 
 func (r *campaignPlanResolver) Changesets(

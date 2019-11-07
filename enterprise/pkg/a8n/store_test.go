@@ -1230,5 +1230,106 @@ func testStore(db *sql.DB) func(*testing.T) {
 				}
 			})
 		})
+
+		t.Run("CampaignPlan BackgroundProcessStatus", func(t *testing.T) {
+			tests := []struct {
+				jobs []*a8n.CampaignJob
+				want *a8n.BackgroundProcessStatus
+			}{
+				{
+					jobs: []*a8n.CampaignJob{}, // no jobs
+					want: &a8n.BackgroundProcessStatus{
+						ProcessState:  a8n.BackgroundProcessStateCompleted,
+						Total:         0,
+						Completed:     0,
+						Pending:       0,
+						ProcessErrors: nil,
+					},
+				},
+				{
+					jobs: []*a8n.CampaignJob{
+						// not started (pending)
+						{},
+						// started (pending)
+						{StartedAt: now},
+					},
+					want: &a8n.BackgroundProcessStatus{
+						ProcessState:  a8n.BackgroundProcessStateProcessing,
+						Total:         2,
+						Completed:     0,
+						Pending:       2,
+						ProcessErrors: nil,
+					},
+				},
+				{
+					jobs: []*a8n.CampaignJob{
+						// completed, no errors
+						{StartedAt: now, FinishedAt: now},
+					},
+					want: &a8n.BackgroundProcessStatus{
+						ProcessState:  a8n.BackgroundProcessStateCompleted,
+						Total:         1,
+						Completed:     1,
+						Pending:       0,
+						ProcessErrors: nil,
+					},
+				},
+				{
+					jobs: []*a8n.CampaignJob{
+						// completed, error
+						{StartedAt: now, FinishedAt: now, Error: "error1"},
+					},
+					want: &a8n.BackgroundProcessStatus{
+						ProcessState:  a8n.BackgroundProcessStateErrored,
+						Total:         1,
+						Completed:     1,
+						Pending:       0,
+						ProcessErrors: []string{"error1"},
+					},
+				},
+				{
+					jobs: []*a8n.CampaignJob{
+						// not started (pending)
+						{},
+						// started (pending)
+						{StartedAt: now},
+						// completed, no errors
+						{StartedAt: now, FinishedAt: now},
+						// completed, error
+						{StartedAt: now, FinishedAt: now, Error: "error1"},
+						// completed, another error
+						{StartedAt: now, FinishedAt: now, Error: "error2"},
+					},
+					want: &a8n.BackgroundProcessStatus{
+						ProcessState:  a8n.BackgroundProcessStateProcessing,
+						Total:         5,
+						Completed:     3,
+						Pending:       2,
+						ProcessErrors: []string{"error1", "error2"},
+					},
+				},
+			}
+			for num, tc := range tests {
+				campaignPlanID := int64(num + 1)
+
+				for _, j := range tc.jobs {
+					j.CampaignPlanID = campaignPlanID
+
+					err := s.CreateCampaignJob(ctx, j)
+					if err != nil {
+						t.Fatal(err)
+					}
+				}
+
+				status, err := s.GetCampaignPlanStatus(ctx, campaignPlanID)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(status, tc.want); diff != "" {
+					t.Fatalf("wrong diff: %s", diff)
+				}
+			}
+		})
 	}
 }
