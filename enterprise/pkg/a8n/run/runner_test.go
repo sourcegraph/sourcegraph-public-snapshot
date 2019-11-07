@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strconv"
 	"testing"
 	"time"
 
@@ -101,10 +102,11 @@ func TestRunner(t *testing.T) {
 		{
 			name: "too many search results",
 			search: func(ctx context.Context, query string) ([]*graphqlbackend.RepositoryResolver, error) {
-				count := MaxRepositories + 1
+				m, _ := strconv.ParseInt(maxRepositories, 10, 64)
+				count := m + 1
 
 				resolvers := make([]*graphqlbackend.RepositoryResolver, count)
-				for i := 0; i < count; i++ {
+				for i := 0; i < int(count); i++ {
 					resolvers[i] = repoToResolver(rs[i%len(rs)])
 				}
 				return resolvers, nil

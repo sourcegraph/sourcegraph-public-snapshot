@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
@@ -14,17 +15,18 @@ import (
 	ee "github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-// MaxRepositories defines the maximum number of repositories over which a
+// maxRepositories defines the maximum number of repositories over which a
 // Runner executes CampaignJobs.
 // This upper limit is set while Automation features are still under
 // development.
-const MaxRepositories = 200
+var maxRepositories = env.Get("A8N_MAX_REPOS", "200", "maximum number of repositories over which to run campaigns")
 
 // ErrTooManyResults is returned by the Runner's Run method when the
-// CampaignType's searchQuery produced more than MaxRepositories number of
+// CampaignType's searchQuery produced more than maxRepositories number of
 // repositories.
 var ErrTooManyResults = errors.New("search yielded too many results")
 
@@ -120,7 +122,11 @@ func (r *Runner) Run(ctx context.Context, plan *a8n.CampaignPlan) error {
 	if err != nil {
 		return err
 	}
-	if len(rs) > MaxRepositories {
+	max, err := strconv.ParseInt(maxRepositories, 10, 64)
+	if err != nil {
+		return err
+	}
+	if len(rs) > int(max) {
 		return ErrTooManyResults
 	}
 
