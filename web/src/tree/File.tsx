@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { RepositoryIcon } from '../../../shared/src/components/icons'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { TreeLayerProps } from './TreeLayer'
 import { maxEntries, treePadding } from './util'
 
@@ -34,7 +34,7 @@ export const File: React.FunctionComponent<FileProps> = props => (
                                 onClick={props.noopRowClick}
                                 tabIndex={-1}
                             >
-                                <RepositoryIcon className="icon-inline" />
+                                <SourceRepositoryIcon className="icon-inline" />
                             </span>
                             <span className="tree__row-label">
                                 {props.entryInfo.name} @ {props.entryInfo.submodule.commit.substr(0, 7)}
@@ -50,7 +50,7 @@ export const File: React.FunctionComponent<FileProps> = props => (
                                 // eslint-disable-next-line react/forbid-dom-props
                                 style={treePadding(props.depth, true)}
                             >
-                                <RepositoryIcon className="icon-inline" />
+                                <SourceRepositoryIcon className="icon-inline" />
                             </span>
                             <span className="tree__row-label">
                                 {props.entryInfo.name} @ {props.entryInfo.submodule.commit.substr(0, 7)}

@@ -1,10 +1,10 @@
 import * as React from 'react'
-import { RepositoryIcon } from '../../../../shared/src/components/icons'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { LanguageIcon } from '../../../../shared/src/components/languageIcons'
 import { dirname, basename } from '../../util/path'
 import FilterIcon from 'mdi-react/FilterIcon'
 import FileIcon from 'mdi-react/FileIcon'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { SymbolIcon } from '../../../../shared/src/symbols/SymbolIcon'
 
 export enum SuggestionTypes {
@@ -117,7 +117,7 @@ const SuggestionIcon: React.FunctionComponent<SuggestionIconProps> = ({ suggesti
         case SuggestionTypes.filters:
             return <FilterIcon {...props} />
         case SuggestionTypes.repo:
-            return <RepositoryIcon {...props} />
+            return <SourceRepositoryIcon {...props} />
         case SuggestionTypes.file:
             return <FileIcon {...props} />
         case SuggestionTypes.lang:

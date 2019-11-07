@@ -1,5 +1,4 @@
 import * as React from 'react'
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
 export interface IconProps {
     className?: string
@@ -98,10 +97,6 @@ export const PhabricatorIcon: React.FunctionComponent<IconProps> = props => (
             />
         </g>
     </svg>
-)
-
-export const RepositoryIcon: React.FunctionComponent<IconProps> = ({ size, className }) => (
-    <SourceRepositoryIcon size={size} className={className} />
 )
 
 export const WrapDisabledIcon: React.FunctionComponent<IconProps> = props => (

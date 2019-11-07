@@ -5,6 +5,7 @@ import FolderIcon from 'mdi-react/FolderIcon'
 import HistoryIcon from 'mdi-react/HistoryIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import TagIcon from 'mdi-react/TagIcon'
 import UserIcon from 'mdi-react/UserIcon'
 import * as React from 'react'
@@ -15,7 +16,6 @@ import { ActionItem } from '../../../shared/src/actions/ActionItem'
 import { ActionsContainer } from '../../../shared/src/actions/ActionsContainer'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
-import { RepositoryIcon } from '../../../shared/src/components/icons'
 import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { gql } from '../../../shared/src/graphql/graphql'
@@ -230,7 +230,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                             {this.state.treeOrError.isRoot ? (
                                 <header>
                                     <h2 className="tree-page__title">
-                                        <RepositoryIcon className="icon-inline" />{' '}
+                                        <SourceRepositoryIcon className="icon-inline" />{' '}
                                         {displayRepoName(this.props.repoName)}
                                     </h2>
                                     {this.props.repoDescription && <p>{this.props.repoDescription}</p>}

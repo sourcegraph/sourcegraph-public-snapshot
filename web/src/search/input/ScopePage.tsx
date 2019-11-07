@@ -1,10 +1,10 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { concat, of, Subject, Subscription } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
-import { RepositoryIcon } from '../../../../shared/src/components/icons'
 import { RepoLink } from '../../../../shared/src/components/RepoLink'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
@@ -185,7 +185,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                                                 {this.state.repositories.slice(0, this.state.first).map((repo, i) => (
                                                     <div key={i} className="scope-page__row">
                                                         <Link to={repo.url} className="scope-page__link">
-                                                            <RepositoryIcon className="icon-inline scope-page__link-icon" />
+                                                            <SourceRepositoryIcon className="icon-inline scope-page__link-icon" />
                                                             <RepoLink repoName={repo.name} to={null} />
                                                         </Link>
                                                     </div>
