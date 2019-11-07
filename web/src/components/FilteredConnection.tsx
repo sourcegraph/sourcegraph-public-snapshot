@@ -732,8 +732,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                                 onDidSelectFilter={this.onDidSelectFilter}
                                 value={this.state.activeFilter.id}
                             >
-                                {' '}
-                                {AdditionalFilters && <AdditionalFilters />}{' '}
+                                {AdditionalFilters && <AdditionalFilters />}
                             </FilteredConnectionFilterControl>
                         )}
                     </Form>
