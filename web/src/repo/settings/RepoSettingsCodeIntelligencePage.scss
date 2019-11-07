@@ -23,16 +23,6 @@
             color: $color-text-2;
         }
 
-        &-commit {
-            flex: none;
-            white-space: nowrap;
-            padding-left: 0.5rem;
-        }
-
-        &-commit code {
-            font-size: 10px;
-        }
-
         &-timestamp {
             flex: none;
             white-space: nowrap;
