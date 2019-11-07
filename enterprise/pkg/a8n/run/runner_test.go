@@ -290,7 +290,6 @@ type testCampaignType struct {
 	diffErr string
 }
 
-func (t *testCampaignType) valid() error        { return nil }
 func (t *testCampaignType) searchQuery() string { return "" }
 func (t *testCampaignType) generateDiff(ctx context.Context, repo api.RepoName, commit api.CommitID) (string, error) {
 	if t.diffErr != "" {
