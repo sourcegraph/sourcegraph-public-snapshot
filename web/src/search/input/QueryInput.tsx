@@ -360,7 +360,6 @@ export class QueryInput extends React.Component<Props, State> {
                 // only show fuzzy-suggestions that are relevant to the typed filter
                 switch (filterBeforeCursor) {
                     case SuggestionTypes.repo:
-                        console.log('suggestion.type: ', suggestion.type)
                         return suggestion.type === SuggestionTypes.repo
                     default:
                         return true
