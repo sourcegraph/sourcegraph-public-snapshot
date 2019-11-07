@@ -98,7 +98,7 @@ func (c *comby) generateDiff(ctx context.Context, repo api.RepoName, commit api.
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return "", err
+		return "", fmt.Errorf("unexpected response status from replacer service: %q", resp.Status)
 	}
 
 	scanner := bufio.NewScanner(resp.Body)
