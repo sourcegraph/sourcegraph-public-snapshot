@@ -208,7 +208,7 @@ func performCodemod(ctx context.Context, args *search.Args) ([]searchResultResol
 	return results, common, nil
 }
 
-var replacerURL = env.Get("REPLACER_URL", "http://replacer:3185", "replacer server URL")
+var ReplacerURL = env.Get("REPLACER_URL", "http://replacer:3185", "replacer server URL")
 
 func toMatchResolver(fileURL string, raw *rawCodemodResult) ([]*searchResultMatchResolver, error) {
 	if !strings.Contains(raw.Diff, "@@") {
@@ -240,7 +240,7 @@ func callCodemodInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions
 		return nil, errors.Wrap(err, "codemod repo lookup failed: it's possible that the repo is not cloned in gitserver. Try force a repo update another way.")
 	}
 
-	u, err := url.Parse(replacerURL)
+	u, err := url.Parse(ReplacerURL)
 	if err != nil {
 		return nil, err
 	}

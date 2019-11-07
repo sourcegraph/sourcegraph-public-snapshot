@@ -6,24 +6,9 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
-
-type CampaignType struct {
-	// TODO(a8n): This should probably be an `interface{}` and then have
-	// concrete implementations such as `CombyArguments`
-	Parameters []string
-	ServiceURL string
-}
-
-var CampaignTypes = map[string]CampaignType{
-	"comby": {
-		Parameters: []string{"scopeQuery", "matchTemplate", "rewriteTemplate"},
-		ServiceURL: env.Get("COMBY_URL", "http://replacer:3185", "replacer server URL"),
-	},
-}
 
 // A CampaignPlan represents the application of a CampaignType to the Arguments
 // over multiple repositories.
