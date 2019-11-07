@@ -459,7 +459,10 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
             debounceTime(200),
             startWith(this.state.query)
         )
-        const refreshRequests = new Subject<boolean>()
+
+        // Emits `{ forceRefresh: false }` when loading a subsequent page (keeping the existing result set)
+        // Emits `{ forceRefresh: true }` on all other refresh conditions (clearing the existing result set)
+        const refreshRequests = new Subject<{ forceRefresh: boolean }>()
 
         this.subscriptions.add(
             activeFilterChanges
@@ -480,11 +483,15 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         )
 
         this.subscriptions.add(
-            combineLatest([queryChanges, activeFilterChanges, refreshRequests.pipe(startWith<boolean>(false))])
+            combineLatest([
+                queryChanges,
+                activeFilterChanges,
+                refreshRequests.pipe(startWith<{ forceRefresh: boolean }>({ forceRefresh: false })),
+            ])
                 .pipe(
                     // Track whether the query or the active filter changed
                     scan<
-                        [string, FilteredConnectionFilter | undefined, boolean],
+                        [string, FilteredConnectionFilter | undefined, { forceRefresh: boolean }],
                         {
                             query: string
                             filter: FilteredConnectionFilter | undefined
@@ -492,7 +499,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                             queryCount: number
                         }
                     >(
-                        ({ query, filter, queryCount }, [currentQuery, currentFilter, forceRefresh]) => ({
+                        ({ query, filter, queryCount }, [currentQuery, currentFilter, { forceRefresh }]) => ({
                             query: currentQuery,
                             filter: currentFilter,
                             shouldRefresh: forceRefresh || query !== currentQuery || filter !== currentFilter,
@@ -602,13 +609,15 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                         ({ first: this.props.cursorPaging ? this.state.first : this.state.first * 2 })
                     )
                 )
-                .subscribe(({ first }) => this.setState({ first, loading: true }, () => refreshRequests.next(false)))
+                .subscribe(({ first }) =>
+                    this.setState({ first, loading: true }, () => refreshRequests.next({ forceRefresh: false }))
+                )
         )
 
         if (this.props.updates) {
             this.subscriptions.add(
                 this.props.updates.subscribe(c => {
-                    this.setState({ loading: true }, () => refreshRequests.next(true))
+                    this.setState({ loading: true }, () => refreshRequests.next({ forceRefresh: true }))
                 })
             )
         }
@@ -620,7 +629,9 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                     filter(({ updateOnChange }) => updateOnChange !== undefined)
                 )
                 .subscribe(() => {
-                    this.setState({ loading: true, connectionOrError: undefined }, () => refreshRequests.next(true))
+                    this.setState({ loading: true, connectionOrError: undefined }, () =>
+                        refreshRequests.next({ forceRefresh: true })
+                    )
                 })
         )
 
@@ -634,7 +645,9 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                     tap(() => this.focusFilter())
                 )
                 .subscribe(() =>
-                    this.setState({ loading: true, connectionOrError: undefined }, () => refreshRequests.next(true))
+                    this.setState({ loading: true, connectionOrError: undefined }, () =>
+                        refreshRequests.next({ forceRefresh: true })
+                    )
                 )
         )
         this.componentUpdates.next(this.props)
