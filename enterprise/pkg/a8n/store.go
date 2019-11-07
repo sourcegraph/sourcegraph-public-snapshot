@@ -1313,11 +1313,12 @@ func (s *Store) GetCampaignPlanStatus(ctx context.Context, id int64) (*a8n.Backg
 	}
 
 	status.ProcessState = a8n.BackgroundProcessStateCompleted
-	if status.Pending > 0 {
+	switch {
+	case status.Pending > 0:
 		status.ProcessState = a8n.BackgroundProcessStateProcessing
-	} else if status.Completed == status.Total && len(status.ProcessErrors) == 0 {
+	case status.Completed == status.Total && len(status.ProcessErrors) == 0:
 		status.ProcessState = a8n.BackgroundProcessStateCompleted
-	} else if status.Completed == status.Total && len(status.ProcessErrors) != 0 {
+	case status.Completed == status.Total && len(status.ProcessErrors) != 0:
 		status.ProcessState = a8n.BackgroundProcessStateErrored
 	}
 	return &status, nil
