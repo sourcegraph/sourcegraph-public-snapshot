@@ -115,8 +115,8 @@ interface ConnectionPropsCommon<N, NP = {}> extends ConnectionDisplayProps {
     /** Props to pass to each nodeComponent in addition to `{ node: N }`. */
     nodeComponentProps?: NP
 
-    /** The component type to use to display additional filters. */
-    additionalFilterComponent?: React.ComponentType<{}>
+    /** An element rendered as a sibling of the filters. */
+    additionalFilterComponent?: React.ReactElement
 }
 
 /** State related to the ConnectionNodes component. */
@@ -701,7 +701,6 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
             errors.push(this.state.connectionOrError.error)
         }
 
-        const AdditionalFilters = this.props.additionalFilterComponent
         const compactnessClass = `filtered-connection--${this.props.compact ? 'compact' : 'noncompact'}`
         return (
             <div
@@ -732,7 +731,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                                 onDidSelectFilter={this.onDidSelectFilter}
                                 value={this.state.activeFilter.id}
                             >
-                                {AdditionalFilters && <AdditionalFilters />}
+                                {this.props.additionalFilterComponent}
                             </FilteredConnectionFilterControl>
                         )}
                     </Form>
