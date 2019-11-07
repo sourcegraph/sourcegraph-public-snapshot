@@ -85,7 +85,7 @@ func (c *comby) generateDiff(ctx context.Context, repo api.RepoName, commit api.
 	}
 
 	cl := &http.Client{}
-	resp, err := cl.Do(req)
+	resp, err := cl.Do(req.WithContext(ctx))
 	if err != nil {
 		return "", err
 	}
