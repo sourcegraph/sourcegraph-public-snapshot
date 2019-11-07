@@ -1,4 +1,4 @@
-FROM sourcegraph/builder:13f3b144f4@sha256:d3cab7dd1d78fb2bc6d109ba364456194a26959122733d8b2a126f10ff384a80 as builder
+FROM sourcegraph/builder:3254493778@sha256:10a11bf74d0b8c97af0e738aca547bc28399c943255b411e0fe21b1ab18ca60d as builder
 
 ARG VERSION="unknown"
 ENV VERSION ${VERSION}

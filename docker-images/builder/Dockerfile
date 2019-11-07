@@ -94,9 +94,10 @@ ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
 WORKDIR $GOPATH
 
-# # "Experimental" - warm up the cache by attempting to build sourcegraph once
-# COPY warm-up-cache.sh .
-# # hadolint ignore=DL4001
-# RUN ./warm-up-cache.sh
-# # hadolint ignore=DL4001
-# RUN rm ./warm-up-cache.sh
+# "Experimental" - warm up the cache by attempting to build sourcegraph once
+ENV SOURCEGRAPH_COMMIT "e93d3379f68441062b54ec219f44046c280a0b18"
+COPY warm-up-cache.sh .
+# hadolint ignore=DL4001
+RUN ./warm-up-cache.sh
+# hadolint ignore=DL4001
+RUN rm ./warm-up-cache.sh
