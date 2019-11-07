@@ -97,28 +97,27 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
             <small className="search-results-info-bar__row">
                 <div className="search-results-info-bar__row-left">
                     {/* Time stats */}
-                    {
-                        <div className="search-results-info-bar__notice e2e-search-results-stats">
-                            <span>
-                                <CalculatorIcon className="icon-inline" /> {props.results.approximateResultCount}{' '}
-                                {pluralize('result', props.results.resultCount)} in{' '}
-                                {(props.results.elapsedMilliseconds / 1000).toFixed(2)} seconds
-                                {props.results.indexUnavailable && ' (index unavailable)'}
-                                {/* Nonbreaking space */}
-                                {props.results.limitHit && String.fromCharCode(160)}
-                            </span>
-                            {/* Instantly accessible "show more button" */}
-                            {props.results.limitHit && (
-                                <button
-                                    type="button"
-                                    className="btn btn-link btn-sm p-0"
-                                    onClick={props.onShowMoreResultsClick}
-                                >
-                                    (show more)
-                                </button>
-                            )}
-                        </div>
-                    }
+                    <div className="search-results-info-bar__notice e2e-search-results-stats">
+                        <span>
+                            <CalculatorIcon className="icon-inline" /> {props.results.approximateResultCount}{' '}
+                            {pluralize('result', props.results.matchCount)} in{' '}
+                            {(props.results.elapsedMilliseconds / 1000).toFixed(2)} seconds
+                            {props.results.indexUnavailable && ' (index unavailable)'}
+                            {/* Nonbreaking space */}
+                            {props.results.limitHit && String.fromCharCode(160)}
+                        </span>
+                        {/* Instantly accessible "show more button" */}
+                        {props.results.limitHit && (
+                            <button
+                                type="button"
+                                className="btn btn-link btn-sm p-0"
+                                onClick={props.onShowMoreResultsClick}
+                            >
+                                (show more)
+                            </button>
+                        )}
+                    </div>
+
                     {/* Missing repos */}
                     {props.results.missing.length > 0 && (
                         <div
