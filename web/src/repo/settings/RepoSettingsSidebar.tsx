@@ -37,6 +37,13 @@ export const RepoSettingsSidebar: React.FunctionComponent<Props> = (props: Props
                         Indexing
                     </NavLink>
                     <NavLink
+                        to={`/${props.repo.name}/-/settings/code-intelligence`}
+                        exact={true}
+                        className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}
+                    >
+                        Code intelligence
+                    </NavLink>
+                    <NavLink
                         to={`/${props.repo.name}/-/settings/mirror`}
                         exact={true}
                         className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}
