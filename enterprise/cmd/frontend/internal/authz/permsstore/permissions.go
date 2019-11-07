@@ -81,9 +81,10 @@ func (p *UserPermissions) TracingFields() []otlog.Field {
 	return fs
 }
 
-func (p *UserPermissions) loadQuery() *sqlf.Query {
+// LoadQuery returns a Query object that is used for querying user permissions.
+func (p *UserPermissions) LoadQuery() *sqlf.Query {
 	const format = `
--- source: enterprise/cmd/frontend/internal/authz/permsstore/permissions.go:UserPermissions.loadQuery
+-- source: enterprise/cmd/frontend/internal/authz/permsstore/permissions.go:UserPermissions.LoadQuery
 SELECT object_ids, updated_at
 FROM user_permissions
 WHERE user_id = %s
@@ -101,9 +102,10 @@ AND provider = %s
 	)
 }
 
-func (p *UserPermissions) upsertQuery() (*sqlf.Query, error) {
+// UpsertQuery returns a Query object that is used for upserting user permissions.
+func (p *UserPermissions) UpsertQuery() (*sqlf.Query, error) {
 	const format = `
--- source: enterprise/cmd/frontend/internal/authz/permsstore/permissions.go:UserPermissions.upsertQuery
+-- source: enterprise/cmd/frontend/internal/authz/permsstore/permissions.go:UserPermissions.UpsertQuery
 INSERT INTO user_permissions
   (user_id, permission, object_type, object_ids, provider, updated_at)
 VALUES

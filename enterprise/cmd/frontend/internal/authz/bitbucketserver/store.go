@@ -24,7 +24,7 @@ import (
 // It leverages Postgres row locking for concurrency control of cache fill events,
 // so that many concurrent requests during an expiration don't overload the Bitbucket Server API.
 type store struct {
-	db dbutil.DB
+	*permsstore.Store
 	// Duration after which a given user's cached permissions SHOULD be updated.
 	// Previously cached permissions can still be used.
 	ttl time.Duration
@@ -42,7 +42,7 @@ func newStore(db dbutil.DB, ttl, hardTTL time.Duration, clock func() time.Time) 
 	}
 
 	return &store{
-		db:      db,
+		Store:   permsstore.NewStore(db, clock),
 		ttl:     ttl,
 		hardTTL: hardTTL,
 		clock:   clock,
@@ -80,7 +80,7 @@ func (s *store) LoadPermissions(
 	ctx, save := s.observe(ctx, "LoadPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
-	now := s.clock()
+	now := s.Now()
 
 	// Load updated permissions from the database.
 	if err = s.load(ctx, p); err != nil {
@@ -104,7 +104,7 @@ func (s *store) UpdatePermissions(
 	ctx, save := s.observe(ctx, "UpdatePermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
-	now := s.clock()
+	now := s.Now()
 	expired := *p
 	expired.IDs = nil
 
@@ -161,14 +161,14 @@ func (s *store) lock(ctx context.Context, p *permsstore.UserPermissions) (err er
 	ctx, save := s.observe(ctx, "lock", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
-	if _, ok := s.db.(*sql.Tx); !ok {
+	if !s.InTx() {
 		return errors.Errorf("store.lock must be called inside a transaction")
 	}
 
 	q := lockQuery(p)
 
 	var rows *sql.Rows
-	rows, err = s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err = s.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return err
 	}
@@ -220,32 +220,8 @@ func (s *store) load(ctx context.Context, p *permsstore.UserPermissions) (err er
 	ctx, save := s.observe(ctx, "load", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
-	q := loadQuery(p)
-
-	var rows *sql.Rows
-	rows, err = s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return err
-	}
-
-	if !rows.Next() {
-		return rows.Err()
-	}
-
-	var ids []byte
-	if err = rows.Scan(&ids, &p.UpdatedAt); err != nil {
-		return err
-	}
-
-	if err = rows.Close(); err != nil {
-		return err
-	}
-
-	if p.IDs = roaring.NewBitmap(); len(ids) == 0 {
-		return nil
-	}
-
-	return p.IDs.UnmarshalBinary(ids)
+	p.IDs, p.UpdatedAt, err = s.Load(ctx, p.LoadQuery())
+	return err
 }
 
 func loadRepoIDsQuery(c *extsvc.CodeHost, externalIDs []uint32) (*sqlf.Query, error) {
@@ -286,7 +262,7 @@ func (s *store) loadRepoIDs(ctx context.Context, c *extsvc.CodeHost, externalIDs
 	}
 
 	var rows *sql.Rows
-	rows, err = s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err = s.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	}
@@ -313,26 +289,6 @@ func (s *store) loadRepoIDs(ctx context.Context, c *extsvc.CodeHost, externalIDs
 	return ids, nil
 }
 
-func loadQuery(p *permsstore.UserPermissions) *sqlf.Query {
-	return sqlf.Sprintf(
-		loadQueryFmtStr,
-		p.UserID,
-		p.Perm.String(),
-		p.Type,
-		p.Provider,
-	)
-}
-
-const loadQueryFmtStr = `
--- source: enterprise/cmd/frontend/internal/authz/bitbucketserver/store.go:store.load
-SELECT object_ids, updated_at
-FROM user_permissions
-WHERE user_id = %s
-AND permission = %s
-AND object_type = %s
-AND provider = %s
-`
-
 func (s *store) update(ctx context.Context, p *permsstore.UserPermissions, update PermissionsUpdateFunc) (err error) {
 	_, save := s.observe(ctx, "update", "")
 	defer func() { save(&err, p.TracingFields()...) }()
@@ -342,8 +298,8 @@ func (s *store) update(ctx context.Context, p *permsstore.UserPermissions, updat
 	ctx = context.Background()
 
 	// Open a transaction for concurrency control.
-	var tx *sql.Tx
-	if tx, err = s.tx(ctx); err != nil {
+	var tx *permsstore.Tx
+	if tx, err = s.Tx(ctx); err != nil {
 		return err
 	}
 
@@ -360,7 +316,10 @@ func (s *store) update(ctx context.Context, p *permsstore.UserPermissions, updat
 	}()
 
 	// Make another store with this underlying transaction.
-	txs := store{db: tx, clock: s.clock}
+	txs := store{
+		Store: permsstore.NewStore(tx, s.clock),
+		clock: s.clock,
+	}
 
 	// We're here because we need to update our permissions. In order
 	// to prevent multiple concurrent (and distributed) cache fills,
@@ -381,7 +340,7 @@ func (s *store) update(ctx context.Context, p *permsstore.UserPermissions, updat
 		return err
 	}
 
-	now := s.clock()
+	now := s.Now()
 	if expired = p.Expired(s.ttl, now); !expired { // Valid!
 		return nil // UserPermissions were updated by another process.
 	}
@@ -407,28 +366,17 @@ func (s *store) update(ctx context.Context, p *permsstore.UserPermissions, updat
 	return txs.upsert(ctx, p)
 }
 
-func (s *store) tx(ctx context.Context) (*sql.Tx, error) {
-	switch t := s.db.(type) {
-	case *sql.Tx:
-		return t, nil
-	case *sql.DB:
-		return t.BeginTx(ctx, nil)
-	default:
-		panic("can't open transaction with unknown implementation of dbutil.DB")
-	}
-}
-
 func (s *store) upsert(ctx context.Context, p *permsstore.UserPermissions) (err error) {
 	ctx, save := s.observe(ctx, "upsert", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
-	var q *sqlf.Query
-	if q, err = s.upsertQuery(p); err != nil {
+	q, err := p.UpsertQuery()
+	if err != nil {
 		return err
 	}
 
 	var rows *sql.Rows
-	rows, err = s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err = s.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return err
 	}
@@ -436,46 +384,12 @@ func (s *store) upsert(ctx context.Context, p *permsstore.UserPermissions) (err 
 	return rows.Close()
 }
 
-func (s *store) upsertQuery(p *permsstore.UserPermissions) (*sqlf.Query, error) {
-	ids, err := p.IDs.ToBytes()
-	if err != nil {
-		return nil, err
-	}
-
-	if p.UpdatedAt.IsZero() {
-		return nil, errors.New("UpdatedAt timestamp must be set")
-	}
-
-	return sqlf.Sprintf(
-		upsertQueryFmtStr,
-		p.UserID,
-		p.Perm.String(),
-		p.Type,
-		ids,
-		p.Provider,
-		p.UpdatedAt.UTC(),
-	), nil
-}
-
-const upsertQueryFmtStr = `
--- source: enterprise/cmd/frontend/internal/authz/bitbucketserver/store.go:store.upsert
-INSERT INTO user_permissions
-  (user_id, permission, object_type, object_ids, provider, updated_at)
-VALUES
-  (%s, %s, %s, %s, %s, %s)
-ON CONFLICT ON CONSTRAINT
-  user_permissions_perm_object_provider_unique
-DO UPDATE SET
-  object_ids = excluded.object_ids,
-  updated_at = excluded.updated_at
-`
-
 func (s *store) observe(ctx context.Context, family, title string) (context.Context, func(*error, ...otlog.Field)) {
-	began := s.clock()
+	began := s.Now()
 	tr, ctx := trace.New(ctx, "bitbucket.authz.store."+family, title)
 
 	return ctx, func(err *error, fs ...otlog.Field) {
-		now := s.clock()
+		now := s.Now()
 		took := now.Sub(began)
 
 		fs = append(fs, otlog.String("Duration", took.String()))

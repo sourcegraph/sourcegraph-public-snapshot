@@ -30,13 +30,18 @@ func NewStore(db dbutil.DB, clock func() time.Time) *Store {
 	}
 }
 
+// Now returns the current time in the context.
+func (s *Store) Now() time.Time {
+	return s.clock()
+}
+
 // LoadUserPermissions loads stored user permissions into p. An error is returned
 // when there are no valid permissions available.
 func (s *Store) LoadUserPermissions(ctx context.Context, p *UserPermissions) (err error) {
 	ctx, save := s.observe(ctx, "LoadUserPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
-	p.IDs, p.UpdatedAt, err = s.load(ctx, p.loadQuery())
+	p.IDs, p.UpdatedAt, err = s.Load(ctx, p.LoadQuery())
 	return err
 }
 
@@ -46,7 +51,7 @@ func (s *Store) LoadRepoPermissions(ctx context.Context, p *RepoPermissions) (er
 	ctx, save := s.observe(ctx, "LoadRepoPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
-	p.IDs, p.UpdatedAt, err = s.load(ctx, p.loadQuery())
+	p.IDs, p.UpdatedAt, err = s.Load(ctx, p.loadQuery())
 	return err
 }
 
@@ -56,7 +61,7 @@ func (s *Store) LoadPendingPermissions(ctx context.Context, p *PendingPermission
 	ctx, save := s.observe(ctx, "LoadPendingPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
-	p.IDs, p.UpdatedAt, err = s.load(ctx, p.loadQuery())
+	p.IDs, p.UpdatedAt, err = s.Load(ctx, p.loadQuery())
 	return err
 }
 
@@ -71,8 +76,8 @@ func (s *Store) UpsertRepoPermissions(ctx context.Context, p *RepoPermissions) (
 	ctx = context.Background()
 
 	// Open a transaction for update consistency.
-	var tx *sqlTx
-	if tx, err = s.tx(ctx); err != nil {
+	var tx *Tx
+	if tx, err = s.Tx(ctx); err != nil {
 		return err
 	}
 	defer func() { tx.commitOrRollback(err) }()
@@ -90,7 +95,7 @@ func (s *Store) UpsertRepoPermissions(ctx context.Context, p *RepoPermissions) (
 	}
 
 	// Retrieve currently stored IDs of this repository.
-	oldIDs, _, err := s.load(ctx, p.loadQuery())
+	oldIDs, _, err := s.Load(ctx, p.loadQuery())
 	if err != nil {
 		return err
 	}
@@ -120,8 +125,8 @@ func (s *Store) RemoveRepoPermissions(ctx context.Context, p *RepoPermissions) (
 	ctx = context.Background()
 
 	// Open a transaction for update consistency.
-	var tx *sqlTx
-	if tx, err = s.tx(ctx); err != nil {
+	var tx *Tx
+	if tx, err = s.Tx(ctx); err != nil {
 		return err
 	}
 	defer func() { tx.commitOrRollback(err) }()
@@ -139,7 +144,7 @@ func (s *Store) RemoveRepoPermissions(ctx context.Context, p *RepoPermissions) (
 	}
 
 	// Retrieve currently stored IDs of this repository.
-	oldIDs, _, err := s.load(ctx, p.loadQuery())
+	oldIDs, _, err := s.Load(ctx, p.loadQuery())
 	if err != nil {
 		return err
 	}
@@ -173,7 +178,7 @@ func (s *Store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err
 	ctx = context.Background()
 
 	// Retrieve currently stored IDs of this repository.
-	oldIDs, _, err := s.load(ctx, p.loadQuery())
+	oldIDs, _, err := s.Load(ctx, p.loadQuery())
 	if err != nil {
 		return err
 	}
@@ -188,8 +193,8 @@ func (s *Store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err
 	toAdd.AndNot(p.IDs)
 
 	// Open a transaction for update consistency.
-	var tx *sqlTx
-	if tx, err = s.tx(ctx); err != nil {
+	var tx *Tx
+	if tx, err = s.Tx(ctx); err != nil {
 		return err
 	}
 	defer func() { tx.commitOrRollback(err) }()
@@ -258,7 +263,7 @@ func (s *Store) iterateAndUpsertUserPermissions(
 			Type:     PermRepos,
 			Provider: provider,
 		}
-		up.IDs, _, err = s.load(ctx, up.loadQuery())
+		up.IDs, _, err = s.Load(ctx, up.LoadQuery())
 		if err != nil {
 			return err
 		}
@@ -268,7 +273,7 @@ func (s *Store) iterateAndUpsertUserPermissions(
 		}
 
 		up.UpdatedAt = s.clock()
-		if q, err = up.upsertQuery(); err != nil {
+		if q, err = up.UpsertQuery(); err != nil {
 			return err
 		} else if err = s.upsert(ctx, q); err != nil {
 			return err
@@ -340,7 +345,7 @@ func (s *Store) iterateAndUpsertPendingPermissions(
 			Perm:   opts.Perm,
 			Type:   opts.Type,
 		}
-		pp.IDs, _, err = s.load(ctx, pp.loadQuery())
+		pp.IDs, _, err = s.Load(ctx, pp.loadQuery())
 		if err != nil {
 			return err
 		}
@@ -432,14 +437,14 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Pe
 	// but let the above instrumentation use the original request's context.
 	ctx = context.Background()
 
-	p.IDs, p.UpdatedAt, err = s.load(ctx, p.loadQuery())
+	p.IDs, p.UpdatedAt, err = s.Load(ctx, p.loadQuery())
 	if err != nil {
 		return err
 	}
 
 	// Open a transaction for update consistency.
-	var tx *sqlTx
-	if tx, err = s.tx(ctx); err != nil {
+	var tx *Tx
+	if tx, err = s.Tx(ctx); err != nil {
 		return err
 	}
 	defer func() { tx.commitOrRollback(err) }()
@@ -456,7 +461,7 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Pe
 		UpdatedAt: txs.clock(),
 	}
 	var q *sqlf.Query
-	if q, err = up.upsertQuery(); err != nil {
+	if q, err = up.UpsertQuery(); err != nil {
 		return err
 	} else if err = txs.upsert(ctx, q); err != nil {
 		return err
@@ -470,7 +475,7 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Pe
 			Perm:     p.Perm,
 			Provider: ProviderSourcegraph,
 		}
-		rp.IDs, _, err = txs.load(ctx, rp.loadQuery())
+		rp.IDs, _, err = txs.Load(ctx, rp.loadQuery())
 		if err != nil {
 			return err
 		}
@@ -502,8 +507,8 @@ func (s *Store) upsert(ctx context.Context, q *sqlf.Query) (err error) {
 	return rows.Close()
 }
 
-// load runs the query and returns unmarshalled IDs and last updated time.
-func (s *Store) load(ctx context.Context, q *sqlf.Query) (*roaring.Bitmap, time.Time, error) {
+// Load runs the query and returns unmarshalled IDs and last updated time.
+func (s *Store) Load(ctx context.Context, q *sqlf.Query) (*roaring.Bitmap, time.Time, error) {
 	var err error
 	ctx, save := s.observe(ctx, "loadIDs", "")
 	defer func() {
@@ -543,19 +548,34 @@ func (s *Store) load(ctx context.Context, q *sqlf.Query) (*roaring.Bitmap, time.
 	return bm, updatedAt, nil
 }
 
-func (s *Store) tx(ctx context.Context) (*sqlTx, error) {
+// QueryContext is the wrapper method that operates on the underlying db object.
+func (s *Store) QueryContext(ctx context.Context, q string, args ...interface{}) (*sql.Rows, error) {
+	return s.db.QueryContext(ctx, q, args...)
+}
+
+// Tx returns a new transaction on the underlying db object. If the caller is already in
+// a transaction, it returns the existing transaction object.
+func (s *Store) Tx(ctx context.Context) (*Tx, error) {
 	switch t := s.db.(type) {
 	case *sql.Tx:
-		return &sqlTx{t}, nil
+		return &Tx{t}, nil
 	case *sql.DB:
 		tx, err := t.BeginTx(ctx, nil)
 		if err != nil {
 			return nil, err
 		}
-		return &sqlTx{tx}, nil
+		return &Tx{tx}, nil
+	case *Tx:
+		return t, nil
 	default:
 		panic(fmt.Sprintf("can't open transaction with unknown implementation of dbutil.DB: %T", t))
 	}
+}
+
+// InTx returns true if current context is inside a transaction.
+func (s *Store) InTx() bool {
+	_, ok := s.db.(*Tx)
+	return ok
 }
 
 func (s *Store) observe(ctx context.Context, family, title string) (context.Context, func(*error, ...otlog.Field)) {

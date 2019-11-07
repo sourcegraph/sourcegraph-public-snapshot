@@ -4,11 +4,12 @@ import (
 	"database/sql"
 )
 
-type sqlTx struct {
+// Tx is a transaction object.
+type Tx struct {
 	*sql.Tx
 }
 
-func (tx *sqlTx) commitOrRollback(err error) {
+func (tx *Tx) commitOrRollback(err error) {
 	if err == nil {
 		_ = tx.Commit()
 	} else {
