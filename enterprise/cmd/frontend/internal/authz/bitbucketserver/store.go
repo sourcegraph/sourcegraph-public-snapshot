@@ -25,7 +25,7 @@ import (
 // It leverages Postgres row locking for concurrency control of cache fill events,
 // so that many concurrent requests during an expiration don't overload the Bitbucket Server API.
 type store struct {
-	db dbutil.DB
+	db *dbutil.DBTx
 	// Duration after which a given user's cached permissions SHOULD be updated.
 	// Previously cached permissions can still be used.
 	ttl time.Duration
@@ -42,12 +42,17 @@ func newStore(db dbutil.DB, ttl, hardTTL time.Duration, clock func() time.Time) 
 		hardTTL = ttl
 	}
 
-	return &store{
-		db:      db,
+	s := store{
 		ttl:     ttl,
 		hardTTL: hardTTL,
 		clock:   clock,
 	}
+
+	if db != nil {
+		s.db = dbutil.NewDBTx(db)
+	}
+
+	return &s
 }
 
 // Permissions of a user to perform an action on the
@@ -206,7 +211,7 @@ func (s *store) lock(ctx context.Context, p *Permissions) (err error) {
 	ctx, save := s.observe(ctx, "lock", "")
 	defer func() { save(&err, p.tracingFields()...) }()
 
-	if _, ok := s.db.(*sql.Tx); !ok {
+	if s.db.Tx() == nil {
 		return errors.Errorf("store.lock must be called inside a transaction")
 	}
 
@@ -383,8 +388,8 @@ func (s *store) update(ctx context.Context, p *Permissions, update PermissionsUp
 	ctx = context.Background()
 
 	// Open a transaction for concurrency control.
-	var tx *sql.Tx
-	if tx, err = s.tx(ctx); err != nil {
+	var tx dbutil.Tx
+	if tx, err = s.db.BeginTx(ctx, nil); err != nil {
 		return err
 	}
 
@@ -401,7 +406,7 @@ func (s *store) update(ctx context.Context, p *Permissions, update PermissionsUp
 	}()
 
 	// Make another store with this underlying transaction.
-	txs := store{db: tx, clock: s.clock}
+	txs := store{db: dbutil.NewDBTx(tx), clock: s.clock}
 
 	// We're here because we need to update our permissions. In order
 	// to prevent multiple concurrent (and distributed) cache fills,
@@ -446,17 +451,6 @@ func (s *store) update(ctx context.Context, p *Permissions, update PermissionsUp
 
 	// Write back the updated permissions to the database.
 	return txs.upsert(ctx, p)
-}
-
-func (s *store) tx(ctx context.Context) (*sql.Tx, error) {
-	switch t := s.db.(type) {
-	case *sql.Tx:
-		return t, nil
-	case *sql.DB:
-		return t.BeginTx(ctx, nil)
-	default:
-		panic("can't open transaction with unknown implementation of dbutil.DB")
-	}
 }
 
 func (s *store) upsert(ctx context.Context, p *Permissions) (err error) {

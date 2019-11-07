@@ -995,25 +995,6 @@ func testStoreListReposPagination(store repos.Store) func(*testing.T) {
 	}
 }
 
-func testDBStoreTransact(store *repos.DBStore) func(*testing.T) {
-	return func(t *testing.T) {
-		ctx := context.Background()
-
-		txstore, err := store.Transact(ctx)
-		if err != nil {
-			t.Fatal("expected DBStore to support transactions", err)
-		}
-		defer txstore.Done()
-
-		_, err = txstore.(repos.Transactor).Transact(ctx)
-		have := fmt.Sprintf("%s", err)
-		want := "dbstore: already in a transaction"
-		if have != want {
-			t.Errorf("error:\nhave: %v\nwant: %v", have, want)
-		}
-	}
-}
-
 func mkRepos(n int, base ...*repos.Repo) repos.Repos {
 	if len(base) == 0 {
 		return nil

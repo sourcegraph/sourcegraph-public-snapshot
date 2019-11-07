@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
 var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
@@ -19,6 +20,11 @@ func TestIntegration(t *testing.T) {
 	db, cleanup := dbtest.NewDB(t, *dsn)
 	defer cleanup()
 
-	t.Run("Store", testStore(db))
-	t.Run("GitHubWebhook", testGitHubWebhook(db))
+	tx, done := dbtest.NewTx(t, db)
+	defer done()
+
+	dbtx := dbutil.NewDBTx(tx)
+
+	t.Run("Store", testStore(dbtx))
+	t.Run("GitHubWebhook", testGitHubWebhook(dbtx))
 }

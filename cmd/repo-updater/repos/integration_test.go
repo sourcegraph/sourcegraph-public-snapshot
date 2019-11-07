@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -30,7 +31,12 @@ func TestIntegration(t *testing.T) {
 	db, cleanup := dbtest.NewDB(t, *dsn)
 	defer cleanup()
 
-	dbstore := repos.NewDBStore(db, sql.TxOptions{
+	tx, done := dbtest.NewTx(t, db)
+	defer done()
+
+	dbtx := dbutil.NewDBTx(tx)
+
+	dbstore := repos.NewDBStore(dbtx, sql.TxOptions{
 		Isolation: sql.LevelSerializable,
 	})
 
@@ -48,7 +54,6 @@ func TestIntegration(t *testing.T) {
 		name string
 		test func(*testing.T)
 	}{
-		{"DBStore/Transact", testDBStoreTransact(dbstore)},
 		{"DBStore/ListExternalServices", testStoreListExternalServices(store)},
 		{"DBStore/ListExternalServices/ByRepo", testStoreListExternalServicesByRepos(store)},
 		{"DBStore/UpsertExternalServices", testStoreUpsertExternalServices(store)},

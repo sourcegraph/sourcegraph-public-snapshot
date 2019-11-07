@@ -24,6 +24,7 @@ import (
 	gh "github.com/google/go-github/github"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
@@ -34,7 +35,7 @@ import (
 var update = flag.Bool("update", false, "update testdata")
 
 // Ran in integration_test.go
-func testGitHubWebhook(db *sql.DB) func(*testing.T) {
+func testGitHubWebhook(db dbutil.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		now := time.Now()
 		clock := func() time.Time {

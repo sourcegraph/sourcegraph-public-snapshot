@@ -6,6 +6,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/url"
 	"os"
 	"strconv"
@@ -55,23 +56,29 @@ func Transaction(ctx context.Context, db *sql.DB, f func(tx *sql.Tx) error) (err
 	return f(tx)
 }
 
-// A DB captures the essential method of a sql.DB: QueryContext.
+// A DB captures the common methods of a sql.DB and sql.Tx
 type DB interface {
+	Query(q string, args ...interface{}) (*sql.Rows, error)
 	QueryContext(ctx context.Context, q string, args ...interface{}) (*sql.Rows, error)
+	QueryRow(q string, args ...interface{}) *sql.Row
+	QueryRowContext(ctx context.Context, q string, args ...interface{}) *sql.Row
+	Exec(q string, args ...interface{}) (sql.Result, error)
+	ExecContext(ctx context.Context, q string, args ...interface{}) (sql.Result, error)
 }
 
 // A Tx captures the essential methods of a sql.Tx.
 type Tx interface {
+	DB
 	Rollback() error
 	Commit() error
 }
 
 // A TxBeginner captures BeginTx method of a sql.DB
 type TxBeginner interface {
-	BeginTx(context.Context, *sql.TxOptions) (*sql.Tx, error)
+	BeginTx(context.Context, *sql.TxOptions) (Tx, error)
 }
 
-// NewDB returns a new *sql.DB from the given dsn (data source name).
+// NewDB returns a new DB from the given dsn (data source name).
 func NewDB(dsn, app string) (*sql.DB, error) {
 	cfg, err := url.Parse(dsn)
 	if err != nil {
@@ -109,6 +116,97 @@ func NewDB(dsn, app string) (*sql.DB, error) {
 
 	return db, nil
 }
+
+// ErrNotInTransaction is returned when using DB.Commit
+// outside of a transaction.
+var ErrNotInTransaction = errors.New("not in transaction")
+
+// DBTx can be used as a DB or a Tx and supports nested
+// transactions with Postgres savepoints.
+type DBTx struct {
+	DB
+	db        *sql.DB
+	tx        *sql.Tx
+	savepoint string
+}
+
+// NewDBTx returns a new DBTx with the given *sql.DB.
+func NewDBTx(db DB) *DBTx {
+	switch t := db.(type) {
+	case *DBTx:
+		return t
+	case *sql.DB:
+		return &DBTx{DB: t, db: t}
+	case *sql.Tx:
+		return &DBTx{DB: t, tx: t}
+	default:
+		panic(fmt.Sprintf("unsupported DB type %T", t))
+	}
+}
+
+// BeginTx opens a new Tx if there isn't one open yet, otherwise it creates
+// a new savepoint.
+func (d *DBTx) BeginTx(ctx context.Context, opts *sql.TxOptions) (Tx, error) {
+	if d.tx == nil {
+		tx, err := d.db.BeginTx(ctx, opts)
+		if err != nil {
+			return nil, err
+		}
+		return &DBTx{DB: tx, db: d.db, tx: tx}, nil
+	}
+
+	savepoint := "sp_" + strconv.FormatUint(rand.Uint64(), 10)
+
+	_, err := d.tx.Exec("SAVEPOINT " + savepoint)
+	if err != nil {
+		return nil, err
+	}
+
+	return &DBTx{DB: d.tx, db: d.db, tx: d.tx, savepoint: savepoint}, nil
+}
+
+// Rollback rolls back the transaction if there's one open, or rolls back
+// to the previous savepoint if there's one.
+func (d *DBTx) Rollback() (err error) {
+	switch {
+	case d.tx == nil:
+		return nil
+	case d.savepoint != "":
+		_, err = d.tx.Exec("ROLLBACK TO SAVEPOINT " + d.savepoint)
+	default:
+		err = d.tx.Rollback()
+	}
+
+	if err == nil {
+		d.tx, d.DB = nil, nil
+	}
+
+	return err
+}
+
+// Commit commits the open transaction if there's one, returning
+// ErrNotInTransaction otherwise. If there's an open savepoint,
+// it will be released instead of the transaction being commited.
+func (d *DBTx) Commit() (err error) {
+	if d.tx == nil {
+		return ErrNotInTransaction
+	}
+
+	if d.savepoint != "" {
+		_, err = d.tx.Exec("RELEASE SAVEPOINT " + d.savepoint)
+	} else {
+		err = d.tx.Commit()
+	}
+
+	if err == nil {
+		d.tx, d.DB = nil, nil
+	}
+
+	return err
+}
+
+// Tx returns the underlying transaction, if any.
+func (d *DBTx) Tx() *sql.Tx { return d.tx }
 
 func NewMigrationSourceLoader(dataSource string) *bindata.AssetSource {
 	return bindata.Resource(migrations.AssetNames(), migrations.Asset)

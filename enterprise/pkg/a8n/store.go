@@ -20,7 +20,7 @@ import (
 // Store exposes methods to read and write a8n domain models
 // from persistent storage.
 type Store struct {
-	db  dbutil.DB
+	db  *dbutil.DBTx
 	now func() time.Time
 }
 
@@ -34,28 +34,18 @@ func NewStore(db dbutil.DB) *Store {
 // NewStoreWithClock returns a new Store backed by the given db and
 // clock for timestamps.
 func NewStoreWithClock(db dbutil.DB, clock func() time.Time) *Store {
-	return &Store{db: db, now: clock}
+	return &Store{db: dbutil.NewDBTx(db), now: clock}
 }
 
 // Transact returns a Store whose methods operate within the context of a transaction.
 // This method will return an error if the underlying DB cannot be interface upgraded
 // to a TxBeginner.
 func (s *Store) Transact(ctx context.Context) (*Store, error) {
-	if _, ok := s.db.(dbutil.Tx); ok { // Already in a Tx.
-		return s, nil
-	}
-
-	tb, ok := s.db.(dbutil.TxBeginner)
-	if !ok { // Not a Tx nor a TxBeginner, error.
-		return nil, errors.New("store: not transactable")
-	}
-
-	tx, err := tb.BeginTx(ctx, nil)
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "store: BeginTx")
 	}
-
-	return &Store{db: tx, now: s.now}, nil
+	return NewStoreWithClock(tx, s.now), nil
 }
 
 // Done terminates the underlying Tx in a Store either by committing or rolling
@@ -66,15 +56,13 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 // When the error value pointed to by the first given `err` is nil, or when no error
 // pointer is given, the transaction is commited. Otherwise, it's rolled-back.
 func (s *Store) Done(errs ...*error) {
-	switch tx, ok := s.db.(dbutil.Tx); {
-	case !ok:
-		return
+	switch {
 	case len(errs) == 0:
-		_ = tx.Commit()
+		_ = s.db.Commit()
 	case errs[0] != nil && *errs[0] != nil:
-		_ = tx.Rollback()
+		_ = s.db.Rollback()
 	default:
-		_ = tx.Commit()
+		_ = s.db.Commit()
 	}
 }
 

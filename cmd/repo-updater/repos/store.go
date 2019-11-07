@@ -85,37 +85,24 @@ type TxStore interface {
 // DBStore implements the Store interface for reading and writing repos directly
 // from the Postgres database.
 type DBStore struct {
-	db     dbutil.DB
+	db     *dbutil.DBTx
 	txOpts sql.TxOptions
 }
 
 // NewDBStore instantiates and returns a new DBStore with prepared statements.
 func NewDBStore(db dbutil.DB, txOpts sql.TxOptions) *DBStore {
-	return &DBStore{db: db, txOpts: txOpts}
+	return &DBStore{db: dbutil.NewDBTx(db), txOpts: txOpts}
 }
 
 // Transact returns a TxStore whose methods operate within the context of a transaction.
 // This method will return an error if the underlying DB cannot be interface upgraded
 // to a TxBeginner.
 func (s *DBStore) Transact(ctx context.Context) (TxStore, error) {
-	if _, ok := s.db.(dbutil.Tx); ok { // Already in a Tx.
-		return nil, errors.New("dbstore: already in a transaction")
-	}
-
-	tb, ok := s.db.(dbutil.TxBeginner)
-	if !ok { // Not a Tx nor a TxBeginner, error.
-		return nil, errors.New("dbstore: not transactable")
-	}
-
-	tx, err := tb.BeginTx(ctx, &s.txOpts)
+	tx, err := s.db.BeginTx(ctx, &s.txOpts)
 	if err != nil {
 		return nil, errors.Wrap(err, "dbstore: BeginTx")
 	}
-
-	return &DBStore{
-		db:     tx,
-		txOpts: s.txOpts,
-	}, nil
+	return NewDBStore(tx, s.txOpts), nil
 }
 
 // Done terminates the underlying Tx in a DBStore either by committing or rolling
@@ -126,15 +113,13 @@ func (s *DBStore) Transact(ctx context.Context) (TxStore, error) {
 // When the error value pointed to by the first given `err` is nil, or when no error
 // pointer is given, the transaction is commited. Otherwise, it's rolled-back.
 func (s *DBStore) Done(errs ...*error) {
-	switch tx, ok := s.db.(dbutil.Tx); {
-	case !ok:
-		return
+	switch {
 	case len(errs) == 0:
-		_ = tx.Commit()
+		_ = s.db.Commit()
 	case errs[0] != nil && *errs[0] != nil:
-		_ = tx.Rollback()
+		_ = s.db.Rollback()
 	default:
-		_ = tx.Commit()
+		_ = s.db.Commit()
 	}
 }
 

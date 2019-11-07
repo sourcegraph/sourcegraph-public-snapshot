@@ -2,7 +2,6 @@ package a8n
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"sort"
 	"testing"
@@ -11,19 +10,16 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
 // Ran in integration_test.go
-func testStore(db *sql.DB) func(*testing.T) {
+func testStore(db dbutil.DB) func(*testing.T) {
 	return func(t *testing.T) {
-		tx, done := dbtest.NewTx(t, db)
-		defer done()
-
 		now := time.Now().UTC().Truncate(time.Microsecond)
-		s := NewStoreWithClock(tx, func() time.Time {
+		s := NewStoreWithClock(db, func() time.Time {
 			return now.UTC().Truncate(time.Microsecond)
 		})
 
@@ -274,7 +270,6 @@ func testStore(db *sql.DB) func(*testing.T) {
 					}
 				}
 			})
-
 		})
 
 		t.Run("Changesets", func(t *testing.T) {

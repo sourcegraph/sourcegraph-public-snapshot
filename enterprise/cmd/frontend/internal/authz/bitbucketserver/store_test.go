@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 )
@@ -80,7 +81,7 @@ func BenchmarkStore(b *testing.B) {
 	})
 }
 
-func testStore(db *sql.DB) func(*testing.T) {
+func testStore(db dbutil.DB) func(*testing.T) {
 	equal := func(t testing.TB, name string, have, want interface{}) {
 		t.Helper()
 		if !reflect.DeepEqual(have, want) {

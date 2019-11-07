@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 )
@@ -69,7 +70,7 @@ func TestProvider_Validate(t *testing.T) {
 	}
 }
 
-func testProviderRepoPerms(db *sql.DB) func(*testing.T) {
+func testProviderRepoPerms(db dbutil.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		cli, save := newClient(t, "RepoPerms")
 		defer save()
@@ -484,7 +485,7 @@ func newClient(t *testing.T, name string) (*bitbucketserver.Client, func()) {
 	return cli, save
 }
 
-func newProvider(cli *bitbucketserver.Client, db *sql.DB, ttl time.Duration) *Provider {
+func newProvider(cli *bitbucketserver.Client, db dbutil.DB, ttl time.Duration) *Provider {
 	p := NewProvider(cli, db, ttl, DefaultHardTTL)
 	p.pageSize = 1       // Exercise pagination
 	p.store.block = true // Wait for first update to complete.
