@@ -35,6 +35,20 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+const (
+	// maxFileMatches is the limit on number of matching files we return.
+	maxFileMatches = 1000
+
+	// maxLineMatches is the limit on number of matches to return in a
+	// file.
+	maxLineMatches = 100
+
+	// numWorkers is how many concurrent readerGreps run in the case of
+	// regexSearch, and the number of parallel workers in the case of
+	// structuralSearch.
+	numWorkers = 8
+)
+
 // Service is the search service. It is an http.Handler.
 type Service struct {
 	Store *store.Store
@@ -213,7 +227,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 	archiveSize.Observe(float64(bytes))
 
 	if p.IsStructuralPat {
-		matches, limitHit, err = structuralSearch(ctx, zipPath, p.FileMatchLimit)
+		matches, limitHit, err = structuralSearch(ctx, zipPath, p.Pattern, p.IncludePatterns, p.Repo)
 	} else {
 		matches, limitHit, err = regexSearch(ctx, rg, zf, p.FileMatchLimit, p.PatternMatchesContent, p.PatternMatchesPath)
 	}

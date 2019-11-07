@@ -23,19 +23,6 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 )
 
-const (
-	// maxFileMatches is the limit on number of matching files we return.
-	maxFileMatches = 1000
-
-	// maxLineMatches is the limit on number of matches to return in a
-	// file.
-	maxLineMatches = 100
-
-	// numWorkers is how many concurrent readerGreps run per
-	// concurrentFind
-	numWorkers = 8
-)
-
 // readerGrep is responsible for finding LineMatches. It is not concurrency
 // safe (it reuses buffers for performance).
 //
