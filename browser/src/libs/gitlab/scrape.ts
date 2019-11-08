@@ -157,10 +157,11 @@ export function getFilePathsFromCodeView(codeView: HTMLElement): Pick<FileInfo, 
     }
 
     const filePathDidChange = filePathElements.length > 1
+    const filePath = getFilePathFromElem(filePathElements.item(filePathDidChange ? 1 : 0))
 
     return {
-        filePath: getFilePathFromElem(filePathElements.item(filePathDidChange ? 1 : 0)),
-        baseFilePath: filePathDidChange ? getFilePathFromElem(filePathElements.item(0)) : undefined,
+        filePath,
+        baseFilePath: filePathDidChange ? getFilePathFromElem(filePathElements.item(0)) : filePath,
     }
 }
 
