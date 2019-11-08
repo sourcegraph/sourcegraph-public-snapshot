@@ -2,7 +2,7 @@ import * as constants from '../../constants'
 import * as fs from 'mz/fs'
 import * as path from 'path'
 import { FAILED_JOB_MAX_AGE, STORAGE_ROOT } from '../settings'
-import { logAndTraceCall, TracingContext } from '../../tracing'
+import { logAndTraceCall, TracingContext } from '../../shared/tracing'
 
 /**
  * Create a job that removes upload and temp files that are older than `FAILED_JOB_MAX_AGE`.

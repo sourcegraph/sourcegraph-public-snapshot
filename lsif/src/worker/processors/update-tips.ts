@@ -1,5 +1,5 @@
 import { ConfigurationFetcher } from '../../config'
-import { TracingContext } from '../../tracing'
+import { TracingContext } from '../../shared/tracing'
 import { XrepoDatabase } from '../../xrepo'
 
 /*

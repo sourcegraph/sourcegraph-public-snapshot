@@ -1,6 +1,6 @@
 import { JOB_MAX_AGE } from '../settings'
 import { JobStatusClean, Queue } from 'bull'
-import { logAndTraceCall, TracingContext } from '../../tracing'
+import { logAndTraceCall, TracingContext } from '../../shared/tracing'
 import { Logger } from 'winston'
 
 const cleanStatuses: JobStatusClean[] = ['completed', 'wait', 'active', 'delayed', 'failed']

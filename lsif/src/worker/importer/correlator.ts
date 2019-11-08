@@ -32,8 +32,8 @@ import {
     RangeId,
 } from 'lsif-protocol'
 import { DisjointSet } from '../../disjoint-set'
-import { TracingContext } from '../../tracing'
-import { createSilentLogger } from '../../logging'
+import { TracingContext } from '../../shared/tracing'
+import { createSilentLogger } from '../../shared/logging'
 import { Logger } from 'winston'
 
 /**

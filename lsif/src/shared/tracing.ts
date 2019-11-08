@@ -1,5 +1,5 @@
 import * as lightstep from 'lightstep-tracer'
-import { Configuration } from './config'
+import { Configuration } from '../config'
 import { createSilentLogger, logCall } from './logging'
 import { ERROR } from 'opentracing/lib/ext/tags'
 import { initTracerFromEnv } from 'jaeger-client'

@@ -3,10 +3,10 @@ import * as fs from 'mz/fs'
 import * as path from 'path'
 import { ConfigurationFetcher } from '../../config'
 import { convertLsif } from '../importer/importer'
-import { createSilentLogger } from '../../logging'
+import { createSilentLogger } from '../../shared/logging'
 import { dbFilename, hasErrorCode } from '../../util'
 import { DBS_DIR_MAXIMUM_SIZE_BYTES, STORAGE_ROOT } from '../settings'
-import { logAndTraceCall, TracingContext } from '../../tracing'
+import { logAndTraceCall, TracingContext } from '../../shared/tracing'
 import { XrepoDatabase } from '../../xrepo'
 
 /**

@@ -2,7 +2,7 @@ import * as lsp from 'vscode-languageserver-protocol'
 import { Connection } from 'typeorm'
 import { ConnectionCache, DocumentCache, EncodedJsonCacheValue, ResultChunkCache } from './cache'
 import { hashKey, mustGet } from '../../util'
-import { instrument } from '../../metrics'
+import { instrument } from '../../shared/metrics'
 import { databaseQueryDurationHistogram, databaseQueryErrorsCounter } from '../../database.metrics'
 import { DefaultMap } from '../../default-map'
 import { gunzipJSON } from '../../encoding'
@@ -22,7 +22,7 @@ import {
     entities,
 } from '../../database.models'
 import { DefinitionReferenceResultId, RangeId } from '../../database.types'
-import { TracingContext, logSpan } from '../../tracing'
+import { TracingContext, logSpan } from '../../shared/tracing'
 
 /**
  * A wrapper around operations for single repository/commit pair.

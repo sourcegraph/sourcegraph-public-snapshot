@@ -33,7 +33,7 @@ import {
     PackageInformationId,
     HoverResultId,
 } from '../../database.types'
-import { TracingContext, logAndTraceCall } from '../../tracing'
+import { TracingContext, logAndTraceCall } from '../../shared/tracing'
 
 /**
  * The insertion metrics for the database.
