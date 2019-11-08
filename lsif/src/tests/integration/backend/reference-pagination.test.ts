@@ -1,16 +1,15 @@
-import { BackendTestContext, filterNodeModules } from './util'
-import { createCommit } from '../test-utils'
+import * as util from '../integration-test-util'
 import { lsp } from 'lsif-protocol'
-import { ReferencePaginationContext } from '../server/backend/backend'
+import { ReferencePaginationContext } from '../../../server/backend/backend'
 
 describe('Backend', () => {
-    const ctx = new BackendTestContext()
+    const ctx = new util.BackendTestContext()
 
     beforeAll(async () => {
         await ctx.init()
         await Promise.all(
             ['a', 'b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10'].map(r =>
-                ctx.convertTestData(r, createCommit(r), '', `reference-pagination/data/${r}.lsif.gz`)
+                ctx.convertTestData(r, util.createCommit(r), '', `reference-pagination/data/${r}.lsif.gz`)
             )
         )
     })
@@ -27,10 +26,10 @@ describe('Backend', () => {
         }
 
         const fetch = async (paginationContext?: ReferencePaginationContext) =>
-            filterNodeModules(
+            util.filterNodeModules(
                 await backend.references(
                     'a',
-                    createCommit('a'),
+                    util.createCommit('a'),
                     'src/index.ts',
                     {
                         line: 0,

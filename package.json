@@ -20,7 +20,7 @@
     "graphql": "gulp graphQLTypes",
     "graphql-lint": "graphql-schema-linter --old-implements-syntax --comment-descriptions cmd/frontend/graphqlbackend/schema.graphql",
     "prepublish": "gulp generate",
-    "test": "jest --testPathIgnorePatterns e2e regression",
+    "test": "jest --testPathIgnorePatterns e2e regression integration",
     "storybook": "start-storybook -p 9001 -c .storybook",
     "storybook:build": "build-storybook -c .storybook",
     "storybook:smoke-test": "yarn run storybook --smoke-test",

@@ -1,22 +1,21 @@
-import { BackendTestContext, filterNodeModules } from './util'
-import { createCommit, createLocation } from '../test-utils'
-import { ReferencePaginationContext } from '../server/backend/backend'
-import { MAX_TRAVERSAL_LIMIT } from '../shared/constants'
+import * as util from '../integration-test-util'
 import { lsp } from 'lsif-protocol'
+import { MAX_TRAVERSAL_LIMIT } from '../../../shared/constants'
+import { ReferencePaginationContext } from '../../../server/backend/backend'
 
 describe('Backend', () => {
-    const ctx = new BackendTestContext()
+    const ctx = new util.BackendTestContext()
     const repository = 'monorepo'
 
     // Note: we use '.' as a suffix for commit numbers on construction so that
     // we can distinguish `1` and `11` (`1.1.1...` and `11.11.11...`).
-    const c0 = createCommit('0.')
-    const c1 = createCommit('1.')
-    const c2 = createCommit('2.')
-    const c3 = createCommit('3.')
-    const c4 = createCommit('4.')
-    const cpen = createCommit(`${MAX_TRAVERSAL_LIMIT * 2 - 1}.`)
-    const cmax = createCommit(`${MAX_TRAVERSAL_LIMIT * 2}.`)
+    const c0 = util.createCommit('0.')
+    const c1 = util.createCommit('1.')
+    const c2 = util.createCommit('2.')
+    const c3 = util.createCommit('3.')
+    const c4 = util.createCommit('4.')
+    const cpen = util.createCommit(`${MAX_TRAVERSAL_LIMIT * 2 - 1}.`)
+    const cmax = util.createCommit(`${MAX_TRAVERSAL_LIMIT * 2}.`)
 
     beforeAll(async () => {
         await ctx.init()
@@ -73,8 +72,8 @@ describe('Backend', () => {
         await ctx.xrepoDatabase.updateCommits(
             repository,
             Array.from({ length: MAX_TRAVERSAL_LIMIT * 2 + 1 }, (_, i) => [
-                createCommit(`${i}.`),
-                createCommit(`${i + 1}.`),
+                util.createCommit(`${i}.`),
+                util.createCommit(`${i + 1}.`),
             ])
         )
     })
@@ -91,11 +90,11 @@ describe('Backend', () => {
         }
 
         const checkRefs = (locations: lsp.Location[], root: string) => {
-            expect(locations).toContainEqual(createLocation(`${root}/src/index.ts`, 0, 9, 0, 12))
-            expect(locations).toContainEqual(createLocation(`${root}/src/index.ts`, 3, 0, 3, 3))
-            expect(locations).toContainEqual(createLocation(`${root}/src/index.ts`, 3, 7, 3, 10))
-            expect(locations).toContainEqual(createLocation(`${root}/src/index.ts`, 3, 14, 3, 17))
-            expect(locations).toContainEqual(createLocation(`${root}/src/index.ts`, 3, 21, 3, 24))
+            expect(locations).toContainEqual(util.createLocation(`${root}/src/index.ts`, 0, 9, 0, 12))
+            expect(locations).toContainEqual(util.createLocation(`${root}/src/index.ts`, 3, 0, 3, 3))
+            expect(locations).toContainEqual(util.createLocation(`${root}/src/index.ts`, 3, 7, 3, 10))
+            expect(locations).toContainEqual(util.createLocation(`${root}/src/index.ts`, 3, 14, 3, 17))
+            expect(locations).toContainEqual(util.createLocation(`${root}/src/index.ts`, 3, 21, 3, 24))
         }
 
         const testCases = [
@@ -107,7 +106,7 @@ describe('Backend', () => {
 
         for (const { commit, refs } of testCases) {
             const fetch = async (paginationContext?: ReferencePaginationContext) =>
-                filterNodeModules(
+                util.filterNodeModules(
                     await backend.references(
                         repository,
                         commit,
@@ -123,7 +122,7 @@ describe('Backend', () => {
             const { locations, cursor } = await fetch()
             expect(cursor).toBeUndefined()
 
-            expect(locations).toContainEqual(createLocation('a/src/index.ts', 0, 16, 0, 19))
+            expect(locations).toContainEqual(util.createLocation('a/src/index.ts', 0, 16, 0, 19))
             for (const root of refs) {
                 checkRefs(locations, root)
             }
@@ -141,10 +140,10 @@ describe('Backend', () => {
         // Add external references
         const repos = ['ext1', 'ext2', 'ext3', 'ext4', 'ext5']
         const filename = 'reference-pagination-monorepo/data/f-ref.lsif.gz'
-        await Promise.all(repos.map(r => ctx.convertTestData(r, createCommit(r), 'f/', filename)))
+        await Promise.all(repos.map(r => ctx.convertTestData(r, util.createCommit(r), 'f/', filename)))
 
         const fetch = async (paginationContext?: ReferencePaginationContext) =>
-            filterNodeModules(
+            util.filterNodeModules(
                 await backend.references(
                     repository,
                     c3,
