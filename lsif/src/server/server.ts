@@ -6,28 +6,28 @@ import express from 'express'
 import onFinished from 'on-finished'
 import promClient from 'prom-client'
 import uuid from 'uuid'
-import { httpUploadDurationHistogram, httpQueryDurationHistogram, queueSizeGauge } from './server.metrics'
+import { httpUploadDurationHistogram, httpQueryDurationHistogram, queueSizeGauge } from '../server.metrics'
 import { chunk } from 'lodash'
 import cors from 'cors'
 import {
     connectionCacheCapacityGauge,
     documentCacheCapacityGauge,
     resultChunkCacheCapacityGauge,
-} from './cache.metrics'
-import { dbFilename, dbFilenameOld, ensureDirectory, readEnvInt } from './util'
-import { createPostgresConnection } from './connection'
-import { Backend, ReferencePaginationCursor } from './backend'
+} from '../cache.metrics'
+import { dbFilename, dbFilenameOld, ensureDirectory, readEnvInt } from '../util'
+import { createPostgresConnection } from '../connection'
+import { Backend, ReferencePaginationCursor } from '../backend'
 import { logger as loggingMiddleware } from 'express-winston'
 import { Logger } from 'winston'
 import { pipeline as _pipeline } from 'stream'
 import { promisify } from 'util'
 import { wrap } from 'async-middleware'
-import { XrepoDatabase } from './xrepo'
-import { createTracer, logAndTraceCall, TracingContext, addTags } from './tracing'
+import { XrepoDatabase } from '../xrepo'
+import { createTracer, logAndTraceCall, TracingContext, addTags } from '../tracing'
 import { Span, Tracer } from 'opentracing'
 import { default as tracingMiddleware } from 'express-opentracing'
-import { waitForConfiguration } from './config'
-import { createLogger } from './logging'
+import { waitForConfiguration } from '../config'
+import { createLogger } from '../logging'
 import {
     enqueue,
     createQueue,
@@ -36,14 +36,14 @@ import {
     QUEUE_PREFIX,
     statesByQueue,
     ApiJobState,
-} from './queue'
+} from '../queue'
 import { Connection } from 'typeorm'
-import { LsifDump } from './xrepo.models'
-import * as constants from './constants'
+import { LsifDump } from '../xrepo.models'
+import * as constants from '../constants'
 import pTimeout from 'p-timeout'
-import { formatJob, formatJobFromMap } from './api-job'
+import { formatJob, formatJobFromMap } from '../api-job'
 import { Redis } from 'ioredis'
-import * as settings from './settings'
+import * as settings from '../settings'
 
 const pipeline = promisify(_pipeline)
 
