@@ -1,6 +1,6 @@
 import { Column, Entity, Index, PrimaryColumn } from 'typeorm'
 import { MonikerKind } from 'lsif-protocol'
-import { getBatchSize } from '../util'
+import { getBatchSize } from './util'
 import {
     DocumentPath,
     JSONEncoded,

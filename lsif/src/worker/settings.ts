@@ -1,4 +1,4 @@
-import { readEnvInt } from '../shared/util'
+import { readEnvInt } from '../shared/settings'
 
 /**
  * Which port to run the worker metrics server on. Defaults to 3187.

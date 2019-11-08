@@ -1,4 +1,4 @@
-import { readEnvInt } from '../../shared/util'
+import { readEnvInt } from '../../shared/settings'
 
 /**
  * The number of SQLite connections that can be opened at once. This

@@ -1,4 +1,4 @@
-import { mustGetFromEither } from './util'
+import { mustGetFromEither } from './maps'
 
 describe('mustGetFromEither', () => {
     it('should return first defined value', () => {

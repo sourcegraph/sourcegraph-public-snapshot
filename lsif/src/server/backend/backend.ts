@@ -1,6 +1,6 @@
 import * as lsp from 'vscode-languageserver-protocol'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { dbFilename, mustGet, NoLSIFDumpError } from '../../shared/util'
+import { mustGet } from '../../shared/maps'
 import { XrepoDatabase } from '../../shared/xrepo/xrepo'
 import { TracingContext, logAndTraceCall, addTags, logSpan } from '../../shared/tracing'
 import { Database, sortMonikers, createRemoteUri } from './database'
@@ -15,6 +15,20 @@ import {
 import { uniqWith, isEqual } from 'lodash'
 import { LsifDump, DumpId } from '../../shared/models/xrepo'
 import * as settings from './cache.settings'
+import { dbFilename } from '../../shared/paths'
+
+/**
+ * No matching LSIF dump was found. This could be because:
+ *
+ * - You're currently browsing while on a commit that is too far away from the
+ *   last uploaded LSIF dump
+ * - You're currently viewing a file that is under a different root from what
+ *   the LSIF dump is associated with (i.e. the current file is not contained in
+ *   the dump)
+ * - You're currently viewing a file that is not part of the LSIF dump (e.g. due
+ *   to tsconfig.json exclude rules)
+ */
+export class NoLSIFDumpError extends Error {}
 
 /**
  * Context describing the current request for paginated results.

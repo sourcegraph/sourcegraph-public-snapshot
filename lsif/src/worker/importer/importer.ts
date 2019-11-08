@@ -1,12 +1,14 @@
-import { assertId, hashKey, mustGet, readEnvInt } from '../../shared/util'
 import { Correlator, ResultSetData, ResultSetId } from './correlator'
 import { createSqliteConnection } from '../../shared/database/sqlite'
 import { databaseInsertionDurationHistogram, databaseInsertionErrorsCounter } from '../metrics'
 import { DefaultMap } from '../../shared/datastructures/default-map'
-import { Edge, MonikerKind, RangeId, Vertex } from 'lsif-protocol'
+import { Edge, Id, MonikerKind, RangeId, Vertex } from 'lsif-protocol'
 import { EntityManager } from 'typeorm'
 import { gzipJSON } from '../../shared/encoding/json'
+import { readEnvInt } from '../../shared/settings'
+import { mustGet } from '../../shared/maps'
 import { isEqual, uniqWith } from 'lodash'
+import { logAndTraceCall, TracingContext } from '../../shared/tracing'
 import { Package, SymbolReferences } from '../../shared/xrepo/xrepo'
 import { Readable } from 'stream'
 import { readGzippedJsonElements } from './input'
@@ -33,7 +35,7 @@ import {
     PackageInformationId,
     HoverResultId,
 } from '../../shared/models/types'
-import { TracingContext, logAndTraceCall } from '../../shared/tracing'
+import { hashKey } from '../../shared/models/hash'
 
 /**
  * The insertion metrics for the database.
@@ -628,4 +630,17 @@ function gatherDocument(correlator: Correlator, currentDocumentId: DocumentId, p
     }
 
     return document
+}
+
+/**
+ * Return the value of `id`, or throw an exception if it is undefined.
+ *
+ * @param id The identifier.
+ */
+function assertId<T extends Id>(id: T | undefined): T {
+    if (id !== undefined) {
+        return id
+    }
+
+    throw new Error('id is undefined')
 }

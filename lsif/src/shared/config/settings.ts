@@ -1,4 +1,4 @@
-import { readEnvInt } from '../util'
+import { readEnvInt } from '../settings'
 
 /**
  * HTTP address for internal frontend HTTP API.

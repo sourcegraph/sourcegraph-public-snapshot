@@ -1,7 +1,7 @@
 import * as lsp from 'vscode-languageserver-protocol'
 import { Connection } from 'typeorm'
 import { ConnectionCache, DocumentCache, EncodedJsonCacheValue, ResultChunkCache } from './cache'
-import { hashKey, mustGet } from '../../shared/util'
+import { mustGet } from '../../shared/maps'
 import { instrument } from '../../shared/metrics'
 import { databaseQueryDurationHistogram, databaseQueryErrorsCounter } from '../metrics'
 import { DefaultMap } from '../../shared/datastructures/default-map'
@@ -23,6 +23,7 @@ import {
 } from '../../shared/models/dump'
 import { DefinitionReferenceResultId, RangeId } from '../../shared/models/types'
 import { TracingContext, logSpan } from '../../shared/tracing'
+import { hashKey } from '../../shared/models/hash'
 
 /**
  * A wrapper around operations for single repository/commit pair.

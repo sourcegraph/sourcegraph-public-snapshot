@@ -4,7 +4,7 @@ import * as path from 'path'
 import { ConfigurationFetcher } from '../../shared/config/config'
 import { convertLsif } from '../importer/importer'
 import { createSilentLogger } from '../../shared/logging'
-import { dbFilename, hasErrorCode } from '../../shared/util'
+import { dbFilename } from '../../shared/paths'
 import { DBS_DIR_MAXIMUM_SIZE_BYTES, STORAGE_ROOT } from '../settings'
 import { logAndTraceCall, TracingContext } from '../../shared/tracing'
 import { XrepoDatabase } from '../../shared/xrepo/xrepo'
@@ -152,7 +152,7 @@ async function filesize(filename: string): Promise<number> {
     try {
         return (await fs.stat(filename)).size
     } catch (error) {
-        if (!hasErrorCode(error, 'ENOENT')) {
+        if (!(error && error.code === 'ENOENT')) {
             throw error
         }
 

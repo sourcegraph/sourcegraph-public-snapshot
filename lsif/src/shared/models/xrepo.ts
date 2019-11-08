@@ -1,5 +1,5 @@
 import { PrimaryGeneratedColumn, Column, Entity, OneToOne, JoinColumn } from 'typeorm'
-import { getBatchSize } from '../util'
+import { getBatchSize } from './util'
 import { EncodedBloomFilter } from '../xrepo/bloom-filter'
 
 /**
