@@ -11,9 +11,9 @@ import {
     DefinitionModel,
     ReferenceModel,
     PackageInformationData,
-} from '../../database.models'
+} from '../../shared/models/dump'
 import { uniqWith, isEqual } from 'lodash'
-import { LsifDump, DumpId } from '../../xrepo.models'
+import { LsifDump, DumpId } from '../../shared/models/xrepo'
 import * as settings from './cache.settings'
 
 /**

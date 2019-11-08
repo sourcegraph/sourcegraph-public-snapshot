@@ -1,6 +1,6 @@
 import { Column, Entity, Index, PrimaryColumn } from 'typeorm'
 import { MonikerKind } from 'lsif-protocol'
-import { getBatchSize } from './util'
+import { getBatchSize } from '../../util'
 import {
     DocumentPath,
     JSONEncoded,
@@ -13,7 +13,7 @@ import {
     RangeId,
     DefinitionResultId,
     ReferenceResultId,
-} from './database.types'
+} from './types'
 
 /**
 n entity within the database describing LSIF data for a single repository

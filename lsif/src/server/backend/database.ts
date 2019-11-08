@@ -7,7 +7,7 @@ import { databaseQueryDurationHistogram, databaseQueryErrorsCounter } from '../.
 import { DefaultMap } from '../../default-map'
 import { gunzipJSON } from '../../encoding'
 import { isEqual, uniqWith } from 'lodash'
-import { DumpId, LsifDump } from '../../xrepo.models'
+import { DumpId, LsifDump } from '../../shared/models/xrepo'
 import {
     DefinitionModel,
     DocumentData,
@@ -20,8 +20,8 @@ import {
     ResultChunkModel,
     DocumentPathRangeId,
     entities,
-} from '../../database.models'
-import { DefinitionReferenceResultId, RangeId } from '../../database.types'
+} from '../../shared/models/dump'
+import { DefinitionReferenceResultId, RangeId } from '../../shared/models/types'
 import { TracingContext, logSpan } from '../../shared/tracing'
 
 /**

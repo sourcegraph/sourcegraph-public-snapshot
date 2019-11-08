@@ -5,7 +5,7 @@ import { createCleanPostgresDatabase, createCommit, truncatePostgresTables, crea
 import { Connection } from 'typeorm'
 import { fail } from 'assert'
 import { pick } from 'lodash'
-import { LsifDump } from '../../xrepo.models'
+import { LsifDump } from '../models/xrepo'
 
 describe('XrepoDatabase', () => {
     let connection!: Connection

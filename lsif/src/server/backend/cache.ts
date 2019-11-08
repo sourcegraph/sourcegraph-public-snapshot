@@ -2,7 +2,7 @@ import promClient from 'prom-client'
 import Yallist from 'yallist'
 import { Connection, EntityManager } from 'typeorm'
 import { createSqliteConnection } from '../../shared/database/sqlite'
-import { DocumentData, ResultChunkData } from '../../database.models'
+import { DocumentData, ResultChunkData } from '../../shared/models/dump'
 import {
     connectionCacheEventsCounter,
     connectionCacheSizeGauge,

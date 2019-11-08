@@ -1,6 +1,6 @@
 import { PrimaryGeneratedColumn, Column, Entity, OneToOne, JoinColumn } from 'typeorm'
-import { getBatchSize } from './util'
-import { EncodedBloomFilter } from './encoding'
+import { getBatchSize } from '../../util'
+import { EncodedBloomFilter } from '../../encoding'
 
 /**
  * An entity within the cross-repo database. This tracks commit parentage and branch

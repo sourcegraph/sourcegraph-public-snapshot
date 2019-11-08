@@ -2,7 +2,7 @@ import * as fs from 'mz/fs'
 import * as path from 'path'
 import { Id } from 'lsif-protocol'
 import * as constants from './constants'
-import { DefinitionReferenceResultId } from './database.types'
+import { DefinitionReferenceResultId } from './shared/models/types'
 
 /**
  * Reads an integer from an environment variable or defaults to the given value.

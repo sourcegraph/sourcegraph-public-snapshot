@@ -23,7 +23,7 @@ import {
     ResultChunkModel,
     DocumentIdRangeId,
     entities,
-} from '../../database.models'
+} from '../../shared/models/dump'
 import {
     DefinitionResultId,
     MonikerId,
@@ -32,7 +32,7 @@ import {
     ReferenceResultId,
     PackageInformationId,
     HoverResultId,
-} from '../../database.types'
+} from '../../shared/models/types'
 import { TracingContext, logAndTraceCall } from '../../shared/tracing'
 
 /**
