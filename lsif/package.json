@@ -80,7 +80,7 @@
     "build": "tsc",
     "postbuild": "yarn run copy-files",
     "copy-files": "copyfiles -u 1 src/**/*.lua out",
-    "test": "jest --testPathIgnorePatterns e2e",
+    "test": "jest",
     "typecheck": "tsc --noEmit",
     "tslint": "../node_modules/.bin/tslint -p tsconfig.json",
     "eslint": "../node_modules/.bin/eslint 'src/**/*.ts?(x)'",

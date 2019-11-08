@@ -1,15 +1,18 @@
+import * as constants from '../../shared/constants'
 import * as fs from 'mz/fs'
 import * as path from 'path'
 import * as uuid from 'uuid'
-import { Connection } from 'typeorm'
-import { connectPostgres } from './shared/database/postgres'
-import { lsp } from 'lsif-protocol'
+import rmfr from 'rmfr'
+import { Backend, ReferencePaginationCursor } from '../../server/backend/backend'
 import { child_process } from 'mz'
-import { convertLsif } from './worker/importer/importer'
-import { XrepoDatabase } from './shared/xrepo/xrepo'
-import { dbFilename, ensureDirectory } from './shared/paths'
+import { Configuration } from '../../shared/config/config'
+import { Connection } from 'typeorm'
+import { connectPostgres } from '../../shared/database/postgres'
+import { convertLsif } from '../../worker/importer/importer'
+import { dbFilename, ensureDirectory } from '../../shared/paths'
+import { lsp } from 'lsif-protocol'
 import { userInfo } from 'os'
-import * as constants from './shared/constants'
+import { XrepoDatabase } from '../../shared/xrepo/xrepo'
 
 /**
  * Create a temporary directory with a subdirectory for dbs.
@@ -143,7 +146,9 @@ export async function convertTestData(
 ): Promise<void> {
     // Create a filesystem read stream for the given test file. This will cover
     // the cases where `yarn test` is run from the root or from the lsif directory.
-    const input = fs.createReadStream(path.join((await fs.exists('lsif')) ? 'lsif' : '', 'test-data', filename))
+    const input = fs.createReadStream(
+        path.join((await fs.exists('lsif')) ? 'lsif' : '', 'src/tests/integration/data', filename)
+    )
 
     const tmp = path.join(storageRoot, constants.TEMP_DIR, uuid.v4())
     const { packages, references } = await convertLsif(input, tmp)
@@ -153,6 +158,90 @@ export async function convertTestData(
     if (updateCommits) {
         await xrepoDatabase.updateCommits(repository, [[commit, '']])
         await xrepoDatabase.updateDumpsVisibleFromTip(repository, commit)
+    }
+}
+
+/**
+ * A wrapper around tests for the Backend class. This abstracts a lot
+ * of the common setup and teardown around creating a temporary Postgres
+ * database, a storage root, across-repository database instance, and a
+ * backend instance.
+ */
+export class BackendTestContext {
+    /**
+     * The backend instance.
+     */
+    public backend?: Backend
+
+    /**
+     * The cross-repository database instance.
+     */
+    public xrepoDatabase?: XrepoDatabase
+
+    /**
+     * A temporary directory.
+     */
+    private storageRoot?: string
+
+    /**
+     * A reference to a function that destroys the temporary database.
+     */
+    private cleanup?: () => Promise<void>
+
+    /**
+     * Create a backend and a cross-repository database. This will create
+     * temporary resources (database and temporary directory) that should
+     * be cleaned up via the `teardown` method.
+     *
+     * The backend and cross-repository database values can be referenced
+     * by the public fields of this class.
+     */
+    public async init(): Promise<void> {
+        this.storageRoot = await createStorageRoot()
+
+        const { connection, cleanup } = await createCleanPostgresDatabase()
+        this.cleanup = cleanup
+
+        this.xrepoDatabase = new XrepoDatabase(this.storageRoot, connection)
+        this.backend = new Backend(this.storageRoot, this.xrepoDatabase, () => ({} as Configuration))
+    }
+
+    /**
+     * Mock an upload of the given file. This will create a SQLite database in the
+     * given storage root and will insert dump, package, and reference data into
+     * the given cross-repository database.
+     *
+     * @param repository The repository name.
+     * @param commit The commit.
+     * @param root The root of the dump.
+     * @param filename The filename of the (gzipped) LSIF dump.
+     * @param updateCommits Whether not to update commits.
+     */
+    public convertTestData(
+        repository: string,
+        commit: string,
+        root: string,
+        filename: string,
+        updateCommits: boolean = true
+    ): Promise<void> {
+        if (!this.xrepoDatabase || !this.storageRoot) {
+            return Promise.resolve()
+        }
+
+        return convertTestData(this.xrepoDatabase, this.storageRoot, repository, commit, root, filename, updateCommits)
+    }
+
+    /**
+     * Clean up disk and database resources created for this test.
+     */
+    public async teardown(): Promise<void> {
+        if (this.storageRoot) {
+            await rmfr(this.storageRoot)
+        }
+
+        if (this.cleanup) {
+            await this.cleanup()
+        }
     }
 }
 
@@ -210,4 +299,21 @@ export function createRemoteLocation(
  */
 export function createCommit(repository: string): string {
     return repository.repeat(40).substring(0, 40)
+}
+
+/**
+ * Remove all node_modules locations from the output of a references result.
+ *
+ * @param args Parameter bag.
+ */
+export function filterNodeModules<T>({
+    locations,
+    cursor,
+}: {
+    /** The reference locations. */
+    locations: lsp.Location[]
+    /** The pagination cursor. */
+    cursor?: ReferencePaginationCursor
+}): { locations: lsp.Location[]; cursor?: ReferencePaginationCursor } {
+    return { locations: locations.filter(l => !l.uri.includes('node_modules')), cursor }
 }

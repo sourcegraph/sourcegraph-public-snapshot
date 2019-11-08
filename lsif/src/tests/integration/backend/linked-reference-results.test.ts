@@ -1,10 +1,9 @@
-import { BackendTestContext, filterNodeModules } from './util'
-import { createCommit, createLocation } from '../test-utils'
+import * as util from '../integration-test-util'
 
 describe('Backend', () => {
-    const ctx = new BackendTestContext()
+    const ctx = new util.BackendTestContext()
     const repository = 'main'
-    const commit = createCommit('0')
+    const commit = util.createCommit('0')
 
     beforeAll(async () => {
         await ctx.init()
@@ -30,15 +29,15 @@ describe('Backend', () => {
         ]
 
         for (const position of positions) {
-            const { locations } = filterNodeModules(
+            const { locations } = util.filterNodeModules(
                 await ctx.backend.references(repository, commit, 'src/index.ts', position)
             )
 
-            expect(locations).toContainEqual(createLocation('src/index.ts', 1, 4, 1, 7)) // abstract def in I
-            expect(locations).toContainEqual(createLocation('src/index.ts', 5, 4, 5, 7)) // concrete def in A
-            expect(locations).toContainEqual(createLocation('src/index.ts', 9, 4, 9, 7)) // concrete def in B
-            expect(locations).toContainEqual(createLocation('src/index.ts', 13, 2, 13, 5)) // use via I
-            expect(locations).toContainEqual(createLocation('src/index.ts', 16, 2, 16, 5)) // use via B
+            expect(locations).toContainEqual(util.createLocation('src/index.ts', 1, 4, 1, 7)) // abstract def in I
+            expect(locations).toContainEqual(util.createLocation('src/index.ts', 5, 4, 5, 7)) // concrete def in A
+            expect(locations).toContainEqual(util.createLocation('src/index.ts', 9, 4, 9, 7)) // concrete def in B
+            expect(locations).toContainEqual(util.createLocation('src/index.ts', 13, 2, 13, 5)) // use via I
+            expect(locations).toContainEqual(util.createLocation('src/index.ts', 16, 2, 16, 5)) // use via B
 
             // Ensure no additional references
             expect(locations && locations.length).toEqual(5)
