@@ -4,7 +4,7 @@ This document lists the technologies that we prefer to use by default.
 
 If you would like to build something that does not conform to our standard tech stack:
 
-1. Write an [RFC](rfcs/index.md) that explains why you want to use a different technology.
+1. Write an [RFC](https://about.sourcegraph.com/handbook/engineering/rfcs) that explains why you want to use a different technology.
 2. Open a PR that adds a description for the new exception to this document.
 
 If there are enough exceptions of the same kind (i.e. at least 3), we can consider updating our policy so that these cases are no longer considered exceptions.
