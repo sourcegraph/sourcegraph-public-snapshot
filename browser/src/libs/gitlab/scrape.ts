@@ -95,6 +95,7 @@ export interface GitLabDiffInfo extends RawRepoSpec, Pick<GitLabInfo, 'owner' | 
 
     diffID?: string
     baseCommitID?: string
+    baseRawRepoName: string
 }
 
 /**
@@ -110,7 +111,22 @@ export function getDiffPageInfo(): GitLabDiffInfo {
         throw new Error('Unable to determine merge request ID')
     }
 
+    const sourceRepoLink = document.querySelector<HTMLLinkElement>('.js-source-branch a:first-child')
+    if (!sourceRepoLink) {
+        throw new Error('Could not find merge request source repo link')
+    }
+    const [baseRepoOwner, baseRepoProjectName] = new URL(sourceRepoLink.href).pathname.split('/').slice(1)
+    if (!baseRepoOwner) {
+        throw new Error('Could not determine MR baseRawRepoName: no baseRepoOwner')
+    }
+    if (!baseRepoProjectName) {
+        throw new Error('Could not determine MR baseRawRepoName: no baseRepoProjectName')
+    }
+    const hostname = isExtension ? window.location.hostname : new URL(gon.gitlab_url).hostname
+    const baseRawRepoName = `${hostname}/${owner}/${projectName}`
+
     return {
+        baseRawRepoName,
         rawRepoName,
         owner,
         projectName,

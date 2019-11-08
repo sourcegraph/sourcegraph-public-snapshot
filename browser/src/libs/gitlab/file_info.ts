@@ -47,21 +47,23 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo>
     of(undefined).pipe(
         map(getDiffPageInfo),
         // Resolve base commit ID.
-        switchMap(({ owner, projectName, mergeRequestID, diffID, baseCommitID, rawRepoName }) => {
+        switchMap(({ owner, projectName, mergeRequestID, diffID, baseCommitID, rawRepoName, baseRawRepoName }) => {
             const gettingBaseCommitID = baseCommitID
                 ? // Commit was found in URL.
                   of(baseCommitID)
                 : // Commit needs to be fetched from the API.
                   getBaseCommitIDForMergeRequest({ owner, projectName, mergeRequestID, diffID })
 
-            return gettingBaseCommitID.pipe(map(baseCommitID => ({ baseCommitID, rawRepoName })))
+            return gettingBaseCommitID.pipe(map(baseCommitID => ({ baseCommitID, rawRepoName, baseRawRepoName })))
         }),
         map(
-            ({ baseCommitID, rawRepoName }): FileInfo => {
+            ({ baseCommitID, rawRepoName, baseRawRepoName }): FileInfo => {
                 // Head commit is found in the "View file @ ..." button in the code view.
                 const commitID = getHeadCommitIDFromCodeView(codeView)
                 const { filePath, baseFilePath } = getFilePathsFromCodeView(codeView)
-                return { baseCommitID, baseFilePath, commitID, filePath, rawRepoName }
+                const diffFileInfo = { baseCommitID, baseFilePath, commitID, filePath, rawRepoName, baseRawRepoName }
+                console.log({ diffFileInfo })
+                return diffFileInfo
             }
         )
     )
