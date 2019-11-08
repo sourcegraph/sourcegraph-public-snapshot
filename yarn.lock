@@ -13056,10 +13056,10 @@ p-retry@^3.0.1:
   dependencies:
     retry "^0.12.0"
 
-p-retry@^4.1.0:
-  version "4.1.0"
-  resolved "https://registry.npmjs.org/p-retry/-/p-retry-4.1.0.tgz#9ce7cef2069e84bf590df3b8ec18d740109338d6"
-  integrity sha512-oepllyG9gX1qH4Sm20YAKxg1GA7L7puhvGnTfimi31P07zSIj7SDV6YtuAx9nbJF51DES+2CIIRkXs8GKqWJxA==
+p-retry@^4.2.0:
+  version "4.2.0"
+  resolved "https://registry.npmjs.org/p-retry/-/p-retry-4.2.0.tgz#ea9066c6b44f23cab4cd42f6147cdbbc6604da5d"
+  integrity sha512-jPH38/MRh263KKcq0wBNOGFJbm+U6784RilTmHjB/HM9kH9V8WlCpVUcdOmip9cjXOh6MxZ5yk1z2SjDUJfWmA==
   dependencies:
     "@types/retry" "^0.12.0"
     retry "^0.12.0"
