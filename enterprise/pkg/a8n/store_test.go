@@ -1519,9 +1519,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					}
 				}
 
-				if tc.hasCampaign {
-					// TODO(a8n): Create a Campaign with CampaignPlanID = plan.ID
-				}
+				// TODO(a8n): Create a Campaign with CampaignPlanID = plan.ID
 
 				for i, j := range tc.jobs {
 					j.StartedAt = now.Add(-2 * time.Hour)
