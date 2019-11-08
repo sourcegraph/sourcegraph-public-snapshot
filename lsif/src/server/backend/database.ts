@@ -3,27 +3,14 @@ import { Connection } from 'typeorm'
 import { ConnectionCache, DocumentCache, EncodedJsonCacheValue, ResultChunkCache } from './cache'
 import { mustGet } from '../../shared/maps'
 import { instrument } from '../../shared/metrics'
-import { databaseQueryDurationHistogram, databaseQueryErrorsCounter } from '../metrics'
+import * as metrics from '../metrics'
 import { DefaultMap } from '../../shared/datastructures/default-map'
 import { gunzipJSON } from '../../shared/encoding/json'
 import { isEqual, uniqWith } from 'lodash'
-import { DumpId, LsifDump } from '../../shared/models/xrepo'
-import {
-    DefinitionModel,
-    DocumentData,
-    DocumentModel,
-    MetaModel,
-    MonikerData,
-    RangeData,
-    ReferenceModel,
-    ResultChunkData,
-    ResultChunkModel,
-    DocumentPathRangeId,
-    entities,
-} from '../../shared/models/dump'
-import { DefinitionReferenceResultId, RangeId } from '../../shared/models/types'
+import * as dumpModels from '../../shared/models/dump'
 import { TracingContext, logSpan } from '../../shared/tracing'
 import { hashKey } from '../../shared/models/hash'
+import * as xrepoModels from '../../shared/models/xrepo'
 
 /**
  * A wrapper around operations for single repository/commit pair.
@@ -49,7 +36,7 @@ export class Database {
         private connectionCache: ConnectionCache,
         private documentCache: DocumentCache,
         private resultChunkCache: ResultChunkCache,
-        private dumpId: DumpId,
+        private dumpId: xrepoModels.DumpId,
         private databasePath: string
     ) {}
 
@@ -170,11 +157,11 @@ export class Database {
      */
     private async convertRangesToLspLocations(
         path: string,
-        document: DocumentData,
-        resultData: DocumentPathRangeId[]
+        document: dumpModels.DocumentData,
+        resultData: dumpModels.DocumentPathRangeId[]
     ): Promise<lsp.Location[]> {
         // Group by document path so we only have to load each document once
-        const groupedResults = new DefaultMap<string, Set<RangeId>>(() => new Set())
+        const groupedResults = new DefaultMap<string, Set<dumpModels.RangeId>>(() => new Set())
 
         for (const { documentPath, rangeId } of resultData) {
             groupedResults.getOrDefault(documentPath).add(rangeId)
@@ -211,12 +198,12 @@ export class Database {
      * @param ctx The tracing context.
      */
     public async monikerResults(
-        model: typeof DefinitionModel | typeof ReferenceModel,
-        moniker: Pick<MonikerData, 'scheme' | 'identifier'>,
+        model: typeof dumpModels.DefinitionModel | typeof dumpModels.ReferenceModel,
+        moniker: Pick<dumpModels.MonikerData, 'scheme' | 'identifier'>,
         ctx: TracingContext
     ): Promise<lsp.Location[]> {
         const results = await this.withConnection(connection =>
-            connection.getRepository<DefinitionModel | ReferenceModel>(model).find({
+            connection.getRepository<dumpModels.DefinitionModel | dumpModels.ReferenceModel>(model).find({
                 where: {
                     scheme: moniker.scheme,
                     identifier: moniker.identifier,
@@ -234,15 +221,15 @@ export class Database {
      *
      * @param path The path of the document.
      */
-    private async getDocumentByPath(path: string): Promise<DocumentData | undefined> {
-        const factory = async (): Promise<EncodedJsonCacheValue<DocumentData>> => {
+    private async getDocumentByPath(path: string): Promise<dumpModels.DocumentData | undefined> {
+        const factory = async (): Promise<EncodedJsonCacheValue<dumpModels.DocumentData>> => {
             const document = await this.withConnection(connection =>
-                connection.getRepository(DocumentModel).findOneOrFail(path)
+                connection.getRepository(dumpModels.DocumentModel).findOneOrFail(path)
             )
 
             return {
                 size: document.data.length,
-                data: await gunzipJSON<DocumentData>(document.data),
+                data: await gunzipJSON<dumpModels.DocumentData>(document.data),
             }
         }
 
@@ -272,7 +259,7 @@ export class Database {
         path: string,
         position: lsp.Position,
         ctx: TracingContext
-    ): Promise<{ document: DocumentData | undefined; ranges: RangeData[] }> {
+    ): Promise<{ document: dumpModels.DocumentData | undefined; ranges: dumpModels.RangeData[] }> {
         const document = await this.getDocumentByPath(path)
         if (!document) {
             return { document: undefined, ranges: [] }
@@ -290,7 +277,7 @@ export class Database {
      *
      * @param id The identifier of the definition or reference result.
      */
-    private async getResultById(id: DefinitionReferenceResultId): Promise<DocumentPathRangeId[]> {
+    private async getResultById(id: dumpModels.DefinitionReferenceResultId): Promise<dumpModels.DocumentPathRangeId[]> {
         const { documentPaths, documentIdRangeIds } = await this.getResultChunkByResultId(id)
         const ranges = mustGet(documentIdRangeIds, id, 'documentIdRangeId')
 
@@ -305,18 +292,20 @@ export class Database {
      *
      * @param id An identifier contained in the result chunk.
      */
-    private async getResultChunkByResultId(id: DefinitionReferenceResultId): Promise<ResultChunkData> {
+    private async getResultChunkByResultId(
+        id: dumpModels.DefinitionReferenceResultId
+    ): Promise<dumpModels.ResultChunkData> {
         // Find the result chunk index this id belongs to
         const index = hashKey(id, await this.getNumResultChunks())
 
-        const factory = async (): Promise<EncodedJsonCacheValue<ResultChunkData>> => {
+        const factory = async (): Promise<EncodedJsonCacheValue<dumpModels.ResultChunkData>> => {
             const resultChunk = await this.withConnection(connection =>
-                connection.getRepository(ResultChunkModel).findOneOrFail(index)
+                connection.getRepository(dumpModels.ResultChunkModel).findOneOrFail(index)
             )
 
             return {
                 size: resultChunk.data.length,
-                data: await gunzipJSON<ResultChunkData>(resultChunk.data),
+                data: await gunzipJSON<dumpModels.ResultChunkData>(resultChunk.data),
             }
         }
 
@@ -335,7 +324,9 @@ export class Database {
         }
 
         // Not in the shared map, need to query it
-        const meta = await this.withConnection(connection => connection.getRepository(MetaModel).findOneOrFail(1))
+        const meta = await this.withConnection(connection =>
+            connection.getRepository(dumpModels.MetaModel).findOneOrFail(1)
+        )
         Database.numResultChunks.set(this.databasePath, meta.numResultChunks)
         return meta.numResultChunks
     }
@@ -347,8 +338,10 @@ export class Database {
      * @param callback The function invoke with the SQLite connection.
      */
     private withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
-        return this.connectionCache.withConnection(this.databasePath, entities, connection =>
-            instrument(databaseQueryDurationHistogram, databaseQueryErrorsCounter, () => callback(connection))
+        return this.connectionCache.withConnection(this.databasePath, dumpModels.entities, connection =>
+            instrument(metrics.databaseQueryDurationHistogram, metrics.databaseQueryErrorsCounter, () =>
+                callback(connection)
+            )
         )
     }
 
@@ -372,7 +365,7 @@ export class Database {
  * @param ranges The set of possible ranges.
  * @param position The user's hover position.
  */
-export function findRanges(ranges: Iterable<RangeData>, position: lsp.Position): RangeData[] {
+export function findRanges(ranges: Iterable<dumpModels.RangeData>, position: lsp.Position): dumpModels.RangeData[] {
     const filtered = []
     for (const range of ranges) {
         if (comparePosition(range, position) === 0) {
@@ -397,7 +390,7 @@ export function findRanges(ranges: Iterable<RangeData>, position: lsp.Position):
  * @param range The range.
  * @param position The position.
  */
-export function comparePosition(range: RangeData, position: lsp.Position): number {
+export function comparePosition(range: dumpModels.RangeData, position: lsp.Position): number {
     if (position.line < range.startLine) {
         return +1
     }
@@ -426,7 +419,7 @@ export function comparePosition(range: RangeData, position: lsp.Position): numbe
  *
  * @param monikers The list of monikers.
  */
-export function sortMonikers(monikers: MonikerData[]): MonikerData[] {
+export function sortMonikers(monikers: dumpModels.MonikerData[]): dumpModels.MonikerData[] {
     const monikerKindPreferences = ['import', 'local', 'export']
     const monikerSchemePreferences = ['npm', 'tsc']
 
@@ -449,7 +442,7 @@ export function sortMonikers(monikers: MonikerData[]): MonikerData[] {
  * @param dump The target dump.
  * @param path The path relative to the project root.
  */
-export function createRemoteUri(dump: LsifDump, path: string): string {
+export function createRemoteUri(dump: xrepoModels.LsifDump, path: string): string {
     const url = new URL(`git://${dump.repository}`)
     url.search = dump.commit
     url.hash = path
@@ -477,7 +470,11 @@ function createRange(result: {
  * @param uri The location URI.
  * @param ids The set of range identifiers for each resulting location.
  */
-export function mapRangesToLocations(ranges: Map<RangeId, RangeData>, uri: string, ids: Set<RangeId>): lsp.Location[] {
+export function mapRangesToLocations(
+    ranges: Map<dumpModels.RangeId, dumpModels.RangeData>,
+    uri: string,
+    ids: Set<dumpModels.RangeId>
+): lsp.Location[] {
     const locations = []
     for (const id of ids) {
         locations.push(lsp.Location.create(uri, createRange(mustGet(ranges, id, 'range'))))
@@ -491,7 +488,7 @@ export function mapRangesToLocations(ranges: Map<RangeId, RangeData>, uri: strin
  *
  * @param ranges The ranges to clean.
  */
-function cleanRanges(ranges: RangeData[]): { [K: string]: any } {
+function cleanRanges(ranges: dumpModels.RangeData[]): { [K: string]: any } {
     // We need to array-ize sets otherwise we get a "0 key" object
     return ranges.map(r => ({ ...r, monikerIds: Array.from(r.monikerIds) }))
 }

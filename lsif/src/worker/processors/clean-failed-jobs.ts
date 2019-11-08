@@ -1,7 +1,7 @@
 import * as constants from '../../shared/constants'
 import * as fs from 'mz/fs'
 import * as path from 'path'
-import { FAILED_JOB_MAX_AGE, STORAGE_ROOT } from '../settings'
+import * as settings from '../settings'
 import { logAndTraceCall, TracingContext } from '../../shared/tracing'
 
 /**
@@ -13,14 +13,14 @@ export const createCleanFailedJobsProcessor = () => async (_: {}, ctx: TracingCo
     await logAndTraceCall(ctx, 'cleaning failed jobs', async (ctx: TracingContext) => {
         const purgeFile = async (filename: string): Promise<void> => {
             const stat = await fs.stat(filename)
-            if (Date.now() - stat.mtimeMs >= FAILED_JOB_MAX_AGE) {
+            if (Date.now() - stat.mtimeMs >= settings.FAILED_JOB_MAX_AGE) {
                 await fs.unlink(filename)
             }
         }
 
         for (const directory of [constants.TEMP_DIR, constants.UPLOADS_DIR]) {
-            for (const filename of await fs.readdir(path.join(STORAGE_ROOT, directory))) {
-                await purgeFile(path.join(STORAGE_ROOT, directory, filename))
+            for (const filename of await fs.readdir(path.join(settings.STORAGE_ROOT, directory))) {
+                await purgeFile(path.join(settings.STORAGE_ROOT, directory, filename))
             }
         }
     })

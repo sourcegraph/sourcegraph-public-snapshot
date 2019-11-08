@@ -1,21 +1,15 @@
 import * as lsp from 'vscode-languageserver-protocol'
+import * as settings from '../settings'
+import { addTags, logAndTraceCall, logSpan, TracingContext } from '../../shared/tracing'
+import { ConfigurationFetcher } from '../../shared/config/config'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
+import { createRemoteUri, Database, sortMonikers } from './database'
+import { dbFilename } from '../../shared/paths'
+import * as xrepoModels from '../../shared/models/xrepo'
+import { isEqual, uniqWith } from 'lodash'
 import { mustGet } from '../../shared/maps'
 import { XrepoDatabase } from '../../shared/xrepo/xrepo'
-import { TracingContext, logAndTraceCall, addTags, logSpan } from '../../shared/tracing'
-import { Database, sortMonikers, createRemoteUri } from './database'
-import { ConfigurationFetcher } from '../../shared/config/config'
-import {
-    DocumentData,
-    MonikerData,
-    DefinitionModel,
-    ReferenceModel,
-    PackageInformationData,
-} from '../../shared/models/dump'
-import { uniqWith, isEqual } from 'lodash'
-import { LsifDump, DumpId } from '../../shared/models/xrepo'
-import * as settings from './cache.settings'
-import { dbFilename } from '../../shared/paths'
+import * as dumpModels from '../../shared/models/dump'
 
 /**
  * No matching LSIF dump was found. This could be because:
@@ -129,7 +123,7 @@ export class Backend {
         visibleAtTip: boolean,
         limit: number,
         offset: number
-    ): Promise<{ dumps: LsifDump[]; totalCount: number }> {
+    ): Promise<{ dumps: xrepoModels.LsifDump[]; totalCount: number }> {
         return this.xrepoDatabase.getDumps(repository, query, visibleAtTip, limit, offset)
     }
 
@@ -138,7 +132,7 @@ export class Backend {
      *
      * @param id The dump identifier.
      */
-    public dump(id: DumpId): Promise<LsifDump | undefined> {
+    public dump(id: xrepoModels.DumpId): Promise<xrepoModels.LsifDump | undefined> {
         return this.xrepoDatabase.getDumpById(id)
     }
 
@@ -212,7 +206,12 @@ export class Backend {
                     // This symbol was imported from another database. See if we have xrepo
                     // definition for it.
 
-                    const remoteDefinitions = await this.lookupMoniker(document, moniker, DefinitionModel, ctx)
+                    const remoteDefinitions = await this.lookupMoniker(
+                        document,
+                        moniker,
+                        dumpModels.DefinitionModel,
+                        ctx
+                    )
                     if (remoteDefinitions) {
                         return remoteDefinitions
                     }
@@ -221,9 +220,11 @@ export class Backend {
                     // table of our own database in case there was a definition that wasn't properly
                     // attached to a result set but did have the correct monikers attached.
 
-                    const localDefinitions = (await database.monikerResults(DefinitionModel, moniker, ctx)).map(loc =>
-                        this.locationFromDatabase(dump.root, loc)
-                    )
+                    const localDefinitions = (await database.monikerResults(
+                        dumpModels.DefinitionModel,
+                        moniker,
+                        ctx
+                    )).map(loc => this.locationFromDatabase(dump.root, loc))
                     if (localDefinitions) {
                         return localDefinitions
                     }
@@ -241,10 +242,10 @@ export class Backend {
      * @param ctx The tracing context.
      */
     private lookupPackageInformation(
-        document: DocumentData,
-        moniker: MonikerData,
+        document: dumpModels.DocumentData,
+        moniker: dumpModels.MonikerData,
         ctx: TracingContext = {}
-    ): PackageInformationData | undefined {
+    ): dumpModels.PackageInformationData | undefined {
         if (!moniker.packageInformationId) {
             return undefined
         }
@@ -274,9 +275,9 @@ export class Backend {
      * @param ctx The tracing context.
      */
     private async lookupMoniker(
-        document: DocumentData,
-        moniker: MonikerData,
-        model: typeof DefinitionModel | typeof ReferenceModel,
+        document: dumpModels.DocumentData,
+        moniker: dumpModels.MonikerData,
+        model: typeof dumpModels.DefinitionModel | typeof dumpModels.ReferenceModel,
         ctx: TracingContext = {}
     ): Promise<lsp.Location[]> {
         const packageInformation = this.lookupPackageInformation(document, moniker, ctx)
@@ -335,10 +336,10 @@ export class Backend {
      * @param ctx The tracing context.
      */
     private async remoteReferences(
-        dumpId: DumpId,
+        dumpId: xrepoModels.DumpId,
         repository: string,
-        moniker: Pick<MonikerData, 'scheme' | 'identifier'>,
-        packageInformation: Pick<PackageInformationData, 'name' | 'version'>,
+        moniker: Pick<dumpModels.MonikerData, 'scheme' | 'identifier'>,
+        packageInformation: Pick<dumpModels.PackageInformationData, 'name' | 'version'>,
         limit: number,
         offset: number,
         ctx: TracingContext = {}
@@ -374,11 +375,11 @@ export class Backend {
      * @param ctx The tracing context.
      */
     private async sameRepositoryRemoteReferences(
-        dumpId: DumpId,
+        dumpId: xrepoModels.DumpId,
         repository: string,
         commit: string,
-        moniker: Pick<MonikerData, 'scheme' | 'identifier'>,
-        packageInformation: Pick<PackageInformationData, 'name' | 'version'>,
+        moniker: Pick<dumpModels.MonikerData, 'scheme' | 'identifier'>,
+        packageInformation: Pick<dumpModels.PackageInformationData, 'name' | 'version'>,
         limit: number,
         offset: number,
         ctx: TracingContext = {}
@@ -409,9 +410,9 @@ export class Backend {
      * @param ctx The tracing context.
      */
     private async locationsFromRemoteReferences(
-        dumpId: DumpId,
-        moniker: Pick<MonikerData, 'scheme' | 'identifier'>,
-        dumps: LsifDump[],
+        dumpId: xrepoModels.DumpId,
+        moniker: Pick<dumpModels.MonikerData, 'scheme' | 'identifier'>,
+        dumps: xrepoModels.LsifDump[],
         remote: boolean,
         ctx: TracingContext = {}
     ): Promise<lsp.Location[]> {
@@ -435,7 +436,7 @@ export class Backend {
                 dbFilename(this.storageRoot, dump.id, dump.repository, dump.commit)
             )
 
-            const references = (await db.monikerResults(ReferenceModel, moniker, ctx)).map(loc =>
+            const references = (await db.monikerResults(dumpModels.ReferenceModel, moniker, ctx)).map(loc =>
                 mapLocation(
                     uri => (remote ? createRemoteUri(dump, uri) : uri),
                     this.locationFromDatabase(dump.root, loc)
@@ -512,7 +513,7 @@ export class Backend {
 
             for (const moniker of monikers) {
                 locations = locations.concat(
-                    (await database.monikerResults(ReferenceModel, moniker, ctx)).map(loc =>
+                    (await database.monikerResults(dumpModels.ReferenceModel, moniker, ctx)).map(loc =>
                         this.locationFromDatabase(dump.root, loc)
                     )
                 )
@@ -525,7 +526,9 @@ export class Backend {
             for (const moniker of monikers) {
                 if (moniker.kind === 'import') {
                     // Get locations in the defining package
-                    locations = locations.concat(await this.lookupMoniker(document, moniker, ReferenceModel, ctx))
+                    locations = locations.concat(
+                        await this.lookupMoniker(document, moniker, dumpModels.ReferenceModel, ctx)
+                    )
                 }
 
                 const packageInformation = this.lookupPackageInformation(document, moniker, ctx)
@@ -704,7 +707,7 @@ export class Backend {
         commit: string,
         file: string,
         ctx: TracingContext = {}
-    ): Promise<{ database: Database; dump: LsifDump; ctx: TracingContext }> {
+    ): Promise<{ database: Database; dump: xrepoModels.LsifDump; ctx: TracingContext }> {
         return logAndTraceCall(ctx, 'loading closest database', async ctx => {
             // Determine the closest commit that we actually have LSIF data for. If the commit is
             // not tracked, then commit data is requested from gitserver and insert the ancestors

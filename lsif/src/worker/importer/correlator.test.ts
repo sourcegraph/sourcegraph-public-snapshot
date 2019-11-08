@@ -1,13 +1,13 @@
 import { normalizeHover, Correlator } from './correlator'
-import { ElementTypes, VertexLabels, EdgeLabels, MonikerKind } from 'lsif-protocol'
+import * as lsif from 'lsif-protocol'
 
 describe('Correlator', () => {
     it('should stash lsif version and project root from metadata', () => {
         const c = new Correlator()
         c.insert({
             id: '1',
-            type: ElementTypes.vertex,
-            label: VertexLabels.metaData,
+            type: lsif.ElementTypes.vertex,
+            label: lsif.VertexLabels.metaData,
             positionEncoding: 'utf-16',
             version: '0.4.3',
             projectRoot: 'file:///lsif-test',
@@ -24,8 +24,8 @@ describe('Correlator', () => {
         expect(() => {
             c.insert({
                 id: '1',
-                type: ElementTypes.vertex,
-                label: VertexLabels.document,
+                type: lsif.ElementTypes.vertex,
+                label: lsif.VertexLabels.document,
                 uri: 'file:///lsif-test/index.ts',
                 languageId: 'typescript',
             })
@@ -36,8 +36,8 @@ describe('Correlator', () => {
         const c = new Correlator()
         c.insert({
             id: '1',
-            type: ElementTypes.vertex,
-            label: VertexLabels.metaData,
+            type: lsif.ElementTypes.vertex,
+            label: lsif.VertexLabels.metaData,
             positionEncoding: 'utf-16',
             version: '0.4.3',
             projectRoot: 'file:///lsif-test',
@@ -45,8 +45,8 @@ describe('Correlator', () => {
 
         c.insert({
             id: '2',
-            type: ElementTypes.vertex,
-            label: VertexLabels.document,
+            type: lsif.ElementTypes.vertex,
+            label: lsif.VertexLabels.document,
             uri: 'file:///lsif-test/sub/path/index.ts',
             languageId: 'typescript',
         })
@@ -58,8 +58,8 @@ describe('Correlator', () => {
         const c = new Correlator()
         c.insert({
             id: '1',
-            type: ElementTypes.vertex,
-            label: VertexLabels.metaData,
+            type: lsif.ElementTypes.vertex,
+            label: lsif.VertexLabels.metaData,
             positionEncoding: 'utf-16',
             version: '0.4.3',
             projectRoot: 'file:///lsif-test',
@@ -67,36 +67,36 @@ describe('Correlator', () => {
 
         c.insert({
             id: '2',
-            type: ElementTypes.vertex,
-            label: VertexLabels.document,
+            type: lsif.ElementTypes.vertex,
+            label: lsif.VertexLabels.document,
             uri: 'file:///lsif-test/sub/path/index.ts',
             languageId: 'typescript',
         })
 
         c.insert({
             id: '3',
-            type: ElementTypes.vertex,
-            label: VertexLabels.range,
+            type: lsif.ElementTypes.vertex,
+            label: lsif.VertexLabels.range,
             start: { line: 3, character: 16 },
             end: { line: 3, character: 19 },
         })
 
         c.insert({
             id: '4',
-            type: ElementTypes.vertex,
-            label: VertexLabels.definitionResult,
+            type: lsif.ElementTypes.vertex,
+            label: lsif.VertexLabels.definitionResult,
         })
 
         c.insert({
             id: '5',
-            type: ElementTypes.vertex,
-            label: VertexLabels.referenceResult,
+            type: lsif.ElementTypes.vertex,
+            label: lsif.VertexLabels.referenceResult,
         })
 
         c.insert({
             id: '5',
-            type: ElementTypes.edge,
-            label: EdgeLabels.item,
+            type: lsif.ElementTypes.edge,
+            label: lsif.EdgeLabels.item,
             outV: '4',
             inVs: ['3'],
             document: '2',
@@ -104,8 +104,8 @@ describe('Correlator', () => {
 
         c.insert({
             id: '5',
-            type: ElementTypes.edge,
-            label: EdgeLabels.item,
+            type: lsif.ElementTypes.edge,
+            label: lsif.EdgeLabels.item,
             outV: '5',
             inVs: ['3'],
             document: '2',
@@ -123,26 +123,26 @@ describe('Correlator', () => {
 
         c.insert({
             id: '2',
-            type: ElementTypes.vertex,
-            label: VertexLabels.referenceResult,
+            type: lsif.ElementTypes.vertex,
+            label: lsif.VertexLabels.referenceResult,
         })
 
         c.insert({
             id: '3',
-            type: ElementTypes.vertex,
-            label: VertexLabels.referenceResult,
+            type: lsif.ElementTypes.vertex,
+            label: lsif.VertexLabels.referenceResult,
         })
 
         c.insert({
             id: '4',
-            type: ElementTypes.vertex,
-            label: VertexLabels.referenceResult,
+            type: lsif.ElementTypes.vertex,
+            label: lsif.VertexLabels.referenceResult,
         })
 
         c.insert({
             id: '5',
-            type: ElementTypes.edge,
-            label: EdgeLabels.item,
+            type: lsif.ElementTypes.edge,
+            label: lsif.EdgeLabels.item,
             outV: '2',
             inVs: ['3', '4'],
             document: '1',
@@ -150,8 +150,8 @@ describe('Correlator', () => {
 
         c.insert({
             id: '6',
-            type: ElementTypes.edge,
-            label: EdgeLabels.item,
+            type: lsif.ElementTypes.edge,
+            label: lsif.EdgeLabels.item,
             outV: '4',
             inVs: ['3'],
             document: '1',
@@ -166,8 +166,8 @@ describe('Correlator', () => {
         const c = new Correlator()
         c.insert({
             id: '1',
-            type: ElementTypes.vertex,
-            label: VertexLabels.hoverResult,
+            type: lsif.ElementTypes.vertex,
+            label: lsif.VertexLabels.hoverResult,
             result: {
                 contents: {
                     language: 'typescript',
@@ -183,17 +183,17 @@ describe('Correlator', () => {
         const c = new Correlator()
         c.insert({
             id: '1',
-            type: ElementTypes.vertex,
-            label: VertexLabels.moniker,
-            kind: MonikerKind.import,
+            type: lsif.ElementTypes.vertex,
+            label: lsif.VertexLabels.moniker,
+            kind: lsif.MonikerKind.import,
             scheme: 'tsc',
             identifier: 'lsif-test:index:foo',
         })
 
         c.insert({
             id: '2',
-            type: ElementTypes.vertex,
-            label: VertexLabels.packageInformation,
+            type: lsif.ElementTypes.vertex,
+            label: lsif.VertexLabels.packageInformation,
             manager: 'npm',
             name: 'dependency',
             version: '0.1.0',
@@ -201,8 +201,8 @@ describe('Correlator', () => {
 
         c.insert({
             id: '3',
-            type: ElementTypes.edge,
-            label: EdgeLabels.packageInformation,
+            type: lsif.ElementTypes.edge,
+            label: lsif.EdgeLabels.packageInformation,
             outV: '1',
             inV: '2',
         })
@@ -214,17 +214,17 @@ describe('Correlator', () => {
         const c = new Correlator()
         c.insert({
             id: '1',
-            type: ElementTypes.vertex,
-            label: VertexLabels.moniker,
-            kind: MonikerKind.export,
+            type: lsif.ElementTypes.vertex,
+            label: lsif.VertexLabels.moniker,
+            kind: lsif.MonikerKind.export,
             scheme: 'tsc',
             identifier: 'lsif-test:index:foo',
         })
 
         c.insert({
             id: '2',
-            type: ElementTypes.vertex,
-            label: VertexLabels.packageInformation,
+            type: lsif.ElementTypes.vertex,
+            label: lsif.VertexLabels.packageInformation,
             manager: 'npm',
             name: 'dependency',
             version: '0.1.0',
@@ -232,8 +232,8 @@ describe('Correlator', () => {
 
         c.insert({
             id: '3',
-            type: ElementTypes.edge,
-            label: EdgeLabels.packageInformation,
+            type: lsif.ElementTypes.edge,
+            label: lsif.EdgeLabels.packageInformation,
             outV: '1',
             inV: '2',
         })
@@ -245,56 +245,56 @@ describe('Correlator', () => {
         const c = new Correlator()
         c.insert({
             id: '1',
-            type: ElementTypes.vertex,
-            label: VertexLabels.range,
+            type: lsif.ElementTypes.vertex,
+            label: lsif.VertexLabels.range,
             start: { line: 3, character: 16 },
             end: { line: 3, character: 19 },
         })
 
         c.insert({
             id: '2',
-            type: ElementTypes.vertex,
-            label: VertexLabels.moniker,
+            type: lsif.ElementTypes.vertex,
+            label: lsif.VertexLabels.moniker,
             scheme: 'tsc',
             identifier: 'lsif-test:index:foo',
         })
 
         c.insert({
             id: '3',
-            type: ElementTypes.vertex,
-            label: VertexLabels.moniker,
+            type: lsif.ElementTypes.vertex,
+            label: lsif.VertexLabels.moniker,
             scheme: 'npm',
             identifier: 'lsif-test:index:foo',
         })
 
         c.insert({
             id: '4',
-            type: ElementTypes.vertex,
-            label: VertexLabels.moniker,
+            type: lsif.ElementTypes.vertex,
+            label: lsif.VertexLabels.moniker,
             scheme: 'super-npm',
             identifier: 'lsif-test:index:foo',
         })
 
         c.insert({
             id: '5',
-            type: ElementTypes.edge,
-            label: EdgeLabels.moniker,
+            type: lsif.ElementTypes.edge,
+            label: lsif.EdgeLabels.moniker,
             outV: '1',
             inV: '2',
         })
 
         c.insert({
             id: '6',
-            type: ElementTypes.edge,
-            label: EdgeLabels.nextMoniker,
+            type: lsif.ElementTypes.edge,
+            label: lsif.EdgeLabels.nextMoniker,
             outV: '2',
             inV: '3',
         })
 
         c.insert({
             id: '6',
-            type: ElementTypes.edge,
-            label: EdgeLabels.nextMoniker,
+            type: lsif.ElementTypes.edge,
+            label: lsif.EdgeLabels.nextMoniker,
             outV: '3',
             inV: '4',
         })

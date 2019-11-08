@@ -1,4 +1,4 @@
-import { DefinitionReferenceResultId } from './types'
+import * as dumpModels from './dump'
 
 /**
  * Hash a string or numeric identifier into the range `[0, maxIndex)`. The
@@ -7,7 +7,7 @@ import { DefinitionReferenceResultId } from './types'
  * @param id The identifier to hash.
  * @param maxIndex The maximum of the range.
  */
-export function hashKey(id: DefinitionReferenceResultId, maxIndex: number): number {
+export function hashKey(id: dumpModels.DefinitionReferenceResultId, maxIndex: number): number {
     const s = `${id}`
 
     let hash = 0

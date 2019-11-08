@@ -2,15 +2,8 @@ import promClient from 'prom-client'
 import Yallist from 'yallist'
 import { Connection, EntityManager } from 'typeorm'
 import { createSqliteConnection } from '../../shared/database/sqlite'
-import { DocumentData, ResultChunkData } from '../../shared/models/dump'
-import {
-    connectionCacheEventsCounter,
-    connectionCacheSizeGauge,
-    documentCacheEventsCounter,
-    documentCacheSizeGauge,
-    resultChunkCacheEventsCounter,
-    resultChunkCacheSizeGauge,
-} from '../metrics'
+import * as dumpModels from '../../shared/models/dump'
+import * as metrics from '../metrics'
 
 /**
  * A wrapper around a cache value promise.
@@ -99,13 +92,13 @@ export class GenericCache<K, V> {
      * @param max The maximum size of the cache before an eviction.
      * @param sizeFunction A function that determines the size of a cache item.
      * @param disposeFunction A function that disposes of evicted cache items.
-     * @param metrics The bag of metrics to use for this instance of the cache.
+     * @param cacheMetrics The bag of metrics to use for this instance of the cache.
      */
     constructor(
         private max: number,
         private sizeFunction: (value: V) => number,
         private disposeFunction: (value: V) => Promise<void> | void,
-        private metrics: CacheMetrics
+        private cacheMetrics: CacheMetrics
     ) {}
 
     /**
@@ -206,7 +199,7 @@ export class GenericCache<K, V> {
             this.lruList.unshiftNode(node)
 
             // Log cache event
-            this.metrics.eventsCounter.labels('hit').inc()
+            this.cacheMetrics.eventsCounter.labels('hit').inc()
 
             // Ensure entry is locked before returning
             const entry = node.value
@@ -215,7 +208,7 @@ export class GenericCache<K, V> {
         }
 
         // Log cache event
-        this.metrics.eventsCounter.labels('miss').inc()
+        this.cacheMetrics.eventsCounter.labels('miss').inc()
 
         // Create promise and the entry that wraps it. We don't know the effective
         // size of the value until the promise resolves, so we put zero. We have a
@@ -259,7 +252,7 @@ export class GenericCache<K, V> {
     private async resolved(entry: CacheEntry<K, V>, value: V): Promise<void> {
         entry.size = this.sizeFunction(value)
         this.size += entry.size
-        this.metrics.sizeGauge.inc(entry.size)
+        this.cacheMetrics.sizeGauge.inc(entry.size)
 
         let node = this.lruList.tail
         while (this.size > this.max && node) {
@@ -278,10 +271,10 @@ export class GenericCache<K, V> {
                 await this.disposeFunction(await promise)
 
                 // Log cache event
-                this.metrics.eventsCounter.labels('eviction').inc()
+                this.cacheMetrics.eventsCounter.labels('eviction').inc()
             } else {
                 // Log cache event
-                this.metrics.eventsCounter.labels('locked-eviction').inc()
+                this.cacheMetrics.eventsCounter.labels('locked-eviction').inc()
             }
 
             node = prev
@@ -317,8 +310,8 @@ export class ConnectionCache extends GenericCache<string, Connection> {
             // Close the underlying file handle on cache eviction.
             connection => connection.close(),
             {
-                sizeGauge: connectionCacheSizeGauge,
-                eventsCounter: connectionCacheEventsCounter,
+                sizeGauge: metrics.connectionCacheSizeGauge,
+                eventsCounter: metrics.connectionCacheEventsCounter,
             }
         )
     }
@@ -388,15 +381,15 @@ class EncodedJsonCache<K, V> extends GenericCache<K, EncodedJsonCacheValue<V>> {
      * all items in the cache.
      *
      * @param max The maximum size of the cache before an eviction.
-     * @param metrics The bag of metrics to use for this instance of the cache.
+     * @param cacheMetrics The bag of metrics to use for this instance of the cache.
      */
-    constructor(max: number, metrics: CacheMetrics) {
+    constructor(max: number, cacheMetrics: CacheMetrics) {
         super(
             max,
             v => v.size,
             // Let GC handle the cleanup of the object on cache eviction.
             () => {},
-            metrics
+            cacheMetrics
         )
     }
 }
@@ -405,7 +398,7 @@ class EncodedJsonCache<K, V> extends GenericCache<K, EncodedJsonCacheValue<V>> {
  * A cache of deserialized `DocumentData` values indexed by a string containing
  * the database path and the path of the document.
  */
-export class DocumentCache extends EncodedJsonCache<string, DocumentData> {
+export class DocumentCache extends EncodedJsonCache<string, dumpModels.DocumentData> {
     /**
      * Create a new `DocumentCache` with the given maximum (soft) size for
      * all items in the cache.
@@ -414,8 +407,8 @@ export class DocumentCache extends EncodedJsonCache<string, DocumentData> {
      */
     constructor(max: number) {
         super(max, {
-            sizeGauge: documentCacheSizeGauge,
-            eventsCounter: documentCacheEventsCounter,
+            sizeGauge: metrics.documentCacheSizeGauge,
+            eventsCounter: metrics.documentCacheEventsCounter,
         })
     }
 }
@@ -424,7 +417,7 @@ export class DocumentCache extends EncodedJsonCache<string, DocumentData> {
  * A cache of deserialized `ResultChunkData` values indexed by a string containing
  * the database path and the chunk index.
  */
-export class ResultChunkCache extends EncodedJsonCache<string, ResultChunkData> {
+export class ResultChunkCache extends EncodedJsonCache<string, dumpModels.ResultChunkData> {
     /**
      * Create a new `ResultChunkCache` with the given maximum (soft) size for
      * all items in the cache.
@@ -433,8 +426,8 @@ export class ResultChunkCache extends EncodedJsonCache<string, ResultChunkData> 
      */
     constructor(max: number) {
         super(max, {
-            sizeGauge: resultChunkCacheSizeGauge,
-            eventsCounter: resultChunkCacheEventsCounter,
+            sizeGauge: metrics.resultChunkCacheSizeGauge,
+            eventsCounter: metrics.resultChunkCacheEventsCounter,
         })
     }
 }

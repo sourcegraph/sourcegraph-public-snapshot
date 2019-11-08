@@ -1,14 +1,9 @@
-import {
-    bloomFilterEventsCounter,
-    xrepoInsertionDurationHistogram,
-    xrepoQueryDurationHistogram,
-    xrepoQueryErrorsCounter,
-} from './metrics'
+import * as metrics from './metrics'
 import * as crc32 from 'crc-32'
 import { instrument } from '../metrics'
 import { Connection, EntityManager, Brackets } from 'typeorm'
 import { createFilter, testFilter } from './bloom-filter'
-import { PackageModel, ReferenceModel, Commit, LsifDump, DumpId } from '../models/xrepo'
+import * as xrepoModels from '../models/xrepo'
 import { TableInserter } from '../database/inserter'
 import { addrFor, getCommitsNear, gitserverExecLines } from './commits'
 import { TracingContext, logAndTraceCall } from '../tracing'
@@ -20,8 +15,8 @@ import { chunk } from 'lodash'
  * The insertion metrics for the cross-repo database.
  */
 const insertionMetrics = {
-    durationHistogram: xrepoInsertionDurationHistogram,
-    errorsCounter: xrepoQueryErrorsCounter,
+    durationHistogram: metrics.xrepoInsertionDurationHistogram,
+    errorsCounter: metrics.xrepoQueryErrorsCounter,
 }
 
 /**
@@ -90,10 +85,10 @@ export class XrepoDatabase {
         visibleAtTip: boolean,
         limit: number,
         offset: number
-    ): Promise<{ dumps: LsifDump[]; totalCount: number }> {
+    ): Promise<{ dumps: xrepoModels.LsifDump[]; totalCount: number }> {
         const [dumps, totalCount] = await this.withConnection(connection => {
             let queryBuilder = connection
-                .getRepository(LsifDump)
+                .getRepository(xrepoModels.LsifDump)
                 .createQueryBuilder()
                 .where({ repository })
                 .orderBy('uploaded_at', 'DESC')
@@ -125,8 +120,8 @@ export class XrepoDatabase {
      *
      * @param id The dump identifier.
      */
-    public getDumpById(id: DumpId): Promise<LsifDump | undefined> {
-        return this.withConnection(connection => connection.getRepository(LsifDump).findOne({ id }))
+    public getDumpById(id: xrepoModels.DumpId): Promise<xrepoModels.LsifDump | undefined> {
+        return this.withConnection(connection => connection.getRepository(xrepoModels.LsifDump).findOne({ id }))
     }
 
     /**
@@ -135,7 +130,7 @@ export class XrepoDatabase {
     public async getTrackedRepositories(): Promise<string[]> {
         const payload = await this.withConnection(connection =>
             connection
-                .getRepository(LsifDump)
+                .getRepository(xrepoModels.LsifDump)
                 .createQueryBuilder()
                 .select('DISTINCT repository')
                 .getRawMany()
@@ -152,7 +147,7 @@ export class XrepoDatabase {
     public isRepositoryTracked(repository: string): Promise<boolean> {
         return this.withConnection(
             async connection =>
-                (await connection.getRepository(LsifDump).findOne({ where: { repository } })) !== undefined
+                (await connection.getRepository(xrepoModels.LsifDump).findOne({ where: { repository } })) !== undefined
         )
     }
 
@@ -165,7 +160,8 @@ export class XrepoDatabase {
     public isCommitTracked(repository: string, commit: string): Promise<boolean> {
         return this.withConnection(
             async connection =>
-                (await connection.getRepository(Commit).findOne({ where: { repository, commit } })) !== undefined
+                (await connection.getRepository(xrepoModels.Commit).findOne({ where: { repository, commit } })) !==
+                undefined
         )
     }
 
@@ -219,7 +215,7 @@ export class XrepoDatabase {
         file: string,
         ctx: TracingContext = {},
         gitserverUrls?: string[]
-    ): Promise<LsifDump | undefined> {
+    ): Promise<xrepoModels.LsifDump | undefined> {
         // Request updated commit data from gitserver if this commit isn't
         // already tracked. This will pull back ancestors for this commit
         // up to a certain (configurable) depth and insert them into the
@@ -235,7 +231,7 @@ export class XrepoDatabase {
                 commit,
                 file,
                 MAX_TRAVERSAL_LIMIT,
-            ])) as LsifDump[]
+            ])) as xrepoModels.LsifDump[]
 
             if (results.length === 0) {
                 return undefined
@@ -257,8 +253,8 @@ export class XrepoDatabase {
         return this.withTransactionalEntityManager(async entityManager => {
             const commitInserter = new TableInserter(
                 entityManager,
-                Commit,
-                Commit.BatchSize,
+                xrepoModels.Commit,
+                xrepoModels.Commit.BatchSize,
                 insertionMetrics,
                 true // Do nothing on conflict
             )
@@ -278,9 +274,13 @@ export class XrepoDatabase {
      * @param name The package name.
      * @param version The package version.
      */
-    public getPackage(scheme: string, name: string, version: string | null): Promise<PackageModel | undefined> {
+    public getPackage(
+        scheme: string,
+        name: string,
+        version: string | null
+    ): Promise<xrepoModels.PackageModel | undefined> {
         return this.withConnection(connection =>
-            connection.getRepository(PackageModel).findOne({
+            connection.getRepository(xrepoModels.PackageModel).findOne({
                 where: {
                     scheme,
                     name,
@@ -306,24 +306,22 @@ export class XrepoDatabase {
         root: string,
         packages: Package[],
         references: SymbolReferences[]
-    ): Promise<LsifDump> {
+    ): Promise<xrepoModels.LsifDump> {
         return this.withTransactionalEntityManager(async entityManager => {
             const dump = await this.insertDump(repository, commit, root, entityManager)
 
-            const packageInserter = new TableInserter<PackageModel, new () => PackageModel>(
+            const packageInserter = new TableInserter<xrepoModels.PackageModel, new () => xrepoModels.PackageModel>(
                 entityManager,
-                PackageModel,
-                PackageModel.BatchSize,
+                xrepoModels.PackageModel,
+                xrepoModels.PackageModel.BatchSize,
                 insertionMetrics,
                 true // Do nothing on conflict
             )
 
-            const referenceInserter = new TableInserter<ReferenceModel, new () => ReferenceModel>(
-                entityManager,
-                ReferenceModel,
-                ReferenceModel.BatchSize,
-                insertionMetrics
-            )
+            const referenceInserter = new TableInserter<
+                xrepoModels.ReferenceModel,
+                new () => xrepoModels.ReferenceModel
+            >(entityManager, xrepoModels.ReferenceModel, xrepoModels.ReferenceModel.BatchSize, insertionMetrics)
 
             for (const pkg of packages) {
                 await packageInserter.insert({ dump_id: dump.id, ...pkg })
@@ -357,12 +355,12 @@ export class XrepoDatabase {
         commit: string,
         root: string,
         entityManager: EntityManager = this.connection.createEntityManager()
-    ): Promise<LsifDump> {
+    ): Promise<xrepoModels.LsifDump> {
         // Get existing dumps from the same repo@commit that overlap with the current
         // root (where the existing root is a prefix of the current root, or vice versa).
 
         const dumps = await entityManager
-            .getRepository(LsifDump)
+            .getRepository(xrepoModels.LsifDump)
             .createQueryBuilder()
             .select()
             .where({ repository, commit })
@@ -378,7 +376,7 @@ export class XrepoDatabase {
             await this.deleteDump(dump, entityManager)
         }
 
-        const dump = new LsifDump()
+        const dump = new xrepoModels.LsifDump()
         dump.repository = repository
         dump.commit = commit
         dump.root = root
@@ -393,10 +391,10 @@ export class XrepoDatabase {
      * @param commit The commit.
      * @param file A filename that should be included in the dump.
      */
-    public getDump(repository: string, commit: string, file: string): Promise<LsifDump | undefined> {
+    public getDump(repository: string, commit: string, file: string): Promise<xrepoModels.LsifDump | undefined> {
         return this.withConnection(connection =>
             connection
-                .getRepository(LsifDump)
+                .getRepository(xrepoModels.LsifDump)
                 .createQueryBuilder()
                 .select()
                 .where({ repository, commit })
@@ -408,10 +406,10 @@ export class XrepoDatabase {
     /**
      * Get the oldest dump that is not visible at the tip of its repository.
      */
-    public getOldestPrunableDump(): Promise<LsifDump | undefined> {
+    public getOldestPrunableDump(): Promise<xrepoModels.LsifDump | undefined> {
         return this.withConnection(connection =>
             connection
-                .getRepository(LsifDump)
+                .getRepository(xrepoModels.LsifDump)
                 .createQueryBuilder()
                 .select()
                 .where({ visibleAtTip: false })
@@ -428,7 +426,7 @@ export class XrepoDatabase {
      * @param entityManager The EntityManager for the connection to the xrepo database.
      */
     public async deleteDump(
-        dump: LsifDump,
+        dump: xrepoModels.LsifDump,
         entityManager: EntityManager = this.connection.createEntityManager()
     ): Promise<void> {
         // Delete the SQLite file on disk (ignore errors if the file doesn't exist)
@@ -441,7 +439,7 @@ export class XrepoDatabase {
         // have any process to tell us that the file is okay to delete and will be orphaned
         // on disk forever.
 
-        await entityManager.getRepository(LsifDump).delete(dump.id)
+        await entityManager.getRepository(xrepoModels.LsifDump).delete(dump.id)
     }
 
     /**
@@ -449,10 +447,10 @@ export class XrepoDatabase {
      *
      * @param repository The repository.
      */
-    public getVisibleDumps(repository: string): Promise<LsifDump[]> {
+    public getVisibleDumps(repository: string): Promise<xrepoModels.LsifDump[]> {
         return this.withConnection(connection =>
             connection
-                .getRepository(LsifDump)
+                .getRepository(xrepoModels.LsifDump)
                 .createQueryBuilder()
                 .select()
                 .where({ repository, visibleAtTip: true })
@@ -494,7 +492,7 @@ export class XrepoDatabase {
         limit: number
         /** The number of repository records to skip. */
         offset: number
-    }): Promise<{ references: ReferenceModel[]; totalCount: number; newOffset: number }> {
+    }): Promise<{ references: xrepoModels.ReferenceModel[]; totalCount: number; newOffset: number }> {
         // We do this inside of a transaction so that we get consistent results from multiple
         // distinct queries: one count query and one or more select queries, depending on the
         // sparsity of the use of the given identifier.
@@ -502,7 +500,7 @@ export class XrepoDatabase {
             // Create a base query that selects all active uses of the target package. This
             // is used as the common prefix for both the count and the getPage queries.
             const baseQuery = entityManager
-                .getRepository(ReferenceModel)
+                .getRepository(xrepoModels.ReferenceModel)
                 .createQueryBuilder('reference')
                 .leftJoinAndSelect('reference.dump', 'dump')
                 .where({ scheme, name, version })
@@ -513,7 +511,7 @@ export class XrepoDatabase {
             const totalCount = await baseQuery.getCount()
 
             // Construct method to select a page of possible references
-            const getPage = (pageOffset: number): Promise<ReferenceModel[]> =>
+            const getPage = (pageOffset: number): Promise<xrepoModels.ReferenceModel[]> =>
                 baseQuery
                     .orderBy('dump.repository')
                     .addOrderBy('dump.root')
@@ -571,7 +569,7 @@ export class XrepoDatabase {
         limit: number
         /** The number of repository records to skip. */
         offset: number
-    }): Promise<{ references: ReferenceModel[]; totalCount: number; newOffset: number }> {
+    }): Promise<{ references: xrepoModels.ReferenceModel[]; totalCount: number; newOffset: number }> {
         const visibleIdsQuery = `
             -- lineage is a recursively defined CTE that returns all ancestor an descendants
             -- of the given commit for the given repository. This happens to evaluate in
@@ -633,11 +631,11 @@ export class XrepoDatabase {
             // Construct method to select a page of possible references. We first perform
             // the query defined above that returns reference identifiers, then perform a
             // second query to select the models by id so that we load the relationships.
-            const getPage = async (pageOffset: number): Promise<ReferenceModel[]> => {
+            const getPage = async (pageOffset: number): Promise<xrepoModels.ReferenceModel[]> => {
                 const args = [scheme, name, version, visible_ids, pageOffset, limit]
                 const results = await entityManager.query(referenceIdsQuery, args)
                 const referenceIds = extractIds(results)
-                const references = await entityManager.getRepository(ReferenceModel).findByIds(referenceIds)
+                const references = await entityManager.getRepository(xrepoModels.ReferenceModel).findByIds(referenceIds)
 
                 // findByIds doesn't return models in the same order as they were requested,
                 // so we need to sort them here before returning.
@@ -679,7 +677,7 @@ export class XrepoDatabase {
         totalCount,
     }: {
         /** The function to invoke to query the next set of references. */
-        getPage: (offset: number) => Promise<ReferenceModel[]>
+        getPage: (offset: number) => Promise<xrepoModels.ReferenceModel[]>
         /** The identifier to test. */
         identifier: string
         /** The maximum number of repository records to return. */
@@ -691,8 +689,8 @@ export class XrepoDatabase {
          * number of items that can be returned by `getPage` starting from offset zero.
          */
         totalCount: number
-    }): Promise<{ references: ReferenceModel[]; newOffset: number }> {
-        const references: ReferenceModel[] = []
+    }): Promise<{ references: xrepoModels.ReferenceModel[]; newOffset: number }> {
+        const references: xrepoModels.ReferenceModel[] = []
         while (references.length < limit && offset < totalCount) {
             const page = await getPage(offset)
             if (page.length === 0) {
@@ -726,17 +724,17 @@ export class XrepoDatabase {
      * @param limit The maximum number of references to return.
      */
     private async applyBloomFilter(
-        references: ReferenceModel[],
+        references: xrepoModels.ReferenceModel[],
         identifier: string,
         limit: number
-    ): Promise<{ references: ReferenceModel[]; scanned: number }> {
+    ): Promise<{ references: xrepoModels.ReferenceModel[]; scanned: number }> {
         // Test the bloom filter of each reference model concurrently
         const keepFlags = await Promise.all(references.map(result => testFilter(result.filter, identifier)))
 
         const filtered = []
         for (const [index, flag] of keepFlags.entries()) {
             // Record hit and miss counts
-            bloomFilterEventsCounter.labels(flag ? 'hit' : 'miss').inc()
+            metrics.bloomFilterEventsCounter.labels(flag ? 'hit' : 'miss').inc()
 
             if (flag) {
                 filtered.push(references[index])
@@ -800,7 +798,9 @@ export class XrepoDatabase {
      * @param callback The function invoke with the SQLite connection.
      */
     private withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
-        return instrument(xrepoQueryDurationHistogram, xrepoQueryErrorsCounter, () => callback(this.connection))
+        return instrument(metrics.xrepoQueryDurationHistogram, metrics.xrepoQueryErrorsCounter, () =>
+            callback(this.connection)
+        )
     }
 
     /**

@@ -1,4 +1,4 @@
-import { JOB_MAX_AGE } from '../settings'
+import * as settings from '../settings'
 import { JobStatusClean, Queue } from 'bull'
 import { logAndTraceCall, TracingContext } from '../../shared/tracing'
 import { Logger } from 'winston'
@@ -16,7 +16,7 @@ export const createCleanOldJobsProcessor = (queue: Queue, logger: Logger) => asy
     ctx: TracingContext
 ): Promise<void> => {
     const removedJobs = await logAndTraceCall(ctx, 'cleaning old jobs', (ctx: TracingContext) =>
-        Promise.all(cleanStatuses.map(status => queue.clean(JOB_MAX_AGE * 1000, status)))
+        Promise.all(cleanStatuses.map(status => queue.clean(settings.JOB_MAX_AGE * 1000, status)))
     )
 
     const { logger: jobLogger = logger } = ctx

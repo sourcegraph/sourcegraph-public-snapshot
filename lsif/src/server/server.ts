@@ -1,7 +1,6 @@
 import * as constants from '../shared/constants'
 import * as fs from 'mz/fs'
 import * as path from 'path'
-import * as settings from './backend/cache.settings'
 import cors from 'cors'
 import express from 'express'
 import promClient from 'prom-client'
@@ -21,24 +20,12 @@ import { defineRedisCommands } from './redis/redis'
 import { errorHandler } from './middleware/errors'
 import { logger as loggingMiddleware } from 'express-winston'
 import { Logger } from 'winston'
-import { LsifDump } from '../shared/models/xrepo'
+import * as xrepoModels from '../shared/models/xrepo'
 import { metricsMiddleware } from './middleware/metrics'
 import { waitForConfiguration } from '../shared/config/config'
 import { XrepoDatabase } from '../shared/xrepo/xrepo'
-import {
-    connectionCacheCapacityGauge,
-    queueSizeGauge,
-    documentCacheCapacityGauge,
-    resultChunkCacheCapacityGauge,
-} from './metrics'
-import {
-    STORAGE_ROOT,
-    REDIS_ENDPOINT,
-    UPDATE_TIPS_JOB_SCHEDULE_INTERVAL,
-    CLEAN_OLD_JOBS_INTERVAL,
-    CLEAN_FAILED_JOBS_INTERVAL,
-    HTTP_PORT,
-} from './settings'
+import * as metrics from './metrics'
+import * as settings from './settings'
 
 /**
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
@@ -56,42 +43,40 @@ async function main(logger: Logger): Promise<void> {
     const tracer = createTracer('lsif-server', fetchConfiguration())
 
     // Update cache capacities on startup
-    connectionCacheCapacityGauge.set(settings.CONNECTION_CACHE_CAPACITY)
-    documentCacheCapacityGauge.set(settings.DOCUMENT_CACHE_CAPACITY)
-    resultChunkCacheCapacityGauge.set(settings.RESULT_CHUNK_CACHE_CAPACITY)
+    metrics.connectionCacheCapacityGauge.set(settings.CONNECTION_CACHE_CAPACITY)
+    metrics.documentCacheCapacityGauge.set(settings.DOCUMENT_CACHE_CAPACITY)
+    metrics.resultChunkCacheCapacityGauge.set(settings.RESULT_CHUNK_CACHE_CAPACITY)
 
     // Ensure storage roots exist
-    await ensureDirectory(STORAGE_ROOT)
-    await ensureDirectory(path.join(STORAGE_ROOT, constants.DBS_DIR))
-    await ensureDirectory(path.join(STORAGE_ROOT, constants.TEMP_DIR))
-    await ensureDirectory(path.join(STORAGE_ROOT, constants.UPLOADS_DIR))
+    await ensureDirectory(settings.STORAGE_ROOT)
+    await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.DBS_DIR))
+    await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.TEMP_DIR))
+    await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR))
 
     // Create cross-repo database
     const connection = await createPostgresConnection(fetchConfiguration(), logger)
-    const xrepoDatabase = new XrepoDatabase(STORAGE_ROOT, connection)
-    const backend = new Backend(STORAGE_ROOT, xrepoDatabase, fetchConfiguration)
+    const xrepoDatabase = new XrepoDatabase(settings.STORAGE_ROOT, connection)
+    const backend = new Backend(settings.STORAGE_ROOT, xrepoDatabase, fetchConfiguration)
 
     // Temporary migrations
     await moveDatabaseFilesToSubdir() // TODO - remove after 3.12
     await ensureFilenamesAreIDs(connection) // TODO - remove after 3.10
 
     // Create queue to publish convert
-    const queue = createQueue(REDIS_ENDPOINT, logger)
+    const queue = createQueue(settings.REDIS_ENDPOINT, logger)
 
     // Schedule jobs on timers
-    await ensureOnlyRepeatableJob(queue, 'update-tips', {}, UPDATE_TIPS_JOB_SCHEDULE_INTERVAL * 1000)
-    await ensureOnlyRepeatableJob(queue, 'clean-old-jobs', {}, CLEAN_OLD_JOBS_INTERVAL * 1000)
-    await ensureOnlyRepeatableJob(queue, 'clean-failed-jobs', {}, CLEAN_FAILED_JOBS_INTERVAL * 1000)
+    await ensureOnlyRepeatableJob(queue, 'update-tips', {}, settings.UPDATE_TIPS_JOB_SCHEDULE_INTERVAL * 1000)
+    await ensureOnlyRepeatableJob(queue, 'clean-old-jobs', {}, settings.CLEAN_OLD_JOBS_INTERVAL * 1000)
+    await ensureOnlyRepeatableJob(queue, 'clean-failed-jobs', {}, settings.CLEAN_FAILED_JOBS_INTERVAL * 1000)
 
     // Update queue size metric on a timer
-    setInterval(
-        () =>
-            queue
-                .count()
-                .then(count => queueSizeGauge.set(count))
-                .catch(() => {}),
-        1000
-    )
+    setInterval(() => {
+        queue
+            .count()
+            .then(count => metrics.queueSizeGauge.set(count))
+            .catch(() => {})
+    }, 1000)
 
     // Register the required commands on the queue's Redis client
     const scriptedClient = await defineRedisCommands(queue.client)
@@ -123,16 +108,19 @@ async function main(logger: Logger): Promise<void> {
     // Error handler must be registered last
     app.use(errorHandler(logger))
 
-    app.listen(HTTP_PORT, () => logger.debug('listening', { port: HTTP_PORT }))
+    app.listen(settings.HTTP_PORT, () => logger.debug('listening', { port: settings.HTTP_PORT }))
 }
 
 /**
  * Move all db files in storage root to a subdirectory.
  */
 async function moveDatabaseFilesToSubdir(): Promise<void> {
-    for (const filename of await fs.readdir(STORAGE_ROOT)) {
+    for (const filename of await fs.readdir(settings.STORAGE_ROOT)) {
         if (filename.endsWith('.db')) {
-            await fs.rename(path.join(STORAGE_ROOT, filename), path.join(STORAGE_ROOT, constants.DBS_DIR, filename))
+            await fs.rename(
+                path.join(settings.STORAGE_ROOT, filename),
+                path.join(settings.STORAGE_ROOT, constants.DBS_DIR, filename)
+            )
         }
     }
 }
@@ -142,15 +130,15 @@ async function moveDatabaseFilesToSubdir(): Promise<void> {
  * `$REPO@$COMMIT.lsif.db` to the new format `$ID.lsif.db`.
  */
 async function ensureFilenamesAreIDs(db: Connection): Promise<void> {
-    const doneFile = path.join(STORAGE_ROOT, 'id-based-filenames')
+    const doneFile = path.join(settings.STORAGE_ROOT, 'id-based-filenames')
     if (await fs.exists(doneFile)) {
         // Already migrated.
         return
     }
 
-    for (const dump of await db.getRepository(LsifDump).find()) {
-        const oldFile = dbFilenameOld(STORAGE_ROOT, dump.repository, dump.commit)
-        const newFile = dbFilename(STORAGE_ROOT, dump.id, dump.repository, dump.commit)
+    for (const dump of await db.getRepository(xrepoModels.LsifDump).find()) {
+        const oldFile = dbFilenameOld(settings.STORAGE_ROOT, dump.repository, dump.commit)
+        const newFile = dbFilename(settings.STORAGE_ROOT, dump.id, dump.repository, dump.commit)
         if (!(await fs.exists(oldFile))) {
             continue
         }

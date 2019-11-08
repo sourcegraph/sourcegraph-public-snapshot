@@ -1,7 +1,7 @@
 import express from 'express'
 import promClient from 'prom-client'
 import { Logger } from 'winston'
-import { WORKER_METRICS_PORT } from './settings'
+import * as settings from './settings'
 
 /**
  * Create an express server that only has /healthz and /metric endpoints.
@@ -16,5 +16,5 @@ export function startMetricsServer(logger: Logger): void {
         res.end(promClient.register.metrics())
     })
 
-    app.listen(WORKER_METRICS_PORT, () => logger.debug('listening', { port: WORKER_METRICS_PORT }))
+    app.listen(settings.WORKER_METRICS_PORT, () => logger.debug('listening', { port: settings.WORKER_METRICS_PORT }))
 }

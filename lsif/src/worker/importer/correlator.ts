@@ -2,35 +2,8 @@ import RelateUrl from 'relateurl'
 import { mustGet, mustGetFromEither } from '../../shared/maps'
 import { DefaultMap } from '../../shared/datastructures/default-map'
 import { Hover, MarkupContent } from 'vscode-languageserver-types'
-import { MonikerData, PackageInformationData, RangeData } from '../../shared/models/dump'
-import {
-    MonikerId,
-    HoverResultId,
-    ReferenceResultId,
-    DefinitionResultId,
-    DocumentId,
-    PackageInformationId,
-} from '../../shared/models/types'
-import {
-    Id,
-    VertexLabels,
-    EdgeLabels,
-    Vertex,
-    Edge,
-    MonikerKind,
-    moniker,
-    next,
-    nextMoniker,
-    textDocument_definition,
-    textDocument_hover,
-    textDocument_references,
-    packageInformation,
-    item,
-    MetaData,
-    ElementTypes,
-    contains,
-    RangeId,
-} from 'lsif-protocol'
+import * as dumpModels from '../../shared/models/dump'
+import * as lsif from 'lsif-protocol'
 import { DisjointSet } from '../../shared/datastructures/disjoint-set'
 import { TracingContext } from '../../shared/tracing'
 import { createSilentLogger } from '../../shared/logging'
@@ -39,7 +12,7 @@ import { Logger } from 'winston'
 /**
  * Identifiers of result set vertices.
  */
-export type ResultSetId = Id
+export type ResultSetId = lsif.Id
 
 /**
  * An internal representation of a result set vertex. This is only used during
@@ -50,22 +23,22 @@ export interface ResultSetData {
     /**
      * The identifier of the definition result attached to this result set.
      */
-    definitionResultId?: DefinitionResultId
+    definitionResultId?: dumpModels.DefinitionResultId
 
     /**
      * The identifier of the reference result attached to this result set.
      */
-    referenceResultId?: ReferenceResultId
+    referenceResultId?: dumpModels.ReferenceResultId
 
     /**
      * The identifier of the hover result attached to this result set.
      */
-    hoverResultId?: HoverResultId
+    hoverResultId?: dumpModels.HoverResultId
 
     /**
      * The set of moniker identifiers directly attached to this result set.
      */
-    monikerIds: Set<MonikerId>
+    monikerIds: Set<dumpModels.MonikerId>
 }
 
 /**
@@ -88,39 +61,39 @@ export class Correlator {
     public projectRoot?: URL
 
     // Vertex data
-    public documentPaths = new Map<DocumentId, string>()
-    public rangeData = new Map<RangeId, RangeData>()
+    public documentPaths = new Map<dumpModels.DocumentId, string>()
+    public rangeData = new Map<lsif.RangeId, dumpModels.RangeData>()
     public resultSetData = new Map<ResultSetId, ResultSetData>()
-    public hoverData = new Map<HoverResultId, string>()
-    public monikerData = new Map<MonikerId, MonikerData>()
-    public packageInformationData = new Map<PackageInformationId, PackageInformationData>()
-    public unsupportedVertexes = new Set<Id>()
+    public hoverData = new Map<dumpModels.HoverResultId, string>()
+    public monikerData = new Map<dumpModels.MonikerId, dumpModels.MonikerData>()
+    public packageInformationData = new Map<dumpModels.PackageInformationId, dumpModels.PackageInformationData>()
+    public unsupportedVertexes = new Set<lsif.Id>()
 
     // Edge data
-    public nextData = new Map<RangeId | ResultSetId, ResultSetId>()
-    public containsData = new Map<DocumentId, Set<RangeId>>()
-    public definitionData = new Map<DefinitionResultId, DefaultMap<DocumentId, RangeId[]>>()
-    public referenceData = new Map<ReferenceResultId, DefaultMap<DocumentId, RangeId[]>>()
+    public nextData = new Map<lsif.RangeId | ResultSetId, ResultSetId>()
+    public containsData = new Map<dumpModels.DocumentId, Set<lsif.RangeId>>()
+    public definitionData = new Map<dumpModels.DefinitionResultId, DefaultMap<dumpModels.DocumentId, lsif.RangeId[]>>()
+    public referenceData = new Map<dumpModels.ReferenceResultId, DefaultMap<dumpModels.DocumentId, lsif.RangeId[]>>()
 
     /**
      * A disjoint set of monikers linked by `nextMoniker` edges.
      */
-    public linkedMonikers = new DisjointSet<MonikerId>()
+    public linkedMonikers = new DisjointSet<dumpModels.MonikerId>()
 
     /**
      * A disjoint set of reference results linked by `item` edges.
      */
-    public linkedReferenceResults = new DisjointSet<ReferenceResultId>()
+    public linkedReferenceResults = new DisjointSet<dumpModels.ReferenceResultId>()
 
     /**
      * The set of exported moniker identifiers that have package information attached.
      */
-    public importedMonikers = new Set<MonikerId>()
+    public importedMonikers = new Set<dumpModels.MonikerId>()
 
     /**
      * The set of exported moniker identifiers that have package information attached.
      */
-    public exportedMonikers = new Set<MonikerId>()
+    public exportedMonikers = new Set<dumpModels.MonikerId>()
 
     private logger: Logger
 
@@ -133,14 +106,14 @@ export class Correlator {
      *
      * @param element A vertex or edge element from the LSIF dump.
      */
-    public insert(element: Vertex | Edge): void {
-        if (element.type === ElementTypes.vertex) {
+    public insert(element: lsif.Vertex | lsif.Edge): void {
+        if (element.type === lsif.ElementTypes.vertex) {
             switch (element.label) {
-                case VertexLabels.metaData:
+                case lsif.VertexLabels.metaData:
                     this.handleMetaData(element)
                     break
 
-                case VertexLabels.document: {
+                case lsif.VertexLabels.document: {
                     if (!this.projectRoot) {
                         throw new Error('No metadata defined.')
                     }
@@ -152,7 +125,7 @@ export class Correlator {
                     })
 
                     this.documentPaths.set(element.id, path)
-                    this.containsData.set(element.id, new Set<RangeId>())
+                    this.containsData.set(element.id, new Set<lsif.RangeId>())
                     break
                 }
 
@@ -160,41 +133,41 @@ export class Correlator {
                 // may be retrieved when an edge that references it is seen, or when a document
                 // is finalized.
 
-                case VertexLabels.range:
+                case lsif.VertexLabels.range:
                     this.rangeData.set(element.id, {
                         startLine: element.start.line,
                         startCharacter: element.start.character,
                         endLine: element.end.line,
                         endCharacter: element.end.character,
-                        monikerIds: new Set<MonikerId>(),
+                        monikerIds: new Set<dumpModels.MonikerId>(),
                     })
                     break
 
-                case VertexLabels.resultSet:
-                    this.resultSetData.set(element.id, { monikerIds: new Set<MonikerId>() })
+                case lsif.VertexLabels.resultSet:
+                    this.resultSetData.set(element.id, { monikerIds: new Set<dumpModels.MonikerId>() })
                     break
 
-                case VertexLabels.definitionResult:
-                    this.definitionData.set(element.id, new DefaultMap<DocumentId, RangeId[]>(() => []))
+                case lsif.VertexLabels.definitionResult:
+                    this.definitionData.set(element.id, new DefaultMap<dumpModels.DocumentId, lsif.RangeId[]>(() => []))
                     break
 
-                case VertexLabels.referenceResult:
-                    this.referenceData.set(element.id, new DefaultMap<DocumentId, RangeId[]>(() => []))
+                case lsif.VertexLabels.referenceResult:
+                    this.referenceData.set(element.id, new DefaultMap<dumpModels.DocumentId, lsif.RangeId[]>(() => []))
                     break
 
-                case VertexLabels.hoverResult:
+                case lsif.VertexLabels.hoverResult:
                     this.hoverData.set(element.id, normalizeHover(element.result))
                     break
 
-                case VertexLabels.moniker:
+                case lsif.VertexLabels.moniker:
                     this.monikerData.set(element.id, {
-                        kind: element.kind || MonikerKind.local,
+                        kind: element.kind || lsif.MonikerKind.local,
                         scheme: element.scheme,
                         identifier: element.identifier,
                     })
                     break
 
-                case VertexLabels.packageInformation:
+                case lsif.VertexLabels.packageInformation:
                     this.packageInformationData.set(element.id, {
                         name: element.name,
                         version: element.version || null,
@@ -216,41 +189,41 @@ export class Correlator {
             }
         }
 
-        if (element.type === ElementTypes.edge) {
+        if (element.type === lsif.ElementTypes.edge) {
             switch (element.label) {
-                case EdgeLabels.contains:
+                case lsif.EdgeLabels.contains:
                     this.handleContains(element)
                     break
 
-                case EdgeLabels.next:
+                case lsif.EdgeLabels.next:
                     this.handleNextEdge(element)
                     break
 
-                case EdgeLabels.item:
+                case lsif.EdgeLabels.item:
                     this.handleItemEdge(element)
                     break
 
-                case EdgeLabels.textDocument_definition:
+                case lsif.EdgeLabels.textDocument_definition:
                     this.handleDefinitionEdge(element)
                     break
 
-                case EdgeLabels.textDocument_references:
+                case lsif.EdgeLabels.textDocument_references:
                     this.handleReferenceEdge(element)
                     break
 
-                case EdgeLabels.textDocument_hover:
+                case lsif.EdgeLabels.textDocument_hover:
                     this.handleHoverEdge(element)
                     break
 
-                case EdgeLabels.moniker:
+                case lsif.EdgeLabels.moniker:
                     this.handleMonikerEdge(element)
                     break
 
-                case EdgeLabels.nextMoniker:
+                case lsif.EdgeLabels.nextMoniker:
                     this.handleNextMonikerEdge(element)
                     break
 
-                case EdgeLabels.packageInformation:
+                case lsif.EdgeLabels.packageInformation:
                     this.handlePackageInformationEdge(element)
                     break
             }
@@ -267,7 +240,7 @@ export class Correlator {
      *
      * @param vertex The metadata vertex.
      */
-    private handleMetaData(vertex: MetaData): void {
+    private handleMetaData(vertex: lsif.MetaData): void {
         this.lsifVersion = vertex.version
         this.projectRoot = new URL(vertex.projectRoot)
     }
@@ -281,7 +254,7 @@ export class Correlator {
      *
      * @param edge The contains edge.
      */
-    private handleContains(edge: contains): void {
+    private handleContains(edge: lsif.contains): void {
         // Do not track project contains
         if (!this.documentPaths.has(edge.outV)) {
             return
@@ -300,7 +273,7 @@ export class Correlator {
      *
      * @param edge The item edge.
      */
-    private handleItemEdge(edge: item): void {
+    private handleItemEdge(edge: lsif.item): void {
         if (this.definitionData.has(edge.outV)) {
             const documentMap = mustGet(this.definitionData, edge.outV, 'definitionResult')
             const rangeIds = documentMap.getOrDefault(edge.document)
@@ -341,8 +314,8 @@ export class Correlator {
      *
      * @param edge The moniker edge.
      */
-    private handleMonikerEdge(edge: moniker): void {
-        const source = mustGetFromEither<RangeId, RangeData, ResultSetId, ResultSetData>(
+    private handleMonikerEdge(edge: lsif.moniker): void {
+        const source = mustGetFromEither<lsif.RangeId, dumpModels.RangeData, ResultSetId, ResultSetData>(
             this.rangeData,
             this.resultSetData,
             edge.outV,
@@ -350,7 +323,7 @@ export class Correlator {
         )
 
         mustGet(this.monikerData, edge.inV, 'moniker')
-        source.monikerIds = new Set<MonikerId>([edge.inV])
+        source.monikerIds = new Set<dumpModels.MonikerId>([edge.inV])
     }
 
     /**
@@ -359,8 +332,8 @@ export class Correlator {
      *
      * @param edge The next edge.
      */
-    private handleNextEdge(edge: next): void {
-        mustGetFromEither<RangeId, RangeData, ResultSetId, ResultSetData>(
+    private handleNextEdge(edge: lsif.next): void {
+        mustGetFromEither<lsif.RangeId, dumpModels.RangeData, ResultSetId, ResultSetData>(
             this.rangeData,
             this.resultSetData,
             edge.outV,
@@ -377,7 +350,7 @@ export class Correlator {
      *
      * @param edge The nextMoniker edge.
      */
-    private handleNextMonikerEdge(edge: nextMoniker): void {
+    private handleNextMonikerEdge(edge: lsif.nextMoniker): void {
         mustGet(this.monikerData, edge.inV, 'moniker')
         mustGet(this.monikerData, edge.outV, 'moniker')
         this.linkedMonikers.union(edge.inV, edge.outV)
@@ -390,7 +363,7 @@ export class Correlator {
      *
      * @param edge The packageInformation edge.
      */
-    private handlePackageInformationEdge(edge: packageInformation): void {
+    private handlePackageInformationEdge(edge: lsif.packageInformation): void {
         const source = mustGet(this.monikerData, edge.outV, 'moniker')
         mustGet(this.packageInformationData, edge.inV, 'packageInformation')
         source.packageInformationId = edge.inV
@@ -410,8 +383,8 @@ export class Correlator {
      *
      * @param edge The textDocument/definition edge.
      */
-    private handleDefinitionEdge(edge: textDocument_definition): void {
-        const outV = mustGetFromEither<RangeId, RangeData, ResultSetId, ResultSetData>(
+    private handleDefinitionEdge(edge: lsif.textDocument_definition): void {
+        const outV = mustGetFromEither<lsif.RangeId, dumpModels.RangeData, ResultSetId, ResultSetData>(
             this.rangeData,
             this.resultSetData,
             edge.outV,
@@ -428,8 +401,8 @@ export class Correlator {
      *
      * @param edge The textDocument/references edge.
      */
-    private handleReferenceEdge(edge: textDocument_references): void {
-        const outV = mustGetFromEither<RangeId, RangeData, ResultSetId, ResultSetData>(
+    private handleReferenceEdge(edge: lsif.textDocument_references): void {
+        const outV = mustGetFromEither<lsif.RangeId, dumpModels.RangeData, ResultSetId, ResultSetData>(
             this.rangeData,
             this.resultSetData,
             edge.outV,
@@ -446,8 +419,8 @@ export class Correlator {
      *
      * @param edge The textDocument/hover edge.
      */
-    private handleHoverEdge(edge: textDocument_hover): void {
-        const outV = mustGetFromEither<RangeId, RangeData, ResultSetId, ResultSetData>(
+    private handleHoverEdge(edge: lsif.textDocument_hover): void {
+        const outV = mustGetFromEither<lsif.RangeId, dumpModels.RangeData, ResultSetId, ResultSetData>(
             this.rangeData,
             this.resultSetData,
             edge.outV,

@@ -1,7 +1,7 @@
 import express from 'express'
 import onFinished from 'on-finished'
 import promClient from 'prom-client'
-import { httpQueryDurationHistogram, httpUploadDurationHistogram } from '../metrics'
+import * as metrics from '../metrics'
 
 /**
  * Middleware function used to emit HTTP durations for LSIF functions. Originally
@@ -13,12 +13,12 @@ export const metricsMiddleware = (req: express.Request, res: express.Response, n
     let histogram: promClient.Histogram | undefined
     switch (req.path) {
         case '/upload':
-            histogram = httpUploadDurationHistogram
+            histogram = metrics.httpUploadDurationHistogram
             break
 
         case '/exists':
         case '/request':
-            histogram = httpQueryDurationHistogram
+            histogram = metrics.httpQueryDurationHistogram
     }
 
     if (histogram !== undefined) {

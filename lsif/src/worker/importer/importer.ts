@@ -2,7 +2,7 @@ import { Correlator, ResultSetData, ResultSetId } from './correlator'
 import { createSqliteConnection } from '../../shared/database/sqlite'
 import { databaseInsertionDurationHistogram, databaseInsertionErrorsCounter } from '../metrics'
 import { DefaultMap } from '../../shared/datastructures/default-map'
-import { Edge, Id, MonikerKind, RangeId, Vertex } from 'lsif-protocol'
+import * as lsif from 'lsif-protocol'
 import { EntityManager } from 'typeorm'
 import { gzipJSON } from '../../shared/encoding/json'
 import { readEnvInt } from '../../shared/settings'
@@ -13,28 +13,7 @@ import { Package, SymbolReferences } from '../../shared/xrepo/xrepo'
 import { Readable } from 'stream'
 import { readGzippedJsonElements } from './input'
 import { TableInserter } from '../../shared/database/inserter'
-import {
-    DefinitionModel,
-    DocumentData,
-    DocumentModel,
-    MetaModel,
-    MonikerData,
-    PackageInformationData,
-    RangeData,
-    ReferenceModel,
-    ResultChunkModel,
-    DocumentIdRangeId,
-    entities,
-} from '../../shared/models/dump'
-import {
-    DefinitionResultId,
-    MonikerId,
-    DefinitionReferenceResultId,
-    DocumentId,
-    ReferenceResultId,
-    PackageInformationId,
-    HoverResultId,
-} from '../../shared/models/types'
+import * as dumpModels from '../../shared/models/dump'
 import { hashKey } from '../../shared/models/hash'
 
 /**
@@ -78,7 +57,7 @@ export async function convertLsif(
     database: string,
     ctx: TracingContext = {}
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
-    const connection = await createSqliteConnection(database, entities)
+    const connection = await createSqliteConnection(database, dumpModels.entities)
 
     try {
         await connection.query('PRAGMA synchronous = OFF')
@@ -107,7 +86,7 @@ export async function importLsif(
     // Correlate input data into in-memory maps
     const correlator = new Correlator(ctx)
     await logAndTraceCall(ctx, 'correlating LSIF data', async () => {
-        for await (const element of readGzippedJsonElements(input) as AsyncIterable<Vertex | Edge>) {
+        for await (const element of readGzippedJsonElements(input) as AsyncIterable<lsif.Vertex | lsif.Edge>) {
             correlator.insert(element)
         }
     })
@@ -129,7 +108,12 @@ export async function importLsif(
     const numResultChunks = Math.min(MAX_NUM_RESULT_CHUNKS, Math.floor(numResults / RESULTS_PER_RESULT_CHUNK) || 1)
 
     // Insert metadata
-    const metaInserter = new TableInserter(entityManager, MetaModel, MetaModel.BatchSize, inserterMetrics)
+    const metaInserter = new TableInserter(
+        entityManager,
+        dumpModels.MetaModel,
+        dumpModels.MetaModel.BatchSize,
+        inserterMetrics
+    )
     await populateMetadataTable(correlator, metaInserter, numResultChunks)
     await metaInserter.flush()
 
@@ -137,8 +121,8 @@ export async function importLsif(
     await logAndTraceCall(ctx, 'populating documents', async () => {
         const documentInserter = new TableInserter(
             entityManager,
-            DocumentModel,
-            DocumentModel.BatchSize,
+            dumpModels.DocumentModel,
+            dumpModels.DocumentModel.BatchSize,
             inserterMetrics
         )
         await populateDocumentsTable(correlator, documentInserter, canonicalReferenceResultIds)
@@ -149,8 +133,8 @@ export async function importLsif(
     await logAndTraceCall(ctx, 'populating result chunks', async () => {
         const resultChunkInserter = new TableInserter(
             entityManager,
-            ResultChunkModel,
-            ResultChunkModel.BatchSize,
+            dumpModels.ResultChunkModel,
+            dumpModels.ResultChunkModel.BatchSize,
             inserterMetrics
         )
         await populateResultChunksTable(correlator, resultChunkInserter, numResultChunks)
@@ -161,14 +145,14 @@ export async function importLsif(
     await logAndTraceCall(ctx, 'populating definitions and references', async () => {
         const definitionInserter = new TableInserter(
             entityManager,
-            DefinitionModel,
-            DefinitionModel.BatchSize,
+            dumpModels.DefinitionModel,
+            dumpModels.DefinitionModel.BatchSize,
             inserterMetrics
         )
         const referenceInserter = new TableInserter(
             entityManager,
-            ReferenceModel,
-            ReferenceModel.BatchSize,
+            dumpModels.ReferenceModel,
+            dumpModels.ReferenceModel.BatchSize,
             inserterMetrics
         )
         await populateDefinitionsAndReferencesTables(correlator, definitionInserter, referenceInserter)
@@ -189,8 +173,8 @@ export async function importLsif(
  */
 async function populateDocumentsTable(
     correlator: Correlator,
-    documentInserter: TableInserter<DocumentModel, new () => DocumentModel>,
-    canonicalReferenceResultIds: Map<ReferenceResultId, ReferenceResultId>
+    documentInserter: TableInserter<dumpModels.DocumentModel, new () => dumpModels.DocumentModel>,
+    canonicalReferenceResultIds: Map<dumpModels.ReferenceResultId, dumpModels.ReferenceResultId>
 ): Promise<void> {
     // Collapse result sets data into the ranges that can reach them. The
     // remainder of this function assumes that we can completely ignore
@@ -232,7 +216,7 @@ async function populateDocumentsTable(
  */
 async function populateResultChunksTable(
     correlator: Correlator,
-    resultChunkInserter: TableInserter<ResultChunkModel, new () => ResultChunkModel>,
+    resultChunkInserter: TableInserter<dumpModels.ResultChunkModel, new () => dumpModels.ResultChunkModel>,
     numResultChunks: number
 ): Promise<void> {
     // Create all the result chunks we'll be populating and inserting up-front. Data will
@@ -240,14 +224,16 @@ async function populateResultChunksTable(
     // and we don't want to create them lazily.
 
     const resultChunks = new Array(numResultChunks).fill(null).map(() => ({
-        paths: new Map<DocumentId, string>(),
-        documentIdRangeIds: new Map<DefinitionReferenceResultId, DocumentIdRangeId[]>(),
+        paths: new Map<dumpModels.DocumentId, string>(),
+        documentIdRangeIds: new Map<dumpModels.DefinitionReferenceResultId, dumpModels.DocumentIdRangeId[]>(),
     }))
 
-    const chunkResults = (data: Map<DefinitionReferenceResultId, Map<DocumentId, RangeId[]>>): void => {
+    const chunkResults = (
+        data: Map<dumpModels.DefinitionReferenceResultId, Map<dumpModels.DocumentId, lsif.RangeId[]>>
+    ): void => {
         for (const [id, documentRanges] of data) {
             // Flatten map into list of ranges
-            let documentIdRangeIds: DocumentIdRangeId[] = []
+            let documentIdRangeIds: dumpModels.DocumentIdRangeId[] = []
             for (const [documentId, rangeIds] of documentRanges) {
                 documentIdRangeIds = documentIdRangeIds.concat(rangeIds.map(rangeId => ({ documentId, rangeId })))
             }
@@ -292,8 +278,8 @@ async function populateResultChunksTable(
  */
 async function populateDefinitionsAndReferencesTables(
     correlator: Correlator,
-    definitionInserter: TableInserter<DefinitionModel, new () => DefinitionModel>,
-    referenceInserter: TableInserter<ReferenceModel, new () => ReferenceModel>
+    definitionInserter: TableInserter<dumpModels.DefinitionModel, new () => dumpModels.DefinitionModel>,
+    referenceInserter: TableInserter<dumpModels.ReferenceModel, new () => dumpModels.ReferenceModel>
 ): Promise<void> {
     // Determine the set of monikers that are attached to a definition or a
     // reference result. Correlating information in this way has two benefits:
@@ -301,8 +287,8 @@ async function populateDefinitionsAndReferencesTables(
     //   (2) it stop us from re-iterating over the range data of the entire
     //       LSIF dump, which is by far the largest proportion of data.
 
-    const definitionMonikers = new DefaultMap<DefinitionResultId, Set<MonikerId>>(() => new Set())
-    const referenceMonikers = new DefaultMap<ReferenceResultId, Set<MonikerId>>(() => new Set())
+    const definitionMonikers = new DefaultMap<dumpModels.DefinitionResultId, Set<dumpModels.MonikerId>>(() => new Set())
+    const referenceMonikers = new DefaultMap<dumpModels.ReferenceResultId, Set<dumpModels.MonikerId>>(() => new Set())
 
     for (const range of correlator.rangeData.values()) {
         if (range.monikerIds.size === 0) {
@@ -325,9 +311,12 @@ async function populateDefinitionsAndReferencesTables(
     }
 
     const insertMonikerRanges = async (
-        data: Map<DefinitionReferenceResultId, Map<DocumentId, RangeId[]>>,
-        monikers: Map<MonikerId, Set<RangeId>>,
-        inserter: TableInserter<DefinitionModel | ReferenceModel, new () => DefinitionModel | ReferenceModel>
+        data: Map<dumpModels.DefinitionReferenceResultId, Map<dumpModels.DocumentId, lsif.RangeId[]>>,
+        monikers: Map<dumpModels.MonikerId, Set<lsif.RangeId>>,
+        inserter: TableInserter<
+            dumpModels.DefinitionModel | dumpModels.ReferenceModel,
+            new () => dumpModels.DefinitionModel | dumpModels.ReferenceModel
+        >
     ): Promise<void> => {
         for (const [id, documentRanges] of data) {
             // Get monikers. Nothing to insert if we don't have any.
@@ -377,7 +366,7 @@ async function populateDefinitionsAndReferencesTables(
  */
 async function populateMetadataTable(
     correlator: Correlator,
-    metaInserter: TableInserter<MetaModel, new () => MetaModel>,
+    metaInserter: TableInserter<dumpModels.MetaModel, new () => dumpModels.MetaModel>,
     numResultChunks: number
 ): Promise<void> {
     await metaInserter.insert({
@@ -452,8 +441,10 @@ function getReferences(correlator: Correlator): SymbolReferences[] {
  *
  * @param correlator The correlator with all vertices and edges inserted.
  */
-function canonicalizeReferenceResults(correlator: Correlator): Map<ReferenceResultId, ReferenceResultId> {
-    const canonicalReferenceResultIds = new Map<ReferenceResultId, ReferenceResultId>()
+function canonicalizeReferenceResults(
+    correlator: Correlator
+): Map<dumpModels.ReferenceResultId, dumpModels.ReferenceResultId> {
+    const canonicalReferenceResultIds = new Map<dumpModels.ReferenceResultId, dumpModels.ReferenceResultId>()
 
     for (const referenceResultId of correlator.linkedReferenceResults.keys()) {
         // Don't re-process the same set of linked reference results
@@ -509,18 +500,18 @@ function canonicalizeReferenceResults(correlator: Correlator): Map<ReferenceResu
  */
 function canonicalizeItem(
     correlator: Correlator,
-    canonicalReferenceResultIds: Map<ReferenceResultId, ReferenceResultId>,
-    id: RangeId | ResultSetId,
-    item: RangeData | ResultSetData
+    canonicalReferenceResultIds: Map<dumpModels.ReferenceResultId, dumpModels.ReferenceResultId>,
+    id: lsif.RangeId | ResultSetId,
+    item: dumpModels.RangeData | ResultSetData
 ): void {
-    const monikers = new Set<MonikerId>()
+    const monikers = new Set<dumpModels.MonikerId>()
     if (item.monikerIds.size > 0) {
         // Find arbitrary moniker attached to item
         const candidateMoniker = item.monikerIds.keys().next().value
 
         // Get all monikers reachable from this one
         for (const monikerId of correlator.linkedMonikers.extractSet(candidateMoniker)) {
-            if (mustGet(correlator.monikerData, monikerId, 'moniker').kind !== MonikerKind.local) {
+            if (mustGet(correlator.monikerData, monikerId, 'moniker').kind !== lsif.MonikerKind.local) {
                 monikers.add(monikerId)
             }
         }
@@ -577,16 +568,20 @@ function canonicalizeItem(
  * @param currentDocumentId The identifier of the document.
  * @param path The path of the document.
  */
-function gatherDocument(correlator: Correlator, currentDocumentId: DocumentId, path: string): DocumentData {
+function gatherDocument(
+    correlator: Correlator,
+    currentDocumentId: dumpModels.DocumentId,
+    path: string
+): dumpModels.DocumentData {
     const document = {
         path,
-        ranges: new Map<RangeId, RangeData>(),
-        hoverResults: new Map<HoverResultId, string>(),
-        monikers: new Map<MonikerId, MonikerData>(),
-        packageInformation: new Map<PackageInformationId, PackageInformationData>(),
+        ranges: new Map<lsif.RangeId, dumpModels.RangeData>(),
+        hoverResults: new Map<dumpModels.HoverResultId, string>(),
+        monikers: new Map<dumpModels.MonikerId, dumpModels.MonikerData>(),
+        packageInformation: new Map<dumpModels.PackageInformationId, dumpModels.PackageInformationData>(),
     }
 
-    const addHover = (id: HoverResultId | undefined): void => {
+    const addHover = (id: dumpModels.HoverResultId | undefined): void => {
         if (id === undefined || document.hoverResults.has(id)) {
             return
         }
@@ -596,7 +591,7 @@ function gatherDocument(correlator: Correlator, currentDocumentId: DocumentId, p
         document.hoverResults.set(id, data)
     }
 
-    const addPackageInformation = (id: PackageInformationId | undefined): void => {
+    const addPackageInformation = (id: dumpModels.PackageInformationId | undefined): void => {
         if (id === undefined || document.packageInformation.has(id)) {
             return
         }
@@ -606,7 +601,7 @@ function gatherDocument(correlator: Correlator, currentDocumentId: DocumentId, p
         document.packageInformation.set(id, data)
     }
 
-    const addMoniker = (id: MonikerId | undefined): void => {
+    const addMoniker = (id: dumpModels.MonikerId | undefined): void => {
         if (id === undefined || document.monikers.has(id)) {
             return
         }
@@ -637,7 +632,7 @@ function gatherDocument(correlator: Correlator, currentDocumentId: DocumentId, p
  *
  * @param id The identifier.
  */
-function assertId<T extends Id>(id: T | undefined): T {
+function assertId<T extends lsif.Id>(id: T | undefined): T {
     if (id !== undefined) {
         return id
     }

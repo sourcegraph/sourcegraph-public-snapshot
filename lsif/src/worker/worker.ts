@@ -13,9 +13,9 @@ import { ensureDirectory } from '../shared/paths'
 import { followsFrom, FORMAT_TEXT_MAP, Span, Tracer } from 'opentracing'
 import { instrument } from '../shared/metrics'
 import { Job } from 'bull'
-import { jobDurationErrorsCounter, jobDurationHistogram } from './metrics'
+import * as metrics from './metrics'
 import { Logger } from 'winston'
-import { REDIS_ENDPOINT, STORAGE_ROOT } from './settings'
+import * as settings from './settings'
 import { startMetricsServer } from './server'
 import { waitForConfiguration } from '../shared/config/config'
 import { XrepoDatabase } from '../shared/xrepo/xrepo'
@@ -50,8 +50,8 @@ const wrapJobProcessor = <T>(
     const ctx = addTags({ logger, span }, { jobId: job.id, ...args })
 
     await instrument(
-        jobDurationHistogram,
-        jobDurationErrorsCounter,
+        metrics.jobDurationHistogram,
+        metrics.jobDurationErrorsCounter,
         (): Promise<void> => logAndTraceCall(ctx, `${name} job`, (ctx: TracingContext) => jobProcessor(args, ctx))
     )
 }
@@ -72,20 +72,20 @@ async function main(logger: Logger): Promise<void> {
     const tracer = createTracer('lsif-worker', fetchConfiguration())
 
     // Ensure storage roots exist
-    await ensureDirectory(STORAGE_ROOT)
-    await ensureDirectory(path.join(STORAGE_ROOT, constants.DBS_DIR))
-    await ensureDirectory(path.join(STORAGE_ROOT, constants.TEMP_DIR))
-    await ensureDirectory(path.join(STORAGE_ROOT, constants.UPLOADS_DIR))
+    await ensureDirectory(settings.STORAGE_ROOT)
+    await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.DBS_DIR))
+    await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.TEMP_DIR))
+    await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR))
 
     // Create cross-repo database
     const connection = await createPostgresConnection(fetchConfiguration(), logger)
-    const xrepoDatabase = new XrepoDatabase(STORAGE_ROOT, connection)
+    const xrepoDatabase = new XrepoDatabase(settings.STORAGE_ROOT, connection)
 
     // Start metrics server
     startMetricsServer(logger)
 
     // Create queue to poll for jobs
-    const queue = createQueue(REDIS_ENDPOINT, logger)
+    const queue = createQueue(settings.REDIS_ENDPOINT, logger)
 
     const convertJobProcessor = wrapJobProcessor(
         'convert',

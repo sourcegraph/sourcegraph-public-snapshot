@@ -5,7 +5,7 @@ import { createCleanPostgresDatabase, createCommit, truncatePostgresTables, crea
 import { Connection } from 'typeorm'
 import { fail } from 'assert'
 import { pick } from 'lodash'
-import { LsifDump } from '../models/xrepo'
+import * as xrepoModels from '../models/xrepo'
 
 describe('XrepoDatabase', () => {
     let connection!: Connection
@@ -271,7 +271,7 @@ describe('XrepoDatabase', () => {
 
         await xrepoDatabase.updateDumpsVisibleFromTip('foo', cf)
         const visibleDumps = await xrepoDatabase.getVisibleDumps('foo')
-        expect(visibleDumps.map((dump: LsifDump) => dump.id).sort()).toEqual([d1.id, d2.id])
+        expect(visibleDumps.map((dump: xrepoModels.LsifDump) => dump.id).sort()).toEqual([d1.id, d2.id])
     })
 
     it('should traverse branching paths during visibility check', async () => {
@@ -319,7 +319,12 @@ describe('XrepoDatabase', () => {
 
         await xrepoDatabase.updateDumpsVisibleFromTip('foo', ci)
         const visibleDumps = await xrepoDatabase.getVisibleDumps('foo')
-        expect(visibleDumps.map((dump: LsifDump) => dump.id).sort()).toEqual([dump1.id, dump2.id, dump3.id, dump4.id])
+        expect(visibleDumps.map((dump: xrepoModels.LsifDump) => dump.id).sort()).toEqual([
+            dump1.id,
+            dump2.id,
+            dump3.id,
+            dump4.id,
+        ])
     })
 
     it('should not set dumps visible farther than MAX_TRAVERSAL_LIMIT', async () => {
@@ -352,15 +357,15 @@ describe('XrepoDatabase', () => {
 
         await xrepoDatabase.updateDumpsVisibleFromTip('foo', cmax)
         let visibleDumps = await xrepoDatabase.getVisibleDumps('foo')
-        expect(visibleDumps.map((dump: LsifDump) => dump.id).sort()).toEqual([dump1.id])
+        expect(visibleDumps.map((dump: xrepoModels.LsifDump) => dump.id).sort()).toEqual([dump1.id])
 
         await xrepoDatabase.updateDumpsVisibleFromTip('foo', c1)
         visibleDumps = await xrepoDatabase.getVisibleDumps('foo')
-        expect(visibleDumps.map((dump: LsifDump) => dump.id).sort()).toEqual([dump1.id])
+        expect(visibleDumps.map((dump: xrepoModels.LsifDump) => dump.id).sort()).toEqual([dump1.id])
 
         await xrepoDatabase.updateDumpsVisibleFromTip('foo', c0)
         visibleDumps = await xrepoDatabase.getVisibleDumps('foo')
-        expect(visibleDumps.map((dump: LsifDump) => dump.id).sort()).toEqual([])
+        expect(visibleDumps.map((dump: xrepoModels.LsifDump) => dump.id).sort()).toEqual([])
 
         // Add closer dump
         const dump2 = await xrepoDatabase.insertDump('foo', cpen, '')
@@ -368,7 +373,7 @@ describe('XrepoDatabase', () => {
         // Now commit cpen should be found
         await xrepoDatabase.updateDumpsVisibleFromTip('foo', c0)
         visibleDumps = await xrepoDatabase.getVisibleDumps('foo')
-        expect(visibleDumps.map((dump: LsifDump) => dump.id).sort()).toEqual([dump2.id])
+        expect(visibleDumps.map((dump: xrepoModels.LsifDump) => dump.id).sort()).toEqual([dump2.id])
     })
 
     it('should respect bloom filter', async () => {
@@ -379,7 +384,7 @@ describe('XrepoDatabase', () => {
         const ce = createCommit('e')
         const cf = createCommit('f')
 
-        const updatePackages = (commit: string, root: string, identifiers: string[]): Promise<LsifDump> =>
+        const updatePackages = (commit: string, root: string, identifiers: string[]): Promise<xrepoModels.LsifDump> =>
             xrepoDatabase.addPackagesAndReferences(
                 'foo',
                 commit,
@@ -427,7 +432,7 @@ describe('XrepoDatabase', () => {
     })
 
     it('should re-query if bloom filter prunes too many results', async () => {
-        const updatePackages = (commit: string, root: string, identifiers: string[]): Promise<LsifDump> =>
+        const updatePackages = (commit: string, root: string, identifiers: string[]): Promise<xrepoModels.LsifDump> =>
             xrepoDatabase.addPackagesAndReferences(
                 'foo',
                 commit,
@@ -455,7 +460,7 @@ describe('XrepoDatabase', () => {
 
             const dump = await updatePackages(createCommit('0'), `r${i}`, ['x', isUse ? 'y' : 'z'])
             dump.visibleAtTip = true
-            await connection.getRepository(LsifDump).save(dump)
+            await connection.getRepository(xrepoModels.LsifDump).save(dump)
 
             if (isUse) {
                 // Save use ids
@@ -513,9 +518,9 @@ describe('XrepoDatabase', () => {
             dumpa.visibleAtTip = visibleA
             dumpb.visibleAtTip = visibleB
             dumpc.visibleAtTip = visibleC
-            await connection.getRepository(LsifDump).save(dumpa)
-            await connection.getRepository(LsifDump).save(dumpb)
-            await connection.getRepository(LsifDump).save(dumpc)
+            await connection.getRepository(xrepoModels.LsifDump).save(dumpa)
+            await connection.getRepository(xrepoModels.LsifDump).save(dumpb)
+            await connection.getRepository(xrepoModels.LsifDump).save(dumpc)
         }
 
         // Set a, b visible from tip

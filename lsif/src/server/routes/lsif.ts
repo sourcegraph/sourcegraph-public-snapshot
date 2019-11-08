@@ -7,7 +7,7 @@ import pTimeout from 'p-timeout'
 import uuid from 'uuid'
 import { addTags, logAndTraceCall, TracingContext } from '../../shared/tracing'
 import { Backend, ReferencePaginationCursor } from '../backend/backend'
-import { DEFAULT_REFERENCES_NUM_REMOTE_DUMPS, STORAGE_ROOT } from '../settings'
+import * as settings from '../settings'
 import { encodeCursor, parseCursor } from '../pagination/cursor'
 import { enqueue } from '../../shared/queue/queue'
 import { extractLimit } from '../pagination/limit-offset'
@@ -52,7 +52,7 @@ export function createLsifRouter(
                     commit,
                     root,
                 })
-                const filename = path.join(STORAGE_ROOT, constants.UPLOADS_DIR, uuid.v4())
+                const filename = path.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR, uuid.v4())
                 const output = fs.createWriteStream(filename)
 
                 try {
@@ -137,7 +137,7 @@ export function createLsifRouter(
 
                     case 'references': {
                         const { cursor: cursorRaw } = req.query
-                        const limit = extractLimit(req, DEFAULT_REFERENCES_NUM_REMOTE_DUMPS)
+                        const limit = extractLimit(req, settings.DEFAULT_REFERENCES_NUM_REMOTE_DUMPS)
                         const startCursor = parseCursor<ReferencePaginationCursor>(cursorRaw)
 
                         const { locations, cursor: endCursor } = await backend.references(

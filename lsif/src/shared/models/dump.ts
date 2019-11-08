@@ -1,19 +1,28 @@
 import { Column, Entity, Index, PrimaryColumn } from 'typeorm'
-import { MonikerKind } from 'lsif-protocol'
+import * as lsif from 'lsif-protocol'
 import { getBatchSize } from './util'
-import {
-    DocumentPath,
-    JSONEncoded,
-    HashMod,
-    DefinitionReferenceResultId,
-    HoverResultId,
-    MonikerId,
-    PackageInformationId,
-    DocumentId,
-    RangeId,
-    DefinitionResultId,
-    ReferenceResultId,
-} from './types'
+
+export type DocumentId = lsif.Id
+export type DocumentPath = string
+export type RangeId = lsif.Id
+export type DefinitionResultId = lsif.Id
+export type ReferenceResultId = lsif.Id
+export type DefinitionReferenceResultId = DefinitionResultId | ReferenceResultId
+export type HoverResultId = lsif.Id
+export type MonikerId = lsif.Id
+export type PackageInformationId = lsif.Id
+
+/**
+ * A type that describes a gzipped and JSON-encoded value of type `T`.
+ */
+export type JSONEncoded<T> = Buffer
+
+/**
+ * A type of hashed value created by hashing a value of type `T` and performing
+ * the modulus with a value of type `U`. This is to link the index of a result
+ * chunk to the hashed value of the identifiers stored within it.
+ */
+export type HashMod<T, U> = number
 
 /**
 n entity within the database describing LSIF data for a single repository
@@ -329,7 +338,7 @@ export interface MonikerData {
     /**
      * The kind of moniker (e.g. local, import, export).
      */
-    kind: MonikerKind
+    kind: lsif.MonikerKind
 
     /**
      * The name of the package type (e.g. npm, pip).

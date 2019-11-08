@@ -1,6 +1,6 @@
 import * as json5 from 'json5'
 import got from 'got'
-import { CONFIG_POLL_INTERVAL, DELAY_BEFORE_UNREACHABLE_LOG, SRC_FRONTEND_INTERNAL } from './settings'
+import * as settings from './settings'
 import { isEqual, pick } from 'lodash'
 import { Logger } from 'winston'
 
@@ -90,13 +90,13 @@ async function updateConfiguration(logger: Logger, onChange: (configuration: Con
             // Suppress log messages for errors caused by the frontend being unreachable until we've
             // given the frontend enough time to initialize (in case other services start up before
             // the frontend), to reduce log spam.
-            if (Date.now() - start > DELAY_BEFORE_UNREACHABLE_LOG * 1000 || error.code !== 'ECONNREFUSED') {
+            if (Date.now() - start > settings.DELAY_BEFORE_UNREACHABLE_LOG * 1000 || error.code !== 'ECONNREFUSED') {
                 logger.error('failed to retrieve configuration from frontend', { error })
             }
         }
 
         // Do a jittery sleep _up to_ the config poll interval.
-        const durationMs = Math.random() * CONFIG_POLL_INTERVAL * 1000
+        const durationMs = Math.random() * settings.CONFIG_POLL_INTERVAL * 1000
         await new Promise(resolve => setTimeout(resolve, durationMs))
     }
 }
@@ -105,7 +105,7 @@ async function updateConfiguration(logger: Logger, onChange: (configuration: Con
  * Read configuration from the frontend.
  */
 async function loadConfiguration(): Promise<Configuration> {
-    const url = new URL(`http://${SRC_FRONTEND_INTERNAL}/.internal/configuration`).href
+    const url = new URL(`http://${settings.SRC_FRONTEND_INTERNAL}/.internal/configuration`).href
     const resp = await got.post(url, { followRedirect: true })
     const payload = JSON.parse(resp.body)
 

@@ -1,12 +1,11 @@
 import express from 'express'
 import { Backend } from '../backend/backend'
 import { Logger } from 'winston'
-import { pipeline as _pipeline } from 'stream'
 import { Tracer } from 'opentracing'
 import { wrap } from 'async-middleware'
 import { limitOffset } from '../pagination/limit-offset'
 import { nextLink } from '../pagination/link'
-import { DEFAULT_DUMP_PAGE_SIZE } from '../settings'
+import * as settings from '../settings'
 
 /**
  * Create a router containing the LSIF dump endpoints.
@@ -24,7 +23,7 @@ export function createDumpRouter(backend: Backend, logger: Logger, tracer: Trace
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { repository } = req.params
                 const { query, visibleAtTip: visibleAtTipRaw } = req.query
-                const { limit, offset } = limitOffset(req, DEFAULT_DUMP_PAGE_SIZE)
+                const { limit, offset } = limitOffset(req, settings.DEFAULT_DUMP_PAGE_SIZE)
                 const visibleAtTip = visibleAtTipRaw === 'true'
                 const { dumps, totalCount } = await backend.dumps(
                     decodeURIComponent(repository),

@@ -5,7 +5,7 @@ import { ConfigurationFetcher } from '../../shared/config/config'
 import { convertLsif } from '../importer/importer'
 import { createSilentLogger } from '../../shared/logging'
 import { dbFilename } from '../../shared/paths'
-import { DBS_DIR_MAXIMUM_SIZE_BYTES, STORAGE_ROOT } from '../settings'
+import * as settings from '../settings'
 import { logAndTraceCall, TracingContext } from '../../shared/tracing'
 import { XrepoDatabase } from '../../shared/xrepo/xrepo'
 
@@ -26,7 +26,7 @@ export const createConvertJobProcessor = (
 ): Promise<void> => {
     await logAndTraceCall(ctx, 'converting LSIF data', async (ctx: TracingContext) => {
         const input = fs.createReadStream(filename)
-        const tempFile = path.join(STORAGE_ROOT, constants.TEMP_DIR, path.basename(filename))
+        const tempFile = path.join(settings.STORAGE_ROOT, constants.TEMP_DIR, path.basename(filename))
 
         try {
             // Create database in a temp path
@@ -38,7 +38,7 @@ export const createConvertJobProcessor = (
             )
 
             // Move the temp file where it can be found by the server
-            await fs.rename(tempFile, dbFilename(STORAGE_ROOT, dump.id, repository, commit))
+            await fs.rename(tempFile, dbFilename(settings.STORAGE_ROOT, dump.id, repository, commit))
         } catch (e) {
             // Don't leave busted artifacts
             await fs.unlink(tempFile)
@@ -58,7 +58,7 @@ export const createConvertJobProcessor = (
     await fs.unlink(filename)
 
     // Clean up disk space if necessary
-    await purgeOldDumps(STORAGE_ROOT, xrepoDatabase, DBS_DIR_MAXIMUM_SIZE_BYTES, ctx)
+    await purgeOldDumps(settings.STORAGE_ROOT, xrepoDatabase, settings.DBS_DIR_MAXIMUM_SIZE_BYTES, ctx)
 }
 
 /**

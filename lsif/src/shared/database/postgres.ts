@@ -1,5 +1,5 @@
 import { Connection, createConnection as _createConnection } from 'typeorm'
-import * as xrepo from '../models/xrepo'
+import * as xrepoModels from '../models/xrepo'
 import { PostgresConnectionCredentialsOptions } from 'typeorm/driver/postgres/PostgresConnectionCredentialsOptions'
 import { readEnvInt } from '../settings'
 import { Logger } from 'winston'
@@ -114,7 +114,7 @@ export function connectPostgres(
     return _createConnection({
         type: 'postgres',
         name: `xrepo${suffix}`,
-        entities: xrepo.entities,
+        entities: xrepoModels.entities,
         logging: ['error', 'warn'],
         maxQueryExecutionTime: 1000,
         ...connectionOptions,

@@ -1,7 +1,7 @@
 import express from 'express'
 import { ApiJobState, QUEUE_PREFIX, queueTypes, statesByQueue } from '../../shared/queue/queue'
 import { chunk } from 'lodash'
-import { DEFAULT_JOB_PAGE_SIZE, MAX_JOB_SEARCH } from '../settings'
+import * as settings from '../settings'
 import { Job, Queue } from 'bull'
 import { limitOffset } from '../pagination/limit-offset'
 import { Logger } from 'winston'
@@ -134,7 +134,7 @@ export function createJobRouter(
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { state } = req.params as { state: ApiJobState }
                 const { query } = req.query
-                const { limit, offset } = limitOffset(req, DEFAULT_JOB_PAGE_SIZE)
+                const { limit, offset } = limitOffset(req, settings.DEFAULT_JOB_PAGE_SIZE)
 
                 const queueName = queueTypes.get(state)
                 if (!queueName) {
@@ -158,7 +158,7 @@ export function createJobRouter(
                         query,
                         offset,
                         limit,
-                        MAX_JOB_SEARCH,
+                        settings.MAX_JOB_SEARCH,
                     ])
 
                     const jobs = payloads
