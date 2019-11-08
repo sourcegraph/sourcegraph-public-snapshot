@@ -11,7 +11,7 @@ import { QuickLink, Settings } from '../../schema/settings.schema'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { limitString } from '../../util'
-import { submitSearch } from '../helpers'
+import { submitSearch, QueryValue } from '../helpers'
 import { QuickLinks } from '../QuickLinks'
 import { QueryBuilder } from './QueryBuilder'
 import { QueryInput } from './QueryInput'
@@ -28,7 +28,7 @@ interface Props extends SettingsCascadeProps, ThemeProps, ThemePreferenceProps, 
 
 interface State {
     /** The query value entered by the user in the query input */
-    userQuery: string
+    userQueryValue: QueryValue
     /** The query that results from combining all values in the query builder form. */
     builderQuery: string
 }
@@ -42,7 +42,10 @@ export class SearchPage extends React.Component<Props, State> {
 
         const queryFromUrl = parseSearchURLQuery(props.location.search) || ''
         this.state = {
-            userQuery: queryFromUrl,
+            userQueryValue: {
+                query: queryFromUrl,
+                cursorPosition: queryFromUrl.length,
+            },
             builderQuery: '',
         }
     }
@@ -76,7 +79,7 @@ export class SearchPage extends React.Component<Props, State> {
                     <div className="search-page__input-container">
                         <QueryInput
                             {...this.props}
-                            value={this.state.userQuery}
+                            value={this.state.userQueryValue}
                             onChange={this.onUserQueryChange}
                             autoFocus="cursor-at-end"
                             hasGlobalQueryBehavior={true}
@@ -91,7 +94,7 @@ export class SearchPage extends React.Component<Props, State> {
                                 <SearchFilterChips
                                     location={this.props.location}
                                     history={this.props.history}
-                                    query={this.state.userQuery}
+                                    query={this.state.userQueryValue.query}
                                     authenticatedUser={this.props.authenticatedUser}
                                     settingsCascade={this.props.settingsCascade}
                                     isSourcegraphDotCom={this.props.isSourcegraphDotCom}
@@ -117,7 +120,7 @@ export class SearchPage extends React.Component<Props, State> {
                                 <SearchFilterChips
                                     location={this.props.location}
                                     history={this.props.history}
-                                    query={this.state.userQuery}
+                                    query={this.state.userQueryValue.query}
                                     authenticatedUser={this.props.authenticatedUser}
                                     settingsCascade={this.props.settingsCascade}
                                     isSourcegraphDotCom={this.props.isSourcegraphDotCom}
@@ -132,8 +135,8 @@ export class SearchPage extends React.Component<Props, State> {
         )
     }
 
-    private onUserQueryChange = (userQuery: string): void => {
-        this.setState({ userQuery })
+    private onUserQueryChange = (userQueryValue: QueryValue): void => {
+        this.setState({ userQueryValue })
     }
 
     private onBuilderQueryChange = (builderQuery: string): void => {
@@ -142,14 +145,14 @@ export class SearchPage extends React.Component<Props, State> {
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
-        const query = [this.state.builderQuery, this.state.userQuery].filter(s => !!s).join(' ')
+        const query = [this.state.builderQuery, this.state.userQueryValue].filter(s => !!s).join(' ')
         submitSearch(this.props.history, query, 'home', this.props.patternType, this.props.activation)
     }
 
     private getPageTitle(): string | undefined {
         const query = parseSearchURLQuery(this.props.location.search)
         if (query) {
-            return `${limitString(this.state.userQuery, 25, true)}`
+            return `${limitString(this.state.userQueryValue.query, 25, true)}`
         }
         return undefined
     }

@@ -31,7 +31,7 @@ import { PageTitle } from '../components/PageTitle'
 import { isDiscussionsEnabled } from '../discussions'
 import { DiscussionsList } from '../discussions/DiscussionsList'
 import { searchQueryForRepoRev, PatternTypeProps } from '../search'
-import { submitSearch } from '../search/helpers'
+import { submitSearch, QueryValue } from '../search/helpers'
 import { QueryInput } from '../search/input/QueryInput'
 import { SearchButton } from '../search/input/SearchButton'
 import { eventLogger, EventLoggerProps } from '../tracking/eventLogger'
@@ -72,7 +72,13 @@ const TreeEntriesSection: React.FunctionComponent<{
             <h3 className="tree-page__section-header">{title}</h3>
             <div className={entries.length > MIN_ENTRIES_FOR_COLUMN_LAYOUT ? 'tree-page__entries--columns' : undefined}>
                 {entries.map((e, i) => (
-                    <TreeEntry key={i} isDir={e.isDirectory} name={e.name} parentPath={parentPath} url={e.url} />
+                    <TreeEntry
+                        key={e.name + String(i)}
+                        isDir={e.isDirectory}
+                        name={e.name}
+                        parentPath={parentPath}
+                        url={e.url}
+                    />
                 ))}
             </div>
         </section>
@@ -147,11 +153,11 @@ interface State {
     /**
      * The value of the search query input field.
      */
-    query: string
+    queryValue: QueryValue
 }
 
 export class TreePage extends React.PureComponent<Props, State> {
-    public state: State = { query: '' }
+    public state: State = { queryValue: { query: '', cursorPosition: 0 } }
 
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
@@ -281,7 +287,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                 <Form className="tree-page__section-search" onSubmit={this.onSubmit}>
                                     <QueryInput
                                         {...this.props}
-                                        value={this.state.query}
+                                        value={this.state.queryValue}
                                         onChange={this.onQueryChange}
                                         prependQueryForSuggestions={this.getQueryPrefix()}
                                         autoFocus={true}
@@ -316,10 +322,10 @@ export class TreePage extends React.PureComponent<Props, State> {
                                 render={items => (
                                     <section className="tree-page__section">
                                         <h3 className="tree-page__section-header">Actions</h3>
-                                        {items.map((item, i) => (
+                                        {items.map(item => (
                                             <ActionItem
                                                 {...this.props}
-                                                key={i}
+                                                key={item.action.id}
                                                 {...item}
                                                 className="btn btn-secondary mr-1 mb-1"
                                             />
@@ -355,13 +361,13 @@ export class TreePage extends React.PureComponent<Props, State> {
         )
     }
 
-    private onQueryChange = (query: string): void => this.setState({ query })
+    private onQueryChange = (queryValue: QueryValue): void => this.setState({ queryValue })
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
         submitSearch(
             this.props.history,
-            this.getQueryPrefix() + this.state.query,
+            this.getQueryPrefix() + this.state.queryValue,
             this.props.filePath ? 'tree' : 'repo',
             this.props.patternType,
             this.props.activation

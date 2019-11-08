@@ -198,9 +198,10 @@ const SUGGESTION_FILTER_SEPARATOR = ':'
 
 /**
  * The search query and cursor position of where the last character was inserted.
- * Cursor position is used to correctly insert the suggestion when it's selected.
+ * Cursor position is used to correctly insert the suggestion when it's selected,
+ * and set the cursor to the end of where the suggestion was inserted.
  */
-export interface SearchQueryCursor {
+export interface QueryValue {
     query: string
     cursorPosition: number
 }
@@ -219,11 +220,7 @@ export const isTypingWordAndNotFilterValue = (value: string): boolean => Boolean
  * @param suggestion the select suggestion
  * @param cursorPosition cursor position when suggestions were given
  */
-export const insertSuggestionInQuery = (
-    query: string,
-    suggestion: Suggestion,
-    cursorPosition: number
-): SearchQueryCursor => {
+export const insertSuggestionInQuery = (query: string, suggestion: Suggestion, cursorPosition: number): QueryValue => {
     const firstPart = query.substring(0, cursorPosition)
     const lastPart = query.substring(firstPart.length)
     const isFiltersSuggestion = suggestion.type === SuggestionTypes.filters
@@ -270,7 +267,7 @@ type FilterAndValue = string
  * Checks if the word is a valid filter, else returns [false].
  */
 export const getFilterTypedBeforeCursor = (
-    queryCursor: SearchQueryCursor
+    queryCursor: QueryValue
 ): { filterAndValue?: FilterAndValue; filter?: SuggestionTypes } => {
     const firstPart = queryCursor.query.substring(0, queryCursor.cursorPosition)
     // get string before ":" char until a space is found or start of string
@@ -284,7 +281,7 @@ export const getFilterTypedBeforeCursor = (
  *     "QueryInput lang:|" => false
  *     "archived:Yes QueryInp|" => true
  */
-export const isFuzzyWordSearch = (queryCursor: SearchQueryCursor): boolean => {
+export const isFuzzyWordSearch = (queryCursor: QueryValue): boolean => {
     const firstPart = queryCursor.query.substring(0, queryCursor.cursorPosition)
     const isTypingFirstWord = Boolean(firstPart.match(/^(\s?)+[^:\s]+$/))
     return isTypingFirstWord || isTypingWordAndNotFilterValue(firstPart)

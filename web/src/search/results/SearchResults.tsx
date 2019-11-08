@@ -22,6 +22,7 @@ import {
     toggleSearchFilter,
     toggleSearchFilterAndReplaceSampleRepogroup,
     getSearchTypeFromQuery,
+    QueryValue,
 } from '../helpers'
 import { queryTelemetryData } from '../queryTelemetry'
 import { SearchResultsFilterBars, SearchScopeWithOptionalName } from './SearchResultsFilterBars'
@@ -39,7 +40,7 @@ export interface SearchResultsProps
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
-    navbarSearchQuery: string
+    navbarSearchQueryValue: QueryValue
     telemetryService: Pick<EventLogger, 'log' | 'logViewEvent'>
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
     searchRequest: (
@@ -90,7 +91,8 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         if (!patternType) {
             // If the patternType query parameter does not exist in the URL or is invalid, redirect to a URL which
             // has patternType=regexp appended. This is to ensure old URLs before requiring patternType still work.
-            const newLoc = '/search?' + buildSearchURLQuery(this.props.navbarSearchQuery, GQL.SearchPatternType.regexp)
+            const newLoc =
+                '/search?' + buildSearchURLQuery(this.props.navbarSearchQueryValue.query, GQL.SearchPatternType.regexp)
             window.location.replace(newLoc)
         }
 
@@ -209,7 +211,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             <div className="e2e-search-results search-results d-flex flex-column w-100">
                 <PageTitle key="page-title" title={query} />
                 <SearchResultsFilterBars
-                    navbarSearchQuery={this.props.navbarSearchQuery}
+                    navbarSearchQuery={this.props.navbarSearchQueryValue.query}
                     results={this.state.resultsOrError}
                     filters={filters}
                     extensionFilters={extensionFilters}
@@ -218,7 +220,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     onShowMoreResultsClick={this.showMoreResults}
                     calculateShowMoreResultsCount={this.calculateCount}
                 />
-                <SearchResultTypeTabs {...this.props} query={this.props.navbarSearchQuery} />
+                <SearchResultTypeTabs {...this.props} query={this.props.navbarSearchQueryValue.query} />
                 <SearchResultsList
                     {...this.props}
                     resultsOrError={this.state.resultsOrError}
@@ -315,8 +317,8 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         })
 
         const newQuery = this.props.isSourcegraphDotCom
-            ? toggleSearchFilterAndReplaceSampleRepogroup(this.props.navbarSearchQuery, value)
-            : toggleSearchFilter(this.props.navbarSearchQuery, value)
+            ? toggleSearchFilterAndReplaceSampleRepogroup(this.props.navbarSearchQueryValue.query, value)
+            : toggleSearchFilter(this.props.navbarSearchQueryValue.query, value)
 
         submitSearch(this.props.history, newQuery, 'filter', this.props.patternType)
     }

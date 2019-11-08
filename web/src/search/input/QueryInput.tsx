@@ -23,7 +23,7 @@ import { PatternTypeProps } from '..'
 import Downshift from 'downshift'
 import { searchFilterSuggestions, SearchFilterSuggestions } from '../searchFilterSuggestions'
 import {
-    SearchQueryCursor,
+    QueryValue,
     filterSearchSuggestions,
     insertSuggestionInQuery,
     isFuzzyWordSearch,
@@ -43,10 +43,10 @@ interface Props extends PatternTypeProps {
     history: H.History
 
     /** The value of the query input */
-    value: string
+    value: QueryValue
 
     /** Called when the value changes */
-    onChange: (newValue: string) => void
+    onChange: (newValue: QueryValue) => void
 
     /**
      * A string that is appended to the query input's query before
@@ -83,11 +83,6 @@ interface ComponentSuggestions {
 interface State {
     /** The suggestions shown to the user */
     suggestions: ComponentSuggestions
-    /**
-     * Used to add suggestions into the query
-     * and correctly position the cursor
-     */
-    cursorPosition: number
 }
 
 interface SuggestionsStateUpdate {
@@ -103,7 +98,7 @@ export class QueryInput extends React.Component<Props, State> {
     private subscriptions = new Subscription()
 
     /** Emits new input values */
-    private inputValues = new Subject<SearchQueryCursor>()
+    private inputValues = new Subject<QueryValue>()
 
     /** Emits when the suggestions are hidden */
     private suggestionsHidden = new Subject<void>()
@@ -122,7 +117,6 @@ export class QueryInput extends React.Component<Props, State> {
             cursorPosition: 0,
             values: [],
         },
-        cursorPosition: 0,
     }
 
     constructor(props: Props) {
@@ -132,24 +126,24 @@ export class QueryInput extends React.Component<Props, State> {
             // Trigger new suggestions every time the input field is typed into.
             this.inputValues
                 .pipe(
-                    tap(({ query }) => this.props.onChange(query)),
+                    tap(queryValue => this.props.onChange(queryValue)),
                     distinctUntilChanged(),
                     debounceTime(200),
-                    switchMap(queryCursor => {
-                        if (queryCursor.query.length === 0) {
+                    switchMap(queryValue => {
+                        if (queryValue.query.length === 0) {
                             return [{ suggestions: hiddenSuggestions }]
                         }
 
                         // A filter value (example, in "archive:yes", "archive" is filter and "yes" is the value)
                         // can either be one defined in `searchFilterSuggestions` or a suggestion from the fuzzy-search.
 
-                        const filterSuggestions = this.getSuggestions(searchFilterSuggestions, queryCursor)
+                        const filterSuggestions = this.getSuggestions(searchFilterSuggestions, queryValue)
 
-                        const fullQuery = [this.props.prependQueryForSuggestions, queryCursor.query]
+                        const fullQuery = [this.props.prependQueryForSuggestions, queryValue.query]
                             .filter(s => !!s)
                             .join(' ')
 
-                        const { filterAndValue, filter: filterBeforeCursor } = getFilterTypedBeforeCursor(queryCursor)
+                        const { filterAndValue, filter: filterBeforeCursor } = getFilterTypedBeforeCursor(queryValue)
 
                         if (filterAndValue && filterBeforeCursor) {
                             if (!fuzzySearchFilters.includes(filterBeforeCursor)) {
@@ -158,12 +152,17 @@ export class QueryInput extends React.Component<Props, State> {
                             return this.fetchFuzzySuggestions(
                                 filterAndValue,
                                 filterBeforeCursor,
-                                queryCursor,
+                                queryValue.cursorPosition,
                                 filterSuggestions
                             )
                         }
 
-                        return this.fetchFuzzySuggestions(fullQuery, false, queryCursor, filterSuggestions)
+                        return this.fetchFuzzySuggestions(
+                            fullQuery,
+                            false,
+                            queryValue.cursorPosition,
+                            filterSuggestions
+                        )
                     }),
                     // Abort suggestion display on route change or suggestion hiding
                     takeUntil(this.suggestionsHidden),
@@ -196,7 +195,8 @@ export class QueryInput extends React.Component<Props, State> {
                         )
                     )
                     .subscribe(() => {
-                        this.props.onChange(String(window.getSelection() || ''))
+                        const selection = String(window.getSelection() || '')
+                        this.props.onChange({ query: selection, cursorPosition: selection.length })
                         if (this.inputElement.current) {
                             this.inputElement.current.focus()
                             // Select whole input text
@@ -208,7 +208,12 @@ export class QueryInput extends React.Component<Props, State> {
             // Allow other components to update the query (e.g., to be relevant to what the user is
             // currently viewing).
             this.subscriptions.add(
-                queryUpdates.pipe(distinctUntilChanged()).subscribe(query => this.props.onChange(query))
+                queryUpdates.pipe(distinctUntilChanged()).subscribe(query =>
+                    this.props.onChange({
+                        query,
+                        cursorPosition: query.length,
+                    })
+                )
             )
 
             /** Whenever the URL query has a "focus" property, remove it and focus the query input. */
@@ -252,9 +257,9 @@ export class QueryInput extends React.Component<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-    public componentDidUpdate(_: Props, prevState: State): void {
-        if (prevState.cursorPosition !== this.state.cursorPosition) {
-            this.focusInputAndPositionCursor(this.state.cursorPosition)
+    public componentDidUpdate(prevProps: Props): void {
+        if (this.props.value.cursorPosition && prevProps.value.cursorPosition !== this.props.value.cursorPosition) {
+            this.focusInputAndPositionCursor(this.props.value.cursorPosition)
         }
         this.componentUpdates.next(this.props)
     }
@@ -264,7 +269,7 @@ export class QueryInput extends React.Component<Props, State> {
         // If last typed word is not a filter type,
         // suggestions should show url label and redirect on select.
         const showUrlLabel = isFuzzyWordSearch({
-            query: this.props.value,
+            query: this.props.value.query,
             cursorPosition: this.state.suggestions.cursorPosition,
         })
         return (
@@ -280,7 +285,7 @@ export class QueryInput extends React.Component<Props, State> {
                             <div ref={this.containerElement}>
                                 <input
                                     className="form-control query-input2__input rounded-left e2e-query-input"
-                                    value={this.props.value}
+                                    value={this.props.value.query}
                                     autoFocus={this.props.autoFocus === true}
                                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
                                         downshiftChange(event)
@@ -323,7 +328,7 @@ export class QueryInput extends React.Component<Props, State> {
                                 <RegexpToggle
                                     {...this.props}
                                     toggled={this.props.patternType === SearchPatternType.regexp}
-                                    navbarSearchQuery={this.props.value}
+                                    navbarSearchQuery={this.props.value.query}
                                 />
                             </div>
                         </div>
@@ -350,7 +355,7 @@ export class QueryInput extends React.Component<Props, State> {
     private fetchFuzzySuggestions = (
         query: string,
         filterBeforeCursor: SuggestionTypes | false,
-        queryCursor: SearchQueryCursor,
+        cursorPosition: QueryValue['cursorPosition'],
         filterSuggestions: ComponentSuggestions
     ): ObservableInput<SuggestionsStateUpdate> =>
         fetchSuggestions(this.formatQueryForFuzzySearch(query)).pipe(
@@ -368,7 +373,7 @@ export class QueryInput extends React.Component<Props, State> {
             toArray(),
             map(suggestions => ({
                 suggestions: {
-                    cursorPosition: queryCursor.cursorPosition,
+                    cursorPosition,
                     values: filterSuggestions.values.concat(suggestions),
                 },
             })),
@@ -390,7 +395,7 @@ export class QueryInput extends React.Component<Props, State> {
 
     private getSuggestions = (
         searchFilterSuggestions: SearchFilterSuggestions,
-        { query, cursorPosition }: SearchQueryCursor = { query: '', cursorPosition: 0 }
+        { query, cursorPosition }: QueryValue = { query: '', cursorPosition: 0 }
     ): ComponentSuggestions => ({
         cursorPosition,
         values: !searchFilterSuggestions ? [] : filterSearchSuggestions(query, cursorPosition, searchFilterSuggestions),
@@ -410,7 +415,6 @@ export class QueryInput extends React.Component<Props, State> {
             if (!suggestion) {
                 return {
                     suggestions: hiddenSuggestions,
-                    cursorPosition: state.cursorPosition,
                 }
             }
 
@@ -426,26 +430,26 @@ export class QueryInput extends React.Component<Props, State> {
             // if separate word is being typed and suggestion with url is selected
             if (
                 isFuzzyWordSearch({
-                    query: props.value,
+                    query: props.value.query,
                     cursorPosition: state.suggestions.cursorPosition,
                 }) &&
                 suggestion.url
             ) {
                 this.props.history.push(suggestion.url)
-                return {
-                    cursorPosition: 0,
-                    suggestions: hiddenSuggestions,
-                }
+                return { suggestions: hiddenSuggestions }
             }
 
             const { cursorPosition } = state.suggestions
             const { query: newQuery, cursorPosition: newCursorPosition } = insertSuggestionInQuery(
-                props.value,
+                props.value.query,
                 suggestion,
                 cursorPosition
             )
 
-            props.onChange(newQuery)
+            props.onChange({
+                query: newQuery,
+                cursorPosition: newCursorPosition,
+            })
 
             const isValueSuggestion = suggestion.type !== SuggestionTypes.filters
 
@@ -457,21 +461,15 @@ export class QueryInput extends React.Component<Props, State> {
                 })
             }
 
-            return {
-                cursorPosition: newCursorPosition,
-                suggestions: hiddenSuggestions,
-            }
+            return { suggestions: hiddenSuggestions }
         })
     }
 
     private focusInputAndPositionCursor(cursorPosition: number): void {
-        // run after props.onChange (in case it was called)
-        setTimeout(() => {
-            if (this.inputElement.current) {
-                this.inputElement.current.focus()
-                this.inputElement.current.setSelectionRange(cursorPosition, cursorPosition)
-            }
-        }, 0)
+        if (this.inputElement.current) {
+            this.inputElement.current.focus()
+            this.inputElement.current.setSelectionRange(cursorPosition, cursorPosition)
+        }
     }
 
     private focusInputAndPositionCursorAtEnd(): void {
