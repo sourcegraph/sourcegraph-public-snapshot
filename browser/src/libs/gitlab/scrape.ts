@@ -95,6 +95,7 @@ export interface GitLabDiffInfo extends RawRepoSpec, Pick<GitLabInfo, 'owner' | 
 
     diffID?: string
     baseCommitID?: string
+    baseRawRepoName: string
 }
 
 /**
@@ -110,7 +111,22 @@ export function getDiffPageInfo(): GitLabDiffInfo {
         throw new Error('Unable to determine merge request ID')
     }
 
+    const sourceRepoLink = document.querySelector<HTMLLinkElement>('.js-source-branch a:first-child')
+    if (!sourceRepoLink) {
+        throw new Error('Could not find merge request source repo link')
+    }
+    const [baseRepoOwner, baseRepoProjectName] = new URL(sourceRepoLink.href).pathname.split('/').slice(1)
+    if (!baseRepoOwner) {
+        throw new Error('Could not determine MR baseRawRepoName: no baseRepoOwner')
+    }
+    if (!baseRepoProjectName) {
+        throw new Error('Could not determine MR baseRawRepoName: no baseRepoProjectName')
+    }
+    const hostname = isExtension ? window.location.hostname : new URL(gon.gitlab_url).hostname
+    const baseRawRepoName = `${hostname}/${owner}/${projectName}`
+
     return {
+        baseRawRepoName,
         rawRepoName,
         owner,
         projectName,
@@ -141,10 +157,11 @@ export function getFilePathsFromCodeView(codeView: HTMLElement): Pick<FileInfo, 
     }
 
     const filePathDidChange = filePathElements.length > 1
+    const filePath = getFilePathFromElem(filePathElements.item(filePathDidChange ? 1 : 0))
 
     return {
-        filePath: getFilePathFromElem(filePathElements.item(filePathDidChange ? 1 : 0)),
-        baseFilePath: filePathDidChange ? getFilePathFromElem(filePathElements.item(0)) : undefined,
+        filePath,
+        baseFilePath: filePathDidChange ? getFilePathFromElem(filePathElements.item(0)) : filePath,
     }
 }
 
