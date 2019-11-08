@@ -9,10 +9,10 @@ import {
 } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { GraphQLClient } from './GraphQLClient'
-import { map, tap, retryWhen, delayWhen, take } from 'rxjs/operators'
-import { zip, timer, concat, throwError, defer, from, Observable } from 'rxjs'
+import { map, tap, retryWhen, delayWhen, take, mergeMap } from 'rxjs/operators'
+import { zip, timer, concat, throwError, defer, Observable } from 'rxjs'
 import { CloneInProgressError, ECLONEINPROGESS } from '../../../../shared/src/backend/errors'
-import { isErrorLike } from '../../../../shared/src/util/errors'
+import { isErrorLike, createAggregateError } from '../../../../shared/src/util/errors'
 import { ResourceDestructor } from './TestResourceManager'
 import { Config } from '../../../../shared/src/e2e/config'
 import { PlatformContext } from '../../../../shared/src/platform/context'
@@ -214,66 +214,14 @@ export async function ensureTestExternalService(
  * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
  * dependency-injected `requestGraphQL`.
  */
-export async function getUser(gqlClient: GraphQLClient, username: string): Promise<GQL.IUser | null> {
-    const user = await gqlClient
-        .queryGraphQL(
-            gql`
-                query User($username: String!) {
-                    user(username: $username) {
-                        __typename
-                        id
-                        username
-                        displayName
-                        url
-                        settingsURL
-                        avatarURL
-                        viewerCanAdminister
-                        siteAdmin
-                        createdAt
-                        emails {
-                            email
-                            verified
-                        }
-                        organizations {
-                            nodes {
-                                id
-                                displayName
-                                name
-                            }
-                        }
-                        settingsCascade {
-                            subjects {
-                                latestSettings {
-                                    id
-                                    contents
-                                }
-                            }
-                        }
-                    }
-                }
-            `,
-            { username }
-        )
-        .pipe(
-            map(dataOrThrowErrors),
-            map(({ user }) => user)
-        )
-        .toPromise()
-    return user
-}
-
-/**
- * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
- * dependency-injected `requestGraphQL`.
- */
 export async function deleteUser(
-    gqlClient: GraphQLClient,
+    { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
     username: string,
     mustAlreadyExist: boolean = true
 ): Promise<void> {
     let user: GQL.IUser | null
     try {
-        user = await getUser(gqlClient, username)
+        user = await getUser({ requestGraphQL }, username)
     } catch (err) {
         if (mustAlreadyExist) {
             throw err
@@ -290,18 +238,17 @@ export async function deleteUser(
         }
     }
 
-    await gqlClient
-        .mutateGraphQL(
-            gql`
-                mutation DeleteUser($user: ID!, $hard: Boolean) {
-                    deleteUser(user: $user, hard: $hard) {
-                        alwaysNil
-                    }
+    await requestGraphQL<GQL.IMutation>({
+        request: gql`
+            mutation DeleteUser($user: ID!, $hard: Boolean) {
+                deleteUser(user: $user, hard: $hard) {
+                    alwaysNil
                 }
-            `,
-            { hard: false, user: user.id }
-        )
-        .toPromise()
+            }
+        `,
+        variables: { hard: false, user: user.id },
+        mightContainPrivateInfo: false,
+    }).toPromise()
 }
 
 /**
@@ -403,44 +350,47 @@ export async function setUserEmailVerified(
  * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
  * dependency-injected `requestGraphQL`.
  */
-export function getViewerSettings(gqlClient: GraphQLClient): Promise<GQL.ISettingsCascade> {
-    return gqlClient
-        .queryGraphQL(
-            gql`
-                query ViewerSettings {
-                    viewerSettings {
-                        ...SettingsCascadeFields
-                    }
+export function getViewerSettings({
+    requestGraphQL,
+}: Pick<PlatformContext, 'requestGraphQL'>): Promise<GQL.ISettingsCascade> {
+    return requestGraphQL<GQL.IQuery>({
+        request: gql`
+            query ViewerSettings {
+                viewerSettings {
+                    ...SettingsCascadeFields
                 }
+            }
 
-                fragment SettingsCascadeFields on SettingsCascade {
-                    subjects {
-                        __typename
-                        ... on Org {
-                            id
-                            name
-                            displayName
-                        }
-                        ... on User {
-                            id
-                            username
-                            displayName
-                        }
-                        ... on Site {
-                            id
-                            siteID
-                        }
-                        latestSettings {
-                            id
-                            contents
-                        }
-                        settingsURL
-                        viewerCanAdminister
+            fragment SettingsCascadeFields on SettingsCascade {
+                subjects {
+                    __typename
+                    ... on Org {
+                        id
+                        name
+                        displayName
                     }
-                    final
+                    ... on User {
+                        id
+                        username
+                        displayName
+                    }
+                    ... on Site {
+                        id
+                        siteID
+                    }
+                    latestSettings {
+                        id
+                        contents
+                    }
+                    settingsURL
+                    viewerCanAdminister
                 }
-            `
-        )
+                final
+            }
+        `,
+        variables: {},
+        mightContainPrivateInfo: true,
+    })
         .pipe(
             map(dataOrThrowErrors),
             map(data => data.viewerSettings)
@@ -511,4 +461,130 @@ export function fetchAllOrganizations(
         map(dataOrThrowErrors),
         map(data => data.organizations)
     )
+}
+
+/**
+ * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
+ * dependency-injected `requestGraphQL`.
+ */
+export function createOrganization(
+    {
+        requestGraphQL,
+        eventLogger = { log: () => undefined },
+    }: Pick<PlatformContext, 'requestGraphQL'> & {
+        eventLogger?: { log: (eventLabel: string, eventProperties?: any) => void }
+    },
+    variables: {
+        /** The name of the organization. */
+        name: string
+        /** The new organization's display name (e.g. full name) in the organization profile. */
+        displayName?: string
+    }
+): Observable<GQL.IOrg> {
+    return requestGraphQL<GQL.IMutation>({
+        request: gql`
+            mutation createOrganization($name: String!, $displayName: String) {
+                createOrganization(name: $name, displayName: $displayName) {
+                    id
+                    name
+                }
+            }
+        `,
+        variables,
+        mightContainPrivateInfo: false,
+    }).pipe(
+        mergeMap(({ data, errors }) => {
+            if (!data || !data.createOrganization) {
+                eventLogger.log('NewOrgFailed')
+                throw createAggregateError(errors)
+            }
+            eventLogger.log('NewOrgCreated', {
+                organization: {
+                    org_id: data.createOrganization.id,
+                    org_name: data.createOrganization.name,
+                },
+            })
+            return concat([data.createOrganization])
+        })
+    )
+}
+
+/**
+ * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
+ * dependency-injected `requestGraphQL`.
+ */
+export function createUser(
+    { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
+    username: string,
+    email: string | undefined
+): Observable<GQL.ICreateUserResult> {
+    return requestGraphQL<GQL.IMutation>({
+        request: gql`
+            mutation CreateUser($username: String!, $email: String) {
+                createUser(username: $username, email: $email) {
+                    resetPasswordURL
+                }
+            }
+        `,
+        variables: { username, email },
+        mightContainPrivateInfo: true,
+    }).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.createUser)
+    )
+}
+
+/**
+ * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
+ * dependency-injected `requestGraphQL`.
+ */
+export async function getUser(
+    { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
+    username: string
+): Promise<GQL.IUser | null> {
+    const user = await requestGraphQL<GQL.IQuery>({
+        request: gql`
+            query User($username: String!) {
+                user(username: $username) {
+                    __typename
+                    id
+                    username
+                    displayName
+                    url
+                    settingsURL
+                    avatarURL
+                    viewerCanAdminister
+                    siteAdmin
+                    createdAt
+                    emails {
+                        email
+                        verified
+                    }
+                    organizations {
+                        nodes {
+                            id
+                            displayName
+                            name
+                        }
+                    }
+                    settingsCascade {
+                        subjects {
+                            latestSettings {
+                                id
+                                contents
+                            }
+                        }
+                    }
+                }
+            }
+        `,
+        variables: { username },
+        mightContainPrivateInfo: true,
+    })
+        .pipe(
+            map(dataOrThrowErrors),
+            map(({ user }) => user)
+        )
+        .toPromise()
+    return user
 }

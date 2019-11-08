@@ -4,15 +4,28 @@ import { getTestTools } from './util/init'
 import { Driver } from '../../../shared/src/e2e/driver'
 import { GraphQLClient, createGraphQLClient } from './util/GraphQLClient'
 import { TestResourceManager } from './util/TestResourceManager'
-import { ensureLoggedInOrCreateTestUser } from './util/helpers'
-import { getUser, setUserSiteAdmin, fetchAllOrganizations, deleteOrganization, getViewerSettings } from './util/api'
+import {
+    ensureLoggedInOrCreateTestUser,
+    getCriticalSiteConfig,
+    setCriticalSiteConfig,
+    ensureNewUser,
+    ensureNewOrganization,
+} from './util/helpers'
+import {
+    getUser,
+    setUserSiteAdmin,
+    fetchAllOrganizations,
+    deleteOrganization,
+    getViewerSettings,
+    getManagementConsoleState,
+} from './util/api'
 import { PlatformContext } from '../../../shared/src/platform/context'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { parse } from '@sqs/jsonc-parser'
 import { parseJSONCOrError } from '../../../shared/src/util/jsonc'
 import { Settings, QuickLink } from '../schema/settings.schema'
 import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
-import { QuickLinks } from '../search/QuickLinks'
+import * as jsonc from '@sqs/jsonc-parser'
+import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 
 /**
  * @jest-environment node
@@ -29,8 +42,6 @@ async function deleteOrganizationByName(
 
 /**
  * Test plan:
- * Test 1: org UI
- * Test 2: org settings (user settings cascade) (API-driven)
  * Test 3: auth.userOrgMap (API-driven)
  */
 
@@ -50,8 +61,7 @@ describe('Organizations regression test suite', () => {
             'noCleanup',
             'sourcegraphBaseUrl',
             'testUserPassword',
-            'logBrowserConsole',
-            'managementConsoleUrl'
+            'logBrowserConsole'
         )
 
         let driver: Driver
@@ -163,5 +173,138 @@ describe('Organizations regression test suite', () => {
                 }
             }
         })
+    })
+
+    describe('Organizations API', () => {
+        if (process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0') {
+            console.error('You must set environment variable NODE_TLS_REJECT_UNAUTHORIZED=0 when running this test.')
+        }
+
+        const resourceManager = new TestResourceManager()
+        const config = getConfig(
+            'sudoToken',
+            'sudoUsername',
+            'headless',
+            'slowMo',
+            'keepBrowser',
+            'noCleanup',
+            'sourcegraphBaseUrl',
+            'testUserPassword',
+            'logBrowserConsole',
+            'managementConsoleUrl'
+        )
+        afterAll(async () => {
+            if (!config.noCleanup) {
+                await resourceManager.destroyAll()
+            }
+        })
+
+        test(
+            'auth.userOrgMap',
+            async () => {
+                const testUser1 = {
+                    username: 'test-org-user-1',
+                    email: 'beyang+test-org-user-1@sourcegraph.com',
+                }
+                const testOrg = {
+                    name: 'test-org-2',
+                    displayName: 'Test Org 2',
+                }
+                const gqlClient = createGraphQLClient({
+                    baseUrl: config.sourcegraphBaseUrl,
+                    token: config.sudoToken,
+                    sudoUsername: config.sudoUsername,
+                })
+                const formattingOptions = { eol: '\n', insertSpaces: true, tabSize: 2 }
+
+                // Initial state: no auth.userOrgMap property
+                const { plaintextPassword: managementConsolePassword } = await getManagementConsoleState(gqlClient)
+                if (!managementConsolePassword) {
+                    throw new Error('empty management console password')
+                }
+                const origCriticalConfig = await getCriticalSiteConfig(
+                    config.managementConsoleUrl,
+                    managementConsolePassword
+                )
+                const criticalConfigContents = jsonc.applyEdits(
+                    origCriticalConfig.Contents,
+                    jsoncEdit.removeProperty(origCriticalConfig.Contents, ['auth.userOrgMap'], formattingOptions)
+                )
+                const nextCriticalConfig = await setCriticalSiteConfig(
+                    config.managementConsoleUrl,
+                    managementConsolePassword,
+                    {
+                        LastID: origCriticalConfig.ID,
+                        Contents: criticalConfigContents,
+                    }
+                )
+                resourceManager.add('Configuration', 'auth.userOrgMap', async () => {
+                    const c = await getCriticalSiteConfig(config.managementConsoleUrl, managementConsolePassword)
+                    await setCriticalSiteConfig(config.managementConsoleUrl, managementConsolePassword, {
+                        LastID: c.ID,
+                        Contents: origCriticalConfig.Contents,
+                    })
+                })
+                // TODO(beyang): Possible race condition with config propagation here
+                await new Promise(resolve => setTimeout(resolve, 5 * 1000))
+
+                // Create org
+                const createdOrg = resourceManager.add(
+                    'Organization',
+                    testOrg.name,
+                    await ensureNewOrganization(gqlClient, testOrg)
+                )
+
+                // Create user
+                resourceManager.add(
+                    'User',
+                    testUser1.username,
+                    await ensureNewUser(gqlClient, testUser1.username, testUser1.email)
+                )
+
+                // Check that user is not part of org
+                {
+                    const user = await getUser(gqlClient, testUser1.username)
+                    if (!user) {
+                        throw new Error(`user ${testUser1.username} wasn't created`)
+                    }
+                    if (user.organizations.nodes.some(org => org.id === createdOrg.id)) {
+                        throw new Error(`user ${testUser1.username} should not be part of org ${testOrg.name}`)
+                    }
+                }
+
+                // Set auth.userOrgMap
+                const newCriticalConfigContents = jsonc.applyEdits(
+                    nextCriticalConfig.Contents,
+                    jsoncEdit.setProperty(
+                        nextCriticalConfig.Contents,
+                        ['auth.userOrgMap'],
+                        { '*': [testOrg.name] },
+                        formattingOptions
+                    )
+                )
+                await setCriticalSiteConfig(config.managementConsoleUrl, managementConsolePassword, {
+                    LastID: nextCriticalConfig.ID,
+                    Contents: newCriticalConfigContents,
+                })
+                // TODO(beyang): Possible race condition with config propagation here
+                await new Promise(resolve => setTimeout(resolve, 5 * 1000))
+
+                // Re-create user
+                await ensureNewUser(gqlClient, testUser1.username, testUser1.email)
+
+                // Check that user is part of organization
+                {
+                    const user = await getUser(gqlClient, testUser1.username)
+                    if (!user) {
+                        throw new Error(`user ${testUser1.username} wasn't created`)
+                    }
+                    if (!user.organizations.nodes.some(org => org.id === createdOrg.id)) {
+                        throw new Error(`user ${testUser1.username} should be part of org ${testOrg.name}`)
+                    }
+                }
+            },
+            120 * 1000
+        )
     })
 })
