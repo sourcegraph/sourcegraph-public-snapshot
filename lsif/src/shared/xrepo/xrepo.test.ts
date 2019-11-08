@@ -1,11 +1,11 @@
-import rmfr from 'rmfr'
-import { XrepoDatabase } from './xrepo'
-import { MAX_TRAVERSAL_LIMIT } from '../constants'
-import { createCleanPostgresDatabase, createCommit, truncatePostgresTables, createStorageRoot } from '../../test-utils'
-import { Connection } from 'typeorm'
-import { fail } from 'assert'
-import { pick } from 'lodash'
 import * as xrepoModels from '../models/xrepo'
+import rmfr from 'rmfr'
+import { Connection } from 'typeorm'
+import { createCleanPostgresDatabase, createCommit, createStorageRoot, truncatePostgresTables } from '../../test-utils'
+import { fail } from 'assert'
+import { MAX_TRAVERSAL_LIMIT } from '../constants'
+import { pick } from 'lodash'
+import { XrepoDatabase } from './xrepo'
 
 describe('XrepoDatabase', () => {
     let connection!: Connection

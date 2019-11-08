@@ -1,9 +1,9 @@
+import * as dumpModels from '../../shared/models/dump'
+import * as metrics from '../metrics'
 import promClient from 'prom-client'
 import Yallist from 'yallist'
 import { Connection, EntityManager } from 'typeorm'
 import { createSqliteConnection } from '../../shared/database/sqlite'
-import * as dumpModels from '../../shared/models/dump'
-import * as metrics from '../metrics'
 
 /**
  * A wrapper around a cache value promise.

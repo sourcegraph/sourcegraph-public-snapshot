@@ -1,6 +1,6 @@
-import * as lsp from 'vscode-languageserver-protocol'
-import { comparePosition, createRemoteUri, mapRangesToLocations, findRanges } from './database'
 import * as dumpModels from '../../shared/models/dump'
+import * as lsp from 'vscode-languageserver-protocol'
+import { comparePosition, createRemoteUri, findRanges, mapRangesToLocations } from './database'
 
 describe('findRanges', () => {
     it('should return ranges containing position', () => {

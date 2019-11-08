@@ -1,15 +1,15 @@
+import * as dumpModels from '../../shared/models/dump'
 import * as lsp from 'vscode-languageserver-protocol'
 import * as settings from '../settings'
+import * as xrepoModels from '../../shared/models/xrepo'
 import { addTags, logAndTraceCall, logSpan, TracingContext } from '../../shared/tracing'
 import { ConfigurationFetcher } from '../../shared/config/config'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { createRemoteUri, Database, sortMonikers } from './database'
 import { dbFilename } from '../../shared/paths'
-import * as xrepoModels from '../../shared/models/xrepo'
 import { isEqual, uniqWith } from 'lodash'
 import { mustGet } from '../../shared/maps'
 import { XrepoDatabase } from '../../shared/xrepo/xrepo'
-import * as dumpModels from '../../shared/models/dump'
 
 /**
  * No matching LSIF dump was found. This could be because:

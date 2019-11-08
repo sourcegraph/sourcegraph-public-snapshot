@@ -1,13 +1,13 @@
 import * as constants from '../../shared/constants'
 import * as fs from 'mz/fs'
 import * as path from 'path'
+import * as settings from '../settings'
 import bodyParser from 'body-parser'
 import express from 'express'
 import pTimeout from 'p-timeout'
 import uuid from 'uuid'
 import { addTags, logAndTraceCall, TracingContext } from '../../shared/tracing'
 import { Backend, ReferencePaginationCursor } from '../backend/backend'
-import * as settings from '../settings'
 import { encodeCursor, parseCursor } from '../pagination/cursor'
 import { enqueue } from '../../shared/queue/queue'
 import { extractLimit } from '../pagination/limit-offset'
@@ -20,6 +20,82 @@ import { Span, Tracer } from 'opentracing'
 import { wrap } from 'async-middleware'
 
 const pipeline = promisify(_pipeline)
+
+/**
+ * Create a tracing context from the request logger and tracing span
+ * tagged with the given values.
+ *
+ * @param logger The logger instance.
+ * @param req The express request.
+ * @param tags The tags to apply to the logger and span.
+ */
+const createTracingContext = (
+    logger: Logger,
+    req: express.Request & { span?: Span },
+    tags: { [K: string]: any }
+): TracingContext => addTags({ logger, span: req.span }, tags)
+
+/**
+ * Adds a trailing slash to a root unless it refers to the top level.
+ *
+ * - 'foo' -> 'foo/'
+ * - 'foo/' -> 'foo/'
+ * - '/' -> ''
+ * - '' -> ''
+ */
+const normalizeRoot = (root: any): string => {
+    if (root === undefined || root === '/' || root === '') {
+        return ''
+    }
+
+    if (typeof root !== 'string') {
+        throw Object.assign(new Error('root must be a string'), {
+            status: 422,
+        })
+    }
+
+    return root.endsWith('/') ? root : root + '/'
+}
+
+/**
+ * Throws an error with status 400 if the repository string is invalid.
+ */
+const validateRepository = (repository: any): void => {
+    if (typeof repository !== 'string') {
+        throw Object.assign(new Error(`Must specify a repository ${repository}`), {
+            status: 400,
+        })
+    }
+}
+
+/**
+ * Throws an error with status 400 if the commit string is invalid.
+ */
+const validateCommit = (commit: any): void => {
+    if (typeof commit !== 'string' || commit.length !== 40 || !/^[0-9a-f]+$/.test(commit)) {
+        throw Object.assign(new Error(`Must specify the commit as a 40 character hash ${commit}`), { status: 400 })
+    }
+}
+
+/**
+ * Throws an error with status 400 if the file is not present.
+ */
+const validateFile = (file: any): void => {
+    if (typeof file !== 'string') {
+        throw Object.assign(new Error(`Must specify a file ${file}`), { status: 400 })
+    }
+}
+
+/**
+ * Throws an error with status 422 if the requested method is not supported.
+ */
+const validateMethod = (method: string, supportedMethods: string[]): void => {
+    if (!supportedMethods.includes(method)) {
+        throw Object.assign(new Error(`Method must be one of ${Array.from(supportedMethods).join(', ')}`), {
+            status: 422,
+        })
+    }
+}
 
 /**
  * Create a router containing the LSIF upload and query endpoints.
@@ -44,8 +120,8 @@ export function createLsifRouter(
                 const { repository, commit, root: rootRaw, blocking, maxWait } = req.query
                 const root = normalizeRoot(rootRaw)
                 const timeout = parseInt(maxWait, 10) || 0
-                checkRepository(repository)
-                checkCommit(commit)
+                validateRepository(repository)
+                validateCommit(commit)
 
                 const ctx = createTracingContext(logger, req, {
                     repository,
@@ -103,9 +179,9 @@ export function createLsifRouter(
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { repository, commit, file } = req.query
-                checkRepository(repository)
-                checkCommit(commit)
-                checkFile(file)
+                validateRepository(repository)
+                validateCommit(commit)
+                validateFile(file)
 
                 const ctx = createTracingContext(logger, req, { repository, commit })
                 res.json(await backend.exists(repository, commit, file, ctx))
@@ -120,9 +196,9 @@ export function createLsifRouter(
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { repository, commit } = req.query
                 const { path: filePath, position, method } = req.body
-                checkRepository(repository)
-                checkCommit(commit)
-                checkMethod(method, ['definitions', 'references', 'hover'])
+                validateRepository(repository)
+                validateCommit(commit)
+                validateMethod(method, ['definitions', 'references', 'hover'])
 
                 const ctx = createTracingContext(logger, req, { repository, commit })
 
@@ -163,82 +239,4 @@ export function createLsifRouter(
     )
 
     return router
-}
-
-/**
- * Create a tracing context from the request logger and tracing span
- * tagged with the given values.
- *
- * @param logger The logger instance.
- * @param req The express request.
- * @param tags The tags to apply to the logger and span.
- */
-function createTracingContext(
-    logger: Logger,
-    req: express.Request & { span?: Span },
-    tags: { [K: string]: any }
-): TracingContext {
-    return addTags({ logger, span: req.span }, tags)
-}
-
-/**
- * Adds a trailing slash to a root unless it refers to the top level.
- *
- * - 'foo' -> 'foo/'
- * - 'foo/' -> 'foo/'
- * - '/' -> ''
- * - '' -> ''
- */
-function normalizeRoot(root: any): string {
-    if (root === undefined || root === '/' || root === '') {
-        return ''
-    }
-
-    if (typeof root !== 'string') {
-        throw Object.assign(new Error('root must be a string'), {
-            status: 422,
-        })
-    }
-
-    return root.endsWith('/') ? root : root + '/'
-}
-
-/**
- * Throws an error with status 400 if the repository string is invalid.
- */
-function checkRepository(repository: any): void {
-    if (typeof repository !== 'string') {
-        throw Object.assign(new Error(`Must specify a repository ${repository}`), {
-            status: 400,
-        })
-    }
-}
-
-/**
- * Throws an error with status 400 if the commit string is invalid.
- */
-function checkCommit(commit: any): void {
-    if (typeof commit !== 'string' || commit.length !== 40 || !/^[0-9a-f]+$/.test(commit)) {
-        throw Object.assign(new Error(`Must specify the commit as a 40 character hash ${commit}`), { status: 400 })
-    }
-}
-
-/**
- * Throws an error with status 400 if the file is not present.
- */
-function checkFile(file: any): void {
-    if (typeof file !== 'string') {
-        throw Object.assign(new Error(`Must specify a file ${file}`), { status: 400 })
-    }
-}
-
-/**
- * Throws an error with status 422 if the requested method is not supported.
- */
-function checkMethod(method: string, supportedMethods: string[]): void {
-    if (!supportedMethods.includes(method)) {
-        throw Object.assign(new Error(`Method must be one of ${Array.from(supportedMethods).join(', ')}`), {
-            status: 422,
-        })
-    }
 }

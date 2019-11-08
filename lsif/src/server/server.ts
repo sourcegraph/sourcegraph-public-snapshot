@@ -1,6 +1,9 @@
 import * as constants from '../shared/constants'
 import * as fs from 'mz/fs'
+import * as metrics from './metrics'
 import * as path from 'path'
+import * as settings from './settings'
+import * as xrepoModels from '../shared/models/xrepo'
 import cors from 'cors'
 import express from 'express'
 import promClient from 'prom-client'
@@ -20,12 +23,9 @@ import { defineRedisCommands } from './redis/redis'
 import { errorHandler } from './middleware/errors'
 import { logger as loggingMiddleware } from 'express-winston'
 import { Logger } from 'winston'
-import * as xrepoModels from '../shared/models/xrepo'
 import { metricsMiddleware } from './middleware/metrics'
 import { waitForConfiguration } from '../shared/config/config'
 import { XrepoDatabase } from '../shared/xrepo/xrepo'
-import * as metrics from './metrics'
-import * as settings from './settings'
 
 /**
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.

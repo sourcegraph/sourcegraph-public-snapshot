@@ -1,5 +1,5 @@
-import got from 'got'
 import * as crypto from 'crypto'
+import got from 'got'
 import { MAX_COMMITS_PER_UPDATE } from '../constants'
 
 /**

@@ -1,7 +1,7 @@
+import * as settings from '../settings'
 import express from 'express'
 import { ApiJobState, QUEUE_PREFIX, queueTypes, statesByQueue } from '../../shared/queue/queue'
 import { chunk } from 'lodash'
-import * as settings from '../settings'
 import { Job, Queue } from 'bull'
 import { limitOffset } from '../pagination/limit-offset'
 import { Logger } from 'winston'
@@ -13,7 +13,7 @@ import { wrap } from 'async-middleware'
 /**
  * The representation of a job as returned by the API.
  */
-export interface ApiJob {
+interface ApiJob {
     id: string
     name: string
     args: object

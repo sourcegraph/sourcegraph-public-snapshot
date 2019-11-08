@@ -1,7 +1,7 @@
-import { hashmod, flattenCommitParents, getCommitsNear } from './commits'
 import nock from 'nock'
-import { XrepoDatabase } from './xrepo'
 import { createCleanPostgresDatabase, createCommit } from '../../test-utils'
+import { flattenCommitParents, getCommitsNear, hashmod } from './commits'
+import { XrepoDatabase } from './xrepo'
 
 describe('discoverAndUpdateCommit', () => {
     it('should update tracked commits', async () => {

@@ -1,10 +1,10 @@
-import { Connection, createConnection as _createConnection } from 'typeorm'
 import * as xrepoModels from '../models/xrepo'
+import pRetry from 'p-retry'
+import { Configuration } from '../config/config'
+import { Connection, createConnection as _createConnection } from 'typeorm'
+import { Logger } from 'winston'
 import { PostgresConnectionCredentialsOptions } from 'typeorm/driver/postgres/PostgresConnectionCredentialsOptions'
 import { readEnvInt } from '../settings'
-import { Logger } from 'winston'
-import { Configuration } from '../config/config'
-import pRetry from 'p-retry'
 import { TlsOptions } from 'tls'
 
 /**

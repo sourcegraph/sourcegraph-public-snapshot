@@ -1,13 +1,13 @@
-import RelateUrl from 'relateurl'
-import { mustGet, mustGetFromEither } from '../../shared/maps'
-import { DefaultMap } from '../../shared/datastructures/default-map'
-import { Hover, MarkupContent } from 'vscode-languageserver-types'
 import * as dumpModels from '../../shared/models/dump'
 import * as lsif from 'lsif-protocol'
-import { DisjointSet } from '../../shared/datastructures/disjoint-set'
-import { TracingContext } from '../../shared/tracing'
+import RelateUrl from 'relateurl'
 import { createSilentLogger } from '../../shared/logging'
+import { DefaultMap } from '../../shared/datastructures/default-map'
+import { DisjointSet } from '../../shared/datastructures/disjoint-set'
+import { Hover, MarkupContent } from 'vscode-languageserver-types'
 import { Logger } from 'winston'
+import { mustGet, mustGetFromEither } from '../../shared/maps'
+import { TracingContext } from '../../shared/tracing'
 
 /**
  * Identifiers of result set vertices.

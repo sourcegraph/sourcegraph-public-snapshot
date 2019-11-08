@@ -1,6 +1,6 @@
 import * as json5 from 'json5'
-import got from 'got'
 import * as settings from './settings'
+import got from 'got'
 import { isEqual, pick } from 'lodash'
 import { Logger } from 'winston'
 

@@ -1,4 +1,4 @@
-import { gzipJSON, gunzipJSON } from './json'
+import { gunzipJSON, gzipJSON } from './json'
 
 describe('gzipJSON', () => {
     it('should preserve maps', async () => {

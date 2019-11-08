@@ -1,5 +1,5 @@
-import Bull, { Queue, Job, JobOptions } from 'bull'
-import { Span, Tracer, FORMAT_TEXT_MAP } from 'opentracing'
+import Bull, { Job, JobOptions, Queue } from 'bull'
+import { FORMAT_TEXT_MAP, Span, Tracer } from 'opentracing'
 import { Logger } from 'winston'
 
 /**

@@ -1,16 +1,16 @@
+import * as cache from './cache'
+import * as dumpModels from '../../shared/models/dump'
 import * as lsp from 'vscode-languageserver-protocol'
-import { Connection } from 'typeorm'
-import { ConnectionCache, DocumentCache, EncodedJsonCacheValue, ResultChunkCache } from './cache'
-import { mustGet } from '../../shared/maps'
-import { instrument } from '../../shared/metrics'
 import * as metrics from '../metrics'
+import * as xrepoModels from '../../shared/models/xrepo'
+import { Connection } from 'typeorm'
 import { DefaultMap } from '../../shared/datastructures/default-map'
 import { gunzipJSON } from '../../shared/encoding/json'
-import { isEqual, uniqWith } from 'lodash'
-import * as dumpModels from '../../shared/models/dump'
-import { TracingContext, logSpan } from '../../shared/tracing'
 import { hashKey } from '../../shared/models/hash'
-import * as xrepoModels from '../../shared/models/xrepo'
+import { instrument } from '../../shared/metrics'
+import { isEqual, uniqWith } from 'lodash'
+import { logSpan, TracingContext } from '../../shared/tracing'
+import { mustGet } from '../../shared/maps'
 
 /**
  * A wrapper around operations for single repository/commit pair.
@@ -33,9 +33,9 @@ export class Database {
      * @param databasePath The path to the database file.
      */
     constructor(
-        private connectionCache: ConnectionCache,
-        private documentCache: DocumentCache,
-        private resultChunkCache: ResultChunkCache,
+        private connectionCache: cache.ConnectionCache,
+        private documentCache: cache.DocumentCache,
+        private resultChunkCache: cache.ResultChunkCache,
         private dumpId: xrepoModels.DumpId,
         private databasePath: string
     ) {}
@@ -222,7 +222,7 @@ export class Database {
      * @param path The path of the document.
      */
     private async getDocumentByPath(path: string): Promise<dumpModels.DocumentData | undefined> {
-        const factory = async (): Promise<EncodedJsonCacheValue<dumpModels.DocumentData>> => {
+        const factory = async (): Promise<cache.EncodedJsonCacheValue<dumpModels.DocumentData>> => {
             const document = await this.withConnection(connection =>
                 connection.getRepository(dumpModels.DocumentModel).findOneOrFail(path)
             )
@@ -298,7 +298,7 @@ export class Database {
         // Find the result chunk index this id belongs to
         const index = hashKey(id, await this.getNumResultChunks())
 
-        const factory = async (): Promise<EncodedJsonCacheValue<dumpModels.ResultChunkData>> => {
+        const factory = async (): Promise<cache.EncodedJsonCacheValue<dumpModels.ResultChunkData>> => {
             const resultChunk = await this.withConnection(connection =>
                 connection.getRepository(dumpModels.ResultChunkModel).findOneOrFail(index)
             )

@@ -1,6 +1,6 @@
 import { BloomFilter } from 'bloomfilter'
+import { gunzipJSON, gzipJSON } from '../encoding/json'
 import { readEnvInt } from '../settings'
-import { gzipJSON, gunzipJSON } from '../encoding/json'
 
 // These parameters give us a 1 in 1.38x10^9 false positive rate if we assume
 // that the number of unique URIs referrable by an external package is of the

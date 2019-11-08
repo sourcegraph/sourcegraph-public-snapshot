@@ -1,5 +1,8 @@
 import promClient from 'prom-client'
 
+//
+// Job Metrics
+
 export const jobDurationHistogram = new promClient.Histogram({
     name: 'lsif_job_duration_seconds',
     help: 'Total time spent on jobs.',
@@ -11,6 +14,7 @@ export const jobDurationErrorsCounter = new promClient.Counter({
     name: 'lsif_job_errors_total',
     help: 'The number of errors that occurred while processing a job.',
 })
+
 //
 // Importer Metric
 

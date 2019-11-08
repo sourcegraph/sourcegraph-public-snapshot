@@ -1,4 +1,4 @@
-import { gzip, gunzip } from 'mz/zlib'
+import { gunzip, gzip } from 'mz/zlib'
 
 /**
  * Return the gzipped JSON representation of `value`.

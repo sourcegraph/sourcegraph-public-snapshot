@@ -1,5 +1,5 @@
-import { Column, Entity, Index, PrimaryColumn } from 'typeorm'
 import * as lsif from 'lsif-protocol'
+import { Column, Entity, Index, PrimaryColumn } from 'typeorm'
 import { getBatchSize } from './util'
 
 export type DocumentId = lsif.Id

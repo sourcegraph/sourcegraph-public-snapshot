@@ -1,7 +1,7 @@
+import * as metrics from '../metrics'
 import express from 'express'
 import onFinished from 'on-finished'
 import promClient from 'prom-client'
-import * as metrics from '../metrics'
 
 /**
  * Middleware function used to emit HTTP durations for LSIF functions. Originally

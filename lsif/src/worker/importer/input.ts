@@ -1,5 +1,5 @@
-import { Readable } from 'stream'
 import { createGunzip } from 'zlib'
+import { Readable } from 'stream'
 
 /**
  * Yield parsed JSON elements from a stream containing the gzipped JSON lines.

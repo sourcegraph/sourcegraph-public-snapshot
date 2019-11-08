@@ -1,7 +1,7 @@
+import * as settings from './settings'
 import express from 'express'
 import promClient from 'prom-client'
 import { Logger } from 'winston'
-import * as settings from './settings'
 
 /**
  * Create an express server that only has /healthz and /metric endpoints.

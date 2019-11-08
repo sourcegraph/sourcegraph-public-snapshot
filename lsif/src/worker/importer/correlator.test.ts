@@ -1,5 +1,5 @@
-import { normalizeHover, Correlator } from './correlator'
 import * as lsif from 'lsif-protocol'
+import { Correlator, normalizeHover } from './correlator'
 
 describe('Correlator', () => {
     it('should stash lsif version and project root from metadata', () => {

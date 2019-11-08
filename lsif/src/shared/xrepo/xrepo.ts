@@ -1,15 +1,15 @@
-import * as metrics from './metrics'
 import * as crc32 from 'crc-32'
-import { instrument } from '../metrics'
-import { Connection, EntityManager, Brackets } from 'typeorm'
-import { createFilter, testFilter } from './bloom-filter'
+import * as metrics from './metrics'
 import * as xrepoModels from '../models/xrepo'
-import { TableInserter } from '../database/inserter'
 import { addrFor, getCommitsNear, gitserverExecLines } from './commits'
-import { TracingContext, logAndTraceCall } from '../tracing'
-import { dbFilename, tryDeleteFile } from '../paths'
-import { MAX_TRAVERSAL_LIMIT, ADVISORY_LOCK_ID_SALT, MAX_CONCURRENT_GITSERVER_REQUESTS } from '../constants'
+import { ADVISORY_LOCK_ID_SALT, MAX_CONCURRENT_GITSERVER_REQUESTS, MAX_TRAVERSAL_LIMIT } from '../constants'
+import { Brackets, Connection, EntityManager } from 'typeorm'
 import { chunk } from 'lodash'
+import { createFilter, testFilter } from './bloom-filter'
+import { dbFilename, tryDeleteFile } from '../paths'
+import { instrument } from '../metrics'
+import { logAndTraceCall, TracingContext } from '../tracing'
+import { TableInserter } from '../database/inserter'
 
 /**
  * The insertion metrics for the cross-repo database.

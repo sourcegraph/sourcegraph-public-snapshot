@@ -1,6 +1,6 @@
-import promClient from 'prom-client'
-import { GenericCache, createBarrierPromise } from './cache'
 import * as sinon from 'sinon'
+import promClient from 'prom-client'
+import { createBarrierPromise, GenericCache } from './cache'
 
 describe('GenericCache', () => {
     const testCacheSizeGauge = new promClient.Gauge({

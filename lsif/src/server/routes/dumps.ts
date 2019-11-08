@@ -1,11 +1,11 @@
+import * as settings from '../settings'
 import express from 'express'
 import { Backend } from '../backend/backend'
+import { limitOffset } from '../pagination/limit-offset'
 import { Logger } from 'winston'
+import { nextLink } from '../pagination/link'
 import { Tracer } from 'opentracing'
 import { wrap } from 'async-middleware'
-import { limitOffset } from '../pagination/limit-offset'
-import { nextLink } from '../pagination/link'
-import * as settings from '../settings'
 
 /**
  * Create a router containing the LSIF dump endpoints.
