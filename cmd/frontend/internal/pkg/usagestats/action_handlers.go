@@ -1,12 +1,10 @@
 package usagestats
 
 import (
-	"context"
 	"fmt"
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -161,19 +159,4 @@ var logStageEvent = func(userID int32, event string, isAuthenticated bool) error
 
 	now := timeNow().UTC()
 	return c.Send("HSET", key, keyFromStage(event), now.Format(time.RFC3339))
-}
-
-// LogEvent logs users events.
-func LogEvent(ctx context.Context, name, url string, userID int32, userCookieID, source string, argument *string) error {
-	info := &db.Event{
-		Name:            name,
-		URL:             url,
-		UserID:          uint32(userID),
-		AnonymousUserID: userCookieID,
-		Source:          source,
-	}
-	if argument != nil {
-		info.Argument = *argument
-	}
-	return db.EventLogs.Insert(ctx, info)
 }

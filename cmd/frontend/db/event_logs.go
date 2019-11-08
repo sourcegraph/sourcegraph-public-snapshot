@@ -26,12 +26,13 @@ type Event struct {
 	AnonymousUserID string
 	Argument        string
 	Source          string
+	Timestamp       time.Time
 }
 
 func (*eventLogs) Insert(ctx context.Context, e *Event) error {
 	_, err := dbconn.Global.ExecContext(
 		ctx,
-		"INSERT INTO event_logs(name, url, user_id, anonymous_user_id, source, argument, version) VALUES($1, $2, $3, $4, $5, $6, $7)",
+		"INSERT INTO event_logs(name, url, user_id, anonymous_user_id, source, argument, version, timestamp) VALUES($1, $2, $3, $4, $5, $6, $7, $8)",
 		e.Name,
 		e.URL,
 		e.UserID,
@@ -39,6 +40,7 @@ func (*eventLogs) Insert(ctx context.Context, e *Event) error {
 		e.Source,
 		e.Argument,
 		version.Version(),
+		e.Timestamp,
 	)
 	if err != nil {
 		return errors.Wrap(err, "INSERT")
@@ -156,12 +158,24 @@ func (l *eventLogs) CountIntegrationMAUs(ctx context.Context, startDate time.Tim
 func (l *eventLogs) countUniqueUsersBySQL(ctx context.Context, interval string, period string, cond string, args ...interface{}) ([]UsageDatum, error) {
 	rows, err := dbconn.Global.QueryContext(ctx, `
 WITH
-	dates AS (SELECT generate_series(($1)::timestamp, ($2)::timestamp, interval '1 `+interval+`') AS period),
-	users AS (SELECT `+period+` AS period, COUNT(DISTINCT CASE WHEN user_id=0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END) AS count from event_logs `+cond+` GROUP BY 1)
+	all_periods AS (SELECT generate_series(($1)::timestamp, ($2)::timestamp, interval '1 `+interval+`') AS period),
+	users_by_period AS (
+		SELECT
+			`+period+` AS period,
+			COUNT(DISTINCT CASE
+				WHEN user_id=0 THEN anonymous_user_id
+				ELSE CAST(user_id AS TEXT)
+				END) AS count
+		FROM event_logs `+cond+`
+		GROUP BY 1
+	)
 SELECT
-	dates.period,
+	all_periods.period,
 	COALESCE(count, 0)
-FROM dates LEFT OUTER JOIN users ON dates.period = users.period ORDER BY 1 DESC`, args...)
+FROM all_periods
+LEFT OUTER JOIN users_by_period
+ON all_periods.period = users_by_period.period
+ORDER BY 1 DESC`, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -177,11 +191,39 @@ FROM dates LEFT OUTER JOIN users ON dates.period = users.period ORDER BY 1 DESC`
 		if err != nil {
 			return nil, err
 		}
-		u := &UsageDatum{Count: *c, Start: *d}
+		u := &UsageDatum{Count: *c, Start: (*d).UTC()}
 		counts = append(counts, *u)
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 	return counts, nil
+}
+
+func (l *eventLogs) CountUniquesAll(ctx context.Context, startDate time.Time, endDate time.Time) (int, error) {
+	return l.countUniquesBySQL(ctx, "WHERE DATE(timestamp) >= $1 AND DATE(timestamp) <= $2", startDate, endDate)
+}
+
+func (l *eventLogs) CountUniquesByEventNamePrefix(ctx context.Context, startDate time.Time, endDate time.Time, namePrefix string) (int, error) {
+	return l.countUniquesBySQL(ctx, "WHERE DATE(timestamp) >= $1 AND DATE(timestamp) <= $2 AND name LIKE $3 || '%'", startDate, endDate, namePrefix)
+}
+
+func (l *eventLogs) CountUniquesByEventName(ctx context.Context, startDate time.Time, endDate time.Time, name string) (int, error) {
+	return l.countUniquesBySQL(ctx, "WHERE DATE(timestamp) >= $1 AND DATE(timestamp) <= $2 AND name = $3", startDate, endDate, name)
+}
+
+func (l *eventLogs) CountUniquesByEventNames(ctx context.Context, startDate time.Time, endDate time.Time, names []string) (int, error) {
+	items := []*sqlf.Query{}
+	for _, v := range names {
+		items = append(items, sqlf.Sprintf("%s", v))
+	}
+	q := sqlf.Sprintf("WHERE DATE(timestamp) >= %s AND DATE(timestamp) <= %s AND name IN (%s)", startDate.Format("2006-01-02 15:04:05 UTC"), endDate.Format("2006-01-02 15:04:05 UTC"), sqlf.Join(items, ","))
+	return l.countUniquesBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+}
+
+func (*eventLogs) countUniquesBySQL(ctx context.Context, query string, args ...interface{}) (int, error) {
+	r := dbconn.Global.QueryRowContext(ctx, "SELECT COUNT(DISTINCT CASE WHEN user_id=0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END) FROM event_logs "+query, args...)
+	var count int
+	err := r.Scan(&count)
+	return count, err
 }

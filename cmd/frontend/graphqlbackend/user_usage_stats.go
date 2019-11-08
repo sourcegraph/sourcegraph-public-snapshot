@@ -114,7 +114,7 @@ func (*schemaResolver) LogEvent(ctx context.Context, args *struct {
 		return nil, pubsubutil.Publish(pubSubDotComEventsTopicID, string(event))
 	}
 
-	return nil, usagestats.LogEvent(
+	return nil, usagestats2.LogEvent(
 		ctx,
 		args.Event,
 		args.URL,
