@@ -239,7 +239,7 @@ export class RevisionsPopover extends React.PureComponent<Props> {
                                 history={this.props.history}
                                 location={this.props.location}
                                 noSummaryIfAllNodesVisible={true}
-                                useURLQuerys={false}
+                                useURLQuery={false}
                             />
                         )
                     )}

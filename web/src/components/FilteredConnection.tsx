@@ -441,10 +441,10 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
 
         this.state = {
             loading: true,
-            query: (!this.props.hideSearch && this.props.shouldReadURLQuery && q.get(QUERY_KEY)) || '',
-            activeFilter: getFilterFromURL(q, !!this.props.shouldReadURLQuery, this.props.filters),
-            first: (this.props.shouldReadURLQuery && parseQueryInt(q, 'first')) || this.props.defaultFirst!,
-            visible: (this.props.shouldReadURLQuery && parseQueryInt(q, 'visible')) || 0,
+            query: (!this.props.hideSearch && this.props.useURLQuery && q.get(QUERY_KEY)) || '',
+            activeFilter: getFilterFromURL(q, !!this.props.useURLQuery, this.props.filters),
+            first: (this.props.useURLQuery && parseQueryInt(q, 'first')) || this.props.defaultFirst!,
+            visible: (this.props.useURLQuery && parseQueryInt(q, 'visible')) || 0,
         }
     }
 
@@ -828,14 +828,14 @@ function parseQueryInt(q: URLSearchParams, name: string): number | null {
 
 function getFilterFromURL(
     q: URLSearchParams,
-    shouldReadURLQuery: boolean,
+    uesURLQuerys: boolean,
     filters: FilteredConnectionFilter[] | undefined
 ): FilteredConnectionFilter | undefined {
     if (filters === undefined || filters.length === 0) {
         return undefined
     }
     const id = q.get('filter')
-    if (shouldReadURLQuery && id !== null) {
+    if (uesURLQuerys && id !== null) {
         const filter = filters.find(f => f.id === id)
         if (filter) {
             return filter
