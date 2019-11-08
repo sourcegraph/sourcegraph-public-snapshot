@@ -8,8 +8,6 @@ import {
 } from './helpers'
 import { SearchType } from './results/SearchResults'
 import { searchFilterSuggestions, filterAliases } from './searchFilterSuggestions'
-import { startsWith } from 'lodash/fp'
-import { map, forEach } from 'lodash'
 
 describe('search/helpers', () => {
     describe('queryIndexOfScope()', () => {
@@ -105,17 +103,19 @@ describe('search/helpers', () => {
 
         describe('filterSearchSuggestions()', () => {
             test('filters suggestions for filters starting with "r"', () => {
-                const filtersStartingWithR = Object.keys(searchFilterSuggestions).filter(startsWith('r'))
-                expect(map(getFilterSuggestionStartingWithR(), 'value')).toEqual(
+                const filtersStartingWithR = Object.keys(searchFilterSuggestions).filter(filter =>
+                    filter.startsWith('r')
+                )
+                expect(getFilterSuggestionStartingWithR().map(suggestion => suggestion.value)).toEqual(
                     expect.arrayContaining(filtersStartingWithR)
                 )
             })
 
             test('filters suggestions for filter aliases', () => {
-                forEach(filterAliases, (filter: string, alias: string) => {
+                for (const [alias, filter] of Object.entries(filterAliases)) {
                     const [{ value }] = filterSearchSuggestions(alias, alias.length, searchFilterSuggestions)
                     expect(value).toBe(filter)
-                })
+                }
             })
 
             test('does not throw for query ":"', () => {
