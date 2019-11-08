@@ -3,7 +3,7 @@ import {
     xrepoInsertionDurationHistogram,
     xrepoQueryDurationHistogram,
     xrepoQueryErrorsCounter,
-} from '../../xrepo.metrics'
+} from './metrics'
 import * as crc32 from 'crc-32'
 import { instrument } from '../metrics'
 import { Connection, EntityManager, Brackets } from 'typeorm'

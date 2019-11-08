@@ -1,7 +1,7 @@
 import express from 'express'
 import onFinished from 'on-finished'
 import promClient from 'prom-client'
-import { httpQueryDurationHistogram, httpUploadDurationHistogram } from '../../server.metrics'
+import { httpQueryDurationHistogram, httpUploadDurationHistogram } from '../metrics'
 
 /**
  * Middleware function used to emit HTTP durations for LSIF functions. Originally

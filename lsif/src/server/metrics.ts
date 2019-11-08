@@ -1,5 +1,47 @@
 import promClient from 'prom-client'
 
+//
+// HTTP Metrics
+
+export const httpUploadDurationHistogram = new promClient.Histogram({
+    name: 'lsif_http_upload_request_duration_seconds',
+    help: 'Total time spent on upload requests.',
+    labelNames: ['code'],
+    buckets: [0.2, 0.5, 1, 2, 5, 10, 30],
+})
+
+export const httpQueryDurationHistogram = new promClient.Histogram({
+    name: 'lsif_http_query_request_duration_seconds',
+    help: 'Total time spent on query requests.',
+    labelNames: ['code'],
+    buckets: [0.2, 0.5, 1, 2, 5, 10, 30],
+})
+
+//
+// Database Metrics
+
+export const databaseQueryDurationHistogram = new promClient.Histogram({
+    name: 'lsif_database_query_duration_seconds',
+    help: 'Total time spent on database queries.',
+    buckets: [0.2, 0.5, 1, 2, 5, 10, 30],
+})
+
+export const databaseQueryErrorsCounter = new promClient.Counter({
+    name: 'lsif_database_query_errors_total',
+    help: 'The number of errors that occurred during a database query.',
+})
+
+//
+// Job and Queue Metrics
+
+export const queueSizeGauge = new promClient.Gauge({
+    name: 'lsif_queue_size',
+    help: 'The current number of items in the work-queue.',
+})
+
+//
+// Cache Metrics
+
 export const connectionCacheCapacityGauge = new promClient.Gauge({
     name: 'lsif_connection_cache_capacity',
     help: 'The maximum number of open SQLite handles.',

@@ -10,7 +10,7 @@ import {
     documentCacheSizeGauge,
     resultChunkCacheEventsCounter,
     resultChunkCacheSizeGauge,
-} from './cache.metrics'
+} from '../metrics'
 
 /**
  * A wrapper around a cache value promise.
