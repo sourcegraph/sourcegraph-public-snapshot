@@ -58,7 +58,6 @@ export interface Suggestion {
 interface SuggestionIconProps {
     suggestion: Suggestion
     className?: string
-    size: number
 }
 
 export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undefined {
@@ -146,7 +145,7 @@ export const SuggestionItem: React.FunctionComponent<SuggestionProps> = ({
     ...props
 }) => (
     <li className={'suggestion' + (isSelected ? ' suggestion--selected' : '')} {...props}>
-        <SuggestionIcon size={20} className="icon-inline suggestion__icon" suggestion={suggestion} />
+        <SuggestionIcon className="icon-inline suggestion__icon" suggestion={suggestion} />
         <div className="suggestion__title">{suggestion.value}</div>
         <div className="suggestion__description">{suggestion.description}</div>
         {showUrlLabel && !!suggestion.label && (
