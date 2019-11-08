@@ -7,7 +7,7 @@ import {
 import * as crc32 from 'crc-32'
 import { instrument } from '../metrics'
 import { Connection, EntityManager, Brackets } from 'typeorm'
-import { createFilter, testFilter } from '../../encoding'
+import { createFilter, testFilter } from './bloom-filter'
 import { PackageModel, ReferenceModel, Commit, LsifDump, DumpId } from '../models/xrepo'
 import { TableInserter } from '../database/inserter'
 import { addrFor, getCommitsNear, gitserverExecLines } from './commits'

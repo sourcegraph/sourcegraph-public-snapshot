@@ -5,7 +5,7 @@ import { hashKey, mustGet } from '../../shared/util'
 import { instrument } from '../../shared/metrics'
 import { databaseQueryDurationHistogram, databaseQueryErrorsCounter } from '../metrics'
 import { DefaultMap } from '../../shared/datastructures/default-map'
-import { gunzipJSON } from '../../encoding'
+import { gunzipJSON } from '../../shared/encoding/json'
 import { isEqual, uniqWith } from 'lodash'
 import { DumpId, LsifDump } from '../../shared/models/xrepo'
 import {

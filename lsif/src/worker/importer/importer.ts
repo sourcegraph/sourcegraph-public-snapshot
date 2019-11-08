@@ -5,7 +5,7 @@ import { databaseInsertionDurationHistogram, databaseInsertionErrorsCounter } fr
 import { DefaultMap } from '../../shared/datastructures/default-map'
 import { Edge, MonikerKind, RangeId, Vertex } from 'lsif-protocol'
 import { EntityManager } from 'typeorm'
-import { gzipJSON } from '../../encoding'
+import { gzipJSON } from '../../shared/encoding/json'
 import { isEqual, uniqWith } from 'lodash'
 import { Package, SymbolReferences } from '../../shared/xrepo/xrepo'
 import { Readable } from 'stream'
