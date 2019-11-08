@@ -1,8 +1,8 @@
 import rmfr from 'rmfr'
-import { Backend, ReferencePaginationCursor } from '../backend'
-import { Configuration } from '../config'
+import { Backend, ReferencePaginationCursor } from '../server/backend/backend'
+import { Configuration } from '../shared/config/config'
 import { createCleanPostgresDatabase, createStorageRoot, convertTestData } from '../test-utils'
-import { XrepoDatabase } from '../xrepo'
+import { XrepoDatabase } from '../shared/xrepo/xrepo'
 import { lsp } from 'lsif-protocol'
 
 /**

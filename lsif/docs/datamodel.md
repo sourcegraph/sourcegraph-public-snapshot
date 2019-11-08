@@ -1,6 +1,6 @@
 # LSIF data model
 
-This document outlines the data model for a single LSIF dump. The definition of the database tables and the entities encoded within it can be found in [../src/database.models.ts](../src/database.models.ts).
+This document outlines the data model for a single LSIF dump. The definition of the database tables and the entities encoded within it can be found in [../src/shared/models/dump.ts](../src/shared/models/dump.ts).
 
 In the following document, we collapse ranges to keep the document readable, where `a:b-c:d` is shorthand for the following:
 
