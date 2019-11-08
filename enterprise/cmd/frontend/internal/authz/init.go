@@ -3,7 +3,6 @@ package authz
 import (
 	"context"
 	"database/sql"
-	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -19,9 +18,23 @@ type ExternalServicesStore interface {
 	ListBitbucketServerConnections(context.Context) ([]*schema.BitbucketServerConnection, error)
 }
 
+// ProviderRegister is a function that returns authz providers and any serious problems and warnings found.
+type ProviderRegister = func(
+	context.Context,
+	*conf.Unified,
+	ExternalServicesStore,
+	*sql.DB,
+) (_ []authz.Provider, problems []string, warnings []string)
+
+var providerRegisters []ProviderRegister
+
+func NewProviderRegister(r ProviderRegister) {
+	providerRegisters = append(providerRegisters, r)
+}
+
 // ProvidersFromConfig returns the set of permission-related providers derived from the site config.
 // It also returns any validation problems with the config, separating these into "serious problems"
-// and "warnings".  "Serious problems" are those that should make Sourcegraph set
+// and "warnings". "Serious problems" are those that should make Sourcegraph set
 // authz.allowAccessByDefault to false. "Warnings" are all other validation problems.
 func ProvidersFromConfig(
 	ctx context.Context,
@@ -42,28 +55,8 @@ func ProvidersFromConfig(
 		}
 	}()
 
-	if gitlabs, err := s.ListGitLabConnections(ctx); err != nil {
-		seriousProblems = append(seriousProblems, fmt.Sprintf("Could not load GitLab external service configs: %s", err))
-	} else {
-		glp, glproblems, glwarnings := gitlabProviders(ctx, cfg, gitlabs)
-		authzProviders = append(authzProviders, glp...)
-		seriousProblems = append(seriousProblems, glproblems...)
-		warnings = append(warnings, glwarnings...)
-	}
-
-	if githubs, err := s.ListGitHubConnections(ctx); err != nil {
-		seriousProblems = append(seriousProblems, fmt.Sprintf("Could not load GitHub external service configs: %s", err))
-	} else {
-		ghp, ghproblems, ghwarnings := githubProviders(ctx, githubs)
-		authzProviders = append(authzProviders, ghp...)
-		seriousProblems = append(seriousProblems, ghproblems...)
-		warnings = append(warnings, ghwarnings...)
-	}
-
-	if bitbucketServers, err := s.ListBitbucketServerConnections(ctx); err != nil {
-		seriousProblems = append(seriousProblems, fmt.Sprintf("Could not load Bitbucket Server external service configs: %s", err))
-	} else {
-		ps, problems, warns := bitbucketServerProviders(ctx, db, cfg, bitbucketServers)
+	for _, r := range providerRegisters {
+		ps, problems, warns := r(ctx, cfg, s, db)
 		authzProviders = append(authzProviders, ps...)
 		seriousProblems = append(seriousProblems, problems...)
 		warnings = append(warnings, warns...)
