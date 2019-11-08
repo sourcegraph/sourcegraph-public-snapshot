@@ -1,16 +1,16 @@
 import express from 'express'
+import { ApiJobState, QUEUE_PREFIX, queueTypes, statesByQueue } from '../../queue'
 import { chunk } from 'lodash'
-import { formatJob, formatJobFromMap } from '../../api-job'
+import { DEFAULT_JOB_PAGE_SIZE, MAX_JOB_SEARCH } from '../settings'
+import { Job } from 'bull'
+import { limitOffset } from '../pagination/limit-offset'
 import { Logger } from 'winston'
+import { nextLink } from '../pagination/link'
 import { pipeline as _pipeline } from 'stream'
 import { Queue } from 'bull'
+import { ScriptedRedis } from '../redis/redis'
 import { Tracer } from 'opentracing'
 import { wrap } from 'async-middleware'
-import { queueTypes, QUEUE_PREFIX, statesByQueue, ApiJobState } from '../../queue'
-import { nextLink } from '../pagination/link'
-import { limitOffset } from '../pagination/limit-offset'
-import { ScriptedRedis } from '../redis/redis'
-import { MAX_JOB_SEARCH, DEFAULT_JOB_PAGE_SIZE } from '../settings'
 
 /**
  * Create a router containing the job endpoints.
@@ -117,4 +117,89 @@ export function createJobRouter(
     )
 
     return router
+}
+
+/**
+ * The representation of a job as returned by the API.
+ */
+export interface ApiJob {
+    id: string
+    name: string
+    args: object
+    state: ApiJobState
+    progress: number
+    failedReason: string | null
+    stacktrace: string[] | null
+    timestamp: string
+    processedOn: string | null
+    finishedOn: string | null
+}
+
+/**
+ * Convert a timestamp into an ISO string.
+ *
+ * @param timestamp The millisecond POSIX timestamp.
+ */
+
+const toDate = (timestamp: number): string => new Date(timestamp).toISOString()
+
+/**
+ * Attempt to convert a timestamp into an ISO string.
+ *
+ * @param timestamp The millisecond POSIX timestamp.
+ */
+const toMaybeDate = (timestamp: number | null): string | null => (timestamp ? toDate(timestamp) : null)
+
+/**
+ * Attempt to convert a string into an integer.
+ *
+ * @param value The int-y string.
+ */
+const toMaybeInt = (value: string | undefined): number | null => (value ? parseInt(value, 10) : null)
+
+/**
+ * Format a job to return from the API.
+ *
+ * @param job The job to format.
+ * @param state The job's state.
+ */
+const formatJob = (job: Job, state: ApiJobState): ApiJob => {
+    const payload = job.toJSON()
+
+    return {
+        id: `${payload.id}`,
+        name: payload.name,
+        args: payload.data.args,
+        state,
+        progress: payload.progress,
+        failedReason: payload.failedReason,
+        stacktrace: payload.stacktrace,
+        timestamp: toDate(payload.timestamp),
+        processedOn: toMaybeDate(payload.processedOn),
+        finishedOn: toMaybeDate(payload.finishedOn),
+    }
+}
+
+/**
+ * Format a job to return from the API.
+ *
+ * @param values A map of values composing the job.
+ * @param state The job's state.
+ */
+const formatJobFromMap = (values: Map<string, string>, state: ApiJobState): ApiJob => {
+    const rawData = values.get('data')
+    const rawStacktrace = values.get('stacktrace')
+
+    return {
+        id: values.get('id') || '',
+        name: values.get('name') || '',
+        args: rawData ? JSON.parse(rawData).args : {},
+        state,
+        progress: toMaybeInt(values.get('progress')) || 0,
+        failedReason: values.get('failedReason') || null,
+        stacktrace: rawStacktrace ? JSON.parse(rawStacktrace) : null,
+        timestamp: toMaybeDate(toMaybeInt(values.get('timestamp'))) || '',
+        processedOn: toMaybeDate(toMaybeInt(values.get('processedOn'))),
+        finishedOn: toMaybeDate(toMaybeInt(values.get('finishedOn'))),
+    }
 }
