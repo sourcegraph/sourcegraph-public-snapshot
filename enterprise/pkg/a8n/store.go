@@ -1536,6 +1536,8 @@ DELETE FROM campaign_jobs WHERE id = %s
 // counting code mods.
 type CountCampaignJobsOpts struct {
 	CampaignPlanID int64
+	OnlyFinished   bool
+	OnlyWithDiff   bool
 }
 
 // CountCampaignJobs returns the number of code mods in the database.
@@ -1558,6 +1560,14 @@ func countCampaignJobsQuery(opts *CountCampaignJobsOpts) *sqlf.Query {
 	var preds []*sqlf.Query
 	if opts.CampaignPlanID != 0 {
 		preds = append(preds, sqlf.Sprintf("campaign_plan_id = %s", opts.CampaignPlanID))
+	}
+
+	if opts.OnlyFinished {
+		preds = append(preds, sqlf.Sprintf("finished_at IS NOT NULL"))
+	}
+
+	if opts.OnlyWithDiff {
+		preds = append(preds, sqlf.Sprintf("diff != ''"))
 	}
 
 	if len(preds) == 0 {
@@ -1628,6 +1638,8 @@ type ListCampaignJobsOpts struct {
 	CampaignPlanID int64
 	Cursor         int64
 	Limit          int
+	OnlyFinished   bool
+	OnlyWithDiff   bool
 }
 
 // ListCampaignJobs lists CampaignJobs with the given filters.
@@ -1683,6 +1695,14 @@ func listCampaignJobsQuery(opts *ListCampaignJobsOpts) *sqlf.Query {
 
 	if opts.CampaignPlanID != 0 {
 		preds = append(preds, sqlf.Sprintf("campaign_plan_id = %s", opts.CampaignPlanID))
+	}
+
+	if opts.OnlyFinished {
+		preds = append(preds, sqlf.Sprintf("finished_at IS NOT NULL"))
+	}
+
+	if opts.OnlyWithDiff {
+		preds = append(preds, sqlf.Sprintf("diff != ''"))
 	}
 
 	return sqlf.Sprintf(

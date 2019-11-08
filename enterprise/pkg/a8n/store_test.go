@@ -1161,6 +1161,116 @@ func testStore(db *sql.DB) func(*testing.T) {
 				}
 			})
 
+			t.Run("Listing and Couting OnlyFinished", func(t *testing.T) {
+				listOpts := ListCampaignJobsOpts{OnlyFinished: true}
+				countOpts := CountCampaignJobsOpts{OnlyFinished: true}
+
+				have, _, err := s.ListCampaignJobs(ctx, listOpts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if len(have) != 0 {
+					t.Errorf("jobs returned: %d", len(have))
+				}
+
+				count, err := s.CountCampaignJobs(ctx, countOpts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if count != 0 {
+					t.Errorf("jobs counted: %d", count)
+				}
+
+				for _, j := range campaignJobs {
+					j.FinishedAt = now
+
+					err := s.UpdateCampaignJob(ctx, j)
+					if err != nil {
+						t.Fatal(err)
+					}
+				}
+
+				have, _, err = s.ListCampaignJobs(ctx, listOpts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				have, want := have, campaignJobs
+				if len(have) != len(want) {
+					t.Fatalf("listed %d campaignJobs, want: %d", len(have), len(want))
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
+				}
+
+				count, err = s.CountCampaignJobs(ctx, countOpts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if int(count) != len(campaignJobs) {
+					t.Errorf("jobs counted: %d", count)
+				}
+			})
+
+			t.Run("Listing and Counting OnlyWithDiff", func(t *testing.T) {
+				listOpts := ListCampaignJobsOpts{OnlyWithDiff: true}
+				countOpts := CountCampaignJobsOpts{OnlyWithDiff: true}
+
+				have, _, err := s.ListCampaignJobs(ctx, listOpts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				have, want := have, campaignJobs
+				if len(have) != len(want) {
+					t.Fatalf("listed %d campaignJobs, want: %d", len(have), len(want))
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
+				}
+
+				count, err := s.CountCampaignJobs(ctx, countOpts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if int(count) != len(want) {
+					t.Errorf("jobs counted: %d", count)
+				}
+
+				for _, j := range campaignJobs {
+					j.Diff = ""
+
+					err := s.UpdateCampaignJob(ctx, j)
+					if err != nil {
+						t.Fatal(err)
+					}
+				}
+
+				have, _, err = s.ListCampaignJobs(ctx, listOpts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if len(have) != 0 {
+					t.Errorf("jobs returned: %d", len(have))
+				}
+
+				count, err = s.CountCampaignJobs(ctx, countOpts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if count != 0 {
+					t.Errorf("jobs counted: %d", count)
+				}
+			})
+
 			t.Run("Update", func(t *testing.T) {
 				for _, c := range campaignJobs {
 					now = now.Add(time.Second)
