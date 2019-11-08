@@ -1,4 +1,4 @@
-import * as constants from '../../constants'
+import * as constants from '../../shared/constants'
 import * as fs from 'mz/fs'
 import * as path from 'path'
 import { ConfigurationFetcher } from '../../shared/config/config'

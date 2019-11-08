@@ -1,7 +1,7 @@
 import * as fs from 'mz/fs'
 import * as path from 'path'
 import { Id } from 'lsif-protocol'
-import * as constants from '../constants'
+import * as constants from './constants'
 import { DefinitionReferenceResultId } from './models/types'
 
 /**

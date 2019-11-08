@@ -9,7 +9,7 @@ import { convertLsif } from './worker/importer/importer'
 import { XrepoDatabase } from './shared/xrepo/xrepo'
 import { dbFilename, ensureDirectory } from './shared/util'
 import { userInfo } from 'os'
-import * as constants from './constants'
+import * as constants from './shared/constants'
 
 /**
  * Create a temporary directory with a subdirectory for dbs.

@@ -1,6 +1,6 @@
 import rmfr from 'rmfr'
 import { XrepoDatabase } from './xrepo'
-import { MAX_TRAVERSAL_LIMIT } from '../../constants'
+import { MAX_TRAVERSAL_LIMIT } from '../constants'
 import { createCleanPostgresDatabase, createCommit, truncatePostgresTables, createStorageRoot } from '../../test-utils'
 import { Connection } from 'typeorm'
 import { fail } from 'assert'

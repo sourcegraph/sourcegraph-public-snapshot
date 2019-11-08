@@ -1,6 +1,6 @@
 import got from 'got'
 import * as crypto from 'crypto'
-import { MAX_COMMITS_PER_UPDATE } from '../../constants'
+import { MAX_COMMITS_PER_UPDATE } from '../constants'
 
 /**
  * Determine the gitserver that holds data for the given repository. This matches the

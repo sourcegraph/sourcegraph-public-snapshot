@@ -1,4 +1,4 @@
-import * as constants from '../constants'
+import * as constants from '../shared/constants'
 import * as path from 'path'
 import promClient from 'prom-client'
 import { addTags, createTracer, logAndTraceCall, TracingContext } from '../shared/tracing'
