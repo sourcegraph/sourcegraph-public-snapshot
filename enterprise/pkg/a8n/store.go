@@ -148,7 +148,9 @@ WITH batch AS (
       metadata              jsonb,
       campaign_ids          jsonb,
       external_id           text,
-      external_service_type text
+      external_service_type text,
+	  campaign_job_id       int,
+	  error                 text
     )
   )
   WITH ORDINALITY
@@ -165,7 +167,9 @@ changed AS (
     metadata,
     campaign_ids,
     external_id,
-    external_service_type
+    external_service_type,
+	campaign_job_id,
+	error
   )
   SELECT
     repo_id,
@@ -174,10 +178,11 @@ changed AS (
     metadata,
     campaign_ids,
     external_id,
-    external_service_type
+    external_service_type,
+	campaign_job_id,
+	error
   FROM batch
-  ON CONFLICT ON CONSTRAINT
-    changesets_repo_external_id_unique
+  ON CONFLICT (repo_id, external_id, campaign_job_id) WHERE external_id IS NOT NULL AND campaign_job_id IS NOT NULL 
   DO NOTHING
   RETURNING changesets.*
 )
@@ -192,12 +197,16 @@ SELECT
   COALESCE(changed.metadata, existing.metadata) AS metadata,
   COALESCE(changed.campaign_ids, existing.campaign_ids) AS campaign_ids,
   COALESCE(changed.external_id, existing.external_id) AS external_id,
-  COALESCE(changed.external_service_type, existing.external_service_type) AS external_service_type
+  COALESCE(changed.external_service_type, existing.external_service_type) AS external_service_type,
+  COALESCE(changed.campaign_job_id, existing.campaign_job_id) AS campaign_job_id,
+  COALESCE(changed.error, existing.error) AS error
 FROM changed
 RIGHT JOIN batch ON batch.repo_id = changed.repo_id
 AND batch.external_id = changed.external_id
+AND batch.campaign_job_id = changed.campaign_job_id
 LEFT JOIN changesets existing ON existing.repo_id = batch.repo_id
 AND existing.external_id = batch.external_id
+AND existing.campaign_job_id = batch.campaign_job_id
 ORDER BY batch.ordinality
 `
 
@@ -223,8 +232,10 @@ func batchChangesetsQuery(fmtstr string, cs []*a8n.Changeset) (*sqlf.Query, erro
 		UpdatedAt           time.Time       `json:"updated_at"`
 		Metadata            json.RawMessage `json:"metadata"`
 		CampaignIDs         json.RawMessage `json:"campaign_ids"`
-		ExternalID          string          `json:"external_id"`
+		ExternalID          *string         `json:"external_id"`
 		ExternalServiceType string          `json:"external_service_type"`
+		CampaignJobID       *int64          `json:"campaign_job_id"`
+		Error               *string         `json:"error"`
 	}
 
 	records := make([]record, 0, len(cs))
@@ -247,8 +258,10 @@ func batchChangesetsQuery(fmtstr string, cs []*a8n.Changeset) (*sqlf.Query, erro
 			UpdatedAt:           c.UpdatedAt,
 			Metadata:            metadata,
 			CampaignIDs:         campaignIDs,
-			ExternalID:          c.ExternalID,
+			ExternalID:          nullStringColumn(c.ExternalID),
 			ExternalServiceType: c.ExternalServiceType,
+			CampaignJobID:       nullInt64Column(c.CampaignJobID),
+			Error:               nullStringColumn(c.Error),
 		})
 	}
 
@@ -891,6 +904,13 @@ func nullTimeColumn(t time.Time) *time.Time {
 		return nil
 	}
 	return &t
+}
+
+func nullStringColumn(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }
 
 // UpdateCampaign updates the given Campaign.
@@ -1823,8 +1843,10 @@ func scanChangeset(t *a8n.Changeset, s scanner) error {
 		&t.UpdatedAt,
 		&metadata,
 		&dbutil.JSONInt64Set{Set: &t.CampaignIDs},
-		&t.ExternalID,
+		&dbutil.NullString{S: &t.ExternalID},
 		&t.ExternalServiceType,
+		&dbutil.NullInt64{N: &t.CampaignJobID},
+		&dbutil.NullString{S: &t.Error},
 	)
 	if err != nil {
 		return err

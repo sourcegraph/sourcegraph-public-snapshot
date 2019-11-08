@@ -308,6 +308,12 @@ func testStore(db *sql.DB) func(*testing.T) {
 						ExternalServiceType: "github",
 					}
 
+					if i == 2 {
+						// th.Error = "Nullable error"
+						th.CampaignJobID = 2323
+						th.ExternalID = ""
+					}
+
 					changesets = append(changesets, th)
 				}
 
@@ -347,6 +353,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 						RepoID:              c.RepoID,
 						ExternalID:          c.ExternalID,
 						ExternalServiceType: c.ExternalServiceType,
+						CampaignJobID:       c.CampaignJobID,
 					}
 				}
 
@@ -355,6 +362,9 @@ func testStore(db *sql.DB) func(*testing.T) {
 				now = now.Add(time.Second)
 
 				err := s.CreateChangesets(ctx, clones...)
+				for _, c := range clones {
+					fmt.Printf("c=%+v\n", c)
+				}
 				ae, ok := err.(AlreadyExistError)
 				if !ok {
 					t.Fatal(err)

@@ -44,6 +44,8 @@ Indexes:
 Foreign-key constraints:
     "campaign_jobs_campaign_plan_id_fkey" FOREIGN KEY (campaign_plan_id) REFERENCES campaign_plans(id) ON DELETE CASCADE DEFERRABLE
     "campaign_jobs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
+Referenced by:
+    TABLE "changesets" CONSTRAINT "changesets_campaign_job_id_fkey" FOREIGN KEY (campaign_job_id) REFERENCES campaign_jobs(id) DEFERRABLE
 
 ```
 
@@ -132,17 +134,21 @@ Foreign-key constraints:
  created_at            | timestamp with time zone | not null default now()
  updated_at            | timestamp with time zone | not null default now()
  metadata              | jsonb                    | not null default '{}'::jsonb
- external_id           | text                     | not null
+ external_id           | text                     | 
  external_service_type | text                     | not null
+ campaign_job_id       | bigint                   | 
+ error                 | text                     | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
+    "changesets_error" btree (error)
 Check constraints:
     "changesets_campaign_ids_check" CHECK (jsonb_typeof(campaign_ids) = 'object'::text)
-    "changesets_external_id_check" CHECK (external_id <> ''::text)
+    "changesets_external_id_check" CHECK (external_id IS NULL OR external_id <> ''::text)
     "changesets_external_service_type_not_blank" CHECK (external_service_type <> ''::text)
     "changesets_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
 Foreign-key constraints:
+    "changesets_campaign_job_id_fkey" FOREIGN KEY (campaign_job_id) REFERENCES campaign_jobs(id) DEFERRABLE
     "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 Referenced by:
     TABLE "changeset_events" CONSTRAINT "changeset_events_changeset_id_fkey" FOREIGN KEY (changeset_id) REFERENCES changesets(id) ON DELETE CASCADE DEFERRABLE
