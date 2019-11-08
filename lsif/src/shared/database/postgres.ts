@@ -1,9 +1,9 @@
 import { Connection, createConnection as _createConnection } from 'typeorm'
-import * as xrepo from './xrepo.models'
+import * as xrepo from '../../xrepo.models'
 import { PostgresConnectionCredentialsOptions } from 'typeorm/driver/postgres/PostgresConnectionCredentialsOptions'
-import { readEnvInt } from './util'
+import { readEnvInt } from '../../util'
 import { Logger } from 'winston'
-import { Configuration } from './config'
+import { Configuration } from '../../config'
 import pRetry from 'p-retry'
 import { TlsOptions } from 'tls'
 
@@ -35,29 +35,6 @@ const MAX_CONNECTION_RETRIES = readEnvInt('MAX_CONNECTION_RETRIES', 60)
  * How long to wait (in seconds) between cross-repository connection attempts.
  */
 const CONNECTION_RETRY_INTERVAL = readEnvInt('CONNECTION_RETRY_INTERVAL', 5)
-
-/**
- * Create a SQLite connection from the given filename.
- *
- * @param database The database filename.
- * @param entities The set of expected entities present in this schema.
- */
-export function createSqliteConnection(
-    database: string,
-    // Decorators are not possible type check
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    entities: Function[]
-): Promise<Connection> {
-    return _createConnection({
-        type: 'sqlite',
-        name: database,
-        database,
-        entities,
-        synchronize: true,
-        logging: ['error', 'warn'],
-        maxQueryExecutionTime: 1000,
-    })
-}
 
 /**
  * Create a Postgres connection. This creates a typorm connection pool with the

@@ -1,7 +1,7 @@
 import promClient from 'prom-client'
 import { EntityManager } from 'typeorm'
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity'
-import { instrument } from './shared/metrics'
+import { instrument } from '../metrics'
 
 /**
  * A bag of prometheus metric objects that apply to a particular instance of

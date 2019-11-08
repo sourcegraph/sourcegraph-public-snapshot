@@ -1,6 +1,6 @@
 import { assertId, hashKey, mustGet, readEnvInt } from '../../util'
 import { Correlator, ResultSetData, ResultSetId } from './correlator'
-import { createSqliteConnection } from '../../connection'
+import { createSqliteConnection } from '../../shared/database/sqlite'
 import { databaseInsertionDurationHistogram, databaseInsertionErrorsCounter } from './importer.metrics'
 import { DefaultMap } from '../../default-map'
 import { Edge, MonikerKind, RangeId, Vertex } from 'lsif-protocol'
@@ -10,7 +10,7 @@ import { isEqual, uniqWith } from 'lodash'
 import { Package, SymbolReferences } from '../../shared/xrepo/xrepo'
 import { Readable } from 'stream'
 import { readGzippedJsonElements } from './input'
-import { TableInserter } from '../../inserter'
+import { TableInserter } from '../../shared/database/inserter'
 import {
     DefinitionModel,
     DocumentData,
