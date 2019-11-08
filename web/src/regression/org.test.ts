@@ -41,11 +41,6 @@ async function deleteOrganizationByName(
     await Promise.all(matches.map(org => deleteOrganization({ requestGraphQL }, org.id).toPromise()))
 }
 
-/**
- * Test plan:
- * Test 3: auth.userOrgMap (API-driven)
- */
-
 describe('Organizations regression test suite', () => {
     describe('Organizations GUI', () => {
         const testUsername = 'test-org'
