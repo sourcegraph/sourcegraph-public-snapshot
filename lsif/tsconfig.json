@@ -1,8 +1,10 @@
 {
   "extends": "@sourcegraph/tsconfig",
+  "references": [],
   "compilerOptions": {
     "allowJs": false,
     "allowSyntheticDefaultImports": true,
+    "composite": true,
     "emitDecoratorMetadata": true,
     "esModuleInterop": true,
     "experimentalDecorators": true,
@@ -16,6 +18,7 @@
     "noImplicitReturns": true,
     "outDir": "out",
     "resolveJsonModule": true,
+    "rootDir": "src",
     "skipLibCheck": true,
     "strict": true,
     "target": "esnext",

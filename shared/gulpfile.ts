@@ -2,13 +2,12 @@ import { generateNamespace } from '@gql2ts/from-schema'
 import { DEFAULT_OPTIONS, DEFAULT_TYPE_MAP } from '@gql2ts/language-typescript'
 import { buildSchema, graphql, introspectionQuery, IntrospectionQuery } from 'graphql'
 import gulp from 'gulp'
-import $RefParser from 'json-schema-ref-parser'
+import $RefParser, { ResolverOptions } from 'json-schema-ref-parser'
 import { compile as compileJSONSchema } from 'json-schema-to-typescript'
 import mkdirp from 'mkdirp-promise'
 import { readFile, writeFile } from 'mz/fs'
 import path from 'path'
 import { format, resolveConfig } from 'prettier'
-import { draftV7resolver } from './draftV7Resolver'
 
 const GRAPHQL_SCHEMA_PATH = path.join(__dirname, '../cmd/frontend/graphqlbackend/schema.graphql')
 
@@ -48,6 +47,16 @@ export async function graphQLTypes(): Promise<void> {
             }
         )
     await writeFile(__dirname + '/src/graphql/schema.ts', typings)
+}
+
+/**
+ * Allow json-schema-ref-parser to resolve the v7 draft of JSON Schema
+ * using a local copy of the spec, enabling developers to run/develop Sourcegraph offline
+ */
+const draftV7resolver: ResolverOptions = {
+    order: 1,
+    read: () => readFile(path.join(__dirname, '../schema/json-schema-draft-07.schema.json')),
+    canRead: file => file.url === 'http://json-schema.org/draft-07/schema',
 }
 
 /**
