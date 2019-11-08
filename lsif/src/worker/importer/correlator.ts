@@ -1,8 +1,8 @@
 import RelateUrl from 'relateurl'
-import { mustGet, mustGetFromEither } from './util'
-import { DefaultMap } from './default-map'
+import { mustGet, mustGetFromEither } from '../../util'
+import { DefaultMap } from '../../default-map'
 import { Hover, MarkupContent } from 'vscode-languageserver-types'
-import { MonikerData, PackageInformationData, RangeData } from './database.models'
+import { MonikerData, PackageInformationData, RangeData } from '../../database.models'
 import {
     MonikerId,
     HoverResultId,
@@ -10,7 +10,7 @@ import {
     DefinitionResultId,
     DocumentId,
     PackageInformationId,
-} from './database.types'
+} from '../../database.types'
 import {
     Id,
     VertexLabels,
@@ -31,9 +31,9 @@ import {
     contains,
     RangeId,
 } from 'lsif-protocol'
-import { DisjointSet } from './disjoint-set'
-import { TracingContext } from './tracing'
-import { createSilentLogger } from './logging'
+import { DisjointSet } from '../../disjoint-set'
+import { TracingContext } from '../../tracing'
+import { createSilentLogger } from '../../logging'
 import { Logger } from 'winston'
 
 /**

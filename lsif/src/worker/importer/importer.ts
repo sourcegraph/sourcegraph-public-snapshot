@@ -1,16 +1,16 @@
-import { assertId, hashKey, mustGet, readEnvInt } from './util'
+import { assertId, hashKey, mustGet, readEnvInt } from '../../util'
 import { Correlator, ResultSetData, ResultSetId } from './correlator'
-import { createSqliteConnection } from './connection'
+import { createSqliteConnection } from '../../connection'
 import { databaseInsertionDurationHistogram, databaseInsertionErrorsCounter } from './importer.metrics'
-import { DefaultMap } from './default-map'
+import { DefaultMap } from '../../default-map'
 import { Edge, MonikerKind, RangeId, Vertex } from 'lsif-protocol'
 import { EntityManager } from 'typeorm'
-import { gzipJSON } from './encoding'
+import { gzipJSON } from '../../encoding'
 import { isEqual, uniqWith } from 'lodash'
-import { Package, SymbolReferences } from './xrepo'
+import { Package, SymbolReferences } from '../../xrepo'
 import { Readable } from 'stream'
-import { readGzippedJsonElements } from './input'
-import { TableInserter } from './inserter'
+import { readGzippedJsonElements } from '../../input'
+import { TableInserter } from '../../inserter'
 import {
     DefinitionModel,
     DocumentData,
@@ -23,7 +23,7 @@ import {
     ResultChunkModel,
     DocumentIdRangeId,
     entities,
-} from './database.models'
+} from '../../database.models'
 import {
     DefinitionResultId,
     MonikerId,
@@ -32,8 +32,8 @@ import {
     ReferenceResultId,
     PackageInformationId,
     HoverResultId,
-} from './database.types'
-import { TracingContext, logAndTraceCall } from './tracing'
+} from '../../database.types'
+import { TracingContext, logAndTraceCall } from '../../tracing'
 
 /**
  * The insertion metrics for the database.
