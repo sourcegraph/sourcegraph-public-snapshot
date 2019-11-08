@@ -1,6 +1,6 @@
 import rmfr from 'rmfr'
 import { Backend, ReferencePaginationCursor } from '../server/backend/backend'
-import { Configuration } from '../config'
+import { Configuration } from '../shared/config/config'
 import { createCleanPostgresDatabase, createStorageRoot, convertTestData } from '../test-utils'
 import { XrepoDatabase } from '../shared/xrepo/xrepo'
 import { lsp } from 'lsif-protocol'

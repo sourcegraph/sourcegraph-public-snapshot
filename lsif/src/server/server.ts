@@ -25,7 +25,7 @@ import { LsifDump } from '../xrepo.models'
 import { metricsMiddleware } from './middleware/metrics'
 import { pipeline as _pipeline } from 'stream'
 import { queueSizeGauge } from '../server.metrics'
-import { waitForConfiguration } from '../config'
+import { waitForConfiguration } from '../shared/config/config'
 import { XrepoDatabase } from '../shared/xrepo/xrepo'
 import {
     STORAGE_ROOT,

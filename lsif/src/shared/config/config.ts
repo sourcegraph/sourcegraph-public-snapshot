@@ -1,5 +1,5 @@
 import got from 'got'
-import { readEnvInt } from './util'
+import { readEnvInt } from '../../util'
 import * as json5 from 'json5'
 import { Logger } from 'winston'
 import { isEqual, pick } from 'lodash'

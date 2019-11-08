@@ -1,7 +1,7 @@
 import * as constants from '../../constants'
 import * as fs from 'mz/fs'
 import * as path from 'path'
-import { ConfigurationFetcher } from '../../config'
+import { ConfigurationFetcher } from '../../shared/config/config'
 import { convertLsif } from '../importer/importer'
 import { createSilentLogger } from '../../shared/logging'
 import { dbFilename, hasErrorCode } from '../../util'

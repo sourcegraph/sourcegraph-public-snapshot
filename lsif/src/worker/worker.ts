@@ -17,7 +17,7 @@ import { jobDurationErrorsCounter, jobDurationHistogram } from '../worker.metric
 import { Logger } from 'winston'
 import { REDIS_ENDPOINT, STORAGE_ROOT } from './settings'
 import { startMetricsServer } from './server'
-import { waitForConfiguration } from '../config'
+import { waitForConfiguration } from '../shared/config/config'
 import { XrepoDatabase } from '../shared/xrepo/xrepo'
 
 /**

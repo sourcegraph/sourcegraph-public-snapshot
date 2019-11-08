@@ -3,7 +3,7 @@ import * as xrepo from '../../xrepo.models'
 import { PostgresConnectionCredentialsOptions } from 'typeorm/driver/postgres/PostgresConnectionCredentialsOptions'
 import { readEnvInt } from '../../util'
 import { Logger } from 'winston'
-import { Configuration } from '../../config'
+import { Configuration } from '../config/config'
 import pRetry from 'p-retry'
 import { TlsOptions } from 'tls'
 
