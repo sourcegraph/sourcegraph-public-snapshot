@@ -38,6 +38,25 @@ func ReadFile(ctx context.Context, repo gitserver.Repo, commit api.CommitID, nam
 	return b, nil
 }
 
+// GetFileReader returns an io.ReadCloser reading from the named file at commit.
+// The caller should always close the reader after use
+func GetFileReader(ctx context.Context, repo gitserver.Repo, commit api.CommitID, name string) (io.ReadCloser, error) {
+	if Mocks.GetFileReader != nil {
+		return Mocks.GetFileReader(commit, name)
+	}
+
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: GetFileReader")
+	span.SetTag("Name", name)
+	defer span.Finish()
+
+	name = util.Rel(name)
+	br, err := newBlobReader(ctx, repo, commit, name)
+	if err != nil {
+		return nil, err
+	}
+	return br, nil
+}
+
 func readFileBytes(ctx context.Context, repo gitserver.Repo, commit api.CommitID, name string, maxBytes int64) ([]byte, error) {
 	br, err := newBlobReader(ctx, repo, commit, name)
 	if err != nil {
