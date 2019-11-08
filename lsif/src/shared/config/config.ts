@@ -1,26 +1,8 @@
-import got from 'got'
-import { readEnvInt } from '../../util'
 import * as json5 from 'json5'
-import { Logger } from 'winston'
+import got from 'got'
+import { CONFIG_POLL_INTERVAL, DELAY_BEFORE_UNREACHABLE_LOG, SRC_FRONTEND_INTERNAL } from './settings'
 import { isEqual, pick } from 'lodash'
-
-/**
- * HTTP address for internal frontend HTTP API.
- */
-const SRC_FRONTEND_INTERNAL = process.env.SRC_FRONTEND_INTERNAL || 'sourcegraph-frontend-internal'
-
-/**
- * How long to wait before emitting error logs when polling config (in seconds).
- * This needs to be long enough to allow the frontend to fully migrate the PostgreSQL
- * database in most cases, to avoid log spam when running sourcegraph/server for the
- * first time.
- */
-const DELAY_BEFORE_UNREACHABLE_LOG = readEnvInt('DELAY_BEFORE_UNREACHABLE_LOG', 15)
-
-/**
- * How long to wait between polling config.
- */
-const CONFIG_POLL_INTERVAL = 5
+import { Logger } from 'winston'
 
 /**
  * Service configuration data pulled from the frontend.
