@@ -23,10 +23,14 @@ import { logger as loggingMiddleware } from 'express-winston'
 import { Logger } from 'winston'
 import { LsifDump } from '../shared/models/xrepo'
 import { metricsMiddleware } from './middleware/metrics'
-import { pipeline as _pipeline } from 'stream'
-import { queueSizeGauge } from './metrics'
 import { waitForConfiguration } from '../shared/config/config'
 import { XrepoDatabase } from '../shared/xrepo/xrepo'
+import {
+    connectionCacheCapacityGauge,
+    queueSizeGauge,
+    documentCacheCapacityGauge,
+    resultChunkCacheCapacityGauge,
+} from './metrics'
 import {
     STORAGE_ROOT,
     REDIS_ENDPOINT,
@@ -35,7 +39,6 @@ import {
     CLEAN_FAILED_JOBS_INTERVAL,
     HTTP_PORT,
 } from './settings'
-import { connectionCacheCapacityGauge, documentCacheCapacityGauge, resultChunkCacheCapacityGauge } from './metrics'
 
 /**
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
