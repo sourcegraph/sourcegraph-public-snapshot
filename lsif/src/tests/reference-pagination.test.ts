@@ -1,7 +1,7 @@
 import { BackendTestContext, filterNodeModules } from './util'
 import { createCommit } from '../test-utils'
 import { lsp } from 'lsif-protocol'
-import { ReferencePaginationContext } from '../backend'
+import { ReferencePaginationContext } from '../server/backend/backend'
 
 describe('Backend', () => {
     const ctx = new BackendTestContext()

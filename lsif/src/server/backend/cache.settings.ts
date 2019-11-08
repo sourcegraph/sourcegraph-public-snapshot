@@ -1,4 +1,4 @@
-import { readEnvInt } from './util'
+import { readEnvInt } from '../../util'
 
 /**
  * The number of SQLite connections that can be opened at once. This

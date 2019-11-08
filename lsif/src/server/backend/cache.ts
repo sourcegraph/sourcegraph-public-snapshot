@@ -1,8 +1,8 @@
 import promClient from 'prom-client'
 import Yallist from 'yallist'
 import { Connection, EntityManager } from 'typeorm'
-import { createSqliteConnection } from './connection'
-import { DocumentData, ResultChunkData } from './database.models'
+import { createSqliteConnection } from '../../connection'
+import { DocumentData, ResultChunkData } from '../../database.models'
 import {
     connectionCacheEventsCounter,
     connectionCacheSizeGauge,

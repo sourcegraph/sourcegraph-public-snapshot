@@ -1,5 +1,5 @@
 import express from 'express'
-import { Backend } from '../../backend'
+import { Backend } from '../backend/backend'
 import { Logger } from 'winston'
 import { pipeline as _pipeline } from 'stream'
 import { Tracer } from 'opentracing'

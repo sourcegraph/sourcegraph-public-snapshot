@@ -1,14 +1,20 @@
 import * as lsp from 'vscode-languageserver-protocol'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { dbFilename, mustGet, NoLSIFDumpError } from './util'
-import { XrepoDatabase } from './xrepo'
-import { TracingContext, logAndTraceCall, addTags, logSpan } from './tracing'
+import { dbFilename, mustGet, NoLSIFDumpError } from '../../util'
+import { XrepoDatabase } from '../../xrepo'
+import { TracingContext, logAndTraceCall, addTags, logSpan } from '../../tracing'
 import { Database, sortMonikers, createRemoteUri } from './database'
-import { ConfigurationFetcher } from './config'
-import { DocumentData, MonikerData, DefinitionModel, ReferenceModel, PackageInformationData } from './database.models'
+import { ConfigurationFetcher } from '../../config'
+import {
+    DocumentData,
+    MonikerData,
+    DefinitionModel,
+    ReferenceModel,
+    PackageInformationData,
+} from '../../database.models'
 import { uniqWith, isEqual } from 'lodash'
-import { LsifDump, DumpId } from './xrepo.models'
-import * as settings from './settings'
+import { LsifDump, DumpId } from '../../xrepo.models'
+import * as settings from './cache.settings'
 
 /**
  * Context describing the current request for paginated results.

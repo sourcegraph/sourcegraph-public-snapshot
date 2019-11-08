@@ -1,11 +1,11 @@
 import * as constants from '../constants'
 import * as fs from 'mz/fs'
 import * as path from 'path'
-import * as settings from '../settings'
+import * as settings from './backend/cache.settings'
 import cors from 'cors'
 import express from 'express'
 import promClient from 'prom-client'
-import { Backend } from '../backend'
+import { Backend } from './backend/backend'
 import { Connection } from 'typeorm'
 import { createDumpRouter } from './routes/dumps'
 import { createJobRouter } from './routes/jobs'
@@ -39,7 +39,7 @@ import {
     connectionCacheCapacityGauge,
     documentCacheCapacityGauge,
     resultChunkCacheCapacityGauge,
-} from '../cache.metrics'
+} from './backend/cache.metrics'
 
 /**
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.

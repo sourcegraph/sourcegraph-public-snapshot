@@ -1,6 +1,6 @@
 import { BackendTestContext, filterNodeModules } from './util'
 import { createCommit, createLocation } from '../test-utils'
-import { ReferencePaginationContext } from '../backend'
+import { ReferencePaginationContext } from '../server/backend/backend'
 import { MAX_TRAVERSAL_LIMIT } from '../constants'
 import { lsp } from 'lsif-protocol'
 
