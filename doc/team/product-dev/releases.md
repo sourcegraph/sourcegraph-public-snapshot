@@ -35,7 +35,7 @@ In the future, we may introduce continuous releases if these issues become surmo
 
 [Monthly releases](#releases-are-monthly) of Sourcegraph increase the minor version number (e.g. 3.1 -> 3.2). These releases **never** require any manual migration steps.
 
-Patch releases (e.g. 3.0.0 -> 3.0.1) are released on an as-needed basis to fix bugs and security issues. These releases **never** require any manual migration steps. To create a patch release, create a tracking issue using the [patch release issue template](patch_release_issue_template.md) and complete all listed steps.
+Patch releases (e.g. 3.0.0 -> 3.0.1) are released on an as-needed basis to fix bugs and security issues. These releases **never** require any manual migration steps. To create a patch release, create a tracking issue using the [patch release issue template](../../dev/patch_release_issue_template.md) and complete all listed steps.
 
 On rare occasions we may decide to increase the major version number (e.g. 2.13 -> 3.0). These releases **may** require manual migration steps.
 
@@ -47,13 +47,13 @@ What is the process we follow to release?
 
 The release captain is _responsible_ for managing the release process and ensuring that the release happens on time. The release captain may _delegate_ work to other teammates, but such delegation does not absolve the release captain of their responsibility to ensure that delegated work gets done.
 
-The release captain should create a tracking issue using the [release issue template](release_issue_template.md) at the beginning of the release cycle.
+The release captain should create a tracking issue using the [release issue template](../../dev/release_issue_template.md) at the beginning of the release cycle.
 
 ### Release templates
 
-- [Release issue template](release_issue_template.md)
-- [Patch release issue template](patch_release_issue_template.md)
-- [DevRel release issue template](devrel_release_issue_template.md)
+- [Release issue template](../../dev/release_issue_template.md)
+- [Patch release issue template](../../dev/patch_release_issue_template.md)
+- [DevRel release issue template](../../dev/devrel_release_issue_template.md)
 
 ### Schedule
 

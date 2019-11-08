@@ -72,6 +72,6 @@ After the incident is resolved:
 
 Here is the high level flow:
 
-![flowchart](img/incident-flow.svg)
+![flowchart](../../dev/img/incident-flow.svg)
 
 Source: https://drive.google.com/file/d/1kTZ-_N1ulx9Kf0vZyn5BWTrtipbvN9jH/view?usp=sharing
