@@ -18269,7 +18269,7 @@ whatwg-mimetype@^2.1.0, whatwg-mimetype@^2.2.0, whatwg-mimetype@^2.3.0:
   resolved "https://registry.npmjs.org/whatwg-mimetype/-/whatwg-mimetype-2.3.0.tgz#3d4b1e0312d2079879f826aff18dbeeca5960fbf"
   integrity sha512-M4yMwr6mAnQz76TbJm914+gPpB/nCwvZbJU28cUD6dR004SAxDLOOSUaB1JDRqLtaOV/vi0IC5lEAGFgrjGv/g==
 
-whatwg-url@7.0.0, whatwg-url@^7.0.0:
+whatwg-url@7.0.0:
   version "7.0.0"
   resolved "https://registry.npmjs.org/whatwg-url/-/whatwg-url-7.0.0.tgz#fde926fa54a599f3adf82dff25a9f7be02dc6edd"
   integrity sha512-37GeVSIJ3kn1JgKyjiYNmSLP1yzbpb29jdmwBSgkD9h40/hyrR/OifpVUndji3tmwGgD8qpw7iQu3RSbCrBpsQ==
@@ -18282,6 +18282,15 @@ whatwg-url@^6.4.1:
   version "6.5.0"
   resolved "https://registry.npmjs.org/whatwg-url/-/whatwg-url-6.5.0.tgz#f2df02bff176fd65070df74ad5ccbb5a199965a8"
   integrity sha512-rhRZRqx/TLJQWUpQ6bmrt2UV4f0HCQ463yQuONJqC6fO2VoEb1pTYddbe59SkYq87aoM5A3bdhMZiUiVws+fzQ==
+  dependencies:
+    lodash.sortby "^4.7.0"
+    tr46 "^1.0.1"
+    webidl-conversions "^4.0.2"
+
+whatwg-url@^7.0.0, whatwg-url@^7.1.0:
+  version "7.1.0"
+  resolved "https://registry.npmjs.org/whatwg-url/-/whatwg-url-7.1.0.tgz#c2c492f1eca612988efd3d2266be1b9fc6170d06"
+  integrity sha512-WUu7Rg1DroM7oQvGWfOiAK21n74Gg+T4elXEQYkOhtyLeWiJFoOGLXPKI/9gzIie9CtwVLm8wtw6YJdKyxSjeg==
   dependencies:
     lodash.sortby "^4.7.0"
     tr46 "^1.0.1"
