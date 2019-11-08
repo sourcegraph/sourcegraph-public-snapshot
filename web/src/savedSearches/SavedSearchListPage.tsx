@@ -13,6 +13,7 @@ import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { NamespaceProps } from '../namespaces'
 import { deleteSavedSearch, fetchSavedSearches } from '../search/backend'
 import { PatternTypeProps } from '../search'
+import { ErrorAlert } from '../components/alerts'
 
 interface NodeProps extends RouteComponentProps, Omit<PatternTypeProps, 'togglePatternType'> {
     savedSearch: GQL.ISavedSearch
@@ -141,9 +142,7 @@ export class SavedSearchListPage extends React.Component<Props, State> {
                     </div>
                 </div>
                 {this.state.savedSearchesOrError && isErrorLike(this.state.savedSearchesOrError) && (
-                    <div className="alert alert-danger mb-3">
-                        <strong>Error:</strong> {this.state.savedSearchesOrError.message}
-                    </div>
+                    <ErrorAlert className="mb-3" error={this.state.savedSearchesOrError} />
                 )}
                 <div className="list-group list-group-flush">
                     {this.state.savedSearchesOrError &&

@@ -1,4 +1,3 @@
-import { upperFirst } from 'lodash'
 import AddIcon from 'mdi-react/AddIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -16,6 +15,7 @@ import { registryExtensionFragment } from '../../extensions/extension/ExtensionA
 import { eventLogger } from '../../tracking/eventLogger'
 import { deleteRegistryExtensionWithConfirmation } from '../extensions/registry/backend'
 import { RegistryExtensionSourceBadge } from '../extensions/registry/RegistryExtensionSourceBadge'
+import { ErrorAlert } from '../../components/alerts'
 
 interface RegistryExtensionNodeSiteAdminProps {
     node: GQL.IRegistryExtension
@@ -118,9 +118,7 @@ class RegistryExtensionNodeSiteAdminRow extends React.PureComponent<
                     </div>
                 </div>
                 {isErrorLike(this.state.deletionOrError) && (
-                    <div className="alert alert-danger mt-2">
-                        Error: {upperFirst(this.state.deletionOrError.message)}
-                    </div>
+                    <ErrorAlert className="mt-2" error={this.state.deletionOrError} />
                 )}
             </li>
         )

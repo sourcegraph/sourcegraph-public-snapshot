@@ -8,7 +8,7 @@ import { UserAvatar } from '../../../user/UserAvatar'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { CampaignsIcon } from '../icons'
 import { ExternalChangesetNode } from './changesets/ExternalChangesetNode'
-import { noop, upperFirst } from 'lodash'
+import { noop } from 'lodash'
 import { Form } from '../../../components/Form'
 import { fetchCampaignById, updateCampaign, deleteCampaign, createCampaign, queryChangesets } from './backend'
 import { useError } from '../../../util/useObservable'
@@ -21,6 +21,7 @@ import { AddChangesetForm } from './AddChangesetForm'
 import { Subject } from 'rxjs'
 import { Markdown } from '../../../../../shared/src/components/Markdown'
 import { renderMarkdown } from '../../../../../shared/src/util/markdown'
+import { ErrorAlert } from '../../../components/alerts'
 
 interface Props {
     /**
@@ -238,7 +239,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         )}
                     </span>
                 </h2>
-                {alertError && <div className="alert alert-danger">{upperFirst(alertError.message)}</div>}
+                {alertError && <ErrorAlert error={alertError} />}
                 <div className="card mb-3">
                     <div className="card-header">
                         <strong>

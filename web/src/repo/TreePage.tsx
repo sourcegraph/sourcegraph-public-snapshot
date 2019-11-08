@@ -1,6 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
-import { escapeRegExp, upperFirst } from 'lodash'
+import { escapeRegExp } from 'lodash'
 import FolderIcon from 'mdi-react/FolderIcon'
 import HistoryIcon from 'mdi-react/HistoryIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
@@ -40,6 +40,7 @@ import { fetchTree } from './backend'
 import { GitCommitNode, GitCommitNodeProps } from './commits/GitCommitNode'
 import { gitCommitFragment } from './commits/RepositoryCommitsPage'
 import { ThemeProps } from '../../../shared/src/theme'
+import { ErrorAlert } from '../components/alerts'
 
 const TreeEntry: React.FunctionComponent<{
     isDir: boolean
@@ -224,7 +225,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                 )}
                 {this.state.treeOrError !== undefined &&
                     (isErrorLike(this.state.treeOrError) ? (
-                        <div className="alert alert-danger">{upperFirst(this.state.treeOrError.message)}</div>
+                        <ErrorAlert error={this.state.treeOrError} />
                     ) : (
                         <>
                             {this.state.treeOrError.isRoot ? (

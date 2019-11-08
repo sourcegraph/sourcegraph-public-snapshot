@@ -1,5 +1,4 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { upperFirst } from 'lodash'
 import AddIcon from 'mdi-react/AddIcon'
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
 import * as React from 'react'
@@ -19,6 +18,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { RegistryExtensionNameFormGroup, RegistryPublisherFormGroup } from '../extension/RegistryExtensionForm'
 import { queryViewerRegistryPublishers } from './backend'
 import { RegistryAreaPageProps } from './RegistryArea'
+import { ErrorAlert } from '../../../components/alerts'
 
 function createExtension(publisher: GQL.ID, name: string): Observable<GQL.IExtensionRegistryCreateExtensionResult> {
     return mutateGraphQL(
@@ -189,9 +189,7 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                             </button>
                         </Form>
                         {isErrorLike(this.state.creationOrError) && (
-                            <div className="alert alert-danger mt-3">
-                                {upperFirst(this.state.creationOrError.message)}
-                            </div>
+                            <ErrorAlert className="mt-3" error={this.state.creationOrError} />
                         )}
                     </ModalPage>
                 </>

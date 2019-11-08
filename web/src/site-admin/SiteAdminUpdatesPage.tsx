@@ -13,6 +13,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchSite, fetchSiteUpdateCheck } from './backend'
+import { ErrorAlert } from '../components/alerts'
 
 interface Props extends RouteComponentProps<any> {}
 
@@ -87,9 +88,11 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
                                 </div>
                             ))}
                         {this.state.updateCheck.errorMessage && (
-                            <div className="site-admin-updates-page__alert alert alert-danger">
-                                Error checking for updates: {this.state.updateCheck.errorMessage}
-                            </div>
+                            <ErrorAlert
+                                className="site-admin-updates-page__alert"
+                                prefix="Error checking for updates"
+                                error={this.state.updateCheck.errorMessage}
+                            />
                         )}
                     </div>
                 )}
