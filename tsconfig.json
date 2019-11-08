@@ -30,6 +30,6 @@
     "rootDir": ".",
   },
 
-  "include": ["gulpfile.ts"],
+  "include": [],
   "exclude": ["out", "node_modules"],
 }
