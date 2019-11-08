@@ -1,5 +1,4 @@
 import * as lightstep from 'lightstep-tracer'
-import { Configuration } from '../config'
 import { createSilentLogger, logCall } from './logging'
 import { ERROR } from 'opentracing/lib/ext/tags'
 import { initTracerFromEnv } from 'jaeger-client'
@@ -52,8 +51,19 @@ export function logSpan({ span = new Span() }: TracingContext, event: string, pa
  * @param serviceName The name of the process.
  * @param configuration The current configuration.
  */
-export function createTracer(serviceName: string, configuration: Configuration): Tracer | undefined {
-    if (configuration.useJaeger) {
+export function createTracer(
+    serviceName: string,
+    {
+        useJaeger,
+        lightstepAccessToken,
+    }: {
+        /** Whether or not to enable Jaeger. */
+        useJaeger: boolean
+        /** The access token for lightstep tracing. */
+        lightstepAccessToken: string
+    }
+): Tracer | undefined {
+    if (useJaeger) {
         const config = {
             serviceName,
             sampler: {
@@ -65,9 +75,9 @@ export function createTracer(serviceName: string, configuration: Configuration):
         return initTracerFromEnv(config, {})
     }
 
-    if (configuration.lightstepAccessToken !== '') {
+    if (lightstepAccessToken !== '') {
         return new lightstep.Tracer({
-            access_token: configuration.lightstepAccessToken,
+            access_token: lightstepAccessToken,
             component_name: serviceName,
         })
     }
