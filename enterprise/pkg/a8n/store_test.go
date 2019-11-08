@@ -35,10 +35,11 @@ func testStore(db *sql.DB) func(*testing.T) {
 			t.Run("Create", func(t *testing.T) {
 				for i := 0; i < cap(campaigns); i++ {
 					c := &a8n.Campaign{
-						Name:         fmt.Sprintf("Upgrade ES-Lint %d", i),
-						Description:  "All the Javascripts are belong to us",
-						AuthorID:     23,
-						ChangesetIDs: []int64{int64(i) + 1},
+						Name:           fmt.Sprintf("Upgrade ES-Lint %d", i),
+						Description:    "All the Javascripts are belong to us",
+						AuthorID:       23,
+						ChangesetIDs:   []int64{int64(i) + 1},
+						CampaignPlanID: 42,
 					}
 
 					if i%2 == 0 {

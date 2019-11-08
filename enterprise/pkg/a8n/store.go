@@ -827,9 +827,10 @@ INSERT INTO campaigns (
   namespace_org_id,
   created_at,
   updated_at,
-  changeset_ids
+  changeset_ids,
+  campaign_plan_id
 )
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING
   id,
   name,
@@ -839,7 +840,8 @@ RETURNING
   namespace_org_id,
   created_at,
   updated_at,
-  changeset_ids
+  changeset_ids,
+  campaign_plan_id
 `
 
 func (s *Store) createCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
@@ -866,10 +868,18 @@ func (s *Store) createCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
 		c.CreatedAt,
 		c.UpdatedAt,
 		changesetIDs,
+		nullInt64Column(c.CampaignPlanID),
 	), nil
 }
 
 func nullInt32Column(n int32) *int32 {
+	if n == 0 {
+		return nil
+	}
+	return &n
+}
+
+func nullInt64Column(n int64) *int64 {
 	if n == 0 {
 		return nil
 	}
@@ -906,8 +916,9 @@ SET (
   namespace_user_id,
   namespace_org_id,
   updated_at,
-  changeset_ids
-) = (%s, %s, %s, %s, %s, %s, %s)
+  changeset_ids,
+  campaign_plan_id
+) = (%s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   id,
@@ -918,7 +929,8 @@ RETURNING
   namespace_org_id,
   created_at,
   updated_at,
-  changeset_ids
+  changeset_ids,
+  campaign_plan_id
 `
 
 func (s *Store) updateCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
@@ -938,6 +950,7 @@ func (s *Store) updateCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
 		nullInt32Column(c.NamespaceOrgID),
 		c.UpdatedAt,
 		changesetIDs,
+		nullInt64Column(c.CampaignPlanID),
 		c.ID,
 	), nil
 }
@@ -1028,7 +1041,8 @@ SELECT
   namespace_org_id,
   created_at,
   updated_at,
-  changeset_ids
+  changeset_ids,
+  campaign_plan_id
 FROM campaigns
 WHERE %s
 LIMIT 1
@@ -1088,7 +1102,8 @@ SELECT
   namespace_org_id,
   created_at,
   updated_at,
-  changeset_ids
+  changeset_ids,
+  campaign_plan_id
 FROM campaigns
 WHERE %s
 ORDER BY id ASC
@@ -1870,6 +1885,7 @@ func scanCampaign(c *a8n.Campaign, s scanner) error {
 		&c.CreatedAt,
 		&c.UpdatedAt,
 		&dbutil.JSONInt64Set{Set: &c.ChangesetIDs},
+		&dbutil.NullInt64{N: &c.CampaignPlanID},
 	)
 }
 
