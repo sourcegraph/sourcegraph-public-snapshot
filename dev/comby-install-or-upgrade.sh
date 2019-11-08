@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 
 # This function installs the comby dependency for cmd/searcher and cmd/replacer.
-# The CI pipeline calls this script to install comby for tests.
-RELEASE_VERSION="0.11.0"
-RELEASE_TAG="0.11.0"
+# The main /dev/launch.sh script and CI pipeline calls this script to install or
+# upgrade comby for tests or development environments.
+REQUIRE_VERSION="0.11.0"
+
+RELEASE_VERSION=$REQUIRE_VERSION
+RELEASE_TAG=$REQUIRE_VERSION
 RELEASE_URL="https://github.com/comby-tools/comby/releases"
 
 INSTALL_DIR=/usr/local/bin
@@ -17,6 +20,11 @@ function ctrl_c() {
 trap ctrl_c INT
 
 EXISTS=$(command -v comby || echo)
+
+# Exit if comby exists with the desired version.
+if [ "$EXISTS" ] && [ $(comby -version) == "$REQUIRE_VERSION" ]; then
+    exit 0
+fi
 
 if [ -n "$EXISTS" ]; then
     INSTALL_DIR=$(dirname $EXISTS)
