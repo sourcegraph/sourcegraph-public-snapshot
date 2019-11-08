@@ -110,9 +110,13 @@ describe('discoverAndUpdateTips', () => {
                 ctx: {},
             })
 
-            expect((await xrepoDatabase.getDump('test-repo', ca, 'foo/test.ts'))!.visibleAtTip).toBeFalsy()
-            expect((await xrepoDatabase.getDump('test-repo', cb, 'foo/test.ts'))!.visibleAtTip).toBeTruthy()
-            expect((await xrepoDatabase.getDump('test-repo', cc, 'bar/test.ts'))!.visibleAtTip).toBeTruthy()
+            const d1 = await xrepoDatabase.getDump('test-repo', ca, 'foo/test.ts')
+            const d2 = await xrepoDatabase.getDump('test-repo', cb, 'foo/test.ts')
+            const d3 = await xrepoDatabase.getDump('test-repo', cc, 'bar/test.ts')
+
+            expect(d1 && d1.visibleAtTip).toBeFalsy()
+            expect(d2 && d2.visibleAtTip).toBeTruthy()
+            expect(d3 && d3.visibleAtTip).toBeTruthy()
         } finally {
             await cleanup()
         }

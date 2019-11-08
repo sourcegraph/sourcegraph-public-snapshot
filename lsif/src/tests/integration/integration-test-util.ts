@@ -5,7 +5,6 @@ import * as uuid from 'uuid'
 import rmfr from 'rmfr'
 import { Backend, ReferencePaginationCursor } from '../../server/backend/backend'
 import { child_process } from 'mz'
-import { Configuration } from '../../shared/config/config'
 import { Connection } from 'typeorm'
 import { connectPostgres } from '../../shared/database/postgres'
 import { convertLsif } from '../../worker/importer/importer'
@@ -197,13 +196,18 @@ export class BackendTestContext {
      * by the public fields of this class.
      */
     public async init(): Promise<void> {
-        this.storageRoot = await createStorageRoot()
+        const emptyConfig = {
+            postgresDSN: '',
+            gitServers: [],
+            useJaeger: false,
+            lightstepAccessToken: '',
+        }
 
+        this.storageRoot = await createStorageRoot()
         const { connection, cleanup } = await createCleanPostgresDatabase()
         this.cleanup = cleanup
-
         this.xrepoDatabase = new XrepoDatabase(this.storageRoot, connection)
-        this.backend = new Backend(this.storageRoot, this.xrepoDatabase, () => ({} as Configuration))
+        this.backend = new Backend(this.storageRoot, this.xrepoDatabase, () => emptyConfig)
     }
 
     /**

@@ -1,6 +1,5 @@
 import express from 'express'
 import { Logger } from 'winston'
-import { pipeline as _pipeline } from 'stream'
 
 /**
  * Middleware function used to convert uncaught exceptions into 500 responses.

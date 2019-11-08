@@ -58,7 +58,13 @@ export async function waitForConfiguration(logger: Logger): Promise<Configuratio
         }).catch(() => {})
     })
 
-    return () => oldConfiguration!
+    return () => {
+        if (oldConfiguration === undefined) {
+            throw new Error('Unreachable')
+        }
+
+        return oldConfiguration
+    }
 }
 
 /**

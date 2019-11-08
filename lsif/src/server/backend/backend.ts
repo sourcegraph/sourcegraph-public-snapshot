@@ -540,7 +540,7 @@ export class Backend {
                 // the beginning of the set of results: first, scan dumps of the same
                 // repository, then scan dumps from remote repositories.
 
-                const cursor = {
+                const cursor: ReferencePaginationCursor = {
                     dumpId: dump.id,
                     scheme: moniker.scheme,
                     identifier: moniker.identifier,
@@ -548,7 +548,7 @@ export class Backend {
                     version: packageInformation.version,
                     phase: 'same-repo',
                     offset: 0,
-                } as ReferencePaginationCursor
+                }
 
                 const results = await this.performRemoteReferences(
                     repository,

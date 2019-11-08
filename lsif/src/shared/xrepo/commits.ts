@@ -99,7 +99,11 @@ export function flattenCommitParents(lines: string[]): [string, string][] {
             return [[line, '']]
         }
 
-        const child = commits.shift()!
+        const child = commits.shift()
+        if (child === undefined) {
+            throw new Error('Unreachable')
+        }
+
         return commits.map<[string, string]>(commit => [child, commit])
     })
 }
