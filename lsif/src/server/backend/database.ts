@@ -4,7 +4,7 @@ import { ConnectionCache, DocumentCache, EncodedJsonCacheValue, ResultChunkCache
 import { hashKey, mustGet } from '../../shared/util'
 import { instrument } from '../../shared/metrics'
 import { databaseQueryDurationHistogram, databaseQueryErrorsCounter } from '../metrics'
-import { DefaultMap } from '../../default-map'
+import { DefaultMap } from '../../shared/datastructures/default-map'
 import { gunzipJSON } from '../../encoding'
 import { isEqual, uniqWith } from 'lodash'
 import { DumpId, LsifDump } from '../../shared/models/xrepo'

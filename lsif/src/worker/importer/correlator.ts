@@ -1,6 +1,6 @@
 import RelateUrl from 'relateurl'
 import { mustGet, mustGetFromEither } from '../../shared/util'
-import { DefaultMap } from '../../default-map'
+import { DefaultMap } from '../../shared/datastructures/default-map'
 import { Hover, MarkupContent } from 'vscode-languageserver-types'
 import { MonikerData, PackageInformationData, RangeData } from '../../shared/models/dump'
 import {
@@ -31,7 +31,7 @@ import {
     contains,
     RangeId,
 } from 'lsif-protocol'
-import { DisjointSet } from './disjoint-set'
+import { DisjointSet } from '../../shared/datastructures/disjoint-set'
 import { TracingContext } from '../../shared/tracing'
 import { createSilentLogger } from '../../shared/logging'
 import { Logger } from 'winston'

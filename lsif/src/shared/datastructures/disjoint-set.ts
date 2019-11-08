@@ -1,4 +1,4 @@
-import { DefaultMap } from '../../default-map'
+import { DefaultMap } from './default-map'
 
 /**
  * A modified disjoint set or union-find data structure. Allows linking
