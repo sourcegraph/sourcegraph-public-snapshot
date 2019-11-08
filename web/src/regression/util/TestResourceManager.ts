@@ -2,12 +2,14 @@ export type ResourceDestructor = () => Promise<void>
 
 interface Resource {
     /**
-     * Resource type, printed on creation and destruction.
+     * Resource type
      */
     type: 'User' | 'External service' | 'Authentication provider' | 'Global setting' | 'Organization' | 'Configuration'
 
     /**
-     * Name of the resource, printed upon creation and destruction.
+     * Name of the resource, printed upon creation and destruction. This should uniquely identify
+     * the resource within the resource type. Only the last destructor for duplicate resources will
+     * be applied.
      */
     name: string
 
@@ -36,8 +38,24 @@ export class TestResourceManager {
     }
 
     public async destroyAll(): Promise<void> {
-        for (const resource of this.resources) {
-            await resource.destroy()
+        const seen: Record<string, Record<string, boolean>> = {}
+        for (const resource of this.resources.reverse()) {
+            if (!seen[resource.type]) {
+                seen[resource.type] = {}
+            }
+            if (seen[resource.type][resource.name]) {
+                continue
+            }
+            seen[resource.type][resource.name] = true
+
+            try {
+                await resource.destroy()
+            } catch (err) {
+                console.error(
+                    `Error when destrying resource ${resource.type} ${JSON.stringify(resource.name)}: ${err.message}`
+                )
+                continue
+            }
             console.log(`Test resource destroyed: ${resource.type} ${JSON.stringify(resource.name)}`)
         }
     }

@@ -26,6 +26,7 @@ import { Settings, QuickLink } from '../schema/settings.schema'
 import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import * as jsonc from '@sqs/jsonc-parser'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
+import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 
 /**
  * @jest-environment node
@@ -245,33 +246,39 @@ describe('Organizations regression test suite', () => {
                         Contents: origCriticalConfig.Contents,
                     })
                 })
-                // TODO(beyang): Possible race condition with config propagation here
-                await new Promise(resolve => setTimeout(resolve, 5 * 1000))
 
-                // Create org
-                const createdOrg = resourceManager.add(
-                    'Organization',
-                    testOrg.name,
-                    await ensureNewOrganization(gqlClient, testOrg)
+                // Retry, because the critical configuration update endpoint is eventually consistent
+                let lastCreatedOrg: GQL.IOrg
+                await retry(
+                    async () => {
+                        // Create org
+                        const createdOrg = resourceManager.add(
+                            'Organization',
+                            testOrg.name,
+                            await ensureNewOrganization(gqlClient, testOrg)
+                        )
+                        lastCreatedOrg = createdOrg
+
+                        // Create user
+                        resourceManager.add(
+                            'User',
+                            testUser1.username,
+                            await ensureNewUser(gqlClient, testUser1.username, testUser1.email)
+                        )
+
+                        // Check that user is not part of org
+                        {
+                            const user = await getUser(gqlClient, testUser1.username)
+                            if (!user) {
+                                throw new Error(`user ${testUser1.username} wasn't created`)
+                            }
+                            if (user.organizations.nodes.some(org => org.id === createdOrg.id)) {
+                                throw new Error(`user ${testUser1.username} should not be part of org ${testOrg.name}`)
+                            }
+                        }
+                    },
+                    { retries: 3 }
                 )
-
-                // Create user
-                resourceManager.add(
-                    'User',
-                    testUser1.username,
-                    await ensureNewUser(gqlClient, testUser1.username, testUser1.email)
-                )
-
-                // Check that user is not part of org
-                {
-                    const user = await getUser(gqlClient, testUser1.username)
-                    if (!user) {
-                        throw new Error(`user ${testUser1.username} wasn't created`)
-                    }
-                    if (user.organizations.nodes.some(org => org.id === createdOrg.id)) {
-                        throw new Error(`user ${testUser1.username} should not be part of org ${testOrg.name}`)
-                    }
-                }
 
                 // Set auth.userOrgMap
                 const newCriticalConfigContents = jsonc.applyEdits(
@@ -287,22 +294,25 @@ describe('Organizations regression test suite', () => {
                     LastID: nextCriticalConfig.ID,
                     Contents: newCriticalConfigContents,
                 })
-                // TODO(beyang): Possible race condition with config propagation here
-                await new Promise(resolve => setTimeout(resolve, 5 * 1000))
 
-                // Re-create user
-                await ensureNewUser(gqlClient, testUser1.username, testUser1.email)
+                await retry(
+                    async () => {
+                        // Re-create user
+                        await ensureNewUser(gqlClient, testUser1.username, testUser1.email)
 
-                // Check that user is part of organization
-                {
-                    const user = await getUser(gqlClient, testUser1.username)
-                    if (!user) {
-                        throw new Error(`user ${testUser1.username} wasn't created`)
-                    }
-                    if (!user.organizations.nodes.some(org => org.id === createdOrg.id)) {
-                        throw new Error(`user ${testUser1.username} should be part of org ${testOrg.name}`)
-                    }
-                }
+                        // Check that user is part of organization
+                        {
+                            const user = await getUser(gqlClient, testUser1.username)
+                            if (!user) {
+                                throw new Error(`user ${testUser1.username} wasn't created`)
+                            }
+                            if (!user.organizations.nodes.some(org => org.id === lastCreatedOrg.id)) {
+                                throw new Error(`user ${testUser1.username} should be part of org ${testOrg.name}`)
+                            }
+                        }
+                    },
+                    { retries: 3 }
+                )
             },
             120 * 1000
         )
