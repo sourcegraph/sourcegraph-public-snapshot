@@ -43,7 +43,7 @@ interface FilterState {}
 class FilteredConnectionFilterControl extends React.PureComponent<FilterProps, FilterState> {
     public render(): React.ReactFragment {
         return (
-            <div className="filtered-connection__control">
+            <div className="filtered-connection-filter-control">
                 <RadioButtons nodes={this.props.filters} selected={this.props.value} onChange={this.onChange} />
                 {this.props.children}
             </div>
