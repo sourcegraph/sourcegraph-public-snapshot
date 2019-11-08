@@ -26,7 +26,7 @@ import { metricsMiddleware } from './middleware/metrics'
 import { pipeline as _pipeline } from 'stream'
 import { queueSizeGauge } from '../server.metrics'
 import { waitForConfiguration } from '../config'
-import { XrepoDatabase } from '../xrepo'
+import { XrepoDatabase } from '../shared/xrepo/xrepo'
 import {
     STORAGE_ROOT,
     REDIS_ENDPOINT,

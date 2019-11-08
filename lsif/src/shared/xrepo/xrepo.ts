@@ -3,17 +3,17 @@ import {
     xrepoInsertionDurationHistogram,
     xrepoQueryDurationHistogram,
     xrepoQueryErrorsCounter,
-} from './xrepo.metrics'
+} from '../../xrepo.metrics'
 import * as crc32 from 'crc-32'
-import { instrument } from './shared/metrics'
+import { instrument } from '../metrics'
 import { Connection, EntityManager, Brackets } from 'typeorm'
-import { createFilter, testFilter } from './encoding'
-import { PackageModel, ReferenceModel, Commit, LsifDump, DumpId } from './xrepo.models'
-import { TableInserter } from './inserter'
+import { createFilter, testFilter } from '../../encoding'
+import { PackageModel, ReferenceModel, Commit, LsifDump, DumpId } from '../../xrepo.models'
+import { TableInserter } from '../../inserter'
 import { addrFor, getCommitsNear, gitserverExecLines } from './commits'
-import { TracingContext, logAndTraceCall } from './shared/tracing'
-import { dbFilename, tryDeleteFile } from './util'
-import { MAX_TRAVERSAL_LIMIT, ADVISORY_LOCK_ID_SALT, MAX_CONCURRENT_GITSERVER_REQUESTS } from './constants'
+import { TracingContext, logAndTraceCall } from '../tracing'
+import { dbFilename, tryDeleteFile } from '../../util'
+import { MAX_TRAVERSAL_LIMIT, ADVISORY_LOCK_ID_SALT, MAX_CONCURRENT_GITSERVER_REQUESTS } from '../../constants'
 import { chunk } from 'lodash'
 
 /**

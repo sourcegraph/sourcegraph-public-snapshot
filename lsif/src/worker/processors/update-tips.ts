@@ -1,6 +1,6 @@
 import { ConfigurationFetcher } from '../../config'
 import { TracingContext } from '../../shared/tracing'
-import { XrepoDatabase } from '../../xrepo'
+import { XrepoDatabase } from '../../shared/xrepo/xrepo'
 
 /*
  * Create a job that updates the tip of the default branch for every repository that has LSIF data.

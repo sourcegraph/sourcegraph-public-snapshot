@@ -7,7 +7,7 @@ import { createSilentLogger } from '../../shared/logging'
 import { dbFilename, hasErrorCode } from '../../util'
 import { DBS_DIR_MAXIMUM_SIZE_BYTES, STORAGE_ROOT } from '../settings'
 import { logAndTraceCall, TracingContext } from '../../shared/tracing'
-import { XrepoDatabase } from '../../xrepo'
+import { XrepoDatabase } from '../../shared/xrepo/xrepo'
 
 /**
  * Create a job that takes a repository, commit, and filename containing the gzipped

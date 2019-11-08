@@ -1,7 +1,7 @@
 import * as lsp from 'vscode-languageserver-protocol'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { dbFilename, mustGet, NoLSIFDumpError } from '../../util'
-import { XrepoDatabase } from '../../xrepo'
+import { XrepoDatabase } from '../../shared/xrepo/xrepo'
 import { TracingContext, logAndTraceCall, addTags, logSpan } from '../../shared/tracing'
 import { Database, sortMonikers, createRemoteUri } from './database'
 import { ConfigurationFetcher } from '../../config'

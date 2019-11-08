@@ -18,7 +18,7 @@ import { Logger } from 'winston'
 import { REDIS_ENDPOINT, STORAGE_ROOT } from './settings'
 import { startMetricsServer } from './server'
 import { waitForConfiguration } from '../config'
-import { XrepoDatabase } from '../xrepo'
+import { XrepoDatabase } from '../shared/xrepo/xrepo'
 
 /**
  * Wrap a job processor with instrumentation.
