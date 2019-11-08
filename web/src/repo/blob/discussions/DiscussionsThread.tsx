@@ -1,7 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import { isEqual } from 'lodash'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { Redirect } from 'react-router'
 import { combineLatest, Subject, Subscription, throwError, Observable } from 'rxjs'
@@ -15,6 +14,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { formatHash } from '../../../util/url'
 import { DiscussionsInput, TitleMode } from './DiscussionsInput'
 import { DiscussionsNavbar } from './DiscussionsNavbar'
+import { ErrorAlert } from '../../../components/alerts'
 
 interface Props extends ExtensionsControllerProps {
     threadIDWithoutKind: string
@@ -102,10 +102,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
                 <DiscussionsNavbar {...this.props} threadTitle={thread ? thread.title : undefined} />
                 {loading && <LoadingSpinner className="icon-inline" />}
                 {error && (
-                    <div className="discussions-thread__error alert alert-danger">
-                        <AlertCircleIcon className="icon-inline discussions-thread__error-icon" />
-                        Error loading thread: {error.message}
-                    </div>
+                    <ErrorAlert className="discussions-thread__error" prefix="Error loading thread" error={error} />
                 )}
                 {thread && (
                     <div className="discussions-thread__comments">

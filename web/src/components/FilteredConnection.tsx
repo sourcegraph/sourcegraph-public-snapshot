@@ -1,6 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
-import { uniq, upperFirst } from 'lodash'
+import { uniq } from 'lodash'
 import * as React from 'react'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import {
@@ -23,6 +23,7 @@ import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors
 import { pluralize } from '../../../shared/src/util/strings'
 import { Form } from './Form'
 import { RadioButtons } from './RadioButtons'
+import { ErrorMessage } from './alerts'
 
 /** Checks if the passed value satisfies the GraphQL Node interface */
 const hasID = (obj: any): obj is { id: GQL.ID } => obj && typeof obj.id === 'string'
@@ -753,10 +754,9 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                 )}
                 {errors.length > 0 && (
                     <div className="alert alert-danger filtered-connection__error">
-                        {errors.map((m, i) => (
+                        {errors.map((error, i) => (
                             <React.Fragment key={i}>
-                                {upperFirst(m)}
-                                <br />
+                                <ErrorMessage error={error} />
                             </React.Fragment>
                         ))}
                     </div>

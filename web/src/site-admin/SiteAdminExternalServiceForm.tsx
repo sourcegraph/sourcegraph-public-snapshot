@@ -1,13 +1,12 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import * as React from 'react'
-import { Markdown } from '../../../shared/src/components/Markdown'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { ErrorLike } from '../../../shared/src/util/errors'
-import { renderMarkdown } from '../../../shared/src/util/markdown'
 import { Form } from '../components/Form'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
 import { ExternalServiceKindMetadata } from './externalServices'
+import { ErrorAlert, ErrorMessage } from '../components/alerts'
 
 interface Props extends Pick<ExternalServiceKindMetadata, 'jsonSchema' | 'editorActions'> {
     history: H.History
@@ -28,16 +27,11 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
     public render(): JSX.Element | null {
         return (
             <Form className="external-service-form" onSubmit={this.props.onSubmit}>
-                {this.props.error && (
-                    <div className="alert alert-danger">
-                        <p>Error saving configuration:</p>
-                        <Markdown dangerousInnerHTML={renderMarkdown(this.props.error.message.replace(/\t/g, ''))} />
-                    </div>
-                )}
+                {this.props.error && <ErrorAlert error={this.props.error} />}
                 {this.props.warning && (
                     <div className="alert alert-warning">
                         <h4>Warning</h4>
-                        <Markdown dangerousInnerHTML={renderMarkdown(this.props.warning.replace(/\t/g, ''))} />
+                        <ErrorMessage error={this.props.warning} />
                     </div>
                 )}
                 <div className="form-group">

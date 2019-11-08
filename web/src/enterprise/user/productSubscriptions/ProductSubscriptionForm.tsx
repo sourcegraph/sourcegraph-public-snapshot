@@ -1,5 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { isEqual, upperFirst } from 'lodash'
+import { isEqual } from 'lodash'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { ReactStripeElements } from 'react-stripe-elements'
@@ -16,6 +16,7 @@ import { NewProductSubscriptionPaymentSection } from './NewProductSubscriptionPa
 import { PaymentTokenFormControl } from './PaymentTokenFormControl'
 import { productSubscriptionInputForLocationHash } from './UserSubscriptionsNewProductSubscriptionPage'
 import { ThemeProps } from '../../../../../shared/src/theme'
+import { ErrorAlert } from '../../../components/alerts'
 
 /**
  * The form data that is submitted by the ProductSubscriptionForm component.
@@ -252,10 +253,10 @@ class _ProductSubscriptionForm extends React.Component<Props & ReactStripeElemen
                     </div>
                 </Form>
                 {isErrorLike(this.state.paymentTokenOrError) && (
-                    <div className="alert alert-danger mt-3">{upperFirst(this.state.paymentTokenOrError.message)}</div>
+                    <ErrorAlert className="mt-3" error={this.state.paymentTokenOrError} />
                 )}
                 {isErrorLike(this.props.submissionState) && (
-                    <div className="alert alert-danger mt-3">{upperFirst(this.props.submissionState.message)}</div>
+                    <ErrorAlert className="mt-3" error={this.props.submissionState} />
                 )}
             </div>
         )

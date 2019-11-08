@@ -1,11 +1,12 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
-import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Form } from '../components/Form'
 import { eventLogger } from '../tracking/eventLogger'
 import { getReturnTo, PasswordInput } from './SignInSignUpCommon'
+import { ErrorAlert } from '../components/alerts'
+import { asError } from '../../../shared/src/util/errors'
 
 interface Props {
     location: H.Location
@@ -15,7 +16,7 @@ interface Props {
 interface State {
     email: string
     password: string
-    errorDescription: string
+    error?: Error
     loading: boolean
 }
 
@@ -28,7 +29,6 @@ export class UsernamePasswordSignInForm extends React.Component<Props, State> {
         this.state = {
             email: '',
             password: '',
-            errorDescription: '',
             loading: false,
         }
     }
@@ -43,9 +43,7 @@ export class UsernamePasswordSignInForm extends React.Component<Props, State> {
                 ) : (
                     <p className="text-muted">To create an account, contact the site admin.</p>
                 )}
-                {this.state.errorDescription !== '' && (
-                    <div className="alert alert-danger my-2">Error: {upperFirst(this.state.errorDescription)}</div>
-                )}
+                {this.state.error && <ErrorAlert className="my-2" error={this.state.error} icon={false} />}
                 <div className="form-group">
                     <input
                         className="form-control signin-signup-form__input"
@@ -128,9 +126,9 @@ export class UsernamePasswordSignInForm extends React.Component<Props, State> {
                     throw new Error('Unknown Error')
                 }
             })
-            .catch(err => {
-                console.error('auth error: ', err)
-                this.setState({ loading: false, errorDescription: (err && err.message) || 'Unknown Error' })
+            .catch(error => {
+                console.error('Auth error:', error)
+                this.setState({ loading: false, error: asError(error) })
             })
     }
 }
