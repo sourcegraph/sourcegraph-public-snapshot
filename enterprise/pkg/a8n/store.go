@@ -1232,6 +1232,49 @@ var deleteCampaignPlanQueryFmtstr = `
 DELETE FROM campaign_plans WHERE id = %s
 `
 
+const CampaignPlanTTL = 1 * time.Hour
+
+// DeleteExpiredCampaignPlans deletes CampaignPlans that have finished execution
+// but have not been attached to a Campaign within CampaignPlanTTL.
+func (s *Store) DeleteExpiredCampaignPlans(ctx context.Context) error {
+	expirationTime := s.now().Add(-CampaignPlanTTL)
+	q := sqlf.Sprintf(deleteExpiredCampaignPlansQueryFmtstr, expirationTime)
+
+	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return err
+	}
+	return rows.Close()
+}
+
+var deleteExpiredCampaignPlansQueryFmtstr = `
+-- source: pkg/a8n/store.go:DeleteExpiredCampaignPlans
+DELETE FROM
+  campaign_plans
+WHERE
+NOT EXISTS (
+  SELECT 1
+  FROM
+  campaigns
+  WHERE
+  campaigns.campaign_plan_id = campaign_plans.id
+)
+AND
+NOT EXISTS (
+  SELECT id
+  FROM
+  campaign_jobs
+  WHERE
+  campaign_jobs.campaign_plan_id = campaign_plans.id
+  AND
+  (
+    campaign_jobs.finished_at IS NULL
+    OR
+    campaign_jobs.finished_at > %s
+  )
+);
+`
+
 // CountCampaignPlans returns the number of code mods in the database.
 func (s *Store) CountCampaignPlans(ctx context.Context) (count int64, _ error) {
 	q := sqlf.Sprintf(countCampaignPlansQueryFmtstr)
