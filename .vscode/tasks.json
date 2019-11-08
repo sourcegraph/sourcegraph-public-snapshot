@@ -12,70 +12,22 @@
       "type": "process",
       "group": "build",
       "problemMatcher": "$tsc-watch",
+      "isBackground": true,
       "command": ["node_modules/.bin/tsc"],
       "args": ["--build", ".", "--watch", "--incremental"],
-      "options": {
-        "cwd": "${workspaceFolder}",
-      },
       "runOptions": {
         "runOn": "folderOpen",
       },
     },
-
     {
-      "label": "launch",
-      "command": "${workspaceRoot}/dev/launch.sh",
-      "isBackground": true,
-      "problemMatcher": [],
+      "type": "npm",
+      "script": "all:eslint",
+      "problemMatcher": ["$eslint-stylish"],
     },
-    {
-      "label": "tslint",
-      "command": "yarn",
-      "args": ["--prefix", "web", "tslint"],
-      "problemMatcher": "$tslint5",
-    },
-
-    {
-      "label": "eslint web",
-      "command": "yarn",
-      "options": {
-        "cwd": "${workspaceFolder}/web",
-      },
-      "args": ["run", "eslint", "--quiet"],
-      "problemMatcher": "$eslint-stylish",
-      "presentation": {
-        "reveal": "never",
-      },
-    },
-    {
-      "label": "eslint shared",
-      "command": "yarn",
-      "options": {
-        "cwd": "${workspaceFolder}/shared",
-      },
-      "args": ["run", "eslint", "--quiet"],
-      "problemMatcher": "$eslint-stylish",
-      "presentation": {
-        "reveal": "never",
-      },
-    },
-    {
-      "label": "eslint browser",
-      "command": "yarn",
-      "options": {
-        "cwd": "${workspaceFolder}/browser",
-      },
-      "args": ["run", "eslint", "--quiet"],
-      "problemMatcher": "$eslint-stylish",
-      "presentation": {
-        "reveal": "never",
-      },
-    },
-
     {
       "label": "stylelint",
-      "command": "npm",
-      "args": ["--silent", "--prefix", "web", "run", "stylelint", "--", "--formatter", "compact"],
+      "command": "yarn",
+      "args": ["-s", "run", "all:stylelint", "--", "--formatter", "compact"],
       "problemMatcher": {
         "owner": "stylelint",
         "applyTo": "closedDocuments",
@@ -91,6 +43,12 @@
           },
         ],
       },
+    },
+    {
+      "label": "launch",
+      "command": "${workspaceRoot}/dev/launch.sh",
+      "isBackground": true,
+      "problemMatcher": [],
     },
   ],
 }
