@@ -1,5 +1,5 @@
 import RelateUrl from 'relateurl'
-import { mustGet, mustGetFromEither } from '../../util'
+import { mustGet, mustGetFromEither } from '../../shared/util'
 import { DefaultMap } from '../../default-map'
 import { Hover, MarkupContent } from 'vscode-languageserver-types'
 import { MonikerData, PackageInformationData, RangeData } from '../../shared/models/dump'

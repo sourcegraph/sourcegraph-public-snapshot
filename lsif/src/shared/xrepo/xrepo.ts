@@ -12,7 +12,7 @@ import { PackageModel, ReferenceModel, Commit, LsifDump, DumpId } from '../model
 import { TableInserter } from '../database/inserter'
 import { addrFor, getCommitsNear, gitserverExecLines } from './commits'
 import { TracingContext, logAndTraceCall } from '../tracing'
-import { dbFilename, tryDeleteFile } from '../../util'
+import { dbFilename, tryDeleteFile } from '../util'
 import { MAX_TRAVERSAL_LIMIT, ADVISORY_LOCK_ID_SALT, MAX_CONCURRENT_GITSERVER_REQUESTS } from '../../constants'
 import { chunk } from 'lodash'
 

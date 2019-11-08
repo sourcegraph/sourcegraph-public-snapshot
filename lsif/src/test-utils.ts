@@ -7,7 +7,7 @@ import { lsp } from 'lsif-protocol'
 import { child_process } from 'mz'
 import { convertLsif } from './worker/importer/importer'
 import { XrepoDatabase } from './shared/xrepo/xrepo'
-import { dbFilename, ensureDirectory } from './util'
+import { dbFilename, ensureDirectory } from './shared/util'
 import { userInfo } from 'os'
 import * as constants from './constants'
 

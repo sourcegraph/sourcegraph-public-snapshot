@@ -1,7 +1,7 @@
 import { Connection, createConnection as _createConnection } from 'typeorm'
 import * as xrepo from '../models/xrepo'
 import { PostgresConnectionCredentialsOptions } from 'typeorm/driver/postgres/PostgresConnectionCredentialsOptions'
-import { readEnvInt } from '../../util'
+import { readEnvInt } from '../util'
 import { Logger } from 'winston'
 import { Configuration } from '../config/config'
 import pRetry from 'p-retry'

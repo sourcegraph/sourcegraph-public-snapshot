@@ -1,4 +1,4 @@
-import { readEnvInt } from '../util'
+import { readEnvInt } from '../shared/util'
 
 /**
  * Which port to run the LSIF server on. Defaults to 3186.

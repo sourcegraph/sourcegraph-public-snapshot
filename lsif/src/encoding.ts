@@ -1,6 +1,6 @@
 import { gzip, gunzip } from 'mz/zlib'
 import { BloomFilter } from 'bloomfilter'
-import { readEnvInt } from './util'
+import { readEnvInt } from './shared/util'
 
 // These parameters give us a 1 in 1.38x10^9 false positive rate if we assume
 // that the number of unique URIs referrable by an external package is of the

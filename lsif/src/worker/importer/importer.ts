@@ -1,4 +1,4 @@
-import { assertId, hashKey, mustGet, readEnvInt } from '../../util'
+import { assertId, hashKey, mustGet, readEnvInt } from '../../shared/util'
 import { Correlator, ResultSetData, ResultSetId } from './correlator'
 import { createSqliteConnection } from '../../shared/database/sqlite'
 import { databaseInsertionDurationHistogram, databaseInsertionErrorsCounter } from '../metrics'

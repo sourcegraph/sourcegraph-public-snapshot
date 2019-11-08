@@ -1,7 +1,7 @@
 import * as lsp from 'vscode-languageserver-protocol'
 import { Connection } from 'typeorm'
 import { ConnectionCache, DocumentCache, EncodedJsonCacheValue, ResultChunkCache } from './cache'
-import { hashKey, mustGet } from '../../util'
+import { hashKey, mustGet } from '../../shared/util'
 import { instrument } from '../../shared/metrics'
 import { databaseQueryDurationHistogram, databaseQueryErrorsCounter } from '../metrics'
 import { DefaultMap } from '../../default-map'
