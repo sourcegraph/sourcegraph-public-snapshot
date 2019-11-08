@@ -18,7 +18,7 @@ export type ScriptedRedis = Redis & {
 export async function defineRedisCommands(client: Redis): Promise<ScriptedRedis> {
     client.defineCommand('searchJobs', {
         numberOfKeys: 2,
-        lua: (await fs.readFile(`${__dirname}/../search-jobs.lua`)).toString(),
+        lua: (await fs.readFile(`${__dirname}/../../search-jobs.lua`)).toString(),
     })
 
     // The defineCommand method on the client dynamically defines a new method, but
