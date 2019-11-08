@@ -15,7 +15,7 @@ import (
 // Tests that structural search correctly infers the Go matcher from the .go
 // file extension.
 func TestInferredMatcher(t *testing.T) {
-	// If we are not on CI skip the test if comby is not installed.
+	// If we are not on CI skip the test.
 	if os.Getenv("CI") == "" {
 		t.Skip("Not on CI, skipping comby-dependent test")
 	}
@@ -66,7 +66,7 @@ func foo(real string) {}
 // instead (currently) expects a list of patterns that represent a set of file
 // paths to search.
 func TestIncludePatterns(t *testing.T) {
-	// If we are not on CI skip the test if comby is not installed.
+	// If we are not on CI skip the test.
 	if os.Getenv("CI") == "" {
 		t.Skip("Not on CI, skipping comby-dependent test")
 	}
