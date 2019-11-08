@@ -61,9 +61,7 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo>
                 // Head commit is found in the "View file @ ..." button in the code view.
                 const commitID = getHeadCommitIDFromCodeView(codeView)
                 const { filePath, baseFilePath } = getFilePathsFromCodeView(codeView)
-                const diffFileInfo = { baseCommitID, baseFilePath, commitID, filePath, rawRepoName, baseRawRepoName }
-                console.log({ diffFileInfo })
-                return diffFileInfo
+                return { baseCommitID, baseFilePath, commitID, filePath, rawRepoName, baseRawRepoName }
             }
         )
     )
