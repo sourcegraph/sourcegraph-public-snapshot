@@ -9,7 +9,7 @@ import { gzipJSON } from '../../encoding'
 import { isEqual, uniqWith } from 'lodash'
 import { Package, SymbolReferences } from '../../xrepo'
 import { Readable } from 'stream'
-import { readGzippedJsonElements } from '../../input'
+import { readGzippedJsonElements } from './input'
 import { TableInserter } from '../../inserter'
 import {
     DefinitionModel,
