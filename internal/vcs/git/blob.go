@@ -85,7 +85,6 @@ type blobReader struct {
 }
 
 func newBlobReader(ctx context.Context, repo gitserver.Repo, commit api.CommitID, name string) (*blobReader, error) {
-	// NOTE: Do we really want to panic here? Surely returning an error is enough?
 	ensureAbsCommit(commit)
 
 	cmd := gitserver.DefaultClient.Command("git", "show", string(commit)+":"+name)
