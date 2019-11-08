@@ -95,6 +95,11 @@ const resolveView: ViewResolver<CodeView>['resolveView'] = (element: HTMLElement
     }
 
     if (pageKind === GitLabPageKind.MergeRequest) {
+        if (!element.querySelector('.file-actions')) {
+            // If the code view has no file actions, we cannot resolve its head commit ID.
+            // This can be the case for code views representing added git submodules.
+            return null
+        }
         return { element, ...mergeRequestCodeView }
     }
 
