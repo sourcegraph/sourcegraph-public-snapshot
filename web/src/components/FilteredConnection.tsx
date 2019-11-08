@@ -291,7 +291,7 @@ interface FilteredConnectionDisplayProps extends ConnectionDisplayProps {
     /** Autofocuses the filter input field. */
     autoFocus?: boolean
 
-    /** Whether we will use the URL query string to reflect teh filter and pagination state or not. */
+    /** Whether we will use the URL query string to reflect the filter and pagination state or not. */
     useURLQuery?: boolean
 
     /**
