@@ -1,5 +1,5 @@
 import express from 'express'
-import { ApiJobState, QUEUE_PREFIX, queueTypes, statesByQueue } from '../../queue'
+import { ApiJobState, QUEUE_PREFIX, queueTypes, statesByQueue } from '../../shared/queue/queue'
 import { chunk } from 'lodash'
 import { DEFAULT_JOB_PAGE_SIZE, MAX_JOB_SEARCH } from '../settings'
 import { Job } from 'bull'
