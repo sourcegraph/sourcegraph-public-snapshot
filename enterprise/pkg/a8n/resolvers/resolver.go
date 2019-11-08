@@ -182,11 +182,15 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 
 	switch relay.UnmarshalKind(args.Input.Namespace) {
 	case "User":
-		relay.UnmarshalSpec(args.Input.Namespace, &campaign.NamespaceUserID)
+		err = relay.UnmarshalSpec(args.Input.Namespace, &campaign.NamespaceUserID)
 	case "Org":
-		relay.UnmarshalSpec(args.Input.Namespace, &campaign.NamespaceOrgID)
+		err = relay.UnmarshalSpec(args.Input.Namespace, &campaign.NamespaceOrgID)
 	default:
-		return nil, errors.Errorf("Invalid namespace %q", args.Input.Namespace)
+		err = errors.Errorf("Invalid namespace %q", args.Input.Namespace)
+	}
+
+	if err != nil {
+		return nil, err
 	}
 
 	if err := r.store.CreateCampaign(ctx, campaign); err != nil {
