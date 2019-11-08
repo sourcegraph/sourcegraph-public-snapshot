@@ -1501,11 +1501,22 @@ func testStore(db *sql.DB) func(*testing.T) {
 			}
 
 			for _, tc := range tests {
-				plan := &a8n.CampaignPlan{CampaignType: "comby", Arguments: "{}"}
+				plan := &a8n.CampaignPlan{CampaignType: "comby", Arguments: `{"foobar":"barfoo"}`}
 
 				err := s.CreateCampaignPlan(ctx, plan)
 				if err != nil {
 					t.Fatal(err)
+				}
+				// Clean up before test
+				existingJobs, _, err := s.ListCampaignJobs(ctx, ListCampaignJobsOpts{CampaignPlanID: plan.ID})
+				if err != nil {
+					t.Fatal(err)
+				}
+				for _, j := range existingJobs {
+					err := s.DeleteCampaignJob(ctx, j.ID)
+					if err != nil {
+						t.Fatal(err)
+					}
 				}
 
 				if tc.hasCampaign {
@@ -1529,13 +1540,13 @@ func testStore(db *sql.DB) func(*testing.T) {
 					t.Fatal(err)
 				}
 
-				_, err = s.GetCampaignPlan(ctx, GetCampaignPlanOpts{ID: plan.ID})
+				havePlan, err := s.GetCampaignPlan(ctx, GetCampaignPlanOpts{ID: plan.ID})
 				if err != nil && err != ErrNoResults {
 					t.Fatal(err)
 				}
 
-				if tc.wantDeleted && err != ErrNoResults {
-					t.Fatalf("want campaign to be deleted. got error: %s", err)
+				if tc.wantDeleted && err == nil {
+					t.Fatalf("want campaign to be deleted. got: %v", havePlan)
 				}
 
 				if !tc.wantDeleted && err == ErrNoResults {
