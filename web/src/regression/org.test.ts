@@ -6,10 +6,9 @@ import { GraphQLClient, createGraphQLClient } from './util/GraphQLClient'
 import { TestResourceManager } from './util/TestResourceManager'
 import {
     ensureLoggedInOrCreateTestUser,
-    getCriticalSiteConfig,
-    setCriticalSiteConfig,
     ensureNewUser,
     ensureNewOrganization,
+    editCriticalSiteConfig,
 } from './util/helpers'
 import {
     getUser,
@@ -24,7 +23,6 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { parseJSONCOrError } from '../../../shared/src/util/jsonc'
 import { Settings, QuickLink } from '../schema/settings.schema'
 import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
-import * as jsonc from '@sqs/jsonc-parser'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 
@@ -218,29 +216,13 @@ describe('Organizations regression test suite', () => {
                 if (!managementConsolePassword) {
                     throw new Error('empty management console password')
                 }
-                const origCriticalConfig = await getCriticalSiteConfig(
-                    config.managementConsoleUrl,
-                    managementConsolePassword
+                resourceManager.add(
+                    'Configuration',
+                    'auth.userOrgMap',
+                    await editCriticalSiteConfig(config.managementConsoleUrl, managementConsolePassword, contents =>
+                        jsoncEdit.removeProperty(contents, ['auth.userOrgMap'], formattingOptions)
+                    )
                 )
-                const criticalConfigContents = jsonc.applyEdits(
-                    origCriticalConfig.Contents,
-                    jsoncEdit.removeProperty(origCriticalConfig.Contents, ['auth.userOrgMap'], formattingOptions)
-                )
-                const nextCriticalConfig = await setCriticalSiteConfig(
-                    config.managementConsoleUrl,
-                    managementConsolePassword,
-                    {
-                        LastID: origCriticalConfig.ID,
-                        Contents: criticalConfigContents,
-                    }
-                )
-                resourceManager.add('Configuration', 'auth.userOrgMap', async () => {
-                    const c = await getCriticalSiteConfig(config.managementConsoleUrl, managementConsolePassword)
-                    await setCriticalSiteConfig(config.managementConsoleUrl, managementConsolePassword, {
-                        LastID: c.ID,
-                        Contents: origCriticalConfig.Contents,
-                    })
-                })
 
                 // Retry, because the critical configuration update endpoint is eventually consistent
                 let lastCreatedOrg: GQL.IOrg
@@ -276,19 +258,9 @@ describe('Organizations regression test suite', () => {
                 )
 
                 // Set auth.userOrgMap
-                const newCriticalConfigContents = jsonc.applyEdits(
-                    nextCriticalConfig.Contents,
-                    jsoncEdit.setProperty(
-                        nextCriticalConfig.Contents,
-                        ['auth.userOrgMap'],
-                        { '*': [testOrg.name] },
-                        formattingOptions
-                    )
+                await editCriticalSiteConfig(config.managementConsoleUrl, managementConsolePassword, contents =>
+                    jsoncEdit.setProperty(contents, ['auth.userOrgMap'], { '*': [testOrg.name] }, formattingOptions)
                 )
-                await setCriticalSiteConfig(config.managementConsoleUrl, managementConsolePassword, {
-                    LastID: nextCriticalConfig.ID,
-                    Contents: newCriticalConfigContents,
-                })
 
                 await retry(
                     async () => {

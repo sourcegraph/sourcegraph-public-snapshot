@@ -20,9 +20,12 @@ interface Resource {
 }
 
 /**
- * Tracks resources created by tests. Lets the resource creation and removal logic be stored in one
- * place and for easy resource cleanup at the end of tests. Also prints which resources are created
- * and destroyed in case tests are aborted midway through and manual cleanup is required.
+ * Tracks resources created by tests for easy resource cleanup at the end of tests. Resources are
+ * destroyed in the reverse order in which they're added. Duplicate resources (as identified by type
+ * and name) are only destroyed once (subsequent destructors passed to `add` are ignored).
+ *
+ * Prints which resources are created and destroyed in case tests are aborted midway through and
+ * manual cleanup is required.
  */
 export class TestResourceManager {
     private resources: Resource[] = []
@@ -52,7 +55,7 @@ export class TestResourceManager {
                 await resource.destroy()
             } catch (err) {
                 console.error(
-                    `Error when destrying resource ${resource.type} ${JSON.stringify(resource.name)}: ${err.message}`
+                    `Error when destroying resource ${resource.type} ${JSON.stringify(resource.name)}: ${err.message}`
                 )
                 continue
             }

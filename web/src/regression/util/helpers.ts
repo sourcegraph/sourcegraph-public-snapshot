@@ -252,3 +252,25 @@ export async function ensureNewOrganization(
         result: createdOrg,
     }
 }
+
+export async function editCriticalSiteConfig(
+    managementConsoleUrl: string,
+    managementConsolePassword: string,
+    edits: (contents: string) => jsonc.Edit[]
+): Promise<{ destroy: ResourceDestructor; result: Configuration }> {
+    const origCriticalConfig = await getCriticalSiteConfig(managementConsoleUrl, managementConsolePassword)
+    const newContents = jsonc.applyEdits(origCriticalConfig.Contents, edits(origCriticalConfig.Contents))
+    return {
+        result: await setCriticalSiteConfig(managementConsoleUrl, managementConsolePassword, {
+            Contents: newContents,
+            LastID: origCriticalConfig.ID,
+        }),
+        destroy: async () => {
+            const c = await getCriticalSiteConfig(managementConsoleUrl, managementConsolePassword)
+            await setCriticalSiteConfig(managementConsoleUrl, managementConsolePassword, {
+                LastID: c.ID,
+                Contents: origCriticalConfig.Contents,
+            })
+        },
+    }
+}
