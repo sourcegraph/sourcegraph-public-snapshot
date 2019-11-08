@@ -58,6 +58,8 @@
 // 1528395609_create_campaign_jobs_table.up.sql (551B)
 // 1528395610_change_campaign_plan_arguments_to_text.down.sql (191B)
 // 1528395610_change_campaign_plan_arguments_to_text.up.sql (254B)
+// 1528395611_add_unique_constraint_to_campaign_jobs.down.sql (104B)
+// 1528395611_add_unique_constraint_to_campaign_jobs.up.sql (178B)
 
 package migrations
 
@@ -1286,6 +1288,46 @@ func _1528395610_change_campaign_plan_arguments_to_textUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395611_add_unique_constraint_to_campaign_jobsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\x4e\xcc\x2d\x48\xcc\x4c\xcf\x8b\xcf\xca\x4f\x2a\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x0b\x0e\x09\x72\xf4\xf4\x0b\x41\x95\x8d\x87\xf3\x0a\x72\x12\xf3\xe2\x8b\x52\x0b\xf2\xe3\x8b\x52\xcb\xe2\x4b\xf3\x32\x0b\x4b\x53\xad\xb9\xb8\x9c\xfd\x7d\x7d\x3d\x43\xac\xb9\x00\x01\x00\x00\xff\xff\x9a\x41\x7a\x60\x68\x00\x00\x00")
+
+func _1528395611_add_unique_constraint_to_campaign_jobsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395611_add_unique_constraint_to_campaign_jobsDownSql,
+		"1528395611_add_unique_constraint_to_campaign_jobs.down.sql",
+	)
+}
+
+func _1528395611_add_unique_constraint_to_campaign_jobsDownSql() (*asset, error) {
+	bytes, err := _1528395611_add_unique_constraint_to_campaign_jobsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395611_add_unique_constraint_to_campaign_jobs.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x88, 0x20, 0x8c, 0x35, 0xc5, 0xbe, 0x1f, 0xca, 0xae, 0xc6, 0xeb, 0x10, 0xff, 0xc1, 0x29, 0xf2, 0x61, 0x9, 0x7e, 0x74, 0x84, 0xc7, 0xfa, 0x67, 0x6e, 0xab, 0x82, 0x87, 0xa4, 0xd8, 0xe0, 0x20}}
+	return a, nil
+}
+
+var __1528395611_add_unique_constraint_to_campaign_jobsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x54\xcd\xc1\x0a\xc2\x30\x10\x04\xd0\xfb\x7e\xc5\x1e\x15\xfc\x83\x9e\xb6\xcd\x2a\x0b\x49\x8a\x71\x7b\xf0\x14\xaa\x16\xa9\x68\x1a\x2b\xed\xf7\x0b\x15\x84\xde\x66\x98\x07\x53\xf2\x41\x7c\x01\x40\x56\x39\xa0\x52\x69\x19\xaf\xed\x2b\xb7\xfd\x3d\xc5\xc7\x70\xf9\x20\x19\x83\x55\xed\x4f\x1a\x48\xbc\xae\xc7\xf8\x6f\xf9\xd9\xa6\x38\x76\x79\x88\x63\x37\xc7\x29\xf5\xef\xa9\x03\xc4\xc6\xcb\xb1\x61\xdc\xac\x5d\x7f\xdb\xe1\x62\x7f\x61\xde\x02\xa2\xe1\x3d\x87\xb0\xfc\x8b\x17\x15\xb2\xf6\x8c\xe2\x1c\x1b\x21\xe5\x02\xa0\xaa\x9d\x13\x2d\xe0\x1b\x00\x00\xff\xff\xdf\x6d\x9a\x6d\xb2\x00\x00\x00")
+
+func _1528395611_add_unique_constraint_to_campaign_jobsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395611_add_unique_constraint_to_campaign_jobsUpSql,
+		"1528395611_add_unique_constraint_to_campaign_jobs.up.sql",
+	)
+}
+
+func _1528395611_add_unique_constraint_to_campaign_jobsUpSql() (*asset, error) {
+	bytes, err := _1528395611_add_unique_constraint_to_campaign_jobsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395611_add_unique_constraint_to_campaign_jobs.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x6e, 0xd4, 0x59, 0x7f, 0xfc, 0x1e, 0x50, 0xf6, 0x77, 0x8b, 0x85, 0x91, 0x72, 0xb1, 0xff, 0x42, 0x79, 0x5a, 0x32, 0x38, 0x82, 0xec, 0xe0, 0x42, 0x86, 0x99, 0xfb, 0x9a, 0xb2, 0x5e, 0x66, 0xd6}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1435,6 +1477,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395609_create_campaign_jobs_table.up.sql":                             _1528395609_create_campaign_jobs_tableUpSql,
 	"1528395610_change_campaign_plan_arguments_to_text.down.sql":               _1528395610_change_campaign_plan_arguments_to_textDownSql,
 	"1528395610_change_campaign_plan_arguments_to_text.up.sql":                 _1528395610_change_campaign_plan_arguments_to_textUpSql,
+	"1528395611_add_unique_constraint_to_campaign_jobs.down.sql":               _1528395611_add_unique_constraint_to_campaign_jobsDownSql,
+	"1528395611_add_unique_constraint_to_campaign_jobs.up.sql":                 _1528395611_add_unique_constraint_to_campaign_jobsUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1536,6 +1580,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395609_create_campaign_jobs_table.up.sql":                             {_1528395609_create_campaign_jobs_tableUpSql, map[string]*bintree{}},
 	"1528395610_change_campaign_plan_arguments_to_text.down.sql":               {_1528395610_change_campaign_plan_arguments_to_textDownSql, map[string]*bintree{}},
 	"1528395610_change_campaign_plan_arguments_to_text.up.sql":                 {_1528395610_change_campaign_plan_arguments_to_textUpSql, map[string]*bintree{}},
+	"1528395611_add_unique_constraint_to_campaign_jobs.down.sql":               {_1528395611_add_unique_constraint_to_campaign_jobsDownSql, map[string]*bintree{}},
+	"1528395611_add_unique_constraint_to_campaign_jobs.up.sql":                 {_1528395611_add_unique_constraint_to_campaign_jobsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

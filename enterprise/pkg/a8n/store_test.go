@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -1312,8 +1313,10 @@ func testStore(db *sql.DB) func(*testing.T) {
 			for num, tc := range tests {
 				campaignPlanID := int64(num + 1)
 
-				for _, j := range tc.jobs {
+				for i, j := range tc.jobs {
 					j.CampaignPlanID = campaignPlanID
+					j.RepoID = int32(i)
+					j.Rev = api.CommitID(fmt.Sprintf("deadbeef-%d", i))
 
 					err := s.CreateCampaignJob(ctx, j)
 					if err != nil {
