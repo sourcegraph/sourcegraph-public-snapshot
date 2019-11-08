@@ -1,12 +1,12 @@
 # Product
 
-This document is about *how* we plan product changes at Sourcegraph. For the *what*, see the [product roadmap](../roadmap/index.md).
+This document is about *how* we plan product changes at Sourcegraph. For the *what*, see the [product roadmap](../../roadmap/index.md).
 
 ## Goals
 
 The goals of product at Sourcegraph are to make the following true:
 
-- The team is working on the most important things (listed in the [product roadmap](../roadmap/index.md)) to achieve our company goals.
+- The team is working on the most important things (listed in the [product roadmap](../../roadmap/index.md)) to achieve our company goals.
 - Each teammate has the customer and product context needed (about customer problems, likely future priorities, possible solutions, etc.) to perform their work effectively.
 - The product vision and roadmap are communicated well to teammates and everyone outside Sourcegraph.
 
@@ -21,7 +21,7 @@ Product planning has 3 parts:
 The [product manager](#product-manager) and project team plan each project at least through the [current release](../releases.md). The outcome of planning a project is that:
 
 - The project has a [tracking issue](tracking_issue_template.md) in each release milestone that ships something related to the project. The tracking issue describes what a project will ship in a specific release. It is the source of truth for the description and status of a project.
-- The [product roadmap](../roadmap/index.md) links to the project's [tracking issues](tracking_issue_template.md).
+- The [product roadmap](../../roadmap/index.md) links to the project's [tracking issues](tracking_issue_template.md).
 - The [issues](../issues.md) for the project are correctly prioritized, assigned, and documented.
 - The project team has the context necessary to work effectively and to [triage issues](../issues.md#triage) that are filed between now and the next planning session.
 
@@ -39,7 +39,7 @@ Project planning is a continuous process, punctuated with meetings to ensure eve
 
 The agenda for a project planning kickoff or checkin is:
 
-1. Review, update, and/or create the project's tracking issue on the [product roadmap](../roadmap/index.md) for the next release.
+1. Review, update, and/or create the project's tracking issue on the [product roadmap](../../roadmap/index.md) for the next release.
    - Use the [**tracking issue template**](tracking_issue_template.md).
    - Are the tasks the most important things to work on?
    - Are they realistic?

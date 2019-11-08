@@ -2,4 +2,4 @@
 ignoreDisconnectedPageCheck: true
 ---
 
-This document was moved to [another location](../../documentation/structure.md).
+This document was moved to [another location](../../team/product-dev/documentation/structure.md).

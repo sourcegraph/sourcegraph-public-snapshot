@@ -7,7 +7,7 @@ We want Sourcegraph to be:
 
 This roadmap is an overview of what’s coming in the next 3-6 months.  More details are in the [project roadmap](https://docs.google.com/document/d/1cBsE9801DcBF9chZyMnxRdolqM_1c2pPyGQz15QAvYI/edit?usp=sharing). Our high-level vision is outlined in the [Sourcegraph master plan](https://about.sourcegraph.com/plan).
 
-We ship a release on the [20th day of each month](../releases.md#releases-are-monthly).
+We ship a release on the [20th day of each month](../product-dev/releases.md#releases-are-monthly).
 
 Want to help us achieve these goals? [We're hiring!](https://github.com/sourcegraph/careers/blob/master/job-descriptions/software-engineer.md)
 

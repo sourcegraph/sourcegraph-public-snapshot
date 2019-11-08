@@ -4,7 +4,7 @@
 
 The documentation style guide defines the markup structure used in Sourcegraph documentation. Check the [documentation guidelines](index.md) for general development instructions.
 
-See the [Sourcegraph style guide](../style_guide.md) for general information.
+See the [Sourcegraph style guide](../../style_guide.md) for general information.
 
 For help adhering to the guidelines, see [Linting](index.md#linting).
 

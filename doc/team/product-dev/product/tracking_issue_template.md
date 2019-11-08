@@ -1,6 +1,6 @@
 # Tracking issue template
 
-This is the template for the [project tracking issue](index.md#planning) that the [roadmap](../roadmap/index.md) links to.
+This is the template for the [project tracking issue](index.md#planning) that the [roadmap](../../roadmap/index.md) links to.
 
 1. [Create a new GitHub issue on sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph/issues/new?label=roadmap)
    - Label: `roadmap` and any other relevant labels
