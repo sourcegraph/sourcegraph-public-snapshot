@@ -291,11 +291,8 @@ interface FilteredConnectionDisplayProps extends ConnectionDisplayProps {
     /** Autofocuses the filter input field. */
     autoFocus?: boolean
 
-    /** Whether we will read initial filter and pagination state from the URL. */
-    shouldReadURLQuery?: boolean
-
-    /** Whether we will update the URL query string to reflect the filter and pagination state or not. */
-    shouldUpdateURLQuery?: boolean
+    /** Whether we will use the URL query string to reflect teh filter and pagination state or not. */
+    useURLQuery?: boolean
 
     /**
      * Filters to display next to the filter input field.
@@ -414,8 +411,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
 > {
     public static defaultProps: Partial<FilteredConnectionProps<any, any>> = {
         defaultFirst: 20,
-        shouldReadURLQuery: true,
-        shouldUpdateURLQuery: true,
+        useURLQuery: true,
     }
 
     private queryInputChanges = new Subject<string>()
@@ -585,7 +581,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                 )
                 .subscribe(
                     ({ connectionOrError, previousPage, ...rest }) => {
-                        if (this.props.shouldUpdateURLQuery) {
+                        if (this.props.useURLQuery) {
                             this.props.history.replace({
                                 search: this.urlQuery({ visible: previousPage.length }),
                                 hash: this.props.location.hash,
