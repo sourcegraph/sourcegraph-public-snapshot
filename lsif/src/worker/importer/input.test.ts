@@ -37,7 +37,7 @@ describe('splitLines', () => {
     it('should split input by newline', async () => {
         const chunks = ['foo\n', 'bar', '\nbaz\n\nbonk\nqu', 'ux']
 
-        const lines = []
+        const lines: string[] = []
         for await (const line of splitLines(generate(chunks))) {
             lines.push(line)
         }
@@ -55,7 +55,7 @@ describe('parseJsonLines', () => {
             { type: 'edge', label: 'moniker' },
         ]
 
-        const elements: any[] = []
+        const elements: unknown[] = []
         for await (const element of parseJsonLines(generate(lines.map(l => JSON.stringify(l))))) {
             elements.push(element)
         }

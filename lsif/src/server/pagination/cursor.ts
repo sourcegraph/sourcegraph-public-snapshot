@@ -3,7 +3,7 @@
  *
  * @param cursorRaw The raw cursor.
  */
-export function parseCursor<T>(cursorRaw: any): T | undefined {
+export function parseCursor<T>(cursorRaw: string | undefined): T | undefined {
     if (cursorRaw === undefined) {
         return undefined
     }

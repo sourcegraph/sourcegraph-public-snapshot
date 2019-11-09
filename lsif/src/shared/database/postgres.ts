@@ -52,7 +52,7 @@ export async function createPostgresConnection(configuration: Configuration, log
     const url = new URL(configuration.postgresDSN)
 
     // TODO(efritz) - handle allow, prefer, require, 'verify-ca', and 'verify-full'
-    const sslModes: { [K: string]: boolean | TlsOptions } = {
+    const sslModes: { [name: string]: boolean | TlsOptions } = {
         disable: false,
     }
 

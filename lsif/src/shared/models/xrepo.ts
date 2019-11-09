@@ -129,7 +129,7 @@ class Package {
      * The corresponding dump, `LsifDump` when querying and `DumpId` when
      * inserting.
      */
-    @OneToOne(type => LsifDump, { eager: true })
+    @OneToOne(() => LsifDump, { eager: true })
     @JoinColumn({ name: 'dump_id' })
     public dump!: LsifDump
 

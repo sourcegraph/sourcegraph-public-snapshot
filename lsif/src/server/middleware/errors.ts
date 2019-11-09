@@ -8,10 +8,17 @@ import { Logger } from 'winston'
  */
 export const errorHandler = (
     logger: Logger
-): ((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => void) => (
-    error: any,
+): ((
+    error: Error & { status?: number },
     req: express.Request,
     res: express.Response,
+    next: express.NextFunction
+) => void) => (
+    error: Error & { status?: number },
+    req: express.Request,
+    res: express.Response,
+    // Express uses argument length to distinguish middleware and error handlers
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     next: express.NextFunction
 ): void => {
     if (!error || !error.status) {
