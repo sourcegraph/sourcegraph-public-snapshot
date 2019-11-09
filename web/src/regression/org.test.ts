@@ -155,8 +155,7 @@ describe('Organizations regression test suite', () => {
             })
             await (await driver.findElementWithText('Leave organization', { wait: { timeout: 1000 } })).click()
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            await driver.page.waitForFunction(() => !(window as any).find('Leave organization'))
+            await driver.page.waitForFunction(() => !document.body.innerText.includes('Leave organization'))
 
             {
                 const quicklinks = await getQuickLinks()
