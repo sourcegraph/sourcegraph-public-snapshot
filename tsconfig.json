@@ -22,6 +22,7 @@
     "declaration": true,
     "declarationMap": true,
     "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
     "noErrorTruncation": true,
     "importHelpers": true,
     "resolveJsonModule": true,
