@@ -108,14 +108,14 @@ describe('Critical config test suite', () => {
                 editFns.push((contents: string) =>
                     jsoncEdit.setProperty(contents, ['auth.providers', -1], p, formattingOptions)
                 )
-                resourceManager.add(
-                    'Configuration',
-                    'builtin auth provider: allowSignup',
-                    await editCriticalSiteConfig(config.managementConsoleUrl, managementConsolePassword, ...editFns)
-                )
+                return await editCriticalSiteConfig(config.managementConsoleUrl, managementConsolePassword, ...editFns)
             }
 
-            await setBuiltinAuthProvider({ type: 'builtin', allowSignup: false })
+            resourceManager.add(
+                'Configuration',
+                'builtin auth provider: allowSignup',
+                await setBuiltinAuthProvider({ type: 'builtin', allowSignup: false })
+            )
             await retry(
                 async () => {
                     await driver.page.goto(config.sourcegraphBaseUrl)
