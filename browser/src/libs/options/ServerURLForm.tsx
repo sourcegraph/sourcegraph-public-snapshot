@@ -2,6 +2,10 @@ import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { merge, Subject, Subscription } from 'rxjs'
 import { debounceTime, takeUntil } from 'rxjs/operators'
+import { ErrorLike } from '@sourcegraph/codeintellify/lib/errors'
+import { isErrorLike } from '../../../../shared/src/util/errors'
+import { ERAUTHREQUIRED } from '../../../../shared/src/backend/errors'
+import { EINVALIDSOURCEGRAPHURL } from '../../shared/util/context'
 
 export enum ConnectionErrors {
     AuthError,
@@ -29,9 +33,7 @@ const zeroWidthNbsp = '\u2060'
 
 export interface ServerURLFormProps {
     className?: string
-    status: keyof StatusClassNames
-    connectionError?: ConnectionErrors
-
+    statusOrError: 'connecting' | 'connected' | ErrorLike
     value: string
     onChange: (value: string) => void
     onSubmit: () => void
@@ -92,6 +94,7 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
     }
 
     public render(): React.ReactNode {
+        const statusString = isErrorLike(this.props.statusOrError) ? 'error' : this.props.statusOrError
         return (
             // eslint-disable-next-line react/forbid-elements
             <form className={`server-url-form ${this.props.className || ''}`} onSubmit={this.handleSubmit}>
@@ -104,11 +107,11 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
                                     className={
                                         'server-url-form__status-indicator ' +
                                         'bg-' +
-                                        (this.isUpdating ? 'secondary' : statusClassNames[this.props.status])
+                                        (this.isUpdating ? 'secondary' : statusString)
                                     }
                                 />{' '}
                                 <span className="e2e-connection-status">
-                                    {this.isUpdating ? zeroWidthNbsp : upperFirst(this.props.status)}
+                                    {this.isUpdating ? zeroWidthNbsp : statusString}
                                 </span>
                             </span>
                         </span>
@@ -125,16 +128,23 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
                         autoCorrect="off"
                     />
                 </div>
-                {!this.state.isUpdating && this.props.connectionError === ConnectionErrors.AuthError && (
-                    <div className="mt-1">
-                        Authentication to Sourcegraph failed.{' '}
-                        <a href={this.props.value} target="_blank" rel="noopener noreferrer">
-                            Sign in to your instance
-                        </a>{' '}
-                        to continue.
-                    </div>
-                )}
-                {!this.state.isUpdating && this.props.connectionError === ConnectionErrors.UnableToConnect && (
+                {!this.state.isUpdating &&
+                    isErrorLike(this.props.statusOrError) &&
+                    this.props.statusOrError.code === EINVALIDSOURCEGRAPHURL && (
+                        <div className="mt-1 text-error">Invalid Sourcegraph URL</div>
+                    )}
+                {!this.state.isUpdating &&
+                    isErrorLike(this.props.statusOrError) &&
+                    this.props.statusOrError.code === ERAUTHREQUIRED && (
+                        <div className="mt-1">
+                            Authentication to Sourcegraph failed.{' '}
+                            <a href={this.props.value} target="_blank" rel="noopener noreferrer">
+                                Sign in to your instance
+                            </a>{' '}
+                            to continue.
+                        </div>
+                    )}
+                {!this.state.isUpdating && isErrorLike(this.props.statusOrError) && (
                     <div className="mt-1">
                         <p>
                             Unable to connect to{' '}

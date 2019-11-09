@@ -94,7 +94,7 @@ class Options extends React.Component<{}, State> {
 
         this.subscriptions.add(
             observeSourcegraphURL(IS_EXTENSION).subscribe(sourcegraphURL => {
-                this.setState({ sourcegraphURL })
+                this.setState({ sourcegraphURL: sourcegraphURL.href })
             })
         )
 

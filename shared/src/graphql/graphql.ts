@@ -51,21 +51,20 @@ export const createInvalidGraphQLMutationResponseError = (queryName: string): Gr
         queryName,
     })
 
-export interface GraphQLRequestOptions extends Omit<RequestInit, 'method' | 'body'> {
-    baseUrl?: string
-}
-
 export function requestGraphQL<T extends GQL.IQuery | GQL.IMutation>({
     request,
     variables = {},
-    baseUrl = '',
+    baseURL,
     ...options
-}: GraphQLRequestOptions & {
+}: Omit<RequestInit, 'method' | 'body'> & {
     request: string
     variables?: {}
+    baseURL?: URL
 }): Observable<GraphQLResult<T>> {
     const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
-    return fromFetch(`${baseUrl}/.api/graphql${nameMatch ? '?' + nameMatch[1] : ''}`, {
+    const apiURL = `/.api/graphql${nameMatch ? '?' + nameMatch[1] : ''}`
+    const fetchURL = baseURL ? new URL(apiURL, baseURL).href : apiURL
+    return fromFetch(fetchURL, {
         ...options,
         method: 'POST',
         body: JSON.stringify({ query: request, variables }),

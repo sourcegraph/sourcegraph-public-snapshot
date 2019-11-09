@@ -123,7 +123,7 @@ export interface PlatformContext {
      *
      * @example `https://sourcegraph.com`
      */
-    sourcegraphURL: string
+    sourcegraphURL: Observable<URL>
 
     /**
      * The client application that is running this extension, either 'sourcegraph' for Sourcegraph

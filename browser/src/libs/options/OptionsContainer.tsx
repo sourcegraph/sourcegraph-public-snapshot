@@ -1,11 +1,9 @@
 import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, filter, map, share, switchMap, concatMap } from 'rxjs/operators'
-import { ERAUTHREQUIRED } from '../../../../shared/src/backend/errors'
+import { catchError, distinctUntilChanged, map, share, switchMap, concatMap } from 'rxjs/operators'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { getExtensionVersion } from '../../shared/util/context'
+import { getExtensionVersion, InvalidSourcegraphURLError } from '../../shared/util/context'
 import { OptionsMenu, OptionsMenuProps } from './OptionsMenu'
-import { ConnectionErrors } from './ServerURLForm'
 
 export interface OptionsContainerProps {
     sourcegraphURL: string
@@ -23,13 +21,7 @@ export interface OptionsContainerProps {
 interface OptionsContainerState
     extends Pick<
         OptionsMenuProps,
-        | 'status'
-        | 'sourcegraphURL'
-        | 'connectionError'
-        | 'isSettingsOpen'
-        | 'isActivated'
-        | 'urlHasPermissions'
-        | 'currentTabStatus'
+        'statusOrError' | 'sourcegraphURL' | 'isSettingsOpen' | 'isActivated' | 'urlHasPermissions' | 'currentTabStatus'
     > {}
 
 export class OptionsContainer extends React.Component<OptionsContainerProps, OptionsContainerState> {
@@ -45,29 +37,22 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
         super(props)
 
         this.state = {
-            status: 'connecting',
+            statusOrError: 'connecting',
             sourcegraphURL: props.sourcegraphURL,
             isActivated: props.isActivated,
             urlHasPermissions: false,
-            connectionError: undefined,
             isSettingsOpen: false,
         }
 
         const fetchingSite: Observable<string | ErrorLike> = this.urlUpdates.pipe(
             distinctUntilChanged(),
-            map(url => url.replace(/\/$/, '')),
-            filter(maybeURL => {
-                let validURL = false
-                try {
-                    validURL = !!new URL(maybeURL)
-                } catch (e) {
-                    validURL = false
-                }
-
-                return validURL
-            }),
             switchMap(url => {
-                this.setState({ status: 'connecting', connectionError: undefined })
+                try {
+                    new URL(url)
+                } catch (err) {
+                    throw new InvalidSourcegraphURLError(url)
+                }
+                this.setState({ statusOrError: 'connecting' })
                 return this.props.ensureValidSite(url).pipe(
                     map(() => url),
                     catchError(err => of(err))
@@ -84,13 +69,11 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
 
                 if (isErrorLike(res)) {
                     this.setState({
-                        status: 'error',
-                        connectionError:
-                            res.code === ERAUTHREQUIRED ? ConnectionErrors.AuthError : ConnectionErrors.UnableToConnect,
+                        statusOrError: res,
                     })
                     url = this.state.sourcegraphURL
                 } else {
-                    this.setState({ status: 'connected' })
+                    this.setState({ statusOrError: 'connected' })
                     url = res
                 }
 

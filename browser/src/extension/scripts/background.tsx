@@ -43,7 +43,7 @@ if (contentScripts) {
     }
 }
 
-const configureOmnibox = (serverUrl: string): void => {
+const configureOmnibox = (serverUrl: URL): void => {
     browser.omnibox.setDefaultSuggestion({
         description: `Search code on ${serverUrl}`,
     })
@@ -58,11 +58,11 @@ const requestGraphQL = <T extends GQL.IQuery | GQL.IMutation>({
 }): Observable<GraphQLResult<T>> =>
     observeSourcegraphURL(IS_EXTENSION).pipe(
         take(1),
-        switchMap(sourcegraphURL =>
+        switchMap(baseURL =>
             requestGraphQLCommon<T>({
                 request,
                 variables,
-                baseUrl: sourcegraphURL,
+                baseURL,
                 headers: getHeaders(),
                 credentials: 'include',
             })
