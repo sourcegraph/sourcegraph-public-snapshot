@@ -5,7 +5,6 @@ import * as React from 'react'
 export interface OptionsHeaderProps {
     className?: string
     version: string
-    assetsDir?: string
     isActivated: boolean
     onSettingsClick: (event: React.MouseEvent<HTMLButtonElement>) => void
     onToggleActivationClick: (value: boolean) => void
@@ -14,14 +13,13 @@ export interface OptionsHeaderProps {
 export const OptionsHeader: React.FunctionComponent<OptionsHeaderProps> = ({
     className,
     version,
-    assetsDir,
     isActivated,
     onSettingsClick,
     onToggleActivationClick,
 }: OptionsHeaderProps) => (
     <div className={`options-header ${className || ''}`}>
         <div>
-            <img src={`${assetsDir || ''}/img/sourcegraph-logo.svg`} className="options-header__logo" />
+            <img src="/img/sourcegraph-logo.svg" className="options-header__logo" />
             <div className="options-header__version">v{version}</div>
         </div>
         <div className="options-header__right">

@@ -33,6 +33,7 @@ import {
     switchMap,
     withLatestFrom,
     tap,
+    first,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { DecorationMapByLine } from '../../../../shared/src/api/client/services/decoration'
@@ -98,6 +99,7 @@ import { observeStorageKey } from '../../browser/storage'
 import { SourcegraphIntegrationURLs } from '../../platform/context'
 import { requestGraphQLHelper } from '../../shared/backend/requestGraphQL'
 import { checkUserLoggedInAndFetchSettings } from '../../platform/settings'
+import { observeSourcegraphURL } from '../../shared/util/context'
 
 registerHighlightContributions()
 
@@ -280,7 +282,12 @@ export interface FileInfoWithRepoNames extends FileInfo, RepoSpec {
 
 export interface CodeIntelligenceProps
     extends PlatformContextProps<
-            'forceUpdateTooltip' | 'urlToFile' | 'sideloadedExtensionURL' | 'requestGraphQL' | 'settings'
+            | 'forceUpdateTooltip'
+            | 'urlToFile'
+            | 'sideloadedExtensionURL'
+            | 'requestGraphQL'
+            | 'settings'
+            | 'sourcegraphURL'
         >,
         TelemetryProps {
     codeHost: CodeHost
@@ -443,13 +450,11 @@ export function handleCodeHost({
     extensionsController,
     platformContext,
     showGlobalDebug,
-    sourcegraphURL,
     telemetryService,
     render,
     minimalUI,
 }: CodeIntelligenceProps & {
     mutations: Observable<MutationRecordLike[]>
-    sourcegraphURL: string
     render: typeof reactDOMRender
     minimalUI?: boolean
 }): Subscription {
@@ -518,7 +523,7 @@ export function handleCodeHost({
     // so we don't need to subscribe to mutations.
     if (showGlobalDebug) {
         const mount = createGlobalDebugMount()
-        renderGlobalDebug({ extensionsController, platformContext, history, sourcegraphURL, render })(mount)
+        renderGlobalDebug({ extensionsController, platformContext, history, render })(mount)
     }
 
     // Render view on Sourcegraph button
@@ -527,7 +532,7 @@ export function handleCodeHost({
         subscriptions.add(
             addedElements.pipe(map(codeHost.getViewContextOnSourcegraphMount), filter(isDefined)).subscribe(
                 renderViewContextOnSourcegraph({
-                    sourcegraphURL,
+                    sourcegraphURL: platformContext.sourcegraphURL,
                     getContext,
                     viewOnSourcegraphButtonClassProps,
                     ensureRepoExists,
@@ -799,7 +804,6 @@ export function handleCodeHost({
                     <CodeViewToolbar
                         {...fileInfo}
                         {...codeHost.codeViewToolbarClassProps}
-                        sourcegraphURL={sourcegraphURL}
                         telemetryService={telemetryService}
                         platformContext={platformContext}
                         extensionsController={extensionsController}
@@ -846,11 +850,14 @@ export const determineCodeHost = (): CodeHost | undefined => CODE_HOSTS.find(cod
 export async function injectCodeIntelligenceToCodeHost(
     mutations: Observable<MutationRecordLike[]>,
     codeHost: CodeHost,
-    { sourcegraphURL, assetsURL }: SourcegraphIntegrationURLs,
+    { assetsURL }: SourcegraphIntegrationURLs,
     isExtension: boolean,
     showGlobalDebug = SHOW_DEBUG()
 ): Promise<Subscription> {
     const subscriptions = new Subscription()
+    const sourcegraphURL = await observeSourcegraphURL(isExtension)
+        .pipe(first())
+        .toPromise()
     const initialSettingsResult = await checkUserLoggedInAndFetchSettings(
         requestGraphQLHelper(isExtension, sourcegraphURL)
     ).toPromise()
@@ -859,9 +866,9 @@ export async function injectCodeIntelligenceToCodeHost(
         console.warn(`Sourcegraph is disabled: you must be logged in to ${sourcegraphURL} to use Sourcegraph.`)
         return subscriptions
     }
-    const { platformContext, extensionsController } = initializeExtensions(
+    const { platformContext, extensionsController } = await initializeExtensions(
         codeHost,
-        { sourcegraphURL, assetsURL },
+        { sourcegraphURL: sourcegraphURL.href, assetsURL },
         initialSettingsResult.settings,
         isExtension
     )
@@ -893,7 +900,6 @@ export async function injectCodeIntelligenceToCodeHost(
                     extensionsController,
                     platformContext,
                     showGlobalDebug,
-                    sourcegraphURL,
                     telemetryService,
                     render: reactDOMRender,
                     minimalUI,

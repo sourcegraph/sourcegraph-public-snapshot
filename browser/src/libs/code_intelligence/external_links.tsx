@@ -3,10 +3,11 @@ import { isEqual } from 'lodash'
 import * as React from 'react'
 import { render } from 'react-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
-import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
+import { distinctUntilChanged, map, switchMap, first } from 'rxjs/operators'
 import { SourcegraphIconButton } from '../../shared/components/Button'
 import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
 import { CodeHost, CodeHostContext } from './code_intelligence'
+import { useObservable } from '../../../../shared/src/util/useObservable'
 
 export interface ViewOnSourcegraphButtonClassProps {
     className?: string
@@ -15,93 +16,54 @@ export interface ViewOnSourcegraphButtonClassProps {
 
 interface ViewOnSourcegraphButtonProps extends ViewOnSourcegraphButtonClassProps {
     context: CodeHostContext
-    sourcegraphURL: string
-    ensureRepoExists: (context: CodeHostContext, sourcegraphUrl: string) => Observable<boolean>
+    sourcegraphURL: Observable<URL>
+    ensureRepoExists: (context: CodeHostContext) => Observable<boolean>
     onConfigureSourcegraphClick?: () => void
 }
 
-interface ViewOnSourcegraphButtonState {
-    /**
-     * Whether or not the repo exists on the configured Sourcegraph instance.
-     */
-    repoExists?: boolean
-}
+const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphButtonProps> = ({
+    ensureRepoExists,
+    context,
+    sourcegraphURL,
+    className,
+    iconClassName,
+    onConfigureSourcegraphClick,
+}) => {
+    const repoExists = useObservable(React.useMemo(() => ensureRepoExists(context), [context, ensureRepoExists]))
+    const sourcegraphBaseURL = useObservable(sourcegraphURL)
 
-class ViewOnSourcegraphButton extends React.Component<ViewOnSourcegraphButtonProps, ViewOnSourcegraphButtonState> {
-    private componentUpdates = new Subject<ViewOnSourcegraphButtonProps>()
-    private subscriptions = new Subscription()
-
-    constructor(props: ViewOnSourcegraphButtonProps) {
-        super(props)
-        this.state = {}
-        this.subscriptions.add(
-            this.componentUpdates
-                .pipe(
-                    map(({ context, sourcegraphURL, ensureRepoExists }) => ({
-                        context,
-                        sourcegraphURL,
-                        ensureRepoExists,
-                    })),
-                    distinctUntilChanged((a, b) => isEqual(a, b)),
-                    switchMap(({ context, sourcegraphURL, ensureRepoExists }) =>
-                        ensureRepoExists(context, sourcegraphURL)
-                    )
-                )
-                .subscribe(repoExists => {
-                    this.setState({ repoExists })
-                })
-        )
+    if (!repoExists) {
+        return null
     }
 
-    public componentDidMount(): void {
-        this.componentUpdates.next(this.props)
+    if (!sourcegraphBaseURL) {
+        return null
     }
 
-    public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
-    }
-
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    public render(): React.ReactNode {
-        if (this.state.repoExists === undefined) {
-            return null
-        }
-
-        // If repo doesn't exist and the instance is sourcegraph.com, prompt
-        // user to configure Sourcegraph.
-        if (
-            !this.state.repoExists &&
-            this.props.sourcegraphURL === DEFAULT_SOURCEGRAPH_URL &&
-            this.props.onConfigureSourcegraphClick
-        ) {
-            return (
-                <SourcegraphIconButton
-                    label="Configure Sourcegraph"
-                    ariaLabel="Install Sourcegraph for search and code intelligence on private instance"
-                    className={classNames('open-on-sourcegraph', this.props.className)}
-                    iconClassName={classNames('open-on-sourcegraph__icon--muted', this.props.iconClassName)}
-                    onClick={this.props.onConfigureSourcegraphClick}
-                />
-            )
-        }
-
+    // If repo doesn't exist and the instance is sourcegraph.com, prompt
+    // user to configure Sourcegraph.
+    if (!repoExists && sourcegraphBaseURL.href === DEFAULT_SOURCEGRAPH_URL.href && onConfigureSourcegraphClick) {
         return (
             <SourcegraphIconButton
-                url={this.getURL()}
-                ariaLabel="View repository on Sourcegraph"
-                className={classNames('open-on-sourcegraph', this.props.className)}
-                iconClassName={this.props.iconClassName}
+                label="Configure Sourcegraph"
+                ariaLabel="Install Sourcegraph for search and code intelligence on private instance"
+                className={classNames('open-on-sourcegraph', className)}
+                iconClassName={classNames('open-on-sourcegraph__icon--muted', iconClassName)}
+                onClick={onConfigureSourcegraphClick}
             />
         )
     }
 
-    private getURL(): string {
-        const rev = this.props.context.rev ? `@${this.props.context.rev}` : ''
-        return `${this.props.sourcegraphURL}/${this.props.context.rawRepoName}${rev}`
-    }
+    const rev = context.rev ? `@${context.rev}` : ''
+    const iconURL = new URL(`${context.rawRepoName}${rev}`, sourcegraphBaseURL).href
+    return (
+        <SourcegraphIconButton
+            url={iconURL}
+            ariaLabel="View repository on Sourcegraph"
+            className={classNames('open-on-sourcegraph', className)}
+            iconClassName={iconClassName}
+        />
+    )
 }
 
 export const renderViewContextOnSourcegraph = ({
@@ -111,7 +73,7 @@ export const renderViewContextOnSourcegraph = ({
     viewOnSourcegraphButtonClassProps,
     onConfigureSourcegraphClick,
 }: {
-    sourcegraphURL: string
+    sourcegraphURL: Observable<URL>
     ensureRepoExists: ViewOnSourcegraphButtonProps['ensureRepoExists']
     onConfigureSourcegraphClick?: ViewOnSourcegraphButtonProps['onConfigureSourcegraphClick']
 } & Required<Pick<CodeHost, 'getContext'>> &

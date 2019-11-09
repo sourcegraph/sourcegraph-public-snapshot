@@ -1,4 +1,4 @@
-import { concat, Observable, ReplaySubject } from 'rxjs'
+import { concat, Observable, ReplaySubject, of } from 'rxjs'
 import { map, publishReplay, refCount } from 'rxjs/operators'
 import { createExtensionHost } from '../../../shared/src/api/extension/worker'
 import { gql } from '../../../shared/src/graphql/graphql'
@@ -62,7 +62,7 @@ export function createPlatformContext(): PlatformContext {
         createExtensionHost: () => createExtensionHost({ wrapEndpoints: false }),
         urlToFile: toPrettyBlobURL,
         getScriptURLForExtension: bundleURL => bundleURL,
-        sourcegraphURL: window.context.externalURL,
+        sourcegraphURL: of(new URL(window.context.externalURL)),
         clientApplication: 'sourcegraph',
         sideloadedExtensionURL: new LocalStorageSubject<string | null>('sideloadedExtensionURL', null),
         telemetryService: eventLogger,

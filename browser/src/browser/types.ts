@@ -76,5 +76,6 @@ export interface BackgroundMessageHandlers {
     requestGraphQL<T extends GQL.IQuery | GQL.IMutation>(options: {
         request: string
         variables: {}
+        baseURL?: string
     }): Promise<GraphQLResult<T>>
 }

@@ -55,7 +55,7 @@ export function createPlatformContext(
         observeSourcegraphURL(isExtension).pipe(
             take(1),
             switchMap(sourcegraphURL => {
-                if (mightContainPrivateInfo && sourcegraphURL === DEFAULT_SOURCEGRAPH_URL) {
+                if (mightContainPrivateInfo && sourcegraphURL.href === DEFAULT_SOURCEGRAPH_URL.href) {
                     // If we can't determine the code host context, assume the current repository is private.
                     const privateRepository = getContext ? getContext().privateRepository : true
                     if (privateRepository) {
@@ -136,7 +136,7 @@ export function createPlatformContext(
             // Otherwise fall back to linking to Sourcegraph (with an absolute URL).
             return `${sourcegraphURL}${toPrettyBlobURL(location)}`
         },
-        sourcegraphURL,
+        sourcegraphURL: observeSourcegraphURL(isExtension),
         clientApplication: 'other',
         sideloadedExtensionURL: isInPage
             ? new LocalStorageSubject<string | null>('sideloadedExtensionURL', null)

@@ -34,19 +34,19 @@ import { ISettingsCascade } from '../../../../shared/src/graphql/schema'
  * Initializes extensions for a page. It creates the {@link PlatformContext} and extensions controller.
  *
  */
-export function initializeExtensions(
+export async function initializeExtensions(
     { urlToFile, getContext }: Pick<CodeHost, 'urlToFile' | 'getContext'>,
     urls: SourcegraphIntegrationURLs,
     initialSettings: Pick<ISettingsCascade, 'subjects' | 'final'>,
     isExtension: boolean
-): PlatformContextProps & ExtensionsControllerProps {
+): Promise<PlatformContextProps & ExtensionsControllerProps> {
     const platformContext = createPlatformContext({ urlToFile, getContext }, urls, initialSettings, isExtension)
-    const extensionsController = createExtensionsController(platformContext)
+    const extensionsController = await createExtensionsController(platformContext)
     return { platformContext, extensionsController }
 }
 
 interface InjectProps
-    extends PlatformContextProps<'forceUpdateTooltip' | 'sideloadedExtensionURL'>,
+    extends PlatformContextProps<'forceUpdateTooltip' | 'sideloadedExtensionURL' | 'sourcegraphURL'>,
         ExtensionsControllerProps {
     history: H.History
     render: typeof render
@@ -83,14 +83,12 @@ export const renderGlobalDebug = ({
     platformContext,
     history,
     render,
-    sourcegraphURL,
-}: InjectProps & { sourcegraphURL: string; showGlobalDebug?: boolean }) => (mount: HTMLElement): void => {
+}: InjectProps & { showGlobalDebug?: boolean }) => (mount: HTMLElement): void => {
     render(
         <GlobalDebug
             extensionsController={extensionsController}
             location={history.location}
             platformContext={platformContext}
-            sourcegraphURL={sourcegraphURL}
         />,
         mount
     )

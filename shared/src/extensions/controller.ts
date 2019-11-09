@@ -1,5 +1,5 @@
 import { from, Observable, Subject, Subscription, Unsubscribable } from 'rxjs'
-import { map, publishReplay, refCount } from 'rxjs/operators'
+import { map, publishReplay, refCount, take } from 'rxjs/operators'
 import { createExtensionHostClient } from '../api/client/client'
 import { Services } from '../api/client/services'
 import { ExecuteCommandParams } from '../api/client/services/command'
@@ -60,13 +60,14 @@ export interface ExtensionsControllerProps<K extends keyof Controller = keyof Co
  * There should only be a single controller for the entire client application. The controller's model represents
  * all of the client application state that the client needs to know.
  */
-export function createController(context: PlatformContext): Controller {
+export async function createController(context: PlatformContext): Promise<Controller> {
     const subscriptions = new Subscription()
 
     const services = new Services(context)
     const extensionHostEndpoint = context.createExtensionHost()
     const initData: InitData = {
-        sourcegraphURL: context.sourcegraphURL,
+        // TODO should observe sourcegraphURL in extensions as well
+        sourcegraphURL: (await context.sourcegraphURL.pipe(take(1)).toPromise()).href,
         clientApplication: context.clientApplication,
     }
     const client = createExtensionHostClient(services, extensionHostEndpoint, initData)

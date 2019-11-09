@@ -10,7 +10,7 @@ import { background } from '../../browser/runtime'
  *
  * In the native integration, the returned function will rely on the `requestGraphQL` implementation from `/shared`.
  */
-export const requestGraphQLHelper = (isExtension: boolean, baseUrl: string) => <T extends IQuery | IMutation>({
+export const requestGraphQLHelper = (isExtension: boolean, baseURL: URL) => <T extends IQuery | IMutation>({
     request,
     variables,
 }: {
@@ -24,6 +24,6 @@ export const requestGraphQLHelper = (isExtension: boolean, baseUrl: string) => <
         : requestGraphQL<T>({
               request,
               variables,
-              baseUrl,
+              baseURL,
               credentials: 'include',
           })

@@ -11,17 +11,15 @@ describe('ServerURLForm', () => {
     afterAll(cleanup)
 
     const stubs: OptionsMenuProps = {
-        status: 'connected',
+        connectionStatus: { type: 'connected' },
         version: '0.0.0',
-        urlHasPermissions: true,
-        sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
+        sourcegraphURL: DEFAULT_SOURCEGRAPH_URL.href,
         requestPermissions: noop,
-        onURLChange: noop,
-        onURLSubmit: noop,
+        onSourcegraphURLChange: noop,
+        onSourcegraphURLSubmit: noop,
         isActivated: true,
         toggleFeatureFlag: noop,
         onToggleActivationClick: noop,
-        onSettingsClick: noop,
     }
 
     test('renders a default state', () => {
@@ -87,32 +85,13 @@ describe('ServerURLForm', () => {
     })
 
     test('renders the feature flags', () => {
-        expect(
-            renderer.create(
-                <OptionsMenu
-                    {...stubs}
-                    isSettingsOpen={true}
-                    featureFlags={[
-                        { key: 'foo', value: true },
-                        { key: 'bar', value: false },
-                    ]}
-                />
-            )
-        ).toMatchSnapshot()
+        expect(renderer.create(<OptionsMenu {...stubs} featureFlags={{ foo: true, bar: false }} />)).toMatchSnapshot()
     })
 
     test('triggers the toggleFeatureFlag handler', () => {
         const toggleFeatureFlag = sinon.spy()
         const { container } = render(
-            <OptionsMenu
-                {...stubs}
-                isSettingsOpen={true}
-                featureFlags={[
-                    { key: 'foo', value: true },
-                    { key: 'bar', value: false },
-                ]}
-                toggleFeatureFlag={toggleFeatureFlag}
-            />
+            <OptionsMenu {...stubs} featureFlags={{ foo: true, bar: false }} toggleFeatureFlag={toggleFeatureFlag} />
         )
         const fooCheckbox = container.querySelector('#foo')!
         fireEvent.click(fooCheckbox)

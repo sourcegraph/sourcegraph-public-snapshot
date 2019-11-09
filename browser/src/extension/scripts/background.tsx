@@ -3,7 +3,7 @@ import '../polyfills'
 
 import { Endpoint } from '@sourcegraph/comlink'
 import { without } from 'lodash'
-import { noop, Observable } from 'rxjs'
+import { noop, Observable, of } from 'rxjs'
 import { bufferCount, filter, groupBy, map, mergeMap, switchMap, take } from 'rxjs/operators'
 import addDomainPermissionToggle from 'webext-domain-permission-toggle'
 import { createExtensionHostWorker } from '../../../../shared/src/api/extension/worker'
@@ -43,7 +43,7 @@ if (contentScripts) {
     }
 }
 
-const configureOmnibox = (serverUrl: string): void => {
+const configureOmnibox = (serverUrl: URL): void => {
     browser.omnibox.setDefaultSuggestion({
         description: `Search code on ${serverUrl}`,
     })
@@ -52,17 +52,19 @@ const configureOmnibox = (serverUrl: string): void => {
 const requestGraphQL = <T extends GQL.IQuery | GQL.IMutation>({
     request,
     variables,
+    baseURL,
 }: {
     request: string
     variables: {}
+    baseURL?: string
 }): Observable<GraphQLResult<T>> =>
-    observeSourcegraphURL(IS_EXTENSION).pipe(
+    (baseURL ? of(new URL(baseURL)) : observeSourcegraphURL(IS_EXTENSION)).pipe(
         take(1),
-        switchMap(sourcegraphURL =>
+        switchMap(baseURL =>
             requestGraphQLCommon<T>({
                 request,
                 variables,
-                baseUrl: sourcegraphURL,
+                baseURL,
                 headers: getHeaders(),
                 credentials: 'include',
             })
@@ -139,11 +141,13 @@ async function main(): Promise<void> {
         async requestGraphQL<T extends GQL.IQuery | GQL.IMutation>({
             request,
             variables,
+            baseURL,
         }: {
             request: string
             variables: {}
+            baseURL: string
         }): Promise<GraphQLResult<T>> {
-            return requestGraphQL<T>({ request, variables }).toPromise()
+            return await requestGraphQL<T>({ request, variables, baseURL }).toPromise()
         },
     }
 

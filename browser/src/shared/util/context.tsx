@@ -2,15 +2,35 @@ import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { observeStorageKey } from '../../browser/storage'
 
-export const DEFAULT_SOURCEGRAPH_URL = 'https://sourcegraph.com'
+export const DEFAULT_SOURCEGRAPH_URL = new URL('https://sourcegraph.com')
 
-export function observeSourcegraphURL(isExtension: boolean): Observable<string> {
-    if (isExtension) {
-        return observeStorageKey('sync', 'sourcegraphURL').pipe(
-            map(sourcegraphURL => sourcegraphURL || DEFAULT_SOURCEGRAPH_URL)
-        )
+export const EINVALIDSOURCEGRAPHURL = 'InvalidSourcegraphURLError'
+
+export class InvalidSourcegraphURLError extends Error {
+    public name = EINVALIDSOURCEGRAPHURL
+    public code = EINVALIDSOURCEGRAPHURL
+
+    constructor(sourcegraphURL: string) {
+        super(`Invalid Sourcegraph URL ${JSON.stringify(sourcegraphURL)}`)
     }
-    return of(window.SOURCEGRAPH_URL || window.localStorage.getItem('SOURCEGRAPH_URL') || DEFAULT_SOURCEGRAPH_URL)
+}
+
+export function observeSourcegraphURL(isExtension: boolean): Observable<URL> {
+    const sourcegraphURLObservable: Observable<string | null | undefined> = isExtension
+        ? observeStorageKey('sync', 'sourcegraphURL')
+        : of(window.SOURCEGRAPH_URL || window.localStorage.getItem('SOURCEGRAPH_URL'))
+    return sourcegraphURLObservable.pipe(
+        map(sourcegraphURL => {
+            if (sourcegraphURL) {
+                try {
+                    return new URL(sourcegraphURL)
+                } catch (err) {
+                    throw new InvalidSourcegraphURLError(sourcegraphURL)
+                }
+            }
+            return DEFAULT_SOURCEGRAPH_URL
+        })
+    )
 }
 
 /**
@@ -26,10 +46,6 @@ export function observeSourcegraphURL(isExtension: boolean): Observable<string> 
 export function getAssetsURL(sourcegraphURL: string): string {
     const assetsURL = window.SOURCEGRAPH_ASSETS_URL || new URL('/.assets/extension/', sourcegraphURL).href
     return assetsURL.endsWith('/') ? assetsURL : assetsURL + '/'
-}
-
-export function isSourcegraphDotCom(url: string): boolean {
-    return url === DEFAULT_SOURCEGRAPH_URL
 }
 
 type PlatformName = typeof globalThis.SOURCEGRAPH_INTEGRATION | 'firefox-extension' | 'chrome-extension'
