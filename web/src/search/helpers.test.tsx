@@ -103,9 +103,9 @@ describe('search/helpers', () => {
 
         describe('filterSearchSuggestions()', () => {
             test('filters suggestions for filters starting with "r"', () => {
-                const filtersStartingWithR = Object.keys(searchFilterSuggestions).filter(filter =>
-                    filter.startsWith('r')
-                )
+                const filtersStartingWithR = searchFilterSuggestions.filters.values
+                    .map(filter => filter.value)
+                    .filter(filter => filter.startsWith('r'))
                 expect(getFilterSuggestionStartingWithR().map(suggestion => suggestion.value)).toEqual(
                     expect.arrayContaining(filtersStartingWithR)
                 )
@@ -114,7 +114,7 @@ describe('search/helpers', () => {
             test('filters suggestions for filter aliases', () => {
                 for (const [alias, filter] of Object.entries(filterAliases)) {
                     const [{ value }] = filterSearchSuggestions(alias, alias.length, searchFilterSuggestions)
-                    expect(value).toBe(filter)
+                    expect(value).toBe(filter + ':')
                 }
             })
 
@@ -134,9 +134,9 @@ describe('search/helpers', () => {
 
         describe('insertSuggestionInQuery()', () => {
             describe('inserts suggestions for a filter name', () => {
-                const suggestion = getFilterSuggestionStartingWithR().filter(({ value: title }) => title === 'repo')[0]
+                const [suggestion] = getFilterSuggestionStartingWithR().filter(({ value }) => value === 'repo:')
                 const { query: newQuery } = insertSuggestionInQuery('test r test', suggestion, 6)
-                expect(newQuery).toBe(`test ${suggestion.value}: test`)
+                expect(newQuery).toBe(`test ${suggestion.value} test`)
             })
             test('inserts suggestion for a filter value', () => {
                 const [suggestion] = getArchivedSuggestions()
@@ -162,7 +162,7 @@ describe('search/helpers', () => {
             lastFilterAndValueBeforeCursor({ query, cursorPosition: 9 })
         })
         it('does not return a value if typed whitespace char', () => {
-            expect(lastFilterAndValueBeforeCursor({ query, cursorPosition: 13 })).toStrictEqual({})
+            expect(lastFilterAndValueBeforeCursor({ query, cursorPosition: 13 })).toStrictEqual(null)
         })
     })
 

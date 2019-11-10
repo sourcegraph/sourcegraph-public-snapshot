@@ -221,6 +221,8 @@ export const insertSuggestionInQuery = (query: string, suggestion: Suggestion, c
     const lastPart = query.substring(firstPart.length)
     const isFiltersSuggestion = suggestion.type === SuggestionTypes.filters
     const separatorIndex = firstPart.lastIndexOf(!isFiltersSuggestion ? SUGGESTION_FILTER_SEPARATOR : ' ')
+    // If a filter value or separate word suggestion was selected, then append a whitespace
+    const valueToAppend = suggestion.value + (isFiltersSuggestion ? '' : ' ')
 
     const newFirstPart = (() => {
         const lastWordOfFirstPartMatch = firstPart.match(/\s+(\S?)+$/)
@@ -238,14 +240,15 @@ export const insertSuggestionInQuery = (query: string, suggestion: Suggestion, c
             lastWordOfFirstPartMatch.index
         ) {
             // adds a space because a separate word was being typed
-            return firstPart.substring(0, lastWordOfFirstPartMatch.index) + ' ' + suggestion.value + lastPart
+            return firstPart.substring(0, lastWordOfFirstPartMatch.index) + ' ' + valueToAppend + lastPart
         }
 
-        return firstPart.substring(0, separatorIndex + 1) + suggestion.value
+        return firstPart.substring(0, separatorIndex + 1) + valueToAppend
     })()
 
     return {
-        query: newFirstPart + lastPart,
+        // .replace() to remove excess whitespace in query
+        query: (newFirstPart + lastPart).replace(/\s+/g, ' '),
         cursorPosition: newFirstPart.length,
     }
 }
