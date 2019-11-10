@@ -100,3 +100,36 @@ export function fetchLsifDumps({
         map(data => data.lsifDumps)
     )
 }
+
+/**
+ * Fetch LSIF jobs with the given state.
+ */
+export function fetchLsifJobs({
+    state,
+    first,
+    query,
+}: GQL.ILsifJobsOnQueryArguments): Observable<GQL.ILSIFJobConnection> {
+    return queryGraphQL(
+        gql`
+            query LsifJobs($state: LSIFJobState!, $first: Int, $query: String) {
+                lsifJobs(state: $state, first: $first, query: $query) {
+                    nodes {
+                        id
+                        args
+                        state
+                        timestamp
+                        processedOn
+                        finishedOn
+                    }
+                    pageInfo {
+                        hasNextPage
+                    }
+                }
+            }
+        `,
+        { state: state.toUpperCase(), first, query }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.lsifJobs)
+    )
+}

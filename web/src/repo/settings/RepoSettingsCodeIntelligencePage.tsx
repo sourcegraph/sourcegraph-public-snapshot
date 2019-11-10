@@ -1,31 +1,66 @@
 import * as GQL from '../../../../shared/src/graphql/schema'
-import React, { FunctionComponent, useCallback, useEffect } from 'react'
+import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 import { eventLogger } from '../../tracking/eventLogger'
-import { fetchLsifDumps } from './backend'
+import { fetchLsifDumps, fetchLsifJobs } from './backend'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../components/FilteredConnection'
 import { Link } from '../../../../shared/src/components/Link'
 import { PageTitle } from '../../components/PageTitle'
 import { RouteComponentProps } from 'react-router'
 import { Timestamp } from '../../components/time/Timestamp'
+import { Collapsible } from '../../components/Collapsible'
+import { useObservable } from '../../util/useObservable'
+import { Observable } from 'rxjs'
 
 const LsifDumpNode: FunctionComponent<{ node: GQL.ILSIFDump }> = ({ node }) => (
-    <div className="w-100 lsif-dump list-group-item lsif-dump__main">
-        <div className="lsif-dump__meta">
-            <div className="lsif-dump__meta-root">
+    <div className="w-100 list-group-item py-2 lsif-data__main">
+        <div className="lsif-data__meta">
+            <div className="lsif-data__meta-root">
                 <code>{node.projectRoot.commit.abbreviatedOID}</code>
                 <span className="ml-2">
                     <Link to={node.projectRoot.url}>
-                        <strong>{node.projectRoot.path}</strong>
+                        <strong>{node.projectRoot.path || '/'}</strong>
                     </Link>
                 </span>
             </div>
         </div>
 
-        <small className="text-muted lsif-dump__meta-timestamp">
+        <small className="text-muted lsif-data__meta-timestamp">
             <Timestamp noAbout={true} date={node.uploadedAt} />
         </small>
     </div>
 )
+
+const LsifJobNode: FunctionComponent<{ node: GQL.ILSIFJob }> = ({ node }) => {
+    const { commit, root } = node.args as { commit: string; root: string }
+
+    return (
+        <div className="w-100 list-group-item py-2 lsif-data__main">
+            <div className="lsif-data__meta">
+                <div className="lsif-data__meta-root">
+                    <Link to={`/site-admin/lsif-jobs/${node.id}`}>
+                        {node.state === GQL.LSIFJobState.PROCESSING ? (
+                            <span>Processing</span>
+                        ) : node.state === GQL.LSIFJobState.COMPLETED ? (
+                            <span className="text-success">Processed</span>
+                        ) : node.state === GQL.LSIFJobState.ERRORED ? (
+                            <span className="text-danger">Failed to process</span>
+                        ) : (
+                            <span>Waiting to process</span>
+                        )}
+                    </Link>{' '}
+                    <code>{commit.substring(0, 7)}</code>
+                    <span className="ml-2">
+                        <strong>{root || '/'}</strong>
+                    </span>
+                </div>
+            </div>
+
+            <small className="text-muted lsif-data__meta-timestamp">
+                <Timestamp noAbout={true} date={node.finishedOn || node.processedOn || node.timestamp} />
+            </small>
+        </div>
+    )
+}
 
 interface Props extends RouteComponentProps<any> {
     repo: GQL.IRepository
@@ -45,6 +80,42 @@ export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ rep
     const queryLatestDumps = useCallback(
         (args: FilteredConnectionQueryArgs) => fetchLsifDumps({ repository: repo.id, isLatestForRepo: true, ...args }),
         [repo.id]
+    )
+
+    const fetchJobs = (name: string, state: GQL.LSIFJobState): Observable<GQL.ILSIFJobConnection> =>
+        fetchLsifJobs({
+            query: `convert ${name}`,
+            state,
+            first: 5,
+        })
+
+    const activeLsifJobs = useObservable(useMemo(() => fetchJobs(repo.name, GQL.LSIFJobState.PROCESSING), [repo.name]))
+    const queuedLsifJobs = useObservable(useMemo(() => fetchJobs(repo.name, GQL.LSIFJobState.QUEUED), [repo.name]))
+    const failedLsifJobs = useObservable(useMemo(() => fetchJobs(repo.name, GQL.LSIFJobState.ERRORED), [repo.name]))
+
+    const activeCount = (activeLsifJobs && activeLsifJobs.nodes.length) || 0
+    const queuedCount = (queuedLsifJobs && queuedLsifJobs.nodes.length) || 0
+    const failedCount = (failedLsifJobs && failedLsifJobs.nodes.length) || 0
+
+    const activityTitle = (
+        <>
+            <span className="h5">Activity for this repository</span>
+
+            <div className="repo-settings-code-intelligence-page-collapsible-badges ml-1">
+                {activeCount + queuedCount > 0 && (
+                    <span className="badge badge-primary badge-pill ml-1">
+                        {activeCount + queuedCount}
+                        {queuedLsifJobs && queuedLsifJobs.pageInfo.hasNextPage && '+'}
+                    </span>
+                )}
+                {failedCount > 0 && (
+                    <span className="badge badge-danger badge-pill ml-1">
+                        {failedCount}
+                        {failedLsifJobs && failedLsifJobs.pageInfo.hasNextPage && '+'}
+                    </span>
+                )}
+            </div>
+        </>
     )
 
     return (
@@ -75,24 +146,110 @@ export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ rep
                     location={props.location}
                     listClassName="list-group list-group-flush"
                     cursorPaging={true}
+                    emptyElement={
+                        <small>No dumps are recent enough to be used at the tip of the default branch.</small>
+                    }
                 />
             </div>
 
             <div className="mt-4">
-                <h3>Historic LSIF uploads</h3>
-                <p>These uploads provide code intelligence for older commits.</p>
+                <Collapsible
+                    title={activityTitle}
+                    defaultExpanded={false}
+                    className="repo-settings-code-intelligence-page-collapsible"
+                    titleClassName="mb-0"
+                >
+                    <div>
+                        <h3>Pending and active LSIF uploads</h3>
 
-                <FilteredConnection<{}, { node: GQL.ILSIFDump }>
-                    className="list-group list-group-flush mt-3"
-                    noun="upload"
-                    pluralNoun="uploads"
-                    queryConnection={queryDumps}
-                    nodeComponent={LsifDumpNode}
-                    history={props.history}
-                    location={props.location}
-                    listClassName="list-group list-group-flush"
-                    cursorPaging={true}
-                />
+                        {(activeLsifJobs && activeLsifJobs.nodes.length > 0) ||
+                        (queuedLsifJobs && queuedLsifJobs.nodes.length > 0) ? (
+                            <>
+                                <p>These uploads have been accepted but have not yet been processed.</p>
+
+                                <div className="list-group list-group-flush mt-3">
+                                    {activeLsifJobs &&
+                                        activeLsifJobs.nodes.map(job => <LsifJobNode key={job.id} node={job} />)}
+                                    {queuedLsifJobs &&
+                                        queuedLsifJobs.nodes.map(job => <LsifJobNode key={job.id} node={job} />)}
+                                </div>
+
+                                {queuedLsifJobs && queuedLsifJobs.pageInfo.hasNextPage && (
+                                    <div className="mt-2">
+                                        Showing five queued uploads.{' '}
+                                        <Link
+                                            to={`http://localhost:3080/site-admin/lsif-jobs?filter=queued&query=convert+${encodeURIComponent(
+                                                repo.name
+                                            )}`}
+                                        >
+                                            See all queued jobs for this repository.
+                                        </Link>
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <p>
+                                <small>No uploads are queued or currently being processed.</small>
+                            </p>
+                        )}
+                    </div>
+
+                    <div className="mt-4">
+                        <h3>Recent failed LSIF uploads</h3>
+
+                        {failedLsifJobs && failedLsifJobs.nodes.length > 0 ? (
+                            <>
+                                <p>These uploads have recently failed processing.</p>
+
+                                <div className="list-group list-group-flush mt-3">
+                                    {failedLsifJobs.nodes.map(job => (
+                                        <LsifJobNode key={job.id} node={job} />
+                                    ))}
+                                </div>
+
+                                {failedLsifJobs && failedLsifJobs.pageInfo.hasNextPage && (
+                                    <div className="mt-2">
+                                        Showing five recent failures.{' '}
+                                        <Link
+                                            to={`http://localhost:3080/site-admin/lsif-jobs?filter=errored&query=convert+${encodeURIComponent(
+                                                repo.name
+                                            )}`}
+                                        >
+                                            See all failed jobs for this repository.
+                                        </Link>
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <p>
+                                <small>No recent uploads have failed processsing.</small>
+                            </p>
+                        )}
+                    </div>
+                </Collapsible>
+            </div>
+
+            <div className="mt-4">
+                <Collapsible
+                    title="Historic LSIF uploads"
+                    defaultExpanded={false}
+                    className="repo-settings-code-intelligence-page-collapsible"
+                    titleClassName="h5 mb-0"
+                >
+                    <p>These uploads provide code intelligence for branches and older commits.</p>
+
+                    <FilteredConnection<{}, { node: GQL.ILSIFDump }>
+                        className="list-group list-group-flush mt-3"
+                        noun="upload"
+                        pluralNoun="uploads"
+                        queryConnection={queryDumps}
+                        nodeComponent={LsifDumpNode}
+                        history={props.history}
+                        location={props.location}
+                        listClassName="list-group list-group-flush"
+                        cursorPaging={true}
+                    />
+                </Collapsible>
             </div>
         </div>
     )
