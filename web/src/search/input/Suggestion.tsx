@@ -151,23 +151,27 @@ interface SuggestionProps {
     suggestion: Suggestion
     isSelected?: boolean
     onClick?: () => void
+    /** If suggestion.label should be shown, else show defaultLabel  */
     showUrlLabel: boolean
+    /** Suggestion label to show if(!showUrlLabel || !suggestion.label) */
+    defaultLabel?: string
 }
 
 export const SuggestionItem: React.FunctionComponent<SuggestionProps> = ({
     suggestion,
     isSelected,
     showUrlLabel,
+    defaultLabel,
     ...props
 }) => (
     <li className={'suggestion' + (isSelected ? ' suggestion--selected' : '')} {...props}>
         <SuggestionIcon className="icon-inline suggestion__icon" suggestion={suggestion} />
         <div className="suggestion__title">{suggestion.value}</div>
         <div className="suggestion__description">{suggestion.description}</div>
-        {showUrlLabel && !!suggestion.label && (
+        {(showUrlLabel || defaultLabel) &&
             <div className="suggestion__action" hidden={!isSelected}>
-                <kbd>enter</kbd> {suggestion.label}
+                <kbd>enter</kbd> {showUrlLabel && suggestion?.label || defaultLabel}
             </div>
-        )}
+        }
     </li>
 )

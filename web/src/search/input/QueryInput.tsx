@@ -343,6 +343,7 @@ export class QueryInput extends React.Component<Props, State> {
                                                     suggestion={suggestion}
                                                     isSelected={isSelected}
                                                     showUrlLabel={showUrlLabel}
+                                                    defaultLabel='add to query'
                                                 />
                                             )
                                         })}

@@ -80,7 +80,6 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
         ].map(
             assign({
                 type: SuggestionTypes.filters,
-                label: 'add to query',
             })
         ),
     },
