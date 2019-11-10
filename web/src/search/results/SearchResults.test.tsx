@@ -29,7 +29,7 @@ describe('SearchResults', () => {
         authenticatedUser: null,
         location: history.location,
         history,
-        navbarSearchQueryValue: { query: '', cursorPosition: 0 },
+        navbarSearchQueryState: { query: '', cursorPosition: 0 },
         fetchHighlightedFileLines: HIGHLIGHTED_FILE_LINES_REQUEST,
         searchRequest: OBSERVABLE_SEARCH_REQUEST,
         isLightTheme: true,

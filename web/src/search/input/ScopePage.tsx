@@ -15,7 +15,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { SearchScope, Settings } from '../../schema/settings.schema'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchReposByQuery } from '../backend'
-import { submitSearch, QueryValue } from '../helpers'
+import { submitSearch, QueryState } from '../helpers'
 import { QueryInput, queryUpdates } from './QueryInput'
 import { SearchButton } from './SearchButton'
 import { PatternTypeProps } from '..'
@@ -39,7 +39,7 @@ interface ScopePageProps extends RouteComponentProps<{ id: GQL.ID }>, SettingsCa
 }
 
 interface State {
-    queryValue: QueryValue
+    queryState: QueryState
     repositories?: { name: string; url: string }[]
     searchScopes?: SearchScope[]
     id?: string
@@ -56,7 +56,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
     private showMoreClicks = new Subject<void>()
 
     public state: State = {
-        queryValue: { query: '', cursorPosition: 0 },
+        queryState: { query: '', cursorPosition: 0 },
         repositories: [],
         value: '',
         first: 50,
@@ -159,7 +159,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                             </div>
                             <QueryInput
                                 {...this.props}
-                                value={this.state.queryValue}
+                                value={this.state.queryState}
                                 onChange={this.onQueryChange}
                                 prependQueryForSuggestions={this.state.value}
                                 autoFocus={true}
@@ -226,11 +226,16 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
         )
     }
 
-    private onQueryChange = (queryValue: QueryValue): void => this.setState({ queryValue })
+    private onQueryChange = (queryState: QueryState): void => this.setState({ queryState })
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
-        submitSearch(this.props.history, `${this.state.value} ${this.state.queryValue}`, 'home', this.props.patternType)
+        submitSearch(
+            this.props.history,
+            `${this.state.value} ${this.state.queryState.query}`,
+            'home',
+            this.props.patternType
+        )
     }
 
     private onShowMore = (): void => {

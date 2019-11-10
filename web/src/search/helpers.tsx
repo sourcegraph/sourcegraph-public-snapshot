@@ -164,12 +164,12 @@ const isValidFilterAlias = (alias: string): alias is keyof typeof filterAliases 
  *
  * @param query the current search query
  * @param cursorPosition cursor position of last typed character
- * @param filterSuggestions where the suggestions should be searched
+ * @param suggestions where the suggestions should be searched
  */
 export const filterSearchSuggestions = (
     query: string,
     cursorPosition: number,
-    filterSuggestions: SearchFilterSuggestions
+    suggestions: SearchFilterSuggestions
 ): Suggestion[] => {
     const textUntilCursor = query.substring(0, cursorPosition)
     const [lastWord] = textUntilCursor.match(/([^\s]+)$/) || ['']
@@ -182,16 +182,12 @@ export const filterSearchSuggestions = (
         resolvedFilter !== SuggestionTypes.filters &&
         (valueQuery || lastWord.endsWith(':'))
     ) {
-        const suggestionsToShow = filterSuggestions[resolvedFilter] || []
+        const suggestionsToShow = suggestions[resolvedFilter] || []
         return suggestionsToShow.values.filter(suggestion => suggestion.value.startsWith(valueQuery))
     }
 
-    return filterSuggestions.filters.values
-        .filter(({ value }) => value.startsWith(resolvedFilter))
-        .map(suggestion => ({
-            ...suggestion,
-            type: SuggestionTypes.filters,
-        }))
+    // Suggest filter types
+    return suggestions.filters.values.filter(({ value }) => value.startsWith(resolvedFilter))
 }
 
 const SUGGESTION_FILTER_SEPARATOR = ':'
@@ -201,7 +197,7 @@ const SUGGESTION_FILTER_SEPARATOR = ':'
  * Cursor position is used to correctly insert the suggestion when it's selected,
  * and set the cursor to the end of where the suggestion was inserted.
  */
-export interface QueryValue {
+export interface QueryState {
     query: string
     cursorPosition: number
 }
@@ -220,7 +216,7 @@ export const isTypingWordAndNotFilterValue = (value: string): boolean => Boolean
  * @param suggestion the select suggestion
  * @param cursorPosition cursor position when suggestions were given
  */
-export const insertSuggestionInQuery = (query: string, suggestion: Suggestion, cursorPosition: number): QueryValue => {
+export const insertSuggestionInQuery = (query: string, suggestion: Suggestion, cursorPosition: number): QueryState => {
     const firstPart = query.substring(0, cursorPosition)
     const lastPart = query.substring(firstPart.length)
     const isFiltersSuggestion = suggestion.type === SuggestionTypes.filters
@@ -264,15 +260,15 @@ type FilterAndValue = string
 /**
  * If a filter value is being typed, try to get its filter type.
  * E.g: with "|"" being the cursor: "repo:| lang:go" => "repo"
- * Checks if the word is a valid filter, else returns [false].
+ * Checks if the matched word is a valid filter.
  */
-export const getFilterTypedBeforeCursor = (
-    queryCursor: QueryValue
-): { filterAndValue?: FilterAndValue; filter?: SuggestionTypes } => {
+export const lastFilterAndValueBeforeCursor = (
+    queryCursor: QueryState
+): { filterAndValue: FilterAndValue; filter: SuggestionTypes } | null => {
     const firstPart = queryCursor.query.substring(0, queryCursor.cursorPosition)
     // get string before ":" char until a space is found or start of string
     const [filterAndValue, filter] = firstPart.match(/([^\s:]+)?:(\S?)+$/) || []
-    return isValidFilter(filter) ? { filter, filterAndValue: filterAndValue.trim() } : {}
+    return isValidFilter(filter) ? { filter, filterAndValue: filterAndValue.trim() } : null
 }
 
 /**
@@ -281,8 +277,17 @@ export const getFilterTypedBeforeCursor = (
  *     "QueryInput lang:|" => false
  *     "archived:Yes QueryInp|" => true
  */
-export const isFuzzyWordSearch = (queryCursor: QueryValue): boolean => {
+export const isFuzzyWordSearch = (queryCursor: QueryState): boolean => {
     const firstPart = queryCursor.query.substring(0, queryCursor.cursorPosition)
     const isTypingFirstWord = Boolean(firstPart.match(/^(\s?)+[^:\s]+$/))
     return isTypingFirstWord || isTypingWordAndNotFilterValue(firstPart)
 }
+
+/**
+ * Makes any modification to the query which will only be used
+ * for fetching suggesitons, and should not mutate the query in state.
+ */
+export const formatQueryForFuzzySearch = (query: string): string =>
+    // Use search results from `file` filter when suggesting for `repohasfile` filter.
+    // Also requires the filter type to be in ./Suggestion.tsx->fuzzySearchFilters
+    query.replace(SuggestionTypes.repohasfile, 'file')

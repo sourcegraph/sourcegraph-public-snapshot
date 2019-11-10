@@ -51,7 +51,7 @@ import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { parseSearchURLPatternType } from './search'
 import { ThemePreference } from './search/theme'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
-import { QueryValue } from './search/helpers'
+import { QueryState } from './search/helpers'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     exploreSections: readonly ExploreSectionDescriptor[]
@@ -95,7 +95,7 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     /**
      * The current search query in the navbar.
      */
-    navbarSearchQueryValue: QueryValue
+    navbarSearchQueryState: QueryState
     /**
      * The current search pattern type.
      */
@@ -152,7 +152,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         this.state = {
             themePreference: readStoredThemePreference(),
             systemIsLightTheme: !this.darkThemeMediaList.matches,
-            navbarSearchQueryValue: { query: '', cursorPosition: 0 },
+            navbarSearchQueryState: { query: '', cursorPosition: 0 },
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: SITE_SUBJECT_NO_ADMIN,
             searchPatternType: urlPatternType,
@@ -297,7 +297,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     themePreference={this.state.themePreference}
                                     onThemePreferenceChange={this.onThemePreferenceChange}
                                     // Search query
-                                    navbarSearchQueryValue={this.state.navbarSearchQueryValue}
+                                    navbarSearchQueryState={this.state.navbarSearchQueryState}
                                     onNavbarQueryChange={this.onNavbarQueryChange}
                                     fetchHighlightedFileLines={fetchHighlightedFileLines}
                                     searchRequest={search}
@@ -324,8 +324,8 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         this.setState({ themePreference })
     }
 
-    private onNavbarQueryChange = (navbarSearchQueryValue: QueryValue): void => {
-        this.setState({ navbarSearchQueryValue })
+    private onNavbarQueryChange = (navbarSearchQueryState: QueryState): void => {
+        this.setState({ navbarSearchQueryState })
     }
 
     private togglePatternType = (): void => {

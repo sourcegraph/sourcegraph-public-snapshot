@@ -16,7 +16,7 @@ import { NavLinks } from './NavLinks'
 import { ThemeProps } from '../../../shared/src/theme'
 import { ThemePreferenceProps } from '../search/theme'
 import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
-import { QueryValue } from '../search/helpers'
+import { QueryState } from '../search/helpers'
 
 interface Props
     extends SettingsCascadeProps,
@@ -31,8 +31,8 @@ interface Props
     history: H.History
     location: H.Location<{ query: string }>
     authenticatedUser: GQL.IUser | null
-    navbarSearchQueryValue: QueryValue
-    onNavbarQueryChange: (queryValue: QueryValue) => void
+    navbarSearchQueryState: QueryState
+    onNavbarQueryChange: (queryState: QueryState) => void
     isSourcegraphDotCom: boolean
     showCampaigns: boolean
 
@@ -125,7 +125,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                             <div className="global-navbar__search-box-container d-none d-sm-flex">
                                 <SearchNavbarItem
                                     {...this.props}
-                                    navbarSearchValue={this.props.navbarSearchQueryValue}
+                                    navbarSearchState={this.props.navbarSearchQueryState}
                                     onChange={this.props.onNavbarQueryChange}
                                 />
                             </div>

@@ -44,7 +44,7 @@ import LiteralSearchToast from './marketing/LiteralSearchToast'
 import { ThemeProps } from '../../shared/src/theme'
 import { ThemePreferenceProps } from './search/theme'
 import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_SHOW_HELP } from './keyboardShortcuts/keyboardShortcuts'
-import { QueryValue } from './search/helpers'
+import { QueryState } from './search/helpers'
 
 export interface LayoutProps
     extends RouteComponentProps<any>,
@@ -87,11 +87,11 @@ export interface LayoutProps
     telemetryService: EventLogger
 
     // Search
-    navbarSearchQueryValue: QueryValue
-    onNavbarQueryChange: (queryValue: QueryValue) => void
+    navbarSearchQueryState: QueryState
+    onNavbarQueryChange: (queryState: QueryState) => void
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
     searchRequest: (
-        query: QueryValue['query'],
+        query: QueryState['query'],
         version: string,
         patternType: GQL.SearchPatternType,
         { extensionsController }: ExtensionsControllerProps<'services'>
