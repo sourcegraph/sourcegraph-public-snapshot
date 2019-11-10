@@ -5,6 +5,7 @@
     <link rel="icon" type="image/png" href="https://about.sourcegraph.com/sourcegraph-mark.png" />
     <link rel="stylesheet" href="{{asset "bootstrap.min.css"}}?4.3.1" />
     <link rel="stylesheet" href="{{asset "layout.css"}}?13" />
+    <link rel="stylesheet" href="{{asset "search.css"}}" />
     <link rel="stylesheet" href="{{asset "content.css"}}?13" />
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover" />
     {{block "head" .}}{{end}}
@@ -19,18 +20,7 @@
                         <img class="nav-logo-image small-hidden" src="/assets/sourcegraph-logo-docs.svg" alt="Sourcegraph Documentation">
                         <img class="nav-logo-image-small large-hidden medium-hidden" src="/assets/sourcegraph-logo-docs-small.svg" alt="Sourcegraph Documentation">
                     </a>
-                    <div id="version-selector" class="dropdown version-dropdown ml-2">
-                        <button class="btn btn-outline dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                {{.ContentVersion}}{{/* If no version is specified we are on the master branch */}}{{if eq .ContentVersion ""}}master{{end}}
-                            </button>
-                        <details-menu aria-label="Sourcegraph version" class="dropdown-menu m-0 p-0" aria-labelledby="Version Dropdown">
-
-                            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.8.2"}} {{$previousReleaseVersion := "3.8"}} {{$currentReleaseRevspec := "v3.9.4"}} {{$currentReleaseVersion := "3.9"}} {{$nextReleaseVersion := "master"}}
-                            <a rel="nofollow" class="dropdown-item {{if eq .ContentVersion " "}}active{{end}}" href="/{{.ContentPagePath}}">master</a>
-                            <a rel="nofollow" class=" dropdown-item {{if eq $currentReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$currentReleaseVersion}}/{{.ContentPagePath}}">{{$currentReleaseVersion}}<span class="current-branch ml-1">current</span></a>
-                            <a rel="nofollow" class=" dropdown-item {{if eq $previousReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$previousReleaseVersion}}/{{.ContentPagePath}}">{{$previousReleaseVersion}}</a>
-                        </details-menu>
-                    </div>
+                    {{block "versionSelector" .}}{{end}}
                 </div>
                 <span class="mobile-nav-button"></span>
                 <div class="nav-links">
@@ -39,8 +29,9 @@
                         <li class="nav-link"><a href="https://github.com/sourcegraph/sourcegraph">Code</a></li>
                         <li class="nav-link"><a href="https://sourcegraph.com">Sourcegraph.com</a></li>
                     </ul>
-                    <form class="search-form form-inline small-hidden">
-                        <input name="search" class="nav-search form-control" type="search" id="search" placeholder="Search docs..." spellcheck="false">
+                    <form class="search-form form-inline small-hidden" method="get" action="/search">
+                        <input type="text" name="q" class="nav-search form-control" id="search" value="{{block "query" .}}{{end}}" placeholder="Search docs..." spellcheck="false">
+                        <input type="hidden" name="v" value="{{block "version" .}}{{end}}">
                         <button class="btn btn-primary nav-search-button ml-2" id="search-button" type="submit">Search</button>
                     </form>
                 </div>
@@ -108,14 +99,8 @@
             </footer>
         </div>
     </div>
-    <script src="{{asset "docs.js"}}?12"></script>
-    {{with .Content}}
-        <script>sgdocs.init(breadcrumbs = {{ .Breadcrumbs }});</script>
-    {{else}}
-        <script>
-            sgdocs.init(breadcrumbs = null);
-        </script>
-    {{end}}
+
+    {{block "afterBody" .}}{{end}}
 
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-40540747-20"></script>
     <script>
