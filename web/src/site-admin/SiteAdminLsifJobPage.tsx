@@ -47,7 +47,7 @@ export const SiteAdminLsifJobPage: FunctionComponent<Props> = ({
         <div className="site-admin-lsif-job-page">
             <PageTitle title="LSIF Jobs - Admin" />
             <div className="d-flex justify-content-between align-items-center mt-3 mb-1">
-                {jobOrError && !isErrorLike(jobOrError) && <h2 className="mb-0"> lsifJobDescription(jobOrError)</h2>}
+                {jobOrError && !isErrorLike(jobOrError) && <h2 className="mb-0">{lsifJobDescription(jobOrError)}</h2>}
             </div>
 
             {!jobOrError ? (
@@ -137,7 +137,7 @@ export const SiteAdminLsifJobPage: FunctionComponent<Props> = ({
  *
  * @param job The job instance.
  */
-export function lsifJobDescription(job: GQL.ILSIFJob): string {
+function lsifJobDescription(job: GQL.ILSIFJob): string {
     if (job.name === 'convert') {
         const {
             repository,
@@ -149,7 +149,7 @@ export function lsifJobDescription(job: GQL.ILSIFJob): string {
             root: string
         } = job.args
 
-        return `Convert upload for ${repository} at ${commit.substring(0, 7)}${root !== '' && `, ${root}`}`
+        return `Convert upload for ${repository} at ${commit.substring(0, 7)}${root === '' ? '' : `, ${root}`}`
     }
 
     const internalJobs: { [K: string]: string } = {
