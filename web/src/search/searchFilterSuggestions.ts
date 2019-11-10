@@ -22,67 +22,67 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
     filters: {
         values: [
             {
-                value: 'repo',
+                value: 'repo:',
                 description: 'regex-pattern (include results whose repository path matches)',
             },
             {
-                value: '-repo',
+                value: '-repo:',
                 description: 'regex-pattern (exclude results whose repository path matches)',
             },
             {
-                value: 'repogroup',
+                value: 'repogroup:',
                 description: 'group-name (include results from the named group)',
             },
             {
-                value: 'repohasfile',
+                value: 'repohasfile:',
                 description: 'regex-pattern (include results from repos that contain a matching file)',
             },
             {
-                value: '-repohasfile',
+                value: '-repohasfile:',
                 description: 'regex-pattern (exclude results from repositories that contain a matching file)',
             },
             {
-                value: 'repohascommitafter',
+                value: 'repohascommitafter:',
                 description: '"string specifying time frame" (filter out stale repositories without recent commits)',
             },
             {
-                value: 'file',
+                value: 'file:',
                 description: 'regex-pattern (include results whose file path matches)',
             },
             {
-                value: '-file',
+                value: '-file:',
                 description: 'regex-pattern (exclude results whose file path matches)',
             },
             {
-                value: 'type',
+                value: 'type:',
                 description: 'code | diff | commit | symbol',
             },
             {
-                value: 'case',
+                value: 'case:',
                 description: 'yes | no (default)',
             },
             {
-                value: 'lang',
+                value: 'lang:',
                 description: 'lang-name (include results from the named language)',
             },
             {
-                value: '-lang',
+                value: '-lang:',
                 description: 'lang-name (exclude results from the named language)',
             },
             {
-                value: 'fork',
+                value: 'fork:',
                 description: 'no | only | yes (default)',
             },
             {
-                value: 'archived',
+                value: 'archived:',
                 description: 'no | only | yes (default)',
             },
             {
-                value: 'count',
+                value: 'count:',
                 description: 'integer (number of results to fetch)',
             },
             {
-                value: 'timeout',
+                value: 'timeout:',
                 description: '"string specifying time duration" (duration before timeout)',
             },
         ].map(

@@ -241,12 +241,7 @@ export const insertSuggestionInQuery = (query: string, suggestion: Suggestion, c
             return firstPart.substring(0, lastWordOfFirstPartMatch.index) + ' ' + suggestion.value + lastPart
         }
 
-        return (
-            // join first part with the selected suggestion
-            firstPart.substring(0, separatorIndex + 1) +
-            suggestion.value +
-            (isFiltersSuggestion ? SUGGESTION_FILTER_SEPARATOR : '')
-        )
+        return firstPart.substring(0, separatorIndex + 1) + suggestion.value
     })()
 
     return {
