@@ -1,4 +1,3 @@
-import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
@@ -12,6 +11,7 @@ import { Form } from '../../../../components/Form'
 import { PageTitle } from '../../../../components/PageTitle'
 import { eventLogger } from '../../../../tracking/eventLogger'
 import { AccountEmailAddresses } from '../../../dotcom/productSubscriptions/AccountEmailAddresses'
+import { ErrorAlert } from '../../../../components/alerts'
 
 interface Props extends RouteComponentProps<{}> {
     authenticatedUser: GQL.IUser
@@ -140,9 +140,11 @@ export class SiteAdminCreateProductSubscriptionPage extends React.Component<Prop
                             )}
                         </select>
                         {isErrorLike(this.state.accountsOrError) ? (
-                            <div className="alert alert-danger mt-2">
-                                Error loading accounts: {upperFirst(this.state.accountsOrError.message)}
-                            </div>
+                            <ErrorAlert
+                                className="mt-2"
+                                error={this.state.accountsOrError}
+                                prefix="Error loading accounts"
+                            />
                         ) : selectedAccount ? (
                             <small className="form-text text-muted">
                                 Email {pluralize('address', selectedAccount.emails.length, 'addresses')}:{' '}
@@ -173,7 +175,7 @@ export class SiteAdminCreateProductSubscriptionPage extends React.Component<Prop
                     </div>
                 </Form>
                 {isErrorLike(this.state.creationOrError) && (
-                    <div className="alert alert-danger mt-3">{upperFirst(this.state.creationOrError.message)}</div>
+                    <ErrorAlert className="mt-3" error={this.state.creationOrError} />
                 )}
             </div>
         )
