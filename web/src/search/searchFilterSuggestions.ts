@@ -10,14 +10,6 @@ export type SearchFilterSuggestions = Record<
     }
 >
 
-export const filterAliases = {
-    r: SuggestionTypes.repo,
-    g: SuggestionTypes.repogroup,
-    f: SuggestionTypes.file,
-    l: SuggestionTypes.lang,
-    language: SuggestionTypes.lang,
-}
-
 export const searchFilterSuggestions: SearchFilterSuggestions = {
     filters: {
         values: [

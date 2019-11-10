@@ -1,13 +1,14 @@
 import {
     getSearchTypeFromQuery,
     toggleSearchType,
-    filterSearchSuggestions,
+    filterStaticSuggestions,
     insertSuggestionInQuery,
     lastFilterAndValueBeforeCursor,
     isFuzzyWordSearch,
 } from './helpers'
 import { SearchType } from './results/SearchResults'
-import { searchFilterSuggestions, filterAliases } from './searchFilterSuggestions'
+import { searchFilterSuggestions } from './searchFilterSuggestions'
+import { filterAliases } from './input/Suggestion'
 
 describe('search/helpers', () => {
     describe('queryIndexOfScope()', () => {
@@ -98,8 +99,10 @@ describe('search/helpers', () => {
     describe('suggestions', () => {
         const filterQuery = 'test r test'
 
-        const getArchivedSuggestions = () => filterSearchSuggestions('archived:', 9, searchFilterSuggestions)
-        const getFilterSuggestionStartingWithR = () => filterSearchSuggestions(filterQuery, 6, searchFilterSuggestions)
+        const getArchivedSuggestions = () =>
+            filterStaticSuggestions({ query: 'archived:', cursorPosition: 9 }, searchFilterSuggestions)
+        const getFilterSuggestionStartingWithR = () =>
+            filterStaticSuggestions({ query: filterQuery, cursorPosition: 6 }, searchFilterSuggestions)
 
         describe('filterSearchSuggestions()', () => {
             test('filters suggestions for filters starting with "r"', () => {
@@ -113,17 +116,24 @@ describe('search/helpers', () => {
 
             test('filters suggestions for filter aliases', () => {
                 for (const [alias, filter] of Object.entries(filterAliases)) {
-                    const [{ value }] = filterSearchSuggestions(alias, alias.length, searchFilterSuggestions)
+                    const [{ value }] = filterStaticSuggestions(
+                        { query: alias, cursorPosition: alias.length },
+                        searchFilterSuggestions
+                    )
                     expect(value).toBe(filter + ':')
                 }
             })
 
             test('does not throw for query ":"', () => {
-                expect(() => filterSearchSuggestions(':', 1, searchFilterSuggestions)).not.toThrowError()
+                expect(() =>
+                    filterStaticSuggestions({ query: ':', cursorPosition: 1 }, searchFilterSuggestions)
+                ).not.toThrowError()
             })
 
             test('filters suggestions for word "test"', () => {
-                expect(filterSearchSuggestions(filterQuery, 4, searchFilterSuggestions)).toHaveLength(0)
+                expect(
+                    filterStaticSuggestions({ query: filterQuery, cursorPosition: 4 }, searchFilterSuggestions)
+                ).toHaveLength(0)
             })
 
             test('filters suggestions for the "archived:" filter', () => {
@@ -152,12 +162,14 @@ describe('search/helpers', () => {
             expect(lastFilterAndValueBeforeCursor({ query, cursorPosition: 10 })).toStrictEqual({
                 filterAndValue: 'archived:y',
                 filter: 'archived',
+                value: 'y',
             })
         })
         it('returns values when a filter is selected but no value char is typed yet', () => {
             expect(lastFilterAndValueBeforeCursor({ query, cursorPosition: 9 })).toStrictEqual({
                 filterAndValue: 'archived:',
                 filter: 'archived',
+                value: '',
             })
             lastFilterAndValueBeforeCursor({ query, cursorPosition: 9 })
         })

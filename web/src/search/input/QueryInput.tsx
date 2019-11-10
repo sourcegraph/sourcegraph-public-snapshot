@@ -21,14 +21,15 @@ import RegexpToggle from './RegexpToggle'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 import { PatternTypeProps } from '..'
 import Downshift from 'downshift'
-import { searchFilterSuggestions, SearchFilterSuggestions } from '../searchFilterSuggestions'
+import { searchFilterSuggestions } from '../searchFilterSuggestions'
 import {
     QueryState,
-    filterSearchSuggestions,
+    filterStaticSuggestions,
     insertSuggestionInQuery,
     isFuzzyWordSearch,
     lastFilterAndValueBeforeCursor,
     formatQueryForFuzzySearch,
+    isValidFilter,
 } from '../helpers'
 import { fetchSuggestions } from '../backend'
 import { isDefined } from '../../../../shared/src/util/types'
@@ -134,8 +135,11 @@ export class QueryInput extends React.Component<Props, State> {
                         // A filter value (in "archive:yes", "archive" is the filter and "yes" is the value)
                         // can either be from `searchFilterSuggestions` or from the fuzzy-search.
 
-                        // First get any static suggestion
-                        const staticSuggestions = this.getSuggestions(searchFilterSuggestions, queryState)
+                        // First get static suggestions
+                        const staticSuggestions = {
+                            cursorPosition: queryState.cursorPosition,
+                            values: filterStaticSuggestions(queryState, searchFilterSuggestions)
+                        }
 
                         // Used to know if a filter value, and not just a separate word, is being typed
                         const filterAndValueBeforeCursor = lastFilterAndValueBeforeCursor(queryState)
@@ -144,15 +148,17 @@ export class QueryInput extends React.Component<Props, State> {
                         // fuzzy-search suggestions, then return only static suggestions
                         if (
                             filterAndValueBeforeCursor &&
+                            isValidFilter(filterAndValueBeforeCursor.filter) &&
                             !fuzzySearchFilters.includes(filterAndValueBeforeCursor.filter)
                         ) {
                             return [{ suggestions: staticSuggestions }]
                         }
 
-                        const fullQuery = (this.props.prependQueryForSuggestions ?? '') + ' ' + queryState.query
+                        const queryForFuzzySearch = formatQueryForFuzzySearch(queryState)
+                        const fullQuery = (this.props.prependQueryForSuggestions ?? '') + ' ' + queryForFuzzySearch
 
                         // Dos a fuzzy search and formats suggestions for display.
-                        return fetchSuggestions(formatQueryForFuzzySearch(fullQuery)).pipe(
+                        return fetchSuggestions(fullQuery).pipe(
                             map(createSuggestion),
                             filter(isDefined),
                             map((suggestion): Suggestion => ({ ...suggestion, fromFuzzySearch: true })),
@@ -361,19 +367,14 @@ export class QueryInput extends React.Component<Props, State> {
     }
 
     private onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
-        // Ctrl+Space to show all available suggestions
+        // Ctrl+Space to show all available filter type suggestions
         if (!this.props.value.query && event.ctrlKey && event.key === ' ') {
-            this.setState({ suggestions: this.getSuggestions(searchFilterSuggestions) })
+            this.setState({ suggestions: {
+                cursorPosition: event.currentTarget.selectionStart ?? 0,
+                values: searchFilterSuggestions.filters.values
+            } })
         }
     }
-
-    private getSuggestions = (
-        searchFilterSuggestions: SearchFilterSuggestions,
-        { query, cursorPosition }: QueryState = { query: '', cursorPosition: 0 }
-    ): ComponentSuggestions => ({
-        cursorPosition,
-        values: !searchFilterSuggestions ? [] : filterSearchSuggestions(query, cursorPosition, searchFilterSuggestions),
-    })
 
     private hideSuggestions = (): void => {
         this.suggestionsHidden.next()

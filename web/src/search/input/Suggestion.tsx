@@ -25,6 +25,14 @@ export enum SuggestionTypes {
     symbol = 'symbol',
 }
 
+export const filterAliases = {
+    r: SuggestionTypes.repo,
+    g: SuggestionTypes.repogroup,
+    f: SuggestionTypes.file,
+    l: SuggestionTypes.lang,
+    language: SuggestionTypes.lang,
+}
+
 /**
  * Filters which use fuzzy-search for their suggestion values
  */
@@ -34,6 +42,12 @@ export const fuzzySearchFilters = [
     SuggestionTypes.file,
     SuggestionTypes.repohasfile,
 ]
+
+/**
+ * Some filter types should have their suggestions searched without influence
+ * from the rest of the query, as they will then influence the scope of other filters.
+ */
+export const isolatedFuzzySearchFilters = [SuggestionTypes.repo, SuggestionTypes.repogroup]
 
 /**
  * dir and symbol are fetched/suggested by the fuzzy-search
