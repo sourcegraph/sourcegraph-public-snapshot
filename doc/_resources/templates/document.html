@@ -6,6 +6,21 @@
     {{end}}
 {{end}}
 
+{{define "versionSelector"}}
+    <div id="version-selector" class="dropdown version-dropdown ml-2">
+        <button class="btn btn-outline dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            {{.ContentVersion}}{{/* If no version is specified we are on the master branch */}}{{if eq .ContentVersion ""}}master{{end}}
+        </button>
+        <details-menu aria-label="Sourcegraph version" class="dropdown-menu m-0 p-0" aria-labelledby="Version Dropdown">
+
+            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.8.2"}} {{$previousReleaseVersion := "3.8"}} {{$currentReleaseRevspec := "v3.9.4"}} {{$currentReleaseVersion := "3.9"}} {{$nextReleaseVersion := "master"}}
+            <a rel="nofollow" class="dropdown-item {{if eq .ContentVersion " "}}active{{end}}" href="/{{.ContentPagePath}}">master</a>
+            <a rel="nofollow" class=" dropdown-item {{if eq $currentReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$currentReleaseVersion}}/{{.ContentPagePath}}">{{$currentReleaseVersion}}<span class="current-branch ml-1">current</span></a>
+            <a rel="nofollow" class=" dropdown-item {{if eq $previousReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$previousReleaseVersion}}/{{.ContentPagePath}}">{{$previousReleaseVersion}}</a>
+        </details-menu>
+    </div>
+{{end}}
+
 {{define "content"}}
     <div class="docs-content">
         <div class="nav-sticky-wrapper content-nav-wrapper column large-2 medium-3 mobile-show">
@@ -363,5 +378,16 @@
                 </ul>
             {{end}}
         </li>
+    {{end}}
+{{end}}
+
+{{define "afterBody"}}
+    <script src="{{asset "docs.js"}}?12"></script>
+    {{with .Content}}
+        <script>sgdocs.init(breadcrumbs = {{ .Breadcrumbs }});</script>
+    {{else}}
+        <script>
+            sgdocs.init(breadcrumbs = null);
+        </script>
     {{end}}
 {{end}}
