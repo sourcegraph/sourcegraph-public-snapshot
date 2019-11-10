@@ -6,7 +6,7 @@ interface Props {
     /**
      * Content in the always-visible, single-line title bar.
      */
-    title: string
+    title: string | React.ReactFragment
 
     /**
      * Optional children that appear below the title bar that can be expanded/collapsed. If present,

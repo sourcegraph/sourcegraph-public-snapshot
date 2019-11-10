@@ -16,6 +16,7 @@ import { FileDiffConnection } from './FileDiffConnection'
 import { FileDiffNode } from './FileDiffNode'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 import { ThemeProps } from '../../../../shared/src/theme'
+import { FileDiffFields, FileDiffHunkRangeFields, DiffStatFields } from '../../backend/diff'
 
 export function queryRepositoryComparisonFileDiffs(args: {
     repo: GQL.ID
@@ -46,39 +47,11 @@ export function queryRepositoryComparisonFileDiffs(args: {
                 }
             }
 
-            fragment FileDiffFields on FileDiff {
-                oldPath
-                newPath
-                mostRelevantFile {
-                    url
-                }
-                hunks {
-                    oldRange {
-                        ...FileDiffHunkRangeFields
-                    }
-                    oldNoNewlineAt
-                    newRange {
-                        ...FileDiffHunkRangeFields
-                    }
-                    section
-                    body
-                }
-                stat {
-                    ...DiffStatFields
-                }
-                internalID
-            }
+            ${FileDiffFields}
 
-            fragment FileDiffHunkRangeFields on FileDiffHunkRange {
-                startLine
-                lines
-            }
+            ${FileDiffHunkRangeFields}
 
-            fragment DiffStatFields on DiffStat {
-                added
-                changed
-                deleted
-            }
+            ${DiffStatFields}
         `,
         args
     ).pipe(

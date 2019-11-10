@@ -21,6 +21,7 @@ interface JSONSchema {
 
 export interface Props extends ThemeProps {
     id?: string
+    className?: string
     value: string | undefined
     onChange?: (newValue: string) => void
     readOnly?: boolean | undefined
@@ -111,6 +112,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
         return (
             <MonacoEditor
                 id={this.props.id}
+                className={this.props.className}
                 language={this.props.language || 'json'}
                 height={this.props.height || 400}
                 theme={isLightThemeToMonacoTheme(this.props.isLightTheme)}

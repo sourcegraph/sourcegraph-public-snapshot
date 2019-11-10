@@ -7,9 +7,12 @@ import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { Connection, FilteredConnection } from '../../components/FilteredConnection'
 import { FileDiffNodeProps } from './FileDiffNode'
 
-class FilteredFileDiffConnection extends FilteredConnection<GQL.IFileDiff, Omit<FileDiffNodeProps, 'node'>> {}
+class FilteredFileDiffConnection extends FilteredConnection<
+    GQL.IFileDiff | GQL.IPreviewFileDiff,
+    Omit<FileDiffNodeProps, 'node'>
+> {}
 
-type Props = FilteredFileDiffConnection['props'] & ExtensionsControllerProps
+type Props = FilteredFileDiffConnection['props'] & Partial<ExtensionsControllerProps>
 
 /**
  * Displays a list of file diffs.
@@ -19,7 +22,9 @@ export class FileDiffConnection extends React.PureComponent<Props> {
         return <FilteredFileDiffConnection {...this.props} onUpdate={this.onUpdate} />
     }
 
-    private onUpdate = (fileDiffsOrError: Connection<GQL.IFileDiff> | ErrorLike | undefined): void => {
+    private onUpdate = (
+        fileDiffsOrError: Connection<GQL.IFileDiff | GQL.IPreviewFileDiff> | ErrorLike | undefined
+    ): void => {
         const nodeProps = this.props.nodeComponentProps!
 
         // TODO(sqs): This reports to extensions that these files are empty. This is wrong, but we don't have any
@@ -27,41 +32,43 @@ export class FileDiffConnection extends React.PureComponent<Props> {
         // API's support for diffs.
         const dummyText = ''
 
-        this.props.extensionsController.services.editor.removeAllEditors()
+        if (this.props.extensionsController) {
+            this.props.extensionsController.services.editor.removeAllEditors()
 
-        if (fileDiffsOrError && !isErrorLike(fileDiffsOrError)) {
-            for (const fileDiff of fileDiffsOrError.nodes) {
-                if (fileDiff.oldPath) {
-                    const uri = `git://${nodeProps.base.repoName}?${nodeProps.base.commitID}#${fileDiff.oldPath}`
-                    if (!this.props.extensionsController.services.model.hasModel(uri)) {
-                        this.props.extensionsController.services.model.addModel({
-                            uri,
-                            languageId: getModeFromPath(fileDiff.oldPath),
-                            text: dummyText,
+            if (fileDiffsOrError && !isErrorLike(fileDiffsOrError)) {
+                for (const fileDiff of fileDiffsOrError.nodes) {
+                    if (fileDiff.oldPath && nodeProps.base) {
+                        const uri = `git://${nodeProps.base.repoName}?${nodeProps.base.commitID}#${fileDiff.oldPath}`
+                        if (!this.props.extensionsController.services.model.hasModel(uri)) {
+                            this.props.extensionsController.services.model.addModel({
+                                uri,
+                                languageId: getModeFromPath(fileDiff.oldPath),
+                                text: dummyText,
+                            })
+                        }
+                        this.props.extensionsController.services.editor.addEditor({
+                            type: 'CodeEditor',
+                            resource: uri,
+                            selections: [],
+                            isActive: false, // HACK: arbitrarily say that the base is inactive. TODO: support diffs first-class
                         })
                     }
-                    this.props.extensionsController.services.editor.addEditor({
-                        type: 'CodeEditor',
-                        resource: uri,
-                        selections: [],
-                        isActive: false, // HACK: arbitrarily say that the base is inactive. TODO: support diffs first-class
-                    })
-                }
-                if (fileDiff.newPath) {
-                    const uri = `git://${nodeProps.head.repoName}?${nodeProps.head.commitID}#${fileDiff.newPath}`
-                    if (!this.props.extensionsController.services.model.hasModel(uri)) {
-                        this.props.extensionsController.services.model.addModel({
-                            uri,
-                            languageId: getModeFromPath(fileDiff.newPath),
-                            text: dummyText,
+                    if (fileDiff.newPath && nodeProps.head) {
+                        const uri = `git://${nodeProps.head.repoName}?${nodeProps.head.commitID}#${fileDiff.newPath}`
+                        if (!this.props.extensionsController.services.model.hasModel(uri)) {
+                            this.props.extensionsController.services.model.addModel({
+                                uri,
+                                languageId: getModeFromPath(fileDiff.newPath),
+                                text: dummyText,
+                            })
+                        }
+                        this.props.extensionsController.services.editor.addEditor({
+                            type: 'CodeEditor',
+                            resource: uri,
+                            selections: [],
+                            isActive: true,
                         })
                     }
-                    this.props.extensionsController.services.editor.addEditor({
-                        type: 'CodeEditor',
-                        resource: uri,
-                        selections: [],
-                        isActive: true,
-                    })
                 }
             }
         }

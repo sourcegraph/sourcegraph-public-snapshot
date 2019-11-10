@@ -1,3 +1,4 @@
+import { parse as parseJSONC } from '@sqs/jsonc-parser'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
@@ -7,23 +8,39 @@ import { PageTitle } from '../../../components/PageTitle'
 import { UserAvatar } from '../../../user/UserAvatar'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { CampaignsIcon } from '../icons'
-import { ExternalChangesetNode } from './changesets/ExternalChangesetNode'
-import { noop } from 'lodash'
+import { ChangesetNode, ChangesetNodeProps } from './changesets/ChangesetNode'
+import { isEqual, noop } from 'lodash'
 import { Form } from '../../../components/Form'
-import { fetchCampaignById, updateCampaign, deleteCampaign, createCampaign, queryChangesets } from './backend'
-import { useError } from '../../../util/useObservable'
+import {
+    fetchCampaignById,
+    updateCampaign,
+    deleteCampaign,
+    createCampaign,
+    queryChangesets,
+    previewCampaignPlan,
+    fetchCampaignPlanById,
+} from './backend'
+import { useError, useObservable } from '../../../util/useObservable'
 import { asError } from '../../../../../shared/src/util/errors'
 import * as H from 'history'
 import { queryNamespaces } from '../../namespaces/backend'
 import { CampaignBurndownChart } from './BurndownChart'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 import { AddChangesetForm } from './AddChangesetForm'
-import { Subject } from 'rxjs'
-import { Markdown } from '../../../../../shared/src/components/Markdown'
+import { Subject, of, timer, merge, EMPTY } from 'rxjs'
+import { MonacoSettingsEditor } from '../../../settings/MonacoSettingsEditor'
 import { renderMarkdown } from '../../../../../shared/src/util/markdown'
 import { ErrorAlert } from '../../../components/alerts'
+import { Markdown } from '../../../../../shared/src/components/Markdown'
+import { Link } from '../../../../../shared/src/components/Link'
+import { switchMap, tap, catchError, takeWhile, concatMap } from 'rxjs/operators'
+import { ThemeProps } from '../../../../../shared/src/theme'
+import { TabsWithLocalStorageViewStatePersistence } from '../../../../../shared/src/components/Tabs'
+import SourcePullIcon from 'mdi-react/SourcePullIcon'
+import { LinkOrSpan } from '../../../../../shared/src/components/LinkOrSpan'
+import { FileDiffNode } from '../../../repo/compare/FileDiffNode'
 
-interface Props {
+interface Props extends ThemeProps {
     /**
      * The campaign ID.
      * If not given, will display a creation form.
@@ -32,6 +49,30 @@ interface Props {
     authenticatedUser: GQL.IUser
     history: H.History
     location: H.Location
+    isSourcegraphDotCom: boolean
+}
+
+const combyJsonSchema = {
+    $id: '',
+    $schema: 'http://json-schema.org/draft-07/schema#',
+    description: 'Schema for comby options',
+    type: 'object',
+    properties: {
+        scopeQuery: {
+            type: 'string',
+            description: 'Define a scope to narrow down repositories affected by this change',
+        },
+        matchTemplate: {
+            type: 'string',
+            description: 'See https://comby.dev/#match-syntax for syntax',
+        },
+        rewriteTemplate: {
+            type: 'string',
+            description: 'See https://comby.dev/#match-syntax for syntax',
+        },
+    },
+    required: ['scopeQuery', 'matchTemplate', 'rewriteTemplate'],
+    additionalProperties: false,
 }
 
 /**
@@ -42,10 +83,14 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     history,
     location,
     authenticatedUser,
+    isLightTheme,
+    isSourcegraphDotCom,
 }) => {
     // State for the form in editing mode
     const [name, setName] = useState<string>('')
     const [description, setDescription] = useState<string>('')
+    const [type, setType] = useState<string>('')
+    const [campaignPlanSpec, setCampaignPlanSpec] = useState<string>('')
     const [namespace, setNamespace] = useState<GQL.ID>()
 
     const [namespaces, setNamespaces] = useState<GQL.Namespace[]>()
@@ -66,15 +111,29 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         return () => subscription.unsubscribe()
     }, [campaignID, triggerError])
 
+    const changesetUpdates = useMemo(() => new Subject<void>(), [])
+    const nextChangesetUpdate = useCallback(changesetUpdates.next.bind(changesetUpdates), [changesetUpdates])
+
     // Fetch campaign if ID was given
     const [campaign, setCampaign] = useState<GQL.ICampaign | null>()
+    const [campaignPlan, setCampaignPlan] = useState<GQL.ICampaignPlan | null>()
     useEffect(() => {
         if (!campaignID) {
             return
         }
-        const subscription = fetchCampaignById(campaignID).subscribe({ next: setCampaign, error: triggerError })
+        const subscription = merge(of(undefined), changesetUpdates)
+            .pipe(switchMap(() => fetchCampaignById(campaignID)))
+            .subscribe({
+                next: fetchedCampaign => {
+                    setCampaign(fetchedCampaign)
+                    setCampaignPlan(fetchedCampaign ? fetchedCampaign.plan : null)
+                },
+                error: triggerError,
+            })
         return () => subscription.unsubscribe()
-    }, [campaignID, triggerError])
+    }, [campaignID, triggerError, changesetUpdates])
+
+    const [previewRefreshNeeded, setPreviewRefreshNeeded] = useState<boolean>(true)
 
     const queryChangesetsConnection = useCallback(
         (args: FilteredConnectionQueryArgs) => queryChangesets(campaignID!, args),
@@ -84,7 +143,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     const [mode, setMode] = useState<'viewing' | 'editing' | 'saving' | 'deleting'>(campaignID ? 'viewing' : 'editing')
 
     // To report errors from saving or deleting
-    const [alertError, setAlertError] = useState<Error>()
+    const [alertError, setAlertError] = useState<Error | null>()
 
     // To unblock the history after leaving edit mode
     const unblockHistoryRef = useRef<H.UnregisterCallback>(noop)
@@ -96,8 +155,54 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         return unblockHistoryRef.current
     }, [campaignID, history])
 
-    const changesetUpdates = useMemo(() => new Subject<void>(), [])
-    const nextChangesetUpdate = useCallback(changesetUpdates.next.bind(changesetUpdates), [changesetUpdates])
+    const previewCampaignPlanEvent = useMemo(() => new Subject<GQL.ICampaignPlanSpecification>(), [])
+    const nextPreviewUpdate = useCallback(previewCampaignPlanEvent.next.bind(previewCampaignPlanEvent), [
+        previewCampaignPlanEvent,
+    ])
+    const [isLoadingPreview, setIsLoadingPreview] = useState<boolean>(false)
+    useObservable(
+        useMemo(
+            () =>
+                previewCampaignPlanEvent.pipe(
+                    tap(() => {
+                        setAlertError(null)
+                        setIsLoadingPreview(true)
+                        setCampaignPlan(null)
+                    }),
+                    switchMap(plan =>
+                        previewCampaignPlan(plan, false).pipe(
+                            catchError(error => {
+                                setAlertError(asError(error))
+                                setIsLoadingPreview(false)
+                                return EMPTY
+                            }),
+                            switchMap(previewPlan =>
+                                merge(
+                                    of(previewPlan),
+                                    timer(0, 2000).pipe(
+                                        concatMap(() => fetchCampaignPlanById(previewPlan.id)),
+                                        takeWhile((plan): plan is GQL.ICampaignPlan => !!plan),
+                                        takeWhile(plan => plan.status.state === 'PROCESSING', true)
+                                    )
+                                )
+                            )
+                        )
+                    ),
+                    tap(campaignPlan => {
+                        if (campaignPlan.status.state !== 'PROCESSING') {
+                            setIsLoadingPreview(false)
+                        }
+                        if (campaignPlan.status.state === 'COMPLETED') {
+                            setPreviewRefreshNeeded(false)
+                        }
+                    }),
+                    tap(campaignPlan => {
+                        setCampaignPlan(campaignPlan)
+                    })
+                ),
+            [previewCampaignPlanEvent]
+        )
+    )
 
     if (campaign === undefined && campaignID) {
         return <LoadingSpinner className="icon-inline mx-auto my-4" />
@@ -114,14 +219,30 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 setCampaign(await updateCampaign({ id: campaignID, name, description }))
                 unblockHistoryRef.current()
             } else {
-                const createdCampaign = await createCampaign({ name, description, namespace: getNamespace()! })
+                const createdCampaign = await createCampaign({
+                    name,
+                    description,
+                    namespace: getNamespace()!,
+                    plan: type === 'comby' && campaignPlan ? campaignPlan.id : undefined,
+                })
                 unblockHistoryRef.current()
                 history.push(`/campaigns/${createdCampaign.id}`)
             }
             setMode('viewing')
+            setAlertError(null)
         } catch (err) {
             setMode('editing')
             setAlertError(asError(err))
+        }
+    }
+
+    const onChangeConfiguration = (event: string): void => {
+        const currentSpec = campaignPlan ? parseJSONC(campaignPlan.arguments) : undefined
+        if (!currentSpec || !isEqual(currentSpec, parseJSONC(event))) {
+            setCampaignPlanSpec(event)
+            setPreviewRefreshNeeded(true)
+        } else if (!isLoadingPreview) {
+            setPreviewRefreshNeeded(false)
         }
     }
 
@@ -131,10 +252,13 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         event.preventDefault()
         unblockHistoryRef.current = history.block(discardChangesMessage)
         {
-            const { name, description } = campaign!
+            const { name, description, plan } = campaign!
             setName(name)
             setDescription(description)
             setMode('editing')
+            // setCampaignPlan(plan)
+            setType(plan ? plan.type : 'manual')
+            setCampaignPlanSpec(plan ? plan.arguments : '')
         }
     }
 
@@ -145,6 +269,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         }
         unblockHistoryRef.current()
         setMode('viewing')
+        setAlertError(null)
     }
 
     const onDelete: React.MouseEventHandler = async event => {
@@ -164,12 +289,41 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
     const author = campaign ? campaign.author : authenticatedUser
 
+    const totalAdditions = campaignPlan
+        ? campaignPlan.changesets.nodes.reduce(
+              (prev, next) => prev + next.fileDiffs.diffStat.added + next.fileDiffs.diffStat.changed,
+              0
+          )
+        : campaign
+        ? campaign.changesets.nodes.reduce(
+              (prev, next) =>
+                  prev + (next.diff ? next.diff.fileDiffs.diffStat.added + next.diff.fileDiffs.diffStat.changed : 0),
+              0
+          )
+        : 0
+    const totalDeletions = campaignPlan
+        ? campaignPlan.changesets.nodes.reduce(
+              (prev, next) => prev + next.fileDiffs.diffStat.deleted + next.fileDiffs.diffStat.changed,
+              0
+          )
+        : campaign
+        ? campaign.changesets.nodes.reduce(
+              (prev, next) =>
+                  prev + (next.diff ? next.diff.fileDiffs.diffStat.deleted + next.diff.fileDiffs.diffStat.changed : 0),
+              0
+          )
+        : 0
+
     return (
         <>
             <PageTitle title={campaign ? campaign.name : 'New Campaign'} />
             <Form onSubmit={onSubmit} onReset={onCancel}>
                 <h2 className="d-flex">
                     <CampaignsIcon className="icon-inline mr-2" />
+                    <span>
+                        <Link to="/campaigns">Campaigns</Link>
+                    </span>
+                    <span className="text-muted d-inline-block mx-2">/</span>
                     {/* The namespace of a campaign can only be set on creation */}
                     {campaign ? (
                         <span>{campaign.namespace.namespaceName}</span>
@@ -206,41 +360,40 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     )}
                     <span className="flex-grow-1 d-flex justify-content-end align-items-center">
                         {(mode === 'saving' || mode === 'deleting') && <LoadingSpinner className="mr-2" />}
-                        {mode === 'editing' || mode === 'saving' ? (
-                            <>
-                                <button type="submit" className="btn btn-primary mr-1" disabled={mode === 'saving'}>
-                                    Save
-                                </button>
-                                {campaignID && (
+                        {campaignID &&
+                            (mode === 'editing' || mode === 'saving' ? (
+                                <>
+                                    <button type="submit" className="btn btn-primary mr-1" disabled={mode === 'saving'}>
+                                        Save
+                                    </button>
                                     <button type="reset" className="btn btn-secondary" disabled={mode === 'saving'}>
                                         Cancel
                                     </button>
-                                )}
-                            </>
-                        ) : (
-                            <>
-                                <button
-                                    type="button"
-                                    className="btn btn-secondary mr-1"
-                                    onClick={onEdit}
-                                    disabled={mode === 'deleting'}
-                                >
-                                    Edit
-                                </button>
-                                <button
-                                    type="button"
-                                    className="btn btn-danger"
-                                    onClick={onDelete}
-                                    disabled={mode === 'deleting'}
-                                >
-                                    Delete
-                                </button>
-                            </>
-                        )}
+                                </>
+                            ) : (
+                                <>
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary mr-1"
+                                        onClick={onEdit}
+                                        disabled={mode === 'deleting'}
+                                    >
+                                        Edit
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-danger"
+                                        onClick={onDelete}
+                                        disabled={mode === 'deleting'}
+                                    >
+                                        Delete
+                                    </button>
+                                </>
+                            ))}
                     </span>
                 </h2>
                 {alertError && <ErrorAlert error={alertError} />}
-                <div className="card mb-3">
+                <div className="card">
                     <div className="card-header">
                         <strong>
                             <UserAvatar user={author} className="icon-inline" /> {author.username}
@@ -258,6 +411,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             value={description}
                             onChange={event => setDescription(event.target.value)}
                             placeholder="Describe the purpose of this campaign, link to relevant internal documentation, etc."
+                            rows={8}
                             disabled={mode === 'saving'}
                         />
                     ) : (
@@ -266,7 +420,86 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         </div>
                     )}
                 </div>
+                <p className="ml-1">
+                    <small>
+                        <a
+                            rel="noopener noreferrer"
+                            target="_blank"
+                            href={(isSourcegraphDotCom ? 'https://docs.sourcegraph.com' : '/help') + '/user/markdown'}
+                        >
+                            Markdown supported
+                        </a>
+                    </small>
+                </p>
+                <h3>Campaign type</h3>
+                <select
+                    className="form-control w-auto d-inline-block"
+                    placeholder="Select campaign type"
+                    onChange={event => setType(event.target.value)}
+                    disabled={!!(campaign && campaign.id)}
+                    value={campaign && campaign.plan ? campaign.plan.type : type}
+                    required={true}
+                >
+                    <option value="manual">Manual</option>
+                    <option value="comby">Comby search and replace</option>
+                </select>
+                {type === 'comby' && (
+                    <small className="ml-1">
+                        <a rel="noopener noreferrer" target="_blank" href="https://comby.dev/#match-syntax">
+                            Learn about comby syntax
+                        </a>
+                    </small>
+                )}
+                <MonacoSettingsEditor
+                    className="my-3"
+                    isLightTheme={isLightTheme}
+                    value={campaignPlanSpec}
+                    jsonSchema={type === 'comby' ? combyJsonSchema : undefined}
+                    height={110}
+                    onChange={onChangeConfiguration}
+                    readOnly={!!(campaign && campaign.id)}
+                ></MonacoSettingsEditor>
+                {!campaign && mode === 'editing' && (
+                    <>
+                        {type === 'comby' && (
+                            <button
+                                type="button"
+                                className="btn btn-primary mr-1"
+                                disabled={!previewRefreshNeeded}
+                                onClick={() => nextPreviewUpdate({ type, arguments: campaignPlanSpec })}
+                            >
+                                {isLoadingPreview && <LoadingSpinner className="icon-inline mr-1" />}
+                                Preview changes
+                            </button>
+                        )}
+                        <button
+                            type="submit"
+                            className="btn btn-primary"
+                            disabled={(type === 'comby' && previewRefreshNeeded) || mode !== 'editing'}
+                        >
+                            Create
+                        </button>
+                    </>
+                )}
             </Form>
+
+            {campaignPlan && (
+                <>
+                    {campaignPlan.status.state === 'PROCESSING' && (
+                        <div className="d-flex mt-3">
+                            <LoadingSpinner className="icon-inline" />{' '}
+                            <span data-tooltip="Computing changesets">
+                                {campaignPlan.status.completedCount} /{' '}
+                                {campaignPlan.status.pendingCount + campaignPlan.status.completedCount}
+                            </span>
+                        </div>
+                    )}
+                    {campaignPlan.status.errors.map((error, i) => (
+                        <ErrorAlert error={error} className="mt-3" key={i} />
+                    ))}
+                </>
+            )}
+
             {campaign && (
                 <>
                     <h3>Progress</h3>
@@ -274,26 +507,118 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         changesetCountsOverTime={campaign.changesetCountsOverTime}
                         history={history}
                     />
-
-                    <h3>
-                        Changesets{' '}
-                        <span className="badge badge-secondary badge-pill">{campaign.changesets.totalCount}</span>
-                    </h3>
-
-                    <AddChangesetForm campaignID={campaign.id} onAdd={nextChangesetUpdate} />
-
-                    <FilteredConnection<GQL.IExternalChangeset>
-                        className="mt-2"
-                        updates={changesetUpdates}
-                        nodeComponent={ExternalChangesetNode}
-                        queryConnection={queryChangesetsConnection}
-                        hideSearch={true}
-                        defaultFirst={15}
-                        noun="Changeset"
-                        pluralNoun="Changesets"
-                        history={history}
-                        location={location}
-                    />
+                    {/* only campaigns that have no plan can add changesets manually */}
+                    {!campaign.plan && <AddChangesetForm campaignID={campaign.id} onAdd={nextChangesetUpdate} />}
+                </>
+            )}
+            {(campaign || campaignPlan) && (
+                <>
+                    <TabsWithLocalStorageViewStatePersistence
+                        storageKey="campaignTab"
+                        className="mt-3"
+                        tabs={[
+                            {
+                                id: 'diff',
+                                label: (
+                                    <span>
+                                        Diff <span className="diff-stat__text-added">+{totalAdditions}</span>{' '}
+                                        <span className="diff-stat__text-deleted">-{totalDeletions}</span>
+                                    </span>
+                                ),
+                            },
+                            {
+                                id: 'changesets',
+                                label: (
+                                    <span>
+                                        Changesets{' '}
+                                        {(campaignPlan || campaign) && (
+                                            <span className="badge badge-secondary badge-pill">
+                                                {(campaignPlan || campaign)!.changesets.totalCount}
+                                            </span>
+                                        )}
+                                    </span>
+                                ),
+                            },
+                        ]}
+                        tabClassName="tab-bar__tab--h5like"
+                    >
+                        <div className="list-group mt-3" key="changesets">
+                            {campaign && (
+                                <FilteredConnection<
+                                    GQL.IExternalChangeset | GQL.IChangesetPlan,
+                                    Omit<ChangesetNodeProps, 'node'>
+                                >
+                                    className="mt-2"
+                                    updates={changesetUpdates}
+                                    nodeComponent={ChangesetNode}
+                                    nodeComponentProps={{ isLightTheme, history, location }}
+                                    queryConnection={queryChangesetsConnection}
+                                    hideSearch={true}
+                                    defaultFirst={15}
+                                    noun="Changeset"
+                                    pluralNoun="Changesets"
+                                    history={history}
+                                    location={location}
+                                />
+                            )}
+                            {campaignPlan &&
+                                campaignPlan.changesets.nodes.map((changeset, i) => (
+                                    <ChangesetNode
+                                        node={changeset}
+                                        isLightTheme={isLightTheme}
+                                        key={i}
+                                        location={location}
+                                    ></ChangesetNode>
+                                ))}
+                        </div>
+                        <div className="mt-3" key="diff">
+                            {campaignPlan &&
+                                campaignPlan.changesets.nodes.map((changesetNode, i) => (
+                                    <div key={i}>
+                                        <h3>
+                                            <SourcePullIcon className="icon-inline mr-2" />{' '}
+                                            <LinkOrSpan to={changesetNode.repository.url || undefined}>
+                                                {changesetNode.repository.name}
+                                            </LinkOrSpan>
+                                        </h3>
+                                        {changesetNode.fileDiffs.nodes.map((fileDiffNode, j) => (
+                                            <FileDiffNode
+                                                isLightTheme={isLightTheme}
+                                                node={fileDiffNode}
+                                                lineNumbers={true}
+                                                location={location}
+                                                history={history}
+                                                key={j}
+                                            ></FileDiffNode>
+                                        ))}
+                                    </div>
+                                ))}
+                            {campaign &&
+                                campaign.changesets.nodes.map(
+                                    (changesetNode, i) =>
+                                        changesetNode.diff && (
+                                            <div key={i}>
+                                                <h3>
+                                                    <SourcePullIcon className="icon-inline mr-2" />{' '}
+                                                    <LinkOrSpan to={changesetNode.repository.url || undefined}>
+                                                        {changesetNode.repository.name}
+                                                    </LinkOrSpan>
+                                                </h3>
+                                                {changesetNode.diff.fileDiffs.nodes.map((fileDiffNode, j) => (
+                                                    <FileDiffNode
+                                                        isLightTheme={isLightTheme}
+                                                        node={fileDiffNode}
+                                                        lineNumbers={true}
+                                                        location={location}
+                                                        history={history}
+                                                        key={j}
+                                                    ></FileDiffNode>
+                                                ))}
+                                            </div>
+                                        )
+                                )}
+                        </div>
+                    </TabsWithLocalStorageViewStatePersistence>
                 </>
             )}
         </>

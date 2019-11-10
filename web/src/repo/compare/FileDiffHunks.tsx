@@ -10,7 +10,6 @@ import { DecorationMapByLine, groupDecorationsByLine } from '../../../../shared/
 import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { isDefined } from '../../../../shared/src/util/types'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec, toURIWithPath } from '../../../../shared/src/util/url'
 import { ThemeProps } from '../../../../shared/src/theme'
@@ -29,15 +28,15 @@ interface PartFileInfo {
     filePath: string | null
 }
 
-interface FileHunksProps extends PlatformContextProps, ExtensionsControllerProps, ThemeProps {
+interface FileHunksProps extends Partial<ExtensionsControllerProps>, ThemeProps {
     /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
     fileDiffAnchor: string
 
     /** The base repository, revision, and file. */
-    base: PartFileInfo
+    base?: PartFileInfo
 
     /** The head repository, revision, and file. */
-    head: PartFileInfo
+    head?: PartFileInfo
 
     /** The file's hunks. */
     hunks: GQL.IFileDiffHunk[]
@@ -47,8 +46,8 @@ interface FileHunksProps extends PlatformContextProps, ExtensionsControllerProps
 
     className: string
     location: H.Location
-    history: H.History
-    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
+    history?: H.History
+    hoverifier?: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
 }
 
 interface FileDiffHunksState {
@@ -95,22 +94,24 @@ export class FileDiffHunks extends React.Component<FileHunksProps, FileDiffHunks
             decorations: { head: new Map(), base: new Map() },
         }
 
-        this.subscriptions.add(
-            this.props.hoverifier.hoverify({
-                dom: diffDomFunctions,
-                positionEvents: this.codeElements.pipe(
-                    filter(isDefined),
-                    findPositionsFromEvents({ domFunctions: diffDomFunctions })
-                ),
-                positionJumps: NEVER, // TODO support diff URLs
-                resolveContext: hoveredToken => {
-                    // if part is undefined, it doesn't matter whether we chose head or base, the line stayed the same
-                    const { repoName, rev, filePath, commitID } = this.props[hoveredToken.part || 'head']
-                    // If a hover or go-to-definition was invoked on this part, we know the file path must exist
-                    return { repoName, filePath: filePath!, rev, commitID }
-                },
-            })
-        )
+        if (this.props.hoverifier) {
+            this.subscriptions.add(
+                this.props.hoverifier.hoverify({
+                    dom: diffDomFunctions,
+                    positionEvents: this.codeElements.pipe(
+                        filter(isDefined),
+                        findPositionsFromEvents({ domFunctions: diffDomFunctions })
+                    ),
+                    positionJumps: NEVER, // TODO support diff URLs
+                    resolveContext: hoveredToken => {
+                        // if part is undefined, it doesn't matter whether we chose head or base, the line stayed the same
+                        const { repoName, rev, filePath, commitID } = this.props[hoveredToken.part || 'head']!
+                        // If a hover or go-to-definition was invoked on this part, we know the file path must exist
+                        return { repoName, filePath: filePath!, rev, commitID }
+                    },
+                })
+            )
+        }
 
         // Listen to decorations from extensions and group them by line
         this.subscriptions.add(
@@ -130,18 +131,20 @@ export class FileDiffHunks extends React.Component<FileHunksProps, FileDiffHunks
                             filePath,
                         }: PartFileInfo): Observable<TextDocumentDecoration[] | null> =>
                             filePath !== null
-                                ? extensionsController.services.textDocumentDecoration.getDecorations({
+                                ? extensionsController!.services.textDocumentDecoration.getDecorations({
                                       uri: toURIWithPath({ repoName, commitID, filePath }),
                                   })
                                 : of(null)
-                        return combineLatest([getDecorationsForPart(head), getDecorationsForPart(base)])
+                        return extensionsController && head && base
+                            ? combineLatest([getDecorationsForPart(head), getDecorationsForPart(base)])
+                            : of([])
                     })
                 )
                 .subscribe(([headDecorations, baseDecorations]) => {
                     this.setState({
                         decorations: {
-                            head: groupDecorationsByLine(headDecorations),
-                            base: groupDecorationsByLine(baseDecorations),
+                            head: headDecorations ? groupDecorationsByLine(headDecorations) : new Map(),
+                            base: baseDecorations ? groupDecorationsByLine(baseDecorations) : new Map(),
                         },
                     })
                 })
