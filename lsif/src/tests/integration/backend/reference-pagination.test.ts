@@ -22,7 +22,6 @@ describe('Backend', () => {
         const backend = ctx.backend
         if (!backend) {
             fail('failed beforeAll')
-            return
         }
 
         const fetch = async (paginationContext?: ReferencePaginationContext) =>
