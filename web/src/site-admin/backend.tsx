@@ -585,3 +585,32 @@ export function fetchSiteUpdateCheck(): Observable<{
         map(data => data.site)
     )
 }
+
+/**
+ * Fetch a single LSIF job by id.
+ */
+export function fetchLsifJob({ id }: GQL.ILsifJobOnQueryArguments): Observable<GQL.ILSIFJob> {
+    return queryGraphQL(
+        gql`
+            query LsifJob($id: ID!) {
+                node(id: $id) {
+                    ... on LSIFJob {
+                        id
+                        name
+                        args
+                        state
+                        progress
+                        failedReason
+                        timestamp
+                        processedOn
+                        finishedOn
+                    }
+                }
+            }
+        `,
+        { id }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.node as GQL.ILSIFJob)
+    )
+}
