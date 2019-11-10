@@ -179,7 +179,8 @@ export const lastFilterAndValueBeforeCursor = (
     // get string before ":" char until a space is found or start of string
     const [filterAndValue, filter] = firstPart.match(/([^\s:]+)?(:(\S?)+)?$/) || []
     const value = filterAndValue?.split(':')[1]?.trim()
-    const resolvedFilter = isValidFilterAlias(filter) ? filterAliases[filter] : filter
+    const absoluteFilter = filter?.replace(/^-/, '')
+    const resolvedFilter = isValidFilterAlias(absoluteFilter) ? filterAliases[absoluteFilter] : absoluteFilter
     return isValidFilter(filter) ? { filter: resolvedFilter, filterAndValue: filterAndValue.trim(), value } : null
 }
 

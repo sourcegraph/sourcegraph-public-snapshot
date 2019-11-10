@@ -164,12 +164,13 @@ export class QueryInput extends React.Component<Props, State> {
                             map((suggestion): Suggestion => ({ ...suggestion, fromFuzzySearch: true })),
                             filter(suggestion => {
                                 // Only show fuzzy-suggestions that are relevant to the typed filter
-                                switch (filterAndValueBeforeCursor?.filter) {
-                                    case SuggestionTypes.repo:
-                                        return suggestion.type === SuggestionTypes.repo
-                                    default:
-                                        return true
+                                if (
+                                    filterAndValueBeforeCursor?.filter &&
+                                    isValidFilter(filterAndValueBeforeCursor.filter)
+                                ) {
+                                    return suggestion.type === filterAndValueBeforeCursor.filter
                                 }
+                                return true
                             }),
                             toArray(),
                             map(suggestions => ({
