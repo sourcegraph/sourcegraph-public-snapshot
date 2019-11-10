@@ -25,7 +25,7 @@ interface ToggleComponentProps {
 
 const ToggleComponent: FunctionComponent<ToggleComponentProps> = ({ hideInternal, onToggle }) => (
     <div className="lsif-jobs-filter-toggle">
-        <label className="radio-buttons__item" title="Hide internal jobs">
+        <label className="radio-buttons__item lsif-jobs-filter-toggle-label" title="Hide internal jobs">
             <Toggle value={hideInternal} onToggle={onToggle} title="Hide internal jobs" />
 
             <small>
@@ -203,7 +203,7 @@ export class SiteAdminLsifJobsPage extends React.Component<Props, State> {
  *
  * @param job The job instance.
  */
-export function lsifJobDescription(job: GQL.ILSIFJob): JSX.Element {
+function lsifJobDescription(job: GQL.ILSIFJob): JSX.Element {
     if (job.name === 'convert') {
         const { repository, commit, root } = job.args as {
             repository: string

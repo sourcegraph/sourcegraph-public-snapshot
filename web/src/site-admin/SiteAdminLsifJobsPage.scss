@@ -38,8 +38,8 @@
 .lsif-jobs-filter-toggle {
     // Take the remaining space in the radio button row
     flex: 1 1 auto;
-}
 
-.lsif-jobs-filter-toggle > label {
-    float: right;
+    &-label {
+        float: right;
+    }
 }
