@@ -745,12 +745,6 @@ li.content-nav-no-hover:hover {
     padding-bottom: 2rem;
 }
 
-/* Because there is no breadcrumb trail */
-
-#home .page-nav {
-    top: 106px;
-}
-
 .page-nav-title {
     border-bottom: 1px solid #eaeaea;
 }
