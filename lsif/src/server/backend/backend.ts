@@ -3,7 +3,6 @@ import * as lsp from 'vscode-languageserver-protocol'
 import * as settings from '../settings'
 import * as xrepoModels from '../../shared/models/xrepo'
 import { addTags, logAndTraceCall, logSpan, TracingContext } from '../../shared/tracing'
-import { ConfigurationFetcher } from '../../shared/config/config'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { createRemoteUri, Database, sortMonikers } from './database'
 import { dbFilename } from '../../shared/paths'
@@ -105,7 +104,7 @@ export class Backend {
     constructor(
         private storageRoot: string,
         private xrepoDatabase: XrepoDatabase,
-        private fetchConfiguration: ConfigurationFetcher
+        private fetchConfiguration: () => { gitServers: string[] }
     ) {}
 
     /**

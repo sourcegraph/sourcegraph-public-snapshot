@@ -1,4 +1,3 @@
-import { ConfigurationFetcher } from '../../shared/config/config'
 import { TracingContext } from '../../shared/tracing'
 import { XrepoDatabase } from '../../shared/xrepo/xrepo'
 
@@ -10,7 +9,7 @@ import { XrepoDatabase } from '../../shared/xrepo/xrepo'
  */
 export const createUpdateTipsJobProcessor = (
     xrepoDatabase: XrepoDatabase,
-    fetchConfiguration: ConfigurationFetcher
+    fetchConfiguration: () => { gitServers: string[] }
 ) => (_: unknown, ctx: TracingContext): Promise<void> =>
     xrepoDatabase.discoverAndUpdateTips({
         gitserverUrls: fetchConfiguration().gitServers,

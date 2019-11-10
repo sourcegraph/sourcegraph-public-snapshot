@@ -196,18 +196,11 @@ export class BackendTestContext {
      * by the public fields of this class.
      */
     public async init(): Promise<void> {
-        const emptyConfig = {
-            postgresDSN: '',
-            gitServers: [],
-            useJaeger: false,
-            lightstepAccessToken: '',
-        }
-
         this.storageRoot = await createStorageRoot()
         const { connection, cleanup } = await createCleanPostgresDatabase()
         this.cleanup = cleanup
         this.xrepoDatabase = new XrepoDatabase(this.storageRoot, connection)
-        this.backend = new Backend(this.storageRoot, this.xrepoDatabase, () => emptyConfig)
+        this.backend = new Backend(this.storageRoot, this.xrepoDatabase, () => ({ gitServers: [] }))
     }
 
     /**
