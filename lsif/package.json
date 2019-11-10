@@ -77,7 +77,7 @@
     "typescript-json-schema": "^0.40.0"
   },
   "scripts": {
-    "build": "tsc -b .",
+    "build": "tsc",
     "postbuild": "yarn run copy-files",
     "copy-files": "copyfiles -u 1 src/**/*.lua out",
     "test": "jest",
