@@ -11,7 +11,7 @@ import { XrepoDatabase } from '../../shared/xrepo/xrepo'
 export const createUpdateTipsJobProcessor = (
     xrepoDatabase: XrepoDatabase,
     fetchConfiguration: ConfigurationFetcher
-) => (_: never, ctx: TracingContext): Promise<void> =>
+) => (_: unknown, ctx: TracingContext): Promise<void> =>
     xrepoDatabase.discoverAndUpdateTips({
         gitserverUrls: fetchConfiguration().gitServers,
         ctx,

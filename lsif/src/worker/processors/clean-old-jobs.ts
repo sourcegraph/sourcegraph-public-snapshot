@@ -12,7 +12,7 @@ const cleanStatuses: JobStatusClean[] = ['completed', 'wait', 'active', 'delayed
  * @param logger The logger instance.
  */
 export const createCleanOldJobsProcessor = (queue: Queue, logger: Logger) => async (
-    _: never,
+    _: unknown,
     ctx: TracingContext
 ): Promise<void> => {
     const removedJobs = await logAndTraceCall(ctx, 'cleaning old jobs', () =>
