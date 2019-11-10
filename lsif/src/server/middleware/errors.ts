@@ -23,7 +23,7 @@ export const errorHandler = (
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     next: express.NextFunction
 ): void => {
-    const status = (isApiError(error) ? error.status : 500) || 500
+    const status = (isApiError(error) && error.status) || 500
     const message = (isApiError(error) ? error.message : '') || 'Unknown error'
 
     if (status !== 500) {
