@@ -155,6 +155,7 @@ export class QueryInput extends React.Component<Props, State> {
                         return fetchSuggestions(formatQueryForFuzzySearch(fullQuery)).pipe(
                             map(createSuggestion),
                             filter(isDefined),
+                            map((suggestion): Suggestion => ({ ...suggestion, fromFuzzySearch: true })),
                             filter(suggestion => {
                                 // Only show fuzzy-suggestions that are relevant to the typed filter
                                 switch (filterAndValueBeforeCursor?.filter) {
@@ -412,10 +413,16 @@ export class QueryInput extends React.Component<Props, State> {
                 return { suggestions: noSuggestions }
             }
 
+            const isValueSuggestion = suggestion.type !== SuggestionTypes.filters
+
             const { cursorPosition } = state.suggestions
             const { query: newQuery, cursorPosition: newCursorPosition } = insertSuggestionInQuery(
                 props.value.query,
-                suggestion,
+                // Add regex end of string boundary to limit future suggestion results
+                !suggestion.fromFuzzySearch ? suggestion : {
+                    ...suggestion,
+                    value: suggestion.value + '$'
+                },
                 cursorPosition
             )
 
@@ -423,8 +430,6 @@ export class QueryInput extends React.Component<Props, State> {
                 query: newQuery,
                 cursorPosition: newCursorPosition,
             })
-
-            const isValueSuggestion = suggestion.type !== SuggestionTypes.filters
 
             // If a filter was selected, show filter value suggestions
             if (!isValueSuggestion) {

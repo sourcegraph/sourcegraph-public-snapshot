@@ -53,6 +53,8 @@ export interface Suggestion {
     label?: string
     /** For suggestions of type `symbol` */
     symbolKind?: GQL.SymbolKind
+    /** If the suggestion was loaded from the fuzzy-search */
+    fromFuzzySearch?: true
 }
 
 interface SuggestionIconProps {
