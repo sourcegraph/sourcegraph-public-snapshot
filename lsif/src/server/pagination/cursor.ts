@@ -9,7 +9,7 @@ export function parseCursor<T>(cursorRaw: string | undefined): T | undefined {
     }
 
     try {
-        return JSON.parse(Buffer.from(cursorRaw, 'base64').toString('ascii'))
+        return JSON.parse(Buffer.from(cursorRaw, 'base64').toString())
     } catch {
         throw Object.assign(new Error(`Malformed cursor supplied ${cursorRaw}`), { status: 400 })
     }

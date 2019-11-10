@@ -55,7 +55,7 @@ export async function waitForConfiguration(logger: Logger): Promise<() => Config
 
     return () => {
         if (oldConfiguration === undefined) {
-            throw new Error('Unreachable')
+            throw new Error('Configuration is not defined.')
         }
 
         return oldConfiguration
