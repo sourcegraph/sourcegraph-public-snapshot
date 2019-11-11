@@ -138,8 +138,6 @@ type CreateCommitFromPatchRequest struct {
 	Patch string
 	// TargetRef is the ref that will be created for this patch
 	TargetRef string
-	// CreateBranch will create a branch from the given TargetRef if true.
-	CreateBranch bool
 	// CommitInfo is the information that will be used when creating the commit from a patch
 	CommitInfo PatchCommitInfo
 }

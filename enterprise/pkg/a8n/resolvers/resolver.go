@@ -183,6 +183,8 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 			return nil, err
 		}
 		campaign.CampaignPlanID = planID
+		// TODO(a8n): Implement this. We need to turn the CampaignJobs into
+		// changesets on the code host.
 	}
 
 	switch relay.UnmarshalKind(args.Input.Namespace) {
@@ -290,6 +292,7 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		//   - Finally we need to use the code host clients (Sources) to create the PRs.
 
 	}
+
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
 

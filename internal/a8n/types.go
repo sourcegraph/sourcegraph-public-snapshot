@@ -152,14 +152,12 @@ func (s ChangesetReviewState) Valid() bool {
 type Changeset struct {
 	ID                  int64
 	RepoID              int32
-	CampaignJobID       int64
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
 	Metadata            interface{}
 	CampaignIDs         []int64
 	ExternalID          string
 	ExternalServiceType string
-	Error               string
 }
 
 // Clone returns a clone of a Changeset.
