@@ -6,7 +6,7 @@ import express from 'express'
  * @param req The HTTP request.
  * @param params The query params to overwrite.
  */
-export function nextLink(req: express.Request, params: { [name: string]: unknown }): string {
+export function nextLink(req: express.Request, params: { [name: string]: string | number | boolean }): string {
     const url = new URL(`${req.protocol}://${req.get('host')}${req.originalUrl}`)
     for (const [key, value] of Object.entries(params)) {
         url.searchParams.set(key, String(value))
