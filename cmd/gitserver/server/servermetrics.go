@@ -52,7 +52,7 @@ func (s *Server) RegisterMetrics() {
 		Namespace: "src",
 		Subsystem: "gitserver",
 		Name:      "disk_space_total",
-		Help:      "Amount of total disk space on the repos mount.",
+		Help:      "Amount of total disk space in the repos directory.",
 	}, func() float64 {
 		var stat syscall.Statfs_t
 
