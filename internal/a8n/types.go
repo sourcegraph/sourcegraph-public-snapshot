@@ -147,6 +147,31 @@ func (s ChangesetReviewState) Valid() bool {
 	}
 }
 
+// A ChangesetJob is the creation of a Changset on an external host from a
+// local CampaignJob for a given Campaign.
+type ChangesetJob struct {
+	ID            int64
+	CampaignID    int64
+	CampaignJobID int64
+
+	// Only set once the ChangesetJob has successfully finished.
+	ChangesetID int64
+
+	Error string
+
+	StartedAt  time.Time
+	FinishedAt time.Time
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+// Clone returns a clone of a ChangesetJob.
+func (c *ChangesetJob) Clone() *ChangesetJob {
+	cc := *c
+	return &cc
+}
+
 // A Changeset is a changeset on a code host belonging to a Repository and many
 // Campaigns.
 type Changeset struct {
