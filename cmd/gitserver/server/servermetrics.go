@@ -43,7 +43,6 @@ func (s *Server) RegisterMetrics() {
 		Help:      "Amount of free space disk space on the repos mount.",
 	}, func() float64 {
 		var stat syscall.Statfs_t
-
 		syscall.Statfs(s.ReposDir, &stat)
 		return float64(stat.Bavail * uint64(stat.Bsize))
 	})
