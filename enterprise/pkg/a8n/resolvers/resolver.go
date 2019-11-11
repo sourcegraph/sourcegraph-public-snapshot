@@ -239,7 +239,7 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 
 			// TODO(a8n): Set CampaignJobID in Changeset
 			rel.Changeset = &a8n.Changeset{
-				RepoID:              rel.RepoID,
+				RepoID:              rel.CampaignJob.RepoID,
 				CampaignIDs:         []int64{campaign.ID},
 				ExternalServiceType: rel.ExternalRepo.ServiceType,
 			}
@@ -268,9 +268,9 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 			//   - Then we need to actually push the branch to origin (i.e. the code host)
 			now := time.Now().UTC()
 			_, err = r.gitserver.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
-				Repo:       api.RepoName(rj.Name),
-				BaseCommit: rj.Rev,
-				Patch:      rj.Diff,
+				Repo:       api.RepoName(rel.Repo.Name),
+				BaseCommit: rel.CampaignJob.Rev,
+				Patch:      rel.CampaignJob.Diff,
 				TargetRef:  "sourcegraph/campaign-" + strconv.FormatInt(campaign.ID, 10),
 				CommitInfo: protocol.PatchCommitInfo{
 					Message:     campaign.Name,
