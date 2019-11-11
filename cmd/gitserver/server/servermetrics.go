@@ -55,7 +55,6 @@ func (s *Server) RegisterMetrics() {
 		Help:      "Amount of total disk space in the repos directory.",
 	}, func() float64 {
 		var stat syscall.Statfs_t
-
 		syscall.Statfs(s.ReposDir, &stat)
 		return float64(stat.Blocks * uint64(stat.Bsize))
 	})
