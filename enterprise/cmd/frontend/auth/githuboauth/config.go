@@ -9,6 +9,10 @@ import (
 
 func init() {
 	const pkgName = "githuboauth"
+	conf.ContributeValidator(func(cfg conf.Unified) conf.Problems {
+		_, problems := parseConfig(&cfg)
+		return problems
+	})
 	go func() {
 		conf.Watch(func() {
 			newProviders, _ := parseConfig(conf.Get())
@@ -21,10 +25,6 @@ func init() {
 				}
 				providers.Update(pkgName, newProvidersList)
 			}
-		})
-		conf.ContributeValidator(func(cfg conf.Unified) conf.Problems {
-			_, problems := parseConfig(&cfg)
-			return problems
 		})
 	}()
 }
