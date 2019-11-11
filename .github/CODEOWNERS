@@ -254,9 +254,9 @@ README.md @sqs
 
 # LSIF
 /lsif/ @sourcegraph/code-intel
-/cmd/frontend/internal/graphqlbackend/*lsif* @sourcegraph/code-intel
-/cmd/frontend/internal/httpapi/*lsif* @sourcegraph/code-intel
-/cmd/frontend/types/*lsif* @sourcegraph/code-intel
+/cmd/frontend/graphqlbackend/*lsif* @sourcegraph/code-intel
+/cmd/frontend/internal/httpapi/lsif.go @sourcegraph/code-intel
+/cmd/frontend/types/lsif.go @sourcegraph/code-intel
 
 # Development
 /dev/fakehub @sourcegraph/core-services
