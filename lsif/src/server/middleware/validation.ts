@@ -6,7 +6,7 @@ import { query, ValidationChain, validationResult } from 'express-validator'
  *
  * @param key The query string key.
  */
-export const validateNonEmptyString = (key: string) =>
+export const validateNonEmptyString = (key: string): ValidationChain =>
     query(key)
         .isString()
         .not()
@@ -17,7 +17,7 @@ export const validateNonEmptyString = (key: string) =>
  *
  * @param key The query string key.
  */
-export const validateOptionalString = (key: string) =>
+export const validateOptionalString = (key: string): ValidationChain =>
     query(key)
         .optional()
         .customSanitizer(value => value || '')
@@ -27,7 +27,7 @@ export const validateOptionalString = (key: string) =>
  *
  * @param key The query string key.
  */
-export const validateOptionalBoolean = (key: string) =>
+export const validateOptionalBoolean = (key: string): ValidationChain =>
     query(key)
         .optional()
         .isBoolean()
@@ -38,7 +38,7 @@ export const validateOptionalBoolean = (key: string) =>
  *
  * @param key The query string key.
  */
-export const validateOptionalInt = (key: string) =>
+export const validateOptionalInt = (key: string): ValidationChain =>
     query(key)
         .optional()
         .isInt()
@@ -55,7 +55,7 @@ export const validationMiddleware = (chains: ValidationChain[]) => async (
 ): Promise<void> => {
     await Promise.all(chains.map(chain => chain.run(req)))
 
-    var errors = validationResult(req)
+    const errors = validationResult(req)
     if (!errors.isEmpty()) {
         res.status(422).send({ errors: errors.mapped() })
         return
