@@ -18,6 +18,7 @@ const typeToProse: Record<Exclude<SearchType, null>, string> = {
     commit: 'Commits',
     symbol: 'Symbols',
     repo: 'Repos',
+    path: 'Files',
 }
 
 export const SearchResultTabHeader: React.FunctionComponent<Props> = ({ location, type, query, patternType }) => {

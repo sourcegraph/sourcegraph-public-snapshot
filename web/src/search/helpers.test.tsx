@@ -17,7 +17,7 @@ describe('search/helpers', () => {
         })
     })
 
-    const searchTypes: SearchType[] = ['diff', 'commit', 'symbol', 'repo']
+    const searchTypes: SearchType[] = ['diff', 'commit', 'symbol', 'repo', 'path']
 
     describe('getSearchTypeFromQuery()', () => {
         test('parses the search type in simple queries', () => {
