@@ -17,9 +17,9 @@ import {
 } from './presentation'
 import { Link } from '../../../../../../shared/src/components/Link'
 import { LinkOrSpan } from '../../../../../../shared/src/components/LinkOrSpan'
-import { FileDiffNode } from '../../../../repo/compare/FileDiffNode'
+import { FileDiffNode } from '../../../../components/FileDiffNode'
 import { Collapsible } from '../../../../components/Collapsible'
-import { DiffStat } from '../../../../repo/compare/DiffStat'
+import { DiffStat } from '../../../../components/DiffStat'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 
 export interface ChangesetNodeProps extends ThemeProps {

@@ -3,7 +3,7 @@ import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
 import React from 'react'
 import renderer from 'react-test-renderer'
-import * as GQL from '../../../../shared/src/graphql/schema'
+import * as GQL from '../../../shared/src/graphql/schema'
 import { DiffHunk } from './DiffHunk'
 
 describe('DiffHunk', () => {

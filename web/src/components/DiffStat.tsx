@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { numberWithCommas, pluralize } from '../../../../shared/src/util/strings'
+import { numberWithCommas, pluralize } from '../../../shared/src/util/strings'
 
 const NUM_SQUARES = 5
 

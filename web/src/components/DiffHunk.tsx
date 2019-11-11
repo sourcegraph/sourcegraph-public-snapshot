@@ -4,11 +4,11 @@ import {
     decorationAttachmentStyleForTheme,
     DecorationMapByLine,
     decorationStyleForTheme,
-} from '../../../../shared/src/api/client/services/decoration'
-import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { propertyIsDefined } from '../../../../shared/src/util/types'
-import { ThemeProps } from '../../../../shared/src/theme'
+} from '../../../shared/src/api/client/services/decoration'
+import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
+import * as GQL from '../../../shared/src/graphql/schema'
+import { propertyIsDefined } from '../../../shared/src/util/types'
+import { ThemeProps } from '../../../shared/src/theme'
 
 const DiffBoundary: React.FunctionComponent<{
     /** The "lines" property is set for end boundaries (only for start boundaries and between hunks). */

@@ -1,10 +1,10 @@
 import * as React from 'react'
 import { Omit } from 'utility-types'
-import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
-import * as GQL from '../../../../shared/src/graphql/schema'
-import { getModeFromPath } from '../../../../shared/src/languages'
-import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { Connection, FilteredConnection } from '../../components/FilteredConnection'
+import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
+import * as GQL from '../../../shared/src/graphql/schema'
+import { getModeFromPath } from '../../../shared/src/languages'
+import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+import { Connection, FilteredConnection } from './FilteredConnection'
 import { FileDiffNodeProps } from './FileDiffNode'
 
 class FilteredFileDiffConnection extends FilteredConnection<
