@@ -29,10 +29,7 @@ describe('trackViews()', () => {
     test('detects all views on the page', async () => {
         const mutations: Observable<MutationRecordLike[]> = of([{ addedNodes: [document.body], removedNodes: [] }])
         const views = await mutations
-            .pipe(
-                trackViews([{ selector: '.view', resolveView: element => ({ element }) }]),
-                toArray()
-            )
+            .pipe(trackViews([{ selector: '.view', resolveView: element => ({ element }) }]), toArray())
             .toPromise()
         expect(views.map(({ element }) => element.id)).toEqual(['1', '2', '3'])
     })

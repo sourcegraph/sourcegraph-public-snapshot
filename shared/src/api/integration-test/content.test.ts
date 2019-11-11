@@ -61,7 +61,10 @@ describe('content (integration)', () => {
                 .pipe(take(1))
                 .toPromise()
         ).toEqual({
-            content: [{ value: 'qux', kind: MarkupKind.PlainText }, { value: 'zip', kind: MarkupKind.PlainText }],
+            content: [
+                { value: 'qux', kind: MarkupKind.PlainText },
+                { value: 'zip', kind: MarkupKind.PlainText },
+            ],
             hover: [],
         })
     })

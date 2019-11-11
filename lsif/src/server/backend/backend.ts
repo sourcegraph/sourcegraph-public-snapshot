@@ -174,9 +174,9 @@ export class Backend {
         const { database, dump, ctx: newCtx } = await this.loadClosestDatabase(repository, commit, path, ctx)
 
         // Try to find definitions in the same dump.
-        const definitions = (await database.definitions(this.pathToDatabase(dump.root, path), position, newCtx)).map(
-            loc => this.locationFromDatabase(dump.root, loc)
-        )
+        const definitions = (
+            await database.definitions(this.pathToDatabase(dump.root, path), position, newCtx)
+        ).map(loc => this.locationFromDatabase(dump.root, loc))
         if (definitions.length > 0) {
             return definitions
         }
@@ -219,11 +219,9 @@ export class Backend {
                     // table of our own database in case there was a definition that wasn't properly
                     // attached to a result set but did have the correct monikers attached.
 
-                    const localDefinitions = (await database.monikerResults(
-                        dumpModels.DefinitionModel,
-                        moniker,
-                        ctx
-                    )).map(loc => this.locationFromDatabase(dump.root, loc))
+                    const localDefinitions = (
+                        await database.monikerResults(dumpModels.DefinitionModel, moniker, ctx)
+                    ).map(loc => this.locationFromDatabase(dump.root, loc))
                     if (localDefinitions) {
                         return localDefinitions
                     }

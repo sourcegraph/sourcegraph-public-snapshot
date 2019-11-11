@@ -167,7 +167,10 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                         )
                     )
                 )
-                .subscribe(newState => this.setState(newState as SearchResultsState), err => console.error(err))
+                .subscribe(
+                    newState => this.setState(newState as SearchResultsState),
+                    err => console.error(err)
+                )
         )
 
         this.props.extensionsController.services.contribution

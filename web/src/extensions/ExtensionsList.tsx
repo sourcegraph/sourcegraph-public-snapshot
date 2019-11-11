@@ -157,10 +157,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                             catchError(err => [asError(err)])
                         )
                         return concat(
-                            of(LOADING).pipe(
-                                delay(immediate ? 0 : 250),
-                                takeUntil(resultOrError)
-                            ),
+                            of(LOADING).pipe(delay(immediate ? 0 : 250), takeUntil(resultOrError)),
                             resultOrError
                         ).pipe(map(resultOrError => ({ data: { query, resultOrError } })))
                     })

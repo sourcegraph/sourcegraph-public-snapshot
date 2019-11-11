@@ -265,9 +265,10 @@ export class RepoSettingsMirrorPage extends React.PureComponent<Props, State> {
         eventLogger.logViewEvent('RepoSettingsMirror')
 
         this.subscriptions.add(
-            this.repoUpdates
-                .pipe(switchMap(() => fetchRepository(this.props.repo.name)))
-                .subscribe(repo => this.setState({ repo }), err => this.setState({ error: err.message }))
+            this.repoUpdates.pipe(switchMap(() => fetchRepository(this.props.repo.name))).subscribe(
+                repo => this.setState({ repo }),
+                err => this.setState({ error: err.message })
+            )
         )
     }
 

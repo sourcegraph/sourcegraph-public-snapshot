@@ -189,10 +189,7 @@ function testLocationProvider<P>({
             // Expect it to emit the first provider's result first (and not block on both providers being ready).
             expect(
                 await getResult(services, 'file:///f')
-                    .pipe(
-                        take(2),
-                        toArray()
-                    )
+                    .pipe(take(2), toArray())
                     .toPromise()
             ).toEqual([labeledProviderResults(['a']), labeledProviderResults(['a', 'b'])])
         })

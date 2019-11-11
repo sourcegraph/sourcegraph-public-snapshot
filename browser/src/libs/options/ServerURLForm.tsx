@@ -70,10 +70,7 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
             })
         )
 
-        const submitAfterInactivity = this.changes.pipe(
-            debounceTime(5000),
-            takeUntil(this.submits)
-        )
+        const submitAfterInactivity = this.changes.pipe(debounceTime(5000), takeUntil(this.submits))
 
         this.subscriptions.add(
             merge(this.submits, submitAfterInactivity).subscribe(() => {

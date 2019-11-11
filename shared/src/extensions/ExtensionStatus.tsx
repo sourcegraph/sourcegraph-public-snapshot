@@ -39,7 +39,10 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
                     catchError(err => [asError(err)]),
                     map(extensionsOrError => ({ extensionsOrError }))
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    err => console.error(err)
+                )
         )
 
         const platformContext = this.componentUpdates.pipe(

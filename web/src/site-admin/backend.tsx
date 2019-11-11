@@ -387,9 +387,10 @@ export function fetchAllConfigAndSettings(): Observable<AllConfig> {
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {
-            const externalServices: Partial<
-                Record<GQL.ExternalServiceKind, ExternalServiceConfig[]>
-            > = data.externalServices.nodes
+            const externalServices: Partial<Record<
+                GQL.ExternalServiceKind,
+                ExternalServiceConfig[]
+            >> = data.externalServices.nodes
                 .filter(svc => svc.config)
                 .map((svc): [GQL.ExternalServiceKind, ExternalServiceConfig] => [svc.kind, parseJSONC(svc.config)])
                 .reduce<Partial<{ [k in GQL.ExternalServiceKind]: ExternalServiceConfig[] }>>(
