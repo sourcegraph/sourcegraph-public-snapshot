@@ -31,7 +31,8 @@ describe('External services GUI', () => {
         'logBrowserConsole',
         'slowMo',
         'headless',
-        'keepBrowser'
+        'keepBrowser',
+        'logStatusMessages'
     )
 
     let driver: Driver
@@ -64,7 +65,7 @@ describe('External services GUI', () => {
         }
     }, 10 * 1000)
 
-    test('External services: GitHub.com GUI', async () => {
+    test('External services: GitHub.com GUI and repositoryPathPattern', async () => {
         const externalServiceName = '[TEST] Regression test: GitHub.com'
         await ensureNoTestExternalServices(gqlClient, {
             kind: GQL.ExternalServiceKind.GITHUB,
@@ -87,6 +88,8 @@ describe('External services GUI', () => {
                     "token": ${JSON.stringify(config.gitHubToken)},
                     "repos": ${JSON.stringify(repoSlugs)},
                     "repositoryQuery": ["none"],
+                    "repos": ["gorilla/mux"],
+                    "repositoryPathPattern": "github-prefix/{nameWithOwner}"
                 }`
                 await driver.replaceText({
                     selector: '#e2e-external-service-form-display-name',
@@ -112,6 +115,17 @@ describe('External services GUI', () => {
                     })
             })()
         )
+
+        await waitForRepos(gqlClient, ['github-prefix/gorilla/mux'], config)
+        const response = await driver.page.goto(config.sourcegraphBaseUrl + '/github-prefix/gorilla/mux')
+        if (!response) {
+            throw new Error('no response')
+        }
+        expect(response.status()).toBe(200)
+
+        // Redirect
+        await driver.page.goto(config.sourcegraphBaseUrl + '/github.com/gorilla/mux')
+        await driver.waitUntilURL(config.sourcegraphBaseUrl + '/github-prefix/gorilla/mux')
     })
 })
 
