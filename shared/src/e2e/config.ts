@@ -12,6 +12,7 @@ export interface Config {
     gitHubToken: string
     gitHubUserBobPassword: string
     gitHubUserAmyPassword: string
+    gitLabToken: string
     gitLabClientID: string
     gitLabClientSecret: string
     gitLabUserAmyPassword: string
@@ -86,6 +87,11 @@ const configFields: ConfigFields = {
     gitHubUserAmyPassword: {
         envVar: 'GITHUB_USER_AMY_PASSWORD',
         description: 'Password of the GitHub user sg-e2e-regression-test-amy, used to log in to Sourcegraph.',
+    },
+    gitLabToken: {
+        envVar: 'GITLAB_TOKEN',
+        description:
+            'A GitLab access token that will be used to authenticate a GitLab external service. It requires API scope.',
     },
     gitLabClientID: {
         envVar: 'GITLAB_CLIENT_ID',

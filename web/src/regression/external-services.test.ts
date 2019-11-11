@@ -3,15 +3,21 @@
  */
 
 import { TestResourceManager } from './util/TestResourceManager'
-import { GraphQLClient } from './util/GraphQLClient'
+import { GraphQLClient, createGraphQLClient } from './util/GraphQLClient'
 import { Driver } from '../../../shared/src/e2e/driver'
 import { getConfig } from '../../../shared/src/e2e/config'
 import { getTestTools } from './util/init'
 import { ensureLoggedInOrCreateTestUser } from './util/helpers'
-import { setUserSiteAdmin, getUser, ensureNoTestExternalServices } from './util/api'
+import {
+    setUserSiteAdmin,
+    getUser,
+    ensureNoTestExternalServices,
+    ensureTestExternalService,
+    waitForRepos,
+} from './util/api'
 import * as GQL from '../../../shared/src/graphql/schema'
 
-describe('External services regression test suite', () => {
+describe('External services GUI', () => {
     const testUsername = 'test-extsvc'
     const config = getConfig(
         'sudoToken',
@@ -56,7 +62,7 @@ describe('External services regression test suite', () => {
         }
     }, 10 * 1000)
 
-    test('GitHub.com external service', async () => {
+    test('External services: GitHub.com GUI', async () => {
         const externalServiceName = '[TEST] Regression test: GitHub.com'
         await ensureNoTestExternalServices(gqlClient, {
             kind: GQL.ExternalServiceKind.GITHUB,
@@ -105,4 +111,62 @@ describe('External services regression test suite', () => {
             })()
         )
     })
+})
+
+describe('External services API', () => {
+    const config = getConfig(
+        'sudoToken',
+        'sudoUsername',
+        'gitHubToken',
+        'gitLabToken',
+        'sourcegraphBaseUrl',
+        'noCleanup',
+        'testUserPassword',
+        'logBrowserConsole',
+        'slowMo',
+        'headless',
+        'keepBrowser',
+        'logStatusMessages'
+    )
+
+    const gqlClient = createGraphQLClient({
+        baseUrl: config.sourcegraphBaseUrl,
+        token: config.sudoToken,
+        sudoUsername: config.sudoUsername,
+    })
+    const resourceManager = new TestResourceManager()
+    afterAll(async () => {
+        if (!config.noCleanup) {
+            await resourceManager.destroyAll()
+        }
+    })
+
+    test(
+        'External services: GitLab',
+        async () => {
+            const externalService = {
+                kind: GQL.ExternalServiceKind.GITLAB,
+                uniqueDisplayName: '[TEST] Regression test: GitLab.com',
+                config: {
+                    url: 'https://gitlab.com',
+                    token: config.gitLabToken,
+                    projectQuery: ['none'],
+                    projects: [
+                        {
+                            name: 'ase/ase',
+                        },
+                    ],
+                },
+            }
+            const repos = ['gitlab.com/ase/ase']
+            await ensureNoTestExternalServices(gqlClient, { ...externalService, deleteIfExist: true })
+            await waitForRepos(gqlClient, repos, config, true)
+            resourceManager.add(
+                'External service',
+                externalService.uniqueDisplayName,
+                await ensureTestExternalService(gqlClient, { ...externalService, waitForRepos: repos }, config)
+            )
+        },
+        5 * 1000
+    )
 })

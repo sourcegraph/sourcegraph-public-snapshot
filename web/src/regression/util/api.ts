@@ -6,12 +6,13 @@ import {
     gql,
     dataOrThrowErrors,
     createInvalidGraphQLMutationResponseError,
+    isGraphQLError,
 } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { GraphQLClient } from './GraphQLClient'
-import { map, tap, retryWhen, delayWhen, take, mergeMap } from 'rxjs/operators'
+import { map, tap, retryWhen, delayWhen, take, mergeMap, catchError } from 'rxjs/operators'
 import { zip, timer, concat, throwError, defer, Observable } from 'rxjs'
-import { CloneInProgressError, ECLONEINPROGESS } from '../../../../shared/src/backend/errors'
+import { CloneInProgressError, ECLONEINPROGESS, EREPONOTFOUND } from '../../../../shared/src/backend/errors'
 import { isErrorLike, createAggregateError } from '../../../../shared/src/util/errors'
 import { ResourceDestructor } from './TestResourceManager'
 import { Config } from '../../../../shared/src/e2e/config'
@@ -23,57 +24,96 @@ import { PlatformContext } from '../../../../shared/src/platform/context'
 export async function waitForRepos(
     gqlClient: GraphQLClient,
     ensureRepos: string[],
-    config?: Partial<Pick<Config, 'logStatusMessages'>>
+    config?: Partial<Pick<Config, 'logStatusMessages'>>,
+    shouldNotExist: boolean = false
 ): Promise<void> {
-    await zip(
-        // List of Observables that complete after each repository is successfully fetched.
-        ...ensureRepos.map(repoName =>
-            gqlClient
-                .queryGraphQL(
-                    gql`
-                        query ResolveRev($repoName: String!) {
-                            repository(name: $repoName) {
-                                mirrorInfo {
-                                    cloned
-                                }
-                            }
-                        }
-                    `,
-                    { repoName }
-                )
-                .pipe(
-                    map(dataOrThrowErrors),
-                    // Wait until the repository is cloned even if it doesn't yet exist.
-                    // waitForRepos might be called immediately after adding a new external service,
-                    // and we have no guarantee that all the repositories from that external service
-                    // will exist when the add-external-service endpoint returns.
-                    tap(({ repository }) => {
-                        if (!repository || !repository.mirrorInfo || !repository.mirrorInfo.cloned) {
-                            throw new CloneInProgressError(repoName)
-                        }
-                    }),
-                    retryWhen(errors =>
-                        concat(
-                            errors.pipe(
-                                delayWhen(error => {
-                                    if (isErrorLike(error) && error.code === ECLONEINPROGESS) {
-                                        // Delay retry by 2s.
-                                        if (config && config.logStatusMessages) {
-                                            console.log(`Waiting for ${repoName} to finish cloning...`)
-                                        }
-                                        return timer(2 * 1000)
-                                    }
-                                    // Throw all errors other than ECLONEINPROGRESS
-                                    throw error
-                                }),
-                                take(60) // Up to 60 retries (an effective timeout of 2 minutes)
-                            ),
-                            defer(() => throwError(new Error(`Could not resolve repo ${repoName}: too many retries`)))
-                        )
-                    )
-                )
-        )
-    ).toPromise()
+    await zip(...ensureRepos.map(repoName => waitForRepo(gqlClient, repoName, config, shouldNotExist))).toPromise()
+}
+
+function waitForRepo(
+    gqlClient: GraphQLClient,
+    repoName: string,
+    config?: Partial<Pick<Config, 'logStatusMessages'>>,
+    shouldNotExist: boolean = false
+): Observable<void> {
+    const request = gqlClient.queryGraphQL(
+        gql`
+            query ResolveRev($repoName: String!) {
+                repository(name: $repoName) {
+                    mirrorInfo {
+                        cloned
+                    }
+                }
+            }
+        `,
+        { repoName }
+    )
+
+    return shouldNotExist
+        ? request.pipe(
+              map(result => {
+                  // map to true if repo is not found, false if repo is found, throw other errors
+                  if (isGraphQLError(result) && result.errors.some(err => err.code === EREPONOTFOUND)) {
+                      return undefined
+                  }
+                  const { repository } = dataOrThrowErrors(result)
+                  if (!repository) {
+                      return undefined
+                  }
+                  throw new Error('Repo exists')
+              }),
+              retryWhen(errors =>
+                  concat(
+                      errors.pipe(
+                          delayWhen(error => {
+                              if (isErrorLike(error) && error.message === 'Repo exists') {
+                                  // Delay retry by 2s.
+                                  if (config && config.logStatusMessages) {
+                                      console.log(`Waiting for ${repoName} to be removed`)
+                                  }
+                                  return timer(2 * 1000)
+                              }
+                              // Throw all errors
+                              throw error
+                          }),
+                          take(60) // Up to 60 retries (an effective timeout of 2 minutes)
+                      ),
+                      defer(() => throwError(new Error(`Could not resolve repo ${repoName}: too many retries`)))
+                  )
+              )
+          )
+        : request.pipe(
+              map(dataOrThrowErrors),
+              // Wait until the repository is cloned even if it doesn't yet exist.
+              // waitForRepos might be called immediately after adding a new external service,
+              // and we have no guarantee that all the repositories from that external service
+              // will exist when the add-external-service endpoint returns.
+              tap(({ repository }) => {
+                  if (!repository || !repository.mirrorInfo || !repository.mirrorInfo.cloned) {
+                      throw new CloneInProgressError(repoName)
+                  }
+              }),
+              retryWhen(errors =>
+                  concat(
+                      errors.pipe(
+                          delayWhen(error => {
+                              if (isErrorLike(error) && error.code === ECLONEINPROGESS) {
+                                  // Delay retry by 2s.
+                                  if (config && config.logStatusMessages) {
+                                      console.log(`Waiting for ${repoName} to finish cloning...`)
+                                  }
+                                  return timer(2 * 1000)
+                              }
+                              // Throw all errors other than ECLONEINPROGRESS
+                              throw error
+                          }),
+                          take(60) // Up to 60 retries (an effective timeout of 2 minutes)
+                      ),
+                      defer(() => throwError(new Error(`Could not resolve repo ${repoName}: too many retries`)))
+                  )
+              ),
+              map(() => undefined)
+          )
 }
 
 export async function ensureNoTestExternalServices(
@@ -186,22 +226,7 @@ export async function ensureTestExternalService(
         displayName: options.uniqueDisplayName,
         config: JSON.stringify(options.config),
     }
-    dataOrThrowErrors(
-        await gqlClient
-            .mutateGraphQL(
-                gql`
-                    mutation addExternalService($input: AddExternalServiceInput!) {
-                        addExternalService(input: $input) {
-                            kind
-                            displayName
-                            config
-                        }
-                    }
-                `,
-                { input }
-            )
-            .toPromise()
-    )
+    await addExternalService(input, gqlClient).toPromise()
 
     if (options.waitForRepos && options.waitForRepos.length > 0) {
         await waitForRepos(gqlClient, options.waitForRepos, e2eConfig)
@@ -463,6 +488,10 @@ export function fetchAllOrganizations(
     )
 }
 
+interface EventLogger {
+    log: (eventLabel: string, eventProperties?: any) => void
+}
+
 /**
  * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
  * dependency-injected `requestGraphQL`.
@@ -472,7 +501,7 @@ export function createOrganization(
         requestGraphQL,
         eventLogger = { log: () => undefined },
     }: Pick<PlatformContext, 'requestGraphQL'> & {
-        eventLogger?: { log: (eventLabel: string, eventProperties?: any) => void }
+        eventLogger?: EventLogger
     },
     variables: {
         /** The name of the organization. */
@@ -587,4 +616,44 @@ export async function getUser(
         )
         .toPromise()
     return user
+}
+
+/**
+ * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
+ * dependency-injected `requestGraphQL`.
+ */
+export function addExternalService(
+    input: GQL.IAddExternalServiceInput,
+    {
+        eventLogger = { log: () => undefined },
+        requestGraphQL,
+    }: Pick<PlatformContext, 'requestGraphQL'> & { eventLogger: EventLogger }
+): Observable<GQL.IExternalService> {
+    return requestGraphQL<GQL.IMutation>({
+        request: gql`
+            mutation addExternalService($input: AddExternalServiceInput!) {
+                addExternalService(input: $input) {
+                    id
+                    kind
+                    displayName
+                    warning
+                }
+            }
+        `,
+        variables: { input },
+        mightContainPrivateInfo: true,
+    }).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.addExternalService || (errors && errors.length > 0)) {
+                eventLogger.log('AddExternalServiceFailed')
+                throw createAggregateError(errors)
+            }
+            eventLogger.log('AddExternalServiceSucceeded', {
+                externalService: {
+                    kind: data.addExternalService.kind,
+                },
+            })
+            return data.addExternalService
+        })
+    )
 }
