@@ -70,7 +70,7 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
 
     // Create cleanup function to run after test. This will close the connection
     // created below (if successful), then destroy the database that was created
-    // for the test. It is necessary to close teh database first, otherwise we
+    // for the test. It is necessary to close the database first, otherwise we
     // get failures during the after hooks:
     //
     // dropdb: database removal failed: ERROR:  database "sourcegraph-test-lsif-xrepo-5033c9e8" is being accessed by other users
