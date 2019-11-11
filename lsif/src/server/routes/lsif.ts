@@ -10,9 +10,8 @@ import uuid from 'uuid'
 import { addTags, logAndTraceCall, TracingContext } from '../../shared/tracing'
 import { Backend, ReferencePaginationCursor } from '../backend/backend'
 import { checkSchema, ParamSchema } from 'express-validator'
-import { encodeCursor, parseCursor } from '../pagination/cursor'
+import { encodeCursor } from '../pagination/cursor'
 import { enqueue } from '../../shared/queue/queue'
-import { extractLimit } from '../pagination/limit-offset'
 import { Logger } from 'winston'
 import { lsp } from 'lsif-protocol'
 import { nextLink } from '../pagination/link'
@@ -162,11 +161,24 @@ export function createLsifRouter(
         validation.validationMiddleware([
             validateRepository,
             validateCommit,
+            validation.validateLimit(settings.DEFAULT_REFERENCES_NUM_REMOTE_DUMPS),
+            validation.validateCursor<ReferencePaginationCursor>(),
             ...checkSchema(requestBodySchema, ['body']),
         ]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
-                const { repository, commit }: { repository: string; commit: string } = req.query
+                const {
+                    repository,
+                    commit,
+                    limit,
+                    cursor,
+                }: {
+                    repository: string
+                    commit: string
+                    limit: number
+                    cursor: ReferencePaginationCursor | undefined
+                } = req.query
+
                 const {
                     path: filePath,
                     position,
@@ -181,16 +193,12 @@ export function createLsifRouter(
                         break
 
                     case 'references': {
-                        const { cursor: cursorRaw }: { cursor: string } = req.query
-                        const limit = extractLimit(req, settings.DEFAULT_REFERENCES_NUM_REMOTE_DUMPS)
-                        const startCursor = parseCursor<ReferencePaginationCursor>(cursorRaw)
-
                         const { locations, cursor: endCursor } = await backend.references(
                             repository,
                             commit,
                             filePath,
                             position,
-                            { limit, cursor: startCursor },
+                            { limit, cursor },
                             ctx
                         )
 

@@ -4,7 +4,6 @@ import express from 'express'
 import { ApiJobState, QUEUE_PREFIX, queueTypes, statesByQueue } from '../../shared/queue/queue'
 import { chunk } from 'lodash'
 import { Job, Queue } from 'bull'
-import { limitOffset } from '../pagination/limit-offset'
 import { Logger } from 'winston'
 import { nextLink } from '../pagination/link'
 import { ScriptedRedis } from '../redis/redis'
@@ -112,8 +111,6 @@ export function createJobRouter(
 ): express.Router {
     const router = express.Router()
 
-    const validateQuery = validation.validateOptionalString('query')
-
     router.get(
         '/jobs/stats',
         wrap(
@@ -133,12 +130,15 @@ export function createJobRouter(
 
     router.get(
         `/jobs/:state(${Array.from(queueTypes.keys()).join('|')})`,
-        validation.validationMiddleware([validateQuery]),
+        validation.validationMiddleware([
+            validation.validateQuery,
+            validation.validateLimit(settings.DEFAULT_JOB_PAGE_SIZE),
+            validation.validateOffset,
+        ]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { state } = req.params as { state: ApiJobState }
-                const { query }: { query: string } = req.query
-                const { limit, offset } = limitOffset(req, settings.DEFAULT_JOB_PAGE_SIZE)
+                const { query, limit, offset }: { query: string; limit: number; offset: number } = req.query
 
                 const queueName = queueTypes.get(state)
                 if (!queueName) {

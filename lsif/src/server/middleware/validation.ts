@@ -1,5 +1,6 @@
 import express from 'express'
 import { query, ValidationChain, validationResult } from 'express-validator'
+import { parseCursor } from '../pagination/cursor'
 
 /**
  * Create a query string validator for a required non-empty string value.
@@ -43,6 +44,30 @@ export const validateOptionalInt = (key: string): ValidationChain =>
         .optional()
         .isInt()
         .toInt()
+
+/**
+ * A validator used for a string query field.
+ */
+export const validateQuery = validateOptionalString('query')
+
+/**
+ * Create a validator for an integer limit field. Defaults to the given limit if not supplied.
+ *
+ * @param defaultValue The default value.
+ */
+export const validateLimit = (defaultValue: number): ValidationChain =>
+    validateOptionalInt('limit').customSanitizer(value => value || defaultValue)
+
+/**
+ * A validator used for an integer offset field. Defaults to zero if not supplied.
+ */
+export const validateOffset = validateOptionalInt('offset').customSanitizer(value => value || 0)
+
+/**
+ * Create a validator for a cursor that is serialized as the supplied generic type.
+ */
+export const validateCursor = <T>(): ValidationChain =>
+    validateOptionalString('cursor').customSanitizer(value => parseCursor<T>(value))
 
 /**
  * Middleware function used to apply a sequence of validators and then return
