@@ -47,12 +47,10 @@ async function testLogin(
     await driver.newPage()
     await driver.page.goto(sourcegraphBaseUrl)
     await driver.page.reload()
-    await (
-        await driver.findElementWithText('Sign in with ' + authProvider.displayName, {
-            tagName: 'a',
-            wait: { timeout: 5000 },
-        })
-    ).click()
+    await (await driver.findElementWithText('Sign in with ' + authProvider.displayName, {
+        selector: 'a',
+        wait: { timeout: 5000 },
+    })).click()
     await driver.page.waitForNavigation()
     if (driver.page.url() !== sourcegraphBaseUrl + '/search') {
         await loginToAuthProvider()

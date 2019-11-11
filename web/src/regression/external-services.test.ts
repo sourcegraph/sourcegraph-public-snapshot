@@ -70,11 +70,9 @@ describe('External services regression test suite', () => {
             await (async () => {
                 await driver.page.goto(config.sourcegraphBaseUrl + '/site-admin/external-services')
                 await (await driver.findElementWithText('Add external service', { wait: { timeout: 500 } })).click()
-                await (
-                    await driver.findElementWithText('Add GitHub.com repositories.', {
-                        wait: { timeout: 500 },
-                    })
-                ).click()
+                await (await driver.findElementWithText('Add GitHub.com repositories.', {
+                    wait: { timeout: 500 },
+                })).click()
                 const repoSlugs = ['gorilla/mux']
                 const githubConfig = `{
                     "url": "https://github.com",
@@ -94,12 +92,10 @@ describe('External services regression test suite', () => {
                     selectMethod: 'keyboard',
                     enterTextMethod: 'paste',
                 })
-                await (
-                    await driver.findElementWithText('Add external service', {
-                        tagName: 'button',
-                        wait: { timeout: 500 },
-                    })
-                ).click()
+                await (await driver.findElementWithText('Add external service', {
+                    selector: 'button',
+                    wait: { timeout: 500 },
+                })).click()
                 return () =>
                     ensureNoTestExternalServices(gqlClient, {
                         kind: GQL.ExternalServiceKind.GITHUB,
