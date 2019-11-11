@@ -133,4 +133,7 @@ libsqlite3-pcre.so
 # Direnv
 .envrc
 
+# Docker images
+docker-images/prometheus/config/prometheus_targets.yml
+
 comment.txt
