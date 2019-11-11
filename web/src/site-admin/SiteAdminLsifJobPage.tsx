@@ -13,6 +13,7 @@ import { sortBy } from 'lodash'
 import { RouteComponentProps } from 'react-router'
 import { Timestamp } from '../components/time/Timestamp'
 import { useObservable } from '../util/useObservable'
+import { ErrorAlert } from '../components/alerts'
 
 const JobArguments: FunctionComponent<{ args: { [name: string]: string } }> = ({ args }) => (
     <table className="job-arguments w-100 mb-0 table table-sm">
@@ -54,9 +55,7 @@ export const SiteAdminLsifJobPage: FunctionComponent<Props> = ({
                 <LoadingSpinner className="icon-inline" />
             ) : isErrorLike(jobOrError) ? (
                 <div className="alert alert-danger">
-                    Error getting LSIF job:
-                    <br />
-                    <code>{jobOrError.message}</code>
+                    <ErrorAlert prefix="Error loading LSIF job" error={jobOrError} />
                 </div>
             ) : (
                 <div>
