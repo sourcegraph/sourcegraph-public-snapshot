@@ -589,11 +589,12 @@ export function fetchSiteUpdateCheck(): Observable<{
 /**
  * Fetch a single LSIF job by id.
  */
-export function fetchLsifJob({ id }: GQL.ILsifJobOnQueryArguments): Observable<GQL.ILSIFJob> {
+export function fetchLsifJob({ id }: GQL.ILsifJobOnQueryArguments): Observable<GQL.ILSIFJob | null> {
     return queryGraphQL(
         gql`
             query LsifJob($id: ID!) {
                 node(id: $id) {
+                    __typename
                     ... on LSIFJob {
                         id
                         name
@@ -611,6 +612,17 @@ export function fetchLsifJob({ id }: GQL.ILsifJobOnQueryArguments): Observable<G
         { id }
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.node as GQL.ILSIFJob)
+        map(({ node }) => {
+            console.log(node)
+
+            if (!node) {
+                return null
+            }
+            if (node.__typename !== 'LSIFJob') {
+                throw new Error(`The given ID is a ${node.__typename}, not an LSIFJob`)
+            }
+
+            return node
+        })
     )
 }
