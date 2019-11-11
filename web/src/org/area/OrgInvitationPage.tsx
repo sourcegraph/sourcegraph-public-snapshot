@@ -1,5 +1,4 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { Link, Redirect } from 'react-router-dom'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
@@ -18,6 +17,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { userURL } from '../../user'
 import { OrgAvatar } from '../OrgAvatar'
 import { OrgAreaPageProps } from './OrgArea'
+import { ErrorAlert } from '../../components/alerts'
 
 interface Props extends OrgAreaPageProps {
     authenticatedUser: GQL.IUser
@@ -154,9 +154,7 @@ export const OrgInvitationPage = withAuthenticatedUser(
                                     </button>
                                 </div>
                                 {isErrorLike(this.state.submissionOrError) && (
-                                    <div className="alert alert-danger my-2">
-                                        {upperFirst(this.state.submissionOrError.message)}
-                                    </div>
+                                    <ErrorAlert className="my-2" error={this.state.submissionOrError} />
                                 )}
                                 {this.state.submissionOrError === 'loading' && (
                                     <LoadingSpinner className="icon-inline" />

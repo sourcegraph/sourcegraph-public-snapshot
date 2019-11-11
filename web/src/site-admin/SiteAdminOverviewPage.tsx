@@ -1,6 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
-import { upperFirst } from 'lodash'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
@@ -17,6 +16,7 @@ import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { SiteAdminManagementConsolePassword } from './SiteAdminManagementConsolePassword'
 import { UsageChart } from './SiteAdminUsageStatisticsPage'
+import { ErrorAlert } from '../components/alerts'
 
 interface Props extends ActivationProps {
     history: H.History
@@ -181,9 +181,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                     className="list-group-item"
                                     titleClassName="h5 mb-0 font-weight-normal p-2"
                                 >
-                                    {this.state.error && (
-                                        <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>
-                                    )}
+                                    {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}
                                     {this.state.stats && (
                                         <UsageChart
                                             {...this.props}

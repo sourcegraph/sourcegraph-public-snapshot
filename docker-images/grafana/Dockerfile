@@ -20,7 +20,7 @@ RUN ./build.sh
 # temporary fix for status_code <-> code label discrepancy in metrics (lsif code base uses status_code, rest uses code)
 RUN sed -i -e 's/{code=~/{status_code=~/g' lsif.json
 
-FROM grafana/grafana:6.4.2@sha256:41333de8ca11b15f405d8a67bdb5034b138ad3a539de3e549e768d24dfea2b72 as production
+FROM grafana/grafana:6.4.4@sha256:01f35fd54472850715866dfe5e6ec34783064558197a643d5a2b48b7791367dd as production
 
 LABEL org.opencontainers.image.url=https://sourcegraph.com/
 LABEL org.opencontainers.image.source=https://github.com/sourcegraph/sourcegraph/

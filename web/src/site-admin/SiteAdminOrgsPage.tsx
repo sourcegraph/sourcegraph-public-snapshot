@@ -13,6 +13,7 @@ import { PageTitle } from '../components/PageTitle'
 import { orgURL } from '../org'
 import { eventLogger } from '../tracking/eventLogger'
 import { deleteOrganization, fetchAllOrganizations } from './backend'
+import { ErrorAlert } from '../components/alerts'
 
 interface OrgNodeProps {
     /**
@@ -79,9 +80,7 @@ class OrgNode extends React.PureComponent<OrgNodeProps, OrgNodeState> {
                         </button>
                     </div>
                 </div>
-                {this.state.errorDescription && (
-                    <div className="alert alert-danger mt-2">{this.state.errorDescription}</div>
-                )}
+                {this.state.errorDescription && <ErrorAlert className="mt-2" error={this.state.errorDescription} />}
             </li>
         )
     }

@@ -44,7 +44,7 @@ to access `~/.sourcegraph/config` and `~/.sourcegraph/data`. In that case, you w
 
 All you need to do to upgrade Sourcegraph is to restart your Docker server with a new image tag.
 
-We actively maintain the two most recent [monthly releases of Sourcegraph](team/product-dev/releases.md) and we support upgrading from the two previous monthly releases.
+We actively maintain the two most recent monthly releases of Sourcegraph, and we support upgrading from the two previous monthly releases.
 
 For example, if you are running Sourcegraph 3.1, then you can upgrade directly to 3.2 and 3.3. If you want to upgrade to 3.4, then you first need to upgrade to 3.3 before you can upgrade to 3.4.
 
@@ -60,7 +60,7 @@ Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](h
 - [**Administrator documentation**](admin/index.md)
 - [Install Sourcegraph](admin/install/index.md) or [update Sourcegraph](admin/updates.md)
 - [Sourcegraph extensions](extensions/index.md)
-- [Roadmap](team/roadmap/index.md)
+- [Product direction (roadmap)](https://about.sourcegraph.com/direction)
 
 ### Features and tutorials
 
@@ -72,8 +72,6 @@ Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](h
 - [Query syntax reference](user/search/queries.md)
 - [GraphQL API](api/graphql/index.md)
 - [Sourcegraph Enterprise](admin/subscriptions/index.md)
-
-<!-- TODO(sqs): Add link to ./graphbook when it has more content. -->
 
 ## Sourcegraph subscriptions
 
@@ -88,7 +86,7 @@ For self-hosted Sourcegraph instances, you run a Docker image or Kubernetes clus
 
 - [Sourcegraph open-source repository](https://github.com/sourcegraph/sourcegraph)
 - [Contributing to Sourcegraph](dev/index.md)
-- [Sourcegraph team documentation](team/index.md)
+- [Sourcegraph handbook](https://about.sourcegraph.com/handbook)
 - [Sourcegraph blog](https://about.sourcegraph.com/blog/)
 - [Issue tracker](https://github.com/sourcegraph/sourcegraph/issues)
 - [about.sourcegraph.com](https://about.sourcegraph.com) (general information about Sourcegraph)

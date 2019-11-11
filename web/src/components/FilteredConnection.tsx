@@ -1,6 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
-import { uniq, upperFirst } from 'lodash'
+import { uniq } from 'lodash'
 import * as React from 'react'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import {
@@ -23,6 +23,7 @@ import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors
 import { pluralize } from '../../../shared/src/util/strings'
 import { Form } from './Form'
 import { RadioButtons } from './RadioButtons'
+import { ErrorMessage } from './alerts'
 
 /** Checks if the passed value satisfies the GraphQL Node interface */
 const hasID = (obj: any): obj is { id: GQL.ID } => obj && typeof obj.id === 'string'
@@ -42,7 +43,12 @@ interface FilterState {}
 
 class FilteredConnectionFilterControl extends React.PureComponent<FilterProps, FilterState> {
     public render(): React.ReactFragment {
-        return <RadioButtons nodes={this.props.filters} selected={this.props.value} onChange={this.onChange} />
+        return (
+            <div className="filtered-connection-filter-control">
+                <RadioButtons nodes={this.props.filters} selected={this.props.value} onChange={this.onChange} />
+                {this.props.children}
+            </div>
+        )
     }
 
     private onChange: React.ChangeEventHandler<HTMLInputElement> = e => {
@@ -109,6 +115,9 @@ interface ConnectionPropsCommon<N, NP = {}> extends ConnectionDisplayProps {
 
     /** Props to pass to each nodeComponent in addition to `{ node: N }`. */
     nodeComponentProps?: NP
+
+    /** An element rendered as a sibling of the filters. */
+    additionalFilterElement?: React.ReactElement
 }
 
 /** State related to the ConnectionNodes component. */
@@ -737,16 +746,17 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                                 filters={this.props.filters}
                                 onDidSelectFilter={this.onDidSelectFilter}
                                 value={this.state.activeFilter.id}
-                            />
+                            >
+                                {this.props.additionalFilterElement}
+                            </FilteredConnectionFilterControl>
                         )}
                     </Form>
                 )}
                 {errors.length > 0 && (
                     <div className="alert alert-danger filtered-connection__error">
-                        {errors.map((m, i) => (
+                        {errors.map((error, i) => (
                             <React.Fragment key={i}>
-                                {upperFirst(m)}
-                                <br />
+                                <ErrorMessage error={error} />
                             </React.Fragment>
                         ))}
                     </div>

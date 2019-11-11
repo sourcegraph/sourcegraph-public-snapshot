@@ -27,14 +27,14 @@ LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
-RUN echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories && \
-    echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
-    echo "@edge http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \
-    echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories && \
-    echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
-    echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \
-    echo "http://dl-cdn.alpinelinux.org/alpine/v3.6/main" >> /etc/apk/repositories && \
-    echo "http://dl-cdn.alpinelinux.org/alpine/v3.6/community" >> /etc/apk/repositories
+RUN echo "@edge http://sjc.edge.kernel.org/alpine/edge/main" >> /etc/apk/repositories && \
+    echo "@edge http://sjc.edge.kernel.org/alpine/edge/testing" >> /etc/apk/repositories && \
+    echo "@edge http://sjc.edge.kernel.org/alpine/edge/community" >> /etc/apk/repositories && \
+    echo "http://sjc.edge.kernel.org/alpine/edge/main" >> /etc/apk/repositories && \
+    echo "http://sjc.edge.kernel.org/alpine/edge/testing" >> /etc/apk/repositories && \
+    echo "http://sjc.edge.kernel.org/alpine/edge/community" >> /etc/apk/repositories && \
+    echo "http://sjc.edge.kernel.org/alpine/v3.6/main" >> /etc/apk/repositories && \
+    echo "http://sjc.edge.kernel.org/alpine/v3.6/community" >> /etc/apk/repositories
 
 # hadolint ignore=DL3018
 RUN apk update && apk add --no-cache \
@@ -58,9 +58,9 @@ COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
 COPY --from=sourcegraph/lsif-server:ci /lsif /lsif
 
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/prometheus:10.0.1@sha256:ba6dd9e33621801d553651191b4d4c64f866a6620374d48aedb92abad305e7ca /bin/prometheus /usr/local/bin
+COPY --from=sourcegraph/prometheus:10.0.4@sha256:03af446c1c1d49e6ac395c06a29a207e8c7b59e6aa1fcf156c0bff63ad88d829 /bin/prometheus /usr/local/bin
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/prometheus:10.0.1@sha256:ba6dd9e33621801d553651191b4d4c64f866a6620374d48aedb92abad305e7ca /usr/share/prometheus /usr/share/prometheus
+COPY --from=sourcegraph/prometheus:10.0.4@sha256:03af446c1c1d49e6ac395c06a29a207e8c7b59e6aa1fcf156c0bff63ad88d829 /usr/share/prometheus /usr/share/prometheus
 
 # hadolint ignore=DL3018
 RUN set -ex && \
@@ -69,7 +69,7 @@ RUN set -ex && \
     apk add --no-cache libc6-compat=1.1.24-r0 ca-certificates su-exec
 
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/grafana:10.0.2@sha256:ac3f89039007be1359a2308a0cd2f8aebdd85ee933a9ab1728fd7077ed103b67 /usr/share/grafana /usr/share/grafana
+COPY --from=sourcegraph/grafana:10.0.3@sha256:4a5a6ca6e2b54d2c7d74132457f4c1ddc121890fa9003ff6cf7d774fdf0a1fa0 /usr/share/grafana /usr/share/grafana
 
 # hadolint ignore=DL3022
 COPY --from=libsqlite3-pcre /sqlite3-pcre/pcre.so /libsqlite3-pcre.so
@@ -77,7 +77,7 @@ ENV LIBSQLITE3_PCRE /libsqlite3-pcre.so
 COPY . /
 
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/grafana:10.0.2@sha256:ac3f89039007be1359a2308a0cd2f8aebdd85ee933a9ab1728fd7077ed103b67 /sg_config_grafana/provisioning/dashboards/sourcegraph/*json /sg_config_grafana/provisioning/dashboards/sourcegraph/
+COPY --from=sourcegraph/grafana:10.0.3@sha256:4a5a6ca6e2b54d2c7d74132457f4c1ddc121890fa9003ff6cf7d774fdf0a1fa0 /sg_config_grafana/provisioning/dashboards/sourcegraph/*json /sg_config_grafana/provisioning/dashboards/sourcegraph/
 
 RUN echo "hosts: files dns" > /etc/nsswitch.conf
 

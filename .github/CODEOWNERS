@@ -11,7 +11,6 @@
 /enterprise/cmd/frontend @beyang @slimsag
 /enterprise/cmd/server @beyang @slimsag
 /enterprise/dev @beyang
-/cmd/frontend/docsite @sqs
 /cmd/frontend/shared @beyang @slimsag
 /cmd/frontend/backend @beyang @slimsag
 /cmd/frontend/internal/app/assets @slimsag
@@ -223,8 +222,6 @@ Dockerfile @sourcegraph/distribution
 README.md @sqs
 /doc/ @sourcegraph/distribution @ryan-blunden
 /doc/dev/ @nicksnyder
-/doc/team/product-dev/ @nicksnyder
-/doc/team/product-dev/product/ @christinaforney
 
 # Browser extensions
 /browser/ @sourcegraph/web

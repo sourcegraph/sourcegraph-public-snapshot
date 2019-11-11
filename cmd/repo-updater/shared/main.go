@@ -30,7 +30,7 @@ import (
 
 const port = "3182"
 
-func Main(newPreSync repos.NewPreSync) {
+func Main(newPreSync repos.NewPreSync, dbInitHook func(db *sql.DB)) {
 	streamingSyncer, _ := strconv.ParseBool(env.Get("SRC_STREAMING_SYNCER_ENABLED", "true", "Use the new, streaming repo metadata syncer."))
 
 	ctx := context.Background()
@@ -65,6 +65,10 @@ func Main(newPreSync repos.NewPreSync) {
 	db, err := dbutil.NewDB(dsn, "repo-updater")
 	if err != nil {
 		log.Fatalf("failed to initialize db store: %v", err)
+	}
+
+	if dbInitHook != nil {
+		go dbInitHook(db)
 	}
 
 	var store repos.Store

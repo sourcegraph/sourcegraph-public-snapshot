@@ -37,6 +37,7 @@ Foreign-key constraints:
  updated_at       | timestamp with time zone | not null default now()
 Indexes:
     "campaign_jobs_pkey" PRIMARY KEY, btree (id)
+    "campaign_jobs_campaign_plan_repo_rev_unique" UNIQUE CONSTRAINT, btree (campaign_plan_id, repo_id, rev) DEFERRABLE
 Foreign-key constraints:
     "campaign_jobs_campaign_plan_id_fkey" FOREIGN KEY (campaign_plan_id) REFERENCES campaign_plans(id) ON DELETE CASCADE DEFERRABLE
     "campaign_jobs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE

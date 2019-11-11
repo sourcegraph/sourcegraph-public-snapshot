@@ -356,6 +356,9 @@ func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
 	if p.IsRegExp {
 		form.Set("IsRegExp", "true")
 	}
+	if p.IsStructuralPat {
+		form.Set("IsStructuralPat", "true")
+	}
 	if p.IsWordMatch {
 		form.Set("IsWordMatch", "true")
 	}

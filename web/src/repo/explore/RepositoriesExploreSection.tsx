@@ -11,6 +11,7 @@ import { pluralize } from '../../../../shared/src/util/strings'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { queryGraphQL } from '../../backend/graphql'
 import { PatternTypeProps } from '../../search'
+import { ErrorAlert } from '../../components/alerts'
 
 const LOADING: 'loading' = 'loading'
 
@@ -80,7 +81,7 @@ export class RepositoriesExploreSection extends React.PureComponent<
                 <h3 className="card-header">Repositories</h3>
                 <div className="list-group list-group-flush">
                     {isErrorLike(repositoriesOrError) ? (
-                        <div className="alert alert-danger">Error: {repositoriesOrError.message}</div>
+                        <ErrorAlert error={repositoriesOrError} />
                     ) : repositoriesOrError.length === 0 ? (
                         <p>No repositories.</p>
                     ) : (

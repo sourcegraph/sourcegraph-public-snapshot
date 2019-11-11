@@ -26,7 +26,7 @@
     "mz": "^2.7.0",
     "on-finished": "^2.3.0",
     "opentracing": "^0.14.4",
-    "p-retry": "^4.1.0",
+    "p-retry": "^4.2.0",
     "p-timeout": "^3.2.0",
     "pg": "^7.12.1",
     "prom-client": "^11.5.3",
@@ -80,11 +80,11 @@
     "build": "tsc",
     "postbuild": "yarn run copy-files",
     "copy-files": "copyfiles -u 1 src/**/*.lua out",
-    "test": "jest --testPathIgnorePatterns e2e",
+    "test": "jest",
     "typecheck": "tsc --noEmit",
     "tslint": "../node_modules/.bin/tslint -p tsconfig.json",
     "eslint": "../node_modules/.bin/eslint 'src/**/*.ts?(x)'",
-    "run:server": "tsc-watch --onFirstSuccess \"yarn postbuild\" --onSuccess \"node -r source-map-support/register out/server.js\" --noClear",
-    "run:worker": "tsc-watch --onFirstSuccess \"yarn postbuild\" --onSuccess \"node -r source-map-support/register out/worker.js\" --noClear"
+    "run:server": "tsc-watch --onFirstSuccess \"yarn postbuild\" --onSuccess \"node -r source-map-support/register out/server/server.js\" --noClear",
+    "run:worker": "tsc-watch --onFirstSuccess \"yarn postbuild\" --onSuccess \"node -r source-map-support/register out/worker/worker.js\" --noClear"
   }
 }

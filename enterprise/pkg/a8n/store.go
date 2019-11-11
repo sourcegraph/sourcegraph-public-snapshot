@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
@@ -875,6 +876,13 @@ func nullInt32Column(n int32) *int32 {
 	return &n
 }
 
+func nullTimeColumn(t time.Time) *time.Time {
+	if t.IsZero() {
+		return nil
+	}
+	return &t
+}
+
 // UpdateCampaign updates the given Campaign.
 func (s *Store) UpdateCampaign(ctx context.Context, c *a8n.Campaign) error {
 	q, err := s.updateCampaignQuery(c)
@@ -1224,6 +1232,49 @@ var deleteCampaignPlanQueryFmtstr = `
 DELETE FROM campaign_plans WHERE id = %s
 `
 
+const CampaignPlanTTL = 1 * time.Hour
+
+// DeleteExpiredCampaignPlans deletes CampaignPlans that have finished execution
+// but have not been attached to a Campaign within CampaignPlanTTL.
+func (s *Store) DeleteExpiredCampaignPlans(ctx context.Context) error {
+	expirationTime := s.now().Add(-CampaignPlanTTL)
+	q := sqlf.Sprintf(deleteExpiredCampaignPlansQueryFmtstr, expirationTime)
+
+	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return err
+	}
+	return rows.Close()
+}
+
+var deleteExpiredCampaignPlansQueryFmtstr = `
+-- source: pkg/a8n/store.go:DeleteExpiredCampaignPlans
+DELETE FROM
+  campaign_plans
+WHERE
+NOT EXISTS (
+  SELECT 1
+  FROM
+  campaigns
+  WHERE
+  campaigns.campaign_plan_id = campaign_plans.id
+)
+AND
+NOT EXISTS (
+  SELECT id
+  FROM
+  campaign_jobs
+  WHERE
+  campaign_jobs.campaign_plan_id = campaign_plans.id
+  AND
+  (
+    campaign_jobs.finished_at IS NULL
+    OR
+    campaign_jobs.finished_at > %s
+  )
+);
+`
+
 // CountCampaignPlans returns the number of code mods in the database.
 func (s *Store) CountCampaignPlans(ctx context.Context) (count int64, _ error) {
 	q := sqlf.Sprintf(countCampaignPlansQueryFmtstr)
@@ -1288,6 +1339,45 @@ func getCampaignPlanQuery(opts *GetCampaignPlanOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(getCampaignPlansQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
+
+// GetCampaignPlanStatus gets the a8n.BackgroundProcessStatus for a CampaignPlan
+func (s *Store) GetCampaignPlanStatus(ctx context.Context, id int64) (*a8n.BackgroundProcessStatus, error) {
+	q := sqlf.Sprintf(
+		getCampaignPlanStatussQueryFmtstr,
+		sqlf.Sprintf("campaign_plan_id = %s", id),
+	)
+
+	var status a8n.BackgroundProcessStatus
+	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		return 0, 0, scanBackgroundProcessStatus(&status, sc)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	status.ProcessState = a8n.BackgroundProcessStateCompleted
+	switch {
+	case status.Pending > 0:
+		status.ProcessState = a8n.BackgroundProcessStateProcessing
+	case status.Completed == status.Total && len(status.ProcessErrors) == 0:
+		status.ProcessState = a8n.BackgroundProcessStateCompleted
+	case status.Completed == status.Total && len(status.ProcessErrors) != 0:
+		status.ProcessState = a8n.BackgroundProcessStateErrored
+	}
+	return &status, nil
+}
+
+var getCampaignPlanStatussQueryFmtstr = `
+-- source: pkg/a8n/store.go:GetCampaignPlanStatus
+SELECT
+  COUNT(*) AS total,
+  COUNT(*) FILTER (WHERE finished_at IS NULL) AS pending,
+  COUNT(*) FILTER (WHERE finished_at IS NOT NULL) AS completed,
+  array_agg(error) FILTER (WHERE error != '') AS errors
+FROM campaign_jobs
+WHERE %s
+LIMIT 1
+`
 
 // ListCampaignPlansOpts captures the query options needed for
 // listing code mods.
@@ -1405,8 +1495,8 @@ func (s *Store) createCampaignJobQuery(c *a8n.CampaignJob) (*sqlf.Query, error) 
 		c.Rev,
 		c.Diff,
 		c.Error,
-		c.StartedAt,
-		c.FinishedAt,
+		nullTimeColumn(c.StartedAt),
+		nullTimeColumn(c.FinishedAt),
 		c.CreatedAt,
 		c.UpdatedAt,
 	), nil
@@ -1489,6 +1579,8 @@ DELETE FROM campaign_jobs WHERE id = %s
 // counting code mods.
 type CountCampaignJobsOpts struct {
 	CampaignPlanID int64
+	OnlyFinished   bool
+	OnlyWithDiff   bool
 }
 
 // CountCampaignJobs returns the number of code mods in the database.
@@ -1511,6 +1603,14 @@ func countCampaignJobsQuery(opts *CountCampaignJobsOpts) *sqlf.Query {
 	var preds []*sqlf.Query
 	if opts.CampaignPlanID != 0 {
 		preds = append(preds, sqlf.Sprintf("campaign_plan_id = %s", opts.CampaignPlanID))
+	}
+
+	if opts.OnlyFinished {
+		preds = append(preds, sqlf.Sprintf("finished_at IS NOT NULL"))
+	}
+
+	if opts.OnlyWithDiff {
+		preds = append(preds, sqlf.Sprintf("diff != ''"))
 	}
 
 	if len(preds) == 0 {
@@ -1581,6 +1681,8 @@ type ListCampaignJobsOpts struct {
 	CampaignPlanID int64
 	Cursor         int64
 	Limit          int
+	OnlyFinished   bool
+	OnlyWithDiff   bool
 }
 
 // ListCampaignJobs lists CampaignJobs with the given filters.
@@ -1636,6 +1738,14 @@ func listCampaignJobsQuery(opts *ListCampaignJobsOpts) *sqlf.Query {
 
 	if opts.CampaignPlanID != 0 {
 		preds = append(preds, sqlf.Sprintf("campaign_plan_id = %s", opts.CampaignPlanID))
+	}
+
+	if opts.OnlyFinished {
+		preds = append(preds, sqlf.Sprintf("finished_at IS NOT NULL"))
+	}
+
+	if opts.OnlyWithDiff {
+		preds = append(preds, sqlf.Sprintf("diff != ''"))
 	}
 
 	return sqlf.Sprintf(
@@ -1781,10 +1891,19 @@ func scanCampaignJob(c *a8n.CampaignJob, s scanner) error {
 		&c.Rev,
 		&c.Diff,
 		&c.Error,
-		&c.StartedAt,
-		&c.FinishedAt,
+		&dbutil.NullTime{Time: &c.StartedAt},
+		&dbutil.NullTime{Time: &c.FinishedAt},
 		&c.CreatedAt,
 		&c.UpdatedAt,
+	)
+}
+
+func scanBackgroundProcessStatus(b *a8n.BackgroundProcessStatus, s scanner) error {
+	return s.Scan(
+		&b.Total,
+		&b.Pending,
+		&b.Completed,
+		pq.Array(&b.ProcessErrors),
 	)
 }
 

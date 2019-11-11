@@ -712,6 +712,8 @@ github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81 h1:v4/JVxZSPWif
 github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81/go.mod h1:xIvvI5FiHLxhv8prbzVpaMHaaGPFPFQSuTcxC91ryOo=
 github.com/sourcegraph/docsite v0.0.0-20190808202107-429b97fc9faf h1:FyxKjkXE1GblbpF0Ugj9ZYEE4fI5Dxk+su81QgMjiFI=
 github.com/sourcegraph/docsite v0.0.0-20190808202107-429b97fc9faf/go.mod h1:ucjBn4OyVoeap7hT5bHGPKAwD0FVWnuu69idPvNIcwg=
+github.com/sourcegraph/docsite v1.1.0 h1:Ilg2iWBhGteavTfJBJMWty6gmsMHcaQpc7caJL2cedQ=
+github.com/sourcegraph/docsite v1.1.0/go.mod h1:XpXb/UTQM3Bf2ynTYtw18rJzQXFIC3WMv6VfCLr1ck0=
 github.com/sourcegraph/go-diff v0.5.1 h1:gO6i5zugwzo1RVTvgvfwCOSVegNuvnNi6bAD1QCmkHs=
 github.com/sourcegraph/go-diff v0.5.1/go.mod h1:j2dHj3m8aZgQO8lMTcTnBcXkRRRqi34cd2MNlA9u1mE=
 github.com/sourcegraph/go-jsonschema v0.0.0-20190205151546-7939fa138765 h1:bFHV2WYU7J7MPdKTyaR6M7Ahhbn4cIdvbTRIRXprenM=

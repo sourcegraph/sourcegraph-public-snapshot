@@ -44,14 +44,8 @@ func (r *campaignPlanResolver) Arguments() (graphqlbackend.JSONCString, error) {
 	return graphqlbackend.JSONCString(r.campaignPlan.Arguments), nil
 }
 
-func (r *campaignPlanResolver) Status() graphqlbackend.BackgroundProcessStatus {
-	// TODO(a8n): Implement this
-	return a8n.BackgroundProcessStatus{
-		Completed:     0,
-		Pending:       99,
-		ProcessState:  a8n.BackgroundProcessStateErrored,
-		ProcessErrors: []string{"this is just a skeleton api"},
-	}
+func (r *campaignPlanResolver) Status(ctx context.Context) (graphqlbackend.BackgroundProcessStatus, error) {
+	return r.store.GetCampaignPlanStatus(ctx, r.campaignPlan.ID)
 }
 
 func (r *campaignPlanResolver) Changesets(
@@ -61,14 +55,19 @@ func (r *campaignPlanResolver) Changesets(
 	return &campaignJobsConnectionResolver{
 		store:        r.store,
 		campaignPlan: r.campaignPlan,
-		limit:        int(args.GetFirst()),
+		opts: ee.ListCampaignJobsOpts{
+			CampaignPlanID: r.campaignPlan.ID,
+			Limit:          int(args.GetFirst()),
+			OnlyFinished:   true,
+			OnlyWithDiff:   true,
+		},
 	}
 }
 
 type campaignJobsConnectionResolver struct {
 	store        *ee.Store
 	campaignPlan *a8n.CampaignPlan
-	limit        int
+	opts         ee.ListCampaignJobsOpts
 
 	// cache results because they are used by multiple fields
 	once      sync.Once
@@ -98,10 +97,7 @@ func (r *campaignJobsConnectionResolver) Nodes(ctx context.Context) ([]graphqlba
 
 func (r *campaignJobsConnectionResolver) compute(ctx context.Context) ([]*a8n.CampaignJob, map[int32]*repos.Repo, int64, error) {
 	r.once.Do(func() {
-		r.jobs, r.next, r.err = r.store.ListCampaignJobs(ctx, ee.ListCampaignJobsOpts{
-			CampaignPlanID: r.campaignPlan.ID,
-			Limit:          r.limit,
-		})
+		r.jobs, r.next, r.err = r.store.ListCampaignJobs(ctx, r.opts)
 		if r.err != nil {
 			return
 		}
@@ -128,6 +124,8 @@ func (r *campaignJobsConnectionResolver) compute(ctx context.Context) ([]*a8n.Ca
 
 func (r *campaignJobsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	opts := ee.CountCampaignJobsOpts{CampaignPlanID: r.campaignPlan.ID}
+	opts.OnlyFinished = r.opts.OnlyFinished
+	opts.OnlyWithDiff = r.opts.OnlyWithDiff
 	count, err := r.store.CountCampaignJobs(ctx, opts)
 	return int32(count), err
 }

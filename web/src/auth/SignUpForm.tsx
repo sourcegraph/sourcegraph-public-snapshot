@@ -1,6 +1,5 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
-import { upperFirst } from 'lodash'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import * as React from 'react'
 import { from, Subscription } from 'rxjs'
@@ -9,6 +8,7 @@ import { Form } from '../components/Form'
 import { eventLogger } from '../tracking/eventLogger'
 import { enterpriseTrial, signupTerms } from '../util/features'
 import { EmailInput, PasswordInput, UsernameInput } from './SignInSignUpCommon'
+import { ErrorAlert } from '../components/alerts'
 
 export interface SignUpArgs {
     email: string
@@ -53,9 +53,7 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
     public render(): JSX.Element | null {
         return (
             <Form className="signin-signup-form signup-form e2e-signup-form" onSubmit={this.handleSubmit}>
-                {this.state.error && (
-                    <div className="alert alert-danger my-2">Error: {upperFirst(this.state.error.message)}</div>
-                )}
+                {this.state.error && <ErrorAlert className="my-2" error={this.state.error} />}
                 <div className="form-group">
                     <EmailInput
                         className="signin-signup-form__input"

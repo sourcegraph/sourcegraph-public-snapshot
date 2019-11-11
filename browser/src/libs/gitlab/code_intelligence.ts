@@ -18,9 +18,17 @@ export function checkIsGitlab(): boolean {
 
 const adjustOverlayPosition: CodeHost['adjustOverlayPosition'] = ({ top, left }) => {
     const header = document.querySelector('header')
-
+    if (header) {
+        top += header.getBoundingClientRect().height
+    }
+    // When running GitLab from source, we also need to take into account
+    // the debug header shown at the top of the page.
+    const debugHeader = document.querySelector('#js-peek.development')
+    if (debugHeader) {
+        top += debugHeader.getBoundingClientRect().height
+    }
     return {
-        top: header ? top + header.getBoundingClientRect().height : 0,
+        top,
         left,
     }
 }
@@ -87,6 +95,11 @@ const resolveView: ViewResolver<CodeView>['resolveView'] = (element: HTMLElement
     }
 
     if (pageKind === GitLabPageKind.MergeRequest) {
+        if (!element.querySelector('.file-actions')) {
+            // If the code view has no file actions, we cannot resolve its head commit ID.
+            // This can be the case for code views representing added git submodules.
+            return null
+        }
         return { element, ...mergeRequestCodeView }
     }
 

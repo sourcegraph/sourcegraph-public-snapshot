@@ -6,4 +6,4 @@ node_modules
 out
 
 # Test data
-test-data
+src/tests/integration/data
