@@ -38,8 +38,58 @@ func ReadFile(ctx context.Context, repo gitserver.Repo, commit api.CommitID, nam
 	return b, nil
 }
 
+// NewFileReader returns an io.ReadCloser reading from the named file at commit.
+// The caller should always close the reader after use
+func NewFileReader(ctx context.Context, repo gitserver.Repo, commit api.CommitID, name string) (io.ReadCloser, error) {
+	if Mocks.GetFileReader != nil {
+		return Mocks.GetFileReader(commit, name)
+	}
+
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: GetFileReader")
+	span.SetTag("Name", name)
+	defer span.Finish()
+
+	name = util.Rel(name)
+	br, err := newBlobReader(ctx, repo, commit, name)
+	if err != nil {
+		return nil, err
+	}
+	return br, nil
+}
+
 func readFileBytes(ctx context.Context, repo gitserver.Repo, commit api.CommitID, name string, maxBytes int64) ([]byte, error) {
-	ensureAbsCommit(commit)
+	br, err := newBlobReader(ctx, repo, commit, name)
+	if err != nil {
+		return nil, err
+	}
+	defer br.Close()
+
+	r := io.Reader(br)
+	if maxBytes > 0 {
+		r = io.LimitReader(r, maxBytes)
+	}
+	data, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
+// blobReader, which should be created using newBlobReader, is a struct that allows
+// us to get a ReadCloser to a specific named file at a specific commit
+type blobReader struct {
+	ctx    context.Context
+	repo   gitserver.Repo
+	commit api.CommitID
+	name   string
+	cmd    *gitserver.Cmd
+	rc     io.ReadCloser
+}
+
+func newBlobReader(ctx context.Context, repo gitserver.Repo, commit api.CommitID, name string) (*blobReader, error) {
+	if err := ensureAbsoluteCommit(commit); err != nil {
+		return nil, err
+	}
 
 	cmd := gitserver.DefaultClient.Command("git", "show", string(commit)+":"+name)
 	cmd.Repo = repo
@@ -47,29 +97,50 @@ func readFileBytes(ctx context.Context, repo gitserver.Repo, commit api.CommitID
 	if err != nil {
 		return nil, err
 	}
-	defer stdout.Close()
 
-	r := io.Reader(stdout)
-	if maxBytes > 0 {
-		r = io.LimitReader(r, maxBytes)
-	}
-	data, err := ioutil.ReadAll(r)
+	return &blobReader{
+		ctx:    ctx,
+		repo:   repo,
+		commit: commit,
+		name:   name,
+		cmd:    cmd,
+		rc:     stdout,
+	}, nil
+}
+
+func (br *blobReader) Read(p []byte) (int, error) {
+	n, err := br.rc.Read(p)
 	if err != nil {
-		if strings.Contains(err.Error(), "exists on disk, but not in") || strings.Contains(err.Error(), "does not exist") {
-			return nil, &os.PathError{Op: "open", Path: name, Err: os.ErrNotExist}
-		}
-		if strings.Contains(err.Error(), "fatal: bad object ") {
-			// Could be a git submodule.
-			fi, err := Stat(ctx, repo, commit, name)
-			if err != nil {
-				return nil, err
-			}
-			// Return empty for a submodule for now.
-			if fi.Mode()&ModeSubmodule != 0 {
-				return nil, nil
-			}
-		}
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, err))
+		return n, br.convertError(err)
 	}
-	return data, nil
+	return n, nil
+}
+
+func (br *blobReader) Close() error {
+	return br.rc.Close()
+}
+
+// convertError converts an error returned from 'git show' into a more appropriate error type
+func (br *blobReader) convertError(err error) error {
+	if err == nil {
+		return nil
+	}
+	if err == io.EOF {
+		return err
+	}
+	if strings.Contains(err.Error(), "exists on disk, but not in") || strings.Contains(err.Error(), "does not exist") {
+		return &os.PathError{Op: "open", Path: br.name, Err: os.ErrNotExist}
+	}
+	if strings.Contains(err.Error(), "fatal: bad object ") {
+		// Could be a git submodule.
+		fi, err := Stat(br.ctx, br.repo, br.commit, br.name)
+		if err != nil {
+			return err
+		}
+		// Return EOF for a submodule for now which indicates zero content
+		if fi.Mode()&ModeSubmodule != 0 {
+			return io.EOF
+		}
+	}
+	return errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", br.cmd.Args, err))
 }

@@ -352,7 +352,7 @@ export class Database {
      * @param event The name of the event.
      * @param pairs The values to log.
      */
-    private logSpan(ctx: TracingContext, event: string, pairs: { [K: string]: any }): void {
+    private logSpan(ctx: TracingContext, event: string, pairs: { [name: string]: unknown }): void {
         logSpan(ctx, event, { ...pairs, dbID: this.dumpId })
     }
 }
@@ -488,7 +488,9 @@ export function mapRangesToLocations(
  *
  * @param ranges The ranges to clean.
  */
-function cleanRanges(ranges: dumpModels.RangeData[]): { [K: string]: any } {
+function cleanRanges(
+    ranges: dumpModels.RangeData[]
+): (Omit<dumpModels.RangeData, 'monikerIds'> & { monikerIds: dumpModels.MonikerId[] })[] {
     // We need to array-ize sets otherwise we get a "0 key" object
     return ranges.map(r => ({ ...r, monikerIds: Array.from(r.monikerIds) }))
 }

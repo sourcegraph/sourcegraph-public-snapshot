@@ -30,20 +30,15 @@ export interface Configuration {
 }
 
 /**
- * A function that returns the current configuration.
- */
-export type ConfigurationFetcher = () => Configuration
-
-/**
  * Create a configuration fetcher function and block until the first payload
- * can be read from teh frontend. Continue reading the configuration from the
+ * can be read from the frontend. Continue reading the configuration from the
  * frontend in the background. If one of the fields that cannot be updated while
  * the process remains up changes, it will forcibly exit the process to allow
  * whatever orchestrator is running this process restart it.
  *
  * @param logger The logger instance.
  */
-export async function waitForConfiguration(logger: Logger): Promise<ConfigurationFetcher> {
+export async function waitForConfiguration(logger: Logger): Promise<() => Configuration> {
     let oldConfiguration: Configuration | undefined
 
     await new Promise<void>(resolve => {
@@ -58,6 +53,8 @@ export async function waitForConfiguration(logger: Logger): Promise<Configuratio
         }).catch(() => {})
     })
 
+    // This value is guaranteed to be set by the resolution of the promise above
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return () => oldConfiguration!
 }
 

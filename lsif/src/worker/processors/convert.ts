@@ -2,7 +2,6 @@ import * as constants from '../../shared/constants'
 import * as fs from 'mz/fs'
 import * as path from 'path'
 import * as settings from '../settings'
-import { ConfigurationFetcher } from '../../shared/config/config'
 import { convertLsif } from '../importer/importer'
 import { createSilentLogger } from '../../shared/logging'
 import { dbFilename } from '../../shared/paths'
@@ -19,7 +18,7 @@ import { XrepoDatabase } from '../../shared/xrepo/xrepo'
  */
 export const createConvertJobProcessor = (
     xrepoDatabase: XrepoDatabase,
-    fetchConfiguration: ConfigurationFetcher
+    fetchConfiguration: () => { gitServers: string[] }
 ) => async (
     { repository, commit, root, filename }: { repository: string; commit: string; root: string; filename: string },
     ctx: TracingContext

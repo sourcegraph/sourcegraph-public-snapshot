@@ -34,7 +34,7 @@ const pipeline = promisify(_pipeline)
 const createTracingContext = (
     logger: Logger,
     req: express.Request & { span?: Span },
-    tags: { [K: string]: any }
+    tags: { [K: string]: unknown }
 ): TracingContext => addTags({ logger, span: req.span }, tags)
 
 /**
