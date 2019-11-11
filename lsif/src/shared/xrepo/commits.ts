@@ -53,10 +53,9 @@ export function mod(sum: string, max: number): number {
 
 /**
  * Get a list of commits for the given repository with their parent starting at the
- * given commit and returning at most `MAX_COMMITS_PER_UPDATE` commits. Each value in
- * the return list of the form `[A, B]` indicates that `B` is a parent of `A`. The
- * second element is an empty string if the first element has no parent. Commits may
- * appear multiple times, but each pair is unique.
+ * given commit and returning at most `MAX_COMMITS_PER_UPDATE` commits. The output
+ * is a set of pairs `(child, parent)`. Commits without a parent will be returend as
+ * `(child, undefined)`. Commits may appear multiple times, but each pair is unique.
  *
  * If the repository or commit is unknown by gitserver, then the the results will be
  * empty but no error will be thrown. Any other error type will b thrown without
@@ -70,7 +69,7 @@ export async function getCommitsNear(
     gitserverUrl: string,
     repository: string,
     commit: string
-): Promise<[string, string][]> {
+): Promise<[string, string | undefined][]> {
     const args = ['log', '--pretty=%H %P', commit, `-${MAX_COMMITS_PER_UPDATE}`]
 
     try {
@@ -88,19 +87,19 @@ export async function getCommitsNear(
 /**
  * Convert git log output into a parentage map. Each line of the input should have the
  * form `commit p1 p2 p3...`, where commits without a parent appear on a line of their
- * own. The output is a map of pairs `(child, parent)`. Commits without a parent will
- * be returend as `(child, '')`.
+ * own. The output is a set of pairs `(child, parent)`. Commits without a parent will
+ * be returend as `(child, undefined)`.
  *
  * @param lines The output lines of `git log`.
  */
-export function flattenCommitParents(lines: string[]): [string, string][] {
+export function flattenCommitParents(lines: string[]): [string, string | undefined][] {
     return lines.flatMap(line => {
         const [child, ...commits] = line.split(' ')
         if (commits.length === 0) {
-            return [[child, '']]
+            return [[child, undefined]]
         }
 
-        return commits.map<[string, string]>(commit => [child, commit])
+        return commits.map<[string, string | undefined]>(commit => [child, commit])
     })
 }
 
