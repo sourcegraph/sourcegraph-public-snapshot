@@ -99,16 +99,13 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                             catchError(err => [asError(err)]),
                             share()
                         )
-                        return merge(
-                            treeFetch,
-                            of(LOADING).pipe(
-                                delay(300),
-                                takeUntil(treeFetch)
-                            )
-                        )
+                        return merge(treeFetch, of(LOADING).pipe(delay(300), takeUntil(treeFetch)))
                     })
                 )
-                .subscribe(treeOrError => this.setState({ treeOrError }), err => console.error(err))
+                .subscribe(
+                    treeOrError => this.setState({ treeOrError }),
+                    err => console.error(err)
+                )
         )
 
         // This handles pre-fetching when a user

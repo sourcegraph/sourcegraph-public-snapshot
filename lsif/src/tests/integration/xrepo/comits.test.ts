@@ -100,7 +100,13 @@ describe('discoverAndUpdateTips', () => {
 
         try {
             const xrepoDatabase = new XrepoDatabase('', connection)
-            await xrepoDatabase.updateCommits('test-repo', [[ca, ''], [cb, ca], [cc, cb], [cd, cc], [ce, cd]])
+            await xrepoDatabase.updateCommits('test-repo', [
+                [ca, ''],
+                [cb, ca],
+                [cc, cb],
+                [cd, cc],
+                [ce, cd],
+            ])
             await xrepoDatabase.insertDump('test-repo', ca, 'foo')
             await xrepoDatabase.insertDump('test-repo', cb, 'foo')
             await xrepoDatabase.insertDump('test-repo', cc, 'bar')

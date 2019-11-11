@@ -65,10 +65,7 @@ export async function createPostgresConnection(configuration: Configuration, log
     const ssl = sslMode ? sslModes[sslMode] : undefined
 
     // Get a working connection
-    const connection = await connect(
-        { host, port, username, password, database, ssl },
-        logger
-    )
+    const connection = await connect({ host, port, username, password, database, ssl }, logger)
 
     // Poll the schema migrations table until we are up to date
     await waitForMigrations(connection, logger)

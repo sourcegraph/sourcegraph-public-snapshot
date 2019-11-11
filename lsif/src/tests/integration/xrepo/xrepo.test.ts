@@ -148,7 +148,10 @@ describe('XrepoDatabase', () => {
         const fields = ['repository', 'commit', 'root']
 
         // Add relations
-        await xrepoDatabase.updateCommits('foo', [[ca, ''], [cb, ca]])
+        await xrepoDatabase.updateCommits('foo', [
+            [ca, ''],
+            [cb, ca],
+        ])
 
         // Add dumps
         await xrepoDatabase.insertDump('foo', cb, 'root1/')
@@ -259,7 +262,15 @@ describe('XrepoDatabase', () => {
         const cg = util.createCommit('g')
 
         // Add relations
-        await xrepoDatabase.updateCommits('foo', [[ca, ''], [cb, ca], [cc, cb], [cd, cc], [ce, cd], [cf, ce], [cg, cf]])
+        await xrepoDatabase.updateCommits('foo', [
+            [ca, ''],
+            [cb, ca],
+            [cc, cb],
+            [cd, cc],
+            [ce, cd],
+            [cf, ce],
+            [cg, cf],
+        ])
 
         // Add dumps
         await xrepoDatabase.insertDump('foo', ca, 'r1')
@@ -424,7 +435,14 @@ describe('XrepoDatabase', () => {
             return references.map(reference => reference.dump_id).sort()
         }
 
-        await xrepoDatabase.updateCommits('foo', [[ca, ''], [cb, ca], [cc, cb], [cd, cc], [ce, cd], [cf, ce]])
+        await xrepoDatabase.updateCommits('foo', [
+            [ca, ''],
+            [cb, ca],
+            [cc, cb],
+            [cd, cc],
+            [ce, cd],
+            [cf, ce],
+        ])
         await xrepoDatabase.updateDumpsVisibleFromTip('foo', cf)
 
         // only references containing identifier y
@@ -502,15 +520,17 @@ describe('XrepoDatabase', () => {
         const dumpc = await xrepoDatabase.addPackagesAndReferences('foo', cc, '', [], references)
 
         const getReferencedDumpIds = async () =>
-            (await xrepoDatabase.getReferences({
-                repository: '',
-                scheme: 'npm',
-                name: 'p1',
-                version: '0.1.0',
-                identifier: 'y',
-                limit: 50,
-                offset: 0,
-            })).references
+            (
+                await xrepoDatabase.getReferences({
+                    repository: '',
+                    scheme: 'npm',
+                    name: 'p1',
+                    version: '0.1.0',
+                    identifier: 'y',
+                    limit: 50,
+                    offset: 0,
+                })
+            ).references
                 .map(reference => reference.dump_id)
                 .sort()
 

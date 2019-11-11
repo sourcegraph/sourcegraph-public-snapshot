@@ -88,7 +88,10 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                         this.remoteRefreshes.next()
                     })
                 )
-                .subscribe(() => this.setState({ saving: false }), error => this.setState({ saving: false, error }))
+                .subscribe(
+                    () => this.setState({ saving: false }),
+                    error => this.setState({ saving: false, error })
+                )
         )
 
         this.subscriptions.add(

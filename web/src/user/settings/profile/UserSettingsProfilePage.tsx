@@ -103,7 +103,10 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                         )
                     )
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    err => console.error(err)
+                )
         )
 
         this.subscriptions.add(

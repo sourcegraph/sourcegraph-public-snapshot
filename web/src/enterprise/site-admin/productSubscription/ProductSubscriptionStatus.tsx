@@ -46,7 +46,10 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
                     catchError(err => [asError(err)]),
                     map(v => ({ statusOrError: v }))
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    err => console.error(err)
+                )
         )
     }
 

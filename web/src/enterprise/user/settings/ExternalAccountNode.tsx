@@ -90,7 +90,10 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
                         )
                     )
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    error => console.error(error)
+                )
         )
     }
 

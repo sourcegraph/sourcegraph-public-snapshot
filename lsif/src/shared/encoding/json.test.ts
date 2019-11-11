@@ -2,7 +2,11 @@ import { gunzipJSON, gzipJSON } from './json'
 
 describe('gzipJSON', () => {
     it('should preserve maps', async () => {
-        const m = new Map<string, number>([['a', 1], ['b', 2], ['c', 3]])
+        const m = new Map<string, number>([
+            ['a', 1],
+            ['b', 2],
+            ['c', 3],
+        ])
 
         const value = {
             foo: [1, 2, 3],

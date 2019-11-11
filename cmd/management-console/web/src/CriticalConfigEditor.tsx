@@ -334,7 +334,10 @@ export class CriticalConfigEditor extends React.PureComponent<Props, State> {
     private runAction(id: string, editor?: _monaco.editor.ICodeEditor): void {
         if (editor) {
             const action = editor.getAction(id)
-            action.run().then(() => undefined, (err: any) => console.error(err))
+            action.run().then(
+                () => undefined,
+                (err: any) => console.error(err)
+            )
         }
     }
 

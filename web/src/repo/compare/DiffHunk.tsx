@@ -37,17 +37,15 @@ const DiffBoundary: React.FunctionComponent<{
         </td>
     </tr>
 )
-export const DiffHunk: React.FunctionComponent<
-    {
-        /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
-        fileDiffAnchor: string
-        hunk: GQL.IFileDiffHunk
-        lineNumbers: boolean
-        decorations: Record<'head' | 'base', DecorationMapByLine>
-        location: H.Location
-        history: H.History
-    } & ThemeProps
-> = ({ fileDiffAnchor, decorations, hunk, lineNumbers, location, history, isLightTheme }) => {
+export const DiffHunk: React.FunctionComponent<{
+    /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
+    fileDiffAnchor: string
+    hunk: GQL.IFileDiffHunk
+    lineNumbers: boolean
+    decorations: Record<'head' | 'base', DecorationMapByLine>
+    location: H.Location
+    history: H.History
+} & ThemeProps> = ({ fileDiffAnchor, decorations, hunk, lineNumbers, location, history, isLightTheme }) => {
     let oldLine = hunk.oldRange.startLine
     let newLine = hunk.newRange.startLine
     return (

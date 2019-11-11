@@ -34,12 +34,15 @@ export const resolveRepo = memoizeObservable(
             mightContainPrivateInfo: true,
         }).pipe(
             map(dataOrThrowErrors),
-            map(({ repository }) => {
-                if (!repository || !repository.name) {
-                    throw new RepoNotFoundError(rawRepoName)
-                }
-                return repository.name
-            }, catchError((err, caught) => caught))
+            map(
+                ({ repository }) => {
+                    if (!repository || !repository.name) {
+                        throw new RepoNotFoundError(rawRepoName)
+                    }
+                    return repository.name
+                },
+                catchError((err, caught) => caught)
+            )
         ),
     ({ rawRepoName }) => rawRepoName
 )

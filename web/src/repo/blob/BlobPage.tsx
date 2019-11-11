@@ -141,10 +141,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                     map(props => pick(props, 'repoName', 'commitID', 'filePath', 'isLightTheme')),
                     distinctUntilChanged((a, b) => isEqual(a, b))
                 ),
-                this.extendHighlightingTimeoutClicks.pipe(
-                    mapTo(true),
-                    startWith(false)
-                ),
+                this.extendHighlightingTimeoutClicks.pipe(mapTo(true), startWith(false)),
             ])
                 .pipe(
                     tap(() => this.setState({ blobOrError: undefined })),
@@ -163,7 +160,10 @@ export class BlobPage extends React.PureComponent<Props, State> {
                         )
                     )
                 )
-                .subscribe(blobOrError => this.setState({ blobOrError }), err => console.error(err))
+                .subscribe(
+                    blobOrError => this.setState({ blobOrError }),
+                    err => console.error(err)
+                )
         )
 
         // Clear the Sourcegraph extensions model's component when the blob is no longer shown.

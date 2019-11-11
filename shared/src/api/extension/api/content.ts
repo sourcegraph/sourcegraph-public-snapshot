@@ -10,9 +10,9 @@ export class ExtContent {
     constructor(private proxy: ProxyResult<ClientContentAPI>) {}
 
     public registerLinkPreviewProvider(urlMatchPattern: string, provider: LinkPreviewProvider): Unsubscribable {
-        const providerFunction: ProxyInput<
-            Parameters<ClientContentAPI['$registerLinkPreviewProvider']>[1]
-        > = proxyValue((url: string) =>
+        const providerFunction: ProxyInput<Parameters<
+            ClientContentAPI['$registerLinkPreviewProvider']
+        >[1]> = proxyValue((url: string) =>
             toProxyableSubscribable(provider.provideLinkPreview(new URL(url)), preview => preview)
         )
         return syncSubscription(this.proxy.$registerLinkPreviewProvider(urlMatchPattern, providerFunction))

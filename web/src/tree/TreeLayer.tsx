@@ -102,16 +102,13 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                             catchError(err => [asError(err)]),
                             share()
                         )
-                        return merge(
-                            treeFetch,
-                            of(LOADING).pipe(
-                                delay(300),
-                                takeUntil(treeFetch)
-                            )
-                        )
+                        return merge(treeFetch, of(LOADING).pipe(delay(300), takeUntil(treeFetch)))
                     })
                 )
-                .subscribe(treeOrError => this.setState({ treeOrError }), err => console.error(err))
+                .subscribe(
+                    treeOrError => this.setState({ treeOrError }),
+                    err => console.error(err)
+                )
         )
 
         // If the layer is already expanded, fetch contents.
