@@ -85,7 +85,9 @@ type blobReader struct {
 }
 
 func newBlobReader(ctx context.Context, repo gitserver.Repo, commit api.CommitID, name string) (*blobReader, error) {
-	ensureAbsCommit(commit)
+	if err := ensureAbsoluteCommit(commit); err != nil {
+		return nil, err
+	}
 
 	cmd := gitserver.DefaultClient.Command("git", "show", string(commit)+":"+name)
 	cmd.Repo = repo
