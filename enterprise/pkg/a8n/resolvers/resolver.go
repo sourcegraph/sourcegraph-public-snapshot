@@ -3,10 +3,7 @@ package resolvers
 import (
 	"context"
 	"database/sql"
-	"math"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -20,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n/run"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
@@ -28,9 +25,6 @@ import (
 type Resolver struct {
 	store       *ee.Store
 	httpFactory *httpcli.Factory
-	gitserver   interface {
-		CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error)
-	}
 }
 
 // NewResolver returns a new Resolver whose store uses the given db
@@ -183,8 +177,6 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 			return nil, err
 		}
 		campaign.CampaignPlanID = planID
-		// TODO(a8n): Implement this. We need to turn the CampaignJobs into
-		// changesets on the code host.
 	}
 
 	switch relay.UnmarshalKind(args.Input.Namespace) {
@@ -200,95 +192,10 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		return nil, err
 	}
 
-	if err := r.store.CreateCampaign(ctx, campaign); err != nil {
+	svc := ee.NewCampaignsService(r.store, gitserver.DefaultClient)
+	err = svc.CreateCampaign(ctx, campaign)
+	if err != nil {
 		return nil, err
-	}
-
-	if campaign.CampaignPlanID != 0 {
-		jobs, _, err := r.store.ListCampaignJobs(ctx, ee.ListCampaignJobsOpts{
-			CampaignPlanID: campaign.CampaignPlanID,
-			Limit:          int(math.MaxInt32),
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		// RepoRels contains the joined repo, campaign job and the created changeset.
-		type RepoRels struct {
-			*repos.Repo
-			*a8n.CampaignJob
-			*a8n.ChangesetJob
-		}
-
-		rels := make(map[int32]*RepoRels, len(jobs))
-		repoIDs := make([]uint32, len(jobs))
-
-		for i, job := range jobs {
-			rels[job.RepoID] = &RepoRels{CampaignJob: job}
-			repoIDs[i] = uint32(job.RepoID)
-		}
-
-		repoStore := repos.NewDBStore(r.store.DB(), sql.TxOptions{})
-		rs, err := repoStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: repoIDs})
-		if err != nil {
-			return nil, err
-		}
-
-		for _, repo := range rs {
-			rel := rels[int32(repo.ID)]
-			rel.Repo = repo
-
-			rel.ChangesetJob = &a8n.ChangesetJob{
-				CampaignID:    campaign.ID,
-				CampaignJobID: rel.CampaignJob.ID,
-			}
-
-			err = r.store.CreateChangesetJob(ctx, rel.ChangesetJob)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		for _, rel := range rels {
-			// TODO(a8n):
-			//   - Ensure all of these calls are idempotent so they can be safely retried.
-			//   - After creating a commit we need to create a branch so that it can be pushed.
-			//   - Then we need to actually push the branch to origin (i.e. the code host)
-			now := time.Now().UTC()
-
-			rel.ChangesetJob.StartedAt = now
-			err = r.store.UpdateChangesetJob(ctx, rel.ChangesetJob)
-			if err != nil {
-				return nil, err
-			}
-
-			_, err = r.gitserver.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
-				Repo:       api.RepoName(rel.Repo.Name),
-				BaseCommit: rel.CampaignJob.Rev,
-				Patch:      rel.CampaignJob.Diff,
-				TargetRef:  "sourcegraph/campaign-" + strconv.FormatInt(campaign.ID, 10),
-				CommitInfo: protocol.PatchCommitInfo{
-					Message:     campaign.Name,
-					AuthorName:  "Sourcegraph Bot",
-					AuthorEmail: "automation@sourcegraph.com",
-					Date:        now,
-				},
-			})
-
-			// TODO(a8n): Set the Error in the ChangesetJob instead of exiting.
-			if err != nil {
-				return nil, err
-			}
-
-			// TODO(a8n):
-			//   - Create a Changeset once we have an external ID for the created Pull Request
-			//   - Update `ChangesetID` on `ChangesetJob`
-			//   - Add the Changeset to the Campaign, add Campaign to Changeset
-		}
-
-		// TODO(a8n):
-		//   - Finally we need to use the code host clients (Sources) to create the PRs.
-
 	}
 
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
