@@ -29,7 +29,7 @@ export interface TracingContext {
  */
 export function addTags(
     { logger = createSilentLogger(), span = new Span() }: TracingContext,
-    tags: { [K: string]: any }
+    tags: { [name: string]: unknown }
 ): TracingContext {
     return { logger: logger.child(tags), span: span.addTags(tags) }
 }
@@ -41,7 +41,11 @@ export function addTags(
  * @param event The name of the event.
  * @param pairs The values to log.
  */
-export function logSpan({ span = new Span() }: TracingContext, event: string, pairs: { [K: string]: any }): void {
+export function logSpan(
+    { span = new Span() }: TracingContext,
+    event: string,
+    pairs: { [name: string]: unknown }
+): void {
     span.log({ event, ...pairs })
 }
 

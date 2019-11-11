@@ -8,7 +8,7 @@ describe('getCommitsNear', () => {
             .reply(200, 'a\nb c\nd e f\ng h i j k l')
 
         expect(await getCommitsNear('gitserver0', 'r', 'l')).toEqual([
-            ['a', ''],
+            ['a', undefined],
             ['b', 'c'],
             ['d', 'e'],
             ['d', 'f'],
@@ -32,7 +32,7 @@ describe('getCommitsNear', () => {
 describe('flattenCommitParents', () => {
     it('should handle multiple commits', () => {
         expect(flattenCommitParents(['a', 'b c', 'd e f', 'g h i j k l'])).toEqual([
-            ['a', ''],
+            ['a', undefined],
             ['b', 'c'],
             ['d', 'e'],
             ['d', 'f'],

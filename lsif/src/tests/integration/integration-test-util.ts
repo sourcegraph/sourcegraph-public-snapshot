@@ -5,7 +5,6 @@ import * as uuid from 'uuid'
 import rmfr from 'rmfr'
 import { Backend, ReferencePaginationCursor } from '../../server/backend/backend'
 import { child_process } from 'mz'
-import { Configuration } from '../../shared/config/config'
 import { Connection } from 'typeorm'
 import { connectPostgres } from '../../shared/database/postgres'
 import { convertLsif } from '../../worker/importer/importer'
@@ -71,7 +70,7 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
 
     // Create cleanup function to run after test. This will close the connection
     // created below (if successful), then destroy the database that was created
-    // for the test. It is necessary to close teh database first, otherwise we
+    // for the test. It is necessary to close the database first, otherwise we
     // get failures during the after hooks:
     //
     // dropdb: database removal failed: ERROR:  database "sourcegraph-test-lsif-xrepo-5033c9e8" is being accessed by other users
@@ -156,7 +155,7 @@ export async function convertTestData(
     await fs.rename(tmp, dbFilename(storageRoot, dump.id, repository, commit))
 
     if (updateCommits) {
-        await xrepoDatabase.updateCommits(repository, [[commit, '']])
+        await xrepoDatabase.updateCommits(repository, [[commit, undefined]])
         await xrepoDatabase.updateDumpsVisibleFromTip(repository, commit)
     }
 }
@@ -198,12 +197,10 @@ export class BackendTestContext {
      */
     public async init(): Promise<void> {
         this.storageRoot = await createStorageRoot()
-
         const { connection, cleanup } = await createCleanPostgresDatabase()
         this.cleanup = cleanup
-
         this.xrepoDatabase = new XrepoDatabase(this.storageRoot, connection)
-        this.backend = new Backend(this.storageRoot, this.xrepoDatabase, () => ({} as Configuration))
+        this.backend = new Backend(this.storageRoot, this.xrepoDatabase, () => ({ gitServers: [] }))
     }
 
     /**

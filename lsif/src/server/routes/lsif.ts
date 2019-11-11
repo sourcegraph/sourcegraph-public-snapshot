@@ -32,7 +32,7 @@ const pipeline = promisify(_pipeline)
 const createTracingContext = (
     logger: Logger,
     req: express.Request & { span?: Span },
-    tags: { [K: string]: any }
+    tags: { [K: string]: unknown }
 ): TracingContext => addTags({ logger, span: req.span }, tags)
 
 /**
@@ -43,7 +43,7 @@ const createTracingContext = (
  * - '/' -> ''
  * - '' -> ''
  */
-const normalizeRoot = (root: any): string => {
+const normalizeRoot = (root: unknown): string => {
     if (root === undefined || root === '/' || root === '') {
         return ''
     }
@@ -60,7 +60,7 @@ const normalizeRoot = (root: any): string => {
 /**
  * Throws an error with status 400 if the repository string is invalid.
  */
-const validateRepository = (repository: any): void => {
+const validateRepository = (repository: unknown): void => {
     if (typeof repository !== 'string') {
         throw Object.assign(new Error(`Must specify a repository ${repository}`), {
             status: 400,
@@ -71,7 +71,7 @@ const validateRepository = (repository: any): void => {
 /**
  * Throws an error with status 400 if the commit string is invalid.
  */
-const validateCommit = (commit: any): void => {
+const validateCommit = (commit: unknown): void => {
     if (typeof commit !== 'string' || commit.length !== 40 || !/^[0-9a-f]+$/.test(commit)) {
         throw Object.assign(new Error(`Must specify the commit as a 40 character hash ${commit}`), { status: 400 })
     }
@@ -80,7 +80,7 @@ const validateCommit = (commit: any): void => {
 /**
  * Throws an error with status 400 if the file is not present.
  */
-const validateFile = (file: any): void => {
+const validateFile = (file: unknown): void => {
     if (typeof file !== 'string') {
         throw Object.assign(new Error(`Must specify a file ${file}`), { status: 400 })
     }

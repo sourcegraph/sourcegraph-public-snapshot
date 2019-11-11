@@ -19,7 +19,6 @@ describe('Backend', () => {
     it('should find all cross-repo defs of `add` from repo a', async () => {
         if (!ctx.backend) {
             fail('failed beforeAll')
-            return
         }
 
         const definitions = await ctx.backend.definitions('a', util.createCommit('a'), 'src/index.ts', {
@@ -32,7 +31,6 @@ describe('Backend', () => {
     it('should find all cross-repo defs of `add` from repo b1', async () => {
         if (!ctx.backend) {
             fail('failed beforeAll')
-            return
         }
 
         const definitions = await ctx.backend.definitions('b1', util.createCommit('b1'), 'src/index.ts', {
@@ -45,7 +43,6 @@ describe('Backend', () => {
     it('should find all cross-repo defs of `mul` from repo b1', async () => {
         if (!ctx.backend) {
             fail('failed beforeAll')
-            return
         }
 
         const definitions = await ctx.backend.definitions('b1', util.createCommit('b1'), 'src/index.ts', {
@@ -58,7 +55,6 @@ describe('Backend', () => {
     it('should find all cross-repo refs of `mul` from repo a', async () => {
         if (!ctx.backend) {
             fail('failed beforeAll')
-            return
         }
 
         const { locations } = util.filterNodeModules(
@@ -86,7 +82,6 @@ describe('Backend', () => {
     it('should find all cross-repo refs of `mul` from repo b1', async () => {
         if (!ctx.backend) {
             fail('failed beforeAll')
-            return
         }
 
         const { locations } = util.filterNodeModules(
@@ -114,7 +109,6 @@ describe('Backend', () => {
     it('should find all cross-repo refs of `add` from repo a', async () => {
         if (!ctx.backend) {
             fail('failed beforeAll')
-            return
         }
 
         const { locations } = util.filterNodeModules(
@@ -152,7 +146,6 @@ describe('Backend', () => {
     it('should find all cross-repo refs of `add` from repo c1', async () => {
         if (!ctx.backend) {
             fail('failed beforeAll')
-            return
         }
 
         const { locations } = util.filterNodeModules(
