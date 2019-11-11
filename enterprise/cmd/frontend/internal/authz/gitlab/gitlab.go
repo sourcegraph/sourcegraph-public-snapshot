@@ -1,8 +1,6 @@
 package gitlab
 
 import (
-	"context"
-	"database/sql"
 	"fmt"
 	"net/url"
 
@@ -13,36 +11,30 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func init() {
-	iauthz.NewProviderRegister(func(
-		ctx context.Context,
-		cfg *conf.Unified,
-		s iauthz.ExternalServicesStore,
-		db *sql.DB,
-	) (ps []authz.Provider, problems []string, warnings []string) {
-		conns, err := s.ListGitLabConnections(ctx)
+// NewAuthzProviders returns the set of GitLab authz providers derived from the connections.
+// It also returns any validation problems with the config, separating these into "serious problems" and
+// "warnings". "Serious problems" are those that should make Sourcegraph set authz.allowAccessByDefault
+// to false. "Warnings" are all other validation problems.
+func NewAuthzProviders(
+	cfg *conf.Unified,
+	conns []*schema.GitLabConnection,
+) (ps []authz.Provider, problems []string, warnings []string) {
+	// Authorization (i.e., permissions) providers
+	for _, c := range conns {
+		p, err := newAuthzProvider(c.Authorization, c.Url, c.Token, cfg.Critical.AuthProviders)
 		if err != nil {
-			problems = append(problems, fmt.Sprintf("Could not load GitLab external service configs: %s", err))
-			return nil, problems, nil
+			problems = append(problems, err.Error())
+		} else if p != nil {
+			ps = append(ps, p)
 		}
+	}
+	for _, p := range ps {
+		for _, problem := range p.Validate() {
+			warnings = append(warnings, fmt.Sprintf("GitLab config for %s was invalid: %s", p.ServiceID(), problem))
+		}
+	}
 
-		// Authorization (i.e., permissions) providers
-		for _, c := range conns {
-			p, err := newAuthzProvider(c.Authorization, c.Url, c.Token, cfg.Critical.AuthProviders)
-			if err != nil {
-				problems = append(problems, err.Error())
-			} else if p != nil {
-				ps = append(ps, p)
-			}
-		}
-		for _, p := range ps {
-			for _, problem := range p.Validate() {
-				warnings = append(warnings, fmt.Sprintf("GitLab config for %s was invalid: %s", p.ServiceID(), problem))
-			}
-		}
-
-		return ps, problems, warnings
-	})
+	return ps, problems, warnings
 }
 
 func newAuthzProvider(a *schema.GitLabAuthorization, instanceURL, token string, ps []schema.AuthProviders) (authz.Provider, error) {

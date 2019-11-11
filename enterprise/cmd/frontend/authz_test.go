@@ -1,4 +1,4 @@
-package authz_test
+package main
 
 import (
 	"context"
@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -447,7 +446,8 @@ func Test_providersFromConfig(t *testing.T) {
 			bitbucketServers: test.bitbucketServerConnections,
 		}
 
-		allowAccessByDefault, authzProviders, seriousProblems, _ := iauthz.ProvidersFromConfig(context.Background(), &test.cfg, &store, nil)
+		allowAccessByDefault, authzProviders, seriousProblems, _ :=
+			authzProvidersFromConfig(context.Background(), &test.cfg, &store, nil)
 		if allowAccessByDefault != test.expAuthzAllowAccessByDefault {
 			t.Errorf("allowAccessByDefault: (actual) %v != (expected) %v", asJSON(t, allowAccessByDefault), asJSON(t, test.expAuthzAllowAccessByDefault))
 		}

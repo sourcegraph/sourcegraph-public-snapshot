@@ -30,7 +30,7 @@ import (
 type ExternalServicesStore struct {
 	GitHubValidators          []func(*schema.GitHubConnection) error
 	GitLabValidators          []func(*schema.GitLabConnection, []schema.AuthProviders) error
-	BitbucketServerValidators []func(*schema.BitbucketServerConnection, []schema.AuthProviders) error
+	BitbucketServerValidators []func(*schema.BitbucketServerConnection) error
 }
 
 // ExternalServiceKinds contains a map of all supported kinds of
@@ -138,7 +138,7 @@ func (e *ExternalServicesStore) ValidateConfig(kind, config string, ps []schema.
 		if err = json.Unmarshal(normalized, &c); err != nil {
 			return err
 		}
-		err = e.validateBitbucketServerConnection(&c, ps)
+		err = e.validateBitbucketServerConnection(&c)
 
 	case "OTHER":
 		var c schema.OtherExternalServiceConnection
@@ -201,10 +201,10 @@ func (e *ExternalServicesStore) validateGitlabConnection(c *schema.GitLabConnect
 	return err.ErrorOrNil()
 }
 
-func (e *ExternalServicesStore) validateBitbucketServerConnection(c *schema.BitbucketServerConnection, ps []schema.AuthProviders) error {
+func (e *ExternalServicesStore) validateBitbucketServerConnection(c *schema.BitbucketServerConnection) error {
 	err := new(multierror.Error)
 	for _, validate := range e.BitbucketServerValidators {
-		err = multierror.Append(err, validate(c, ps))
+		err = multierror.Append(err, validate(c))
 	}
 
 	if c.Repos == nil && c.RepositoryQuery == nil {

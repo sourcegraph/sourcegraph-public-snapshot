@@ -1,7 +1,6 @@
 package bitbucketserver
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"net/url"
@@ -10,49 +9,41 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func init() {
-	iauthz.NewProviderRegister(func(
-		ctx context.Context,
-		cfg *conf.Unified,
-		s iauthz.ExternalServicesStore,
-		db *sql.DB,
-	) (ps []authz.Provider, problems []string, warnings []string) {
-		conns, err := s.ListBitbucketServerConnections(ctx)
+// NewAuthzProviders returns the set of Bitbucket Server authz providers derived from the connections.
+// It also returns any validation problems with the config, separating these into "serious problems" and
+// "warnings". "Serious problems" are those that should make Sourcegraph set authz.allowAccessByDefault
+// to false. "Warnings" are all other validation problems.
+func NewAuthzProviders(
+	conns []*schema.BitbucketServerConnection,
+	db *sql.DB,
+) (ps []authz.Provider, problems []string, warnings []string) {
+	// Authorization (i.e., permissions) providers
+	for _, c := range conns {
+		p, err := newAuthzProvider(db, c.Authorization, c.Url, c.Username)
 		if err != nil {
-			problems = append(problems, fmt.Sprintf("Could not load Bitbucket Server external service configs: %s", err))
-			return nil, problems, nil
+			problems = append(problems, err.Error())
+		} else if p != nil {
+			ps = append(ps, p)
 		}
+	}
 
-		// Authorization (i.e., permissions) providers
-		for _, c := range conns {
-			p, err := newAuthzProvider(db, c.Authorization, c.Url, c.Username, cfg.Critical.AuthProviders)
-			if err != nil {
-				problems = append(problems, err.Error())
-			} else if p != nil {
-				ps = append(ps, p)
-			}
+	for _, p := range ps {
+		for _, problem := range p.Validate() {
+			warnings = append(warnings, fmt.Sprintf("BitbucketServer config for %s was invalid: %s", p.ServiceID(), problem))
 		}
+	}
 
-		for _, p := range ps {
-			for _, problem := range p.Validate() {
-				warnings = append(warnings, fmt.Sprintf("BitbucketServer config for %s was invalid: %s", p.ServiceID(), problem))
-			}
-		}
-
-		return ps, problems, warnings
-	})
+	return ps, problems, warnings
 }
 
 func newAuthzProvider(
 	db *sql.DB,
 	a *schema.BitbucketServerAuthorization,
 	instanceURL, username string,
-	ps []schema.AuthProviders,
 ) (authz.Provider, error) {
 	if a == nil {
 		return nil, nil
@@ -99,7 +90,7 @@ func newAuthzProvider(
 
 // ValidateAuthz validates the authorization fields of the given BitbucketServer external
 // service config.
-func ValidateAuthz(c *schema.BitbucketServerConnection, ps []schema.AuthProviders) error {
-	_, err := newAuthzProvider(nil, c.Authorization, c.Url, c.Username, ps)
+func ValidateAuthz(c *schema.BitbucketServerConnection) error {
+	_, err := newAuthzProvider(nil, c.Authorization, c.Url, c.Username)
 	return err
 }
