@@ -1,5 +1,4 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { concat, Observable, of, Subject, Subscription } from 'rxjs'
@@ -13,6 +12,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { ExternalServiceCard } from '../components/ExternalServiceCard'
 import { getExternalService } from './externalServices'
 import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
+import { ErrorAlert } from '../components/alerts'
 
 interface Props extends RouteComponentProps<{ id: GQL.ID }> {
     isLightTheme: boolean
@@ -121,7 +121,7 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                 <h2>Update external service</h2>
                 {this.state.externalServiceOrError === LOADING && <LoadingSpinner className="icon-inline" />}
                 {isErrorLike(this.state.externalServiceOrError) && (
-                    <p className="alert alert-danger">{upperFirst(this.state.externalServiceOrError.message)}</p>
+                    <ErrorAlert className="mb-3" error={this.state.externalServiceOrError} />
                 )}
                 {externalService && (
                     <div className="mb-3">

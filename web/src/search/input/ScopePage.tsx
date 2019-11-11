@@ -19,6 +19,7 @@ import { submitSearch } from '../helpers'
 import { QueryInput, queryUpdates } from './QueryInput'
 import { SearchButton } from './SearchButton'
 import { PatternTypeProps } from '..'
+import { ErrorAlert } from '../../components/alerts'
 
 const ScopeNotFound: React.FunctionComponent = () => (
     <HeroPage
@@ -174,9 +175,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                     <section className="scope-page__repos">
                         <div>
                             <div>
-                                {this.state.errorMessage && (
-                                    <p className="alert alert-danger">{this.state.errorMessage}</p>
-                                )}
+                                {this.state.errorMessage && <ErrorAlert error={this.state.errorMessage} />}
                                 {!this.state.errorMessage &&
                                     (this.state.repositories && this.state.repositories.length > 0 ? (
                                         <div>

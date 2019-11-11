@@ -1444,5 +1444,113 @@ func testStore(db *sql.DB) func(*testing.T) {
 				}
 			}
 		})
+
+		t.Run("CampaignPlan DeleteExpired", func(t *testing.T) {
+			tests := []struct {
+				hasCampaign bool
+				jobs        []*a8n.CampaignJob
+				wantDeleted bool
+				want        *a8n.BackgroundProcessStatus
+			}{
+				{
+					hasCampaign: false,
+					jobs: []*a8n.CampaignJob{
+						// completed more than 1 hour ago
+						{FinishedAt: now.Add(-61 * time.Minute)},
+					},
+					wantDeleted: true,
+				},
+				{
+					hasCampaign: false,
+					jobs: []*a8n.CampaignJob{
+						// completed 30 min ago
+						{FinishedAt: now.Add(30 * time.Minute)},
+					},
+					wantDeleted: false,
+				},
+				{
+					hasCampaign: false,
+					jobs: []*a8n.CampaignJob{
+						// completed more than 1 hour ago
+						{FinishedAt: now.Add(-61 * time.Minute)},
+						// completed 30 min ago
+						{FinishedAt: now.Add(30 * time.Minute)},
+					},
+					wantDeleted: false,
+				},
+				{
+					hasCampaign: false,
+					jobs: []*a8n.CampaignJob{
+						// completed more than 1 hour ago
+						{FinishedAt: now.Add(-61 * time.Minute)},
+						// not completed
+						{},
+					},
+					wantDeleted: false,
+				},
+				{
+					hasCampaign: false,
+					jobs: []*a8n.CampaignJob{
+						// completed more than 1 hour ago
+						{FinishedAt: now.Add(-61 * time.Minute)},
+						// completed more than 2 hours ago
+						{FinishedAt: now.Add(-121 * time.Minute)},
+					},
+					wantDeleted: true,
+				},
+			}
+
+			for _, tc := range tests {
+				plan := &a8n.CampaignPlan{CampaignType: "comby", Arguments: `{"foobar":"barfoo"}`}
+
+				err := s.CreateCampaignPlan(ctx, plan)
+				if err != nil {
+					t.Fatal(err)
+				}
+				// Clean up before test
+				existingJobs, _, err := s.ListCampaignJobs(ctx, ListCampaignJobsOpts{CampaignPlanID: plan.ID})
+				if err != nil {
+					t.Fatal(err)
+				}
+				for _, j := range existingJobs {
+					err := s.DeleteCampaignJob(ctx, j.ID)
+					if err != nil {
+						t.Fatal(err)
+					}
+				}
+
+				// TODO(a8n): Create a Campaign with CampaignPlanID = plan.ID
+
+				for i, j := range tc.jobs {
+					j.StartedAt = now.Add(-2 * time.Hour)
+					j.CampaignPlanID = plan.ID
+					j.RepoID = int32(i)
+					j.Rev = api.CommitID(fmt.Sprintf("deadbeef-%d", i))
+
+					err := s.CreateCampaignJob(ctx, j)
+					if err != nil {
+						t.Fatal(err)
+					}
+				}
+
+				err = s.DeleteExpiredCampaignPlans(ctx)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				havePlan, err := s.GetCampaignPlan(ctx, GetCampaignPlanOpts{ID: plan.ID})
+				if err != nil && err != ErrNoResults {
+					t.Fatal(err)
+				}
+
+				if tc.wantDeleted && err == nil {
+					t.Fatalf("want campaign to be deleted. got: %v", havePlan)
+				}
+
+				if !tc.wantDeleted && err == ErrNoResults {
+					t.Fatalf("want campaign not to be deletedbut got deleted")
+				}
+			}
+		})
 	}
 }

@@ -15,6 +15,7 @@ import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { eventLogger } from '../../tracking/eventLogger'
+import { ErrorAlert } from '../../components/alerts'
 
 /**
  * Fetches a repository's text search index information.
@@ -158,11 +159,7 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                 <h2>Indexing</h2>
                 {this.state.loading && <LoadingSpinner className="icon-inline" />}
                 {this.state.error && (
-                    <div className="alert alert-danger">
-                        Error getting repository index status:
-                        <br />
-                        <code>{this.state.error.message}</code>
-                    </div>
+                    <ErrorAlert prefix="Error getting repository index status" error={this.state.error} />
                 )}
                 {!this.state.error &&
                     !this.state.loading &&

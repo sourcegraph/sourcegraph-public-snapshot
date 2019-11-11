@@ -1,5 +1,4 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -11,6 +10,7 @@ import { Form } from '../../../components/Form'
 import { PageTitle } from '../../../components/PageTitle'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { updatePassword } from '../backend'
+import { ErrorAlert } from '../../../components/alerts'
 
 interface Props extends RouteComponentProps<any> {
     user: GQL.IUser
@@ -97,10 +97,8 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                     </div>
                 ) : (
                     <>
-                        {this.state.error && (
-                            <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>
-                        )}
-                        {this.state.saved && <p className="alert alert-success">Password changed!</p>}
+                        {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}
+                        {this.state.saved && <div className="alert alert-success mb-3">Password changed!</div>}
                         <Form onSubmit={this.handleSubmit}>
                             {/* Include a username field as a hint for password managers to update the saved password. */}
                             <input
