@@ -16,7 +16,7 @@
     "express-opentracing": "^0.1.1",
     "express-winston": "^4.0.1",
     "got": "^9.6.0",
-    "ioredis": "^4.14.0",
+    "ioredis": "^4.14.1",
     "jaeger-client": "^3.17.1",
     "json5": "^2.1.1",
     "lightstep-tracer": "^0.22.3",
