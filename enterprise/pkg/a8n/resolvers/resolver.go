@@ -217,7 +217,7 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		type RepoRels struct {
 			*repos.Repo
 			*a8n.CampaignJob
-			*a8n.Changeset
+			*a8n.ChangesetJob
 		}
 
 		rels := make(map[int32]*RepoRels, len(jobs))
@@ -234,33 +234,19 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 			return nil, err
 		}
 
-		changesets := make([]*a8n.Changeset, 0, len(jobs))
-		for _, r := range rs {
-			rel := rels[int32(r.ID)]
-			rel.Repo = r
+		for _, repo := range rs {
+			rel := rels[int32(repo.ID)]
+			rel.Repo = repo
 
-			// TODO(a8n): Set CampaignJobID in Changeset
-			rel.Changeset = &a8n.Changeset{
-				RepoID:              rel.CampaignJob.RepoID,
-				CampaignIDs:         []int64{campaign.ID},
-				ExternalServiceType: rel.ExternalRepo.ServiceType,
+			rel.ChangesetJob = &a8n.ChangesetJob{
+				CampaignID:    campaign.ID,
+				CampaignJobID: rel.CampaignJob.ID,
 			}
 
-			changesets = append(changesets, rel.Changeset)
-		}
-
-		err = r.store.CreateChangesets(ctx, changesets...)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, cs := range changesets {
-			campaign.ChangesetIDs = append(campaign.ChangesetIDs, cs.ID)
-		}
-
-		err = r.store.UpdateCampaign(ctx, campaign)
-		if err != nil {
-			return nil, err
+			err = r.store.CreateChangesetJob(ctx, rel.ChangesetJob)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		for _, rel := range rels {
@@ -269,6 +255,13 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 			//   - After creating a commit we need to create a branch so that it can be pushed.
 			//   - Then we need to actually push the branch to origin (i.e. the code host)
 			now := time.Now().UTC()
+
+			rel.ChangesetJob.StartedAt = now
+			err = r.store.UpdateChangesetJob(ctx, rel.ChangesetJob)
+			if err != nil {
+				return nil, err
+			}
+
 			_, err = r.gitserver.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
 				Repo:       api.RepoName(rel.Repo.Name),
 				BaseCommit: rel.CampaignJob.Rev,
@@ -282,10 +275,15 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 				},
 			})
 
-			// TODO(a8n): Set the Error in the Changeset instead of exiting.
+			// TODO(a8n): Set the Error in the ChangesetJob instead of exiting.
 			if err != nil {
 				return nil, err
 			}
+
+			// TODO(a8n):
+			//   - Create a Changeset once we have an external ID for the created Pull Request
+			//   - Update `ChangesetID` on `ChangesetJob`
+			//   - Add the Changeset to the Campaign, add Campaign to Changeset
 		}
 
 		// TODO(a8n):
