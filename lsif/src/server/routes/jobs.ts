@@ -40,40 +40,6 @@ const toMaybeDate = (timestamp: number | null): string | null => (timestamp ? to
 /**
  * Format a job to return from the API.
  *
- * @param job The job to format.
- * @param state The job's state.
- */
-const formatJob = (job: Job, state: ApiJobState): ApiJob => formatJobInternal({ state, ...job.toJSON() })
-
-/**
- * Format a job to return from the API.
- *
- * @param values A map of values composing the job.
- * @param state The job's state.
- */
-const formatJobFromMap = (values: Map<string, string>, state: ApiJobState): ApiJob => {
-    const rawData = values.get('data')
-    const rawStacktrace = values.get('stacktrace')
-    const rawTimestamp = values.get('timestamp')
-    const rawProcessedOn = values.get('processedOn')
-    const rawFinishedOn = values.get('finishedOn')
-
-    return formatJobInternal({
-        id: values.get('id') || '',
-        name: values.get('name') || '',
-        data: JSON.parse(rawData || '{}'),
-        failedReason: values.get('failedReason') || null,
-        stacktrace: rawStacktrace ? JSON.parse(rawStacktrace) : null,
-        timestamp: rawTimestamp ? parseInt(rawTimestamp, 10) : 0,
-        processedOn: rawProcessedOn ? parseInt(rawProcessedOn, 10) : null,
-        finishedOn: rawFinishedOn ? parseInt(rawFinishedOn, 10) : null,
-        state,
-    })
-}
-
-/**
- * Format a job to return from the API.
- *
  * @param payload The job's JSON payload.
  */
 const formatJobInternal = ({
@@ -112,6 +78,40 @@ const formatJobInternal = ({
         startedAt: toMaybeDate(processedOn),
         completedOrErroredAt: toMaybeDate(finishedOn),
     }
+}
+
+/**
+ * Format a job to return from the API.
+ *
+ * @param job The job to format.
+ * @param state The job's state.
+ */
+const formatJob = (job: Job, state: ApiJobState): ApiJob => formatJobInternal({ state, ...job.toJSON() })
+
+/**
+ * Format a job to return from the API.
+ *
+ * @param values A map of values composing the job.
+ * @param state The job's state.
+ */
+const formatJobFromMap = (values: Map<string, string>, state: ApiJobState): ApiJob => {
+    const rawData = values.get('data')
+    const rawStacktrace = values.get('stacktrace')
+    const rawTimestamp = values.get('timestamp')
+    const rawProcessedOn = values.get('processedOn')
+    const rawFinishedOn = values.get('finishedOn')
+
+    return formatJobInternal({
+        id: values.get('id') || '',
+        name: values.get('name') || '',
+        data: JSON.parse(rawData || '{}'),
+        failedReason: values.get('failedReason') || null,
+        stacktrace: rawStacktrace ? JSON.parse(rawStacktrace) : null,
+        timestamp: rawTimestamp ? parseInt(rawTimestamp, 10) : 0,
+        processedOn: rawProcessedOn ? parseInt(rawProcessedOn, 10) : null,
+        finishedOn: rawFinishedOn ? parseInt(rawFinishedOn, 10) : null,
+        state,
+    })
 }
 
 /**
