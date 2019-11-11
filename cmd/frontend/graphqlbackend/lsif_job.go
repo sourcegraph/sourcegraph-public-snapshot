@@ -36,16 +36,25 @@ func lsifJobByGQLID(ctx context.Context, id graphql.ID) (*lsifJobResolver, error
 	return &lsifJobResolver{lsifJob: lsifJob}, nil
 }
 
-func (r *lsifJobResolver) ID() graphql.ID         { return marshalLSIFJobGQLID(r.lsifJob.ID) }
-func (r *lsifJobResolver) Name() string           { return r.lsifJob.Name }
-func (r *lsifJobResolver) Args() JSONValue        { return JSONValue{r.lsifJob.Args} }
-func (r *lsifJobResolver) State() string          { return strings.ToUpper(r.lsifJob.State) }
-func (r *lsifJobResolver) Progress() float64      { return r.lsifJob.Progress }
-func (r *lsifJobResolver) FailedReason() *string  { return r.lsifJob.FailedReason }
-func (r *lsifJobResolver) Stacktrace() *[]string  { return r.lsifJob.Stacktrace }
-func (r *lsifJobResolver) Timestamp() DateTime    { return DateTime{Time: r.lsifJob.Timestamp} }
-func (r *lsifJobResolver) ProcessedOn() *DateTime { return DateTimeOrNil(r.lsifJob.ProcessedOn) }
-func (r *lsifJobResolver) FinishedOn() *DateTime  { return DateTimeOrNil(r.lsifJob.FinishedOn) }
+func (r *lsifJobResolver) ID() graphql.ID       { return marshalLSIFJobGQLID(r.lsifJob.ID) }
+func (r *lsifJobResolver) JobType() string      { return r.lsifJob.JobType }
+func (r *lsifJobResolver) Arguments() JSONValue { return JSONValue{r.lsifJob.Argumentss} }
+func (r *lsifJobResolver) State() string        { return strings.ToUpper(r.lsifJob.State) }
+func (r *lsifJobResolver) Failure() *lsifFailureReasonResolver {
+	return &lsifFailureReasonResolver{r.lsifJob.Failure}
+}
+func (r *lsifJobResolver) QueuedAt() DateTime   { return DateTime{Time: r.lsifJob.QueuedAt} }
+func (r *lsifJobResolver) StartedAt() *DateTime { return DateTimeOrNil(r.lsifJob.StartedAt) }
+func (r *lsifJobResolver) CompletedOrErroredAt() *DateTime {
+	return DateTimeOrNil(r.lsifJob.CompletedOrErroredAt)
+}
+
+type lsifFailureReasonResolver struct {
+	lsifJobFailure *types.LSIFJobFailure
+}
+
+func (r *lsifFailureReasonResolver) Summary() string       { return r.lsifJobFailure.Summary }
+func (r *lsifFailureReasonResolver) Stacktraces() []string { return r.lsifJobFailure.Stacktraces }
 
 func marshalLSIFJobGQLID(lsifJobID string) graphql.ID {
 	return relay.MarshalID("LSIFJob", lsifJobID)
