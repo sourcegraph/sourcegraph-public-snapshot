@@ -38,9 +38,9 @@ func ReadFile(ctx context.Context, repo gitserver.Repo, commit api.CommitID, nam
 	return b, nil
 }
 
-// GetFileReader returns an io.ReadCloser reading from the named file at commit.
+// NewFileReader returns an io.ReadCloser reading from the named file at commit.
 // The caller should always close the reader after use
-func GetFileReader(ctx context.Context, repo gitserver.Repo, commit api.CommitID, name string) (io.ReadCloser, error) {
+func NewFileReader(ctx context.Context, repo gitserver.Repo, commit api.CommitID, name string) (io.ReadCloser, error) {
 	if Mocks.GetFileReader != nil {
 		return Mocks.GetFileReader(commit, name)
 	}

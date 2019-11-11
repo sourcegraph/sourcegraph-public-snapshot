@@ -53,12 +53,12 @@ func TestRead(t *testing.T) {
 	}
 
 	for name, test := range tests {
-		t.Run(name+"-"+"ReadFile", func(t *testing.T) {
+		t.Run(name+"-ReadFile", func(t *testing.T) {
 			data, err := git.ReadFile(ctx, repo, commitID, test.file, test.maxBytes)
 			test.checkFn(t, err, data)
 		})
-		t.Run(name+"-"+"GetFileReader", func(t *testing.T) {
-			rc, err := git.GetFileReader(ctx, repo, commitID, test.file)
+		t.Run(name+"-GetFileReader", func(t *testing.T) {
+			rc, err := git.NewFileReader(ctx, repo, commitID, test.file)
 			if err != nil {
 				t.Fatal(err)
 			}
