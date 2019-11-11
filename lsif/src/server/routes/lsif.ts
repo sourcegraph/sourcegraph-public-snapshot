@@ -53,6 +53,14 @@ export function createLsifRouter(
 ): express.Router {
     const router = express.Router()
 
+    // Used to validate commit hashes are 40 hex digits
+    const commitPattern = /^[a-f0-9]{40}$/
+
+    /**
+     * Ensure roots end with a slash, unless it refers to the top-level directory.
+     *
+     * @param root The input root.
+     */
     const sanitizeRoot = (root: string | undefined): string => {
         if (root === undefined || root === '/' || root === '') {
             return ''
@@ -61,22 +69,14 @@ export function createLsifRouter(
         return root.endsWith('/') ? root : root + '/'
     }
 
-    const commitPattern = /^[a-f0-9]{40}$/
-    const validateRepository = validation.validateNonEmptyString('repository')
-    const validateCommit = validation.validateNonEmptyString('commit').matches(commitPattern)
-    const validateRoot = validation.validateOptionalString('root').customSanitizer(sanitizeRoot)
-    const validateFile = validation.validateNonEmptyString('file')
-    const validateBlocking = validation.validateOptionalBoolean('blocking')
-    const validateMaxWait = validation.validateOptionalInt('maxWait')
-
     router.post(
         '/upload',
         validation.validationMiddleware([
-            validateRepository,
-            validateCommit,
-            validateRoot,
-            validateBlocking,
-            validateMaxWait,
+            validation.validateNonEmptyString('repository'),
+            validation.validateNonEmptyString('commit').matches(commitPattern),
+            validation.validateOptionalString('root').customSanitizer(sanitizeRoot),
+            validation.validateOptionalBoolean('blocking'),
+            validation.validateOptionalInt('maxWait'),
         ]),
         wrap(
             async (req: express.Request & { span?: Span }, res: express.Response): Promise<void> => {
@@ -138,7 +138,11 @@ export function createLsifRouter(
     router.post(
         '/exists',
         bodyParser.json({ limit: '1mb' }),
-        validation.validationMiddleware([validateRepository, validateCommit, validateFile]),
+        validation.validationMiddleware([
+            validation.validateNonEmptyString('repository'),
+            validation.validateNonEmptyString('commit').matches(commitPattern),
+            validation.validateNonEmptyString('file'),
+        ]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { repository, commit, file }: { repository: string; commit: string; file: string } = req.query
@@ -159,8 +163,8 @@ export function createLsifRouter(
         '/request',
         bodyParser.json({ limit: '1mb' }),
         validation.validationMiddleware([
-            validateRepository,
-            validateCommit,
+            validation.validateNonEmptyString('repository'),
+            validation.validateNonEmptyString('commit').matches(commitPattern),
             validation.validateLimit(settings.DEFAULT_REFERENCES_NUM_REMOTE_DUMPS),
             validation.validateCursor<ReferencePaginationCursor>(),
             ...checkSchema(requestBodySchema, ['body']),
