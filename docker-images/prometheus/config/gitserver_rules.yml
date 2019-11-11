@@ -6,4 +6,4 @@ groups:
       - record: gitserver_error_rate10m_percent
         expr: sum(rate(src_gitserver_request_duration_seconds_count{code=~"5.."}[10m])) / sum(rate(src_gitserver_request_duration_seconds_count[10m]))
       - record: gitserver_health_warning
-        expr: gitserver_error_rate10m_percent > 0.3 or gitserver_disk_free_percent < 0.2 or vector(0)
+        expr: clamp_max((gitserver_error_rate10m_percent > 0.3 or vector(0)) + (gitserver_disk_free_percent < 0.2 or vector(0)), 1)
