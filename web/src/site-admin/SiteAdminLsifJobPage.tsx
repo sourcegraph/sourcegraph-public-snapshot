@@ -47,10 +47,6 @@ export const SiteAdminLsifJobPage: FunctionComponent<Props> = ({
     return (
         <div className="site-admin-lsif-job-page w-100">
             <PageTitle title="LSIF Jobs - Admin" />
-            <div className="mt-3 mb-1">
-                {jobOrError && !isErrorLike(jobOrError) && <h2 className="mb-0">{lsifJobDescription(jobOrError)}</h2>}
-            </div>
-
             {!jobOrError ? (
                 <LoadingSpinner className="icon-inline" />
             ) : isErrorLike(jobOrError) ? (
@@ -59,6 +55,10 @@ export const SiteAdminLsifJobPage: FunctionComponent<Props> = ({
                 </div>
             ) : (
                 <>
+                    <div className="mt-3 mb-1">
+                        <h2 className="mb-0">{lsifJobDescription(jobOrError)}</h2>
+                    </div>
+
                     {jobOrError.state === GQL.LSIFJobState.PROCESSING ? (
                         <div className="alert alert-primary mb-4 mt-3">
                             <LoadingSpinner className="icon-inline" /> Job is currently being processed...{' '}
