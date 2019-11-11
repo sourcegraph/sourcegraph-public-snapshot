@@ -38,7 +38,7 @@
     "uuid": "^3.3.3",
     "vscode-languageserver": "^5.2.1",
     "winston": "^3.2.1",
-    "yallist": "^3.0.3"
+    "yallist": "^4.0.0"
   },
   "devDependencies": {
     "@sourcegraph/tsconfig": "^4.0.0",
