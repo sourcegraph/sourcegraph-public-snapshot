@@ -86,9 +86,10 @@ export async function getCommitsNear(
 }
 
 /**
- * Convert git log output into a map of (`child`, `parent`) commits. Each line should
- * have the form `commit parent1 parent2...`. Commits with no parents appear on a line
- * of their own.
+ * Convert git log output into a parentage map. Each line of the input should have the
+ * form `commit p1 p2 p3...`, where commits without a parent appear on a line of their
+ * own. The output is a map of pairs `(child, parent)`. Commits without a parent will
+ * be returend as `(child, '')`.
  *
  * @param lines The output lines of `git log`.
  */
