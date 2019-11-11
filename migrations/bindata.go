@@ -62,6 +62,8 @@
 // 1528395611_add_unique_constraint_to_campaign_jobs.up.sql (178B)
 // 1528395612_validate_campaign_plan_completion_with_trigger.down.sql (305B)
 // 1528395612_validate_campaign_plan_completion_with_trigger.up.sql (1.04kB)
+// 1528395613_create_changeset_jobs_table.down.sql (54B)
+// 1528395613_create_changeset_jobs_table.up.sql (829B)
 
 package migrations
 
@@ -1370,6 +1372,46 @@ func _1528395612_validate_campaign_plan_completion_with_triggerUpSql() (*asset, 
 	return a, nil
 }
 
+var __1528395613_create_changeset_jobs_tableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x89\xcf\xca\x4f\x2a\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xd6\x7b\x79\xcc\x36\x00\x00\x00")
+
+func _1528395613_create_changeset_jobs_tableDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395613_create_changeset_jobs_tableDownSql,
+		"1528395613_create_changeset_jobs_table.down.sql",
+	)
+}
+
+func _1528395613_create_changeset_jobs_tableDownSql() (*asset, error) {
+	bytes, err := _1528395613_create_changeset_jobs_tableDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395613_create_changeset_jobs_table.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x1c, 0x97, 0x6f, 0xe4, 0x29, 0xbe, 0xbb, 0x13, 0x25, 0xa, 0x67, 0xe, 0x67, 0xd5, 0x39, 0xc1, 0x4b, 0x1a, 0x58, 0x3b, 0x7d, 0x1f, 0x6d, 0x7a, 0x4a, 0xa1, 0x1c, 0xd7, 0x6c, 0x21, 0xb0, 0xe7}}
+	return a, nil
+}
+
+var __1528395613_create_changeset_jobs_tableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x92\xc1\x6e\xa3\x30\x14\x45\xf7\xfe\x8a\xbb\x04\x29\x7f\xc0\xca\x09\x2f\x23\x6b\xc0\xcc\x38\x46\x6a\x56\xc8\x09\x6e\xe2\xa8\x81\x14\x1c\xb5\xea\xd7\x57\x21\x6a\xa0\x50\xb5\xcd\xd6\xc7\x3e\xd7\x57\xef\xcd\xe9\x8f\x90\x11\x63\x0b\x45\x5c\x13\x34\x9f\x27\x84\xed\xde\x54\x3b\xdb\x5a\x5f\x1c\xea\x4d\x8b\x80\x01\xae\xc4\xc6\xed\x5a\xdb\x38\xf3\x84\x7f\x4a\xa4\x5c\xad\xf1\x97\xd6\x33\xc6\x80\xad\x39\x9e\x8c\xdb\x55\xc5\xf5\x96\xab\x3c\x64\xa6\x21\xf3\x24\x81\xa2\x25\x29\x92\x0b\x5a\xdd\xae\xb5\x81\x2b\x43\x06\x00\xf1\x05\xaa\x2e\x53\x48\xa1\x05\x4f\x92\x35\x44\x9a\x52\x2c\xb8\xa6\xcf\xee\x43\xbd\xf9\xa5\xbf\xfb\xf5\x5d\x19\xb7\xbe\x7d\xc0\xd0\xfb\x81\xef\x92\xda\xa6\xa9\x1b\x78\xfb\xea\xaf\x19\x8d\x35\xde\x96\x85\xf1\xf0\xee\x68\x5b\x6f\x8e\x27\xff\xd6\xf7\x88\x69\xc9\xf3\x44\xa3\xaa\x5f\x82\x70\xc6\x80\xf3\xa9\xbc\xe7\x01\x03\x5a\x6f\x9a\xe9\x8b\x8b\xeb\xd1\x55\xae\xdd\x4f\x10\x0b\x23\xc6\x78\xa2\x49\x7d\x3d\x78\x1e\xc7\x58\x64\x72\xa5\x15\x17\x52\x8f\x68\x71\xae\xdc\xf3\xd9\xb2\x5c\x8a\xff\x39\x21\x18\x2c\xc1\x6c\x3c\xb5\xb0\xdf\x30\x21\x63\x7a\x18\xab\x06\x3f\xcf\xe4\x08\x06\x3d\x0c\xa3\x6f\x2d\xc3\x96\x53\xcd\x80\xfe\xe0\xb9\x4e\x6e\x6a\xe8\xce\xbb\x2a\x59\x9a\x0a\x1d\xb1\xf7\x00\x00\x00\xff\xff\xab\x27\x64\xe7\x3d\x03\x00\x00")
+
+func _1528395613_create_changeset_jobs_tableUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395613_create_changeset_jobs_tableUpSql,
+		"1528395613_create_changeset_jobs_table.up.sql",
+	)
+}
+
+func _1528395613_create_changeset_jobs_tableUpSql() (*asset, error) {
+	bytes, err := _1528395613_create_changeset_jobs_tableUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395613_create_changeset_jobs_table.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xb, 0x82, 0xbb, 0xbd, 0xb, 0x1d, 0x9a, 0x82, 0xb4, 0x11, 0xdc, 0xec, 0x79, 0x2b, 0x7e, 0xfe, 0x7a, 0xd0, 0xbc, 0x26, 0x39, 0xe1, 0x9b, 0x87, 0x5e, 0x7b, 0xf8, 0xfb, 0x2, 0x76, 0x8c, 0x8d}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1523,6 +1565,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395611_add_unique_constraint_to_campaign_jobs.up.sql":                 _1528395611_add_unique_constraint_to_campaign_jobsUpSql,
 	"1528395612_validate_campaign_plan_completion_with_trigger.down.sql":       _1528395612_validate_campaign_plan_completion_with_triggerDownSql,
 	"1528395612_validate_campaign_plan_completion_with_trigger.up.sql":         _1528395612_validate_campaign_plan_completion_with_triggerUpSql,
+	"1528395613_create_changeset_jobs_table.down.sql":                          _1528395613_create_changeset_jobs_tableDownSql,
+	"1528395613_create_changeset_jobs_table.up.sql":                            _1528395613_create_changeset_jobs_tableUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1628,6 +1672,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395611_add_unique_constraint_to_campaign_jobs.up.sql":                 {_1528395611_add_unique_constraint_to_campaign_jobsUpSql, map[string]*bintree{}},
 	"1528395612_validate_campaign_plan_completion_with_trigger.down.sql":       {_1528395612_validate_campaign_plan_completion_with_triggerDownSql, map[string]*bintree{}},
 	"1528395612_validate_campaign_plan_completion_with_trigger.up.sql":         {_1528395612_validate_campaign_plan_completion_with_triggerUpSql, map[string]*bintree{}},
+	"1528395613_create_changeset_jobs_table.down.sql":                          {_1528395613_create_changeset_jobs_tableDownSql, map[string]*bintree{}},
+	"1528395613_create_changeset_jobs_table.up.sql":                            {_1528395613_create_changeset_jobs_tableUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
