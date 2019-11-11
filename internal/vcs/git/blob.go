@@ -75,6 +75,8 @@ func readFileBytes(ctx context.Context, repo gitserver.Repo, commit api.CommitID
 	return data, nil
 }
 
+// blobReader, which should be created using newBlobReader, is a struct that allows
+// us to get a ReadCloser to a specific named file at a specific commit
 type blobReader struct {
 	ctx    context.Context
 	repo   gitserver.Repo
@@ -118,7 +120,7 @@ func (br *blobReader) Close() error {
 	return br.rc.Close()
 }
 
-// convertError converts an error returned from git show into a more appropriate error type
+// convertError converts an error returned from 'git show' into a more appropriate error type
 func (br *blobReader) convertError(err error) error {
 	if err == nil {
 		return nil
