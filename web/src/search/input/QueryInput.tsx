@@ -148,7 +148,6 @@ export class QueryInput extends React.Component<Props, State> {
                         // fuzzy-search suggestions, then return only static suggestions
                         if (
                             filterAndValueBeforeCursor &&
-                            isValidFilter(filterAndValueBeforeCursor.filter) &&
                             !fuzzySearchFilters.includes(filterAndValueBeforeCursor.filter)
                         ) {
                             return [{ suggestions: staticSuggestions }]
@@ -164,10 +163,7 @@ export class QueryInput extends React.Component<Props, State> {
                             map((suggestion): Suggestion => ({ ...suggestion, fromFuzzySearch: true })),
                             filter(suggestion => {
                                 // Only show fuzzy-suggestions that are relevant to the typed filter
-                                if (
-                                    filterAndValueBeforeCursor?.filter &&
-                                    isValidFilter(filterAndValueBeforeCursor.filter)
-                                ) {
+                                if (filterAndValueBeforeCursor?.filter) {
                                     return suggestion.type === filterAndValueBeforeCursor.filter
                                 }
                                 return true

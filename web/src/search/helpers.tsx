@@ -171,7 +171,7 @@ const isValidFilterAlias = (alias: string): alias is keyof typeof filterAliases 
 export const lastFilterAndValueBeforeCursor = (
     queryState: QueryState
 ): {
-    filter: string,
+    filter: SuggestionTypes,
     filterAndValue: string
     value: string
 } | null => {
@@ -181,7 +181,7 @@ export const lastFilterAndValueBeforeCursor = (
     const value = filterAndValue?.split(':')[1]?.trim()
     const absoluteFilter = filter?.replace(/^-/, '')
     const resolvedFilter = isValidFilterAlias(absoluteFilter) ? filterAliases[absoluteFilter] : absoluteFilter
-    return isValidFilter(filter) ? { filter: resolvedFilter, filterAndValue: filterAndValue.trim(), value } : null
+    return isValidFilter(resolvedFilter) ? { filter: resolvedFilter, filterAndValue: filterAndValue.trim(), value } : null
 }
 
 /**
@@ -209,7 +209,7 @@ export const filterStaticSuggestions = (
         filter !== SuggestionTypes.filters &&
         (value || filterAndValue.endsWith(':'))
     ) {
-        const suggestionsToShow = suggestions[filter] || []
+        const suggestionsToShow = suggestions[filter] ?? []
         return suggestionsToShow.values.filter(suggestion => suggestion.value.startsWith(value))
     }
 
@@ -297,7 +297,6 @@ export const formatQueryForFuzzySearch = (queryState: QueryState): string => {
     // Check if filter shold have its suggestions searched without influence from the rest of the query
     if (
         filterAndValueBeforeCursor &&
-        isValidFilter(filterAndValueBeforeCursor.filter) &&
         isolatedFuzzySearchFilters.includes(filterAndValueBeforeCursor.filter)
     ) {
         return filterAndValueBeforeCursor.filterAndValue
