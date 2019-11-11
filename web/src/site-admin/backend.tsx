@@ -613,8 +613,6 @@ export function fetchLsifJob({ id }: GQL.ILsifJobOnQueryArguments): Observable<G
     ).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
-            console.log(node)
-
             if (!node) {
                 return null
             }
