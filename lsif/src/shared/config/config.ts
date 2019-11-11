@@ -53,13 +53,9 @@ export async function waitForConfiguration(logger: Logger): Promise<() => Config
         }).catch(() => {})
     })
 
-    return () => {
-        if (oldConfiguration === undefined) {
-            throw new Error('Configuration is not defined.')
-        }
-
-        return oldConfiguration
-    }
+    // This value is guaranteed to be set by the resolution of the promise above
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return () => oldConfiguration!
 }
 
 /**
