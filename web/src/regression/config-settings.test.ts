@@ -1,11 +1,6 @@
 import { getTestTools } from './util/init'
 import { getConfig } from '../../../shared/src/e2e/config'
-import {
-    editCriticalSiteConfig,
-    ensureLoggedInOrCreateTestUser,
-    getCriticalSiteConfig,
-    existsElementWithText,
-} from './util/helpers'
+import { editCriticalSiteConfig, getCriticalSiteConfig } from './util/helpers'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import * as jsonc from '@sqs/jsonc-parser'
 import { getManagementConsoleState } from './util/api'
@@ -13,7 +8,7 @@ import { Driver } from '../../../shared/src/e2e/driver'
 import { GraphQLClient } from './util/GraphQLClient'
 import { TestResourceManager } from './util/TestResourceManager'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
-import { GitHubAuthProvider, CriticalConfiguration, BuiltinAuthProvider } from '../schema/critical.schema'
+import { CriticalConfiguration, BuiltinAuthProvider } from '../schema/critical.schema'
 
 /**
  * @jest-environment node
@@ -45,7 +40,7 @@ describe('Critical config test suite', () => {
         }
         managementConsolePassword = plaintextPassword
     })
-    beforeEach(async () => {
+    beforeEach(() => {
         resourceManager = new TestResourceManager()
     })
     afterEach(async () => {

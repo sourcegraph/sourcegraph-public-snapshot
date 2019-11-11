@@ -10,7 +10,7 @@ import {
 } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { GraphQLClient } from './GraphQLClient'
-import { map, tap, retryWhen, delayWhen, take, mergeMap, catchError } from 'rxjs/operators'
+import { map, tap, retryWhen, delayWhen, take, mergeMap } from 'rxjs/operators'
 import { zip, timer, concat, throwError, defer, Observable } from 'rxjs'
 import { CloneInProgressError, ECLONEINPROGESS, EREPONOTFOUND } from '../../../../shared/src/backend/errors'
 import { isErrorLike, createAggregateError } from '../../../../shared/src/util/errors'

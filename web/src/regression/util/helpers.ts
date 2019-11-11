@@ -21,7 +21,7 @@ import {
 import { fromFetch } from 'rxjs/fetch'
 
 /**
- * Create the user with the specified password. Returns a destructor that destroys the test user.
+ * Create the user with the specified password. Returns a destructor that destroys the test user. Assumes basic auth.
  */
 export async function ensureLoggedInOrCreateTestUser(
     driver: Driver,
@@ -276,4 +276,78 @@ export async function editCriticalSiteConfig(
             })
         },
     }
+}
+
+export async function login(
+    driver: Driver,
+    {
+        sourcegraphBaseUrl,
+        authProviderDisplayName,
+    }: Pick<Config, 'sourcegraphBaseUrl'> & { authProviderDisplayName: string },
+    loginToAuthProvider: () => Promise<void>
+): Promise<void> {
+    await driver.page.goto(sourcegraphBaseUrl + '/-/sign-out')
+    await driver.newPage()
+    await driver.page.goto(sourcegraphBaseUrl)
+    await driver.page.reload()
+    await (await driver.findElementWithText('Sign in with ' + authProviderDisplayName, {
+        selector: 'a',
+        wait: { timeout: 5000 },
+    })).click()
+    await driver.page.waitForNavigation()
+    if (driver.page.url() !== sourcegraphBaseUrl + '/search') {
+        await loginToAuthProvider()
+        try {
+            await driver.page.waitForFunction(
+                url => document.location.href === url,
+                { timeout: 5 * 1000 },
+                sourcegraphBaseUrl + '/search'
+            )
+        } catch (err) {
+            throw new Error('unsuccessful login')
+        }
+    }
+}
+
+export async function loginToOkta(driver: Driver, username: string, password: string): Promise<void> {
+    await driver.page.waitForSelector('#okta-signin-username')
+    await driver.replaceText({
+        selector: '#okta-signin-username',
+        newText: username,
+    })
+    await driver.replaceText({
+        selector: '#okta-signin-password',
+        newText: password,
+    })
+    await (await driver.page.waitForSelector('#okta-signin-submit')).click()
+}
+
+export async function loginToGitHub(driver: Driver, username: string, password: string): Promise<void> {
+    await driver.page.waitForSelector('#login_field')
+    await driver.replaceText({
+        selector: '#login_field',
+        newText: username,
+        selectMethod: 'keyboard',
+        enterTextMethod: 'paste',
+    })
+    await driver.replaceText({
+        selector: '#password',
+        newText: password,
+        selectMethod: 'keyboard',
+        enterTextMethod: 'paste',
+    })
+    await driver.page.keyboard.press('Enter')
+}
+
+export async function loginToGitLab(driver: Driver, username: string, password: string): Promise<void> {
+    await driver.page.waitForSelector('input[name="user[login]"]', { timeout: 2000 })
+    await driver.replaceText({
+        selector: '#user_login',
+        newText: username,
+    })
+    await driver.replaceText({
+        selector: '#user_password',
+        newText: password,
+    })
+    await (await driver.page.waitForSelector('input[data-qa-selector="sign_in_button"]')).click()
 }
