@@ -37,7 +37,7 @@ describe('splitLines', () => {
     it('should split input by newline', async () => {
         const chunks = ['foo\n', 'bar', '\nbaz\n\nbonk\nqu', 'ux']
 
-        const lines = []
+        const lines: string[] = []
         for await (const line of splitLines(generate(chunks))) {
             lines.push(line)
         }
@@ -55,7 +55,7 @@ describe('parseJsonLines', () => {
             { type: 'edge', label: 'moniker' },
         ]
 
-        const elements: any[] = []
+        const elements: unknown[] = []
         for await (const element of parseJsonLines(generate(lines.map(l => JSON.stringify(l))))) {
             elements.push(element)
         }
@@ -92,6 +92,9 @@ async function* generate<T>(values: T[]): AsyncIterable<T> {
 }
 
 async function consume(iterable: AsyncIterable<unknown>): Promise<void> {
+    // We need to consume the iterable but can't make a meaningful
+    // binding for each element of the iteration.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     for await (const _ of iterable) {
         // no-op body, just consume iterable
     }

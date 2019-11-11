@@ -17,7 +17,6 @@ describe('Backend', () => {
     it('should find all simple defs of `add` from a.ts', async () => {
         if (!ctx.backend) {
             fail('failed beforeAll')
-            return
         }
 
         const definitions = await ctx.backend.definitions(repository, commit, 'src/a.ts', { line: 0, character: 17 })
@@ -27,7 +26,6 @@ describe('Backend', () => {
     it('should find all simple defs of `add` from b.ts', async () => {
         if (!ctx.backend) {
             fail('failed beforeAll')
-            return
         }
 
         const definitions = await ctx.backend.definitions(repository, commit, 'src/b.ts', { line: 2, character: 1 })
@@ -37,7 +35,6 @@ describe('Backend', () => {
     it('should find all simple refs of `add` from a.ts', async () => {
         if (!ctx.backend) {
             fail('failed beforeAll')
-            return
         }
 
         const { locations } = util.filterNodeModules(

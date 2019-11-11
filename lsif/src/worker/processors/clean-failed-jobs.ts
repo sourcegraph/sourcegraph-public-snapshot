@@ -9,8 +9,8 @@ import { logAndTraceCall, TracingContext } from '../../shared/tracing'
  * This assumes that a conversion job's total duration (from enqueue to completion) is less
  * than this interval during healthy operation.
  */
-export const createCleanFailedJobsProcessor = () => async (_: {}, ctx: TracingContext): Promise<void> => {
-    await logAndTraceCall(ctx, 'cleaning failed jobs', async (ctx: TracingContext) => {
+export const createCleanFailedJobsProcessor = () => async (_: unknown, ctx: TracingContext): Promise<void> => {
+    await logAndTraceCall(ctx, 'cleaning failed jobs', async () => {
         const purgeFile = async (filename: string): Promise<void> => {
             const stat = await fs.stat(filename)
             if (Date.now() - stat.mtimeMs >= settings.FAILED_JOB_MAX_AGE) {
