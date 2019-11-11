@@ -2,16 +2,19 @@ import * as constants from '../../shared/constants'
 import * as fs from 'mz/fs'
 import * as path from 'path'
 import * as settings from '../settings'
+import * as validation from '../middleware/validation'
 import bodyParser from 'body-parser'
 import express from 'express'
 import pTimeout from 'p-timeout'
 import uuid from 'uuid'
 import { addTags, logAndTraceCall, TracingContext } from '../../shared/tracing'
 import { Backend, ReferencePaginationCursor } from '../backend/backend'
+import { checkSchema, ParamSchema } from 'express-validator'
 import { encodeCursor, parseCursor } from '../pagination/cursor'
 import { enqueue } from '../../shared/queue/queue'
 import { extractLimit } from '../pagination/limit-offset'
 import { Logger } from 'winston'
+import { lsp } from 'lsif-protocol'
 import { nextLink } from '../pagination/link'
 import { pipeline as _pipeline } from 'stream'
 import { promisify } from 'util'
@@ -36,68 +39,6 @@ const createTracingContext = (
 ): TracingContext => addTags({ logger, span: req.span }, tags)
 
 /**
- * Adds a trailing slash to a root unless it refers to the top level.
- *
- * - 'foo' -> 'foo/'
- * - 'foo/' -> 'foo/'
- * - '/' -> ''
- * - '' -> ''
- */
-const normalizeRoot = (root: any): string => {
-    if (root === undefined || root === '/' || root === '') {
-        return ''
-    }
-
-    if (typeof root !== 'string') {
-        throw Object.assign(new Error('root must be a string'), {
-            status: 422,
-        })
-    }
-
-    return root.endsWith('/') ? root : root + '/'
-}
-
-/**
- * Throws an error with status 400 if the repository string is invalid.
- */
-const validateRepository = (repository: any): void => {
-    if (typeof repository !== 'string') {
-        throw Object.assign(new Error(`Must specify a repository ${repository}`), {
-            status: 400,
-        })
-    }
-}
-
-/**
- * Throws an error with status 400 if the commit string is invalid.
- */
-const validateCommit = (commit: any): void => {
-    if (typeof commit !== 'string' || commit.length !== 40 || !/^[0-9a-f]+$/.test(commit)) {
-        throw Object.assign(new Error(`Must specify the commit as a 40 character hash ${commit}`), { status: 400 })
-    }
-}
-
-/**
- * Throws an error with status 400 if the file is not present.
- */
-const validateFile = (file: any): void => {
-    if (typeof file !== 'string') {
-        throw Object.assign(new Error(`Must specify a file ${file}`), { status: 400 })
-    }
-}
-
-/**
- * Throws an error with status 422 if the requested method is not supported.
- */
-const validateMethod = (method: string, supportedMethods: string[]): void => {
-    if (!supportedMethods.includes(method)) {
-        throw Object.assign(new Error(`Method must be one of ${Array.from(supportedMethods).join(', ')}`), {
-            status: 422,
-        })
-    }
-}
-
-/**
  * Create a router containing the LSIF upload and query endpoints.
  *
  * @param backend The backend instance.
@@ -113,29 +54,51 @@ export function createLsifRouter(
 ): express.Router {
     const router = express.Router()
 
+    const sanitizeRoot = (root: string | undefined): string => {
+        if (root === undefined || root === '/' || root === '') {
+            return ''
+        }
+
+        return root.endsWith('/') ? root : root + '/'
+    }
+
+    const commitPattern = /^[a-f0-9]{40}$/
+    const validateRepository = validation.validateNonEmptyString('repository')
+    const validateCommit = validation.validateNonEmptyString('commit').matches(commitPattern)
+    const validateRoot = validation.validateOptionalString('root').customSanitizer(sanitizeRoot)
+    const validateFile = validation.validateNonEmptyString('file')
+    const validateBlocking = validation.validateOptionalBoolean('blocking')
+    const validateMaxWait = validation.validateOptionalInt('maxWait')
+
     router.post(
         '/upload',
+        validation.validationMiddleware([
+            validateRepository,
+            validateCommit,
+            validateRoot,
+            validateBlocking,
+            validateMaxWait,
+        ]),
         wrap(
             async (req: express.Request & { span?: Span }, res: express.Response): Promise<void> => {
-                const { repository, commit, root: rootRaw, blocking, maxWait } = req.query
-                const root = normalizeRoot(rootRaw)
-                const timeout = parseInt(maxWait, 10) || 0
-                validateRepository(repository)
-                validateCommit(commit)
-
-                const ctx = createTracingContext(logger, req, {
+                const {
                     repository,
                     commit,
                     root,
-                })
+                    blocking,
+                    maxWait,
+                }: {
+                    repository: string
+                    commit: string
+                    root: string
+                    blocking: boolean
+                    maxWait: number
+                } = req.query
+
+                const ctx = createTracingContext(logger, req, { repository, commit, root })
                 const filename = path.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR, uuid.v4())
                 const output = fs.createWriteStream(filename)
-
-                try {
-                    await logAndTraceCall(ctx, 'uploading dump', () => pipeline(req, output))
-                } catch (e) {
-                    throw Object.assign(e, { status: 422 })
-                }
+                await logAndTraceCall(ctx, 'uploading dump', () => pipeline(req, output))
 
                 // Enqueue convert job
                 logger.debug('enqueueing convert job', { repository, commit, root })
@@ -144,19 +107,20 @@ export function createLsifRouter(
 
                 if (blocking) {
                     let promise = job.finished()
-                    if (timeout >= 0) {
-                        promise = pTimeout(promise, timeout * 1000)
+                    if (!isNaN(maxWait)) {
+                        promise = pTimeout(promise, maxWait * 1000)
                     }
 
                     try {
                         await promise
 
                         // Job succeeded while blocked, send success
-                        res.status(200)
-                        res.send({ id: job.id })
+                        res.status(200).send({ id: job.id })
                         return
                     } catch (error) {
-                        // Throw the job error, but not the timeout error
+                        // Throw a job error, if one occurred. If we caught a timeout
+                        // just fall-through and return a 202 response. The user can
+                        // check the progress asynchronously with subsequent API calls.
                         if (!error.message.includes('Promise timed out')) {
                             throw error
                         }
@@ -167,8 +131,7 @@ export function createLsifRouter(
                 // the job id so that the client can continue to track the progress
                 // asynchronously.
 
-                res.status(202)
-                res.send({ id: job.id })
+                res.status(202).send({ id: job.id })
             }
         )
     )
@@ -176,29 +139,39 @@ export function createLsifRouter(
     router.post(
         '/exists',
         bodyParser.json({ limit: '1mb' }),
+        validation.validationMiddleware([validateRepository, validateCommit, validateFile]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
-                const { repository, commit, file } = req.query
-                validateRepository(repository)
-                validateCommit(commit)
-                validateFile(file)
-
+                const { repository, commit, file }: { repository: string; commit: string; file: string } = req.query
                 const ctx = createTracingContext(logger, req, { repository, commit })
                 res.json(await backend.exists(repository, commit, file, ctx))
             }
         )
     )
 
+    const requestBodySchema: Record<string, ParamSchema> = {
+        path: { isString: true, isEmpty: { negated: true } },
+        'position.line': { isInt: true },
+        'position.character': { isInt: true },
+        method: { isIn: { options: [['definitions', 'references', 'hover']] } },
+    }
+
     router.post(
         '/request',
         bodyParser.json({ limit: '1mb' }),
+        validation.validationMiddleware([
+            validateRepository,
+            validateCommit,
+            ...checkSchema(requestBodySchema, ['body']),
+        ]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
-                const { repository, commit } = req.query
-                const { path: filePath, position, method } = req.body
-                validateRepository(repository)
-                validateCommit(commit)
-                validateMethod(method, ['definitions', 'references', 'hover'])
+                const { repository, commit }: { repository: string; commit: string } = req.query
+                const {
+                    path: filePath,
+                    position,
+                    method,
+                }: { path: string; position: lsp.Position; method: string } = req.body
 
                 const ctx = createTracingContext(logger, req, { repository, commit })
 
@@ -207,12 +180,8 @@ export function createLsifRouter(
                         res.json(await backend.definitions(repository, commit, filePath, position, ctx))
                         break
 
-                    case 'hover':
-                        res.json(await backend.hover(repository, commit, filePath, position, ctx))
-                        break
-
                     case 'references': {
-                        const { cursor: cursorRaw } = req.query
+                        const { cursor: cursorRaw }: { cursor: string } = req.query
                         const limit = extractLimit(req, settings.DEFAULT_REFERENCES_NUM_REMOTE_DUMPS)
                         const startCursor = parseCursor<ReferencePaginationCursor>(cursorRaw)
 
@@ -233,6 +202,10 @@ export function createLsifRouter(
                         res.json(locations)
                         break
                     }
+
+                    case 'hover':
+                        res.json(await backend.hover(repository, commit, filePath, position, ctx))
+                        break
                 }
             }
         )

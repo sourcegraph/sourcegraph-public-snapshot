@@ -6,6 +6,7 @@ import { Logger } from 'winston'
 import { nextLink } from '../pagination/link'
 import { Tracer } from 'opentracing'
 import { wrap } from 'async-middleware'
+import * as validation from '../middleware/validation'
 
 /**
  * Create a router containing the LSIF dump endpoints.
@@ -17,14 +18,17 @@ import { wrap } from 'async-middleware'
 export function createDumpRouter(backend: Backend, logger: Logger, tracer: Tracer | undefined): express.Router {
     const router = express.Router()
 
+    const validateQuery = validation.validateOptionalString('query')
+    const validateVisibleAtTip = validation.validateOptionalBoolean('visibleAtTip')
+
     router.get(
         '/dumps/:repository',
+        validation.validationMiddleware([validateQuery, validateVisibleAtTip]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { repository } = req.params
-                const { query, visibleAtTip: visibleAtTipRaw } = req.query
+                const { query, visibleAtTip }: { query: string; visibleAtTip: boolean } = req.query
                 const { limit, offset } = limitOffset(req, settings.DEFAULT_DUMP_PAGE_SIZE)
-                const visibleAtTip = visibleAtTipRaw === 'true'
                 const { dumps, totalCount } = await backend.dumps(
                     decodeURIComponent(repository),
                     query,

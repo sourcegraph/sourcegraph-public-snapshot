@@ -1,4 +1,5 @@
 import * as settings from '../settings'
+import * as validation from '../middleware/validation'
 import express from 'express'
 import { ApiJobState, QUEUE_PREFIX, queueTypes, statesByQueue } from '../../shared/queue/queue'
 import { chunk } from 'lodash'
@@ -111,6 +112,8 @@ export function createJobRouter(
 ): express.Router {
     const router = express.Router()
 
+    const validateQuery = validation.validateOptionalString('query')
+
     router.get(
         '/jobs/stats',
         wrap(
@@ -130,10 +133,11 @@ export function createJobRouter(
 
     router.get(
         `/jobs/:state(${Array.from(queueTypes.keys()).join('|')})`,
+        validation.validationMiddleware([validateQuery]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { state } = req.params as { state: ApiJobState }
-                const { query } = req.query
+                const { query }: { query: string } = req.query
                 const { limit, offset } = limitOffset(req, settings.DEFAULT_JOB_PAGE_SIZE)
 
                 const queueName = queueTypes.get(state)
