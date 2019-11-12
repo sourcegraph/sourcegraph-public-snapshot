@@ -10,8 +10,6 @@ import { Timestamp } from '../../components/time/Timestamp'
 import { Collapsible } from '../../components/Collapsible'
 import { useObservable } from '../../util/useObservable'
 import { Observable } from 'rxjs'
-import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { ErrorAlert } from '../../components/alerts'
 
 const LsifDumpNode: FunctionComponent<{ node: GQL.ILSIFDump }> = ({ node }) => (
     <div className="w-100 list-group-item py-2 lsif-data__main">
@@ -84,23 +82,20 @@ export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ rep
         [repo.id]
     )
 
-    const fromObservable = useCallback(
-        (state: GQL.LSIFJobState): Observable<GQL.ILSIFJobConnection | ErrorLike> =>
-            fetchLsifJobs({
-                query: `convert ${repo.name}`,
-                state,
-                first: 5,
-            }),
-        [repo.name]
-    )
+    const fetchJobs = (name: string, state: GQL.LSIFJobState): Observable<GQL.ILSIFJobConnection> =>
+        fetchLsifJobs({
+            query: `convert ${name}`,
+            state,
+            first: 5,
+        })
 
-    const activeLsifJobs = useObservable(useMemo(() => fromObservable(GQL.LSIFJobState.PROCESSING), [fromObservable]))
-    const queuedLsifJobs = useObservable(useMemo(() => fromObservable(GQL.LSIFJobState.QUEUED), [fromObservable]))
-    const failedLsifJobs = useObservable(useMemo(() => fromObservable(GQL.LSIFJobState.ERRORED), [fromObservable]))
+    const activeLsifJobs = useObservable(useMemo(() => fetchJobs(repo.name, GQL.LSIFJobState.PROCESSING), [repo.name]))
+    const queuedLsifJobs = useObservable(useMemo(() => fetchJobs(repo.name, GQL.LSIFJobState.QUEUED), [repo.name]))
+    const failedLsifJobs = useObservable(useMemo(() => fetchJobs(repo.name, GQL.LSIFJobState.ERRORED), [repo.name]))
 
-    const activeCount = (activeLsifJobs && !isErrorLike(activeLsifJobs) && activeLsifJobs.nodes.length) || 0
-    const queuedCount = (queuedLsifJobs && !isErrorLike(queuedLsifJobs) && queuedLsifJobs.nodes.length) || 0
-    const failedCount = (failedLsifJobs && !isErrorLike(failedLsifJobs) && failedLsifJobs.nodes.length) || 0
+    const activeCount = (activeLsifJobs && activeLsifJobs.nodes.length) || 0
+    const queuedCount = (queuedLsifJobs && queuedLsifJobs.nodes.length) || 0
+    const failedCount = (failedLsifJobs && failedLsifJobs.nodes.length) || 0
 
     const activityTitle = (
         <>
@@ -110,13 +105,13 @@ export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ rep
                 {activeCount + queuedCount > 0 && (
                     <span className="badge badge-primary badge-pill ml-1">
                         {activeCount + queuedCount}
-                        {queuedLsifJobs && !isErrorLike(queuedLsifJobs) && queuedLsifJobs.pageInfo.hasNextPage && '+'}
+                        {queuedLsifJobs && queuedLsifJobs.pageInfo.hasNextPage && '+'}
                     </span>
                 )}
                 {failedCount > 0 && (
                     <span className="badge badge-danger badge-pill ml-1">
                         {failedCount}
-                        {failedLsifJobs && !isErrorLike(failedLsifJobs) && failedLsifJobs.pageInfo.hasNextPage && '+'}
+                        {failedLsifJobs && failedLsifJobs.pageInfo.hasNextPage && '+'}
                     </span>
                 )}
             </div>
@@ -167,13 +162,9 @@ export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ rep
                     <div>
                         <h3>Pending and active LSIF uploads</h3>
 
-                        {activeLsifJobs === undefined || queuedLsifJobs === undefined ? (
-                            <></>
-                        ) : isErrorLike(activeLsifJobs) ? (
-                            <ErrorAlert prefix="Error loading active LSIF jobs" error={activeLsifJobs} />
-                        ) : isErrorLike(queuedLsifJobs) ? (
-                            <ErrorAlert prefix="Error loading queued LSIF jobs" error={queuedLsifJobs} />
-                        ) : activeCount + queuedCount === 0 ? (
+                        {activeLsifJobs === undefined ||
+                        queuedLsifJobs === undefined ||
+                        activeCount + queuedCount === 0 ? (
                             <p>
                                 <small>No uploads are queued or currently being processed.</small>
                             </p>
@@ -183,14 +174,12 @@ export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ rep
 
                                 <div className="list-group list-group-flush mt-3">
                                     {activeLsifJobs &&
-                                        !isErrorLike(activeLsifJobs) &&
                                         activeLsifJobs.nodes.map(job => <LsifJobNode key={job.id} node={job} />)}
                                     {queuedLsifJobs &&
-                                        !isErrorLike(queuedLsifJobs) &&
                                         queuedLsifJobs.nodes.map(job => <LsifJobNode key={job.id} node={job} />)}
                                 </div>
 
-                                {queuedLsifJobs && !isErrorLike(queuedLsifJobs) && queuedLsifJobs.pageInfo.hasNextPage && (
+                                {queuedLsifJobs && queuedLsifJobs.pageInfo.hasNextPage && (
                                     <div className="mt-2">
                                         Showing five queued uploads.{' '}
                                         <Link
@@ -209,11 +198,7 @@ export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ rep
                     <div className="mt-4">
                         <h3>Recent failed LSIF uploads</h3>
 
-                        {failedLsifJobs === undefined ? (
-                            <></>
-                        ) : isErrorLike(failedLsifJobs) ? (
-                            <ErrorAlert prefix="Error loading failed LSIF jobs" error={failedLsifJobs} />
-                        ) : failedCount === 0 ? (
+                        {failedLsifJobs === undefined || failedCount === 0 ? (
                             <p>
                                 <small>No recent uploads have failed processing.</small>
                             </p>
