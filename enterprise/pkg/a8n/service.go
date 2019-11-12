@@ -210,19 +210,19 @@ func (s *Service) runChangesetJob(
 		return err
 	}
 
-	store, err = store.Transact(ctx)
+	tx, err := store.Transact(ctx)
 	if err != nil {
 		return err
 	}
 
-	defer store.Done(&err)
+	defer tx.Done(&err)
 
-	if err = store.CreateChangesets(ctx, cs.Changeset); err != nil {
+	if err = tx.CreateChangesets(ctx, cs.Changeset); err != nil {
 		return err
 	}
 
 	job.ChangesetID = cs.Changeset.ID
 	c.ChangesetIDs = append(c.ChangesetIDs, cs.Changeset.ID)
 
-	return store.UpdateCampaign(ctx, c)
+	return tx.UpdateCampaign(ctx, c)
 }

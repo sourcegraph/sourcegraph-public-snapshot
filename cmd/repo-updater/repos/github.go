@@ -150,14 +150,13 @@ func (s GithubSource) ExternalServices() ExternalServices {
 // CreateChangeset creates the given *Changeset in the code host.
 func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) error {
 	repo := c.Repo.Metadata.(*github.Repository)
-	pr := c.Changeset.Metadata.(*github.PullRequest)
 
 	pr, err := s.client.CreatePullRequest(ctx, &github.CreatePullRequestInput{
 		RepositoryID: repo.ID,
-		Title:        pr.Title,
-		Body:         pr.Body,
-		HeadRefName:  pr.HeadRefName,
-		BaseRefName:  pr.BaseRefName,
+		Title:        c.Title,
+		Body:         c.Body,
+		HeadRefName:  c.HeadRefName,
+		BaseRefName:  c.BaseRefName,
 	})
 
 	if err != nil {
