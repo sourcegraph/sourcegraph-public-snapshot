@@ -135,14 +135,14 @@ async function gitserverExec(gitserverUrl: string, repository: string, args: str
     })
 
     // Read trailers on a 200-level response
-    const status = resp.trailers['x-exec-status']
+    const status = resp.trailers['x-exec-exit-status']
     const stderr = resp.trailers['x-exec-stderr']
 
     // Determine if underlying git command failed and throw an error
     // in that case. Status will be undefined in some of our tests and
     // will be the process exit code (given as a string) otherwise.
     if (status !== undefined && status !== '0') {
-        throw new Error(stderr)
+        throw Object.assign(new Error('Failed to run git command'), { stderr })
     }
 
     return resp.body
