@@ -29,7 +29,6 @@ import {
     isFuzzyWordSearch,
     lastFilterAndValueBeforeCursor,
     formatQueryForFuzzySearch,
-    isValidFilter,
 } from '../helpers'
 import { fetchSuggestions } from '../backend'
 import { isDefined } from '../../../../shared/src/util/types'
