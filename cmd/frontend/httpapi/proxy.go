@@ -1,6 +1,13 @@
 package httpapi
 
-import "github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintelligence/lsifserver/proxy"
+import (
+	"net/http"
+)
+
+type LSIFServerProxy struct {
+	UploadHandler    http.Handler
+	AllRoutesHandler http.Handler
+}
 
 // Set by enterprise frontend
-var NewLSIFServerProxy func() (*proxy.LSIFServerProxy, error)
+var NewLSIFServerProxy func() (*LSIFServerProxy, error)
