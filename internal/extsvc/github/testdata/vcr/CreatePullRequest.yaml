@@ -27,7 +27,7 @@ interactions:
       { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t... on ReviewRequestedEvent {\n\t\tactor
       { ...actor }\n\t\trequestedReviewer { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t...
       on UnassignedEvent {\n\t\tactor { ...actor }\n\t\tassignee { ...actor }\n\t\tcreatedAt\n\t\t}\n\t}\n\t}\n}\nmutation\tCreatePullRequest($input:CreatePullRequestInput!)
-      {\n  createPullRequest(input:$input) {\n    pullRequest {\n      ... pr\n    }\n  }\n}","variables":{"input":{"repositoryId":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","baseRefName":"master","headRefName":"test-pr-2","title":"This
+      {\n  createPullRequest(input:$input) {\n    pullRequest {\n      ... pr\n    }\n  }\n}","variables":{"input":{"repositoryId":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","baseRefName":"master","headRefName":"test-pr-3","title":"This
       is a test PR, feel free to ignore","body":"I''m opening this PR to test something.
       Please ignore."}}}'
     form: {}
@@ -37,8 +37,9 @@ interactions:
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"createPullRequest":{"pullRequest":null}},"errors":[{"type":"UNPROCESSABLE","path":["createPullRequest"],"locations":[{"line":130,"column":3}],"message":"A
-      pull request already exists for sourcegraph:test-pr-2."}]}'
+    body: '{"data":{"createPullRequest":{"pullRequest":{"id":"MDExOlB1bGxSZXF1ZXN0MzM5ODk3MjIz","title":"This
+      is a test PR, feel free to ignore","body":"I''m opening this PR to test something.
+      Please ignore.","state":"OPEN","url":"https://github.com/sourcegraph/automation-testing/pull/6","number":6,"createdAt":"2019-11-12T13:00:11Z","updatedAt":"2019-11-12T13:00:11Z","headRefOid":"05e562cc5d8ab50b5fcab8dfd5dfa5db13a48e80","baseRefOid":"c75943274b322ffef2230df8f8049de84ddf12c1","headRefName":"test-pr-3","baseRefName":"master","author":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"participants":{"nodes":[{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"}]},"timelineItems":{"nodes":[]}}}}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -53,7 +54,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 12 Nov 2019 12:08:01 GMT
+      - Tue, 12 Nov 2019 13:00:12 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -73,15 +74,15 @@ interactions:
       X-Github-Media-Type:
       - github.v4; format=json
       X-Github-Request-Id:
-      - 0891:43EF6:53C866B:63EAFDB:5DCAA0A0
+      - FDAB:2CFE8:333C085:3D60CF6:5DCAACDA
       X-Oauth-Scopes:
-      - admin:org_hook, admin:repo_hook, repo
+      - public_repo
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4943"
+      - "4968"
       X-Ratelimit-Reset:
-      - "1573563927"
+      - "1573567164"
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK
@@ -139,7 +140,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 12 Nov 2019 12:08:02 GMT
+      - Tue, 12 Nov 2019 13:00:12 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -159,15 +160,15 @@ interactions:
       X-Github-Media-Type:
       - github.v4; format=json
       X-Github-Request-Id:
-      - 0891:43EF6:53C87E5:63EB199:5DCAA0A1
+      - FDAB:2CFE8:333C21B:3D60EE0:5DCAACDC
       X-Oauth-Scopes:
-      - admin:org_hook, admin:repo_hook, repo
+      - public_repo
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4940"
+      - "4965"
       X-Ratelimit-Reset:
-      - "1573563927"
+      - "1573567164"
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK
@@ -224,7 +225,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 12 Nov 2019 12:08:02 GMT
+      - Tue, 12 Nov 2019 13:00:13 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -244,15 +245,15 @@ interactions:
       X-Github-Media-Type:
       - github.v4; format=json
       X-Github-Request-Id:
-      - 0891:43EF6:53C889E:63EB286:5DCAA0A2
+      - FDAB:2CFE8:333C2FB:3D60FF9:5DCAACDC
       X-Oauth-Scopes:
-      - admin:org_hook, admin:repo_hook, repo
+      - public_repo
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4937"
+      - "4962"
       X-Ratelimit-Reset:
-      - "1573563927"
+      - "1573567164"
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK
