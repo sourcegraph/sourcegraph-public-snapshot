@@ -46,8 +46,18 @@ type Service struct {
 	clock func() time.Time
 }
 
-func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign) error {
-	if err := s.store.CreateCampaign(ctx, c); err != nil {
+// CreateCampaign creates the Campaign. When a CampaignPlanID is set, it also
+// creates one ChangesetJob for each CampaignJob belonging to the respective
+// CampaignPlan, together with the Campaign in a transaction.
+func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign) (err error) {
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer tx.Done(&err)
+
+	if err := tx.CreateCampaign(ctx, c); err != nil {
 		return err
 	}
 
@@ -55,7 +65,7 @@ func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign) error {
 		return nil
 	}
 
-	jobs, _, err := s.store.ListCampaignJobs(ctx, ListCampaignJobsOpts{
+	jobs, _, err := tx.ListCampaignJobs(ctx, ListCampaignJobsOpts{
 		CampaignPlanID: c.CampaignPlanID,
 		Limit:          10000,
 	})
@@ -63,37 +73,12 @@ func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign) error {
 		return err
 	}
 
-	// RepoRels contains the joined repo, campaign job and the changeset job.
-	type RepoRels struct {
-		*repos.Repo
-		*a8n.CampaignJob
-		*a8n.ChangesetJob
-	}
-
-	rels := make(map[int32]*RepoRels, len(jobs))
-	repoIDs := make([]uint32, len(jobs))
-
-	for i, job := range jobs {
-		rels[job.RepoID] = &RepoRels{CampaignJob: job}
-		repoIDs[i] = uint32(job.RepoID)
-	}
-
-	repoStore := repos.NewDBStore(s.store.DB(), sql.TxOptions{})
-	rs, err := repoStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: repoIDs})
-	if err != nil {
-		return err
-	}
-
-	for _, repo := range rs {
-		rel := rels[int32(repo.ID)]
-		rel.Repo = repo
-
-		rel.ChangesetJob = &a8n.ChangesetJob{
+	for _, job := range jobs {
+		changesetJob := &a8n.ChangesetJob{
 			CampaignID:    c.ID,
-			CampaignJobID: rel.CampaignJob.ID,
+			CampaignJobID: job.ID,
 		}
-
-		err = s.store.CreateChangesetJob(ctx, rel.ChangesetJob)
+		err = tx.CreateChangesetJob(ctx, changesetJob)
 		if err != nil {
 			return err
 		}
@@ -128,8 +113,6 @@ func (s *Service) runChangesetJob(
 	c *a8n.Campaign,
 	job *a8n.ChangesetJob,
 ) (err error) {
-	store := s.store
-
 	// TODO(a8n):
 	//   - Ensure all of these calls are idempotent so they can be safely retried.
 	defer func() {
@@ -138,7 +121,7 @@ func (s *Service) runChangesetJob(
 		}
 		job.FinishedAt = s.clock()
 
-		if e := store.UpdateChangesetJob(ctx, job); e != nil {
+		if e := s.store.UpdateChangesetJob(ctx, job); e != nil {
 			if err == nil {
 				err = e
 			} else {
@@ -242,19 +225,22 @@ func (s *Service) runChangesetJob(
 		return err
 	}
 
-	store, err = store.Transact(ctx)
+	tx, err := s.store.Transact(ctx)
 	if err != nil {
 		return err
 	}
 
-	defer store.Done(&err)
+	defer tx.Done(&err)
 
-	if err = store.CreateChangesets(ctx, cs.Changeset); err != nil {
+	if err = tx.CreateChangesets(ctx, cs.Changeset); err != nil {
+		return err
+	}
+
+	c.ChangesetIDs = append(c.ChangesetIDs, cs.Changeset.ID)
+	if err = tx.UpdateCampaign(ctx, c); err != nil {
 		return err
 	}
 
 	job.ChangesetID = cs.Changeset.ID
-	c.ChangesetIDs = append(c.ChangesetIDs, cs.Changeset.ID)
-
-	return store.UpdateCampaign(ctx, c)
+	return tx.UpdateChangesetJob(ctx, job)
 }
