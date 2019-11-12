@@ -36,8 +36,6 @@ func main() {
 		store := a8n.NewStore(db)
 
 		for {
-			log15.Info("DeleteExpiredCampaignPlans running")
-
 			err := store.DeleteExpiredCampaignPlans(ctx)
 			if err != nil {
 				log15.Error("DeleteExpiredCampaignPlans", "error", err)
