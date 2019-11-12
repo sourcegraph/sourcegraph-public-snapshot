@@ -12,26 +12,29 @@ import (
 var NewCodeIntelligenceResolver func() CodeIntelligenceResolver
 
 type CodeIntelligenceResolver interface {
-	LSIFDumpByGQLID(ctx context.Context, id graphql.ID) (LSIFDumpResolver, error)
-	LSIFJobStatsByGQLID(ctx context.Context, id graphql.ID) (LSIFJobStatsResolver, error)
-	LSIFJobByGQLID(ctx context.Context, id graphql.ID) (LSIFJobResolver, error)
-
 	LSIFDump(ctx context.Context, args *struct{ ID graphql.ID }) (LSIFDumpResolver, error)
-	LSIFDumps(args *struct {
-		graphqlutil.ConnectionArgs
-		Repository      graphql.ID
-		Query           *string
-		IsLatestForRepo *bool
-		After           *string
-	}) (LSIFDumpConnectionResolver, error)
-	LSIFJobStats(ctx context.Context) (LSIFJobStatsResolver, error)
+	LSIFDumpByGQLID(ctx context.Context, id graphql.ID) (LSIFDumpResolver, error)
+	LSIFDumps(ctx context.Context, args *LSIFDumpsQueryArgs) (LSIFDumpConnectionResolver, error)
 	LSIFJob(ctx context.Context, args *struct{ ID graphql.ID }) (LSIFJobResolver, error)
-	LSIFJobs(args *struct {
-		graphqlutil.ConnectionArgs
-		State string
-		Query *string
-		After *string
-	}) (LSIFJobConnectionResolver, error)
+	LSIFJobByGQLID(ctx context.Context, id graphql.ID) (LSIFJobResolver, error)
+	LSIFJobs(ctx context.Context, args *LSIFJobsQueryArgs) (LSIFJobConnectionResolver, error)
+	LSIFJobStats(ctx context.Context) (LSIFJobStatsResolver, error)
+	LSIFJobStatsByGQLID(ctx context.Context, id graphql.ID) (LSIFJobStatsResolver, error)
+}
+
+type LSIFDumpsQueryArgs struct {
+	graphqlutil.ConnectionArgs
+	Repository      graphql.ID
+	Query           *string
+	IsLatestForRepo *bool
+	After           *string
+}
+
+type LSIFJobsQueryArgs struct {
+	graphqlutil.ConnectionArgs
+	State string
+	Query *string
+	After *string
 }
 
 type LSIFDumpResolver interface {
@@ -77,27 +80,6 @@ type LSIFJobConnectionResolver interface {
 
 var codeIntelligenceOnlyInEnterprise = errors.New("lsif dumps and jobs are only available in enterprise")
 
-func (r *schemaResolver) LSIFDumpByGQLID(ctx context.Context, id graphql.ID) (LSIFDumpResolver, error) {
-	if r.codeIntelligenceResolver == nil {
-		return nil, codeIntelligenceOnlyInEnterprise
-	}
-	return r.codeIntelligenceResolver.LSIFDumpByGQLID(ctx, id)
-}
-
-func (r *schemaResolver) LSIFJobStatsByGQLID(ctx context.Context, id graphql.ID) (LSIFJobStatsResolver, error) {
-	if r.codeIntelligenceResolver == nil {
-		return nil, codeIntelligenceOnlyInEnterprise
-	}
-	return r.codeIntelligenceResolver.LSIFJobStatsByGQLID(ctx, id)
-}
-
-func (r *schemaResolver) LSIFJobByGQLID(ctx context.Context, id graphql.ID) (LSIFJobResolver, error) {
-	if r.codeIntelligenceResolver == nil {
-		return nil, codeIntelligenceOnlyInEnterprise
-	}
-	return r.codeIntelligenceResolver.LSIFJobByGQLID(ctx, id)
-}
-
 func (r *schemaResolver) LSIFDump(ctx context.Context, args *struct{ ID graphql.ID }) (LSIFDumpResolver, error) {
 	if r.codeIntelligenceResolver == nil {
 		return nil, codeIntelligenceOnlyInEnterprise
@@ -105,25 +87,18 @@ func (r *schemaResolver) LSIFDump(ctx context.Context, args *struct{ ID graphql.
 	return r.codeIntelligenceResolver.LSIFDump(ctx, args)
 }
 
-// TODO - add ctx
-func (r *schemaResolver) LSIFDumps(args *struct {
-	graphqlutil.ConnectionArgs
-	Repository      graphql.ID
-	Query           *string
-	IsLatestForRepo *bool
-	After           *string
-}) (LSIFDumpConnectionResolver, error) {
+func (r *schemaResolver) LSIFDumpByGQLID(ctx context.Context, id graphql.ID) (LSIFDumpResolver, error) {
 	if r.codeIntelligenceResolver == nil {
 		return nil, codeIntelligenceOnlyInEnterprise
 	}
-	return r.codeIntelligenceResolver.LSIFDumps(args)
+	return r.codeIntelligenceResolver.LSIFDumpByGQLID(ctx, id)
 }
 
-func (r *schemaResolver) LSIFJobStats(ctx context.Context) (LSIFJobStatsResolver, error) {
+func (r *schemaResolver) LSIFDumps(ctx context.Context, args *LSIFDumpsQueryArgs) (LSIFDumpConnectionResolver, error) {
 	if r.codeIntelligenceResolver == nil {
 		return nil, codeIntelligenceOnlyInEnterprise
 	}
-	return r.codeIntelligenceResolver.LSIFJobStats(ctx)
+	return r.codeIntelligenceResolver.LSIFDumps(ctx, args)
 }
 
 func (r *schemaResolver) LSIFJob(ctx context.Context, args *struct{ ID graphql.ID }) (LSIFJobResolver, error) {
@@ -133,15 +108,30 @@ func (r *schemaResolver) LSIFJob(ctx context.Context, args *struct{ ID graphql.I
 	return r.codeIntelligenceResolver.LSIFJob(ctx, args)
 }
 
-// TODO - add ctx
-func (r *schemaResolver) LSIFJobs(args *struct {
-	graphqlutil.ConnectionArgs
-	State string
-	Query *string
-	After *string
-}) (LSIFJobConnectionResolver, error) {
+func (r *schemaResolver) LSIFJobByGQLID(ctx context.Context, id graphql.ID) (LSIFJobResolver, error) {
 	if r.codeIntelligenceResolver == nil {
 		return nil, codeIntelligenceOnlyInEnterprise
 	}
-	return r.codeIntelligenceResolver.LSIFJobs(args)
+	return r.codeIntelligenceResolver.LSIFJobByGQLID(ctx, id)
+}
+
+func (r *schemaResolver) LSIFJobs(ctx context.Context, args *LSIFJobsQueryArgs) (LSIFJobConnectionResolver, error) {
+	if r.codeIntelligenceResolver == nil {
+		return nil, codeIntelligenceOnlyInEnterprise
+	}
+	return r.codeIntelligenceResolver.LSIFJobs(ctx, args)
+}
+
+func (r *schemaResolver) LSIFJobStats(ctx context.Context) (LSIFJobStatsResolver, error) {
+	if r.codeIntelligenceResolver == nil {
+		return nil, codeIntelligenceOnlyInEnterprise
+	}
+	return r.codeIntelligenceResolver.LSIFJobStats(ctx)
+}
+
+func (r *schemaResolver) LSIFJobStatsByGQLID(ctx context.Context, id graphql.ID) (LSIFJobStatsResolver, error) {
+	if r.codeIntelligenceResolver == nil {
+		return nil, codeIntelligenceOnlyInEnterprise
+	}
+	return r.codeIntelligenceResolver.LSIFJobStatsByGQLID(ctx, id)
 }

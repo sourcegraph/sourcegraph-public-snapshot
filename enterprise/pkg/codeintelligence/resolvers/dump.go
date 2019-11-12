@@ -50,6 +50,15 @@ func (r *lsifDumpResolver) UploadedAt() graphqlbackend.DateTime {
 
 //
 // Connection Resolver
+
+type LSIFDumpsListOptions struct {
+	Repository      graphql.ID
+	Query           *string
+	IsLatestForRepo *bool
+	Limit           *int32
+	NextURL         *string
+}
+
 type lsifDumpConnectionResolver struct {
 	opt LSIFDumpsListOptions
 

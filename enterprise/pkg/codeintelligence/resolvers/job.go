@@ -69,6 +69,13 @@ func (r *lsifJobResolver) FinishedOn() *graphqlbackend.DateTime {
 //
 // Connection Resolver
 
+type LSIFJobsListOptions struct {
+	State   string
+	Query   *string
+	Limit   *int32
+	NextURL *string
+}
+
 type lsifJobConnectionResolver struct {
 	opt LSIFJobsListOptions
 

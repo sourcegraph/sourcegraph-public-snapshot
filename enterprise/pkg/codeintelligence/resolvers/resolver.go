@@ -10,7 +10,6 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintelligence/lsifserver/client"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -55,14 +54,6 @@ func (r *Resolver) LSIFDumpByGQLID(ctx context.Context, id graphql.ID) (graphqlb
 //
 // Dump Connection Resolvers
 
-type LSIFDumpsListOptions struct {
-	Repository      graphql.ID
-	Query           *string
-	IsLatestForRepo *bool
-	Limit           *int32
-	NextURL         *string
-}
-
 // This method implements cursor-based forward pagination. The `after` parameter
 // should be an `endCursor` value from a previous request. This value is the rel="next"
 // URL in the Link header of the LSIF server response. This URL includes all of the
@@ -70,13 +61,7 @@ type LSIFDumpsListOptions struct {
 // dependent on the limit, so we can overwrite this value if the user has changed its
 // value since making the last request.
 
-func (r *Resolver) LSIFDumps(args *struct {
-	graphqlutil.ConnectionArgs
-	Repository      graphql.ID
-	Query           *string
-	IsLatestForRepo *bool
-	After           *string
-}) (graphqlbackend.LSIFDumpConnectionResolver, error) {
+func (r *Resolver) LSIFDumps(ctx context.Context, args *graphqlbackend.LSIFDumpsQueryArgs) (graphqlbackend.LSIFDumpConnectionResolver, error) {
 	opt := LSIFDumpsListOptions{
 		Repository:      args.Repository,
 		Query:           args.Query,
@@ -127,13 +112,6 @@ func (r *Resolver) LSIFJobByGQLID(ctx context.Context, id graphql.ID) (graphqlba
 //
 // Job Connection Resolvers
 
-type LSIFJobsListOptions struct {
-	State   string
-	Query   *string
-	Limit   *int32
-	NextURL *string
-}
-
 // This method implements cursor-based forward pagination. The `after` parameter
 // should be an `endCursor` value from a previous request. This value is the rel="next"
 // URL in the Link header of the LSIF server response. This URL includes all of the
@@ -141,12 +119,7 @@ type LSIFJobsListOptions struct {
 // dependent on the limit, so we can overwrite this value if the user has changed its
 // value since making the last request.
 
-func (r *Resolver) LSIFJobs(args *struct {
-	graphqlutil.ConnectionArgs
-	State string
-	Query *string
-	After *string
-}) (graphqlbackend.LSIFJobConnectionResolver, error) {
+func (r *Resolver) LSIFJobs(ctx context.Context, args *graphqlbackend.LSIFJobsQueryArgs) (graphqlbackend.LSIFJobConnectionResolver, error) {
 	opt := LSIFJobsListOptions{
 		State: args.State,
 		Query: args.Query,
