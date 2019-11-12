@@ -1,6 +1,5 @@
 window.sgdocs = (() => {
   let VERSION_SELECT_BUTTON,
-    SEARCH_FORMS,
     CONTENT_NAV,
     BREADCRUMBS,
     BREADCRUMBS_DATA = [],
@@ -12,8 +11,6 @@ window.sgdocs = (() => {
       BREADCRUMBS = document.querySelector('#breadcrumbs')
       BREADCRUMBS_MOBILE = document.querySelector('#breadcrumbs-mobile')
 
-      SEARCH_FORMS = document.querySelectorAll('.search-form')
-
       VERSION_SELECTOR = document.querySelector('#version-selector')
       VERSION_SELECT_BUTTON = VERSION_SELECTOR.querySelector('#version-selector button')
       VERSION_OPTIONS = VERSION_SELECTOR.querySelector('#version-selector details-menu')
@@ -22,7 +19,6 @@ window.sgdocs = (() => {
 
       MOBILE_NAV_BUTTON = BREADCRUMBS_MOBILE.querySelector('input[type="button"]')
 
-      searchInit()
       versionSelectorInit()
       mobileNavInit()
       navInit()
@@ -46,17 +42,6 @@ window.sgdocs = (() => {
       top: element.offsetTop - elementOffsetTop,
       left: 0,
       behavior: 'smooth',
-    })
-  }
-
-  function searchInit() {
-    SEARCH_FORMS.forEach(form => {
-      form.addEventListener('submit', e => {
-        const search = e.srcElement.querySelector('input[name="search"]').value
-        e.preventDefault()
-        window.location.href =
-          'https://www.google.com/search?ie=UTF-8&q=site%3Adocs.sourcegraph.com+' + encodeURIComponent(search)
-      })
     })
   }
 

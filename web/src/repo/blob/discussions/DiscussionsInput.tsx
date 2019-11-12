@@ -1,7 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import { uniqueId } from 'lodash'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { concat, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, filter, map, mergeMap, startWith, switchMap, tap, withLatestFrom } from 'rxjs/operators'
@@ -21,6 +20,7 @@ import { Form } from '../../../components/Form'
 import { WebEditorCompletionWidget } from '../../../components/shared'
 import { renderMarkdown } from '../../../discussions/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { ErrorAlert } from '../../../components/alerts'
 
 /**
  * How & whether or not to render a title input field.
@@ -240,7 +240,10 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                         )
                     )
                 )
-            ).subscribe(updateState => this.setState(state => updateState(state)), err => console.error(err))
+            ).subscribe(
+                updateState => this.setState(state => updateState(state)),
+                err => console.error(err)
+            )
         )
         this.componentUpdates.next(this.props)
     }
@@ -273,7 +276,10 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                 )}
                 {/* TODO(slimsag:discussions): local storage persistence is not ideal here. */}
                 <TabsWithLocalStorageViewStatePersistence
-                    tabs={[{ id: 'write', label: 'Write' }, { id: 'preview', label: 'Preview' }]}
+                    tabs={[
+                        { id: 'write', label: 'Write' },
+                        { id: 'preview', label: 'Preview' },
+                    ]}
                     storageKey="discussions-input-last-tab"
                     tabBarEndFragment={
                         <>
@@ -318,12 +324,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                         {this.props.submitLabel}
                     </button>
                 </div>
-                {error && (
-                    <div className="discussions-input__error alert alert-danger">
-                        <AlertCircleIcon className="icon-inline discussions-input__error-icon" />
-                        {error.message}
-                    </div>
-                )}
+                {error && <ErrorAlert className="discussions-input__error" error={error} />}
             </Form>
         )
     }

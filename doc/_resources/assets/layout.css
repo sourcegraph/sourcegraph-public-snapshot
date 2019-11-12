@@ -12,19 +12,14 @@
     --body-color: #2b3750;
     --body-bg: #fbfdff;
     --text-muted: #6d727c;
-    --link-color: #566e9f;
-    --link-hover-color: #1d2535 --body-color: #2b3750;
+    --link-color: #0055c5;
+	--link-hover-color: #1986ea;
     --body-bg: #fbfdff;
     --text-muted: #6d727c;
-    --link-color: #566e9f;
-    --link-hover-color: #1d2535 --loading-spinner-outer-color: rgba(43, 55, 80, 0.3);
-    --loading-spinner-inner-color: #2b3750;
     --secondary: #e1e6ef;
     --border-color: #cad2e2;
     --body-bg: #ffffff;
     --text-muted: #{$color-light-text-2};
-    --link-color: #566e9f;
-    --link-hover-color: #1d2535;
     --dropdown-bg: #{$color-light-bg-1};
     --dropdown-border-color: #{$color-light-border};
 }
@@ -743,12 +738,6 @@ li.content-nav-no-hover:hover {
     right: 0;
     top: 135px;
     padding-bottom: 2rem;
-}
-
-/* Because there is no breadcrumb trail */
-
-#home .page-nav {
-    top: 106px;
 }
 
 .page-nav-title {

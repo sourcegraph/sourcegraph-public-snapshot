@@ -28,6 +28,7 @@ import {
     TreeEntryInfo,
     treePadding,
 } from './util'
+import { ErrorAlert } from '../components/alerts'
 
 export interface TreeLayerProps extends AbsoluteRepo {
     history: H.History
@@ -101,16 +102,13 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                             catchError(err => [asError(err)]),
                             share()
                         )
-                        return merge(
-                            treeFetch,
-                            of(LOADING).pipe(
-                                delay(300),
-                                takeUntil(treeFetch)
-                            )
-                        )
+                        return merge(treeFetch, of(LOADING).pipe(delay(300), takeUntil(treeFetch)))
                     })
                 )
-                .subscribe(treeOrError => this.setState({ treeOrError }), err => console.error(err))
+                .subscribe(
+                    treeOrError => this.setState({ treeOrError }),
+                    err => console.error(err)
+                )
         )
 
         // If the layer is already expanded, fetch contents.
@@ -272,14 +270,14 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                     <tr>
                                         <td className="tree__cell">
                                             {isErrorLike(treeOrError) ? (
-                                                <div
-                                                    className="tree__row-alert alert alert-danger"
+                                                <ErrorAlert
+                                                    className="tree__row-alert"
                                                     // needed because of dynamic styling
                                                     // eslint-disable-next-line react/forbid-dom-props
                                                     style={treePadding(this.props.depth, true)}
-                                                >
-                                                    Error loading file tree: {treeOrError.message}
-                                                </div>
+                                                    error={treeOrError}
+                                                    prefix="Error loading file tree"
+                                                />
                                             ) : (
                                                 treeOrError && (
                                                     <ChildTreeLayer

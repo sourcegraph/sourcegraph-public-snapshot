@@ -60,7 +60,7 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 	apiURL, githubDotCom := github.APIRoot(baseURL)
 
 	if cf == nil {
-		cf = NewHTTPClientFactory()
+		cf = httpcli.NewHTTPClientFactory()
 	}
 
 	opts := []httpcli.Opt{
@@ -70,7 +70,7 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 	}
 
 	if c.Certificate != "" {
-		pool, err := newCertPool(c.Certificate)
+		pool, err := httpcli.NewCertPool(c.Certificate)
 		if err != nil {
 			return nil, err
 		}
@@ -145,6 +145,29 @@ func (s GithubSource) ListRepos(ctx context.Context, results chan SourceResult) 
 // ExternalServices returns a singleton slice containing the external service.
 func (s GithubSource) ExternalServices() ExternalServices {
 	return ExternalServices{s.svc}
+}
+
+// CreateChangeset creates the given *Changeset in the code host.
+func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) error {
+	repo := c.Repo.Metadata.(*github.Repository)
+
+	pr, err := s.client.CreatePullRequest(ctx, &github.CreatePullRequestInput{
+		RepositoryID: repo.ID,
+		Title:        c.Title,
+		Body:         c.Body,
+		HeadRefName:  c.HeadRefName,
+		BaseRefName:  c.BaseRefName,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	c.Changeset.Metadata = pr
+	c.Changeset.ExternalID = strconv.FormatInt(pr.Number, 10)
+	c.Changeset.ExternalServiceType = github.ServiceType
+
+	return nil
 }
 
 // LoadChangesets loads the latest state of the given Changesets from the codehost.

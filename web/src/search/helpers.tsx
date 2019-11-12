@@ -78,7 +78,7 @@ export function toggleSearchFilter(query: string, searchFilter: string): string 
 
 export function getSearchTypeFromQuery(query: string): SearchType {
     // RegExp to match `type:$TYPE` in any part of a query.
-    const getTypeName = /\btype:(?<type>diff|commit|symbol|repo)\b/
+    const getTypeName = /\btype:(?<type>diff|commit|symbol|repo|path)\b/
     const matches = query.match(getTypeName)
 
     if (matches && matches.groups && matches.groups.type) {

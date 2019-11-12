@@ -106,6 +106,7 @@ puppeteer/
 package-lock.json
 /dist
 sourcegraph-webapp-*.tgz
+*.tsbuildinfo
 
 # Extensions
 /packages/sourcegraph-extension-api/dist
@@ -132,5 +133,8 @@ libsqlite3-pcre.so
 
 # Direnv
 .envrc
+
+# Docker images
+docker-images/prometheus/config/prometheus_targets.yml
 
 comment.txt

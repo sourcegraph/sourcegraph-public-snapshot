@@ -54,7 +54,10 @@ export class RepoSettingsArea extends React.Component<Props> {
                     distinctUntilChanged(),
                     switchMap(name => fetchRepository(name))
                 )
-                .subscribe(repo => this.setState({ repo }), err => this.setState({ error: err.message }))
+                .subscribe(
+                    repo => this.setState({ repo }),
+                    err => this.setState({ error: err.message })
+                )
         )
         this.componentUpdates.next(this.props)
     }

@@ -12,6 +12,7 @@ import { ExpirationDate } from '../../productSubscription/ExpirationDate'
 import { formatUserCount } from '../../productSubscription/helpers'
 import { ProductCertificate } from '../../productSubscription/ProductCertificate'
 import { TrueUpStatusSummary } from '../../productSubscription/TrueUpStatusSummary'
+import { ErrorAlert } from '../../../components/alerts'
 
 interface Props {
     className?: string
@@ -45,7 +46,10 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
                     catchError(err => [asError(err)]),
                     map(v => ({ statusOrError: v }))
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    err => console.error(err)
+                )
         )
     }
 
@@ -58,11 +62,7 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
             return null
         }
         if (isErrorLike(this.state.statusOrError)) {
-            return (
-                <div className="alert alert-danger">
-                    Error checking product license: {this.state.statusOrError.message}
-                </div>
-            )
+            return <ErrorAlert error={this.state.statusOrError} prefix="Error checking product license" />
         }
 
         const {

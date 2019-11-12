@@ -29,7 +29,7 @@
 /dev/retrospectives https://about.sourcegraph.com/retrospectives 308
 /dev/retrospectives/postgresql_upgrade https://about.sourcegraph.com/retrospectives/postgresql_upgrade 308
 /dev/rfcs https://about.sourcegraph.com/handbook/engineering/rfcs 308
-/dev/style_guide https://about.sourcegraph.com/handbook/style_guide 308
+/dev/style_guide https://about.sourcegraph.com/handbook/communication/style_guide 308
 /direction https://about.sourcegraph.com/direction 308
 /direction/secure https://about.sourcegraph.com/direction 308
 /graphbook/communication https://about.sourcegraph.com/handbook 308
@@ -46,7 +46,7 @@
 /team/product-dev/documentation/separate_website https://about.sourcegraph.com/handbook/documentation/separate_website 308
 /team/product-dev/documentation/site https://about.sourcegraph.com/handbook/documentation/site 308
 /team/product-dev/documentation/structure https://about.sourcegraph.com/handbook/documentation 308
-/team/product-dev/documentation/style_guide https://about.sourcegraph.com/handbook/style_guide 308
+/team/product-dev/documentation/style_guide https://about.sourcegraph.com/handbook/communication/style_guide 308
 /team/product-dev/incidents https://about.sourcegraph.com/handbook/engineering/incidents 308
 /team/product-dev https://about.sourcegraph.com/handbook/engineering 308
 /team/product-dev/open_source_open_company https://about.sourcegraph.com/company/open_source_open_company 308
@@ -68,4 +68,4 @@
 /team/product-dev/retrospectives/postgresql_upgrade https://about.sourcegraph.com/retrospectives/postgresql_upgrade 308
 /team/product-dev/rfcs https://about.sourcegraph.com/handbook/engineering/rfcs 308
 /team/roadmap https://about.sourcegraph.com/direction 308
-/team/style_guide https://about.sourcegraph.com/handbook/style_guide 308
+/team/style_guide https://about.sourcegraph.com/handbook/communication/style_guide 308

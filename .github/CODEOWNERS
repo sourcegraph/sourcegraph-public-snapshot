@@ -6,6 +6,7 @@
 # precedence.
 
 # Top-level catch-alls (these are weaker confidence and might need to be reassigned at some point)
+*.js @sourcegraph/web
 *.ts @sourcegraph/web
 *.tsx @sourcegraph/web
 /enterprise/cmd/frontend @beyang @slimsag
@@ -53,7 +54,6 @@
 /internal/prefixsuffixsaver @beyang
 /internal/gosrc @beyang
 /internal/txemail @slimsag
-/gulpfile.ts @beyang
 /renovate.json @felixfbecker
 /.stylelintrc.json @felixfbecker
 /graphql-schema-linter.config.js @felixfbecker
@@ -95,9 +95,9 @@
 /.dockerignore @beyang
 /.mailmap @beyang
 /tsconfig.json @felixfbecker
-/jest.config.base.js @felixfbecker
 tslint.json @felixfbecker
 tslint.config.js @felixfbecker
+.eslintrc.* @felixfbecker
 /enterprise/cmd @beyang
 /enterprise/pkg @beyang
 /enterprise @beyang

@@ -66,7 +66,10 @@ describe('activeExtensions', () => {
             expectObservable(
                 from(
                     new TestExtensionsService(
-                        [{ id: 'x', manifest, rawManifest: null }, { id: 'y', manifest, rawManifest: null }],
+                        [
+                            { id: 'x', manifest, rawManifest: null },
+                            { id: 'y', manifest, rawManifest: null },
+                        ],
                         {
                             activeLanguages: cold<ReadonlySet<string>>('-a-b-|', {
                                 a: new Set(['x']),
@@ -87,7 +90,10 @@ describe('activeExtensions', () => {
                 )
             ).toBe('-a-b-|', {
                 a: [{ id: 'x', manifest, scriptURL: 'u' }],
-                b: [{ id: 'x', manifest, scriptURL: 'u' }, { id: 'y', manifest, scriptURL: 'u' }],
+                b: [
+                    { id: 'x', manifest, scriptURL: 'u' },
+                    { id: 'y', manifest, scriptURL: 'u' },
+                ],
             } as Record<string, ExecutableExtension[]>)
         ))
 

@@ -18,6 +18,7 @@ import { PageTitle } from '../components/PageTitle'
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchAllRepositoriesAndPollIfEmptyOrAnyCloning } from './backend'
+import { ErrorAlert } from '../components/alerts'
 
 interface RepositoryNodeProps extends ActivationProps {
     node: GQL.IRepository
@@ -72,9 +73,7 @@ class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Repository
                         }{' '}
                     </div>
                 </div>
-                {this.state.errorDescription && (
-                    <div className="alert alert-danger mt-2">{this.state.errorDescription}</div>
-                )}
+                {this.state.errorDescription && <ErrorAlert className="mt-2" error={this.state.errorDescription} />}
             </li>
         )
     }

@@ -12,6 +12,7 @@ import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
 import { SiteAdminManagementConsolePassword } from './SiteAdminManagementConsolePassword'
+import { ErrorAlert } from '../components/alerts'
 
 interface Props extends RouteComponentProps<any> {
     isLightTheme: boolean
@@ -87,7 +88,10 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                         this.remoteRefreshes.next()
                     })
                 )
-                .subscribe(() => this.setState({ saving: false }), error => this.setState({ saving: false, error }))
+                .subscribe(
+                    () => this.setState({ saving: false }),
+                    error => this.setState({ saving: false, error })
+                )
         )
 
         this.subscriptions.add(
@@ -128,9 +132,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         const alerts: JSX.Element[] = []
         if (this.state.error) {
             alerts.push(
-                <div key="error" className="alert alert-danger site-admin-configuration-page__alert">
-                    <p>Error: {this.state.error.message}</p>
-                </div>
+                <ErrorAlert key="error" className="site-admin-configuration-page__alert" error={this.state.error} />
             )
         }
         if (this.state.reloadStartedAt) {

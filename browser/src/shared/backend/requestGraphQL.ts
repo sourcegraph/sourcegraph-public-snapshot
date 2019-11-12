@@ -18,7 +18,9 @@ export const requestGraphQLHelper = (isExtension: boolean, baseUrl: string) => <
     variables: {}
 }) =>
     isExtension
-        ? from(background.requestGraphQL<T>({ request, variables }))
+        ? from(
+              background.requestGraphQL<T>({ request, variables })
+          )
         : requestGraphQL<T>({
               request,
               variables,

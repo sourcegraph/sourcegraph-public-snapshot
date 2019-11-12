@@ -20,6 +20,7 @@ import { fetchTreeEntries } from '../repo/backend'
 import { ChildTreeLayer } from './ChildTreeLayer'
 import { TreeNode } from './Tree'
 import { hasSingleChild, singleChildEntriesToGitTree, SingleChildGitTree } from './util'
+import { ErrorAlert } from '../components/alerts'
 
 const maxEntries = 2500
 
@@ -98,16 +99,13 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                             catchError(err => [asError(err)]),
                             share()
                         )
-                        return merge(
-                            treeFetch,
-                            of(LOADING).pipe(
-                                delay(300),
-                                takeUntil(treeFetch)
-                            )
-                        )
+                        return merge(treeFetch, of(LOADING).pipe(delay(300), takeUntil(treeFetch)))
                     })
                 )
-                .subscribe(treeOrError => this.setState({ treeOrError }), err => console.error(err))
+                .subscribe(
+                    treeOrError => this.setState({ treeOrError }),
+                    err => console.error(err)
+                )
         )
 
         // This handles pre-fetching when a user
@@ -157,14 +155,14 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
         return (
             <>
                 {isErrorLike(treeOrError) ? (
-                    <div
+                    <ErrorAlert
                         // needed because of dynamic styling
                         // eslint-disable-next-line react/forbid-dom-props
                         style={errorWidth(localStorage.getItem(this.props.sizeKey) ? this.props.sizeKey : undefined)}
-                        className="tree__row tree__row-alert alert alert-danger"
-                    >
-                        Error loading tree: {treeOrError.message}
-                    </div>
+                        className="tree__row tree__row-alert"
+                        prefix="Error loading tree"
+                        error={treeOrError}
+                    />
                 ) : (
                     <table className="tree-layer" tabIndex={0}>
                         <tbody>

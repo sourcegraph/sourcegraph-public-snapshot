@@ -1,3 +1,7 @@
-.site-admin-lsif-job-page {
-    width: 100%;
+.job-arguments {
+    &__cell {
+        .job-arguments__row:first-child > & {
+            border-top: none;
+        }
+    }
 }

@@ -5,6 +5,7 @@ import { Omit } from 'utility-types'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { Form } from '../components/Form'
 import { NamespaceProps } from '../namespaces'
+import { ErrorAlert } from '../components/alerts'
 
 export interface SavedQueryFields {
     id: GQL.ID
@@ -169,9 +170,7 @@ export class SavedSearchForm extends React.Component<Props, State> {
                         {this.props.submitLabel}
                     </button>
                     {this.props.error && !this.props.loading && (
-                        <div className="alert alert-danger mb-3">
-                            <strong>Error:</strong> {this.props.error.message}
-                        </div>
+                        <ErrorAlert className="mb-3" error={this.props.error} />
                     )}
                 </Form>
             </div>

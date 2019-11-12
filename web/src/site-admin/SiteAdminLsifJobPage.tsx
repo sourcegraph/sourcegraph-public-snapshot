@@ -13,14 +13,15 @@ import { sortBy } from 'lodash'
 import { RouteComponentProps } from 'react-router'
 import { Timestamp } from '../components/time/Timestamp'
 import { useObservable } from '../util/useObservable'
+import { ErrorAlert } from '../components/alerts'
 
 const JobArguments: FunctionComponent<{ args: { [name: string]: string } }> = ({ args }) => (
-    <table className="w-100 mb-0 table table-sm">
+    <table className="job-arguments w-100 mb-0 table table-sm">
         <tbody>
-            {sortBy(Array.from(Object.entries(args)), ([key]) => key).map(([key, value]) => (
-                <tr key={key}>
-                    <td>{key}</td>
-                    <td>{value}</td>
+            {sortBy(Object.entries(args), ([key]) => key).map(([key, value]) => (
+                <tr key={key} className="job-arguments__row">
+                    <td className="job-arguments__cell">{key}</td>
+                    <td className="job-arguments__cell">{value}</td>
                 </tr>
             ))}
         </tbody>
@@ -44,22 +45,20 @@ export const SiteAdminLsifJobPage: FunctionComponent<Props> = ({
     )
 
     return (
-        <div className="site-admin-lsif-job-page">
+        <div className="site-admin-lsif-job-page w-100">
             <PageTitle title="LSIF Jobs - Admin" />
-            <div className="d-flex justify-content-between align-items-center mt-3 mb-1">
-                {jobOrError && !isErrorLike(jobOrError) && <h2 className="mb-0"> lsifJobDescription(jobOrError)</h2>}
-            </div>
-
             {!jobOrError ? (
                 <LoadingSpinner className="icon-inline" />
             ) : isErrorLike(jobOrError) ? (
                 <div className="alert alert-danger">
-                    Error getting LSIF job:
-                    <br />
-                    <code>{jobOrError.message}</code>
+                    <ErrorAlert prefix="Error loading LSIF job" error={jobOrError} />
                 </div>
             ) : (
-                <div>
+                <>
+                    <div className="mt-3 mb-1">
+                        <h2 className="mb-0">{lsifJobDescription(jobOrError)}</h2>
+                    </div>
+
                     {jobOrError.state === GQL.LSIFJobState.PROCESSING ? (
                         <div className="alert alert-primary mb-4 mt-3">
                             <LoadingSpinner className="icon-inline" /> Job is currently being processed...{' '}
@@ -126,7 +125,7 @@ export const SiteAdminLsifJobPage: FunctionComponent<Props> = ({
                             )}
                         </tbody>
                     </table>
-                </div>
+                </>
             )}
         </div>
     )
@@ -137,7 +136,7 @@ export const SiteAdminLsifJobPage: FunctionComponent<Props> = ({
  *
  * @param job The job instance.
  */
-export function lsifJobDescription(job: GQL.ILSIFJob): string {
+function lsifJobDescription(job: GQL.ILSIFJob): string {
     if (job.name === 'convert') {
         const {
             repository,
@@ -149,10 +148,10 @@ export function lsifJobDescription(job: GQL.ILSIFJob): string {
             root: string
         } = job.args
 
-        return `Convert upload for ${repository} at ${commit.substring(0, 7)}${root !== '' && `, ${root}`}`
+        return `Convert upload for ${repository} at ${commit.substring(0, 7)}${root === '' ? '' : `, ${root}`}`
     }
 
-    const internalJobs: { [K: string]: string } = {
+    const internalJobs: { [name: string]: string } = {
         'clean-old-jobs': 'Purge old job data from LSIF work queue',
         'clean-failed-jobs': 'Clean old failed job uploads from disk',
         'update-tips': 'Refresh current uploads',
