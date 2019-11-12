@@ -3,7 +3,7 @@ package a8n
 import (
 	"context"
 	"database/sql"
-	"math"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -52,7 +52,7 @@ func (cc *CampaignsService) CreateCampaign(ctx context.Context, c *a8n.Campaign)
 
 	jobs, _, err := cc.store.ListCampaignJobs(ctx, ListCampaignJobsOpts{
 		CampaignPlanID: c.CampaignPlanID,
-		Limit:          int(math.MaxInt32),
+		Limit:          10000,
 	})
 	if err != nil {
 		return err
@@ -114,8 +114,6 @@ func (cc *CampaignsService) runChangesetJob(
 ) (err error) {
 	// TODO(a8n):
 	//   - Ensure all of these calls are idempotent so they can be safely retried.
-	//   - After creating a commit we need to create a branch so that it can be pushed.
-	//   - Then we need to actually push the branch to origin (i.e. the code host)
 	defer func() {
 		if err != nil {
 			job.Error = err.Error()
@@ -127,23 +125,29 @@ func (cc *CampaignsService) runChangesetJob(
 
 	job.StartedAt = cc.clock()
 
-	_, err = cc.git.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
+	rev, err := cc.git.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
 		Repo:       api.RepoName(repo.Name),
 		BaseCommit: campaignJob.Rev,
-		Patch:      campaignJob.Diff,
-		TargetRef:  "sourcegraph/campaign-" + strconv.FormatInt(c.ID, 10),
+		// IMPORTANT: We add a trailing newline here, otherwise `git apply`
+		// will fail with "corrupt patch at line <N>" where N is the last line.
+		Patch:     campaignJob.Diff + "\n",
+		TargetRef: "sourcegraph/campaign-" + strconv.FormatInt(c.ID, 10),
 		CommitInfo: protocol.PatchCommitInfo{
 			Message:     c.Name,
 			AuthorName:  "Sourcegraph Bot",
 			AuthorEmail: "automation@sourcegraph.com",
 			Date:        job.StartedAt,
 		},
+		Push: true,
 	})
 
-	// TODO(a8n): Set the Error in the ChangesetJob instead of exiting.
 	if err != nil {
 		return err
 	}
+
+	fmt.Printf("pushed rev: %s\n", rev)
+	// client := github.NewClient()
+	// client.CreatePullRequest(rev)
 
 	// TODO(a8n):
 	//   - Create a Changeset once we have an external ID for the created Pull Request
