@@ -68,12 +68,15 @@ func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign) (err erro
 	jobs, _, err := tx.ListCampaignJobs(ctx, ListCampaignJobsOpts{
 		CampaignPlanID: c.CampaignPlanID,
 		Limit:          10000,
+		OnlyFinished:   true,
+		OnlyWithDiff:   true,
 	})
 	if err != nil {
 		return err
 	}
 
 	for _, job := range jobs {
+
 		changesetJob := &a8n.ChangesetJob{
 			CampaignID:    c.ID,
 			CampaignJobID: job.ID,
