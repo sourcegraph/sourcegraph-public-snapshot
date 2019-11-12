@@ -12,7 +12,6 @@ import (
 )
 
 const (
-	webSource         = "WEB"
 	integrationSource = "CODEHOSTINTEGRATION"
 )
 

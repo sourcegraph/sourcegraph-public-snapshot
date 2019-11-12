@@ -92,10 +92,16 @@ func publishSourcegraphDotComEvent(args Event) error {
 // logLocalEvent logs users events.
 func logLocalEvent(ctx context.Context, name, url string, userID int32, userCookieID, source string, argument *string) error {
 	if name == "SearchSubmitted" {
-		logSiteSearchOccurred()
+		err := logSiteSearchOccurred()
+		if err != nil {
+			return err
+		}
 	}
 	if name == "findReferences" {
-		logSiteFindRefsOccurred()
+		err := logSiteFindRefsOccurred()
+		if err != nil {
+			return err
+		}
 	}
 
 	info := &db.Event{
