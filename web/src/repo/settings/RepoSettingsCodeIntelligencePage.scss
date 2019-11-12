@@ -1,8 +1,19 @@
 .repo-settings-code-intelligence-page {
     width: 100%;
+
+    &-collapsible {
+        border: 1px solid $color-border;
+        border-radius: 0.125rem;
+        margin: 0.5rem 0;
+        padding: 0.5rem 0.75rem;
+
+        .theme-light & {
+            border-color: $color-light-border;
+        }
+    }
 }
 
-.lsif-dump {
+.lsif-data {
     &__main {
         display: flex;
         flex-wrap: wrap-reverse;
@@ -21,22 +32,16 @@
             white-space: nowrap;
             text-overflow: ellipsis;
             color: $color-text-2;
+
+            .theme-light & {
+                color: $color-light-text-1;
+            }
         }
 
         &-timestamp {
             flex: none;
             white-space: nowrap;
             margin-bottom: 0.125rem;
-        }
-    }
-}
-
-.theme-light {
-    .lsif-dump {
-        &__meta {
-            &-root {
-                color: $color-light-text-1;
-            }
         }
     }
 }
