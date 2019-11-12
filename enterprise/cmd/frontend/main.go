@@ -16,16 +16,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/httpapi"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
 	a8nResolvers "github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n/resolvers"
-	"github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintelligence/proxy"
+	"github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintelligence/lsifserver/proxy"
 	codeIntelligenceResolvers "github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintelligence/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -113,7 +113,7 @@ func initResolvers() {
 }
 
 func initLSIFEndpoints() {
-	httpapi.NewLSIFProxy = proxy.NewProxy
+	httpapi.NewLSIFServerProxy = proxy.NewProxy
 }
 
 type usersStore struct{}

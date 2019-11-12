@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -22,6 +23,8 @@ func enforceAuth(w http.ResponseWriter, r *http.Request, repoName string) (error
 	return errors.New("Verification not supported for code host. See https://github.com/sourcegraph/sourcegraph/issues/4967"), http.StatusUnprocessableEntity
 }
 
+var githubURL = url.URL{Scheme: "https", Host: "api.github.com"}
+
 func enforceAuthGithub(w http.ResponseWriter, r *http.Request, repoName string) (error, int) {
 	nameWithOwner := strings.TrimPrefix(repoName, "github.com/")
 	owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
@@ -35,7 +38,7 @@ func enforceAuthGithub(w http.ResponseWriter, r *http.Request, repoName string) 
 		return errors.New("Must provide github_token."), http.StatusUnauthorized
 	}
 
-	client := github.NewClient(&apiURL, githubToken, nil)
+	client := github.NewClient(&githubURL, githubToken, nil)
 	repo, err := client.GetRepository(r.Context(), owner, name)
 	if err != nil {
 		return errors.Wrap(err, "Unable to get repository permissions"), http.StatusNotFound

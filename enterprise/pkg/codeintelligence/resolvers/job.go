@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintelligence/lsif"
+	"github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintelligence/lsifserver/client"
 )
 
 //
@@ -35,7 +35,7 @@ func (r *lsifJobResolver) Name() string {
 }
 
 func (r *lsifJobResolver) Args() graphqlbackend.JSONValue {
-	return graphqlbackend.JSONValue{r.lsifJob.Args}
+	return graphqlbackend.JSONValue{Value: r.lsifJob.Args}
 }
 
 func (r *lsifJobResolver) State() string {
@@ -139,7 +139,7 @@ func (r *lsifJobConnectionResolver) compute(ctx context.Context) ([]*types.LSIFJ
 			query.Set("limit", strconv.FormatInt(int64(*r.opt.Limit), 10))
 		}
 
-		resp, err := lsif.BuildAndTraceRequest(ctx, path, query)
+		resp, err := client.BuildAndTraceRequest(ctx, path, query)
 		if err != nil {
 			r.err = err
 			return
@@ -152,14 +152,14 @@ func (r *lsifJobConnectionResolver) compute(ctx context.Context) ([]*types.LSIFJ
 			Jobs: []*types.LSIFJob{},
 		}
 
-		if err := lsif.UnmarshalPayload(resp, &payload); err != nil {
+		if err := client.UnmarshalPayload(resp, &payload); err != nil {
 			r.err = err
 			return
 		}
 
 		r.jobs = payload.Jobs
 		r.totalCount = payload.TotalCount
-		r.nextURL = lsif.ExtractNextURL(resp)
+		r.nextURL = client.ExtractNextURL(resp)
 	})
 
 	return r.jobs, r.totalCount, r.nextURL, r.err

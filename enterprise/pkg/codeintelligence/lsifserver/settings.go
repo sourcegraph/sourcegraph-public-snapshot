@@ -1,4 +1,4 @@
-package codeintelligence
+package lsifserver
 
 import (
 	"github.com/sourcegraph/sourcegraph/internal/env"

@@ -34,7 +34,10 @@ func newExternalHTTPHandler(schema *graphql.Schema, githubWebhook http.Handler) 
 
 	// HTTP API handler.
 	r := router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter())
-	apiHandler := httpapi.NewHandler(r, schema, githubWebhook)
+	apiHandler, err := httpapi.NewHandler(r, schema, githubWebhook)
+	if err != nil {
+		return nil, err
+	}
 	apiHandler = authMiddlewares.API(apiHandler) // 🚨 SECURITY: auth middleware
 	// 🚨 SECURITY: The HTTP API should not accept cookies as authentication (except those with the
 	// X-Requested-With header). Doing so would open it up to CSRF attacks.

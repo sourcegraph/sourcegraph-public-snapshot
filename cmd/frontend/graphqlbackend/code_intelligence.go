@@ -36,7 +36,7 @@ type CodeIntelligenceResolver interface {
 
 type LSIFDumpResolver interface {
 	ID() graphql.ID
-	ProjectRoot() *GitTreeEntryResolver
+	ProjectRoot() (*GitTreeEntryResolver, error)
 	IsLatestForRepo() bool
 	UploadedAt() DateTime
 }

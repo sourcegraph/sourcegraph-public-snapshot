@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintelligence/lsif"
+	"github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintelligence/lsifserver/client"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
@@ -40,7 +40,7 @@ func (r *Resolver) LSIFDumpByGQLID(ctx context.Context, id graphql.ID) (graphqlb
 	path := fmt.Sprintf("/dumps/%s/%d", url.PathEscape(repoName), dumpID)
 
 	var lsifDump *types.LSIFDump
-	if err := lsif.TraceRequestAndUnmarshalPayload(ctx, path, nil, &lsifDump); err != nil {
+	if err := client.TraceRequestAndUnmarshalPayload(ctx, path, nil, &lsifDump); err != nil {
 		return nil, err
 	}
 
@@ -117,7 +117,7 @@ func (r *Resolver) LSIFJobByGQLID(ctx context.Context, id graphql.ID) (graphqlba
 	path := fmt.Sprintf("/jobs/%s", url.PathEscape(jobID))
 
 	var lsifJob *types.LSIFJob
-	if err := lsif.TraceRequestAndUnmarshalPayload(ctx, path, nil, &lsifJob); err != nil {
+	if err := client.TraceRequestAndUnmarshalPayload(ctx, path, nil, &lsifJob); err != nil {
 		return nil, err
 	}
 
@@ -185,7 +185,7 @@ func (r *Resolver) LSIFJobStatsByGQLID(ctx context.Context, id graphql.ID) (grap
 	}
 
 	var stats *types.LSIFJobStats
-	if err := lsif.TraceRequestAndUnmarshalPayload(ctx, "/jobs/stats", nil, &stats); err != nil {
+	if err := client.TraceRequestAndUnmarshalPayload(ctx, "/jobs/stats", nil, &stats); err != nil {
 		return nil, err
 	}
 

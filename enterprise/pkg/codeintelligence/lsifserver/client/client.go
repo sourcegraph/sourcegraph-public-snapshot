@@ -1,4 +1,4 @@
-package lsif
+package client
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintelligence"
+	"github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintelligence/lsifserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/tomnomnom/linkheader"
 	"golang.org/x/net/context/ctxhttp"
@@ -58,7 +58,7 @@ func buildURL(path string, query url.Values) (string, error) {
 	build := url.Parse
 	if len(path) > 0 && path[0] == '/' {
 		build = func(path string) (*url.URL, error) {
-			u, err := url.Parse(codeintelligence.ServerURLFromEnv)
+			u, err := url.Parse(lsifserver.ServerURLFromEnv)
 			if err != nil {
 				return nil, err
 			}

@@ -3,24 +3,13 @@ package proxy
 import (
 	"net/http"
 	"net/http/httputil"
-	"net/url"
 
-	"github.com/gorilla/mux"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
-var apiURL = url.URL{Scheme: "https", Host: "api.github.com"}
-
-func ProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		r.URL.Path = mux.Vars(r)["rest"]
-		p.ServeHTTP(w, r)
-	}
-}
-
-func UploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
+func uploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
 		repoName := q.Get("repository")

@@ -234,6 +234,10 @@ func (r *RepositoryResolver) resultCount() int32 {
 	return 1
 }
 
+func (r *RepositoryResolver) Type() *types.Repo {
+	return r.repo
+}
+
 func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 	r.hydration.Do(func() {
 		if r.repo.RepoFields != nil {

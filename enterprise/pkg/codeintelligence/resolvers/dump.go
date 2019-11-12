@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintelligence/lsif"
+	"github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintelligence/lsifserver/client"
 )
 
 //
@@ -30,13 +30,14 @@ func (r *lsifDumpResolver) ID() graphql.ID {
 	return marshalLSIFDumpGQLID(r.lsifDump.Repository, r.lsifDump.ID)
 }
 
-func (r *lsifDumpResolver) ProjectRoot() *graphqlbackend.GitTreeEntryResolver {
-	// commitResolver := &graphqlbackend.GitCommitResolver{
-	// 	repo: &graphqlbackend.RepositoryResolver{repo: r.repo},
-	// 	oid:  graphqlbackend.GitObjectID(r.lsifDump.Commit),
-	// }
+func (r *lsifDumpResolver) ProjectRoot() (*graphqlbackend.GitTreeEntryResolver, error) {
+	repo := graphqlbackend.NewRepositoryResolver(r.repo)
+	commitResolver, err := repo.Commit(context.Background(), &graphqlbackend.RepositoryCommitArgs{Rev: r.lsifDump.Commit})
+	if err != nil {
+		return nil, err
+	}
 
-	return graphqlbackend.NewGitTreeEntryResolver(nil, graphqlbackend.CreateFileInfo(r.lsifDump.Root, true))
+	return graphqlbackend.NewGitTreeEntryResolver(commitResolver, graphqlbackend.CreateFileInfo(r.lsifDump.Root, true)), nil
 }
 
 func (r *lsifDumpResolver) IsLatestForRepo() bool {
@@ -64,7 +65,7 @@ type lsifDumpConnectionResolver struct {
 var _ graphqlbackend.LSIFDumpConnectionResolver = &lsifDumpConnectionResolver{}
 
 func (r *lsifDumpConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.LSIFDumpResolver, error) {
-	dumps, _, _, _, err := r.compute(ctx)
+	dumps, repo, _, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +73,7 @@ func (r *lsifDumpConnectionResolver) Nodes(ctx context.Context) ([]graphqlbacken
 	var l []graphqlbackend.LSIFDumpResolver
 	for _, lsifDump := range dumps {
 		l = append(l, &lsifDumpResolver{
-			repo:     nil, //   repo.repo,
+			repo:     repo.Type(),
 			lsifDump: lsifDump,
 		})
 	}
@@ -125,7 +126,7 @@ func (r *lsifDumpConnectionResolver) compute(ctx context.Context) ([]*types.LSIF
 			query.Set("limit", strconv.FormatInt(int64(*r.opt.Limit), 10))
 		}
 
-		resp, err := lsif.BuildAndTraceRequest(ctx, path, query)
+		resp, err := client.BuildAndTraceRequest(ctx, path, query)
 		if err != nil {
 			r.err = err
 			return
@@ -138,7 +139,7 @@ func (r *lsifDumpConnectionResolver) compute(ctx context.Context) ([]*types.LSIF
 			Dumps: []*types.LSIFDump{},
 		}
 
-		if err := lsif.UnmarshalPayload(resp, &payload); err != nil {
+		if err := client.UnmarshalPayload(resp, &payload); err != nil {
 			r.err = err
 			return
 		}
@@ -146,7 +147,7 @@ func (r *lsifDumpConnectionResolver) compute(ctx context.Context) ([]*types.LSIF
 		r.dumps = payload.Dumps
 		r.repo = repo
 		r.totalCount = payload.TotalCount
-		r.nextURL = lsif.ExtractNextURL(resp)
+		r.nextURL = client.ExtractNextURL(resp)
 	})
 
 	return r.dumps, r.repo, r.totalCount, r.nextURL, r.err
