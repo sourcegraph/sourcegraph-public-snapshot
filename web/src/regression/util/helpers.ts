@@ -27,7 +27,6 @@ import {
     SAMLAuthProvider,
 } from '../../schema/critical.schema'
 import { fromFetch } from 'rxjs/fetch'
-import { Settings } from '../../schema/settings.schema'
 import { first } from 'lodash'
 import { overwriteSettings } from '../../../../shared/src/settings/edit'
 

@@ -154,7 +154,7 @@ describe('Auth regression test suite', () => {
                     clientSecret: config.gitLabClientSecret,
                     allowSignup: true,
                 },
-                loginToAuthProvider: async () =>
+                loginToAuthProvider: () =>
                     loginToGitLab(driver, 'sg-e2e-regression-test-amy', config.gitLabUserAmyPassword),
             })
         },

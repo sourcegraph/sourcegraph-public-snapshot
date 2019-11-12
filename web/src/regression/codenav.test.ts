@@ -11,7 +11,6 @@ import { ensureLoggedInOrCreateTestUser } from './util/helpers'
 import { ScreenshotVerifier } from './util/ScreenshotVerifier'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { ensureTestExternalService } from './util/api'
-import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 
 describe('Code navigation regression test suite', () => {
     const testUsername = 'test-codenav'
