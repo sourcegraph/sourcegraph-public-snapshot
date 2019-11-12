@@ -24,7 +24,7 @@ import { ThemeProps } from '../../../../../../shared/src/theme'
 
 export interface ChangesetNodeProps extends ThemeProps {
     node: IExternalChangeset | IChangesetPlan
-    history?: H.History
+    history: H.History
     location: H.Location
 }
 
@@ -109,6 +109,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                             lineNumbers={true}
                             location={location}
                             history={history}
+                            disableLinePersistance={node.__typename === 'ChangesetPlan'}
                             key={i}
                         ></FileDiffNode>
                     ))}

@@ -46,8 +46,10 @@ interface FileHunksProps extends Partial<ExtensionsControllerProps>, ThemeProps 
 
     className: string
     location: H.Location
-    history?: H.History
+    history: H.History
     hoverifier?: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
+    /** Don't reflect selected line in url */
+    disableLinePersistance: boolean
 }
 
 interface FileDiffHunksState {

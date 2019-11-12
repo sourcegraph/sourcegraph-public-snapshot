@@ -17,7 +17,7 @@ export interface FileDiffNodeProps extends ThemeProps {
     lineNumbers: boolean
     className?: string
     location: H.Location
-    history?: H.History
+    history: H.History
 
     /** The base repository and revision. */
     base?: { repoName: string; repoID: GQL.ID; rev: string; commitID: string }
@@ -26,6 +26,9 @@ export interface FileDiffNodeProps extends ThemeProps {
     head?: { repoName: string; repoID: GQL.ID; rev: string; commitID: string }
 
     hoverifier?: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
+
+    /** Don't reflect selected line in url */
+    disableLinePersistance: boolean
 }
 
 interface State {

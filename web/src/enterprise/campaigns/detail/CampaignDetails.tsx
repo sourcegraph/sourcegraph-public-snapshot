@@ -568,6 +568,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                         isLightTheme={isLightTheme}
                                         key={i}
                                         location={location}
+                                        history={history}
                                     ></ChangesetNode>
                                 ))}
                         </div>
@@ -588,6 +589,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                                 lineNumbers={true}
                                                 location={location}
                                                 history={history}
+                                                disableLinePersistance={true}
                                                 key={j}
                                             ></FileDiffNode>
                                         ))}

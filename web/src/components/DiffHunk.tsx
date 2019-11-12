@@ -37,17 +37,26 @@ const DiffBoundary: React.FunctionComponent<{
         </td>
     </tr>
 )
-export const DiffHunk: React.FunctionComponent<
-    {
-        /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
-        fileDiffAnchor: string
-        hunk: GQL.IFileDiffHunk
-        lineNumbers: boolean
-        decorations: Record<'head' | 'base', DecorationMapByLine>
-        location: H.Location
-        history: H.History
-    } & ThemeProps
-> = ({ fileDiffAnchor, decorations, hunk, lineNumbers, location, history, isLightTheme }) => {
+export const DiffHunk: React.FunctionComponent<{
+    /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
+    fileDiffAnchor: string
+    hunk: GQL.IFileDiffHunk
+    lineNumbers: boolean
+    decorations: Record<'head' | 'base', DecorationMapByLine>
+    location: H.Location
+    history: H.History
+    /** Don't reflect selected line in url */
+    disableLinePersistance?: boolean
+} & ThemeProps> = ({
+    fileDiffAnchor,
+    decorations,
+    hunk,
+    lineNumbers,
+    location,
+    history,
+    disableLinePersistance,
+    isLightTheme,
+}) => {
     let oldLine = hunk.oldRange.startLine
     let newLine = hunk.newRange.startLine
     return (
@@ -100,7 +109,7 @@ export const DiffHunk: React.FunctionComponent<
                                             data-line={oldLine - 1}
                                             data-part="base"
                                             id={oldAnchor}
-                                            onClick={() => history && history.push({ hash: oldAnchor })}
+                                            onClick={() => !disableLinePersistance && history.push({ hash: oldAnchor })}
                                         />
                                     ) : (
                                         <td className="diff-hunk__num diff-hunk__num--empty" />
@@ -112,7 +121,7 @@ export const DiffHunk: React.FunctionComponent<
                                             data-line={newLine - 1}
                                             data-part="head"
                                             id={newAnchor}
-                                            onClick={() => history && history.push({ hash: newAnchor })}
+                                            onClick={() => !disableLinePersistance && history.push({ hash: newAnchor })}
                                         />
                                     ) : (
                                         <td className="diff-hunk__num diff-hunk__num--empty" />
