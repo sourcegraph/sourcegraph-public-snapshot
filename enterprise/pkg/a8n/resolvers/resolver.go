@@ -126,8 +126,10 @@ func (r *Resolver) AddChangesetsToCampaign(ctx context.Context, args *graphqlbac
 	if err != nil {
 		return nil, err
 	}
-	// TODO(a8n): If campaign.CampaignPlainID != 0, we need to return an error
-	// here. Only "manual" campaigns can have changesets added.
+
+	if campaign.CampaignPlanID != 0 {
+		return nil, errors.New("Changesets can only be added to campaigns that don't create their own changesets")
+	}
 
 	changesets, _, err := tx.ListChangesets(ctx, ee.ListChangesetsOpts{IDs: changesetIDs})
 	if err != nil {
