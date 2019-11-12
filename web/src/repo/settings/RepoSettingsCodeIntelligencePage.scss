@@ -7,11 +7,6 @@
         margin: 0.5rem 0;
         padding: 0.5rem 0.75rem;
 
-        &-badges {
-            display: inline;
-            vertical-align: top;
-        }
-
         .theme-light & {
             border-color: $color-light-border;
         }

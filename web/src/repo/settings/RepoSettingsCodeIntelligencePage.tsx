@@ -97,27 +97,6 @@ export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ rep
     const queuedCount = (queuedLsifJobs && queuedLsifJobs.nodes.length) || 0
     const failedCount = (failedLsifJobs && failedLsifJobs.nodes.length) || 0
 
-    const activityTitle = (
-        <>
-            <span className="h5">Activity for this repository</span>
-
-            <div className="repo-settings-code-intelligence-page-collapsible-badges ml-1">
-                {activeCount + queuedCount > 0 && (
-                    <span className="badge badge-primary badge-pill ml-1">
-                        {activeCount + queuedCount}
-                        {queuedLsifJobs && queuedLsifJobs.pageInfo.hasNextPage && '+'}
-                    </span>
-                )}
-                {failedCount > 0 && (
-                    <span className="badge badge-danger badge-pill ml-1">
-                        {failedCount}
-                        {failedLsifJobs && failedLsifJobs.pageInfo.hasNextPage && '+'}
-                    </span>
-                )}
-            </div>
-        </>
-    )
-
     return (
         <div className="repo-settings-code-intelligence-page">
             <PageTitle title="Code intelligence" />
@@ -154,10 +133,10 @@ export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ rep
 
             <div className="mt-4">
                 <Collapsible
-                    title={activityTitle}
+                    title="Activity for this repository"
                     defaultExpanded={false}
                     className="repo-settings-code-intelligence-page-collapsible"
-                    titleClassName="mb-0"
+                    titleClassName="h5 mb-0"
                 >
                     <div>
                         <h3>Pending and active LSIF uploads</h3>
