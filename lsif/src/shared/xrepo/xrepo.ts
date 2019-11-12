@@ -872,13 +872,11 @@ export class XrepoDatabase {
         /** The maximum number of requests to make at once. Set during testing.*/
         batchSize?: number
     }): Promise<void> {
-        for (const [repository, commit] of (
-            await this.discoverTips({
-                gitserverUrls,
-                ctx,
-                batchSize,
-            })
-        ).entries()) {
+        for (const [repository, commit] of (await this.discoverTips({
+            gitserverUrls,
+            ctx,
+            batchSize,
+        })).entries()) {
             await this.updateDumpsVisibleFromTip(repository, commit)
         }
     }
@@ -910,7 +908,6 @@ export class XrepoDatabase {
         for (const repository of await this.getTrackedRepositories()) {
             factories.push(async () => {
                 const lines = await gitserverExecLines(addrFor(repository, gitserverUrls), repository, [
-                    'git',
                     'rev-parse',
                     'HEAD',
                 ])

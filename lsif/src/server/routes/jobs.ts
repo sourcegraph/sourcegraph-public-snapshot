@@ -101,6 +101,38 @@ const formatJobFromMap = (values: Map<string, string>, state: ApiJobState): ApiJ
 export function createJobRouter(queue: Queue, scriptedClient: ScriptedRedis): express.Router {
     const router = express.Router()
 
+    // router.post(
+    //     '/jobs',
+    //     wrap(
+    //         async (req: express.Request, res: express.Response): Promise<void> => {
+    //             const { name, args }: { name: string; args: object } = req.body
+
+    //             const job = await enqueue(queue, name, args, {}, undefined, undefined) // tracer, ctx.span)
+
+    //             // if (blocking) {
+    //             //     let promise = job.finished()
+    //             //     if (timeout >= 0) {
+    //             //         promise = pTimeout(promise, timeout * 1000)
+    //             //     }
+
+    //             //     try {
+    //             //         await promise
+
+    //             //         // Job succeeded while blocked, send success
+    //             //         res.status(200)
+    //             //         res.send({ id: job.id })
+    //             //         return
+    //             //     } catch (error) {
+    //             //         // Throw the job error, but not the timeout error
+    //             //         if (!error.message.includes('Promise timed out')) {
+    //             //             throw error
+    //             //         }
+    //             //     }
+    //             // }
+    //         }
+    //     )
+    // )
+
     router.get(
         '/jobs/stats',
         wrap(

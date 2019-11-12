@@ -93,7 +93,7 @@ describe('discoverAndUpdateTips', () => {
         const ce = util.createCommit('e')
 
         nock('http://gitserver0')
-            .post('/exec', { repo: 'test-repo', args: ['git', 'rev-parse', 'HEAD'] })
+            .post('/exec', { repo: 'test-repo', args: ['rev-parse', 'HEAD'] })
             .reply(200, ce)
 
         const { connection, cleanup } = await util.createCleanPostgresDatabase()
@@ -142,7 +142,7 @@ describe('discoverTips', () => {
         for (const [addr, suffixes] of Object.entries(requests)) {
             for (const i of suffixes) {
                 nock(addr)
-                    .post('/exec', { repo: `test-repo-${i}`, args: ['git', 'rev-parse', 'HEAD'] })
+                    .post('/exec', { repo: `test-repo-${i}`, args: ['rev-parse', 'HEAD'] })
                     .reply(200, `c${i}`)
             }
         }

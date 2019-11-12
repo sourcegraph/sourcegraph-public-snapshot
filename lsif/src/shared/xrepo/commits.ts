@@ -129,14 +129,20 @@ async function gitserverExec(gitserverUrl: string, repository: string, args: str
         throw new Error('gitserver commands should not be prefixed with `git`')
     }
 
-    const body = JSON.stringify({ repo: repository, args })
-    const resp = await got(new URL(`http://${gitserverUrl}/exec`).href, { body })
+    // Perform request - this may fail with a 404 or 500
+    const resp = await got(new URL(`http://${gitserverUrl}/exec`).href, {
+        body: JSON.stringify({ repo: repository, args }),
+    })
 
-    if (resp.trailers['x-exec-status'] !== '0') {
-        // The request may fail on its own, or it may succeed but put the
-        // subprocess failure message into the response trailers. Check for
-        // that so we don't silently throw away failures.
-        throw new Error(resp.trailers['x-exec-stderr'])
+    // Read trailers on a 200-level response
+    const status = resp.trailers['x-exec-status']
+    const stderr = resp.trailers['x-exec-stderr']
+
+    // Determine if underlying git command failed and throw an error
+    // in that case. Status will be undefined in some of our tests and
+    // will be the process exit code (given as a string) otherwise.
+    if (status !== undefined && status !== '0') {
+        throw new Error(stderr)
     }
 
     return resp.body
