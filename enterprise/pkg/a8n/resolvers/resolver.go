@@ -192,7 +192,7 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		return nil, err
 	}
 
-	svc := ee.NewCampaignsService(r.store, gitserver.DefaultClient)
+	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
 	err = svc.CreateCampaign(ctx, campaign)
 	if err != nil {
 		return nil, err

@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -94,7 +95,7 @@ func Main(newPreSync repos.NewPreSync, dbInitHook func(db *sql.DB)) {
 		)
 	}
 
-	cf := repos.NewHTTPClientFactory()
+	cf := httpcli.NewHTTPClientFactory()
 	var src repos.Sourcer
 	{
 		m := repos.NewSourceMetrics()

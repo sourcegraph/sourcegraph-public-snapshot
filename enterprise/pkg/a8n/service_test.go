@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
 func TestService(t *testing.T) {
@@ -86,7 +87,8 @@ func TestService(t *testing.T) {
 	}
 	gitClient := &dummyGitserverClient{response: "testresponse", responseErr: nil}
 
-	svc := NewServiceWithClock(store, gitClient, clock)
+	cf := httpcli.NewHTTPClientFactory()
+	svc := NewServiceWithClock(store, gitClient, cf, clock)
 	err = svc.CreateCampaign(ctx, campaign)
 	if err != nil {
 		t.Fatal(err)

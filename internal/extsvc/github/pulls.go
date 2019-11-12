@@ -75,6 +75,8 @@ type PullRequest struct {
 	URL           string
 	HeadRefOid    string
 	BaseRefOid    string
+	HeadRefName   string
+	BaseRefName   string
 	Number        int64
 	Author        Actor
 	Participants  []Actor
@@ -486,7 +488,7 @@ fragment review on PullRequestReview {
 }
 fragment pr on PullRequest {
 	id, title, body, state, url, number, createdAt, updatedAt
-	headRefOid, baseRefOid
+	headRefOid, baseRefOid, headRefName, baseRefName
 	author { ...actor }
 	participants(first: 100) { nodes { ...actor } }
 	timelineItems(

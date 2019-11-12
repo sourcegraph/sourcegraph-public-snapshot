@@ -7,9 +7,9 @@ interactions:
       url\n\tcommitter {\n\tavatarUrl, email, name\n\tuser { ...actor }\n\t}\n}\nfragment
       review on PullRequestReview {\n\tdatabaseId\n\tauthor { ...actor }\n\tauthorAssociation\n\tbody\n\tstate\n\turl\n\tcreatedAt\n\tupdatedAt\n\tcommit
       { ...commit }\n\tincludesCreatedEdit\n}\nfragment pr on PullRequest {\n\tid,
-      title, body, state, url, number, createdAt, updatedAt\n\theadRefOid, baseRefOid\n\tauthor
-      { ...actor }\n\tparticipants(first: 100) { nodes { ...actor } }\n\ttimelineItems(\n\tfirst:
-      250\n\titemTypes: [\n\t\tASSIGNED_EVENT\n\t\tCLOSED_EVENT\n\t\tISSUE_COMMENT\n\t\tRENAMED_TITLE_EVENT\n\t\tMERGED_EVENT\n\t\tPULL_REQUEST_REVIEW\n\t\tPULL_REQUEST_REVIEW_THREAD\n\t\tREOPENED_EVENT\n\t\tREVIEW_DISMISSED_EVENT\n\t\tREVIEW_REQUEST_REMOVED_EVENT\n\t\tREVIEW_REQUESTED_EVENT\n\t\tUNASSIGNED_EVENT\n\t]\n\t)
+      title, body, state, url, number, createdAt, updatedAt\n\theadRefOid, baseRefOid,
+      headRefName, baseRefName\n\tauthor { ...actor }\n\tparticipants(first: 100)
+      { nodes { ...actor } }\n\ttimelineItems(\n\tfirst: 250\n\titemTypes: [\n\t\tASSIGNED_EVENT\n\t\tCLOSED_EVENT\n\t\tISSUE_COMMENT\n\t\tRENAMED_TITLE_EVENT\n\t\tMERGED_EVENT\n\t\tPULL_REQUEST_REVIEW\n\t\tPULL_REQUEST_REVIEW_THREAD\n\t\tREOPENED_EVENT\n\t\tREVIEW_DISMISSED_EVENT\n\t\tREVIEW_REQUEST_REMOVED_EVENT\n\t\tREVIEW_REQUESTED_EVENT\n\t\tUNASSIGNED_EVENT\n\t]\n\t)
       {\n\tnodes {\n\t\t__typename\n\t\t... on AssignedEvent {\n\t\tactor { ...actor
       }\n\t\tassignee { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t... on ClosedEvent {\n\t\tactor
       { ...actor }\n\t\tcreatedAt\n\t\turl\n\t\t}\n\t\t... on IssueComment {\n\t\tdatabaseId\n\t\tauthor
@@ -37,9 +37,8 @@ interactions:
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"createPullRequest":{"pullRequest":{"id":"MDExOlB1bGxSZXF1ZXN0MzM5NzUzMzQy","title":"This
-      is a test PR, feel free to ignore","body":"I''m opening this PR to test something.
-      Please ignore.","state":"OPEN","url":"https://github.com/sourcegraph/automation-testing/pull/3","number":3,"createdAt":"2019-11-12T06:43:39Z","updatedAt":"2019-11-12T06:43:39Z","headRefOid":"9d04a0d8733dafbb5d75e594a9ec525c49dfc975","baseRefOid":"c75943274b322ffef2230df8f8049de84ddf12c1","author":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"participants":{"nodes":[{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"}]},"timelineItems":{"nodes":[]}}}}}'
+    body: '{"data":{"createPullRequest":{"pullRequest":null}},"errors":[{"type":"UNPROCESSABLE","path":["createPullRequest"],"locations":[{"line":130,"column":3}],"message":"A
+      pull request already exists for sourcegraph:test-pr-2."}]}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -54,7 +53,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 12 Nov 2019 06:43:40 GMT
+      - Tue, 12 Nov 2019 12:08:01 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -74,15 +73,15 @@ interactions:
       X-Github-Media-Type:
       - github.v4; format=json
       X-Github-Request-Id:
-      - D5FC:43EEE:15A9887:19D0E45:5DCA549A
+      - 0891:43EF6:53C866B:63EAFDB:5DCAA0A0
       X-Oauth-Scopes:
-      - public_repo
+      - admin:org_hook, admin:repo_hook, repo
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4997"
+      - "4943"
       X-Ratelimit-Reset:
-      - "1573544619"
+      - "1573563927"
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK
@@ -94,9 +93,9 @@ interactions:
       url\n\tcommitter {\n\tavatarUrl, email, name\n\tuser { ...actor }\n\t}\n}\nfragment
       review on PullRequestReview {\n\tdatabaseId\n\tauthor { ...actor }\n\tauthorAssociation\n\tbody\n\tstate\n\turl\n\tcreatedAt\n\tupdatedAt\n\tcommit
       { ...commit }\n\tincludesCreatedEdit\n}\nfragment pr on PullRequest {\n\tid,
-      title, body, state, url, number, createdAt, updatedAt\n\theadRefOid, baseRefOid\n\tauthor
-      { ...actor }\n\tparticipants(first: 100) { nodes { ...actor } }\n\ttimelineItems(\n\tfirst:
-      250\n\titemTypes: [\n\t\tASSIGNED_EVENT\n\t\tCLOSED_EVENT\n\t\tISSUE_COMMENT\n\t\tRENAMED_TITLE_EVENT\n\t\tMERGED_EVENT\n\t\tPULL_REQUEST_REVIEW\n\t\tPULL_REQUEST_REVIEW_THREAD\n\t\tREOPENED_EVENT\n\t\tREVIEW_DISMISSED_EVENT\n\t\tREVIEW_REQUEST_REMOVED_EVENT\n\t\tREVIEW_REQUESTED_EVENT\n\t\tUNASSIGNED_EVENT\n\t]\n\t)
+      title, body, state, url, number, createdAt, updatedAt\n\theadRefOid, baseRefOid,
+      headRefName, baseRefName\n\tauthor { ...actor }\n\tparticipants(first: 100)
+      { nodes { ...actor } }\n\ttimelineItems(\n\tfirst: 250\n\titemTypes: [\n\t\tASSIGNED_EVENT\n\t\tCLOSED_EVENT\n\t\tISSUE_COMMENT\n\t\tRENAMED_TITLE_EVENT\n\t\tMERGED_EVENT\n\t\tPULL_REQUEST_REVIEW\n\t\tPULL_REQUEST_REVIEW_THREAD\n\t\tREOPENED_EVENT\n\t\tREVIEW_DISMISSED_EVENT\n\t\tREVIEW_REQUEST_REMOVED_EVENT\n\t\tREVIEW_REQUESTED_EVENT\n\t\tUNASSIGNED_EVENT\n\t]\n\t)
       {\n\tnodes {\n\t\t__typename\n\t\t... on AssignedEvent {\n\t\tactor { ...actor
       }\n\t\tassignee { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t... on ClosedEvent {\n\t\tactor
       { ...actor }\n\t\tcreatedAt\n\t\turl\n\t\t}\n\t\t... on IssueComment {\n\t\tdatabaseId\n\t\tauthor
@@ -140,7 +139,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 12 Nov 2019 06:43:40 GMT
+      - Tue, 12 Nov 2019 12:08:02 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -160,15 +159,15 @@ interactions:
       X-Github-Media-Type:
       - github.v4; format=json
       X-Github-Request-Id:
-      - D5FC:43EEE:15A98C7:19D0E8A:5DCA549C
+      - 0891:43EF6:53C87E5:63EB199:5DCAA0A1
       X-Oauth-Scopes:
-      - public_repo
+      - admin:org_hook, admin:repo_hook, repo
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4994"
+      - "4940"
       X-Ratelimit-Reset:
-      - "1573544619"
+      - "1573563927"
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK
@@ -180,9 +179,9 @@ interactions:
       url\n\tcommitter {\n\tavatarUrl, email, name\n\tuser { ...actor }\n\t}\n}\nfragment
       review on PullRequestReview {\n\tdatabaseId\n\tauthor { ...actor }\n\tauthorAssociation\n\tbody\n\tstate\n\turl\n\tcreatedAt\n\tupdatedAt\n\tcommit
       { ...commit }\n\tincludesCreatedEdit\n}\nfragment pr on PullRequest {\n\tid,
-      title, body, state, url, number, createdAt, updatedAt\n\theadRefOid, baseRefOid\n\tauthor
-      { ...actor }\n\tparticipants(first: 100) { nodes { ...actor } }\n\ttimelineItems(\n\tfirst:
-      250\n\titemTypes: [\n\t\tASSIGNED_EVENT\n\t\tCLOSED_EVENT\n\t\tISSUE_COMMENT\n\t\tRENAMED_TITLE_EVENT\n\t\tMERGED_EVENT\n\t\tPULL_REQUEST_REVIEW\n\t\tPULL_REQUEST_REVIEW_THREAD\n\t\tREOPENED_EVENT\n\t\tREVIEW_DISMISSED_EVENT\n\t\tREVIEW_REQUEST_REMOVED_EVENT\n\t\tREVIEW_REQUESTED_EVENT\n\t\tUNASSIGNED_EVENT\n\t]\n\t)
+      title, body, state, url, number, createdAt, updatedAt\n\theadRefOid, baseRefOid,
+      headRefName, baseRefName\n\tauthor { ...actor }\n\tparticipants(first: 100)
+      { nodes { ...actor } }\n\ttimelineItems(\n\tfirst: 250\n\titemTypes: [\n\t\tASSIGNED_EVENT\n\t\tCLOSED_EVENT\n\t\tISSUE_COMMENT\n\t\tRENAMED_TITLE_EVENT\n\t\tMERGED_EVENT\n\t\tPULL_REQUEST_REVIEW\n\t\tPULL_REQUEST_REVIEW_THREAD\n\t\tREOPENED_EVENT\n\t\tREVIEW_DISMISSED_EVENT\n\t\tREVIEW_REQUEST_REMOVED_EVENT\n\t\tREVIEW_REQUESTED_EVENT\n\t\tUNASSIGNED_EVENT\n\t]\n\t)
       {\n\tnodes {\n\t\t__typename\n\t\t... on AssignedEvent {\n\t\tactor { ...actor
       }\n\t\tassignee { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t... on ClosedEvent {\n\t\tactor
       { ...actor }\n\t\tcreatedAt\n\t\turl\n\t\t}\n\t\t... on IssueComment {\n\t\tdatabaseId\n\t\tauthor
@@ -225,7 +224,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 12 Nov 2019 06:43:40 GMT
+      - Tue, 12 Nov 2019 12:08:02 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -245,15 +244,15 @@ interactions:
       X-Github-Media-Type:
       - github.v4; format=json
       X-Github-Request-Id:
-      - D5FC:43EEE:15A98E7:19D0EA8:5DCA549C
+      - 0891:43EF6:53C889E:63EB286:5DCAA0A2
       X-Oauth-Scopes:
-      - public_repo
+      - admin:org_hook, admin:repo_hook, repo
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4991"
+      - "4937"
       X-Ratelimit-Reset:
-      - "1573544619"
+      - "1573563927"
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK
