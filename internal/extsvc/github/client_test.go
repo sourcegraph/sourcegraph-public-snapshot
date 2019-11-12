@@ -167,7 +167,7 @@ func TestClient_CreatePullRequest(t *testing.T) {
 
 	// Repository used: sourcegraph/automation-testing
 	// The requests here cannot be easily rerun with `-update` since you can
-	// only open a pull request a single time.
+	// only open a pull request once.
 	// In order to update specific tests, comment out the other ones and then
 	// run with -update.
 	for i, tc := range []struct {
