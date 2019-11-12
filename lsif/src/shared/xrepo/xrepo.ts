@@ -910,7 +910,6 @@ export class XrepoDatabase {
         for (const repository of await this.getTrackedRepositories()) {
             factories.push(async () => {
                 const lines = await gitserverExecLines(addrFor(repository, gitserverUrls), repository, [
-                    'git',
                     'rev-parse',
                     'HEAD',
                 ])
