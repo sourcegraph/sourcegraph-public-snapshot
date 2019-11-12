@@ -115,7 +115,7 @@ export class SiteAdminLsifJobsPage extends React.Component<Props, State> {
             this.updates
                 // Do not set statsOrError as null here to indicate loading
                 // so that the stats don't disappear during navigation, which
-                // causes some werid jitter.
+                // causes some weird jitter.
                 .pipe(switchMap(() => fetchLsifJobStatistics()))
                 .subscribe(
                     stats => this.setState({ statsOrError: stats }),
