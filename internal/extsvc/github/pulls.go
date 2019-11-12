@@ -75,6 +75,8 @@ type PullRequest struct {
 	URL           string
 	HeadRefOid    string
 	BaseRefOid    string
+	HeadRefName   string
+	BaseRefName   string
 	Number        int64
 	Author        Actor
 	Participants  []Actor
@@ -401,13 +403,13 @@ func (c *Client) LoadPullRequests(ctx context.Context, prs ...*PullRequest) erro
 	}
 
 	labeled := map[string]*repository{}
-	for _, pr := range prs {
+	for i, pr := range prs {
 		owner, repo, err := SplitRepositoryNameWithOwner(pr.RepoWithOwner)
 		if err != nil {
 			return err
 		}
 
-		repoLabel := owner + "_" + repo
+		repoLabel := fmt.Sprintf("repo_%d", i)
 		r, ok := labeled[repoLabel]
 		if !ok {
 			r = &repository{
@@ -486,7 +488,7 @@ fragment review on PullRequestReview {
 }
 fragment pr on PullRequest {
 	id, title, body, state, url, number, createdAt, updatedAt
-	headRefOid, baseRefOid
+	headRefOid, baseRefOid, headRefName, baseRefName
 	author { ...actor }
 	participants(first: 100) { nodes { ...actor } }
 	timelineItems(

@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -102,7 +103,14 @@ func TestNewRepoCache_GitHubEnterprise(t *testing.T) {
 	}
 }
 
-var update = flag.Bool("update", false, "update testdata")
+var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")
+
+func update(name string) bool {
+	if updateRegex == nil || *updateRegex == "" {
+		return false
+	}
+	return regexp.MustCompile(*updateRegex).MatchString(name)
+}
 
 func TestClient_LoadPullRequests(t *testing.T) {
 	cli, save := newClient(t, "LoadPullRequests")
@@ -154,7 +162,7 @@ func TestClient_LoadPullRequests(t *testing.T) {
 
 			assertGolden(t,
 				"testdata/golden/LoadPullRequests-"+strconv.Itoa(i),
-				*update,
+				update("LoadPullRequests"),
 				tc.prs,
 			)
 		})
@@ -181,7 +189,7 @@ func TestClient_CreatePullRequest(t *testing.T) {
 			input: &CreatePullRequestInput{
 				RepositoryID: "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
 				BaseRefName:  "master",
-				HeadRefName:  "test-pr-2",
+				HeadRefName:  "test-pr-3",
 				Title:        "This is a test PR, feel free to ignore",
 				Body:         "I'm opening this PR to test something. Please ignore.",
 			},
@@ -229,7 +237,7 @@ func TestClient_CreatePullRequest(t *testing.T) {
 
 			assertGolden(t,
 				"testdata/golden/CreatePullRequest-"+strconv.Itoa(i),
-				*update,
+				update("CreatePullRequest"),
 				pr,
 			)
 		})
@@ -266,7 +274,7 @@ func newClient(t testing.TB, name string) (*Client, func()) {
 	t.Helper()
 
 	cassete := filepath.Join("testdata/vcr/", strings.Replace(name, " ", "-", -1))
-	rec, err := httptestutil.NewRecorder(cassete, *update, func(i *cassette.Interaction) error {
+	rec, err := httptestutil.NewRecorder(cassete, update(name), func(i *cassette.Interaction) error {
 		return nil
 	})
 	if err != nil {

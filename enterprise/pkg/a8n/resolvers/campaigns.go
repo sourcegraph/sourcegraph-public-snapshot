@@ -215,6 +215,10 @@ func (r *campaignResolver) RepositoryDiffs(
 	return &changesetDiffsConnectionResolver{changesetsConnection}, nil
 }
 
+func (r *campaignResolver) ChangesetCreationStatus(ctx context.Context) (graphqlbackend.BackgroundProcessStatus, error) {
+	return r.store.GetCampaignStatus(ctx, r.Campaign.ID)
+}
+
 type changesetDiffsConnectionResolver struct {
 	*changesetsConnectionResolver
 }
@@ -235,14 +239,4 @@ func (r *changesetDiffsConnectionResolver) Nodes(ctx context.Context) ([]*graphq
 		}
 	}
 	return resolvers, nil
-}
-
-func (r *campaignResolver) ChangesetCreationStatus() graphqlbackend.BackgroundProcessStatus {
-	// TODO(a8n): Implement this
-	return a8n.BackgroundProcessStatus{
-		Completed:     0,
-		Pending:       99,
-		ProcessState:  a8n.BackgroundProcessStateErrored,
-		ProcessErrors: []string{"something went wrong we don't know what"},
-	}
 }
