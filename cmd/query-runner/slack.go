@@ -28,7 +28,7 @@ func (n *notifier) slackNotify(ctx context.Context) {
 		}
 	}
 	// TODO(Dan): find all users in the recipient list and log events for all of them
-	logEvent(0, "", "SavedSearchSlackNotificationSent", "results")
+	logEvent(0, "SavedSearchSlackNotificationSent", "results")
 }
 
 func slackNotifySubscribed(ctx context.Context, recipient *recipient, query api.SavedQuerySpecAndConfig) error {
@@ -40,7 +40,7 @@ func slackNotifySubscribed(ctx context.Context, recipient *recipient, query api.
 		return err
 	}
 	// TODO(Dan): find all users in the recipient list and log events for all of them
-	logEvent(0, "", "SavedSearchSlackNotificationSent", "enabled")
+	logEvent(0, "SavedSearchSlackNotificationSent", "enabled")
 	return nil
 }
 
@@ -53,7 +53,7 @@ func slackNotifyUnsubscribed(ctx context.Context, recipient *recipient, query ap
 		return err
 	}
 	// TODO(Dan): find all users in the recipient list and log events for all of them
-	logEvent(0, "", "SavedSearchSlackNotificationSent", "disabled")
+	logEvent(0, "SavedSearchSlackNotificationSent", "disabled")
 	return nil
 }
 

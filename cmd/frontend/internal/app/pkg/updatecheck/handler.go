@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
 	"github.com/sourcegraph/sourcegraph/internal/hubspot"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub/pubsubutil"
@@ -210,8 +209,6 @@ func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 		everFindRefs,
 		time.Now().UTC().Format(time.RFC3339),
 	)
-
-	eventlogger.LogEvent(0, "ServerUpdateCheck", message)
 
 	if pubsubutil.Enabled() {
 		err := pubsubutil.Publish(pubSubPingsTopicID, message)

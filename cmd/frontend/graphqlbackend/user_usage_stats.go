@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"time"
 
@@ -11,13 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/pubsub/pubsubutil"
-	"github.com/sourcegraph/sourcegraph/internal/version"
 )
-
-// pubSubDotComEventsTopicID is the topic ID of the topic that forwards messages to Sourcegraph.com events' pub/sub subscribers.
-var pubSubDotComEventsTopicID = env.Get("PUBSUB_DOTCOM_EVENTS_TOPIC_ID", "", "Pub/sub dotcom events topic ID is the pub/sub topic id where Sourcegraph.com events are published.")
 
 func (r *UserResolver) UsageStatistics(ctx context.Context) (*userUsageStatisticsResolver, error) {
 	if envvar.SourcegraphDotComMode() {
@@ -83,50 +76,12 @@ func (*schemaResolver) LogEvent(ctx context.Context, args *struct {
 		return nil, nil
 	}
 	actor := actor.FromContext(ctx)
-
-	// On Sourcegraph.com, log events to BigQuery instead of the internal Postgres table.
-	if envvar.SourcegraphDotComMode() {
-		if pubSubDotComEventsTopicID == "" {
-			return nil, nil
-		}
-		var argument string
-		if args.Argument != nil {
-			argument = *args.Argument
-		}
-		event, err := json.Marshal(bigQueryEvent{
-			EventName:       args.Event,
-			UserID:          int(actor.UID),
-			AnonymousUserID: args.UserCookieID,
-			URL:             args.URL,
-			Source:          args.Source,
-			Argument:        argument,
-			Timestamp:       time.Now().UTC().Format(time.RFC3339),
-			Version:         version.Version(),
-		})
-		if err != nil {
-			return nil, err
-		}
-		return nil, pubsubutil.Publish(pubSubDotComEventsTopicID, string(event))
-	}
-
-	return nil, usagestats2.LogEvent(
-		ctx,
-		args.Event,
-		args.URL,
-		actor.UID,
-		args.UserCookieID,
-		args.Source,
-		args.Argument,
-	)
-}
-
-type bigQueryEvent struct {
-	EventName       string `json:"name"`
-	AnonymousUserID string `json:"anonymous_user_id"`
-	UserID          int    `json:"user_id"`
-	URL             string `json:"url"`
-	Source          string `json:"source"`
-	Argument        string `json:"argument,omitempty"`
-	Timestamp       string `json:"timestamp"`
-	Version         string `json:"version"`
+	return nil, usagestats2.LogEvent(ctx, usagestats2.Event{
+		EventName:    args.Event,
+		URL:          args.URL,
+		UserID:       actor.UID,
+		UserCookieID: args.UserCookieID,
+		Source:       args.Source,
+		Argument:     args.Argument,
+	})
 }

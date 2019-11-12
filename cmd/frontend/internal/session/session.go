@@ -267,9 +267,6 @@ func CookieMiddleware(next http.Handler) http.Handler {
 // "Content-Type: application/json; charset=utf-8" or a non-empty HTTP request header whose name is
 // given in corsAllowHeader.
 //
-// NOTE: As a special temporary case, if the request path begins with /.api/telemetry/log/, it uses
-// cookies for authentication. See https://github.com/sourcegraph/sourcegraph/issues/10901 for why.
-//
 // If the request is a simple CORS request, or if neither of these is true, then the cookie is not
 // used to authenticate the request. The request is still allowed to proceed (but will be
 // unauthenticated unless some other authentication is provided, such as an access token).
@@ -285,10 +282,6 @@ func CookieMiddlewareWithCSRFSafety(next http.Handler, corsAllowHeader string, i
 		if !isTrusted {
 			contentType := r.Header.Get("Content-Type")
 			isTrusted = contentType == "application/json" || contentType == "application/json; charset=utf-8"
-		}
-		if !isTrusted {
-			// See NOTE in docstring for why this is special-case allowed.
-			isTrusted = strings.HasPrefix(r.URL.Path, "/.api/telemetry/log/")
 		}
 		if isTrusted {
 			r = r.WithContext(authenticateByCookie(r, w))

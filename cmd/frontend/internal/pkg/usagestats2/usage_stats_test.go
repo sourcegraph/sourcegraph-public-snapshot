@@ -33,7 +33,7 @@ func TestUserUsageStatistics_LogPageView(t *testing.T) {
 	user := types.User{
 		ID: 1,
 	}
-	err := LogEvent(context.Background(), "ViewRepo", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "WEB", nil)
+	err := logLocalEvent(context.Background(), "ViewRepo", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,7 +57,7 @@ func TestUserUsageStatistics_LogSearchQuery(t *testing.T) {
 	user := types.User{
 		ID: 1,
 	}
-	err := LogEvent(context.Background(), "SearchSubmitted", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "WEB", nil)
+	err := logLocalEvent(context.Background(), "SearchSubmitted", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,7 +77,7 @@ func TestUserUsageStatistics_LogCodeIntelAction(t *testing.T) {
 	user := types.User{
 		ID: 1,
 	}
-	err := LogEvent(context.Background(), "hover", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "WEB", nil)
+	err := logLocalEvent(context.Background(), "hover", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,7 +97,7 @@ func TestUserUsageStatistics_LogCodeHostIntegrationUsage(t *testing.T) {
 	user := types.User{
 		ID: 1,
 	}
-	err := LogEvent(context.Background(), "hover", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "CODEHOSTINTEGRATION", nil)
+	err := logLocalEvent(context.Background(), "hover", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "CODEHOSTINTEGRATION", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -125,7 +125,7 @@ func TestUserUsageStatistics_getUsersActiveToday(t *testing.T) {
 	}
 
 	// Test single user
-	err := LogEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil)
+	err := logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,19 +139,19 @@ func TestUserUsageStatistics_getUsersActiveToday(t *testing.T) {
 	}
 
 	// Test multiple users, with repeats
-	err = LogEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil)
+	err = logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = LogEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil)
+	err = logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = LogEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", 0, "test-cookie-id-3", "WEB", nil)
+	err = logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", 0, "test-cookie-id-3", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = LogEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil)
+	err = logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil)
 
 	if err != nil {
 		t.Fatal(err)
@@ -197,74 +197,74 @@ func TestUserUsageStatistics_DAUs_WAUs_MAUs(t *testing.T) {
 
 	// 2018/02/27 (2 users, 1 registered)
 	mockTimeNow(oneMonthFourDaysAgo)
-	err := LogEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil)
+	err := logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = LogEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", 0, "068ccbfa-8529-4fa7-859e-2c3514af2434", "WEB", nil)
+	err = logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", 0, "068ccbfa-8529-4fa7-859e-2c3514af2434", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = LogEvent(ctx, "hover", "https://sourcegraph.example.com/", 0, "068ccbfa-8529-4fa7-859e-2c3514af2434", "CODEHOSTINTEGRATION", nil)
+	err = logLocalEvent(ctx, "hover", "https://sourcegraph.example.com/", 0, "068ccbfa-8529-4fa7-859e-2c3514af2434", "CODEHOSTINTEGRATION", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// 2018/02/28 (2 users, 1 registered)
 	mockTimeNow(oneMonthThreeDaysAgo)
-	err = LogEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil)
+	err = logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = LogEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", 0, "30dd2661-2e73-4774-bc2b-7a126f360734", "WEB", nil)
+	err = logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", 0, "30dd2661-2e73-4774-bc2b-7a126f360734", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// 2018/03/15 (2 users, 1 registered)
 	mockTimeNow(twoWeeksTwoDaysAgo)
-	err = LogEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil)
+	err = logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = LogEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", 0, "068ccbfa-8529-4fa7-859e-2c3514af2434", "WEB", nil)
+	err = logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", 0, "068ccbfa-8529-4fa7-859e-2c3514af2434", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// 2018/03/17 (2 users, 1 registered)
 	mockTimeNow(twoWeeksAgo)
-	err = LogEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil)
+	err = logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = LogEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", 0, "b309dad0-b6f9-440d-bf0a-4cf38030ca70", "WEB", nil)
+	err = logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", 0, "b309dad0-b6f9-440d-bf0a-4cf38030ca70", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = LogEvent(ctx, "hover", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "CODEHOSTINTEGRATION", nil)
+	err = logLocalEvent(ctx, "hover", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "CODEHOSTINTEGRATION", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// 2018/03/26 (1 user, 1 registered)
 	mockTimeNow(fiveDaysAgo)
-	err = LogEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil)
+	err = logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// 2018/03/28 (2 users, 2 registered)
 	mockTimeNow(threeDaysAgo)
-	err = LogEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil)
+	err = logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = LogEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil)
+	err = logLocalEvent(ctx, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = LogEvent(ctx, "hover", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "CODEHOSTINTEGRATION", nil)
+	err = logLocalEvent(ctx, "hover", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "CODEHOSTINTEGRATION", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -60,7 +60,6 @@ func New(base *mux.Router) *mux.Router {
 
 	addRegistryRoute(base)
 	addGraphQLRoute(base)
-	addTelemetryRoute(base)
 	base.Path("/github-webhooks").Methods("POST").Name(GitHubWebhooks)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
 	base.Path("/lsif/{rest:.*}").Methods("GET", "POST").Name(LSIF)
@@ -113,19 +112,15 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/repos/{RepoName:.*}").Methods("POST").Name(ReposGetByName)
 	base.Path("/configuration").Methods("POST").Name(Configuration)
 	base.Path("/search/configuration").Methods("GET").Name(SearchConfiguration)
+	base.Path("/telemetry").Methods("POST").Name(Telemetry)
 	addRegistryRoute(base)
 	addGraphQLRoute(base)
-	addTelemetryRoute(base)
 
 	return base
 }
 
 func addRegistryRoute(m *mux.Router) {
 	m.PathPrefix("/registry").Methods("GET").Name(Registry)
-}
-
-func addTelemetryRoute(m *mux.Router) {
-	m.Path("/telemetry/{TelemetryPath:.*}").Methods("POST").Name(Telemetry)
 }
 
 func addGraphQLRoute(m *mux.Router) {
