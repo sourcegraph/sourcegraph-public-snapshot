@@ -18,23 +18,34 @@ import { ResourceDestructor } from './TestResourceManager'
 import { Config } from '../../../../shared/src/e2e/config'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 
+type WaitForRepoOptions = Partial<
+    Pick<Config, 'logStatusMessages'> & {
+        shouldNotExist?: boolean
+        retryPeriod?: number
+        timeout?: number
+    }
+>
+
 /**
  * Wait until all repositories in the list exist.
  */
 export async function waitForRepos(
     gqlClient: GraphQLClient,
     ensureRepos: string[],
-    config?: Partial<Pick<Config, 'logStatusMessages'>>,
-    shouldNotExist: boolean = false
+    options: WaitForRepoOptions = {}
 ): Promise<void> {
-    await zip(...ensureRepos.map(repoName => waitForRepo(gqlClient, repoName, config, shouldNotExist))).toPromise()
+    await zip(...ensureRepos.map(repoName => waitForRepo(gqlClient, repoName, options))).toPromise()
 }
 
 function waitForRepo(
     gqlClient: GraphQLClient,
     repoName: string,
-    config?: Partial<Pick<Config, 'logStatusMessages'>>,
-    shouldNotExist: boolean = false
+    {
+        logStatusMessages,
+        shouldNotExist = false,
+        retryPeriod = 2000, // 2 seconds
+        timeout = 60000, // 1 minute
+    }: WaitForRepoOptions = {}
 ): Observable<void> {
     const request = gqlClient.queryGraphQL(
         gql`
@@ -48,6 +59,7 @@ function waitForRepo(
         `,
         { repoName }
     )
+    const numRetries = Math.ceil(timeout / retryPeriod)
 
     return shouldNotExist
         ? request.pipe(
@@ -68,15 +80,15 @@ function waitForRepo(
                           delayWhen(error => {
                               if (isErrorLike(error) && error.message === 'Repo exists') {
                                   // Delay retry by 2s.
-                                  if (config && config.logStatusMessages) {
+                                  if (logStatusMessages) {
                                       console.log(`Waiting for ${repoName} to be removed`)
                                   }
-                                  return timer(2 * 1000)
+                                  return timer(retryPeriod)
                               }
                               // Throw all errors
                               throw error
                           }),
-                          take(60) // Up to 60 retries (an effective timeout of 2 minutes)
+                          take(numRetries)
                       ),
                       defer(() => throwError(new Error(`Could not resolve repo ${repoName}: too many retries`)))
                   )
@@ -99,7 +111,7 @@ function waitForRepo(
                           delayWhen(error => {
                               if (isErrorLike(error) && error.code === ECLONEINPROGESS) {
                                   // Delay retry by 2s.
-                                  if (config && config.logStatusMessages) {
+                                  if (logStatusMessages) {
                                       console.log(`Waiting for ${repoName} to finish cloning...`)
                                   }
                                   return timer(2 * 1000)
@@ -225,37 +237,40 @@ export async function updateExternalService(
 
 export async function ensureTestExternalService(
     gqlClient: GraphQLClient,
-    options: {
+    externalServiceOptions: {
         kind: GQL.ExternalServiceKind
         uniqueDisplayName: string
         config: Record<string, any>
         waitForRepos?: string[]
     },
-    e2eConfig?: Partial<Pick<Config, 'logStatusMessages'>>
+    waitForReposOptions?: WaitForRepoOptions
 ): Promise<ResourceDestructor> {
-    if (!options.uniqueDisplayName.startsWith('[TEST]')) {
+    if (!externalServiceOptions.uniqueDisplayName.startsWith('[TEST]')) {
         throw new Error(
-            `Test external service name ${JSON.stringify(options.uniqueDisplayName)} must start with "[TEST]".`
+            `Test external service name ${JSON.stringify(
+                externalServiceOptions.uniqueDisplayName
+            )} must start with "[TEST]".`
         )
     }
 
-    const destroy = (): Promise<void> => ensureNoTestExternalServices(gqlClient, { ...options, deleteIfExist: true })
+    const destroy = (): Promise<void> =>
+        ensureNoTestExternalServices(gqlClient, { ...externalServiceOptions, deleteIfExist: true })
 
-    const externalServices = await getExternalServices(gqlClient, options)
+    const externalServices = await getExternalServices(gqlClient, externalServiceOptions)
     if (externalServices.length > 0) {
         return destroy
     }
 
     // Add a new external service if one doesn't already exist.
     const input: GQL.IAddExternalServiceInput = {
-        kind: options.kind,
-        displayName: options.uniqueDisplayName,
-        config: JSON.stringify(options.config),
+        kind: externalServiceOptions.kind,
+        displayName: externalServiceOptions.uniqueDisplayName,
+        config: JSON.stringify(externalServiceOptions.config),
     }
     await addExternalService(input, gqlClient).toPromise()
 
-    if (options.waitForRepos && options.waitForRepos.length > 0) {
-        await waitForRepos(gqlClient, options.waitForRepos, e2eConfig)
+    if (externalServiceOptions.waitForRepos && externalServiceOptions.waitForRepos.length > 0) {
+        await waitForRepos(gqlClient, externalServiceOptions.waitForRepos, waitForReposOptions)
     }
 
     return destroy

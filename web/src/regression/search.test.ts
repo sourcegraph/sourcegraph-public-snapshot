@@ -177,12 +177,12 @@ describe('Search regression test suite', () => {
                             },
                             waitForRepos: testRepoSlugs.map(slug => 'github.com/' + slug),
                         },
-                        config
+                        { ...config, timeout: 5 * 60 * 1000 }
                     )
                 )
             },
-            // Cloning the repositories takes ~1 minute, so give initialization 2 minutes
-            2 * 60 * 1000
+            // Cloning the repositories takes ~1 minute, so give initialization 5 minutes
+            5 * 60 * 1000
         )
 
         afterAll(async () => {
