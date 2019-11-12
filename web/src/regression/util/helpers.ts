@@ -6,7 +6,15 @@ import { catchError, map } from 'rxjs/operators'
 import { throwError } from 'rxjs'
 import { Key } from 'ts-key-enum'
 import { PlatformContext } from '../../../../shared/src/platform/context'
-import { deleteUser, getUser, createUser, fetchAllOrganizations, createOrganization, deleteOrganization } from './api'
+import {
+    deleteUser,
+    getUser,
+    createUser,
+    fetchAllOrganizations,
+    createOrganization,
+    deleteOrganization,
+    getViewerSettings,
+} from './api'
 import { Config } from '../../../../shared/src/e2e/config'
 import { ResourceDestructor } from './TestResourceManager'
 import * as jsonc from '@sqs/jsonc-parser'
@@ -19,6 +27,9 @@ import {
     SAMLAuthProvider,
 } from '../../schema/critical.schema'
 import { fromFetch } from 'rxjs/fetch'
+import { Settings } from '../../schema/settings.schema'
+import { first } from 'lodash'
+import { overwriteSettings } from '../../../../shared/src/settings/edit'
 
 /**
  * Create the user with the specified password. Returns a destructor that destroys the test user. Assumes basic auth.
@@ -250,6 +261,40 @@ export async function ensureNewOrganization(
     return {
         destroy: () => deleteOrganization({ requestGraphQL }, createdOrg.id).toPromise(),
         result: createdOrg,
+    }
+}
+
+export async function getGlobalSettings(
+    gqlClient: GraphQLClient
+): Promise<{ subjectID: GQL.ID; settingsID: number; contents: string }> {
+    const settings = await getViewerSettings(gqlClient)
+    const globalSettingsSubject = first(settings.subjects.filter(subject => subject.__typename === 'Site'))
+    if (!globalSettingsSubject || !globalSettingsSubject.latestSettings) {
+        throw new Error('Could not get global settings')
+    }
+    return {
+        subjectID: globalSettingsSubject.id,
+        settingsID: globalSettingsSubject.latestSettings.id,
+        contents: globalSettingsSubject.latestSettings.contents,
+    }
+}
+
+export async function editGlobalSettings(
+    gqlClient: GraphQLClient,
+    ...edits: ((contents: string) => jsonc.Edit[])[]
+): Promise<{ destroy: ResourceDestructor; result: string }> {
+    const { subjectID, settingsID, contents: origContents } = await getGlobalSettings(gqlClient)
+    let newContents = origContents
+    for (const editFn of edits) {
+        newContents = jsonc.applyEdits(newContents, editFn(newContents))
+    }
+    await overwriteSettings(gqlClient, subjectID, settingsID, newContents)
+    return {
+        destroy: async () => {
+            const { subjectID, settingsID } = await getGlobalSettings(gqlClient)
+            await overwriteSettings(gqlClient, subjectID, settingsID, origContents)
+        },
+        result: newContents,
     }
 }
 

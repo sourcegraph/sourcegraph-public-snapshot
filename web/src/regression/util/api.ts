@@ -657,3 +657,124 @@ export function addExternalService(
         })
     )
 }
+
+const genericSearchResultInterfaceFields = gql`
+  __typename
+  label {
+      html
+  }
+  url
+  icon
+  detail {
+      html
+  }
+  matches {
+      url
+      body {
+          text
+          html
+      }
+      highlights {
+          line
+          character
+          length
+      }
+  }
+`
+
+export function search(
+    { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
+    query: string,
+    version: string,
+    patternType: GQL.SearchPatternType
+): Promise<GQL.ISearch> {
+    return requestGraphQL<GQL.IQuery>({
+        request: gql`
+        query Search($query: String!, $version: SearchVersion!, $patternType: SearchPatternType!) {
+            search(query: $query, version: $version, patternType: $patternType) {
+                results {
+                    __typename
+                    limitHit
+                    resultCount
+                    matchCount
+                    approximateResultCount
+                    missing {
+                        name
+                    }
+                    cloning {
+                        name
+                    }
+                    timedout {
+                        name
+                    }
+                    indexUnavailable
+                    dynamicFilters {
+                        value
+                        label
+                        count
+                        limitHit
+                        kind
+                    }
+                    results {
+                        __typename
+                        ... on Repository {
+                            id
+                            name
+                            ${genericSearchResultInterfaceFields}
+                        }
+                        ... on FileMatch {
+                            file {
+                                path
+                                url
+                                commit {
+                                    oid
+                                }
+                            }
+                            repository {
+                                name
+                                url
+                            }
+                            limitHit
+                            symbols {
+                                name
+                                containerName
+                                url
+                                kind
+                            }
+                            lineMatches {
+                                preview
+                                lineNumber
+                                offsetAndLengths
+                            }
+                        }
+                        ... on CommitSearchResult {
+                            ${genericSearchResultInterfaceFields}
+                        }
+                    }
+                    alert {
+                        title
+                        description
+                        proposedQueries {
+                            description
+                            query
+                        }
+                    }
+                    elapsedMilliseconds
+                }
+            }
+        }
+        `,
+        variables: { query, version, patternType },
+        mightContainPrivateInfo: false,
+    })
+        .pipe(
+            map(dataOrThrowErrors),
+            map(data => {
+                if (!data.search) {
+                    throw new Error('no results field in search response')
+                }
+                return data.search
+            })
+        )
+        .toPromise()
+}

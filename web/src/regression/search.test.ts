@@ -7,10 +7,11 @@ import { getConfig } from '../../../shared/src/e2e/config'
 import { getTestTools } from './util/init'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { GraphQLClient } from './util/GraphQLClient'
-import { ensureTestExternalService } from './util/api'
-import { ensureLoggedInOrCreateTestUser } from './util/helpers'
+import { ensureTestExternalService, search } from './util/api'
+import { ensureLoggedInOrCreateTestUser, editGlobalSettings } from './util/helpers'
 import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { TestResourceManager } from './util/TestResourceManager'
+import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 
 /**
  * Reads the number of results from the text at the top of the results page
@@ -49,6 +50,8 @@ function hasNoResultsOrError(): boolean {
 }
 
 describe('Search regression test suite', () => {
+    const formattingOptions = { eol: '\n', insertSpaces: true, tabSize: 2 }
+
     /**
      * Test data
      */
@@ -375,6 +378,53 @@ describe('Search regression test suite', () => {
             )
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
+        })
+
+        test(
+            'Search timeout',
+            async () => {
+                const response = await search(
+                    gqlClient,
+                    'router index:no timeout:1ns',
+                    'V2',
+                    GQL.SearchPatternType.literal
+                )
+                expect(response.results.matchCount).toBe(0)
+                expect(response.results.alert && response.results.alert.title).toBe('Timeout')
+            },
+            2 * 1000
+        )
+
+        test('Search repo group', async () => {
+            resourceManager.add(
+                'Global setting',
+                'search.repositoryGroups',
+                await editGlobalSettings(gqlClient, contents =>
+                    setProperty(
+                        contents,
+                        ['search.repositoryGroups'],
+                        {
+                            test_group: ['github.com/auth0/go-jwt-middleware'],
+                        },
+                        formattingOptions
+                    )
+                )
+            )
+
+            const response = await search(gqlClient, 'repogroup:test_group route', 'V2', GQL.SearchPatternType.literal)
+            expect(
+                response.results.results.length > 0 &&
+                    response.results.results.every(r => {
+                        switch (r.__typename) {
+                            case 'FileMatch':
+                                return r.repository.name === 'github.com/auth0/go-jwt-middleware'
+                            case 'Repository':
+                                return r.name === 'github.com/auth0/go-jwt-middleware'
+                            default:
+                                return false
+                        }
+                    })
+            ).toBeTruthy()
         })
     })
 })
