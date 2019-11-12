@@ -115,11 +115,6 @@ async function main(logger: Logger): Promise<void> {
         tracer
     )
 
-    await xrepoDatabase.discoverAndUpdateTips({
-        gitserverUrls: fetchConfiguration().gitServers,
-        ctx: {},
-    })
-
     // Start processing work
     queue.process('convert', convertJobProcessor).catch(() => {})
     queue.process('update-tips', updateTipsJobProcessor).catch(() => {})
