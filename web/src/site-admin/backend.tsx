@@ -588,6 +588,69 @@ export function fetchSiteUpdateCheck(): Observable<{
 }
 
 /**
+ * Fetch counts of LSIF jobs by state.
+ */
+export function fetchLsifJobStatistics(): Observable<GQL.ILSIFJobStats> {
+    return queryGraphQL(
+        gql`
+            query LsifJobStats {
+                lsifJobStats {
+                    erroredCount
+                    completedCount
+                    processingCount
+                    queuedCount
+                    scheduledCount
+                }
+            }
+        `
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.lsifJobStats)
+    )
+}
+
+/**
+ * Fetch LSIF jobs with the given state.
+ */
+export function fetchLsifJobs({
+    state,
+    first,
+    after,
+    query,
+}: GQL.ILsifJobsOnQueryArguments): Observable<GQL.ILSIFJobConnection> {
+    return queryGraphQL(
+        gql`
+            query LsifJobs($state: LSIFJobState!, $first: Int, $after: String, $query: String) {
+                lsifJobs(state: $state, first: $first, after: $after, query: $query) {
+                    nodes {
+                        id
+                        name
+                        args
+                        state
+                        progress
+                        failedReason
+                        stacktrace
+                        timestamp
+                        processedOn
+                        finishedOn
+                    }
+
+                    totalCount
+                    pageInfo {
+                        endCursor
+                        hasNextPage
+                    }
+                }
+            }
+        `,
+        { state: state.toUpperCase(), first, after, query }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.lsifJobs)
+    )
+}
+
+/**
  * Fetch a single LSIF job by id.
  */
 export function fetchLsifJob({ id }: GQL.ILsifJobOnQueryArguments): Observable<GQL.ILSIFJob | null> {
