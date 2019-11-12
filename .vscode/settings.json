@@ -7,8 +7,10 @@
     "ui/assets": true,
     "browser/build": true,
     "**/coverage": true,
+    "**/out": true,
     "/cmd/management-console/assets/": true,
     "**/__fixtures__/**": true,
+    "**/.cache": true,
   },
   "files.associations": {
     "**/dev/critical-config.json": "jsonc",
@@ -25,12 +27,20 @@
     },
   ],
   "editor.formatOnSave": true,
-  "typescript.tsdk": "node_modules/typescript/lib",
   "go.docsTool": "gogetdoc",
   "jest.pathToJest": "yarn -s test",
   "jest.showCoverageOnLoad": false,
   "jest.autoEnable": false, // until we confirm people like it
+  "gulp.autoDetect": "off",
+  "npm.packageManager": "yarn",
+  "npm.runSilent": true,
+  "typescript.preferences.quoteStyle": "single",
+  "typescript.preferences.importModuleSpecifier": "relative",
   "typescript.format.semicolons": "remove",
+  "typescript.tsc.autoDetect": "off",
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "eslint.packageManager": "yarn",
+  "eslint.lintTask.enable": false,
   "eslint.autoFixOnSave": true,
   "eslint.validate": [
     "javascript",
@@ -47,6 +57,7 @@
   "eslint.workingDirectories": [
     {
       "directory": "dev/release",
+      "changeProcessCWD": true,
     },
     {
       "directory": "web",
@@ -69,5 +80,4 @@
       "changeProcessCWD": true,
     },
   ],
-  "cSpell.enabled": false,
 }

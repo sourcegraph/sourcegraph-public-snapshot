@@ -60,6 +60,10 @@
 // 1528395610_change_campaign_plan_arguments_to_text.up.sql (254B)
 // 1528395611_add_unique_constraint_to_campaign_jobs.down.sql (104B)
 // 1528395611_add_unique_constraint_to_campaign_jobs.up.sql (178B)
+// 1528395612_validate_campaign_plan_completion_with_trigger.down.sql (305B)
+// 1528395612_validate_campaign_plan_completion_with_trigger.up.sql (1.04kB)
+// 1528395613_create_changeset_jobs_table.down.sql (54B)
+// 1528395613_create_changeset_jobs_table.up.sql (829B)
 
 package migrations
 
@@ -1328,6 +1332,86 @@ func _1528395611_add_unique_constraint_to_campaign_jobsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395612_validate_campaign_plan_completion_with_triggerDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x8e\xc1\xae\x82\x30\x10\x45\xf7\xfd\x8a\x59\xbe\xf7\x0d\xdd\x09\x85\xcc\x82\xd6\x40\x4d\xd8\x4d\x46\x8b\x38\x06\x91\xd0\xc6\xef\x37\xd1\x60\x88\x1b\x59\xdf\x7b\x4e\xce\xce\x94\x68\xb5\x52\x79\xed\xf6\xe0\x6b\x2c\x4b\x53\x03\x16\x60\x5a\x6c\x7c\x03\x69\x96\x9e\x1e\x3c\x48\xe0\xd4\xd1\x89\x6f\x13\x4b\x3f\xd2\x34\xf0\x48\x12\xe9\x2c\xa3\xc4\x4b\x17\xc0\x59\x58\xc6\xa8\xdf\xb2\xe2\x60\x33\x8f\xce\xae\x6c\xbf\x45\x7f\xff\x4b\x0b\xda\xdc\xb4\x2b\xf6\x83\x5c\xef\xc7\xf8\x2d\x08\x7a\x0b\x14\x13\xcf\xa9\x0b\xc4\x69\xd3\x7d\x69\x7a\xfd\x55\xe6\xaa\x0a\xbd\x56\xcf\x00\x00\x00\xff\xff\x6c\x6e\xe5\xe1\x31\x01\x00\x00")
+
+func _1528395612_validate_campaign_plan_completion_with_triggerDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395612_validate_campaign_plan_completion_with_triggerDownSql,
+		"1528395612_validate_campaign_plan_completion_with_trigger.down.sql",
+	)
+}
+
+func _1528395612_validate_campaign_plan_completion_with_triggerDownSql() (*asset, error) {
+	bytes, err := _1528395612_validate_campaign_plan_completion_with_triggerDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395612_validate_campaign_plan_completion_with_trigger.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x49, 0xf2, 0x81, 0x99, 0x44, 0xe8, 0xa0, 0x6f, 0xac, 0x1, 0xa6, 0xd, 0x3e, 0xfe, 0x4f, 0xab, 0x2c, 0xd9, 0x1e, 0x36, 0x6, 0x1d, 0x36, 0x9, 0x82, 0xf0, 0xf7, 0x2f, 0xd, 0xb5, 0x6d, 0xc3}}
+	return a, nil
+}
+
+var __1528395612_validate_campaign_plan_completion_with_triggerUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x53\x4d\x8f\xda\x30\x14\xbc\xfb\x57\x4c\xa5\x5d\x01\xd5\xee\xaa\xe7\x8d\x38\x64\x9d\x17\x88\x14\x6c\xe4\x38\x82\x1b\xeb\x42\x96\xa4\xca\x1a\x4a\x4c\x39\x54\xfd\xef\x55\x42\xc3\x67\xf7\xe3\x12\xc5\xf6\x9b\xf1\xbc\x79\xe3\x27\x1a\x44\xc2\x63\x8c\x2b\xf2\x35\x21\x12\x01\x4d\x31\x37\xaf\x6b\x53\x2c\xed\xec\xc7\xea\x7b\x35\x3b\xac\xd6\xa5\xb1\xb3\x62\x01\x29\xce\x2b\xba\x97\x15\x3d\xef\x3d\xbe\xca\x99\x8d\xcb\x16\x33\xe3\xae\x99\x8e\x67\xef\x73\xbc\x14\xb6\xa8\xf2\x37\x48\x4e\x0e\x7b\x1e\x63\xf7\xf7\x98\xe4\x99\xc5\x2e\xc3\x7c\x93\x19\x97\xc1\xe0\x79\x9e\x1b\xbb\xcc\xaa\xcc\x3d\x63\x57\xb8\x1c\x06\x76\x65\x61\xb7\x65\x89\xab\x7e\x77\x19\x5e\xb7\x95\xab\x89\x7e\x99\xb2\x58\xd4\x14\x2e\x37\x6e\xff\x31\x65\x89\xd5\xcb\xfe\xff\x0c\xda\xa9\x50\xcb\x81\xd9\x64\x68\x25\x3d\x1c\x9c\x96\x0a\x8a\xc6\xb1\xcf\x09\x61\x2a\xb8\x8e\xa4\x38\xb0\x5f\x5a\x7e\xec\xb7\xdb\x83\x22\x9d\x2a\x91\x40\xab\x68\x30\x20\x05\x3f\x61\x37\x1f\x03\x6f\x58\x40\x3c\xf6\x15\x31\x60\xb3\xb5\xb6\xb0\x4b\x14\xd6\x79\xac\x09\xc0\xc9\xe6\x63\x1f\x5d\x06\x00\x09\xc5\xc4\x35\xb8\x4c\x85\xee\x7e\xed\x21\x54\x72\x74\x6e\x74\x53\x36\x19\x92\xa2\x6b\xcf\xfa\x10\x34\x79\xb8\xdc\x6e\x10\xbe\x08\x70\x3a\xbf\x28\x81\x48\xe3\x98\x01\xf5\xb4\x80\x28\x44\xb7\x55\xf3\xa5\x8f\x6f\x3d\xe8\x21\x89\x06\xaa\xfc\x28\x21\xd0\x94\xd3\xb8\x31\xac\xc3\xff\x5d\x30\x2e\x8d\xfd\x1d\x05\x8f\xb8\xfd\x83\xdc\x54\xb8\xc5\xd6\xb6\x77\x34\x53\xe8\xdc\x35\x04\xf8\xaf\xac\xbb\xb6\x7b\x8f\x01\x24\x02\x44\x61\xa3\x64\x6f\x75\x0d\xf1\x18\x89\xc0\xfb\x9c\xd1\xb1\x2f\x06\xa9\x3f\x20\xac\xcb\xf5\xb2\xfa\x59\x1e\x5f\x57\x3b\x32\xb7\x29\x96\xb3\x8f\xa9\xd8\x13\x85\x52\xd5\x0f\x20\x21\xa5\xeb\xc4\xa4\xe3\xa0\xc9\xce\x31\xf1\x15\x0b\xa5\x02\xf9\x7c\x08\x25\x27\xa0\x29\xf1\x54\x13\xc6\x4a\x72\x0a\x52\x45\x9f\xca\x54\xad\x50\x8e\x46\x91\xf6\xd8\xdf\x00\x00\x00\xff\xff\x74\xc5\x5e\x01\x10\x04\x00\x00")
+
+func _1528395612_validate_campaign_plan_completion_with_triggerUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395612_validate_campaign_plan_completion_with_triggerUpSql,
+		"1528395612_validate_campaign_plan_completion_with_trigger.up.sql",
+	)
+}
+
+func _1528395612_validate_campaign_plan_completion_with_triggerUpSql() (*asset, error) {
+	bytes, err := _1528395612_validate_campaign_plan_completion_with_triggerUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395612_validate_campaign_plan_completion_with_trigger.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x0, 0x6d, 0x36, 0xce, 0x60, 0xed, 0xc9, 0xa0, 0xaf, 0x61, 0xd0, 0x5d, 0xf0, 0x50, 0xe3, 0x7d, 0x8b, 0x26, 0x4, 0xae, 0xf9, 0x72, 0xd3, 0x7d, 0x94, 0x43, 0x28, 0x2e, 0x6b, 0x8, 0xa0, 0xf3}}
+	return a, nil
+}
+
+var __1528395613_create_changeset_jobs_tableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x89\xcf\xca\x4f\x2a\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xd6\x7b\x79\xcc\x36\x00\x00\x00")
+
+func _1528395613_create_changeset_jobs_tableDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395613_create_changeset_jobs_tableDownSql,
+		"1528395613_create_changeset_jobs_table.down.sql",
+	)
+}
+
+func _1528395613_create_changeset_jobs_tableDownSql() (*asset, error) {
+	bytes, err := _1528395613_create_changeset_jobs_tableDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395613_create_changeset_jobs_table.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x1c, 0x97, 0x6f, 0xe4, 0x29, 0xbe, 0xbb, 0x13, 0x25, 0xa, 0x67, 0xe, 0x67, 0xd5, 0x39, 0xc1, 0x4b, 0x1a, 0x58, 0x3b, 0x7d, 0x1f, 0x6d, 0x7a, 0x4a, 0xa1, 0x1c, 0xd7, 0x6c, 0x21, 0xb0, 0xe7}}
+	return a, nil
+}
+
+var __1528395613_create_changeset_jobs_tableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x92\xc1\x6e\xa3\x30\x14\x45\xf7\xfe\x8a\xbb\x04\x29\x7f\xc0\xca\x09\x2f\x23\x6b\xc0\xcc\x38\x46\x6a\x56\xc8\x09\x6e\xe2\xa8\x81\x14\x1c\xb5\xea\xd7\x57\x21\x6a\xa0\x50\xb5\xcd\xd6\xc7\x3e\xd7\x57\xef\xcd\xe9\x8f\x90\x11\x63\x0b\x45\x5c\x13\x34\x9f\x27\x84\xed\xde\x54\x3b\xdb\x5a\x5f\x1c\xea\x4d\x8b\x80\x01\xae\xc4\xc6\xed\x5a\xdb\x38\xf3\x84\x7f\x4a\xa4\x5c\xad\xf1\x97\xd6\x33\xc6\x80\xad\x39\x9e\x8c\xdb\x55\xc5\xf5\x96\xab\x3c\x64\xa6\x21\xf3\x24\x81\xa2\x25\x29\x92\x0b\x5a\xdd\xae\xb5\x81\x2b\x43\x06\x00\xf1\x05\xaa\x2e\x53\x48\xa1\x05\x4f\x92\x35\x44\x9a\x52\x2c\xb8\xa6\xcf\xee\x43\xbd\xf9\xa5\xbf\xfb\xf5\x5d\x19\xb7\xbe\x7d\xc0\xd0\xfb\x81\xef\x92\xda\xa6\xa9\x1b\x78\xfb\xea\xaf\x19\x8d\x35\xde\x96\x85\xf1\xf0\xee\x68\x5b\x6f\x8e\x27\xff\xd6\xf7\x88\x69\xc9\xf3\x44\xa3\xaa\x5f\x82\x70\xc6\x80\xf3\xa9\xbc\xe7\x01\x03\x5a\x6f\x9a\xe9\x8b\x8b\xeb\xd1\x55\xae\xdd\x4f\x10\x0b\x23\xc6\x78\xa2\x49\x7d\x3d\x78\x1e\xc7\x58\x64\x72\xa5\x15\x17\x52\x8f\x68\x71\xae\xdc\xf3\xd9\xb2\x5c\x8a\xff\x39\x21\x18\x2c\xc1\x6c\x3c\xb5\xb0\xdf\x30\x21\x63\x7a\x18\xab\x06\x3f\xcf\xe4\x08\x06\x3d\x0c\xa3\x6f\x2d\xc3\x96\x53\xcd\x80\xfe\xe0\xb9\x4e\x6e\x6a\xe8\xce\xbb\x2a\x59\x9a\x0a\x1d\xb1\xf7\x00\x00\x00\xff\xff\xab\x27\x64\xe7\x3d\x03\x00\x00")
+
+func _1528395613_create_changeset_jobs_tableUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395613_create_changeset_jobs_tableUpSql,
+		"1528395613_create_changeset_jobs_table.up.sql",
+	)
+}
+
+func _1528395613_create_changeset_jobs_tableUpSql() (*asset, error) {
+	bytes, err := _1528395613_create_changeset_jobs_tableUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395613_create_changeset_jobs_table.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xb, 0x82, 0xbb, 0xbd, 0xb, 0x1d, 0x9a, 0x82, 0xb4, 0x11, 0xdc, 0xec, 0x79, 0x2b, 0x7e, 0xfe, 0x7a, 0xd0, 0xbc, 0x26, 0x39, 0xe1, 0x9b, 0x87, 0x5e, 0x7b, 0xf8, 0xfb, 0x2, 0x76, 0x8c, 0x8d}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1479,6 +1563,10 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395610_change_campaign_plan_arguments_to_text.up.sql":                 _1528395610_change_campaign_plan_arguments_to_textUpSql,
 	"1528395611_add_unique_constraint_to_campaign_jobs.down.sql":               _1528395611_add_unique_constraint_to_campaign_jobsDownSql,
 	"1528395611_add_unique_constraint_to_campaign_jobs.up.sql":                 _1528395611_add_unique_constraint_to_campaign_jobsUpSql,
+	"1528395612_validate_campaign_plan_completion_with_trigger.down.sql":       _1528395612_validate_campaign_plan_completion_with_triggerDownSql,
+	"1528395612_validate_campaign_plan_completion_with_trigger.up.sql":         _1528395612_validate_campaign_plan_completion_with_triggerUpSql,
+	"1528395613_create_changeset_jobs_table.down.sql":                          _1528395613_create_changeset_jobs_tableDownSql,
+	"1528395613_create_changeset_jobs_table.up.sql":                            _1528395613_create_changeset_jobs_tableUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1582,6 +1670,10 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395610_change_campaign_plan_arguments_to_text.up.sql":                 {_1528395610_change_campaign_plan_arguments_to_textUpSql, map[string]*bintree{}},
 	"1528395611_add_unique_constraint_to_campaign_jobs.down.sql":               {_1528395611_add_unique_constraint_to_campaign_jobsDownSql, map[string]*bintree{}},
 	"1528395611_add_unique_constraint_to_campaign_jobs.up.sql":                 {_1528395611_add_unique_constraint_to_campaign_jobsUpSql, map[string]*bintree{}},
+	"1528395612_validate_campaign_plan_completion_with_trigger.down.sql":       {_1528395612_validate_campaign_plan_completion_with_triggerDownSql, map[string]*bintree{}},
+	"1528395612_validate_campaign_plan_completion_with_trigger.up.sql":         {_1528395612_validate_campaign_plan_completion_with_triggerUpSql, map[string]*bintree{}},
+	"1528395613_create_changeset_jobs_table.down.sql":                          {_1528395613_create_changeset_jobs_tableDownSql, map[string]*bintree{}},
+	"1528395613_create_changeset_jobs_table.up.sql":                            {_1528395613_create_changeset_jobs_tableUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

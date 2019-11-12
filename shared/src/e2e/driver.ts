@@ -245,9 +245,11 @@ export class Driver {
 
         await (await this.page.waitForSelector('.e2e-goto-add-external-service-page', { visible: true })).click()
 
-        await (await this.page.waitForSelector(`[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`, {
-            visible: true,
-        })).click()
+        await (
+            await this.page.waitForSelector(`[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`, {
+                visible: true,
+            })
+        ).click()
 
         await this.replaceText({
             selector: '#e2e-external-service-form-display-name',
@@ -512,10 +514,12 @@ export class Driver {
             }
             await this.page.waitForSelector('#details-button')
             await this.page.click('#details-button')
-            await (await this.findElementWithText('Proceed to', {
-                tagName: 'a',
-                wait: { timeout: 2000 },
-            })).click()
+            await (
+                await this.findElementWithText('Proceed to', {
+                    tagName: 'a',
+                    wait: { timeout: 2000 },
+                })
+            ).click()
         }
         await this.page.waitForSelector('.monaco-editor', { timeout: 2000 })
     }

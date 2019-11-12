@@ -118,6 +118,11 @@ export PATH="$PWD/.bin:$PWD/node_modules/.bin:$PATH"
     pushd ./lsif && yarn --no-progress && popd
 }
 
+# Build once to make sure editor codeintel works
+# This is fast if no changes were made.
+# Don't fail if it errors as this is only for codeintel, not for the build.
+yarn run build-ts || true
+
 printf >&2 "\nStarting all binaries...\n\n"
 export GOREMAN="goreman --set-ports=false --exit-on-error -f dev/Procfile"
 exec $GOREMAN start

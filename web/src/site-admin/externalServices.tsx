@@ -776,9 +776,10 @@ export interface AddExternalServiceMetadata extends ExternalServiceKindMetadata 
  * We want to have more than one "add" option for some external services (e.g., GitHub.com vs. GitHub Enterprise).
  * These patches define the overrides that should be applied to certain external services.
  */
-const externalServiceAddVariants: Partial<
-    Record<GQL.ExternalServiceKind, Partial<Record<ExternalServiceVariant, Partial<ExternalServiceKindMetadata>>>>
-> = {
+const externalServiceAddVariants: Partial<Record<
+    GQL.ExternalServiceKind,
+    Partial<Record<ExternalServiceVariant, Partial<ExternalServiceKindMetadata>>>
+>> = {
     [GQL.ExternalServiceKind.GITHUB]: {
         dotcom: {
             title: 'GitHub.com repositories',

@@ -74,7 +74,10 @@ export const authRequired = authenticatedUser.pipe(map(user => user === null && 
 if (window.context && window.context.isAuthenticatedUser) {
     refreshAuthenticatedUser()
         .toPromise()
-        .then(() => undefined, err => console.error(err))
+        .then(
+            () => undefined,
+            err => console.error(err)
+        )
 } else {
     authenticatedUser.next(null)
 }

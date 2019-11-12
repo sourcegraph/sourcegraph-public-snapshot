@@ -92,7 +92,10 @@ describe('ServerURLForm', () => {
                 <OptionsMenu
                     {...stubs}
                     isSettingsOpen={true}
-                    featureFlags={[{ key: 'foo', value: true }, { key: 'bar', value: false }]}
+                    featureFlags={[
+                        { key: 'foo', value: true },
+                        { key: 'bar', value: false },
+                    ]}
                 />
             )
         ).toMatchSnapshot()
@@ -104,7 +107,10 @@ describe('ServerURLForm', () => {
             <OptionsMenu
                 {...stubs}
                 isSettingsOpen={true}
-                featureFlags={[{ key: 'foo', value: true }, { key: 'bar', value: false }]}
+                featureFlags={[
+                    { key: 'foo', value: true },
+                    { key: 'bar', value: false },
+                ]}
                 toggleFeatureFlag={toggleFeatureFlag}
             />
         )

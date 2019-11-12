@@ -1,5 +1,4 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { concat, of, Subject, Subscription } from 'rxjs'
@@ -10,6 +9,7 @@ import { PageTitle } from '../../../components/PageTitle'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { OrgAreaPageProps } from '../../area/OrgArea'
 import { updateOrganization } from '../../backend'
+import { ErrorAlert } from '../../../components/alerts'
 
 interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {}
 
@@ -119,7 +119,7 @@ export class OrgSettingsProfilePage extends React.PureComponent<Props, State> {
                     >
                         <small>Updated!</small>
                     </div>
-                    {this.state.error && <div className="alert alert-danger">{upperFirst(this.state.error)}</div>}
+                    {this.state.error && <ErrorAlert error={this.state.error} />}
                 </Form>
             </div>
         )

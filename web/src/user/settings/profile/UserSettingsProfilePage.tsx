@@ -1,5 +1,4 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { combineLatest, concat, Observable, Subject, Subscription } from 'rxjs'
@@ -19,6 +18,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { UserAreaRouteContext } from '../../area/UserArea'
 import { UserAvatar } from '../../UserAvatar'
 import { updateUser } from '../backend'
+import { ErrorAlert } from '../../../components/alerts'
 
 function queryUser(user: GQL.ID): Observable<GQL.IUser> {
     return queryGraphQL(
@@ -103,7 +103,10 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                         )
                     )
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    err => console.error(err)
+                )
         )
 
         this.subscriptions.add(
@@ -174,12 +177,8 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                         </div>
                     )}
 
-                {isErrorLike(this.state.userOrError) && (
-                    <p className="alert alert-danger">Error: {upperFirst(this.state.userOrError.message)}</p>
-                )}
-                {this.state.error && (
-                    <p className="alert alert-danger">Error: {upperFirst(this.state.error.message)}</p>
-                )}
+                {isErrorLike(this.state.userOrError) && <ErrorAlert error={this.state.userOrError.message} />}
+                {this.state.error && <ErrorAlert error={this.state.error.message} />}
                 {this.state.userOrError && !isErrorLike(this.state.userOrError) && (
                     <Form className="user-settings-profile-page__form" onSubmit={this.handleSubmit}>
                         <div className="form-group">

@@ -1,5 +1,4 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { upperFirst } from 'lodash'
 import AddIcon from 'mdi-react/AddIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import EmailOpenOutlineIcon from 'mdi-react/EmailOpenOutlineIcon'
@@ -15,6 +14,7 @@ import { CopyableText } from '../../components/CopyableText'
 import { DismissibleAlert } from '../../components/DismissibleAlert'
 import { Form } from '../../components/Form'
 import { eventLogger } from '../../tracking/eventLogger'
+import { ErrorAlert } from '../../components/alerts'
 
 function inviteUserToOrganization(
     username: string,
@@ -189,7 +189,10 @@ export class InviteForm extends React.PureComponent<Props, State> {
                         )
                     )
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    err => console.error(err)
+                )
         )
 
         // Adds.
@@ -225,7 +228,10 @@ export class InviteForm extends React.PureComponent<Props, State> {
                         )
                     )
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    err => console.error(err)
+                )
         )
 
         this.componentUpdates.next(this.props)
@@ -342,11 +348,7 @@ export class InviteForm extends React.PureComponent<Props, State> {
                         />
                         /* eslint-enable react/jsx-no-bind */
                     ))}
-                {this.state.error && (
-                    <div className="invite-form__alert alert alert-danger">
-                        Error: {upperFirst(this.state.error.message)}
-                    </div>
-                )}
+                {this.state.error && <ErrorAlert className="invite-form__alert" error={this.state.error} />}
             </div>
         )
     }

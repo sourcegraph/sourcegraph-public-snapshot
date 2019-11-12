@@ -49,9 +49,9 @@ export interface CodeEditorWithModel extends CodeEditor {
 }
 
 export type EditorUpdate =
-    | { type: 'added'; editorData: CodeEditorData } & EditorId
-    | { type: 'updated'; editorData: Pick<CodeEditorData, 'selections'> } & EditorId
-    | { type: 'deleted' } & EditorId
+    | ({ type: 'added'; editorData: CodeEditorData } & EditorId)
+    | ({ type: 'updated'; editorData: Pick<CodeEditorData, 'selections'> } & EditorId)
+    | ({ type: 'deleted' } & EditorId)
 
 /**
  * The editor service manages editors and documents.

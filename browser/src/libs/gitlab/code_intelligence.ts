@@ -7,6 +7,8 @@ import { diffDOMFunctions, singleFileDOMFunctions } from './dom_functions'
 import { getCommandPaletteMount } from './extensions'
 import { resolveCommitFileInfo, resolveDiffFileInfo, resolveFileInfo } from './file_info'
 import { getPageInfo, GitLabPageKind } from './scrape'
+import { toAbsoluteBlobURL } from '../../shared/util/url'
+import { subTypeOf } from '../../../../shared/src/util/types'
 
 const toolbarButtonProps = {
     className: 'btn btn-default btn-sm',
@@ -111,7 +113,7 @@ const codeViewResolver: ViewResolver<CodeView> = {
     resolveView,
 }
 
-export const gitlabCodeHost: CodeHost = {
+export const gitlabCodeHost = subTypeOf<CodeHost>()({
     type: 'gitlab',
     name: 'GitLab',
     check: checkIsGitlab,
@@ -122,6 +124,25 @@ export const gitlabCodeHost: CodeHost = {
         ...getPageInfo(),
         privateRepository: window.location.hostname !== 'gitlab.com',
     }),
+    urlToFile: (sourcegraphURL, target): string => {
+        // A view state means that a panel must be shown, and panels are currently only supported on
+        // Sourcegraph (not code hosts).
+        // Make sure the location is also on this Gitlab instance, return an absolute URL otherwise.
+        if (target.viewState || !target.rawRepoName.startsWith(window.location.hostname)) {
+            return toAbsoluteBlobURL(sourcegraphURL, target)
+        }
+
+        // Go to specific URL on this Gitlab instance.
+        const url = new URL(`https://${target.rawRepoName}/blob/${target.rev}/${target.filePath}`)
+        if (target.position) {
+            const { line, character } = target.position
+            url.hash = `#L${line}`
+            if (character) {
+                url.hash += `:${character}`
+            }
+        }
+        return url.href
+    },
     commandPaletteClassProps: {
         popoverClassName: 'dropdown-menu command-list-popover--gitlab',
         formClassName: 'dropdown-input',
@@ -144,4 +165,4 @@ export const gitlabCodeHost: CodeHost = {
         errorAlertClassName: 'alert alert-danger',
     },
     codeViewsRequireTokenization: true,
-}
+})

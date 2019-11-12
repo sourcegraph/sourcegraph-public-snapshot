@@ -387,9 +387,10 @@ export function fetchAllConfigAndSettings(): Observable<AllConfig> {
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {
-            const externalServices: Partial<
-                Record<GQL.ExternalServiceKind, ExternalServiceConfig[]>
-            > = data.externalServices.nodes
+            const externalServices: Partial<Record<
+                GQL.ExternalServiceKind,
+                ExternalServiceConfig[]
+            >> = data.externalServices.nodes
                 .filter(svc => svc.config)
                 .map((svc): [GQL.ExternalServiceKind, ExternalServiceConfig] => [svc.kind, parseJSONC(svc.config)])
                 .reduce<Partial<{ [k in GQL.ExternalServiceKind]: ExternalServiceConfig[] }>>(
@@ -583,5 +584,44 @@ export function fetchSiteUpdateCheck(): Observable<{
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.site)
+    )
+}
+
+/**
+ * Fetch a single LSIF job by id.
+ */
+export function fetchLsifJob({ id }: GQL.ILsifJobOnQueryArguments): Observable<GQL.ILSIFJob | null> {
+    return queryGraphQL(
+        gql`
+            query LsifJob($id: ID!) {
+                node(id: $id) {
+                    __typename
+                    ... on LSIFJob {
+                        id
+                        name
+                        args
+                        state
+                        progress
+                        failedReason
+                        timestamp
+                        processedOn
+                        finishedOn
+                    }
+                }
+            }
+        `,
+        { id }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                return null
+            }
+            if (node.__typename !== 'LSIFJob') {
+                throw new Error(`The given ID is a ${node.__typename}, not an LSIFJob`)
+            }
+
+            return node
+        })
     )
 }

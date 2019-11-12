@@ -25,11 +25,10 @@ describe('CodeEditor (integration)', () => {
                     toArray()
                 )
                 .toPromise()
-            assertToJSON(values.map(v => v.map(v => Selection.fromPlain(v).toPlain())), [
-                [],
-                [new Selection(1, 2, 3, 4).toPlain()],
-                [],
-            ])
+            assertToJSON(
+                values.map(v => v.map(v => Selection.fromPlain(v).toPlain())),
+                [[], [new Selection(1, 2, 3, 4).toPlain()], []]
+            )
         })
     })
 

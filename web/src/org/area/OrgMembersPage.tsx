@@ -1,4 +1,3 @@
-import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -15,6 +14,7 @@ import { userURL } from '../../user'
 import { removeUserFromOrganization } from '../backend'
 import { InviteForm } from '../invite/InviteForm'
 import { OrgAreaPageProps } from './OrgArea'
+import { ErrorAlert } from '../../components/alerts'
 
 interface UserNodeProps {
     /** The user to display in this list item. */
@@ -112,7 +112,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                     </div>
                 </div>
                 {isErrorLike(this.state.removalOrError) && (
-                    <div className="alert alert-danger mt-2">{upperFirst(this.state.removalOrError.message)}</div>
+                    <ErrorAlert className="mt-2" error={this.state.removalOrError} />
                 )}
             </li>
         )

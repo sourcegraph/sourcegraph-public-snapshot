@@ -365,7 +365,7 @@ describe('Search regression test suite', () => {
                 'repo:^github\\.com/facebook/react$ componentDidMount\\(\\) {\\n\\s*this\\.props\\.sourcegraph\\( index:no',
                 GQL.SearchPatternType.regexp
             )
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search' + urlQuery)
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 0)
         })
     })

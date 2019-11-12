@@ -329,7 +329,10 @@ const SiteSchemaJSON = `{
         },
         "remoteRegistry": {
           "description": "The remote extension registry URL, or ` + "`" + `false` + "`" + ` to not use a remote extension registry. If not set, the default remote extension registry URL is used.",
-          "oneOf": [{ "type": "string", "format": "uri" }, { "type": "boolean", "const": false }]
+          "oneOf": [
+            { "type": "string", "format": "uri" },
+            { "type": "boolean", "const": false }
+          ]
         },
         "allowRemoteExtensions": {
           "description": "Allow only the explicitly listed remote extensions (by extension ID, such as \"alice/myextension\") from the remote registry. If not set, all remote extensions may be used from the remote registry. To completely disable the remote registry, set ` + "`" + `remoteRegistry` + "`" + ` to ` + "`" + `false` + "`" + `.\n\nOnly available in Sourcegraph Enterprise.",

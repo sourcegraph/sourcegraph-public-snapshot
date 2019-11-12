@@ -30,10 +30,7 @@ export function handleTextFields(
     }: Pick<CodeHost, 'textFieldResolvers' | 'completionWidgetClassProps'>
 ): Unsubscribable {
     /** A stream of added or removed text fields. */
-    const textFields = mutations.pipe(
-        trackViews(textFieldResolvers || []),
-        observeOn(animationFrameScheduler)
-    )
+    const textFields = mutations.pipe(trackViews(textFieldResolvers || []), observeOn(animationFrameScheduler))
 
     // Don't use lodash.uniqueId because that makes it harder to hard-code expected URI values in
     // test code (because the URIs would change depending on test execution order).

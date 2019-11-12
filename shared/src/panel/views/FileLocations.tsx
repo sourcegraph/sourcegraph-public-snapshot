@@ -84,7 +84,10 @@ export class FileLocations extends React.PureComponent<Props, State> {
                     startWith(LOADING),
                     map(result => ({ locationsOrError: result }))
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    error => console.error(error)
+                )
         )
 
         this.componentUpdates.next(this.props)

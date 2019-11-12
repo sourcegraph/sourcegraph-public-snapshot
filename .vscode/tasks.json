@@ -6,128 +6,28 @@
     "cwd": "${workspaceFolder}",
   },
   "tasks": [
-    //#region typecheck tasks to run on folder open
     {
-      "type": "typescript",
-      "isBackground": true,
+      "label": "Watch TypeScript",
+      "detail": "Watch all TypeScript projects so type errors get reported in the problems panel",
+      "type": "process",
+      "group": "build",
       "problemMatcher": "$tsc-watch",
-      "tsconfig": "shared/tsconfig.json",
-      "option": "watch",
-      "presentation": {
-        "reveal": "never",
-      },
+      "isBackground": true,
+      "command": ["node_modules/.bin/tsc"],
+      "args": ["--build", ".", "--watch", "--incremental"],
       "runOptions": {
         "runOn": "folderOpen",
       },
     },
     {
-      "type": "typescript",
-      "isBackground": true,
-      "problemMatcher": "$tsc-watch",
-      "option": "watch",
-      "tsconfig": "web/tsconfig.json",
-      "presentation": {
-        "reveal": "never",
-      },
-      "runOptions": {
-        "runOn": "folderOpen",
-      },
+      "type": "npm",
+      "script": "all:eslint",
+      "problemMatcher": ["$eslint-stylish"],
     },
-    {
-      "type": "typescript",
-      "isBackground": true,
-      "option": "watch",
-      "problemMatcher": "$tsc-watch",
-      "tsconfig": "browser/tsconfig.json",
-      "presentation": {
-        "reveal": "never",
-      },
-      "runOptions": {
-        "runOn": "folderOpen",
-      },
-    },
-    {
-      "type": "typescript",
-      "isBackground": true,
-      "option": "watch",
-      "problemMatcher": "$tsc-watch",
-      "tsconfig": "packages/@sourcegraph/extension-api-types/tsconfig.json",
-      "presentation": {
-        "reveal": "never",
-      },
-      "runOptions": {
-        "runOn": "folderOpen",
-      },
-    },
-    {
-      "type": "typescript",
-      "option": "watch",
-      "isBackground": true,
-      "problemMatcher": "$tsc-watch",
-      "tsconfig": "packages/sourcegraph-extension-api/tsconfig.json",
-      "presentation": {
-        "reveal": "never",
-      },
-      "runOptions": {
-        "runOn": "folderOpen",
-      },
-    },
-    //#endregion
-
-    {
-      "label": "launch",
-      "command": "${workspaceRoot}/dev/launch.sh",
-      "isBackground": true,
-      "problemMatcher": [],
-    },
-    {
-      "label": "tslint",
-      "command": "yarn",
-      "args": ["--prefix", "web", "tslint"],
-      "problemMatcher": "$tslint5",
-    },
-
-    {
-      "label": "eslint web",
-      "command": "yarn",
-      "options": {
-        "cwd": "${workspaceFolder}/web",
-      },
-      "args": ["run", "eslint", "--quiet"],
-      "problemMatcher": "$eslint-stylish",
-      "presentation": {
-        "reveal": "never",
-      },
-    },
-    {
-      "label": "eslint shared",
-      "command": "yarn",
-      "options": {
-        "cwd": "${workspaceFolder}/shared",
-      },
-      "args": ["run", "eslint", "--quiet"],
-      "problemMatcher": "$eslint-stylish",
-      "presentation": {
-        "reveal": "never",
-      },
-    },
-    {
-      "label": "eslint browser",
-      "command": "yarn",
-      "options": {
-        "cwd": "${workspaceFolder}/browser",
-      },
-      "args": ["run", "eslint", "--quiet"],
-      "problemMatcher": "$eslint-stylish",
-      "presentation": {
-        "reveal": "never",
-      },
-    },
-
     {
       "label": "stylelint",
-      "command": "npm",
-      "args": ["--silent", "--prefix", "web", "run", "stylelint", "--", "--formatter", "compact"],
+      "command": "yarn",
+      "args": ["-s", "run", "all:stylelint", "--", "--formatter", "compact"],
       "problemMatcher": {
         "owner": "stylelint",
         "applyTo": "closedDocuments",
@@ -145,54 +45,10 @@
       },
     },
     {
-      "label": "build",
-      "command": "yarn",
-      "args": ["--prefix", "web", "run", "build"],
-      "problemMatcher": {
-        "fileLocation": "relative",
-        "owner": "typescript",
-        "severity": "error",
-        "pattern": [
-          {
-            "regexp": "^ERROR in (.+)$",
-            "file": 1,
-          },
-          {
-            "regexp": "^\\((\\d+),(\\d+)\\): error TS\\d+: (.+)$",
-            "line": 1,
-            "column": 2,
-            "message": 3,
-          },
-        ],
-      },
-    },
-    {
-      "label": "watch",
-      "command": "yarn",
-      "args": ["--prefix", "web", "run", "watch"],
+      "label": "launch",
+      "command": "${workspaceRoot}/dev/launch.sh",
       "isBackground": true,
-      "problemMatcher": {
-        "fileLocation": "relative",
-        "owner": "typescript",
-        "severity": "error",
-        "pattern": [
-          {
-            "regexp": "^ERROR in (.+)$",
-            "file": 1,
-          },
-          {
-            "regexp": "^\\((\\d+),(\\d+)\\): error TS\\d+: (.+)$",
-            "line": 1,
-            "column": 2,
-            "message": 3,
-          },
-        ],
-        "background": {
-          "activeOnStart": false,
-          "beginsPattern": "^Begin compile at .*$",
-          "endsPattern": "^Time: .*$",
-        },
-      },
+      "problemMatcher": [],
     },
   ],
 }

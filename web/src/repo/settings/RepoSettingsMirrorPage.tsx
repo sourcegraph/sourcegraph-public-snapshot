@@ -1,5 +1,4 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { upperFirst } from 'lodash'
 import CheckIcon from 'mdi-react/CheckIcon'
 import LockIcon from 'mdi-react/LockIcon'
 import * as React from 'react'
@@ -16,6 +15,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { DirectImportRepoAlert } from '../DirectImportRepoAlert'
 import { fetchRepository } from './backend'
 import { ActionContainer, BaseActionContainer } from './components/ActionContainer'
+import { ErrorAlert } from '../../components/alerts'
 
 interface UpdateMirrorRepositoryActionContainerProps {
     repo: GQL.IRepository
@@ -194,9 +194,7 @@ class CheckMirrorRepositoryConnectionActionContainer extends React.PureComponent
                 details={
                     <>
                         {this.state.errorDescription && (
-                            <div className="alert alert-danger action-container__alert">
-                                Error: {this.state.errorDescription}
-                            </div>
+                            <ErrorAlert className="action-container__alert" error={this.state.errorDescription} />
                         )}
                         {this.state.loading && (
                             <div className="alert alert-primary action-container__alert">
@@ -267,9 +265,10 @@ export class RepoSettingsMirrorPage extends React.PureComponent<Props, State> {
         eventLogger.logViewEvent('RepoSettingsMirror')
 
         this.subscriptions.add(
-            this.repoUpdates
-                .pipe(switchMap(() => fetchRepository(this.props.repo.name)))
-                .subscribe(repo => this.setState({ repo }), err => this.setState({ error: err.message }))
+            this.repoUpdates.pipe(switchMap(() => fetchRepository(this.props.repo.name))).subscribe(
+                repo => this.setState({ repo }),
+                err => this.setState({ error: err.message })
+            )
         )
     }
 
@@ -283,7 +282,7 @@ export class RepoSettingsMirrorPage extends React.PureComponent<Props, State> {
                 <PageTitle title="Mirror settings" />
                 <h2>Mirroring and cloning</h2>
                 {this.state.loading && <LoadingSpinner className="icon-inline" />}
-                {this.state.error && <div className="alert alert-danger">{upperFirst(this.state.error)}</div>}
+                {this.state.error && <ErrorAlert error={this.state.error} />}
                 <div className="form-group">
                     <label>
                         Remote repository URL{' '}

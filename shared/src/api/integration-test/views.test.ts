@@ -46,16 +46,19 @@ describe('Views (integration)', () => {
                 .getViews(ContributableViewContainer.Panel)
                 .pipe(first(v => v.length > 0))
                 .toPromise()
-            assertToJSON(values.map(v => ({ ...v, locationProvider: 'value not checked' })), [
-                {
-                    id: 'p',
-                    title: 't',
-                    content: 'c',
-                    priority: 3,
-                    container: ContributableViewContainer.Panel,
-                    locationProvider: 'value not checked',
-                },
-            ])
+            assertToJSON(
+                values.map(v => ({ ...v, locationProvider: 'value not checked' })),
+                [
+                    {
+                        id: 'p',
+                        title: 't',
+                        content: 'c',
+                        priority: 3,
+                        container: ContributableViewContainer.Panel,
+                        locationProvider: 'value not checked',
+                    },
+                ]
+            )
         })
     })
 })

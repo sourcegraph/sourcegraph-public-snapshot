@@ -42,7 +42,7 @@ func NewProvider(githubURL *url.URL, baseToken string, cacheTTL time.Duration, m
 	return p
 }
 
-var _ authz.Provider = ((*Provider)(nil))
+var _ authz.Provider = (*Provider)(nil)
 
 // RepoPerms implements the authz.Provider interface.
 //

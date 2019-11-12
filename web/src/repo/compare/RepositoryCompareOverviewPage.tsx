@@ -1,6 +1,5 @@
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
@@ -20,6 +19,7 @@ import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 import { RepositoryCompareCommitsPage } from './RepositoryCompareCommitsPage'
 import { RepositoryCompareDiffPage } from './RepositoryCompareDiffPage'
 import { ThemeProps } from '../../../../shared/src/theme'
+import { ErrorAlert } from '../../components/alerts'
 
 function queryRepositoryComparison(args: {
     repo: GQL.ID
@@ -126,7 +126,10 @@ export class RepositoryCompareOverviewPage extends React.PureComponent<Props, St
                         )
                     })
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    error => console.error(error)
+                )
         )
         this.componentUpdates.next(this.props)
     }
@@ -148,7 +151,7 @@ export class RepositoryCompareOverviewPage extends React.PureComponent<Props, St
                 ) : this.state.rangeOrError === undefined ? (
                     <LoadingSpinner className="icon-inline" />
                 ) : isErrorLike(this.state.rangeOrError) ? (
-                    <div className="alert alert-danger mt-2">Error: {upperFirst(this.state.rangeOrError.message)}</div>
+                    <ErrorAlert className="mt-2" error={this.state.rangeOrError} />
                 ) : (
                     <>
                         <RepositoryCompareCommitsPage {...this.props} />

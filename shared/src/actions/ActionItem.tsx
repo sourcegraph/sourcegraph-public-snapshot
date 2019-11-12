@@ -107,7 +107,10 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                         )
                     )
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    error => console.error(error)
+                )
         )
     }
 

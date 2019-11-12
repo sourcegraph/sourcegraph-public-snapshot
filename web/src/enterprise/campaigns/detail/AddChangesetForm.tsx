@@ -6,6 +6,7 @@ import { ID } from '../../../../../shared/src/graphql/schema'
 import { RepoNotFoundError } from '../../../../../shared/src/backend/errors'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { asError } from '../../../../../shared/src/util/errors'
+import { ErrorAlert } from '../../../components/alerts'
 
 async function addChangeset({
     campaignID,
@@ -113,7 +114,7 @@ export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: 
                 </button>
                 {isLoading && <LoadingSpinner className="icon-inline" />}
             </Form>
-            {error && <div className="alert alert-danger">{error.message}</div>}
+            {error && <ErrorAlert error={error} />}
         </>
     )
 }
