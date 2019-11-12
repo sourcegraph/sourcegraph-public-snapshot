@@ -18,6 +18,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
+func init() {
+	dbtesting.DBNameSuffix = "a8nenterpriserdb"
+}
+
 func TestService(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
