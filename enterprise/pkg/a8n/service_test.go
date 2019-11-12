@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
 
-func TestCampaignsService(t *testing.T) {
+func TestService(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -86,7 +86,7 @@ func TestCampaignsService(t *testing.T) {
 	}
 	gitClient := &dummyGitserverClient{response: "testresponse", responseErr: nil}
 
-	svc := NewCampaignsServiceWithClock(store, gitClient, clock)
+	svc := NewServiceWithClock(store, gitClient, clock)
 	err = svc.CreateCampaign(ctx, campaign)
 	if err != nil {
 		t.Fatal(err)

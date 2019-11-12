@@ -13,17 +13,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
 
-// NewCampaignsService returns a CampaignsService.
-func NewCampaignsService(store *Store, git GitserverClient) *CampaignsService {
-	return NewCampaignsServiceWithClock(store, git, func() time.Time {
+// NewService returns a Service.
+func NewService(store *Store, git GitserverClient) *Service {
+	return NewServiceWithClock(store, git, func() time.Time {
 		return time.Now().UTC().Truncate(time.Microsecond)
 	})
 }
 
-// NewCampaignsServiceWithClock returns a CampaignsService the given clock used
+// NewServiceWithClock returns a Service the given clock used
 // to generate timestamps.
-func NewCampaignsServiceWithClock(store *Store, git GitserverClient, clock func() time.Time) *CampaignsService {
-	return &CampaignsService{
+func NewServiceWithClock(store *Store, git GitserverClient, clock func() time.Time) *Service {
+	return &Service{
 		store: store,
 		git:   git,
 		clock: clock,
@@ -34,14 +34,14 @@ type GitserverClient interface {
 	CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error)
 }
 
-type CampaignsService struct {
+type Service struct {
 	store *Store
 	git   GitserverClient
 
 	clock func() time.Time
 }
 
-func (cc *CampaignsService) CreateCampaign(ctx context.Context, c *a8n.Campaign) error {
+func (cc *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign) error {
 	if err := cc.store.CreateCampaign(ctx, c); err != nil {
 		return err
 	}
@@ -105,7 +105,7 @@ func (cc *CampaignsService) CreateCampaign(ctx context.Context, c *a8n.Campaign)
 	return nil
 }
 
-func (cc *CampaignsService) runChangesetJob(
+func (cc *Service) runChangesetJob(
 	ctx context.Context,
 	c *a8n.Campaign,
 	job *a8n.ChangesetJob,
