@@ -11,8 +11,9 @@ import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../shared/sr
 import { DiffStat } from './DiffStat'
 import { FileDiffHunks } from './FileDiffHunks'
 import { ThemeProps } from '../../../shared/src/theme'
+import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 
-export interface FileDiffNodeProps extends ThemeProps {
+export interface FileDiffNodeProps extends Partial<ExtensionsControllerProps>, ThemeProps {
     node: GQL.IFileDiff | GQL.IPreviewFileDiff
     lineNumbers: boolean
     className?: string

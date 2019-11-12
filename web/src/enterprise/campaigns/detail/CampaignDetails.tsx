@@ -89,7 +89,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     // State for the form in editing mode
     const [name, setName] = useState<string>('')
     const [description, setDescription] = useState<string>('')
-    const [type, setType] = useState<string>('')
+    const [type, setType] = useState<'manual' | 'comby'>('manual')
     const [campaignPlanSpec, setCampaignPlanSpec] = useState<string>('')
     const [namespace, setNamespace] = useState<GQL.ID>()
 
@@ -116,6 +116,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
     // Fetch campaign if ID was given
     const [campaign, setCampaign] = useState<GQL.ICampaign | null>()
+    // campaign plan is not present for campaigns that are manually created, hence can be null
     const [campaignPlan, setCampaignPlan] = useState<GQL.ICampaignPlan | null>()
     useEffect(() => {
         if (!campaignID) {
@@ -155,15 +156,15 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         return unblockHistoryRef.current
     }, [campaignID, history])
 
-    const previewCampaignPlanEvent = useMemo(() => new Subject<GQL.ICampaignPlanSpecification>(), [])
-    const nextPreviewUpdate = useCallback(previewCampaignPlanEvent.next.bind(previewCampaignPlanEvent), [
-        previewCampaignPlanEvent,
+    const previewCampaignPlans = useMemo(() => new Subject<GQL.ICampaignPlanSpecification>(), [])
+    const nextPreviewCampaignPlan = useCallback(previewCampaignPlans.next.bind(previewCampaignPlans), [
+        previewCampaignPlans,
     ])
     const [isLoadingPreview, setIsLoadingPreview] = useState<boolean>(false)
     useObservable(
         useMemo(
             () =>
-                previewCampaignPlanEvent.pipe(
+                previewCampaignPlans.pipe(
                     tap(() => {
                         setAlertError(null)
                         setIsLoadingPreview(true)
@@ -171,6 +172,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     }),
                     switchMap(plan =>
                         previewCampaignPlan(plan, false).pipe(
+                            tap(() => {
+                                setIsLoadingPreview(false)
+                            }),
                             catchError(error => {
                                 setAlertError(asError(error))
                                 setIsLoadingPreview(false)
@@ -189,9 +193,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         )
                     ),
                     tap(campaignPlan => {
-                        if (campaignPlan.status.state !== 'PROCESSING') {
-                            setIsLoadingPreview(false)
-                        }
                         if (campaignPlan.status.state === 'COMPLETED') {
                             setPreviewRefreshNeeded(false)
                         }
@@ -200,7 +201,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         setCampaignPlan(campaignPlan)
                     })
                 ),
-            [previewCampaignPlanEvent]
+            [previewCampaignPlans]
         )
     )
 
@@ -256,8 +257,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             setName(name)
             setDescription(description)
             setMode('editing')
-            // setCampaignPlan(plan)
-            setType(plan ? plan.type : 'manual')
+            setType(plan ? (plan.type as 'comby' | 'manual') : 'manual')
             setCampaignPlanSpec(plan ? plan.arguments : '')
         }
     }
@@ -435,7 +435,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 <select
                     className="form-control w-auto d-inline-block"
                     placeholder="Select campaign type"
-                    onChange={event => setType(event.target.value)}
+                    onChange={event => setType(event.target.value as 'comby' | 'manual')}
                     disabled={!!(campaign && campaign.id)}
                     value={campaign && campaign.plan ? campaign.plan.type : type}
                     required={true}
@@ -466,7 +466,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                 type="button"
                                 className="btn btn-primary mr-1"
                                 disabled={!previewRefreshNeeded}
-                                onClick={() => nextPreviewUpdate({ type, arguments: campaignPlanSpec })}
+                                onClick={() => nextPreviewCampaignPlan({ type, arguments: campaignPlanSpec })}
                             >
                                 {isLoadingPreview && <LoadingSpinner className="icon-inline mr-1" />}
                                 Preview changes
