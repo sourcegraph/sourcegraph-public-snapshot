@@ -54,6 +54,12 @@ func TestUserUsageStatistics_LogPageView(t *testing.T) {
 func TestUserUsageStatistics_LogSearchQuery(t *testing.T) {
 	setupForTest(t)
 
+	// Set searchOccurred to true to prevent using redis to log all-time stats during tests.
+	searchOccurred = true
+	defer func() {
+		searchOccurred = false
+	}()
+
 	user := types.User{
 		ID: 1,
 	}
