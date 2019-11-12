@@ -29,7 +29,6 @@ interface ApiJob {
  *
  * @param timestamp The millisecond POSIX timestamp.
  */
-
 const toDate = (timestamp: number): string => new Date(timestamp).toISOString()
 
 /**

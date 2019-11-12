@@ -122,7 +122,22 @@ export async function gitserverExecLines(gitserverUrl: string, repository: strin
  * @param args The command to run in the repository's git directory.
  */
 async function gitserverExec(gitserverUrl: string, repository: string, args: string[]): Promise<string> {
+    if (args.length > 0 && args[0] === 'git') {
+        // Prevent this from happening again:
+        // https://github.com/sourcegraph/sourcegraph/pull/5941
+        // https://github.com/sourcegraph/sourcegraph/pull/6548
+        throw new Error('gitserver commands should not be prefixed with `git`')
+    }
+
     const body = JSON.stringify({ repo: repository, args })
     const resp = await got(new URL(`http://${gitserverUrl}/exec`).href, { body })
+
+    if (resp.trailers['x-exec-status'] !== '0') {
+        // The request may fail on its own, or it may succeed but put the
+        // subprocess failure message into the response trailers. Check for
+        // that so we don't silently throw away failures.
+        throw new Error(resp.trailers['x-exec-stderr'])
+    }
+
     return resp.body
 }
