@@ -122,7 +122,7 @@ export async function gitserverExecLines(gitserverUrl: string, repository: strin
  * @param args The command to run in the repository's git directory.
  */
 async function gitserverExec(gitserverUrl: string, repository: string, args: string[]): Promise<string> {
-    if (args.length > 0 && args[0] === 'git') {
+    if (args[0] === 'git') {
         // Prevent this from happening again:
         // https://github.com/sourcegraph/sourcegraph/pull/5941
         // https://github.com/sourcegraph/sourcegraph/pull/6548
@@ -142,7 +142,7 @@ async function gitserverExec(gitserverUrl: string, repository: string, args: str
     // in that case. Status will be undefined in some of our tests and
     // will be the process exit code (given as a string) otherwise.
     if (status !== undefined && status !== '0') {
-        throw Object.assign(new Error('Failed to run git command'), { stderr })
+        throw new Error(`Failed to run git command ${['git', ...args].join(' ')}: ${stderr}`)
     }
 
     return resp.body
