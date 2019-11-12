@@ -122,13 +122,20 @@ export function createJobRouter(queue: Queue, scriptedClient: ScriptedRedis): ex
         `/jobs/:state(${Array.from(queueTypes.keys()).join('|')})`,
         validation.validationMiddleware([
             validation.validateQuery,
-            validation.validateLimit(settings.DEFAULT_JOB_PAGE_SIZE),
+            validation.validateLimit,
             validation.validateOffset,
         ]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { state } = req.params as { state: ApiJobState }
-                const { query, limit, offset }: { query: string; limit: number; offset: number } = req.query
+                const {
+                    query,
+                    limit: limitRaw,
+                    offset: offsetRaw,
+                }: { query: string; limit: number | undefined; offset: number | undefined } = req.query
+
+                const limit = limitRaw || settings.DEFAULT_JOB_PAGE_SIZE
+                const offset = offsetRaw || 0
 
                 const queueName = queueTypes.get(state)
                 if (!queueName) {

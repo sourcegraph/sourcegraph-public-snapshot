@@ -18,7 +18,7 @@ export function createDumpRouter(backend: Backend): express.Router {
         validation.validationMiddleware([
             validation.validateQuery,
             validation.validateOptionalBoolean('visibleAtTip'),
-            validation.validateLimit(settings.DEFAULT_DUMP_PAGE_SIZE),
+            validation.validateLimit,
             validation.validateOffset,
         ]),
         wrap(
@@ -27,9 +27,17 @@ export function createDumpRouter(backend: Backend): express.Router {
                 const {
                     query,
                     visibleAtTip,
-                    limit,
-                    offset,
-                }: { query: string; visibleAtTip: boolean; limit: number; offset: number } = req.query
+                    limit: limitRaw,
+                    offset: offsetRaw,
+                }: {
+                    query: string
+                    visibleAtTip: boolean
+                    limit: number | undefined
+                    offset: number | undefined
+                } = req.query
+
+                const limit = limitRaw || settings.DEFAULT_DUMP_PAGE_SIZE
+                const offset = offsetRaw || 0
 
                 const { dumps, totalCount } = await backend.dumps(
                     decodeURIComponent(repository),

@@ -165,7 +165,7 @@ export function createLsifRouter(
         validation.validationMiddleware([
             validation.validateNonEmptyString('repository'),
             validation.validateNonEmptyString('commit').matches(commitPattern),
-            validation.validateLimit(settings.DEFAULT_REFERENCES_NUM_REMOTE_DUMPS),
+            validation.validateLimit,
             validation.validateCursor<ReferencePaginationCursor>(),
             ...checkSchema(requestBodySchema, ['body']),
         ]),
@@ -174,12 +174,12 @@ export function createLsifRouter(
                 const {
                     repository,
                     commit,
-                    limit,
+                    limit: limitRaw,
                     cursor,
                 }: {
                     repository: string
                     commit: string
-                    limit: number
+                    limit: number | undefined
                     cursor: ReferencePaginationCursor | undefined
                 } = req.query
 
@@ -189,6 +189,7 @@ export function createLsifRouter(
                     method,
                 }: { path: string; position: lsp.Position; method: string } = req.body
 
+                const limit = limitRaw || settings.DEFAULT_REFERENCES_NUM_REMOTE_DUMPS
                 const ctx = createTracingContext(logger, req, { repository, commit })
 
                 switch (method) {
