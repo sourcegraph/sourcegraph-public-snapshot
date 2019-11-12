@@ -61,7 +61,6 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook http.Handle
 	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL(schema))))
 
 	if httpapi.NewLSIFServerProxy != nil {
-		// TODO - handle error?
 		proxy, err := httpapi.NewLSIFServerProxy()
 		if err != nil {
 			return nil, err
@@ -71,9 +70,8 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook http.Handle
 		m.Get(apirouter.LSIFUpload).Handler(trace.TraceRoute(proxy.UploadHandler))
 	} else {
 		lsifDisabledHandler := func(w http.ResponseWriter, r *http.Request) {
-			// TODO
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("DISABLED"))
+			w.WriteHeader(http.StatusNotFound)
+			w.Write([]byte("lsif endpoints are only available in enterprise"))
 		}
 
 		m.Get(apirouter.LSIF).Handler(trace.TraceRoute(http.HandlerFunc(lsifDisabledHandler)))
