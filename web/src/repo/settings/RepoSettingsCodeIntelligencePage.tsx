@@ -118,6 +118,7 @@ export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ rep
                     noun="upload"
                     pluralNoun="uploads"
                     hideSearch={true}
+                    useURLQuery={false}
                     noSummaryIfAllNodesVisible={true}
                     queryConnection={queryLatestDumps}
                     nodeComponent={LsifDumpNode}
