@@ -171,7 +171,7 @@ const isValidFilterAlias = (alias: string): alias is keyof typeof filterAliases 
 export const lastFilterAndValueBeforeCursor = (
     queryState: QueryState
 ): {
-    filter: SuggestionTypes,
+    filter: SuggestionTypes
     filterAndValue: string
     value: string
 } | null => {
@@ -181,7 +181,9 @@ export const lastFilterAndValueBeforeCursor = (
     const value = filterAndValue?.split(':')[1]?.trim()
     const absoluteFilter = filter?.replace(/^-/, '')
     const resolvedFilter = isValidFilterAlias(absoluteFilter) ? filterAliases[absoluteFilter] : absoluteFilter
-    return isValidFilter(resolvedFilter) ? { filter: resolvedFilter, filterAndValue: filterAndValue.trim(), value } : null
+    return isValidFilter(resolvedFilter)
+        ? { filter: resolvedFilter, filterAndValue: filterAndValue.trim(), value }
+        : null
 }
 
 /**
@@ -191,10 +193,7 @@ export const lastFilterAndValueBeforeCursor = (
  * For query "case:| archived:" where "|" is the cursor position, it
  * returns suggestions (filter values) for the "case" filter.
  */
-export const filterStaticSuggestions = (
-    queryState: QueryState,
-    suggestions: SearchFilterSuggestions
-): Suggestion[] => {
+export const filterStaticSuggestions = (queryState: QueryState, suggestions: SearchFilterSuggestions): Suggestion[] => {
     const filterAndValueBeforeCursor = lastFilterAndValueBeforeCursor(queryState)
 
     if (!filterAndValueBeforeCursor) {
@@ -238,7 +237,11 @@ export const isTypingWordAndNotFilterValue = (value: string): boolean => Boolean
  * Adds suggestions value to search query where cursor was positioned.
  * ('a test: query', 'suggestion', 7) => 'a test:suggestion query'
  */
-export const insertSuggestionInQuery = (queryToInsertIn: string, selectedSuggestion: Suggestion, cursorPosition: number): QueryState => {
+export const insertSuggestionInQuery = (
+    queryToInsertIn: string,
+    selectedSuggestion: Suggestion,
+    cursorPosition: number
+): QueryState => {
     const firstPart = queryToInsertIn.substring(0, cursorPosition)
     const lastPart = queryToInsertIn.substring(firstPart.length)
     const isFiltersSuggestion = selectedSuggestion.type === SuggestionTypes.filters
@@ -295,10 +298,7 @@ export const isFuzzyWordSearch = (queryCursor: QueryState): boolean => {
 export const formatQueryForFuzzySearch = (queryState: QueryState): string => {
     const filterAndValueBeforeCursor = lastFilterAndValueBeforeCursor(queryState)
     // Check if filter shold have its suggestions searched without influence from the rest of the query
-    if (
-        filterAndValueBeforeCursor &&
-        isolatedFuzzySearchFilters.includes(filterAndValueBeforeCursor.filter)
-    ) {
+    if (filterAndValueBeforeCursor && isolatedFuzzySearchFilters.includes(filterAndValueBeforeCursor.filter)) {
         return filterAndValueBeforeCursor.filterAndValue
     }
     // Use search results from `file` filter when suggesting for `repohasfile` filter.

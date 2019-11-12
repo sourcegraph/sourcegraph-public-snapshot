@@ -138,7 +138,7 @@ export class QueryInput extends React.Component<Props, State> {
                         // First get static suggestions
                         const staticSuggestions = {
                             cursorPosition: queryState.cursorPosition,
-                            values: filterStaticSuggestions(queryState, searchFilterSuggestions)
+                            values: filterStaticSuggestions(queryState, searchFilterSuggestions),
                         }
 
                         // Used to know if a filter value, and not just a separate word, is being typed
@@ -339,7 +339,7 @@ export class QueryInput extends React.Component<Props, State> {
                                                     suggestion={suggestion}
                                                     isSelected={isSelected}
                                                     showUrlLabel={showUrlLabel}
-                                                    defaultLabel='add to query'
+                                                    defaultLabel="add to query"
                                                 />
                                             )
                                         })}
@@ -367,10 +367,12 @@ export class QueryInput extends React.Component<Props, State> {
     private onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
         // Ctrl+Space to show all available filter type suggestions
         if (!this.props.value.query && event.ctrlKey && event.key === ' ') {
-            this.setState({ suggestions: {
-                cursorPosition: event.currentTarget.selectionStart ?? 0,
-                values: searchFilterSuggestions.filters.values
-            } })
+            this.setState({
+                suggestions: {
+                    cursorPosition: event.currentTarget.selectionStart ?? 0,
+                    values: searchFilterSuggestions.filters.values,
+                },
+            })
         }
     }
 
@@ -418,10 +420,12 @@ export class QueryInput extends React.Component<Props, State> {
             const { query: newQuery, cursorPosition: newCursorPosition } = insertSuggestionInQuery(
                 props.value.query,
                 // Add regex end of string boundary to limit future suggestion results
-                !suggestion.fromFuzzySearch ? suggestion : {
-                    ...suggestion,
-                    value: suggestion.value + '$'
-                },
+                !suggestion.fromFuzzySearch
+                    ? suggestion
+                    : {
+                          ...suggestion,
+                          value: suggestion.value + '$',
+                      },
                 cursorPosition
             )
 

@@ -168,10 +168,10 @@ export const SuggestionItem: React.FunctionComponent<SuggestionProps> = ({
         <SuggestionIcon className="icon-inline suggestion__icon" suggestion={suggestion} />
         <div className="suggestion__title">{suggestion.value}</div>
         <div className="suggestion__description">{suggestion.description}</div>
-        {(showUrlLabel || defaultLabel) &&
+        {(showUrlLabel || defaultLabel) && (
             <div className="suggestion__action" hidden={!isSelected}>
-                <kbd>enter</kbd> {showUrlLabel && suggestion?.label || defaultLabel}
+                <kbd>enter</kbd> {(showUrlLabel && suggestion?.label) || defaultLabel}
             </div>
-        }
+        )}
     </li>
 )
