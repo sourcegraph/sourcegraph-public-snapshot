@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
@@ -98,23 +99,34 @@ func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign) error {
 		}
 	}
 
-	// TODO: This part can happen asynchronously
-	for _, rel := range rels {
-		err := s.runChangesetJob(ctx, c, rel.ChangesetJob, rel.Repo, rel.CampaignJob)
+	return nil
+}
+
+func (s *Service) RunChangesetJobs(ctx context.Context, c *a8n.Campaign) error {
+	jobs, _, err := s.store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
+		CampaignID: c.ID,
+		Limit:      10000,
+	})
+	if err != nil {
+		return err
+	}
+
+	errs := &multierror.Error{}
+	for _, job := range jobs {
+		err := s.runChangesetJob(ctx, c, job)
 		if err != nil {
-			return err
+			err = errors.Wrapf(err, "ChangesetJob %d", job.ID)
+			errs = multierror.Append(errs, err)
 		}
 	}
 
-	return nil
+	return errs.ErrorOrNil()
 }
 
 func (s *Service) runChangesetJob(
 	ctx context.Context,
 	c *a8n.Campaign,
 	job *a8n.ChangesetJob,
-	repo *repos.Repo,
-	campaignJob *a8n.CampaignJob,
 ) (err error) {
 	store := s.store
 
@@ -125,11 +137,32 @@ func (s *Service) runChangesetJob(
 			job.Error = err.Error()
 		}
 		job.FinishedAt = s.clock()
-		err = store.UpdateChangesetJob(ctx, job)
+
+		if e := store.UpdateChangesetJob(ctx, job); e != nil {
+			if err == nil {
+				err = e
+			} else {
+				err = multierror.Append(err, e)
+			}
+		}
 		return
 	}()
-
 	job.StartedAt = s.clock()
+
+	campaignJob, err := s.store.GetCampaignJob(ctx, GetCampaignJobOpts{ID: job.CampaignJobID})
+	if err != nil {
+		return err
+	}
+
+	reposStore := repos.NewDBStore(s.store.DB(), sql.TxOptions{})
+	rs, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: []uint32{uint32(campaignJob.RepoID)}})
+	if err != nil {
+		return err
+	}
+	if len(rs) != 1 {
+		return errors.Errorf("repo not found: %d", campaignJob.RepoID)
+	}
+	repo := rs[0]
 
 	headRefName := "sourcegraph/campaign-" + strconv.FormatInt(c.ID, 10)
 
@@ -155,10 +188,9 @@ func (s *Service) runChangesetJob(
 
 	var externalService *repos.ExternalService
 	{
-		store := repos.NewDBStore(s.store.DB(), sql.TxOptions{})
 		args := repos.StoreListExternalServicesArgs{IDs: repo.ExternalServiceIDs()}
 
-		es, err := store.ListExternalServices(ctx, args)
+		es, err := reposStore.ListExternalServices(ctx, args)
 		if err != nil {
 			return err
 		}
@@ -210,19 +242,19 @@ func (s *Service) runChangesetJob(
 		return err
 	}
 
-	tx, err := store.Transact(ctx)
+	store, err = store.Transact(ctx)
 	if err != nil {
 		return err
 	}
 
-	defer tx.Done(&err)
+	defer store.Done(&err)
 
-	if err = tx.CreateChangesets(ctx, cs.Changeset); err != nil {
+	if err = store.CreateChangesets(ctx, cs.Changeset); err != nil {
 		return err
 	}
 
 	job.ChangesetID = cs.Changeset.ID
 	c.ChangesetIDs = append(c.ChangesetIDs, cs.Changeset.ID)
 
-	return tx.UpdateCampaign(ctx, c)
+	return store.UpdateCampaign(ctx, c)
 }

@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // Resolver is the GraphQL resolver of all things A8N.
@@ -197,6 +198,13 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 	if err != nil {
 		return nil, err
 	}
+
+	go func() {
+		err := svc.RunChangesetJobs(context.Background(), campaign)
+		if err != nil {
+			log15.Error("RunChangesetJobs", "err", err)
+		}
+	}()
 
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
