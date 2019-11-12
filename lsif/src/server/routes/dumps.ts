@@ -4,6 +4,7 @@ import express from 'express'
 import { Backend } from '../backend/backend'
 import { nextLink } from '../pagination/link'
 import { wrap } from 'async-middleware'
+import { extractLimitOffset } from '../pagination/limit-offset'
 
 /**
  * Create a router containing the LSIF dump endpoints.
@@ -12,6 +13,11 @@ import { wrap } from 'async-middleware'
  */
 export function createDumpRouter(backend: Backend): express.Router {
     const router = express.Router()
+
+    interface DumpsQueryArgs {
+        query: string
+        visibleAtTip: boolean
+    }
 
     router.get(
         '/dumps/:repository',
@@ -24,20 +30,8 @@ export function createDumpRouter(backend: Backend): express.Router {
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { repository } = req.params
-                const {
-                    query,
-                    visibleAtTip,
-                    limit: limitRaw,
-                    offset: offsetRaw,
-                }: {
-                    query: string
-                    visibleAtTip: boolean
-                    limit: number | undefined
-                    offset: number | undefined
-                } = req.query
-
-                const limit = limitRaw || settings.DEFAULT_DUMP_PAGE_SIZE
-                const offset = offsetRaw || 0
+                const { query, visibleAtTip }: DumpsQueryArgs = req.query
+                const { limit, offset } = extractLimitOffset(req.query, settings.DEFAULT_DUMP_PAGE_SIZE)
 
                 const { dumps, totalCount } = await backend.dumps(
                     decodeURIComponent(repository),
