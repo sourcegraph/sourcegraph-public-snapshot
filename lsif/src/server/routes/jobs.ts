@@ -135,7 +135,7 @@ export function createJobRouter(
             validation.validateOptionalInt('maxWait'),
             ...checkSchema(
                 {
-                    name: { isIn: { options: [['update-tips', 'clean-failed-jobs', 'clean-old-jobs']] } },
+                    name: { isIn: { options: [['update-tips', 'clean-old-jobs', 'clean-failed-jobs']] } },
                 },
                 ['body']
             ),
