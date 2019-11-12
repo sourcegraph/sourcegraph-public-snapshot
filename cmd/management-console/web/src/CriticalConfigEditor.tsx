@@ -78,7 +78,7 @@ interface State {
 }
 
 /** A response from the server when an error occurs. */
-interface ErrorResponse {
+export interface ErrorResponse {
     /** A human-readable error message. */
     error: string
     /** A stable ID for this kind of error. */
@@ -91,7 +91,11 @@ const defaultFormattingOptions = {
     tabSize: 2,
 }
 
-const quickConfigureActions = [
+const quickConfigureActions: {
+    id: string
+    label: string
+    run: (config: string) => { edits: jsonc.Edit[]; selectText: string }
+}[] = [
     {
         id: 'setExternalURL',
         label: 'Set external URL',
@@ -197,7 +201,7 @@ const quickConfigureActions = [
         id: 'useOktaSAML',
         label: 'Add Okta SAML',
         run: config => {
-            const { externalURL, externalURLRegexp } = getExternalURLPlaceholders(config)
+            const { externalURL } = getExternalURLPlaceholders(config)
             const value = {
                 type: 'saml',
                 displayName: 'Okta',
@@ -464,7 +468,7 @@ export class CriticalConfigEditor extends React.PureComponent<Props, State> {
                         fetch('/api/update', {
                             method: 'POST',
                             body: JSON.stringify({
-                                LastID: this.state.criticalConfig.ID,
+                                LastID: this.state.criticalConfig!.ID,
                                 Contents: this.state.content,
                             } as UpdateParams),
                         })

@@ -101,7 +101,7 @@ import { checkUserLoggedInAndFetchSettings } from '../../platform/settings'
 
 registerHighlightContributions()
 
-interface OverlayPosition {
+export interface OverlayPosition {
     top: number
     left: number
 }
