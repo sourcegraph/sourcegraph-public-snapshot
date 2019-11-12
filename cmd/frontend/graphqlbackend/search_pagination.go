@@ -116,14 +116,20 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchRe
 		tr.Finish()
 	}()
 
-	// All paginated search requests should complete within this timeframe.
+	// All paginated search requests must complete within this timeframe.
 	//
-	// This should not be increased or made to be configurable, because from a
-	// product POV it should never take longer than 10s to fetch 5,000 results
-	// (the max you can fetch in one request). If it does timeout and you are
-	// thinking of increasing this value, it means there is a different part of
-	// the underlying system which needs to be improved instead.
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	// In an ideal world, all paginated search requests would complete in under
+	// just a few seconds and we could safely have e.g. a 10s hard limit in
+	// place here. But in practice, some queries can take longer:
+	//
+	// 	`repo:^github\.com/kubernetes/kubernetes$ .` (so many results it often can't complete in under 1m)
+	// 	`repo:^github\.com/torvalds/linux$ type:diff error index:no ` (times out after 1m)
+	//
+	// These cases would make a UI paginated search experience bad, but from an
+	// API use case you are very willing to wait as long as you get accurate
+	// results so for now we use a 2m hard timeout (based on the non-paginated
+	// search upper bound, it should not be increased further).
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
 
 	repos, missingRepoRevs, alertResult, err := r.determineRepos(ctx, tr, start)
