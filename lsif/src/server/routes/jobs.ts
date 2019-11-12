@@ -128,10 +128,7 @@ export function createJobRouter(queue: Queue, scriptedClient: ScriptedRedis): ex
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { state } = req.params as { state: ApiJobState }
-                const { query, limit: a, offset: b }: { query: string; limit: number; offset: number } = req.query
-
-                const limit = a || settings.DEFAULT_JOB_PAGE_SIZE
-                const offset = b || 0
+                const { query, limit, offset }: { query: string; limit: number; offset: number } = req.query
 
                 const queueName = queueTypes.get(state)
                 if (!queueName) {
