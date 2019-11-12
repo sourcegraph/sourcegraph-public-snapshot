@@ -151,7 +151,7 @@ function lsifJobDescription(job: GQL.ILSIFJob): string {
         return `Convert upload for ${repository} at ${commit.substring(0, 7)}${root === '' ? '' : `, ${root}`}`
     }
 
-    const internalJobs: { [K: string]: string } = {
+    const internalJobs: { [name: string]: string } = {
         'clean-old-jobs': 'Purge old job data from LSIF work queue',
         'clean-failed-jobs': 'Clean old failed job uploads from disk',
         'update-tips': 'Refresh current uploads',
