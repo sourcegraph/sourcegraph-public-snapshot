@@ -1364,11 +1364,33 @@ func getCampaignPlanQuery(opts *GetCampaignPlanOpts) *sqlf.Query {
 
 // GetCampaignPlanStatus gets the a8n.BackgroundProcessStatus for a CampaignPlan
 func (s *Store) GetCampaignPlanStatus(ctx context.Context, id int64) (*a8n.BackgroundProcessStatus, error) {
-	q := sqlf.Sprintf(
-		getCampaignPlanStatussQueryFmtstr,
+	return s.queryBackgroundProcessStatus(ctx, sqlf.Sprintf(
+		getCampaignPlanStatusQueryFmtstr,
 		sqlf.Sprintf("campaign_plan_id = %s", id),
-	)
+	))
+}
 
+var getCampaignPlanStatusQueryFmtstr = `
+-- source: pkg/a8n/store.go:GetCampaignPlanStatus
+SELECT
+  COUNT(*) AS total,
+  COUNT(*) FILTER (WHERE finished_at IS NULL) AS pending,
+  COUNT(*) FILTER (WHERE finished_at IS NOT NULL) AS completed,
+  array_agg(error) FILTER (WHERE error != '') AS errors
+FROM campaign_jobs
+WHERE %s
+LIMIT 1
+`
+
+// GetCampaignStatus gets the a8n.BackgroundProcessStatus for a Campaign
+func (s *Store) GetCampaignStatus(ctx context.Context, id int64) (*a8n.BackgroundProcessStatus, error) {
+	return s.queryBackgroundProcessStatus(ctx, sqlf.Sprintf(
+		getCampaignStatusQueryFmtstr,
+		sqlf.Sprintf("campaign_id = %s", id),
+	))
+}
+
+func (s *Store) queryBackgroundProcessStatus(ctx context.Context, q *sqlf.Query) (*a8n.BackgroundProcessStatus, error) {
 	var status a8n.BackgroundProcessStatus
 	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
 		return 0, 0, scanBackgroundProcessStatus(&status, sc)
@@ -1389,14 +1411,14 @@ func (s *Store) GetCampaignPlanStatus(ctx context.Context, id int64) (*a8n.Backg
 	return &status, nil
 }
 
-var getCampaignPlanStatussQueryFmtstr = `
--- source: pkg/a8n/store.go:GetCampaignPlanStatus
+var getCampaignStatusQueryFmtstr = `
+-- source: pkg/a8n/store.go:GetCampaignStatus
 SELECT
   COUNT(*) AS total,
   COUNT(*) FILTER (WHERE finished_at IS NULL) AS pending,
   COUNT(*) FILTER (WHERE finished_at IS NOT NULL) AS completed,
   array_agg(error) FILTER (WHERE error != '') AS errors
-FROM campaign_jobs
+FROM changeset_jobs
 WHERE %s
 LIMIT 1
 `
