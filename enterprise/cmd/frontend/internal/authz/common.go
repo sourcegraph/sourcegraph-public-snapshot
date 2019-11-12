@@ -5,7 +5,8 @@ import (
 	"time"
 )
 
-func parseTTL(ttl string) (time.Duration, error) {
+// ParseTTL parses ttl string to a valid time duration.
+func ParseTTL(ttl string) (time.Duration, error) {
 	defaultValue := 3 * time.Hour
 	if ttl == "" {
 		return defaultValue, nil
