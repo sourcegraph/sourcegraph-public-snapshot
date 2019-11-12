@@ -1,8 +1,8 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -10,7 +10,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats2"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
 )
@@ -33,14 +33,10 @@ func init() {
 			if err != nil {
 				log15.Error("telemetryHandler: Decode(2)", "error", err)
 			}
-			if tr.UserID != 0 && tr.EventLabel == "SavedSearchEmailNotificationSent" {
-				err = usagestats.LogActivity(true, tr.UserID, "", "STAGEVERIFY")
-				if err != nil {
-					log15.Error("telemetryHandler: usagestats.LogActivity", "error", err)
-				}
+			err = usagestats2.LogEvent(context.Background(), tr.EventName, "", tr.UserID, "backend", "BACKEND", nil)
+			if err != nil {
+				log15.Error("telemetryHandler: usagestats2.LogEvent", "error", err)
 			}
-
-			fmt.Fprintln(w, "event-level telemetry is disabled")
 			w.WriteHeader(http.StatusNoContent)
 		})
 	}

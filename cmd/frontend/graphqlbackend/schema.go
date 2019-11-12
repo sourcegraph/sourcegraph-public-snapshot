@@ -924,6 +924,7 @@ input MarkdownOptions {
 enum EventSource {
     WEB
     CODEHOSTINTEGRATION
+    BACKEND
 }
 
 # Input for Mutation.settingsMutation, which contains fields that all settings (global, organization, and user
