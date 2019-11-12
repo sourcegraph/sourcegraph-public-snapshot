@@ -349,7 +349,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                     }}
                                     updateOnChange={`${this.props.repoName}:${this.props.rev}:${this.props.filePath}`}
                                     defaultFirst={7}
-                                    shouldUpdateURLQuery={false}
+                                    useURLQuery={false}
                                     hideSearch={true}
                                 />
                             </div>

@@ -99,7 +99,7 @@ export class RepositoriesPopover extends React.PureComponent<Props> {
                     history={this.props.history}
                     location={this.props.location}
                     noSummaryIfAllNodesVisible={true}
-                    shouldUpdateURLQuery={false}
+                    useURLQuery={false}
                 />
             </div>
         )
