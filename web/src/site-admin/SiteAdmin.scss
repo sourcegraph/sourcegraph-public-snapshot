@@ -6,8 +6,8 @@
 @import './SiteAdminSurveyResponsesPage';
 @import './SiteAdminAddExternalServicesPage';
 @import './SiteAdminManagementConsolePassword';
-@import './SiteAdminLsifJobPage';
-@import './SiteAdminLsifJobsPage';
+@import '../enterprise/site-admin/SiteAdminLsifJobPage';
+@import '../enterprise/site-admin/SiteAdminLsifJobsPage';
 
 .site-admin-area .settings-file {
     flex: 1;
