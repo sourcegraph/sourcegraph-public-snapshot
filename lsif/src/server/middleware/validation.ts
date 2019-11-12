@@ -52,8 +52,6 @@ export const validateQuery = validateOptionalString('query')
 
 /**
  * Create a validator for an integer limit field.
- *
- * @param defaultValue The default value.
  */
 export const validateLimit = validateOptionalInt('limit')
 
