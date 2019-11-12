@@ -12,6 +12,7 @@ import { ensureLoggedInOrCreateTestUser, editGlobalSettings } from './util/helpe
 import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { TestResourceManager } from './util/TestResourceManager'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
+import { Key } from 'ts-key-enum'
 
 /**
  * Reads the number of results from the text at the top of the results page
@@ -425,6 +426,84 @@ describe('Search regression test suite', () => {
                         }
                     })
             ).toBeTruthy()
+        })
+
+        test('Search suggestions', async () => {
+            // Repo autocomplete from homepage
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search')
+            await driver.page.waitForSelector('.e2e-query-input')
+            await driver.replaceText({
+                selector: '.e2e-query-input',
+                newText: 'go-jwt-middlew',
+                enterTextMethod: 'type',
+            })
+            await driver.page.waitForSelector('.e2e-query-suggestions')
+            await (await driver.findElementWithText('github.com/auth0/go-jwt-middleware', {
+                wait: { timeout: 5000 },
+                selector: '.e2e-query-suggestions li',
+            })).click()
+            await driver.waitUntilURL(`${config.sourcegraphBaseUrl}/github.com/auth0/go-jwt-middleware`)
+
+            // File autocomplete from repo search bar
+            await driver.page.waitForSelector('.e2e-repo-container .e2e-query-input')
+            await driver.replaceText({
+                selector: '.e2e-repo-container .e2e-query-input',
+                newText: 'READM',
+                enterTextMethod: 'type',
+            })
+            await driver.page.waitForSelector('.e2e-repo-container .e2e-query-suggestions')
+            await driver.findElementWithText('README.md', {
+                selector: '.e2e-repo-container .e2e-query-suggestions',
+                wait: { timeout: 5000 },
+            })
+            await driver.page.keyboard.press(Key.ArrowDown)
+            await driver.page.keyboard.press(Key.Enter)
+            await driver.page.waitForFunction(() => document.location.href.endsWith('/README.md'), { timeout: 5000 })
+
+            // Symbol autocomplete in top search bar
+            await driver.page.waitForSelector('.e2e-query-input')
+            await driver.replaceText({
+                selector: '.e2e-query-input',
+                newText: 'checkj',
+                enterTextMethod: 'type',
+            })
+            await driver.page.waitForSelector('.e2e-query-suggestions')
+            await driver.findElementWithText('CheckJWT', {
+                selector: '.e2e-query-suggestions',
+                wait: { timeout: 5000 },
+            })
+            await driver.page.keyboard.press(Key.ArrowDown)
+            await driver.page.keyboard.press(Key.Enter)
+            await driver.page.waitForFunction(() => document.location.pathname.endsWith('/jwtmiddleware.go'), {
+                timeout: 5000,
+            })
+        })
+
+        test('Search filters', async () => {
+            const filterToToken = [
+                ['case:yes', 'case:yes'],
+                ['lang:go', 'lang:go'],
+                ['-file:_test\\.go$', '-file:_test\\.go$'],
+            ]
+            const origQuery = 'jwtmiddleware'
+            for (const [filter, token] of filterToToken) {
+                await driver.page.goto(
+                    `${config.sourcegraphBaseUrl}/search?q=${encodeURIComponent(origQuery)}&patternType=literal`
+                )
+                await (await driver.findElementWithText(filter, {
+                    selector: 'button',
+                    wait: { timeout: 5000 },
+                })).click()
+                await driver.page.waitForFunction(
+                    expectedQuery => {
+                        const url = new URL(document.location.href)
+                        const query = url.searchParams.get('q')
+                        return query && query.trim() === expectedQuery
+                    },
+                    { timeout: 5000 },
+                    `${origQuery} ${token}`
+                )
+            }
         })
     })
 })
