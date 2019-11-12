@@ -20,10 +20,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/httpapi"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
-	"github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n/resolvers"
+	a8nResolvers "github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintelligence/proxy"
+	codeIntelligenceResolvers "github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintelligence/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )
@@ -32,6 +35,7 @@ func main() {
 	initLicensing()
 	initAuthz()
 	initResolvers()
+	initLSIFEndpoints()
 
 	// Connect to the database.
 	if err := dbconn.ConnectToDB(""); err != nil {
@@ -104,7 +108,12 @@ func initLicensing() {
 }
 
 func initResolvers() {
-	graphqlbackend.NewA8NResolver = resolvers.NewResolver
+	graphqlbackend.NewA8NResolver = a8nResolvers.NewResolver
+	graphqlbackend.NewCodeIntelligenceResolver = codeIntelligenceResolvers.NewResolver
+}
+
+func initLSIFEndpoints() {
+	httpapi.NewLSIFProxy = proxy.NewProxy
 }
 
 type usersStore struct{}
