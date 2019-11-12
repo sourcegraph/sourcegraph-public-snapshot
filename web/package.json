@@ -15,8 +15,7 @@
     "webpack": "cross-env NODE_OPTIONS=\"--max_old_space_size=4096\" gulp webpack",
     "lint": "yarn run tslint && gulp unusedExports && yarn run stylelint",
     "tslint": "tslint -t stylish -c tslint.json -p tsconfig.json -e 'src/schema/**' 'src/**/*.ts?(x)' 'types/**/*.ts?(x)' './*.ts?(x)'",
-    "eslint": "eslint '**/*.[jt]s?(x)'",
-    "typecheck": "tsc -p .",
+    "eslint": "eslint 'src/**/*.ts?(x)'",
     "stylelint": "stylelint 'src/**/*.scss'",
     "bundlesize": "cross-env GITHUB_TOKEN= bundlesize",
     "browserslist": "browserslist"

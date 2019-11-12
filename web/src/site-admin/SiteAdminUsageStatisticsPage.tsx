@@ -218,7 +218,10 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
         eventLogger.logViewEvent('SiteAdminUsageStatistics')
 
         this.subscriptions.add(
-            fetchSiteUsageStatistics().subscribe(stats => this.setState({ stats }), error => this.setState({ error }))
+            fetchSiteUsageStatistics().subscribe(
+                stats => this.setState({ stats }),
+                error => this.setState({ error })
+            )
         )
     }
 

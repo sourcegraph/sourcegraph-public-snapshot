@@ -1,6 +1,12 @@
 import express from 'express'
 import { Logger } from 'winston'
-import { pipeline as _pipeline } from 'stream'
+
+export interface ApiError {
+    message: string
+    status?: number
+}
+
+export const isApiError = (val: unknown): val is ApiError => typeof val === 'object' && !!val && 'message' in val
 
 /**
  * Middleware function used to convert uncaught exceptions into 500 responses.
@@ -9,18 +15,22 @@ import { pipeline as _pipeline } from 'stream'
  */
 export const errorHandler = (
     logger: Logger
-): ((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => void) => (
-    error: any,
+): ((error: unknown, req: express.Request, res: express.Response, next: express.NextFunction) => void) => (
+    error: unknown,
     req: express.Request,
     res: express.Response,
+    // Express uses argument length to distinguish middleware and error handlers
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     next: express.NextFunction
 ): void => {
-    if (!error || !error.status) {
-        // Only log errors that don't have a status attached
+    const status = (isApiError(error) && error.status) || 500
+    const message = (isApiError(error) && error.message) || 'Unknown error'
+
+    if (status !== 500) {
         logger.error('uncaught exception', { error })
     }
 
     if (!res.headersSent) {
-        res.status((error && error.status) || 500).send({ message: (error && error.message) || 'Unknown error' })
+        res.status(status).send({ message })
     }
 }

@@ -93,14 +93,20 @@ describe('discoverAndUpdateTips', () => {
         const ce = util.createCommit('e')
 
         nock('http://gitserver0')
-            .post('/exec', { repo: 'test-repo', args: ['git', 'rev-parse', 'HEAD'] })
+            .post('/exec', { repo: 'test-repo', args: ['rev-parse', 'HEAD'] })
             .reply(200, ce)
 
         const { connection, cleanup } = await util.createCleanPostgresDatabase()
 
         try {
             const xrepoDatabase = new XrepoDatabase('', connection)
-            await xrepoDatabase.updateCommits('test-repo', [[ca, ''], [cb, ca], [cc, cb], [cd, cc], [ce, cd]])
+            await xrepoDatabase.updateCommits('test-repo', [
+                [ca, ''],
+                [cb, ca],
+                [cc, cb],
+                [cd, cc],
+                [ce, cd],
+            ])
             await xrepoDatabase.insertDump('test-repo', ca, 'foo')
             await xrepoDatabase.insertDump('test-repo', cb, 'foo')
             await xrepoDatabase.insertDump('test-repo', cc, 'bar')
@@ -110,9 +116,13 @@ describe('discoverAndUpdateTips', () => {
                 ctx: {},
             })
 
-            expect((await xrepoDatabase.getDump('test-repo', ca, 'foo/test.ts'))!.visibleAtTip).toBeFalsy()
-            expect((await xrepoDatabase.getDump('test-repo', cb, 'foo/test.ts'))!.visibleAtTip).toBeTruthy()
-            expect((await xrepoDatabase.getDump('test-repo', cc, 'bar/test.ts'))!.visibleAtTip).toBeTruthy()
+            const d1 = await xrepoDatabase.getDump('test-repo', ca, 'foo/test.ts')
+            const d2 = await xrepoDatabase.getDump('test-repo', cb, 'foo/test.ts')
+            const d3 = await xrepoDatabase.getDump('test-repo', cc, 'bar/test.ts')
+
+            expect(d1 && d1.visibleAtTip).toBeFalsy()
+            expect(d2 && d2.visibleAtTip).toBeTruthy()
+            expect(d3 && d3.visibleAtTip).toBeTruthy()
         } finally {
             await cleanup()
         }
@@ -132,7 +142,7 @@ describe('discoverTips', () => {
         for (const [addr, suffixes] of Object.entries(requests)) {
             for (const i of suffixes) {
                 nock(addr)
-                    .post('/exec', { repo: `test-repo-${i}`, args: ['git', 'rev-parse', 'HEAD'] })
+                    .post('/exec', { repo: `test-repo-${i}`, args: ['rev-parse', 'HEAD'] })
                     .reply(200, `c${i}`)
             }
         }

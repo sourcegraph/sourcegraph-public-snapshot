@@ -242,14 +242,13 @@ export class XrepoDatabase {
     }
 
     /**
-     * Update the known commits for a repository. The given commits are pairs of revhashes, where
-     * [`a`, `b`] indicates that one parent of `b` is `a`. If a commit has no parents, then there
-     * should be a pair of the form [`a`, ``] (where the parent is an empty string).
+     * Update the known commits for a repository. The given commit list is a set of pairs of the
+     * form `(child, parent)`. Commits without a parent will be returend as  `(child, undefined)`.
      *
      * @param repository The repository name.
      * @param commits The commit parentage data.
      */
-    public updateCommits(repository: string, commits: [string, string][]): Promise<void> {
+    public updateCommits(repository: string, commits: [string, string | undefined][]): Promise<void> {
         return this.withTransactionalEntityManager(async entityManager => {
             const commitInserter = new TableInserter(
                 entityManager,
@@ -260,7 +259,7 @@ export class XrepoDatabase {
             )
 
             for (const [commit, parentCommit] of commits) {
-                await commitInserter.insert({ repository, commit, parentCommit })
+                await commitInserter.insert({ repository, commit, parentCommit: parentCommit || '' })
             }
 
             await commitInserter.flush()
@@ -873,11 +872,13 @@ export class XrepoDatabase {
         /** The maximum number of requests to make at once. Set during testing.*/
         batchSize?: number
     }): Promise<void> {
-        for (const [repository, commit] of (await this.discoverTips({
-            gitserverUrls,
-            ctx,
-            batchSize,
-        })).entries()) {
+        for (const [repository, commit] of (
+            await this.discoverTips({
+                gitserverUrls,
+                ctx,
+                batchSize,
+            })
+        ).entries()) {
             await this.updateDumpsVisibleFromTip(repository, commit)
         }
     }
@@ -909,7 +910,6 @@ export class XrepoDatabase {
         for (const repository of await this.getTrackedRepositories()) {
             factories.push(async () => {
                 const lines = await gitserverExecLines(addrFor(repository, gitserverUrls), repository, [
-                    'git',
                     'rev-parse',
                     'HEAD',
                 ])

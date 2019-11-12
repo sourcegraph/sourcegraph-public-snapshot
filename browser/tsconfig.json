@@ -1,12 +1,18 @@
 {
   "extends": "../tsconfig.json",
+  "references": [{ "path": "../shared" }, { "path": "../schema" }],
   "compilerOptions": {
+    "module": "esnext",
     "typeRoots": ["src/types", "../shared/src/types", "../node_modules/@types", "../node_modules/web-ext-types"],
     "jsx": "react",
     "resolveJsonModule": true,
+    "rootDir": ".",
+    "outDir": "out",
   },
-  "include": ["**/*"],
+  "include": ["./**/*", "./src/**/*.json"],
   "exclude": [
+    "out",
+    "node_modules",
     "../node_modules",
     "./build/**/*",
     "coverage",

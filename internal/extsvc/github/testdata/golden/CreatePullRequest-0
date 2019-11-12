@@ -1,0 +1,25 @@
+{
+  "ID": "MDExOlB1bGxSZXF1ZXN0MzM5NzUzMzQy",
+  "Title": "This is a test PR, feel free to ignore",
+  "Body": "I'm opening this PR to test something. Please ignore.",
+  "State": "OPEN",
+  "URL": "https://github.com/sourcegraph/automation-testing/pull/3",
+  "HeadRefOid": "9d04a0d8733dafbb5d75e594a9ec525c49dfc975",
+  "BaseRefOid": "c75943274b322ffef2230df8f8049de84ddf12c1",
+  "Number": 3,
+  "Author": {
+   "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+   "Login": "mrnugget",
+   "URL": "https://github.com/mrnugget"
+  },
+  "Participants": [
+   {
+    "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+    "Login": "mrnugget",
+    "URL": "https://github.com/mrnugget"
+   }
+  ],
+  "TimelineItems": [],
+  "CreatedAt": "2019-11-12T06:43:39Z",
+  "UpdatedAt": "2019-11-12T06:43:39Z"
+ }

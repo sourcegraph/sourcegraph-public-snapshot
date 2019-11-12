@@ -52,7 +52,7 @@ export async function createPostgresConnection(configuration: Configuration, log
     const url = new URL(configuration.postgresDSN)
 
     // TODO(efritz) - handle allow, prefer, require, 'verify-ca', and 'verify-full'
-    const sslModes: { [K: string]: boolean | TlsOptions } = {
+    const sslModes: { [name: string]: boolean | TlsOptions } = {
         disable: false,
     }
 
@@ -65,10 +65,7 @@ export async function createPostgresConnection(configuration: Configuration, log
     const ssl = sslMode ? sslModes[sslMode] : undefined
 
     // Get a working connection
-    const connection = await connect(
-        { host, port, username, password, database, ssl },
-        logger
-    )
+    const connection = await connect({ host, port, username, password, database, ssl }, logger)
 
     // Poll the schema migrations table until we are up to date
     await waitForMigrations(connection, logger)

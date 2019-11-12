@@ -1,30 +1,36 @@
 import * as settings from '../settings'
+import * as validation from '../middleware/validation'
 import express from 'express'
 import { Backend } from '../backend/backend'
-import { limitOffset } from '../pagination/limit-offset'
-import { Logger } from 'winston'
 import { nextLink } from '../pagination/link'
-import { Tracer } from 'opentracing'
 import { wrap } from 'async-middleware'
 
 /**
  * Create a router containing the LSIF dump endpoints.
  *
  * @param backend The backend instance.
- * @param logger The logger instance.
- * @param tracer The tracer instance.
  */
-export function createDumpRouter(backend: Backend, logger: Logger, tracer: Tracer | undefined): express.Router {
+export function createDumpRouter(backend: Backend): express.Router {
     const router = express.Router()
 
     router.get(
         '/dumps/:repository',
+        validation.validationMiddleware([
+            validation.validateQuery,
+            validation.validateOptionalBoolean('visibleAtTip'),
+            validation.validateLimit(settings.DEFAULT_DUMP_PAGE_SIZE),
+            validation.validateOffset,
+        ]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { repository } = req.params
-                const { query, visibleAtTip: visibleAtTipRaw } = req.query
-                const { limit, offset } = limitOffset(req, settings.DEFAULT_DUMP_PAGE_SIZE)
-                const visibleAtTip = visibleAtTipRaw === 'true'
+                const {
+                    query,
+                    visibleAtTip,
+                    limit,
+                    offset,
+                }: { query: string; visibleAtTip: boolean; limit: number; offset: number } = req.query
+
                 const { dumps, totalCount } = await backend.dumps(
                     decodeURIComponent(repository),
                     query,

@@ -34,10 +34,7 @@ export class ClientExtensions {
 
         this.subscriptions.add(
             from(extensionRegistry.activeExtensions)
-                .pipe(
-                    startWith([] as ExecutableExtension[]),
-                    bufferCount(2, 1)
-                )
+                .pipe(startWith([] as ExecutableExtension[]), bufferCount(2, 1))
                 .subscribe(([oldExtensions, newExtensions]) => {
                     // Diff next state's activated extensions vs. current state's.
                     const toActivate = [...newExtensions] // clone to avoid mutating state stored by bufferCount

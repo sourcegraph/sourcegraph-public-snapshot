@@ -38,7 +38,10 @@ export class SiteAdminManagementConsolePassword extends React.Component<Props, S
                     catchError(err => [asError(err)]),
                     map(v => ({ stateOrError: v }))
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    err => console.error(err)
+                )
         )
 
         this.subscriptions.add(
@@ -48,7 +51,10 @@ export class SiteAdminManagementConsolePassword extends React.Component<Props, S
                     catchError(err => [asError(err)]),
                     map(v => ({ stateOrError: isErrorLike(v) ? v : undefined }))
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    err => console.error(err)
+                )
         )
     }
 

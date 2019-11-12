@@ -2,7 +2,6 @@ import * as constants from '../../shared/constants'
 import * as fs from 'mz/fs'
 import * as path from 'path'
 import * as settings from '../settings'
-import { ConfigurationFetcher } from '../../shared/config/config'
 import { convertLsif } from '../importer/importer'
 import { createSilentLogger } from '../../shared/logging'
 import { dbFilename } from '../../shared/paths'
@@ -19,7 +18,7 @@ import { XrepoDatabase } from '../../shared/xrepo/xrepo'
  */
 export const createConvertJobProcessor = (
     xrepoDatabase: XrepoDatabase,
-    fetchConfiguration: ConfigurationFetcher
+    fetchConfiguration: () => { gitServers: string[] }
 ) => async (
     { repository, commit, root, filename }: { repository: string; commit: string; root: string; filename: string },
     ctx: TracingContext
@@ -138,9 +137,9 @@ async function withLock<T>(xrepoDatabase: XrepoDatabase, name: string, f: () => 
  * @param directory The directory path.
  */
 async function dirsize(directory: string): Promise<number> {
-    return (await Promise.all(
-        (await fs.readdir(directory)).map(filename => filesize(path.join(directory, filename)))
-    )).reduce((a, b) => a + b, 0)
+    return (
+        await Promise.all((await fs.readdir(directory)).map(filename => filesize(path.join(directory, filename))))
+    ).reduce((a, b) => a + b, 0)
 }
 
 /**

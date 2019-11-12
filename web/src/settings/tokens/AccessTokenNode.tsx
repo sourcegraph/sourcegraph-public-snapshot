@@ -96,7 +96,10 @@ export class AccessTokenNode extends React.PureComponent<AccessTokenNodeProps, A
                         )
                     )
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    error => console.error(error)
+                )
         )
     }
 

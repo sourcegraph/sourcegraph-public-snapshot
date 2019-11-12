@@ -7,7 +7,7 @@ import { CodeHost, MountGetter } from './code_intelligence'
 import { CodeView, DOMFunctions } from './code_views'
 
 const mountGetterKeys = ['getCommandPaletteMount', 'getViewContextOnSourcegraphMount'] as const
-type MountGetterKey = (typeof mountGetterKeys)[number]
+type MountGetterKey = typeof mountGetterKeys[number]
 
 /**
  * @param containerHtmlFixturePaths Paths to full-document fixtures keyed by the mount getter function name

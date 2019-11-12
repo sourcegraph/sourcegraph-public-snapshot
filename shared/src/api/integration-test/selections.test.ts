@@ -21,7 +21,11 @@ describe('Selections (integration)', () => {
             const selectionValues = collectSubscribableValues(selectionChanges)
             const testValues = [
                 [{ start: 3, end: 5 }],
-                [{ start: 1, end: 10 }, { start: 25, end: 40 }, { start: 56, end: 57 }],
+                [
+                    { start: 1, end: 10 },
+                    { start: 25, end: 40 },
+                    { start: 56, end: 57 },
+                ],
                 [],
             ]
             for (const selections of testValues) {

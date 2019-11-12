@@ -86,7 +86,6 @@ describe('Backend', () => {
         const backend = ctx.backend
         if (!backend) {
             fail('failed beforeAll')
-            return
         }
 
         const checkRefs = (locations: lsp.Location[], root: string) => {
@@ -134,7 +133,6 @@ describe('Backend', () => {
         const backend = ctx.backend
         if (!backend) {
             fail('failed beforeAll')
-            return
         }
 
         // Add external references

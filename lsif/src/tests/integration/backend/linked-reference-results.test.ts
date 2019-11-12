@@ -17,7 +17,6 @@ describe('Backend', () => {
     it('should find all linked refs of `foo` in index.ts', async () => {
         if (!ctx.backend) {
             fail('failed beforeAll')
-            return
         }
 
         const positions = [

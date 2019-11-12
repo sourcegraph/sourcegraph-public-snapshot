@@ -425,3 +425,6 @@ func APIRoot(baseURL *url.URL) (apiURL *url.URL, githubDotCom bool) {
 
 // ErrIncompleteResults is returned when the GitHub Search API returns an `incomplete_results: true` field in their response
 var ErrIncompleteResults = errors.New("github repository search returned incomplete results. This is an ephemeral error from GitHub, so does not indicate a problem with your configuration. See https://developer.github.com/changes/2014-04-07-understanding-search-results-and-potential-timeouts/ for more information")
+
+// ErrPullRequestAlreadyExists is when the requested GitHub Pull Request already exists.
+var ErrPullRequestAlreadyExists = errors.New("GitHub pull request already exists")

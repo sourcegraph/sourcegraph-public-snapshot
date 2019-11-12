@@ -9,7 +9,11 @@ import { MESSAGE } from 'triple-beam'
  * @param value The raw log level.
  */
 function toLogLevel(value: string): 'debug' | 'info' | 'warn' | 'error' {
-    return ['debug', 'info', 'warn', 'error'].includes(value) ? (value as any) : 'info'
+    if (value === 'debug' || value === 'info' || value === 'warn' || value === 'error') {
+        return value
+    }
+
+    return 'info'
 }
 
 /**
@@ -22,7 +26,7 @@ const LOG_LEVEL: 'debug' | 'info' | 'warn' | 'error' = toLogLevel((process.env.L
  */
 export function createLogger(service: string): Logger {
     const formatTransformer = (info: TransformableInfo): TransformableInfo => {
-        const attributes: { [k: string]: any } = {}
+        const attributes: { [name: string]: unknown } = {}
         for (const [key, value] of Object.entries(info)) {
             if (key !== 'level' && key !== 'message') {
                 attributes[key] = value

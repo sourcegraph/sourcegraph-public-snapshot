@@ -44,7 +44,7 @@ export async function* splitLines(input: AsyncIterable<string | Buffer>): AsyncI
  *
  * @param lines An iterable of JSON lines.
  */
-export async function* parseJsonLines(lines: AsyncIterable<string>): AsyncIterable<any> {
+export async function* parseJsonLines(lines: AsyncIterable<string>): AsyncIterable<unknown> {
     let index = 0
     for await (const data of lines) {
         index++

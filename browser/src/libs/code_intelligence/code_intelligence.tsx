@@ -101,7 +101,7 @@ import { checkUserLoggedInAndFetchSettings } from '../../platform/settings'
 
 registerHighlightContributions()
 
-interface OverlayPosition {
+export interface OverlayPosition {
     top: number
     left: number
 }
@@ -500,21 +500,16 @@ export function handleCodeHost({
     // Render command palette
     if (codeHost.getCommandPaletteMount && !minimalUI) {
         subscriptions.add(
-            addedElements
-                .pipe(
-                    map(codeHost.getCommandPaletteMount),
-                    filter(isDefined)
-                )
-                .subscribe(
-                    renderCommandPalette({
-                        extensionsController,
-                        history,
-                        platformContext,
-                        telemetryService,
-                        render,
-                        ...codeHost.commandPaletteClassProps,
-                    })
-                )
+            addedElements.pipe(map(codeHost.getCommandPaletteMount), filter(isDefined)).subscribe(
+                renderCommandPalette({
+                    extensionsController,
+                    history,
+                    platformContext,
+                    telemetryService,
+                    render,
+                    ...codeHost.commandPaletteClassProps,
+                })
+            )
         )
     }
 
@@ -530,20 +525,15 @@ export function handleCodeHost({
     if (codeHost.getViewContextOnSourcegraphMount && codeHost.getContext && !minimalUI) {
         const { getContext, viewOnSourcegraphButtonClassProps } = codeHost
         subscriptions.add(
-            addedElements
-                .pipe(
-                    map(codeHost.getViewContextOnSourcegraphMount),
-                    filter(isDefined)
-                )
-                .subscribe(
-                    renderViewContextOnSourcegraph({
-                        sourcegraphURL,
-                        getContext,
-                        viewOnSourcegraphButtonClassProps,
-                        ensureRepoExists,
-                        onConfigureSourcegraphClick: isInPage ? undefined : openOptionsMenu,
-                    })
-                )
+            addedElements.pipe(map(codeHost.getViewContextOnSourcegraphMount), filter(isDefined)).subscribe(
+                renderViewContextOnSourcegraph({
+                    sourcegraphURL,
+                    getContext,
+                    viewOnSourcegraphButtonClassProps,
+                    ensureRepoExists,
+                    onConfigureSourcegraphClick: isInPage ? undefined : openOptionsMenu,
+                })
+            )
         )
     }
 

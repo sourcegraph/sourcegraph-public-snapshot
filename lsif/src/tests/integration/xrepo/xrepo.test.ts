@@ -71,17 +71,26 @@ describe('XrepoDatabase', () => {
         await xrepoDatabase.insertDump('foo', cc, '')
         await xrepoDatabase.insertDump('foo', cg, '')
 
+        const d1 = await xrepoDatabase.findClosestDump('foo', ca, 'file')
+        const d2 = await xrepoDatabase.findClosestDump('foo', cb, 'file')
+        const d3 = await xrepoDatabase.findClosestDump('foo', cc, 'file')
+        const d4 = await xrepoDatabase.findClosestDump('foo', cd, 'file')
+        const d5 = await xrepoDatabase.findClosestDump('foo', cf, 'file')
+        const d6 = await xrepoDatabase.findClosestDump('foo', cg, 'file')
+        const d7 = await xrepoDatabase.findClosestDump('foo', ce, 'file')
+        const d8 = await xrepoDatabase.findClosestDump('foo', ch, 'file')
+
         // Test closest commit
-        expect((await xrepoDatabase.findClosestDump('foo', ca, 'file'))!.commit).toEqual(ca)
-        expect((await xrepoDatabase.findClosestDump('foo', cb, 'file'))!.commit).toEqual(ca)
-        expect((await xrepoDatabase.findClosestDump('foo', cc, 'file'))!.commit).toEqual(cc)
-        expect((await xrepoDatabase.findClosestDump('foo', cd, 'file'))!.commit).toEqual(cc)
-        expect((await xrepoDatabase.findClosestDump('foo', cf, 'file'))!.commit).toEqual(cg)
-        expect((await xrepoDatabase.findClosestDump('foo', cg, 'file'))!.commit).toEqual(cg)
+        expect(d1 && d1.commit).toEqual(ca)
+        expect(d2 && d2.commit).toEqual(ca)
+        expect(d3 && d3.commit).toEqual(cc)
+        expect(d4 && d4.commit).toEqual(cc)
+        expect(d5 && d5.commit).toEqual(cg)
+        expect(d6 && d6.commit).toEqual(cg)
 
         // Multiple nearest are chosen arbitrarily
-        expect([ca, cc, cg]).toContain((await xrepoDatabase.findClosestDump('foo', ce, 'file'))!.commit)
-        expect([ca, cc]).toContain((await xrepoDatabase.findClosestDump('foo', ch, 'file'))!.commit)
+        expect([ca, cc, cg]).toContain(d7 && d7.commit)
+        expect([ca, cc]).toContain(d8 && d8.commit)
     })
 
     it('should return empty string as closest commit with no reachable lsif data', async () => {
@@ -121,10 +130,14 @@ describe('XrepoDatabase', () => {
         // Add dumps
         await xrepoDatabase.insertDump('foo', cb, '')
 
+        const d1 = await xrepoDatabase.findClosestDump('foo', ca, 'file')
+        const d2 = await xrepoDatabase.findClosestDump('foo', cb, 'file')
+        const d3 = await xrepoDatabase.findClosestDump('foo', cc, 'file')
+
         // Test closest commit
-        expect((await xrepoDatabase.findClosestDump('foo', ca, 'file'))!.commit).toEqual(cb)
-        expect((await xrepoDatabase.findClosestDump('foo', cb, 'file'))!.commit).toEqual(cb)
-        expect((await xrepoDatabase.findClosestDump('foo', cc, 'file'))!.commit).toEqual(cb)
+        expect(d1 && d1.commit).toEqual(cb)
+        expect(d2 && d2.commit).toEqual(cb)
+        expect(d3 && d3.commit).toEqual(cb)
         expect(await xrepoDatabase.findClosestDump('foo', cd, 'file')).toBeUndefined()
         expect(await xrepoDatabase.findClosestDump('foo', ce, 'file')).toBeUndefined()
         expect(await xrepoDatabase.findClosestDump('foo', cf, 'file')).toBeUndefined()
@@ -148,7 +161,10 @@ describe('XrepoDatabase', () => {
         const fields = ['repository', 'commit', 'root']
 
         // Add relations
-        await xrepoDatabase.updateCommits('foo', [[ca, ''], [cb, ca]])
+        await xrepoDatabase.updateCommits('foo', [
+            [ca, ''],
+            [cb, ca],
+        ])
 
         // Add dumps
         await xrepoDatabase.insertDump('foo', cb, 'root1/')
@@ -215,10 +231,14 @@ describe('XrepoDatabase', () => {
         // Add dumps
         await xrepoDatabase.insertDump('foo', c0, '')
 
+        const d1 = await xrepoDatabase.findClosestDump('foo', c0, 'file')
+        const d2 = await xrepoDatabase.findClosestDump('foo', c1, 'file')
+        const d3 = await xrepoDatabase.findClosestDump('foo', cpen, 'file')
+
         // Test closest commit
-        expect((await xrepoDatabase.findClosestDump('foo', c0, 'file'))!.commit).toEqual(c0)
-        expect((await xrepoDatabase.findClosestDump('foo', c1, 'file'))!.commit).toEqual(c0)
-        expect((await xrepoDatabase.findClosestDump('foo', cpen, 'file'))!.commit).toEqual(c0)
+        expect(d1 && d1.commit).toEqual(c0)
+        expect(d2 && d2.commit).toEqual(c0)
+        expect(d3 && d3.commit).toEqual(c0)
 
         // (Assuming MAX_TRAVERSAL_LIMIT = 100)
         // At commit `50`, the traversal limit will be reached before visiting commit `0`
@@ -242,7 +262,8 @@ describe('XrepoDatabase', () => {
         await xrepoDatabase.insertDump('foo', c1, '')
 
         // Now commit 1 should be found
-        expect((await xrepoDatabase.findClosestDump('foo', cmax, 'file'))!.commit).toEqual(c1)
+        const dump = await xrepoDatabase.findClosestDump('foo', cmax, 'file')
+        expect(dump && dump.commit).toEqual(c1)
     })
 
     it('should prune overlapping roots during visibility check', async () => {
@@ -259,7 +280,15 @@ describe('XrepoDatabase', () => {
         const cg = util.createCommit('g')
 
         // Add relations
-        await xrepoDatabase.updateCommits('foo', [[ca, ''], [cb, ca], [cc, cb], [cd, cc], [ce, cd], [cf, ce], [cg, cf]])
+        await xrepoDatabase.updateCommits('foo', [
+            [ca, ''],
+            [cb, ca],
+            [cc, cb],
+            [cd, cc],
+            [ce, cd],
+            [cf, ce],
+            [cg, cf],
+        ])
 
         // Add dumps
         await xrepoDatabase.insertDump('foo', ca, 'r1')
@@ -424,7 +453,14 @@ describe('XrepoDatabase', () => {
             return references.map(reference => reference.dump_id).sort()
         }
 
-        await xrepoDatabase.updateCommits('foo', [[ca, ''], [cb, ca], [cc, cb], [cd, cc], [ce, cd], [cf, ce]])
+        await xrepoDatabase.updateCommits('foo', [
+            [ca, ''],
+            [cb, ca],
+            [cc, cb],
+            [cd, cc],
+            [ce, cd],
+            [cf, ce],
+        ])
         await xrepoDatabase.updateDumpsVisibleFromTip('foo', cf)
 
         // only references containing identifier y
@@ -502,15 +538,17 @@ describe('XrepoDatabase', () => {
         const dumpc = await xrepoDatabase.addPackagesAndReferences('foo', cc, '', [], references)
 
         const getReferencedDumpIds = async () =>
-            (await xrepoDatabase.getReferences({
-                repository: '',
-                scheme: 'npm',
-                name: 'p1',
-                version: '0.1.0',
-                identifier: 'y',
-                limit: 50,
-                offset: 0,
-            })).references
+            (
+                await xrepoDatabase.getReferences({
+                    repository: '',
+                    scheme: 'npm',
+                    name: 'p1',
+                    version: '0.1.0',
+                    identifier: 'y',
+                    limit: 50,
+                    offset: 0,
+                })
+            ).references
                 .map(reference => reference.dump_id)
                 .sort()
 

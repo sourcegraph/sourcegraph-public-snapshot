@@ -1,13 +1,11 @@
 import * as settings from '../settings'
+import * as validation from '../middleware/validation'
 import express from 'express'
 import { ApiJobState, QUEUE_PREFIX, queueTypes, statesByQueue } from '../../shared/queue/queue'
 import { chunk } from 'lodash'
 import { Job, Queue } from 'bull'
-import { limitOffset } from '../pagination/limit-offset'
-import { Logger } from 'winston'
 import { nextLink } from '../pagination/link'
 import { ScriptedRedis } from '../redis/redis'
-import { Tracer } from 'opentracing'
 import { wrap } from 'async-middleware'
 
 /**
@@ -100,15 +98,8 @@ const formatJobFromMap = (values: Map<string, string>, state: ApiJobState): ApiJ
  *
  * @param queue The queue instance.
  * @param scriptedClient The Redis client with scripts loaded.
- * @param logger The logger instance.
- * @param tracer The tracer instance.
  */
-export function createJobRouter(
-    queue: Queue,
-    scriptedClient: ScriptedRedis,
-    logger: Logger,
-    tracer: Tracer | undefined
-): express.Router {
+export function createJobRouter(queue: Queue, scriptedClient: ScriptedRedis): express.Router {
     const router = express.Router()
 
     router.get(
@@ -130,11 +121,15 @@ export function createJobRouter(
 
     router.get(
         `/jobs/:state(${Array.from(queueTypes.keys()).join('|')})`,
+        validation.validationMiddleware([
+            validation.validateQuery,
+            validation.validateLimit(settings.DEFAULT_JOB_PAGE_SIZE),
+            validation.validateOffset,
+        ]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { state } = req.params as { state: ApiJobState }
-                const { query } = req.query
-                const { limit, offset } = limitOffset(req, settings.DEFAULT_JOB_PAGE_SIZE)
+                const { query, limit, offset }: { query: string; limit: number; offset: number } = req.query
 
                 const queueName = queueTypes.get(state)
                 if (!queueName) {

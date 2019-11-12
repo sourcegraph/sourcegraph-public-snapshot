@@ -95,6 +95,7 @@ const steps: Step[] = [
                 },
                 {
                     title: `Cut release branch ${c.version}`,
+                    description: '(This is not an actual event to attend, just a calendar marker.)',
                     anyoneCanAddSelf: true,
                     attendees: [c.teamEmail],
                     startDateTime: new Date(c.fourWorkingDaysBeforeRelease).toISOString(),
@@ -109,7 +110,9 @@ const steps: Step[] = [
                 },
                 {
                     title: `Reminder to submit feedback for ${c.version} Engineering Retrospective`,
-                    description: `Retrospective document: ${c.retrospectiveDocURL}`,
+                    description: `(This is not an actual event to attend, just a calendar marker.)
+
+Retrospective document: ${c.retrospectiveDocURL}`,
                     anyoneCanAddSelf: true,
                     attendees: [c.teamEmail],
                     startDateTime: new Date(c.retrospectiveReminderDateTime).toISOString(),

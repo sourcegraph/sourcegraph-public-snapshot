@@ -497,7 +497,9 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
             combineLatest([
                 queryChanges,
                 activeFilterChanges,
-                refreshRequests.pipe(startWith<{ forceRefresh: boolean }>({ forceRefresh: false })),
+                refreshRequests.pipe(
+                    startWith<{ forceRefresh: boolean }>({ forceRefresh: false })
+                ),
             ])
                 .pipe(
                     // Track whether the query or the active filter changed

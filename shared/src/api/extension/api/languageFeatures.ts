@@ -23,9 +23,9 @@ export class ExtLanguageFeatures {
     constructor(private proxy: ProxyResult<ClientLanguageFeaturesAPI>, private documents: ExtDocuments) {}
 
     public registerHoverProvider(selector: DocumentSelector, provider: HoverProvider): Unsubscribable {
-        const providerFunction: ProxyInput<
-            Parameters<ClientLanguageFeaturesAPI['$registerHoverProvider']>[1]
-        > = proxyValue(async ({ textDocument, position }: TextDocumentPositionParams) =>
+        const providerFunction: ProxyInput<Parameters<
+            ClientLanguageFeaturesAPI['$registerHoverProvider']
+        >[1]> = proxyValue(async ({ textDocument, position }: TextDocumentPositionParams) =>
             toProxyableSubscribable(
                 provider.provideHover(await this.documents.getSync(textDocument.uri), toPosition(position)),
                 hover => (hover ? fromHover(hover) : hover)
@@ -35,9 +35,9 @@ export class ExtLanguageFeatures {
     }
 
     public registerDefinitionProvider(selector: DocumentSelector, provider: DefinitionProvider): Unsubscribable {
-        const providerFunction: ProxyInput<
-            Parameters<ClientLanguageFeaturesAPI['$registerDefinitionProvider']>[1]
-        > = proxyValue(async ({ textDocument, position }: TextDocumentPositionParams) =>
+        const providerFunction: ProxyInput<Parameters<
+            ClientLanguageFeaturesAPI['$registerDefinitionProvider']
+        >[1]> = proxyValue(async ({ textDocument, position }: TextDocumentPositionParams) =>
             toProxyableSubscribable(
                 provider.provideDefinition(await this.documents.getSync(textDocument.uri), toPosition(position)),
                 toLocations
@@ -47,9 +47,9 @@ export class ExtLanguageFeatures {
     }
 
     public registerReferenceProvider(selector: DocumentSelector, provider: ReferenceProvider): Unsubscribable {
-        const providerFunction: ProxyInput<
-            Parameters<ClientLanguageFeaturesAPI['$registerReferenceProvider']>[1]
-        > = proxyValue(async ({ textDocument, position, context }: ReferenceParams) =>
+        const providerFunction: ProxyInput<Parameters<
+            ClientLanguageFeaturesAPI['$registerReferenceProvider']
+        >[1]> = proxyValue(async ({ textDocument, position, context }: ReferenceParams) =>
             toProxyableSubscribable(
                 provider.provideReferences(
                     await this.documents.getSync(textDocument.uri),
@@ -67,9 +67,9 @@ export class ExtLanguageFeatures {
         selector: DocumentSelector,
         provider: LocationProvider
     ): Unsubscribable {
-        const providerFunction: ProxyInput<
-            Parameters<ClientLanguageFeaturesAPI['$registerLocationProvider']>[2]
-        > = proxyValue(async ({ textDocument, position }: TextDocumentPositionParams) =>
+        const providerFunction: ProxyInput<Parameters<
+            ClientLanguageFeaturesAPI['$registerLocationProvider']
+        >[2]> = proxyValue(async ({ textDocument, position }: TextDocumentPositionParams) =>
             toProxyableSubscribable(
                 provider.provideLocations(await this.documents.getSync(textDocument.uri), toPosition(position)),
                 toLocations
@@ -82,9 +82,9 @@ export class ExtLanguageFeatures {
         selector: DocumentSelector,
         provider: CompletionItemProvider
     ): Unsubscribable {
-        const providerFunction: ProxyInput<
-            Parameters<ClientLanguageFeaturesAPI['$registerCompletionItemProvider']>[1]
-        > = proxyValue(async ({ textDocument, position }: TextDocumentPositionParams) =>
+        const providerFunction: ProxyInput<Parameters<
+            ClientLanguageFeaturesAPI['$registerCompletionItemProvider']
+        >[1]> = proxyValue(async ({ textDocument, position }: TextDocumentPositionParams) =>
             toProxyableSubscribable(
                 provider.provideCompletionItems(await this.documents.getSync(textDocument.uri), toPosition(position)),
                 items => items

@@ -20,10 +20,9 @@ USER root
 RUN addgroup -g 101 -S sourcegraph && adduser -u 100 -S -G sourcegraph -h /home/sourcegraph sourcegraph
 USER sourcegraph
 
-# hadolint ignore=DL3020
-ADD config /sg_config_prometheus
+COPY config/*_rules.yml /sg_config_prometheus/
+COPY config/prometheus.yml /sg_config_prometheus/
 
-# hadolint ignore=DL3020
-ADD entry.sh /
+COPY entry.sh /
 
 ENTRYPOINT ["/entry.sh"]
