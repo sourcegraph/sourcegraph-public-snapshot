@@ -29,7 +29,7 @@ require (
 	github.com/dlclark/regexp2 v1.2.0 // indirect
 	github.com/dnaeon/go-vcr v1.0.1
 	github.com/docker/distribution v2.7.1+incompatible // indirect
-	github.com/docker/docker v1.13.1
+	github.com/docker/docker v0.12.0
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/emersion/go-imap v1.0.1
 	github.com/emersion/go-sasl v0.0.0-20190817083125-240c8404624e // indirect
