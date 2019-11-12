@@ -135,8 +135,7 @@ export function createJobRouter(
             validation.validateOptionalInt('maxWait'),
             ...checkSchema(
                 {
-                    name: { isString: true, isEmpty: { negated: true } },
-                    args: {},
+                    name: { isIn: { options: [['update-tips', 'clean-failed-jobs', 'clean-old-jobs']] } },
                 },
                 ['body']
             ),
@@ -144,12 +143,12 @@ export function createJobRouter(
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { blocking, maxWait }: { blocking: boolean; maxWait: number } = req.query
-                const { name, args }: { name: string; args: object } = req.body
+                const { name }: { name: string } = req.body
 
                 // Enqueue job
                 const ctx = createTracingContext(req, { name })
-                logger.debug(`enqueueing ${name} job`, { ...args })
-                const job = await enqueue(queue, name, args, {}, tracer, ctx.span)
+                logger.debug(`enqueueing ${name} job`)
+                const job = await enqueue(queue, name, {}, {}, tracer, ctx.span)
 
                 if (blocking && (await waitForJob(job, maxWait))) {
                     // Job succeeded while blocked, send success

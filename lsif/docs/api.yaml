@@ -521,9 +521,10 @@ components:
         name:
           type: string
           description: The job type.
-        args:
-          type: object
-          description: The job arguments.
+          enum:
+            - update-tips
+            - clean-old-jobs
+            - clean-failed-jobs
       required:
         - name
       additionalProperties: false
