@@ -65,7 +65,7 @@ func TestCampaigns(t *testing.T) {
 		httpFactory: cf,
 	}
 
-	s, err := graphqlbackend.NewSchema(sr)
+	s, err := graphqlbackend.NewSchema(sr, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -759,7 +759,7 @@ index 671e50a..851b23a 100644
 +++ b/README.md
 @@ -1,3 +1,3 @@
  # README
- 
+
 -This file is hosted at example.com and is a test file.
 +This file is hosted at sourcegraph.com and is a test file.
 diff --git a/urls.txt b/urls.txt
@@ -916,7 +916,7 @@ func TestCampaignPlanResolver(t *testing.T) {
 	}
 
 	sr := &Resolver{store: store}
-	s, err := graphqlbackend.NewSchema(sr)
+	s, err := graphqlbackend.NewSchema(sr, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
