@@ -72,6 +72,26 @@ func GetUsersActiveTodayCount(ctx context.Context) (int, error) {
 	return db.EventLogs.CountUniquesAll(ctx, today, today.AddDate(0, 0, 1))
 }
 
+// ListRegisteredUsersToday returns a list of the registered users that were active today.
+func ListRegisteredUsersToday(ctx context.Context) ([]int32, error) {
+	now := timeNow().UTC()
+	start := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	return db.EventLogs.ListUniquesAll(ctx, start, start.AddDate(0, 0, 1))
+}
+
+// ListRegisteredUsersThisWeek returns a list of the registered users that were active this week.
+func ListRegisteredUsersThisWeek(ctx context.Context) ([]int32, error) {
+	start := startOfWeek(0)
+	return db.EventLogs.ListUniquesAll(ctx, start, start.AddDate(0, 0, 7))
+}
+
+// ListRegisteredUsersThisMonth returns a list of the registered users that were active this month.
+func ListRegisteredUsersThisMonth(ctx context.Context) ([]int32, error) {
+	now := timeNow().UTC()
+	start := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+	return db.EventLogs.ListUniquesAll(ctx, start, start.AddDate(0, 1, 0))
+}
+
 // SiteUsageStatisticsOptions contains options for the number of daily, weekly, and monthly periods in
 // which to calculate the number of unique users (i.e., how many days of Daily Active Users, or DAUs,
 // how many weeks of Weekly Active Users, or WAUs, and how many months of Monthly Active Users, or MAUs).
@@ -128,6 +148,9 @@ func GetSiteUsageStatistics(ctx context.Context, opt *SiteUsageStatisticsOptions
 
 // daus returns a count of daily active users for the last daysCount days (including the current, partial day).
 func daus(ctx context.Context, periods int) ([]*types.SiteActivityPeriod, error) {
+	if periods == 0 {
+		return []*types.SiteActivityPeriod{}, nil
+	}
 	var daus []*types.SiteActivityPeriod
 	now := timeNow().UTC()
 	current := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
@@ -161,6 +184,9 @@ func daus(ctx context.Context, periods int) ([]*types.SiteActivityPeriod, error)
 
 // waus returns a count of weekly active users for the last weekssCount weeks (including the current, partial week).
 func waus(ctx context.Context, periods int) ([]*types.SiteActivityPeriod, error) {
+	if periods == 0 {
+		return []*types.SiteActivityPeriod{}, nil
+	}
 	var waus []*types.SiteActivityPeriod
 	current := startOfWeek(0)
 	p := (periods - 1)
@@ -200,6 +226,9 @@ func waus(ctx context.Context, periods int) ([]*types.SiteActivityPeriod, error)
 
 // maus returns a count of monthly active users for the last monthsCount months (including the current, partial month).
 func maus(ctx context.Context, periods int) ([]*types.SiteActivityPeriod, error) {
+	if periods == 0 {
+		return []*types.SiteActivityPeriod{}, nil
+	}
 	var maus []*types.SiteActivityPeriod
 	now := timeNow().UTC()
 	current := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)

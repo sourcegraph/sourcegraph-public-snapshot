@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats2"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
@@ -55,25 +55,17 @@ func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, in
 		return nil, 0, errors.New("usage statistics are not available on sourcegraph.com")
 	}
 	r.once.Do(func() {
-		var users *usagestats.ActiveUsers
 		var err error
-
 		switch *r.activePeriod {
 		case "TODAY":
-			users, err = usagestats.ListUsersToday()
+			r.opt.UserIDs, err = usagestats2.ListRegisteredUsersToday(ctx)
 		case "THIS_WEEK":
-			users, err = usagestats.ListUsersThisWeek()
+			r.opt.UserIDs, err = usagestats2.ListRegisteredUsersThisWeek(ctx)
 		case "THIS_MONTH":
-			users, err = usagestats.ListUsersThisMonth()
+			r.opt.UserIDs, err = usagestats2.ListRegisteredUsersThisMonth(ctx)
 		default:
-			err = fmt.Errorf("unknown user event %s", *r.activePeriod)
+			err = fmt.Errorf("unknown user active period %s", *r.activePeriod)
 		}
-		if err != nil {
-			r.err = err
-			return
-		}
-
-		r.opt.UserIDs, err = sliceAtoi(users.Registered)
 		if err != nil {
 			r.err = err
 			return

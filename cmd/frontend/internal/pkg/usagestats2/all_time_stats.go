@@ -1,8 +1,6 @@
 package usagestats2
 
 import (
-	"context"
-
 	"github.com/gomodule/redigo/redis"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
@@ -45,7 +43,7 @@ func logSiteFindRefsOccurred() error {
 }
 
 // HasSearchOccurred indicates whether a search has ever occurred on this instance.
-func HasSearchOccurred(ctx context.Context) (bool, error) {
+func HasSearchOccurred() (bool, error) {
 	c := pool.Get()
 	defer c.Close()
 	s, err := redis.Bool(c.Do("GET", keyPrefix+fSearchOccurred))

@@ -227,3 +227,24 @@ func (*eventLogs) countUniquesBySQL(ctx context.Context, query string, args ...i
 	err := r.Scan(&count)
 	return count, err
 }
+
+func (l *eventLogs) ListUniquesAll(ctx context.Context, startDate time.Time, endDate time.Time) ([]int32, error) {
+	rows, err := dbconn.Global.QueryContext(ctx, "SELECT user_id FROM event_logs WHERE user_id > 0 AND DATE(timestamp) >= $1 AND DATE(timestamp) <= $2 GROUP BY user_id", startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	var users []int32
+	defer rows.Close()
+	for rows.Next() {
+		var userID int32
+		err := rows.Scan(&userID)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, userID)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return users, nil
+}

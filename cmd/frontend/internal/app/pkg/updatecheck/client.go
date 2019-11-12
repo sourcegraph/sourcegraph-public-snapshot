@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats2"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
@@ -68,7 +68,7 @@ var baseURL = &url.URL{
 
 func getSiteActivityJSON() ([]byte, error) {
 	days, weeks, months := 2, 1, 1
-	siteActivity, err := usagestats.GetSiteUsageStatistics(&usagestats.SiteUsageStatisticsOptions{
+	siteActivity, err := usagestats2.GetSiteUsageStatistics(context.Background(), &usagestats2.SiteUsageStatisticsOptions{
 		DayPeriods:   &days,
 		WeekPeriods:  &weeks,
 		MonthPeriods: &months,
@@ -93,9 +93,9 @@ func updateURL(ctx context.Context) string {
 	q.Set("hasExtURL", strconv.FormatBool(conf.UsingExternalURL()))
 	q.Set("signup", strconv.FormatBool(conf.IsBuiltinSignupAllowed()))
 
-	count, err := usagestats.GetUsersActiveTodayCount()
+	count, err := usagestats2.GetUsersActiveTodayCount(ctx)
 	if err != nil {
-		logFunc("usagestats.GetUsersActiveTodayCount failed", "error", err)
+		logFunc("usagestats2.GetUsersActiveTodayCount failed", "error", err)
 	}
 	q.Set("u", strconv.Itoa(count))
 	totalUsers, err := db.Users.Count(ctx, &db.UsersListOptions{})
@@ -109,15 +109,15 @@ func updateURL(ctx context.Context) string {
 		logFunc("db.Repos.Count failed", "error", err)
 	}
 	q.Set("repos", strconv.FormatBool(hasRepos))
-	searchOccurred, err := usagestats.HasSearchOccurred()
+	searchOccurred, err := usagestats2.HasSearchOccurred()
 	if err != nil {
-		logFunc("usagestats.HasSearchOccurred failed", "error", err)
+		logFunc("usagestats2.HasSearchOccurred failed", "error", err)
 	}
 	// Searches only count if repos have been added.
 	q.Set("searched", strconv.FormatBool(hasRepos && searchOccurred))
-	findRefsOccurred, err := usagestats.HasFindRefsOccurred()
+	findRefsOccurred, err := usagestats2.HasFindRefsOccurred()
 	if err != nil {
-		logFunc("usagestats.HasFindRefsOccurred failed", "error", err)
+		logFunc("usagestats2.HasFindRefsOccurred failed", "error", err)
 	}
 	q.Set("refs", strconv.FormatBool(findRefsOccurred))
 	if act, err := getSiteActivityJSON(); err != nil {

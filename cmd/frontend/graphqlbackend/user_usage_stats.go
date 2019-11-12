@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats2"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -70,11 +69,7 @@ func (*schemaResolver) LogUserEvent(ctx context.Context, args *struct {
 	Event        string
 	UserCookieID string
 }) (*EmptyResponse, error) {
-	if envvar.SourcegraphDotComMode() {
-		return nil, nil
-	}
-	actor := actor.FromContext(ctx)
-	return nil, usagestats.LogActivity(actor.IsAuthenticated(), actor.UID, args.UserCookieID, args.Event)
+	return nil, nil
 }
 
 func (*schemaResolver) LogEvent(ctx context.Context, args *struct {
