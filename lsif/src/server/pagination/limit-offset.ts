@@ -1,7 +1,7 @@
 /**
  * Normalize limit and offset values extracted from the query string.
  *
- * @param param0 Parameter bag.
+ * @param query Parameter bag.
  * @param defaultLimit The limit to use if one is not supplied.
  */
 export const extractLimitOffset = (
