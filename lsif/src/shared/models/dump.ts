@@ -304,7 +304,7 @@ export interface RangeData {
 
     /**
      * The identifier of the definition result attached to this range, if one exists.
-     * The definition result object can be queried by its * identifier within the containing
+     * The definition result object can be queried by its identifier within the containing
      * document.
      */
     definitionResultId?: DefinitionResultId
