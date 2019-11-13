@@ -61,18 +61,18 @@ paths:
           schema:
             type: number
       responses:
-        '201':
+        '200':
           description: Processed (synchronously)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UploadResponse'
+                $ref: '#/components/schemas/EnqueueResponse'
         '202':
           description: Accepted
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UploadResponse'
+                $ref: '#/components/schemas/EnqueueResponse'
   /exists:
     get:
       description: Determine if LSIF data exists for a file within a particular commit. This endpoint will return true if there is a nearby commit (direct ancestor or descendant) with LSIF data for the same file if the exact commit does not have available LSIF data.
@@ -230,6 +230,44 @@ paths:
                 $ref: '#/components/schemas/Dump'
         '404':
           description: Not found
+  /jobs:
+    post:
+      description: Immediately queue a job.
+      tags:
+        - Jobs
+      requestBody:
+        description: The job description.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobDescription'
+      parameters:
+        - name: blocking
+          in: query
+          description: If true, block the request until the job has completed.
+          required: false
+          schema:
+            type: boolean
+        - name: maxWait
+          in: query
+          description: The maximum time (in seconds) that request will block. The job will continue asynchronously if this much time has elapesed.
+          required: false
+          schema:
+            type: number
+      responses:
+        '200':
+          description: Processed (synchronously)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnqueueResponse'
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnqueueResponse'
   /jobs/stats:
     get:
       description: Get the current counts of jobs by their state.
@@ -354,16 +392,6 @@ components:
         - uri
         - range
       additionalProperties: false
-    UploadResponse:
-      type: object
-      description: A payload indicating the job that will process this dump.
-      properties:
-        id:
-          type: string
-          description: The job identifier.
-      required:
-        - id
-      additionalProperties: false
     LSPRequest:
       type: object
       description: A payload indicating the type of requested LSP data.
@@ -485,6 +513,30 @@ components:
         - completed
         - queued
         - scheduled
+      additionalProperties: false
+    JobDescription:
+      type: object
+      description: A payload indicating a job to enqueue.
+      properties:
+        name:
+          type: string
+          description: The job type.
+          enum:
+            - update-tips
+            - clean-old-jobs
+            - clean-failed-jobs
+      required:
+        - name
+      additionalProperties: false
+    EnqueueResponse:
+      type: object
+      description: A payload indicating the enqueued job.
+      properties:
+        id:
+          type: string
+          description: The job identifier.
+      required:
+        - id
       additionalProperties: false
     Jobs:
       type: object
