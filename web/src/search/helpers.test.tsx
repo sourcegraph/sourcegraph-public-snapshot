@@ -6,10 +6,11 @@ import {
     lastFilterAndValueBeforeCursor,
     isFuzzyWordSearch,
     formatQueryForFuzzySearch,
+    filterAliasForSearch,
 } from './helpers'
 import { SearchType } from './results/SearchResults'
 import { searchFilterSuggestions } from './searchFilterSuggestions'
-import { filterAliases, isolatedFuzzySearchFilters } from './input/Suggestion'
+import { filterAliases, isolatedFuzzySearchFilters, SuggestionTypes } from './input/Suggestion'
 
 describe('search/helpers', () => {
     describe('queryIndexOfScope()', () => {
@@ -209,6 +210,16 @@ describe('search/helpers', () => {
                 })
             ).toBe('l:javascript file:index.js archived:No')
         })
-        it('replaces filter being typed with its `filterAliasForSearch`', () => {})
+        it('replaces filter being typed with its `filterAliasForSearch`', () => {
+            expect(
+                Object.keys(filterAliasForSearch).map(filterType =>
+                    formatQueryForFuzzySearch({
+                        query: `archived:Yes ${filterType}:value Props`,
+                        // 19 is position until after ':value'
+                        cursorPosition: 19 + filterType.length,
+                    })
+                )
+            ).toStrictEqual(Object.values(filterAliasForSearch).map(alias => `archived:Yes ${alias}:value Props`))
+        })
     })
 })
