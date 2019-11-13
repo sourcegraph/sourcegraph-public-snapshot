@@ -18,6 +18,7 @@ import (
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
@@ -184,8 +185,17 @@ func Main(githubWebhook http.Handler) error {
 		return err
 	}
 
+	// httpapi.NewLSIFServerProxy is set by enterprise frontend
+	var lsifServerProxy *httpapi.LSIFServerProxy
+	if httpapi.NewLSIFServerProxy != nil {
+		var err error
+		if lsifServerProxy, err = httpapi.NewLSIFServerProxy(); err != nil {
+			return err
+		}
+	}
+
 	// Create the external HTTP handler.
-	externalHandler, err := newExternalHTTPHandler(schema, githubWebhook)
+	externalHandler, err := newExternalHTTPHandler(schema, githubWebhook, lsifServerProxy)
 	if err != nil {
 		return err
 	}

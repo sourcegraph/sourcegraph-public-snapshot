@@ -30,7 +30,7 @@ import (
 //
 // 🚨 SECURITY: The caller MUST wrap the returned handler in middleware that checks authentication
 // and sets the actor in the request context.
-func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook http.Handler) (http.Handler, error) {
+func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook http.Handler, lsifServerProxy *httpapi.LSIFServerProxy) http.Handler {
 	if m == nil {
 		m = apirouter.New(nil)
 	}
@@ -60,14 +60,9 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook http.Handle
 
 	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL(schema))))
 
-	if httpapi.NewLSIFServerProxy != nil {
-		proxy, err := httpapi.NewLSIFServerProxy()
-		if err != nil {
-			return nil, err
-		}
-
-		m.Get(apirouter.LSIF).Handler(trace.TraceRoute(proxy.AllRoutesHandler))
-		m.Get(apirouter.LSIFUpload).Handler(trace.TraceRoute(proxy.UploadHandler))
+	if lsifServerProxy != nil {
+		m.Get(apirouter.LSIF).Handler(trace.TraceRoute(lsifServerProxy.AllRoutesHandler))
+		m.Get(apirouter.LSIFUpload).Handler(trace.TraceRoute(lsifServerProxy.UploadHandler))
 	} else {
 		lsifDisabledHandler := func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNotFound)
@@ -85,7 +80,7 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook http.Handle
 		http.Error(w, "no route", http.StatusNotFound)
 	})
 
-	return m, nil
+	return m
 }
 
 // NewInternalHandler returns a new API handler for internal endpoints that uses
