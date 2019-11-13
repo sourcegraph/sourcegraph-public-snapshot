@@ -30,7 +30,7 @@ import { XrepoDatabase } from '../shared/xrepo/xrepo'
  */
 const wrapJobProcessor = <T>(
     type: string,
-    jobProcessor: (args: T, ctx: TracingContext) => Promise<void>,
+    jobProcessor: (job: Job, args: T, ctx: TracingContext) => Promise<void>,
     logger: Logger,
     tracer: Tracer | undefined
 ): ((job: Job) => Promise<void>) => async (job: Job) => {
