@@ -109,7 +109,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                             lineNumbers={true}
                             location={location}
                             history={history}
-                            disableLinePersistance={node.__typename === 'ChangesetPlan'}
+                            persistLines={node.__typename === 'ExternalChangeset'}
                             key={i}
                         ></FileDiffNode>
                     ))}

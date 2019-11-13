@@ -13,23 +13,25 @@ import { FileDiffHunks } from './FileDiffHunks'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 
-export interface FileDiffNodeProps extends Partial<ExtensionsControllerProps>, ThemeProps {
+export interface FileDiffNodeProps extends ThemeProps {
     node: GQL.IFileDiff | GQL.IPreviewFileDiff
     lineNumbers: boolean
     className?: string
     location: H.Location
     history: H.History
 
-    /** The base repository and revision. */
-    base?: { repoName: string; repoID: GQL.ID; rev: string; commitID: string }
+    hovers?: {
+        /** The base repository and revision. */
+        base: { repoName: string; repoID: GQL.ID; rev: string; commitID: string }
 
-    /** The head repository and revision. */
-    head?: { repoName: string; repoID: GQL.ID; rev: string; commitID: string }
+        /** The head repository and revision. */
+        head: { repoName: string; repoID: GQL.ID; rev: string; commitID: string }
 
-    hoverifier?: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
+        hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
+    } & ExtensionsControllerProps
 
-    /** Don't reflect selected line in url */
-    disableLinePersistance?: boolean
+    /** Reflect selected line in url */
+    persistLines?: boolean
 }
 
 interface State {
@@ -109,21 +111,21 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                             {...this.props}
                             className="file-diff-node__hunks"
                             fileDiffAnchor={anchor}
-                            base={
-                                this.props.base && {
-                                    ...this.props.base,
-                                    filePath: node.oldPath,
-                                }
-                            }
-                            head={
-                                this.props.head && {
-                                    ...this.props.head,
-                                    filePath: node.newPath,
+                            hovers={
+                                this.props.hovers && {
+                                    ...this.props.hovers,
+                                    base: {
+                                        ...this.props.hovers.base,
+                                        filePath: node.oldPath,
+                                    },
+                                    head: {
+                                        ...this.props.hovers.head,
+                                        filePath: node.newPath,
+                                    },
                                 }
                             }
                             hunks={node.hunks}
                             lineNumbers={this.props.lineNumbers}
-                            hoverifier={this.props.hoverifier}
                         />
                     )}
                 </div>

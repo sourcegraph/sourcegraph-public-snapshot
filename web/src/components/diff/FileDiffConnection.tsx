@@ -1,6 +1,5 @@
 import * as React from 'react'
 import { Omit } from 'utility-types'
-import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { getModeFromPath } from '../../../../shared/src/languages'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
@@ -12,7 +11,7 @@ class FilteredFileDiffConnection extends FilteredConnection<
     Omit<FileDiffNodeProps, 'node'>
 > {}
 
-type Props = FilteredFileDiffConnection['props'] & Partial<ExtensionsControllerProps>
+type Props = FilteredFileDiffConnection['props']
 
 /**
  * Displays a list of file diffs.
@@ -32,37 +31,37 @@ export class FileDiffConnection extends React.PureComponent<Props> {
         // API's support for diffs.
         const dummyText = ''
 
-        if (this.props.extensionsController) {
-            this.props.extensionsController.services.editor.removeAllEditors()
+        if (nodeProps.hovers) {
+            nodeProps.hovers.extensionsController.services.editor.removeAllEditors()
 
             if (fileDiffsOrError && !isErrorLike(fileDiffsOrError)) {
                 for (const fileDiff of fileDiffsOrError.nodes) {
-                    if (fileDiff.oldPath && nodeProps.base) {
-                        const uri = `git://${nodeProps.base.repoName}?${nodeProps.base.commitID}#${fileDiff.oldPath}`
-                        if (!this.props.extensionsController.services.model.hasModel(uri)) {
-                            this.props.extensionsController.services.model.addModel({
+                    if (fileDiff.oldPath && nodeProps.hovers) {
+                        const uri = `git://${nodeProps.hovers.base.repoName}?${nodeProps.hovers.base.commitID}#${fileDiff.oldPath}`
+                        if (!nodeProps.hovers.extensionsController.services.model.hasModel(uri)) {
+                            nodeProps.hovers.extensionsController.services.model.addModel({
                                 uri,
                                 languageId: getModeFromPath(fileDiff.oldPath),
                                 text: dummyText,
                             })
                         }
-                        this.props.extensionsController.services.editor.addEditor({
+                        nodeProps.hovers.extensionsController.services.editor.addEditor({
                             type: 'CodeEditor',
                             resource: uri,
                             selections: [],
                             isActive: false, // HACK: arbitrarily say that the base is inactive. TODO: support diffs first-class
                         })
                     }
-                    if (fileDiff.newPath && nodeProps.head) {
-                        const uri = `git://${nodeProps.head.repoName}?${nodeProps.head.commitID}#${fileDiff.newPath}`
-                        if (!this.props.extensionsController.services.model.hasModel(uri)) {
-                            this.props.extensionsController.services.model.addModel({
+                    if (fileDiff.newPath && nodeProps.hovers) {
+                        const uri = `git://${nodeProps.hovers.head.repoName}?${nodeProps.hovers.head.commitID}#${fileDiff.newPath}`
+                        if (!nodeProps.hovers.extensionsController.services.model.hasModel(uri)) {
+                            nodeProps.hovers.extensionsController.services.model.addModel({
                                 uri,
                                 languageId: getModeFromPath(fileDiff.newPath),
                                 text: dummyText,
                             })
                         }
-                        this.props.extensionsController.services.editor.addEditor({
+                        nodeProps.hovers.extensionsController.services.editor.addEditor({
                             type: 'CodeEditor',
                             resource: uri,
                             selections: [],

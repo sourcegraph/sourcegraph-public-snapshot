@@ -599,7 +599,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                                 lineNumbers={true}
                                                 location={location}
                                                 history={history}
-                                                disableLinePersistance={true}
+                                                persistLines={false}
                                                 key={j}
                                             ></FileDiffNode>
                                         ))}

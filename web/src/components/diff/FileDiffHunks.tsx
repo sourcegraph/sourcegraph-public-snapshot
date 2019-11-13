@@ -28,15 +28,18 @@ interface PartFileInfo {
     filePath: string | null
 }
 
-interface FileHunksProps extends Partial<ExtensionsControllerProps>, ThemeProps {
+interface FileHunksProps extends ThemeProps {
     /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
     fileDiffAnchor: string
 
-    /** The base repository, revision, and file. */
-    base?: PartFileInfo
+    hovers?: {
+        /** The base repository, revision, and file. */
+        base: PartFileInfo
 
-    /** The head repository, revision, and file. */
-    head?: PartFileInfo
+        /** The head repository, revision, and file. */
+        head: PartFileInfo
+        hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
+    } & ExtensionsControllerProps
 
     /** The file's hunks. */
     hunks: GQL.IFileDiffHunk[]
@@ -47,9 +50,8 @@ interface FileHunksProps extends Partial<ExtensionsControllerProps>, ThemeProps 
     className: string
     location: H.Location
     history: H.History
-    hoverifier?: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
-    /** Don't reflect selected line in url */
-    disableLinePersistance?: boolean
+    /** Reflect selected line in url */
+    persistLines?: boolean
 }
 
 interface FileDiffHunksState {
@@ -96,9 +98,9 @@ export class FileDiffHunks extends React.Component<FileHunksProps, FileDiffHunks
             decorations: { head: new Map(), base: new Map() },
         }
 
-        if (this.props.hoverifier) {
+        if (this.props.hovers) {
             this.subscriptions.add(
-                this.props.hoverifier.hoverify({
+                this.props.hovers.hoverifier.hoverify({
                     dom: diffDomFunctions,
                     positionEvents: this.codeElements.pipe(
                         filter(isDefined),
@@ -107,7 +109,7 @@ export class FileDiffHunks extends React.Component<FileHunksProps, FileDiffHunks
                     positionJumps: NEVER, // TODO support diff URLs
                     resolveContext: hoveredToken => {
                         // if part is undefined, it doesn't matter whether we chose head or base, the line stayed the same
-                        const { repoName, rev, filePath, commitID } = this.props[hoveredToken.part || 'head']!
+                        const { repoName, rev, filePath, commitID } = this.props.hovers![hoveredToken.part || 'head']
                         // If a hover or go-to-definition was invoked on this part, we know the file path must exist
                         return { repoName, filePath: filePath!, rev, commitID }
                     },
@@ -119,7 +121,8 @@ export class FileDiffHunks extends React.Component<FileHunksProps, FileDiffHunks
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(
-                    map(({ head, base, extensionsController }) => ({ head, base, extensionsController })),
+                    map(({ hovers }) => hovers),
+                    filter(isDefined),
                     distinctUntilChanged(
                         (a, b) =>
                             isEqual(a.head, b.head) &&
@@ -133,20 +136,18 @@ export class FileDiffHunks extends React.Component<FileHunksProps, FileDiffHunks
                             filePath,
                         }: PartFileInfo): Observable<TextDocumentDecoration[] | null> =>
                             filePath !== null
-                                ? extensionsController!.services.textDocumentDecoration.getDecorations({
+                                ? extensionsController.services.textDocumentDecoration.getDecorations({
                                       uri: toURIWithPath({ repoName, commitID, filePath }),
                                   })
                                 : of(null)
-                        return extensionsController && head && base
-                            ? combineLatest([getDecorationsForPart(head), getDecorationsForPart(base)])
-                            : of([])
+                        return combineLatest([getDecorationsForPart(head), getDecorationsForPart(base)])
                     })
                 )
                 .subscribe(([headDecorations, baseDecorations]) => {
                     this.setState({
                         decorations: {
-                            head: headDecorations ? groupDecorationsByLine(headDecorations) : new Map(),
-                            base: baseDecorations ? groupDecorationsByLine(baseDecorations) : new Map(),
+                            head: groupDecorationsByLine(headDecorations),
+                            base: groupDecorationsByLine(baseDecorations),
                         },
                     })
                 })
