@@ -38,7 +38,7 @@ import { ThemeProps } from '../../../../../shared/src/theme'
 import { TabsWithLocalStorageViewStatePersistence } from '../../../../../shared/src/components/Tabs'
 import SourcePullIcon from 'mdi-react/SourcePullIcon'
 import { LinkOrSpan } from '../../../../../shared/src/components/LinkOrSpan'
-import { FileDiffNode } from '../../../components/FileDiffNode'
+import { FileDiffNode } from '../../../components/diff/FileDiffNode'
 import { isDefined } from '../../../../../shared/src/util/types'
 
 interface Props extends ThemeProps {

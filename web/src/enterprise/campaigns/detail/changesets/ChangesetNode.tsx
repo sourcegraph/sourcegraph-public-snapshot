@@ -17,10 +17,10 @@ import {
 } from './presentation'
 import { Link } from '../../../../../../shared/src/components/Link'
 import { LinkOrSpan } from '../../../../../../shared/src/components/LinkOrSpan'
-import { FileDiffNode } from '../../../../components/FileDiffNode'
-import { Collapsible } from '../../../../components/Collapsible'
-import { DiffStat } from '../../../../components/DiffStat'
 import { ThemeProps } from '../../../../../../shared/src/theme'
+import { Collapsible } from '../../../../components/Collapsible'
+import { DiffStat } from '../../../../components/diff/DiffStat'
+import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
 
 export interface ChangesetNodeProps extends ThemeProps {
     node: IExternalChangeset | IChangesetPlan
