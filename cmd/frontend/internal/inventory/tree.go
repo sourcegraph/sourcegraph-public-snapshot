@@ -2,6 +2,8 @@ package inventory
 
 import (
 	"context"
+	"io"
+	"io/ioutil"
 	"os"
 	"sort"
 
@@ -15,9 +17,8 @@ type Context struct {
 	// ReadFile call), not just the basename.
 	ReadTree func(ctx context.Context, path string) ([]os.FileInfo, error)
 
-	// ReadFile is called to read the partial contents of the file at path. At least the specified
-	// number of bytes must be returned (or the entire file, if it is smaller).
-	ReadFile func(ctx context.Context, path string, minBytes int64) ([]byte, error)
+	// GetFileReader is called to get an io.ReadCloser from the file at path.
+	GetFileReader func(ctx context.Context, path string) (io.ReadCloser, error)
 
 	// CacheGet, if set, returns the cached inventory and true for the given tree, or false for a cache miss.
 	CacheGet func(os.FileInfo) (Inventory, bool)
@@ -46,16 +47,23 @@ func (c *Context) Tree(ctx context.Context, tree os.FileInfo) (inv Inventory, er
 	if err != nil {
 		return Inventory{}, err
 	}
-	langTotalBytes := map[string]uint64{} // language name -> total bytes
+	totals := map[string]Lang{} // language name -> stats
 	for _, e := range entries {
 		switch {
 		case e.Mode().IsRegular(): // file
-			lang, err := detect(ctx, e, c.ReadFile)
+			rc, err := c.GetFileReader(ctx, e.Name())
+			if err != nil {
+				return Inventory{}, errors.Wrap(err, "getting file reader")
+			}
+			lang, err := getLang(ctx, e, rc)
 			if err != nil {
 				return Inventory{}, errors.Wrapf(err, "inventory file %q", e.Name())
 			}
-			if lang != "" {
-				langTotalBytes[lang] += uint64(e.Size())
+			if lang.Name != "" {
+				l := totals[lang.Name]
+				lang.TotalBytes += l.TotalBytes
+				lang.TotalLines += l.TotalLines
+				totals[lang.Name] = lang
 			}
 
 		case e.Mode().IsDir(): // subtree
@@ -64,20 +72,48 @@ func (c *Context) Tree(ctx context.Context, tree os.FileInfo) (inv Inventory, er
 				return Inventory{}, errors.Wrapf(err, "inventory tree %q", e.Name())
 			}
 			for _, lang := range entryInv.Languages {
-				langTotalBytes[lang.Name] += lang.TotalBytes
+				l := totals[lang.Name]
+				l.TotalBytes += lang.TotalBytes
+				l.TotalLines += lang.TotalLines
+				totals[lang.Name] = l
 			}
 
 		default:
 			// Skip symlinks, submodules, etc.
 		}
 	}
-	return sum(langTotalBytes), nil
+	return sum(totals), nil
 }
 
-func sum(langTotalBytes map[string]uint64) Inventory {
-	sum := Inventory{Languages: make([]Lang, 0, len(langTotalBytes))}
-	for lang, totalBytes := range langTotalBytes {
-		sum.Languages = append(sum.Languages, Lang{Name: lang, TotalBytes: totalBytes})
+type contentsGetter struct {
+	r        io.Reader
+	maxBytes int64
+	data     []byte
+	err      error
+}
+
+func (c *contentsGetter) GetContents() ([]byte, error) {
+	if c.r == nil {
+		return nil, nil
+	}
+	// Been run before
+	if len(c.data) > 0 {
+		return c.data, c.err
+	}
+	r := c.r
+	if c.maxBytes >= 0 {
+		r = io.LimitReader(c.r, c.maxBytes)
+	}
+	c.data, c.err = ioutil.ReadAll(r)
+	return c.data, c.err
+}
+
+func sum(langStats map[string]Lang) Inventory {
+	sum := Inventory{Languages: make([]Lang, 0, len(langStats))}
+	for name := range langStats {
+		stats := langStats[name]
+		stats.Name = name
+		sum.Languages = append(sum.Languages, stats)
 	}
 	sort.Slice(sum.Languages, func(i, j int) bool {
 		return sum.Languages[i].TotalBytes > sum.Languages[j].TotalBytes || (sum.Languages[i].TotalBytes == sum.Languages[j].TotalBytes && sum.Languages[i].Name < sum.Languages[j].Name)

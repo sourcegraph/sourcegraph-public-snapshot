@@ -3,10 +3,15 @@
 package inventory
 
 import (
+	"bufio"
+	"bytes"
 	"context"
+	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
+	"github.com/pkg/errors"
 	"github.com/src-d/enry/v2"
 	"github.com/src-d/enry/v2/data"
 )
@@ -26,6 +31,9 @@ type Lang struct {
 	// TotalBytes is the total number of bytes of code written in the
 	// programming language.
 	TotalBytes uint64 `json:"TotalBytes,omitempty"`
+	// TotalLines is the total number of lines of code written in the
+	// programming language.
+	TotalLines uint64 `json:"TotalLines,omitempty"`
 }
 
 // minFileBytes is the minimum byte size prefix for each file to read when using file contents for
@@ -50,6 +58,51 @@ func detect(ctx context.Context, file os.FileInfo, readFile func(ctx context.Con
 		matchedLang = enry.GetLanguage(file.Name(), data)
 	}
 	return matchedLang, nil
+}
+
+func getLang(ctx context.Context, file os.FileInfo, rc io.ReadCloser) (Lang, error) {
+	defer func() {
+		if rc != nil {
+			rc.Close()
+		}
+	}()
+
+	if !file.Mode().IsRegular() || enry.IsVendor(file.Name()) {
+		return Lang{}, nil
+	}
+
+	lang := Lang{}
+	// In many cases, GetLanguageByFilename can detect the language conclusively just from the
+	// filename. If not, we pass a subset of the file contents for analysis.
+	matchedLang, safe := GetLanguageByFilename(file.Name())
+	if rc != nil {
+		var data []byte
+		var err error
+		if !safe {
+			// Detect language
+			r := io.LimitReader(rc, minFileBytes)
+			data, err = ioutil.ReadAll(r)
+			if err != nil {
+				return lang, err
+			}
+			matchedLang = enry.GetLanguage(file.Name(), data)
+		}
+
+		// Count lines
+		var linecount int
+		scanner := bufio.NewScanner(io.MultiReader(bytes.NewReader(data), rc))
+		for scanner.Scan() {
+			linecount++
+		}
+		if scanner.Err() != nil {
+			return lang, errors.Wrap(scanner.Err(), "scanning file")
+		}
+		lang.TotalLines = uint64(linecount)
+
+		lang.TotalBytes = uint64(file.Size())
+	}
+	lang.Name = matchedLang
+	return lang, nil
 }
 
 // GetLanguageByFilename returns the guessed language for the named file (and safe == true if this
