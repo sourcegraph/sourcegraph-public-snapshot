@@ -169,10 +169,6 @@ describe('Organizations regression test suite', () => {
     })
 
     describe('Organizations API', () => {
-        if (process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0') {
-            console.error('You must set environment variable NODE_TLS_REJECT_UNAUTHORIZED=0 when running this test.')
-        }
-
         const resourceManager = new TestResourceManager()
         const config = getConfig(
             'sudoToken',
@@ -195,6 +191,12 @@ describe('Organizations regression test suite', () => {
         test(
             'auth.userOrgMap',
             async () => {
+                if (process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0') {
+                    throw new Error(
+                        'You must set environment variable NODE_TLS_REJECT_UNAUTHORIZED=0 when running this test.'
+                    )
+                }
+
                 const testUser1 = {
                     username: 'test-org-user-1',
                     email: 'beyang+test-org-user-1@sourcegraph.com',
