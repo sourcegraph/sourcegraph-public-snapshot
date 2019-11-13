@@ -68,10 +68,11 @@ func getLang(ctx context.Context, file os.FileInfo, rc io.ReadCloser) (Lang, err
 		}
 		// NOTE: It seems that calling enry.GetLanguage with no content
 		// returns a different result to enry.GetLanguageByExtension.
-		// For example, files with .m extension are returned as either
-		// MATLAB or
+		// For example:
+		//     enry.GetLanguageByExtension("test.m") -> "Limbo"
+		//     enry.GetLanguage("test.m", nil) -> "MATLAB"
 		// We continue to send zero content here to maintain backwards
-		// compatibility
+		// compatibility as we have tests that rely on this behavior
 		matchedLang = enry.GetLanguage(file.Name(), data)
 	}
 	lang.Name = matchedLang
