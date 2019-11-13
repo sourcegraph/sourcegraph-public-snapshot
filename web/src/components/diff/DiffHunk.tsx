@@ -45,7 +45,11 @@ export const DiffHunk: React.FunctionComponent<{
     decorations: Record<'head' | 'base', DecorationMapByLine>
     location: H.Location
     history: H.History
-    /** Don't reflect selected line in url */
+    /**
+     * Reflect selected line in url
+     *
+     * @default true
+     */
     persistLines?: boolean
 } & ThemeProps> = ({
     fileDiffAnchor,

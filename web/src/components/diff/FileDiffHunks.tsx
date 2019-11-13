@@ -32,7 +32,11 @@ interface FileHunksProps extends ThemeProps {
     /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
     fileDiffAnchor: string
 
-    hovers?: {
+    /**
+     * Information needed to apply extensions (hovers, decorations, ...) on the diff.
+     * If undefined, extensions will not be applied on this diff.
+     */
+    extensionInfo?: {
         /** The base repository, revision, and file. */
         base: PartFileInfo
 

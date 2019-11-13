@@ -7,7 +7,7 @@ interface Props {
     /**
      * Content in the always-visible, single-line title bar.
      */
-    title: React.ReactFragment
+    title: React.ReactNode
 
     /**
      * Optional children that appear below the title bar that can be expanded/collapsed. If present,
