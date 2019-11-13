@@ -164,6 +164,15 @@ const isValidFilterAlias = (alias: string): alias is keyof typeof filterAliases 
     Object.prototype.hasOwnProperty.call(filterAliases, alias)
 
 /**
+ * Split string, into first and last part, at the character position.
+ * E.g: ('query', 3) => { firstPart: 'que', lastPart: 'ry' }
+ */
+const splitStringAtPosition = (value: string, position: number): { firstPart: string; lastPart: string } => ({
+    firstPart: value.substring(0, position),
+    lastPart: value.substring(position),
+})
+
+/**
  * If a filter value is being typed, try to get its filter type.
  * E.g: with "|"" being the cursor: "repo:| lang:go" => "repo"
  * Checks if the matched word is a valid filter.
@@ -171,18 +180,20 @@ const isValidFilterAlias = (alias: string): alias is keyof typeof filterAliases 
 export const lastFilterAndValueBeforeCursor = (
     queryState: QueryState
 ): {
+    filterIndex: RegExpMatchArray['index']
     filter: SuggestionTypes
     filterAndValue: string
     value: string
 } | null => {
-    const firstPart = queryState.query.substring(0, queryState.cursorPosition)
+    const { firstPart } = splitStringAtPosition(queryState.query, queryState.cursorPosition)
     // get string before ":" char until a space is found or start of string
-    const [filterAndValue, filter] = firstPart.match(/([^\s:]+)?(:(\S?)+)?$/) || []
+    const match = firstPart.match(/([^\s:]+)?(:(\S?)+)?$/) || []
+    const [filterAndValue, filter] = match
     const value = filterAndValue?.split(':')[1]?.trim()
     const absoluteFilter = filter?.replace(/^-/, '')
     const resolvedFilter = isValidFilterAlias(absoluteFilter) ? filterAliases[absoluteFilter] : absoluteFilter
     return isValidFilter(resolvedFilter)
-        ? { filter: resolvedFilter, filterAndValue: filterAndValue.trim(), value }
+        ? { filterIndex: match.index, filter: resolvedFilter, filterAndValue: filterAndValue.trim(), value }
         : null
 }
 
@@ -235,15 +246,14 @@ export const isTypingWordAndNotFilterValue = (value: string): boolean => Boolean
 
 /**
  * Adds suggestions value to search query where cursor was positioned.
- * ('a test: query', 'suggestion', 7) => 'a test:suggestion query'
+ * ('a test: query', { value: 'suggestion' }, 7) => 'a test:suggestion query'
  */
 export const insertSuggestionInQuery = (
     queryToInsertIn: string,
     selectedSuggestion: Suggestion,
     cursorPosition: number
 ): QueryState => {
-    const firstPart = queryToInsertIn.substring(0, cursorPosition)
-    const lastPart = queryToInsertIn.substring(firstPart.length)
+    const { firstPart, lastPart } = splitStringAtPosition(queryToInsertIn, cursorPosition)
     const isFiltersSuggestion = selectedSuggestion.type === SuggestionTypes.filters
     // Know where to place the suggestion later on
     const separatorIndex = firstPart.lastIndexOf(!isFiltersSuggestion ? ':' : ' ')
@@ -285,23 +295,58 @@ export const insertSuggestionInQuery = (
  *     "QueryInput lang:|" => false
  *     "archived:Yes QueryInp|" => true
  */
-export const isFuzzyWordSearch = (queryCursor: QueryState): boolean => {
-    const firstPart = queryCursor.query.substring(0, queryCursor.cursorPosition)
+export const isFuzzyWordSearch = (queryState: QueryState): boolean => {
+    const { firstPart } = splitStringAtPosition(queryState.query, queryState.cursorPosition)
     const isTypingFirstWord = Boolean(firstPart.match(/^(\s?)+[^:\s]+$/))
     return isTypingFirstWord || isTypingWordAndNotFilterValue(firstPart)
 }
 
 /**
+ * Some filters should use an alias just for search so they receive the expected suggestions.
+ * See `./Suggestion.tsx->fuzzySearchFilters`.
+ * E.g: `repohasfile` expects a file name as a value, so we should show `file` suggestions
+ */
+export const filterAliasForSearch: Record<string, SuggestionTypes | undefined> = {
+    [SuggestionTypes.repohasfile]: SuggestionTypes.file,
+}
+
+/**
  * Makes any modification to the query which will only be used
  * for fetching suggestions, and should not mutate the query in state.
+ *
+ * @returns the query to be used for fuzzy-search
  */
 export const formatQueryForFuzzySearch = (queryState: QueryState): string => {
     const filterAndValueBeforeCursor = lastFilterAndValueBeforeCursor(queryState)
-    // Check if filter should have its suggestions searched without influence from the rest of the query
-    if (filterAndValueBeforeCursor && isolatedFuzzySearchFilters.includes(filterAndValueBeforeCursor.filter)) {
-        return filterAndValueBeforeCursor.filterAndValue
+
+    // If no valid filter was found before `queryState.cursorPosition` then no formatting is necessary
+    if (!filterAndValueBeforeCursor || !filterAndValueBeforeCursor.filterIndex) {
+        return queryState.query
     }
-    // Use search results from `file` filter when suggesting for `repohasfile` filter.
-    // Also requires the filter type to be in ./Suggestion.tsx->fuzzySearchFilters
-    return queryState.query.replace(SuggestionTypes.repohasfile, 'file')
+
+    const { filterIndex, filter, filterAndValue } = filterAndValueBeforeCursor
+
+    // Check if filter should have its suggestions searched without influence from the rest of the query
+    if (isolatedFuzzySearchFilters.includes(filter)) {
+        return filterAndValue
+    }
+
+    // Any change to the filter being typed.
+    // Get to the filter and value being typed
+    const { firstPart, lastPart } = splitStringAtPosition(queryState.query, queryState.cursorPosition)
+
+    // This is the match of the last typed filter and value before `queryState.cursorPosition`
+    let formattedFilterAndValue = filterAndValue
+
+    // If filter has an alias that it should use just for fuzzy-search
+    const filterSearchAlias = filterAliasForSearch[filter]
+    if (filterSearchAlias) {
+        formattedFilterAndValue = formattedFilterAndValue.replace(filter, filterSearchAlias)
+    }
+
+    // Remove the '-' character from the start of a filter that's being typed.
+    // E.g ('|' is the cursor): 'archived:Yes -file:| Props' => 'archived:Yes file:| Props'
+    formattedFilterAndValue = formattedFilterAndValue.replace(/^-/, '')
+
+    return firstPart.substring(0, filterIndex) + formattedFilterAndValue + lastPart
 }

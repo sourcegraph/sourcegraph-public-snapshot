@@ -5,10 +5,11 @@ import {
     insertSuggestionInQuery,
     lastFilterAndValueBeforeCursor,
     isFuzzyWordSearch,
+    formatQueryForFuzzySearch,
 } from './helpers'
 import { SearchType } from './results/SearchResults'
 import { searchFilterSuggestions } from './searchFilterSuggestions'
-import { filterAliases } from './input/Suggestion'
+import { filterAliases, isolatedFuzzySearchFilters } from './input/Suggestion'
 
 describe('search/helpers', () => {
     describe('queryIndexOfScope()', () => {
@@ -159,14 +160,16 @@ describe('search/helpers', () => {
     describe('getFilterTypedBeforeCursor', () => {
         const query = 'archived:yes QueryInput'
         it('returns values when a filter value is being typed', () => {
-            expect(lastFilterAndValueBeforeCursor({ query, cursorPosition: 10 })).toStrictEqual({
+            expect(lastFilterAndValueBeforeCursor({ query, cursorPosition: 10 })).toEqual({
+                filterIndex: 0,
                 filterAndValue: 'archived:y',
                 filter: 'archived',
                 value: 'y',
             })
         })
         it('returns values when a filter is selected but no value char is typed yet', () => {
-            expect(lastFilterAndValueBeforeCursor({ query, cursorPosition: 9 })).toStrictEqual({
+            expect(lastFilterAndValueBeforeCursor({ query, cursorPosition: 9 })).toEqual({
+                filterIndex: 0,
                 filterAndValue: 'archived:',
                 filter: 'archived',
                 value: '',
@@ -184,5 +187,28 @@ describe('search/helpers', () => {
             expect(isFuzzyWordSearch({ query, cursorPosition: 12 })).toBe(false))
         it('returns true if typing a non filter type or value', () =>
             expect(isFuzzyWordSearch({ query, cursorPosition: 5 })).toBe(true))
+    })
+
+    describe('formatQueryForFuzzySearch', () => {
+        it('isolates filters that are in isolatedFuzzySearchFilters', () => {
+            expect(
+                isolatedFuzzySearchFilters.map(filterType =>
+                    formatQueryForFuzzySearch({
+                        query: `archived:Yes ${filterType}:value Props`,
+                        // 19 is position until after ':value'
+                        cursorPosition: 19 + filterType.length,
+                    })
+                )
+            ).toStrictEqual(isolatedFuzzySearchFilters.map(filterType => filterType + ':value'))
+        })
+        it('return absolute filter if filter being typed is negated (e.g: `-file`)', () => {
+            expect(
+                formatQueryForFuzzySearch({
+                    query: 'l:javascript -file:index.js archived:No',
+                    cursorPosition: 27,
+                })
+            ).toBe('l:javascript file:index.js archived:No')
+        })
+        it('replaces filter being typed with its `filterAliasForSearch`', () => {})
     })
 })
