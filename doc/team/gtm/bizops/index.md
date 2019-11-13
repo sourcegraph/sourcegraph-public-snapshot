@@ -3,10 +3,10 @@
 ## How to submit a data request
 
 **Large projects:** Add an issue to the left column of this project in GitHub. This is triaged everyday. Please include the following information:
-* What is the deliverable going to be used for? Why do you need it? This helps the team prioritize requests. 
-* What do you want the deliverable to look like (in as much detail as possible)? For example, If you want a chart you could draw the chart on paper and attach it.
-* When do you need the deliverable by? 
-* Is this request a nice-to-have or a necessity?
+- What is the deliverable going to be used for? Why do you need it? This helps the team prioritize requests. 
+- What do you want the deliverable to look like (in as much detail as possible)? For example, If you want a chart you could draw the chart on paper and attach it.
+- When do you need the deliverable by? 
+- Is this request a nice-to-have or a necessity?
 
 **Small asks and questions:** post in the #analytics channel in Slack. 
 
@@ -20,16 +20,17 @@ Here are the following tools we use:
 * Google Sheets: There are a number of spreadsheets that Looker queries (by way of BigQuery). You can find them in the shared Google Drive under ‘Analytics’ -> ‘ETL’
 * [HubSpot](#marketing): Marketing automation and CRM
 * Apollo: Email marketing automation
-* Sourcegraph Admin: Customers, subscriptions, user surveys, usage stats, etc…
+* Sourcegraph.com Site-admin pages: customer subscriptions and license keys
+* Self-hosted Sourcegraph instance Site-admin pages: usage statistics and user surveys
 * Custom event tool to track event
 
 ## Data sources
 
-###Product
+### Product
 
-Private instances (on-prem)
+#### Self-hosted instances
 
-We receive pings every 30 minutes than [contains this data](https://docs.sourcegraph.com/admin/pings). 
+We receive [pings](https://docs.sourcegraph.com/admin/pings) from self-hosted instances periodically (approximately every 30 minutes) containing primarily anonymous and aggregated information.
 
 #### Sourcegraph.com
 
@@ -52,8 +53,8 @@ Other:
 We track our lead activity using HubSpot, which we use for marketing automation and our CRM.
 
 Main HubSpot events:
-* Request to demo form
-* Contact form
+* Request a demo form
+* Contact us form
 * In-product trial request: A user installs an instance on a local machine and checks the box that requests an enterprise trial
 * Create a Sourcegraph.com account
 * Chrome uninstall feedback: feedback is provided when the chrome extension is uninstalled
