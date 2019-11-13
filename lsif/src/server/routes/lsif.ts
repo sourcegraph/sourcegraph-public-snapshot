@@ -81,13 +81,14 @@ export function createLsifRouter(
         validation.validationMiddleware([
             validation.validateNonEmptyString('repository'),
             validation.validateNonEmptyString('commit').matches(commitPattern),
-            validation.validateOptionalString('root').customSanitizer(sanitizeRoot),
+            validation.validateOptionalString('root'),
             validation.validateOptionalBoolean('blocking'),
             validation.validateOptionalInt('maxWait'),
         ]),
         wrap(
             async (req: express.Request & { span?: Span }, res: express.Response): Promise<void> => {
-                const { repository, commit, root, blocking, maxWait }: UploadQueryArgs = req.query
+                const { repository, commit, root: rootRaw, blocking, maxWait }: UploadQueryArgs = req.query
+                const root = sanitizeRoot(rootRaw)
                 const ctx = createTracingContext(req, { repository, commit, root })
                 const filename = path.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR, uuid.v4())
                 const output = fs.createWriteStream(filename)
