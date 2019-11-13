@@ -560,7 +560,7 @@ components:
         id:
           type: string
           description: A unique identifier.
-        jobType:
+        type:
           type: string
           description: The type of job.
           enum:

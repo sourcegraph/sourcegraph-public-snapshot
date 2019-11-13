@@ -204,7 +204,7 @@ export class SiteAdminLsifJobsPage extends React.Component<Props, State> {
  * @param job The job instance.
  */
 function lsifJobDescription(job: GQL.ILSIFJob): JSX.Element {
-    if (job.jobType === 'convert') {
+    if (job.type === 'convert') {
         const {
             repository,
             commit,
@@ -236,14 +236,14 @@ function lsifJobDescription(job: GQL.ILSIFJob): JSX.Element {
         'update-tips': 'Refresh current uploads',
     }
 
-    if (internalJobs[job.jobType]) {
+    if (internalJobs[job.type]) {
         return (
             <span>
                 <strong>Internal job: </strong>
-                {internalJobs[job.jobType]}
+                {internalJobs[job.type]}
             </span>
         )
     }
 
-    return <span>Unknown job type {job.jobType}</span>
+    return <span>Unknown job type {job.type}</span>
 }

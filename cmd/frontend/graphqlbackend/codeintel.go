@@ -61,7 +61,7 @@ type LSIFJobStatsResolver interface {
 
 type LSIFJobResolver interface {
 	ID() graphql.ID
-	JobType() string
+	Type() string
 	Arguments() JSONValue
 	State() string
 	Failure() LSIFJobFailureReasonResolver

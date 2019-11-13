@@ -30,8 +30,8 @@ func (r *lsifJobResolver) ID() graphql.ID {
 	return marshalLSIFJobGQLID(r.lsifJob.ID)
 }
 
-func (r *lsifJobResolver) JobType() string {
-	return r.lsifJob.JobType
+func (r *lsifJobResolver) Type() string {
+	return r.lsifJob.Type
 }
 
 func (r *lsifJobResolver) Arguments() graphqlbackend.JSONValue {

@@ -624,7 +624,7 @@ export function fetchLsifJobs({
                 lsifJobs(state: $state, first: $first, after: $after, query: $query) {
                     nodes {
                         id
-                        jobType
+                        type
                         arguments
                         state
                         failure {
@@ -661,7 +661,7 @@ export function fetchLsifJob({ id }: GQL.ILsifJobOnQueryArguments): Observable<G
                     __typename
                     ... on LSIFJob {
                         id
-                        jobType
+                        type
                         arguments
                         state
                         failure {

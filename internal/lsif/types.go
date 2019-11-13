@@ -24,7 +24,7 @@ type LSIFJobStats struct {
 
 type LSIFJob struct {
 	ID                   string           `json:"id"`
-	JobType              string           `json:"jobType"`
+	Type                 string           `json:"type"`
 	Argumentss           *json.RawMessage `json:"arguments"`
 	State                string           `json:"state"`
 	Failure              *LSIFJobFailure  `json:"failure"`

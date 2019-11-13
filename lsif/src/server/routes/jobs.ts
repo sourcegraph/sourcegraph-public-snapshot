@@ -20,7 +20,7 @@ import { extractLimitOffset } from '../pagination/limit-offset'
  */
 interface ApiJob {
     id: string
-    jobType: string
+    type: string
     arguments: object
     state: ApiJobState
     failure: { summary: string; stacktraces: string[] } | null
@@ -76,7 +76,7 @@ const formatJobInternal = ({
 
     return {
         id: `${id}`,
-        jobType: name,
+        type: name,
         arguments: data.args,
         state,
         failure,

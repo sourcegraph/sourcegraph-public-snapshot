@@ -3979,7 +3979,7 @@ type LSIFJob implements Node {
     id: ID!
 
     # The job type.
-    jobType: String!
+    type: String!
 
     # The job's arguments.
     arguments: JSONValue!

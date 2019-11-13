@@ -136,7 +136,7 @@ export const SiteAdminLsifJobPage: FunctionComponent<Props> = ({
  * @param job The job instance.
  */
 function lsifJobDescription(job: GQL.ILSIFJob): string {
-    if (job.jobType === 'convert') {
+    if (job.type === 'convert') {
         const {
             repository,
             commit,
@@ -156,9 +156,9 @@ function lsifJobDescription(job: GQL.ILSIFJob): string {
         'update-tips': 'Refresh current uploads',
     }
 
-    if (internalJobs[job.jobType]) {
-        return `Internal job: ${internalJobs[job.jobType]}`
+    if (internalJobs[job.type]) {
+        return `Internal job: ${internalJobs[job.type]}`
     }
 
-    return `Unknown job type ${job.jobType}`
+    return `Unknown job type ${job.type}`
 }
