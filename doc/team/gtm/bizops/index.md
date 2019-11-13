@@ -1,67 +1,32 @@
 # Analytics
 
+This page describes Sourcegraph's analytics function, our data sources, and how to use our data tools.
+
 ## How to submit a data request
 
-**Large projects:** Add an issue to the left column of this project in GitHub. This is triaged everyday. Please include the following information:
+[Looker](https://sourcegraph.looker.com/) is a self-service tool so we encourage everyone to try finding answers within the tool. [Get started here](#using-looker) if you're not familiar with Looker, and the team in the #analytics Slack channel are more than happy to answer any questions regarding Looker. 
+
+**Projects:** Add an issue to the [analytics board](https://github.com/orgs/sourcegraph/projects/63) in GitHub. This is used as the analytics project board and is triaged everyday. Please think through and include the following so we can effectively prioritize your request.
 - What is the deliverable going to be used for? Why do you need it? This helps the team prioritize requests. 
-- What do you want the deliverable to look like (in as much detail as possible)? For example, If you want a chart you could draw the chart on paper and attach it.
+- What do you want the deliverable to look like (in as much detail as possible)? For example, if you want a chart it would be extremely helpful to draw the chart on paper and attach it.
 - When do you need the deliverable by? 
 - Is this request a nice-to-have or a necessity?
 
-**Small asks and questions:** post in the #analytics channel in Slack. 
-
-## Go-to-market tools
-
-Here are the following tools we use:
-
-* [Looker](#using-looker): Business intelligence/data visualization tool
-* Google Analytics: Website analytics
-* Google Cloud Platform: BigQuery as our data warehouse and the database our Looker runs on top of
-* Google Sheets: There are a number of spreadsheets that Looker queries (by way of BigQuery). You can find them in the shared Google Drive under ‘Analytics’ -> ‘ETL’
-* [HubSpot](#marketing): Marketing automation and CRM
-* Apollo: Email marketing automation
-* Sourcegraph.com Site-admin pages: customer subscriptions and license keys
-* Self-hosted Sourcegraph instance Site-admin pages: usage statistics and user surveys
-* Custom event tool to track event
+**Small asks and questions:** Post in the #analytics channel in Slack. 
 
 ## Data sources
 
-### Product
+Here are the following sources we collect data from:
 
-#### Self-hosted instances
-
-We receive [pings](https://docs.sourcegraph.com/admin/pings) from self-hosted instances periodically (approximately every 30 minutes) containing primarily anonymous and aggregated information.
-
-#### Sourcegraph.com
-
-"All" frontend user actions are logged inside of the Sourcegraph instance. This includes everything from "user viewed a page" to "user clicked a button" to "user hovered over a symbol". You can look at all calls to eventLogger.log here. 
-
-All of these events are stored in a backend database containing:
-* name: the name of the event
-* argument (or whatever): the string argument
-* url: the URL on the page when the event was logged
-* userID: the user that took the action (null if not signed in)
-* anonymousUserID: ID assigned to the user regardless of whether they are signed in or anonymous (through a UUID stored in a cookie)
-* timestamp: the timestamp of the action
-
-Other:
-* Net Promoter Score (NPS) survey submissions (see the survey here)
-* Chrome Uninstall Feedback
-
-###Marketing
-
-We track our lead activity using HubSpot, which we use for marketing automation and our CRM.
-
-Main HubSpot events:
-* Request a demo form
-* Contact us form
-* In-product trial request: A user installs an instance on a local machine and checks the box that requests an enterprise trial
-* Create a Sourcegraph.com account
-* Chrome uninstall feedback: feedback is provided when the chrome extension is uninstalled
-* Private instance: A private instance was created on a user’s local machine AND they created an account to use the product (note: users can’t use Sourcegraph on a local machine until they create an account so installs =! accounts)
-* Sourcegraph.com Account: A user creates an account while using the Sourcegraph-hosted instance
-* NPS submission: User submits an [NPS survey](https://sourcegraph.com/survey) and includes their email
-* Live conferences and events: Event leads and live-blog subscribers
+* [Looker](#using-looker): Business intelligence/data visualization tool
+* Google Analytics: Website analytics for Sourcegraph marketing and docs pages (not Sourcegraph.com)
+* Google Cloud Platform: BigQuery is our data warehouse and the database Looker runs on top of
+* Google Sheets: There are a [number of spreadsheets](https://drive.google.com/drive/folders/1vOyhFO90FjHe-bwnHOZeljHLuhXL2BAv)that Looker queries (by way of BigQuery).
+* HubSpot: Marketing automation and CRM
+* Apollo: Email marketing automation
+* Sourcegraph.com Site-admin pages: customer subscriptions and license keys
+* [Pings](https://docs.sourcegraph.com/admin/pings) from self-hosted Sourcegraph instances containing anonymous and aggregated information
+* [Custom tool to track events](https://github.com/sourcegraph/sourcegraph/issues/5486) on Sourcegraph.com instance
 
 ## Using Looker
 
