@@ -19,14 +19,14 @@ if [ -z "$1" ]; then
     echo "This tool will squash all migrations up to and including the last migration defined"
     echo "in the given tag branch. The input to this tool should be three minor releases before"
     echo "the current release. For example, if we're currently on master for a 3.10 release, then"
-    echo "we need to maintain all migrations for 3.9 and 3.8 releases. Run this with tag 3.7."
+    echo "we need to maintain all migrations for 3.9 and 3.8 releases. Then, it is expected to run"
+    echo "this tool with the tag 'v3.7.0'."
     echo ""
     exit 1
 fi
 
 # Find the last migration defined in the given tag
-VERSION=$(curl "https://api.github.com/repos/sourcegraph/sourcegraph/contents/migrations?ref=$1" -s \
-    | jq -r '.[].name' \
+VERSION=$(git ls-tree -r --name-only "$1" ./ \
     | cut -d'_' -f1 \
     | grep -v [^0-9] \
     | sort \
@@ -36,9 +36,6 @@ if [ -z "${VERSION}" ]; then
     echo "failed to retrieve migration version"
     exit 1
 fi
-
-
-
 
 # First, apply migrations up to the version we want to squash
 migrate -database "postgres://${PGHOST}:${PGPORT}/${PGDATABASE}?sslmode=disable" -path . goto "${VERSION}"
