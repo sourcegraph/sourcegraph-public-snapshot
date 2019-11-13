@@ -11,15 +11,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintelligence/lsifserver/client"
+	"github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintel/lsifserver/client"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 type Resolver struct{}
 
-var _ graphqlbackend.CodeIntelligenceResolver = &Resolver{}
+var _ graphqlbackend.CodeIntelResolver = &Resolver{}
 
-func NewResolver() graphqlbackend.CodeIntelligenceResolver {
+func NewResolver() graphqlbackend.CodeIntelResolver {
 	return &Resolver{}
 }
 

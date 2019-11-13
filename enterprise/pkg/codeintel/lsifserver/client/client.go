@@ -11,7 +11,7 @@ import (
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintelligence/lsifserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintel/lsifserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/tomnomnom/linkheader"
 	"golang.org/x/net/context/ctxhttp"

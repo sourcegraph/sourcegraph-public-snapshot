@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintelligence/lsifserver/client"
+	"github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintel/lsifserver/client"
 )
 
 //

@@ -6,7 +6,7 @@ import (
 	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/httpapi"
-	"github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintelligence/lsifserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintel/lsifserver"
 )
 
 func NewProxy() (*httpapi.LSIFServerProxy, error) {

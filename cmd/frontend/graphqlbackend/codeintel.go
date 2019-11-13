@@ -8,10 +8,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
-// NewCodeIntelligenceResolver will be set by enterprise
-var NewCodeIntelligenceResolver func() CodeIntelligenceResolver
+// NewCodeIntelResolver will be set by enterprise
+var NewCodeIntelResolver func() CodeIntelResolver
 
-type CodeIntelligenceResolver interface {
+type CodeIntelResolver interface {
 	LSIFDump(ctx context.Context, args *struct{ ID graphql.ID }) (LSIFDumpResolver, error)
 	LSIFDumpByGQLID(ctx context.Context, id graphql.ID) (LSIFDumpResolver, error)
 	LSIFDumps(ctx context.Context, args *LSIFDumpsQueryArgs) (LSIFDumpConnectionResolver, error)
@@ -78,60 +78,60 @@ type LSIFJobConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
-var codeIntelligenceOnlyInEnterprise = errors.New("lsif dumps and jobs are only available in enterprise")
+var codeIntelOnlyInEnterprise = errors.New("lsif dumps and jobs are only available in enterprise")
 
 func (r *schemaResolver) LSIFDump(ctx context.Context, args *struct{ ID graphql.ID }) (LSIFDumpResolver, error) {
-	if r.codeIntelligenceResolver == nil {
-		return nil, codeIntelligenceOnlyInEnterprise
+	if r.codeIntelResolver == nil {
+		return nil, codeIntelOnlyInEnterprise
 	}
-	return r.codeIntelligenceResolver.LSIFDump(ctx, args)
+	return r.codeIntelResolver.LSIFDump(ctx, args)
 }
 
 func (r *schemaResolver) LSIFDumpByGQLID(ctx context.Context, id graphql.ID) (LSIFDumpResolver, error) {
-	if r.codeIntelligenceResolver == nil {
-		return nil, codeIntelligenceOnlyInEnterprise
+	if r.codeIntelResolver == nil {
+		return nil, codeIntelOnlyInEnterprise
 	}
-	return r.codeIntelligenceResolver.LSIFDumpByGQLID(ctx, id)
+	return r.codeIntelResolver.LSIFDumpByGQLID(ctx, id)
 }
 
 func (r *schemaResolver) LSIFDumps(ctx context.Context, args *LSIFDumpsQueryArgs) (LSIFDumpConnectionResolver, error) {
-	if r.codeIntelligenceResolver == nil {
-		return nil, codeIntelligenceOnlyInEnterprise
+	if r.codeIntelResolver == nil {
+		return nil, codeIntelOnlyInEnterprise
 	}
-	return r.codeIntelligenceResolver.LSIFDumps(ctx, args)
+	return r.codeIntelResolver.LSIFDumps(ctx, args)
 }
 
 func (r *schemaResolver) LSIFJob(ctx context.Context, args *struct{ ID graphql.ID }) (LSIFJobResolver, error) {
-	if r.codeIntelligenceResolver == nil {
-		return nil, codeIntelligenceOnlyInEnterprise
+	if r.codeIntelResolver == nil {
+		return nil, codeIntelOnlyInEnterprise
 	}
-	return r.codeIntelligenceResolver.LSIFJob(ctx, args)
+	return r.codeIntelResolver.LSIFJob(ctx, args)
 }
 
 func (r *schemaResolver) LSIFJobByGQLID(ctx context.Context, id graphql.ID) (LSIFJobResolver, error) {
-	if r.codeIntelligenceResolver == nil {
-		return nil, codeIntelligenceOnlyInEnterprise
+	if r.codeIntelResolver == nil {
+		return nil, codeIntelOnlyInEnterprise
 	}
-	return r.codeIntelligenceResolver.LSIFJobByGQLID(ctx, id)
+	return r.codeIntelResolver.LSIFJobByGQLID(ctx, id)
 }
 
 func (r *schemaResolver) LSIFJobs(ctx context.Context, args *LSIFJobsQueryArgs) (LSIFJobConnectionResolver, error) {
-	if r.codeIntelligenceResolver == nil {
-		return nil, codeIntelligenceOnlyInEnterprise
+	if r.codeIntelResolver == nil {
+		return nil, codeIntelOnlyInEnterprise
 	}
-	return r.codeIntelligenceResolver.LSIFJobs(ctx, args)
+	return r.codeIntelResolver.LSIFJobs(ctx, args)
 }
 
 func (r *schemaResolver) LSIFJobStats(ctx context.Context) (LSIFJobStatsResolver, error) {
-	if r.codeIntelligenceResolver == nil {
-		return nil, codeIntelligenceOnlyInEnterprise
+	if r.codeIntelResolver == nil {
+		return nil, codeIntelOnlyInEnterprise
 	}
-	return r.codeIntelligenceResolver.LSIFJobStats(ctx)
+	return r.codeIntelResolver.LSIFJobStats(ctx)
 }
 
 func (r *schemaResolver) LSIFJobStatsByGQLID(ctx context.Context, id graphql.ID) (LSIFJobStatsResolver, error) {
-	if r.codeIntelligenceResolver == nil {
-		return nil, codeIntelligenceOnlyInEnterprise
+	if r.codeIntelResolver == nil {
+		return nil, codeIntelOnlyInEnterprise
 	}
-	return r.codeIntelligenceResolver.LSIFJobStatsByGQLID(ctx, id)
+	return r.codeIntelResolver.LSIFJobStatsByGQLID(ctx, id)
 }

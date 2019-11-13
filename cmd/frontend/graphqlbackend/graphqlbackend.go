@@ -44,10 +44,10 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 	}
 }
 
-func NewSchema(a8n A8NResolver, codeIntelligence CodeIntelligenceResolver) (*graphql.Schema, error) {
+func NewSchema(a8n A8NResolver, codeIntel CodeIntelResolver) (*graphql.Schema, error) {
 	return graphql.ParseSchema(
 		Schema,
-		&schemaResolver{a8nResolver: a8n, codeIntelligenceResolver: codeIntelligence},
+		&schemaResolver{a8nResolver: a8n, codeIntelResolver: codeIntel},
 		graphql.Tracer(prometheusTracer{}),
 	)
 }
@@ -191,8 +191,8 @@ func (r *NodeResolver) ToLSIFJob() (LSIFJobResolver, bool) {
 // uses subresolvers, some of which are globals and some of which are fields on
 // schemaResolver.
 type schemaResolver struct {
-	a8nResolver              A8NResolver
-	codeIntelligenceResolver CodeIntelligenceResolver
+	a8nResolver       A8NResolver
+	codeIntelResolver CodeIntelResolver
 }
 
 // DEPRECATED
@@ -264,20 +264,20 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 	case "Site":
 		return siteByGQLID(ctx, id)
 	case "LSIFDump":
-		if r.codeIntelligenceResolver == nil {
-			return nil, codeIntelligenceOnlyInEnterprise
+		if r.codeIntelResolver == nil {
+			return nil, codeIntelOnlyInEnterprise
 		}
-		return r.codeIntelligenceResolver.LSIFDumpByGQLID(ctx, id)
+		return r.codeIntelResolver.LSIFDumpByGQLID(ctx, id)
 	case "LSIFJobStats":
-		if r.codeIntelligenceResolver == nil {
-			return nil, codeIntelligenceOnlyInEnterprise
+		if r.codeIntelResolver == nil {
+			return nil, codeIntelOnlyInEnterprise
 		}
-		return r.codeIntelligenceResolver.LSIFJobStatsByGQLID(ctx, id)
+		return r.codeIntelResolver.LSIFJobStatsByGQLID(ctx, id)
 	case "LSIFJob":
-		if r.codeIntelligenceResolver == nil {
-			return nil, codeIntelligenceOnlyInEnterprise
+		if r.codeIntelResolver == nil {
+			return nil, codeIntelOnlyInEnterprise
 		}
-		return r.codeIntelligenceResolver.LSIFJobByGQLID(ctx, id)
+		return r.codeIntelResolver.LSIFJobByGQLID(ctx, id)
 	default:
 		return nil, errors.New("invalid id")
 	}

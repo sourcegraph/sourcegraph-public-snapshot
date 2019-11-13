@@ -25,8 +25,8 @@ import (
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
 	a8nResolvers "github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n/resolvers"
-	"github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintelligence/lsifserver/proxy"
-	codeIntelligenceResolvers "github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintelligence/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintel/lsifserver/proxy"
+	codeIntelResolvers "github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )
@@ -109,7 +109,7 @@ func initLicensing() {
 
 func initResolvers() {
 	graphqlbackend.NewA8NResolver = a8nResolvers.NewResolver
-	graphqlbackend.NewCodeIntelligenceResolver = codeIntelligenceResolvers.NewResolver
+	graphqlbackend.NewCodeIntelResolver = codeIntelResolvers.NewResolver
 }
 
 func initLSIFEndpoints() {

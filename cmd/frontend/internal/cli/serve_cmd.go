@@ -173,13 +173,13 @@ func Main(githubWebhook http.Handler) error {
 		a8nResolver = graphqlbackend.NewA8NResolver(dbconn.Global)
 	}
 
-	// graphqlbackend.CodeIntelligenceResolver is set by enterprise frontend
-	var codeIntelligenceResolver graphqlbackend.CodeIntelligenceResolver
-	if graphqlbackend.NewCodeIntelligenceResolver != nil {
-		codeIntelligenceResolver = graphqlbackend.NewCodeIntelligenceResolver()
+	// graphqlbackend.CodeIntelResolver is set by enterprise frontend
+	var codeIntelResolver graphqlbackend.CodeIntelResolver
+	if graphqlbackend.NewCodeIntelResolver != nil {
+		codeIntelResolver = graphqlbackend.NewCodeIntelResolver()
 	}
 
-	schema, err := graphqlbackend.NewSchema(a8nResolver, codeIntelligenceResolver)
+	schema, err := graphqlbackend.NewSchema(a8nResolver, codeIntelResolver)
 	if err != nil {
 		return err
 	}
