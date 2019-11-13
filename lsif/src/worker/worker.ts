@@ -13,7 +13,7 @@ import { createQueue } from '../shared/queue/queue'
 import { createUpdateTipsJobProcessor } from './processors/update-tips'
 import { ensureDirectory } from '../shared/paths'
 import { followsFrom, FORMAT_TEXT_MAP, Span, Tracer } from 'opentracing'
-import { instrument } from '../shared/metrics'
+import { instrumentWithLabels } from '../shared/metrics'
 import { Job } from 'bull'
 import { Logger } from 'winston'
 import { startMetricsServer } from './server'
@@ -49,10 +49,11 @@ const wrapJobProcessor = <T>(
     // Tag tracing context with jobId and arguments
     const ctx = addTags({ logger, span }, { jobId: job.id, ...args })
 
-    await instrument(
+    await instrumentWithLabels(
         metrics.jobDurationHistogram,
         metrics.jobDurationErrorsCounter,
-        (): Promise<void> => logAndTraceCall(ctx, `${name} job`, (ctx: TracingContext) => jobProcessor(args, ctx))
+        { class: type },
+        (): Promise<void> => logAndTraceCall(ctx, `${type} job`, (ctx: TracingContext) => jobProcessor(args, ctx))
     )
 }
 
