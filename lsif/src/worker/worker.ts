@@ -13,7 +13,7 @@ import { createQueue } from '../shared/queue/queue'
 import { createUpdateTipsJobProcessor } from './processors/update-tips'
 import { ensureDirectory } from '../shared/paths'
 import { followsFrom, FORMAT_TEXT_MAP, Span, Tracer } from 'opentracing'
-import { instrument } from '../shared/metrics'
+import { instrumentWithLabels } from '../shared/metrics'
 import { Job } from 'bull'
 import { Logger } from 'winston'
 import { startMetricsServer } from './server'
@@ -23,18 +23,18 @@ import { XrepoDatabase } from '../shared/xrepo/xrepo'
 /**
  * Wrap a job processor with instrumentation.
  *
- * @param name The job name.
+ * @param type The job name.
  * @param jobProcessor The job processor.
  * @param logger The logger instance.
  * @param tracer The tracer instance.
  */
 const wrapJobProcessor = <T>(
-    name: string,
+    type: string,
     jobProcessor: (args: T, ctx: TracingContext) => Promise<void>,
     logger: Logger,
     tracer: Tracer | undefined
 ): ((job: Job) => Promise<void>) => async (job: Job) => {
-    logger.debug(`${name} job accepted`, { jobId: job.id })
+    logger.debug(`${type} job accepted`, { jobId: job.id })
 
     // Destructure arguments and injected tracing context
     const { args, tracing }: { args: T; tracing: object } = job.data
@@ -43,16 +43,17 @@ const wrapJobProcessor = <T>(
     if (tracer) {
         // Extract tracing context from job payload
         const publisher = tracer.extract(FORMAT_TEXT_MAP, tracing)
-        span = tracer.startSpan(name, publisher ? { references: [followsFrom(publisher)] } : {})
+        span = tracer.startSpan(type, publisher ? { references: [followsFrom(publisher)] } : {})
     }
 
     // Tag tracing context with jobId and arguments
     const ctx = addTags({ logger, span }, { jobId: job.id, ...args })
 
-    await instrument(
+    await instrumentWithLabels(
         metrics.jobDurationHistogram,
         metrics.jobDurationErrorsCounter,
-        (): Promise<void> => logAndTraceCall(ctx, `${name} job`, (ctx: TracingContext) => jobProcessor(args, ctx))
+        { class: type },
+        (): Promise<void> => logAndTraceCall(ctx, `${type} job`, (ctx: TracingContext) => jobProcessor(args, ctx))
     )
 }
 

@@ -61,8 +61,8 @@ const formatJobInternal = ({
 }: {
     id: string | number
     name: string
-    data: any
-    failedReason: any
+    data: unknown
+    failedReason: unknown
     stacktrace: string[] | null
     timestamp: number
     finishedOn: number | null
@@ -74,10 +74,13 @@ const formatJobInternal = ({
             ? { summary: failedReason, stacktraces: stacktrace }
             : null
 
+    // All jobs are enqueued with an args object property
+    const envelope: { args: object } = data as { args: object }
+
     return {
         id: `${id}`,
         type: name,
-        arguments: data.args,
+        arguments: envelope.args,
         state,
         failure,
         queuedAt: toDate(timestamp),

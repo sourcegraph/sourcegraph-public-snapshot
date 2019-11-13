@@ -16,10 +16,6 @@ ENV PATH="/opt/jsonnet:${PATH}"
 
 RUN ./build.sh
 
-# TODO(uwedeportivo): remove once eric's PR lands
-# temporary fix for status_code <-> code label discrepancy in metrics (lsif code base uses status_code, rest uses code)
-RUN sed -i -e 's/{code=~/{status_code=~/g' lsif.json
-
 FROM grafana/grafana:6.4.4@sha256:01f35fd54472850715866dfe5e6ec34783064558197a643d5a2b48b7791367dd as production
 
 LABEL org.opencontainers.image.url=https://sourcegraph.com/

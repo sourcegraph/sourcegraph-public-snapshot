@@ -29,7 +29,7 @@ local httpPatterns = ['5..', '4..'];
 local errorColors = ['#bf1b00', '#cca300'];
 
 // The classes of jobs performed by the LSIF worker
-local jobClasses = ['convert'];
+local jobClasses = ['convert', 'update-tips'];
 
 //
 // Utils
@@ -105,14 +105,6 @@ local queueSizePanel = common.makePanel(
   ],
 );
 
-local jobEventsPanel = common.makePanel(
-  title='Job events',
-  targets=[
-    prometheus.target('sum(rate(lsif_job_events_total{type="success"}[%s])) by (class)' % [timeRange], legendFormat='{{class}} success'),
-    prometheus.target('sum(rate(lsif_job_events_total{type="failure"}[%s])) by (class)' % [timeRange], legendFormat='{{class}} failure'),
-  ],
-);
-
 local durationPanelsByJob = std.flattenArrays(std.map(function(class) [
   makeRequestsPanel(titleValue='%s jobs' % class, metricValue='lsif_job', metricFilter='class="%s"' % class),
   makeDurationPercentilesPanel(titleValue='%s jobs' % titleCase(class), metricValue='lsif_job', metricFilter='class="%s"' % class),
@@ -177,7 +169,7 @@ common.makeDashboard(title='LSIF')
 .addRow(title='Process metrics', panels=[cpuPanel, memoryPanel])
 .addRow(title='Upload requests', panels=[httpUploadTotalRequestsPanel, httpUploadRequestsPanel, httpUploadErrorRatePanel, httpUploadDurationPercentilesPanel])
 .addRow(title='Query requests', panels=[httpQueryTotalRequestsPanel, httpQueryRequestsPanel, httpQueryErrorRatePanel, httpQueryDurationPercentilesPanel])
-.addRow(title='Queue and job stats', panels=[queueSizePanel, jobEventsPanel] + durationPanelsByJob)
+.addRow(title='Queue and job stats', panels=[queueSizePanel] + durationPanelsByJob)
 .addRow(title='Database queries', panels=[databaseQueryRequestsPanel, databaseQueryErrorRatePanel, databaseQueryDurationPercentilesPanel])
 .addRow(title='Cross-repository queries', panels=[xrepoQueryRequestsPanel, xrepoQueryErrorRatePanel, xrepoQueryDurationPercentilesPanel])
 .addRow(title='Database insertions', panels=[databaseInsertionRequestsPanel, databaseInsertionErrorRatePanel, databaseInsertionDurationPercentilesPanel])
