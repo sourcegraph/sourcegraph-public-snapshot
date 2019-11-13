@@ -225,7 +225,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                             nodeComponent={FileDiffNode}
                             nodeComponentProps={{
                                 ...this.props,
-                                hovers: {
+                                extensionInfo: {
                                     base: {
                                         repoName: this.props.repo.name,
                                         repoID: this.props.repo.id,

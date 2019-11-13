@@ -31,37 +31,37 @@ export class FileDiffConnection extends React.PureComponent<Props> {
         // API's support for diffs.
         const dummyText = ''
 
-        if (nodeProps.hovers) {
-            nodeProps.hovers.extensionsController.services.editor.removeAllEditors()
+        if (nodeProps.extensionInfo) {
+            nodeProps.extensionInfo.extensionsController.services.editor.removeAllEditors()
 
             if (fileDiffsOrError && !isErrorLike(fileDiffsOrError)) {
                 for (const fileDiff of fileDiffsOrError.nodes) {
-                    if (fileDiff.oldPath && nodeProps.hovers) {
-                        const uri = `git://${nodeProps.hovers.base.repoName}?${nodeProps.hovers.base.commitID}#${fileDiff.oldPath}`
-                        if (!nodeProps.hovers.extensionsController.services.model.hasModel(uri)) {
-                            nodeProps.hovers.extensionsController.services.model.addModel({
+                    if (fileDiff.oldPath && nodeProps.extensionInfo) {
+                        const uri = `git://${nodeProps.extensionInfo.base.repoName}?${nodeProps.extensionInfo.base.commitID}#${fileDiff.oldPath}`
+                        if (!nodeProps.extensionInfo.extensionsController.services.model.hasModel(uri)) {
+                            nodeProps.extensionInfo.extensionsController.services.model.addModel({
                                 uri,
                                 languageId: getModeFromPath(fileDiff.oldPath),
                                 text: dummyText,
                             })
                         }
-                        nodeProps.hovers.extensionsController.services.editor.addEditor({
+                        nodeProps.extensionInfo.extensionsController.services.editor.addEditor({
                             type: 'CodeEditor',
                             resource: uri,
                             selections: [],
                             isActive: false, // HACK: arbitrarily say that the base is inactive. TODO: support diffs first-class
                         })
                     }
-                    if (fileDiff.newPath && nodeProps.hovers) {
-                        const uri = `git://${nodeProps.hovers.head.repoName}?${nodeProps.hovers.head.commitID}#${fileDiff.newPath}`
-                        if (!nodeProps.hovers.extensionsController.services.model.hasModel(uri)) {
-                            nodeProps.hovers.extensionsController.services.model.addModel({
+                    if (fileDiff.newPath && nodeProps.extensionInfo) {
+                        const uri = `git://${nodeProps.extensionInfo.head.repoName}?${nodeProps.extensionInfo.head.commitID}#${fileDiff.newPath}`
+                        if (!nodeProps.extensionInfo.extensionsController.services.model.hasModel(uri)) {
+                            nodeProps.extensionInfo.extensionsController.services.model.addModel({
                                 uri,
                                 languageId: getModeFromPath(fileDiff.newPath),
                                 text: dummyText,
                             })
                         }
-                        nodeProps.hovers.extensionsController.services.editor.addEditor({
+                        nodeProps.extensionInfo.extensionsController.services.editor.addEditor({
                             type: 'CodeEditor',
                             resource: uri,
                             selections: [],

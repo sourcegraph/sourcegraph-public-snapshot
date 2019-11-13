@@ -95,7 +95,7 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
                     nodeComponent={FileDiffNode}
                     nodeComponentProps={{
                         ...this.props,
-                        hovers: {
+                        extensionInfo: {
                             base: { ...this.props.base, rev: this.props.base.rev || 'HEAD' },
                             head: { ...this.props.head, rev: this.props.head.rev || 'HEAD' },
                             hoverifier: this.props.hoverifier,

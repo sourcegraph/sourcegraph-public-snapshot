@@ -102,9 +102,9 @@ export class FileDiffHunks extends React.Component<FileHunksProps, FileDiffHunks
             decorations: { head: new Map(), base: new Map() },
         }
 
-        if (this.props.hovers) {
+        if (this.props.extensionInfo) {
             this.subscriptions.add(
-                this.props.hovers.hoverifier.hoverify({
+                this.props.extensionInfo.hoverifier.hoverify({
                     dom: diffDomFunctions,
                     positionEvents: this.codeElements.pipe(
                         filter(isDefined),
@@ -113,7 +113,9 @@ export class FileDiffHunks extends React.Component<FileHunksProps, FileDiffHunks
                     positionJumps: NEVER, // TODO support diff URLs
                     resolveContext: hoveredToken => {
                         // if part is undefined, it doesn't matter whether we chose head or base, the line stayed the same
-                        const { repoName, rev, filePath, commitID } = this.props.hovers![hoveredToken.part || 'head']
+                        const { repoName, rev, filePath, commitID } = this.props.extensionInfo![
+                            hoveredToken.part || 'head'
+                        ]
                         // If a hover or go-to-definition was invoked on this part, we know the file path must exist
                         return { repoName, filePath: filePath!, rev, commitID }
                     },
@@ -125,7 +127,7 @@ export class FileDiffHunks extends React.Component<FileHunksProps, FileDiffHunks
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(
-                    map(({ hovers }) => hovers),
+                    map(({ extensionInfo }) => extensionInfo),
                     filter(isDefined),
                     distinctUntilChanged(
                         (a, b) =>

@@ -20,7 +20,7 @@ export interface FileDiffNodeProps extends ThemeProps {
     location: H.Location
     history: H.History
 
-    hovers?: {
+    extensionInfo?: {
         /** The base repository and revision. */
         base: { repoName: string; repoID: GQL.ID; rev: string; commitID: string }
 
@@ -111,15 +111,15 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                             {...this.props}
                             className="file-diff-node__hunks"
                             fileDiffAnchor={anchor}
-                            hovers={
-                                this.props.hovers && {
-                                    ...this.props.hovers,
+                            extensionInfo={
+                                this.props.extensionInfo && {
+                                    ...this.props.extensionInfo,
                                     base: {
-                                        ...this.props.hovers.base,
+                                        ...this.props.extensionInfo.base,
                                         filePath: node.oldPath,
                                     },
                                     head: {
-                                        ...this.props.hovers.head,
+                                        ...this.props.extensionInfo.head,
                                         filePath: node.newPath,
                                     },
                                 }
