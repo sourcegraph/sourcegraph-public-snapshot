@@ -163,7 +163,12 @@ export class QueryInput extends React.Component<Props, State> {
                             filter(suggestion => {
                                 // Only show fuzzy-suggestions that are relevant to the typed filter
                                 if (filterAndValueBeforeCursor?.filter) {
-                                    return suggestion.type === filterAndValueBeforeCursor.filter
+                                    switch (filterAndValueBeforeCursor.filter) {
+                                        case SuggestionTypes.repohasfile:
+                                            return suggestion.type === SuggestionTypes.file
+                                        default:
+                                            return suggestion.type === filterAndValueBeforeCursor.filter
+                                    }
                                 }
                                 return true
                             }),

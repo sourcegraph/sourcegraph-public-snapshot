@@ -128,11 +128,7 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
         values: [],
     },
     repohasfile: {
-        values: [{ value: 'go.mod' }, { value: 'package.json' }, { value: 'Gemfile' }].map(
-            assign({
-                type: SuggestionTypes.repohasfile,
-            })
-        ),
+        values: [],
     },
     repohascommitafter: {
         values: [{ value: '1 week ago' }, { value: '1 month ago' }].map(

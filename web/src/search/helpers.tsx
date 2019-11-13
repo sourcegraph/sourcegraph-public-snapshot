@@ -293,11 +293,11 @@ export const isFuzzyWordSearch = (queryCursor: QueryState): boolean => {
 
 /**
  * Makes any modification to the query which will only be used
- * for fetching suggesitons, and should not mutate the query in state.
+ * for fetching suggestions, and should not mutate the query in state.
  */
 export const formatQueryForFuzzySearch = (queryState: QueryState): string => {
     const filterAndValueBeforeCursor = lastFilterAndValueBeforeCursor(queryState)
-    // Check if filter shold have its suggestions searched without influence from the rest of the query
+    // Check if filter should have its suggestions searched without influence from the rest of the query
     if (filterAndValueBeforeCursor && isolatedFuzzySearchFilters.includes(filterAndValueBeforeCursor.filter)) {
         return filterAndValueBeforeCursor.filterAndValue
     }
