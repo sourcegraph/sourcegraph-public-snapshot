@@ -58,6 +58,7 @@ const campaignFragment = gql`
         plan {
             id
             type
+            arguments
         }
         # TODO move to separate query and configure from/to
         changesetCountsOverTime {

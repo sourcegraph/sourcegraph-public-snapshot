@@ -27,7 +27,7 @@ import { queryNamespaces } from '../../namespaces/backend'
 import { CampaignBurndownChart } from './BurndownChart'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 import { AddChangesetForm } from './AddChangesetForm'
-import { Subject, of, timer, merge, EMPTY } from 'rxjs'
+import { Subject, of, timer, merge } from 'rxjs'
 import { MonacoSettingsEditor } from '../../../settings/MonacoSettingsEditor'
 import { renderMarkdown } from '../../../../../shared/src/util/markdown'
 import { ErrorAlert } from '../../../components/alerts'
@@ -39,6 +39,7 @@ import { TabsWithLocalStorageViewStatePersistence } from '../../../../../shared/
 import SourcePullIcon from 'mdi-react/SourcePullIcon'
 import { LinkOrSpan } from '../../../../../shared/src/components/LinkOrSpan'
 import { FileDiffNode } from '../../../components/FileDiffNode'
+import { isDefined } from '../../../../../shared/src/util/types'
 
 interface Props extends ThemeProps {
     /**
@@ -53,7 +54,7 @@ interface Props extends ThemeProps {
 }
 
 const combyJsonSchema = {
-    $id: '',
+    $id: 'comby-spec.json#',
     $schema: 'http://json-schema.org/draft-07/schema#',
     description: 'Schema for comby options',
     type: 'object',
@@ -90,7 +91,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     const [name, setName] = useState<string>('')
     const [description, setDescription] = useState<string>('')
     const [type, setType] = useState<'manual' | 'comby'>('manual')
-    const [campaignPlanSpec, setCampaignPlanSpec] = useState<string>('')
+    const [campaignPlanArguments, setCampaignPlanArguments] = useState<string>('')
     const [namespace, setNamespace] = useState<GQL.ID>()
 
     const [namespaces, setNamespaces] = useState<GQL.Namespace[]>()
@@ -116,7 +117,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
     // Fetch campaign if ID was given
     const [campaign, setCampaign] = useState<GQL.ICampaign | null>()
-    // campaign plan is not present for campaigns that are manually created, hence can be null
+    // Campaign plan is not present for campaigns that are manually created, hence can be null. undefined means not yet loaded
     const [campaignPlan, setCampaignPlan] = useState<GQL.ICampaignPlan | null>()
     useEffect(() => {
         if (!campaignID) {
@@ -127,13 +128,18 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             .subscribe({
                 next: fetchedCampaign => {
                     setCampaign(fetchedCampaign)
-                    setCampaignPlan(fetchedCampaign ? fetchedCampaign.plan : null)
+                    setCampaignPlan(null)
+                    setType(fetchedCampaign && fetchedCampaign.plan ? (fetchedCampaign.plan.type as 'comby') : 'manual')
+                    setCampaignPlanArguments(
+                        fetchedCampaign && fetchedCampaign.plan ? fetchedCampaign.plan.arguments : null
+                    )
                 },
                 error: triggerError,
             })
         return () => subscription.unsubscribe()
     }, [campaignID, triggerError, changesetUpdates])
 
+    // Tracks if a refresh of the campaignPlan is required before the campaign can be created
     const [previewRefreshNeeded, setPreviewRefreshNeeded] = useState<boolean>(true)
 
     const queryChangesetsConnection = useCallback(
@@ -178,14 +184,14 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             catchError(error => {
                                 setAlertError(asError(error))
                                 setIsLoadingPreview(false)
-                                return EMPTY
+                                return []
                             }),
                             switchMap(previewPlan =>
                                 merge(
                                     of(previewPlan),
                                     timer(0, 2000).pipe(
                                         concatMap(() => fetchCampaignPlanById(previewPlan.id)),
-                                        takeWhile((plan): plan is GQL.ICampaignPlan => !!plan),
+                                        takeWhile(isDefined),
                                         takeWhile(plan => plan.status.state === 'PROCESSING', true)
                                     )
                                 )
@@ -237,10 +243,10 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         }
     }
 
-    const onChangeConfiguration = (event: string): void => {
+    const onChangeArguments = (event: string): void => {
         const currentSpec = campaignPlan ? parseJSONC(campaignPlan.arguments) : undefined
         if (!currentSpec || !isEqual(currentSpec, parseJSONC(event))) {
-            setCampaignPlanSpec(event)
+            setCampaignPlanArguments(event)
             setPreviewRefreshNeeded(true)
         } else if (!isLoadingPreview) {
             setPreviewRefreshNeeded(false)
@@ -258,7 +264,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             setDescription(description)
             setMode('editing')
             setType(plan ? (plan.type as 'comby' | 'manual') : 'manual')
-            setCampaignPlanSpec(plan ? plan.arguments : '')
+            setCampaignPlanArguments(plan ? plan.arguments : '')
         }
     }
 
@@ -420,17 +426,21 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         </div>
                     )}
                 </div>
-                <p className="ml-1">
-                    <small>
-                        <a
-                            rel="noopener noreferrer"
-                            target="_blank"
-                            href={(isSourcegraphDotCom ? 'https://docs.sourcegraph.com' : '/help') + '/user/markdown'}
-                        >
-                            Markdown supported
-                        </a>
-                    </small>
-                </p>
+                {mode === 'editing' && (
+                    <p className="ml-1">
+                        <small>
+                            <a
+                                rel="noopener noreferrer"
+                                target="_blank"
+                                href={
+                                    (isSourcegraphDotCom ? 'https://docs.sourcegraph.com' : '/help') + '/user/markdown'
+                                }
+                            >
+                                Markdown supported
+                            </a>
+                        </small>
+                    </p>
+                )}
                 <h3>Campaign type</h3>
                 <select
                     className="form-control w-auto d-inline-block"
@@ -453,10 +463,10 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 <MonacoSettingsEditor
                     className="my-3"
                     isLightTheme={isLightTheme}
-                    value={campaignPlanSpec}
+                    value={campaignPlanArguments}
                     jsonSchema={type === 'comby' ? combyJsonSchema : undefined}
                     height={110}
-                    onChange={onChangeConfiguration}
+                    onChange={onChangeArguments}
                     readOnly={!!(campaign && campaign.id)}
                 ></MonacoSettingsEditor>
                 {!campaign && mode === 'editing' && (
@@ -466,7 +476,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                 type="button"
                                 className="btn btn-primary mr-1"
                                 disabled={!previewRefreshNeeded}
-                                onClick={() => nextPreviewCampaignPlan({ type, arguments: campaignPlanSpec })}
+                                onClick={() => nextPreviewCampaignPlan({ type, arguments: campaignPlanArguments })}
                             >
                                 {isLoadingPreview && <LoadingSpinner className="icon-inline mr-1" />}
                                 Preview changes
