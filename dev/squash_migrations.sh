@@ -18,9 +18,8 @@ if [ -z "$1" ]; then
     echo ""
     echo "This tool will squash all migrations up to and including the last migration defined"
     echo "in the given tag branch. The input to this tool should be three minor releases before"
-    echo "the current release. For example, if we're currently on master for a 3.10 release, then"
-    echo "we need to maintain all migrations for 3.9 and 3.8 releases. Then, it is expected to run"
-    echo "this tool with the tag 'v3.7.0'."
+    echo "the current release. For example, if we're currently on 3.10, the input should be the"
+    echo "tag 'v3.7.0' as we need to maintain compatibility with versions 3.8 and 3.9."
     echo ""
     exit 1
 fi
