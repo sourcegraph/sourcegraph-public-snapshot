@@ -10,7 +10,7 @@ import {
 } from './helpers'
 import { SearchType } from './results/SearchResults'
 import { searchFilterSuggestions } from './searchFilterSuggestions'
-import { filterAliases, isolatedFuzzySearchFilters, SuggestionTypes } from './input/Suggestion'
+import { filterAliases, isolatedFuzzySearchFilters } from './input/Suggestion'
 
 describe('search/helpers', () => {
     describe('queryIndexOfScope()', () => {
