@@ -61,7 +61,8 @@ const combyJsonSchema = {
     properties: {
         scopeQuery: {
             type: 'string',
-            description: 'Define a scope to narrow down repositories affected by this change',
+            description:
+                'Define a scope to narrow down repositories affected by this change. Only GitHub and Bitbucket are supported.',
         },
         matchTemplate: {
             type: 'string',
@@ -130,7 +131,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             const subscription = fetchCampaignById(campaignID)
                                 .pipe(
                                     tap(campaign => {
-                                        observer.next(campaign)
                                         currentCampaign = campaign
                                     }),
                                     repeatWhen(obs =>
@@ -174,7 +174,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     const [mode, setMode] = useState<'viewing' | 'editing' | 'saving' | 'deleting'>(campaignID ? 'viewing' : 'editing')
 
     // To report errors from saving or deleting
-    const [alertError, setAlertError] = useState<Error | null>()
+    const [alertError, setAlertError] = useState<Error>()
 
     // To unblock the history after leaving edit mode
     const unblockHistoryRef = useRef<H.UnregisterCallback>(noop)
@@ -196,7 +196,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             () =>
                 previewCampaignPlans.pipe(
                     tap(() => {
-                        setAlertError(null)
+                        setAlertError(undefined)
                         setIsLoadingPreview(true)
                         setCampaign(undefined)
                     }),
@@ -261,18 +261,18 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 history.push(`/campaigns/${createdCampaign.id}`)
             }
             setMode('viewing')
-            setAlertError(null)
+            setAlertError(undefined)
         } catch (err) {
             setMode('editing')
             setAlertError(asError(err))
         }
     }
 
-    const onChangeArguments = (event: string): void => {
+    const onChangeArguments = (newText: string): void => {
         const currentSpec =
             campaign && campaign.__typename === 'CampaignPlan' ? parseJSONC(campaign.arguments) : undefined
-        if (!currentSpec || !isEqual(currentSpec, parseJSONC(event))) {
-            setCampaignPlanArguments(event)
+        if (!currentSpec || !isEqual(currentSpec, parseJSONC(newText))) {
+            setCampaignPlanArguments(newText)
             setPreviewRefreshNeeded(true)
         } else if (!isLoadingPreview) {
             setPreviewRefreshNeeded(false)
@@ -301,7 +301,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         }
         unblockHistoryRef.current()
         setMode('viewing')
-        setAlertError(null)
+        setAlertError(undefined)
     }
 
     const onDelete: React.MouseEventHandler = async event => {
@@ -321,34 +321,23 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
     const author = campaign && campaign.__typename === 'Campaign' ? campaign.author : authenticatedUser
 
-    const totalAdditions =
+    const calculateDiff = (field: 'added' | 'deleted'): number =>
         campaign && campaign.__typename === 'CampaignPlan'
             ? campaign.changesets.nodes.reduce(
-                  (prev, next) => prev + next.fileDiffs.diffStat.added + next.fileDiffs.diffStat.changed,
+                  (prev, next) => prev + next.fileDiffs.diffStat[field] + next.fileDiffs.diffStat.changed,
                   0
               )
             : campaign
             ? campaign.changesets.nodes.reduce(
                   (prev, next) =>
                       prev +
-                      (next.diff ? next.diff.fileDiffs.diffStat.added + next.diff.fileDiffs.diffStat.changed : 0),
+                      (next.diff ? next.diff.fileDiffs.diffStat[field] + next.diff.fileDiffs.diffStat.changed : 0),
                   0
               )
             : 0
-    const totalDeletions =
-        campaign && campaign.__typename === 'CampaignPlan'
-            ? campaign.changesets.nodes.reduce(
-                  (prev, next) => prev + next.fileDiffs.diffStat.deleted + next.fileDiffs.diffStat.changed,
-                  0
-              )
-            : campaign
-            ? campaign.changesets.nodes.reduce(
-                  (prev, next) =>
-                      prev +
-                      (next.diff ? next.diff.fileDiffs.diffStat.deleted + next.diff.fileDiffs.diffStat.changed : 0),
-                  0
-              )
-            : 0
+
+    const totalAdditions = calculateDiff('added')
+    const totalDeletions = calculateDiff('deleted')
 
     const status = campaign
         ? campaign.__typename === 'CampaignPlan'
@@ -570,8 +559,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                 id: 'diff',
                                 label: (
                                     <span>
-                                        Diff <span className="diff-stat__text-added">+{totalAdditions}</span>{' '}
-                                        <span className="diff-stat__text-deleted">-{totalDeletions}</span>
+                                        Diff <span className="text-success">+{totalAdditions}</span>{' '}
+                                        <span className="text-danger">-{totalDeletions}</span>
                                     </span>
                                 ),
                             },
@@ -633,7 +622,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                                 {changesetNode.repository.name}
                                             </LinkOrSpan>
                                         </h3>
-                                        {changesetNode.fileDiffs.nodes.map((fileDiffNode, j) => (
+                                        {changesetNode.fileDiffs.nodes.map(fileDiffNode => (
                                             <FileDiffNode
                                                 isLightTheme={isLightTheme}
                                                 node={fileDiffNode}
@@ -641,7 +630,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                                 location={location}
                                                 history={history}
                                                 persistLines={false}
-                                                key={j}
+                                                key={fileDiffNode.internalID}
                                             ></FileDiffNode>
                                         ))}
                                     </div>
@@ -658,14 +647,14 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                                         {changesetNode.repository.name}
                                                     </LinkOrSpan>
                                                 </h3>
-                                                {changesetNode.diff.fileDiffs.nodes.map((fileDiffNode, j) => (
+                                                {changesetNode.diff.fileDiffs.nodes.map(fileDiffNode => (
                                                     <FileDiffNode
                                                         isLightTheme={isLightTheme}
                                                         node={fileDiffNode}
                                                         lineNumbers={true}
                                                         location={location}
                                                         history={history}
-                                                        key={j}
+                                                        key={fileDiffNode.internalID}
                                                     ></FileDiffNode>
                                                 ))}
                                             </div>
