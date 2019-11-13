@@ -3,7 +3,6 @@ package inventory
 import (
 	"context"
 	"io"
-	"io/ioutil"
 	"os"
 	"sort"
 
@@ -83,29 +82,6 @@ func (c *Context) Tree(ctx context.Context, tree os.FileInfo) (inv Inventory, er
 		}
 	}
 	return sum(totals), nil
-}
-
-type contentsGetter struct {
-	r        io.Reader
-	maxBytes int64
-	data     []byte
-	err      error
-}
-
-func (c *contentsGetter) GetContents() ([]byte, error) {
-	if c.r == nil {
-		return nil, nil
-	}
-	// Been run before
-	if len(c.data) > 0 {
-		return c.data, c.err
-	}
-	r := c.r
-	if c.maxBytes >= 0 {
-		r = io.LimitReader(c.r, c.maxBytes)
-	}
-	c.data, c.err = ioutil.ReadAll(r)
-	return c.data, c.err
 }
 
 func sum(langStats map[string]Lang) Inventory {
