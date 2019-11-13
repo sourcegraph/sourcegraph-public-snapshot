@@ -3,6 +3,8 @@ package main
 import (
 	"bufio"
 	"compress/gzip"
+	"encoding/base64"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -187,15 +189,15 @@ Examples:
 			return err
 		}
 
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+
 		// Our request may have failed before the reaching GraphQL endpoint, so
 		// confirm the status code. You can test this easily with e.g. an invalid
 		// endpoint like -endpoint=https://google.com
 		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-			body, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				return err
-			}
-
 			if resp.StatusCode == http.StatusUnauthorized && string(body) == "Must provide github_token.\n" {
 				return fmt.Errorf("error: you have to provide -github-token with 'public_repo' scope")
 			}
@@ -208,7 +210,17 @@ Examples:
 			return fmt.Errorf("error: %s\n\n%s", resp.Status, body)
 		}
 
-		fmt.Printf("LSIF dump uploaded.\n")
+		payload := struct {
+			ID string `json:"id"`
+		}{}
+		if err := json.Unmarshal(body, &payload); err != nil {
+			return err
+		}
+
+		jobURL := string(base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf(`LSIFJob:"%s"`, payload.ID))))
+		fmt.Println("")
+		fmt.Printf("LSIF dump successfully uploaded. It will be converted asynchronously.\n")
+		fmt.Printf("To check the status, visit %s/site-admin/lsif-jobs/%s.\n", cfg.Endpoint, jobURL)
 		return nil
 	}
 
