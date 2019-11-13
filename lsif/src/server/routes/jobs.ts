@@ -127,6 +127,15 @@ export function createJobRouter(
         tags: { [K: string]: unknown }
     ): TracingContext => addTags({ logger, span: req.span }, tags)
 
+    interface EnqueueQueryArgs {
+        blocking: boolean
+        maxWait: number
+    }
+
+    interface EnqueueBodyArgs {
+        name: string
+    }
+
     const enqueueBodySchema: Record<string, ParamSchema> = {
         name: { isIn: { options: [['update-tips', 'clean-old-jobs', 'clean-failed-jobs']] } },
     }
@@ -141,8 +150,8 @@ export function createJobRouter(
         ]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
-                const { blocking, maxWait }: { blocking: boolean; maxWait: number } = req.query
-                const { name }: { name: string } = req.body
+                const { blocking, maxWait }: EnqueueQueryArgs = req.query
+                const { name }: EnqueueBodyArgs = req.body
 
                 // Enqueue job
                 const ctx = createTracingContext(req, { name })
