@@ -216,15 +216,12 @@ func (s *Service) runChangesetJob(
 		},
 	}
 
-	cc, ok := src.(interface {
-		CreateChangeset(context.Context, *repos.Changeset) error
-	})
-
+	ccs, ok := src.(repos.ChangesetSource)
 	if !ok {
 		return errors.Errorf("creating changesets on code host of repo %q is not implemented", repo.Name)
 	}
 
-	if err = cc.CreateChangeset(ctx, &cs); err != nil {
+	if err = ccs.CreateChangeset(ctx, &cs); err != nil {
 		return err
 	}
 
