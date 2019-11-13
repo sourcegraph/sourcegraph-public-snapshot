@@ -1,5 +1,5 @@
 import nock from 'nock'
-import { flattenCommitParents, getCommitsNear, hashmod } from './commits'
+import { flattenCommitParents, getCommitsNear, hashmod, gitserverExecLines } from './commits'
 
 describe('getCommitsNear', () => {
     it('should parse response from gitserver', async () => {
@@ -96,5 +96,13 @@ describe('hashmod', () => {
                 expect(hashmod(value, i + 1)).toEqual(results[i])
             }
         }
+    })
+})
+
+describe('gitserverExec', () => {
+    it('should not allow git as first argument', async () => {
+        await expect(gitserverExecLines('', 'r', ['git', 'log'])).rejects.toThrowError(
+            new Error('gitserver commands should not be prefixed with `git`')
+        )
     })
 })

@@ -106,6 +106,7 @@ puppeteer/
 package-lock.json
 /dist
 sourcegraph-webapp-*.tgz
+*.tsbuildinfo
 
 # Extensions
 /packages/sourcegraph-extension-api/dist

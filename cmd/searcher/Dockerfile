@@ -5,6 +5,14 @@
 
 FROM sourcegraph/alpine:3.9@sha256:e9264d4748e16de961a2b973cc12259dee1d33473633beccb1dfb8a0e62c6459
 
+# hadolint ignore=DL3018
+RUN apk --no-cache add pcre
+
+# The comby/comby image is a small binary-only distribution. See the bin and src directories
+# here: https://github.com/comby-tools/comby/tree/master/dockerfiles/alpine
+# hadolint ignore=DL3022
+COPY --from=comby/comby:0.11.0@sha256:839ba09b1e23e5d1688aa6e43fc69c5d3df79f08fe6cf2a3acbe484c94eab986 /usr/local/bin/comby /usr/local/bin/comby
+
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
 ARG VERSION="unknown"

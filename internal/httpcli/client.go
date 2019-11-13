@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/httputil"
 )
 
 // A Doer captures the Do method of an http.Client. It faciliates decorating
@@ -54,6 +55,19 @@ type Opt func(*http.Client) error
 type Factory struct {
 	stack  Middleware
 	common []Opt
+}
+
+// NewHTTPClientFactory returns an httpcli.Factory with common
+// options and middleware pre-set.
+func NewHTTPClientFactory() *Factory {
+	return NewFactory(
+		// TODO(tsenart): Use middle for Prometheus instrumentation later.
+		NewMiddleware(
+			ContextErrorMiddleware,
+		),
+		TracedTransportOpt,
+		NewCachedTransportOpt(httputil.Cache, true),
+	)
 }
 
 // Doer returns a new Doer wrapped with the middleware stack

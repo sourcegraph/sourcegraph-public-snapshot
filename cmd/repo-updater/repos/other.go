@@ -32,7 +32,7 @@ func NewOtherSource(svc *ExternalService, cf *httpcli.Factory) (*OtherSource, er
 	}
 
 	if cf == nil {
-		cf = NewHTTPClientFactory()
+		cf = httpcli.NewHTTPClientFactory()
 	}
 
 	cli, err := cf.Doer()

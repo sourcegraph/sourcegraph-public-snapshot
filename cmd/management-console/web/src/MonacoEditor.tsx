@@ -11,37 +11,37 @@ import './MonacoEditor.scss'
 //
 // https://github.com/Microsoft/monaco-editor-samples/blob/master/browser-esm-parcel/src/index.js#L2-L91
 //
-import 'monaco-editor/esm/vs/editor/browser/controller/coreCommands.js'
-import 'monaco-editor/esm/vs/editor/browser/widget/codeEditorWidget.js'
-import 'monaco-editor/esm/vs/editor/contrib/bracketMatching/bracketMatching.js'
-import 'monaco-editor/esm/vs/editor/contrib/caretOperations/caretOperations.js'
-import 'monaco-editor/esm/vs/editor/contrib/caretOperations/transpose.js'
-import 'monaco-editor/esm/vs/editor/contrib/clipboard/clipboard.js'
-import 'monaco-editor/esm/vs/editor/contrib/codelens/codelensController.js'
-import 'monaco-editor/esm/vs/editor/contrib/colorPicker/colorDetector.js'
-import 'monaco-editor/esm/vs/editor/contrib/comment/comment.js'
-import 'monaco-editor/esm/vs/editor/contrib/contextmenu/contextmenu.js'
-import 'monaco-editor/esm/vs/editor/contrib/cursorUndo/cursorUndo.js'
-import 'monaco-editor/esm/vs/editor/contrib/dnd/dnd.js'
-import 'monaco-editor/esm/vs/editor/contrib/find/findController.js'
-import 'monaco-editor/esm/vs/editor/contrib/folding/folding.js'
-import 'monaco-editor/esm/vs/editor/contrib/format/formatActions.js'
-import 'monaco-editor/esm/vs/editor/contrib/gotoError/gotoError.js'
-import 'monaco-editor/esm/vs/editor/contrib/hover/hover.js'
-import 'monaco-editor/esm/vs/editor/contrib/inPlaceReplace/inPlaceReplace.js'
-import 'monaco-editor/esm/vs/editor/contrib/linesOperations/linesOperations.js'
-import 'monaco-editor/esm/vs/editor/contrib/links/links.js'
-import 'monaco-editor/esm/vs/editor/contrib/multicursor/multicursor.js'
-import 'monaco-editor/esm/vs/editor/contrib/parameterHints/parameterHints.js'
-import 'monaco-editor/esm/vs/editor/contrib/referenceSearch/referenceSearch.js'
-import 'monaco-editor/esm/vs/editor/contrib/rename/rename.js'
-import 'monaco-editor/esm/vs/editor/contrib/smartSelect/smartSelect.js'
-import 'monaco-editor/esm/vs/editor/contrib/snippet/snippetController2.js'
-import 'monaco-editor/esm/vs/editor/contrib/suggest/suggestController.js'
-import 'monaco-editor/esm/vs/editor/contrib/wordHighlighter/wordHighlighter.js'
-import 'monaco-editor/esm/vs/editor/contrib/wordOperations/wordOperations.js'
-import * as monaco from 'monaco-editor/esm/vs/editor/editor.api.js'
-import 'monaco-editor/esm/vs/editor/standalone/browser/inspectTokens/inspectTokens.js'
+import 'monaco-editor/esm/vs/editor/browser/controller/coreCommands'
+import 'monaco-editor/esm/vs/editor/browser/widget/codeEditorWidget'
+import 'monaco-editor/esm/vs/editor/contrib/bracketMatching/bracketMatching'
+import 'monaco-editor/esm/vs/editor/contrib/caretOperations/caretOperations'
+import 'monaco-editor/esm/vs/editor/contrib/caretOperations/transpose'
+import 'monaco-editor/esm/vs/editor/contrib/clipboard/clipboard'
+import 'monaco-editor/esm/vs/editor/contrib/codelens/codelensController'
+import 'monaco-editor/esm/vs/editor/contrib/colorPicker/colorDetector'
+import 'monaco-editor/esm/vs/editor/contrib/comment/comment'
+import 'monaco-editor/esm/vs/editor/contrib/contextmenu/contextmenu'
+import 'monaco-editor/esm/vs/editor/contrib/cursorUndo/cursorUndo'
+import 'monaco-editor/esm/vs/editor/contrib/dnd/dnd'
+import 'monaco-editor/esm/vs/editor/contrib/find/findController'
+import 'monaco-editor/esm/vs/editor/contrib/folding/folding'
+import 'monaco-editor/esm/vs/editor/contrib/format/formatActions'
+import 'monaco-editor/esm/vs/editor/contrib/gotoError/gotoError'
+import 'monaco-editor/esm/vs/editor/contrib/hover/hover'
+import 'monaco-editor/esm/vs/editor/contrib/inPlaceReplace/inPlaceReplace'
+import 'monaco-editor/esm/vs/editor/contrib/linesOperations/linesOperations'
+import 'monaco-editor/esm/vs/editor/contrib/links/links'
+import 'monaco-editor/esm/vs/editor/contrib/multicursor/multicursor'
+import 'monaco-editor/esm/vs/editor/contrib/parameterHints/parameterHints'
+import 'monaco-editor/esm/vs/editor/contrib/referenceSearch/referenceSearch'
+import 'monaco-editor/esm/vs/editor/contrib/rename/rename'
+import 'monaco-editor/esm/vs/editor/contrib/smartSelect/smartSelect'
+import 'monaco-editor/esm/vs/editor/contrib/snippet/snippetController2'
+import 'monaco-editor/esm/vs/editor/contrib/suggest/suggestController'
+import 'monaco-editor/esm/vs/editor/contrib/wordHighlighter/wordHighlighter'
+import 'monaco-editor/esm/vs/editor/contrib/wordOperations/wordOperations'
+import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
+import 'monaco-editor/esm/vs/editor/standalone/browser/inspectTokens/inspectTokens'
 
 import 'monaco-editor/esm/vs/language/json/monaco.contribution'
 
@@ -58,6 +58,7 @@ interface Props {
 
     /**
      * Called when the user changes the content of the editor.
+     *
      * @param content the literal content of the editor
      */
     onDidContentChange(content: string): void
@@ -72,9 +73,9 @@ interface Props {
 }
 
 export class MonacoEditor extends React.Component<Props, {}> {
-    private ref: HTMLElement | null
-    private editor: monaco.editor.IStandaloneCodeEditor | null
-    private model: monaco.editor.IModel | null
+    private ref: HTMLElement | null = null
+    private editor: monaco.editor.IStandaloneCodeEditor | null = null
+    private model: monaco.editor.IModel | null = null
 
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
@@ -117,7 +118,7 @@ export class MonacoEditor extends React.Component<Props, {}> {
         })
 
         // Create the actual Monaco editor.
-        const editor = monaco.editor.create(this.ref, {
+        const editor = monaco.editor.create(this.ref!, {
             lineNumbers: 'on',
             automaticLayout: true,
             minimap: { enabled: false },
@@ -177,7 +178,7 @@ export class MonacoEditor extends React.Component<Props, {}> {
         // won't be ready and the editor will refuse to add the command because
         // it's missing the keybinding service.
         setTimeout(() => {
-            this.editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KEY_S, () => this.props.onDidSave(), '')
+            this.editor!.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KEY_S, () => this.props.onDidSave(), '')
         })
 
         this.model.setValue(this.props.content)

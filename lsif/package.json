@@ -78,11 +78,10 @@
     "typescript-json-schema": "^0.40.0"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -b .",
     "postbuild": "yarn run copy-files",
     "copy-files": "copyfiles -u 1 src/**/*.lua out",
     "test": "jest",
-    "typecheck": "tsc --noEmit",
     "tslint": "../node_modules/.bin/tslint -p tsconfig.json",
     "eslint": "../node_modules/.bin/eslint 'src/**/*.ts?(x)'",
     "run:server": "tsc-watch --onFirstSuccess \"yarn postbuild\" --onSuccess \"node -r source-map-support/register out/server/server.js\" --noClear",

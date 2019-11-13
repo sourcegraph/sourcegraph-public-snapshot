@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -102,7 +103,14 @@ func TestNewRepoCache_GitHubEnterprise(t *testing.T) {
 	}
 }
 
-var update = flag.Bool("update", false, "update testdata")
+var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")
+
+func update(name string) bool {
+	if updateRegex == nil || *updateRegex == "" {
+		return false
+	}
+	return regexp.MustCompile(*updateRegex).MatchString(name)
+}
 
 func TestClient_LoadPullRequests(t *testing.T) {
 	cli, save := newClient(t, "LoadPullRequests")
@@ -154,8 +162,83 @@ func TestClient_LoadPullRequests(t *testing.T) {
 
 			assertGolden(t,
 				"testdata/golden/LoadPullRequests-"+strconv.Itoa(i),
-				*update,
+				update("LoadPullRequests"),
 				tc.prs,
+			)
+		})
+	}
+}
+
+func TestClient_CreatePullRequest(t *testing.T) {
+	cli, save := newClient(t, "CreatePullRequest")
+	defer save()
+
+	// Repository used: sourcegraph/automation-testing
+	// The requests here cannot be easily rerun with `-update` since you can
+	// only open a pull request once.
+	// In order to update specific tests, comment out the other ones and then
+	// run with -update.
+	for i, tc := range []struct {
+		name  string
+		ctx   context.Context
+		input *CreatePullRequestInput
+		err   string
+	}{
+		{
+			name: "success",
+			input: &CreatePullRequestInput{
+				RepositoryID: "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+				BaseRefName:  "master",
+				HeadRefName:  "test-pr-3",
+				Title:        "This is a test PR, feel free to ignore",
+				Body:         "I'm opening this PR to test something. Please ignore.",
+			},
+		},
+		{
+			name: "already-existing-pr",
+			input: &CreatePullRequestInput{
+				RepositoryID: "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+				BaseRefName:  "master",
+				HeadRefName:  "always-open-pr",
+				Title:        "This is a test PR that is always open",
+				Body:         "Feel free to ignore this. This is a test PR that is always open.",
+			},
+			err: ErrPullRequestAlreadyExists.Error(),
+		},
+		{
+			name: "invalid-head-ref",
+			input: &CreatePullRequestInput{
+				RepositoryID: "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+				BaseRefName:  "master",
+				HeadRefName:  "this-head-ref-should-not-exist",
+				Title:        "Test",
+			},
+			err: "error in GraphQL response: Head sha can't be blank, Base sha can't be blank, No commits between master and this-head-ref-should-not-exist, Head ref must be a branch",
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.ctx == nil {
+				tc.ctx = context.Background()
+			}
+
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			pr, err := cli.CreatePullRequest(tc.ctx, tc.input)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if err != nil {
+				return
+			}
+
+			assertGolden(t,
+				"testdata/golden/CreatePullRequest-"+strconv.Itoa(i),
+				update("CreatePullRequest"),
+				pr,
 			)
 		})
 	}
@@ -191,7 +274,7 @@ func newClient(t testing.TB, name string) (*Client, func()) {
 	t.Helper()
 
 	cassete := filepath.Join("testdata/vcr/", strings.Replace(name, " ", "-", -1))
-	rec, err := httptestutil.NewRecorder(cassete, *update, func(i *cassette.Interaction) error {
+	rec, err := httptestutil.NewRecorder(cassete, update(name), func(i *cassette.Interaction) error {
 		return nil
 	})
 	if err != nil {

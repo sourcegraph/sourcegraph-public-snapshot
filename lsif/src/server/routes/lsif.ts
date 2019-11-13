@@ -8,7 +8,7 @@ import express from 'express'
 import uuid from 'uuid'
 import { addTags, logAndTraceCall, TracingContext } from '../../shared/tracing'
 import { Backend, ReferencePaginationCursor } from '../backend/backend'
-import { checkSchema } from 'express-validator'
+import { checkSchema, ParamSchema } from 'express-validator'
 import { encodeCursor } from '../pagination/cursor'
 import { enqueue } from '../../shared/queue/queue'
 import { Logger } from 'winston'
@@ -20,6 +20,7 @@ import { Queue } from 'bull'
 import { Span, Tracer } from 'opentracing'
 import { waitForJob } from '../jobs/blocking'
 import { wrap } from 'async-middleware'
+import { extractLimitOffset } from '../pagination/limit-offset'
 
 const pipeline = promisify(_pipeline)
 
@@ -67,6 +68,14 @@ export function createLsifRouter(
         tags: { [K: string]: unknown }
     ): TracingContext => addTags({ logger, span: req.span }, tags)
 
+    interface UploadQueryArgs {
+        repository: string
+        commit: string
+        root: string
+        blocking: boolean
+        maxWait: number
+    }
+
     router.post(
         '/upload',
         validation.validationMiddleware([
@@ -78,20 +87,7 @@ export function createLsifRouter(
         ]),
         wrap(
             async (req: express.Request & { span?: Span }, res: express.Response): Promise<void> => {
-                const {
-                    repository,
-                    commit,
-                    root,
-                    blocking,
-                    maxWait,
-                }: {
-                    repository: string
-                    commit: string
-                    root: string
-                    blocking: boolean
-                    maxWait: number
-                } = req.query
-
+                const { repository, commit, root, blocking, maxWait }: UploadQueryArgs = req.query
                 const ctx = createTracingContext(req, { repository, commit, root })
                 const filename = path.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR, uuid.v4())
                 const output = fs.createWriteStream(filename)
@@ -116,6 +112,12 @@ export function createLsifRouter(
         )
     )
 
+    interface ExistsQueryArgs {
+        repository: string
+        commit: string
+        file: string
+    }
+
     router.post(
         '/exists',
         validation.validationMiddleware([
@@ -125,12 +127,31 @@ export function createLsifRouter(
         ]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
-                const { repository, commit, file }: { repository: string; commit: string; file: string } = req.query
+                const { repository, commit, file }: ExistsQueryArgs = req.query
                 const ctx = createTracingContext(req, { repository, commit })
                 res.json(await backend.exists(repository, commit, file, ctx))
             }
         )
     )
+
+    interface RequestQueryArgs {
+        repository: string
+        commit: string
+        cursor: ReferencePaginationCursor | undefined
+    }
+
+    interface RequestBodyArgs {
+        path: string
+        position: lsp.Position
+        method: string
+    }
+
+    const requestBodySchema: Record<string, ParamSchema> = {
+        path: { isString: true, isEmpty: { negated: true } },
+        'position.line': { isInt: true },
+        'position.character': { isInt: true },
+        method: { isIn: { options: [['definitions', 'references', 'hover']] } },
+    }
 
     router.post(
         '/request',
@@ -138,38 +159,15 @@ export function createLsifRouter(
         validation.validationMiddleware([
             validation.validateNonEmptyString('repository'),
             validation.validateNonEmptyString('commit').matches(commitPattern),
-            validation.validateLimit(settings.DEFAULT_REFERENCES_NUM_REMOTE_DUMPS),
+            validation.validateLimit,
             validation.validateCursor<ReferencePaginationCursor>(),
-            ...checkSchema(
-                {
-                    path: { isString: true, isEmpty: { negated: true } },
-                    'position.line': { isInt: true },
-                    'position.character': { isInt: true },
-                    method: { isIn: { options: [['definitions', 'references', 'hover']] } },
-                },
-                ['body']
-            ),
+            ...checkSchema(requestBodySchema, ['body']),
         ]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
-                const {
-                    repository,
-                    commit,
-                    limit,
-                    cursor,
-                }: {
-                    repository: string
-                    commit: string
-                    limit: number
-                    cursor: ReferencePaginationCursor | undefined
-                } = req.query
-
-                const {
-                    path: filePath,
-                    position,
-                    method,
-                }: { path: string; position: lsp.Position; method: string } = req.body
-
+                const { repository, commit, cursor }: RequestQueryArgs = req.query
+                const { path: filePath, position, method }: RequestBodyArgs = req.body
+                const { limit } = extractLimitOffset(req.query, settings.DEFAULT_REFERENCES_NUM_REMOTE_DUMPS)
                 const ctx = createTracingContext(req, { repository, commit })
 
                 switch (method) {

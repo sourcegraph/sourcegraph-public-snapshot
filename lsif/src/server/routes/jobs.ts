@@ -3,7 +3,7 @@ import * as validation from '../middleware/validation'
 import express from 'express'
 import { addTags, TracingContext } from '../../shared/tracing'
 import { ApiJobState, enqueue, QUEUE_PREFIX, queueTypes, statesByQueue } from '../../shared/queue/queue'
-import { checkSchema } from 'express-validator'
+import { checkSchema, ParamSchema } from 'express-validator'
 import { chunk } from 'lodash'
 import { Job, Queue } from 'bull'
 import { Logger } from 'winston'
@@ -13,6 +13,7 @@ import { Span, Tracer } from 'opentracing'
 import { wrap } from 'async-middleware'
 import bodyParser from 'body-parser'
 import { waitForJob } from '../jobs/blocking'
+import { extractLimitOffset } from '../pagination/limit-offset'
 
 /**
  * The representation of a job as returned by the API.
@@ -35,7 +36,6 @@ interface ApiJob {
  *
  * @param timestamp The millisecond POSIX timestamp.
  */
-
 const toDate = (timestamp: number): string => new Date(timestamp).toISOString()
 
 /**
@@ -127,18 +127,17 @@ export function createJobRouter(
         tags: { [K: string]: unknown }
     ): TracingContext => addTags({ logger, span: req.span }, tags)
 
+    const enqueueBodySchema: Record<string, ParamSchema> = {
+        name: { isIn: { options: [['update-tips', 'clean-old-jobs', 'clean-failed-jobs']] } },
+    }
+
     router.post(
         '/jobs',
         bodyParser.json({ limit: '1mb' }),
         validation.validationMiddleware([
             validation.validateOptionalBoolean('blocking'),
             validation.validateOptionalInt('maxWait'),
-            ...checkSchema(
-                {
-                    name: { isIn: { options: [['update-tips', 'clean-old-jobs', 'clean-failed-jobs']] } },
-                },
-                ['body']
-            ),
+            ...checkSchema(enqueueBodySchema, ['body']),
         ]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
@@ -181,17 +180,22 @@ export function createJobRouter(
         )
     )
 
+    interface JobsQueryArgs {
+        query: string
+    }
+
     router.get(
         `/jobs/:state(${Array.from(queueTypes.keys()).join('|')})`,
         validation.validationMiddleware([
             validation.validateQuery,
-            validation.validateLimit(settings.DEFAULT_JOB_PAGE_SIZE),
+            validation.validateLimit,
             validation.validateOffset,
         ]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { state } = req.params as { state: ApiJobState }
-                const { query, limit, offset }: { query: string; limit: number; offset: number } = req.query
+                const { query }: JobsQueryArgs = req.query
+                const { limit, offset } = extractLimitOffset(req.query, settings.DEFAULT_JOB_PAGE_SIZE)
 
                 const queueName = queueTypes.get(state)
                 if (!queueName) {

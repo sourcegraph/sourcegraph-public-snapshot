@@ -1,0 +1,45 @@
+.lsif-job {
+    &__row {
+        width: 100%;
+    }
+
+    &__main {
+        display: flex;
+        flex-wrap: wrap-reverse;
+        align-items: flex-start;
+        justify-content: space-between;
+    }
+
+    &__meta {
+        display: flex;
+        align-items: center;
+
+        &-root {
+            flex: 0 1 auto;
+            padding-right: 0.5rem;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            color: $color-text-2;
+
+            .theme-light & {
+                color: $color-light-text-1;
+            }
+        }
+
+        &-timestamp {
+            flex: none;
+            white-space: nowrap;
+            margin-bottom: 0.125rem;
+        }
+    }
+}
+
+.lsif-jobs-filter-toggle {
+    // Take the remaining space in the radio button row
+    flex: 1 1 auto;
+
+    &-label {
+        float: right;
+    }
+}

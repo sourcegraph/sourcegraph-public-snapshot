@@ -25,6 +25,10 @@ export const primaryGroup: SiteAdminSideBarGroup = {
             label: 'Repositories',
             to: '/site-admin/repositories',
         },
+        {
+            label: 'LSIF Jobs',
+            to: '/site-admin/lsif-jobs',
+        },
     ],
 }
 
