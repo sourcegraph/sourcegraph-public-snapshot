@@ -66,7 +66,7 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook http.Handle
 	} else {
 		lsifDisabledHandler := func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNotFound)
-			w.Write([]byte("lsif endpoints are only available in enterprise"))
+			_, _ = w.Write([]byte("lsif endpoints are only available in enterprise"))
 		}
 
 		m.Get(apirouter.LSIF).Handler(trace.TraceRoute(http.HandlerFunc(lsifDisabledHandler)))
