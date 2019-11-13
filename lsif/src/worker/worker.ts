@@ -29,12 +29,12 @@ import { XrepoDatabase } from '../shared/xrepo/xrepo'
  * @param tracer The tracer instance.
  */
 const wrapJobProcessor = <T>(
-    name: string,
+    type: string,
     jobProcessor: (args: T, ctx: TracingContext) => Promise<void>,
     logger: Logger,
     tracer: Tracer | undefined
 ): ((job: Job) => Promise<void>) => async (job: Job) => {
-    logger.debug(`${name} job accepted`, { jobId: job.id })
+    logger.debug(`${type} job accepted`, { jobId: job.id })
 
     // Destructure arguments and injected tracing context
     const { args, tracing }: { args: T; tracing: object } = job.data
@@ -43,7 +43,7 @@ const wrapJobProcessor = <T>(
     if (tracer) {
         // Extract tracing context from job payload
         const publisher = tracer.extract(FORMAT_TEXT_MAP, tracing)
-        span = tracer.startSpan(name, publisher ? { references: [followsFrom(publisher)] } : {})
+        span = tracer.startSpan(type, publisher ? { references: [followsFrom(publisher)] } : {})
     }
 
     // Tag tracing context with jobId and arguments
