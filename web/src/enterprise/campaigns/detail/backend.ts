@@ -25,6 +25,12 @@ const campaignFragment = gql`
             username
             avatarURL
         }
+        changesetCreationStatus {
+            completedCount
+            pendingCount
+            state
+            errors
+        }
         name
         description
         createdAt

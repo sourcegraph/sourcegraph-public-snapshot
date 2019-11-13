@@ -27,13 +27,13 @@ import { queryNamespaces } from '../../namespaces/backend'
 import { CampaignBurndownChart } from './BurndownChart'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 import { AddChangesetForm } from './AddChangesetForm'
-import { Subject, of, timer, merge } from 'rxjs'
+import { Subject, of, timer, merge, Observable } from 'rxjs'
 import { MonacoSettingsEditor } from '../../../settings/MonacoSettingsEditor'
 import { renderMarkdown } from '../../../../../shared/src/util/markdown'
 import { ErrorAlert } from '../../../components/alerts'
 import { Markdown } from '../../../../../shared/src/components/Markdown'
 import { Link } from '../../../../../shared/src/components/Link'
-import { switchMap, tap, catchError, takeWhile, concatMap } from 'rxjs/operators'
+import { switchMap, tap, catchError, takeWhile, concatMap, repeatWhen, delay } from 'rxjs/operators'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { TabsWithLocalStorageViewStatePersistence } from '../../../../../shared/src/components/Tabs'
 import SourcePullIcon from 'mdi-react/SourcePullIcon'
@@ -124,7 +124,34 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             return
         }
         const subscription = merge(of(undefined), changesetUpdates)
-            .pipe(switchMap(() => fetchCampaignById(campaignID)))
+            .pipe(
+                switchMap(
+                    () =>
+                        new Observable<GQL.ICampaign | null>(observer => {
+                            let currentCampaign: GQL.ICampaign | null
+                            const subscription = fetchCampaignById(campaignID)
+                                .pipe(
+                                    tap(campaign => {
+                                        observer.next(campaign)
+                                        currentCampaign = campaign
+                                    }),
+                                    repeatWhen(obs =>
+                                        obs.pipe(
+                                            takeWhile(
+                                                () =>
+                                                    !!currentCampaign &&
+                                                    !!currentCampaign.changesetCreationStatus &&
+                                                    currentCampaign.changesetCreationStatus.state === 'PROCESSING'
+                                            ),
+                                            delay(2000)
+                                        )
+                                    )
+                                )
+                                .subscribe(observer)
+                            return subscription
+                        })
+                )
+            )
             .subscribe({
                 next: fetchedCampaign => {
                     setCampaign(fetchedCampaign)
@@ -320,6 +347,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
           )
         : 0
 
+    const status = campaignPlan ? campaignPlan.status : campaign ? campaign.changesetCreationStatus : null
+
     return (
         <>
             <PageTitle title={campaign ? campaign.name : 'New Campaign'} />
@@ -493,18 +522,17 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 )}
             </Form>
 
-            {campaignPlan && (
+            {status && (
                 <>
-                    {campaignPlan.status.state === 'PROCESSING' && (
+                    {status.state === 'PROCESSING' && (
                         <div className="d-flex mt-3">
                             <LoadingSpinner className="icon-inline" />{' '}
                             <span data-tooltip="Computing changesets">
-                                {campaignPlan.status.completedCount} /{' '}
-                                {campaignPlan.status.pendingCount + campaignPlan.status.completedCount}
+                                {status.completedCount} / {status.pendingCount + status.completedCount}
                             </span>
                         </div>
                     )}
-                    {campaignPlan.status.errors.map((error, i) => (
+                    {status.errors.map((error, i) => (
                         <ErrorAlert error={error} className="mt-3" key={i} />
                     ))}
                 </>

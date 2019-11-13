@@ -100,6 +100,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                         </div>
                     </div>
                 }
+                wholeTitleClickable={false}
             >
                 {fileDiffNodes &&
                     fileDiffNodes.map((fileDiffNode, i) => (
