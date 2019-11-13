@@ -23,7 +23,7 @@ import { XrepoDatabase } from '../shared/xrepo/xrepo'
 /**
  * Wrap a job processor with instrumentation.
  *
- * @param name The job name.
+ * @param type The job name.
  * @param jobProcessor The job processor.
  * @param logger The logger instance.
  * @param tracer The tracer instance.
