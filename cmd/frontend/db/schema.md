@@ -391,7 +391,7 @@ Indexes:
 Indexes:
     "lsif_dumps_pkey" PRIMARY KEY, btree (id)
     "lsif_dumps_repository_commit_root" UNIQUE CONSTRAINT, btree (repository, commit, root)
-    "lsif_dumps_processed_at" btree (processed_at)
+    "lsif_dumps_uploaded_at" btree (uploaded_at)
     "lsif_dumps_visible_repository_commit" btree (repository, commit) WHERE visible_at_tip
 Check constraints:
     "lsif_dumps_commit_check" CHECK (length(commit) = 40)
