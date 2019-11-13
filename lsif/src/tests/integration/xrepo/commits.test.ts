@@ -4,9 +4,9 @@ import { XrepoDatabase } from '../../../shared/xrepo/xrepo'
 
 describe('discoverAndUpdateCommit', () => {
     it('should update tracked commits', async () => {
-        const ca = util.createCommit('a')
-        const cb = util.createCommit('b')
-        const cc = util.createCommit('c')
+        const ca = util.createCommit(0)
+        const cb = util.createCommit(1)
+        const cc = util.createCommit(2)
 
         nock('http://gitserver1')
             .post('/exec')
@@ -35,15 +35,15 @@ describe('discoverAndUpdateCommit', () => {
     })
 
     it('should early-out if commit is tracked', async () => {
-        const ca = util.createCommit('a')
-        const cb = util.createCommit('b')
+        const ca = util.createCommit(0)
+        const cb = util.createCommit(1)
 
         const { connection, cleanup } = await util.createCleanPostgresDatabase()
 
         try {
             const xrepoDatabase = new XrepoDatabase('', connection)
             await xrepoDatabase.insertDump('test-repo', ca, '')
-            await xrepoDatabase.updateCommits('test-repo', [[cb, '']])
+            await xrepoDatabase.updateCommits('test-repo', [[cb, undefined]])
 
             // This test ensures the following does not make a gitserver request.
             // As we did not register a nock interceptor, any request will result
@@ -61,7 +61,7 @@ describe('discoverAndUpdateCommit', () => {
     })
 
     it('should early-out if repository is unknown', async () => {
-        const ca = util.createCommit('a')
+        const ca = util.createCommit(0)
 
         const { connection, cleanup } = await util.createCleanPostgresDatabase()
 
@@ -86,11 +86,11 @@ describe('discoverAndUpdateCommit', () => {
 
 describe('discoverAndUpdateTips', () => {
     it('should update tips', async () => {
-        const ca = util.createCommit('a')
-        const cb = util.createCommit('b')
-        const cc = util.createCommit('c')
-        const cd = util.createCommit('d')
-        const ce = util.createCommit('e')
+        const ca = util.createCommit(0)
+        const cb = util.createCommit(1)
+        const cc = util.createCommit(2)
+        const cd = util.createCommit(3)
+        const ce = util.createCommit(4)
 
         nock('http://gitserver0')
             .post('/exec', { repo: 'test-repo', args: ['rev-parse', 'HEAD'] })
@@ -101,7 +101,7 @@ describe('discoverAndUpdateTips', () => {
         try {
             const xrepoDatabase = new XrepoDatabase('', connection)
             await xrepoDatabase.updateCommits('test-repo', [
-                [ca, ''],
+                [ca, undefined],
                 [cb, ca],
                 [cc, cb],
                 [cd, cc],
@@ -159,7 +159,7 @@ describe('discoverTips', () => {
             const xrepoDatabase = new XrepoDatabase('', connection)
 
             for (let i = 0; i < 15; i++) {
-                await xrepoDatabase.insertDump(`test-repo-${i}`, util.createCommit('c'), '')
+                await xrepoDatabase.insertDump(`test-repo-${i}`, util.createCommit(0), '')
             }
 
             const tips = await xrepoDatabase.discoverTips({
