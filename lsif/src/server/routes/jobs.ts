@@ -7,6 +7,7 @@ import { Job, Queue } from 'bull'
 import { nextLink } from '../pagination/link'
 import { ScriptedRedis } from '../redis/redis'
 import { wrap } from 'async-middleware'
+import { extractLimitOffset } from '../pagination/limit-offset'
 
 /**
  * The representation of a job as returned by the API.
@@ -118,17 +119,22 @@ export function createJobRouter(queue: Queue, scriptedClient: ScriptedRedis): ex
         )
     )
 
+    interface JobsQueryArgs {
+        query: string
+    }
+
     router.get(
         `/jobs/:state(${Array.from(queueTypes.keys()).join('|')})`,
         validation.validationMiddleware([
             validation.validateQuery,
-            validation.validateLimit(settings.DEFAULT_JOB_PAGE_SIZE),
+            validation.validateLimit,
             validation.validateOffset,
         ]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { state } = req.params as { state: ApiJobState }
-                const { query, limit, offset }: { query: string; limit: number; offset: number } = req.query
+                const { query }: JobsQueryArgs = req.query
+                const { limit, offset } = extractLimitOffset(req.query, settings.DEFAULT_JOB_PAGE_SIZE)
 
                 const queueName = queueTypes.get(state)
                 if (!queueName) {
