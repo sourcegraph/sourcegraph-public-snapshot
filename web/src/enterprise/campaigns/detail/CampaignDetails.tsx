@@ -116,9 +116,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     const nextChangesetUpdate = useCallback(changesetUpdates.next.bind(changesetUpdates), [changesetUpdates])
 
     // Fetch campaign if ID was given
-    const [campaign, setCampaign] = useState<GQL.ICampaign | null>()
-    // Campaign plan is not present for campaigns that are manually created, hence can be null. undefined means not yet loaded
-    const [campaignPlan, setCampaignPlan] = useState<GQL.ICampaignPlan | null>()
+    const [campaign, setCampaign] = useState<GQL.ICampaign | GQL.ICampaignPlan | null>()
     useEffect(() => {
         if (!campaignID) {
             return
@@ -155,7 +153,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             .subscribe({
                 next: fetchedCampaign => {
                     setCampaign(fetchedCampaign)
-                    setCampaignPlan(null)
                     setType(fetchedCampaign && fetchedCampaign.plan ? (fetchedCampaign.plan.type as 'comby') : 'manual')
                     setCampaignPlanArguments(
                         fetchedCampaign && fetchedCampaign.plan ? fetchedCampaign.plan.arguments : null
@@ -201,7 +198,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     tap(() => {
                         setAlertError(null)
                         setIsLoadingPreview(true)
-                        setCampaignPlan(null)
+                        setCampaign(undefined)
                     }),
                     switchMap(plan =>
                         previewCampaignPlan(plan, false).pipe(
@@ -230,9 +227,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             setPreviewRefreshNeeded(false)
                         }
                     }),
-                    tap(campaignPlan => {
-                        setCampaignPlan(campaignPlan)
-                    })
+                    tap(setCampaign)
                 ),
             [previewCampaignPlans]
         )
@@ -257,7 +252,10 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     name,
                     description,
                     namespace: getNamespace()!,
-                    plan: type === 'comby' && campaignPlan ? campaignPlan.id : undefined,
+                    plan:
+                        type === 'comby' && campaign && campaign.__typename === 'CampaignPlan'
+                            ? campaign.id
+                            : undefined,
                 })
                 unblockHistoryRef.current()
                 history.push(`/campaigns/${createdCampaign.id}`)
@@ -271,7 +269,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     }
 
     const onChangeArguments = (event: string): void => {
-        const currentSpec = campaignPlan ? parseJSONC(campaignPlan.arguments) : undefined
+        const currentSpec =
+            campaign && campaign.__typename === 'CampaignPlan' ? parseJSONC(campaign.arguments) : undefined
         if (!currentSpec || !isEqual(currentSpec, parseJSONC(event))) {
             setCampaignPlanArguments(event)
             setPreviewRefreshNeeded(true)
@@ -286,7 +285,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         event.preventDefault()
         unblockHistoryRef.current = history.block(discardChangesMessage)
         {
-            const { name, description, plan } = campaign!
+            const { name, description, plan } = campaign! as GQL.ICampaign
             setName(name)
             setDescription(description)
             setMode('editing')
@@ -320,38 +319,46 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         }
     }
 
-    const author = campaign ? campaign.author : authenticatedUser
+    const author = campaign && campaign.__typename === 'Campaign' ? campaign.author : authenticatedUser
 
-    const totalAdditions = campaignPlan
-        ? campaignPlan.changesets.nodes.reduce(
-              (prev, next) => prev + next.fileDiffs.diffStat.added + next.fileDiffs.diffStat.changed,
-              0
-          )
-        : campaign
-        ? campaign.changesets.nodes.reduce(
-              (prev, next) =>
-                  prev + (next.diff ? next.diff.fileDiffs.diffStat.added + next.diff.fileDiffs.diffStat.changed : 0),
-              0
-          )
-        : 0
-    const totalDeletions = campaignPlan
-        ? campaignPlan.changesets.nodes.reduce(
-              (prev, next) => prev + next.fileDiffs.diffStat.deleted + next.fileDiffs.diffStat.changed,
-              0
-          )
-        : campaign
-        ? campaign.changesets.nodes.reduce(
-              (prev, next) =>
-                  prev + (next.diff ? next.diff.fileDiffs.diffStat.deleted + next.diff.fileDiffs.diffStat.changed : 0),
-              0
-          )
-        : 0
+    const totalAdditions =
+        campaign && campaign.__typename === 'CampaignPlan'
+            ? campaign.changesets.nodes.reduce(
+                  (prev, next) => prev + next.fileDiffs.diffStat.added + next.fileDiffs.diffStat.changed,
+                  0
+              )
+            : campaign
+            ? campaign.changesets.nodes.reduce(
+                  (prev, next) =>
+                      prev +
+                      (next.diff ? next.diff.fileDiffs.diffStat.added + next.diff.fileDiffs.diffStat.changed : 0),
+                  0
+              )
+            : 0
+    const totalDeletions =
+        campaign && campaign.__typename === 'CampaignPlan'
+            ? campaign.changesets.nodes.reduce(
+                  (prev, next) => prev + next.fileDiffs.diffStat.deleted + next.fileDiffs.diffStat.changed,
+                  0
+              )
+            : campaign
+            ? campaign.changesets.nodes.reduce(
+                  (prev, next) =>
+                      prev +
+                      (next.diff ? next.diff.fileDiffs.diffStat.deleted + next.diff.fileDiffs.diffStat.changed : 0),
+                  0
+              )
+            : 0
 
-    const status = campaignPlan ? campaignPlan.status : campaign ? campaign.changesetCreationStatus : null
+    const status = campaign
+        ? campaign.__typename === 'CampaignPlan'
+            ? campaign.status
+            : campaign.changesetCreationStatus
+        : null
 
     return (
         <>
-            <PageTitle title={campaign ? campaign.name : 'New Campaign'} />
+            <PageTitle title={campaign && campaign.__typename === 'Campaign' ? campaign.name : 'New Campaign'} />
             <Form onSubmit={onSubmit} onReset={onCancel}>
                 <h2 className="d-flex">
                     <CampaignsIcon className="icon-inline mr-2" />
@@ -360,7 +367,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     </span>
                     <span className="text-muted d-inline-block mx-2">/</span>
                     {/* The namespace of a campaign can only be set on creation */}
-                    {campaign ? (
+                    {campaign && campaign.__typename === 'Campaign' ? (
                         <span>{campaign.namespace.namespaceName}</span>
                     ) : (
                         <select
@@ -391,7 +398,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             required={true}
                         />
                     ) : (
-                        <span>{campaign!.name}</span>
+                        <span>{campaign && campaign.__typename === 'Campaign' && campaign.name}</span>
                     )}
                     <span className="flex-grow-1 d-flex justify-content-end align-items-center">
                         {(mode === 'saving' || mode === 'deleting') && <LoadingSpinner className="mr-2" />}
@@ -433,7 +440,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         <strong>
                             <UserAvatar user={author} className="icon-inline" /> {author.username}
                         </strong>
-                        {campaign && (
+                        {campaign && campaign.__typename === 'Campaign' && (
                             <>
                                 {' '}
                                 started <Timestamp date={campaign.createdAt} />
@@ -450,9 +457,12 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             disabled={mode === 'saving'}
                         />
                     ) : (
-                        <div className="card-body">
-                            <Markdown dangerousInnerHTML={renderMarkdown(campaign!.description)}></Markdown>
-                        </div>
+                        campaign &&
+                        campaign.__typename === 'Campaign' && (
+                            <div className="card-body">
+                                <Markdown dangerousInnerHTML={renderMarkdown(campaign.description)}></Markdown>
+                            </div>
+                        )
                     )}
                 </div>
                 {mode === 'editing' && (
@@ -475,8 +485,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     className="form-control w-auto d-inline-block"
                     placeholder="Select campaign type"
                     onChange={event => setType(event.target.value as 'comby' | 'manual')}
-                    disabled={!!(campaign && campaign.id)}
-                    value={campaign && campaign.plan ? campaign.plan.type : type}
+                    disabled={!!(campaign && campaign.__typename === 'Campaign')}
+                    value={type}
                     required={true}
                 >
                     <option value="manual">Manual</option>
@@ -496,9 +506,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     jsonSchema={type === 'comby' ? combyJsonSchema : undefined}
                     height={110}
                     onChange={onChangeArguments}
-                    readOnly={!!(campaign && campaign.id)}
+                    readOnly={!!(campaign && campaign.__typename === 'Campaign')}
                 ></MonacoSettingsEditor>
-                {!campaign && mode === 'editing' && (
+                {(!campaign || (campaign && campaign.__typename === 'CampaignPlan')) && mode === 'editing' && (
                     <>
                         {type === 'comby' && (
                             <button
@@ -538,7 +548,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 </>
             )}
 
-            {campaign && (
+            {campaign && campaign.__typename === 'Campaign' && (
                 <>
                     <h3>Progress</h3>
                     <CampaignBurndownChart
@@ -549,7 +559,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     {!campaign.plan && <AddChangesetForm campaignID={campaign.id} onAdd={nextChangesetUpdate} />}
                 </>
             )}
-            {(campaign || campaignPlan) && (
+            {/* is already created or a preview is available */}
+            {campaign && (
                 <>
                     <TabsWithLocalStorageViewStatePersistence
                         storageKey="campaignTab"
@@ -569,9 +580,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                 label: (
                                     <span>
                                         Changesets{' '}
-                                        {(campaignPlan || campaign) && (
+                                        {campaign && (
                                             <span className="badge badge-secondary badge-pill">
-                                                {(campaignPlan || campaign)!.changesets.totalCount}
+                                                {campaign.changesets.totalCount}
                                             </span>
                                         )}
                                     </span>
@@ -581,7 +592,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         tabClassName="tab-bar__tab--h5like"
                     >
                         <div className="list-group mt-3" key="changesets">
-                            {campaign && (
+                            {campaign && campaign.__typename === 'Campaign' && (
                                 <FilteredConnection<
                                     GQL.IExternalChangeset | GQL.IChangesetPlan,
                                     Omit<ChangesetNodeProps, 'node'>
@@ -599,8 +610,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                     location={location}
                                 />
                             )}
-                            {campaignPlan &&
-                                campaignPlan.changesets.nodes.map((changeset, i) => (
+                            {campaign &&
+                                campaign.__typename === 'CampaignPlan' &&
+                                campaign.changesets.nodes.map((changeset, i) => (
                                     <ChangesetNode
                                         node={changeset}
                                         isLightTheme={isLightTheme}
@@ -611,8 +623,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                 ))}
                         </div>
                         <div className="mt-3" key="diff">
-                            {campaignPlan &&
-                                campaignPlan.changesets.nodes.map((changesetNode, i) => (
+                            {campaign &&
+                                campaign.__typename === 'CampaignPlan' &&
+                                campaign.changesets.nodes.map((changesetNode, i) => (
                                     <div key={i}>
                                         <h3>
                                             <SourcePullIcon className="icon-inline mr-2" />{' '}
@@ -634,6 +647,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                     </div>
                                 ))}
                             {campaign &&
+                                campaign.__typename === 'Campaign' &&
                                 campaign.changesets.nodes.map(
                                     (changesetNode, i) =>
                                         changesetNode.diff && (
