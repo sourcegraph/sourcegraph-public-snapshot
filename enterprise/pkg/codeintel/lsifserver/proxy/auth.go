@@ -44,14 +44,10 @@ func enforceAuthGithub(w http.ResponseWriter, r *http.Request, repoName string) 
 		return errors.Wrap(err, "Unable to get repository permissions"), http.StatusNotFound
 	}
 
-        switch repo.ViewerPermission {
-        case "ADMIN", "MAINTAIN", "WRITE":
-            return nil, 0
-        default:
-            return errors.New("You do not have write permission to the repository."), http.StatusUnauthorized
-        }
+	switch repo.ViewerPermission {
+	case "ADMIN", "MAINTAIN", "WRITE":
+		return nil, 0
+	default:
 		return errors.New("You do not have write permission to the repository."), http.StatusUnauthorized
 	}
-
-	return nil, 0
 }
