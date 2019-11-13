@@ -14,9 +14,8 @@ const PatchedCardElement: React.FunctionComponent<PatchedElementProps> = props =
 /**
  * Displays a payment form control for the user to enter payment information to purchase a product subscription.
  */
-export const PaymentTokenFormControl: React.FunctionComponent<
-    Props & ReactStripeElements.InjectedStripeProps
-> = props => {
+export const PaymentTokenFormControl: React.FunctionComponent<Props &
+    ReactStripeElements.InjectedStripeProps> = props => {
     const textColor = props.isLightTheme ? '#2b3750' : 'white'
 
     return (

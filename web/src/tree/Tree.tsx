@@ -239,10 +239,7 @@ export class Tree extends React.PureComponent<Props, State> {
 
         this.subscriptions.add(
             this.componentUpdates
-                .pipe(
-                    startWith(this.props),
-                    distinctUntilChanged(isEqual)
-                )
+                .pipe(startWith(this.props), distinctUntilChanged(isEqual))
                 .subscribe((props: Props) => {
                     const newParentPath = props.activePathIsDir ? props.activePath : dirname(props.activePath)
                     const queryParams = new URLSearchParams(this.props.history.location.search)

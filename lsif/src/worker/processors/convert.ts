@@ -137,9 +137,9 @@ async function withLock<T>(xrepoDatabase: XrepoDatabase, name: string, f: () => 
  * @param directory The directory path.
  */
 async function dirsize(directory: string): Promise<number> {
-    return (await Promise.all(
-        (await fs.readdir(directory)).map(filename => filesize(path.join(directory, filename)))
-    )).reduce((a, b) => a + b, 0)
+    return (
+        await Promise.all((await fs.readdir(directory)).map(filename => filesize(path.join(directory, filename))))
+    ).reduce((a, b) => a + b, 0)
 }
 
 /**

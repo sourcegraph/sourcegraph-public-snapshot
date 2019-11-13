@@ -91,7 +91,7 @@ export class DiscussionsList extends React.PureComponent<Props> {
                 updateOnChange={`${this.props.repoID}:${this.props.rev}:${this.props.filePath}`}
                 defaultFirst={this.props.defaultFirst || 100}
                 hideSearch={this.props.hideSearch}
-                shouldUpdateURLQuery={false}
+                useURLQuery={false}
                 history={this.props.history}
                 location={this.props.location}
             />

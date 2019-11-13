@@ -309,9 +309,9 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         )
 
         /** Emits when the URL's target blob (repository, revision, path, and content) changes. */
-        const modelChanges: Observable<
-            AbsoluteRepoFile & ModeSpec & Pick<BlobProps, 'content' | 'isLightTheme'>
-        > = this.componentUpdates.pipe(
+        const modelChanges: Observable<AbsoluteRepoFile &
+            ModeSpec &
+            Pick<BlobProps, 'content' | 'isLightTheme'>> = this.componentUpdates.pipe(
             map(props => pick(props, 'repoName', 'rev', 'commitID', 'filePath', 'mode', 'content', 'isLightTheme')),
             distinctUntilChanged((a, b) => isEqual(a, b)),
             share()

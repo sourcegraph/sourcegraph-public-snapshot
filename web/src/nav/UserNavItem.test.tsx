@@ -14,7 +14,10 @@ describe('UserNavItem', () => {
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     const ORG_CONNECTION = {
         __typename: 'OrgConnection',
-        nodes: [{ id: '1', displayName: 'd', settingsURL: 'u' }, { id: '2', name: 'n', settingsURL: 'u' }] as unknown,
+        nodes: [
+            { id: '1', displayName: 'd', settingsURL: 'u' },
+            { id: '2', name: 'n', settingsURL: 'u' },
+        ] as unknown,
         totalCount: 2,
     } as GQL.IOrgConnection
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions

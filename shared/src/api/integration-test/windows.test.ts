@@ -45,10 +45,7 @@ describe('Windows (integration)', () => {
                 isActive: true,
             })
             await from(extensionAPI.app.activeWindowChanges)
-                .pipe(
-                    filter(isDefined),
-                    first()
-                )
+                .pipe(filter(isDefined), first())
                 .toPromise()
             expect(extensionAPI.app.activeWindow).toBeTruthy()
         })
@@ -204,7 +201,10 @@ describe('Windows (integration)', () => {
                         toArray()
                     )
                     .toPromise()
-                assertToJSON(values.map(c => (c ? c.document.uri : null)), [null, 'foo', null, 'bar'])
+                assertToJSON(
+                    values.map(c => (c ? c.document.uri : null)),
+                    [null, 'foo', null, 'bar']
+                )
             })
         })
 

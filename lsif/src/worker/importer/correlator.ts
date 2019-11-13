@@ -148,11 +148,17 @@ export class Correlator {
                     break
 
                 case lsif.VertexLabels.definitionResult:
-                    this.definitionData.set(element.id, new DefaultMap<dumpModels.DocumentId, lsif.RangeId[]>(() => []))
+                    this.definitionData.set(
+                        element.id,
+                        new DefaultMap<dumpModels.DocumentId, lsif.RangeId[]>(() => [])
+                    )
                     break
 
                 case lsif.VertexLabels.referenceResult:
-                    this.referenceData.set(element.id, new DefaultMap<dumpModels.DocumentId, lsif.RangeId[]>(() => []))
+                    this.referenceData.set(
+                        element.id,
+                        new DefaultMap<dumpModels.DocumentId, lsif.RangeId[]>(() => [])
+                    )
                     break
 
                 case lsif.VertexLabels.hoverResult:

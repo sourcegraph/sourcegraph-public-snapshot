@@ -77,10 +77,7 @@ export function createPlatformContext(
          *   the UX).
          */
         settings: combineLatest([
-            merge(of(initialSettings), updatedViewerSettings).pipe(
-                publishReplay(1),
-                refCount()
-            ),
+            merge(of(initialSettings), updatedViewerSettings).pipe(publishReplay(1), refCount()),
             storageSettingsCascade,
         ]).pipe(
             map(([gqlCascade, storageCascade]) =>

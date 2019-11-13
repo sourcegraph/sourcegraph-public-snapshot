@@ -14,6 +14,7 @@
     "delay": "^4.3.0",
     "express": "^4.17.1",
     "express-opentracing": "^0.1.1",
+    "express-validator": "^6.2.0",
     "express-winston": "^4.0.1",
     "got": "^9.6.0",
     "ioredis": "^4.14.1",
@@ -77,11 +78,10 @@
     "typescript-json-schema": "^0.40.0"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -b .",
     "postbuild": "yarn run copy-files",
     "copy-files": "copyfiles -u 1 src/**/*.lua out",
     "test": "jest",
-    "typecheck": "tsc --noEmit",
     "tslint": "../node_modules/.bin/tslint -p tsconfig.json",
     "eslint": "../node_modules/.bin/eslint 'src/**/*.ts?(x)'",
     "run:server": "tsc-watch --onFirstSuccess \"yarn postbuild\" --onSuccess \"node -r source-map-support/register out/server/server.js\" --noClear",

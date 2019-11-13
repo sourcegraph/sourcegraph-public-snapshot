@@ -240,7 +240,10 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                         )
                     )
                 )
-            ).subscribe(updateState => this.setState(state => updateState(state)), err => console.error(err))
+            ).subscribe(
+                updateState => this.setState(state => updateState(state)),
+                err => console.error(err)
+            )
         )
         this.componentUpdates.next(this.props)
     }
@@ -273,7 +276,10 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                 )}
                 {/* TODO(slimsag:discussions): local storage persistence is not ideal here. */}
                 <TabsWithLocalStorageViewStatePersistence
-                    tabs={[{ id: 'write', label: 'Write' }, { id: 'preview', label: 'Preview' }]}
+                    tabs={[
+                        { id: 'write', label: 'Write' },
+                        { id: 'preview', label: 'Preview' },
+                    ]}
                     storageKey="discussions-input-last-tab"
                     tabBarEndFragment={
                         <>

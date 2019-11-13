@@ -191,7 +191,10 @@ export class TreePage extends React.PureComponent<Props, State> {
                         )
                     )
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    err => console.error(err)
+                )
         )
 
         this.componentUpdates.next(this.props)
@@ -346,7 +349,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                     }}
                                     updateOnChange={`${this.props.repoName}:${this.props.rev}:${this.props.filePath}`}
                                     defaultFirst={7}
-                                    shouldUpdateURLQuery={false}
+                                    useURLQuery={false}
                                     hideSearch={true}
                                 />
                             </div>

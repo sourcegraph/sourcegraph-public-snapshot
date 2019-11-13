@@ -14,7 +14,7 @@ import { TlsOptions } from 'tls'
  * version prior to making use of the DB (which the frontend may still be
  * migrating).
  */
-const MINIMUM_MIGRATION_VERSION = 1528395612
+const MINIMUM_MIGRATION_VERSION = 1528395614
 
 /**
  * How many times to try to check the current database migration version on startup.
@@ -65,10 +65,7 @@ export async function createPostgresConnection(configuration: Configuration, log
     const ssl = sslMode ? sslModes[sslMode] : undefined
 
     // Get a working connection
-    const connection = await connect(
-        { host, port, username, password, database, ssl },
-        logger
-    )
+    const connection = await connect({ host, port, username, password, database, ssl }, logger)
 
     // Poll the schema migrations table until we are up to date
     await waitForMigrations(connection, logger)
