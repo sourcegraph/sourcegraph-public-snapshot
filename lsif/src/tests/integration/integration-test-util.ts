@@ -113,9 +113,9 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
  * @param connection The connection to use.
  */
 export async function truncatePostgresTables(connection: Connection): Promise<void> {
-    const results = (await connection.query(
+    const results: { table_name: string }[] = await connection.query(
         "SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' AND table_name != 'schema_migrations'"
-    )) as { table_name: string }[]
+    )
 
     const tableNames = results.map(row => row.table_name).join(', ')
     await connection.query(`truncate ${tableNames} restart identity`)

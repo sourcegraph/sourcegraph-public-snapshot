@@ -31,9 +31,9 @@ export function dbFilenameOld(storageRoot: string, repository: string, commit: s
 export async function ensureDirectory(directoryPath: string): Promise<void> {
     try {
         await fs.mkdir(directoryPath)
-    } catch (e) {
-        if (!(e && e.code === 'EEXIST')) {
-            throw e
+    } catch (error) {
+        if (!(error && error.code === 'EEXIST')) {
+            throw error
         }
     }
 }
