@@ -427,7 +427,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     )}
                 </div>
                 {mode === 'editing' && (
-                    <p className="ml-1">
+                    <p className="ml-1 mb-0">
                         <small>
                             <a
                                 rel="noopener noreferrer"
@@ -441,7 +441,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         </small>
                     </p>
                 )}
-                <h3>Campaign type</h3>
+                <h3 className="mt-3">Campaign type</h3>
                 <select
                     className="form-control w-auto d-inline-block"
                     placeholder="Select campaign type"
