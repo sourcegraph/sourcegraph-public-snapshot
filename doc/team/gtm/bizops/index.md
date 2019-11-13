@@ -31,7 +31,7 @@ Private instances (on-prem)
 
 We receive pings every 30 minutes than [contains this data](https://docs.sourcegraph.com/admin/pings). 
 
-Sourcegraph.com Instance
+#### Sourcegraph.com
 
 "All" frontend user actions are logged inside of the Sourcegraph instance. This includes everything from "user viewed a page" to "user clicked a button" to "user hovered over a symbol". You can look at all calls to eventLogger.log here. 
 
