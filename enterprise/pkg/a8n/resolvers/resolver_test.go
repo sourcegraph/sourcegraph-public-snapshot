@@ -65,7 +65,7 @@ func TestCampaigns(t *testing.T) {
 		httpFactory: cf,
 	}
 
-	s, err := graphqlbackend.NewSchema(sr)
+	s, err := graphqlbackend.NewSchema(sr, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -916,7 +916,7 @@ func TestCampaignPlanResolver(t *testing.T) {
 	}
 
 	sr := &Resolver{store: store}
-	s, err := graphqlbackend.NewSchema(sr)
+	s, err := graphqlbackend.NewSchema(sr, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

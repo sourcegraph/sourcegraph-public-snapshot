@@ -44,10 +44,10 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 	}
 }
 
-func NewSchema(a8n A8NResolver) (*graphql.Schema, error) {
+func NewSchema(a8n A8NResolver, codeIntel CodeIntelResolver) (*graphql.Schema, error) {
 	return graphql.ParseSchema(
 		Schema,
-		&schemaResolver{a8nResolver: a8n},
+		&schemaResolver{a8nResolver: a8n, codeIntelResolver: codeIntel},
 		graphql.Tracer(prometheusTracer{}),
 	)
 }
@@ -172,18 +172,18 @@ func (r *NodeResolver) ToSite() (*siteResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToLSIFDump() (*lsifDumpResolver, bool) {
-	n, ok := r.Node.(*lsifDumpResolver)
+func (r *NodeResolver) ToLSIFDump() (LSIFDumpResolver, bool) {
+	n, ok := r.Node.(LSIFDumpResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToLSIFJobStats() (*lsifJobStatsResolver, bool) {
-	n, ok := r.Node.(*lsifJobStatsResolver)
+func (r *NodeResolver) ToLSIFJobStats() (LSIFJobStatsResolver, bool) {
+	n, ok := r.Node.(LSIFJobStatsResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToLSIFJob() (*lsifJobResolver, bool) {
-	n, ok := r.Node.(*lsifJobResolver)
+func (r *NodeResolver) ToLSIFJob() (LSIFJobResolver, bool) {
+	n, ok := r.Node.(LSIFJobResolver)
 	return n, ok
 }
 
@@ -191,7 +191,8 @@ func (r *NodeResolver) ToLSIFJob() (*lsifJobResolver, bool) {
 // uses subresolvers, some of which are globals and some of which are fields on
 // schemaResolver.
 type schemaResolver struct {
-	a8nResolver A8NResolver
+	a8nResolver       A8NResolver
+	codeIntelResolver CodeIntelResolver
 }
 
 // DEPRECATED
@@ -213,17 +214,17 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return accessTokenByID(ctx, id)
 	case "Campaign":
 		if r.a8nResolver == nil {
-			return nil, onlyInEnterprise
+			return nil, a8nOnlyInEnterprise
 		}
 		return r.a8nResolver.CampaignByID(ctx, id)
 	case "CampaignPlan":
 		if r.a8nResolver == nil {
-			return nil, onlyInEnterprise
+			return nil, a8nOnlyInEnterprise
 		}
 		return r.a8nResolver.CampaignPlanByID(ctx, id)
 	case "ExternalChangeset":
 		if r.a8nResolver == nil {
-			return nil, onlyInEnterprise
+			return nil, a8nOnlyInEnterprise
 		}
 		return r.a8nResolver.ChangesetByID(ctx, id)
 	case "DiscussionComment":
@@ -263,11 +264,20 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 	case "Site":
 		return siteByGQLID(ctx, id)
 	case "LSIFDump":
-		return lsifDumpByGQLID(ctx, id)
+		if r.codeIntelResolver == nil {
+			return nil, codeIntelOnlyInEnterprise
+		}
+		return r.codeIntelResolver.LSIFDumpByGQLID(ctx, id)
 	case "LSIFJobStats":
-		return lsifJobStatsByGQLID(ctx, id)
+		if r.codeIntelResolver == nil {
+			return nil, codeIntelOnlyInEnterprise
+		}
+		return r.codeIntelResolver.LSIFJobStatsByGQLID(ctx, id)
 	case "LSIFJob":
-		return lsifJobByGQLID(ctx, id)
+		if r.codeIntelResolver == nil {
+			return nil, codeIntelOnlyInEnterprise
+		}
+		return r.codeIntelResolver.LSIFJobByGQLID(ctx, id)
 	default:
 		return nil, errors.New("invalid id")
 	}

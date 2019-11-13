@@ -253,8 +253,10 @@ README.md @sqs
 /cmd/frontend/db/discussion* @slimsag
 
 # LSIF
-/cmd/frontend/internal/httpapi/lsif.go @sourcegraph/code-intel
 /lsif/ @sourcegraph/code-intel
+/internal/lsif @sourcegraph/code-intel
+/enterprise/pkg/codeintel @sourcegraph/code-intel
+/cmd/frontned/graphqlbackend/codeintel.go @sourcegraph/code-intel
 
 # Development
 /dev/fakehub @sourcegraph/core-services
