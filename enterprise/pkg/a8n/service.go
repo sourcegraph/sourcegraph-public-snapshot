@@ -187,9 +187,17 @@ func (s *Service) runChangesetJob(
 				return err
 			}
 
-			c := cfg.(*schema.GitHubConnection)
-			if c.Token != "" {
-				externalService = e
+			switch cfg := cfg.(type) {
+			case *schema.GitHubConnection:
+				if cfg.Token != "" {
+					externalService = e
+				}
+			case *schema.BitbucketServerConnection:
+				if cfg.Token != "" {
+					externalService = e
+				}
+			}
+			if externalService != nil {
 				break
 			}
 		}
