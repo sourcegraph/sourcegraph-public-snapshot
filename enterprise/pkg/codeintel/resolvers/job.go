@@ -13,15 +13,15 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintel/lsifserver/client"
+	"github.com/sourcegraph/sourcegraph/internal/lsif"
 )
 
 //
 // Node Resolver
 
 type lsifJobResolver struct {
-	lsifJob *types.LSIFJob
+	lsifJob *lsif.LSIFJob
 }
 
 var _ graphqlbackend.LSIFJobResolver = &lsifJobResolver{}
@@ -81,7 +81,7 @@ type lsifJobConnectionResolver struct {
 
 	// cache results because they are used by multiple fields
 	once       sync.Once
-	jobs       []*types.LSIFJob
+	jobs       []*lsif.LSIFJob
 	totalCount *int
 	nextURL    string
 	err        error
@@ -127,7 +127,7 @@ func (r *lsifJobConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.
 	return graphqlutil.HasNextPage(false), nil
 }
 
-func (r *lsifJobConnectionResolver) compute(ctx context.Context) ([]*types.LSIFJob, *int, string, error) {
+func (r *lsifJobConnectionResolver) compute(ctx context.Context) ([]*lsif.LSIFJob, *int, string, error) {
 	r.once.Do(func() {
 		var path string
 		if r.opt.NextURL == nil {
@@ -153,10 +153,10 @@ func (r *lsifJobConnectionResolver) compute(ctx context.Context) ([]*types.LSIFJ
 		}
 
 		payload := struct {
-			Jobs       []*types.LSIFJob `json:"jobs"`
-			TotalCount *int             `json:"totalCount"`
+			Jobs       []*lsif.LSIFJob `json:"jobs"`
+			TotalCount *int            `json:"totalCount"`
 		}{
-			Jobs: []*types.LSIFJob{},
+			Jobs: []*lsif.LSIFJob{},
 		}
 
 		if err := client.UnmarshalPayload(resp, &payload); err != nil {
@@ -176,7 +176,7 @@ func (r *lsifJobConnectionResolver) compute(ctx context.Context) ([]*types.LSIFJ
 // Stats Resolver
 
 type lsifJobStatsResolver struct {
-	stats *types.LSIFJobStats
+	stats *lsif.LSIFJobStats
 }
 
 var _ graphqlbackend.LSIFJobStatsResolver = &lsifJobStatsResolver{}

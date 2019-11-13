@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintel/lsifserver/client"
+	"github.com/sourcegraph/sourcegraph/internal/lsif"
 )
 
 //
@@ -21,7 +22,7 @@ import (
 
 type lsifDumpResolver struct {
 	repo     *types.Repo
-	lsifDump *types.LSIFDump
+	lsifDump *lsif.LSIFDump
 }
 
 var _ graphqlbackend.LSIFDumpResolver = &lsifDumpResolver{}
@@ -64,7 +65,7 @@ type lsifDumpConnectionResolver struct {
 
 	// cache results because they are used by multiple fields
 	once       sync.Once
-	dumps      []*types.LSIFDump
+	dumps      []*lsif.LSIFDump
 	repo       *graphqlbackend.RepositoryResolver
 	totalCount int
 	nextURL    string
@@ -107,7 +108,7 @@ func (r *lsifDumpConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil
 	return graphqlutil.HasNextPage(false), nil
 }
 
-func (r *lsifDumpConnectionResolver) compute(ctx context.Context) ([]*types.LSIFDump, *graphqlbackend.RepositoryResolver, int, string, error) {
+func (r *lsifDumpConnectionResolver) compute(ctx context.Context) ([]*lsif.LSIFDump, *graphqlbackend.RepositoryResolver, int, string, error) {
 	r.once.Do(func() {
 		repo, err := graphqlbackend.RepositoryByID(ctx, r.opt.Repository)
 		if err != nil {
@@ -142,10 +143,10 @@ func (r *lsifDumpConnectionResolver) compute(ctx context.Context) ([]*types.LSIF
 		}
 
 		payload := struct {
-			Dumps      []*types.LSIFDump `json:"dumps"`
-			TotalCount int               `json:"totalCount"`
+			Dumps      []*lsif.LSIFDump `json:"dumps"`
+			TotalCount int              `json:"totalCount"`
 		}{
-			Dumps: []*types.LSIFDump{},
+			Dumps: []*lsif.LSIFDump{},
 		}
 
 		if err := client.UnmarshalPayload(resp, &payload); err != nil {

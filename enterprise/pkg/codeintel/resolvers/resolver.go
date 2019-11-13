@@ -10,9 +10,9 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintel/lsifserver/client"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/lsif"
 )
 
 type Resolver struct{}
@@ -38,7 +38,7 @@ func (r *Resolver) LSIFDumpByGQLID(ctx context.Context, id graphql.ID) (graphqlb
 
 	path := fmt.Sprintf("/dumps/%s/%d", url.PathEscape(repoName), dumpID)
 
-	var lsifDump *types.LSIFDump
+	var lsifDump *lsif.LSIFDump
 	if err := client.TraceRequestAndUnmarshalPayload(ctx, path, nil, &lsifDump); err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (r *Resolver) LSIFJobByGQLID(ctx context.Context, id graphql.ID) (graphqlba
 
 	path := fmt.Sprintf("/jobs/%s", url.PathEscape(jobID))
 
-	var lsifJob *types.LSIFJob
+	var lsifJob *lsif.LSIFJob
 	if err := client.TraceRequestAndUnmarshalPayload(ctx, path, nil, &lsifJob); err != nil {
 		return nil, err
 	}
@@ -157,7 +157,7 @@ func (r *Resolver) LSIFJobStatsByGQLID(ctx context.Context, id graphql.ID) (grap
 		return nil, fmt.Errorf("lsif job stats not found: %q", lsifJobStatsID)
 	}
 
-	var stats *types.LSIFJobStats
+	var stats *lsif.LSIFJobStats
 	if err := client.TraceRequestAndUnmarshalPayload(ctx, "/jobs/stats", nil, &stats); err != nil {
 		return nil, err
 	}

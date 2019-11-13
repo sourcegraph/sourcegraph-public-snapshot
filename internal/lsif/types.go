@@ -1,4 +1,4 @@
-package types
+package lsif
 
 import (
 	"encoding/json"
