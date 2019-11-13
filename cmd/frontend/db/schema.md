@@ -369,7 +369,7 @@ Indexes:
  id            | integer | not null default nextval('lsif_commits_id_seq'::regclass)
  repository    | text    | not null
  commit        | text    | not null
- parent_commit | text    | not null
+ parent_commit | text    | 
 Indexes:
     "lsif_commits_pkey" PRIMARY KEY, btree (id)
     "lsif_commits_repo_commit_parent_commit_unique" UNIQUE, btree (repository, commit, parent_commit)

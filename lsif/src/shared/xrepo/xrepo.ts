@@ -259,7 +259,7 @@ export class XrepoDatabase {
             )
 
             for (const [commit, parentCommit] of commits) {
-                await commitInserter.insert({ repository, commit, parentCommit: parentCommit || '' })
+                await commitInserter.insert({ repository, commit, parentCommit })
             }
 
             await commitInserter.flush()
