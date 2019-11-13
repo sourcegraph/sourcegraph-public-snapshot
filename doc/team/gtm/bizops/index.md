@@ -60,7 +60,7 @@ Main HubSpot events:
 * Private instance: A private instance was created on a user’s local machine AND they created an account to use the product (note: users can’t use Sourcegraph on a local machine until they create an account so installs =! accounts)
 * Sourcegraph.com Account: A user creates an account while using the Sourcegraph-hosted instance
 * NPS submission: User submits an [NPS survey](https://sourcegraph.com/survey) and includes their email
-* Live conferences and events: Event leads and live-blog subscribers=
+* Live conferences and events: Event leads and live-blog subscribers
 
 ## Using Looker
 
