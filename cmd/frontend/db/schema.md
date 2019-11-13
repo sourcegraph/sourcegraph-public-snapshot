@@ -396,7 +396,6 @@ Indexes:
     "lsif_dumps_uploaded_at" btree (uploaded_at)
     "lsif_dumps_visible_repository_commit" btree (repository, commit) WHERE visible_at_tip
 Check constraints:
-    "lsif_dumps_commit_check" CHECK (length(commit) = 40)
     "lsif_dumps_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
     "lsif_dumps_repository_check" CHECK (repository <> ''::text)
 Referenced by:
