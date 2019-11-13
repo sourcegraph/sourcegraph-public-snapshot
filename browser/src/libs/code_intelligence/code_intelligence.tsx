@@ -194,6 +194,8 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      */
     adjustOverlayPosition?: (position: OverlayPosition) => OverlayPosition
 
+    getOverlayMountLocation?: () => HTMLElement
+
     // Extensions related input
 
     /**
@@ -288,10 +290,11 @@ export interface CodeIntelligenceProps
     showGlobalDebug?: boolean
 }
 
-export const createOverlayMount = (codeHostName: string): HTMLElement => {
+export const createOverlayMount = (codeHostName: string, getMountLocation?: () => HTMLElement): HTMLElement => {
     const mount = document.createElement('div')
     mount.classList.add('hover-overlay-mount', `hover-overlay-mount__${codeHostName}`)
-    document.body.appendChild(mount)
+    const mountLocation = getMountLocation ? getMountLocation() : document.body
+    mountLocation.appendChild(mount)
     return mount
 }
 
@@ -431,7 +434,7 @@ export function initCodeIntelligence({
 
     // This renders to document.body, which we can assume is never removed,
     // so we don't need to subscribe to mutations.
-    const overlayMount = createOverlayMount(codeHost.type)
+    const overlayMount = createOverlayMount(codeHost.type, codeHost.getOverlayMountLocation)
     render(<HoverOverlayContainer />, overlayMount)
 
     return { hoverifier, subscription }

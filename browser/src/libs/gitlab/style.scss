@@ -5,6 +5,7 @@
 
 .hover-overlay-mount__gitlab {
     .hover-overlay {
+        z-index: 119 !important;
         code {
             background: none;
             color: unset;

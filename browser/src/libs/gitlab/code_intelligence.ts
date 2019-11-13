@@ -165,4 +165,15 @@ export const gitlabCodeHost = subTypeOf<CodeHost>()({
         errorAlertClassName: 'alert alert-danger',
     },
     codeViewsRequireTokenization: true,
+    getOverlayMountLocation: () => {
+        const { pageKind } = getPageInfo()
+        if (pageKind === GitLabPageKind.MergeRequest) {
+            const mount = document.querySelector<HTMLElement>('.diff-files-holder')
+            if (!mount) {
+                throw new Error('Could not find overlay mount location with selector .diff-files-holder')
+            }
+            return mount
+        }
+        return document.body
+    },
 })
