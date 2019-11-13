@@ -73,8 +73,10 @@ async function main(logger: Logger): Promise<void> {
     // Update queue size metric on a timer
     setInterval(() => {
         queue
-            .count()
-            .then(count => metrics.queueSizeGauge.set(count))
+            .getJobCountByTypes('waiting')
+            // The type of this method is wrong in the types package: it says that
+            // it returns a counts object, but it really returns a scalar count.
+            .then((count: unknown) => metrics.queueSizeGauge.set(count as number))
             .catch(() => {})
     }, 1000)
 
