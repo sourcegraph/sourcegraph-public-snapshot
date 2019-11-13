@@ -560,7 +560,7 @@ components:
         id:
           type: string
           description: A unique identifier.
-        name:
+        type:
           type: string
           description: The type of job.
           enum:
@@ -568,7 +568,7 @@ components:
             - update-tips
             - clean-old-jobs
             - clean-failed-jobs
-        args:
+        arguments:
           type: object
           description: The arguments passed to the job.
           additionalProperties:
@@ -585,27 +585,31 @@ components:
             - completed
             - queued
             - scheduled
-        progress:
-          type: number
-          description: A percentage progress of the job (0-100%).
-        failedReason:
-          type: string
-          description: A brief description of why the job failed.
+        failure:
+          type: object
+          description: Metadata about a failed job.
           nullable: true
-        stacktrace:
-          type: array
-          description: The stacktrace that caused an exception.
-          items:
-            type: string
-          nullable: true
-        timestamp:
+          properties:
+            summary:
+              type: string
+              description: A brief description of why the job failed.
+            stacktraces:
+              type: array
+              description: A stacktrace for each attempt of the failed job.
+              items:
+                type: string
+          required:
+            - summary
+            - stacktraces
+          additionalProperties: false
+        queuedAt:
           type: string
           description: An ISO 8601-formatted time that the job was queued.
-        processedOn:
+        startedAt:
           type: string
           description: An ISO 8601-formatted time that the job was processed.
           nullable: true
-        finishedOn:
+        completedOrErroredAt:
           type: string
           description: An ISO 8601-formatted time that the job was completed.
           nullable: true

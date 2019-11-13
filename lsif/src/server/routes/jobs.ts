@@ -20,15 +20,13 @@ import { extractLimitOffset } from '../pagination/limit-offset'
  */
 interface ApiJob {
     id: string
-    name: string
-    args: object
+    type: string
+    arguments: object
     state: ApiJobState
-    progress: number
-    failedReason: string | null
-    stacktrace: string[] | null
-    timestamp: string
-    processedOn: string | null
-    finishedOn: string | null
+    failure: { summary: string; stacktraces: string[] } | null
+    queuedAt: string
+    startedAt: string | null
+    completedOrErroredAt: string | null
 }
 
 /**
@@ -46,11 +44,47 @@ const toDate = (timestamp: number): string => new Date(timestamp).toISOString()
 const toMaybeDate = (timestamp: number | null): string | null => (timestamp ? toDate(timestamp) : null)
 
 /**
- * Attempt to convert a string into an integer.
+ * Format a job to return from the API.
  *
- * @param value The int-y string.
+ * @param payload The job's JSON payload.
  */
-const toMaybeInt = (value: string | undefined): number | null => (value ? parseInt(value, 10) : null)
+const formatJobInternal = ({
+    id,
+    name,
+    data,
+    failedReason,
+    stacktrace,
+    timestamp,
+    finishedOn,
+    processedOn,
+    state,
+}: {
+    id: string | number
+    name: string
+    data: any
+    failedReason: any
+    stacktrace: string[] | null
+    timestamp: number
+    finishedOn: number | null
+    processedOn: number | null
+    state: ApiJobState
+}): ApiJob => {
+    const failure =
+        state === 'errored' && typeof failedReason === 'string' && stacktrace
+            ? { summary: failedReason, stacktraces: stacktrace }
+            : null
+
+    return {
+        id: `${id}`,
+        type: name,
+        arguments: data.args,
+        state,
+        failure,
+        queuedAt: toDate(timestamp),
+        startedAt: toMaybeDate(processedOn),
+        completedOrErroredAt: toMaybeDate(finishedOn),
+    }
+}
 
 /**
  * Format a job to return from the API.
@@ -58,22 +92,7 @@ const toMaybeInt = (value: string | undefined): number | null => (value ? parseI
  * @param job The job to format.
  * @param state The job's state.
  */
-const formatJob = (job: Job, state: ApiJobState): ApiJob => {
-    const payload = job.toJSON()
-
-    return {
-        id: `${payload.id}`,
-        name: payload.name,
-        args: payload.data.args,
-        state,
-        progress: payload.progress,
-        failedReason: payload.failedReason,
-        stacktrace: payload.stacktrace,
-        timestamp: toDate(payload.timestamp),
-        processedOn: toMaybeDate(payload.processedOn),
-        finishedOn: toMaybeDate(payload.finishedOn),
-    }
-}
+const formatJob = (job: Job, state: ApiJobState): ApiJob => formatJobInternal({ state, ...job.toJSON() })
 
 /**
  * Format a job to return from the API.
@@ -84,19 +103,21 @@ const formatJob = (job: Job, state: ApiJobState): ApiJob => {
 const formatJobFromMap = (values: Map<string, string>, state: ApiJobState): ApiJob => {
     const rawData = values.get('data')
     const rawStacktrace = values.get('stacktrace')
+    const rawTimestamp = values.get('timestamp')
+    const rawProcessedOn = values.get('processedOn')
+    const rawFinishedOn = values.get('finishedOn')
 
-    return {
+    return formatJobInternal({
         id: values.get('id') || '',
         name: values.get('name') || '',
-        args: rawData ? JSON.parse(rawData).args : {},
-        state,
-        progress: toMaybeInt(values.get('progress')) || 0,
+        data: JSON.parse(rawData || '{}'),
         failedReason: values.get('failedReason') || null,
         stacktrace: rawStacktrace ? JSON.parse(rawStacktrace) : null,
-        timestamp: toMaybeDate(toMaybeInt(values.get('timestamp'))) || '',
-        processedOn: toMaybeDate(toMaybeInt(values.get('processedOn'))),
-        finishedOn: toMaybeDate(toMaybeInt(values.get('finishedOn'))),
-    }
+        timestamp: rawTimestamp ? parseInt(rawTimestamp, 10) : 0,
+        processedOn: rawProcessedOn ? parseInt(rawProcessedOn, 10) : null,
+        finishedOn: rawFinishedOn ? parseInt(rawFinishedOn, 10) : null,
+        state,
+    })
 }
 
 /**

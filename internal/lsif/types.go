@@ -23,14 +23,17 @@ type LSIFJobStats struct {
 }
 
 type LSIFJob struct {
-	ID           string           `json:"id"`
-	Name         string           `json:"name"`
-	Args         *json.RawMessage `json:"args"`
-	State        string           `json:"state"`
-	Progress     float64          `json:"progress"`
-	FailedReason *string          `json:"failedReason"`
-	Stacktrace   *[]string        `json:"stacktrace"`
-	Timestamp    time.Time        `json:"timestamp"`
-	ProcessedOn  *time.Time       `json:"processedOn"`
-	FinishedOn   *time.Time       `json:"finishedOn"`
+	ID                   string           `json:"id"`
+	Type                 string           `json:"type"`
+	Argumentss           *json.RawMessage `json:"arguments"`
+	State                string           `json:"state"`
+	Failure              *LSIFJobFailure  `json:"failure"`
+	QueuedAt             time.Time        `json:"queuedAt"`
+	StartedAt            *time.Time       `json:"startedAt"`
+	CompletedOrErroredAt *time.Time       `json:"completedOrErroredAt"`
+}
+
+type LSIFJobFailure struct {
+	Summary     string   `json:"summary"`
+	Stacktraces []string `json:"stacktraces"`
 }

@@ -31,7 +31,7 @@ const LsifDumpNode: FunctionComponent<{ node: GQL.ILSIFDump }> = ({ node }) => (
 )
 
 const LsifJobNode: FunctionComponent<{ node: GQL.ILSIFJob }> = ({ node }) => {
-    const { commit, root } = node.args as { commit: string; root: string }
+    const { commit, root }: { commit: string; root: string } = node.arguments
 
     return (
         <div className="w-100 list-group-item py-2 lsif-data__main">
@@ -56,7 +56,7 @@ const LsifJobNode: FunctionComponent<{ node: GQL.ILSIFJob }> = ({ node }) => {
             </div>
 
             <small className="text-muted lsif-data__meta-timestamp">
-                <Timestamp noAbout={true} date={node.finishedOn || node.processedOn || node.timestamp} />
+                <Timestamp noAbout={true} date={node.completedOrErroredAt || node.startedAt || node.queuedAt} />
             </small>
         </div>
     )

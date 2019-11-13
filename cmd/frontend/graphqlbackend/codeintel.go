@@ -61,15 +61,18 @@ type LSIFJobStatsResolver interface {
 
 type LSIFJobResolver interface {
 	ID() graphql.ID
-	Name() string
-	Args() JSONValue
+	Type() string
+	Arguments() JSONValue
 	State() string
-	Progress() float64
-	FailedReason() *string
-	Stacktrace() *[]string
-	Timestamp() DateTime
-	ProcessedOn() *DateTime
-	FinishedOn() *DateTime
+	Failure() LSIFJobFailureReasonResolver
+	QueuedAt() DateTime
+	StartedAt() *DateTime
+	CompletedOrErroredAt() *DateTime
+}
+
+type LSIFJobFailureReasonResolver interface {
+	Summary() string
+	Stacktraces() []string
 }
 
 type LSIFJobConnectionResolver interface {
