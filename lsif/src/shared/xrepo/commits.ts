@@ -54,7 +54,7 @@ export function mod(sum: string, max: number): number {
 /**
  * Get a list of commits for the given repository with their parent starting at the
  * given commit and returning at most `MAX_COMMITS_PER_UPDATE` commits. The output
- * is a set of pairs `(child, parent)`. Commits without a parent will be returend as
+ * is a set of pairs `(child, parent)`. Commits without a parent will be returned as
  * `(child, undefined)`. Commits may appear multiple times, but each pair is unique.
  *
  * If the repository or commit is unknown by gitserver, then the the results will be

@@ -30,40 +30,50 @@ func (r *lsifJobResolver) ID() graphql.ID {
 	return marshalLSIFJobGQLID(r.lsifJob.ID)
 }
 
-func (r *lsifJobResolver) Name() string {
-	return r.lsifJob.Name
+func (r *lsifJobResolver) Type() string {
+	return r.lsifJob.Type
 }
 
-func (r *lsifJobResolver) Args() graphqlbackend.JSONValue {
-	return graphqlbackend.JSONValue{Value: r.lsifJob.Args}
+func (r *lsifJobResolver) Arguments() graphqlbackend.JSONValue {
+	return graphqlbackend.JSONValue{Value: r.lsifJob.Argumentss}
 }
 
 func (r *lsifJobResolver) State() string {
 	return strings.ToUpper(r.lsifJob.State)
 }
 
-func (r *lsifJobResolver) Progress() float64 {
-	return r.lsifJob.Progress
+func (r *lsifJobResolver) Failure() graphqlbackend.LSIFJobFailureReasonResolver {
+	if r.lsifJob.Failure == nil {
+		return nil
+	}
+
+	return &lsifFailureReasonResolver{r.lsifJob.Failure}
 }
 
-func (r *lsifJobResolver) FailedReason() *string {
-	return r.lsifJob.FailedReason
+func (r *lsifJobResolver) QueuedAt() graphqlbackend.DateTime {
+	return graphqlbackend.DateTime{Time: r.lsifJob.QueuedAt}
 }
 
-func (r *lsifJobResolver) Stacktrace() *[]string {
-	return r.lsifJob.Stacktrace
+func (r *lsifJobResolver) StartedAt() *graphqlbackend.DateTime {
+	return graphqlbackend.DateTimeOrNil(r.lsifJob.StartedAt)
 }
 
-func (r *lsifJobResolver) Timestamp() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.lsifJob.Timestamp}
+func (r *lsifJobResolver) CompletedOrErroredAt() *graphqlbackend.DateTime {
+	return graphqlbackend.DateTimeOrNil(r.lsifJob.CompletedOrErroredAt)
 }
 
-func (r *lsifJobResolver) ProcessedOn() *graphqlbackend.DateTime {
-	return graphqlbackend.DateTimeOrNil(r.lsifJob.ProcessedOn)
+type lsifFailureReasonResolver struct {
+	lsifJobFailure *lsif.LSIFJobFailure
 }
 
-func (r *lsifJobResolver) FinishedOn() *graphqlbackend.DateTime {
-	return graphqlbackend.DateTimeOrNil(r.lsifJob.FinishedOn)
+var _ graphqlbackend.LSIFJobFailureReasonResolver = &lsifFailureReasonResolver{}
+
+func (r *lsifFailureReasonResolver) Summary() string {
+	return r.lsifJobFailure.Summary
+}
+
+func (r *lsifFailureReasonResolver) Stacktraces() []string {
+	return r.lsifJobFailure.Stacktraces
 }
 
 //

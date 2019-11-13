@@ -37,7 +37,7 @@ const wrapJobProcessor = <T>(
     logger.debug(`${name} job accepted`, { jobId: job.id })
 
     // Destructure arguments and injected tracing context
-    const { args, tracing } = job.data as { args: T; tracing: object }
+    const { args, tracing }: { args: T; tracing: object } = job.data
 
     let span: Span | undefined
     if (tracer) {

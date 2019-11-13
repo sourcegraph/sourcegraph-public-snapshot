@@ -115,11 +115,11 @@ export function fetchLsifJobs({
                 lsifJobs(state: $state, first: $first, query: $query) {
                     nodes {
                         id
-                        args
+                        arguments
                         state
-                        timestamp
-                        processedOn
-                        finishedOn
+                        queuedAt
+                        startedAt
+                        completedOrErroredAt
                     }
                     pageInfo {
                         hasNextPage

@@ -61,8 +61,7 @@ export const SiteAdminLsifJobPage: FunctionComponent<Props> = ({
 
                     {jobOrError.state === GQL.LSIFJobState.PROCESSING ? (
                         <div className="alert alert-primary mb-4 mt-3">
-                            <LoadingSpinner className="icon-inline" /> Job is currently being processed...{' '}
-                            {jobOrError.progress !== 0 && jobOrError.progress !== 100 && `${jobOrError.progress}%`}
+                            <LoadingSpinner className="icon-inline" /> Job is currently being processed...
                         </div>
                     ) : jobOrError.state === GQL.LSIFJobState.COMPLETED ? (
                         <div className="alert alert-success mb-4 mt-3">
@@ -71,7 +70,7 @@ export const SiteAdminLsifJobPage: FunctionComponent<Props> = ({
                     ) : jobOrError.state === GQL.LSIFJobState.ERRORED ? (
                         <div className="alert alert-danger mb-4 mt-3">
                             <AlertCircleIcon className="icon-inline" /> Job failed to complete:{' '}
-                            <code>{jobOrError.failedReason}</code>
+                            <code>{jobOrError.failure && jobOrError.failure.summary}</code>
                         </div>
                     ) : (
                         <div className="alert alert-primary mb-4 mt-3">
@@ -84,15 +83,15 @@ export const SiteAdminLsifJobPage: FunctionComponent<Props> = ({
                             <tr>
                                 <td>Queued</td>
                                 <td>
-                                    <Timestamp date={jobOrError.timestamp} noAbout={true} />
+                                    <Timestamp date={jobOrError.queuedAt} noAbout={true} />
                                 </td>
                             </tr>
 
                             <tr>
                                 <td>Began processing</td>
                                 <td>
-                                    {jobOrError.processedOn ? (
-                                        <Timestamp date={jobOrError.processedOn} noAbout={true} />
+                                    {jobOrError.startedAt ? (
+                                        <Timestamp date={jobOrError.startedAt} noAbout={true} />
                                     ) : (
                                         <span className="text-muted">Job has not yet started.</span>
                                     )}
@@ -101,25 +100,25 @@ export const SiteAdminLsifJobPage: FunctionComponent<Props> = ({
 
                             <tr>
                                 <td>
-                                    {jobOrError.state === GQL.LSIFJobState.ERRORED && jobOrError.finishedOn
+                                    {jobOrError.state === GQL.LSIFJobState.ERRORED && jobOrError.completedOrErroredAt
                                         ? 'Failed'
                                         : 'Finished'}{' '}
                                     processing
                                 </td>
                                 <td>
-                                    {jobOrError.finishedOn ? (
-                                        <Timestamp date={jobOrError.finishedOn} noAbout={true} />
+                                    {jobOrError.completedOrErroredAt ? (
+                                        <Timestamp date={jobOrError.completedOrErroredAt} noAbout={true} />
                                     ) : (
                                         <span className="text-muted">Job has not yet completed.</span>
                                     )}
                                 </td>
                             </tr>
 
-                            {Object.keys(jobOrError.args || {}).length > 0 && (
+                            {Object.keys(jobOrError.arguments || {}).length > 0 && (
                                 <tr>
                                     <td>Arguments</td>
                                     <td className="pt-0 pb-0 pr-0">
-                                        <JobArguments args={jobOrError.args} />
+                                        <JobArguments args={jobOrError.arguments} />
                                     </td>
                                 </tr>
                             )}
@@ -137,7 +136,7 @@ export const SiteAdminLsifJobPage: FunctionComponent<Props> = ({
  * @param job The job instance.
  */
 function lsifJobDescription(job: GQL.ILSIFJob): string {
-    if (job.name === 'convert') {
+    if (job.type === 'convert') {
         const {
             repository,
             commit,
@@ -146,7 +145,7 @@ function lsifJobDescription(job: GQL.ILSIFJob): string {
             repository: string
             commit: string
             root: string
-        } = job.args
+        } = job.arguments
 
         return `Convert upload for ${repository} at ${commit.substring(0, 7)}${root === '' ? '' : `, ${root}`}`
     }
@@ -157,9 +156,9 @@ function lsifJobDescription(job: GQL.ILSIFJob): string {
         'update-tips': 'Refresh current uploads',
     }
 
-    if (internalJobs[job.name]) {
-        return `Internal job: ${internalJobs[job.name]}`
+    if (internalJobs[job.type]) {
+        return `Internal job: ${internalJobs[job.type]}`
     }
 
-    return `Unknown job type ${job.name}`
+    return `Unknown job type ${job.type}`
 }

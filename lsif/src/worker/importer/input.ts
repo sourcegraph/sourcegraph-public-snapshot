@@ -55,8 +55,8 @@ export async function* parseJsonLines(lines: AsyncIterable<string>): AsyncIterab
 
         try {
             yield JSON.parse(data)
-        } catch (e) {
-            throw new Error(`Failed to process line #${index} (${data}): ${e && e.message}`)
+        } catch (error) {
+            throw new Error(`Failed to process line #${index} (${data}): ${error && error.message}`)
         }
     }
 }
