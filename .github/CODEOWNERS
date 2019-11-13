@@ -256,7 +256,7 @@ README.md @sqs
 /lsif/ @sourcegraph/code-intel
 /internal/lsif @sourcegraph/code-intel
 /enterprise/pkg/codeintel @sourcegraph/code-intel
-/cmd/frontned/graphqlbackend/codeintel.go @sourcegraph/code-intel
+/cmd/frontend/graphqlbackend/codeintel.go @sourcegraph/code-intel
 
 # Development
 /dev/fakehub @sourcegraph/core-services
