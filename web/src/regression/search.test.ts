@@ -73,7 +73,7 @@ describe('Search regression test suite', () => {
         'tuna/tunasync',
         'mthbernardes/GTRS',
         'antonmedv/expr',
-        'kshvakov/clickhouse',
+        'ClickHouse/clickhouse-go',
         'xwb1989/sqlparser',
         'henrylee2cn/pholcus_lib',
         'itcloudy/ERP',
@@ -177,12 +177,12 @@ describe('Search regression test suite', () => {
                             },
                             waitForRepos: testRepoSlugs.map(slug => 'github.com/' + slug),
                         },
-                        { ...config, timeout: 5 * 60 * 1000 }
+                        { ...config, timeout: 3 * 60 * 1000, indexed: true }
                     )
                 )
             },
-            // Cloning the repositories takes ~1 minute, so give initialization 5 minutes
-            5 * 60 * 1000
+            // Cloning the repositories takes ~1 minute, so give initialization ~3 minutes
+            3.5 * 60 * 1000
         )
 
         afterAll(async () => {
