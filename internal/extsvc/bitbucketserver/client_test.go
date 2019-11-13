@@ -412,6 +412,161 @@ func TestClient_LoadPullRequest(t *testing.T) {
 	}
 }
 
+func TestClient_CreatePullRequest(t *testing.T) {
+	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
+	if instanceURL == "" {
+		instanceURL = "http://127.0.0.1:7990"
+	}
+
+	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
+	defer cancel()
+
+	pr := &PullRequest{}
+	pr.Title = "This is a test PR"
+	pr.Description = "This is a test PR. Feel free to ignore."
+	pr.ToRef.Repository.Slug = "automation-testing"
+	pr.ToRef.Repository.Project.Key = "SOUR"
+	pr.ToRef.ID = "refs/heads/master"
+	pr.FromRef.Repository.Slug = "automation-testing"
+	pr.FromRef.Repository.Project.Key = "SOUR"
+	pr.FromRef.ID = "refs/heads/test-pr-bbs-1"
+
+	for _, tc := range []struct {
+		name string
+		ctx  context.Context
+		pr   func() *PullRequest
+		err  string
+	}{
+		{
+			name: "timeout",
+			pr:   func() *PullRequest { return pr },
+			ctx:  timeout,
+			err:  "context deadline exceeded",
+		},
+		{
+			name: "ToRef repo not set",
+			pr: func() *PullRequest {
+				pr := *pr
+				pr.ToRef.Repository.Slug = ""
+				return &pr
+			},
+			err: "ToRef repository slug empty",
+		},
+		{
+			name: "ToRef project not set",
+			pr: func() *PullRequest {
+				pr := *pr
+				pr.ToRef.Repository.Project.Key = ""
+				return &pr
+			},
+			err: "ToRef project key empty",
+		},
+		{
+			name: "ToRef ID not set",
+			pr: func() *PullRequest {
+				pr := *pr
+				pr.ToRef.ID = ""
+				return &pr
+			},
+			err: "ToRef id empty",
+		},
+		{
+			name: "FromRef repo not set",
+			pr: func() *PullRequest {
+				pr := *pr
+				pr.FromRef.Repository.Slug = ""
+				return &pr
+			},
+			err: "FromRef repository slug empty",
+		},
+		{
+			name: "FromRef project not set",
+			pr: func() *PullRequest {
+				pr := *pr
+				pr.FromRef.Repository.Project.Key = ""
+				return &pr
+			},
+			err: "FromRef project key empty",
+		},
+		{
+			name: "FromRef ID not set",
+			pr: func() *PullRequest {
+				pr := *pr
+				pr.FromRef.ID = ""
+				return &pr
+			},
+			err: "FromRef id empty",
+		},
+		{
+			name: "success",
+			pr: func() *PullRequest {
+				pr := *pr
+				pr.FromRef.ID = "refs/heads/test-pr-bbs-3"
+				return &pr
+			},
+		},
+		{
+			name: "pull request already exists",
+			pr: func() *PullRequest {
+				pr := *pr
+				pr.FromRef.ID = "refs/heads/always-open-pr-bbs"
+				return &pr
+			},
+			err: ErrAlreadyExists.Error(),
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			name := "CreatePullRequest-" + strings.Replace(tc.name, " ", "-", -1)
+
+			cli, save := NewTestClient(t, name, *update)
+			defer save()
+
+			if tc.ctx == nil {
+				tc.ctx = context.Background()
+			}
+
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+			tc.err = strings.ReplaceAll(tc.err, "${INSTANCEURL}", instanceURL)
+
+			pr := tc.pr()
+			err := cli.CreatePullRequest(tc.ctx, pr)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Fatalf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if err != nil || tc.err != "<nil>" {
+				return
+			}
+
+			data, err := json.MarshalIndent(pr, " ", " ")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			path := "testdata/golden/" + name
+			if *update {
+				if err = ioutil.WriteFile(path, data, 0640); err != nil {
+					t.Fatalf("failed to update golden file %q: %s", path, err)
+				}
+			}
+
+			golden, err := ioutil.ReadFile(path)
+			if err != nil {
+				t.Fatalf("failed to read golden file %q: %s", path, err)
+			}
+
+			if have, want := string(data), string(golden); have != want {
+				dmp := diffmatchpatch.New()
+				diffs := dmp.DiffMain(have, want, false)
+				t.Error(dmp.DiffPrettyText(diffs))
+			}
+		})
+	}
+}
+
 func TestClient_LoadPullRequestActivities(t *testing.T) {
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {

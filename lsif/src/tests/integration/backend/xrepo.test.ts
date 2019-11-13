@@ -7,7 +7,7 @@ describe('Backend', () => {
         await ctx.init()
         await Promise.all(
             ['a', 'b1', 'b2', 'b3', 'c1', 'c2', 'c3'].map(r =>
-                ctx.convertTestData(r, util.createCommit(r), '', `xrepo/data/${r}.lsif.gz`)
+                ctx.convertTestData(r, util.createCommit(0), '', `xrepo/data/${r}.lsif.gz`)
             )
         )
     })
@@ -21,7 +21,7 @@ describe('Backend', () => {
             fail('failed beforeAll')
         }
 
-        const definitions = await ctx.backend.definitions('a', util.createCommit('a'), 'src/index.ts', {
+        const definitions = await ctx.backend.definitions('a', util.createCommit(0), 'src/index.ts', {
             line: 11,
             character: 18,
         })
@@ -33,7 +33,7 @@ describe('Backend', () => {
             fail('failed beforeAll')
         }
 
-        const definitions = await ctx.backend.definitions('b1', util.createCommit('b1'), 'src/index.ts', {
+        const definitions = await ctx.backend.definitions('b1', util.createCommit(0), 'src/index.ts', {
             line: 3,
             character: 12,
         })
@@ -45,7 +45,7 @@ describe('Backend', () => {
             fail('failed beforeAll')
         }
 
-        const definitions = await ctx.backend.definitions('b1', util.createCommit('b1'), 'src/index.ts', {
+        const definitions = await ctx.backend.definitions('b1', util.createCommit(0), 'src/index.ts', {
             line: 3,
             character: 16,
         })
@@ -58,7 +58,7 @@ describe('Backend', () => {
         }
 
         const { locations } = util.filterNodeModules(
-            await ctx.backend.references('a', util.createCommit('a'), 'src/index.ts', {
+            await ctx.backend.references('a', util.createCommit(0), 'src/index.ts', {
                 line: 4,
                 character: 19,
             })
@@ -85,7 +85,7 @@ describe('Backend', () => {
         }
 
         const { locations } = util.filterNodeModules(
-            await ctx.backend.references('b1', util.createCommit('b1'), 'src/index.ts', {
+            await ctx.backend.references('b1', util.createCommit(0), 'src/index.ts', {
                 line: 3,
                 character: 16,
             })
@@ -112,7 +112,7 @@ describe('Backend', () => {
         }
 
         const { locations } = util.filterNodeModules(
-            await ctx.backend.references('a', util.createCommit('a'), 'src/index.ts', {
+            await ctx.backend.references('a', util.createCommit(0), 'src/index.ts', {
                 line: 0,
                 character: 17,
             })
@@ -149,7 +149,7 @@ describe('Backend', () => {
         }
 
         const { locations } = util.filterNodeModules(
-            await ctx.backend.references('c1', util.createCommit('c1'), 'src/index.ts', {
+            await ctx.backend.references('c1', util.createCommit(0), 'src/index.ts', {
                 line: 3,
                 character: 16,
             })

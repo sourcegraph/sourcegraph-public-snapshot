@@ -51,17 +51,14 @@ export const validateOptionalInt = (key: string): ValidationChain =>
 export const validateQuery = validateOptionalString('query')
 
 /**
- * Create a validator for an integer limit field. Defaults to the given limit if not supplied.
- *
- * @param defaultValue The default value.
+ * Create a validator for an integer limit field.
  */
-export const validateLimit = (defaultValue: number): ValidationChain =>
-    validateOptionalInt('limit').customSanitizer(value => value || defaultValue)
+export const validateLimit = validateOptionalInt('limit')
 
 /**
- * A validator used for an integer offset field. Defaults to zero if not supplied.
+ * A validator used for an integer offset field.
  */
-export const validateOffset = validateOptionalInt('offset').customSanitizer(value => value || 0)
+export const validateOffset = validateOptionalInt('offset')
 
 /**
  * Create a validator for a cursor that is serialized as the supplied generic type.

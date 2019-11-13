@@ -68,12 +68,15 @@ func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign) (err erro
 	jobs, _, err := tx.ListCampaignJobs(ctx, ListCampaignJobsOpts{
 		CampaignPlanID: c.CampaignPlanID,
 		Limit:          10000,
+		OnlyFinished:   true,
+		OnlyWithDiff:   true,
 	})
 	if err != nil {
 		return err
 	}
 
 	for _, job := range jobs {
+
 		changesetJob := &a8n.ChangesetJob{
 			CampaignID:    c.ID,
 			CampaignJobID: job.ID,
@@ -184,9 +187,17 @@ func (s *Service) runChangesetJob(
 				return err
 			}
 
-			c := cfg.(*schema.GitHubConnection)
-			if c.Token != "" {
-				externalService = e
+			switch cfg := cfg.(type) {
+			case *schema.GitHubConnection:
+				if cfg.Token != "" {
+					externalService = e
+				}
+			case *schema.BitbucketServerConnection:
+				if cfg.Token != "" {
+					externalService = e
+				}
+			}
+			if externalService != nil {
 				break
 			}
 		}
@@ -213,15 +224,12 @@ func (s *Service) runChangesetJob(
 		},
 	}
 
-	cc, ok := src.(interface {
-		CreateChangeset(context.Context, *repos.Changeset) error
-	})
-
+	ccs, ok := src.(repos.ChangesetSource)
 	if !ok {
 		return errors.Errorf("creating changesets on code host of repo %q is not implemented", repo.Name)
 	}
 
-	if err = cc.CreateChangeset(ctx, &cs); err != nil {
+	if err = ccs.CreateChangeset(ctx, &cs); err != nil {
 		return err
 	}
 

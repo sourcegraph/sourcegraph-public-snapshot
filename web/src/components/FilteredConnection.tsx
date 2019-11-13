@@ -300,8 +300,8 @@ interface FilteredConnectionDisplayProps extends ConnectionDisplayProps {
     /** Autofocuses the filter input field. */
     autoFocus?: boolean
 
-    /** Whether we will update the URL query string to reflect the filter and pagination state or not. */
-    shouldUpdateURLQuery?: boolean
+    /** Whether we will use the URL query string to reflect the filter and pagination state or not. */
+    useURLQuery?: boolean
 
     /**
      * Filters to display next to the filter input field.
@@ -420,7 +420,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
 > {
     public static defaultProps: Partial<FilteredConnectionProps<any, any>> = {
         defaultFirst: 20,
-        shouldUpdateURLQuery: true,
+        useURLQuery: true,
     }
 
     private queryInputChanges = new Subject<string>()
@@ -450,10 +450,10 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
 
         this.state = {
             loading: true,
-            query: (!this.props.hideSearch && q.get(QUERY_KEY)) || '',
-            activeFilter: getFilterFromURL(q, this.props.filters),
-            first: parseQueryInt(q, 'first') || this.props.defaultFirst!,
-            visible: parseQueryInt(q, 'visible') || 0,
+            query: (!this.props.hideSearch && this.props.useURLQuery && q.get(QUERY_KEY)) || '',
+            activeFilter: (this.props.useURLQuery && getFilterFromURL(q, this.props.filters)) || undefined,
+            first: (this.props.useURLQuery && parseQueryInt(q, 'first')) || this.props.defaultFirst!,
+            visible: (this.props.useURLQuery && parseQueryInt(q, 'visible')) || 0,
         }
     }
 
@@ -592,7 +592,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                 )
                 .subscribe(
                     ({ connectionOrError, previousPage, ...rest }) => {
-                        if (this.props.shouldUpdateURLQuery) {
+                        if (this.props.useURLQuery) {
                             this.props.history.replace({
                                 search: this.urlQuery({ visible: previousPage.length }),
                                 hash: this.props.location.hash,

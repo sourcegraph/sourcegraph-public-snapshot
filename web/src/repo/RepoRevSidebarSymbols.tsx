@@ -83,7 +83,7 @@ export class RepoRevSidebarSymbols extends React.PureComponent<Props> {
                 nodeComponent={SymbolNode}
                 nodeComponentProps={{ location: this.props.location } as Pick<SymbolNodeProps, 'location'>}
                 defaultFirst={100}
-                shouldUpdateURLQuery={false}
+                useURLQuery={false}
                 history={this.props.history}
                 location={this.props.location}
             />

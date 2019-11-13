@@ -147,11 +147,11 @@ export class Backend {
         try {
             const { database, dump } = await this.loadClosestDatabase(repository, commit, path, ctx)
             return await database.exists(this.pathToDatabase(dump.root, path))
-        } catch (e) {
-            if (e instanceof NoLSIFDumpError) {
+        } catch (error) {
+            if (error instanceof NoLSIFDumpError) {
                 return false
             }
-            throw e
+            throw error
         }
     }
 

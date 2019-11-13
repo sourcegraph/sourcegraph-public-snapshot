@@ -38,10 +38,10 @@ export const createConvertJobProcessor = (
 
             // Move the temp file where it can be found by the server
             await fs.rename(tempFile, dbFilename(settings.STORAGE_ROOT, dump.id, repository, commit))
-        } catch (e) {
+        } catch (error) {
             // Don't leave busted artifacts
             await fs.unlink(tempFile)
-            throw e
+            throw error
         }
     })
 

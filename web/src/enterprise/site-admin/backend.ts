@@ -41,15 +41,15 @@ export function fetchLsifJobs({
                 lsifJobs(state: $state, first: $first, after: $after, query: $query) {
                     nodes {
                         id
-                        name
-                        args
+                        type
+                        arguments
                         state
-                        progress
-                        failedReason
-                        stacktrace
-                        timestamp
-                        processedOn
-                        finishedOn
+                        failure {
+                            summary
+                        }
+                        queuedAt
+                        startedAt
+                        completedOrErroredAt
                     }
 
                     totalCount
@@ -78,14 +78,15 @@ export function fetchLsifJob({ id }: GQL.ILsifJobOnQueryArguments): Observable<G
                     __typename
                     ... on LSIFJob {
                         id
-                        name
-                        args
+                        type
+                        arguments
                         state
-                        progress
-                        failedReason
-                        timestamp
-                        processedOn
-                        finishedOn
+                        failure {
+                            summary
+                        }
+                        queuedAt
+                        startedAt
+                        completedOrErroredAt
                     }
                 }
             }

@@ -49,7 +49,7 @@ const LsifJobNode: FunctionComponent<LsifJobNodeProps> = ({ node }) => (
             </div>
 
             <small className="text-muted lsif-job__meta-timestamp">
-                <Timestamp noAbout={true} date={node.finishedOn || node.processedOn || node.timestamp} />
+                <Timestamp noAbout={true} date={node.completedOrErroredAt || node.startedAt || node.queuedAt} />
             </small>
         </div>
     </li>
@@ -204,12 +204,16 @@ export class SiteAdminLsifJobsPage extends React.Component<Props, State> {
  * @param job The job instance.
  */
 function lsifJobDescription(job: GQL.ILSIFJob): JSX.Element {
-    if (job.name === 'convert') {
-        const { repository, commit, root } = job.args as {
+    if (job.type === 'convert') {
+        const {
+            repository,
+            commit,
+            root,
+        }: {
             repository: string
             commit: string
             root: string
-        }
+        } = job.arguments
 
         return (
             <span>
@@ -232,14 +236,14 @@ function lsifJobDescription(job: GQL.ILSIFJob): JSX.Element {
         'update-tips': 'Refresh current uploads',
     }
 
-    if (internalJobs[job.name]) {
+    if (internalJobs[job.type]) {
         return (
             <span>
                 <strong>Internal job: </strong>
-                {internalJobs[job.name]}
+                {internalJobs[job.type]}
             </span>
         )
     }
 
-    return <span>Unknown job type {job.name}</span>
+    return <span>Unknown job type {job.type}</span>
 }

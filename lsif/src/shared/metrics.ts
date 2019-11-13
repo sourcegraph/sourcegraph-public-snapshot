@@ -8,9 +8,9 @@ export async function instrument<T>(
     const end = durationHistogram.startTimer()
     try {
         return await fn()
-    } catch (e) {
+    } catch (error) {
         errorsCounter.inc()
-        throw e
+        throw error
     } finally {
         end()
     }

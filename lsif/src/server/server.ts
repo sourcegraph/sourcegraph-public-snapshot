@@ -103,7 +103,7 @@ async function main(logger: Logger): Promise<void> {
     app.use(createMetaRouter())
     app.use(createLsifRouter(backend, queue, logger, tracer))
     app.use(createDumpRouter(backend))
-    app.use(createJobRouter(queue, scriptedClient))
+    app.use(createJobRouter(queue, scriptedClient, logger, tracer))
 
     // Error handler must be registered last
     app.use(errorHandler(logger))
