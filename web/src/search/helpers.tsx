@@ -331,10 +331,6 @@ export const formatQueryForFuzzySearch = (queryState: QueryState): string => {
         return filterAndValue
     }
 
-    // Any change to the filter being typed.
-    // Get to the filter and value being typed
-    const { firstPart, lastPart } = splitStringAtPosition(queryState.query, queryState.cursorPosition)
-
     // This is the match of the last typed filter and value before `queryState.cursorPosition`
     let formattedFilterAndValue = filterAndValue
 
@@ -347,6 +343,9 @@ export const formatQueryForFuzzySearch = (queryState: QueryState): string => {
     // Remove the '-' character from the start of a filter that's being typed.
     // E.g ('|' is the cursor): 'archived:Yes -file:| Props' => 'archived:Yes file:| Props'
     formattedFilterAndValue = formattedFilterAndValue.replace(/^-/, '')
+
+    // Split the query so `formattedFilterAndValue` can be placed in between
+    const { firstPart, lastPart } = splitStringAtPosition(queryState.query, queryState.cursorPosition)
 
     return firstPart.substring(0, filterIndex) + formattedFilterAndValue + lastPart
 }

@@ -182,7 +182,7 @@ export class QueryInput extends React.Component<Props, State> {
                             catchError(error => {
                                 console.error(error)
                                 // If fuzzy-search is not capable of returning suggestions for the query
-                                // or there is an internal error, than at least return the static suggestions
+                                // or there is an internal error, then at least return the static suggestions
                                 return [{ suggestions: staticSuggestions }]
                             })
                         )
