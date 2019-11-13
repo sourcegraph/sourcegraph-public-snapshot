@@ -44,12 +44,12 @@ func Indexed() *backend.Zoekt {
 	indexedSearchOnce.Do(func() {
 		indexedSearch = &backend.Zoekt{}
 		if indexers := Indexers(); indexers.Enabled() {
-			indexedSearch.Client = &backend.HorizontalSearcher{
+			indexedSearch.Client = backend.NewMeteredSearcher(&backend.HorizontalSearcher{
 				Map:  indexers.Map,
 				Dial: rpc.Client,
-			}
+			})
 		} else if addr := zoektAddr(os.Environ()); addr != "" {
-			indexedSearch.Client = rpc.Client(addr)
+			indexedSearch.Client = backend.NewMeteredSearcher(rpc.Client(addr))
 		}
 		conf.Watch(func() {
 			indexedSearch.SetEnabled(conf.SearchIndexEnabled())
