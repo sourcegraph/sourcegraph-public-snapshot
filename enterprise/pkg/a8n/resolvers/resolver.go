@@ -346,6 +346,15 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 	}
 
 	for _, r := range rs {
+		if !a8n.IsRepoSupported(&r.ExternalRepo) {
+			err = errors.Errorf(
+				"External service type %s of repository %q is currently not supported in Automation features",
+				r.ExternalRepo.ServiceType,
+				r.Name,
+			)
+			return nil, err
+		}
+
 		repoSet[r.ID] = r
 	}
 
