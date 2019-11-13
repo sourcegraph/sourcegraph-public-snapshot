@@ -83,7 +83,7 @@ export function fetchLsifDumps({
                             path
                             url
                         }
-                        uploadedAt
+                        processedAt
                     }
 
                     totalCount

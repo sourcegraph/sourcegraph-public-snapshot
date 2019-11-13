@@ -66,6 +66,8 @@
 // 1528395613_create_changeset_jobs_table.up.sql (829B)
 // 1528395614_lsif_nullable_parent_commits.down.sql (155B)
 // 1528395614_lsif_nullable_parent_commits.up.sql (155B)
+// 1528395615_lsif_processed_at.down.sql (131B)
+// 1528395615_lsif_processed_at.up.sql (260B)
 
 package migrations
 
@@ -1454,6 +1456,46 @@ func _1528395614_lsif_nullable_parent_commitsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395615_lsif_processed_atDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x29\xce\x4c\x8b\x4f\x29\xcd\x2d\x28\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\x28\x2d\xc8\xc9\x4f\x4c\x49\x4d\x89\x4f\x2c\xb1\xc6\xa5\x3e\xc8\xd5\xcf\xd1\xd7\x15\xa6\xa3\xa0\x28\x3f\x39\xb5\xb8\x18\xac\x45\xa1\x24\x1f\xd5\x04\x2e\x67\x7f\x5f\x5f\xcf\x10\x6b\x2e\x40\x00\x00\x00\xff\xff\xbb\x79\x30\xb1\x83\x00\x00\x00")
+
+func _1528395615_lsif_processed_atDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395615_lsif_processed_atDownSql,
+		"1528395615_lsif_processed_at.down.sql",
+	)
+}
+
+func _1528395615_lsif_processed_atDownSql() (*asset, error) {
+	bytes, err := _1528395615_lsif_processed_atDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395615_lsif_processed_at.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x47, 0xb5, 0xd3, 0x25, 0x75, 0xce, 0x2a, 0x1f, 0x79, 0xad, 0x5e, 0xd, 0x9, 0xb7, 0x7, 0x6, 0xc, 0x4a, 0x9d, 0xe1, 0x71, 0x7a, 0xe8, 0x87, 0x8c, 0x12, 0xa5, 0x62, 0xd2, 0xfa, 0xd6, 0x37}}
+	return a, nil
+}
+
+var __1528395615_lsif_processed_atUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x8d\x41\x0a\xc2\x30\x10\x45\xf7\x73\x8a\xb9\x47\x70\x91\xb6\x83\x14\x92\x54\xea\x74\x5d\x8a\x8d\x18\x68\x4c\x30\x29\x82\xa7\x17\xb3\x0b\x28\xb8\xfc\x1f\xde\x7b\x0d\x1d\x7b\x23\x00\xa4\x62\x1a\x91\x65\xa3\x08\xb7\xe4\xae\xf3\xba\xfb\x98\x70\x24\x23\x35\xe1\x1e\xb7\xb0\xac\x76\x9d\x97\x8c\x39\x60\x7c\x84\x8b\x4d\xa9\x6c\xf1\x0b\x95\x5d\x87\xed\xa0\x26\x6d\x6a\xdc\x79\x9b\xf2\xe2\x23\x3e\x5d\xbe\x95\x89\xaf\x70\xb7\x02\xa6\x53\x27\xb9\x52\x9c\x89\x2b\xf6\xf0\x67\xb9\xdc\x5f\xda\x1f\x9f\x19\x18\xcd\xa4\x94\x00\x68\x07\xad\x7b\x16\xf0\x0e\x00\x00\xff\xff\xce\x96\x46\x71\x04\x01\x00\x00")
+
+func _1528395615_lsif_processed_atUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395615_lsif_processed_atUpSql,
+		"1528395615_lsif_processed_at.up.sql",
+	)
+}
+
+func _1528395615_lsif_processed_atUpSql() (*asset, error) {
+	bytes, err := _1528395615_lsif_processed_atUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395615_lsif_processed_at.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xa0, 0xf3, 0x21, 0xf7, 0x5c, 0xbb, 0xed, 0x7a, 0x5d, 0x21, 0xc, 0x62, 0xc0, 0xc0, 0x1d, 0x8d, 0x73, 0x91, 0xeb, 0xa7, 0xf9, 0x15, 0x3, 0xc7, 0x3d, 0xd1, 0x14, 0x42, 0x90, 0x19, 0x2c, 0xf2}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1611,6 +1653,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395613_create_changeset_jobs_table.up.sql":                            _1528395613_create_changeset_jobs_tableUpSql,
 	"1528395614_lsif_nullable_parent_commits.down.sql":                         _1528395614_lsif_nullable_parent_commitsDownSql,
 	"1528395614_lsif_nullable_parent_commits.up.sql":                           _1528395614_lsif_nullable_parent_commitsUpSql,
+	"1528395615_lsif_processed_at.down.sql":                                    _1528395615_lsif_processed_atDownSql,
+	"1528395615_lsif_processed_at.up.sql":                                      _1528395615_lsif_processed_atUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1720,6 +1764,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395613_create_changeset_jobs_table.up.sql":                            {_1528395613_create_changeset_jobs_tableUpSql, map[string]*bintree{}},
 	"1528395614_lsif_nullable_parent_commits.down.sql":                         {_1528395614_lsif_nullable_parent_commitsDownSql, map[string]*bintree{}},
 	"1528395614_lsif_nullable_parent_commits.up.sql":                           {_1528395614_lsif_nullable_parent_commitsUpSql, map[string]*bintree{}},
+	"1528395615_lsif_processed_at.down.sql":                                    {_1528395615_lsif_processed_atDownSql, map[string]*bintree{}},
+	"1528395615_lsif_processed_at.up.sql":                                      {_1528395615_lsif_processed_atUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

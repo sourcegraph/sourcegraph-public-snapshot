@@ -418,6 +418,7 @@ describe('XrepoDatabase', () => {
                 'foo',
                 commit,
                 root,
+                new Date(),
                 [],
                 [
                     {
@@ -473,6 +474,7 @@ describe('XrepoDatabase', () => {
                 'foo',
                 commit,
                 root,
+                new Date(),
                 [],
                 [
                     {
@@ -533,9 +535,9 @@ describe('XrepoDatabase', () => {
             },
         ]
 
-        const dumpa = await xrepoDatabase.addPackagesAndReferences('foo', ca, '', [], references)
-        const dumpb = await xrepoDatabase.addPackagesAndReferences('foo', cb, '', [], references)
-        const dumpc = await xrepoDatabase.addPackagesAndReferences('foo', cc, '', [], references)
+        const dumpa = await xrepoDatabase.addPackagesAndReferences('foo', ca, '', new Date(), [], references)
+        const dumpb = await xrepoDatabase.addPackagesAndReferences('foo', cb, '', new Date(), [], references)
+        const dumpc = await xrepoDatabase.addPackagesAndReferences('foo', cc, '', new Date(), [], references)
 
         const getReferencedDumpIds = async () =>
             (

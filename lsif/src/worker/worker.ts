@@ -30,7 +30,7 @@ import { XrepoDatabase } from '../shared/xrepo/xrepo'
  */
 const wrapJobProcessor = <T>(
     name: string,
-    jobProcessor: (args: T, ctx: TracingContext) => Promise<void>,
+    jobProcessor: (job: Job, args: T, ctx: TracingContext) => Promise<void>,
     logger: Logger,
     tracer: Tracer | undefined
 ): ((job: Job) => Promise<void>) => async (job: Job) => {
@@ -52,7 +52,7 @@ const wrapJobProcessor = <T>(
     await instrument(
         metrics.jobDurationHistogram,
         metrics.jobDurationErrorsCounter,
-        (): Promise<void> => logAndTraceCall(ctx, `${name} job`, (ctx: TracingContext) => jobProcessor(args, ctx))
+        (): Promise<void> => logAndTraceCall(ctx, `${name} job`, (ctx: TracingContext) => jobProcessor(job, args, ctx))
     )
 }
 

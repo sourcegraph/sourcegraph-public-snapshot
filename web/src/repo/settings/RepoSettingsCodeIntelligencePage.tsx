@@ -25,7 +25,7 @@ const LsifDumpNode: FunctionComponent<{ node: GQL.ILSIFDump }> = ({ node }) => (
         </div>
 
         <small className="text-muted lsif-data__meta-timestamp">
-            <Timestamp noAbout={true} date={node.uploadedAt} />
+            <Timestamp noAbout={true} date={node.processedAt} />
         </small>
     </div>
 )

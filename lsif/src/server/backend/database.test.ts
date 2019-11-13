@@ -121,6 +121,7 @@ describe('createRemoteUri', () => {
             root: '',
             visibleAtTip: false,
             uploadedAt: new Date(),
+            processedAt: new Date(),
         }
 
         const uri = createRemoteUri(dump, 'src/position.ts')

@@ -49,6 +49,10 @@ func (r *lsifDumpResolver) UploadedAt() graphqlbackend.DateTime {
 	return graphqlbackend.DateTime{Time: r.lsifDump.UploadedAt}
 }
 
+func (r *lsifDumpResolver) ProcessedAt() graphqlbackend.DateTime {
+	return graphqlbackend.DateTime{Time: r.lsifDump.ProcessedAt}
+}
+
 //
 // Connection Resolver
 
