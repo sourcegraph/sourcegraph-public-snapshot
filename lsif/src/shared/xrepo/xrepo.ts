@@ -136,7 +136,7 @@ export class XrepoDatabase {
                 .getRawMany()
         )
 
-        return (payload as { repository: string }[]).map(e => e.repository)
+        return payload.map((e: { repository: string }) => e.repository)
     }
 
     /**
@@ -624,8 +624,15 @@ export class XrepoDatabase {
             const visible_ids = extractIds(await entityManager.query(visibleIdsQuery, [repository, commit]))
 
             // Get total number of items in this set of results
-            const rawCount = await entityManager.query(countQuery, [scheme, name, version, visible_ids])
-            const totalCount = parseInt((rawCount as { count: string }[])[0].count, 10)
+            const rawCount: { count: string }[] = await entityManager.query(countQuery, [
+                scheme,
+                name,
+                version,
+                visible_ids,
+            ])
+
+            // Oddly, this comes back as a string value in the result set
+            const totalCount = parseInt(rawCount[0].count, 10)
 
             // Construct method to select a page of possible references. We first perform
             // the query defined above that returns reference identifiers, then perform a

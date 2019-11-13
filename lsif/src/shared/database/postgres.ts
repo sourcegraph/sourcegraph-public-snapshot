@@ -151,10 +151,10 @@ function waitForMigrations(connection: Connection, logger: Logger): Promise<void
  * @param connection The database connection.
  */
 async function getMigrationVersion(connection: Connection): Promise<string> {
-    const rows = (await connection.query('select * from schema_migrations')) as {
+    const rows: {
         version: string
         dirty: boolean
-    }[]
+    }[] = await connection.query('select * from schema_migrations')
 
     if (rows.length > 0 && !rows[0].dirty) {
         return rows[0].version
