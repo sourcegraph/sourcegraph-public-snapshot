@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"strconv"
@@ -200,8 +201,8 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 			// to avoid sequential tree traversal calls.
 			return git.ReadDir(ctx, *cachedRepo, commitID, path, false)
 		},
-		ReadFile: func(ctx context.Context, path string, minBytes int64) ([]byte, error) {
-			return git.ReadFile(ctx, *cachedRepo, commitID, path, minBytes)
+		GetFileReader: func(ctx context.Context, path string) (io.ReadCloser, error) {
+			return git.NewFileReader(ctx, *cachedRepo, commitID, path)
 		},
 		CacheGet: func(tree os.FileInfo) (inventory.Inventory, bool) {
 			if b, ok := inventoryCache.Get(cacheKey(tree)); ok {
@@ -226,8 +227,8 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 
 	if !useEnhancedLanguageDetection {
 		// If USE_ENHANCED_LANGUAGE_DETECTION is disabled, do not read file contents to determine
-		// the language.
-		invCtx.ReadFile = func(ctx context.Context, path string, minBytes int64) ([]byte, error) {
+		// the language. Note, this always means we won't count the number of lines per language.
+		invCtx.GetFileReader = func(ctx context.Context, path string) (io.ReadCloser, error) {
 			return nil, nil
 		}
 	}

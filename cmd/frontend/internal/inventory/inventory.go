@@ -42,6 +42,7 @@ const minFileBytes = 16 * 1024
 
 // detect performs an inventory of the file passed in. If readFile is provided, the language
 // detection uses heuristics based on the file content for greater accuracy.
+// TODO: Deprecate this
 func detect(ctx context.Context, file os.FileInfo, readFile func(ctx context.Context, path string, minBytes int64) ([]byte, error)) (string, error) {
 	if !file.Mode().IsRegular() || enry.IsVendor(file.Name()) {
 		return "", nil
@@ -61,33 +62,42 @@ func detect(ctx context.Context, file os.FileInfo, readFile func(ctx context.Con
 }
 
 func getLang(ctx context.Context, file os.FileInfo, rc io.ReadCloser) (Lang, error) {
-	defer func() {
-		if rc != nil {
-			rc.Close()
-		}
-	}()
-
+	if rc != nil {
+		defer rc.Close()
+	}
 	if !file.Mode().IsRegular() || enry.IsVendor(file.Name()) {
 		return Lang{}, nil
 	}
 
-	lang := Lang{}
+	var (
+		lang Lang
+		data []byte
+		err  error
+	)
+
 	// In many cases, GetLanguageByFilename can detect the language conclusively just from the
 	// filename. If not, we pass a subset of the file contents for analysis.
 	matchedLang, safe := GetLanguageByFilename(file.Name())
-	if rc != nil {
-		var data []byte
-		var err error
-		if !safe {
-			// Detect language
+	if !safe {
+		// Detect language
+		if rc != nil {
 			r := io.LimitReader(rc, minFileBytes)
 			data, err = ioutil.ReadAll(r)
 			if err != nil {
 				return lang, err
 			}
-			matchedLang = enry.GetLanguage(file.Name(), data)
 		}
-
+		// NOTE: It seems that calling enry.GetLanguage with no content
+		// returns a different result to enry.GetLanguageByExtension.
+		// For example, files with .m extension are returned as either
+		// MATLAB or
+		// We continue to send zero content here to maintain backwards
+		// compatibility
+		matchedLang = enry.GetLanguage(file.Name(), data)
+	}
+	lang.Name = matchedLang
+	lang.TotalBytes = uint64(file.Size())
+	if rc != nil {
 		// Count lines
 		var linecount int
 		scanner := bufio.NewScanner(io.MultiReader(bytes.NewReader(data), rc))
@@ -98,10 +108,7 @@ func getLang(ctx context.Context, file os.FileInfo, rc io.ReadCloser) (Lang, err
 			return lang, errors.Wrap(scanner.Err(), "scanning file")
 		}
 		lang.TotalLines = uint64(linecount)
-
-		lang.TotalBytes = uint64(file.Size())
 	}
-	lang.Name = matchedLang
 	return lang, nil
 }
 
