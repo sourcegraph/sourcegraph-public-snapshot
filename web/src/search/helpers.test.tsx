@@ -191,16 +191,22 @@ describe('search/helpers', () => {
     })
 
     describe('formatQueryForFuzzySearch', () => {
+        const formatForSearchWithFilter = (filter: string) =>
+            formatQueryForFuzzySearch({
+                query: `archived:Yes ${filter}:value Props`,
+                // 19 is position until after ':value'
+                cursorPosition: 19 + filter.length,
+            })
+
         it('isolates filters that are in isolatedFuzzySearchFilters', () => {
-            expect(
-                isolatedFuzzySearchFilters.map(filterType =>
-                    formatQueryForFuzzySearch({
-                        query: `archived:Yes ${filterType}:value Props`,
-                        // 19 is position until after ':value'
-                        cursorPosition: 19 + filterType.length,
-                    })
-                )
-            ).toStrictEqual(isolatedFuzzySearchFilters.map(filterType => filterType + ':value'))
+            expect(isolatedFuzzySearchFilters.map(formatForSearchWithFilter)).toStrictEqual(
+                isolatedFuzzySearchFilters.map(filterType => filterType + ':value')
+            )
+        })
+        it('replaces filter being typed with its `filterAliasForSearch`', () => {
+            expect(Object.keys(filterAliasForSearch).map(formatForSearchWithFilter)).toStrictEqual(
+                Object.values(filterAliasForSearch).map(alias => `archived:Yes ${alias}:value Props`)
+            )
         })
         it('return absolute filter if filter being typed is negated (e.g: `-file`)', () => {
             expect(
@@ -209,17 +215,6 @@ describe('search/helpers', () => {
                     cursorPosition: 27,
                 })
             ).toBe('l:javascript file:index.js archived:No')
-        })
-        it('replaces filter being typed with its `filterAliasForSearch`', () => {
-            expect(
-                Object.keys(filterAliasForSearch).map(filterType =>
-                    formatQueryForFuzzySearch({
-                        query: `archived:Yes ${filterType}:value Props`,
-                        // 19 is position until after ':value'
-                        cursorPosition: 19 + filterType.length,
-                    })
-                )
-            ).toStrictEqual(Object.values(filterAliasForSearch).map(alias => `archived:Yes ${alias}:value Props`))
         })
     })
 })
