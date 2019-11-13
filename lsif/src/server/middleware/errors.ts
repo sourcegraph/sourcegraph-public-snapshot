@@ -26,7 +26,7 @@ export const errorHandler = (
     const status = (isApiError(error) && error.status) || 500
     const message = (isApiError(error) && error.message) || 'Unknown error'
 
-    if (status !== 500) {
+    if (status === 500) {
         logger.error('uncaught exception', { error })
     }
 
