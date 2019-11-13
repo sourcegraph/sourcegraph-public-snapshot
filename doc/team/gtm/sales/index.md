@@ -6,7 +6,7 @@ To get insights from the data to improve our sales and marketing effectiveness, 
 
 ## Associating Contacts to Deals
 
-It is critical to pick out the 3-5 most important contacts within a company to associate them with the relevant deal. This should include the technical decision-maker, the economic decision-maker (if they are different) and the original member who introduced Sourcegraph to the organization. 
+It is critical to associate all of the most important contacts within a company with any new deal. This should include the technical decision-maker, the economic decision-maker (if they are different) and the original member who introduced Sourcegraph to the organization. 
 
 Result: this allows us to evaluate the effectiveness of marketing channels and sales touchpoints that our team has with an organization. How we reached the person(s) who introduced Sourcegraph to their organization is one of the most important factors in evaluating the success of marketing activities.
 
