@@ -252,7 +252,7 @@ export class GenericCache<K, V> {
     private async resolved(entry: CacheEntry<K, V>, value: V): Promise<void> {
         entry.size = this.sizeFunction(value)
         this.size += entry.size
-        this.cacheMetrics.sizeGauge.inc(entry.size)
+        this.cacheMetrics.sizeGauge.set(this.size)
 
         let node = this.lruList.tail
         while (this.size > this.max && node) {
@@ -289,6 +289,7 @@ export class GenericCache<K, V> {
      */
     private removeNode(node: Yallist.Node<CacheEntry<K, V>>, size: number): void {
         this.size -= size
+        this.cacheMetrics.sizeGauge.set(this.size)
         this.lruList.removeNode(node)
         this.cache.delete(node.value.key)
     }
