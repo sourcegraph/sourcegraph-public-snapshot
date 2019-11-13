@@ -1,6 +1,10 @@
 {
   "extends": "../../../tsconfig.json",
+  "references": [{ "path": "../../../schema" }],
   "compilerOptions": {
     "jsx": "react",
+    "outDir": "out",
+    "rootDir": ".",
   },
+  "include": ["src/**/*"],
 }

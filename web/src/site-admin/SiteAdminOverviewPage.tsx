@@ -89,7 +89,10 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
 
         this.subscriptions.add(fetchOverview().subscribe(info => this.setState({ info })))
         this.subscriptions.add(
-            fetchWeeklyActiveUsers().subscribe(stats => this.setState({ stats }), error => this.setState({ error }))
+            fetchWeeklyActiveUsers().subscribe(
+                stats => this.setState({ stats }),
+                error => this.setState({ error })
+            )
         )
     }
 

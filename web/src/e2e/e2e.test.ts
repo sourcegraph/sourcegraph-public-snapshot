@@ -146,10 +146,12 @@ describe('e2e test suite', () => {
             })
 
             await driver.page.click('.e2e-create-access-token-submit')
-            const token: string = await (await driver.page.waitForFunction(() => {
-                const elem = document.querySelector<HTMLInputElement>('.e2e-access-token input[type=text]')
-                return elem && elem.value
-            })).jsonValue()
+            const token: string = await (
+                await driver.page.waitForFunction(() => {
+                    const elem = document.querySelector<HTMLInputElement>('.e2e-access-token input[type=text]')
+                    return elem && elem.value
+                })
+            ).jsonValue()
 
             const resp = await got.post('/.api/graphql', {
                 baseUrl: sourcegraphBaseUrl,
@@ -174,10 +176,12 @@ describe('e2e test suite', () => {
 
             await Promise.all([
                 driver.acceptNextDialog(),
-                (await driver.page.waitForSelector(
-                    `[data-e2e-access-token-description="${name}"] .e2e-access-token-delete`,
-                    { visible: true }
-                )).click(),
+                (
+                    await driver.page.waitForSelector(
+                        `[data-e2e-access-token-description="${name}"] .e2e-access-token-delete`,
+                        { visible: true }
+                    )
+                ).click(),
             ])
 
             await driver.page.waitFor(
@@ -224,9 +228,11 @@ describe('e2e test suite', () => {
                     '{"url": "https://github.myenterprise.com", "token": "initial-token", "repositoryQuery": ["none"]}',
             })
             await driver.page.goto(sourcegraphBaseUrl + '/site-admin/external-services')
-            await (await driver.page.waitForSelector(
-                `[data-e2e-external-service-name="${displayName}"] .e2e-edit-external-service-button`
-            )).click()
+            await (
+                await driver.page.waitForSelector(
+                    `[data-e2e-external-service-name="${displayName}"] .e2e-edit-external-service-button`
+                )
+            ).click()
 
             // Type in a new external service configuration.
             await driver.replaceText({
@@ -239,16 +245,20 @@ describe('e2e test suite', () => {
             // Must wait for the operation to complete, or else a "Discard changes?" dialog will pop up
             await driver.page.waitForSelector('.e2e-update-external-service-button:not([disabled])', { visible: true })
 
-            await (await driver.page.waitForSelector('.list-group-item[href="/site-admin/external-services"]', {
-                visible: true,
-            })).click()
+            await (
+                await driver.page.waitForSelector('.list-group-item[href="/site-admin/external-services"]', {
+                    visible: true,
+                })
+            ).click()
 
             await Promise.all([
                 driver.acceptNextDialog(),
-                (await driver.page.waitForSelector(
-                    '[data-e2e-external-service-name="e2e-github-test-2"] .e2e-delete-external-service-button',
-                    { visible: true }
-                )).click(),
+                (
+                    await driver.page.waitForSelector(
+                        '[data-e2e-external-service-name="e2e-github-test-2"] .e2e-delete-external-service-button',
+                        { visible: true }
+                    )
+                ).click(),
             ])
 
             await driver.page.waitFor(
@@ -308,10 +318,12 @@ describe('e2e test suite', () => {
                 ensureRepos: ['aws/test'],
             })
             await driver.page.goto(sourcegraphBaseUrl + '/aws/test/-/blob/README')
-            const blob: string = await (await driver.page.waitFor(() => {
-                const elem = document.querySelector<HTMLElement>('.e2e-repo-blob')
-                return elem && elem.textContent
-            })).jsonValue()
+            const blob: string = await (
+                await driver.page.waitFor(() => {
+                    const elem = document.querySelector<HTMLElement>('.e2e-repo-blob')
+                    return elem && elem.textContent
+                })
+            ).jsonValue()
 
             expect(blob).toBe('README\n\nchange')
         })
@@ -336,10 +348,12 @@ describe('e2e test suite', () => {
                 ensureRepos: ['bbs/SOURCEGRAPH/jsonrpc2'],
             })
             await driver.page.goto(sourcegraphBaseUrl + '/bbs/SOURCEGRAPH/jsonrpc2/-/blob/.travis.yml')
-            const blob: string = await (await driver.page.waitFor(() => {
-                const elem = document.querySelector<HTMLElement>('.e2e-repo-blob')
-                return elem && elem.textContent
-            })).jsonValue()
+            const blob: string = await (
+                await driver.page.waitFor(() => {
+                    const elem = document.querySelector<HTMLElement>('.e2e-repo-blob')
+                    return elem && elem.textContent
+                })
+            ).jsonValue()
 
             expect(blob).toBe('language: go\ngo: \n - 1.x\n\nscript:\n - go test -race -v ./...')
         })
@@ -447,9 +461,11 @@ describe('e2e test suite', () => {
                 await driver.page.goto(
                     sourcegraphBaseUrl + '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c'
                 )
-                await (await driver.page.waitForSelector('[data-tree-path="godockerize.go"]', {
-                    visible: true,
-                })).click()
+                await (
+                    await driver.page.waitForSelector('[data-tree-path="godockerize.go"]', {
+                        visible: true,
+                    })
+                ).click()
                 await driver.assertWindowLocation(
                     '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go'
                 )
@@ -744,9 +760,11 @@ describe('e2e test suite', () => {
 
                     await driver.page.waitForSelector('.e2e-symbol-name', { visible: true })
 
-                    await (await driver.page.waitForSelector(`.e2e-symbol-link[href*="${navigationTest.symbolPath}"]`, {
-                        visible: true,
-                    })).click()
+                    await (
+                        await driver.page.waitForSelector(`.e2e-symbol-link[href*="${navigationTest.symbolPath}"]`, {
+                            visible: true,
+                        })
+                    ).click()
                     await driver.assertWindowLocation(repoBaseURL + navigationTest.symbolPath, true)
                 })
             }
@@ -1223,8 +1241,8 @@ describe('e2e test suite', () => {
                 Array.from(document.querySelectorAll('.e2e-search-result-tab'), tab => tab.textContent)
             )
 
-            expect(tabs.length).toEqual(5)
-            expect(tabs).toStrictEqual(['Code', 'Diffs', 'Commits', 'Symbols', 'Repos'])
+            expect(tabs.length).toEqual(6)
+            expect(tabs).toStrictEqual(['Code', 'Diffs', 'Commits', 'Symbols', 'Repos', 'Files'])
 
             const activeTab = await driver.page.evaluate(
                 () => document.querySelectorAll('.e2e-search-result-tab--active').length

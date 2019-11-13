@@ -122,7 +122,28 @@ export async function gitserverExecLines(gitserverUrl: string, repository: strin
  * @param args The command to run in the repository's git directory.
  */
 async function gitserverExec(gitserverUrl: string, repository: string, args: string[]): Promise<string> {
-    const body = JSON.stringify({ repo: repository, args })
-    const resp = await got(new URL(`http://${gitserverUrl}/exec`).href, { body })
+    if (args[0] === 'git') {
+        // Prevent this from happening again:
+        // https://github.com/sourcegraph/sourcegraph/pull/5941
+        // https://github.com/sourcegraph/sourcegraph/pull/6548
+        throw new Error('gitserver commands should not be prefixed with `git`')
+    }
+
+    // Perform request - this may fail with a 404 or 500
+    const resp = await got(new URL(`http://${gitserverUrl}/exec`).href, {
+        body: JSON.stringify({ repo: repository, args }),
+    })
+
+    // Read trailers on a 200-level response
+    const status = resp.trailers['x-exec-exit-status']
+    const stderr = resp.trailers['x-exec-stderr']
+
+    // Determine if underlying git command failed and throw an error
+    // in that case. Status will be undefined in some of our tests and
+    // will be the process exit code (given as a string) otherwise.
+    if (status !== undefined && status !== '0') {
+        throw new Error(`Failed to run git command ${['git', ...args].join(' ')}: ${stderr}`)
+    }
+
     return resp.body
 }

@@ -42,9 +42,18 @@ describe('GenericCache', () => {
             factory.onCall(i).returns(Promise.resolve(value))
         }
 
-        const cache = new GenericCache<string, string>(5, () => 1, () => {}, testMetrics)
+        const cache = new GenericCache<string, string>(
+            5,
+            () => 1,
+            () => {},
+            testMetrics
+        )
         for (const value of values) {
-            const returnValue = await cache.withValue(value, () => factory(value), v => Promise.resolve(v))
+            const returnValue = await cache.withValue(
+                value,
+                () => factory(value),
+                v => Promise.resolve(v)
+            )
             expect(returnValue).toBe(value)
         }
 
@@ -57,7 +66,12 @@ describe('GenericCache', () => {
         const { wait, done } = createBarrierPromise()
         factory.returns(wait.then(() => 'bar'))
 
-        const cache = new GenericCache<string, string>(5, () => 1, () => {}, testMetrics)
+        const cache = new GenericCache<string, string>(
+            5,
+            () => 1,
+            () => {},
+            testMetrics
+        )
         const p1 = cache.withValue('foo', factory, v => Promise.resolve(v))
         const p2 = cache.withValue('foo', factory, v => Promise.resolve(v))
         const p3 = cache.withValue('foo', factory, v => Promise.resolve(v))
@@ -80,7 +94,11 @@ describe('GenericCache', () => {
         const cache = new GenericCache<string, string>(2, () => 1, disposer, testMetrics)
 
         for (const value of values) {
-            await cache.withValue(value, () => Promise.resolve(value), v => Promise.resolve(v))
+            await cache.withValue(
+                value,
+                () => Promise.resolve(value),
+                v => Promise.resolve(v)
+            )
         }
 
         await wait
@@ -102,9 +120,18 @@ describe('GenericCache', () => {
             factory.onCall(i).returns(Promise.resolve(value))
         }
 
-        const cache = new GenericCache<number, number>(5, v => v, () => {}, testMetrics)
+        const cache = new GenericCache<number, number>(
+            5,
+            v => v,
+            () => {},
+            testMetrics
+        )
         for (const value of values) {
-            await cache.withValue(value, () => factory(value), v => Promise.resolve(v))
+            await cache.withValue(
+                value,
+                () => factory(value),
+                v => Promise.resolve(v)
+            )
         }
 
         expect(factory.args).toEqual(expectedInstantiations.map(v => [v]))

@@ -1281,7 +1281,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoName, url string) error {
 		}
 	}
 
-	cmd := exec.CommandContext(ctx, "git", "fetch", "--prune", url, "+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*", "+refs/pull/*:refs/pull/*")
+	cmd := exec.CommandContext(ctx, "git", "fetch", "--prune", url, "+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*", "+refs/pull/*:refs/pull/*", "+refs/sourcegraph/*:refs/sourcegraph/*")
 	cmd.Dir = string(dir)
 
 	// drop temporary pack files after a fetch. this function won't

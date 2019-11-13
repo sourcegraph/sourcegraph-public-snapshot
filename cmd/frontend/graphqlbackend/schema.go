@@ -1294,6 +1294,7 @@ enum SearchVersion {
 enum SearchPatternType {
     literal
     regexp
+    structural
 }
 
 # Configuration details for the browser extension, editor extensions, etc.

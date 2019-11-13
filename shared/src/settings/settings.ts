@@ -38,7 +38,8 @@ export type SettingsSubject = Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdmini
         | Pick<GQL.IUser, '__typename' | 'username' | 'displayName'>
         | Pick<GQL.IOrg, '__typename' | 'name' | 'displayName'>
         | Pick<GQL.ISite, '__typename'>
-        | Pick<GQL.IDefaultSettings, '__typename'>)
+        | Pick<GQL.IDefaultSettings, '__typename'>
+    )
 
 /**
  * A cascade of settings from multiple subjects, from lowest precedence to highest precedence, and the final

@@ -126,7 +126,10 @@ export class RepositoryCompareOverviewPage extends React.PureComponent<Props, St
                         )
                     })
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    error => console.error(error)
+                )
         )
         this.componentUpdates.next(this.props)
     }

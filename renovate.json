@@ -13,7 +13,7 @@
       "labels": ["bot", "npm", "nightly"]
     },
     {
-      "paths": ["dev/release/*"],
+      "packageNames": ["@octokit/rest", "@slack/web-api", "googleapis"],
       "reviewers": ["beyang"]
     },
     {

@@ -36,8 +36,8 @@ export class Commit {
      * with the same `repository` and `commit`` fields. This value is an
      * empty string for a commit with no parent.
      */
-    @Column('text', { name: 'parent_commit' })
-    public parentCommit!: string
+    @Column('text', { name: 'parent_commit', nullable: true })
+    public parentCommit!: string | null
 }
 
 /**

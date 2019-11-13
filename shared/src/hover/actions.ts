@@ -110,10 +110,7 @@ export function getHoverActionsContext(
         // the fairly long LOADER_DELAY has elapsed.
         merge(
             [undefined], // don't block on the first emission
-            of(LOADING).pipe(
-                delay(LOADER_DELAY),
-                takeUntil(definitionURLOrError)
-            ),
+            of(LOADING).pipe(delay(LOADER_DELAY), takeUntil(definitionURLOrError)),
             definitionURLOrError
         ),
 
@@ -128,10 +125,7 @@ export function getHoverActionsContext(
         // quickly determined that there is no definition. TODO(sqs): Allow reference providers to register
         // "trigger characters" or have a "hasReferences" method to opt-out of being called for certain tokens.
         merge(
-            of(true).pipe(
-                delay(LOADER_DELAY),
-                takeUntil(definitionURLOrError.pipe(filter(v => !!v)))
-            ),
+            of(true).pipe(delay(LOADER_DELAY), takeUntil(definitionURLOrError.pipe(filter(v => !!v)))),
             definitionURLOrError.pipe(
                 filter(v => !!v),
                 map(v => !!v)
@@ -268,7 +262,8 @@ export function registerHoverContributions({
               }
           }
           platformContext: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL'>
-      }) & {
+      }
+) & {
     history: H.History
 }): Unsubscribable {
     const subscriptions = new Subscription()

@@ -71,13 +71,7 @@ export const EditorCompletionWidget: React.FunctionComponent<EditorCompletionWid
                             position: editor.selections[0].active,
                         })
                         .pipe(share())
-                    return merge(
-                        of(LOADING).pipe(
-                            delay(2000),
-                            takeUntil(result)
-                        ),
-                        result
-                    )
+                    return merge(of(LOADING).pipe(delay(2000), takeUntil(result)), result)
                 }),
                 catchError(err => [asError(err)])
             )

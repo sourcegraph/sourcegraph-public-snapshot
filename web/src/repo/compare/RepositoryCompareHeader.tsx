@@ -94,12 +94,14 @@ export class RepositoryCompareHeader extends React.PureComponent<Props, State> {
     }
 
     private onChange: React.ChangeEventHandler<HTMLInputElement> = e => {
-        this.setState((e.currentTarget.id === RepositoryCompareHeader.BASE_INPUT_ID
-            ? { comparisonBaseSpec: e.currentTarget.value }
-            : { comparisonHeadSpec: e.currentTarget.value }) as Pick<
-            State,
-            'comparisonBaseSpec' & 'comparisonHeadSpec'
-        >)
+        this.setState(
+            (e.currentTarget.id === RepositoryCompareHeader.BASE_INPUT_ID
+                ? { comparisonBaseSpec: e.currentTarget.value }
+                : { comparisonHeadSpec: e.currentTarget.value }) as Pick<
+                State,
+                'comparisonBaseSpec' & 'comparisonHeadSpec'
+            >
+        )
     }
 
     private onSubmit: React.FormEventHandler<HTMLFormElement> = e => {

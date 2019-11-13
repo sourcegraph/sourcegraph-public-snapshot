@@ -1,24 +1,18 @@
-import express from 'express'
-
 /**
- * Extract a page limit from the request query string.
+ * Normalize limit and offset values extracted from the query string.
  *
- * @param req The HTTP request.
+ * @param query Parameter bag.
  * @param defaultLimit The limit to use if one is not supplied.
  */
-export function extractLimit(req: express.Request, defaultLimit: number): number {
-    return parseInt(req.query.limit, 10) || defaultLimit
-}
-
-/**
- * Extract a page limit and offset from the request query string.
- *
- * @param req The HTTP request.
- * @param defaultLimit The limit to use if one is not supplied.
- */
-export function limitOffset(req: express.Request, defaultLimit: number): { limit: number; offset: number } {
-    return {
-        limit: parseInt(req.query.limit, 10) || defaultLimit,
-        offset: parseInt(req.query.offset, 10) || 0,
-    }
-}
+export const extractLimitOffset = (
+    {
+        limit,
+        offset,
+    }: {
+        /** The limit value extracted from the query string. */
+        limit?: number
+        /** The offset value extracted from the query string. */
+        offset?: number
+    },
+    defaultLimit: number
+): { limit: number; offset: number } => ({ limit: limit || defaultLimit, offset: offset || 0 })

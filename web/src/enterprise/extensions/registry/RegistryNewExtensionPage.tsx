@@ -88,7 +88,10 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                         map(result => ({ publishersOrError: result, publisher: result[0] && result[0].id })),
                         catchError(error => [{ publishersOrError: asError(error) }])
                     )
-                ).subscribe(stateUpdate => this.setState(stateUpdate as State), err => console.error(err))
+                ).subscribe(
+                    stateUpdate => this.setState(stateUpdate as State),
+                    err => console.error(err)
+                )
             )
 
             this.subscriptions.add(
@@ -109,7 +112,10 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                             )
                         )
                     )
-                    .subscribe(stateUpdate => this.setState(stateUpdate as State), err => console.error(err))
+                    .subscribe(
+                        stateUpdate => this.setState(stateUpdate as State),
+                        err => console.error(err)
+                    )
             )
 
             this.componentUpdates.next(this.props)

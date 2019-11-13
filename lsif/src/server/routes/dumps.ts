@@ -1,9 +1,10 @@
 import * as settings from '../settings'
+import * as validation from '../middleware/validation'
 import express from 'express'
 import { Backend } from '../backend/backend'
-import { limitOffset } from '../pagination/limit-offset'
 import { nextLink } from '../pagination/link'
 import { wrap } from 'async-middleware'
+import { extractLimitOffset } from '../pagination/limit-offset'
 
 /**
  * Create a router containing the LSIF dump endpoints.
@@ -13,14 +14,25 @@ import { wrap } from 'async-middleware'
 export function createDumpRouter(backend: Backend): express.Router {
     const router = express.Router()
 
+    interface DumpsQueryArgs {
+        query: string
+        visibleAtTip: boolean
+    }
+
     router.get(
         '/dumps/:repository',
+        validation.validationMiddleware([
+            validation.validateQuery,
+            validation.validateOptionalBoolean('visibleAtTip'),
+            validation.validateLimit,
+            validation.validateOffset,
+        ]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { repository } = req.params
-                const { query, visibleAtTip: visibleAtTipRaw } = req.query
-                const { limit, offset } = limitOffset(req, settings.DEFAULT_DUMP_PAGE_SIZE)
-                const visibleAtTip = visibleAtTipRaw === 'true'
+                const { query, visibleAtTip }: DumpsQueryArgs = req.query
+                const { limit, offset } = extractLimitOffset(req.query, settings.DEFAULT_DUMP_PAGE_SIZE)
+
                 const { dumps, totalCount } = await backend.dumps(
                     decodeURIComponent(repository),
                     query,

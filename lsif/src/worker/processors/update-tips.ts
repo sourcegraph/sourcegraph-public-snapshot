@@ -1,7 +1,7 @@
 import { TracingContext } from '../../shared/tracing'
 import { XrepoDatabase } from '../../shared/xrepo/xrepo'
 
-/*
+/**
  * Create a job that updates the tip of the default branch for every repository that has LSIF data.
  *
  * @param xrepoDatabase The cross-repo database.

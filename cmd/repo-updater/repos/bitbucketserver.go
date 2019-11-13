@@ -46,12 +46,12 @@ func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerCon
 	baseURL = NormalizeBaseURL(baseURL)
 
 	if cf == nil {
-		cf = NewHTTPClientFactory()
+		cf = httpcli.NewHTTPClientFactory()
 	}
 
 	var opts []httpcli.Opt
 	if c.Certificate != "" {
-		pool, err := newCertPool(c.Certificate)
+		pool, err := httpcli.NewCertPool(c.Certificate)
 		if err != nil {
 			return nil, err
 		}
@@ -101,6 +101,32 @@ func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerCon
 // in Sourcegraph via the external services configuration.
 func (s BitbucketServerSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	s.listAllRepos(ctx, results)
+}
+
+// CreateChangeset creates the given *Changeset in the code host.
+func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset) error {
+	repo := c.Repo.Metadata.(*bitbucketserver.Repo)
+
+	pr := &bitbucketserver.PullRequest{Title: c.Title, Description: c.Body}
+
+	pr.ToRef.Repository.Slug = repo.Slug
+	pr.ToRef.Repository.Project.Key = repo.Project.Key
+	pr.ToRef.ID = fmt.Sprintf("refs/heads/%s", c.BaseRefName)
+
+	pr.FromRef.Repository.Slug = repo.Slug
+	pr.FromRef.Repository.Project.Key = repo.Project.Key
+	pr.FromRef.ID = fmt.Sprintf("refs/heads/%s", c.HeadRefName)
+
+	err := s.client.CreatePullRequest(ctx, pr)
+	if err != nil {
+		return err
+	}
+
+	c.Changeset.Metadata = pr
+	c.Changeset.ExternalID = strconv.FormatInt(int64(pr.ID), 10)
+	c.Changeset.ExternalServiceType = bitbucketserver.ServiceType
+
+	return nil
 }
 
 // LoadChangesets loads the latest state of the given Changesets from the codehost.

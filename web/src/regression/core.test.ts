@@ -288,17 +288,21 @@ describe('Core functionality regression test suite', () => {
         })
 
         await driver.page.goto(config.sourcegraphBaseUrl + '/search')
-        await (await driver.findElementWithText(quicklinkInfo.name, {
-            tagName: 'a',
-            wait: { timeout: 1000 },
-        })).hover()
+        await (
+            await driver.findElementWithText(quicklinkInfo.name, {
+                tagName: 'a',
+                wait: { timeout: 1000 },
+            })
+        ).hover()
         await driver.findElementWithText(quicklinkInfo.description, {
             wait: { timeout: 1000 },
         })
-        await (await driver.findElementWithText(quicklinkInfo.name, {
-            tagName: 'a',
-            wait: { timeout: 1000 },
-        })).click()
+        await (
+            await driver.findElementWithText(quicklinkInfo.name, {
+                tagName: 'a',
+                wait: { timeout: 1000 },
+            })
+        ).click()
         await driver.page.waitForNavigation()
         expect(driver.page.url()).toEqual(quicklinkInfo.url)
     })

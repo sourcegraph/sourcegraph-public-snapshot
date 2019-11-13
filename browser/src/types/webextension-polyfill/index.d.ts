@@ -101,36 +101,30 @@ declare namespace browser.bookmarks {
     function update(id: string, changes: { title: string; url: string }): Promise<BookmarkTreeNode>
 
     const onCreated: CallbackEventEmitter<(id: string, bookmark: BookmarkTreeNode) => void>
-    const onRemoved: CallbackEventEmitter<
-        (
-            id: string,
-            removeInfo: {
-                parentId: string
-                index: number
-                node: BookmarkTreeNode
-            }
-        ) => void
-    >
-    const onChanged: CallbackEventEmitter<
-        (
-            id: string,
-            changeInfo: {
-                title: string
-                url?: string
-            }
-        ) => void
-    >
-    const onMoved: CallbackEventEmitter<
-        (
-            id: string,
-            moveInfo: {
-                parentId: string
-                index: number
-                oldParentId: string
-                oldIndex: number
-            }
-        ) => void
-    >
+    const onRemoved: CallbackEventEmitter<(
+        id: string,
+        removeInfo: {
+            parentId: string
+            index: number
+            node: BookmarkTreeNode
+        }
+    ) => void>
+    const onChanged: CallbackEventEmitter<(
+        id: string,
+        changeInfo: {
+            title: string
+            url?: string
+        }
+    ) => void>
+    const onMoved: CallbackEventEmitter<(
+        id: string,
+        moveInfo: {
+            parentId: string
+            index: number
+            oldParentId: string
+            oldIndex: number
+        }
+    ) => void>
 }
 
 declare namespace browser.browserAction {
@@ -1483,62 +1477,52 @@ declare namespace browser.tabs {
     function update(updateProperties: UpdateProperties): Promise<Tab>
 
     const onActivated: EventEmitter<{ tabId: number; windowId: number }>
-    const onAttached: CallbackEventEmitter<
-        (
-            tabId: number,
-            attachInfo: {
-                newWindowId: number
-                newPosition: number
-            }
-        ) => void
-    >
+    const onAttached: CallbackEventEmitter<(
+        tabId: number,
+        attachInfo: {
+            newWindowId: number
+            newPosition: number
+        }
+    ) => void>
     const onCreated: EventEmitter<Tab>
-    const onDetached: CallbackEventEmitter<
-        (
-            tabId: number,
-            detachInfo: {
-                oldWindowId: number
-                oldPosition: number
-            }
-        ) => void
-    >
+    const onDetached: CallbackEventEmitter<(
+        tabId: number,
+        detachInfo: {
+            oldWindowId: number
+            oldPosition: number
+        }
+    ) => void>
     const onHighlighted: EventEmitter<{ windowId: number; tabIds: number[] }>
-    const onMoved: CallbackEventEmitter<
-        (
-            tabId: number,
-            moveInfo: {
-                windowId: number
-                fromIndex: number
-                toIndex: number
-            }
-        ) => void
-    >
-    const onRemoved: CallbackEventEmitter<
-        (
-            tabId: number,
-            removeInfo: {
-                windowId: number
-                isWindowClosing: boolean
-            }
-        ) => void
-    >
+    const onMoved: CallbackEventEmitter<(
+        tabId: number,
+        moveInfo: {
+            windowId: number
+            fromIndex: number
+            toIndex: number
+        }
+    ) => void>
+    const onRemoved: CallbackEventEmitter<(
+        tabId: number,
+        removeInfo: {
+            windowId: number
+            isWindowClosing: boolean
+        }
+    ) => void>
     const onReplaced: CallbackEventEmitter<(addedTabId: number, removedTabId: number) => void>
-    const onUpdated: CallbackEventEmitter<
-        (
-            tabId: number,
-            changeInfo: {
-                audible?: boolean
-                discarded?: boolean
-                favIconUrl?: string
-                mutedInfo?: MutedInfo
-                pinned?: boolean
-                status?: string
-                title?: string
-                url?: string
-            },
-            tab: Tab
-        ) => void
-    >
+    const onUpdated: CallbackEventEmitter<(
+        tabId: number,
+        changeInfo: {
+            audible?: boolean
+            discarded?: boolean
+            favIconUrl?: string
+            mutedInfo?: MutedInfo
+            pinned?: boolean
+            status?: string
+            title?: string
+            url?: string
+        },
+        tab: Tab
+    ) => void>
     const onZoomChanged: EventEmitter<{
         tabId: number
         oldZoomFactor: number
@@ -1697,7 +1681,8 @@ declare namespace browser.webRequest {
 
     type HttpHeaders = (
         | { name: string; binaryValue: number[]; value?: string }
-        | { name: string; value: string; binaryValue?: number[] })[]
+        | { name: string; value: string; binaryValue?: number[] }
+    )[]
 
     interface BlockingResponse {
         cancel?: boolean

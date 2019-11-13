@@ -28,7 +28,7 @@ export const wrapRemoteObservable = <T>(proxyPromise: Promise<ProxyResult<ProxyS
                         // Always subscribe with an object because the other side
                         // is unable to tell if a Proxy is a function or an observer object
                         // (they always appear as functions)
-                        let proxyObserver: Parameters<(typeof proxySubscribable)['subscribe']>[0]
+                        let proxyObserver: Parameters<typeof proxySubscribable['subscribe']>[0]
                         if (typeof args[0] === 'function') {
                             proxyObserver = {
                                 [proxyValueSymbol]: true,
