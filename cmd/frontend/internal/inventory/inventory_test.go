@@ -2,8 +2,9 @@ package inventory
 
 import (
 	"bufio"
+	"bytes"
 	"context"
-	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -12,7 +13,7 @@ import (
 	"github.com/src-d/enry/v2"
 )
 
-func TestDetect_noReadFile(t *testing.T) {
+func TestGetLang_language(t *testing.T) {
 	tests := map[string]struct {
 		file fi
 		want string
@@ -28,12 +29,12 @@ func TestDetect_noReadFile(t *testing.T) {
 	}
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
-			lang, err := detect(context.Background(), test.file, nil)
+			lang, err := getLang(context.Background(), test.file, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if lang != test.want {
-				t.Fatalf("got %q, want %q", lang, test.want)
+			if lang.Name != test.want {
+				t.Fatalf("got %q, want %q", lang.Name, test.want)
 			}
 		})
 	}
@@ -68,20 +69,6 @@ func (f fi) Sys() interface{} {
 	return interface{}(nil)
 }
 
-func newReadFile(files []os.FileInfo) func(_ context.Context, path string, minFileBytes int64) ([]byte, error) {
-	m := make(map[string][]byte, len(files))
-	for _, f := range files {
-		m[f.Name()] = []byte(f.(fi).Contents)
-	}
-	return func(_ context.Context, path string, minFileBytes int64) ([]byte, error) {
-		data, ok := m[path]
-		if !ok {
-			return nil, fmt.Errorf("no file: %s", path)
-		}
-		return data, nil
-	}
-}
-
 func TestGet_readFile(t *testing.T) {
 	tests := []struct {
 		file os.FileInfo
@@ -99,31 +86,49 @@ func TestGet_readFile(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.file.Name(), func(t *testing.T) {
-			lang, err := detect(context.Background(), test.file, func(_ context.Context, path string, minFileBytes int64) ([]byte, error) {
-				return []byte(test.file.(fi).Contents), nil
-			})
+			rc := ioutil.NopCloser(bytes.NewReader([]byte(test.file.(fi).Contents)))
+			lang, err := getLang(context.Background(), test.file, rc)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if lang != test.want {
-				t.Errorf("got %q, want %q", lang, test.want)
+			if lang.Name != test.want {
+				t.Errorf("got %q, want %q", lang.Name, test.want)
 			}
 		})
 	}
 }
 
-func BenchmarkGet(b *testing.B) {
+type nopReadCloser struct {
+	r *bytes.Reader
+}
+
+func (n *nopReadCloser) Read(b []byte) (int, error) {
+	return n.r.Read(b)
+}
+
+func (n *nopReadCloser) Close() error {
+	return nil
+}
+
+func BenchmarkGetLang(b *testing.B) {
 	files, err := readFileTree("prom-repo-tree.txt")
 	if err != nil {
 		b.Fatal(err)
 	}
-	readFile := newReadFile(files)
+	dataMap := make(map[string][]byte)
+	for _, f := range files {
+		dataMap[f.Name()] = []byte(f.(fi).Contents)
+	}
 	b.Logf("Calling Get on %d files.", len(files))
-
+	rc := &nopReadCloser{
+		r: bytes.NewReader(nil),
+	}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		for _, file := range files {
-			_, err = detect(context.Background(), file, readFile)
+			data := dataMap[file.Name()]
+			rc.r.Reset(data)
+			_, err = getLang(context.Background(), file, rc)
 			if err != nil {
 				b.Fatal(err)
 			}

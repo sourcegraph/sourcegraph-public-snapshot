@@ -40,27 +40,6 @@ type Lang struct {
 // language detection.
 const minFileBytes = 16 * 1024
 
-// detect performs an inventory of the file passed in. If readFile is provided, the language
-// detection uses heuristics based on the file content for greater accuracy.
-// TODO: Deprecate this
-func detect(ctx context.Context, file os.FileInfo, readFile func(ctx context.Context, path string, minBytes int64) ([]byte, error)) (string, error) {
-	if !file.Mode().IsRegular() || enry.IsVendor(file.Name()) {
-		return "", nil
-	}
-
-	// In many cases, GetLanguageByFilename can detect the language conclusively just from the
-	// filename. Only try to read the file (which is much slower) if needed.
-	matchedLang, safe := GetLanguageByFilename(file.Name())
-	if !safe && readFile != nil {
-		data, err := readFile(ctx, file.Name(), minFileBytes)
-		if err != nil {
-			return "", err
-		}
-		matchedLang = enry.GetLanguage(file.Name(), data)
-	}
-	return matchedLang, nil
-}
-
 func getLang(ctx context.Context, file os.FileInfo, rc io.ReadCloser) (Lang, error) {
 	if rc != nil {
 		defer rc.Close()
