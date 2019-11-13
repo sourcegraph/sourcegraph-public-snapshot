@@ -35,7 +35,6 @@ var defaultEnv = map[string]string{
 	"SRC_HTTPS_ADDR":        ":8443",
 	"SRC_FRONTEND_INTERNAL": FrontendInternalHost,
 	"GITHUB_BASE_URL":       "http://127.0.0.1:3180", // points to github-proxy
-	"HOSTNAME":              "http://127.0.0.1:3070",
 
 	"GRAFANA_SERVER_URL": "http://127.0.0.1:3370",
 
