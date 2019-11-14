@@ -332,7 +332,10 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
     const currentSpec = campaign && campaign.__typename === 'CampaignPlan' ? parseJSONC(campaign.arguments) : undefined
     // Tracks if a refresh of the campaignPlan is required before the campaign can be created
-    const previewRefreshNeeded = !currentSpec || !isEqual(currentSpec, parseJSONC(campaignPlanArguments))
+    const previewRefreshNeeded =
+        !currentSpec ||
+        !isEqual(currentSpec, parseJSONC(campaignPlanArguments)) ||
+        (status && status.state !== 'COMPLETED')
 
     return (
         <>
