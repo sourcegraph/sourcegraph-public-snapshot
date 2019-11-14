@@ -30,6 +30,8 @@ import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { EmptyRepositoryPage, RepositoryCloningInProgressPage } from './RepositoryGitDataContainer'
 import { RevisionsPopover } from './RevisionsPopover'
 import { PatternTypeProps } from '../search'
+import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
+import { RepoSettingsSideBarItem } from './settings/RepoSettingsSidebar'
 
 /** Props passed to sub-routes of {@link RepoRevContainer}. */
 export interface RepoRevContainerContext
@@ -67,6 +69,8 @@ interface RepoRevContainerProps
         ActivationProps,
         PatternTypeProps {
     routes: readonly RepoRevContainerRoute[]
+    repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
+    repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
     repo: GQL.IRepository
     rev: string
     authenticatedUser: GQL.IUser | null
@@ -218,6 +222,8 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
             settingsCascade: this.props.settingsCascade,
             patternType: this.props.patternType,
             togglePatternType: this.props.togglePatternType,
+            repoSettingsAreaRoutes: this.props.repoSettingsAreaRoutes,
+            repoSettingsSidebarItems: this.props.repoSettingsSidebarItems,
         }
 
         return (

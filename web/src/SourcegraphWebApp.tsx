@@ -51,6 +51,8 @@ import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { parseSearchURLPatternType } from './search'
 import { ThemePreference } from './search/theme'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
+import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
+import { RepoSettingsSideBarItem } from './repo/settings/RepoSettingsSidebar'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     exploreSections: readonly ExploreSectionDescriptor[]
@@ -70,6 +72,8 @@ export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevContainerRoutes: readonly RepoRevContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
+    repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
+    repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
     routes: readonly LayoutRouteProps[]
     showCampaigns: boolean
 }
