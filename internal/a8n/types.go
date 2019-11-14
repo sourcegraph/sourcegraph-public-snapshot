@@ -520,6 +520,8 @@ func (e *ChangesetEvent) Timestamp() time.Time {
 		t = e.CreatedAt
 	case *github.UnassignedEvent:
 		t = e.CreatedAt
+	case *bitbucketserver.Activity:
+		t = unixMilliToTime(int64(e.CreatedDate))
 	}
 
 	return t
