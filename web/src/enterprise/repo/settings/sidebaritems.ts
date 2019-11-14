@@ -1,5 +1,5 @@
-import { RepoSettingsSideBarItems } from './../../../repo/settings/RepoSettingsSidebar'
-import { repoSettingsSidebarItems } from './../../../repo/settings/sidebaritems'
+import { RepoSettingsSideBarItems } from '../../../repo/settings/RepoSettingsSidebar'
+import { repoSettingsSidebarItems } from '../../../repo/settings/sidebaritems'
 
 export const enterpriseRepoSettingsSidebarItems: RepoSettingsSideBarItems = [
     ...repoSettingsSidebarItems,
