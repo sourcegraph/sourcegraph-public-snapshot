@@ -136,7 +136,7 @@ export class XrepoDatabase {
                 .getRawMany()
         )
 
-        return (payload as { repository: string }[]).map(e => e.repository)
+        return payload.map((e: { repository: string }) => e.repository)
     }
 
     /**
@@ -259,7 +259,7 @@ export class XrepoDatabase {
             )
 
             for (const [commit, parentCommit] of commits) {
-                await commitInserter.insert({ repository, commit, parentCommit: parentCommit || '' })
+                await commitInserter.insert({ repository, commit, parentCommit })
             }
 
             await commitInserter.flush()
@@ -296,6 +296,7 @@ export class XrepoDatabase {
      * @param repository The repository being updated.
      * @param commit The commit being updated.
      * @param root The root of all files in this dump.
+     * @param uploadedAt The time the dump was uploaded.
      * @param packages The list of packages that this repository defines (scheme, name, and version).
      * @param references The list of packages that this repository depends on (scheme, name, and version) and the symbols that the package references.
      */
@@ -303,11 +304,12 @@ export class XrepoDatabase {
         repository: string,
         commit: string,
         root: string,
+        uploadedAt: Date,
         packages: Package[],
         references: SymbolReferences[]
     ): Promise<xrepoModels.LsifDump> {
         return this.withTransactionalEntityManager(async entityManager => {
-            const dump = await this.insertDump(repository, commit, root, entityManager)
+            const dump = await this.insertDump(repository, commit, root, uploadedAt, entityManager)
 
             const packageInserter = new TableInserter<xrepoModels.PackageModel, new () => xrepoModels.PackageModel>(
                 entityManager,
@@ -347,12 +349,14 @@ export class XrepoDatabase {
      * @param repository The repository.
      * @param commit The commit.
      * @param root The root of all files that are in this dump.
+     * @param uploadedAt The time the dump was uploaded.
      * @param entityManager The EntityManager for the connection to the xrepo database.
      */
     public async insertDump(
         repository: string,
         commit: string,
         root: string,
+        uploadedAt: Date = new Date(),
         entityManager: EntityManager = this.connection.createEntityManager()
     ): Promise<xrepoModels.LsifDump> {
         // Get existing dumps from the same repo@commit that overlap with the current
@@ -379,6 +383,7 @@ export class XrepoDatabase {
         dump.repository = repository
         dump.commit = commit
         dump.root = root
+        dump.uploadedAt = uploadedAt
         await entityManager.save(dump)
         return dump
     }
@@ -624,8 +629,15 @@ export class XrepoDatabase {
             const visible_ids = extractIds(await entityManager.query(visibleIdsQuery, [repository, commit]))
 
             // Get total number of items in this set of results
-            const rawCount = await entityManager.query(countQuery, [scheme, name, version, visible_ids])
-            const totalCount = parseInt((rawCount as { count: string }[])[0].count, 10)
+            const rawCount: { count: string }[] = await entityManager.query(countQuery, [
+                scheme,
+                name,
+                version,
+                visible_ids,
+            ])
+
+            // Oddly, this comes back as a string value in the result set
+            const totalCount = parseInt(rawCount[0].count, 10)
 
             // Construct method to select a page of possible references. We first perform
             // the query defined above that returns reference identifiers, then perform a

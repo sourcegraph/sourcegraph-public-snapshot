@@ -7,15 +7,13 @@ describe('Backend', () => {
     const ctx = new util.BackendTestContext()
     const repository = 'monorepo'
 
-    // Note: we use '.' as a suffix for commit numbers on construction so that
-    // we can distinguish `1` and `11` (`1.1.1...` and `11.11.11...`).
-    const c0 = util.createCommit('0.')
-    const c1 = util.createCommit('1.')
-    const c2 = util.createCommit('2.')
-    const c3 = util.createCommit('3.')
-    const c4 = util.createCommit('4.')
-    const cpen = util.createCommit(`${MAX_TRAVERSAL_LIMIT * 2 - 1}.`)
-    const cmax = util.createCommit(`${MAX_TRAVERSAL_LIMIT * 2}.`)
+    const c0 = util.createCommit(0)
+    const c1 = util.createCommit(1)
+    const c2 = util.createCommit(2)
+    const c3 = util.createCommit(3)
+    const c4 = util.createCommit(4)
+    const cpen = util.createCommit(MAX_TRAVERSAL_LIMIT * 2 - 1)
+    const cmax = util.createCommit(MAX_TRAVERSAL_LIMIT * 2)
 
     beforeAll(async () => {
         await ctx.init()
@@ -72,8 +70,8 @@ describe('Backend', () => {
         await ctx.xrepoDatabase.updateCommits(
             repository,
             Array.from({ length: MAX_TRAVERSAL_LIMIT * 2 + 1 }, (_, i) => [
-                util.createCommit(`${i}.`),
-                util.createCommit(`${i + 1}.`),
+                util.createCommit(i),
+                util.createCommit(i + 1),
             ])
         )
     })
@@ -138,7 +136,7 @@ describe('Backend', () => {
         // Add external references
         const repos = ['ext1', 'ext2', 'ext3', 'ext4', 'ext5']
         const filename = 'reference-pagination-monorepo/data/f-ref.lsif.gz'
-        await Promise.all(repos.map(r => ctx.convertTestData(r, util.createCommit(r), 'f/', filename)))
+        await Promise.all(repos.map(r => ctx.convertTestData(r, util.createCommit(0), 'f/', filename)))
 
         const fetch = async (paginationContext?: ReferencePaginationContext) =>
             util.filterNodeModules(

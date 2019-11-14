@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -310,7 +311,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 			Kind:        req.ExternalService.Kind,
 			DisplayName: req.ExternalService.DisplayName,
 			Config:      req.ExternalService.Config,
-		}, repos.NewHTTPClientFactory())
+		}, httpcli.NewHTTPClientFactory())
 		if err != nil {
 			errch <- err
 			return

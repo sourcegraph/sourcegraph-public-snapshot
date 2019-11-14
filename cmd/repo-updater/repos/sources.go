@@ -90,6 +90,7 @@ type Source interface {
 // A ChangesetSource can load the latest state of a list of Changesets.
 type ChangesetSource interface {
 	LoadChangesets(context.Context, ...*Changeset) error
+	CreateChangeset(context.Context, *Changeset) error
 }
 
 // A SourceResult is sent by a Source over a channel for each repository it

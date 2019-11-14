@@ -1301,6 +1301,7 @@ enum SearchVersion {
 enum SearchPatternType {
     literal
     regexp
+    structural
 }
 
 # Configuration details for the browser extension, editor extensions, etc.
@@ -3926,6 +3927,9 @@ type LSIFDump implements Node {
 
     # The time the dump was uploaded.
     uploadedAt: DateTime!
+
+    # The time the dump became available for use.
+    processedAt: DateTime!
 }
 
 # A list of LSIF dumps.
@@ -3979,37 +3983,40 @@ type LSIFJobStats implements Node {
     scheduledCount: Int!
 }
 
-# A queued, active, or completed LSIF job.
+# Metadata and status about an LSIF job.
 type LSIFJob implements Node {
     # The ID.
     id: ID!
 
-    # The job type (convert, or clean-old-jobs).
-    name: String!
+    # The job type.
+    type: String!
 
     # The job's arguments.
-    args: JSONValue!
+    arguments: JSONValue!
 
     # The job's current state.
     state: LSIFJobState!
 
-    # The current job progress (0 to 100).
-    progress: Float!
-
-    # If the job failed, its failure message.
-    failedReason: String
-
-    # If the job failed, its stacktrace.
-    stacktrace: [String!]
+    # Metadata about a job's failure (not set if state is not ERRORED).
+    failure: LSIFJobFailureReason
 
     # The time the job was queued.
-    timestamp: DateTime!
+    queuedAt: DateTime!
 
     # The time the job was processed.
-    processedOn: DateTime
+    startedAt: DateTime
 
-    # The time the job was finished.
-    finishedOn: DateTime
+    # The time the job compelted or errored.
+    completedOrErroredAt: DateTime
+}
+
+# Metadata about a LSIF job failure.
+type LSIFJobFailureReason {
+    # A summary of the failure.
+    summary: String!
+
+    # The stacktrace from each failed attempt of the job.
+    stacktraces: [String!]!
 }
 
 # A list of LSIF jobs.

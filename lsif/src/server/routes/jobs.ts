@@ -1,27 +1,32 @@
 import * as settings from '../settings'
 import * as validation from '../middleware/validation'
 import express from 'express'
-import { ApiJobState, QUEUE_PREFIX, queueTypes, statesByQueue } from '../../shared/queue/queue'
+import { addTags, TracingContext } from '../../shared/tracing'
+import { ApiJobState, enqueue, QUEUE_PREFIX, queueTypes, statesByQueue } from '../../shared/queue/queue'
+import { checkSchema, ParamSchema } from 'express-validator'
 import { chunk } from 'lodash'
 import { Job, Queue } from 'bull'
+import { Logger } from 'winston'
 import { nextLink } from '../pagination/link'
 import { ScriptedRedis } from '../redis/redis'
+import { Span, Tracer } from 'opentracing'
 import { wrap } from 'async-middleware'
+import bodyParser from 'body-parser'
+import { waitForJob } from '../jobs/blocking'
+import { extractLimitOffset } from '../pagination/limit-offset'
 
 /**
  * The representation of a job as returned by the API.
  */
 interface ApiJob {
     id: string
-    name: string
-    args: object
+    type: string
+    arguments: object
     state: ApiJobState
-    progress: number
-    failedReason: string | null
-    stacktrace: string[] | null
-    timestamp: string
-    processedOn: string | null
-    finishedOn: string | null
+    failure: { summary: string; stacktraces: string[] } | null
+    queuedAt: string
+    startedAt: string | null
+    completedOrErroredAt: string | null
 }
 
 /**
@@ -29,7 +34,6 @@ interface ApiJob {
  *
  * @param timestamp The millisecond POSIX timestamp.
  */
-
 const toDate = (timestamp: number): string => new Date(timestamp).toISOString()
 
 /**
@@ -40,11 +44,50 @@ const toDate = (timestamp: number): string => new Date(timestamp).toISOString()
 const toMaybeDate = (timestamp: number | null): string | null => (timestamp ? toDate(timestamp) : null)
 
 /**
- * Attempt to convert a string into an integer.
+ * Format a job to return from the API.
  *
- * @param value The int-y string.
+ * @param payload The job's JSON payload.
  */
-const toMaybeInt = (value: string | undefined): number | null => (value ? parseInt(value, 10) : null)
+const formatJobInternal = ({
+    id,
+    name,
+    data,
+    failedReason,
+    stacktrace,
+    timestamp,
+    finishedOn,
+    processedOn,
+    state,
+}: {
+    id: string | number
+    name: string
+    data: unknown
+    failedReason: unknown
+    stacktrace: string[] | null
+    timestamp: number
+    finishedOn: number | null
+    processedOn: number | null
+    state: ApiJobState
+}): ApiJob => {
+    const failure =
+        state === 'errored' && typeof failedReason === 'string' && stacktrace
+            ? { summary: failedReason, stacktraces: stacktrace }
+            : null
+
+    // All jobs are enqueued with an args object property
+    const envelope: { args: object } = data as { args: object }
+
+    return {
+        id: `${id}`,
+        type: name,
+        arguments: envelope.args,
+        state,
+        failure,
+        queuedAt: toDate(timestamp),
+        startedAt: toMaybeDate(processedOn),
+        completedOrErroredAt: toMaybeDate(finishedOn),
+    }
+}
 
 /**
  * Format a job to return from the API.
@@ -52,22 +95,7 @@ const toMaybeInt = (value: string | undefined): number | null => (value ? parseI
  * @param job The job to format.
  * @param state The job's state.
  */
-const formatJob = (job: Job, state: ApiJobState): ApiJob => {
-    const payload = job.toJSON()
-
-    return {
-        id: `${payload.id}`,
-        name: payload.name,
-        args: payload.data.args,
-        state,
-        progress: payload.progress,
-        failedReason: payload.failedReason,
-        stacktrace: payload.stacktrace,
-        timestamp: toDate(payload.timestamp),
-        processedOn: toMaybeDate(payload.processedOn),
-        finishedOn: toMaybeDate(payload.finishedOn),
-    }
-}
+const formatJob = (job: Job, state: ApiJobState): ApiJob => formatJobInternal({ state, ...job.toJSON() })
 
 /**
  * Format a job to return from the API.
@@ -78,19 +106,21 @@ const formatJob = (job: Job, state: ApiJobState): ApiJob => {
 const formatJobFromMap = (values: Map<string, string>, state: ApiJobState): ApiJob => {
     const rawData = values.get('data')
     const rawStacktrace = values.get('stacktrace')
+    const rawTimestamp = values.get('timestamp')
+    const rawProcessedOn = values.get('processedOn')
+    const rawFinishedOn = values.get('finishedOn')
 
-    return {
+    return formatJobInternal({
         id: values.get('id') || '',
         name: values.get('name') || '',
-        args: rawData ? JSON.parse(rawData).args : {},
-        state,
-        progress: toMaybeInt(values.get('progress')) || 0,
+        data: JSON.parse(rawData || '{}'),
         failedReason: values.get('failedReason') || null,
         stacktrace: rawStacktrace ? JSON.parse(rawStacktrace) : null,
-        timestamp: toMaybeDate(toMaybeInt(values.get('timestamp'))) || '',
-        processedOn: toMaybeDate(toMaybeInt(values.get('processedOn'))),
-        finishedOn: toMaybeDate(toMaybeInt(values.get('finishedOn'))),
-    }
+        timestamp: rawTimestamp ? parseInt(rawTimestamp, 10) : 0,
+        processedOn: rawProcessedOn ? parseInt(rawProcessedOn, 10) : null,
+        finishedOn: rawFinishedOn ? parseInt(rawFinishedOn, 10) : null,
+        state,
+    })
 }
 
 /**
@@ -98,9 +128,73 @@ const formatJobFromMap = (values: Map<string, string>, state: ApiJobState): ApiJ
  *
  * @param queue The queue instance.
  * @param scriptedClient The Redis client with scripts loaded.
+ * @param logger The logger instance.
+ * @param tracer The tracer instance.
  */
-export function createJobRouter(queue: Queue, scriptedClient: ScriptedRedis): express.Router {
+export function createJobRouter(
+    queue: Queue,
+    scriptedClient: ScriptedRedis,
+    logger: Logger,
+    tracer: Tracer | undefined
+): express.Router {
     const router = express.Router()
+
+    /**
+     * Create a tracing context from the request logger and tracing span
+     * tagged with the given values.
+     *
+     * @param req The express request.
+     * @param tags The tags to apply to the logger and span.
+     */
+    const createTracingContext = (
+        req: express.Request & { span?: Span },
+        tags: { [K: string]: unknown }
+    ): TracingContext => addTags({ logger, span: req.span }, tags)
+
+    interface EnqueueQueryArgs {
+        blocking: boolean
+        maxWait: number
+    }
+
+    interface EnqueueBodyArgs {
+        name: string
+    }
+
+    const enqueueBodySchema: Record<string, ParamSchema> = {
+        name: { isIn: { options: [['update-tips', 'clean-old-jobs', 'clean-failed-jobs']] } },
+    }
+
+    router.post(
+        '/jobs',
+        bodyParser.json({ limit: '1mb' }),
+        validation.validationMiddleware([
+            validation.validateOptionalBoolean('blocking'),
+            validation.validateOptionalInt('maxWait'),
+            ...checkSchema(enqueueBodySchema, ['body']),
+        ]),
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const { blocking, maxWait }: EnqueueQueryArgs = req.query
+                const { name }: EnqueueBodyArgs = req.body
+
+                // Enqueue job
+                const ctx = createTracingContext(req, { name })
+                logger.debug(`enqueueing ${name} job`)
+                const job = await enqueue(queue, name, {}, {}, tracer, ctx.span)
+
+                if (blocking && (await waitForJob(job, maxWait))) {
+                    // Job succeeded while blocked, send success
+                    res.status(200).send({ id: job.id })
+                    return
+                }
+
+                // Job will complete asynchronously, send an accepted response with
+                // the job id so that the client can continue to track the progress
+                // asynchronously.
+                res.status(202).send({ id: job.id })
+            }
+        )
+    )
 
     router.get(
         '/jobs/stats',
@@ -119,17 +213,22 @@ export function createJobRouter(queue: Queue, scriptedClient: ScriptedRedis): ex
         )
     )
 
+    interface JobsQueryArgs {
+        query: string
+    }
+
     router.get(
         `/jobs/:state(${Array.from(queueTypes.keys()).join('|')})`,
         validation.validationMiddleware([
             validation.validateQuery,
-            validation.validateLimit(settings.DEFAULT_JOB_PAGE_SIZE),
+            validation.validateLimit,
             validation.validateOffset,
         ]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { state } = req.params as { state: ApiJobState }
-                const { query, limit, offset }: { query: string; limit: number; offset: number } = req.query
+                const { query }: JobsQueryArgs = req.query
+                const { limit, offset } = extractLimitOffset(req.query, settings.DEFAULT_JOB_PAGE_SIZE)
 
                 const queueName = queueTypes.get(state)
                 if (!queueName) {

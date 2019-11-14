@@ -36,8 +36,8 @@ export class Commit {
      * with the same `repository` and `commit`` fields. This value is an
      * empty string for a commit with no parent.
      */
-    @Column('text', { name: 'parent_commit' })
-    public parentCommit!: string
+    @Column('text', { name: 'parent_commit', nullable: true })
+    public parentCommit!: string | null
 }
 
 /**
@@ -85,15 +85,21 @@ export class LsifDump {
     public visibleAtTip!: boolean
 
     /**
-     * The dump's insertion time.
+     * The time the dump was uploaded.
      */
     @Column('timestamp with time zone', { name: 'uploaded_at' })
     public uploadedAt!: Date
 
     /**
+     * The time the dump was created.
+     */
+    @Column('timestamp with time zone', { name: 'processed_at' })
+    public processedAt!: Date
+
+    /**
      * The number of model instances that can be inserted at once.
      */
-    public static BatchSize = getBatchSize(6)
+    public static BatchSize = getBatchSize(7)
 }
 
 /**

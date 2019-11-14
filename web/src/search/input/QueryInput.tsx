@@ -328,7 +328,7 @@ export class QueryInput extends React.Component<Props, State> {
                                     autoComplete="off"
                                 />
                                 {showSuggestions && (
-                                    <ul className="query-input2__suggestions" {...getMenuProps()}>
+                                    <ul className="query-input2__suggestions e2e-query-suggestions" {...getMenuProps()}>
                                         {this.state.suggestions.values.map((suggestion, index) => {
                                             const isSelected = highlightedIndex === index
                                             const key = `${index}-${suggestion}`

@@ -215,7 +215,7 @@ export class RevisionsPopover extends React.PureComponent<Props> {
                                 defaultFirst={50}
                                 autoFocus={true}
                                 noSummaryIfAllNodesVisible={true}
-                                shouldUpdateURLQuery={false}
+                                useURLQuery={false}
                                 history={this.props.history}
                                 location={this.props.location}
                             />
@@ -239,7 +239,7 @@ export class RevisionsPopover extends React.PureComponent<Props> {
                                 history={this.props.history}
                                 location={this.props.location}
                                 noSummaryIfAllNodesVisible={true}
-                                shouldUpdateURLQuery={false}
+                                useURLQuery={false}
                             />
                         )
                     )}

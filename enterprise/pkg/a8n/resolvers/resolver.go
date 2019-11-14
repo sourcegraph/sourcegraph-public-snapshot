@@ -17,7 +17,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n/run"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // Resolver is the GraphQL resolver of all things A8N.
@@ -124,8 +126,10 @@ func (r *Resolver) AddChangesetsToCampaign(ctx context.Context, args *graphqlbac
 	if err != nil {
 		return nil, err
 	}
-	// TODO(a8n): If campaign.CampaignPlainID != 0, we need to return an error
-	// here. Only "manual" campaigns can have changesets added.
+
+	if campaign.CampaignPlanID != 0 {
+		return nil, errors.New("Changesets can only be added to campaigns that don't create their own changesets")
+	}
 
 	changesets, _, err := tx.ListChangesets(ctx, ee.ListChangesetsOpts{IDs: changesetIDs})
 	if err != nil {
@@ -176,22 +180,33 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 			return nil, err
 		}
 		campaign.CampaignPlanID = planID
-		// TODO(a8n): Implement this. We need to turn the CampaignJobs into
-		// changesets on the code host.
 	}
 
 	switch relay.UnmarshalKind(args.Input.Namespace) {
 	case "User":
-		relay.UnmarshalSpec(args.Input.Namespace, &campaign.NamespaceUserID)
+		err = relay.UnmarshalSpec(args.Input.Namespace, &campaign.NamespaceUserID)
 	case "Org":
-		relay.UnmarshalSpec(args.Input.Namespace, &campaign.NamespaceOrgID)
+		err = relay.UnmarshalSpec(args.Input.Namespace, &campaign.NamespaceOrgID)
 	default:
-		return nil, errors.Errorf("Invalid namespace %q", args.Input.Namespace)
+		err = errors.Errorf("Invalid namespace %q", args.Input.Namespace)
 	}
 
-	if err := r.store.CreateCampaign(ctx, campaign); err != nil {
+	if err != nil {
 		return nil, err
 	}
+
+	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
+	err = svc.CreateCampaign(ctx, campaign)
+	if err != nil {
+		return nil, err
+	}
+
+	go func() {
+		err := svc.RunChangesetJobs(context.Background(), campaign)
+		if err != nil {
+			log15.Error("RunChangesetJobs", "err", err)
+		}
+	}()
 
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
@@ -331,6 +346,15 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 	}
 
 	for _, r := range rs {
+		if !a8n.IsRepoSupported(&r.ExternalRepo) {
+			err = errors.Errorf(
+				"External service type %s of repository %q is currently not supported in Automation features",
+				r.ExternalRepo.ServiceType,
+				r.Name,
+			)
+			return nil, err
+		}
+
 		repoSet[r.ID] = r
 	}
 
@@ -351,15 +375,10 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 		}
 	}
 
-	tx.Done()
-
-	// Only fetch metadata if none of these changesets existed before.
-	// We do this outside of a transaction.
-
-	store = repos.NewDBStore(r.store.DB(), sql.TxOptions{})
+	store = repos.NewDBStore(tx.DB(), sql.TxOptions{})
 	syncer := ee.ChangesetSyncer{
 		ReposStore:  store,
-		Store:       r.store,
+		Store:       tx,
 		HTTPFactory: r.httpFactory,
 	}
 	if err = syncer.SyncChangesets(ctx, cs...); err != nil {

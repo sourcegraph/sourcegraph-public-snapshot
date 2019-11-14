@@ -3,8 +3,6 @@ package httpapi
 import (
 	"log"
 	"net/http"
-	"net/http/httputil"
-	"net/url"
 	"reflect"
 	"strconv"
 	"time"
@@ -15,9 +13,9 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
 	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/lsif"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
@@ -32,7 +30,7 @@ import (
 //
 // 🚨 SECURITY: The caller MUST wrap the returned handler in middleware that checks authentication
 // and sets the actor in the request context.
-func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook http.Handler) http.Handler {
+func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook http.Handler, lsifServerProxy *httpapi.LSIFServerProxy) http.Handler {
 	if m == nil {
 		m = apirouter.New(nil)
 	}
@@ -62,13 +60,17 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook http.Handle
 
 	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL(schema))))
 
-	lsifServerURL, err := url.Parse(lsif.ServerURLFromEnv)
-	if err != nil {
-		log15.Error("skipping initialization of the LSIF HTTP API because the environment variable LSIF_SERVER_URL is not a valid URL", "parse_error", err, "value", lsif.ServerURLFromEnv)
+	if lsifServerProxy != nil {
+		m.Get(apirouter.LSIF).Handler(trace.TraceRoute(lsifServerProxy.AllRoutesHandler))
+		m.Get(apirouter.LSIFUpload).Handler(trace.TraceRoute(lsifServerProxy.UploadHandler))
 	} else {
-		proxy := httputil.NewSingleHostReverseProxy(lsifServerURL)
-		m.Get(apirouter.LSIFUpload).Handler(trace.TraceRoute(http.HandlerFunc(lsifUploadProxyHandler(proxy))))
-		m.Get(apirouter.LSIF).Handler(trace.TraceRoute(http.HandlerFunc(lsifProxyHandler(proxy))))
+		lsifDisabledHandler := func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write([]byte("lsif endpoints are only available in enterprise"))
+		}
+
+		m.Get(apirouter.LSIF).Handler(trace.TraceRoute(http.HandlerFunc(lsifDisabledHandler)))
+		m.Get(apirouter.LSIFUpload).Handler(trace.TraceRoute(http.HandlerFunc(lsifDisabledHandler)))
 	}
 
 	m.Get(apirouter.Registry).Handler(trace.TraceRoute(handler(registry.HandleRegistry)))

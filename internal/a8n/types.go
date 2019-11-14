@@ -10,6 +10,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
+// SupportedExternalServices are the external service types currently supported
+// by Automation features. Repos that are associated with external services
+// whose type is not in this list will simply be filtered out from the search
+// results.
+var SupportedExternalServices = map[string]struct{}{
+	github.ServiceType:          {},
+	bitbucketserver.ServiceType: {},
+}
+
+// IsRepoSupported returns whether the given ExternalRepoSpec is supported by
+// Automation features, based on the external service type.
+func IsRepoSupported(spec *api.ExternalRepoSpec) bool {
+	_, ok := SupportedExternalServices[spec.ServiceType]
+	return ok
+}
+
 // A CampaignPlan represents the application of a CampaignType to the Arguments
 // over multiple repositories.
 type CampaignPlan struct {
@@ -145,6 +161,31 @@ func (s ChangesetReviewState) Valid() bool {
 	default:
 		return false
 	}
+}
+
+// A ChangesetJob is the creation of a Changset on an external host from a
+// local CampaignJob for a given Campaign.
+type ChangesetJob struct {
+	ID            int64
+	CampaignID    int64
+	CampaignJobID int64
+
+	// Only set once the ChangesetJob has successfully finished.
+	ChangesetID int64
+
+	Error string
+
+	StartedAt  time.Time
+	FinishedAt time.Time
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+// Clone returns a clone of a ChangesetJob.
+func (c *ChangesetJob) Clone() *ChangesetJob {
+	cc := *c
+	return &cc
 }
 
 // A Changeset is a changeset on a code host belonging to a Repository and many
@@ -495,6 +536,8 @@ func (e *ChangesetEvent) Timestamp() time.Time {
 		t = e.CreatedAt
 	case *github.UnassignedEvent:
 		t = e.CreatedAt
+	case *bitbucketserver.Activity:
+		t = unixMilliToTime(int64(e.CreatedDate))
 	}
 
 	return t

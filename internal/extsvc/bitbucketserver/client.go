@@ -384,6 +384,68 @@ func (c *Client) LoadPullRequest(ctx context.Context, pr *PullRequest) error {
 	return c.send(ctx, "GET", path, nil, nil, pr)
 }
 
+// ErrAlreadyExists is returned by Client.CreatePullRequest when a Pull Request
+// for the given FromRef and ToRef already exists.
+var ErrAlreadyExists = errors.New("A pull request with the given to and from refs already exists")
+
+// CreatePullRequest creates the given PullRequest returning an error in case of failure.
+func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
+	for _, namedRef := range [...]struct {
+		name string
+		ref  Ref
+	}{
+		{"ToRef", pr.ToRef},
+		{"FromRef", pr.FromRef},
+	} {
+		if namedRef.ref.ID == "" {
+			return errors.Errorf("%s id empty", namedRef.name)
+		}
+		if namedRef.ref.Repository.Slug == "" {
+			return errors.Errorf("%s repository slug empty", namedRef.name)
+		}
+		if namedRef.ref.Repository.Project.Key == "" {
+			return errors.Errorf("%s project key empty", namedRef.name)
+		}
+	}
+
+	type requestBody struct {
+		Title       string `json:"title"`
+		Description string `json:"description"`
+		State       string `json:"state"`
+		Open        bool   `json:"open"`
+		Closed      bool   `json:"closed"`
+		FromRef     Ref    `json:"fromRef"`
+		ToRef       Ref    `json:"toRef"`
+		Locked      bool   `json:"locked"`
+	}
+
+	payload := requestBody{
+		Title:       pr.Title,
+		Description: pr.Description,
+		State:       "OPEN",
+		Open:        true,
+		Closed:      false,
+		FromRef:     pr.FromRef,
+		ToRef:       pr.ToRef,
+		Locked:      false,
+	}
+
+	path := fmt.Sprintf(
+		"rest/api/1.0/projects/%s/repos/%s/pull-requests",
+		pr.ToRef.Repository.Project.Key,
+		pr.ToRef.Repository.Slug,
+	)
+
+	err := c.send(ctx, "POST", path, nil, payload, pr)
+	if err != nil {
+		if IsDuplicatePullRequest(err) {
+			return ErrAlreadyExists
+		}
+		return err
+	}
+	return nil
+}
+
 // LoadPullRequestActivities loads the given PullRequest's timeline of activities,
 // returning an error in case of failure.
 func (c *Client) LoadPullRequestActivities(ctx context.Context, pr *PullRequest) (err error) {
@@ -919,6 +981,16 @@ func IsNotFound(err error) bool {
 	return false
 }
 
+// IsDuplicatePullRequest reports whether err is a Bitbucket Server API
+// "Duplicate Pull Request" error.
+func IsDuplicatePullRequest(err error) bool {
+	switch e := errors.Cause(err).(type) {
+	case *httpError:
+		return e.DuplicatePullRequest()
+	}
+	return false
+}
+
 type httpError struct {
 	StatusCode int
 	URL        *url.URL
@@ -935,4 +1007,9 @@ func (e *httpError) Unauthorized() bool {
 
 func (e *httpError) NotFound() bool {
 	return e.StatusCode == http.StatusNotFound
+}
+
+func (e *httpError) DuplicatePullRequest() bool {
+	const exception = "com.atlassian.bitbucket.pull.DuplicatePullRequestException"
+	return strings.Contains(string(e.Body), exception)
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
@@ -155,21 +156,27 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 		currentReviewState := computeReviewState(lastReviewByAuthor)
 
 		switch e.Type() {
-		case a8n.ChangesetEventKindGitHubClosed:
+		case a8n.ChangesetEventKindGitHubClosed,
+			a8n.ChangesetEventKindBitbucketServerDeclined:
+
 			c.Open--
 			c.Closed++
 			closed = true
 
 			c.AddReviewState(currentReviewState, -1)
 
-		case a8n.ChangesetEventKindGitHubReopened:
+		case a8n.ChangesetEventKindGitHubReopened,
+			a8n.ChangesetEventKindBitbucketServerReopened:
+
 			c.Open++
 			c.Closed--
 			closed = false
 
 			c.AddReviewState(currentReviewState, 1)
 
-		case a8n.ChangesetEventKindGitHubMerged:
+		case a8n.ChangesetEventKindGitHubMerged,
+			a8n.ChangesetEventKindBitbucketServerMerged:
+
 			// If it was closed, all "review counts" have been updated by the
 			// closed events and we just need to reverse these two counts
 			if closed {
@@ -187,7 +194,10 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 			// other events
 			return nil
 
-		case a8n.ChangesetEventKindGitHubReviewed:
+		case a8n.ChangesetEventKindGitHubReviewed,
+			a8n.ChangesetEventKindBitbucketServerApproved,
+			a8n.ChangesetEventKindBitbucketServerReviewed:
+
 			s, err := reviewState(e)
 			if err != nil {
 				return err
@@ -209,6 +219,32 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 			lastReviewByAuthor[author] = s
 			newReviewState := computeReviewState(lastReviewByAuthor)
 
+			if newReviewState != oldReviewState {
+				// Decrement the counts increased by old review state
+				c.AddReviewState(oldReviewState, -1)
+
+				// Increase the counts for new review state
+				c.AddReviewState(newReviewState, 1)
+			}
+
+		case a8n.ChangesetEventKindBitbucketServerUnapproved:
+			author, err := reviewAuthor(e)
+			if err != nil {
+				return err
+			}
+
+			// A BitbucketServer Unapproved can only follow a previous Approved by
+			// the same author.
+			lastReview, ok := lastReviewByAuthor[author]
+			if !ok || lastReview != a8n.ChangesetReviewStateApproved {
+				return errors.New("Bitbucket Server Unapproval not following an Approval")
+			}
+
+			// Save current review state, then remove last approval and
+			// recompute overall review state
+			oldReviewState := currentReviewState
+			delete(lastReviewByAuthor, author)
+			newReviewState := computeReviewState(lastReviewByAuthor)
 			if newReviewState != oldReviewState {
 				// Decrement the counts increased by old review state
 				c.AddReviewState(oldReviewState, -1)
@@ -246,16 +282,28 @@ func reviewState(e Event) (a8n.ChangesetReviewState, error) {
 		return s, errors.New("Reviewed event not ChangesetEvent")
 	}
 
-	review, ok := changesetEvent.Metadata.(*github.PullRequestReview)
-	if !ok {
-		return s, errors.New("ChangesetEvent metadata event not PullRequestReview")
-	}
+	switch changesetEvent.Kind {
+	case a8n.ChangesetEventKindBitbucketServerApproved:
+		return a8n.ChangesetReviewStateApproved, nil
 
-	s = a8n.ChangesetReviewState(review.State)
-	if !s.Valid() {
-		return s, fmt.Errorf("invalid review state: %s", review.State)
+	case a8n.ChangesetEventKindBitbucketServerReviewed:
+		return a8n.ChangesetReviewStateChangesRequested, nil
+
+	case a8n.ChangesetEventKindGitHubReviewed:
+		review, ok := changesetEvent.Metadata.(*github.PullRequestReview)
+		if !ok {
+			return s, errors.New("ChangesetEvent metadata event not PullRequestReview")
+		}
+
+		s = a8n.ChangesetReviewState(review.State)
+		if !s.Valid() {
+			return s, fmt.Errorf("invalid review state: %s", review.State)
+		}
+		return s, nil
+
+	default:
+		return s, fmt.Errorf("unsupported changeset event kind: %s", changesetEvent.Kind)
 	}
-	return s, nil
 }
 
 func reviewAuthor(e Event) (string, error) {
@@ -264,17 +312,23 @@ func reviewAuthor(e Event) (string, error) {
 		return "", errors.New("Reviewed event not ChangesetEvent")
 	}
 
-	review, ok := changesetEvent.Metadata.(*github.PullRequestReview)
-	if !ok {
-		return "", errors.New("ChangesetEvent metadata event not PullRequestReview")
-	}
+	switch meta := changesetEvent.Metadata.(type) {
+	case *github.PullRequestReview:
+		login := meta.Author.Login
+		if login == "" {
+			return "", errors.New("review author is blank")
+		}
+		return login, nil
 
-	login := review.Author.Login
-	if login == "" {
-		return "", errors.New("review author is blank")
+	case *bitbucketserver.Activity:
+		username := meta.User.Name
+		if username == "" {
+			return "", errors.New("activity user is blank")
+		}
+		return username, nil
+	default:
+		return "", errors.New("ChangesetEvent metadata is of unsupported type")
 	}
-
-	return login, nil
 }
 
 func computeReviewState(statesByAuthor map[string]a8n.ChangesetReviewState) a8n.ChangesetReviewState {

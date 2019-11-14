@@ -83,7 +83,7 @@ export function fetchLsifDumps({
                             path
                             url
                         }
-                        uploadedAt
+                        processedAt
                     }
 
                     totalCount
@@ -98,5 +98,38 @@ export function fetchLsifDumps({
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.lsifDumps)
+    )
+}
+
+/**
+ * Fetch LSIF jobs with the given state.
+ */
+export function fetchLsifJobs({
+    state,
+    first,
+    query,
+}: GQL.ILsifJobsOnQueryArguments): Observable<GQL.ILSIFJobConnection> {
+    return queryGraphQL(
+        gql`
+            query LsifJobs($state: LSIFJobState!, $first: Int, $query: String) {
+                lsifJobs(state: $state, first: $first, query: $query) {
+                    nodes {
+                        id
+                        arguments
+                        state
+                        queuedAt
+                        startedAt
+                        completedOrErroredAt
+                    }
+                    pageInfo {
+                        hasNextPage
+                    }
+                }
+            }
+        `,
+        { state: state.toUpperCase(), first, query }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.lsifJobs)
     )
 }

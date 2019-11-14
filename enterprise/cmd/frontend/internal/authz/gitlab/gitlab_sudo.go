@@ -76,7 +76,7 @@ type SudoProviderOp struct {
 	MockCache pcache
 }
 
-func NewSudoProvider(op SudoProviderOp) *SudoProvider {
+func newSudoProvider(op SudoProviderOp) *SudoProvider {
 	p := &SudoProvider{
 		sudoToken: op.SudoToken,
 

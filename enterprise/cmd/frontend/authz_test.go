@@ -1,4 +1,4 @@
-package authz
+package main
 
 import (
 	"context"
@@ -11,15 +11,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	bbsauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type gitlabAuthzProviderParams struct {
-	OAuthOp gitlab.GitLabOAuthAuthzProviderOp
+	OAuthOp gitlab.OAuthAuthzProviderOp
 	SudoOp  gitlab.SudoProviderOp
 }
 
@@ -45,11 +45,11 @@ func (m gitlabAuthzProviderParams) ServiceType() string {
 func (m gitlabAuthzProviderParams) Validate() []string { return nil }
 
 func Test_providersFromConfig(t *testing.T) {
-	NewGitLabOAuthProvider = func(op gitlab.GitLabOAuthAuthzProviderOp) authz.Provider {
+	gitlab.NewOAuthProvider = func(op gitlab.OAuthAuthzProviderOp) authz.Provider {
 		op.MockCache = nil // ignore cache value
 		return gitlabAuthzProviderParams{OAuthOp: op}
 	}
-	NewGitLabSudoProvider = func(op gitlab.SudoProviderOp) authz.Provider {
+	gitlab.NewSudoProvider = func(op gitlab.SudoProviderOp) authz.Provider {
 		op.MockCache = nil // ignore cache value
 		return gitlabAuthzProviderParams{SudoOp: op}
 	}
@@ -101,7 +101,7 @@ func Test_providersFromConfig(t *testing.T) {
 			expAuthzAllowAccessByDefault: true,
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
-					OAuthOp: gitlab.GitLabOAuthAuthzProviderOp{
+					OAuthOp: gitlab.OAuthAuthzProviderOp{
 						BaseURL:  mustURLParse(t, "https://gitlab.mine"),
 						CacheTTL: 48 * time.Hour,
 					},
@@ -202,13 +202,13 @@ func Test_providersFromConfig(t *testing.T) {
 			expAuthzAllowAccessByDefault: true,
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
-					OAuthOp: gitlab.GitLabOAuthAuthzProviderOp{
+					OAuthOp: gitlab.OAuthAuthzProviderOp{
 						BaseURL:  mustURLParse(t, "https://gitlab.mine"),
 						CacheTTL: 3 * time.Hour,
 					},
 				},
 				gitlabAuthzProviderParams{
-					OAuthOp: gitlab.GitLabOAuthAuthzProviderOp{
+					OAuthOp: gitlab.OAuthAuthzProviderOp{
 						BaseURL:  mustURLParse(t, "https://gitlab.com"),
 						CacheTTL: 3 * time.Hour,
 					},
@@ -430,7 +430,7 @@ func Test_providersFromConfig(t *testing.T) {
 					t.Fatalf("no providers")
 				}
 
-				if _, ok := have[0].(*bbsauthz.Provider); !ok {
+				if have[0].ServiceType() != bitbucketserver.ServiceType {
 					t.Fatalf("no Bitbucket Server authz provider returned")
 				}
 			},
@@ -445,7 +445,8 @@ func Test_providersFromConfig(t *testing.T) {
 			bitbucketServers: test.bitbucketServerConnections,
 		}
 
-		allowAccessByDefault, authzProviders, seriousProblems, _ := ProvidersFromConfig(context.Background(), &test.cfg, &store, nil)
+		allowAccessByDefault, authzProviders, seriousProblems, _ :=
+			authzProvidersFromConfig(context.Background(), &test.cfg, &store, nil)
 		if allowAccessByDefault != test.expAuthzAllowAccessByDefault {
 			t.Errorf("allowAccessByDefault: (actual) %v != (expected) %v", asJSON(t, allowAccessByDefault), asJSON(t, test.expAuthzAllowAccessByDefault))
 		}
