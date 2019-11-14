@@ -342,7 +342,7 @@ export async function login(
                 wait: { timeout: 5000 },
             })
         ).click()
-        await driver.page.waitForNavigation()
+        await driver.page.waitForNavigation({ timeout: 3000 })
     })
     if (driver.page.url() !== sourcegraphBaseUrl + '/search') {
         await loginToAuthProvider()
