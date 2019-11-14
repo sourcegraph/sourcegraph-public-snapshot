@@ -244,7 +244,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
         }
 
         return (
-            <div className="repo-container w-100 d-flex flex-column">
+            <div className="repo-container e2e-repo-container w-100 d-flex flex-column">
                 <RepoHeader
                     {...this.props}
                     actionButtons={this.props.repoHeaderActionButtons}
