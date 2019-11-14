@@ -10,18 +10,8 @@ export function readGzippedJsonElementsFromFile(path: string): AsyncIterable<unk
     const input = fs.createReadStream(path)
     const piped = input.pipe(createGunzip())
 
-    // If we get an error opening or reading the file, we need to ensure that
-    // we forward the error to the readable stream that `splitLines` is consuming.
-    // If we don't register this error handler in the same tick as the call to
-    // `createReadStream`, we may miss the error. This uncaught error causes the
-    // process to crash.
-    //
-    // We should obviously like to catch this error instead and fail the single
-    // job for which that file is missing.
-    //
-    // This is a source of problems for others as well:
-    // https://stackoverflow.com/questions/17136536/is-enoent-from-fs-createreadstream-uncatchable
-
+    // Ensure we forward errors opening/reading the file to the async
+    // iterator opened below.
     input.on('error', error => piped.emit('error', error))
 
     // Create the iterable
