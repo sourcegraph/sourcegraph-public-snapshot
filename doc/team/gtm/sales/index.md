@@ -17,7 +17,7 @@ Updating deal fields regularly, especially:
 * Deal size
 * Number of engineers
 
-If a deal comes through a referral or introduction, tell BizOps so they can make the adjustment in the database to reflect this
+If a deal comes through a referral or introduction, tell [BizOps](@sourcegraph/bizops) so they can make the adjustment in the database to reflect this
 
 When a deal is won:
 1. Mark the ‘Deal Status’ as ‘Closed Won’
