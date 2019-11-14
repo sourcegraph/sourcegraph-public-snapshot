@@ -29,6 +29,7 @@ import {
 import { fromFetch } from 'rxjs/fetch'
 import { first } from 'lodash'
 import { overwriteSettings } from '../../../../shared/src/settings/edit'
+import { retry } from '../../../../shared/src/e2e/e2e-test-utils'
 
 /**
  * Create the user with the specified password. Returns a destructor that destroys the test user. Assumes basic auth.
@@ -333,14 +334,16 @@ export async function login(
     await driver.page.goto(sourcegraphBaseUrl + '/-/sign-out')
     await driver.newPage()
     await driver.page.goto(sourcegraphBaseUrl)
-    await driver.page.reload()
-    await (
-        await driver.findElementWithText('Sign in with ' + authProviderDisplayName, {
-            selector: 'a',
-            wait: { timeout: 5000 },
-        })
-    ).click()
-    await driver.page.waitForNavigation()
+    await retry(async () => {
+        await driver.page.reload()
+        await (
+            await driver.findElementWithText('Sign in with ' + authProviderDisplayName, {
+                selector: 'a',
+                wait: { timeout: 5000 },
+            })
+        ).click()
+        await driver.page.waitForNavigation()
+    })
     if (driver.page.url() !== sourcegraphBaseUrl + '/search') {
         await loginToAuthProvider()
         try {
