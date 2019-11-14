@@ -3,7 +3,7 @@ import * as util from '../integration-test-util'
 describe('Backend', () => {
     const ctx = new util.BackendTestContext()
     const repository = 'main'
-    const commit = util.createCommit(0)
+    const commit = util.createCommit()
 
     beforeAll(async () => {
         await ctx.init()
