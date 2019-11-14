@@ -1,11 +1,10 @@
 import * as React from 'react'
 import { RepoSettingsIndexPage } from './RepoSettingsIndexPage'
-import { RepoSettingsCodeIntelligencePage } from './RepoSettingsCodeIntelligencePage'
 import { RepoSettingsMirrorPage } from './RepoSettingsMirrorPage'
 import { RepoSettingsOptionsPage } from './RepoSettingsOptionsPage'
 import { RepoSettingsAreaRoute } from './RepoSettingsArea'
 
-export const repoSettingsRoutes: readonly RepoSettingsAreaRoute[] = [
+export const repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[] = [
     {
         path: '',
         exact: true,

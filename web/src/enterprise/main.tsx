@@ -29,7 +29,7 @@ import { enterpriseUserAreaRoutes } from './user/routes'
 import { enterpriseUserSettingsAreaRoutes } from './user/settings/routes'
 import { enterpriseUserSettingsSideBarItems } from './user/settings/sidebaritems'
 import { KEYBOARD_SHORTCUTS } from '../keyboardShortcuts/keyboardShortcuts'
-import { enterpriseRepoSettingsRoutes } from './repo/settings/routes'
+import { enterpriseRepoSettingsAreaRoutes } from './repo/settings/routes'
 import { enterpriseRepoSettingsSidebarItems } from './repo/settings/sidebaritems'
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -52,7 +52,7 @@ window.addEventListener('DOMContentLoaded', () => {
             repoContainerRoutes={enterpriseRepoContainerRoutes}
             repoRevContainerRoutes={enterpriseRepoRevContainerRoutes}
             repoHeaderActionButtons={enterpriseRepoHeaderActionButtons}
-            repoSettingsRoutes={enterpriseRepoSettingsRoutes}
+            repoSettingsAreaRoutes={enterpriseRepoSettingsAreaRoutes}
             repoSettingsSidebarItems={enterpriseRepoSettingsSidebarItems}
             routes={enterpriseRoutes}
             keyboardShortcuts={KEYBOARD_SHORTCUTS}

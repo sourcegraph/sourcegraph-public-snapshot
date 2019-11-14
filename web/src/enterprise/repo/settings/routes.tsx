@@ -1,10 +1,10 @@
 import * as React from 'react'
 import { RepoSettingsCodeIntelligencePage } from './RepoSettingsCodeIntelligencePage'
 import { RepoSettingsAreaRoute } from './../../../repo/settings/RepoSettingsArea'
-import { repoSettingsRoutes } from './../../../repo/settings/routes'
+import { repoSettingsAreaRoutes } from './../../../repo/settings/routes'
 
-export const enterpriseRepoSettingsRoutes: readonly RepoSettingsAreaRoute[] = [
-    ...repoSettingsRoutes,
+export const enterpriseRepoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[] = [
+    ...repoSettingsAreaRoutes,
     {
         path: '/code-intelligence',
         exact: true,
