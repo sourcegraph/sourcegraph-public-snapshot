@@ -331,7 +331,7 @@ func (c *internalClient) meteredPost(ctx context.Context, route string, reqBody,
 	err := c.post(ctx, route, reqBody, respBody)
 	d := time.Since(start)
 
-	// TODO(uwedeportivo): break it out more according to response code
+	// TODO(uwedeportivo): might be useful to use actual response status code value
 	code := "200"
 	if err != nil {
 		code = "error"

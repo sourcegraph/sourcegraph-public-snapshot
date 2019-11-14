@@ -22,16 +22,16 @@ func init() {
 }
 
 type meteredSearcher struct {
-	underlying zoekt.Searcher
+	zoekt.Searcher
 }
 
 func NewMeteredSearcher(z zoekt.Searcher) zoekt.Searcher {
-	return &meteredSearcher{underlying: z}
+	return &meteredSearcher{z}
 }
 
 func (m *meteredSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
 	start := time.Now()
-	zsr, err := m.underlying.Search(ctx, q, opts)
+	zsr, err := m.Searcher.Search(ctx, q, opts)
 	d := time.Since(start)
 
 	code := "200"
@@ -46,7 +46,7 @@ func (m *meteredSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.Sea
 
 func (m *meteredSearcher) List(ctx context.Context, q query.Q) (*zoekt.RepoList, error) {
 	start := time.Now()
-	zrl, err := m.underlying.List(ctx, q)
+	zrl, err := m.Searcher.List(ctx, q)
 	d := time.Since(start)
 
 	code := "200"
@@ -56,12 +56,4 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q) (*zoekt.RepoList,
 
 	requestDuration.WithLabelValues("List", code).Observe(d.Seconds())
 	return zrl, err
-}
-
-func (m *meteredSearcher) Close() {
-	m.underlying.Close()
-}
-
-func (m *meteredSearcher) String() string {
-	return m.underlying.String()
 }
