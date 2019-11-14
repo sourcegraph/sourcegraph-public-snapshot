@@ -265,7 +265,7 @@ func parseRemoteURL(urlString string) (string, error) {
 		if len(parts) != 2 {
 			return "", fmt.Errorf("unrecognized remote URL: %s", urlString)
 		}
-		return strings.TrimPrefix(parts[0], "git@") + "/" + strings.TrimSuffix(parts[1], ".git"), nil
+		return strings.TrimPrefix(parts[0], "git@") + "/" + strings.TrimPrefix(strings.TrimSuffix(parts[1], ".git"), "/"), nil
 	}
 
 	remoteURL, err := url.Parse(urlString)
