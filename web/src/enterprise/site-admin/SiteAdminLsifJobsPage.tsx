@@ -1,6 +1,6 @@
 import * as GQL from '../../../../shared/src/graphql/schema'
 import React, { FunctionComponent } from 'react'
-import { ErrorLike } from '../../../../shared/src/util/errors'
+import { ErrorLike, asError } from '../../../../shared/src/util/errors'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchLsifJobs, fetchLsifJobStatistics } from './backend'
 import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
@@ -9,7 +9,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { PageTitle } from '../../components/PageTitle'
 import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription, Observable } from 'rxjs'
-import { switchMap } from 'rxjs/operators'
+import { switchMap, catchError } from 'rxjs/operators'
 import { Timestamp } from '../../components/time/Timestamp'
 import { Toggle } from '../../../../shared/src/components/Toggle'
 import {
@@ -17,6 +17,7 @@ import {
     FilteredConnectionQueryArgs,
     FilteredConnectionFilter,
 } from '../../components/FilteredConnection'
+import { ErrorAlert } from '../../components/alerts'
 
 interface ToggleComponentProps {
     hideInternal: boolean
@@ -24,12 +25,11 @@ interface ToggleComponentProps {
 }
 
 const ToggleComponent: FunctionComponent<ToggleComponentProps> = ({ hideInternal, onToggle }) => (
-    <div className="lsif-jobs-filter-toggle">
-        <label className="radio-buttons__item lsif-jobs-filter-toggle-label" title="Hide internal jobs">
+    <div className="lsif-jobs-internal-toggle">
+        <label className="lsif-jobs-internal-toggle__label" title="Hide internal jobs">
             <Toggle value={hideInternal} onToggle={onToggle} title="Hide internal jobs" />
-
             <small>
-                <div className="radio-buttons__label">Hide internal jobs</div>
+                <div className="lsif-jobs-internal-toggle__label-hint">Hide internal jobs</div>
             </small>
         </label>
     </div>
@@ -104,7 +104,9 @@ export class SiteAdminLsifJobsPage extends React.Component<Props, State> {
         hideInternal: true,
     }
 
+    /** Emits when internal jobs is switched on/off from view. */
     private toggles = new Subject<void>()
+    /** Emits when stats should be refreshed. */
     private updates = new Subject<void>()
     private subscriptions = new Subscription()
 
@@ -116,11 +118,8 @@ export class SiteAdminLsifJobsPage extends React.Component<Props, State> {
                 // Do not set statsOrError as null here to indicate loading
                 // so that the stats don't disappear during navigation, which
                 // causes some weird jitter.
-                .pipe(switchMap(() => fetchLsifJobStatistics()))
-                .subscribe(
-                    stats => this.setState({ statsOrError: stats }),
-                    error => this.setState({ statsOrError: error })
-                )
+                .pipe(switchMap(() => fetchLsifJobStatistics().pipe(catchError(err => [asError(err)]))))
+                .subscribe(stats => this.setState({ statsOrError: stats }))
         )
         this.updates.next()
     }
@@ -140,9 +139,7 @@ export class SiteAdminLsifJobsPage extends React.Component<Props, State> {
                     <LoadingSpinner className="icon-inline" />
                 ) : isErrorLike(this.state.statsOrError) ? (
                     <div className="alert alert-danger">
-                        Error getting LSIF job queue stats:
-                        <br />
-                        <code>{this.state.statsOrError.message}</code>
+                        <ErrorAlert error={this.state.statsOrError} />
                     </div>
                 ) : (
                     <div className="mb-3">
@@ -173,8 +170,7 @@ export class SiteAdminLsifJobsPage extends React.Component<Props, State> {
     }
 
     private onToggle = (hideInternal: boolean): void => {
-        const toggles = this.toggles
-        this.setState({ hideInternal }, () => toggles.next())
+        this.setState({ hideInternal }, () => this.toggles.next())
     }
 
     private queryJobs = (
@@ -221,7 +217,7 @@ function lsifJobDescription(job: GQL.ILSIFJob): JSX.Element {
                 <strong>
                     <code>{commit.substring(0, 7)}</code>
                 </strong>
-                {root !== '' && root !== '/' && (
+                {root !== '' && (
                     <>
                         , <strong>{root}</strong>
                     </>

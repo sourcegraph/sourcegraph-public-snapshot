@@ -20,11 +20,6 @@
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
-            color: $color-text-2;
-
-            .theme-light & {
-                color: $color-light-text-1;
-            }
         }
 
         &-timestamp {
@@ -35,11 +30,20 @@
     }
 }
 
-.lsif-jobs-filter-toggle {
+.lsif-jobs-internal-toggle {
     // Take the remaining space in the radio button row
     flex: 1 1 auto;
+    display: flex;
 
-    &-label {
-        float: right;
+    &__label {
+        display: flex;
+        align-items: center;
+        margin: 0.25rem;
+        margin-left: auto;
+
+        &-hint {
+            display: flex;
+            padding: 0.25rem 0.5rem;
+        }
     }
 }
