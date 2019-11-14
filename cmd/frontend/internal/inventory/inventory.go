@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/pkg/errors"
 	"github.com/src-d/enry/v2"
@@ -39,6 +40,13 @@ type Lang struct {
 // minFileBytes is the minimum byte size prefix for each file to read when using file contents for
 // language detection.
 const minFileBytes = 16 * 1024
+
+const maxTokenSize = 1024 * 1024 // max token size when scanning lines
+const scanBufferSize = 16 * 1024 // initial size of the buffer used when counting lines
+
+var bufPool = sync.Pool{
+	New: func() interface{} { return make([]byte, scanBufferSize) },
+}
 
 func getLang(ctx context.Context, file os.FileInfo, rc io.ReadCloser) (Lang, error) {
 	if rc != nil {
@@ -81,6 +89,10 @@ func getLang(ctx context.Context, file os.FileInfo, rc io.ReadCloser) (Lang, err
 		// Count lines
 		var linecount int
 		scanner := bufio.NewScanner(io.MultiReader(bytes.NewReader(data), rc))
+		buf := bufPool.Get().([]byte)
+		defer bufPool.Put(buf)
+		buf = buf[0:0]
+		scanner.Buffer(buf, maxTokenSize)
 		for scanner.Scan() {
 			linecount++
 		}
