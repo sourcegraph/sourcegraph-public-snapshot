@@ -10,12 +10,11 @@ import { DecorationMapByLine, groupDecorationsByLine } from '../../../../shared/
 import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { isDefined } from '../../../../shared/src/util/types'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec, toURIWithPath } from '../../../../shared/src/util/url'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { DiffHunk } from './DiffHunk'
-import { diffDomFunctions } from './dom-functions'
+import { diffDomFunctions } from '../../repo/compare/dom-functions'
 
 interface PartFileInfo {
     repoName: string
@@ -29,15 +28,22 @@ interface PartFileInfo {
     filePath: string | null
 }
 
-interface FileHunksProps extends PlatformContextProps, ExtensionsControllerProps, ThemeProps {
+interface FileHunksProps extends ThemeProps {
     /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
     fileDiffAnchor: string
 
-    /** The base repository, revision, and file. */
-    base: PartFileInfo
+    /**
+     * Information needed to apply extensions (hovers, decorations, ...) on the diff.
+     * If undefined, extensions will not be applied on this diff.
+     */
+    extensionInfo?: {
+        /** The base repository, revision, and file. */
+        base: PartFileInfo
 
-    /** The head repository, revision, and file. */
-    head: PartFileInfo
+        /** The head repository, revision, and file. */
+        head: PartFileInfo
+        hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
+    } & ExtensionsControllerProps
 
     /** The file's hunks. */
     hunks: GQL.IFileDiffHunk[]
@@ -48,7 +54,8 @@ interface FileHunksProps extends PlatformContextProps, ExtensionsControllerProps
     className: string
     location: H.Location
     history: H.History
-    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
+    /** Reflect selected line in url */
+    persistLines?: boolean
 }
 
 interface FileDiffHunksState {
@@ -95,28 +102,33 @@ export class FileDiffHunks extends React.Component<FileHunksProps, FileDiffHunks
             decorations: { head: new Map(), base: new Map() },
         }
 
-        this.subscriptions.add(
-            this.props.hoverifier.hoverify({
-                dom: diffDomFunctions,
-                positionEvents: this.codeElements.pipe(
-                    filter(isDefined),
-                    findPositionsFromEvents({ domFunctions: diffDomFunctions })
-                ),
-                positionJumps: NEVER, // TODO support diff URLs
-                resolveContext: hoveredToken => {
-                    // if part is undefined, it doesn't matter whether we chose head or base, the line stayed the same
-                    const { repoName, rev, filePath, commitID } = this.props[hoveredToken.part || 'head']
-                    // If a hover or go-to-definition was invoked on this part, we know the file path must exist
-                    return { repoName, filePath: filePath!, rev, commitID }
-                },
-            })
-        )
+        if (this.props.extensionInfo) {
+            this.subscriptions.add(
+                this.props.extensionInfo.hoverifier.hoverify({
+                    dom: diffDomFunctions,
+                    positionEvents: this.codeElements.pipe(
+                        filter(isDefined),
+                        findPositionsFromEvents({ domFunctions: diffDomFunctions })
+                    ),
+                    positionJumps: NEVER, // TODO support diff URLs
+                    resolveContext: hoveredToken => {
+                        // if part is undefined, it doesn't matter whether we chose head or base, the line stayed the same
+                        const { repoName, rev, filePath, commitID } = this.props.extensionInfo![
+                            hoveredToken.part || 'head'
+                        ]
+                        // If a hover or go-to-definition was invoked on this part, we know the file path must exist
+                        return { repoName, filePath: filePath!, rev, commitID }
+                    },
+                })
+            )
+        }
 
         // Listen to decorations from extensions and group them by line
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(
-                    map(({ head, base, extensionsController }) => ({ head, base, extensionsController })),
+                    map(({ extensionInfo }) => extensionInfo),
+                    filter(isDefined),
                     distinctUntilChanged(
                         (a, b) =>
                             isEqual(a.head, b.head) &&

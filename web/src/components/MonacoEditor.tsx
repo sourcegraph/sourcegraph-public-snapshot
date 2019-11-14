@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as monaco from 'monaco-editor'
 import * as React from 'react'
 
@@ -24,6 +25,7 @@ interface Props {
 
     /** Options for the editor. */
     options: monaco.editor.IEditorOptions
+    className?: string
 }
 
 interface State {}
@@ -69,7 +71,7 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
                 style={{ height: `${this.props.height}px`, position: 'relative' }}
                 ref={this.setRef}
                 id={this.props.id}
-                className="border"
+                className={classNames(this.props.className, 'border')}
             />
         )
     }

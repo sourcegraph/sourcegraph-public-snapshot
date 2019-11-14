@@ -6,28 +6,32 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { HoverMerged } from '../../../../shared/src/api/client/types/hover'
-import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
 import { DiffStat } from './DiffStat'
 import { FileDiffHunks } from './FileDiffHunks'
 import { ThemeProps } from '../../../../shared/src/theme'
+import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 
-export interface FileDiffNodeProps extends PlatformContextProps, ExtensionsControllerProps, ThemeProps {
-    node: GQL.IFileDiff
-
-    /** The base repository and revision. */
-    base: { repoName: string; repoID: GQL.ID; rev: string; commitID: string }
-
-    /** The head repository and revision. */
-    head: { repoName: string; repoID: GQL.ID; rev: string; commitID: string }
-
+export interface FileDiffNodeProps extends ThemeProps {
+    node: GQL.IFileDiff | GQL.IPreviewFileDiff
     lineNumbers: boolean
     className?: string
     location: H.Location
     history: H.History
-    hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
+
+    extensionInfo?: {
+        /** The base repository and revision. */
+        base: { repoName: string; repoID: GQL.ID; rev: string; commitID: string }
+
+        /** The head repository and revision. */
+        head: { repoName: string; repoID: GQL.ID; rev: string; commitID: string }
+
+        hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
+    } & ExtensionsControllerProps
+
+    /** Reflect selected line in url */
+    persistLines?: boolean
 }
 
 interface State {
@@ -57,11 +61,12 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
             path = <span title={node.oldPath!}>{node.oldPath}</span>
         }
 
+        const renderAnchor = node.__typename !== 'PreviewFileDiff'
         const anchor = `diff-${node.internalID}`
 
         return (
             <>
-                <a id={anchor} />
+                {renderAnchor && <a id={anchor} />}
                 <div className={`file-diff-node card ${this.props.className || ''}`}>
                     <div className="card-header file-diff-node__header">
                         <div className="file-diff-node__header-path-stat">
@@ -71,18 +76,27 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                                 deleted={node.stat.deleted}
                                 className="file-diff-node__header-stat"
                             />
-                            <Link to={{ ...this.props.location, hash: anchor }} className="file-diff-node__header-path">
-                                {path}
-                            </Link>
+                            {renderAnchor ? (
+                                <Link
+                                    to={{ ...this.props.location, hash: anchor }}
+                                    className="file-diff-node__header-path"
+                                >
+                                    {path}
+                                </Link>
+                            ) : (
+                                <span>{path}</span>
+                            )}
                         </div>
                         <div className="file-diff-node__header-actions">
-                            <Link
-                                to={node.mostRelevantFile.url}
-                                className="btn btn-sm"
-                                data-tooltip="View file at revision"
-                            >
-                                View
-                            </Link>
+                            {node.__typename === 'FileDiff' && (
+                                <Link
+                                    to={node.mostRelevantFile.url}
+                                    className="btn btn-sm"
+                                    data-tooltip="View file at revision"
+                                >
+                                    View
+                                </Link>
+                            )}
                             <button type="button" className="btn btn-sm btn-icon ml-2" onClick={this.toggleExpand}>
                                 {this.state.expanded ? (
                                     <ChevronDownIcon className="icon-inline" />
@@ -97,18 +111,21 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                             {...this.props}
                             className="file-diff-node__hunks"
                             fileDiffAnchor={anchor}
-                            base={{
-                                ...this.props.base,
-                                filePath: node.oldPath,
-                            }}
-                            head={{
-                                ...this.props.head,
-                                filePath: node.newPath,
-                            }}
+                            extensionInfo={
+                                this.props.extensionInfo && {
+                                    ...this.props.extensionInfo,
+                                    base: {
+                                        ...this.props.extensionInfo.base,
+                                        filePath: node.oldPath,
+                                    },
+                                    head: {
+                                        ...this.props.extensionInfo.head,
+                                        filePath: node.newPath,
+                                    },
+                                }
+                            }
                             hunks={node.hunks}
                             lineNumbers={this.props.lineNumbers}
-                            platformContext={this.props.platformContext}
-                            hoverifier={this.props.hoverifier}
                         />
                     )}
                 </div>
