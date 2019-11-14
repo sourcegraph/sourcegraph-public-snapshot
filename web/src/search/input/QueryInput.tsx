@@ -153,7 +153,9 @@ export class QueryInput extends React.Component<Props, State> {
                         }
 
                         const queryForFuzzySearch = formatQueryForFuzzySearch(queryState)
-                        const fullQuery = (this.props.prependQueryForSuggestions ?? '') + ' ' + queryForFuzzySearch
+                        const fullQuery = this.props.prependQueryForSuggestions
+                            ? this.props.prependQueryForSuggestions + ' ' + queryForFuzzySearch
+                            : queryForFuzzySearch
 
                         // Dos a fuzzy search and formats suggestions for display.
                         return fetchSuggestions(fullQuery).pipe(
