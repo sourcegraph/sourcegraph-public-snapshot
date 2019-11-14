@@ -1171,7 +1171,7 @@ type Query {
     # The configuration for clients.
     clientConfiguration: ClientConfigurationDetails!
     # Fetch search filter suggestions for autocompletion.
-    searchFilterSuggestions: SearchFilterSuggestions
+    searchFilterSuggestions: SearchFilterSuggestions!
     # Runs a search.
     search(
         # The version of the search syntax being used.

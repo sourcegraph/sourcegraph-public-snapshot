@@ -1,12 +1,12 @@
 import * as React from 'react'
 
-interface Props {
+export interface IconProps {
     className?: string
     size?: number
     'data-tooltip'?: string
 }
 
-function sizeProps(props: Props): { width: number; height: number; viewBox: string } {
+export function sizeProps(props: IconProps): { width: number; height: number; viewBox: string } {
     const defaultSize = 24
     const size = props.size || defaultSize
     return {
@@ -16,25 +16,25 @@ function sizeProps(props: Props): { width: number; height: number; viewBox: stri
     }
 }
 
-export const ChatIcon: React.FunctionComponent<Props> = props => (
+export const ChatIcon: React.FunctionComponent<IconProps> = props => (
     <svg {...props} {...sizeProps(props)} className={`mdi-icon${props.className ? ' ' + props.className : ''}`}>
         <path d="M 2 11.636 A 10 8 0 0 0 4.75 17.146 A 9 9 0 0 1 2 21.636 A 10.4 10.4 0 0 0 8.5 19.13 A 10 8 0 0 0 12 19.636 A 10 8 0 0 0 22 11.636 A 10 8 0 0 0 12 3.636 A 10 8 0 0 0 2 11.636 Z" />
     </svg>
 )
 
-export const CircleChevronLeftIcon: React.FunctionComponent<Props> = props => (
+export const CircleChevronLeftIcon: React.FunctionComponent<IconProps> = props => (
     <svg {...props} {...sizeProps(props)} className={`mdi-icon${props.className ? ' ' + props.className : ''}`}>
         <path d="M22,12c0,5.5-4.5,10-10,10S2,17.5,2,12S6.5,2,12,2S22,6.5,22,12z M15.4,16.6L10.8,12l4.6-4.6L14,6l-6,6l6,6L15.4,16.6z" />
     </svg>
 )
 
-export const CircleChevronRightIcon: React.FunctionComponent<Props> = props => (
+export const CircleChevronRightIcon: React.FunctionComponent<IconProps> = props => (
     <svg {...props} {...sizeProps(props)} className={`mdi-icon${props.className ? ' ' + props.className : ''}`}>
         <path d="M22,12c0,5.5-4.5,10-10,10S2,17.5,2,12S6.5,2,12,2S22,6.5,22,12z M10,18l6-6l-6-6L8.6,7.4l4.6,4.6l-4.6,4.6L10,18z" />
     </svg>
 )
 
-export const RepoQuestionIcon: React.FunctionComponent<Props> = props => (
+export const RepoQuestionIcon: React.FunctionComponent<IconProps> = props => (
     <svg
         {...props}
         {...sizeProps(props)}
@@ -55,7 +55,7 @@ export const RepoQuestionIcon: React.FunctionComponent<Props> = props => (
     </svg>
 )
 
-export const FormatListBulletedIcon: React.FunctionComponent<Props> = props => (
+export const FormatListBulletedIcon: React.FunctionComponent<IconProps> = props => (
     <svg {...props} {...sizeProps(props)} className={`mdi-icon${props.className ? ' ' + props.className : ''}`}>
         <path
             fill="#000000"
@@ -64,7 +64,7 @@ export const FormatListBulletedIcon: React.FunctionComponent<Props> = props => (
     </svg>
 )
 
-export const PhabricatorIcon: React.FunctionComponent<Props> = props => (
+export const PhabricatorIcon: React.FunctionComponent<IconProps> = props => (
     <svg
         {...props}
         {...sizeProps(props)}
@@ -99,30 +99,7 @@ export const PhabricatorIcon: React.FunctionComponent<Props> = props => (
     </svg>
 )
 
-export const RepositoryIcon: React.FunctionComponent<Props> = props => (
-    <svg
-        {...props}
-        {...sizeProps(props)}
-        className={`mdi-icon${props.className ? ' ' + props.className : ''}`}
-        viewBox="0 0 64 64"
-    >
-        <g>
-            <path d="M23,22.4c1.3,0,2.4-1.1,2.4-2.4s-1.1-2.4-2.4-2.4c-1.3,0-2.4,1.1-2.4,2.4S21.7,22.4,23,22.4z" />
-            <path d="M35,26.4c1.3,0,2.4-1.1,2.4-2.4s-1.1-2.4-2.4-2.4s-2.4,1.1-2.4,2.4S33.7,26.4,35,26.4z" />
-            <path d="M23,42.4c1.3,0,2.4-1.1,2.4-2.4s-1.1-2.4-2.4-2.4s-2.4,1.1-2.4,2.4S21.7,42.4,23,42.4z" />
-            <path
-                d="M50,16h-1.5c-0.3,0-0.5,0.2-0.5,0.5v35c0,0.3-0.2,0.5-0.5,0.5h-27c-0.5,0-1-0.2-1.4-0.6l-0.6-0.6c-0.1-0.1-0.1-0.2-0.1-0.4
-		c0-0.3,0.2-0.5,0.5-0.5H44c1.1,0,2-0.9,2-2V12c0-1.1-0.9-2-2-2H14c-1.1,0-2,0.9-2,2v36.3c0,1.1,0.4,2.1,1.2,2.8l3.1,3.1
-		c1.1,1.1,2.7,1.8,4.2,1.8H50c1.1,0,2-0.9,2-2V18C52,16.9,51.1,16,50,16z M19,20c0-2.2,1.8-4,4-4c1.4,0,2.8,0.8,3.5,2
-		c1.1,1.9,0.4,4.3-1.5,5.4V33c1-0.6,2.3-0.9,4-0.9c1,0,2-0.5,2.8-1.3C32.5,30,33,29.1,33,28v-0.6c-1.2-0.7-2-2-2-3.5
-		c0-2.2,1.8-4,4-4c2.2,0,4,1.8,4,4c0,1.5-0.8,2.7-2,3.5h0c-0.1,2.1-0.9,4.4-2.5,6c-1.6,1.6-3.4,2.4-5.5,2.5c-0.8,0-1.4,0.1-1.9,0.3
-		c-0.2,0.1-1,0.8-1.2,0.9C26.6,38,27,38.9,27,40c0,2.2-1.8,4-4,4s-4-1.8-4-4c0-1.5,0.8-2.7,2-3.4V23.4C19.8,22.7,19,21.4,19,20z"
-            />
-        </g>
-    </svg>
-)
-
-export const WrapDisabledIcon: React.FunctionComponent<Props> = props => (
+export const WrapDisabledIcon: React.FunctionComponent<IconProps> = props => (
     <svg {...props} {...sizeProps(props)} className={`mdi-icon${props.className ? ' ' + props.className : ''}`}>
         <path d="M16,7H3V5H16ZM3,19H16V17H3Zm19-7L18,9v2H3v2H18v2Z" />
     </svg>

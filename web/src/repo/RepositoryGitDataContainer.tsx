@@ -1,10 +1,11 @@
 import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import * as React from 'react'
 import { defer, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap } from 'rxjs/operators'
-import { CloneInProgressError, ECLONEINPROGESS, EREVNOTFOUND } from '../../../shared/src/backend/errors' // TODO: Switch to mdi icon
-import { RepoQuestionIcon, RepositoryIcon } from '../../../shared/src/components/icons' // TODO: Switch to mdi icon
+import { CloneInProgressError, ECLONEINPROGESS, EREVNOTFOUND } from '../../../shared/src/backend/errors'
+import { RepoQuestionIcon } from '../../../shared/src/components/icons'
 import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { HeroPage } from '../components/HeroPage'
@@ -16,7 +17,7 @@ export const RepositoryCloningInProgressPage: React.FunctionComponent<{ repoName
     progress,
 }) => (
     <HeroPage
-        icon={RepositoryIcon}
+        icon={SourceRepositoryIcon}
         title={displayRepoName(repoName)}
         className="repository-cloning-in-progress-page"
         subtitle="Cloning in progress"

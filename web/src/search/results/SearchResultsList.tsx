@@ -5,6 +5,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import FileIcon from 'mdi-react/FileIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
@@ -12,7 +13,6 @@ import { debounceTime, distinctUntilChanged, filter, first, map, skip, skipUntil
 import { parseSearchURLQuery, PatternTypeProps } from '..'
 import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
 import { FileMatch } from '../../../../shared/src/components/FileMatch'
-import { RepositoryIcon } from '../../../../shared/src/components/icons' // TODO: Switch to mdi icon
 import { displayRepoName } from '../../../../shared/src/components/RepoFileLink'
 import { VirtualList } from '../../../../shared/src/components/VirtualList'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
@@ -516,7 +516,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     <FileMatch
                         key={'file:' + result.file.url}
                         location={this.props.location}
-                        icon={result.lineMatches && result.lineMatches.length > 0 ? RepositoryIcon : FileIcon}
+                        icon={result.lineMatches && result.lineMatches.length > 0 ? SourceRepositoryIcon : FileIcon}
                         result={result}
                         onSelect={this.logEvent}
                         expanded={false}
