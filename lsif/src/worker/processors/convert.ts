@@ -7,6 +7,7 @@ import { createSilentLogger } from '../../shared/logging'
 import { dbFilename } from '../../shared/paths'
 import { logAndTraceCall, TracingContext } from '../../shared/tracing'
 import { XrepoDatabase } from '../../shared/xrepo/xrepo'
+import { Job } from 'bull'
 
 /**
  * Create a job that takes a repository, commit, and filename containing the gzipped
@@ -20,6 +21,7 @@ export const createConvertJobProcessor = (
     xrepoDatabase: XrepoDatabase,
     fetchConfiguration: () => { gitServers: string[] }
 ) => async (
+    job: Job,
     { repository, commit, root, filename }: { repository: string; commit: string; root: string; filename: string },
     ctx: TracingContext
 ): Promise<void> => {
@@ -33,7 +35,14 @@ export const createConvertJobProcessor = (
 
             // Add packages and references to the xrepo db
             const dump = await logAndTraceCall(ctx, 'populating cross-repo database', () =>
-                xrepoDatabase.addPackagesAndReferences(repository, commit, root, packages, references)
+                xrepoDatabase.addPackagesAndReferences(
+                    repository,
+                    commit,
+                    root,
+                    new Date(job.timestamp),
+                    packages,
+                    references
+                )
             )
 
             // Move the temp file where it can be found by the server

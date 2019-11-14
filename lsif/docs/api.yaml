@@ -479,7 +479,10 @@ components:
           description: Whether or not this dump can provide global reference code intelligence.
         uploadedAt:
           type: string
-          description: An ISO 8601-formatted time that the dump was created.
+          description: An ISO 8601-formatted time that the dump was uploaded.
+        processedAt:
+          type: string
+          description: An ISO 8601-formatted time that the dump became available for use.
       required:
         - id
         - repository

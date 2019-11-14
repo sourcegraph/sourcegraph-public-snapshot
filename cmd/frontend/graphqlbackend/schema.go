@@ -3920,6 +3920,9 @@ type LSIFDump implements Node {
 
     # The time the dump was uploaded.
     uploadedAt: DateTime!
+
+    # The time the dump became available for use.
+    processedAt: DateTime!
 }
 
 # A list of LSIF dumps.

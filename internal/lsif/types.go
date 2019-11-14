@@ -12,6 +12,7 @@ type LSIFDump struct {
 	Root         string    `json:"root"`
 	VisibleAtTip bool      `json:"visibleAtTip"`
 	UploadedAt   time.Time `json:"uploadedAt"`
+	ProcessedAt  time.Time `json:"processedAt"`
 }
 
 type LSIFJobStats struct {

@@ -68,6 +68,8 @@
 // 1528395614_lsif_nullable_parent_commits.up.sql (155B)
 // 1528395615_lsif-commit-constraints.down.sql (391B)
 // 1528395615_lsif-commit-constraints.up.sql (471B)
+// 1528395616_lsif_processed_at.down.sql (195B)
+// 1528395616_lsif_processed_at.up.sql (359B)
 
 package migrations
 
@@ -1496,6 +1498,46 @@ func _1528395615_lsifCommitConstraintsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395616_lsif_processed_atDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\x8c\xcd\x0a\x02\x21\x10\x80\xef\xf3\x14\x73\xac\x67\xf0\xe4\xba\x43\x08\x3a\x86\x18\x74\x93\x25\x37\x08\x36\x94\x5c\xdf\x3f\x08\x82\xe9\xd0\xf9\xfb\x99\xe8\x64\x59\x01\x68\x97\x28\x62\xd2\x93\x23\xdc\xfa\xe3\x9e\xcb\x78\xb6\x8e\x73\x0c\x67\x34\xc1\x5d\x3c\xe3\x68\x5b\x5d\xca\x5a\xf2\xb2\xab\x7f\x7e\x24\xd6\x9e\xbe\x45\x7b\xd5\xdb\xda\xfb\x27\xc1\xbd\xfe\x1e\x4c\x24\x9d\x08\x2d\xcf\x74\x15\x8b\x2c\x24\x0c\x2c\xc8\x41\x90\xa3\x02\x30\xc1\x7b\x9b\x14\xbc\x03\x00\x00\xff\xff\x10\xb0\x3d\xbf\xc3\x00\x00\x00")
+
+func _1528395616_lsif_processed_atDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395616_lsif_processed_atDownSql,
+		"1528395616_lsif_processed_at.down.sql",
+	)
+}
+
+func _1528395616_lsif_processed_atDownSql() (*asset, error) {
+	bytes, err := _1528395616_lsif_processed_atDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395616_lsif_processed_at.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x6e, 0x7a, 0x76, 0x73, 0x37, 0xd2, 0x4d, 0x8f, 0xc4, 0x70, 0x49, 0x19, 0x19, 0x12, 0x4e, 0x46, 0x29, 0xe0, 0x9c, 0xe6, 0xd4, 0xc1, 0x53, 0x51, 0xa, 0xca, 0xfa, 0x3, 0x32, 0x55, 0x43, 0x4e}}
+	return a, nil
+}
+
+var __1528395616_lsif_processed_atUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x8e\xcd\x6a\xc3\x30\x10\x84\xef\xfb\x14\x7b\x6c\x9f\x41\xf4\x20\x5b\x4b\x31\xe8\xc7\xa8\x32\xf4\x66\x4c\xad\x12\x83\x1d\x89\x48\x26\x90\xa7\x0f\xf6\x49\x86\x24\xe4\x38\x3b\xf3\xcd\x6c\x45\xdf\x8d\x66\x00\x5c\x3a\xb2\xe8\x78\x25\x09\xe7\x34\xfd\xf7\xe3\xba\xc4\x84\x96\x34\x57\x84\x6b\x9c\xc3\x30\xfa\xb1\x1f\x32\xe6\x80\xf1\x12\xfe\x7c\x4a\xbb\x66\xcf\x50\x2e\x04\xd6\x46\x76\x4a\x1f\xf1\x69\xf1\x29\x0f\x4b\xc4\xeb\x94\x4f\xbb\xc4\x5b\x38\x7b\x06\x5d\x2b\xb8\x3b\x54\xfc\x90\x3b\xb0\x5f\x6f\x2e\xef\xe7\x07\xdb\x5b\x9f\x36\x0e\x75\x27\x25\x03\x61\x4d\x8b\x8d\x16\xf4\x5b\xc0\x7d\x91\x67\x50\x5b\xda\x5e\x7a\x15\x42\xa3\x0b\xe7\xa3\x70\x3e\x19\x40\x6d\x94\x6a\x1c\x83\x7b\x00\x00\x00\xff\xff\x45\x1f\x10\x06\x67\x01\x00\x00")
+
+func _1528395616_lsif_processed_atUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395616_lsif_processed_atUpSql,
+		"1528395616_lsif_processed_at.up.sql",
+	)
+}
+
+func _1528395616_lsif_processed_atUpSql() (*asset, error) {
+	bytes, err := _1528395616_lsif_processed_atUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395616_lsif_processed_at.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x58, 0xb4, 0xba, 0x4a, 0x9, 0x76, 0x40, 0x1c, 0xbd, 0x77, 0x3f, 0xed, 0x54, 0x16, 0x41, 0xbf, 0x2d, 0x44, 0xa0, 0xd9, 0x9, 0xfc, 0xfe, 0x18, 0xfd, 0x7b, 0x9f, 0xad, 0x22, 0x76, 0x82, 0xe9}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1655,6 +1697,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395614_lsif_nullable_parent_commits.up.sql":                           _1528395614_lsif_nullable_parent_commitsUpSql,
 	"1528395615_lsif-commit-constraints.down.sql":                              _1528395615_lsifCommitConstraintsDownSql,
 	"1528395615_lsif-commit-constraints.up.sql":                                _1528395615_lsifCommitConstraintsUpSql,
+	"1528395616_lsif_processed_at.down.sql":                                    _1528395616_lsif_processed_atDownSql,
+	"1528395616_lsif_processed_at.up.sql":                                      _1528395616_lsif_processed_atUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1766,6 +1810,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395614_lsif_nullable_parent_commits.up.sql":                           {_1528395614_lsif_nullable_parent_commitsUpSql, map[string]*bintree{}},
 	"1528395615_lsif-commit-constraints.down.sql":                              {_1528395615_lsifCommitConstraintsDownSql, map[string]*bintree{}},
 	"1528395615_lsif-commit-constraints.up.sql":                                {_1528395615_lsifCommitConstraintsUpSql, map[string]*bintree{}},
+	"1528395616_lsif_processed_at.down.sql":                                    {_1528395616_lsif_processed_atDownSql, map[string]*bintree{}},
+	"1528395616_lsif_processed_at.up.sql":                                      {_1528395616_lsif_processed_atUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

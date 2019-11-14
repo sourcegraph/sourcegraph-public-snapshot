@@ -42,6 +42,7 @@ type LSIFDumpResolver interface {
 	ProjectRoot() (*GitTreeEntryResolver, error)
 	IsLatestForRepo() bool
 	UploadedAt() DateTime
+	ProcessedAt() DateTime
 }
 
 type LSIFDumpConnectionResolver interface {

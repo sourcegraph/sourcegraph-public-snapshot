@@ -151,7 +151,14 @@ export async function convertTestData(
 
     const tmp = path.join(storageRoot, constants.TEMP_DIR, uuid.v4())
     const { packages, references } = await convertLsif(input, tmp)
-    const dump = await xrepoDatabase.addPackagesAndReferences(repository, commit, root, packages, references)
+    const dump = await xrepoDatabase.addPackagesAndReferences(
+        repository,
+        commit,
+        root,
+        new Date(),
+        packages,
+        references
+    )
     await fs.rename(tmp, dbFilename(storageRoot, dump.id, repository, commit))
 
     if (updateCommits) {

@@ -389,7 +389,8 @@ Check constraints:
  commit         | text                     | not null
  root           | text                     | not null default ''::text
  visible_at_tip | boolean                  | not null default false
- uploaded_at    | timestamp with time zone | not null default now()
+ processed_at   | timestamp with time zone | not null default now()
+ uploaded_at    | timestamp with time zone | not null
 Indexes:
     "lsif_dumps_pkey" PRIMARY KEY, btree (id)
     "lsif_dumps_repository_commit_root" UNIQUE CONSTRAINT, btree (repository, commit, root)
