@@ -1,15 +1,21 @@
+import * as fs from 'mz/fs'
 import { createGunzip } from 'zlib'
-import { Readable } from 'stream'
 
 /**
- * Yield parsed JSON elements from a stream containing the gzipped JSON lines.
+ * Yield parsed JSON elements from a file containing the gzipped JSON lines.
  *
- * @param input A stream of gzipped JSON lines.
+ * @param path The filepath containing a gzipped compressed stream of JSON lines composing the LSIF dump.
  */
-export async function* readGzippedJsonElements(input: Readable): AsyncIterable<unknown> {
-    for await (const element of parseJsonLines(splitLines(input.pipe(createGunzip())))) {
-        yield element
-    }
+export function readGzippedJsonElementsFromFile(path: string): AsyncIterable<unknown> {
+    const input = fs.createReadStream(path)
+    const piped = input.pipe(createGunzip())
+
+    // Ensure we forward errors opening/reading the file to the async
+    // iterator opened below.
+    input.on('error', error => piped.emit('error', error))
+
+    // Create the iterable
+    return parseJsonLines(splitLines(piped))
 }
 
 /**
