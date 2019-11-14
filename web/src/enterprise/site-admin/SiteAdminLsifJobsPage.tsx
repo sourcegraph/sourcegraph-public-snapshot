@@ -1,22 +1,22 @@
-import * as GQL from '../../../shared/src/graphql/schema'
+import * as GQL from '../../../../shared/src/graphql/schema'
 import React, { FunctionComponent } from 'react'
-import { ErrorLike } from '../../../shared/src/util/errors'
-import { eventLogger } from '../tracking/eventLogger'
+import { ErrorLike } from '../../../../shared/src/util/errors'
+import { eventLogger } from '../../tracking/eventLogger'
 import { fetchLsifJobs, fetchLsifJobStatistics } from './backend'
 import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
-import { Link } from '../../../shared/src/components/Link'
+import { Link } from '../../../../shared/src/components/Link'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { PageTitle } from '../components/PageTitle'
+import { PageTitle } from '../../components/PageTitle'
 import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription, Observable } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
-import { Timestamp } from '../components/time/Timestamp'
-import { Toggle } from '../../../shared/src/components/Toggle'
+import { Timestamp } from '../../components/time/Timestamp'
+import { Toggle } from '../../../../shared/src/components/Toggle'
 import {
     FilteredConnection,
     FilteredConnectionQueryArgs,
     FilteredConnectionFilter,
-} from '../components/FilteredConnection'
+} from '../../components/FilteredConnection'
 
 interface ToggleComponentProps {
     hideInternal: boolean
