@@ -23,6 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fields of type `String` in our GraphQL API that contain [JSONC](https://komkom.github.io/) now have the custom scalar type `JSONCString`. [#6209](https://github.com/sourcegraph/sourcegraph/pull/6209)
 - `ZOEKT_HOST` environment variable has been deprecated. Please use `INDEXED_SEARCH_SERVERS` instead. `ZOEKT_HOST` will be removed in 3.12.
 - Directory names on the repository tree page are now shown in bold to improve readability.
+- Added support for Bitbucket Server pull requests to the [Automation](https://about.sourcegraph.com/product/automation/) campaign burndown chart. This leads to more requests being sent to Bitbucket Server instances, since Sourcegraph needs to keep track of how a pull request's state changes over time. With the [work being done to support Bitbucket Server webhooks](https://docs.google.com/document/d/1I3Aq1WSUh42BP8KvKr6AlmuCfo8tXYtJu40WzdNT6go/edit) these additional requests might be heavily reduced in the future.
 
 ### Fixed
 
