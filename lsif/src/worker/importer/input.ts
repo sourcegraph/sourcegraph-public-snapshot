@@ -13,8 +13,11 @@ export function readGzippedJsonElementsFromFile(path: string): AsyncIterable<unk
     // If we get an error opening or reading the file, we need to ensure that
     // we forward the error to the readable stream that splitLines is consuming.
     // If we don't register this error handler in the same tick as the call to
-    // createReadStream, we may miss the error. This causes the process to lock
-    // up indefinitely waiting for the next line of results from the file.
+    // createReadStream, we may miss the error. This uncaught error causes the
+    // process to crash.
+    //
+    // We should obviously like to catch this error instead and fail the single
+    // job for which that file is missing.
     //
     // This is a source of problems for others as well:
     // https://stackoverflow.com/questions/17136536/is-enoent-from-fs-createreadstream-uncatchable
