@@ -163,9 +163,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         return () => subscription.unsubscribe()
     }, [campaignID, triggerError, changesetUpdates])
 
-    // Tracks if a refresh of the campaignPlan is required before the campaign can be created
-    const [previewRefreshNeeded, setPreviewRefreshNeeded] = useState<boolean>(true)
-
     const queryChangesetsConnection = useCallback(
         (args: FilteredConnectionQueryArgs) => queryChangesets(campaignID!, args),
         [campaignID]
@@ -222,11 +219,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             )
                         )
                     ),
-                    tap(campaignPlan => {
-                        if (campaignPlan.status.state === 'COMPLETED') {
-                            setPreviewRefreshNeeded(false)
-                        }
-                    }),
                     tap(setCampaign)
                 ),
             [previewCampaignPlans]
@@ -269,14 +261,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     }
 
     const onChangeArguments = (newText: string): void => {
-        const currentSpec =
-            campaign && campaign.__typename === 'CampaignPlan' ? parseJSONC(campaign.arguments) : undefined
-        if (!currentSpec || !isEqual(currentSpec, parseJSONC(newText))) {
-            setCampaignPlanArguments(newText)
-            setPreviewRefreshNeeded(true)
-        } else if (!isLoadingPreview) {
-            setPreviewRefreshNeeded(false)
-        }
+        setCampaignPlanArguments(newText)
     }
 
     const discardChangesMessage = 'Do you want to discard your changes?'
@@ -285,7 +270,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         event.preventDefault()
         unblockHistoryRef.current = history.block(discardChangesMessage)
         {
-            const { name, description, plan } = campaign! as GQL.ICampaign
+            const { name, description, plan } = campaign as GQL.ICampaign
             setName(name)
             setDescription(description)
             setMode('editing')
@@ -344,6 +329,10 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             ? campaign.status
             : campaign.changesetCreationStatus
         : null
+
+    const currentSpec = campaign && campaign.__typename === 'CampaignPlan' ? parseJSONC(campaign.arguments) : undefined
+    // Tracks if a refresh of the campaignPlan is required before the campaign can be created
+    const previewRefreshNeeded = !currentSpec || !isEqual(currentSpec, parseJSONC(campaignPlanArguments))
 
     return (
         <>
