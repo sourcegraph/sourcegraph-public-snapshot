@@ -10,6 +10,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
+// SupportedExternalServices are the external service types currently supported
+// by Automation features. Repos that are associated with external services
+// whose type is not in this list will simply be filtered out from the search
+// results.
+var SupportedExternalServices = map[string]struct{}{
+	github.ServiceType:          {},
+	bitbucketserver.ServiceType: {},
+}
+
+// IsRepoSupported returns whether the given ExternalRepoSpec is supported by
+// Automation features, based on the external service type.
+func IsRepoSupported(spec *api.ExternalRepoSpec) bool {
+	_, ok := SupportedExternalServices[spec.ServiceType]
+	return ok
+}
+
 // A CampaignPlan represents the application of a CampaignType to the Arguments
 // over multiple repositories.
 type CampaignPlan struct {

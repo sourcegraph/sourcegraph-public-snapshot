@@ -198,6 +198,10 @@ func (r *Runner) createPlanAndJobs(
 
 	jobs := make([]*a8n.CampaignJob, 0, len(rs))
 	for _, repo := range rs {
+		if !a8n.IsRepoSupported(repo.ExternalRepo()) {
+			continue
+		}
+
 		var repoID int32
 		if err = relay.UnmarshalSpec(repo.ID(), &repoID); err != nil {
 			return jobs, err

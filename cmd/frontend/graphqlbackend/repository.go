@@ -74,6 +74,10 @@ func (r *RepositoryResolver) Name() string {
 	return string(r.repo.Name)
 }
 
+func (r *RepositoryResolver) ExternalRepo() *api.ExternalRepoSpec {
+	return &r.repo.ExternalRepo
+}
+
 func (r *RepositoryResolver) URI(ctx context.Context) (string, error) {
 	err := r.hydrate(ctx)
 	if err != nil {
