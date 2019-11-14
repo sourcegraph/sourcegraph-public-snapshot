@@ -29,7 +29,7 @@ var InternalClient = &internalClient{URL: "http://" + frontendInternal}
 
 var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Namespace: "src",
-	Subsystem: "frontend-internal",
+	Subsystem: "frontend_internal",
 	Name:      "request_duration_seconds",
 	Help:      "Time (in seconds) spent on request.",
 	Buckets:   prometheus.DefBuckets,
