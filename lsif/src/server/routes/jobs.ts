@@ -293,5 +293,22 @@ export function createJobRouter(
         )
     )
 
+    router.delete(
+        '/jobs/:id',
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const job = await queue.getJob(req.params.id)
+                if (!job) {
+                    throw Object.assign(new Error('Job not found'), {
+                        status: 404,
+                    })
+                }
+
+                await job.remove()
+                res.status(204).send()
+            }
+        )
+    )
+
     return router
 }
