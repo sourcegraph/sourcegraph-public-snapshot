@@ -11,19 +11,6 @@ import { mustGet } from '../../shared/maps'
 import { XrepoDatabase } from '../../shared/xrepo/xrepo'
 
 /**
- * No matching LSIF dump was found. This could be because:
- *
- * - You're currently browsing while on a commit that is too far away from the
- *   last uploaded LSIF dump
- * - You're currently viewing a file that is under a different root from what
- *   the LSIF dump is associated with (i.e. the current file is not contained in
- *   the dump)
- * - You're currently viewing a file that is not part of the LSIF dump (e.g. due
- *   to tsconfig.json exclude rules)
- */
-export class NoLSIFDumpError extends Error {}
-
-/**
  * Context describing the current request for paginated results.
  */
 export interface ReferencePaginationContext {
@@ -144,15 +131,12 @@ export class Backend {
      * @param ctx The tracing context.
      */
     public async exists(repository: string, commit: string, path: string, ctx: TracingContext = {}): Promise<boolean> {
-        try {
-            const { database, dump } = await this.loadClosestDatabase(repository, commit, path, ctx)
-            return await database.exists(this.pathToDatabase(dump.root, path))
-        } catch (error) {
-            if (error instanceof NoLSIFDumpError) {
-                return false
-            }
-            throw error
+        const { database, dump } = await this.loadClosestDatabase(repository, commit, path, ctx)
+        if (database === undefined || dump === undefined) {
+            return false
         }
+
+        return database.exists(this.pathToDatabase(dump.root, path))
     }
 
     /**
@@ -172,6 +156,13 @@ export class Backend {
         ctx: TracingContext = {}
     ): Promise<lsp.Location[]> {
         const { database, dump, ctx: newCtx } = await this.loadClosestDatabase(repository, commit, path, ctx)
+        if (database === undefined || dump === undefined) {
+            if (ctx.logger) {
+                ctx.logger.warn('No database could be loaded', { repository, commit, path })
+            }
+
+            return []
+        }
 
         // Try to find definitions in the same dump.
         const definitions = (
@@ -481,6 +472,14 @@ export class Backend {
         }
 
         const { database, dump, ctx: newCtx } = await this.loadClosestDatabase(repository, commit, path, ctx)
+        if (database === undefined || dump === undefined) {
+            if (ctx.logger) {
+                ctx.logger.warn('No database could be loaded', { repository, commit, path })
+            }
+
+            return { locations: [] }
+        }
+
         let locations = (await database.references(this.pathToDatabase(dump.root, path), position, newCtx)).map(loc =>
             this.locationFromDatabase(dump.root, loc)
         )
@@ -683,16 +682,24 @@ export class Backend {
         ctx: TracingContext = {}
     ): Promise<lsp.Hover | null> {
         const { database, dump, ctx: newCtx } = await this.loadClosestDatabase(repository, commit, path, ctx)
+        if (database === undefined || dump === undefined) {
+            if (ctx.logger) {
+                ctx.logger.warn('No database could be loaded', { repository, commit, path })
+            }
+
+            return null
+        }
+
         return database.hover(this.pathToDatabase(dump.root, path), position, newCtx)
     }
 
     /**
-     * Create a database instance for the given repository at the commit
-     * closest to the target commit for which we have LSIF data. Returns
-     * undefined if no such database can be created. Will also return a
-     * tracing context tagged with the closest commit found. This new
-     * tracing context should be used in all downstream requests so that
-     * the original commit and the effective commit are both known.
+     * Create a database instance for the given repository at the commit closest to the target
+     * commit for which we have LSIF data. Also returns the dump instance backing the database.
+     * Returns an undefined database and dump if no such dump can be found. Will also return a
+     * tracing context tagged with the closest commit found. This new tracing context should
+     * be used in all downstream requests so that the original commit and the effective commit
+     * are both known.
      *
      * @param repository The repository name.
      * @param commit The target commit.
@@ -704,7 +711,7 @@ export class Backend {
         commit: string,
         file: string,
         ctx: TracingContext = {}
-    ): Promise<{ database: Database; dump: xrepoModels.LsifDump; ctx: TracingContext }> {
+    ): Promise<{ database?: Database; dump?: xrepoModels.LsifDump; ctx?: TracingContext }> {
         return logAndTraceCall(ctx, 'loading closest database', async ctx => {
             // Determine the closest commit that we actually have LSIF data for. If the commit is
             // not tracked, then commit data is requested from gitserver and insert the ancestors
@@ -712,21 +719,19 @@ export class Backend {
             const dump = await logAndTraceCall(ctx, 'determining closest commit', (ctx: TracingContext) =>
                 this.xrepoDatabase.findClosestDump(repository, commit, file, ctx, this.fetchConfiguration().gitServers)
             )
-            if (!dump) {
-                throw new NoLSIFDumpError()
-            }
-
-            return {
-                database: new Database(
+            if (dump) {
+                const database = new Database(
                     this.connectionCache,
                     this.documentCache,
                     this.resultChunkCache,
                     dump.id,
                     dbFilename(this.storageRoot, dump.id, dump.repository, dump.commit)
-                ),
-                dump,
-                ctx: addTags(ctx, { closestCommit: dump.commit }),
+                )
+
+                return { database, dump, ctx: addTags(ctx, { closestCommit: dump.commit }) }
             }
+
+            return {}
         })
     }
 
