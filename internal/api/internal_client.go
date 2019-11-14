@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -25,6 +26,18 @@ type internalClient struct {
 }
 
 var InternalClient = &internalClient{URL: "http://" + frontendInternal}
+
+var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	Namespace: "src",
+	Subsystem: "frontend_internal",
+	Name:      "request_duration_seconds",
+	Help:      "Time (in seconds) spent on request.",
+	Buckets:   prometheus.DefBuckets,
+}, []string{"category", "code"})
+
+func init() {
+	prometheus.MustRegister(requestDuration)
+}
 
 // WaitForFrontend retries a noop request to the internal API until it is able to reach
 // the endpoint, indicating that the frontend is available.
@@ -310,7 +323,21 @@ func (c *internalClient) LogTelemetry(ctx context.Context, env string, reqBody i
 
 // postInternal sends an HTTP post request to the internal route.
 func (c *internalClient) postInternal(ctx context.Context, route string, reqBody, respBody interface{}) error {
-	return c.post(ctx, "/.internal/"+route, reqBody, respBody)
+	return c.meteredPost(ctx, "/.internal/"+route, reqBody, respBody)
+}
+
+func (c *internalClient) meteredPost(ctx context.Context, route string, reqBody, respBody interface{}) error {
+	start := time.Now()
+	err := c.post(ctx, route, reqBody, respBody)
+	d := time.Since(start)
+
+	// TODO(uwedeportivo): might be useful to use actual response status code value
+	code := "200"
+	if err != nil {
+		code = "error"
+	}
+	requestDuration.WithLabelValues(route, code).Observe(d.Seconds())
+	return err
 }
 
 // post sends an HTTP post request to the provided route. If reqBody is

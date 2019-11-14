@@ -267,6 +267,7 @@ func callCodemodInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions
 	// TODO(RVT): Use a separate HTTP client here dedicated to codemod,
 	// not doing so means codemod and searcher share the same HTTP limits
 	// etc. which is fine for now but not if codemod goes in front of users.
+	// Once separated please fix cmd/frontend/graphqlbackend/textsearch:50 in #6586
 	resp, err := ctxhttp.Do(ctx, searchHTTPClient, req)
 	if err != nil {
 		// If we failed due to cancellation or timeout (with no partial results in the response body), return just that.
