@@ -1,15 +1,28 @@
+import * as fs from 'mz/fs'
 import { createGunzip } from 'zlib'
-import { Readable } from 'stream'
 
 /**
- * Yield parsed JSON elements from a stream containing the gzipped JSON lines.
+ * Yield parsed JSON elements from a file containing the gzipped JSON lines.
  *
- * @param input A stream of gzipped JSON lines.
+ * @param path The filepath containing a gzipped compressed stream of JSON lines composing the LSIF dump.
  */
-export async function* readGzippedJsonElements(input: Readable): AsyncIterable<unknown> {
-    for await (const element of parseJsonLines(splitLines(input.pipe(createGunzip())))) {
-        yield element
-    }
+export function readGzippedJsonElementsFromFile(path: string): AsyncIterable<unknown> {
+    const input = fs.createReadStream(path)
+    const piped = input.pipe(createGunzip())
+
+    // If we get an error opening or reading the file, we need to ensure that
+    // we forward the error to the readable stream that splitLines is consuming.
+    // If we don't register this error handler in the same tick as the call to
+    // createReadStream, we may miss the error. This causes the process to lock
+    // up indefinitely waiting for the next line of results from the file.
+    //
+    // This is a source of problems for others as well:
+    // https://stackoverflow.com/questions/17136536/is-enoent-from-fs-createreadstream-uncatchable
+
+    input.on('error', error => piped.emit('error', error))
+
+    // Create the iterable
+    return parseJsonLines(splitLines(piped))
 }
 
 /**
