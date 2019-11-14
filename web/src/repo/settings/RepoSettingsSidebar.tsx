@@ -28,7 +28,6 @@ export const RepoSettingsSidebar: React.FunctionComponent<Props> = (props: Props
             <div className={SIDEBAR_CARD_CLASS}>
                 <div className="card-header">Settings</div>
                 <div className="list-group list-group-flush">
-                    {/* TODO - propsify */}
                     {props.repoSettingsSidebarItems.map(
                         ({ label, to, exact, condition = () => true }) =>
                             condition({}) && (
