@@ -160,7 +160,6 @@ func (r *Runner) Run(ctx context.Context, plan *a8n.CampaignPlan) error {
 		queue <- job
 	}
 
-	r.wg.Wait()
 	close(queue)
 
 	return nil
