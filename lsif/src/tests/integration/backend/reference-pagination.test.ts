@@ -9,7 +9,7 @@ describe('Backend', () => {
         await ctx.init()
         await Promise.all(
             ['a', 'b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10'].map(r =>
-                ctx.convertTestData(r, util.createCommit(r), '', `reference-pagination/data/${r}.lsif.gz`)
+                ctx.convertTestData(r, util.createCommit(0), '', `reference-pagination/data/${r}.lsif.gz`)
             )
         )
     })
@@ -28,7 +28,7 @@ describe('Backend', () => {
             util.filterNodeModules(
                 await backend.references(
                     'a',
-                    util.createCommit('a'),
+                    util.createCommit(0),
                     'src/index.ts',
                     {
                         line: 0,

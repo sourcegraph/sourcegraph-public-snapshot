@@ -195,6 +195,9 @@ func httpError(w http.ResponseWriter, message string, code string) {
 	})
 }
 
+// serveUpdate updates the critical site configuration. It is eventually consistent--there are no
+// guarantees that the configuration has propagated to all services on return, but this typically
+// happens within a few seconds.
 func serveUpdate(w http.ResponseWriter, r *http.Request) {
 	logger := log15.New("route", "update")
 

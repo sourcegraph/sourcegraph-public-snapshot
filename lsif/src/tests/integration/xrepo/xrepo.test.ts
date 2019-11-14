@@ -44,18 +44,18 @@ describe('XrepoDatabase', () => {
         //       |              |           |
         //       +-- [c] -- d --+           +--- h
 
-        const ca = util.createCommit('a')
-        const cb = util.createCommit('b')
-        const cc = util.createCommit('c')
-        const cd = util.createCommit('d')
-        const ce = util.createCommit('e')
-        const cf = util.createCommit('f')
-        const cg = util.createCommit('g')
-        const ch = util.createCommit('h')
+        const ca = util.createCommit(0)
+        const cb = util.createCommit(1)
+        const cc = util.createCommit(2)
+        const cd = util.createCommit(3)
+        const ce = util.createCommit(4)
+        const cf = util.createCommit(5)
+        const cg = util.createCommit(6)
+        const ch = util.createCommit(7)
 
         // Add relations
         await xrepoDatabase.updateCommits('foo', [
-            [ca, ''],
+            [ca, undefined],
             [cb, ca],
             [cc, ca],
             [cd, cc],
@@ -106,18 +106,18 @@ describe('XrepoDatabase', () => {
         //              |
         //              +-- g -- h
 
-        const ca = util.createCommit('a')
-        const cb = util.createCommit('b')
-        const cc = util.createCommit('c')
-        const cd = util.createCommit('d')
-        const ce = util.createCommit('e')
-        const cf = util.createCommit('f')
-        const cg = util.createCommit('g')
-        const ch = util.createCommit('h')
+        const ca = util.createCommit(0)
+        const cb = util.createCommit(1)
+        const cc = util.createCommit(2)
+        const cd = util.createCommit(3)
+        const ce = util.createCommit(4)
+        const cf = util.createCommit(5)
+        const cg = util.createCommit(6)
+        const ch = util.createCommit(7)
 
         // Add relations
         await xrepoDatabase.updateCommits('foo', [
-            [ca, ''],
+            [ca, undefined],
             [cb, ca],
             [cc, cb],
             [cd, ca],
@@ -156,13 +156,13 @@ describe('XrepoDatabase', () => {
         //
         // Where LSIF dumps exist at b at roots: root1/ and root2/.
 
-        const ca = util.createCommit('a')
-        const cb = util.createCommit('b')
+        const ca = util.createCommit(0)
+        const cb = util.createCommit(1)
         const fields = ['repository', 'commit', 'root']
 
         // Add relations
         await xrepoDatabase.updateCommits('foo', [
-            [ca, ''],
+            [ca, undefined],
             [cb, ca],
         ])
 
@@ -212,17 +212,17 @@ describe('XrepoDatabase', () => {
         //
         // MAX_TRAVERSAL_LIMIT -- ... -- 2 -- 1 -- 0
         //
-        // Note: we use '.' as a suffix for commit numbers on construction so that
-        // we can distinguish `1` and `11` (`1.1.1...` and `11.11.11...`).
+        // Note: we use 'a' as a suffix for commit numbers on construction so that
+        // we can distinguish `1` and `11` (`1a1a1a...` and `11a11a11a..`).
 
-        const c0 = util.createCommit('0.')
-        const c1 = util.createCommit('1.')
-        const cpen = util.createCommit(`${MAX_TRAVERSAL_LIMIT / 2 - 1}.`)
-        const cmax = util.createCommit(`${MAX_TRAVERSAL_LIMIT / 2}.`)
+        const c0 = util.createCommit(0)
+        const c1 = util.createCommit(1)
+        const cpen = util.createCommit(MAX_TRAVERSAL_LIMIT / 2 - 1)
+        const cmax = util.createCommit(MAX_TRAVERSAL_LIMIT / 2)
 
         const commits: [string, string][] = Array.from({ length: MAX_TRAVERSAL_LIMIT }, (_, i) => [
-            util.createCommit(`${i}.`),
-            util.createCommit(`${i + 1}.`),
+            util.createCommit(i),
+            util.createCommit(i + 1),
         ])
 
         // Add relations
@@ -271,17 +271,17 @@ describe('XrepoDatabase', () => {
         //
         // a -- b -- c -- d -- e -- f -- g
 
-        const ca = util.createCommit('a')
-        const cb = util.createCommit('b')
-        const cc = util.createCommit('c')
-        const cd = util.createCommit('d')
-        const ce = util.createCommit('e')
-        const cf = util.createCommit('f')
-        const cg = util.createCommit('g')
+        const ca = util.createCommit(0)
+        const cb = util.createCommit(1)
+        const cc = util.createCommit(2)
+        const cd = util.createCommit(3)
+        const ce = util.createCommit(4)
+        const cf = util.createCommit(5)
+        const cg = util.createCommit(6)
 
         // Add relations
         await xrepoDatabase.updateCommits('foo', [
-            [ca, ''],
+            [ca, undefined],
             [cb, ca],
             [cc, cb],
             [cd, cc],
@@ -312,19 +312,19 @@ describe('XrepoDatabase', () => {
         //     |                           |
         //     +-- [f] --- g --------------+
 
-        const ca = util.createCommit('a')
-        const cb = util.createCommit('b')
-        const cc = util.createCommit('c')
-        const cd = util.createCommit('d')
-        const ce = util.createCommit('e')
-        const ch = util.createCommit('fx')
-        const ci = util.createCommit('i')
-        const cf = util.createCommit('f')
-        const cg = util.createCommit('g')
+        const ca = util.createCommit(0)
+        const cb = util.createCommit(1)
+        const cc = util.createCommit(2)
+        const cd = util.createCommit(3)
+        const ce = util.createCommit(4)
+        const ch = util.createCommit(5)
+        const ci = util.createCommit(6)
+        const cf = util.createCommit(7)
+        const cg = util.createCommit(8)
 
         // Add relations
         await xrepoDatabase.updateCommits('foo', [
-            [ca, ''],
+            [ca, undefined],
             [cb, ca],
             [cc, cb],
             [cd, ca],
@@ -365,17 +365,17 @@ describe('XrepoDatabase', () => {
         //
         // (MAX_TRAVERSAL_LIMIT + 1) -- ... -- 2 -- 1 -- 0
         //
-        // Note: we use '.' as a suffix for commit numbers on construction so that
-        // we can distinguish `1` and `11` (`1.1.1...` and `11.11.11...`).
+        // Note: we use 'a' as a suffix for commit numbers on construction so that
+        // we can distinguish `1` and `11` (`1a1a1a...` and `11a11a11a...`).
 
-        const c0 = util.createCommit('0.')
-        const c1 = util.createCommit('1.')
-        const cpen = util.createCommit(`${MAX_TRAVERSAL_LIMIT - 1}.`)
-        const cmax = util.createCommit(`${MAX_TRAVERSAL_LIMIT}.`)
+        const c0 = util.createCommit(0)
+        const c1 = util.createCommit(1)
+        const cpen = util.createCommit(MAX_TRAVERSAL_LIMIT - 1)
+        const cmax = util.createCommit(MAX_TRAVERSAL_LIMIT)
 
         const commits: [string, string][] = Array.from({ length: MAX_TRAVERSAL_LIMIT + 1 }, (_, i) => [
-            util.createCommit(`${i}.`),
-            util.createCommit(`${i + 1}.`),
+            util.createCommit(i),
+            util.createCommit(i + 1),
         ])
 
         // Add relations
@@ -406,18 +406,19 @@ describe('XrepoDatabase', () => {
     })
 
     it('should respect bloom filter', async () => {
-        const ca = util.createCommit('a')
-        const cb = util.createCommit('b')
-        const cc = util.createCommit('c')
-        const cd = util.createCommit('d')
-        const ce = util.createCommit('e')
-        const cf = util.createCommit('f')
+        const ca = util.createCommit(0)
+        const cb = util.createCommit(1)
+        const cc = util.createCommit(2)
+        const cd = util.createCommit(3)
+        const ce = util.createCommit(4)
+        const cf = util.createCommit(5)
 
         const updatePackages = (commit: string, root: string, identifiers: string[]): Promise<xrepoModels.LsifDump> =>
             xrepoDatabase.addPackagesAndReferences(
                 'foo',
                 commit,
                 root,
+                new Date(),
                 [],
                 [
                     {
@@ -454,7 +455,7 @@ describe('XrepoDatabase', () => {
         }
 
         await xrepoDatabase.updateCommits('foo', [
-            [ca, ''],
+            [ca, undefined],
             [cb, ca],
             [cc, cb],
             [cd, cc],
@@ -473,6 +474,7 @@ describe('XrepoDatabase', () => {
                 'foo',
                 commit,
                 root,
+                new Date(),
                 [],
                 [
                     {
@@ -494,7 +496,7 @@ describe('XrepoDatabase', () => {
             // uses the identifier. In all, there are fifty uses spread over 5 pages.
             const isUse = i >= 100 && i % 3 === 0
 
-            const dump = await updatePackages(util.createCommit('0'), `r${i}`, ['x', isUse ? 'y' : 'z'])
+            const dump = await updatePackages(util.createCommit(0), `r${i}`, ['x', isUse ? 'y' : 'z'])
             dump.visibleAtTip = true
             await connection.getRepository(xrepoModels.LsifDump).save(dump)
 
@@ -518,9 +520,9 @@ describe('XrepoDatabase', () => {
     })
 
     it('references only returned if dumps visible at tip', async () => {
-        const ca = util.createCommit('a')
-        const cb = util.createCommit('b')
-        const cc = util.createCommit('c')
+        const ca = util.createCommit(0)
+        const cb = util.createCommit(1)
+        const cc = util.createCommit(2)
 
         const references = [
             {
@@ -533,9 +535,9 @@ describe('XrepoDatabase', () => {
             },
         ]
 
-        const dumpa = await xrepoDatabase.addPackagesAndReferences('foo', ca, '', [], references)
-        const dumpb = await xrepoDatabase.addPackagesAndReferences('foo', cb, '', [], references)
-        const dumpc = await xrepoDatabase.addPackagesAndReferences('foo', cc, '', [], references)
+        const dumpa = await xrepoDatabase.addPackagesAndReferences('foo', ca, '', new Date(), [], references)
+        const dumpb = await xrepoDatabase.addPackagesAndReferences('foo', cb, '', new Date(), [], references)
+        const dumpc = await xrepoDatabase.addPackagesAndReferences('foo', cc, '', new Date(), [], references)
 
         const getReferencedDumpIds = async () =>
             (

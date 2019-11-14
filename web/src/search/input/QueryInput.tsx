@@ -275,7 +275,7 @@ export class QueryInput extends React.Component<Props, State> {
                     autoComplete="off"
                 />
                 {showSuggestions && (
-                    <ul className="query-input2__suggestions" ref={this.setSuggestionListElement}>
+                    <ul className="query-input2__suggestions e2e-query-suggestions" ref={this.setSuggestionListElement}>
                         {this.state.suggestions.map((suggestion, i) => {
                             /* eslint-disable react/jsx-no-bind */
                             const isSelected = this.state.selectedSuggestion === i

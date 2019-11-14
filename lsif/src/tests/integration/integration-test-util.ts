@@ -113,9 +113,9 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
  * @param connection The connection to use.
  */
 export async function truncatePostgresTables(connection: Connection): Promise<void> {
-    const results = (await connection.query(
+    const results: { table_name: string }[] = await connection.query(
         "SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' AND table_name != 'schema_migrations'"
-    )) as { table_name: string }[]
+    )
 
     const tableNames = results.map(row => row.table_name).join(', ')
     await connection.query(`truncate ${tableNames} restart identity`)
@@ -151,7 +151,14 @@ export async function convertTestData(
 
     const tmp = path.join(storageRoot, constants.TEMP_DIR, uuid.v4())
     const { packages, references } = await convertLsif(input, tmp)
-    const dump = await xrepoDatabase.addPackagesAndReferences(repository, commit, root, packages, references)
+    const dump = await xrepoDatabase.addPackagesAndReferences(
+        repository,
+        commit,
+        root,
+        new Date(),
+        packages,
+        references
+    )
     await fs.rename(tmp, dbFilename(storageRoot, dump.id, repository, commit))
 
     if (updateCommits) {
@@ -283,7 +290,7 @@ export function createRemoteLocation(
     endCharacter: number
 ): lsp.Location {
     const url = new URL(`git://${repository}`)
-    url.search = createCommit(repository)
+    url.search = createCommit(0)
     url.hash = documentPath
 
     return createLocation(url.href, startLine, startCharacter, endLine, endCharacter)
@@ -292,10 +299,11 @@ export function createRemoteLocation(
 /**
  * Create a 40-character commit by repeating the given string.
  *
- * @param repository The repository name.
+ * @param base A unique numeric base to repeat.
  */
-export function createCommit(repository: string): string {
-    return repository.repeat(40).substring(0, 40)
+export function createCommit(base: number): string {
+    // Add 'a' to differentiate between similar numeric bases such as `1a1a...` and `11a11a...`.
+    return (base + 'a').repeat(40).substring(0, 40)
 }
 
 /**

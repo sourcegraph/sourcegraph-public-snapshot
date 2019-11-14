@@ -96,14 +96,4 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         exact: true,
         render: lazyComponent(() => import('./SiteAdminSurveyResponsesPage'), 'SiteAdminSurveyResponsesPage'),
     },
-    {
-        path: '/lsif-jobs',
-        exact: true,
-        render: lazyComponent(() => import('./SiteAdminLsifJobsPage'), 'SiteAdminLsifJobsPage'),
-    },
-    {
-        path: '/lsif-jobs/:id',
-        exact: true,
-        render: lazyComponent(() => import('./SiteAdminLsifJobPage'), 'SiteAdminLsifJobPage'),
-    },
 ]

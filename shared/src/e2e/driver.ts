@@ -41,9 +41,9 @@ type EnterTextMethod = 'type' | 'paste'
 
 interface FindElementOptions {
     /**
-     * Filter candidate elements to those with the specified tag name
+     * Filter candidate elements to those with the specified CSS selector
      */
-    tagName?: keyof HTMLElementTagNameMap
+    selector?: string
 
     /**
      * Log the XPath quer(y|ies) used to find the element.
@@ -79,7 +79,7 @@ function findElementRegexpStrings(
     return regexps
 }
 
-function findElementMatchingRegexpsInDocument(tag: string, regexps: string[]): HTMLElement | null {
+function findElementMatchingRegexps(tag: string, regexps: string[]): HTMLElement | null {
     for (const regexpString of regexps) {
         const regexp = new RegExp(regexpString)
         for (const el of document.querySelectorAll<HTMLElement>(tag)) {
@@ -468,7 +468,7 @@ export class Driver {
         text: string,
         options: FindElementOptions & { wait?: PageFnOptions | boolean } = {}
     ): Promise<puppeteer.ElementHandle<Element>> {
-        const { tagName, fuzziness, wait } = options
+        const { selector: tagName, fuzziness, wait } = options
         const tag = tagName || '*'
         const regexps = findElementRegexpStrings(text, { fuzziness })
 
@@ -483,16 +483,11 @@ export class Driver {
 
         const handlePromise = wait
             ? this.page
-                  .waitForFunction(
-                      findElementMatchingRegexpsInDocument,
-                      typeof wait === 'object' ? wait : {},
-                      tag,
-                      regexps
-                  )
+                  .waitForFunction(findElementMatchingRegexps, typeof wait === 'object' ? wait : {}, tag, regexps)
                   .catch(err => {
                       throw notFoundErr(err)
                   })
-            : this.page.evaluateHandle(findElementMatchingRegexpsInDocument, tag, regexps)
+            : this.page.evaluateHandle(findElementMatchingRegexps, tag, regexps)
 
         const el = (await handlePromise).asElement()
         if (!el) {
@@ -501,8 +496,8 @@ export class Driver {
         return el
     }
 
-    public async waitUntilURL(url: string): Promise<void> {
-        await this.page.waitForFunction(url => document.location.href === url, {}, url)
+    public async waitUntilURL(url: string, options: PageFnOptions = {}): Promise<void> {
+        await this.page.waitForFunction(url => document.location.href === url, options, url)
     }
 
     public async goToURLWithInvalidTLS(url: string): Promise<void> {
@@ -516,7 +511,7 @@ export class Driver {
             await this.page.click('#details-button')
             await (
                 await this.findElementWithText('Proceed to', {
-                    tagName: 'a',
+                    selector: 'a',
                     wait: { timeout: 2000 },
                 })
             ).click()

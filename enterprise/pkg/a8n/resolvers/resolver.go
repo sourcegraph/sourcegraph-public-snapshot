@@ -346,6 +346,15 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 	}
 
 	for _, r := range rs {
+		if !a8n.IsRepoSupported(&r.ExternalRepo) {
+			err = errors.Errorf(
+				"External service type %s of repository %q is currently not supported in Automation features",
+				r.ExternalRepo.ServiceType,
+				r.Name,
+			)
+			return nil, err
+		}
+
 		repoSet[r.ID] = r
 	}
 
@@ -366,15 +375,10 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 		}
 	}
 
-	tx.Done()
-
-	// Only fetch metadata if none of these changesets existed before.
-	// We do this outside of a transaction.
-
-	store = repos.NewDBStore(r.store.DB(), sql.TxOptions{})
+	store = repos.NewDBStore(tx.DB(), sql.TxOptions{})
 	syncer := ee.ChangesetSyncer{
 		ReposStore:  store,
-		Store:       r.store,
+		Store:       tx,
 		HTTPFactory: r.httpFactory,
 	}
 	if err = syncer.SyncChangesets(ctx, cs...); err != nil {

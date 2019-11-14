@@ -27,6 +27,8 @@ import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { RepoRevContainer, RepoRevContainerRoute } from './RepoRevContainer'
 import { RepositoryNotFoundPage } from './RepositoryNotFoundPage'
 import { ThemeProps } from '../../../shared/src/theme'
+import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
+import { RepoSettingsSideBarItem } from './settings/RepoSettingsSidebar'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -42,6 +44,8 @@ export interface RepoContainerContext
         PatternTypeProps {
     repo: GQL.IRepository
     authenticatedUser: GQL.IUser | null
+    repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
+    repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
 
     /** The URL route match for {@link RepoContainer}. */
     routePrefix: string
@@ -69,6 +73,8 @@ interface RepoContainerProps
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevContainerRoutes: readonly RepoRevContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
+    repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
+    repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
     authenticatedUser: GQL.IUser | null
 }
 
@@ -241,10 +247,12 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             onDidUpdateRepository: this.onDidUpdateRepository,
             patternType: this.props.patternType,
             togglePatternType: this.props.togglePatternType,
+            repoSettingsAreaRoutes: this.props.repoSettingsAreaRoutes,
+            repoSettingsSidebarItems: this.props.repoSettingsSidebarItems,
         }
 
         return (
-            <div className="repo-container w-100 d-flex flex-column">
+            <div className="repo-container e2e-repo-container w-100 d-flex flex-column">
                 <RepoHeader
                     {...this.props}
                     actionButtons={this.props.repoHeaderActionButtons}

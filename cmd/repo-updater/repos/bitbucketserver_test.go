@@ -308,6 +308,118 @@ func TestBitbucketServerSource_LoadChangesets(t *testing.T) {
 	}
 }
 
+func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
+	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
+	if instanceURL == "" {
+		// The test fixtures and golden files were generated with
+		// this config pointed to bitbucket.sgdev.org
+		instanceURL = "https://bitbucket.sgdev.org"
+	}
+
+	repo := &Repo{
+		Metadata: &bitbucketserver.Repo{
+			Slug:    "automation-testing",
+			Project: &bitbucketserver.Project{Key: "SOUR"},
+		},
+	}
+
+	testCases := []struct {
+		name string
+		cs   *Changeset
+		err  string
+	}{
+		{
+			name: "success",
+			cs: &Changeset{
+				Title:       "This is a test PR",
+				Body:        "This is the body of a test PR",
+				BaseRefName: "master",
+				HeadRefName: "test-pr-bbs-6",
+				Repo:        repo,
+				Changeset:   &a8n.Changeset{},
+			},
+		},
+		{
+			name: "already exists",
+			cs: &Changeset{
+				Title:       "This is a test PR",
+				Body:        "This is the body of a test PR",
+				BaseRefName: "master",
+				HeadRefName: "always-open-pr-bbs",
+				Repo:        repo,
+				Changeset:   &a8n.Changeset{},
+			},
+			err: bitbucketserver.ErrAlreadyExists.Error(),
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		tc.name = "BitbucketServerSource_CreateChangeset_" + tc.name
+
+		t.Run(tc.name, func(t *testing.T) {
+			cf, save := newClientFactory(t, tc.name)
+			defer save(t)
+
+			lg := log15.New()
+			lg.SetHandler(log15.DiscardHandler())
+
+			svc := &ExternalService{
+				Kind: "BITBUCKETSERVER",
+				Config: marshalJSON(t, &schema.BitbucketServerConnection{
+					Url:   instanceURL,
+					Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
+				}),
+			}
+
+			bbsSrc, err := NewBitbucketServerSource(svc, cf)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			ctx := context.Background()
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			tc.err = strings.ReplaceAll(tc.err, "${INSTANCEURL}", instanceURL)
+
+			err = bbsSrc.CreateChangeset(ctx, tc.cs)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if err != nil {
+				return
+			}
+
+			pr := tc.cs.Changeset.Metadata.(*bitbucketserver.PullRequest)
+			data, err := json.MarshalIndent(pr, " ", " ")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			path := "testdata/golden/" + tc.name
+			if update(tc.name) {
+				if err = ioutil.WriteFile(path, data, 0640); err != nil {
+					t.Fatalf("failed to update golden file %q: %s", path, err)
+				}
+			}
+
+			golden, err := ioutil.ReadFile(path)
+			if err != nil {
+				t.Fatalf("failed to read golden file %q: %s", path, err)
+			}
+
+			if have, want := string(data), string(golden); have != want {
+				dmp := diffmatchpatch.New()
+				diffs := dmp.DiffMain(have, want, false)
+				t.Error(dmp.DiffPrettyText(diffs))
+			}
+		})
+	}
+}
+
 func diff(b1, b2 []byte) (string, error) {
 	f1, err := ioutil.TempFile("", "repos_test")
 	if err != nil {

@@ -1,14 +1,14 @@
-import * as GQL from '../../../../shared/src/graphql/schema'
+import * as GQL from '../../../../../shared/src/graphql/schema'
 import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
-import { eventLogger } from '../../tracking/eventLogger'
+import { eventLogger } from '../../../tracking/eventLogger'
 import { fetchLsifDumps, fetchLsifJobs } from './backend'
-import { FilteredConnection, FilteredConnectionQueryArgs } from '../../components/FilteredConnection'
-import { Link } from '../../../../shared/src/components/Link'
-import { PageTitle } from '../../components/PageTitle'
+import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
+import { Link } from '../../../../../shared/src/components/Link'
+import { PageTitle } from '../../../components/PageTitle'
 import { RouteComponentProps } from 'react-router'
-import { Timestamp } from '../../components/time/Timestamp'
-import { Collapsible } from '../../components/Collapsible'
-import { useObservable } from '../../util/useObservable'
+import { Timestamp } from '../../../components/time/Timestamp'
+import { Collapsible } from '../../../components/Collapsible'
+import { useObservable } from '../../../util/useObservable'
 import { Observable } from 'rxjs'
 
 const LsifDumpNode: FunctionComponent<{ node: GQL.ILSIFDump }> = ({ node }) => (
@@ -25,13 +25,13 @@ const LsifDumpNode: FunctionComponent<{ node: GQL.ILSIFDump }> = ({ node }) => (
         </div>
 
         <small className="text-muted lsif-data__meta-timestamp">
-            <Timestamp noAbout={true} date={node.uploadedAt} />
+            <Timestamp noAbout={true} date={node.processedAt} />
         </small>
     </div>
 )
 
 const LsifJobNode: FunctionComponent<{ node: GQL.ILSIFJob }> = ({ node }) => {
-    const { commit, root } = node.args as { commit: string; root: string }
+    const { commit, root }: { commit: string; root: string } = node.arguments
 
     return (
         <div className="w-100 list-group-item py-2 lsif-data__main">
@@ -56,7 +56,7 @@ const LsifJobNode: FunctionComponent<{ node: GQL.ILSIFJob }> = ({ node }) => {
             </div>
 
             <small className="text-muted lsif-data__meta-timestamp">
-                <Timestamp noAbout={true} date={node.finishedOn || node.processedOn || node.timestamp} />
+                <Timestamp noAbout={true} date={node.completedOrErroredAt || node.startedAt || node.queuedAt} />
             </small>
         </div>
     )
@@ -118,6 +118,7 @@ export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ rep
                     noun="upload"
                     pluralNoun="uploads"
                     hideSearch={true}
+                    useURLQuery={false}
                     noSummaryIfAllNodesVisible={true}
                     queryConnection={queryLatestDumps}
                     nodeComponent={LsifDumpNode}

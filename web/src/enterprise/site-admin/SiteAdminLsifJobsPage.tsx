@@ -1,23 +1,23 @@
-import * as GQL from '../../../shared/src/graphql/schema'
+import * as GQL from '../../../../shared/src/graphql/schema'
 import React, { FunctionComponent } from 'react'
-import { ErrorLike, asError } from '../../../shared/src/util/errors'
-import { eventLogger } from '../tracking/eventLogger'
+import { ErrorLike, asError } from '../../../../shared/src/util/errors'
+import { eventLogger } from '../../tracking/eventLogger'
 import { fetchLsifJobs, fetchLsifJobStatistics } from './backend'
 import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
-import { Link } from '../../../shared/src/components/Link'
+import { Link } from '../../../../shared/src/components/Link'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { PageTitle } from '../components/PageTitle'
+import { PageTitle } from '../../components/PageTitle'
 import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription, Observable } from 'rxjs'
 import { switchMap, catchError } from 'rxjs/operators'
-import { Timestamp } from '../components/time/Timestamp'
-import { Toggle } from '../../../shared/src/components/Toggle'
+import { Timestamp } from '../../components/time/Timestamp'
+import { Toggle } from '../../../../shared/src/components/Toggle'
 import {
     FilteredConnection,
     FilteredConnectionQueryArgs,
     FilteredConnectionFilter,
-} from '../components/FilteredConnection'
-import { ErrorAlert } from '../components/alerts'
+} from '../../components/FilteredConnection'
+import { ErrorAlert } from '../../components/alerts'
 
 interface ToggleComponentProps {
     hideInternal: boolean
@@ -49,7 +49,7 @@ const LsifJobNode: FunctionComponent<LsifJobNodeProps> = ({ node }) => (
             </div>
 
             <small className="text-muted lsif-job__meta-timestamp">
-                <Timestamp noAbout={true} date={node.finishedOn || node.processedOn || node.timestamp} />
+                <Timestamp noAbout={true} date={node.completedOrErroredAt || node.startedAt || node.queuedAt} />
             </small>
         </div>
     </li>
@@ -200,7 +200,7 @@ export class SiteAdminLsifJobsPage extends React.Component<Props, State> {
  * @param job The job instance.
  */
 function lsifJobDescription(job: GQL.ILSIFJob): JSX.Element {
-    if (job.name === 'convert') {
+    if (job.type === 'convert') {
         const {
             repository,
             commit,
@@ -209,7 +209,7 @@ function lsifJobDescription(job: GQL.ILSIFJob): JSX.Element {
             repository: string
             commit: string
             root: string
-        } = job.args
+        } = job.arguments
 
         return (
             <span>
@@ -232,14 +232,14 @@ function lsifJobDescription(job: GQL.ILSIFJob): JSX.Element {
         'update-tips': 'Refresh current uploads',
     }
 
-    if (internalJobs[job.name]) {
+    if (internalJobs[job.type]) {
         return (
             <span>
                 <strong>Internal job: </strong>
-                {internalJobs[job.name]}
+                {internalJobs[job.type]}
             </span>
         )
     }
 
-    return <span>Unknown job type {job.name}</span>
+    return <span>Unknown job type {job.type}</span>
 }
