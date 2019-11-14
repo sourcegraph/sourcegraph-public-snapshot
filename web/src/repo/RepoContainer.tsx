@@ -44,7 +44,7 @@ export interface RepoContainerContext
         PatternTypeProps {
     repo: GQL.IRepository
     authenticatedUser: GQL.IUser | null
-    repoSettingsRoutes: readonly RepoSettingsAreaRoute[]
+    repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
 
     /** The URL route match for {@link RepoContainer}. */
@@ -73,7 +73,7 @@ interface RepoContainerProps
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevContainerRoutes: readonly RepoRevContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
-    repoSettingsRoutes: readonly RepoSettingsAreaRoute[]
+    repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
     authenticatedUser: GQL.IUser | null
 }
@@ -247,7 +247,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             onDidUpdateRepository: this.onDidUpdateRepository,
             patternType: this.props.patternType,
             togglePatternType: this.props.togglePatternType,
-            repoSettingsRoutes: this.props.repoSettingsRoutes,
+            repoSettingsAreaRoutes: this.props.repoSettingsAreaRoutes,
             repoSettingsSidebarItems: this.props.repoSettingsSidebarItems,
         }
 

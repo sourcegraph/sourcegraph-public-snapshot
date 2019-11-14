@@ -75,7 +75,7 @@ export interface LayoutProps
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevContainerRoutes: readonly RepoRevContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
-    repoSettingsRoutes: readonly RepoSettingsAreaRoute[]
+    repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
     routes: readonly LayoutRouteProps[]
 

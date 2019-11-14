@@ -30,7 +30,7 @@ export interface RepoSettingsAreaRouteContext {
 export interface RepoSettingsAreaRoute extends RouteDescriptor<RepoSettingsAreaRouteContext> {}
 
 interface Props extends RouteComponentProps<any>, RepoHeaderContributionsLifecycleProps {
-    repoSettingsRoutes: readonly RepoSettingsAreaRoute[]
+    repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarItems: RepoSettingsSideBarItems
     repo: GQL.IRepository
     authenticatedUser: GQL.IUser | null
@@ -124,7 +124,7 @@ export class RepoSettingsArea extends React.Component<Props> {
                 />
                 <div className="flex-1">
                     <Switch>
-                        {this.props.repoSettingsRoutes.map(
+                        {this.props.repoSettingsAreaRoutes.map(
                             ({ render, path, exact, condition = () => true }) =>
                                 /* eslint-disable react/jsx-no-bind */
                                 condition(context) && (
