@@ -11,9 +11,9 @@ export function readGzippedJsonElementsFromFile(path: string): AsyncIterable<unk
     const piped = input.pipe(createGunzip())
 
     // If we get an error opening or reading the file, we need to ensure that
-    // we forward the error to the readable stream that splitLines is consuming.
+    // we forward the error to the readable stream that `splitLines` is consuming.
     // If we don't register this error handler in the same tick as the call to
-    // createReadStream, we may miss the error. This uncaught error causes the
+    // `createReadStream`, we may miss the error. This uncaught error causes the
     // process to crash.
     //
     // We should obviously like to catch this error instead and fail the single
