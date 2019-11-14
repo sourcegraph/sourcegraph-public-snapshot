@@ -11,9 +11,8 @@ import { isEqual, uniqWith } from 'lodash'
 import { logAndTraceCall, TracingContext } from '../../shared/tracing'
 import { mustGet } from '../../shared/maps'
 import { Package, SymbolReferences } from '../../shared/xrepo/xrepo'
-import { Readable } from 'stream'
 import { readEnvInt } from '../../shared/settings'
-import { readGzippedJsonElements } from './input'
+import { readGzippedJsonElementsFromFile } from './input'
 import { TableInserter } from '../../shared/database/inserter'
 
 /**
@@ -48,12 +47,12 @@ const MAX_NUM_RESULT_CHUNKS = readEnvInt('MAX_NUM_RESULT_CHUNKS', 1000)
  * Populate a SQLite database with the given input stream. Returns the
  * data required to populate the cross-repo database.
  *
- * @param input The input stream containing JSON-encoded LSIF data.
+ * @param path The filepath containing a gzipped compressed stream of JSON lines composing the LSIF dump.
  * @param database The filepath of the database to populate.
  * @param ctx The tracing context.
  */
 export async function convertLsif(
-    input: Readable,
+    path: string,
     database: string,
     ctx: TracingContext = {}
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
@@ -63,7 +62,7 @@ export async function convertLsif(
         await connection.query('PRAGMA synchronous = OFF')
         await connection.query('PRAGMA journal_mode = OFF')
 
-        return await connection.transaction(entityManager => importLsif(entityManager, input, ctx))
+        return await connection.transaction(entityManager => importLsif(entityManager, path, ctx))
     } finally {
         await connection.close()
     }
@@ -75,18 +74,18 @@ export async function convertLsif(
  * external reference data needed to populate the cross-repo database.
  *
  * @param entityManager A transactional SQLite entity manager.
- * @param input A gzipped compressed stream of JSON lines composing the LSIF dump.
+ * @param path The filepath containing a gzipped compressed stream of JSON lines composing the LSIF dump.
  * @param ctx The tracing context.
  */
 export async function importLsif(
     entityManager: EntityManager,
-    input: Readable,
+    path: string,
     ctx: TracingContext
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
     // Correlate input data into in-memory maps
     const correlator = new Correlator(ctx)
     await logAndTraceCall(ctx, 'correlating LSIF data', async () => {
-        for await (const element of readGzippedJsonElements(input) as AsyncIterable<lsif.Vertex | lsif.Edge>) {
+        for await (const element of readGzippedJsonElementsFromFile(path) as AsyncIterable<lsif.Vertex | lsif.Edge>) {
             correlator.insert(element)
         }
     })
