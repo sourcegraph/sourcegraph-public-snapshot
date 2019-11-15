@@ -169,7 +169,7 @@ window.sgdocs = (() => {
 
   function startSourcegraphCommandsInit() {
     START_SOURCEGRAPH_COMMAND_SNIPPETS.forEach(el => {
-      el.onclick = gaConversionOnStartSourcegraphCommands
+      el.addEventListener('click', gaConversionOnStartSourcegraphCommands)
     })
   }
 
