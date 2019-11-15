@@ -38,7 +38,7 @@ func addCheck(pipeline *bk.Pipeline) {
 // Adds the lint test step.
 func addLint(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":lipstick: :lint-roller: :eslint: :stylelint: :typescript: :graphql:",
-		bk.Cmd("dev/ci/yarn-run.sh prettier-check all:eslint all:tslint all:stylelint build-ts graphql-lint"))
+		bk.Cmd("dev/ci/yarn-run.sh prettier-check build-ts all:eslint all:tslint all:stylelint graphql-lint"))
 }
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
