@@ -168,8 +168,12 @@ func (r *Runner) Run(ctx context.Context, plan *a8n.CampaignPlan) error {
 func (r *Runner) runJob(ctx context.Context, job *a8n.CampaignJob) {
 	defer func() {
 		defer r.wg.Done()
+
 		job.FinishedAt = r.clock()
-		err := r.store.UpdateCampaignJob(ctx, job)
+
+		// We're passing a new context here because we want to persist the job
+		// even if we ran into a timeout earlier.
+		err := r.store.UpdateCampaignJob(context.Background(), job)
 		if err != nil {
 			log15.Error("UpdateCampaignJob failed", "err", err)
 		}
