@@ -266,16 +266,16 @@ export async function ensureNewOrganization(
 
 export async function getGlobalSettings(
     gqlClient: GraphQLClient
-): Promise<{ subjectID: GQL.ID; settingsID: number; contents: string }> {
+): Promise<{ subjectID: GQL.ID; settingsID: number | null; contents: string }> {
     const settings = await getViewerSettings(gqlClient)
     const globalSettingsSubject = first(settings.subjects.filter(subject => subject.__typename === 'Site'))
-    if (!globalSettingsSubject || !globalSettingsSubject.latestSettings) {
+    if (!globalSettingsSubject) {
         throw new Error('Could not get global settings')
     }
     return {
         subjectID: globalSettingsSubject.id,
-        settingsID: globalSettingsSubject.latestSettings.id,
-        contents: globalSettingsSubject.latestSettings.contents,
+        settingsID: globalSettingsSubject.latestSettings && globalSettingsSubject.latestSettings.id,
+        contents: (globalSettingsSubject.latestSettings && globalSettingsSubject.latestSettings.contents) || '',
     }
 }
 
@@ -292,7 +292,7 @@ export async function editGlobalSettings(
     return {
         destroy: async () => {
             const { subjectID, settingsID } = await getGlobalSettings(gqlClient)
-            await overwriteSettings(gqlClient, subjectID, settingsID, origContents)
+            await overwriteSettings(gqlClient, subjectID, settingsID, origContents || '')
         },
         result: newContents,
     }
