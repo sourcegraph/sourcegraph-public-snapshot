@@ -29,25 +29,25 @@ func enforceAuthGithub(w http.ResponseWriter, r *http.Request, repoName string) 
 	nameWithOwner := strings.TrimPrefix(repoName, "github.com/")
 	owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
 	if err != nil {
-		return errors.New("Invalid GitHub repository: nameWithOwner=" + nameWithOwner), http.StatusNotFound
+		return errors.New("invalid GitHub repository: nameWithOwner=" + nameWithOwner), http.StatusNotFound
 	}
 
 	q := r.URL.Query()
 	githubToken := q.Get("github_token")
 	if githubToken == "" {
-		return errors.New("Must provide github_token."), http.StatusUnauthorized
+		return errors.New("must provide github_token"), http.StatusUnauthorized
 	}
 
 	client := github.NewClient(&githubURL, githubToken, nil)
 	repo, err := client.GetRepository(r.Context(), owner, name)
 	if err != nil {
-		return errors.Wrap(err, "Unable to get repository permissions"), http.StatusNotFound
+		return errors.Wrap(err, "unable to get repository permissions"), http.StatusNotFound
 	}
 
 	switch repo.ViewerPermission {
 	case "ADMIN", "MAINTAIN", "WRITE":
 		return nil, 0
 	default:
-		return errors.New("You do not have write permission to the repository."), http.StatusUnauthorized
+		return errors.New("you do not have write permission to the repository"), http.StatusUnauthorized
 	}
 }
