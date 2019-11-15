@@ -42,9 +42,8 @@ func uploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *htt
 
 		if conf.Get().LsifEnforceAuth {
 			// 🚨 SECURITY: Ensure we return before proxying to the lsif-server upload
-			// endpoint. When enforce auth is enabled we need to make sure we don't accept
-			// random uploads without verifying ownership of a repository. As this endpoint
-			// is unprotected, this can allow anonymous users to upload questionable content.
+			// endpoint. This endpoint is unprotected, so we need to make sure the user
+			// provides a valid token proving contributor access to the repository.
 			if err, status := enforceAuth(w, r, repoName); err != nil {
 				http.Error(w, err.Error(), status)
 				return
