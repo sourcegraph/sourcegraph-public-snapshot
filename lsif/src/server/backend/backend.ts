@@ -135,7 +135,6 @@ export class Backend {
         if (!closestDatabaseAndDump) {
             return false
         }
-
         const { database, dump } = closestDatabaseAndDump
         return database.exists(this.pathToDatabase(dump.root, path))
     }
@@ -165,9 +164,9 @@ export class Backend {
 
             return undefined
         }
+        const { database, dump, ctx: newCtx } = closestDatabaseAndDump
 
         // Construct path within dump
-        const { database, dump, ctx: newCtx } = closestDatabaseAndDump
         const pathInDb = this.pathToDatabase(dump.root, path)
 
         // Try to find definitions in the same dump.
@@ -481,9 +480,9 @@ export class Backend {
 
             return undefined
         }
+        const { database, dump, ctx: newCtx } = closestDatabaseAndDump
 
         // Construct path within dump
-        const { database, dump, ctx: newCtx } = closestDatabaseAndDump
         const pathInDb = this.pathToDatabase(dump.root, path)
 
         // Try to find references in the same dump
@@ -692,7 +691,6 @@ export class Backend {
 
             return undefined
         }
-
         const { database, dump, ctx: newCtx } = closestDatabaseAndDump
         return database.hover(this.pathToDatabase(dump.root, path), position, newCtx)
     }
