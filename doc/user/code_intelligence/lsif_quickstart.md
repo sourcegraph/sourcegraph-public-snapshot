@@ -26,7 +26,7 @@ For all languages, the upload step is the same. Make sure the current working di
 $ src \
   -endpoint=https://sourcegraph.example.com \
   lsif upload \
-  -github-token=abc... (only needed when uploading to Sourcegraph.com) \
+  -github-token=<token> \
   -file=<LSIF file (e.g. ./cmd/dump.lsif)>
 ```
 
@@ -44,7 +44,17 @@ If you're uploading to Sourcegraph.com, you must authenticate your upload by pas
 
 Make sure you have [enabled LSIF code intelligence](lsif.md#enabling-lsif-on-your-sourcegraph-instance) on your Sourcegraph instance.
 
-Once you have successfully uploaded your LSIF data file to your Sourcegraph instance, go to your repository on Sourcegraph. You should now be able to see precise code intelligence hover tooltips on all files of the language you generated an LSIF index of.
+Once the LSIF data is uploaded, navigate to a code file for the targeted language in the repository, or repository sub-directory LSIF was generated from. LSIF data should now be the source of hover-tooltip content and definitions for that file (presuming that LSIF data exists for that file).
+
+To verify that code intelligence is coming from LSIF:
+
+1. Open your browser's Developer Tools
+1. Click on the *Network* tab
+1. Reload the page to see all network requests logged
+1. Filter network requests by searching for `lsif`.
+
+> NOTE: We are investigating how to make it easier to verify code intelligence is coming from LSIF
+
 
 ## 5. Productionize the process
 
