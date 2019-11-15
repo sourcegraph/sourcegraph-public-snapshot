@@ -7,6 +7,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 func uploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
@@ -17,13 +19,23 @@ func uploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *htt
 
 		repo, err := backend.Repos.GetByName(r.Context(), api.RepoName(repoName))
 		if err != nil {
-			http.Error(w, "Unknown repository.", http.StatusNotFound)
+			if errcode.IsNotFound(err) {
+				http.Error(w, "Unknown repository.", http.StatusNotFound)
+				return
+			}
+
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		_, err = backend.Repos.ResolveRev(r.Context(), repo, commit)
 		if err != nil {
-			http.Error(w, "Unknown commit.", http.StatusNotFound)
+			if gitserver.IsRevisionNotFound(err) {
+				http.Error(w, "Unknown commit.", http.StatusNotFound)
+				return
+			}
+
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -31,6 +43,7 @@ func uploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *htt
 			err, status := enforceAuth(w, r, repoName)
 			if err != nil {
 				http.Error(w, err.Error(), status)
+				return
 			}
 		}
 
