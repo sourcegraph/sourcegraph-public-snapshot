@@ -32,6 +32,7 @@ import {
 } from '../helpers'
 import { fetchSuggestions } from '../backend'
 import { isDefined } from '../../../../shared/src/util/types'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
 /**
  * The query input field is clobbered and updated to contain this subject's values, as
@@ -82,6 +83,8 @@ interface ComponentSuggestions {
 }
 
 interface State {
+    /** Indicates if suggestions are being loaded from the back-end */
+    loadingSuggestions: boolean
     /** The suggestions shown to the user */
     suggestions: ComponentSuggestions
 }
@@ -110,6 +113,7 @@ export class QueryInput extends React.Component<Props, State> {
     private hasLoggedFirstInput = false
 
     public state: State = {
+        loadingSuggestions: false,
         suggestions: {
             cursorPosition: 0,
             values: [],
@@ -161,7 +165,7 @@ export class QueryInput extends React.Component<Props, State> {
 
                         return merge(
                             // Render static suggestions first
-                            [{ suggestions: staticSuggestions }],
+                            [{ suggestions: staticSuggestions, loadingSuggestions: true }],
                             // Fetch and format fuzzy-search suggestions
                             fetchSuggestions(fullQuery).pipe(
                                 map(createSuggestion),
@@ -191,7 +195,11 @@ export class QueryInput extends React.Component<Props, State> {
                                     // If fuzzy-search is not capable of returning suggestions for the query
                                     // or there is an internal error, then at least return the static suggestions
                                     return [{ suggestions: staticSuggestions }]
-                                })
+                                }),
+                                map(state => ({
+                                    ...state,
+                                    loadingSuggestions: false,
+                                }))
                             )
                         )
                     }),
@@ -296,7 +304,7 @@ export class QueryInput extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const showSuggestions = this.state.suggestions.values.length > 0
+        const showSuggestions = this.state.suggestions.values.length > 0 || this.state.loadingSuggestions
         // If last typed word is not a filter type,
         // suggestions should show url label and redirect on select.
         const showUrlLabel = isFuzzyWordSearch({
@@ -355,6 +363,12 @@ export class QueryInput extends React.Component<Props, State> {
                                                 />
                                             )
                                         })}
+                                        {this.state.loadingSuggestions && (
+                                            <li className="suggestion suggestion--selected">
+                                                <LoadingSpinner className="icon-inline" />
+                                                <div className="suggestion__description">fetching suggestions...</div>
+                                            </li>
+                                        )}
                                     </ul>
                                 )}
                                 <RegexpToggle
