@@ -9,19 +9,19 @@ digraph architecture {
     graph [
         fontname="Iosevka"
         fontsize=12
-   ]
+    ]
 
     node [
         style="filled"
         shape="box3d"
         fontname="Iosevka"
         fontsize=10
-   ]
+    ]
 
     edge [
         penwidth=0.6
         arrowType="empty"
-   ]
+    ]
 
     frontend [
         fixedsize=true
@@ -31,6 +31,7 @@ digraph architecture {
         label="frontend"
         URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/frontend"
     ]
+
     gitserver    [label="gitserver" URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/gitserver"]
     repo_updater [label="repo-updater" URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/repo-updater"]
     searcher     [label="searcher" URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/searcher"]
@@ -43,7 +44,6 @@ digraph architecture {
     lsif_server [label="lsif-server" URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/server"]
     lsif_worker [label="lsif-worker" URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/worker"]
 
-    // Databases
     subgraph cluster_databases {
         label="Databases"
         rank="same"
@@ -109,7 +109,6 @@ digraph architecture {
     zoekt_indexserver -> frontend
     zoekt_indexserver -> gitserver
 
-    // Clients
     browser_ext -> frontend
     web_app -> frontend
     src_cli -> frontend
