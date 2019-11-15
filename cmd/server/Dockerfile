@@ -69,7 +69,7 @@ RUN set -ex && \
     apk add --no-cache libc6-compat=1.1.24-r0 ca-certificates su-exec
 
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/grafana:10.0.4@sha256:ba3742bb63787d23664ace0b0b84e6e486d73c925f5870d92845f1f86eb7918d /usr/share/grafana /usr/share/grafana
+COPY --from=sourcegraph/grafana:10.0.5@sha256:bd332c36c5aa36942f502d8078e2b7d57eaf0fa945380fe43c30fcfc902f91bd /usr/share/grafana /usr/share/grafana
 
 # hadolint ignore=DL3022
 COPY --from=libsqlite3-pcre /sqlite3-pcre/pcre.so /libsqlite3-pcre.so
@@ -77,7 +77,10 @@ ENV LIBSQLITE3_PCRE /libsqlite3-pcre.so
 COPY . /
 
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/grafana:10.0.4@sha256:ba3742bb63787d23664ace0b0b84e6e486d73c925f5870d92845f1f86eb7918d /sg_config_grafana/provisioning/dashboards/sourcegraph/*json /sg_config_grafana/provisioning/dashboards/sourcegraph/
+COPY --from=sourcegraph/grafana:10.0.5@sha256:bd332c36c5aa36942f502d8078e2b7d57eaf0fa945380fe43c30fcfc902f91bd /sg_config_grafana/provisioning/dashboards/sourcegraph/*json /sg_config_grafana/provisioning/dashboards/sourcegraph/
+
+# hadolint ignore=DL3022
+COPY --from=wrouesnel/postgres_exporter:v0.7.0@sha256:785c919627c06f540d515aac88b7966f352403f73e931e70dc2cbf783146a98b /postgres_exporter /usr/local/bin/postgres_exporter
 
 RUN echo "hosts: files dns" > /etc/nsswitch.conf
 

@@ -23,3 +23,4 @@ lsif-server: yarn --cwd lsif run run:server
 lsif-worker: yarn --cwd lsif run run:worker
 prometheus: ./dev/prometheus.sh
 grafana: ./dev/grafana.sh
+postgres_exporter: ./dev/postgres_exporter.sh
