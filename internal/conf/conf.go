@@ -114,11 +114,11 @@ func (c *cachedConfigurationSource) Read(ctx context.Context) (conftypes.RawUnif
 	defer c.entryMu.Unlock()
 	if c.entry == nil || time.Since(c.entryTime) > c.ttl {
 		updatedEntry, err := c.source.Read(ctx)
+		if err != nil {
+			return updatedEntry, err
+		}
 		c.entry = &updatedEntry
 		c.entryTime = time.Now()
-		if err != nil {
-			return *c.entry, err
-		}
 	}
 	return *c.entry, nil
 }
