@@ -141,7 +141,8 @@ export class Backend {
     }
 
     /**
-     * Return the location for the definition of the reference at the given position.
+     * Return the location for the definition of the reference at the given position. Returns
+     * undefined if no dump can be loaded to answer this query.
      *
      * @param repository The repository name.
      * @param commit The commit.
@@ -155,14 +156,14 @@ export class Backend {
         path: string,
         position: lsp.Position,
         ctx: TracingContext = {}
-    ): Promise<lsp.Location[]> {
+    ): Promise<lsp.Location[] | undefined> {
         const closestDatabaseAndDump = await this.loadClosestDatabase(repository, commit, path, ctx)
         if (!closestDatabaseAndDump) {
             if (ctx.logger) {
                 ctx.logger.warn('No database could be loaded', { repository, commit, path })
             }
 
-            return []
+            return undefined
         }
 
         // Construct path within dump
@@ -437,7 +438,8 @@ export class Backend {
     }
 
     /**
-     * Return a list of locations which reference the definition at the given position.
+     * Return a list of locations which reference the definition at the given position. Returns
+     * undefined if no dump can be loaded to answer this query.
      *
      * @param repository The repository name.
      * @param commit The commit.
@@ -453,7 +455,7 @@ export class Backend {
         position: lsp.Position,
         paginationContext: ReferencePaginationContext = { limit: 10 },
         ctx: TracingContext = {}
-    ): Promise<{ locations: lsp.Location[]; cursor?: ReferencePaginationCursor }> {
+    ): Promise<{ locations: lsp.Location[]; cursor?: ReferencePaginationCursor } | undefined> {
         if (paginationContext.cursor) {
             // Continue from previous page
             const results = await this.performRemoteReferences(
@@ -477,7 +479,7 @@ export class Backend {
                 ctx.logger.warn('No database could be loaded', { repository, commit, path })
             }
 
-            return { locations: [] }
+            return undefined
         }
 
         // Construct path within dump
@@ -666,7 +668,8 @@ export class Backend {
     }
 
     /**
-     * Return the hover content for the definition or reference at the given position.
+     * Return the hover content for the definition or reference at the given position. Returns
+     * undefined if no dump can be loaded to answer this query.
      *
      * @param repository The repository name.
      * @param commit The commit.
@@ -680,14 +683,14 @@ export class Backend {
         path: string,
         position: lsp.Position,
         ctx: TracingContext = {}
-    ): Promise<lsp.Hover | null> {
+    ): Promise<lsp.Hover | null | undefined> {
         const closestDatabaseAndDump = await this.loadClosestDatabase(repository, commit, path, ctx)
         if (!closestDatabaseAndDump) {
             if (ctx.logger) {
                 ctx.logger.warn('No database could be loaded', { repository, commit, path })
             }
 
-            return null
+            return undefined
         }
 
         const { database, dump, ctx: newCtx } = closestDatabaseAndDump
