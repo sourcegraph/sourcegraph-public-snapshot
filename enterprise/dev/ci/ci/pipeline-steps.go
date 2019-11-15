@@ -39,6 +39,7 @@ func addCheck(pipeline *bk.Pipeline) {
 func addLint(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":lipstick: :lint-roller: :eslint: :stylelint: :typescript: :graphql:",
 		bk.Env("TIMING", "1"),
+		bk.Env("DEBUG", "eslint:cli-engine"),
 		bk.Cmd("dev/ci/yarn-run.sh prettier-check build-ts all:eslint all:tslint all:stylelint graphql-lint"))
 }
 
