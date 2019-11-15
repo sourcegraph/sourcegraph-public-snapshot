@@ -5,7 +5,7 @@
 
 set -euf -o pipefail
 
-IMAGE=wrouesnel/postgres_exporter:v0.7.0
+IMAGE=wrouesnel/postgres_exporter:v0.7.0@sha256:785c919627c06f540d515aac88b7966f352403f73e931e70dc2cbf783146a98b
 CONTAINER=postgres_exporter
 
 NET_ARG=""
