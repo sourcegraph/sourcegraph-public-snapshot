@@ -32,7 +32,8 @@ $ src \
 
 If successful, you'll see the following message:
 
-> Upload successful, queued for processing.
+> LSIF dump successfully uploaded. It will be converted asynchronously.
+> To check the status, visit <link to your Sourcegraph instance LSIF status>
 
 If an error occurred, you'll see it in the response.
 
@@ -58,4 +59,4 @@ To verify that code intelligence is coming from LSIF:
 
 ## 5. Productionize the process
 
-Now that you're happy with the code intelligence on your repository, you need to make sure that is stays up to date with your repository. This can be done by periodically generating LSIF data, and pushing it to Sourcegraph. You can either [add a step to your CI](./lsif_in_ci.md), or run it as a [GitHub Action](./lsif_on_github.md)
+Now that you're happy with the code intelligence on your repository, you need to make sure that is stays up to date with your repository. This can be done by periodically generating LSIF data, and pushing it to Sourcegraph. You can either [add a step to your CI](lsif_in_ci.md), or run it as a [GitHub Action](lsif_on_github.md)

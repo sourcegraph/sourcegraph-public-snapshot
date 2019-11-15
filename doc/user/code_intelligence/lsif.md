@@ -8,7 +8,7 @@
 
 ## Getting started
 
-Follow our [LSIF quickstart guide](./lsif_quickstart.md) to manually generate and upload LSIF data for your repository. After you are satisfied with the result, you can upload LSIF data to a Sourcegraph instance using your existing [continuous integration infrastructure](./lsif_in_ci.md), or using [GitHub Actions](./lsif_on_github.md).
+Follow our [LSIF quickstart guide](lsif_quickstart.md) to manually generate and upload LSIF data for your repository. After you are satisfied with the result, you can upload LSIF data to a Sourcegraph instance using your existing [continuous integration infrastructure](lsif_in_ci.md), or using [GitHub Actions](lsif_on_github.md).
 
 ## Enabling LSIF on your Sourcegraph instance
 
