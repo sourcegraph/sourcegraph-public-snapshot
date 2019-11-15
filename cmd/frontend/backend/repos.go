@@ -227,7 +227,7 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 
 	if !useEnhancedLanguageDetection {
 		// If USE_ENHANCED_LANGUAGE_DETECTION is disabled, do not read file contents to determine
-		// the language. Note, this always means we won't count the number of lines per language.
+		// the language. This means we won't calculate the number of lines per language.
 		invCtx.GetFileReader = func(ctx context.Context, path string) (io.ReadCloser, error) {
 			return nil, nil
 		}
