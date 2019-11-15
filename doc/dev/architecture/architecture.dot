@@ -1,0 +1,116 @@
+digraph architecture {
+    label="Sourcegraph Architecture Overview"
+    rankdir=LR
+    ratio=fill
+    concentrate=true
+    ranksep=0.8
+    nodesep=0.2
+
+    graph [
+        fontname="Iosevka"
+        fontsize=12
+   ]
+
+    node [
+        style="filled"
+        shape="box3d"
+        fontname="Iosevka"
+        fontsize=10
+   ]
+
+    edge [
+        penwidth=0.6
+        arrowType="empty"
+   ]
+
+    frontend [
+        fixedsize=true
+        width=1.2
+        height=1.2
+        shape="tripleoctagon"
+        label="frontend"
+        URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/frontend"
+    ]
+    gitserver    [label="gitserver" URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/gitserver"]
+    repo_updater [label="repo-updater" URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/repo-updater"]
+    searcher     [label="searcher" URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/searcher"]
+    replacer     [label="replacer" URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/replacer"]
+    zoekt_webserver [label="zoekt-webserver" URL="https://github.com/sourcegraph/zoekt/tree/master/cmd/zoekt-webserver"]
+    zoekt_indexserver [label="zoekt-indexserver" URL="https://github.com/sourcegraph/zoekt/tree/master/cmd/zoekt-sourcegraph-indexserver"]
+    query_runner [label="query-runner" URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/query-runner"]
+    github_proxy [label="github-proxy" URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/github-proxy"]
+    syntect_server [label="syntect-server" URL="https://github.com/sourcegraph/syntect_server"]
+    lsif_server [label="lsif-server" URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/server"]
+    lsif_worker [label="lsif-worker" URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/worker"]
+
+    // Databases
+    subgraph cluster_databases {
+        label="Databases"
+        rank="same"
+        graph [style="rounded"]
+        node [shape="cylinder"]
+
+        redis_cache  [label="redis-cache"]
+        redis_store  [label="redis-store"]
+        postgres     [label="postgres"]
+    }
+
+    subgraph cluster_codehosts {
+        label="Code hosts"
+        rank="same"
+        graph [style="dotted"]
+        node  [shape="oval"]
+
+        github_dot_com [label="github.com"]
+        gitlab_dot_com [label="gitlab.com"]
+        bitbucket_cloud [label="bitbucket.com"]
+        github_enterprise [label="GitHub Enterprise"]
+        bitbucket_server [label="Bitbucket Server"]
+    }
+
+    subgraph cluster_clients {
+        label="Clients"
+        node [shape="circle"]
+        src_cli [label="src-cli" URL="https://github.com/sourcegraph/src-cli"]
+        browser_ext [label="Browser\nExtension" URL="https://github.com/sourcegraph/sourcegraph/tree/master/browser/"]
+        web_app [label="Web App" URL="https://github.com/sourcegraph/sourcegraph/tree/master/web"]
+    }
+
+    frontend -> gitserver
+    frontend -> query_runner -> frontend
+    frontend -> searcher -> gitserver
+    frontend -> replacer -> gitserver
+    frontend -> repo_updater
+    frontend -> github_proxy
+    frontend -> zoekt_webserver
+    frontend -> postgres
+    frontend -> redis_cache
+    frontend -> redis_store
+    frontend -> syntect_server
+    frontend -> lsif_server
+    frontend -> lsif_worker
+
+    repo_updater -> github_proxy
+    repo_updater -> github_enterprise
+    repo_updater -> gitlab_dot_com
+    repo_updater -> bitbucket_server
+    repo_updater -> bitbucket_cloud
+    repo_updater -> postgres
+    repo_updater -> gitserver
+    repo_updater -> redis_cache
+
+    github_proxy -> github_dot_com
+
+    gitserver -> github_enterprise
+    gitserver -> gitlab_dot_com
+    gitserver -> bitbucket_server
+    gitserver -> bitbucket_cloud
+
+    zoekt_indexserver -> frontend
+    zoekt_indexserver -> gitserver
+
+    // Clients
+    browser_ext -> frontend
+    web_app -> frontend
+    src_cli -> frontend
+}

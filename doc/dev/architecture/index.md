@@ -2,6 +2,8 @@
 
 This is a high level overview of Sourcegraph's architecture so you can understand how our systems fit together.
 
+![Overview Diagram](architecture.svg)
+
 ## Clients
 
 We maintain multiple Sourcegraph clients:
