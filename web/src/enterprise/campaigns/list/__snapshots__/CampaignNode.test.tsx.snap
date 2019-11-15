@@ -1,0 +1,49 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`CampaignNode renders a campaign node 1`] = `
+<li
+  className="card p-2 mt-2"
+>
+  <div
+    className="d-flex"
+  >
+    <svg
+      className="mdi-icon icon-inline mr-2 flex-shrink-0"
+      fill="currentColor"
+      height={24}
+      viewBox="0 0 24 24"
+      width={24}
+    >
+      <path
+        d="M3,3H5V13H9V7H13V11H17V15H21V21H3V3Z"
+      />
+    </svg>
+    <div
+      className="campaign-node__content"
+    >
+      <h3
+        className="mb-0"
+      >
+        <a
+          className="d-flex align-items-center text-decoration-none"
+          to="/campaigns/123"
+        >
+          Upgrade lodash to v4
+        </a>
+      </h3>
+      <div
+        className="text-truncate markdown"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "Removes lodash
+
+and renders in markdown
+
+",
+          }
+        }
+      />
+    </div>
+  </div>
+</li>
+`;

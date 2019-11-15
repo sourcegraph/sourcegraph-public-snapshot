@@ -1,0 +1,28 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`CampaignBurndownChart renders the chart 1`] = `
+<div
+  className="recharts-responsive-container"
+  style={
+    Object {
+      "height": 300,
+      "maxHeight": undefined,
+      "minHeight": undefined,
+      "minWidth": undefined,
+      "width": "100%",
+    }
+  }
+>
+  <div
+    style={
+      Object {
+        "display": "none",
+        "height": 0,
+        "position": "absolute",
+        "visibility": "hidden",
+        "width": 0,
+      }
+    }
+  />
+</div>
+`;
