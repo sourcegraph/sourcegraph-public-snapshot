@@ -157,7 +157,7 @@ func (s *repos) ListDefault(ctx context.Context) (repos []*types.Repo, err error
 	return db.DefaultRepos.List(ctx)
 }
 
-var inventoryCache = rcache.New("inv")
+var inventoryCache = rcache.New("inv:v2")
 
 // Feature flag for enhanced (but much slower) language detection that uses file contents, not just
 // filenames.
