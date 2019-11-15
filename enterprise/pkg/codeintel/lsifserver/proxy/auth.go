@@ -20,7 +20,7 @@ func enforceAuth(w http.ResponseWriter, r *http.Request, repoName string) (error
 		}
 	}
 
-	return errors.New("Verification not supported for code host. See https://github.com/sourcegraph/sourcegraph/issues/4967"), http.StatusUnprocessableEntity
+	return errors.New("verification not supported for code host - see https://github.com/sourcegraph/sourcegraph/issues/4967"), http.StatusUnprocessableEntity
 }
 
 var githubURL = url.URL{Scheme: "https", Host: "api.github.com"}
