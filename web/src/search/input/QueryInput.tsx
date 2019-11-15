@@ -1,6 +1,6 @@
 import * as H from 'history'
 import * as React from 'react'
-import { fromEvent, Subject, Subscription } from 'rxjs'
+import { fromEvent, Subject, Subscription, merge } from 'rxjs'
 import {
     debounceTime,
     distinctUntilChanged,
@@ -152,41 +152,47 @@ export class QueryInput extends React.Component<Props, State> {
                             return [{ suggestions: staticSuggestions }]
                         }
 
+                        // Because of API limitations, we need to modify the query before the request,
+                        // see definition of `formatQueryForFuzzySearch`
                         const queryForFuzzySearch = formatQueryForFuzzySearch(queryState)
                         const fullQuery = this.props.prependQueryForSuggestions
                             ? this.props.prependQueryForSuggestions + ' ' + queryForFuzzySearch
                             : queryForFuzzySearch
 
-                        // Dos a fuzzy search and formats suggestions for display.
-                        return fetchSuggestions(fullQuery).pipe(
-                            map(createSuggestion),
-                            filter(isDefined),
-                            map((suggestion): Suggestion => ({ ...suggestion, fromFuzzySearch: true })),
-                            filter(suggestion => {
-                                // Only show fuzzy-suggestions that are relevant to the typed filter
-                                if (filterAndValueBeforeCursor?.filter) {
-                                    switch (filterAndValueBeforeCursor.filter) {
-                                        case SuggestionTypes.repohasfile:
-                                            return suggestion.type === SuggestionTypes.file
-                                        default:
-                                            return suggestion.type === filterAndValueBeforeCursor.filter
+                        return merge(
+                            // Render static suggestions first
+                            [{ suggestions: staticSuggestions }],
+                            // Fetch and format fuzzy-search suggestions
+                            fetchSuggestions(fullQuery).pipe(
+                                map(createSuggestion),
+                                filter(isDefined),
+                                map((suggestion): Suggestion => ({ ...suggestion, fromFuzzySearch: true })),
+                                filter(suggestion => {
+                                    // Only show fuzzy-suggestions that are relevant to the typed filter
+                                    if (filterAndValueBeforeCursor?.filter) {
+                                        switch (filterAndValueBeforeCursor.filter) {
+                                            case SuggestionTypes.repohasfile:
+                                                return suggestion.type === SuggestionTypes.file
+                                            default:
+                                                return suggestion.type === filterAndValueBeforeCursor.filter
+                                        }
                                     }
-                                }
-                                return true
-                            }),
-                            toArray(),
-                            map(suggestions => ({
-                                suggestions: {
-                                    cursorPosition: queryState.cursorPosition,
-                                    values: staticSuggestions.values.concat(suggestions),
-                                },
-                            })),
-                            catchError(error => {
-                                console.error(error)
-                                // If fuzzy-search is not capable of returning suggestions for the query
-                                // or there is an internal error, then at least return the static suggestions
-                                return [{ suggestions: staticSuggestions }]
-                            })
+                                    return true
+                                }),
+                                toArray(),
+                                map(suggestions => ({
+                                    suggestions: {
+                                        cursorPosition: queryState.cursorPosition,
+                                        values: staticSuggestions.values.concat(suggestions),
+                                    },
+                                })),
+                                catchError(error => {
+                                    console.error(error)
+                                    // If fuzzy-search is not capable of returning suggestions for the query
+                                    // or there is an internal error, then at least return the static suggestions
+                                    return [{ suggestions: staticSuggestions }]
+                                })
+                            )
                         )
                     }),
                     // Abort suggestion display on route change or suggestion hiding
