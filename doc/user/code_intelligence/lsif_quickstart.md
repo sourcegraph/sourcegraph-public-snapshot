@@ -45,7 +45,7 @@ If you're uploading to Sourcegraph.com, you must authenticate your upload by pas
 
 Make sure you have [enabled LSIF code intelligence](lsif.md#enabling-lsif-on-your-sourcegraph-instance) on your Sourcegraph instance.
 
-Once the LSIF data is uploaded, navigate to a code file for the targeted language in the repository, or repository sub-directory LSIF was generated from. LSIF data should now be the source of hover-tooltip content and definitions for that file (presuming that LSIF data exists for that file).
+Once the LSIF data is uploaded, navigate to a code file for the targeted language in the repository, or repository sub-directory LSIF was generated from. LSIF data should now be the source of hover-tooltips, definitions, and references for that file (presuming that LSIF data exists for that file).
 
 To verify that code intelligence is coming from LSIF:
 
@@ -55,7 +55,6 @@ To verify that code intelligence is coming from LSIF:
 1. Filter network requests by searching for `lsif`.
 
 > NOTE: We are investigating how to make it easier to verify code intelligence is coming from LSIF
-
 
 ## 5. Productionize the process
 
