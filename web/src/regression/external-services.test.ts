@@ -16,6 +16,8 @@ import {
     ensureTestExternalService,
     getManagementConsoleState,
     waitForRepos,
+    getExternalServices,
+    updateExternalService,
 } from './util/api'
 import * as GQL from '../../../shared/src/graphql/schema'
 
@@ -146,7 +148,9 @@ describe('External services API', () => {
         'slowMo',
         'headless',
         'keepBrowser',
-        'logStatusMessages'
+        'logStatusMessages',
+        'bitbucketCloudUsername',
+        'bitbucketCloudAppPassword'
     )
 
     const gqlClient = createGraphQLClient({
@@ -188,6 +192,48 @@ describe('External services API', () => {
             )
         },
         5 * 1000
+    )
+
+    test(
+        'External services: Bitbucket Cloud',
+        async () => {
+            const uniqueDisplayName = '[TEST] Regression test: Bitbucket Cloud (bitbucket.org)'
+            const externalServiceInput = {
+                kind: GQL.ExternalServiceKind.BITBUCKETCLOUD,
+                uniqueDisplayName,
+                config: {
+                    url: 'https://bitbucket.org',
+                    username: config.bitbucketCloudUsername,
+                    appPassword: config.bitbucketCloudAppPassword,
+                },
+            }
+            const repos = [
+                'bitbucket.org/sourcegraph-demo/getsentry-sentry',
+                'bitbucket.org/sourcegraph-demo/golang-go',
+                'bitbucket.org/sourcegraph-demo/jenkinsci-jenkins',
+                'bitbucket.org/sourcegraph-demo/moby-buildkit',
+                'bitbucket.org/sourcegraph-demo/sourcegraph-sourcegraph',
+            ]
+            await ensureNoTestExternalServices(gqlClient, { ...externalServiceInput, deleteIfExist: true })
+            await waitForRepos(gqlClient, repos, config, true)
+            resourceManager.add(
+                'External service',
+                uniqueDisplayName,
+                await ensureTestExternalService(gqlClient, { ...externalServiceInput, waitForRepos: repos }, config)
+            )
+            // Update eternal service with an "exclude" property
+            const { id } = (await getExternalServices(gqlClient, { uniqueDisplayName }))[0]
+            await updateExternalService(gqlClient, {
+                id,
+                config: JSON.stringify({
+                    ...externalServiceInput.config,
+                    exclude: [{ name: 'sourcegraph-demo/sourcegraph-sourcegraph' }],
+                }),
+            })
+            // Check that the excluded repository is no longer synced
+            await waitForRepos(gqlClient, ['bitbucket.org/sourcegraph-demo/sourcegraph-sourcegraph'], config, true)
+        },
+        2 * 60 * 1000 // 2 minutes timeout: Bitbucket Cloud repositories are slow to clone.
     )
 })
 

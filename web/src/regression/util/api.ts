@@ -10,7 +10,7 @@ import {
 } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { GraphQLClient } from './GraphQLClient'
-import { map, tap, retryWhen, delayWhen, take, mergeMap } from 'rxjs/operators'
+import { map, tap, retryWhen, delayWhen, take, mergeMap, mapTo } from 'rxjs/operators'
 import { zip, timer, concat, throwError, defer, Observable } from 'rxjs'
 import { CloneInProgressError, ECLONEINPROGESS, EREPONOTFOUND } from '../../../../shared/src/backend/errors'
 import { isErrorLike, createAggregateError } from '../../../../shared/src/util/errors'
@@ -193,6 +193,32 @@ export function getExternalServices(
                         (options.kind === undefined || options.kind === kind)
                 )
             )
+        )
+        .toPromise()
+}
+
+export async function updateExternalService(
+    gqlClient: GraphQLClient,
+    input: GQL.IUpdateExternalServiceInput
+): Promise<void> {
+    await gqlClient
+        .mutateGraphQL(
+            gql`
+                mutation UpdateExternalService($input: UpdateExternalServiceInput!) {
+                    updateExternalService(input: $input) {
+                        warning
+                    }
+                }
+            `,
+            { input }
+        )
+        .pipe(
+            map(dataOrThrowErrors),
+            tap(({ updateExternalService: { warning } }) => {
+                if (warning) {
+                    console.warn('updateExternalService warning:', warning)
+                }
+            })
         )
         .toPromise()
 }

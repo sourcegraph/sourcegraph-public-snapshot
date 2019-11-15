@@ -29,6 +29,8 @@ export interface Config {
     slowMo: number
     headless: boolean
     keepBrowser: boolean
+    bitbucketCloudUsername: string
+    bitbucketCloudAppPassword: string
 }
 
 interface Field<T = string> {
@@ -178,6 +180,15 @@ const configFields: ConfigFields = {
         parser: parseBool,
         description: 'Run Puppeteer in headless mode',
         defaultValue: false,
+    },
+    bitbucketCloudUsername: {
+        envVar: 'BITBUCKET_CLOUD_USERNAME',
+        description: 'A username that will be used to sync Bitbucket Cloud repositories',
+    },
+    bitbucketCloudAppPassword: {
+        envVar: 'BITBUCKET_CLOUD_APP_PASSWORD',
+        description:
+            'A Bitbucket Cloud app password associated with the bitbucketCloudUsername, that will be used to sync Bitbucket Cloud repositories.',
     },
 }
 
