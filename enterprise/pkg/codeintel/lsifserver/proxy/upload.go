@@ -20,7 +20,7 @@ func uploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *htt
 		repo, err := backend.Repos.GetByName(r.Context(), api.RepoName(repoName))
 		if err != nil {
 			if errcode.IsNotFound(err) {
-				http.Error(w, "Unknown repository.", http.StatusNotFound)
+				http.Error(w, fmt.Sprintf("unknown repository %q", repoName), http.StatusNotFound)
 				return
 			}
 
