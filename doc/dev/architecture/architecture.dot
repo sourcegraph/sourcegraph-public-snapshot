@@ -36,11 +36,18 @@ digraph architecture {
     repo_updater [label="repo-updater" URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/repo-updater"]
     searcher     [label="searcher" URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/searcher"]
     replacer     [label="replacer" URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/replacer"]
-    zoekt_webserver [label="zoekt-webserver" URL="https://github.com/sourcegraph/zoekt/tree/master/cmd/zoekt-webserver"]
-    zoekt_indexserver [label="zoekt-indexserver" URL="https://github.com/sourcegraph/zoekt/tree/master/cmd/zoekt-sourcegraph-indexserver"]
     query_runner [label="query-runner" URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/query-runner"]
     github_proxy [label="github-proxy" URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/github-proxy"]
     syntect_server [label="syntect-server" URL="https://github.com/sourcegraph/syntect_server"]
+
+    subgraph cluster_lsif_zoekt {
+        label="Indexed search"
+        rank="same"
+        graph [style="dotted"]
+
+        zoekt_webserver [label="zoekt-webserver" URL="https://github.com/sourcegraph/zoekt/tree/master/cmd/zoekt-webserver"]
+        zoekt_indexserver [label="zoekt-indexserver" URL="https://github.com/sourcegraph/zoekt/tree/master/cmd/zoekt-sourcegraph-indexserver"]
+    }
 
     subgraph cluster_lsif_processes {
         label="LSIF"
