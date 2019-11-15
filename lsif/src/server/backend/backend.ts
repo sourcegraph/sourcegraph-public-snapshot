@@ -123,6 +123,15 @@ export class Backend {
     }
 
     /**
+     * Delete a dump.
+     *
+     * @param dump The dump.
+     */
+    public deleteDump(dump: xrepoModels.LsifDump): Promise<void> {
+        return this.xrepoDatabase.deleteDump(dump)
+    }
+
+    /**
      * Determine if data exists for a particular document in this database.
      *
      * @param repository The repository name.
