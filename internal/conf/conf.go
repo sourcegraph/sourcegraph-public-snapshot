@@ -109,7 +109,7 @@ type cachedConfigurationSource struct {
 	entryTime time.Time
 }
 
-func (c cachedConfigurationSource) Read(ctx context.Context) (conftypes.RawUnified, error) {
+func (c *cachedConfigurationSource) Read(ctx context.Context) (conftypes.RawUnified, error) {
 	c.entryMu.Lock()
 	defer c.entryMu.Unlock()
 	if c.entry == nil || time.Since(c.entryTime) > c.ttl {
@@ -123,7 +123,7 @@ func (c cachedConfigurationSource) Read(ctx context.Context) (conftypes.RawUnifi
 	return *c.entry, nil
 }
 
-func (c cachedConfigurationSource) Write(ctx context.Context, input conftypes.RawUnified) error {
+func (c *cachedConfigurationSource) Write(ctx context.Context, input conftypes.RawUnified) error {
 	c.entryMu.Lock()
 	defer c.entryMu.Unlock()
 	if err := c.source.Write(ctx, input); err != nil {
