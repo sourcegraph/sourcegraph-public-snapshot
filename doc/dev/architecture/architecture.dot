@@ -39,6 +39,7 @@ digraph architecture {
     query_runner [label="query-runner" URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/query-runner"]
     github_proxy [label="github-proxy" URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/github-proxy"]
     syntect_server [label="syntect-server" URL="https://github.com/sourcegraph/syntect_server"]
+    management_console [label="management-console" URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/management-console"]
 
     subgraph cluster_lsif_zoekt {
         label="Indexed search"
@@ -102,6 +103,8 @@ digraph architecture {
     frontend -> redis_store
     frontend -> syntect_server
     frontend -> lsif_server
+
+    management_console -> postgres
 
     lsif_server -> postgres
     lsif_server -> redis_store
