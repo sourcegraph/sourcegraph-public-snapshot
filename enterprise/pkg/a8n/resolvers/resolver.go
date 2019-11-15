@@ -16,6 +16,7 @@ import (
 	ee "github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n/run"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -442,7 +443,8 @@ func (r *Resolver) PreviewCampaignPlan(ctx context.Context, args graphqlbackend.
 			return nil, err
 		}
 	} else {
-		err := runner.Run(context.Background(), plan)
+		backgroundCtx := actor.WithActor(context.Background(), actor.FromContext(ctx))
+		err := runner.Run(backgroundCtx, plan)
 		if err != nil {
 			return nil, err
 		}
