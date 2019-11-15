@@ -94,7 +94,12 @@ export async function getCommitsNear(
  */
 export function flattenCommitParents(lines: string[]): [string, string | undefined][] {
     return lines.flatMap(line => {
-        const [child, ...commits] = line.trim().split(' ')
+        const trimmed = line.trim()
+        if (trimmed === '') {
+            return []
+        }
+
+        const [child, ...commits] = trimmed.split(' ')
         if (commits.length === 0) {
             return [[child, undefined]]
         }

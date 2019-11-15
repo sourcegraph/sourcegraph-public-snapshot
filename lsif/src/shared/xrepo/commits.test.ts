@@ -31,7 +31,7 @@ describe('getCommitsNear', () => {
 
 describe('flattenCommitParents', () => {
     it('should handle multiple commits', () => {
-        expect(flattenCommitParents(['a', 'b c', 'd e f', 'g h i j k l', 'm '])).toEqual([
+        expect(flattenCommitParents(['a', 'b c', 'd e f', '', 'g h i j k l', 'm '])).toEqual([
             ['a', undefined],
             ['b', 'c'],
             ['d', 'e'],
