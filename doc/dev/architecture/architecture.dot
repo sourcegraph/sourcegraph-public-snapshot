@@ -41,8 +41,15 @@ digraph architecture {
     query_runner [label="query-runner" URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/query-runner"]
     github_proxy [label="github-proxy" URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/github-proxy"]
     syntect_server [label="syntect-server" URL="https://github.com/sourcegraph/syntect_server"]
-    lsif_server [label="lsif-server" URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/server"]
-    lsif_worker [label="lsif-worker" URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/worker"]
+
+    subgraph cluster_lsif_processes {
+        label="LSIF"
+        rank="same"
+        graph [style="dotted"]
+
+        lsif_server [label="lsif-server" URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/server"]
+        lsif_worker [label="lsif-worker" URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/worker"]
+    }
 
     subgraph cluster_databases {
         label="Databases"
@@ -50,9 +57,9 @@ digraph architecture {
         graph [style="rounded"]
         node [shape="cylinder"]
 
-        redis_cache  [label="redis-cache"]
-        redis_store  [label="redis-store"]
-        postgres     [label="postgres"]
+        redis_cache [label="redis-cache"]
+        redis_store [label="redis-store"]
+        postgres [label="postgres"]
     }
 
     subgraph cluster_codehosts {
@@ -88,7 +95,11 @@ digraph architecture {
     frontend -> redis_store
     frontend -> syntect_server
     frontend -> lsif_server
-    frontend -> lsif_worker
+
+    lsif_server -> postgres
+    lsif_server -> redis_store
+    lsif_worker -> postgres
+    lsif_worker -> redis_store
 
     repo_updater -> github_proxy
     repo_updater -> github_enterprise
