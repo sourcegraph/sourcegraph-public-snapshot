@@ -31,7 +31,7 @@ func uploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *htt
 		_, err = backend.Repos.ResolveRev(r.Context(), repo, commit)
 		if err != nil {
 			if gitserver.IsRevisionNotFound(err) {
-				http.Error(w, "Unknown commit.", http.StatusNotFound)
+				http.Error(w, fmt.Sprintf("unknown commit %q", commit), http.StatusNotFound)
 				return
 			}
 
