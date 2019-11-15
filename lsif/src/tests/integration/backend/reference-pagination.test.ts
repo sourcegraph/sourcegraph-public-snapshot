@@ -26,7 +26,7 @@ describe('Backend', () => {
 
         const fetch = async (paginationContext?: ReferencePaginationContext) =>
             util.filterNodeModules(
-                await backend.references(
+                (await backend.references(
                     'a',
                     util.createCommit(0),
                     'src/index.ts',
@@ -35,7 +35,7 @@ describe('Backend', () => {
                         character: 17,
                     },
                     paginationContext
-                )
+                )) || { locations: [] }
             )
 
         const { locations: locations0, cursor: cursor0 } = await fetch() // everything
