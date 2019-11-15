@@ -131,11 +131,12 @@ export class Backend {
      * @param ctx The tracing context.
      */
     public async exists(repository: string, commit: string, path: string, ctx: TracingContext = {}): Promise<boolean> {
-        const { database, dump } = await this.loadClosestDatabase(repository, commit, path, ctx)
-        if (database === undefined || dump === undefined) {
+        const closestDatabaseAndDump = await this.loadClosestDatabase(repository, commit, path, ctx)
+        if (!closestDatabaseAndDump) {
             return false
         }
 
+        const { database, dump } = closestDatabaseAndDump
         return database.exists(this.pathToDatabase(dump.root, path))
     }
 
@@ -155,8 +156,8 @@ export class Backend {
         position: lsp.Position,
         ctx: TracingContext = {}
     ): Promise<lsp.Location[]> {
-        const { database, dump, ctx: newCtx } = await this.loadClosestDatabase(repository, commit, path, ctx)
-        if (database === undefined || dump === undefined) {
+        const closestDatabaseAndDump = await this.loadClosestDatabase(repository, commit, path, ctx)
+        if (!closestDatabaseAndDump) {
             if (ctx.logger) {
                 ctx.logger.warn('No database could be loaded', { repository, commit, path })
             }
@@ -164,20 +165,19 @@ export class Backend {
             return []
         }
 
+        // Construct path within dump
+        const { database, dump, ctx: newCtx } = closestDatabaseAndDump
+        const pathInDb = this.pathToDatabase(dump.root, path)
+
         // Try to find definitions in the same dump.
-        const definitions = (
-            await database.definitions(this.pathToDatabase(dump.root, path), position, newCtx)
-        ).map(loc => this.locationFromDatabase(dump.root, loc))
+        const dbDefinitions = await database.definitions(pathInDb, position, newCtx)
+        const definitions = dbDefinitions.map(loc => this.locationFromDatabase(dump.root, loc))
         if (definitions.length > 0) {
             return definitions
         }
 
         // Try to find definitions in other dumps
-        const { document, ranges } = await database.getRangeByPosition(
-            this.pathToDatabase(dump.root, path),
-            position,
-            ctx
-        )
+        const { document, ranges } = await database.getRangeByPosition(pathInDb, position, ctx)
         if (!document || ranges.length === 0) {
             return []
         }
@@ -471,8 +471,8 @@ export class Backend {
             return { locations: [] }
         }
 
-        const { database, dump, ctx: newCtx } = await this.loadClosestDatabase(repository, commit, path, ctx)
-        if (database === undefined || dump === undefined) {
+        const closestDatabaseAndDump = await this.loadClosestDatabase(repository, commit, path, ctx)
+        if (!closestDatabaseAndDump) {
             if (ctx.logger) {
                 ctx.logger.warn('No database could be loaded', { repository, commit, path })
             }
@@ -480,19 +480,19 @@ export class Backend {
             return { locations: [] }
         }
 
-        let locations = (await database.references(this.pathToDatabase(dump.root, path), position, newCtx)).map(loc =>
-            this.locationFromDatabase(dump.root, loc)
-        )
+        // Construct path within dump
+        const { database, dump, ctx: newCtx } = closestDatabaseAndDump
+        const pathInDb = this.pathToDatabase(dump.root, path)
+
+        // Try to find references in the same dump
+        const dbReferences = await database.references(pathInDb, position, newCtx)
+        let locations = dbReferences.map(loc => this.locationFromDatabase(dump.root, loc))
 
         // Next, we do a moniker search in two stages, described below. We process the
         // monikers for each range sequentially in order of priority for each stage, such
         // that import monikers, if any exist, will be processed first.
 
-        const { document, ranges } = await database.getRangeByPosition(
-            this.pathToDatabase(dump.root, path),
-            position,
-            ctx
-        )
+        const { document, ranges } = await database.getRangeByPosition(pathInDb, position, ctx)
         if (!document || ranges.length === 0) {
             return { locations: [] }
         }
@@ -681,8 +681,8 @@ export class Backend {
         position: lsp.Position,
         ctx: TracingContext = {}
     ): Promise<lsp.Hover | null> {
-        const { database, dump, ctx: newCtx } = await this.loadClosestDatabase(repository, commit, path, ctx)
-        if (database === undefined || dump === undefined) {
+        const closestDatabaseAndDump = await this.loadClosestDatabase(repository, commit, path, ctx)
+        if (!closestDatabaseAndDump) {
             if (ctx.logger) {
                 ctx.logger.warn('No database could be loaded', { repository, commit, path })
             }
@@ -690,6 +690,7 @@ export class Backend {
             return null
         }
 
+        const { database, dump, ctx: newCtx } = closestDatabaseAndDump
         return database.hover(this.pathToDatabase(dump.root, path), position, newCtx)
     }
 
@@ -711,7 +712,7 @@ export class Backend {
         commit: string,
         file: string,
         ctx: TracingContext = {}
-    ): Promise<{ database?: Database; dump?: xrepoModels.LsifDump; ctx?: TracingContext }> {
+    ): Promise<{ database: Database; dump: xrepoModels.LsifDump; ctx: TracingContext } | undefined> {
         return logAndTraceCall(ctx, 'loading closest database', async ctx => {
             // Determine the closest commit that we actually have LSIF data for. If the commit is
             // not tracked, then commit data is requested from gitserver and insert the ancestors
@@ -731,7 +732,7 @@ export class Backend {
                 return { database, dump, ctx: addTags(ctx, { closestCommit: dump.commit }) }
             }
 
-            return {}
+            return undefined
         })
     }
 
