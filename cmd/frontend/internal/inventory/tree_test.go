@@ -15,7 +15,7 @@ import (
 func TestContext_Tree(t *testing.T) {
 	var (
 		readTreeCalls      []string
-		getFileReaderCalls []string
+		newFileReaderCalls []string
 		cacheGetCalls      []string
 		cacheSetCalls      = map[string]Inventory{}
 	)
@@ -34,8 +34,8 @@ func TestContext_Tree(t *testing.T) {
 				panic("unhandled mock ReadTree " + path)
 			}
 		},
-		GetFileReader: func(ctx context.Context, path string) (io.ReadCloser, error) {
-			getFileReaderCalls = append(getFileReaderCalls, path)
+		NewFileReader: func(ctx context.Context, path string) (io.ReadCloser, error) {
+			newFileReaderCalls = append(newFileReaderCalls, path)
 			var data []byte
 			switch path {
 			case "b.go":
@@ -80,8 +80,8 @@ func TestContext_Tree(t *testing.T) {
 		// We need to read all files to get line counts
 		"a/c.m",
 		"b.go",
-	}; !reflect.DeepEqual(getFileReaderCalls, want) {
-		t.Errorf("GetFileReader calls: got %q, want %q", getFileReaderCalls, want)
+	}; !reflect.DeepEqual(newFileReaderCalls, want) {
+		t.Errorf("GetFileReader calls: got %q, want %q", newFileReaderCalls, want)
 	}
 	if want := []string{"", "a"}; !reflect.DeepEqual(cacheGetCalls, want) {
 		t.Errorf("CacheGet calls: got %q, want %q", cacheGetCalls, want)

@@ -16,8 +16,8 @@ type Context struct {
 	// ReadFile call), not just the basename.
 	ReadTree func(ctx context.Context, path string) ([]os.FileInfo, error)
 
-	// GetFileReader is called to get an io.ReadCloser from the file at path.
-	GetFileReader func(ctx context.Context, path string) (io.ReadCloser, error)
+	// NewFileReader is called to get an io.ReadCloser from the file at path.
+	NewFileReader func(ctx context.Context, path string) (io.ReadCloser, error)
 
 	// CacheGet, if set, returns the cached inventory and true for the given tree, or false for a cache miss.
 	CacheGet func(os.FileInfo) (Inventory, bool)
@@ -50,7 +50,7 @@ func (c *Context) Tree(ctx context.Context, tree os.FileInfo) (inv Inventory, er
 	for _, e := range entries {
 		switch {
 		case e.Mode().IsRegular(): // file
-			rc, err := c.GetFileReader(ctx, e.Name())
+			rc, err := c.NewFileReader(ctx, e.Name())
 			if err != nil {
 				return Inventory{}, errors.Wrap(err, "getting file reader")
 			}
