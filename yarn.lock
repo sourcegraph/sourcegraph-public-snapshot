@@ -1532,6 +1532,13 @@
   dependencies:
     esquery "^1.0.1"
 
+"@phenomnomnominal/tsquery@^4.0.0":
+  version "4.0.0"
+  resolved "https://registry.npmjs.org/@phenomnomnominal/tsquery/-/tsquery-4.0.0.tgz#610e8ac968137e4a0f98c842c919bb8ad0e85718"
+  integrity sha512-s2Yet/MCj9Jh6nR6GfldrUPT6Y+aM1jIAdiKcOKEzmeKALT0Tc7SFIkYP3KvzjzbkKK5W7BiJ3cWy2UOa4ITbw==
+  dependencies:
+    esquery "^1.0.1"
+
 "@reach/auto-id@^0.2.0":
   version "0.2.0"
   resolved "https://registry.npmjs.org/@reach/auto-id/-/auto-id-0.2.0.tgz#97f9e48fe736aa5c6f4f32cf73c1f19d005f8550"
@@ -1699,17 +1706,17 @@
   resolved "https://registry.npmjs.org/@sourcegraph/comlink/-/comlink-3.1.1-fork.3.tgz#1bd76bc74ca8a9b55f1dbf508c703053ee66c961"
   integrity sha512-+vfSCJTS/GU391Hhdh2/s+wy5ok4hi6X+kizRQqQZwZI03Q1rR6SVLNFsbg4dhbX624mqr1UCRhwNnZdWHAR+A==
 
-"@sourcegraph/eslint-config@^0.4.4":
-  version "0.4.4"
-  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.4.4.tgz#4d59c2e559f26a4faa81bedf34f44d35939f2b7e"
-  integrity sha512-ogDdnCxi44qbN3D18qzZ2u4lgvaJZvrDqfc9tM5UbyCuNJJ9OyU6AXrO3qhk3u/DiC3lFb7QtZTTP9CLx8dLmg==
+"@sourcegraph/eslint-config@^0.4.5":
+  version "0.4.5"
+  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.4.5.tgz#d5b1a50196a24ea0e7bddddbba9b114261004ab6"
+  integrity sha512-fg14LRViMegcv3tDuvc4b3U2d1Grw5D8+oAj+gT6xA6xSgooB5uBeOTGjxBiaP2c3vlbJUywC4k6W92rfqkEaQ==
   dependencies:
     "@sourcegraph/prettierrc" "^3.0.1"
     "@typescript-eslint/eslint-plugin" "^2.4.0"
     "@typescript-eslint/parser" "^2.4.0"
     eslint-config-prettier "^6.5.0"
     eslint-plugin-ban "^1.3.0"
-    eslint-plugin-etc "^0.0.1-beta.18"
+    eslint-plugin-etc "^0.0.1-beta.20"
     eslint-plugin-import "^2.18.2"
     eslint-plugin-jsdoc "^17.1.0"
     eslint-plugin-react "^7.16.0"
@@ -1737,8 +1744,7 @@
   integrity sha512-Te7F1RQJLBH4C8wQ2xz0nPC2vpe13F80V+Yv+c3GySOoh4DcLNN4P5u51Kh4aZPqeS5DJ7CKvHyX2SM/1EBXNg==
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "0.0.0"
-  uid ""
+  version "2.0.0"
 
 "@sourcegraph/prettierrc@^3.0.1":
   version "3.0.1"
@@ -7456,10 +7462,12 @@ eslint-config-prettier@^6.5.0:
   dependencies:
     get-stdin "^6.0.0"
 
-eslint-etc@^0.0.3:
-  version "0.0.3"
-  resolved "https://registry.npmjs.org/eslint-etc/-/eslint-etc-0.0.3.tgz#174203a561eca6ec83a15d34a7735636a6a8689a"
-  integrity sha512-2z8FOcOd/SCQmJvWKT44n4OK8+PTcu4uxIn6mEokZtFpVjIX9fMeS0cuV44D9ccZEli3UfQyq1hkpRgR4IHmow==
+eslint-etc@^0.0.7:
+  version "0.0.7"
+  resolved "https://registry.npmjs.org/eslint-etc/-/eslint-etc-0.0.7.tgz#56848f1b6338a24e941e698acda64f414ddb03bd"
+  integrity sha512-O3dvZsp2j3PSUwYQOVMmwOKArvyWjsdpxJ9qh1LO3xKhDiiIwB1Q++0OQUfCxtiFKOe40Ux0i59V9eZigNac2w==
+  dependencies:
+    esquery "^1.0.1"
 
 eslint-import-resolver-node@^0.3.2:
   version "0.3.2"
@@ -7484,13 +7492,13 @@ eslint-plugin-ban@^1.3.0:
   dependencies:
     requireindex "~1.2.0"
 
-eslint-plugin-etc@^0.0.1-beta.18:
-  version "0.0.1-beta.18"
-  resolved "https://registry.npmjs.org/eslint-plugin-etc/-/eslint-plugin-etc-0.0.1-beta.18.tgz#2c39b4da47971076bf04f2c6a8d3295f232601b2"
-  integrity sha512-U6QQS4CxJzvpqgTUZivH0O/NzrC5EV/9E50DSwSzQDK56l67CGh8rnmwW19jrboJrAQ8nzwPV7YSrQQMl4G81w==
+eslint-plugin-etc@^0.0.1-beta.20:
+  version "0.0.1-beta.20"
+  resolved "https://registry.npmjs.org/eslint-plugin-etc/-/eslint-plugin-etc-0.0.1-beta.20.tgz#1ada3961359434845c2af68c708f0f60bbff61c2"
+  integrity sha512-p9TdEF+m0LeiF0FpJ2vUXFu8iQAHr7unyIViaUehK612TCe/JgJklDqSeNtTWuAPIAmwbuSUt0R2x5SZfBIvFw==
   dependencies:
-    "@phenomnomnominal/tsquery" "^3.0.0"
-    eslint-etc "^0.0.3"
+    "@phenomnomnominal/tsquery" "^4.0.0"
+    eslint-etc "^0.0.7"
     requireindex "~1.2.0"
     tslib "^1.8.0"
     tslint-etc "^1.6.0"
@@ -16594,8 +16602,7 @@ source-map@^0.7.3:
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "0.0.0"
-  uid ""
+  version "23.0.1"
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
