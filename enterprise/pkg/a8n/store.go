@@ -1375,7 +1375,7 @@ var getCampaignPlanStatusQueryFmtstr = `
 SELECT
   COUNT(*) AS total,
   COUNT(*) FILTER (WHERE finished_at IS NULL) AS pending,
-  COUNT(*) FILTER (WHERE finished_at IS NOT NULL) AS completed,
+  COUNT(*) FILTER (WHERE finished_at IS NOT NULL AND (diff != '' OR error != '')) AS completed,
   array_agg(error) FILTER (WHERE error != '') AS errors
 FROM campaign_jobs
 WHERE %s
