@@ -40,6 +40,7 @@ digraph architecture {
     github_proxy [label="github-proxy" URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/github-proxy"]
     syntect_server [label="syntect-server" URL="https://github.com/sourcegraph/syntect_server"]
     management_console [label="management-console" URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/management-console"]
+    symbols [label="symbols" URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/symbols"]
 
     subgraph cluster_lsif_zoekt {
         label="Indexed search"
@@ -92,9 +93,9 @@ digraph architecture {
     }
 
     frontend -> gitserver
-    frontend -> query_runner -> frontend
-    frontend -> searcher -> gitserver
-    frontend -> replacer -> gitserver
+    frontend -> query_runner
+    frontend -> searcher
+    frontend -> replacer
     frontend -> repo_updater
     frontend -> github_proxy
     frontend -> zoekt_webserver
@@ -103,11 +104,25 @@ digraph architecture {
     frontend -> redis_store
     frontend -> syntect_server
     frontend -> lsif_server
+    frontend -> symbols
+
+    searcher -> frontend
+    searcher -> gitserver
+
+    replacer -> frontend
+    replacer -> gitserver
 
     management_console -> postgres
 
+    query_runner -> frontend
+
+    symbols -> frontend
+    symbols -> gitserver
+
+    lsif_server -> frontend
     lsif_server -> postgres
     lsif_server -> redis_store
+    lsif_worker -> frontend
     lsif_worker -> postgres
     lsif_worker -> redis_store
 
