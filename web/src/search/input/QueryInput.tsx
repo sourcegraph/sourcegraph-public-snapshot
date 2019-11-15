@@ -392,7 +392,7 @@ export class QueryInput extends React.Component<Props, State> {
 
     private onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
         // Ctrl+Space to show all available filter type suggestions
-        if (!this.props.value.query && event.ctrlKey && event.key === ' ') {
+        if (event.ctrlKey && event.key === ' ') {
             this.setState({
                 suggestions: {
                     cursorPosition: event.currentTarget.selectionStart ?? 0,
