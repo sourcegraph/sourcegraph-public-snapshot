@@ -155,12 +155,15 @@ func (r *Runner) Run(ctx context.Context, plan *a8n.CampaignPlan) error {
 		go worker(queue)
 	}
 
-	for _, job := range jobs {
-		r.wg.Add(1)
-		queue <- job
-	}
+	r.wg.Add(len(jobs))
 
-	close(queue)
+	go func() {
+		for _, job := range jobs {
+			queue <- job
+		}
+
+		close(queue)
+	}()
 
 	return nil
 }
