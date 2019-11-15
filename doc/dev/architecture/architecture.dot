@@ -90,6 +90,7 @@ digraph architecture {
         src_cli [label="src-cli" URL="https://github.com/sourcegraph/src-cli"]
         browser_ext [label="Browser\nExtension" URL="https://github.com/sourcegraph/sourcegraph/tree/master/browser/"]
         web_app [label="Web App" URL="https://github.com/sourcegraph/sourcegraph/tree/master/web"]
+        customer_scripts [label="Customer\nScripts"]
     }
 
     frontend -> gitserver
