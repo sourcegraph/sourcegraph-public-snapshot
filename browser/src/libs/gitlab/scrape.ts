@@ -75,8 +75,8 @@ export function getFilePageInfo(): GitLabFileInfo {
         throw new Error('Unable to determine revision or file path')
     }
 
-    const rev = matches[1]
-    const filePath = matches[2]
+    const rev = decodeURIComponent(matches[1])
+    const filePath = decodeURIComponent(matches[2])
 
     return {
         rawRepoName,
