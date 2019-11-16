@@ -31,3 +31,10 @@ export function pluralize(str: string, n: number, plural = str + 's'): string {
 export function sanitizeClass(value: string): string {
     return value.replace(/[^A-Za-z]/g, '-').toLowerCase()
 }
+
+/**
+ * In the given string, turn trailing whitespace into single whitespace
+ */
+export function shave(value: string): string {
+    return value.replace(/\s+/g, ' ')
+}

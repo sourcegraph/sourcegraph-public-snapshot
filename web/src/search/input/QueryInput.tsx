@@ -35,6 +35,7 @@ import { isDefined } from '../../../../shared/src/util/types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import _ from 'lodash'
 import { UndoRedoHistory } from '../../../../shared/src/util/UndoRedoHistory'
+import { shave } from '../../../../shared/src/util/strings'
 
 /**
  * The query input field is clobbered and updated to contain this subject's values, as
@@ -148,7 +149,7 @@ export class QueryInput extends React.Component<Props, State> {
                 .pipe(
                     debounceTime(typingDebounceTime),
                     distinctUntilChanged(
-                        (previous, current) => previous.value.query.trim() === current.value.query.trim()
+                        (previous, current) => shave(previous.value.query) === shave(current.value.query)
                     ),
                     switchMap(({ value: queryState }) => {
                         if (queryState.query.length === 0) {
