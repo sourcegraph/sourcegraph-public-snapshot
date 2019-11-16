@@ -591,30 +591,20 @@ func (c *Client) IsRepoCloneable(ctx context.Context, repo Repo) error {
 		return fmt.Errorf("gitserver error (status code %d): %s", r.StatusCode, string(body))
 	}
 
-	// Try unmarshaling new response format (?v=2) first.
 	var resp protocol.IsRepoCloneableResponse
-	if err := json.Unmarshal(body, &resp); err == nil {
-		if resp.Cloneable {
-			return nil
-		}
-		// Treat all 4xx errors as not found, since we have more relaxed
-		// requirements on what a valid URL is we should treat bad requests,
-		// etc as not found.
-		notFound := strings.Contains(resp.Reason, "not found") || strings.Contains(resp.Reason, "The requested URL returned error: 4")
-		return &RepoNotCloneableErr{repo: repo, reason: resp.Reason, notFound: notFound}
-	}
-
-	// Backcompat (gitserver is old, does not recognize ?v=2)
-	//
-	// TODO(sqs): remove when unneeded
-	var cloneable bool
-	if err := json.Unmarshal(body, &cloneable); err != nil {
+	if err := json.Unmarshal(body, &resp); err != nil {
 		return err
 	}
-	if cloneable {
+
+	if resp.Cloneable {
 		return nil
 	}
-	return &RepoNotCloneableErr{}
+
+	// Treat all 4xx errors as not found, since we have more relaxed
+	// requirements on what a valid URL is we should treat bad requests,
+	// etc as not found.
+	notFound := strings.Contains(resp.Reason, "not found") || strings.Contains(resp.Reason, "The requested URL returned error: 4")
+	return &RepoNotCloneableErr{repo: repo, reason: resp.Reason, notFound: notFound}
 }
 
 // RepoNotCloneableErr is the error that happens when a repository can not be cloned.
