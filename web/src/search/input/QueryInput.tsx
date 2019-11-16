@@ -432,8 +432,7 @@ export class QueryInput extends React.Component<Props, State> {
     }
 
     private hideSuggestions = (): void => {
-        this.suggestionsHidden.next()
-        this.setState({ suggestions: noSuggestions })
+        this.setState({ suggestions: noSuggestions }, () => this.suggestionsHidden.next())
     }
 
     /**
