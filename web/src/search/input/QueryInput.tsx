@@ -33,6 +33,8 @@ import {
 import { fetchSuggestions } from '../backend'
 import { isDefined } from '../../../../shared/src/util/types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import _ from 'lodash'
+import { UndoRedoHistory } from '../../../../shared/src/util/UndoRedoHistory'
 
 /**
  * The query input field is clobbered and updated to contain this subject's values, as
@@ -84,12 +86,15 @@ interface ComponentSuggestions {
 
 interface State {
     /** Indicates if suggestions are being loaded from the back-end */
-    loadingSuggestions: boolean
+    loadingSuggestions?: boolean
     /** The suggestions shown to the user */
     suggestions: ComponentSuggestions
 }
 
 const noSuggestions: State['suggestions'] = { values: [], cursorPosition: 0 }
+
+// Used for fetching suggestions and updating query history (undo/redo)
+const typingDebounceTime = 300
 
 export class QueryInput extends React.Component<Props, State> {
     private componentUpdates = new Subject<Props>()
@@ -109,8 +114,10 @@ export class QueryInput extends React.Component<Props, State> {
     /** Used for scrolling suggestions into view while scrolling with keyboard */
     private containerElement = React.createRef<HTMLDivElement>()
 
-    /** Only used to keep track if the user has typed a single character into the input field so we can log an event once. */
-    private hasLoggedFirstInput = false
+    private queryHistory = new UndoRedoHistory<QueryState>({
+        current: this.props.value,
+        onUpdate: queryState => this.props.onChange(queryState),
+    })
 
     public state: State = {
         loadingSuggestions: false,
@@ -123,14 +130,27 @@ export class QueryInput extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
 
+        this.subscriptions.add(this.queryHistory)
+
+        // Update parent component and push to queryHistory (undo/redo)
         this.subscriptions.add(
-            // Trigger new suggestions every time the input field is typed into.
             this.inputValues
                 .pipe(
                     tap(queryState => this.props.onChange(queryState)),
-                    distinctUntilChanged(),
-                    debounceTime(200),
-                    switchMap(queryState => {
+                    debounceTime(typingDebounceTime)
+                )
+                .subscribe(queryState => this.queryHistory.push(queryState))
+        )
+
+        // Trigger suggestions
+        this.subscriptions.add(
+            this.componentUpdates
+                .pipe(
+                    debounceTime(typingDebounceTime),
+                    distinctUntilChanged(
+                        (previous, current) => previous.value.query.trim() === current.value.query.trim()
+                    ),
+                    switchMap(({ value: queryState }) => {
                         if (queryState.query.length === 0) {
                             return [{ suggestions: noSuggestions }]
                         }
@@ -235,7 +255,7 @@ export class QueryInput extends React.Component<Props, State> {
                     )
                     .subscribe(() => {
                         const selection = String(window.getSelection() || '')
-                        this.props.onChange({ query: selection, cursorPosition: selection.length })
+                        this.inputValues.next({ query: selection, cursorPosition: selection.length })
                         if (this.inputElement.current) {
                             this.inputElement.current.focus()
                             // Select whole input text
@@ -248,7 +268,7 @@ export class QueryInput extends React.Component<Props, State> {
             // currently viewing).
             this.subscriptions.add(
                 queryUpdates.pipe(distinctUntilChanged()).subscribe(query =>
-                    this.props.onChange({
+                    this.inputValues.next({
                         query,
                         cursorPosition: query.length,
                     })
@@ -400,6 +420,14 @@ export class QueryInput extends React.Component<Props, State> {
                 },
             })
         }
+        if (event.ctrlKey && event.key === 'z') {
+            event.preventDefault()
+            this.queryHistory.undo()
+        }
+        if (event.ctrlKey && event.shiftKey && event.key === 'Z') {
+            event.preventDefault()
+            this.queryHistory.redo()
+        }
     }
 
     private hideSuggestions = (): void => {
@@ -412,11 +440,10 @@ export class QueryInput extends React.Component<Props, State> {
      * else: add selected suggestion to query
      */
     private onSuggestionSelect = (suggestion: Suggestion | undefined): void => {
-        this.setState((state, props) => {
+        this.setState(({ suggestions }, { value, history }) => {
+            // If downshift selects an item with value undefined
             if (!suggestion) {
-                return {
-                    suggestions: noSuggestions,
-                }
+                return { suggestions: noSuggestions }
             }
 
             // 🚨 PRIVACY: never provide any private data in { code_search: { suggestion: { type } } }.
@@ -431,42 +458,21 @@ export class QueryInput extends React.Component<Props, State> {
             // if separate word is being typed and suggestion with url is selected
             if (
                 isFuzzyWordSearch({
-                    query: props.value.query,
-                    cursorPosition: state.suggestions.cursorPosition,
+                    query: value.query,
+                    cursorPosition: suggestions.cursorPosition,
                 }) &&
                 suggestion.url
             ) {
-                this.props.history.push(suggestion.url)
+                history.push(suggestion.url)
                 return { suggestions: noSuggestions }
             }
 
-            const isValueSuggestion = suggestion.type !== SuggestionTypes.filters
+            // Add "regex end of string boundary" to limit future suggestion results
+            const selectedSuggestion = !suggestion.fromFuzzySearch
+                ? suggestion
+                : { ...suggestion, value: suggestion.value + '$' }
 
-            const { cursorPosition } = state.suggestions
-            const { query: newQuery, cursorPosition: newCursorPosition } = insertSuggestionInQuery(
-                props.value.query,
-                // Add regex end of string boundary to limit future suggestion results
-                !suggestion.fromFuzzySearch
-                    ? suggestion
-                    : {
-                          ...suggestion,
-                          value: suggestion.value + '$',
-                      },
-                cursorPosition
-            )
-
-            props.onChange({
-                query: newQuery,
-                cursorPosition: newCursorPosition,
-            })
-
-            // If a filter was selected, show filter value suggestions
-            if (!isValueSuggestion) {
-                this.inputValues.next({
-                    cursorPosition: newCursorPosition,
-                    query: newQuery,
-                })
-            }
+            this.inputValues.next(insertSuggestionInQuery(value.query, selectedSuggestion, suggestions.cursorPosition))
 
             return { suggestions: noSuggestions }
         })
@@ -485,11 +491,14 @@ export class QueryInput extends React.Component<Props, State> {
         }
     }
 
+    /** Only log when user has typed the first character into the input. */
+    private logFirstInput = (): void => {
+        eventLogger.log('SearchInitiated')
+        this.logFirstInput = () => {}
+    }
+
     private onInputChange: React.ChangeEventHandler<HTMLInputElement> = event => {
-        if (!this.hasLoggedFirstInput) {
-            eventLogger.log('SearchInitiated')
-            this.hasLoggedFirstInput = true
-        }
+        this.logFirstInput()
         this.inputValues.next({
             query: event.currentTarget.value,
             cursorPosition: event.currentTarget.selectionStart || 0,
