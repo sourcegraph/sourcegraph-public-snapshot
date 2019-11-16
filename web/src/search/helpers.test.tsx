@@ -3,7 +3,7 @@ import {
     toggleSearchType,
     filterStaticSuggestions,
     insertSuggestionInQuery,
-    lastFilterAndValueBeforeCursor,
+    validFilterAndValueBeforeCursor,
     isFuzzyWordSearch,
     formatQueryForFuzzySearch,
     filterAliasForSearch,
@@ -117,13 +117,8 @@ describe('search/helpers', () => {
             })
 
             test('filters suggestions for filter aliases', () => {
-                for (const [alias, filter] of Object.entries(filterAliases)) {
-                    const [{ value }] = filterStaticSuggestions(
-                        { query: alias, cursorPosition: alias.length },
-                        searchFilterSuggestions
-                    )
-                    expect(value).toBe(filter + ':')
-                }
+                const [{ value }] = filterStaticSuggestions({ query: 'l', cursorPosition: 1 }, searchFilterSuggestions)
+                expect(value).toBe(filterAliases.l + ':')
             })
 
             test('does not throw for query ":"', () => {
@@ -161,24 +156,45 @@ describe('search/helpers', () => {
     describe('getFilterTypedBeforeCursor', () => {
         const query = 'archived:yes QueryInput'
         it('returns values when a filter value is being typed', () => {
-            expect(lastFilterAndValueBeforeCursor({ query, cursorPosition: 10 })).toEqual({
+            expect(validFilterAndValueBeforeCursor({ query, cursorPosition: 10 })).toEqual({
                 filterIndex: 0,
                 filterAndValue: 'archived:y',
                 filter: 'archived',
+                resolvedFilter: 'archived',
                 value: 'y',
             })
         })
         it('returns values when a filter is selected but no value char is typed yet', () => {
-            expect(lastFilterAndValueBeforeCursor({ query, cursorPosition: 9 })).toEqual({
+            expect(validFilterAndValueBeforeCursor({ query, cursorPosition: 9 })).toEqual({
                 filterIndex: 0,
                 filterAndValue: 'archived:',
                 filter: 'archived',
+                resolvedFilter: 'archived',
                 value: '',
             })
-            lastFilterAndValueBeforeCursor({ query, cursorPosition: 9 })
         })
         it('does not return a value if typed whitespace char', () => {
-            expect(lastFilterAndValueBeforeCursor({ query, cursorPosition: 13 })).toStrictEqual(null)
+            expect(validFilterAndValueBeforeCursor({ query, cursorPosition: 13 })).toStrictEqual(null)
+        })
+        it('correctly resolves filter aliases', () => {
+            const query = 'l:go'
+            expect(validFilterAndValueBeforeCursor({ query, cursorPosition: query.length })).toEqual({
+                filterIndex: 0,
+                filterAndValue: query,
+                filter: 'l',
+                resolvedFilter: 'lang',
+                value: 'go',
+            })
+        })
+        it('correctly formats negated filters', () => {
+            const query = '-f:package.json'
+            expect(validFilterAndValueBeforeCursor({ query, cursorPosition: query.length })).toEqual({
+                filterIndex: 0,
+                filterAndValue: query,
+                filter: '-f',
+                resolvedFilter: 'file',
+                value: 'package.json',
+            })
         })
     })
 

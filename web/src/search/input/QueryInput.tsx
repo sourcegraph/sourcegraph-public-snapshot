@@ -27,7 +27,7 @@ import {
     filterStaticSuggestions,
     insertSuggestionInQuery,
     isFuzzyWordSearch,
-    lastFilterAndValueBeforeCursor,
+    validFilterAndValueBeforeCursor,
     formatQueryForFuzzySearch,
 } from '../helpers'
 import { fetchSuggestions } from '../backend'
@@ -166,13 +166,13 @@ export class QueryInput extends React.Component<Props, State> {
                         }
 
                         // Used to know if a filter value, and not just a separate word, is being typed
-                        const filterAndValueBeforeCursor = lastFilterAndValueBeforeCursor(queryState)
+                        const filterAndValueBeforeCursor = validFilterAndValueBeforeCursor(queryState)
 
                         // If a filter value is being typed but selected filter does not use
                         // fuzzy-search suggestions, then return only static suggestions
                         if (
                             filterAndValueBeforeCursor &&
-                            !fuzzySearchFilters.includes(filterAndValueBeforeCursor.filter)
+                            !fuzzySearchFilters.includes(filterAndValueBeforeCursor.resolvedFilter)
                         ) {
                             return [{ suggestions: staticSuggestions }]
                         }
@@ -194,12 +194,12 @@ export class QueryInput extends React.Component<Props, State> {
                                 map((suggestion): Suggestion => ({ ...suggestion, fromFuzzySearch: true })),
                                 filter(suggestion => {
                                     // Only show fuzzy-suggestions that are relevant to the typed filter
-                                    if (filterAndValueBeforeCursor?.filter) {
-                                        switch (filterAndValueBeforeCursor.filter) {
+                                    if (filterAndValueBeforeCursor?.resolvedFilter) {
+                                        switch (filterAndValueBeforeCursor.resolvedFilter) {
                                             case SuggestionTypes.repohasfile:
                                                 return suggestion.type === SuggestionTypes.file
                                             default:
-                                                return suggestion.type === filterAndValueBeforeCursor.filter
+                                                return suggestion.type === filterAndValueBeforeCursor.resolvedFilter
                                         }
                                     }
                                     return true
