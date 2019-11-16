@@ -228,7 +228,9 @@ describe('Search regression test suite', () => {
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length >= 2)
         })
         test('Global text search (repohascommitafter:"5 years ago")', async () => {
-            await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=repohascommitafter:"5+months+ago"+test&patternType=literal')
+            await driver.page.goto(
+                config.sourcegraphBaseUrl + '/search?q=repohascommitafter:"5+months+ago"+test&patternType=literal'
+            )
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length >= 10)
         })
         test('Global text search for something with more than 1000 results and use "count:1000".', async () => {
