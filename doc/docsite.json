@@ -1,5 +1,5 @@
 {
-  "$comment": "This configures the documentation server used in local development only. See ./team/product-dev/documentation/index.md#previewing-changes-locally.",
+  "$comment": "This configures the documentation server used in local development only. See ./doc/dev/documentation.md#previewing-changes-locally.",
   "templates": "_resources/templates",
   "content": ".",
   "baseURLPath": "/",
