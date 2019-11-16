@@ -13,6 +13,7 @@ import {
     map,
     toArray,
     catchError,
+    skip,
 } from 'rxjs/operators'
 import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
@@ -143,10 +144,16 @@ export class QueryInput extends React.Component<Props, State> {
                 .subscribe(queryState => this.queryHistory.push(queryState))
         )
 
-        // Trigger suggestions
+        // Trigger suggestions.
+        // This is set on componentDidUpdate so the data flow can be easier to manage,
+        // now it just depends on props.value to use as the query and not both from
+        // props.value and this.inputValues (which was harder to reason about)
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(
+                    // skip: prevent suggestions from showing when
+                    // component updates first time after page load
+                    skip(1),
                     debounceTime(typingDebounceTime),
                     distinctUntilChanged(
                         (previous, current) => shave(previous.value.query) === shave(current.value.query)
