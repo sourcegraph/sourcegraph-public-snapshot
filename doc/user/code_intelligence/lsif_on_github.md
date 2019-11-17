@@ -1,19 +1,19 @@
 # LSIF on GitHub
 
-You can use [GitHub Actions](https://help.github.com/en/github/automating-your-workflow-with-github-actions/about-github-actions) to index LSIF data and upload it to your Sourcegraph instance.
+You can use [GitHub Actions](https://help.github.com/en/github/automating-your-workflow-with-github-actions/about-github-actions) to (1) generate LSIF data and (2) upload it to your Sourcegraph instance.
 
-LSIF indexing actions for each language:
+1. Actions to **Generate LSIF index data** for each language:
 
-- [Go indexer action](https://github.com/marketplace/actions/sourcegraph-go-lsif-indexer)
-- ...and more coming soon!
+    - [Go indexer action](https://github.com/marketplace/actions/sourcegraph-go-lsif-indexer)
+    - ...and more coming soon!
 
-And there is one [LSIF upload action](https://github.com/marketplace/actions/sourcegraph-lsif-uploader).
+2. Action to **[upload LSIF data](https://github.com/marketplace/actions/sourcegraph-lsif-uploader)**.
 
 ## Setup
 
 Create a [workflow file](https://help.github.com/en/github/automating-your-workflow-with-github-actions/configuring-a-workflow#creating-a-workflow-file) `.github/workflows/lsif.yaml` in your repository.
 
-The basic flow is to first generate LSIF data then upload it. Here's an example for generating LSIF data for a Go project:
+You will need configure two actions to (1) generate the LSIF data and (2) upload it to Sourcegraph. Here's an example for generating LSIF data for a Go project:
 
 ```yaml
 name: LSIF

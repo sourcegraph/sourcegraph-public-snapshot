@@ -1,34 +1,20 @@
 # LSIF in continuous integration
 
-## LSIF indexers
-
-An LSIF indexer is a command line tool that analyzes your project's source code and generates a file in LSIF format containing all the definitions, references, and hover documentation in your project. That LSIF file is later uploaded to Sourcegraph to provide code intelligence.
+After walking through the [LSIF quickstart guide](./lsif_quickstart.md), add a job to your CI so code intelligence keeps up with the changes to your repository.
 
 ## Generating and uploading LSIF in CI
 
-1. Install the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) for uploading LSIF data on your CI machines.
-1. Go to https://lsif.dev to find an LSIF indexer for your language and install the command-line tool on your CI machines.
-1. Add a daily step to your CI that:
-  - Runs the LSIF indexer on a project within your repository and generates an LSIF file in the project directory (see docs for your LSIF indexer).
-  - Uploads that generated LSIF file to your Sourcegraph instance using the following command:
+### Setup your CI machines
 
-Make sure the current working directory is somewhere inside your repository, then run:
+Your CI machines will need two command-line tools installed. Depending on your build system setup, you can do this as part of the CI step, or you can add it directly to your CI machines for use by the build.
 
-```
-$ src \
-  -endpoint=https://sourcegraph.example.com \
-  lsif upload \
-  -github-token=abc... (only needed when uploading to Sourcegraph.com) \
-  -file=<LSIF file (e.g. ./cmd/dump.lsif)>
-```
+1. The [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli).
+1. The [LSIF indexer](https://lsif.dev) for your language.
 
-> If you're uploading to Sourcegraph.com, you must authenticate your upload by passing a GitHub access token with [`public_repo` scope](https://developer.github.com/apps/building-oauth-apps/understanding-scopes-for-oauth-apps/#available-scopes) as `-github-token=abc...`. You can create one at https://github.com/settings/tokens
+### Add steps to your CI
 
-If successful, you'll see the following message:
-
-> Upload successful, queued for processing.
-
-If an error occurred, you'll see it in the response.
+1. **Generate the LSIF file** for a project within your repository by running the LSIF indexer in the project directory (see docs for your LSIF indexer).
+1. **[Upload that generated LSIF file](./lsif_quickstart.md#upload-the-data)** to your Sourcegraph instance.
 
 ## Recommended upload frequency
 
