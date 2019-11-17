@@ -32,10 +32,23 @@ $ src \
 
 If successful, you'll see the following message:
 
-> LSIF dump successfully uploaded. It will be converted asynchronously.
-> To check the status, visit <link to your Sourcegraph instance LSIF status>
+```bash
+Repository: <location of repository>
+Commit: <commit sha for generated lsif data>
+File: <LSIF data file>
+Root: <??>
 
-If an error occurred, you'll see it in the response.
+LSIF dump successfully uploaded. It will be converted asynchronously.
+To check the status, visit <link to your Sourcegraph instance LSIF status>
+```
+
+If an error occurred, you'll see it in the response. Possible errors include:
+
+- Unknown repository (404)
+- Invalid commit (404)
+- Invalid auth if LSIF enforce auth is set to true (401 for an invalid token or 404 if repository cannot be found on github)
+- Unexpected errors (500s) 
+- You'll see the job fail in the UI if the LSIF data is bad (malformed indexer) or we encounter a problem processing (e.g. system level bug, flaky connections, etc)
 
 ### Authentication
 
