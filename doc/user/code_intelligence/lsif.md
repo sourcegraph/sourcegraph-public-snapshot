@@ -1,16 +1,16 @@
-# LSIF
+# LSIF: Fast and precise code intelligence
 
 [LSIF](https://github.com/Microsoft/language-server-protocol/blob/master/indexFormat/specification.md) is a file format for precomputed code intelligence data. It provides fast and precise code intelligence, but needs to be periodically generated and uploaded to your Sourcegraph instance. LSIF is opt-in: repositories for which you have not uploaded LSIF data will continue to use the out-of-the-box code intelligence.
 
-> LSIF is supported in Sourcegraph 3.8 and up.
+> Precise code intelligence using LSIF is supported in Sourcegraph 3.8 and up.
 
 > For users who have a language server deployed, LSIF will take priority over the language server when LSIF data exists for a repository.
 
-## Generating and uploading LSIF data
+## Getting started
 
-You can upload LSIF data to a Sourcegraph instance using your existing [continuous integration infrastructure](./lsif_in_ci.md), or using [GitHub Actions](./lsif_on_github.md).
+Follow our [LSIF quickstart guide](lsif_quickstart.md) to manually generate and upload LSIF data for your repository. After you are satisfied with the result, you can upload LSIF data to a Sourcegraph instance using your existing [continuous integration infrastructure](lsif_in_ci.md), or using [GitHub Actions](lsif_on_github.md).
 
-## Enabling LSIF
+## Enabling LSIF on your Sourcegraph instance
 
 Go to your global settings at https://sourcegraph.example.com/site-admin/global-settings and enable LSIF:
 

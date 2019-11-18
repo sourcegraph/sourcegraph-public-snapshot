@@ -59,10 +59,10 @@ describe('Backend', () => {
         }
 
         const { locations } = util.filterNodeModules(
-            await ctx.backend.references('a', commit, 'src/index.ts', {
+            (await ctx.backend.references('a', util.createCommit(0), 'src/index.ts', {
                 line: 4,
                 character: 19,
-            })
+            })) || { locations: [] }
         )
 
         expect(locations).toContainEqual(util.createLocation('src/index.ts', 4, 16, 4, 19)) // def
@@ -86,10 +86,10 @@ describe('Backend', () => {
         }
 
         const { locations } = util.filterNodeModules(
-            await ctx.backend.references('b1', commit, 'src/index.ts', {
+            (await ctx.backend.references('b1', util.createCommit(0), 'src/index.ts', {
                 line: 3,
                 character: 16,
-            })
+            })) || { locations: [] }
         )
 
         expect(locations).toContainEqual(util.createRemoteLocation('a', commit, 'src/index.ts', 4, 16, 4, 19)) // def
@@ -113,10 +113,10 @@ describe('Backend', () => {
         }
 
         const { locations } = util.filterNodeModules(
-            await ctx.backend.references('a', commit, 'src/index.ts', {
+            (await ctx.backend.references('a', util.createCommit(0), 'src/index.ts', {
                 line: 0,
                 character: 17,
-            })
+            })) || { locations: [] }
         )
 
         expect(locations).toContainEqual(util.createLocation('src/index.ts', 0, 16, 0, 19)) // def
@@ -150,10 +150,10 @@ describe('Backend', () => {
         }
 
         const { locations } = util.filterNodeModules(
-            await ctx.backend.references('c1', commit, 'src/index.ts', {
+            (await ctx.backend.references('c1', util.createCommit(0), 'src/index.ts', {
                 line: 3,
                 character: 16,
-            })
+            })) || { locations: [] }
         )
 
         expect(locations).toContainEqual(util.createRemoteLocation('a', commit, 'src/index.ts', 0, 16, 0, 19)) // def

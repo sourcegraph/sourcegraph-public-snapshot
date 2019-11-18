@@ -4,9 +4,11 @@ import { GlobalCampaignListPage } from './list/GlobalCampaignListPage'
 import { CampaignDetails } from '../detail/CampaignDetails'
 import { IUser } from '../../../../../shared/src/graphql/schema'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
+import { ThemeProps } from '../../../../../shared/src/theme'
 
-interface Props extends RouteComponentProps<{}> {
+interface Props extends RouteComponentProps<{}>, ThemeProps {
     authenticatedUser: IUser
+    isSourcegraphDotCom: boolean
 }
 
 /**

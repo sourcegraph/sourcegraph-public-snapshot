@@ -3,7 +3,7 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 import { fromEvent, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
-import { FormatListBulletedIcon } from '../../../shared/src/components/icons' // TODO: Switch to mdi icon
+import { FormatListBulletedIcon } from '../../../shared/src/components/icons'
 import { Resizable } from '../../../shared/src/components/Resizable'
 import {
     Spacer,
@@ -109,7 +109,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                         id="explorer"
                         className={`repo-rev-sidebar ${this.props.className} ${
                             this.state.showSidebar ? `repo-rev-sidebar--open ${this.props.className}--open` : ''
-                        }`}
+                        } e2e-repo-rev-sidebar`}
                         tabClassName="tab-bar__tab--h5like"
                         onSelectTab={this.onSelectTab}
                     >

@@ -1,8 +1,21 @@
+import * as fs from 'mz/fs'
+import * as path from 'path'
 import * as zlib from 'mz/zlib'
-import { parseJsonLines, readGzippedJsonElements, splitLines } from './input'
+import rmfr from 'rmfr'
+import { parseJsonLines, readGzippedJsonElementsFromFile, splitLines } from './input'
 import { Readable } from 'stream'
 
 describe('readGzippedJsonElements', () => {
+    let tempPath!: string
+
+    beforeAll(async () => {
+        tempPath = await fs.mkdtemp('test-', { encoding: 'utf8' })
+    })
+
+    afterAll(async () => {
+        await rmfr(tempPath)
+    })
+
     it('should decode gzip', async () => {
         const lines = [
             { type: 'vertex', label: 'project' },
@@ -11,9 +24,17 @@ describe('readGzippedJsonElements', () => {
             { type: 'edge', label: 'moniker' },
         ]
 
+        const filename = path.join(tempPath, 'gzip.txt')
+
+        const chunks = []
+        for await (const chunk of Readable.from(lines.map(l => JSON.stringify(l)).join('\n')).pipe(zlib.createGzip())) {
+            chunks.push(chunk)
+        }
+
+        await fs.writeFile(filename, Buffer.concat(chunks))
+
         const elements: unknown[] = []
-        const input = Readable.from(lines.map(l => JSON.stringify(l)).join('\n'))
-        for await (const element of readGzippedJsonElements(input.pipe(zlib.createGzip()))) {
+        for await (const element of readGzippedJsonElementsFromFile(filename)) {
             elements.push(element)
         }
 
@@ -28,8 +49,20 @@ describe('readGzippedJsonElements', () => {
             '{"type": "edge", "label": "moniker"}',
         ]
 
-        const input = Readable.from(lines.join('\n'))
-        await expect(consume(readGzippedJsonElements(input))).rejects.toThrowError(new Error('incorrect header check'))
+        const filename = path.join(tempPath, 'nogzip.txt')
+        await fs.writeFile(filename, lines.join('\n'))
+
+        await expect(consume(readGzippedJsonElementsFromFile(filename))).rejects.toThrowError(
+            new Error('incorrect header check')
+        )
+    })
+
+    it('should throw an error on IO error', async () => {
+        const filename = path.join(tempPath, 'missing.txt')
+
+        await expect(consume(readGzippedJsonElementsFromFile(filename))).rejects.toThrowError(
+            new Error(`ENOENT: no such file or directory, open '${filename}'`)
+        )
     })
 })
 

@@ -42,7 +42,7 @@ RUN apk update && apk add --no-cache \
     # from our *Minimum Supported Version* which alone dictates
     # the features we can depend on. See this link for more information:
     # https://github.com/sourcegraph/sourcegraph/blob/master/doc/dev/postgresql.md#version-requirements
-    'bash=5.0.0-r0' 'postgresql-contrib=11.5-r1' 'postgresql=11.5-r1' \
+    'bash=5.0.0-r0' 'postgresql-contrib=11.6-r0' 'postgresql=11.6-r0' \
     'redis=3.2.12-r0' bind-tools ca-certificates git@edge \
     mailcap nginx openssh-client pcre su-exec tini nodejs-current=12.4.0-r0
 
@@ -69,7 +69,7 @@ RUN set -ex && \
     apk add --no-cache libc6-compat=1.1.24-r0 ca-certificates su-exec
 
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/grafana:10.0.3@sha256:4a5a6ca6e2b54d2c7d74132457f4c1ddc121890fa9003ff6cf7d774fdf0a1fa0 /usr/share/grafana /usr/share/grafana
+COPY --from=sourcegraph/grafana:10.0.5@sha256:bd332c36c5aa36942f502d8078e2b7d57eaf0fa945380fe43c30fcfc902f91bd /usr/share/grafana /usr/share/grafana
 
 # hadolint ignore=DL3022
 COPY --from=libsqlite3-pcre /sqlite3-pcre/pcre.so /libsqlite3-pcre.so
@@ -77,7 +77,10 @@ ENV LIBSQLITE3_PCRE /libsqlite3-pcre.so
 COPY . /
 
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/grafana:10.0.3@sha256:4a5a6ca6e2b54d2c7d74132457f4c1ddc121890fa9003ff6cf7d774fdf0a1fa0 /sg_config_grafana/provisioning/dashboards/sourcegraph/*json /sg_config_grafana/provisioning/dashboards/sourcegraph/
+COPY --from=sourcegraph/grafana:10.0.5@sha256:bd332c36c5aa36942f502d8078e2b7d57eaf0fa945380fe43c30fcfc902f91bd /sg_config_grafana/provisioning/dashboards/sourcegraph/*json /sg_config_grafana/provisioning/dashboards/sourcegraph/
+
+# hadolint ignore=DL3022
+COPY --from=wrouesnel/postgres_exporter:v0.7.0@sha256:785c919627c06f540d515aac88b7966f352403f73e931e70dc2cbf783146a98b /postgres_exporter /usr/local/bin/postgres_exporter
 
 RUN echo "hosts: files dns" > /etc/nsswitch.conf
 

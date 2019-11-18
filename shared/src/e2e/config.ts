@@ -11,7 +11,9 @@ export interface Config {
     gitHubClientSecret: string
     gitHubToken: string
     gitHubUserBobPassword: string
+    gitHubUserBobToken: string
     gitHubUserAmyPassword: string
+    gitLabToken: string
     gitLabClientID: string
     gitLabClientSecret: string
     gitLabUserAmyPassword: string
@@ -27,6 +29,7 @@ export interface Config {
     slowMo: number
     headless: boolean
     keepBrowser: boolean
+    bitbucketCloudUserBobAppPassword: string
 }
 
 interface Field<T = string> {
@@ -79,13 +82,23 @@ const configFields: ConfigFields = {
         description:
             'A GitHub personal access token that will be used to authenticate a GitHub external service. It does not need to have any scopes.',
     },
+    gitHubUserAmyPassword: {
+        envVar: 'GITHUB_USER_AMY_PASSWORD',
+        description: 'Password of the GitHub user sg-e2e-regression-test-amy, used to log in to Sourcegraph.',
+    },
     gitHubUserBobPassword: {
         envVar: 'GITHUB_USER_BOB_PASSWORD',
         description: 'Password of the GitHub user sg-e2e-regression-test-bob, used to log in to Sourcegraph.',
     },
-    gitHubUserAmyPassword: {
-        envVar: 'GITHUB_USER_AMY_PASSWORD',
-        description: 'Password of the GitHub user sg-e2e-regression-test-amy, used to log in to Sourcegraph.',
+    gitHubUserBobToken: {
+        envVar: 'GITHUB_USER_BOB_TOKEN',
+        description:
+            "GitHub personal access token with repo scope for user sg-e2e-regression-test-bob. Used to clone Bob's repositories to Sourcegraph.",
+    },
+    gitLabToken: {
+        envVar: 'GITLAB_TOKEN',
+        description:
+            'A GitLab access token that will be used to authenticate a GitLab external service. It requires API scope.',
     },
     gitLabClientID: {
         envVar: 'GITLAB_CLIENT_ID',
@@ -166,6 +179,11 @@ const configFields: ConfigFields = {
         parser: parseBool,
         description: 'Run Puppeteer in headless mode',
         defaultValue: false,
+    },
+    bitbucketCloudUserBobAppPassword: {
+        envVar: 'BITBUCKET_CLOUD_USER_BOB_APP_PASSWORD',
+        description:
+            'A Bitbucket Cloud app password associated with the Bitbucket Cloud user sg-e2e-regression-test-bob, that will be used to sync Bitbucket Cloud repositories.',
     },
 }
 

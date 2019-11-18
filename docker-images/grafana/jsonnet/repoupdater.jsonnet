@@ -51,9 +51,18 @@ local gitlabRequestsPanel = makeHttpRequestsPanel(titleValue='Gitlab requests', 
 local gitlabErrorRatePanel = makeHttpErrorRatePanel(titleValue='Gitlab', metricValue='src_gitlab_request');
 local gitlabDurationPercentilesPanel = makeHttpDurationPercentilesPanel(titleValue='Gitlab request', metricValue='src_gitlab_request');
 
+local bitbucketCloudRequestsPanel = makeHttpRequestsPanel(titleValue='bitbucket cloud requests', metricValue='src_bitbucket_cloud_request');
+local bitbucketCloudErrorRatePanel = makeHttpErrorRatePanel(titleValue='bitbucket cloud', metricValue='src_bitbucket_cloud_request');
+local bitbucketCloudDurationPercentilesPanel = makeHttpDurationPercentilesPanel(titleValue='bitbucket cloud request', metricValue='src_bitbucket_cloud_request');
+
+local phabricatorRequestsPanel = makeHttpRequestsPanel(titleValue='phabricator requests', metricValue='src_phabricator_request');
+local phabricatorErrorRatePanel = makeHttpErrorRatePanel(titleValue='phabricator', metricValue='src_phabricator_request');
+local phabricatorDurationPercentilesPanel = makeHttpDurationPercentilesPanel(titleValue='phabricator request', metricValue='src_phabricator_request');
+
 local handlerRequestsPanel = makeHttpRequestsPanel(titleValue='Http handler calls', metricValue='src_repoupdater_http_handler');
 local handlerErrorRatePanel = makeHttpErrorRatePanel(titleValue='Http handler', metricValue='src_repoupdater_http_handler');
 local handlerDurationPercentilesPanel = makeHttpDurationPercentilesPanel(titleValue='Http handler call', metricValue='src_repoupdater_http_handler');
+
 
 //
 // Dashboard Construction
@@ -61,5 +70,7 @@ local handlerDurationPercentilesPanel = makeHttpDurationPercentilesPanel(titleVa
 common.makeDashboard(title='Repoupdater to external services')
 .addRow(title='Http handler calls', panels=[handlerRequestsPanel, handlerErrorRatePanel, handlerDurationPercentilesPanel])
 .addRow(title='Github requests', panels=[githubRequestsPanel, githubErrorRatePanel, githubDurationPercentilesPanel])
-.addRow(title='Bitbucket requests', panels=[bitbucketRequestsPanel, bitbucketErrorRatePanel, bitbucketDurationPercentilesPanel])
 .addRow(title='Gitlab requests', panels=[gitlabRequestsPanel, gitlabErrorRatePanel, gitlabDurationPercentilesPanel])
+.addRow(title='Bitbucket requests', panels=[bitbucketRequestsPanel, bitbucketErrorRatePanel, bitbucketDurationPercentilesPanel])
+.addRow(title='Bitbucket Cloud requests', panels=[bitbucketCloudRequestsPanel, bitbucketCloudErrorRatePanel, bitbucketCloudDurationPercentilesPanel])
+.addRow(title='Phabricator requests', panels=[phabricatorRequestsPanel, phabricatorErrorRatePanel, phabricatorDurationPercentilesPanel])

@@ -21,6 +21,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )
 
 func init() {
@@ -48,9 +51,12 @@ func TestRunner(t *testing.T) {
 		"09d6921f5ccae24dc2cb3ca2cf263a05e547cf4f",
 	}
 
-	var rs []*repos.Repo
-	for i := 0; i < 3; i++ {
-		rs = append(rs, testRepo(i))
+	rs := []*repos.Repo{
+		testRepo(0, github.ServiceType),
+		testRepo(1, github.ServiceType),
+		testRepo(2, bitbucketserver.ServiceType),
+		// Unsupported for now, filtered out
+		testRepo(3, gitlab.ServiceType),
 	}
 
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
@@ -332,19 +338,21 @@ func wantNoJobs(plan *a8n.CampaignPlan, rs []*repos.Repo, revs []string) []*a8n.
 	return []*a8n.CampaignJob{}
 }
 
-func testRepo(num int) *repos.Repo {
+func testRepo(num int, serviceType string) *repos.Repo {
+	extSvcID := fmt.Sprintf("extsvc:%s:%d", serviceType, num)
+
 	return &repos.Repo{
 		Name:    fmt.Sprintf("repo-%d", num),
 		URI:     fmt.Sprintf("repo-%d", num),
 		Enabled: true,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          fmt.Sprintf("external-id-%d", num),
-			ServiceType: "github",
-			ServiceID:   "https://github.com/",
+			ServiceType: serviceType,
+			ServiceID:   "https://example.com/",
 		},
 		Sources: map[string]*repos.SourceInfo{
-			"extsvc:github:4": {
-				ID:       "extsvc:github:4",
+			extSvcID: {
+				ID:       extSvcID,
 				CloneURL: "https://secrettoken@github.com/sourcegraph/sourcegraph",
 			},
 		},

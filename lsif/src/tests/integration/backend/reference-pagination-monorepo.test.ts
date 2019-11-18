@@ -104,7 +104,7 @@ describe('Backend', () => {
         for (const { commit, refs } of testCases) {
             const fetch = async (paginationContext?: ReferencePaginationContext) =>
                 util.filterNodeModules(
-                    await backend.references(
+                    (await backend.references(
                         repository,
                         commit,
                         'a/src/index.ts',
@@ -113,7 +113,7 @@ describe('Backend', () => {
                             character: 17,
                         },
                         paginationContext
-                    )
+                    )) || { locations: [] }
                 )
 
             const { locations, cursor } = await fetch()
@@ -140,7 +140,7 @@ describe('Backend', () => {
 
         const fetch = async (paginationContext?: ReferencePaginationContext) =>
             util.filterNodeModules(
-                await backend.references(
+                (await backend.references(
                     repository,
                     c3,
                     'a/src/index.ts',
@@ -149,7 +149,7 @@ describe('Backend', () => {
                         character: 17,
                     },
                     paginationContext
-                )
+                )) || { locations: [] }
             )
 
         const { locations: locations0, cursor: cursor0 } = await fetch({ limit: 50 }) // all local

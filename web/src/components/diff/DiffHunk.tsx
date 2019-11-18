@@ -45,7 +45,22 @@ export const DiffHunk: React.FunctionComponent<{
     decorations: Record<'head' | 'base', DecorationMapByLine>
     location: H.Location
     history: H.History
-} & ThemeProps> = ({ fileDiffAnchor, decorations, hunk, lineNumbers, location, history, isLightTheme }) => {
+    /**
+     * Reflect selected line in url
+     *
+     * @default true
+     */
+    persistLines?: boolean
+} & ThemeProps> = ({
+    fileDiffAnchor,
+    decorations,
+    hunk,
+    lineNumbers,
+    location,
+    history,
+    persistLines = true,
+    isLightTheme,
+}) => {
     let oldLine = hunk.oldRange.startLine
     let newLine = hunk.newRange.startLine
     return (
@@ -98,7 +113,7 @@ export const DiffHunk: React.FunctionComponent<{
                                             data-line={oldLine - 1}
                                             data-part="base"
                                             id={oldAnchor}
-                                            onClick={() => history.push({ hash: oldAnchor })}
+                                            onClick={() => persistLines && history.push({ hash: oldAnchor })}
                                         />
                                     ) : (
                                         <td className="diff-hunk__num diff-hunk__num--empty" />
@@ -110,7 +125,7 @@ export const DiffHunk: React.FunctionComponent<{
                                             data-line={newLine - 1}
                                             data-part="head"
                                             id={newAnchor}
-                                            onClick={() => history.push({ hash: newAnchor })}
+                                            onClick={() => persistLines && history.push({ hash: newAnchor })}
                                         />
                                     ) : (
                                         <td className="diff-hunk__num diff-hunk__num--empty" />

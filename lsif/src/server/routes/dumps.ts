@@ -65,5 +65,21 @@ export function createDumpRouter(backend: Backend): express.Router {
         )
     )
 
+    router.delete(
+        '/dumps/:repository/:id',
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const { repository, id } = req.params
+                const dump = await backend.dump(parseInt(id, 10))
+                if (!dump || dump.repository !== decodeURIComponent(repository)) {
+                    throw Object.assign(new Error('LSIF dump not found'), { status: 404 })
+                }
+
+                await backend.deleteDump(dump)
+                res.status(204).send()
+            }
+        )
+    )
+
     return router
 }

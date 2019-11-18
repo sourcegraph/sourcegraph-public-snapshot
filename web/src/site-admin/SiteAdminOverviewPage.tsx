@@ -124,7 +124,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                         <>
                             {this.props.activation && this.props.activation.completed && (
                                 <Collapsible
-                                    title={`${setupPercentage < 100 ? 'Set up Sourcegraph' : 'Status'}`}
+                                    title={<>{setupPercentage < 100 ? 'Set up Sourcegraph' : 'Status'}</>}
                                     defaultExpanded={setupPercentage < 100}
                                     className="list-group-item"
                                     titleClassName="h5 mb-0 font-weight-normal p-2"
@@ -176,10 +176,12 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                             )}
                             {this.state.info.users > 1 && this.state.stats && (
                                 <Collapsible
-                                    title={`${this.state.stats.waus[1].userCount} ${pluralize(
-                                        'active user',
-                                        this.state.stats.waus[1].userCount
-                                    )} last week`}
+                                    title={
+                                        <>
+                                            {this.state.stats.waus[1].userCount}{' '}
+                                            {pluralize('active user', this.state.stats.waus[1].userCount)} last week
+                                        </>
+                                    }
                                     defaultExpanded={true}
                                     className="list-group-item"
                                     titleClassName="h5 mb-0 font-weight-normal p-2"

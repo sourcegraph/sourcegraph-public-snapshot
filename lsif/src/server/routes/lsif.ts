@@ -81,13 +81,14 @@ export function createLsifRouter(
         validation.validationMiddleware([
             validation.validateNonEmptyString('repository'),
             validation.validateNonEmptyString('commit').matches(commitPattern),
-            validation.validateOptionalString('root').customSanitizer(sanitizeRoot),
+            validation.validateOptionalString('root'),
             validation.validateOptionalBoolean('blocking'),
             validation.validateOptionalInt('maxWait'),
         ]),
         wrap(
             async (req: express.Request & { span?: Span }, res: express.Response): Promise<void> => {
-                const { repository, commit, root, blocking, maxWait }: UploadQueryArgs = req.query
+                const { repository, commit, root: rootRaw, blocking, maxWait }: UploadQueryArgs = req.query
+                const root = sanitizeRoot(rootRaw)
                 const ctx = createTracingContext(req, { repository, commit, root })
                 const filename = path.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR, uuid.v4())
                 const output = fs.createWriteStream(filename)
@@ -171,12 +172,30 @@ export function createLsifRouter(
                 const ctx = createTracingContext(req, { repository, commit })
 
                 switch (method) {
-                    case 'definitions':
-                        res.json(await backend.definitions(repository, commit, filePath, position, ctx))
+                    case 'definitions': {
+                        const result = await backend.definitions(repository, commit, filePath, position, ctx)
+                        if (result === undefined) {
+                            res.status(404).send()
+                            return
+                        }
+
+                        res.json(result)
                         break
+                    }
+
+                    case 'hover': {
+                        const result = await backend.hover(repository, commit, filePath, position, ctx)
+                        if (result === undefined) {
+                            res.status(404).send()
+                            return
+                        }
+
+                        res.json(result)
+                        break
+                    }
 
                     case 'references': {
-                        const { locations, cursor: endCursor } = await backend.references(
+                        const result = await backend.references(
                             repository,
                             commit,
                             filePath,
@@ -185,6 +204,12 @@ export function createLsifRouter(
                             ctx
                         )
 
+                        if (result === undefined) {
+                            res.status(404).send()
+                            return
+                        }
+
+                        const { locations, cursor: endCursor } = result
                         const encodedCursor = encodeCursor<ReferencePaginationCursor>(endCursor)
                         if (!encodedCursor) {
                             res.set('Link', nextLink(req, { limit, cursor: encodedCursor }))
@@ -193,10 +218,6 @@ export function createLsifRouter(
                         res.json(locations)
                         break
                     }
-
-                    case 'hover':
-                        res.json(await backend.hover(repository, commit, filePath, position, ctx))
-                        break
                 }
             }
         )

@@ -165,7 +165,11 @@ func (s *Service) runChangesetJob(
 			AuthorEmail: "automation@sourcegraph.com",
 			Date:        job.StartedAt,
 		},
-		Push: true,
+		// We use unified diffs, not git diffs, which means they're missing the
+		// `a/` and `/b` filename prefixes. `-p0` tells `git apply` to not
+		// expect and strip prefixes.
+		GitApplyArgs: []string{"-p0"},
+		Push:         true,
 	})
 
 	if err != nil {

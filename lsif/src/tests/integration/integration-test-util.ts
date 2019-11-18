@@ -145,12 +145,10 @@ export async function convertTestData(
 ): Promise<void> {
     // Create a filesystem read stream for the given test file. This will cover
     // the cases where `yarn test` is run from the root or from the lsif directory.
-    const input = fs.createReadStream(
-        path.join((await fs.exists('lsif')) ? 'lsif' : '', 'src/tests/integration/data', filename)
-    )
+    const fullFilename = path.join((await fs.exists('lsif')) ? 'lsif' : '', 'src/tests/integration/data', filename)
 
     const tmp = path.join(storageRoot, constants.TEMP_DIR, uuid.v4())
-    const { packages, references } = await convertLsif(input, tmp)
+    const { packages, references } = await convertLsif(fullFilename, tmp)
     const dump = await xrepoDatabase.addPackagesAndReferences(
         repository,
         commit,

@@ -156,7 +156,8 @@ local dashboardTemplatingVars =  {
 local timeRange = '$interval';
 
 local gitServerMetricFilter = 'host=~"$gitserver", instance=~"$client_instance", job=~"$client_job"';
-local repoUpdaterMetricFilter = 'instance=~"$client_instance", job=~"$client_job"';
+local clientMetricFilter = 'instance=~"$client_instance", job=~"$client_job"';
+
 
 //
 // Standard Panels
@@ -184,14 +185,29 @@ local gitserverDeadlineExceededRatePanel = common.makePanel(
 );
 
 
-local repoupdaterRequestsPanel = makeHttpRequestsPanel(titleValue='Repoupdater requests', metricValue='src_repoupdater_request', metricFilter=repoUpdaterMetricFilter);
-local repoupdaterErrorRatePanel = makeHttpErrorRatePanel(titleValue='Repoupdater', metricValue='src_repoupdater_request', metricFilter=repoUpdaterMetricFilter);
-local repoupdaterDurationPercentilesPanel = makeHttpDurationPercentilesPanel(titleValue='Repoupdater request', metricValue='src_repoupdater_request', metricFilter=repoUpdaterMetricFilter);
+local repoupdaterRequestsPanel = makeHttpRequestsPanel(titleValue='Repoupdater requests', metricValue='src_repoupdater_request', metricFilter=clientMetricFilter);
+local repoupdaterErrorRatePanel = makeHttpErrorRatePanel(titleValue='Repoupdater', metricValue='src_repoupdater_request', metricFilter=clientMetricFilter);
+local repoupdaterDurationPercentilesPanel = makeHttpDurationPercentilesPanel(titleValue='Repoupdater request', metricValue='src_repoupdater_request', metricFilter=clientMetricFilter);
+
+local frontendInternalRequestsPanel = makeHttpRequestsPanel(titleValue='frontend_internal requests', metricValue='src_frontend_internal_request', metricFilter=clientMetricFilter);
+local frontendInternalErrorRatePanel = makeHttpErrorRatePanel(titleValue='frontend_internal', metricValue='src_frontend_internal_request', metricFilter=clientMetricFilter);
+local frontendInternalDurationPercentilesPanel = makeHttpDurationPercentilesPanel(titleValue='frontend_internal request', metricValue='src_frontend_internal_request', metricFilter=clientMetricFilter);
+
+local textsearchRequestsPanel = makeHttpRequestsPanel(titleValue='textsearch requests', metricValue='src_textsearch_request', metricFilter=clientMetricFilter);
+local textsearchErrorRatePanel = makeHttpErrorRatePanel(titleValue='textsearch', metricValue='src_textsearch_request', metricFilter=clientMetricFilter);
+local textsearchDurationPercentilesPanel = makeHttpDurationPercentilesPanel(titleValue='textsearch request', metricValue='src_textsearch_request', metricFilter=clientMetricFilter);
+
+local zoektRequestsPanel = makeHttpRequestsPanel(titleValue='zoekt requests', metricValue='src_zoekt_request', metricFilter=clientMetricFilter);
+local zoektErrorRatePanel = makeHttpErrorRatePanel(titleValue='zoekt', metricValue='src_zoekt_request', metricFilter=clientMetricFilter);
+local zoektDurationPercentilesPanel = makeHttpDurationPercentilesPanel(titleValue='zoekt request', metricValue='src_zoekt_request', metricFilter=clientMetricFilter);
 
 //
 // Dashboard Construction
 
 common.makeDashboard(title='Cluster-Internal Network Activity, Client POV', extra=dashboardTemplatingVars)
+.addRow(title='Requests to Repoupdater', panels=[frontendInternalRequestsPanel, frontendInternalErrorRatePanel, frontendInternalDurationPercentilesPanel])
 .addRow(title='Requests to Repoupdater', panels=[repoupdaterRequestsPanel, repoupdaterErrorRatePanel, repoupdaterDurationPercentilesPanel])
+.addRow(title='Requests to Text Search', panels=[textsearchRequestsPanel, textsearchErrorRatePanel, textsearchDurationPercentilesPanel])
+.addRow(title='Requests to Zoekt', panels=[zoektRequestsPanel, zoektErrorRatePanel, zoektDurationPercentilesPanel])
 .addRow(title='Requests to Gitserver', panels=[gitserverRequestsPanel, gitserverErrorRatePanel, gitserverDurationPercentilesPanel])
 .addRow(title='Requests to Gitserver', panels=[gitserverDeadlineExceededRatePanel])

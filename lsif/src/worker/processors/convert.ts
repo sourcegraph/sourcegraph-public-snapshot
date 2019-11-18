@@ -26,12 +26,11 @@ export const createConvertJobProcessor = (
     ctx: TracingContext
 ): Promise<void> => {
     await logAndTraceCall(ctx, 'converting LSIF data', async (ctx: TracingContext) => {
-        const input = fs.createReadStream(filename)
         const tempFile = path.join(settings.STORAGE_ROOT, constants.TEMP_DIR, path.basename(filename))
 
         try {
             // Create database in a temp path
-            const { packages, references } = await convertLsif(input, tempFile, ctx)
+            const { packages, references } = await convertLsif(filename, tempFile, ctx)
 
             // Add packages and references to the xrepo db
             const dump = await logAndTraceCall(ctx, 'populating cross-repo database', () =>

@@ -22,6 +22,9 @@
 
     &__icon {
         flex: 0 0 auto;
+        $width-height: 1.25rem !important;
+        height: $width-height;
+        width: $width-height;
     }
 
     &__title {

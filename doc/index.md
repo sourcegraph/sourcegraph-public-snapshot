@@ -4,7 +4,7 @@
 
 ## Quickstart guide
 
-It takes less than 5 minutes to run and install [Sourcegraph Core](https://about.sourcegraph.com/pricing) for free using Docker:
+It takes less than 5 minutes to run and install Sourcegraph using Docker:
 
 <!--
   DO NOT CHANGE THIS TO A CODEBLOCK.
