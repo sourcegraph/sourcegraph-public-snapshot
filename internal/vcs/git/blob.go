@@ -52,7 +52,7 @@ func NewFileReader(ctx context.Context, repo gitserver.Repo, commit api.CommitID
 	name = util.Rel(name)
 	br, err := newBlobReader(ctx, repo, commit, name)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "getting blobReader for %q", name)
 	}
 	return br, nil
 }
