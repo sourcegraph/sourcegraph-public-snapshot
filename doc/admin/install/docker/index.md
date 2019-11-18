@@ -45,6 +45,15 @@ To achieve better performance, you can do any of the following:
   --volume ~/.sourcegraph/data:/var/opt/sourcegraph:delegated
   ```
 
+### Testing Sourcegraph on Windows
+
+Sourcegraph can be **tested** on Windows 10 using roughly the same steps provided above, but data will not be retained after server restarts ([this is due to a limitation of Docker on Windows](https://github.com/docker/for-win/issues/39#issuecomment-371942845)).
+
+1. [Install Docker for Windows](https://docs.docker.com/docker-for-windows/install/)
+2. Using a command prompt, follow the same [installation steps provided above](#install-sourcegraph-with-docker) but remove the `--volume` arguments. For example by pasting this:
+
+<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 2633:2633 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> <span class="virtual-br"></span> sourcegraph/server:3.9.4</code></pre>
+
 ## Insiders build
 
 To test new development builds of Sourcegraph (triggered by commits to master), change the tag to `insiders` in the `docker run` command.
