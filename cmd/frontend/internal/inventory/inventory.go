@@ -47,7 +47,7 @@ const maxTokenSize = 1024 * 1024
 const scanBufferSize = 16 * 1024
 
 var bufPool = sync.Pool{
-	// We return a pointer to a slice here to avoid an allocation
+	// We return a pointer to a slice here to avoid an allocation.
 	// See https://staticcheck.io/docs/checks#SA6002
 	New: func() interface{} { b := make([]byte, scanBufferSize); return &b },
 }
