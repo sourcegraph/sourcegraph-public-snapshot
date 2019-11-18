@@ -3,7 +3,6 @@ package client
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -11,11 +10,10 @@ import (
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintel/lsifserver"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/tomnomnom/linkheader"
-	"golang.org/x/net/context/ctxhttp"
 )
 
 var httpClient = &http.Client{
@@ -87,33 +85,39 @@ func buildURL(path string, query url.Values) (string, error) {
 // response is expected to have a 200-level status code. If an error is returned, the
 // HTTP response body has been closed.
 func traceRequest(ctx context.Context, method, url string, body io.ReadCloser) (resp *http.Response, err error) {
-	tr, ctx := trace.New(ctx, "lsifRequest", fmt.Sprintf("url: %s", url))
+	span, ctx := opentracing.StartSpanFromContext(ctx, "lsifserver.client.traceRequest")
 	defer func() {
-		tr.SetError(err)
-		tr.Finish()
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
 	}()
 
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return
 	}
+	req.Header.Set("Content-Type", "application/json")
 	req = req.WithContext(ctx)
 
 	req, ht := nethttp.TraceRequest(
-		opentracing.GlobalTracer(),
+		span.Tracer(),
 		req,
 		nethttp.OperationName("LSIF client"),
 		nethttp.ClientTrace(false),
 	)
 	defer ht.Finish()
 
-	resp, err = ctxhttp.Do(ctx, httpClient, req)
+	// Do not use ctxhttp.Do here as it will re-wrap the request
+	// with a context and this will causes the ot-headers not to
+	// propagate correctly.
+	resp, err = httpClient.Do(req)
 	if err != nil {
 		if ctx.Err() != nil {
 			err = ctx.Err()
 		}
-		err = errors.Wrap(err, "lsif request failed")
-		return
+		return nil, errors.Wrap(err, "lsif request failed")
 	}
 
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
