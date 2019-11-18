@@ -143,7 +143,7 @@ func (c *comby) generateDiff(ctx context.Context, repo api.RepoName, commit api.
 			result.WriteRune('\n')
 		}
 
-		header := fmt.Sprintf("diff a/%s b/%s\n", parsed.OrigName, parsed.NewName)
+		header := fmt.Sprintf("diff %s %s\n", parsed.OrigName, parsed.NewName)
 		result.WriteString(header)
 		result.WriteString(raw.Diff)
 	}
