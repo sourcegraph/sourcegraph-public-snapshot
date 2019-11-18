@@ -24,20 +24,20 @@ var httpClient = &http.Client{
 
 // BuildAndTraceRequest builds a URL and performs a request. This is a convenience wrapper
 // around BuildURL and TraceRequest.
-func BuildAndTraceRequest(ctx context.Context, path string, query url.Values) (*http.Response, error) {
+func BuildAndTraceRequest(ctx context.Context, method, path string, query url.Values, body io.ReadCloser) (*http.Response, error) {
 	url, err := buildURL(path, query)
 	if err != nil {
 		return nil, err
 	}
 
-	return traceRequest(ctx, url)
+	return traceRequest(ctx, method, url, body)
 }
 
 // TraceRequestAndUnmarshalPayload builds a URL, performs a request, and populates
 // the given payload with the response body. This is a convenience wrapper around
 // BuildURL, TraceRequest, and UnmarshalPayload.
-func TraceRequestAndUnmarshalPayload(ctx context.Context, path string, query url.Values, payload interface{}) error {
-	resp, err := BuildAndTraceRequest(ctx, path, query)
+func TraceRequestAndUnmarshalPayload(ctx context.Context, method, path string, query url.Values, body io.ReadCloser, payload interface{}) error {
+	resp, err := BuildAndTraceRequest(ctx, method, path, query, body)
 	if err != nil {
 		return err
 	}
@@ -92,7 +92,7 @@ func traceRequest(ctx context.Context, url string) (resp *http.Response, err err
 		tr.Finish()
 	}()
 
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return
 	}
