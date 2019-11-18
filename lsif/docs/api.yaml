@@ -374,6 +374,22 @@ paths:
                 $ref: '#/components/schemas/Job'
         '404':
           description: Not Found
+    delete:
+      description: Delete an LSIF job by its identifier.
+      tags:
+        - Jobs
+      parameters:
+        - name: id
+          in: path
+          description: The job identifier.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: No Content
+        '404':
+          description: Not Found
 components:
   schemas:
     Position:
