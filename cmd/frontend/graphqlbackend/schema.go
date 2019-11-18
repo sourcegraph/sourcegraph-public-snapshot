@@ -1226,9 +1226,15 @@ type Query {
     # Look up a namespace by ID.
     namespace(id: ID!): Namespace
 
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
     # Lookup an LSIF dump by ID.
     lsifDump(id: ID!): LSIFDump
 
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
     # Retrieve the LSIF dumps for a repository.
     lsifDumps(
         # The repository ID that this LSIF dump belongs to.
@@ -1253,12 +1259,21 @@ type Query {
         after: String
     ): LSIFDumpConnection!
 
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
     # Retrieve counts of jobs by state in the LSIF work queue.
     lsifJobStats: LSIFJobStats!
 
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
     # Look up an LSIF job by ID.
     lsifJob(id: ID!): LSIFJob
 
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
     # Search for LSIF jobs by state and query term.
     lsifJobs(
         # The state of returned jobs.
