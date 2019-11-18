@@ -149,8 +149,7 @@ describe('External services API', () => {
         'headless',
         'keepBrowser',
         'logStatusMessages',
-        'bitbucketCloudUsername',
-        'bitbucketCloudAppPassword'
+        'bitbucketCloudUserBobAppPassword'
     )
 
     const gqlClient = createGraphQLClient({
@@ -203,16 +202,15 @@ describe('External services API', () => {
                 uniqueDisplayName,
                 config: {
                     url: 'https://bitbucket.org',
-                    username: config.bitbucketCloudUsername,
-                    appPassword: config.bitbucketCloudAppPassword,
+                    username: 'sg-e2e-regression-test-bob',
+                    appPassword: config.bitbucketCloudUserBobAppPassword,
+                    repositoryPathPattern: '{nameWithOwner}',
                 },
             }
             const repos = [
-                'bitbucket.org/sourcegraph-demo/getsentry-sentry',
-                'bitbucket.org/sourcegraph-demo/golang-go',
-                'bitbucket.org/sourcegraph-demo/jenkinsci-jenkins',
-                'bitbucket.org/sourcegraph-demo/moby-buildkit',
-                'bitbucket.org/sourcegraph-demo/sourcegraph-sourcegraph',
+                'sg-e2e-regression-test-bob/jsonrpc2',
+                'sg-e2e-regression-test-bob/codeintellify',
+                'sg-e2e-regression-test-bob/mux',
             ]
             await ensureNoTestExternalServices(gqlClient, { ...externalServiceInput, deleteIfExist: true })
             await waitForRepos(gqlClient, repos, config, true)
@@ -227,13 +225,13 @@ describe('External services API', () => {
                 id,
                 config: JSON.stringify({
                     ...externalServiceInput.config,
-                    exclude: [{ name: 'sourcegraph-demo/sourcegraph-sourcegraph' }],
+                    exclude: [{ name: 'sg-e2e-regression-test-bob/jsonrpc2' }],
                 }),
             })
             // Check that the excluded repository is no longer synced
-            await waitForRepos(gqlClient, ['bitbucket.org/sourcegraph-demo/sourcegraph-sourcegraph'], config, true)
+            await waitForRepos(gqlClient, ['sg-e2e-regression-test-bob/jsonrpc2'], config, true)
         },
-        2 * 60 * 1000 // 2 minutes timeout: Bitbucket Cloud repositories are slow to clone.
+        30 * 1000
     )
 })
 
