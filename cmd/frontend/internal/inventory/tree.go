@@ -28,6 +28,11 @@ type Context struct {
 
 // Tree computes the inventory of languages for a tree. It caches the inventories of subtrees.
 func (c *Context) Tree(ctx context.Context, tree os.FileInfo) (inv Inventory, err error) {
+	buf := make([]byte, fileReadBufferSize, fileReadBufferSize)
+	return c.tree(ctx, tree, buf)
+}
+
+func (c *Context) tree(ctx context.Context, tree os.FileInfo, buf []byte) (inv Inventory, err error) {
 	// Get and set from the cache.
 	if c.CacheGet != nil {
 		if inv, ok := c.CacheGet(tree); ok {
@@ -54,7 +59,7 @@ func (c *Context) Tree(ctx context.Context, tree os.FileInfo) (inv Inventory, er
 			if err != nil {
 				return Inventory{}, errors.Wrap(err, "getting file reader")
 			}
-			lang, err := getLang(ctx, e, rc)
+			lang, err := getLang(ctx, e, buf, rc)
 			if err != nil {
 				return Inventory{}, errors.Wrapf(err, "inventory file %q", e.Name())
 			}
@@ -71,7 +76,7 @@ func (c *Context) Tree(ctx context.Context, tree os.FileInfo) (inv Inventory, er
 			}
 
 		case e.Mode().IsDir(): // subtree
-			entryInv, err := c.Tree(ctx, e)
+			entryInv, err := c.tree(ctx, e, buf)
 			if err != nil {
 				return Inventory{}, errors.Wrapf(err, "inventory tree %q", e.Name())
 			}

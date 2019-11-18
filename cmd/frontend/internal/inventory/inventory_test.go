@@ -30,7 +30,7 @@ func TestGetLang_language(t *testing.T) {
 	}
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
-			lang, err := getLang(context.Background(), test.file, nil)
+			lang, err := getLang(context.Background(), test.file, make([]byte, fileReadBufferSize), nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -88,7 +88,7 @@ func TestGet_readFile(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.file.Name(), func(t *testing.T) {
 			rc := ioutil.NopCloser(bytes.NewReader([]byte(test.file.(fi).Contents)))
-			lang, err := getLang(context.Background(), test.file, rc)
+			lang, err := getLang(context.Background(), test.file, make([]byte, fileReadBufferSize), rc)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -123,12 +123,13 @@ func BenchmarkGetLang(b *testing.B) {
 	rc := &nopReadCloser{
 		Reader: r,
 	}
+	buf := make([]byte, fileReadBufferSize)
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		for _, file := range files {
 			data := dataMap[file.Name()]
 			r.Reset(data)
-			_, err = getLang(context.Background(), file, rc)
+			_, err = getLang(context.Background(), file, buf, rc)
 			if err != nil {
 				b.Fatal(err)
 			}

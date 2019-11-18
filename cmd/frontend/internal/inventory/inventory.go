@@ -3,14 +3,11 @@
 package inventory
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
-	"sync"
 
 	"github.com/pkg/errors"
 	"github.com/src-d/enry/v2"
@@ -37,23 +34,12 @@ type Lang struct {
 	TotalLines uint64 `json:"TotalLines,omitempty"`
 }
 
-// minFileBytes is the minimum byte size prefix for each file to read when using file contents for
-// language detection.
-const minFileBytes = 16 * 1024
+// fileReadBufferSize is the size of the buffer we'll use while reading file contents
+const fileReadBufferSize = 16 * 1024
 
-// maxTokenSize is the maximum size of a token when scanning lines.
-const maxTokenSize = 1024 * 1024
+var newLine = []byte{'\n'}
 
-// scanBufferSize is the initial size of the buffer used when counting lines.
-const scanBufferSize = 16 * 1024
-
-var scanBufPool = sync.Pool{
-	// We return a pointer to a slice here to avoid an allocation.
-	// See https://staticcheck.io/docs/checks#SA6002
-	New: func() interface{} { b := make([]byte, scanBufferSize); return &b },
-}
-
-func getLang(ctx context.Context, file os.FileInfo, rc io.ReadCloser) (*Lang, error) {
+func getLang(ctx context.Context, file os.FileInfo, buf []byte, rc io.ReadCloser) (*Lang, error) {
 	if rc != nil {
 		defer rc.Close()
 	}
@@ -61,11 +47,7 @@ func getLang(ctx context.Context, file os.FileInfo, rc io.ReadCloser) (*Lang, er
 		return nil, nil
 	}
 
-	var (
-		lang Lang
-		data []byte
-		err  error
-	)
+	lang := Lang{}
 
 	// In many cases, GetLanguageByFilename can detect the language conclusively just from the
 	// filename. If not, we pass a subset of the file contents for analysis.
@@ -73,35 +55,29 @@ func getLang(ctx context.Context, file os.FileInfo, rc io.ReadCloser) (*Lang, er
 	if !safe {
 		// Detect language
 		if rc != nil {
-			r := io.LimitReader(rc, minFileBytes)
-			data, err = ioutil.ReadAll(r)
-			if err != nil {
-				return nil, err
+			n, err := rc.Read(buf)
+			if err != nil && err != io.EOF {
+				return nil, errors.Wrap(err, "reading initial file data")
 			}
+			lang.TotalLines += uint64(bytes.Count(buf[:n], newLine))
+			matchedLang = enry.GetLanguage(file.Name(), buf[:n])
 		}
-		// NOTE: It seems that calling enry.GetLanguage with no content
-		// returns a different result to enry.GetLanguageByExtension.
-		// For example:
-		//     enry.GetLanguageByExtension("test.m") -> "Limbo"
-		//     enry.GetLanguage("test.m", nil) -> "MATLAB"
-		// We continue to send zero content here to maintain backwards
-		// compatibility as we have tests that rely on this behavior
-		matchedLang = enry.GetLanguage(file.Name(), data)
 	}
 	lang.Name = matchedLang
 	lang.TotalBytes = uint64(file.Size())
 	if rc != nil {
-		// Count lines
-		scanner := bufio.NewScanner(io.MultiReader(bytes.NewReader(data), rc))
-		buf := *(scanBufPool.Get().(*[]byte))
-		defer scanBufPool.Put(&buf)
-		buf = buf[0:0]
-		scanner.Buffer(buf, maxTokenSize)
-		for scanner.Scan() {
-			lang.TotalLines++
-		}
-		if scanner.Err() != nil {
-			return nil, errors.Wrap(scanner.Err(), "scanning file")
+		for {
+			n, err := rc.Read(buf)
+			lang.TotalLines += uint64(bytes.Count(buf[:n], newLine))
+			if err == io.EOF {
+				if !bytes.HasSuffix(buf, []byte{'\n'}) {
+					// Add final line
+					lang.TotalLines++
+				}
+				break
+			} else if err != nil {
+				return nil, errors.Wrap(err, "reading lines")
+			}
 		}
 	}
 	return &lang, nil
