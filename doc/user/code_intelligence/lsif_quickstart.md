@@ -48,7 +48,7 @@ If an error occurred, you'll see it in the response. Possible errors include:
 - Invalid commit (404)
 - Invalid auth if `lsifEnforceAuth` is `true` (401 for an invalid token or 404 if the repository cannot be found on GitHub.com)
 - Unexpected errors (500s) 
-- You'll see the job fail in the UI if the LSIF data is bad (malformed indexer) or we encounter a problem processing (e.g. system level bug, flaky connections, etc)
+- LSIF processing failures for a repository are listed in **Repository settings > Code intelligence > Activity for this repository**. Failures can occur if the LSIF data is invalid (e.g., malformed indexer), or problems were encountered during processing (e.g., system-level bug, flaky connections, etc).
 
 ### Authentication
 
