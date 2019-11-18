@@ -63,12 +63,6 @@ type Syncer struct {
 // Run runs the Sync at the specified interval.
 func (s *Syncer) Run(ctx context.Context, interval time.Duration) error {
 	for ctx.Err() == nil {
-		if s.PreSync != nil {
-			if err := s.PreSync(ctx); err != nil && s.Logger != nil {
-				s.Logger.Error("PreSync", "error", err)
-			}
-		}
-
 		if err := s.Sync(ctx); err != nil && s.Logger != nil {
 			s.Logger.Error("Syncer", "error", err)
 		}
@@ -90,6 +84,12 @@ func (s *Syncer) TriggerSync() {
 
 // Sync synchronizes the repositories.
 func (s *Syncer) Sync(ctx context.Context) (err error) {
+	if s.PreSync != nil {
+		if err := s.PreSync(ctx); err != nil && s.Logger != nil {
+			s.Logger.Error("PreSync", "error", err)
+		}
+	}
+
 	var diff Diff
 
 	ctx, save := s.observe(ctx, "Syncer.Sync", "")
