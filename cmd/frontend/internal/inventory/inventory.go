@@ -42,11 +42,12 @@ type Lang struct {
 const minFileBytes = 16 * 1024
 
 // maxTokenSize is the maximum size of a token when scanning lines.
-const maxTokenSize = 1024 * 1024 
+const maxTokenSize = 1024 * 1024
+
 // scanBufferSize is the initial size of the buffer used when counting lines.
 const scanBufferSize = 16 * 1024
 
-var bufPool = sync.Pool{
+var scanBufPool = sync.Pool{
 	// We return a pointer to a slice here to avoid an allocation.
 	// See https://staticcheck.io/docs/checks#SA6002
 	New: func() interface{} { b := make([]byte, scanBufferSize); return &b },
@@ -91,19 +92,19 @@ func getLang(ctx context.Context, file os.FileInfo, rc io.ReadCloser) (Lang, err
 	lang.TotalBytes = uint64(file.Size())
 	if rc != nil {
 		// Count lines
-		var linecount int
+		var lineCount int
 		scanner := bufio.NewScanner(io.MultiReader(bytes.NewReader(data), rc))
-		buf := *(bufPool.Get().(*[]byte))
-		defer bufPool.Put(&buf)
+		buf := *(scanBufPool.Get().(*[]byte))
+		defer scanBufPool.Put(&buf)
 		buf = buf[0:0]
 		scanner.Buffer(buf, maxTokenSize)
 		for scanner.Scan() {
-			linecount++
+			lineCount++
 		}
 		if scanner.Err() != nil {
 			return lang, errors.Wrap(scanner.Err(), "scanning file")
 		}
-		lang.TotalLines = uint64(linecount)
+		lang.TotalLines = uint64(lineCount)
 	}
 	return lang, nil
 }
