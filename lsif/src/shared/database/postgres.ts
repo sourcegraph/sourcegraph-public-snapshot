@@ -86,7 +86,7 @@ export async function createPostgresConnection(configuration: Configuration, log
 function connect(connectionOptions: PostgresConnectionCredentialsOptions, logger: Logger): Promise<Connection> {
     return pRetry(
         () => {
-            logger.debug('connecting to cross-repository database')
+            logger.debug('Connecting to cross-repository database')
             return connectPostgres(connectionOptions, '')
         },
         {
@@ -127,11 +127,11 @@ export function connectPostgres(
  */
 function waitForMigrations(connection: Connection, logger: Logger): Promise<void> {
     const check = async (): Promise<void> => {
-        logger.debug('checking database version', { requiredVersion: MINIMUM_MIGRATION_VERSION })
+        logger.debug('Checking database version', { requiredVersion: MINIMUM_MIGRATION_VERSION })
 
         const version = parseInt(await getMigrationVersion(connection), 10)
         if (isNaN(version) || version < MINIMUM_MIGRATION_VERSION) {
-            throw new Error('cross-repository database not up to date')
+            throw new Error('Cross-repository database not up to date')
         }
     }
 

@@ -16,5 +16,7 @@ export function startMetricsServer(logger: Logger): void {
         res.end(promClient.register.metrics())
     })
 
-    app.listen(settings.WORKER_METRICS_PORT, () => logger.debug('listening', { port: settings.WORKER_METRICS_PORT }))
+    app.listen(settings.WORKER_METRICS_PORT, () =>
+        logger.debug('Worker metrics server listening', { port: settings.WORKER_METRICS_PORT })
+    )
 }

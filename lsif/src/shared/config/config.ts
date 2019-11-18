@@ -88,7 +88,7 @@ async function updateConfiguration(logger: Logger, onChange: (configuration: Con
             // given the frontend enough time to initialize (in case other services start up before
             // the frontend), to reduce log spam.
             if (Date.now() - start > settings.DELAY_BEFORE_UNREACHABLE_LOG * 1000 || error.code !== 'ECONNREFUSED') {
-                logger.error('failed to retrieve configuration from frontend', { error })
+                logger.error('Failed to retrieve configuration from frontend', { error })
             }
         }
 

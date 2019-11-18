@@ -92,10 +92,10 @@ export function createLsifRouter(
                 const ctx = createTracingContext(req, { repository, commit, root })
                 const filename = path.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR, uuid.v4())
                 const output = fs.createWriteStream(filename)
-                await logAndTraceCall(ctx, 'uploading dump', () => pipeline(req, output))
+                await logAndTraceCall(ctx, 'Uploading dump', () => pipeline(req, output))
 
                 // Enqueue convert job
-                logger.debug('enqueueing convert job', { repository, commit, root })
+                logger.debug('Enqueueing convert job', { repository, commit, root })
                 const args = { repository, commit, root, filename }
                 const job = await enqueue(queue, 'convert', args, {}, tracer, ctx.span)
 
