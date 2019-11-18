@@ -41,7 +41,8 @@ type Lang struct {
 // language detection.
 const minFileBytes = 16 * 1024
 
-const maxTokenSize = 1024 * 1024 // max token size when scanning lines
+// maxTokenSize is the maximum size of a token when scanning lines.
+const maxTokenSize = 1024 * 1024 
 const scanBufferSize = 16 * 1024 // initial size of the buffer used when counting lines
 
 var bufPool = sync.Pool{
