@@ -1,9 +1,9 @@
-import { shave } from './strings'
+import { dedupeWhitespace } from './strings'
 
 describe('utils/string', () => {
-    describe('shave()', () => {
-        it('turns trailing whitespace into a single whitespace', () => {
-            expect(shave('    a    b   c   d   ')).toBe(' a b c d ')
+    describe(`${dedupeWhitespace.name}()`, () => {
+        it('deduplicates whitespace', () => {
+            expect(dedupeWhitespace('    a    b   c   d   ')).toBe(' a b c d ')
         })
     })
 })

@@ -34,7 +34,7 @@ import { fetchSuggestions } from '../backend'
 import { isDefined } from '../../../../shared/src/util/types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import _ from 'lodash'
-import { shave } from '../../../../shared/src/util/strings'
+import { dedupeWhitespace } from '../../../../shared/src/util/strings'
 
 /**
  * The query input field is clobbered and updated to contain this subject's values, as
@@ -140,7 +140,8 @@ export class QueryInput extends React.Component<Props, State> {
                     // Also: Prevents suggestions from showing on page load because of componentUpdates.
                     filter(props => !!props.value.fromUserInput),
                     distinctUntilChanged(
-                        (previous, current) => shave(previous.value.query) === shave(current.value.query)
+                        (previous, current) =>
+                            dedupeWhitespace(previous.value.query) === dedupeWhitespace(current.value.query)
                     ),
                     switchMap(({ value: queryState }) => {
                         if (queryState.query.length === 0) {

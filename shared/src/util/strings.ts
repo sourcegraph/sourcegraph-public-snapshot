@@ -33,8 +33,9 @@ export function sanitizeClass(value: string): string {
 }
 
 /**
- * In the given string, turn trailing whitespace into single whitespace
+ * In the given string, deduplicate whitespace.
+ * E.g: " a  b  c  " => " a b c "
  */
-export function shave(value: string): string {
+export function dedupeWhitespace(value: string): string {
     return value.replace(/\s+/g, ' ')
 }
