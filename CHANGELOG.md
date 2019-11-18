@@ -15,6 +15,10 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+### Fixed
+
+- If an external service is changed the current repo-updater sync is restarted. Previously on large instances it may take a while for changes to external service to be reflected due to previous sync runs still running. [#6058](https://github.com/sourcegraph/sourcegraph/issues/6058)
+
 ### Removed
 
 ## 3.10.0
