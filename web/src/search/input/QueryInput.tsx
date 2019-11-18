@@ -486,10 +486,9 @@ export class QueryInput extends React.Component<Props, State> {
     }
 
     /** Only log when user has typed the first character into the input. */
-    private logFirstInput = (): void => {
+    private logFirstInput = _.once((): void => {
         eventLogger.log('SearchInitiated')
-        this.logFirstInput = () => {}
-    }
+    })
 
     private onInputChange: React.ChangeEventHandler<HTMLInputElement> = event => {
         this.logFirstInput()
