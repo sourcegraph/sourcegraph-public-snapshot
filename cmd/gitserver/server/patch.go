@@ -87,7 +87,8 @@ func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	cmd = exec.CommandContext(ctx, "git", "apply", "--cached")
+	applyArgs := append([]string{"apply", "--cached"}, req.GitApplyArgs...)
+	cmd = exec.CommandContext(ctx, "git", applyArgs...)
 	cmd.Dir = tmpRepoDir
 	cmd.Env = append(cmd.Env, tmpGitPathEnv, altObjectsEnv)
 	cmd.Stdin = strings.NewReader(req.Patch)
