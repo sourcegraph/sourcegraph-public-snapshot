@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -85,7 +86,7 @@ func buildURL(path string, query url.Values) (string, error) {
 // traceRequest performs a GET request to the given URL with the given context. The
 // response is expected to have a 200-level status code. If an error is returned, the
 // HTTP response body has been closed.
-func traceRequest(ctx context.Context, url string) (resp *http.Response, err error) {
+func traceRequest(ctx context.Context, method, url string, body io.ReadCloser) (resp *http.Response, err error) {
 	tr, ctx := trace.New(ctx, "lsifRequest", fmt.Sprintf("url: %s", url))
 	defer func() {
 		tr.SetError(err)
@@ -120,12 +121,12 @@ func traceRequest(ctx context.Context, url string) (resp *http.Response, err err
 	}
 
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	content, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return
 	}
 
-	err = errors.WithStack(&lsifError{StatusCode: resp.StatusCode, Message: string(body)})
+	err = errors.WithStack(&lsifError{StatusCode: resp.StatusCode, Message: string(content)})
 	return
 }
 
