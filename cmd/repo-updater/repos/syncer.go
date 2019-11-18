@@ -61,23 +61,39 @@ type Syncer struct {
 }
 
 // Run runs the Sync at the specified interval.
-func (s *Syncer) Run(ctx context.Context, interval time.Duration) error {
-	for ctx.Err() == nil {
+func (s *Syncer) Run(pctx context.Context, interval time.Duration) error {
+	for pctx.Err() == nil {
+		next := make(chan struct{})
+		ctx, cancel := context.WithCancel(pctx)
+
+		// This goroutine will close next after interval or when syncSignal is
+		// triggered.
+		go func() {
+			select {
+			case <-time.After(interval):
+			// We don't cancel since if interval fires before we are done we
+			// want to wait for the sync to complete.
+			case <-s.syncSignal.Watch():
+				// We restart the sync process if syncSignal fires.
+				cancel()
+			}
+			close(next)
+		}()
+
 		if err := s.Sync(ctx); err != nil && s.Logger != nil {
 			s.Logger.Error("Syncer", "error", err)
 		}
 
-		select {
-		case <-time.After(interval):
-		case <-s.syncSignal.Watch():
-		}
+		// Wait until interval has elapsed or a sync is triggered.
+		<-next
+		cancel()
 	}
 
-	return ctx.Err()
+	return pctx.Err()
 }
 
-// TriggerSync will run Sync as soon as the current Sync has finished running
-// or if no Sync is running.
+// TriggerSync will run Sync now. If a sync is currently running it is
+// cancelled.
 func (s *Syncer) TriggerSync() {
 	s.syncSignal.Trigger()
 }
