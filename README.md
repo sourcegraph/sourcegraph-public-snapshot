@@ -16,6 +16,12 @@ If there is something you'd like to see Sourcegraph be able to do from the CLI, 
 
 ## Installation
 
+### From source:
+
+```
+go get -u github.com/sourcegraph/src-cli/cmd/src
+```
+
 ### Mac OS:
 
 ```bash
