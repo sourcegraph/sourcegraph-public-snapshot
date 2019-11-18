@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -99,11 +100,7 @@ func TestGet_readFile(t *testing.T) {
 }
 
 type nopReadCloser struct {
-	r *bytes.Reader
-}
-
-func (n *nopReadCloser) Read(b []byte) (int, error) {
-	return n.r.Read(b)
+	io.Reader
 }
 
 func (n *nopReadCloser) Close() error {
@@ -120,16 +117,17 @@ func BenchmarkGetLang(b *testing.B) {
 		dataMap[f.Name()] = []byte(f.(fi).Contents)
 	}
 	b.Logf("Calling Get on %d files.", len(files))
+	r := bytes.NewReader(nil)
 	// We use a custom nopReadCloser here instead of ioutil.NopCloser so that we can reset the
 	// internal buffer and avoid allocations in the benchmark loop
 	rc := &nopReadCloser{
-		r: bytes.NewReader(nil),
+		Reader: r,
 	}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		for _, file := range files {
 			data := dataMap[file.Name()]
-			rc.r.Reset(data)
+			r.Reset(data)
 			_, err = getLang(context.Background(), file, rc)
 			if err != nil {
 				b.Fatal(err)
