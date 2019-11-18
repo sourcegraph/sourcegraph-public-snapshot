@@ -254,6 +254,7 @@ export const filterStaticSuggestions = (queryState: QueryState, suggestions: Sea
 export interface QueryState {
     query: string
     cursorPosition: number
+    event?: React.ChangeEvent<HTMLInputElement>
 }
 
 /**

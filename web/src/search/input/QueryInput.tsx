@@ -151,10 +151,10 @@ export class QueryInput extends React.Component<Props, State> {
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(
-                    // skip: prevent suggestions from showing when
-                    // component updates first time after page load
-                    skip(1),
                     debounceTime(typingDebounceTime),
+                    // Only show suggestions for when the user has typed (explicitly changed the query).
+                    // Also: Prevents suggestions from showing on page load because of componentUpdates.
+                    filter(props => !!props.value.event),
                     distinctUntilChanged(
                         (previous, current) => shave(previous.value.query) === shave(current.value.query)
                     ),
@@ -507,6 +507,7 @@ export class QueryInput extends React.Component<Props, State> {
     private onInputChange: React.ChangeEventHandler<HTMLInputElement> = event => {
         this.logFirstInput()
         this.inputValues.next({
+            event,
             query: event.currentTarget.value,
             cursorPosition: event.currentTarget.selectionStart || 0,
         })
