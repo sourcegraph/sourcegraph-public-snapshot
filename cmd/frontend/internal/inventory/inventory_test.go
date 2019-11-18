@@ -120,6 +120,8 @@ func BenchmarkGetLang(b *testing.B) {
 		dataMap[f.Name()] = []byte(f.(fi).Contents)
 	}
 	b.Logf("Calling Get on %d files.", len(files))
+	// We use a custom nopReadCloser here instead of ioutil.NopCloser so that we can reset the
+	// internal buffer and avoid allocations in the benchmark loop
 	rc := &nopReadCloser{
 		r: bytes.NewReader(nil),
 	}
