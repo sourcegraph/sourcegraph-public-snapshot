@@ -164,7 +164,7 @@ export class QueryInput extends React.Component<Props, State> {
                         // fuzzy-search suggestions, then return only static suggestions
                         if (
                             filterAndValueBeforeCursor &&
-                            !fuzzySearchFilters.includes(filterAndValueBeforeCursor.resolvedFilter)
+                            !fuzzySearchFilters.includes(filterAndValueBeforeCursor.resolvedFilterType)
                         ) {
                             return [{ suggestions: staticSuggestions }]
                         }
@@ -182,12 +182,12 @@ export class QueryInput extends React.Component<Props, State> {
                             map((suggestion): Suggestion => ({ ...suggestion, fromFuzzySearch: true })),
                             filter(suggestion => {
                                 // Only show fuzzy-suggestions that are relevant to the typed filter
-                                if (filterAndValueBeforeCursor?.resolvedFilter) {
-                                    switch (filterAndValueBeforeCursor.resolvedFilter) {
+                                if (filterAndValueBeforeCursor?.resolvedFilterType) {
+                                    switch (filterAndValueBeforeCursor.resolvedFilterType) {
                                         case SuggestionTypes.repohasfile:
                                             return suggestion.type === SuggestionTypes.file
                                         default:
-                                            return suggestion.type === filterAndValueBeforeCursor.resolvedFilter
+                                            return suggestion.type === filterAndValueBeforeCursor.resolvedFilterType
                                     }
                                 }
                                 return true

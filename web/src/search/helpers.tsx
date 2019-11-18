@@ -172,43 +172,46 @@ const splitStringAtPosition = (value: string, position: number): { firstPart: st
     lastPart: value.substring(position),
 })
 
-/**
- * Return type for getFilterAndValueBeforeCursor
- */
-interface FilterAndValueMatch<FilterType> {
+interface FilterAndValueMatch {
     /** The filter/value position on the query string */
     filterIndex: RegExpMatchArray['index']
     /** Filter match without any formatting */
-    filter: string
-    /**
-     * Formatted filter:
-     *     - Without '-', "-file" => "file"
-     *     - Resolved alias, "r" => "repo"
-     */
-    resolvedFilter: FilterType
+    matchedFilter: string
     /** Filter and value match, with format "filterType:value" */
     filterAndValue: string
     /** Only the value match after ':', "archived:Yes" => "Yes" */
     value: string
 }
 
+interface ValidFilterAndValueMatch extends FilterAndValueMatch {
+    resolvedFilterType: FiltersSuggestionTypes
+}
+
+/**
+ * Tries to resolve given string into a valid filter type.
+ */
+const resolveFilterType = (filter: string = ''): FiltersSuggestionTypes | undefined => {
+    const absoluteFilter = filter.replace(/^-/, '')
+    if (isValidFilterAlias(absoluteFilter)) {
+        return filterAliases[absoluteFilter]
+    }
+    return isValidFilter(absoluteFilter) ? absoluteFilter : undefined
+}
+
 /**
  * If a filter value is being typed, try to get its filter and value.
  * E.g: ("|" is the cursor): "lang:go repo:test|" => "repo:test"
  */
-export const getFilterAndValueBeforeCursor = (queryState: QueryState): FilterAndValueMatch<string> => {
+export const getFilterAndValueBeforeCursor = (queryState: QueryState): FilterAndValueMatch => {
     const { firstPart } = splitStringAtPosition(queryState.query, queryState.cursorPosition)
     // get string before ":" char until a space is found or start of string
     const match = firstPart.match(/([^\s:]+)?(:(\S?)+)?$/) || []
-    const [filterAndValue, filter] = match
+    const [filterAndValue, matchedFilter] = match
     const value = filterAndValue?.split(':')[1]?.trim()
-    const absoluteFilter = filter?.replace(/^-/, '')
-    const resolvedFilter = isValidFilterAlias(absoluteFilter) ? filterAliases[absoluteFilter] : absoluteFilter
     return {
-        filterIndex: match.index,
-        resolvedFilter,
-        filter,
         value,
+        matchedFilter,
+        filterIndex: match.index,
         filterAndValue: filterAndValue.trim(),
     }
 }
@@ -216,14 +219,10 @@ export const getFilterAndValueBeforeCursor = (queryState: QueryState): FilterAnd
 /**
  * Verifies that the matched filter is a valid Suggestion type, otherwise returns null.
  */
-export const validFilterAndValueBeforeCursor = (
-    queryState: QueryState
-): FilterAndValueMatch<SuggestionTypes> | null => {
+export const validFilterAndValueBeforeCursor = (queryState: QueryState): ValidFilterAndValueMatch | null => {
     const filterAndValueBeforeCursor = getFilterAndValueBeforeCursor(queryState)
-    if (isValidFilter(filterAndValueBeforeCursor.resolvedFilter)) {
-        return filterAndValueBeforeCursor as FilterAndValueMatch<SuggestionTypes>
-    }
-    return null
+    const resolvedFilterType = resolveFilterType(filterAndValueBeforeCursor.matchedFilter)
+    return resolvedFilterType ? { ...filterAndValueBeforeCursor, resolvedFilterType } : null
 }
 
 /**
@@ -234,20 +233,21 @@ export const validFilterAndValueBeforeCursor = (
  * returns suggestions (filter values) for the "case" filter.
  */
 export const filterStaticSuggestions = (queryState: QueryState, suggestions: SearchFilterSuggestions): Suggestion[] => {
-    const { resolvedFilter, filter, value, filterAndValue } = getFilterAndValueBeforeCursor(queryState)
+    const { matchedFilter, value, filterAndValue } = getFilterAndValueBeforeCursor(queryState)
+    const resolvedFilterType = resolveFilterType(matchedFilter)
 
     if (
         // suggest values for selected filter
-        isValidFilter(resolvedFilter) &&
-        resolvedFilter !== SuggestionTypes.filters &&
+        resolvedFilterType &&
+        resolvedFilterType !== SuggestionTypes.filters &&
         (value || filterAndValue.endsWith(':'))
     ) {
-        const suggestionsToShow = suggestions[resolvedFilter] ?? []
+        const suggestionsToShow = suggestions[resolvedFilterType] ?? []
         return suggestionsToShow.values.filter(suggestion => suggestion.value.startsWith(value))
     }
 
     // Suggest filter types
-    return suggestions.filters.values.filter(({ value }) => value.startsWith(filter))
+    return suggestions.filters.values.filter(({ value }) => value.startsWith(matchedFilter))
 }
 
 /**
@@ -353,19 +353,19 @@ export const formatQueryForFuzzySearch = (queryState: QueryState): string => {
         return queryState.query
     }
 
-    const { filterIndex, resolvedFilter, value } = filterAndValueBeforeCursor
+    const { filterIndex, resolvedFilterType, value } = filterAndValueBeforeCursor
 
-    let formattedFilterAndValue = resolvedFilter + ':' + value
+    let formattedFilterAndValue = resolvedFilterType + ':' + value
 
     // Check if filter should have its suggestions searched without influence from the rest of the query
-    if (isolatedFuzzySearchFilters.includes(resolvedFilter)) {
+    if (isolatedFuzzySearchFilters.includes(resolvedFilterType)) {
         return formattedFilterAndValue
     }
 
     // If filter has an alias that it should use just for fuzzy-search
-    const filterSearchAlias = filterAliasForSearch[resolvedFilter]
+    const filterSearchAlias = filterAliasForSearch[resolvedFilterType]
     if (filterSearchAlias) {
-        formattedFilterAndValue = formattedFilterAndValue.replace(resolvedFilter, filterSearchAlias)
+        formattedFilterAndValue = formattedFilterAndValue.replace(resolvedFilterType, filterSearchAlias)
     }
 
     // Split the query so `formattedFilterAndValue` can be placed in between

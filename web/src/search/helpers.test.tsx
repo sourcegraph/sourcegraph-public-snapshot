@@ -106,7 +106,7 @@ describe('search/helpers', () => {
         const getFilterSuggestionStartingWithR = () =>
             filterStaticSuggestions({ query: filterQuery, cursorPosition: 6 }, searchFilterSuggestions)
 
-        describe('filterSearchSuggestions()', () => {
+        describe(`${filterStaticSuggestions.name}()`, () => {
             test('filters suggestions for filters starting with "r"', () => {
                 const filtersStartingWithR = searchFilterSuggestions.filters.values
                     .map(filter => filter.value)
@@ -139,7 +139,7 @@ describe('search/helpers', () => {
             })
         })
 
-        describe('insertSuggestionInQuery()', () => {
+        describe(`${insertSuggestionInQuery.name}()`, () => {
             describe('inserts suggestions for a filter name', () => {
                 const [suggestion] = getFilterSuggestionStartingWithR().filter(({ value }) => value === 'repo:')
                 const { query: newQuery } = insertSuggestionInQuery('test r test', suggestion, 6)
@@ -153,14 +153,14 @@ describe('search/helpers', () => {
         })
     })
 
-    describe('getFilterTypedBeforeCursor', () => {
+    describe(`${validFilterAndValueBeforeCursor.name}()`, () => {
         const query = 'archived:yes QueryInput'
         it('returns values when a filter value is being typed', () => {
             expect(validFilterAndValueBeforeCursor({ query, cursorPosition: 10 })).toEqual({
                 filterIndex: 0,
                 filterAndValue: 'archived:y',
-                filter: 'archived',
-                resolvedFilter: 'archived',
+                matchedFilter: 'archived',
+                resolvedFilterType: 'archived',
                 value: 'y',
             })
         })
@@ -168,8 +168,8 @@ describe('search/helpers', () => {
             expect(validFilterAndValueBeforeCursor({ query, cursorPosition: 9 })).toEqual({
                 filterIndex: 0,
                 filterAndValue: 'archived:',
-                filter: 'archived',
-                resolvedFilter: 'archived',
+                matchedFilter: 'archived',
+                resolvedFilterType: 'archived',
                 value: '',
             })
         })
@@ -181,8 +181,8 @@ describe('search/helpers', () => {
             expect(validFilterAndValueBeforeCursor({ query, cursorPosition: query.length })).toEqual({
                 filterIndex: 0,
                 filterAndValue: query,
-                filter: 'l',
-                resolvedFilter: 'lang',
+                matchedFilter: 'l',
+                resolvedFilterType: 'lang',
                 value: 'go',
             })
         })
@@ -191,8 +191,8 @@ describe('search/helpers', () => {
             expect(validFilterAndValueBeforeCursor({ query, cursorPosition: query.length })).toEqual({
                 filterIndex: 0,
                 filterAndValue: query,
-                filter: '-f',
-                resolvedFilter: 'file',
+                matchedFilter: '-f',
+                resolvedFilterType: 'file',
                 value: 'package.json',
             })
         })
