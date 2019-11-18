@@ -32,10 +32,23 @@ $ src \
 
 If successful, you'll see the following message:
 
-> LSIF dump successfully uploaded. It will be converted asynchronously.
-> To check the status, visit <link to your Sourcegraph instance LSIF status>
+```
+Repository: <location of repository>
+Commit: <40-character commit associated with this LSIF upload>
+File: <LSIF data file>
+Root: <subdirectory in the repository where this LSIF dump was generated>
 
-If an error occurred, you'll see it in the response.
+LSIF dump successfully uploaded. It will be converted asynchronously.
+To check the status, visit <link to your Sourcegraph instance LSIF status>
+```
+
+Possible errors include:
+
+- Unknown repository (404): check your `-endpoint` and make sure you can view the repository on your Sourcegraph instance
+- Invalid commit (404): try visiting the repository at that commit on your Sourcegraph instance to trigger an update
+- Invalid auth only when [`lsifEnforceAuth`](https://docs.sourcegraph.com/admin/config/site_config#lsifEnforceAuth) is `true` (401 for an invalid token or 404 if the repository cannot be found on GitHub.com): make sure your token is valid and that the repository is correct
+- Unexpected errors (500s): [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new)
+- LSIF processing failures for a repository are listed in **Repository settings > Code intelligence > Activity for this repository**. Failures can occur if the LSIF data is invalid (e.g., malformed indexer output), or problems were encountered during processing (e.g., system-level bug, flaky connections, etc). Try again or [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new) if the problem persists.
 
 ### Authentication
 
