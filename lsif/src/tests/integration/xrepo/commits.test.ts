@@ -4,9 +4,9 @@ import { XrepoDatabase } from '../../../shared/xrepo/xrepo'
 
 describe('discoverAndUpdateCommit', () => {
     it('should update tracked commits', async () => {
-        const ca = util.createCommit(0)
-        const cb = util.createCommit(1)
-        const cc = util.createCommit(2)
+        const ca = util.createCommit()
+        const cb = util.createCommit()
+        const cc = util.createCommit()
 
         nock('http://gitserver1')
             .post('/exec')
@@ -35,8 +35,8 @@ describe('discoverAndUpdateCommit', () => {
     })
 
     it('should early-out if commit is tracked', async () => {
-        const ca = util.createCommit(0)
-        const cb = util.createCommit(1)
+        const ca = util.createCommit()
+        const cb = util.createCommit()
 
         const { connection, cleanup } = await util.createCleanPostgresDatabase()
 
@@ -61,7 +61,7 @@ describe('discoverAndUpdateCommit', () => {
     })
 
     it('should early-out if repository is unknown', async () => {
-        const ca = util.createCommit(0)
+        const ca = util.createCommit()
 
         const { connection, cleanup } = await util.createCleanPostgresDatabase()
 
@@ -86,11 +86,11 @@ describe('discoverAndUpdateCommit', () => {
 
 describe('discoverAndUpdateTips', () => {
     it('should update tips', async () => {
-        const ca = util.createCommit(0)
-        const cb = util.createCommit(1)
-        const cc = util.createCommit(2)
-        const cd = util.createCommit(3)
-        const ce = util.createCommit(4)
+        const ca = util.createCommit()
+        const cb = util.createCommit()
+        const cc = util.createCommit()
+        const cd = util.createCommit()
+        const ce = util.createCommit()
 
         nock('http://gitserver0')
             .post('/exec', { repo: 'test-repo', args: ['rev-parse', 'HEAD'] })
@@ -159,7 +159,7 @@ describe('discoverTips', () => {
             const xrepoDatabase = new XrepoDatabase('', connection)
 
             for (let i = 0; i < 15; i++) {
-                await xrepoDatabase.insertDump(`test-repo-${i}`, util.createCommit(0), '')
+                await xrepoDatabase.insertDump(`test-repo-${i}`, util.createCommit(), '')
             }
 
             const tips = await xrepoDatabase.discoverTips({
