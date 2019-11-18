@@ -13,7 +13,6 @@ import {
     map,
     toArray,
     catchError,
-    skip,
 } from 'rxjs/operators'
 import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
@@ -154,7 +153,7 @@ export class QueryInput extends React.Component<Props, State> {
                     debounceTime(typingDebounceTime),
                     // Only show suggestions for when the user has typed (explicitly changed the query).
                     // Also: Prevents suggestions from showing on page load because of componentUpdates.
-                    filter(props => !!props.value.event),
+                    filter(props => !!props.value.fromUserInput),
                     distinctUntilChanged(
                         (previous, current) => shave(previous.value.query) === shave(current.value.query)
                     ),
@@ -479,7 +478,10 @@ export class QueryInput extends React.Component<Props, State> {
                 ? suggestion
                 : { ...suggestion, value: suggestion.value + '$' }
 
-            this.inputValues.next(insertSuggestionInQuery(value.query, selectedSuggestion, suggestions.cursorPosition))
+            this.inputValues.next({
+                ...insertSuggestionInQuery(value.query, selectedSuggestion, suggestions.cursorPosition),
+                fromUserInput: true,
+            })
 
             return { suggestions: noSuggestions }
         })
@@ -507,7 +509,7 @@ export class QueryInput extends React.Component<Props, State> {
     private onInputChange: React.ChangeEventHandler<HTMLInputElement> = event => {
         this.logFirstInput()
         this.inputValues.next({
-            event,
+            fromUserInput: true,
             query: event.currentTarget.value,
             cursorPosition: event.currentTarget.selectionStart || 0,
         })

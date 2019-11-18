@@ -253,8 +253,13 @@ export const filterStaticSuggestions = (queryState: QueryState, suggestions: Sea
  */
 export interface QueryState {
     query: string
+    /** Where the cursor should be placed in search input */
     cursorPosition: number
-    event?: React.ChangeEvent<HTMLInputElement>
+    /**
+     * Used to know when the user has typed in the query or selected a suggestion.
+     * Prevents fetching/showing suggestions on every component update.
+     */
+    fromUserInput?: true
 }
 
 /**
