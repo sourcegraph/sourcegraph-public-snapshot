@@ -33,7 +33,7 @@ export function sanitizeClass(value: string): string {
 }
 
 /**
- * In the given string, turn trailing whitespace into single whitespace
+ * In the given string, deduplicate whitespace
  */
 export function shave(value: string): string {
     return value.replace(/\s+/g, ' ')
