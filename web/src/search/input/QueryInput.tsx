@@ -8,7 +8,6 @@ import {
     repeat,
     startWith,
     takeUntil,
-    tap,
     switchMap,
     map,
     toArray,
@@ -34,7 +33,6 @@ import { fetchSuggestions } from '../backend'
 import { isDefined } from '../../../../shared/src/util/types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import _ from 'lodash'
-import { UndoRedoHistory } from '../../../../shared/src/util/UndoRedoHistory'
 import { shave } from '../../../../shared/src/util/strings'
 
 /**
@@ -115,11 +113,6 @@ export class QueryInput extends React.Component<Props, State> {
     /** Used for scrolling suggestions into view while scrolling with keyboard */
     private containerElement = React.createRef<HTMLDivElement>()
 
-    private queryHistory = new UndoRedoHistory<QueryState>({
-        current: this.props.value,
-        onUpdate: queryState => this.props.onChange(queryState),
-    })
-
     public state: State = {
         loadingSuggestions: false,
         suggestions: {
@@ -131,17 +124,9 @@ export class QueryInput extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
 
-        this.subscriptions.add(this.queryHistory)
-
-        // Update parent component and push to queryHistory (undo/redo)
-        this.subscriptions.add(
-            this.inputValues
-                .pipe(
-                    tap(queryState => this.props.onChange(queryState)),
-                    debounceTime(typingDebounceTime)
-                )
-                .subscribe(queryState => this.queryHistory.push(queryState))
-        )
+        // Update parent component
+        // (will be used in next PR to push to queryHistory (undo/redo))
+        this.subscriptions.add(this.inputValues.subscribe(queryState => this.props.onChange(queryState)))
 
         // Trigger suggestions.
         // This is set on componentDidUpdate so the data flow can be easier to manage, making it
@@ -425,14 +410,6 @@ export class QueryInput extends React.Component<Props, State> {
                     values: searchFilterSuggestions.filters.values,
                 },
             })
-        }
-        if (event.ctrlKey && event.key === 'z') {
-            event.preventDefault()
-            this.queryHistory.undo()
-        }
-        if (event.ctrlKey && event.shiftKey && event.key === 'Z') {
-            event.preventDefault()
-            this.queryHistory.redo()
         }
     }
 
