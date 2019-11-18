@@ -46,7 +46,7 @@ func (c *Context) Tree(ctx context.Context, tree os.FileInfo) (inv Inventory, er
 	if err != nil {
 		return Inventory{}, err
 	}
-	totals := map[string]Lang{} // language name -> stats
+	langStats := map[string]Lang{} // language name -> stats
 	for _, e := range entries {
 		switch {
 		case e.Mode().IsRegular(): // file
@@ -59,10 +59,10 @@ func (c *Context) Tree(ctx context.Context, tree os.FileInfo) (inv Inventory, er
 				return Inventory{}, errors.Wrapf(err, "inventory file %q", e.Name())
 			}
 			if lang.Name != "" {
-				l := totals[lang.Name]
+				l := langStats[lang.Name]
 				lang.TotalBytes += l.TotalBytes
 				lang.TotalLines += l.TotalLines
-				totals[lang.Name] = lang
+				langStats[lang.Name] = lang
 			}
 
 		case e.Mode().IsDir(): // subtree
@@ -71,17 +71,17 @@ func (c *Context) Tree(ctx context.Context, tree os.FileInfo) (inv Inventory, er
 				return Inventory{}, errors.Wrapf(err, "inventory tree %q", e.Name())
 			}
 			for _, lang := range entryInv.Languages {
-				l := totals[lang.Name]
+				l := langStats[lang.Name]
 				l.TotalBytes += lang.TotalBytes
 				l.TotalLines += lang.TotalLines
-				totals[lang.Name] = l
+				langStats[lang.Name] = l
 			}
 
 		default:
 			// Skip symlinks, submodules, etc.
 		}
 	}
-	return sum(totals), nil
+	return sum(langStats), nil
 }
 
 func sum(langStats map[string]Lang) Inventory {
