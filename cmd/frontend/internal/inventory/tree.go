@@ -28,7 +28,7 @@ type Context struct {
 
 // Tree computes the inventory of languages for a tree. It caches the inventories of subtrees.
 func (c *Context) Tree(ctx context.Context, tree os.FileInfo) (inv Inventory, err error) {
-	buf := make([]byte, fileReadBufferSize, fileReadBufferSize)
+	buf := make([]byte, fileReadBufferSize)
 	return c.tree(ctx, tree, buf)
 }
 
