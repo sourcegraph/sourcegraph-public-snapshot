@@ -86,7 +86,7 @@ export function createLsifRouter(
             validation.validateOptionalInt('maxWait'),
         ]),
         wrap(
-            async (req: express.Request & { span?: Span }, res: express.Response): Promise<void> => {
+            async (req: express.Request, res: express.Response): Promise<void> => {
                 const { repository, commit, root: rootRaw, blocking, maxWait }: UploadQueryArgs = req.query
                 const root = sanitizeRoot(rootRaw)
                 const ctx = createTracingContext(req, { repository, commit, root })
