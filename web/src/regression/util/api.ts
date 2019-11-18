@@ -197,6 +197,32 @@ export function getExternalServices(
         .toPromise()
 }
 
+export async function updateExternalService(
+    gqlClient: GraphQLClient,
+    input: GQL.IUpdateExternalServiceInput
+): Promise<void> {
+    await gqlClient
+        .mutateGraphQL(
+            gql`
+                mutation UpdateExternalService($input: UpdateExternalServiceInput!) {
+                    updateExternalService(input: $input) {
+                        warning
+                    }
+                }
+            `,
+            { input }
+        )
+        .pipe(
+            map(dataOrThrowErrors),
+            tap(({ updateExternalService: { warning } }) => {
+                if (warning) {
+                    console.warn('updateExternalService warning:', warning)
+                }
+            })
+        )
+        .toPromise()
+}
+
 export async function ensureTestExternalService(
     gqlClient: GraphQLClient,
     options: {

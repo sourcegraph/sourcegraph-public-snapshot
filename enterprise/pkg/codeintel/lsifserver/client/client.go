@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -22,20 +23,20 @@ var httpClient = &http.Client{
 
 // BuildAndTraceRequest builds a URL and performs a request. This is a convenience wrapper
 // around BuildURL and TraceRequest.
-func BuildAndTraceRequest(ctx context.Context, path string, query url.Values) (*http.Response, error) {
+func BuildAndTraceRequest(ctx context.Context, method, path string, query url.Values, body io.ReadCloser) (*http.Response, error) {
 	url, err := buildURL(path, query)
 	if err != nil {
 		return nil, err
 	}
 
-	return traceRequest(ctx, url)
+	return traceRequest(ctx, method, url, body)
 }
 
 // TraceRequestAndUnmarshalPayload builds a URL, performs a request, and populates
 // the given payload with the response body. This is a convenience wrapper around
 // BuildURL, TraceRequest, and UnmarshalPayload.
-func TraceRequestAndUnmarshalPayload(ctx context.Context, path string, query url.Values, payload interface{}) error {
-	resp, err := BuildAndTraceRequest(ctx, path, query)
+func TraceRequestAndUnmarshalPayload(ctx context.Context, method, path string, query url.Values, body io.ReadCloser, payload interface{}) error {
+	resp, err := BuildAndTraceRequest(ctx, method, path, query, body)
 	if err != nil {
 		return err
 	}
@@ -83,7 +84,7 @@ func buildURL(path string, query url.Values) (string, error) {
 // traceRequest performs a GET request to the given URL with the given context. The
 // response is expected to have a 200-level status code. If an error is returned, the
 // HTTP response body has been closed.
-func traceRequest(ctx context.Context, url string) (resp *http.Response, err error) {
+func traceRequest(ctx context.Context, method, url string, body io.ReadCloser) (resp *http.Response, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "lsifserver.client.traceRequest")
 	defer func() {
 		if err != nil {
@@ -93,7 +94,7 @@ func traceRequest(ctx context.Context, url string) (resp *http.Response, err err
 		span.Finish()
 	}()
 
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return
 	}
