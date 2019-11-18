@@ -16,27 +16,35 @@ import (
 	"github.com/tomnomnom/linkheader"
 )
 
-var httpClient = &http.Client{
-	// nethttp.Transport will propagate opentracing spans
-	Transport: &nethttp.Transport{},
+var DefaultClient = &Client{
+	URL: lsifserver.ServerURLFromEnv,
+	HTTPClient: &http.Client{
+		// nethttp.Transport will propagate opentracing spans
+		Transport: &nethttp.Transport{},
+	},
+}
+
+type Client struct {
+	URL        string
+	HTTPClient *http.Client
 }
 
 // BuildAndTraceRequest builds a URL and performs a request. This is a convenience wrapper
 // around BuildURL and TraceRequest.
-func BuildAndTraceRequest(ctx context.Context, method, path string, query url.Values, body io.ReadCloser) (*http.Response, error) {
-	url, err := buildURL(path, query)
+func (c *Client) BuildAndTraceRequest(ctx context.Context, method, path string, query url.Values, body io.ReadCloser) (*http.Response, error) {
+	url, err := buildURL(c.URL, path, query)
 	if err != nil {
 		return nil, err
 	}
 
-	return traceRequest(ctx, method, url, body)
+	return c.do(ctx, method, url, body)
 }
 
 // TraceRequestAndUnmarshalPayload builds a URL, performs a request, and populates
 // the given payload with the response body. This is a convenience wrapper around
 // BuildURL, TraceRequest, and UnmarshalPayload.
-func TraceRequestAndUnmarshalPayload(ctx context.Context, method, path string, query url.Values, body io.ReadCloser, payload interface{}) error {
-	resp, err := BuildAndTraceRequest(ctx, method, path, query, body)
+func (c *Client) TraceRequestAndUnmarshalPayload(ctx context.Context, method, path string, query url.Values, body io.ReadCloser, payload interface{}) error {
+	resp, err := c.BuildAndTraceRequest(ctx, method, path, query, body)
 	if err != nil {
 		return err
 	}
@@ -53,11 +61,11 @@ func TraceRequestAndUnmarshalPayload(ctx context.Context, method, path string, q
 // This method can be used to construct a LSIF request URL either from a root
 // relative path on the first request of a paginated endpoint or from the URL
 // provided by the Link header in a previous response.
-func buildURL(path string, query url.Values) (string, error) {
+func buildURL(baseURL, path string, query url.Values) (string, error) {
 	build := url.Parse
 	if len(path) > 0 && path[0] == '/' {
 		build = func(path string) (*url.URL, error) {
-			u, err := url.Parse(lsifserver.ServerURLFromEnv)
+			u, err := url.Parse(baseURL)
 			if err != nil {
 				return nil, err
 			}
@@ -81,11 +89,11 @@ func buildURL(path string, query url.Values) (string, error) {
 	return u.String(), nil
 }
 
-// traceRequest performs a GET request to the given URL with the given context. The
+// do performs a GET request to the given URL with the given context. The
 // response is expected to have a 200-level status code. If an error is returned, the
 // HTTP response body has been closed.
-func traceRequest(ctx context.Context, method, url string, body io.ReadCloser) (resp *http.Response, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "lsifserver.client.traceRequest")
+func (c *Client) do(ctx context.Context, method, url string, body io.ReadCloser) (resp *http.Response, err error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "lsifserver.client.do")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -112,7 +120,7 @@ func traceRequest(ctx context.Context, method, url string, body io.ReadCloser) (
 	// Do not use ctxhttp.Do here as it will re-wrap the request
 	// with a context and this will causes the ot-headers not to
 	// propagate correctly.
-	resp, err = httpClient.Do(req)
+	resp, err = c.HTTPClient.Do(req)
 	if err != nil {
 		if ctx.Err() != nil {
 			err = ctx.Err()
