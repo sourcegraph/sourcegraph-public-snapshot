@@ -172,7 +172,10 @@ const splitStringAtPosition = (value: string, position: number): { firstPart: st
     lastPart: value.substring(position),
 })
 
-interface FilterAndValueFind<FilterType> {
+/**
+ * Return type for getFilterAndValueBeforeCursor
+ */
+interface FilterAndValueMatch<FilterType> {
     /** The filter/value position on the query string */
     filterIndex: RegExpMatchArray['index']
     /** Filter match without any formatting */
@@ -190,11 +193,10 @@ interface FilterAndValueFind<FilterType> {
 }
 
 /**
- * If a filter value is being typed, try to get its filter type.
- * E.g: with "|"" being the cursor: "repo:| lang:go" => "repo"
- * Checks if the matched word is a valid filter.
+ * If a filter value is being typed, try to get its filter and value.
+ * E.g: ("|" is the cursor): "lang:go repo:test|" => "repo:test"
  */
-export const getFilterAndValueBeforeCursor = (queryState: QueryState): FilterAndValueFind<string> => {
+export const getFilterAndValueBeforeCursor = (queryState: QueryState): FilterAndValueMatch<string> => {
     const { firstPart } = splitStringAtPosition(queryState.query, queryState.cursorPosition)
     // get string before ":" char until a space is found or start of string
     const match = firstPart.match(/([^\s:]+)?(:(\S?)+)?$/) || []
@@ -212,12 +214,14 @@ export const getFilterAndValueBeforeCursor = (queryState: QueryState): FilterAnd
 }
 
 /**
- * Verifies that the found filter is a valid Suggestion type, otherwise returns null.
+ * Verifies that the matched filter is a valid Suggestion type, otherwise returns null.
  */
-export const validFilterAndValueBeforeCursor = (queryState: QueryState): FilterAndValueFind<SuggestionTypes> | null => {
+export const validFilterAndValueBeforeCursor = (
+    queryState: QueryState
+): FilterAndValueMatch<SuggestionTypes> | null => {
     const filterAndValueBeforeCursor = getFilterAndValueBeforeCursor(queryState)
     if (isValidFilter(filterAndValueBeforeCursor.resolvedFilter)) {
-        return filterAndValueBeforeCursor as FilterAndValueFind<SuggestionTypes>
+        return filterAndValueBeforeCursor as FilterAndValueMatch<SuggestionTypes>
     }
     return null
 }

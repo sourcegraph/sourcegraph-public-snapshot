@@ -144,9 +144,8 @@ export class QueryInput extends React.Component<Props, State> {
         )
 
         // Trigger suggestions.
-        // This is set on componentDidUpdate so the data flow can be easier to manage,
-        // now it just depends on props.value to use as the query and not both from
-        // props.value and this.inputValues (which was harder to reason about)
+        // This is set on componentDidUpdate so the data flow can be easier to manage, making it
+        // only depend on props.value updates, and not both from props.value and this.inputValues
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(
