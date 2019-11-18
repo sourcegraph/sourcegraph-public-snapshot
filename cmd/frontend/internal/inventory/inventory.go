@@ -92,19 +92,17 @@ func getLang(ctx context.Context, file os.FileInfo, rc io.ReadCloser) (*Lang, er
 	lang.TotalBytes = uint64(file.Size())
 	if rc != nil {
 		// Count lines
-		var lineCount int
 		scanner := bufio.NewScanner(io.MultiReader(bytes.NewReader(data), rc))
 		buf := *(scanBufPool.Get().(*[]byte))
 		defer scanBufPool.Put(&buf)
 		buf = buf[0:0]
 		scanner.Buffer(buf, maxTokenSize)
 		for scanner.Scan() {
-			lineCount++
+			lang.TotalLines++
 		}
 		if scanner.Err() != nil {
 			return nil, errors.Wrap(scanner.Err(), "scanning file")
 		}
-		lang.TotalLines = uint64(lineCount)
 	}
 	return &lang, nil
 }
