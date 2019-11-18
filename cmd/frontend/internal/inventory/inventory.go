@@ -52,32 +52,33 @@ func getLang(ctx context.Context, file os.FileInfo, buf []byte, rc io.ReadCloser
 	// In many cases, GetLanguageByFilename can detect the language conclusively just from the
 	// filename. If not, we pass a subset of the file contents for analysis.
 	matchedLang, safe := GetLanguageByFilename(file.Name())
-	if !safe {
-		// Detect language
-		if rc != nil {
-			n, err := rc.Read(buf)
-			if err != nil && err != io.EOF {
-				return nil, errors.Wrap(err, "reading initial file data")
-			}
-			lang.TotalLines += uint64(bytes.Count(buf[:n], newLine))
-			matchedLang = enry.GetLanguage(file.Name(), buf[:n])
+	if !safe && rc != nil {
+		// Detect language from content
+		n, err := rc.Read(buf)
+		if err != nil && err != io.EOF {
+			return nil, errors.Wrap(err, "reading initial file data")
 		}
+		lang.TotalLines += uint64(bytes.Count(buf[:n], newLine))
+		matchedLang = enry.GetLanguage(file.Name(), buf[:n])
 	}
 	lang.Name = matchedLang
 	lang.TotalBytes = uint64(file.Size())
-	if rc != nil {
-		for {
-			n, err := rc.Read(buf)
-			lang.TotalLines += uint64(bytes.Count(buf[:n], newLine))
-			if err == io.EOF {
-				if !bytes.HasSuffix(buf, []byte{'\n'}) {
-					// Add final line
-					lang.TotalLines++
-				}
-				break
-			} else if err != nil {
-				return nil, errors.Wrap(err, "reading lines")
+	if rc == nil {
+		return &lang, nil
+	}
+	// Count lines
+	for {
+		n, err := rc.Read(buf)
+		lang.TotalLines += uint64(bytes.Count(buf[:n], newLine))
+		if err == io.EOF {
+			if !bytes.HasSuffix(buf, []byte{'\n'}) {
+				// Add final line
+				lang.TotalLines++
 			}
+			break
+		}
+		if err != nil {
+			return nil, errors.Wrap(err, "reading lines")
 		}
 	}
 	return &lang, nil
