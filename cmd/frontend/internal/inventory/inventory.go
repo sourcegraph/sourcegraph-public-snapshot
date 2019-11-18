@@ -53,12 +53,12 @@ var scanBufPool = sync.Pool{
 	New: func() interface{} { b := make([]byte, scanBufferSize); return &b },
 }
 
-func getLang(ctx context.Context, file os.FileInfo, rc io.ReadCloser) (Lang, error) {
+func getLang(ctx context.Context, file os.FileInfo, rc io.ReadCloser) (*Lang, error) {
 	if rc != nil {
 		defer rc.Close()
 	}
 	if !file.Mode().IsRegular() || enry.IsVendor(file.Name()) {
-		return Lang{}, nil
+		return nil, nil
 	}
 
 	var (
@@ -76,7 +76,7 @@ func getLang(ctx context.Context, file os.FileInfo, rc io.ReadCloser) (Lang, err
 			r := io.LimitReader(rc, minFileBytes)
 			data, err = ioutil.ReadAll(r)
 			if err != nil {
-				return lang, err
+				return nil, err
 			}
 		}
 		// NOTE: It seems that calling enry.GetLanguage with no content
@@ -102,11 +102,11 @@ func getLang(ctx context.Context, file os.FileInfo, rc io.ReadCloser) (Lang, err
 			lineCount++
 		}
 		if scanner.Err() != nil {
-			return lang, errors.Wrap(scanner.Err(), "scanning file")
+			return nil, errors.Wrap(scanner.Err(), "scanning file")
 		}
 		lang.TotalLines = uint64(lineCount)
 	}
-	return lang, nil
+	return &lang, nil
 }
 
 // GetLanguageByFilename returns the guessed language for the named file (and safe == true if this

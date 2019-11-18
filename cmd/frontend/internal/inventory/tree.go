@@ -46,7 +46,7 @@ func (c *Context) Tree(ctx context.Context, tree os.FileInfo) (inv Inventory, er
 	if err != nil {
 		return Inventory{}, err
 	}
-	langStats := map[string]Lang{} // language name -> stats
+	langStats := map[string]*Lang{} // language name -> stats
 	for _, e := range entries {
 		switch {
 		case e.Mode().IsRegular(): // file
@@ -58,11 +58,16 @@ func (c *Context) Tree(ctx context.Context, tree os.FileInfo) (inv Inventory, er
 			if err != nil {
 				return Inventory{}, errors.Wrapf(err, "inventory file %q", e.Name())
 			}
-			if lang.Name != "" {
+			if lang != nil && lang.Name != "" {
 				l := langStats[lang.Name]
-				lang.TotalBytes += l.TotalBytes
-				lang.TotalLines += l.TotalLines
-				langStats[lang.Name] = lang
+				if l == nil {
+					l = &Lang{
+						Name: lang.Name,
+					}
+				}
+				l.TotalBytes += lang.TotalBytes
+				l.TotalLines += lang.TotalLines
+				langStats[lang.Name] = l
 			}
 
 		case e.Mode().IsDir(): // subtree
@@ -72,6 +77,11 @@ func (c *Context) Tree(ctx context.Context, tree os.FileInfo) (inv Inventory, er
 			}
 			for _, lang := range entryInv.Languages {
 				l := langStats[lang.Name]
+				if l == nil {
+					l = &Lang{
+						Name: lang.Name,
+					}
+				}
 				l.TotalBytes += lang.TotalBytes
 				l.TotalLines += lang.TotalLines
 				langStats[lang.Name] = l
@@ -84,12 +94,12 @@ func (c *Context) Tree(ctx context.Context, tree os.FileInfo) (inv Inventory, er
 	return sum(langStats), nil
 }
 
-func sum(langStats map[string]Lang) Inventory {
+func sum(langStats map[string]*Lang) Inventory {
 	sum := Inventory{Languages: make([]Lang, 0, len(langStats))}
 	for name := range langStats {
 		stats := langStats[name]
 		stats.Name = name
-		sum.Languages = append(sum.Languages, stats)
+		sum.Languages = append(sum.Languages, *stats)
 	}
 	sort.Slice(sum.Languages, func(i, j int) bool {
 		return sum.Languages[i].TotalBytes > sum.Languages[j].TotalBytes || (sum.Languages[i].TotalBytes == sum.Languages[j].TotalBytes && sum.Languages[i].Name < sum.Languages[j].Name)
