@@ -28,7 +28,7 @@ type Syncer struct {
 	Store   Store
 	Sourcer Sourcer
 
-	// PreSync is called in Run before this Syncer's Sync method.
+	// PreSync is called before this Syncer's Sync method.
 	PreSync func(context.Context) error
 
 	// DisableStreaming if true will prevent the syncer from streaming in new
