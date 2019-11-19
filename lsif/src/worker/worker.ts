@@ -16,9 +16,10 @@ import { followsFrom, FORMAT_TEXT_MAP, Span, Tracer } from 'opentracing'
 import { instrumentWithLabels } from '../shared/metrics'
 import { Job } from 'bull'
 import { Logger } from 'winston'
+import { PostgresLocker } from '../shared/locker/locker'
 import { startMetricsServer } from './server'
 import { waitForConfiguration } from '../shared/config/config'
-import { XrepoDatabase, PostgresLocker } from '../shared/xrepo/xrepo'
+import { XrepoDatabase } from '../shared/xrepo/xrepo'
 
 /**
  * Wrap a job processor with instrumentation.
