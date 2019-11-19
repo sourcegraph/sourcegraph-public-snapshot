@@ -117,6 +117,13 @@ Restart the container once you have copied the files there for the changes to ta
 
 ### Can I disable HTTPS on the management console?
 
-It is **unsafe** to do so as anyone who can MITM your traffic to the management console can steal the admin password and act on your behalf.
+It is **unsafe** to do so if the management console is exposed to the public internet as anyone who can MITM your traffic to the management console can steal the admin password and act on your behalf.
 
 If you understand the risks and still wish to, you can set the environment variable `UNSAFE_NO_HTTPS` to `true` on the Docker container. This will entirely disable HTTPS (the port will remain the same).
+
+### Can I disable password authentication on the management console?
+
+It is **unsafe** to do so if the management console is exposed to the public internet.
+
+If you understand the risks and still wish to, you can set the environment variable `DISABLE_MANAGEMENT_CONSOLE_AUTH` to `true` on the Docker container. This will allow access to the management console without
+ requiring a password and will entirely disable HTTPS (the port will remain the same).

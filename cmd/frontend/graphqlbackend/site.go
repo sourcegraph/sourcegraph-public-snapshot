@@ -24,6 +24,8 @@ import (
 
 const singletonSiteGQLID = "site"
 
+var disableManagementConsoleAuth = env.Get("DISABLE_MANAGEMENT_CONSOLE_AUTH", "false", "When true, no password for accessing managment console is generated (and needed).")
+
 func siteByGQLID(ctx context.Context, id graphql.ID) (Node, error) {
 	siteGQLID, err := unmarshalSiteGQLID(id)
 	if err != nil {
@@ -139,6 +141,11 @@ func (r *siteResolver) ManagementConsoleState(ctx context.Context) (*managementC
 type managementConsoleStateResolver struct{}
 
 func (m *managementConsoleStateResolver) PlaintextPassword(ctx context.Context) (*string, error) {
+	disableManagementConsoleAuth, _ := strconv.ParseBool(disableManagementConsoleAuth)
+	if disableManagementConsoleAuth {
+		return nil, nil
+	}
+
 	// 🚨 SECURITY: Only site admins may view this information.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err

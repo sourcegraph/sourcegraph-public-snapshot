@@ -76,6 +76,7 @@ export WEBPACK_DEV_SERVER=1
 export CRITICAL_CONFIG_FILE=${CRITICAL_CONFIG_FILE:-./dev/critical-config.json}
 export SITE_CONFIG_FILE=${SITE_CONFIG_FILE:-./dev/site-config.json}
 export SITE_CONFIG_ALLOW_EDITS=true
+export DISABLE_MANAGEMENT_CONSOLE_AUTH=true
 
 # WebApp
 export NODE_ENV=development
