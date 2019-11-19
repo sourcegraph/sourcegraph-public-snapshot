@@ -13,9 +13,11 @@ import { setLinkComponent } from '../../../../../../shared/src/components/Link'
 describe('ChangesetNode', () => {
     const history = H.createMemoryHistory({ keyLength: 0 })
     const location = H.createLocation('/campaigns')
-    test('renders a changesetplan', () => {
+    beforeEach(() => {
         setLinkComponent((props: any) => <a {...props} />)
         afterAll(() => setLinkComponent(null as any)) // reset global env for other tests
+    })
+    test('renders a changesetplan', () => {
         expect(
             renderer
                 .create(
@@ -47,8 +49,6 @@ describe('ChangesetNode', () => {
         ).toMatchSnapshot()
     })
     test('renders an externalchangeset', () => {
-        setLinkComponent((props: any) => <a {...props} />)
-        afterAll(() => setLinkComponent(null as any)) // reset global env for other tests
         expect(
             renderer
                 .create(

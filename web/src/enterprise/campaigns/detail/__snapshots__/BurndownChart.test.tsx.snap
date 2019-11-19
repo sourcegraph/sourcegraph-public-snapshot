@@ -1,5 +1,13 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`CampaignBurndownChart renders an alert when data for less than 2 days is present 1`] = `
+<div
+  className="alert alert-info"
+>
+  Burndown chart will be shown when there is more than 1 day of data.
+</div>
+`;
+
 exports[`CampaignBurndownChart renders the chart 1`] = `
 <div
   className="recharts-responsive-container"
