@@ -3,10 +3,16 @@ import React from 'react'
 import renderer from 'react-test-renderer'
 import { CampaignBurndownChart } from './BurndownChart'
 
-// todo(eseliger): remove this once https://github.com/recharts/recharts/pull/1948 is merged
-function createNodeMock() {
-    const doc = document.implementation.createHTMLDocument()
-    return { parentElement: doc.body }
+// this is required because recharts internally checks if the chart would be visible.
+// Therefore, we need to fake the clientWidth and clientHeight values.
+function createNodeMock(element: React.ReactElement<HTMLElement>) {
+    if (element.type === 'div') {
+        return {
+            clientWidth: 500,
+            clientHeight: 350,
+        }
+    }
+    return null
 }
 
 describe('CampaignBurndownChart', () => {
@@ -20,7 +26,7 @@ describe('CampaignBurndownChart', () => {
                             {
                                 __typename: 'ChangesetCounts',
                                 closed: 1,
-                                date: '2019-11-13T23:17:24Z',
+                                date: '2019-11-13T12:00:00Z',
                                 merged: 1,
                                 openApproved: 1,
                                 openChangesRequested: 1,
@@ -31,7 +37,7 @@ describe('CampaignBurndownChart', () => {
                             {
                                 __typename: 'ChangesetCounts',
                                 closed: 1,
-                                date: '2019-11-14T23:17:24Z',
+                                date: '2019-11-14T12:00:00Z',
                                 merged: 5,
                                 openApproved: 1,
                                 openChangesRequested: 1,
@@ -57,7 +63,7 @@ describe('CampaignBurndownChart', () => {
                             {
                                 __typename: 'ChangesetCounts',
                                 closed: 1,
-                                date: '2019-11-13T23:17:24Z',
+                                date: '2019-11-13T12:00:00Z',
                                 merged: 1,
                                 openApproved: 1,
                                 openChangesRequested: 1,
