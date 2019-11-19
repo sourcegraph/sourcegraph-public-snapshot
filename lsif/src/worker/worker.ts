@@ -18,7 +18,7 @@ import { Job } from 'bull'
 import { Logger } from 'winston'
 import { startMetricsServer } from './server'
 import { waitForConfiguration } from '../shared/config/config'
-import { XrepoDatabase } from '../shared/xrepo/xrepo'
+import { XrepoDatabase, PostgresLocker } from '../shared/xrepo/xrepo'
 
 /**
  * Wrap a job processor with instrumentation.
@@ -82,6 +82,7 @@ async function main(logger: Logger): Promise<void> {
     // Create cross-repo database
     const connection = await createPostgresConnection(fetchConfiguration(), logger)
     const xrepoDatabase = new XrepoDatabase(settings.STORAGE_ROOT, connection)
+    const locker = new PostgresLocker(connection)
 
     // Start metrics server
     startMetricsServer(logger)
@@ -91,7 +92,7 @@ async function main(logger: Logger): Promise<void> {
 
     const convertJobProcessor = wrapJobProcessor(
         'convert',
-        createConvertJobProcessor(xrepoDatabase, fetchConfiguration),
+        createConvertJobProcessor(xrepoDatabase, locker, fetchConfiguration),
         logger,
         tracer
     )

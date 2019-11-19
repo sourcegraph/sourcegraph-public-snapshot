@@ -58,6 +58,65 @@ export interface SymbolReferences {
 }
 
 /**
+ * A wrapper around Postgres advisory locks.
+ */
+export class PostgresLocker extends PostgresDataManager {
+    /**
+     * Hold a Postgres advisory lock while executing the given function.
+     *
+     * @param locker The Postgres locker instance.
+     * @param name The name of the lock.
+     * @param f The function to execute while holding the lock.
+     */
+    public async withLock<T>(name: string, f: () => Promise<T>): Promise<T> {
+        await this.lock(name)
+        try {
+            return await f()
+        } finally {
+            await this.unlock(name)
+        }
+    }
+
+    /**
+     * Acquire an advisory lock with the given name. This will block until the lock can be
+     * acquired.
+     *
+     * See https://www.postgresql.org/docs/9.6/static/explicit-locking.html#ADVISORY-LOCKS.
+     *
+     * @param name The lock name.
+     */
+    private lock(name: string): Promise<void> {
+        return this.withConnection(connection =>
+            connection.query('SELECT pg_advisory_lock($1)', [this.generateLockId(name)])
+        )
+    }
+
+    /**
+     * Release an advisory lock acquired by `lock`.
+     *
+     * @param name The lock name.
+     */
+    private unlock(name: string): Promise<void> {
+        return this.withConnection(connection =>
+            connection.query('SELECT pg_advisory_unlock($1)', [this.generateLockId(name)])
+        )
+    }
+
+    /**
+     * Generate an advisory lock identifier from the given name and application salt. This is
+     * based on golang-migrate's advisory lock identifier generation technique, which is in turn
+     * inspired by rails migrations.
+     *
+     * See https://github.com/golang-migrate/migrate/blob/6c96ef02dfbf9430f7286b58afc15718588f2e13/database/util.go#L12.
+     *
+     * @param name The lock name.
+     */
+    private generateLockId(name: string): number {
+        return crc32.str(name) * ADVISORY_LOCK_ID_SALT
+    }
+}
+
+/**
  * A wrapper around the cross-repository database that stitches together the references
  * between projects at a specific commit. This is used for cross-repository jump to
  * definition and find references features.
@@ -812,44 +871,6 @@ undefined.s
 
         // We scanned the entire set of references
         return { references: filtered, scanned: references.length }
-    }
-
-    /**
-     * Acquire an advisory lock with the given name. This will block until the lock can be
-     * acquired.
-     *
-     * See https://www.postgresql.org/docs/9.6/static/explicit-locking.html#ADVISORY-LOCKS.
-     *
-     * @param name The lock name.
-     */
-    public lock(name: string): Promise<void> {
-        return this.withConnection(connection =>
-            connection.query('SELECT pg_advisory_lock($1)', [this.generateLockId(name)])
-        )
-    }
-
-    /**
-     * Release an advisory lock acquired by `lock`.
-     *
-     * @param name The lock name.
-     */
-    public unlock(name: string): Promise<void> {
-        return this.withConnection(connection =>
-            connection.query('SELECT pg_advisory_unlock($1)', [this.generateLockId(name)])
-        )
-    }
-
-    /**
-     * Generate an advisory lock identifier from the given name and application salt. This is
-     * based on golang-migrate's advisory lock identifier generation technique, which is in turn
-     * inspired by rails migrations.
-     *
-     * See https://github.com/golang-migrate/migrate/blob/6c96ef02dfbf9430f7286b58afc15718588f2e13/database/util.go#L12.
-     *
-     * @param name The lock name.
-     */
-    private generateLockId(name: string): number {
-        return crc32.str(name) * ADVISORY_LOCK_ID_SALT
     }
 
     /**
