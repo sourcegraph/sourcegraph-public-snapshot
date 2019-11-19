@@ -26,6 +26,9 @@ type Context struct {
 	CacheSet func(os.FileInfo, Inventory)
 }
 
+// fileReadBufferSize is the size of the buffer we'll use while reading file contents
+const fileReadBufferSize = 16 * 1024
+
 // Tree computes the inventory of languages for a tree. It caches the inventories of subtrees.
 func (c *Context) Tree(ctx context.Context, tree os.FileInfo) (inv Inventory, err error) {
 	buf := make([]byte, fileReadBufferSize)

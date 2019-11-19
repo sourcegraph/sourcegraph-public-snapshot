@@ -8,6 +8,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -17,25 +19,53 @@ import (
 func TestGetLang_language(t *testing.T) {
 	tests := map[string]struct {
 		file fi
-		want string
+		want *Lang
 	}{
-		"empty file": {file: fi{"a", ""}, want: ""},
-		"java":       {file: fi{"a.java", "a"}, want: "Java"},
-		"go":         {file: fi{"a.go", "a"}, want: "Go"},
+		"empty file": {file: fi{"a.java", ""}, want: &Lang{
+			Name:       "Java",
+			TotalBytes: 0,
+			TotalLines: 0,
+		}},
+		"java": {file: fi{"a.java", "a"}, want: &Lang{
+			Name:       "Java",
+			TotalBytes: 1,
+			TotalLines: 1,
+		}},
+		"go": {file: fi{"a.go", "a"}, want: &Lang{
+			Name:       "Go",
+			TotalBytes: 1,
+			TotalLines: 1,
+		}},
+		"go-with-newline": {file: fi{"a.go", "a\n"}, want: &Lang{
+			Name:       "Go",
+			TotalBytes: 2,
+			TotalLines: 1,
+		}},
 
 		// Ensure that .tsx and .jsx are considered as valid extensions for TypeScript and JavaScript,
 		// respectively.
-		"override tsx": {file: fi{"a.tsx", "xx"}, want: "TypeScript"},
-		"override jsx": {file: fi{"b.jsx", "x"}, want: "JavaScript"},
+		"override tsx": {file: fi{"a.tsx", "xx"}, want: &Lang{
+			Name:       "TypeScript",
+			TotalBytes: 2,
+			TotalLines: 1,
+		}},
+		"override jsx": {file: fi{"b.jsx", "x"}, want: &Lang{
+			Name:       "JavaScript",
+			TotalBytes: 1,
+			TotalLines: 1,
+		}},
 	}
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
-			lang, err := getLang(context.Background(), test.file, make([]byte, fileReadBufferSize), nil)
+			lang, err := getLang(context.Background(),
+				test.file,
+				make([]byte, fileReadBufferSize),
+				ioutil.NopCloser(strings.NewReader(test.file.Contents)))
 			if err != nil {
 				t.Fatal(err)
 			}
-			if lang.Name != test.want {
-				t.Fatalf("got %q, want %q", lang.Name, test.want)
+			if !reflect.DeepEqual(lang, test.want) {
+				t.Errorf("Got %q, want %q", lang, test.want)
 			}
 		})
 	}

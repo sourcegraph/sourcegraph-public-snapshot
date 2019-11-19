@@ -34,9 +34,6 @@ type Lang struct {
 	TotalLines uint64 `json:"TotalLines,omitempty"`
 }
 
-// fileReadBufferSize is the size of the buffer we'll use while reading file contents
-const fileReadBufferSize = 16 * 1024
-
 var newLine = []byte{'\n'}
 
 func getLang(ctx context.Context, file os.FileInfo, buf []byte, rc io.ReadCloser) (*Lang, error) {
@@ -46,32 +43,50 @@ func getLang(ctx context.Context, file os.FileInfo, buf []byte, rc io.ReadCloser
 	if !file.Mode().IsRegular() || enry.IsVendor(file.Name()) {
 		return nil, nil
 	}
-
-	lang := Lang{}
+	lang := Lang{
+		TotalBytes: uint64(file.Size()),
+	}
 
 	// In many cases, GetLanguageByFilename can detect the language conclusively just from the
 	// filename. If not, we pass a subset of the file contents for analysis.
 	matchedLang, safe := GetLanguageByFilename(file.Name())
-	if !safe && rc != nil {
-		// Detect language from content
-		n, err := rc.Read(buf)
-		if err != nil && err != io.EOF {
-			return nil, errors.Wrap(err, "reading initial file data")
-		}
-		lang.TotalLines += uint64(bytes.Count(buf[:n], newLine))
-		matchedLang = enry.GetLanguage(file.Name(), buf[:n])
-	}
-	lang.Name = matchedLang
-	lang.TotalBytes = uint64(file.Size())
-	if rc == nil {
+
+	// No content
+	if rc == nil || lang.TotalBytes == 0 {
+		lang.Name = matchedLang
 		return &lang, nil
 	}
+
+	if !safe {
+		// Detect language from content
+		n, err := io.ReadFull(rc, buf)
+		if err != nil && err != io.ErrUnexpectedEOF {
+			return nil, errors.Wrap(err, "reading initial file data")
+		}
+		matchedLang = enry.GetLanguage(file.Name(), buf[:n])
+		lang.TotalLines += uint64(bytes.Count(buf[:n], newLine))
+		lang.Name = matchedLang
+		// File is smaller than buf, we can exit early
+		if err == io.ErrUnexpectedEOF {
+			if !bytes.HasSuffix(buf[:n], newLine) {
+				// Add final line
+				lang.TotalLines++
+			}
+			return &lang, nil
+		}
+	}
+	lang.Name = matchedLang
+
 	// Count lines
+	var trailingNewLine bool
 	for {
 		n, err := rc.Read(buf)
 		lang.TotalLines += uint64(bytes.Count(buf[:n], newLine))
+		if n > 0 {
+			trailingNewLine = bytes.HasSuffix(buf[:n], newLine)
+		}
 		if err == io.EOF {
-			if !bytes.HasSuffix(buf, []byte{'\n'}) {
+			if !trailingNewLine {
 				// Add final line
 				lang.TotalLines++
 			}
