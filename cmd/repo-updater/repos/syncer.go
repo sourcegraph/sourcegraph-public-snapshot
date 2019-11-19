@@ -80,9 +80,9 @@ func (s *Syncer) Run(pctx context.Context, interval time.Duration) error {
 				cancel()
 				close(next)
 
-			case <-time.After(interval):
-				// We don't cancel since if interval fires before we are done
-				// we want to wait for the sync to complete.
+			case <-ctx.Done():
+				// Sync and interval sleep are done, so we can allow Sync to
+				// run again.
 				next <- struct{}{}
 
 			case <-s.syncSignal.Watch():
@@ -95,10 +95,21 @@ func (s *Syncer) Run(pctx context.Context, interval time.Duration) error {
 		if err := s.Sync(ctx); err != nil && s.Logger != nil {
 			s.Logger.Error("Syncer", "error", err)
 		}
+
+		sleep(ctx, interval)
+
 		cancel()
 	}
 
 	return pctx.Err()
+}
+
+// sleep is a context aware time.Sleep
+func sleep(ctx context.Context, d time.Duration) {
+	select {
+	case <-ctx.Done():
+	case <-time.After(d):
+	}
 }
 
 // TriggerSync will run Sync now. If a sync is currently running it is
