@@ -398,7 +398,7 @@ export class QueryInput extends React.Component<Props, State> {
                                         {this.state.loadingSuggestions && (
                                             <li className="suggestion suggestion--selected">
                                                 <LoadingSpinner className="icon-inline" />
-                                                <div className="suggestion__description">LOADING</div>
+                                                <div className="suggestion__description">Loading</div>
                                             </li>
                                         )}
                                     </ul>
