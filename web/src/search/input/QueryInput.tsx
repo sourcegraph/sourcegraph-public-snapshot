@@ -211,9 +211,19 @@ export class QueryInput extends React.Component<Props, State> {
                             }))
                         )
 
+                        // Prevent jitter when no static suggestions are found but fuzzy-suggestions are.
+                        // Jitter being the suggestions list going blank unnecessarily during update.
+                        // (This is a fix for 3.10 release, and will be improved on next PR)
+                        const currentSuggestions = {
+                            ...staticSuggestions,
+                            values: staticSuggestions.values.concat(
+                                this.state.suggestions.values.filter(({ fromFuzzySearch }) => fromFuzzySearch)
+                            ),
+                        }
+
                         return merge(
                             // Render static suggestions first
-                            [{ suggestions: staticSuggestions }],
+                            [{ suggestions: currentSuggestions }],
                             // Prevent loading indicator jitter, only showing it after 1s delay
                             of({ suggestions: staticSuggestions, loadingSuggestions: true }).pipe(
                                 delay(1000),
