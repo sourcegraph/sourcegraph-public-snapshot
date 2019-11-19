@@ -14,6 +14,11 @@ export const TEMP_DIR = 'temp'
 export const UPLOADS_DIR = 'uploads'
 
 /**
+ * The maximum number of rows to bulk insert in Postgres.
+ */
+export const MAX_POSTGRES_BATCH_SIZE = 5000
+
+/**
  * The maximum number of commits to visit breadth-first style when when finding
  * the closest commit.
  */
