@@ -67,7 +67,7 @@ fi
 chmod 755 "$TMP/$RELEASE_BIN"
 echo "[+] Installing comby to $INSTALL_DIR"
 if [ ! $OS == "macos" ]; then
-    printf "[*] To install comby to $INSTALL_DIR requires sudo access. Please type the sudo password in the prompt below"
+    printf "[*] To install comby to $INSTALL_DIR requires sudo access. Please type the sudo password in the prompt below."
     sudo cp "$TMP/$RELEASE_BIN" "$INSTALL_DIR/comby"
 else
     cp "$TMP/$RELEASE_BIN" "$INSTALL_DIR/comby"
