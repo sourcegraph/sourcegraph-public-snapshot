@@ -81,7 +81,7 @@ async function main(logger: Logger): Promise<void> {
 
     // Create cross-repo database
     const connection = await createPostgresConnection(fetchConfiguration(), logger)
-    const xrepoDatabase = new XrepoDatabase(settings.STORAGE_ROOT, connection)
+    const xrepoDatabase = new XrepoDatabase(connection, settings.STORAGE_ROOT)
     const locker = new PostgresLocker(connection)
 
     // Start metrics server

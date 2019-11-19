@@ -204,7 +204,7 @@ export class BackendTestContext {
         this.storageRoot = await createStorageRoot()
         const { connection, cleanup } = await createCleanPostgresDatabase()
         this.cleanup = cleanup
-        this.xrepoDatabase = new XrepoDatabase(this.storageRoot, connection)
+        this.xrepoDatabase = new XrepoDatabase(connection, this.storageRoot)
         this.backend = new Backend(this.storageRoot, this.xrepoDatabase, () => ({ gitServers: [] }))
     }
 

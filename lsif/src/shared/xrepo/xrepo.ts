@@ -125,10 +125,10 @@ export class XrepoDatabase extends PostgresDataManager {
     /**
      * Create a new `XrepoDatabase` backed by the given database connection.
      *
-     * @param storageRoot The path where SQLite databases are stored.
      * @param connection The Postgres connection.
+     * @param storageRoot The path where SQLite databases are stored.
      */
-    constructor(private storageRoot: string, connection: Connection) {
+    constructor(connection: Connection, private storageRoot: string) {
         super(connection)
     }
 
