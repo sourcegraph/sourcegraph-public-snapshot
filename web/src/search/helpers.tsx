@@ -159,9 +159,6 @@ export const isValidFilter = (filter: string = ''): filter is FiltersSuggestionT
     Object.prototype.hasOwnProperty.call(SuggestionTypes, filter) ||
     Object.prototype.hasOwnProperty.call(filterAliases, filter)
 
-const isValidFilterAlias = (alias: string): alias is keyof typeof filterAliases =>
-    Object.prototype.hasOwnProperty.call(filterAliases, alias)
-
 /**
  * Split string, into first and last part, at the character position.
  * E.g: ('query', 3) => { firstPart: 'que', lastPart: 'ry' }
@@ -191,10 +188,7 @@ interface ValidFilterAndValueMatch extends FilterAndValueMatch {
  */
 const resolveFilterType = (filter: string = ''): FiltersSuggestionTypes | null => {
     const absoluteFilter = filter.replace(/^-/, '')
-    if (isValidFilterAlias(absoluteFilter)) {
-        return filterAliases[absoluteFilter]
-    }
-    return isValidFilter(absoluteFilter) ? absoluteFilter : null
+    return filterAliases[absoluteFilter] ?? (isValidFilter(absoluteFilter) ? absoluteFilter : null)
 }
 
 /**
