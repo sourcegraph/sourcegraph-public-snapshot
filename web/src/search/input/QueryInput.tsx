@@ -13,6 +13,7 @@ import {
     toArray,
     catchError,
     delay,
+    share,
 } from 'rxjs/operators'
 import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
@@ -208,7 +209,8 @@ export class QueryInput extends React.Component<Props, State> {
                             map(state => ({
                                 ...state,
                                 loadingSuggestions: false,
-                            }))
+                            })),
+                            share()
                         )
 
                         // Prevent jitter when no static suggestions are found but fuzzy-suggestions are.
