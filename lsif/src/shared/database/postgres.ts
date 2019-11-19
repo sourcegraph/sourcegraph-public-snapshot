@@ -1,13 +1,13 @@
-import * as metrics from './metrics';
-import * as xrepoModels from '../models/xrepo';
-import pRetry from 'p-retry';
-import { Configuration } from '../config/config';
-import { Connection, createConnection as _createConnection, EntityManager } from 'typeorm';
-import { instrument } from '../metrics';
-import { Logger } from 'winston';
-import { PostgresConnectionCredentialsOptions } from 'typeorm/driver/postgres/PostgresConnectionCredentialsOptions';
-import { readEnvInt } from '../settings';
-import { TlsOptions } from 'tls';
+import * as metrics from './metrics'
+import * as xrepoModels from '../models/xrepo'
+import pRetry from 'p-retry'
+import { Configuration } from '../config/config'
+import { Connection, createConnection as _createConnection, EntityManager } from 'typeorm'
+import { instrument } from '../metrics'
+import { Logger } from 'winston'
+import { PostgresConnectionCredentialsOptions } from 'typeorm/driver/postgres/PostgresConnectionCredentialsOptions'
+import { readEnvInt } from '../settings'
+import { TlsOptions } from 'tls'
 
 /**
  * The minimum migration version required by this instance of the LSIF process.
@@ -168,9 +168,9 @@ async function getMigrationVersion(connection: Connection): Promise<string> {
 /**
  * A wrapper around a Postgres database.
  */
-export abstract class PostgresDataManager {
+export abstract class PostgresManager {
     /**
-     * Create a new `PostgresDataManager` backed by the given database connection.
+     * Create a new `PostgresManager` backed by the given database connection.
      *
      * @param connection The Postgres connection.
      */

@@ -9,7 +9,7 @@ import { chunk } from 'lodash'
 import { createFilter, testFilter } from './bloom-filter'
 import { dbFilename, tryDeleteFile } from '../paths'
 import { logAndTraceCall, logSpan, TracingContext } from '../tracing'
-import { PostgresDataManager } from '../database/postgres'
+import { PostgresManager } from '../database/postgres'
 import { TableInserter } from '../database/inserter'
 
 /**
@@ -60,7 +60,7 @@ export interface SymbolReferences {
 /**
  * A wrapper around Postgres advisory locks.
  */
-export class PostgresLocker extends PostgresDataManager {
+export class PostgresLocker extends PostgresManager {
     /**
      * Hold a Postgres advisory lock while executing the given function.
      *
@@ -121,7 +121,7 @@ export class PostgresLocker extends PostgresDataManager {
  * between projects at a specific commit. This is used for cross-repository jump to
  * definition and find references features.
  */
-export class XrepoDatabase extends PostgresDataManager {
+export class XrepoDatabase extends PostgresManager {
     /**
      * Create a new `XrepoDatabase` backed by the given database connection.
      *
