@@ -67,7 +67,7 @@ fi
 chmod 755 "$TMP/$RELEASE_BIN"
 echo "[+] Installing comby to $INSTALL_DIR"
 if [ ! $OS == "macos" ]; then
-    printf "[*] To install comby to $INSTALL_DIR requires sudo access. Please type the sudo password in the prompt below."
+    printf "[*] To install comby to $INSTALL_DIR requires sudo access. Please type the sudo password in the prompt below.\n"
     sudo cp "$TMP/$RELEASE_BIN" "$INSTALL_DIR/comby"
 else
     cp "$TMP/$RELEASE_BIN" "$INSTALL_DIR/comby"
@@ -81,7 +81,7 @@ if [ $SUCCESS_IN_PATH == "notinpath" ]; then
     exit 1
 fi
 
-CHECK=$(printf 'printf("hello world!\\\n");' | $INSTALL_DIR/comby 'printf("hello :[1]!\\n");' 'printf("hello comby!\\n");' -stdin || echo broken)
+CHECK=$(printf 'printf("hello world!\\\n");' | $INSTALL_DIR/comby 'printf("hello :[1]!\\n");' 'printf("hello comby!\\n");' .c -stdin || echo broken)
 if [ "$CHECK"  == "broken" ]; then
     printf "[-] comby did not install correctly.\n"
     printf "[-] My guess is that you need to install the pcre library on your system. Try:\n"
