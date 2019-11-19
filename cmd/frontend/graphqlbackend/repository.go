@@ -266,7 +266,7 @@ func (r *RepositoryResolver) LSIFDumps(ctx context.Context, args *LSIFDumpsQuery
 	}
 	return EnterpriseResolvers.codeIntelResolver.LSIFDumps(ctx, &LSIFRepositoryDumpsQueryArgs{
 		LSIFDumpsQueryArgs: args,
-		Repository:         r.ID(),
+		RepositoryID:       r.ID(),
 	})
 }
 

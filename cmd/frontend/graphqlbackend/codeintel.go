@@ -29,7 +29,7 @@ type LSIFDumpsQueryArgs struct {
 
 type LSIFRepositoryDumpsQueryArgs struct {
 	*LSIFDumpsQueryArgs
-	Repository graphql.ID
+	RepositoryID graphql.ID
 }
 
 type LSIFJobsQueryArgs struct {
