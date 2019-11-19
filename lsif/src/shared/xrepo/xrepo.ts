@@ -322,11 +322,12 @@ undefined.s
         references: SymbolReferences[],
         ctx: TracingContext = {}
     ): Promise<xrepoModels.LsifDump> {
-        // TODO - break this up
-        return logAndTraceCall(ctx, 'Inserting dump', () =>
-            this.withTransactionalEntityManager(async entityManager => {
-                const dump = await this.insertDump(repository, commit, root, uploadedAt, entityManager)
+        return this.withTransactionalEntityManager(async entityManager => {
+            const dump = await logAndTraceCall(ctx, 'Inserting dump', () =>
+                this.insertDump(repository, commit, root, uploadedAt, entityManager)
+            )
 
+            await logAndTraceCall(ctx, 'Inserting packages', async () => {
                 const packageInserter = new TableInserter<xrepoModels.PackageModel, new () => xrepoModels.PackageModel>(
                     entityManager,
                     xrepoModels.PackageModel,
@@ -335,14 +336,18 @@ undefined.s
                     true // Do nothing on conflict
                 )
 
+                for (const pkg of packages) {
+                    await packageInserter.insert({ dump_id: dump.id, ...pkg })
+                }
+
+                await packageInserter.flush()
+            })
+
+            await logAndTraceCall(ctx, 'Inserting references', async () => {
                 const referenceInserter = new TableInserter<
                     xrepoModels.ReferenceModel,
                     new () => xrepoModels.ReferenceModel
                 >(entityManager, xrepoModels.ReferenceModel, xrepoModels.ReferenceModel.BatchSize, insertionMetrics)
-
-                for (const pkg of packages) {
-                    await packageInserter.insert({ dump_id: dump.id, ...pkg })
-                }
 
                 for (const reference of references) {
                     await referenceInserter.insert({
@@ -352,12 +357,11 @@ undefined.s
                     })
                 }
 
-                await packageInserter.flush()
                 await referenceInserter.flush()
-
-                return dump
             })
-        )
+
+            return dump
+        })
     }
 
     /**
