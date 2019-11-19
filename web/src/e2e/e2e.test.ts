@@ -46,6 +46,7 @@ describe('e2e test suite', () => {
             'sourcegraph/go-vcs',
             'sourcegraph/appdash',
             'sourcegraph/sourcegraph-typescript',
+            'sourcegraph/automation-testing',
         ]
         await driver.ensureLoggedIn({ username: 'test', password: 'test', email: 'test@test.com' })
         await driver.resetUserSettings()
@@ -1364,6 +1365,33 @@ describe('e2e test suite', () => {
                 () => document.querySelectorAll('.e2e-literal-search-toast').length
             )
             expect(nodes).toEqual(0)
+        })
+    })
+
+    describe('Campaigns', () => {
+        test('Create campaign preview for comby campaign type', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/campaigns/new')
+            await driver.page.waitForSelector('.e2e-campaign-form')
+
+            // fill campaign preview form
+            await driver.page.type('.e2e-campaign-title', 'E2E campaign')
+            await driver.page.select('.e2e-campaign-type', 'comby')
+            await driver.page.waitForSelector('.e2e-campaign-arguments .monaco-editor')
+            await driver.replaceText({
+                selector: '.e2e-campaign-arguments .monaco-editor',
+                newText: JSON.stringify({
+                    matchTemplate: 'file',
+                    rewriteTemplate: 'files',
+                    scopeQuery: 'repo:github.com/sourcegraph/automation-testing',
+                }),
+                selectMethod: 'keyboard',
+            })
+
+            await driver.page.click('.e2e-preview-campaign')
+            await driver.page.waitForSelector('.e2e-preview-done', { timeout: 10000 })
+            // check if there have been any errors
+            const errorCount = await driver.page.evaluate(() => document.querySelectorAll('.alert.alert-danger').length)
+            expect(errorCount).toEqual(0)
         })
     })
 })
