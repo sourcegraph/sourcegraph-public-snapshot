@@ -230,6 +230,29 @@ paths:
                 $ref: '#/components/schemas/Dump'
         '404':
           description: Not found
+    delete:
+      description: Delete an LSIF dump by its identifier.
+      tags:
+        - Dumps
+      parameters:
+        - name: repository
+          in: path
+          description: The url-encoded repository name.
+          required: true
+          example: github.com%2Fsourcegraph%2Flsif-go
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: The dump identifier.
+          required: true
+          schema:
+            type: number
+      responses:
+        '204':
+          description: No content
+        '404':
+          description: Not found
   /jobs:
     post:
       description: Immediately queue a job.
@@ -349,6 +372,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Job'
+        '404':
+          description: Not Found
+    delete:
+      description: Delete an LSIF job by its identifier.
+      tags:
+        - Jobs
+      parameters:
+        - name: id
+          in: path
+          description: The job identifier.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: No Content
         '404':
           description: Not Found
 components:

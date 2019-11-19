@@ -1,4 +1,4 @@
-# Adminstration troubleshooting
+# Administration troubleshooting
 
 ### Docker Toolbox on Windows: `New state of 'nil' is invalid`
 

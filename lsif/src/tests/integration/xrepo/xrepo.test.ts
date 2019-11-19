@@ -44,14 +44,14 @@ describe('XrepoDatabase', () => {
         //       |              |           |
         //       +-- [c] -- d --+           +--- h
 
-        const ca = util.createCommit(0)
-        const cb = util.createCommit(1)
-        const cc = util.createCommit(2)
-        const cd = util.createCommit(3)
-        const ce = util.createCommit(4)
-        const cf = util.createCommit(5)
-        const cg = util.createCommit(6)
-        const ch = util.createCommit(7)
+        const ca = util.createCommit()
+        const cb = util.createCommit()
+        const cc = util.createCommit()
+        const cd = util.createCommit()
+        const ce = util.createCommit()
+        const cf = util.createCommit()
+        const cg = util.createCommit()
+        const ch = util.createCommit()
 
         // Add relations
         await xrepoDatabase.updateCommits('foo', [
@@ -106,14 +106,14 @@ describe('XrepoDatabase', () => {
         //              |
         //              +-- g -- h
 
-        const ca = util.createCommit(0)
-        const cb = util.createCommit(1)
-        const cc = util.createCommit(2)
-        const cd = util.createCommit(3)
-        const ce = util.createCommit(4)
-        const cf = util.createCommit(5)
-        const cg = util.createCommit(6)
-        const ch = util.createCommit(7)
+        const ca = util.createCommit()
+        const cb = util.createCommit()
+        const cc = util.createCommit()
+        const cd = util.createCommit()
+        const ce = util.createCommit()
+        const cf = util.createCommit()
+        const cg = util.createCommit()
+        const ch = util.createCommit()
 
         // Add relations
         await xrepoDatabase.updateCommits('foo', [
@@ -156,8 +156,8 @@ describe('XrepoDatabase', () => {
         //
         // Where LSIF dumps exist at b at roots: root1/ and root2/.
 
-        const ca = util.createCommit(0)
-        const cb = util.createCommit(1)
+        const ca = util.createCommit()
+        const cb = util.createCommit()
         const fields = ['repository', 'commit', 'root']
 
         // Add relations
@@ -271,13 +271,13 @@ describe('XrepoDatabase', () => {
         //
         // a -- b -- c -- d -- e -- f -- g
 
-        const ca = util.createCommit(0)
-        const cb = util.createCommit(1)
-        const cc = util.createCommit(2)
-        const cd = util.createCommit(3)
-        const ce = util.createCommit(4)
-        const cf = util.createCommit(5)
-        const cg = util.createCommit(6)
+        const ca = util.createCommit()
+        const cb = util.createCommit()
+        const cc = util.createCommit()
+        const cd = util.createCommit()
+        const ce = util.createCommit()
+        const cf = util.createCommit()
+        const cg = util.createCommit()
 
         // Add relations
         await xrepoDatabase.updateCommits('foo', [
@@ -312,15 +312,15 @@ describe('XrepoDatabase', () => {
         //     |                           |
         //     +-- [f] --- g --------------+
 
-        const ca = util.createCommit(0)
-        const cb = util.createCommit(1)
-        const cc = util.createCommit(2)
-        const cd = util.createCommit(3)
-        const ce = util.createCommit(4)
-        const ch = util.createCommit(5)
-        const ci = util.createCommit(6)
-        const cf = util.createCommit(7)
-        const cg = util.createCommit(8)
+        const ca = util.createCommit()
+        const cb = util.createCommit()
+        const cc = util.createCommit()
+        const cd = util.createCommit()
+        const ce = util.createCommit()
+        const ch = util.createCommit()
+        const ci = util.createCommit()
+        const cf = util.createCommit()
+        const cg = util.createCommit()
 
         // Add relations
         await xrepoDatabase.updateCommits('foo', [
@@ -406,12 +406,12 @@ describe('XrepoDatabase', () => {
     })
 
     it('should respect bloom filter', async () => {
-        const ca = util.createCommit(0)
-        const cb = util.createCommit(1)
-        const cc = util.createCommit(2)
-        const cd = util.createCommit(3)
-        const ce = util.createCommit(4)
-        const cf = util.createCommit(5)
+        const ca = util.createCommit()
+        const cb = util.createCommit()
+        const cc = util.createCommit()
+        const cd = util.createCommit()
+        const ce = util.createCommit()
+        const cf = util.createCommit()
 
         const updatePackages = (commit: string, root: string, identifiers: string[]): Promise<xrepoModels.LsifDump> =>
             xrepoDatabase.addPackagesAndReferences(
@@ -496,7 +496,7 @@ describe('XrepoDatabase', () => {
             // uses the identifier. In all, there are fifty uses spread over 5 pages.
             const isUse = i >= 100 && i % 3 === 0
 
-            const dump = await updatePackages(util.createCommit(0), `r${i}`, ['x', isUse ? 'y' : 'z'])
+            const dump = await updatePackages(util.createCommit(), `r${i}`, ['x', isUse ? 'y' : 'z'])
             dump.visibleAtTip = true
             await connection.getRepository(xrepoModels.LsifDump).save(dump)
 
@@ -520,9 +520,9 @@ describe('XrepoDatabase', () => {
     })
 
     it('references only returned if dumps visible at tip', async () => {
-        const ca = util.createCommit(0)
-        const cb = util.createCommit(1)
-        const cc = util.createCommit(2)
+        const ca = util.createCommit()
+        const cb = util.createCommit()
+        const cc = util.createCommit()
 
         const references = [
             {

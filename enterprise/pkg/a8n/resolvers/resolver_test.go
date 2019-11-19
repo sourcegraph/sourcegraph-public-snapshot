@@ -847,6 +847,7 @@ func TestCampaignPlanResolver(t *testing.T) {
 			FinishedAt:     now,
 			RepoID:         int32(repo.ID),
 			Rev:            testingRev,
+			BaseRef:        "master",
 			Diff:           testDiff,
 		}
 

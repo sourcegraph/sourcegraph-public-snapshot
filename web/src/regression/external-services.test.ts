@@ -16,6 +16,8 @@ import {
     ensureTestExternalService,
     getManagementConsoleState,
     waitForRepos,
+    getExternalServices,
+    updateExternalService,
 } from './util/api'
 import * as GQL from '../../../shared/src/graphql/schema'
 
@@ -146,7 +148,8 @@ describe('External services API', () => {
         'slowMo',
         'headless',
         'keepBrowser',
-        'logStatusMessages'
+        'logStatusMessages',
+        'bitbucketCloudUserBobAppPassword'
     )
 
     const gqlClient = createGraphQLClient({
@@ -188,6 +191,47 @@ describe('External services API', () => {
             )
         },
         5 * 1000
+    )
+
+    test(
+        'External services: Bitbucket Cloud',
+        async () => {
+            const uniqueDisplayName = '[TEST] Regression test: Bitbucket Cloud (bitbucket.org)'
+            const externalServiceInput = {
+                kind: GQL.ExternalServiceKind.BITBUCKETCLOUD,
+                uniqueDisplayName,
+                config: {
+                    url: 'https://bitbucket.org',
+                    username: 'sg-e2e-regression-test-bob',
+                    appPassword: config.bitbucketCloudUserBobAppPassword,
+                    repositoryPathPattern: '{nameWithOwner}',
+                },
+            }
+            const repos = [
+                'sg-e2e-regression-test-bob/jsonrpc2',
+                'sg-e2e-regression-test-bob/codeintellify',
+                'sg-e2e-regression-test-bob/mux',
+            ]
+            await ensureNoTestExternalServices(gqlClient, { ...externalServiceInput, deleteIfExist: true })
+            await waitForRepos(gqlClient, repos, config, true)
+            resourceManager.add(
+                'External service',
+                uniqueDisplayName,
+                await ensureTestExternalService(gqlClient, { ...externalServiceInput, waitForRepos: repos }, config)
+            )
+            // Update eternal service with an "exclude" property
+            const { id } = (await getExternalServices(gqlClient, { uniqueDisplayName }))[0]
+            await updateExternalService(gqlClient, {
+                id,
+                config: JSON.stringify({
+                    ...externalServiceInput.config,
+                    exclude: [{ name: 'sg-e2e-regression-test-bob/jsonrpc2' }],
+                }),
+            })
+            // Check that the excluded repository is no longer synced
+            await waitForRepos(gqlClient, ['sg-e2e-regression-test-bob/jsonrpc2'], config, true)
+        },
+        30 * 1000
     )
 })
 

@@ -37,10 +37,10 @@ var ErrTooManyResults = errors.New("search yielded too many results")
 // A Runner executes a CampaignPlan by creating and running CampaignJobs
 // according to the CampaignPlan's Arguments and CampaignType.
 type Runner struct {
-	store    *ee.Store
-	search   repoSearch
-	commitID repoCommitID
-	clock    func() time.Time
+	store         *ee.Store
+	search        repoSearch
+	defaultBranch repoDefaultBranch
+	clock         func() time.Time
 
 	ct CampaignType
 
@@ -52,56 +52,58 @@ type Runner struct {
 // associated with the search results.
 type repoSearch func(ctx context.Context, query string) ([]*graphqlbackend.RepositoryResolver, error)
 
-// repoCommitID takes in a RepositoryResolver and returns the target commit ID
-// of the repository's default branch.
-type repoCommitID func(ctx context.Context, repo *graphqlbackend.RepositoryResolver) (api.CommitID, error)
+// repoDefaultBranch takes in a RepositoryResolver and returns the ref name of
+// the repositories default branch and its target commit ID.
+type repoDefaultBranch func(ctx context.Context, repo *graphqlbackend.RepositoryResolver) (string, api.CommitID, error)
 
-// ErrNoDefaultBranch is returned by a repoCommitID when no default branch
+// ErrNoDefaultBranch is returned by a repoDefaultBranch when no default branch
 // could be determined for a given repo.
 var ErrNoDefaultBranch = errors.New("could not determine default branch")
 
-// defaultRepoCommitID is an implementation of repoCommit that uses methods
-// defined on RepositoryResolver to talk to gitserver to determine a
-// repository's default branch target commit ID.
-var defaultRepoCommitID = func(ctx context.Context, repo *graphqlbackend.RepositoryResolver) (api.CommitID, error) {
+// defaultRepoDefaultBranch is an implementation of repoDefaultBranch that uses
+// methods defined on RepositoryResolver to talk to gitserver to determine a
+// repository's default branch and its target commit ID.
+var defaultRepoDefaultBranch = func(ctx context.Context, repo *graphqlbackend.RepositoryResolver) (string, api.CommitID, error) {
+	var branch string
 	var commitID api.CommitID
 
 	defaultBranch, err := repo.DefaultBranch(ctx)
 	if err != nil {
-		return commitID, err
+		return branch, commitID, err
 	}
 	if defaultBranch == nil {
-		return commitID, ErrNoDefaultBranch
+		return branch, commitID, ErrNoDefaultBranch
 	}
+	branch = defaultBranch.Name()
 
 	commit, err := defaultBranch.Target().Commit(ctx)
 	if err != nil {
-		return commitID, err
+		return branch, commitID, err
 	}
 
 	commitID = api.CommitID(commit.OID())
-	return commitID, nil
+	return branch, commitID, nil
 }
 
 // New returns a Runner for a given CampaignType.
-func New(store *ee.Store, ct CampaignType, search repoSearch, commitID repoCommitID) *Runner {
-	return NewWithClock(store, ct, search, commitID, func() time.Time {
+func New(store *ee.Store, ct CampaignType, search repoSearch, defaultBranch repoDefaultBranch) *Runner {
+	return NewWithClock(store, ct, search, defaultBranch, func() time.Time {
 		return time.Now().UTC().Truncate(time.Microsecond)
 	})
 }
 
 // NewWithClock returns a Runner for a given CampaignType with the given clock used
 // to generate timestamps
-func NewWithClock(store *ee.Store, ct CampaignType, search repoSearch, commitID repoCommitID, clock func() time.Time) *Runner {
+func NewWithClock(store *ee.Store, ct CampaignType, search repoSearch, defaultBranch repoDefaultBranch, clock func() time.Time) *Runner {
 	runner := &Runner{
-		store:    store,
-		search:   search,
-		commitID: commitID,
-		ct:       ct,
-		clock:    clock,
+		store:         store,
+		search:        search,
+		defaultBranch: defaultBranch,
+		ct:            ct,
+		clock:         clock,
 	}
-	if runner.commitID == nil {
-		runner.commitID = defaultRepoCommitID
+	if runner.defaultBranch == nil {
+		runner.defaultBranch = defaultRepoDefaultBranch
 	}
 
 	return runner
@@ -237,8 +239,11 @@ func (r *Runner) createPlanAndJobs(
 			return jobs, err
 		}
 
-		var rev api.CommitID
-		rev, err = r.commitID(ctx, repo)
+		var (
+			branch string
+			rev    api.CommitID
+		)
+		branch, rev, err = r.defaultBranch(ctx, repo)
 		if err == ErrNoDefaultBranch {
 			err = nil
 			continue
@@ -250,6 +255,7 @@ func (r *Runner) createPlanAndJobs(
 		job := &a8n.CampaignJob{
 			CampaignPlanID: plan.ID,
 			RepoID:         repoID,
+			BaseRef:        branch,
 			Rev:            rev,
 		}
 		if err = tx.CreateCampaignJob(ctx, job); err != nil {

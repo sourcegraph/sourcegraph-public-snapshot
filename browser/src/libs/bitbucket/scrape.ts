@@ -58,7 +58,7 @@ const getFileInfoFromLinkInSingleFileView = (
 
             return {
                 rawRepoName: bitbucketToSourcegraphRepoName({ repoSlug, project }),
-                filePath,
+                filePath: decodeURIComponent(filePath),
                 rev,
                 project,
                 repoSlug,
