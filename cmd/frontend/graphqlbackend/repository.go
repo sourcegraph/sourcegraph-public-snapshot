@@ -260,6 +260,16 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 	return r.err
 }
 
+func (r *RepositoryResolver) LSIFDumps(ctx context.Context, args *LSIFDumpsQueryArgs) (LSIFDumpConnectionResolver, error) {
+	if OptionalResolvers.codeIntelResolver == nil {
+		return nil, codeIntelOnlyInEnterprise
+	}
+	return OptionalResolvers.codeIntelResolver.LSIFDumps(ctx, &LSIFRepositoryDumpsQueryArgs{
+		LSIFDumpsQueryArgs: args,
+		Repository:         r.ID(),
+	})
+}
+
 func (*schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
 	Callsign string
 	Name     *string
