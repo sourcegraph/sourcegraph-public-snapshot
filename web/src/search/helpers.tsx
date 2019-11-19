@@ -1,5 +1,4 @@
 import * as H from 'history'
-import _ from 'lodash'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { buildSearchURLQuery } from '../../../shared/src/util/url'
