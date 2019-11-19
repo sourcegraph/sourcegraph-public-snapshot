@@ -57,18 +57,53 @@ export interface SymbolReferences {
 }
 
 /**
- * A wrapper around a SQLite database that stitches together the references
- * between projects at a specific commit. This is used for cross-repository
- * jump to definition and find references features.
+ * A wrapper around a Postgres database.
  */
-export class XrepoDatabase {
+export abstract class PostgresDataManager {
+    /**
+     * Create a new `PostgresDataManager` backed by the given database connection.
+     *
+     * @param connection The Postgres connection.
+     */
+    constructor(protected connection: Connection) {}
+
+    /**
+     * Invoke `callback` with the wrapped Postgres connection.
+     *
+     * @param callback The function invoke with the SQLite connection.
+     */
+    protected withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
+        return instrument(metrics.xrepoQueryDurationHistogram, metrics.xrepoQueryErrorsCounter, () =>
+            callback(this.connection)
+        )
+    }
+
+    /**
+     * Invoke `callback` with a transactional Postgres entity manager created
+     * from the wrapped connection.
+     *
+     * @param callback The function invoke with the entity manager.
+     */
+    protected withTransactionalEntityManager<T>(callback: (connection: EntityManager) => Promise<T>): Promise<T> {
+        return this.withConnection(connection => connection.transaction(callback))
+    }
+}
+
+/**
+ * A wrapper around the cross-repository database that stitches together the references
+ * between projects at a specific commit. This is used for cross-repository jump to
+ * definition and find references features.
+ */
+export class XrepoDatabase extends PostgresDataManager {
     /**
      * Create a new `XrepoDatabase` backed by the given database connection.
      *
      * @param storageRoot The path where SQLite databases are stored.
      * @param connection The Postgres connection.
      */
-    constructor(private storageRoot: string, private connection: Connection) {}
+    constructor(private storageRoot: string, connection: Connection) {
+        super(connection)
+    }
 
     /**
      * Get the dumps for a repository.
@@ -847,28 +882,6 @@ undefined.s
      */
     private generateLockId(name: string): number {
         return crc32.str(name) * ADVISORY_LOCK_ID_SALT
-    }
-
-    /**
-     * Invoke `callback` with a SQLite connection object obtained from the
-     * cache or created on cache miss.
-     *
-     * @param callback The function invoke with the SQLite connection.
-     */
-    private withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
-        return instrument(metrics.xrepoQueryDurationHistogram, metrics.xrepoQueryErrorsCounter, () =>
-            callback(this.connection)
-        )
-    }
-
-    /**
-     * Invoke `callback` with a transactional SQLite manager manager object
-     * obtained from the cache or created on cache miss.
-     *
-     * @param callback The function invoke with the entity manager.
-     */
-    private withTransactionalEntityManager<T>(callback: (connection: EntityManager) => Promise<T>): Promise<T> {
-        return this.withConnection(connection => connection.transaction(callback))
     }
 
     /**
