@@ -166,7 +166,7 @@ digraph architecture {
         customer_scripts [label="Customer\nScripts"]
         editor_ext [label="Editor\nExtensions"]
         native_integrations [label="Native\nIntegrations"]
-        browser [label="Browser"]
+        management_console_ui [label="Management\nConsole\nUI"]
     }
 
     frontend -> {
@@ -246,6 +246,7 @@ digraph architecture {
     gitserver -> {
         github_enterprise
         gitlab_dot_com
+        github_dot_com
         bitbucket_server
         bitbucket_cloud
     } [
@@ -266,6 +267,6 @@ digraph architecture {
         src_cli -> frontend
         editor_ext -> frontend
         customer_scripts -> frontend
-        browser -> management_console
+        management_console_ui -> management_console
     }
 }
