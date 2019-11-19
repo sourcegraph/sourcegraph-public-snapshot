@@ -36,6 +36,7 @@ import { isDefined } from '../../../../shared/src/util/types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { once } from 'lodash'
 import { dedupeWhitespace } from '../../../../shared/src/util/strings'
+import { UndoRedoHistory } from '../../../../shared/src/util/UndoRedoHistory'
 
 /**
  * The query input field is clobbered and updated to contain this subject's values, as
@@ -115,6 +116,11 @@ export class QueryInput extends React.Component<Props, State> {
     /** Used for scrolling suggestions into view while scrolling with keyboard */
     private containerElement = React.createRef<HTMLDivElement>()
 
+    private queryHistory = new UndoRedoHistory<QueryState>({
+        current: this.props.value,
+        onChange: queryState => this.props.onChange(queryState),
+    })
+
     public state: State = {
         loadingSuggestions: false,
         suggestions: {
@@ -126,9 +132,13 @@ export class QueryInput extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
 
-        // Update parent component
-        // (will be used in next PR to push to queryHistory (undo/redo))
-        this.subscriptions.add(this.inputValues.subscribe(queryState => this.props.onChange(queryState)))
+        // Update parent component and insert change into queryHistory for undo/redo
+        this.subscriptions.add(
+            this.inputValues.subscribe(queryState => {
+                this.props.onChange(queryState)
+                this.queryHistory.push(queryState)
+            })
+        )
 
         // Trigger suggestions.
         // This is set on componentDidUpdate so the data flow can be easier to manage, making it
@@ -431,6 +441,14 @@ export class QueryInput extends React.Component<Props, State> {
                     values: searchFilterSuggestions.filters.values,
                 },
             })
+        }
+        if (event.ctrlKey && event.key === 'z') {
+            event.preventDefault()
+            this.queryHistory.undo()
+        }
+        if (event.ctrlKey && event.shiftKey && event.key === 'Z') {
+            event.preventDefault()
+            this.queryHistory.redo()
         }
     }
 
