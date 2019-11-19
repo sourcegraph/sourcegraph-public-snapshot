@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 
 # This function installs the comby dependency for cmd/searcher and cmd/replacer.
-# The CI pipeline calls this script to install comby for tests.
-RELEASE_VERSION="0.11.0"
-RELEASE_TAG="0.11.0"
+# The main /dev/launch.sh script and CI pipeline call this script to install or
+# upgrade comby for tests or development environments.
+REQUIRE_VERSION="0.11.1"
+
+RELEASE_VERSION=$REQUIRE_VERSION
+RELEASE_TAG=$REQUIRE_VERSION
 RELEASE_URL="https://github.com/comby-tools/comby/releases"
 
 INSTALL_DIR=/usr/local/bin
@@ -17,6 +20,11 @@ function ctrl_c() {
 trap ctrl_c INT
 
 EXISTS=$(command -v comby || echo)
+
+# Exit if comby exists with the desired version.
+if [ "$EXISTS" ] && [ $(comby -version) == "$REQUIRE_VERSION" ]; then
+    exit 0
+fi
 
 if [ -n "$EXISTS" ]; then
     INSTALL_DIR=$(dirname $EXISTS)
@@ -59,6 +67,7 @@ fi
 chmod 755 "$TMP/$RELEASE_BIN"
 echo "[+] Installing comby to $INSTALL_DIR"
 if [ ! $OS == "macos" ]; then
+    printf "[*] To install comby to $INSTALL_DIR requires sudo access. Please type the sudo password in the prompt below.\n"
     sudo cp "$TMP/$RELEASE_BIN" "$INSTALL_DIR/comby"
 else
     cp "$TMP/$RELEASE_BIN" "$INSTALL_DIR/comby"
@@ -72,7 +81,7 @@ if [ $SUCCESS_IN_PATH == "notinpath" ]; then
     exit 1
 fi
 
-CHECK=$(printf 'printf("hello world!\\\n");' | $INSTALL_DIR/comby 'printf("hello :[1]!\\n");' 'printf("hello comby!\\n");' -stdin || echo broken)
+CHECK=$(printf 'printf("hello world!\\\n");' | $INSTALL_DIR/comby 'printf("hello :[1]!\\n");' 'printf("hello comby!\\n");' .c -stdin || echo broken)
 if [ "$CHECK"  == "broken" ]; then
     printf "[-] comby did not install correctly.\n"
     printf "[-] My guess is that you need to install the pcre library on your system. Try:\n"
@@ -86,3 +95,4 @@ if [ "$CHECK"  == "broken" ]; then
 fi
 
 rm -f $TMP/$RELEASE_BIN
+printf "[+] comby upgraded to $REQUIRE_VERSION\n"
