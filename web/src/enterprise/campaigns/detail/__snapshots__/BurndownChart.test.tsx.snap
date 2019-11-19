@@ -106,7 +106,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                 dy="0.71em"
                 x={65}
               >
-                November 14
+                November 13
               </tspan>
             </text>
           </g>
@@ -140,7 +140,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                 dy="0.71em"
                 x={189.4212962962963}
               >
-                November 14
+                November 13
               </tspan>
             </text>
           </g>
@@ -208,7 +208,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                 dy="0.71em"
                 x={495}
               >
-                November 15
+                November 14
               </tspan>
             </text>
           </g>
