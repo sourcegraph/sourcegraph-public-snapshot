@@ -179,7 +179,7 @@ export function createJobRouter(
 
                 // Enqueue job
                 const ctx = createTracingContext(req, { name })
-                logger.debug(`enqueueing ${name} job`)
+                logger.debug(`Enqueueing ${name} job`)
                 const job = await enqueue(queue, name, {}, {}, tracer, ctx.span)
 
                 if (blocking && (await waitForJob(job, maxWait))) {

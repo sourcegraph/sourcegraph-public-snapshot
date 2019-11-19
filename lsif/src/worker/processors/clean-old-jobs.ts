@@ -15,7 +15,7 @@ export const createCleanOldJobsProcessor = (queue: Queue, logger: Logger) => asy
     _: unknown,
     ctx: TracingContext
 ): Promise<void> => {
-    const removedJobs = await logAndTraceCall(ctx, 'cleaning old jobs', () =>
+    const removedJobs = await logAndTraceCall(ctx, 'Cleaning old jobs', () =>
         Promise.all(cleanStatuses.map(status => queue.clean(settings.JOB_MAX_AGE * 1000, status)))
     )
 
@@ -23,7 +23,7 @@ export const createCleanOldJobsProcessor = (queue: Queue, logger: Logger) => asy
 
     for (const [status, count] of removedJobs.map((jobs, i) => [cleanStatuses[i], jobs.length])) {
         if (count > 0) {
-            jobLogger.debug('cleaned old jobs', { status, count })
+            jobLogger.debug('Cleaned old jobs', { status, count })
         }
     }
 }

@@ -76,14 +76,14 @@ export function createSilentLogger(): Logger {
  */
 export async function logCall<T>(name: string, logger: Logger, f: () => Promise<T> | T): Promise<T> {
     const timer = logger.startTimer()
-    logger.debug(name)
+    logger.debug(`${name}: starting`)
 
     try {
         const value = await f()
-        timer.done({ message: `finished ${name}`, level: 'debug' })
+        timer.done({ message: `${name}: finished`, level: 'debug' })
         return value
     } catch (error) {
-        timer.done({ message: `failed ${name}`, level: 'error', error })
+        timer.done({ message: `${name}: failed`, level: 'error', error })
         throw error
     }
 }

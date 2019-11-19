@@ -8,7 +8,7 @@ import { chunk } from 'lodash'
 import { createFilter, testFilter } from './bloom-filter'
 import { dbFilename, tryDeleteFile } from '../paths'
 import { instrument } from '../metrics'
-import { logAndTraceCall, TracingContext } from '../tracing'
+import { logAndTraceCall, TracingContext, logSpan } from '../tracing'
 import { TableInserter } from '../database/inserter'
 
 /**
@@ -176,8 +176,9 @@ export class XrepoDatabase {
      *
      * @param repository The repository name.
      * @param commit The head of the default branch.
+     * @param ctx The tracing context.
      */
-    public async updateDumpsVisibleFromTip(repository: string, commit: string): Promise<void> {
+    public updateDumpsVisibleFromTip(repository: string, commit: string, ctx: TracingContext = {}): Promise<void> {
         const query = `
             -- Get all ancestors of the tip
             WITH RECURSIVE lineage(id, repository, "commit", parent) AS (
@@ -195,13 +196,15 @@ export class XrepoDatabase {
             WHERE d.repository = $1 AND (d.id IN (SELECT * from visible_ids) OR d.visible_at_tip)
         `
 
-        await this.withConnection(connection => connection.query(query, [repository, commit]))
+        return logAndTraceCall(ctx, 'Updating dumps visible from tip', () =>
+            this.withConnection(connection => connection.query(query, [repository, commit]))
+        )
     }
 
     /**
      * Return the commit that has LSIF data 'closest' to the given target commit (a direct descendant
-     * or ancestor of the target commit). If no closest commit can be determined, this method returns
-     * undefined.s
+or ancestor of the target commit). If no closest commit can be determined, this method returns
+undefined.s
      *
      * @param repository The repository name.
      * @param commit The target commit.
@@ -225,45 +228,54 @@ export class XrepoDatabase {
             await this.discoverAndUpdateCommit({ repository, commit, gitserverUrls, ctx })
         }
 
-        return this.withConnection(async connection => {
-            const results = (await connection.query('select * from closest_dump($1, $2, $3, $4)', [
-                repository,
-                commit,
-                file,
-                MAX_TRAVERSAL_LIMIT,
-            ])) as xrepoModels.LsifDump[]
+        return logAndTraceCall(ctx, 'Finding closest dump', () =>
+            this.withConnection(async connection => {
+                const results = (await connection.query('select * from closest_dump($1, $2, $3, $4)', [
+                    repository,
+                    commit,
+                    file,
+                    MAX_TRAVERSAL_LIMIT,
+                ])) as xrepoModels.LsifDump[]
 
-            if (results.length === 0) {
-                return undefined
-            }
+                if (results.length === 0) {
+                    return undefined
+                }
 
-            return results[0]
-        })
+                return results[0]
+            })
+        )
     }
 
     /**
      * Update the known commits for a repository. The given commit list is a set of pairs of the
-     * form `(child, parent)`. Commits without a parent will be returend as  `(child, undefined)`.
+     * form `(child, parent)`. Commits without a parent will be returned as `(child, undefined)`.
      *
      * @param repository The repository name.
      * @param commits The commit parentage data.
+     * @param ctx The tracing context.
      */
-    public updateCommits(repository: string, commits: [string, string | undefined][]): Promise<void> {
-        return this.withTransactionalEntityManager(async entityManager => {
-            const commitInserter = new TableInserter(
-                entityManager,
-                xrepoModels.Commit,
-                xrepoModels.Commit.BatchSize,
-                insertionMetrics,
-                true // Do nothing on conflict
-            )
+    public updateCommits(
+        repository: string,
+        commits: [string, string | undefined][],
+        ctx: TracingContext = {}
+    ): Promise<void> {
+        return logAndTraceCall(ctx, 'Updating commits', () =>
+            this.withTransactionalEntityManager(async entityManager => {
+                const commitInserter = new TableInserter(
+                    entityManager,
+                    xrepoModels.Commit,
+                    xrepoModels.Commit.BatchSize,
+                    insertionMetrics,
+                    true // Do nothing on conflict
+                )
 
-            for (const [commit, parentCommit] of commits) {
-                await commitInserter.insert({ repository, commit, parentCommit })
-            }
+                for (const [commit, parentCommit] of commits) {
+                    await commitInserter.insert({ repository, commit, parentCommit })
+                }
 
-            await commitInserter.flush()
-        })
+                await commitInserter.flush()
+            })
+        )
     }
 
     /**
@@ -299,6 +311,7 @@ export class XrepoDatabase {
      * @param uploadedAt The time the dump was uploaded.
      * @param packages The list of packages that this repository defines (scheme, name, and version).
      * @param references The list of packages that this repository depends on (scheme, name, and version) and the symbols that the package references.
+     * @param ctx The tracing context.
      */
     public addPackagesAndReferences(
         repository: string,
@@ -306,38 +319,46 @@ export class XrepoDatabase {
         root: string,
         uploadedAt: Date,
         packages: Package[],
-        references: SymbolReferences[]
+        references: SymbolReferences[],
+        ctx: TracingContext = {}
     ): Promise<xrepoModels.LsifDump> {
         return this.withTransactionalEntityManager(async entityManager => {
-            const dump = await this.insertDump(repository, commit, root, uploadedAt, entityManager)
-
-            const packageInserter = new TableInserter<xrepoModels.PackageModel, new () => xrepoModels.PackageModel>(
-                entityManager,
-                xrepoModels.PackageModel,
-                xrepoModels.PackageModel.BatchSize,
-                insertionMetrics,
-                true // Do nothing on conflict
+            const dump = await logAndTraceCall(ctx, 'Inserting dump', () =>
+                this.insertDump(repository, commit, root, uploadedAt, entityManager)
             )
 
-            const referenceInserter = new TableInserter<
-                xrepoModels.ReferenceModel,
-                new () => xrepoModels.ReferenceModel
-            >(entityManager, xrepoModels.ReferenceModel, xrepoModels.ReferenceModel.BatchSize, insertionMetrics)
+            await logAndTraceCall(ctx, 'Inserting packages', async () => {
+                const packageInserter = new TableInserter<xrepoModels.PackageModel, new () => xrepoModels.PackageModel>(
+                    entityManager,
+                    xrepoModels.PackageModel,
+                    xrepoModels.PackageModel.BatchSize,
+                    insertionMetrics,
+                    true // Do nothing on conflict
+                )
 
-            for (const pkg of packages) {
-                await packageInserter.insert({ dump_id: dump.id, ...pkg })
-            }
+                for (const pkg of packages) {
+                    await packageInserter.insert({ dump_id: dump.id, ...pkg })
+                }
 
-            for (const reference of references) {
-                await referenceInserter.insert({
-                    dump_id: dump.id,
-                    filter: await createFilter(reference.identifiers),
-                    ...reference.package,
-                })
-            }
+                await packageInserter.flush()
+            })
 
-            await packageInserter.flush()
-            await referenceInserter.flush()
+            await logAndTraceCall(ctx, 'Inserting references', async () => {
+                const referenceInserter = new TableInserter<
+                    xrepoModels.ReferenceModel,
+                    new () => xrepoModels.ReferenceModel
+                >(entityManager, xrepoModels.ReferenceModel, xrepoModels.ReferenceModel.BatchSize, insertionMetrics)
+
+                for (const reference of references) {
+                    await referenceInserter.insert({
+                        dump_id: dump.id,
+                        filter: await createFilter(reference.identifiers),
+                        ...reference.package,
+                    })
+                }
+
+                await referenceInserter.flush()
+            })
 
             return dump
         })
@@ -481,6 +502,7 @@ export class XrepoDatabase {
         identifier,
         limit,
         offset,
+        ctx = {},
     }: {
         /** The source repository of the search. */
         repository: string
@@ -496,6 +518,8 @@ export class XrepoDatabase {
         limit: number
         /** The number of repository records to skip. */
         offset: number
+        /** The tracing context. */
+        ctx?: TracingContext
     }): Promise<{ references: xrepoModels.ReferenceModel[]; totalCount: number; newOffset: number }> {
         // We do this inside of a transaction so that we get consistent results from multiple
         // distinct queries: one count query and one or more select queries, depending on the
@@ -532,6 +556,7 @@ export class XrepoDatabase {
                 offset,
                 limit,
                 totalCount,
+                ctx,
             })
 
             return { references, totalCount, newOffset }
@@ -556,6 +581,7 @@ export class XrepoDatabase {
         identifier,
         limit,
         offset,
+        ctx = {},
     }: {
         /** The source repository of the search. */
         repository: string
@@ -573,6 +599,8 @@ export class XrepoDatabase {
         limit: number
         /** The number of repository records to skip. */
         offset: number
+        /** The tracing context. */
+        ctx?: TracingContext
     }): Promise<{ references: xrepoModels.ReferenceModel[]; totalCount: number; newOffset: number }> {
         const visibleIdsQuery = `
             -- lineage is a recursively defined CTE that returns all ancestor an descendants
@@ -666,6 +694,7 @@ export class XrepoDatabase {
                 offset,
                 limit,
                 totalCount,
+                ctx,
             })
 
             return { references, totalCount, newOffset }
@@ -686,6 +715,7 @@ export class XrepoDatabase {
         offset,
         limit,
         totalCount,
+        ctx = {},
     }: {
         /** The function to invoke to query the next set of references. */
         getPage: (offset: number) => Promise<xrepoModels.ReferenceModel[]>
@@ -700,30 +730,47 @@ export class XrepoDatabase {
          * number of items that can be returned by `getPage` starting from offset zero.
          */
         totalCount: number
+        /** The tracing context. */
+        ctx?: TracingContext
     }): Promise<{ references: xrepoModels.ReferenceModel[]; newOffset: number }> {
-        const references: xrepoModels.ReferenceModel[] = []
-        while (references.length < limit && offset < totalCount) {
-            const page = await getPage(offset)
-            if (page.length === 0) {
-                // Shouldn't happen, but just in case of a bug we
-                // don't want this to throw up into an infinite loop.
-                break
+        return logAndTraceCall(ctx, 'Gathering references', async ctx => {
+            let numScanned = 0
+            let numFetched = 0
+            let numFiltered = 0
+            let newOffset = offset
+            const references: xrepoModels.ReferenceModel[] = []
+
+            while (references.length < limit && newOffset < totalCount) {
+                // Copy for use in the following anonymous function, otherwise the
+                // re-assignment of newOffset triggers a non-atomic update warning.
+                const localOffset = newOffset
+
+                const page = await logAndTraceCall(ctx, 'Fetching page of references', () => getPage(localOffset))
+                if (page.length === 0) {
+                    // Shouldn't happen, but just in case of a bug we
+                    // don't want this to throw up into an infinite loop.
+                    break
+                }
+
+                const { references: filtered, scanned } = await this.applyBloomFilter(
+                    page,
+                    identifier,
+                    limit - references.length
+                )
+
+                for (const reference of filtered) {
+                    references.push(reference)
+                }
+
+                newOffset += scanned
+                numScanned += scanned
+                numFetched += page.length
+                numFiltered += scanned - filtered.length
             }
 
-            const { references: filtered, scanned } = await this.applyBloomFilter(
-                page,
-                identifier,
-                limit - references.length
-            )
-
-            for (const reference of filtered) {
-                references.push(reference)
-            }
-
-            offset += scanned
-        }
-
-        return { references, newOffset: offset }
+            logSpan(ctx, 'reference_results', { numScanned, numFetched, numFiltered })
+            return { references, newOffset }
+        })
     }
 
     /**
@@ -836,7 +883,7 @@ export class XrepoDatabase {
         repository,
         commit,
         gitserverUrls,
-        ctx,
+        ctx = {},
     }: {
         /** The repository name. */
         repository: string
@@ -845,7 +892,7 @@ export class XrepoDatabase {
         /** The set of ordered gitserver urls. */
         gitserverUrls: string[]
         /** The tracing context. */
-        ctx: TracingContext
+        ctx?: TracingContext
     }): Promise<void> {
         // No need to update if we already know about this commit
         if (await this.isCommitTracked(repository, commit)) {
@@ -858,10 +905,8 @@ export class XrepoDatabase {
         }
 
         const gitserverUrl = addrFor(repository, gitserverUrls)
-        const commits = await logAndTraceCall(ctx, 'querying commits', () =>
-            getCommitsNear(gitserverUrl, repository, commit)
-        )
-        await logAndTraceCall(ctx, 'updating commits', () => this.updateCommits(repository, commits))
+        const commits = await getCommitsNear(gitserverUrl, repository, commit, ctx)
+        await this.updateCommits(repository, commits, ctx)
     }
 
     /**
@@ -874,13 +919,13 @@ export class XrepoDatabase {
      */
     public async discoverAndUpdateTips({
         gitserverUrls,
-        ctx,
+        ctx = {},
         batchSize = MAX_CONCURRENT_GITSERVER_REQUESTS,
     }: {
         /** The set of ordered gitserver urls. */
         gitserverUrls: string[]
         /** The tracing context. */
-        ctx: TracingContext
+        ctx?: TracingContext
         /** The maximum number of requests to make at once. Set during testing.*/
         batchSize?: number
     }): Promise<void> {
@@ -891,7 +936,7 @@ export class XrepoDatabase {
                 batchSize,
             })
         ).entries()) {
-            await this.updateDumpsVisibleFromTip(repository, commit)
+            await this.updateDumpsVisibleFromTip(repository, commit, ctx)
         }
     }
 
@@ -903,13 +948,13 @@ export class XrepoDatabase {
      */
     public async discoverTips({
         gitserverUrls,
-        ctx,
+        ctx = {},
         batchSize = MAX_CONCURRENT_GITSERVER_REQUESTS,
     }: {
         /** The set of ordered gitserver urls. */
         gitserverUrls: string[]
         /** The tracing context. */
-        ctx: TracingContext
+        ctx?: TracingContext
         /** The maximum number of requests to make at once. Set during testing.*/
         batchSize?: number
     }): Promise<Map<string, string>> {
@@ -921,10 +966,12 @@ export class XrepoDatabase {
         const factories: (() => Promise<{ repository: string; commit: string }>)[] = []
         for (const repository of await this.getTrackedRepositories()) {
             factories.push(async () => {
-                const lines = await gitserverExecLines(addrFor(repository, gitserverUrls), repository, [
-                    'rev-parse',
-                    'HEAD',
-                ])
+                const lines = await gitserverExecLines(
+                    addrFor(repository, gitserverUrls),
+                    repository,
+                    ['rev-parse', 'HEAD'],
+                    ctx
+                )
 
                 return { repository, commit: lines ? lines[0] : '' }
             })
@@ -933,7 +980,7 @@ export class XrepoDatabase {
         const tips = new Map<string, string>()
         for (const batch of chunk(factories, batchSize)) {
             // Perform this batch of calls to the appropriate gitserver instance
-            const responses = await logAndTraceCall(ctx, 'getting repository metadata', () =>
+            const responses = await logAndTraceCall(ctx, 'Getting repository metadata', () =>
                 Promise.all(batch.map(factory => factory()))
             )
 

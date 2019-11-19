@@ -2,7 +2,7 @@ import * as dumpModels from '../../shared/models/dump'
 import * as lsp from 'vscode-languageserver-protocol'
 import * as settings from '../settings'
 import * as xrepoModels from '../../shared/models/xrepo'
-import { addTags, logAndTraceCall, logSpan, TracingContext } from '../../shared/tracing'
+import { addTags, logSpan, TracingContext } from '../../shared/tracing'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { createRemoteUri, Database, sortMonikers } from './database'
 import { dbFilename } from '../../shared/paths'
@@ -178,7 +178,7 @@ export class Backend {
         // Construct path within dump
         const pathInDb = this.pathToDatabase(dump.root, path)
 
-        // Try to find definitions in the same dump.
+        // Try to find definitions in the same dump
         const dbDefinitions = await database.definitions(pathInDb, position, newCtx)
         const definitions = dbDefinitions.map(loc => this.locationFromDatabase(dump.root, loc))
         if (definitions.length > 0) {
@@ -219,9 +219,8 @@ export class Backend {
                     // table of our own database in case there was a definition that wasn't properly
                     // attached to a result set but did have the correct monikers attached.
 
-                    const localDefinitions = (
-                        await database.monikerResults(dumpModels.DefinitionModel, moniker, ctx)
-                    ).map(loc => this.locationFromDatabase(dump.root, loc))
+                    const monikerResults = await database.monikerResults(dumpModels.DefinitionModel, moniker, ctx)
+                    const localDefinitions = monikerResults.map(loc => this.locationFromDatabase(dump.root, loc))
                     if (localDefinitions) {
                         return localDefinitions
                     }
@@ -518,11 +517,8 @@ export class Backend {
             // in the LSIF data.
 
             for (const moniker of monikers) {
-                locations = locations.concat(
-                    (await database.monikerResults(dumpModels.ReferenceModel, moniker, ctx)).map(loc =>
-                        this.locationFromDatabase(dump.root, loc)
-                    )
-                )
+                const monikerResults = await database.monikerResults(dumpModels.ReferenceModel, moniker, ctx)
+                locations = locations.concat(monikerResults.map(loc => this.locationFromDatabase(dump.root, loc)))
             }
 
             // Next, we perform an xrepo search for uses of each nonlocal moniker. We stop processing after
@@ -532,9 +528,8 @@ export class Backend {
             for (const moniker of monikers) {
                 if (moniker.kind === 'import') {
                     // Get locations in the defining package
-                    locations = locations.concat(
-                        await this.lookupMoniker(document, moniker, dumpModels.ReferenceModel, ctx)
-                    )
+                    const monikerLocations = await this.lookupMoniker(document, moniker, dumpModels.ReferenceModel, ctx)
+                    locations = locations.concat(monikerLocations)
                 }
 
                 const packageInformation = this.lookupPackageInformation(document, moniker, ctx)
@@ -717,33 +712,35 @@ export class Backend {
      * @param file One of the files in the dump.
      * @param ctx The tracing context.
      */
-    private loadClosestDatabase(
+    private async loadClosestDatabase(
         repository: string,
         commit: string,
         file: string,
         ctx: TracingContext = {}
     ): Promise<{ database: Database; dump: xrepoModels.LsifDump; ctx: TracingContext } | undefined> {
-        return logAndTraceCall(ctx, 'loading closest database', async ctx => {
-            // Determine the closest commit that we actually have LSIF data for. If the commit is
-            // not tracked, then commit data is requested from gitserver and insert the ancestors
-            // data for this commit.
-            const dump = await logAndTraceCall(ctx, 'determining closest commit', (ctx: TracingContext) =>
-                this.xrepoDatabase.findClosestDump(repository, commit, file, ctx, this.fetchConfiguration().gitServers)
+        // Determine the closest commit that we actually have LSIF data for. If the commit is
+        // not tracked, then commit data is requested from gitserver and insert the ancestors
+        // data for this commit.
+        const dump = await this.xrepoDatabase.findClosestDump(
+            repository,
+            commit,
+            file,
+            ctx,
+            this.fetchConfiguration().gitServers
+        )
+        if (dump) {
+            const database = new Database(
+                this.connectionCache,
+                this.documentCache,
+                this.resultChunkCache,
+                dump.id,
+                dbFilename(this.storageRoot, dump.id, dump.repository, dump.commit)
             )
-            if (dump) {
-                const database = new Database(
-                    this.connectionCache,
-                    this.documentCache,
-                    this.resultChunkCache,
-                    dump.id,
-                    dbFilename(this.storageRoot, dump.id, dump.repository, dump.commit)
-                )
 
-                return { database, dump, ctx: addTags(ctx, { closestCommit: dump.commit }) }
-            }
+            return { database, dump, ctx: addTags(ctx, { closestCommit: dump.commit }) }
+        }
 
-            return undefined
-        })
+        return undefined
     }
 
     /**

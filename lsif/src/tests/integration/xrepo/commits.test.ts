@@ -22,7 +22,6 @@ describe('discoverAndUpdateCommit', () => {
                 repository: 'test-repo', // hashes to gitserver1
                 commit: cc,
                 gitserverUrls: ['gitserver0', 'gitserver1', 'gitserver2'],
-                ctx: {},
             })
 
             // Ensure all commits are now tracked
@@ -53,7 +52,6 @@ describe('discoverAndUpdateCommit', () => {
                 repository: 'test-repo', // hashes to gitserver1
                 commit: cb,
                 gitserverUrls: ['gitserver0', 'gitserver1', 'gitserver2'],
-                ctx: {},
             })
         } finally {
             await cleanup()
@@ -76,7 +74,6 @@ describe('discoverAndUpdateCommit', () => {
                 repository: 'test-repo', // hashes to gitserver1
                 commit: ca,
                 gitserverUrls: ['gitserver0', 'gitserver1', 'gitserver2'],
-                ctx: {},
             })
         } finally {
             await cleanup()
@@ -113,7 +110,6 @@ describe('discoverAndUpdateTips', () => {
 
             await xrepoDatabase.discoverAndUpdateTips({
                 gitserverUrls: ['gitserver0'],
-                ctx: {},
             })
 
             const d1 = await xrepoDatabase.getDump('test-repo', ca, 'foo/test.ts')
@@ -164,7 +160,6 @@ describe('discoverTips', () => {
 
             const tips = await xrepoDatabase.discoverTips({
                 gitserverUrls: ['gitserver0', 'gitserver1', 'gitserver2'],
-                ctx: {},
                 batchSize: 5,
             })
 
