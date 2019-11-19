@@ -48,12 +48,7 @@ export function fetchLsifDumps({
         map(dataOrThrowErrors),
         map(({ node }) => {
             if (!node) {
-                return {
-                    __typename: 'LSIFDumpConnection' as const,
-                    nodes: [],
-                    totalCount: 0,
-                    pageInfo: { __typename: 'PageInfo' as const, endCursor: null, hasNextPage: false },
-                }
+                throw new Error('Invalid repository')
             }
             if (node.__typename !== 'Repository') {
                 throw new Error(`The given ID is a ${node.__typename}, not a Repository`)
