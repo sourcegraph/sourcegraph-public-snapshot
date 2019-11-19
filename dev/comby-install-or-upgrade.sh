@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # This function installs the comby dependency for cmd/searcher and cmd/replacer.
-# The main /dev/launch.sh script and CI pipeline calls this script to install or
+# The main /dev/launch.sh script and CI pipeline call this script to install or
 # upgrade comby for tests or development environments.
 REQUIRE_VERSION="0.11.0"
 
@@ -67,6 +67,7 @@ fi
 chmod 755 "$TMP/$RELEASE_BIN"
 echo "[+] Installing comby to $INSTALL_DIR"
 if [ ! $OS == "macos" ]; then
+    printf "[*] To install comby to $INSTALL_DIR requires sudo access. Please type the sudo password in the prompt below"
     sudo cp "$TMP/$RELEASE_BIN" "$INSTALL_DIR/comby"
 else
     cp "$TMP/$RELEASE_BIN" "$INSTALL_DIR/comby"
