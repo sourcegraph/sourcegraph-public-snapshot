@@ -71,6 +71,7 @@ func TestService(t *testing.T) {
 			CampaignPlanID: testPlan.ID,
 			RepoID:         int32(repo.ID),
 			Rev:            "deadbeef",
+			BaseRef:        "master",
 			Diff:           "cool diff",
 			StartedAt:      now,
 			FinishedAt:     now,
