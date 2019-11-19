@@ -95,4 +95,4 @@ if [ "$CHECK"  == "broken" ]; then
 fi
 
 rm -f $TMP/$RELEASE_BIN
-printf "[+] comby upgraded to $REQUIRE_VERSION."
+printf "[+] comby upgraded to $REQUIRE_VERSION\n"
