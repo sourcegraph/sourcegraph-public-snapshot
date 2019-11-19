@@ -176,7 +176,7 @@ export class QueryInput extends React.Component<Props, State> {
                             ? this.props.prependQueryForSuggestions + ' ' + queryForFuzzySearch
                             : queryForFuzzySearch
 
-                        const fuzzySearch$ = fetchSuggestions(fullQuery).pipe(
+                        const fuzzySearchSuggestions = fetchSuggestions(fullQuery).pipe(
                             map(createSuggestion),
                             filter(isDefined),
                             map((suggestion): Suggestion => ({ ...suggestion, fromFuzzySearch: true })),
@@ -227,10 +227,10 @@ export class QueryInput extends React.Component<Props, State> {
                             // Prevent loading indicator jitter, only showing it after 1s delay
                             of({ suggestions: staticSuggestions, loadingSuggestions: true }).pipe(
                                 delay(1000),
-                                takeUntil(fuzzySearch$)
+                                takeUntil(fuzzySearchSuggestions)
                             ),
                             // Fetch and format fuzzy-search suggestions
-                            fuzzySearch$
+                            fuzzySearchSuggestions
                         )
                     }),
                     // Abort suggestion display on route change or suggestion hiding

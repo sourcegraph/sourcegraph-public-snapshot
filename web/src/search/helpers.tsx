@@ -188,14 +188,14 @@ interface ValidFilterAndValueMatch extends FilterAndValueMatch {
 }
 
 /**
- * Tries to resolve given string into a valid filter type.
+ * Tries to resolve the given string into a valid filter type.
  */
-const resolveFilterType = (filter: string = ''): FiltersSuggestionTypes | undefined => {
+const resolveFilterType = (filter: string = ''): FiltersSuggestionTypes | null => {
     const absoluteFilter = filter.replace(/^-/, '')
     if (isValidFilterAlias(absoluteFilter)) {
         return filterAliases[absoluteFilter]
     }
-    return isValidFilter(absoluteFilter) ? absoluteFilter : undefined
+    return isValidFilter(absoluteFilter) ? absoluteFilter : null
 }
 
 /**
