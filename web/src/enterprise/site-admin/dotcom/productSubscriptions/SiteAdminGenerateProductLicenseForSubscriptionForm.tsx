@@ -1,6 +1,5 @@
 import addDays from 'date-fns/addDays'
 import endOfDay from 'date-fns/endOfDay'
-import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
@@ -10,6 +9,7 @@ import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../
 import { mutateGraphQL } from '../../../../backend/graphql'
 import { Form } from '../../../../components/Form'
 import { ExpirationDate } from '../../../productSubscription/ExpirationDate'
+import { ErrorAlert } from '../../../../components/alerts'
 
 interface Props {
     subscriptionID: GQL.ID
@@ -219,7 +219,7 @@ export class SiteAdminGenerateProductLicenseForSubscriptionForm extends React.Co
                     </Form>
                 )}
                 {isErrorLike(this.state.creationOrError) && (
-                    <div className="alert alert-danger mt-3">{upperFirst(this.state.creationOrError.message)}</div>
+                    <ErrorAlert className="mt-3" error={this.state.creationOrError} />
                 )}
             </div>
         )

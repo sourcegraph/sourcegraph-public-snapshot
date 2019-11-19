@@ -407,10 +407,7 @@ describe('code_intelligence', () => {
                 const decorated = (commit: string): Promise<TextDocumentDecoration[] | null> =>
                     services.textDocumentDecoration
                         .getDecorations({ uri: `git://foo?${commit}#/bar.ts` })
-                        .pipe(
-                            skip(1),
-                            take(1)
-                        )
+                        .pipe(skip(1), take(1))
                         .toPromise()
 
                 // Set decorations and verify that a decoration attachment has been added
@@ -546,10 +543,7 @@ describe('code_intelligence', () => {
                 })
             )
             await from(services.editor.editorUpdates)
-                .pipe(
-                    skip(1),
-                    take(1)
-                )
+                .pipe(skip(1), take(1))
                 .toPromise()
             expect([...services.editor.editors.values()]).toEqual([
                 {

@@ -7,6 +7,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { CopyableText } from '../components/CopyableText'
+import { ErrorAlert } from '../components/alerts'
 
 interface Props {}
 
@@ -37,7 +38,10 @@ export class SiteAdminManagementConsolePassword extends React.Component<Props, S
                     catchError(err => [asError(err)]),
                     map(v => ({ stateOrError: v }))
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    err => console.error(err)
+                )
         )
 
         this.subscriptions.add(
@@ -47,7 +51,10 @@ export class SiteAdminManagementConsolePassword extends React.Component<Props, S
                     catchError(err => [asError(err)]),
                     map(v => ({ stateOrError: isErrorLike(v) ? v : undefined }))
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    err => console.error(err)
+                )
         )
     }
 
@@ -60,11 +67,7 @@ export class SiteAdminManagementConsolePassword extends React.Component<Props, S
             return null // loading
         }
         if (isErrorLike(this.state.stateOrError)) {
-            return (
-                <div className="alert alert-danger">
-                    Error fetching management console state: {this.state.stateOrError.message}
-                </div>
-            )
+            return <ErrorAlert error={this.state.stateOrError} prefix="Error fetching management console state" />
         }
 
         const plaintextPassword = this.state.stateOrError.plaintextPassword

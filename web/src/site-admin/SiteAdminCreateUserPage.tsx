@@ -10,6 +10,7 @@ import { Form } from '../components/Form'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { createUser } from './backend'
+import { ErrorAlert } from '../components/alerts'
 
 interface Props extends RouteComponentProps<any> {}
 
@@ -151,7 +152,7 @@ export class SiteAdminCreateUserPage extends React.Component<Props, State> {
                             </small>
                         </div>
                         {this.state.errorDescription && (
-                            <div className="alert alert-danger my-2">{this.state.errorDescription}</div>
+                            <ErrorAlert className="my-2" error={this.state.errorDescription} />
                         )}
                         <button className="btn btn-primary" disabled={this.state.loading} type="submit">
                             {window.context.resetPasswordEnabled

@@ -72,12 +72,7 @@ export class Resizable<C extends React.ReactElement<any>> extends React.PureComp
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            this.sizeUpdates
-                .pipe(
-                    distinctUntilChanged(),
-                    debounceTime(250)
-                )
-                .subscribe(size => this.setSize(size))
+            this.sizeUpdates.pipe(distinctUntilChanged(), debounceTime(250)).subscribe(size => this.setSize(size))
         )
     }
 

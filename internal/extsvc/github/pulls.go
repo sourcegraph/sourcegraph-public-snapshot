@@ -75,6 +75,8 @@ type PullRequest struct {
 	URL           string
 	HeadRefOid    string
 	BaseRefOid    string
+	HeadRefName   string
+	BaseRefName   string
 	Number        int64
 	Author        Actor
 	Participants  []Actor
@@ -338,6 +340,60 @@ func (i *TimelineItem) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, i.Item)
 }
 
+type CreatePullRequestInput struct {
+	// The Node ID of the repository.
+	RepositoryID string `json:"repositoryId"`
+	// The name of the branch you want your changes pulled into. This should be
+	// an existing branch on the current repository.
+	BaseRefName string `json:"baseRefName"`
+	// The name of the branch where your changes are implemented.
+	HeadRefName string `json:"headRefName"`
+	// The title of the pull request.
+	Title string `json:"title"`
+	// The body of the pull request (optional).
+	Body string `json:"body"`
+}
+
+// CreatePullRequest creates a PullRequest on Github.
+func (c *Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestInput) (*PullRequest, error) {
+	var q strings.Builder
+	q.WriteString(pullRequestFragments)
+	q.WriteString(`mutation	CreatePullRequest($input:CreatePullRequestInput!) {
+  createPullRequest(input:$input) {
+    pullRequest {
+      ... pr
+    }
+  }
+}`)
+
+	var result struct {
+		CreatePullRequest struct {
+			PullRequest struct {
+				PullRequest
+				Participants  struct{ Nodes []Actor }
+				TimelineItems struct{ Nodes []TimelineItem }
+			} `json:"pullRequest"`
+		} `json:"createPullRequest"`
+	}
+
+	input := map[string]interface{}{"input": in}
+	err := c.requestGraphQL(ctx, "", q.String(), input, &result)
+	if err != nil {
+		if gqlErrs, ok := err.(graphqlErrors); ok && len(gqlErrs) == 1 {
+			e := gqlErrs[0]
+			if strings.Contains(e.Message, "A pull request already exists for") {
+				return nil, ErrPullRequestAlreadyExists
+			}
+		}
+		return nil, err
+	}
+
+	pr := &result.CreatePullRequest.PullRequest.PullRequest
+	pr.TimelineItems = result.CreatePullRequest.PullRequest.TimelineItems.Nodes
+	pr.Participants = result.CreatePullRequest.PullRequest.Participants.Nodes
+	return pr, nil
+}
+
 // LoadPullRequests loads a list of PullRequests from Github.
 func (c *Client) LoadPullRequests(ctx context.Context, prs ...*PullRequest) error {
 	type repository struct {
@@ -347,13 +403,13 @@ func (c *Client) LoadPullRequests(ctx context.Context, prs ...*PullRequest) erro
 	}
 
 	labeled := map[string]*repository{}
-	for _, pr := range prs {
+	for i, pr := range prs {
 		owner, repo, err := SplitRepositoryNameWithOwner(pr.RepoWithOwner)
 		if err != nil {
 			return err
 		}
 
-		repoLabel := owner + "_" + repo
+		repoLabel := fmt.Sprintf("repo_%d", i)
 		r, ok := labeled[repoLabel]
 		if !ok {
 			r = &repository{
@@ -369,136 +425,8 @@ func (c *Client) LoadPullRequests(ctx context.Context, prs ...*PullRequest) erro
 	}
 
 	var q strings.Builder
-	q.WriteString(`
-    fragment actor on Actor { avatarUrl, login, url }
-    fragment commit on Commit {
-      oid, message, messageHeadline, committedDate, pushedDate, url
-      committer {
-        avatarUrl, email, name
-        user { ...actor }
-      }
-    }
-    fragment review on PullRequestReview {
-      databaseId
-      author { ...actor }
-      authorAssociation
-      body
-      state
-      url
-      createdAt
-      updatedAt
-      commit { ...commit }
-      includesCreatedEdit
-    }
-    fragment pr on PullRequest {
-      id, title, body, state, url, number, createdAt, updatedAt
-	  headRefOid, baseRefOid
-      author { ...actor }
-      participants(first: 100) { nodes { ...actor } }
-      timelineItems(
-        first: 250
-        itemTypes: [
-          ASSIGNED_EVENT
-          CLOSED_EVENT
-          ISSUE_COMMENT
-          RENAMED_TITLE_EVENT
-          MERGED_EVENT
-          PULL_REQUEST_REVIEW
-          PULL_REQUEST_REVIEW_THREAD
-          REOPENED_EVENT
-          REVIEW_DISMISSED_EVENT
-          REVIEW_REQUEST_REMOVED_EVENT
-          REVIEW_REQUESTED_EVENT
-          UNASSIGNED_EVENT
-        ]
-      ) {
-        nodes {
-          __typename
-          ... on AssignedEvent {
-            actor { ...actor }
-            assignee { ...actor }
-            createdAt
-          }
-          ... on ClosedEvent {
-            actor { ...actor }
-            createdAt
-            url
-          }
-          ... on IssueComment {
-            databaseId
-            author { ...actor }
-            authorAssociation
-            body
-            createdAt
-            editor { ...actor }
-            url
-            updatedAt
-            includesCreatedEdit
-            publishedAt
-          }
-          ... on RenamedTitleEvent {
-            actor { ...actor }
-            previousTitle
-            currentTitle
-            createdAt
-          }
-          ... on MergedEvent {
-            actor { ...actor }
-            mergeRefName
-            url
-            commit { ...commit }
-            createdAt
-          }
-          ... on PullRequestReview {
-            ...review
-          }
-          ... on PullRequestReviewThread {
-            comments(last: 100) {
-              nodes {
-                databaseId
-                author { ...actor }
-                authorAssociation
-                editor { ...actor }
-                commit { ...commit }
-                body
-                state
-                url
-                createdAt
-                updatedAt
-                includesCreatedEdit
-              }
-            }
-          }
-          ... on ReopenedEvent {
-            actor { ...actor }
-            createdAt
-          }
-          ... on ReviewDismissedEvent {
-            actor { ...actor }
-            review { ...review }
-            dismissalMessage
-            createdAt
-          }
-          ... on ReviewRequestRemovedEvent {
-            actor { ...actor }
-            requestedReviewer { ...actor }
-            createdAt
-          }
-          ... on ReviewRequestedEvent {
-            actor { ...actor }
-            requestedReviewer { ...actor }
-            createdAt
-          }
-          ... on UnassignedEvent {
-            actor { ...actor }
-            assignee { ...actor }
-            createdAt
-          }
-        }
-      }
-    }
-    query {
-   `)
+	q.WriteString(pullRequestFragments)
+	q.WriteString("query {\n")
 
 	for repoLabel, r := range labeled {
 		q.WriteString(fmt.Sprintf("%s: repository(owner: %q, name: %q) {\n",
@@ -536,3 +464,133 @@ func (c *Client) LoadPullRequests(ctx context.Context, prs ...*PullRequest) erro
 
 	return nil
 }
+
+const pullRequestFragments = `
+fragment actor on Actor { avatarUrl, login, url }
+fragment commit on Commit {
+	oid, message, messageHeadline, committedDate, pushedDate, url
+	committer {
+	avatarUrl, email, name
+	user { ...actor }
+	}
+}
+fragment review on PullRequestReview {
+	databaseId
+	author { ...actor }
+	authorAssociation
+	body
+	state
+	url
+	createdAt
+	updatedAt
+	commit { ...commit }
+	includesCreatedEdit
+}
+fragment pr on PullRequest {
+	id, title, body, state, url, number, createdAt, updatedAt
+	headRefOid, baseRefOid, headRefName, baseRefName
+	author { ...actor }
+	participants(first: 100) { nodes { ...actor } }
+	timelineItems(
+	first: 250
+	itemTypes: [
+		ASSIGNED_EVENT
+		CLOSED_EVENT
+		ISSUE_COMMENT
+		RENAMED_TITLE_EVENT
+		MERGED_EVENT
+		PULL_REQUEST_REVIEW
+		PULL_REQUEST_REVIEW_THREAD
+		REOPENED_EVENT
+		REVIEW_DISMISSED_EVENT
+		REVIEW_REQUEST_REMOVED_EVENT
+		REVIEW_REQUESTED_EVENT
+		UNASSIGNED_EVENT
+	]
+	) {
+	nodes {
+		__typename
+		... on AssignedEvent {
+		actor { ...actor }
+		assignee { ...actor }
+		createdAt
+		}
+		... on ClosedEvent {
+		actor { ...actor }
+		createdAt
+		url
+		}
+		... on IssueComment {
+		databaseId
+		author { ...actor }
+		authorAssociation
+		body
+		createdAt
+		editor { ...actor }
+		url
+		updatedAt
+		includesCreatedEdit
+		publishedAt
+		}
+		... on RenamedTitleEvent {
+		actor { ...actor }
+		previousTitle
+		currentTitle
+		createdAt
+		}
+		... on MergedEvent {
+		actor { ...actor }
+		mergeRefName
+		url
+		commit { ...commit }
+		createdAt
+		}
+		... on PullRequestReview {
+		...review
+		}
+		... on PullRequestReviewThread {
+		comments(last: 100) {
+			nodes {
+			databaseId
+			author { ...actor }
+			authorAssociation
+			editor { ...actor }
+			commit { ...commit }
+			body
+			state
+			url
+			createdAt
+			updatedAt
+			includesCreatedEdit
+			}
+		}
+		}
+		... on ReopenedEvent {
+		actor { ...actor }
+		createdAt
+		}
+		... on ReviewDismissedEvent {
+		actor { ...actor }
+		review { ...review }
+		dismissalMessage
+		createdAt
+		}
+		... on ReviewRequestRemovedEvent {
+		actor { ...actor }
+		requestedReviewer { ...actor }
+		createdAt
+		}
+		... on ReviewRequestedEvent {
+		actor { ...actor }
+		requestedReviewer { ...actor }
+		createdAt
+		}
+		... on UnassignedEvent {
+		actor { ...actor }
+		assignee { ...actor }
+		createdAt
+		}
+	}
+	}
+}
+`

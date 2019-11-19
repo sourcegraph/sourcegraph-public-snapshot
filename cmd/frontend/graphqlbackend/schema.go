@@ -1171,7 +1171,7 @@ type Query {
     # The configuration for clients.
     clientConfiguration: ClientConfigurationDetails!
     # Fetch search filter suggestions for autocompletion.
-    searchFilterSuggestions: SearchFilterSuggestions
+    searchFilterSuggestions: SearchFilterSuggestions!
     # Runs a search.
     search(
         # The version of the search syntax being used.
@@ -1226,9 +1226,15 @@ type Query {
     # Look up a namespace by ID.
     namespace(id: ID!): Namespace
 
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
     # Lookup an LSIF dump by ID.
     lsifDump(id: ID!): LSIFDump
 
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
     # Retrieve the LSIF dumps for a repository.
     lsifDumps(
         # The repository ID that this LSIF dump belongs to.
@@ -1253,12 +1259,21 @@ type Query {
         after: String
     ): LSIFDumpConnection!
 
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
     # Retrieve counts of jobs by state in the LSIF work queue.
     lsifJobStats: LSIFJobStats!
 
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
     # Look up an LSIF job by ID.
     lsifJob(id: ID!): LSIFJob
 
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
     # Search for LSIF jobs by state and query term.
     lsifJobs(
         # The state of returned jobs.
@@ -1294,6 +1309,7 @@ enum SearchVersion {
 enum SearchPatternType {
     literal
     regexp
+    structural
 }
 
 # Configuration details for the browser extension, editor extensions, etc.
@@ -3919,6 +3935,9 @@ type LSIFDump implements Node {
 
     # The time the dump was uploaded.
     uploadedAt: DateTime!
+
+    # The time the dump became available for use.
+    processedAt: DateTime!
 }
 
 # A list of LSIF dumps.
@@ -3972,37 +3991,40 @@ type LSIFJobStats implements Node {
     scheduledCount: Int!
 }
 
-# A queued, active, or completed LSIF job.
+# Metadata and status about an LSIF job.
 type LSIFJob implements Node {
     # The ID.
     id: ID!
 
-    # The job type (convert, or clean-old-jobs).
-    name: String!
+    # The job type.
+    type: String!
 
     # The job's arguments.
-    args: JSONValue!
+    arguments: JSONValue!
 
     # The job's current state.
     state: LSIFJobState!
 
-    # The current job progress (0 to 100).
-    progress: Float!
-
-    # If the job failed, its failure message.
-    failedReason: String
-
-    # If the job failed, its stacktrace.
-    stacktrace: [String!]
+    # Metadata about a job's failure (not set if state is not ERRORED).
+    failure: LSIFJobFailureReason
 
     # The time the job was queued.
-    timestamp: DateTime!
+    queuedAt: DateTime!
 
     # The time the job was processed.
-    processedOn: DateTime
+    startedAt: DateTime
 
-    # The time the job was finished.
-    finishedOn: DateTime
+    # The time the job compelted or errored.
+    completedOrErroredAt: DateTime
+}
+
+# Metadata about a LSIF job failure.
+type LSIFJobFailureReason {
+    # A summary of the failure.
+    summary: String!
+
+    # The stacktrace from each failed attempt of the job.
+    stacktraces: [String!]!
 }
 
 # A list of LSIF jobs.

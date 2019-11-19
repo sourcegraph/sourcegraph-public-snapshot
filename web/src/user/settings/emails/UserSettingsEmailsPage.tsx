@@ -14,6 +14,7 @@ import { siteFlags } from '../../../site/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { setUserEmailVerified } from '../backend'
 import { AddUserEmailForm } from './AddUserEmailForm'
+import { ErrorAlert } from '../../../components/alerts'
 
 interface UserEmailNodeProps {
     node: GQL.IUserEmail
@@ -71,9 +72,7 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
                         )}
                     </div>
                 </div>
-                {this.state.errorDescription && (
-                    <div className="alert alert-danger mt-2">{this.state.errorDescription}</div>
-                )}
+                {this.state.errorDescription && <ErrorAlert className="mt-2" error={this.state.errorDescription} />}
             </li>
         )
     }

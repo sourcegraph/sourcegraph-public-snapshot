@@ -15,7 +15,7 @@ type cache interface {
 }
 
 // userProjCacheKey returns the key for caching the value describing if the given GitLab user has
-// access to the given GitLab project. This key must be unique among *all* GitLabOAuthAuthzProvider
+// access to the given GitLab project. This key must be unique among *all* OAuthAuthzProvider
 // cache keys, including those for repo visibility (see projVisibilityCacheKey).
 func userProjCacheKey(gitlabAccountID string, gitlabProjID int) string {
 	return fmt.Sprintf("userRepo:%s:%d", gitlabAccountID, gitlabProjID) // GitLab account IDs cannot have ':'
@@ -57,7 +57,7 @@ func cacheSetUserRepo(c cache, gitlabAccountID string, gitlabProjID int, v userR
 
 // projVisibilityCacheKey returns the key for caching the value describing the visibility of the
 // GitLab project (public, internal, private). This key must be unique among *all*
-// GitLabOAuthAuthzProvider cache keys, including those for user-project access (see
+// OAuthAuthzProvider cache keys, including those for user-project access (see
 // userProjCacheKey).
 func projVisibilityCacheKey(gitlabProjID int) string {
 	return fmt.Sprintf("visibility:%d", gitlabProjID)

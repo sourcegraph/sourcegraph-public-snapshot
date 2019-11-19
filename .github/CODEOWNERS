@@ -6,12 +6,12 @@
 # precedence.
 
 # Top-level catch-alls (these are weaker confidence and might need to be reassigned at some point)
+*.js @sourcegraph/web
 *.ts @sourcegraph/web
 *.tsx @sourcegraph/web
 /enterprise/cmd/frontend @beyang @slimsag
 /enterprise/cmd/server @beyang @slimsag
 /enterprise/dev @beyang
-/cmd/frontend/docsite @sqs
 /cmd/frontend/shared @beyang @slimsag
 /cmd/frontend/backend @beyang @slimsag
 /cmd/frontend/internal/app/assets @slimsag
@@ -54,7 +54,6 @@
 /internal/prefixsuffixsaver @beyang
 /internal/gosrc @beyang
 /internal/txemail @slimsag
-/gulpfile.ts @beyang
 /renovate.json @felixfbecker
 /.stylelintrc.json @felixfbecker
 /graphql-schema-linter.config.js @felixfbecker
@@ -88,7 +87,7 @@
 /dev/zoekt @sourcegraph/core-services
 /dev/src-expose @keegancsmith
 /dev/drop-test-databases.sh @efritz
-/dev/squash-migrations.sh @efritz
+/dev/squash_migrations.sh @efritz
 /.buildkite @beyang
 /.storybook @felixfbecker
 /CONTRIBUTING.md @beyang @nicksnyder @slimsag
@@ -96,9 +95,9 @@
 /.dockerignore @beyang
 /.mailmap @beyang
 /tsconfig.json @felixfbecker
-/jest.config.base.js @felixfbecker
 tslint.json @felixfbecker
 tslint.config.js @felixfbecker
+.eslintrc.* @felixfbecker
 /enterprise/cmd @beyang
 /enterprise/pkg @beyang
 /enterprise @beyang
@@ -223,8 +222,6 @@ Dockerfile @sourcegraph/distribution
 README.md @sqs
 /doc/ @sourcegraph/distribution @ryan-blunden
 /doc/dev/ @nicksnyder
-/doc/team/product-dev/ @nicksnyder
-/doc/team/product-dev/product/ @christinaforney
 
 # Browser extensions
 /browser/ @sourcegraph/web
@@ -256,8 +253,10 @@ README.md @sqs
 /cmd/frontend/db/discussion* @slimsag
 
 # LSIF
-/cmd/frontend/internal/httpapi/lsif.go @sourcegraph/code-intel
 /lsif/ @sourcegraph/code-intel
+/internal/lsif @sourcegraph/code-intel
+/enterprise/pkg/codeintel @sourcegraph/code-intel
+/cmd/frontend/graphqlbackend/codeintel.go @sourcegraph/code-intel
 
 # Development
 /dev/fakehub @sourcegraph/core-services

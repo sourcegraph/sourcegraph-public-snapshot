@@ -5,7 +5,6 @@
     "yarn": ">1.10.0"
   },
   "scripts": {
-    "typecheck": "tsc -p .",
     "dev": "NODE_ENV=development NODE_OPTIONS=--max_old_space_size=4096 TS_NODE_COMPILER_OPTIONS=\"{\\\"module\\\":\\\"commonjs\\\"}\" node -r ts-node/register scripts/dev",
     "dev:no-reload": "AUTO_RELOAD=false yarn run dev",
     "dev:firefox": "if type web-ext 2>/dev/null; then web-ext run --source-dir ./build/firefox; else echo 'web-ext not found. Install it with: yarn global add web-ext'; exit 1; fi",

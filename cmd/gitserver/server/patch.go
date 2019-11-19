@@ -87,7 +87,8 @@ func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	cmd = exec.CommandContext(ctx, "git", "apply", "--cached")
+	applyArgs := append([]string{"apply", "--cached"}, req.GitApplyArgs...)
+	cmd = exec.CommandContext(ctx, "git", applyArgs...)
 	cmd.Dir = tmpRepoDir
 	cmd.Env = append(cmd.Env, tmpGitPathEnv, altObjectsEnv)
 	cmd.Stdin = strings.NewReader(req.Patch)
@@ -180,6 +181,25 @@ func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Requ
 
 		http.Error(w, "gitserver: creating ref - "+err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	if req.Push {
+		remoteURL, err := repoRemoteURL(ctx, GitDir(repoGitDir))
+		if err != nil {
+			log15.Error("Failed to get remote URL", "ref", req.TargetRef, "commit", cmtHash, "err", err)
+			http.Error(w, "gitserver: repoRemoteURL"+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		cmd = exec.CommandContext(ctx, "git", "push", "--force", remoteURL, fmt.Sprintf("%s:refs/heads/%s", req.TargetRef, req.TargetRef))
+		cmd.Dir = repoGitDir
+
+		if out, err = run(cmd); err != nil {
+			log15.Error("Failed to push", "ref", req.TargetRef, "commit", cmtHash, "output", string(out))
+
+			http.Error(w, "gitserver: creating ref - "+err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	sendResp(w, "refs/"+ref)

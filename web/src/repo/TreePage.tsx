@@ -1,10 +1,11 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
-import { escapeRegExp, upperFirst } from 'lodash'
+import { escapeRegExp } from 'lodash'
 import FolderIcon from 'mdi-react/FolderIcon'
 import HistoryIcon from 'mdi-react/HistoryIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import TagIcon from 'mdi-react/TagIcon'
 import UserIcon from 'mdi-react/UserIcon'
 import * as React from 'react'
@@ -15,7 +16,6 @@ import { ActionItem } from '../../../shared/src/actions/ActionItem'
 import { ActionsContainer } from '../../../shared/src/actions/ActionsContainer'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
-import { RepositoryIcon } from '../../../shared/src/components/icons' // TODO: Switch to mdi icon
 import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { gql } from '../../../shared/src/graphql/graphql'
@@ -31,7 +31,7 @@ import { PageTitle } from '../components/PageTitle'
 import { isDiscussionsEnabled } from '../discussions'
 import { DiscussionsList } from '../discussions/DiscussionsList'
 import { searchQueryForRepoRev, PatternTypeProps } from '../search'
-import { submitSearch } from '../search/helpers'
+import { submitSearch, QueryState } from '../search/helpers'
 import { QueryInput } from '../search/input/QueryInput'
 import { SearchButton } from '../search/input/SearchButton'
 import { eventLogger, EventLoggerProps } from '../tracking/eventLogger'
@@ -40,6 +40,7 @@ import { fetchTree } from './backend'
 import { GitCommitNode, GitCommitNodeProps } from './commits/GitCommitNode'
 import { gitCommitFragment } from './commits/RepositoryCommitsPage'
 import { ThemeProps } from '../../../shared/src/theme'
+import { ErrorAlert } from '../components/alerts'
 
 const TreeEntry: React.FunctionComponent<{
     isDir: boolean
@@ -72,7 +73,13 @@ const TreeEntriesSection: React.FunctionComponent<{
             <h3 className="tree-page__section-header">{title}</h3>
             <div className={entries.length > MIN_ENTRIES_FOR_COLUMN_LAYOUT ? 'tree-page__entries--columns' : undefined}>
                 {entries.map((e, i) => (
-                    <TreeEntry key={i} isDir={e.isDirectory} name={e.name} parentPath={parentPath} url={e.url} />
+                    <TreeEntry
+                        key={e.name + String(i)}
+                        isDir={e.isDirectory}
+                        name={e.name}
+                        parentPath={parentPath}
+                        url={e.url}
+                    />
                 ))}
             </div>
         </section>
@@ -147,11 +154,11 @@ interface State {
     /**
      * The value of the search query input field.
      */
-    query: string
+    queryState: QueryState
 }
 
 export class TreePage extends React.PureComponent<Props, State> {
-    public state: State = { query: '' }
+    public state: State = { queryState: { query: '', cursorPosition: 0 } }
 
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
@@ -190,7 +197,10 @@ export class TreePage extends React.PureComponent<Props, State> {
                         )
                     )
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    err => console.error(err)
+                )
         )
 
         this.componentUpdates.next(this.props)
@@ -224,13 +234,13 @@ export class TreePage extends React.PureComponent<Props, State> {
                 )}
                 {this.state.treeOrError !== undefined &&
                     (isErrorLike(this.state.treeOrError) ? (
-                        <div className="alert alert-danger">{upperFirst(this.state.treeOrError.message)}</div>
+                        <ErrorAlert error={this.state.treeOrError} />
                     ) : (
                         <>
                             {this.state.treeOrError.isRoot ? (
                                 <header>
                                     <h2 className="tree-page__title">
-                                        <RepositoryIcon className="icon-inline" />{' '}
+                                        <SourceRepositoryIcon className="icon-inline" />{' '}
                                         {displayRepoName(this.props.repoName)}
                                     </h2>
                                     {this.props.repoDescription && <p>{this.props.repoDescription}</p>}
@@ -281,7 +291,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                 <Form className="tree-page__section-search" onSubmit={this.onSubmit}>
                                     <QueryInput
                                         {...this.props}
-                                        value={this.state.query}
+                                        value={this.state.queryState}
                                         onChange={this.onQueryChange}
                                         prependQueryForSuggestions={this.getQueryPrefix()}
                                         autoFocus={true}
@@ -316,10 +326,10 @@ export class TreePage extends React.PureComponent<Props, State> {
                                 render={items => (
                                     <section className="tree-page__section">
                                         <h3 className="tree-page__section-header">Actions</h3>
-                                        {items.map((item, i) => (
+                                        {items.map(item => (
                                             <ActionItem
                                                 {...this.props}
-                                                key={i}
+                                                key={item.action.id}
                                                 {...item}
                                                 className="btn btn-secondary mr-1 mb-1"
                                             />
@@ -345,7 +355,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                     }}
                                     updateOnChange={`${this.props.repoName}:${this.props.rev}:${this.props.filePath}`}
                                     defaultFirst={7}
-                                    shouldUpdateURLQuery={false}
+                                    useURLQuery={false}
                                     hideSearch={true}
                                 />
                             </div>
@@ -355,13 +365,13 @@ export class TreePage extends React.PureComponent<Props, State> {
         )
     }
 
-    private onQueryChange = (query: string): void => this.setState({ query })
+    private onQueryChange = (queryState: QueryState): void => this.setState({ queryState })
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
         submitSearch(
             this.props.history,
-            this.getQueryPrefix() + this.state.query,
+            this.getQueryPrefix() + this.state.queryState.query,
             this.props.filePath ? 'tree' : 'repo',
             this.props.patternType,
             this.props.activation

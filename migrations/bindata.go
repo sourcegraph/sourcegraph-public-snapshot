@@ -58,6 +58,18 @@
 // 1528395609_create_campaign_jobs_table.up.sql (551B)
 // 1528395610_change_campaign_plan_arguments_to_text.down.sql (191B)
 // 1528395610_change_campaign_plan_arguments_to_text.up.sql (254B)
+// 1528395611_add_unique_constraint_to_campaign_jobs.down.sql (104B)
+// 1528395611_add_unique_constraint_to_campaign_jobs.up.sql (178B)
+// 1528395612_validate_campaign_plan_completion_with_trigger.down.sql (305B)
+// 1528395612_validate_campaign_plan_completion_with_trigger.up.sql (1.04kB)
+// 1528395613_create_changeset_jobs_table.down.sql (54B)
+// 1528395613_create_changeset_jobs_table.up.sql (829B)
+// 1528395614_lsif_nullable_parent_commits.down.sql (155B)
+// 1528395614_lsif_nullable_parent_commits.up.sql (155B)
+// 1528395615_lsif-commit-constraints.down.sql (391B)
+// 1528395615_lsif-commit-constraints.up.sql (471B)
+// 1528395616_lsif_processed_at.down.sql (195B)
+// 1528395616_lsif_processed_at.up.sql (359B)
 
 package migrations
 
@@ -1286,6 +1298,246 @@ func _1528395610_change_campaign_plan_arguments_to_textUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395611_add_unique_constraint_to_campaign_jobsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\x4e\xcc\x2d\x48\xcc\x4c\xcf\x8b\xcf\xca\x4f\x2a\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x0b\x0e\x09\x72\xf4\xf4\x0b\x41\x95\x8d\x87\xf3\x0a\x72\x12\xf3\xe2\x8b\x52\x0b\xf2\xe3\x8b\x52\xcb\xe2\x4b\xf3\x32\x0b\x4b\x53\xad\xb9\xb8\x9c\xfd\x7d\x7d\x3d\x43\xac\xb9\x00\x01\x00\x00\xff\xff\x9a\x41\x7a\x60\x68\x00\x00\x00")
+
+func _1528395611_add_unique_constraint_to_campaign_jobsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395611_add_unique_constraint_to_campaign_jobsDownSql,
+		"1528395611_add_unique_constraint_to_campaign_jobs.down.sql",
+	)
+}
+
+func _1528395611_add_unique_constraint_to_campaign_jobsDownSql() (*asset, error) {
+	bytes, err := _1528395611_add_unique_constraint_to_campaign_jobsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395611_add_unique_constraint_to_campaign_jobs.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x88, 0x20, 0x8c, 0x35, 0xc5, 0xbe, 0x1f, 0xca, 0xae, 0xc6, 0xeb, 0x10, 0xff, 0xc1, 0x29, 0xf2, 0x61, 0x9, 0x7e, 0x74, 0x84, 0xc7, 0xfa, 0x67, 0x6e, 0xab, 0x82, 0x87, 0xa4, 0xd8, 0xe0, 0x20}}
+	return a, nil
+}
+
+var __1528395611_add_unique_constraint_to_campaign_jobsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x54\xcd\xc1\x0a\xc2\x30\x10\x04\xd0\xfb\x7e\xc5\x1e\x15\xfc\x83\x9e\xb6\xcd\x2a\x0b\x49\x8a\x71\x7b\xf0\x14\xaa\x16\xa9\x68\x1a\x2b\xed\xf7\x0b\x15\x84\xde\x66\x98\x07\x53\xf2\x41\x7c\x01\x40\x56\x39\xa0\x52\x69\x19\xaf\xed\x2b\xb7\xfd\x3d\xc5\xc7\x70\xf9\x20\x19\x83\x55\xed\x4f\x1a\x48\xbc\xae\xc7\xf8\x6f\xf9\xd9\xa6\x38\x76\x79\x88\x63\x37\xc7\x29\xf5\xef\xa9\x03\xc4\xc6\xcb\xb1\x61\xdc\xac\x5d\x7f\xdb\xe1\x62\x7f\x61\xde\x02\xa2\xe1\x3d\x87\xb0\xfc\x8b\x17\x15\xb2\xf6\x8c\xe2\x1c\x1b\x21\xe5\x02\xa0\xaa\x9d\x13\x2d\xe0\x1b\x00\x00\xff\xff\xdf\x6d\x9a\x6d\xb2\x00\x00\x00")
+
+func _1528395611_add_unique_constraint_to_campaign_jobsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395611_add_unique_constraint_to_campaign_jobsUpSql,
+		"1528395611_add_unique_constraint_to_campaign_jobs.up.sql",
+	)
+}
+
+func _1528395611_add_unique_constraint_to_campaign_jobsUpSql() (*asset, error) {
+	bytes, err := _1528395611_add_unique_constraint_to_campaign_jobsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395611_add_unique_constraint_to_campaign_jobs.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x6e, 0xd4, 0x59, 0x7f, 0xfc, 0x1e, 0x50, 0xf6, 0x77, 0x8b, 0x85, 0x91, 0x72, 0xb1, 0xff, 0x42, 0x79, 0x5a, 0x32, 0x38, 0x82, 0xec, 0xe0, 0x42, 0x86, 0x99, 0xfb, 0x9a, 0xb2, 0x5e, 0x66, 0xd6}}
+	return a, nil
+}
+
+var __1528395612_validate_campaign_plan_completion_with_triggerDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x8e\xc1\xae\x82\x30\x10\x45\xf7\xfd\x8a\x59\xbe\xf7\x0d\xdd\x09\x85\xcc\x82\xd6\x40\x4d\xd8\x4d\x46\x8b\x38\x06\x91\xd0\xc6\xef\x37\xd1\x60\x88\x1b\x59\xdf\x7b\x4e\xce\xce\x94\x68\xb5\x52\x79\xed\xf6\xe0\x6b\x2c\x4b\x53\x03\x16\x60\x5a\x6c\x7c\x03\x69\x96\x9e\x1e\x3c\x48\xe0\xd4\xd1\x89\x6f\x13\x4b\x3f\xd2\x34\xf0\x48\x12\xe9\x2c\xa3\xc4\x4b\x17\xc0\x59\x58\xc6\xa8\xdf\xb2\xe2\x60\x33\x8f\xce\xae\x6c\xbf\x45\x7f\xff\x4b\x0b\xda\xdc\xb4\x2b\xf6\x83\x5c\xef\xc7\xf8\x2d\x08\x7a\x0b\x14\x13\xcf\xa9\x0b\xc4\x69\xd3\x7d\x69\x7a\xfd\x55\xe6\xaa\x0a\xbd\x56\xcf\x00\x00\x00\xff\xff\x6c\x6e\xe5\xe1\x31\x01\x00\x00")
+
+func _1528395612_validate_campaign_plan_completion_with_triggerDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395612_validate_campaign_plan_completion_with_triggerDownSql,
+		"1528395612_validate_campaign_plan_completion_with_trigger.down.sql",
+	)
+}
+
+func _1528395612_validate_campaign_plan_completion_with_triggerDownSql() (*asset, error) {
+	bytes, err := _1528395612_validate_campaign_plan_completion_with_triggerDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395612_validate_campaign_plan_completion_with_trigger.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x49, 0xf2, 0x81, 0x99, 0x44, 0xe8, 0xa0, 0x6f, 0xac, 0x1, 0xa6, 0xd, 0x3e, 0xfe, 0x4f, 0xab, 0x2c, 0xd9, 0x1e, 0x36, 0x6, 0x1d, 0x36, 0x9, 0x82, 0xf0, 0xf7, 0x2f, 0xd, 0xb5, 0x6d, 0xc3}}
+	return a, nil
+}
+
+var __1528395612_validate_campaign_plan_completion_with_triggerUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x53\x4d\x8f\xda\x30\x14\xbc\xfb\x57\x4c\xa5\x5d\x01\xd5\xee\xaa\xe7\x8d\x38\x64\x9d\x17\x88\x14\x6c\xe4\x38\x82\x1b\xeb\x42\x96\xa4\xca\x1a\x4a\x4c\x39\x54\xfd\xef\x55\x42\xc3\x67\xf7\xe3\x12\xc5\xf6\x9b\xf1\xbc\x79\xe3\x27\x1a\x44\xc2\x63\x8c\x2b\xf2\x35\x21\x12\x01\x4d\x31\x37\xaf\x6b\x53\x2c\xed\xec\xc7\xea\x7b\x35\x3b\xac\xd6\xa5\xb1\xb3\x62\x01\x29\xce\x2b\xba\x97\x15\x3d\xef\x3d\xbe\xca\x99\x8d\xcb\x16\x33\xe3\xae\x99\x8e\x67\xef\x73\xbc\x14\xb6\xa8\xf2\x37\x48\x4e\x0e\x7b\x1e\x63\xf7\xf7\x98\xe4\x99\xc5\x2e\xc3\x7c\x93\x19\x97\xc1\xe0\x79\x9e\x1b\xbb\xcc\xaa\xcc\x3d\x63\x57\xb8\x1c\x06\x76\x65\x61\xb7\x65\x89\xab\x7e\x77\x19\x5e\xb7\x95\xab\x89\x7e\x99\xb2\x58\xd4\x14\x2e\x37\x6e\xff\x31\x65\x89\xd5\xcb\xfe\xff\x0c\xda\xa9\x50\xcb\x81\xd9\x64\x68\x25\x3d\x1c\x9c\x96\x0a\x8a\xc6\xb1\xcf\x09\x61\x2a\xb8\x8e\xa4\x38\xb0\x5f\x5a\x7e\xec\xb7\xdb\x83\x22\x9d\x2a\x91\x40\xab\x68\x30\x20\x05\x3f\x61\x37\x1f\x03\x6f\x58\x40\x3c\xf6\x15\x31\x60\xb3\xb5\xb6\xb0\x4b\x14\xd6\x79\xac\x09\xc0\xc9\xe6\x63\x1f\x5d\x06\x00\x09\xc5\xc4\x35\xb8\x4c\x85\xee\x7e\xed\x21\x54\x72\x74\x6e\x74\x53\x36\x19\x92\xa2\x6b\xcf\xfa\x10\x34\x79\xb8\xdc\x6e\x10\xbe\x08\x70\x3a\xbf\x28\x81\x48\xe3\x98\x01\xf5\xb4\x80\x28\x44\xb7\x55\xf3\xa5\x8f\x6f\x3d\xe8\x21\x89\x06\xaa\xfc\x28\x21\xd0\x94\xd3\xb8\x31\xac\xc3\xff\x5d\x30\x2e\x8d\xfd\x1d\x05\x8f\xb8\xfd\x83\xdc\x54\xb8\xc5\xd6\xb6\x77\x34\x53\xe8\xdc\x35\x04\xf8\xaf\xac\xbb\xb6\x7b\x8f\x01\x24\x02\x44\x61\xa3\x64\x6f\x75\x0d\xf1\x18\x89\xc0\xfb\x9c\xd1\xb1\x2f\x06\xa9\x3f\x20\xac\xcb\xf5\xb2\xfa\x59\x1e\x5f\x57\x3b\x32\xb7\x29\x96\xb3\x8f\xa9\xd8\x13\x85\x52\xd5\x0f\x20\x21\xa5\xeb\xc4\xa4\xe3\xa0\xc9\xce\x31\xf1\x15\x0b\xa5\x02\xf9\x7c\x08\x25\x27\xa0\x29\xf1\x54\x13\xc6\x4a\x72\x0a\x52\x45\x9f\xca\x54\xad\x50\x8e\x46\x91\xf6\xd8\xdf\x00\x00\x00\xff\xff\x74\xc5\x5e\x01\x10\x04\x00\x00")
+
+func _1528395612_validate_campaign_plan_completion_with_triggerUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395612_validate_campaign_plan_completion_with_triggerUpSql,
+		"1528395612_validate_campaign_plan_completion_with_trigger.up.sql",
+	)
+}
+
+func _1528395612_validate_campaign_plan_completion_with_triggerUpSql() (*asset, error) {
+	bytes, err := _1528395612_validate_campaign_plan_completion_with_triggerUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395612_validate_campaign_plan_completion_with_trigger.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x0, 0x6d, 0x36, 0xce, 0x60, 0xed, 0xc9, 0xa0, 0xaf, 0x61, 0xd0, 0x5d, 0xf0, 0x50, 0xe3, 0x7d, 0x8b, 0x26, 0x4, 0xae, 0xf9, 0x72, 0xd3, 0x7d, 0x94, 0x43, 0x28, 0x2e, 0x6b, 0x8, 0xa0, 0xf3}}
+	return a, nil
+}
+
+var __1528395613_create_changeset_jobs_tableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\x08\x71\x74\xf2\x71\x55\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x89\xcf\xca\x4f\x2a\xb6\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xd6\x7b\x79\xcc\x36\x00\x00\x00")
+
+func _1528395613_create_changeset_jobs_tableDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395613_create_changeset_jobs_tableDownSql,
+		"1528395613_create_changeset_jobs_table.down.sql",
+	)
+}
+
+func _1528395613_create_changeset_jobs_tableDownSql() (*asset, error) {
+	bytes, err := _1528395613_create_changeset_jobs_tableDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395613_create_changeset_jobs_table.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x1c, 0x97, 0x6f, 0xe4, 0x29, 0xbe, 0xbb, 0x13, 0x25, 0xa, 0x67, 0xe, 0x67, 0xd5, 0x39, 0xc1, 0x4b, 0x1a, 0x58, 0x3b, 0x7d, 0x1f, 0x6d, 0x7a, 0x4a, 0xa1, 0x1c, 0xd7, 0x6c, 0x21, 0xb0, 0xe7}}
+	return a, nil
+}
+
+var __1528395613_create_changeset_jobs_tableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x92\xc1\x6e\xa3\x30\x14\x45\xf7\xfe\x8a\xbb\x04\x29\x7f\xc0\xca\x09\x2f\x23\x6b\xc0\xcc\x38\x46\x6a\x56\xc8\x09\x6e\xe2\xa8\x81\x14\x1c\xb5\xea\xd7\x57\x21\x6a\xa0\x50\xb5\xcd\xd6\xc7\x3e\xd7\x57\xef\xcd\xe9\x8f\x90\x11\x63\x0b\x45\x5c\x13\x34\x9f\x27\x84\xed\xde\x54\x3b\xdb\x5a\x5f\x1c\xea\x4d\x8b\x80\x01\xae\xc4\xc6\xed\x5a\xdb\x38\xf3\x84\x7f\x4a\xa4\x5c\xad\xf1\x97\xd6\x33\xc6\x80\xad\x39\x9e\x8c\xdb\x55\xc5\xf5\x96\xab\x3c\x64\xa6\x21\xf3\x24\x81\xa2\x25\x29\x92\x0b\x5a\xdd\xae\xb5\x81\x2b\x43\x06\x00\xf1\x05\xaa\x2e\x53\x48\xa1\x05\x4f\x92\x35\x44\x9a\x52\x2c\xb8\xa6\xcf\xee\x43\xbd\xf9\xa5\xbf\xfb\xf5\x5d\x19\xb7\xbe\x7d\xc0\xd0\xfb\x81\xef\x92\xda\xa6\xa9\x1b\x78\xfb\xea\xaf\x19\x8d\x35\xde\x96\x85\xf1\xf0\xee\x68\x5b\x6f\x8e\x27\xff\xd6\xf7\x88\x69\xc9\xf3\x44\xa3\xaa\x5f\x82\x70\xc6\x80\xf3\xa9\xbc\xe7\x01\x03\x5a\x6f\x9a\xe9\x8b\x8b\xeb\xd1\x55\xae\xdd\x4f\x10\x0b\x23\xc6\x78\xa2\x49\x7d\x3d\x78\x1e\xc7\x58\x64\x72\xa5\x15\x17\x52\x8f\x68\x71\xae\xdc\xf3\xd9\xb2\x5c\x8a\xff\x39\x21\x18\x2c\xc1\x6c\x3c\xb5\xb0\xdf\x30\x21\x63\x7a\x18\xab\x06\x3f\xcf\xe4\x08\x06\x3d\x0c\xa3\x6f\x2d\xc3\x96\x53\xcd\x80\xfe\xe0\xb9\x4e\x6e\x6a\xe8\xce\xbb\x2a\x59\x9a\x0a\x1d\xb1\xf7\x00\x00\x00\xff\xff\xab\x27\x64\xe7\x3d\x03\x00\x00")
+
+func _1528395613_create_changeset_jobs_tableUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395613_create_changeset_jobs_tableUpSql,
+		"1528395613_create_changeset_jobs_table.up.sql",
+	)
+}
+
+func _1528395613_create_changeset_jobs_tableUpSql() (*asset, error) {
+	bytes, err := _1528395613_create_changeset_jobs_tableUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395613_create_changeset_jobs_table.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xb, 0x82, 0xbb, 0xbd, 0xb, 0x1d, 0x9a, 0x82, 0xb4, 0x11, 0xdc, 0xec, 0x79, 0x2b, 0x7e, 0xfe, 0x7a, 0xd0, 0xbc, 0x26, 0x39, 0xe1, 0x9b, 0x87, 0x5e, 0x7b, 0xf8, 0xfb, 0x2, 0x76, 0x8c, 0x8d}}
+	return a, nil
+}
+
+var __1528395614_lsif_nullable_parent_commitsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x0a\x0d\x70\x71\x0c\x71\x55\xc8\x29\xce\x4c\x8b\x4f\xce\xcf\xcd\xcd\x2c\x29\x56\x08\x76\x0d\x51\x28\x48\x2c\x4a\xcd\x2b\x81\x0a\x29\xd8\x2a\xa8\xab\x2b\x94\x67\xa4\x16\xa5\xa2\x49\x78\x06\x2b\xf8\x85\xfa\xf8\x58\x73\x39\xfa\x84\xb8\x06\x29\x84\x38\x3a\xf9\xa0\x19\x06\x91\x70\xf6\xf7\x09\xf5\xf5\x43\xd3\x0c\xb2\xc7\xcf\x3f\x04\x6a\x02\x97\xb3\xbf\xaf\xaf\x67\x88\x35\x17\x20\x00\x00\xff\xff\xe1\xc6\x0c\x56\x9b\x00\x00\x00")
+
+func _1528395614_lsif_nullable_parent_commitsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395614_lsif_nullable_parent_commitsDownSql,
+		"1528395614_lsif_nullable_parent_commits.down.sql",
+	)
+}
+
+func _1528395614_lsif_nullable_parent_commitsDownSql() (*asset, error) {
+	bytes, err := _1528395614_lsif_nullable_parent_commitsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395614_lsif_nullable_parent_commits.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xe7, 0x74, 0xd7, 0x34, 0xbb, 0xa3, 0x9e, 0x33, 0xe7, 0x13, 0xd5, 0x18, 0x4, 0xb8, 0x8, 0x83, 0xb2, 0x6a, 0x5e, 0x44, 0x24, 0x61, 0x50, 0x65, 0xb2, 0x62, 0x31, 0x3d, 0x78, 0x1f, 0x86, 0x39}}
+	return a, nil
+}
+
+var __1528395614_lsif_nullable_parent_commitsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\xc8\x29\xce\x4c\x8b\x4f\xce\xcf\xcd\xcd\x2c\x29\x56\x80\x48\x38\xfb\xfb\x84\xfa\xfa\x29\x14\x24\x16\xa5\xe6\x95\x40\xe5\x14\x5c\x82\xfc\x03\x14\xfc\xfc\x43\x14\xfc\x42\x7d\x7c\xac\xb9\x42\x03\x5c\x1c\x43\xd0\x74\x07\xbb\x86\xa0\x69\xb2\x05\xab\x56\x28\xcf\x48\x2d\x4a\xc5\x90\x52\x57\xb7\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x8d\x87\x02\xa3\x9b\x00\x00\x00")
+
+func _1528395614_lsif_nullable_parent_commitsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395614_lsif_nullable_parent_commitsUpSql,
+		"1528395614_lsif_nullable_parent_commits.up.sql",
+	)
+}
+
+func _1528395614_lsif_nullable_parent_commitsUpSql() (*asset, error) {
+	bytes, err := _1528395614_lsif_nullable_parent_commitsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395614_lsif_nullable_parent_commits.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xe7, 0x67, 0x66, 0xf5, 0x9e, 0x2, 0xb4, 0xe7, 0xf5, 0x20, 0x40, 0x29, 0xfe, 0xde, 0x49, 0xa0, 0x92, 0xb, 0x30, 0xb, 0x85, 0xc2, 0x17, 0x3c, 0xe4, 0x41, 0x84, 0x9, 0x84, 0x4e, 0xcf, 0xc}}
+	return a, nil
+}
+
+var __1528395615_lsifCommitConstraintsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xac\xcd\xb1\x4e\xc3\x30\x00\x84\xe1\xdd\x4f\x71\xea\x42\x2b\x51\xc4\xc0\x44\xc4\xe0\x3a\x56\x1b\x91\x3a\x28\x78\x77\x2d\xdb\xa8\x16\x09\x0e\xb6\x13\x5e\x9f\x21\x0c\x0c\x09\x13\xf3\x7f\xfa\x6e\xbf\x87\x08\xd9\x3d\xe2\x62\x42\xdf\xfb\x7c\x81\x4f\xd0\x88\x2e\xb9\x38\x39\x8b\xaf\x10\xed\x2d\x52\x80\xcf\x37\x09\x9f\x63\xc8\xce\xde\x11\x72\xe0\xc7\x4a\x14\x84\x10\x5a\x4b\xde\x42\xd2\x43\xcd\xd1\x25\xff\xa6\xec\xd8\x0f\x09\xb4\x2c\xc1\x1a\xf1\x2a\x5b\x5a\x09\xf9\xab\xa8\xf9\x46\x99\xab\x33\xef\x60\x27\xce\x9e\xb1\xad\xb9\x38\xca\xd3\x76\x33\xb7\xcd\x0e\x4f\x78\xb8\xdf\x15\x6b\x78\xd9\x36\x2f\x7f\xeb\x93\xee\xbc\x55\xe6\xaa\x63\x5a\x50\xe6\xd1\x8a\xf3\x13\xff\x51\x1a\x74\x74\x1f\x79\x11\x24\xac\x39\x9f\x2b\x59\x90\xef\x00\x00\x00\xff\xff\x91\x31\x06\x27\x87\x01\x00\x00")
+
+func _1528395615_lsifCommitConstraintsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395615_lsifCommitConstraintsDownSql,
+		"1528395615_lsif-commit-constraints.down.sql",
+	)
+}
+
+func _1528395615_lsifCommitConstraintsDownSql() (*asset, error) {
+	bytes, err := _1528395615_lsifCommitConstraintsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395615_lsif-commit-constraints.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x9d, 0x3a, 0x79, 0x3d, 0x78, 0x30, 0xd9, 0x10, 0x70, 0xda, 0x3b, 0xe5, 0x45, 0xb, 0xe2, 0xf4, 0x29, 0xdd, 0xb, 0x1c, 0x41, 0x49, 0x79, 0x9b, 0xcd, 0x7, 0x97, 0xb7, 0x93, 0xd1, 0xc2, 0x94}}
+	return a, nil
+}
+
+var __1528395615_lsifCommitConstraintsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xbc\xd0\x41\x4b\xc3\x30\x00\xc5\xf1\x7b\x3e\xc5\x63\x08\x55\xb0\xb2\x83\x17\xed\xa9\x4b\x83\x16\xb7\x54\x6a\x6e\xa2\x59\x48\x22\x0b\xae\x66\x26\xd9\x04\x45\x3f\xbb\x87\x78\x50\x94\xe2\x69\xe7\xff\x83\x1f\xbc\xb2\x04\xf7\xc9\x9e\x63\xa9\xfd\x30\xb8\xb4\x84\x8b\x50\x08\x36\xda\xb0\xb3\x06\x2f\x3e\x98\x63\x44\x0f\x97\x8a\x88\xe7\xad\x4f\xd6\x9c\x10\x32\x63\x17\x2d\xaf\x08\xa9\xe7\x82\xf5\x10\xf5\x6c\xce\xb0\x8e\xee\x41\x9a\xed\xb0\x89\xa8\x9b\x06\xb4\xe3\x37\xa2\xaf\x5b\x2e\xbe\x15\x99\x15\xb9\x53\x6b\x67\xa4\x5e\xa9\x10\x41\x2f\x19\xbd\xc2\xe1\x24\xa7\x09\x3e\x50\xdc\xdf\xaa\xf2\x75\x5a\x9e\xdd\xbd\x9d\x4e\xdf\x0f\x8a\xa3\xea\x37\x94\xd7\x7f\x53\x5f\x6d\xbf\xd8\x46\x05\xfb\x94\x46\xcc\x1f\x83\x7f\xc2\xf9\xce\xa6\xef\xae\xc7\xff\xd4\x2b\xab\x1f\x2b\x42\x68\xb7\x58\xb4\xa2\x22\x9f\x01\x00\x00\xff\xff\xb8\x37\xa1\x63\xd7\x01\x00\x00")
+
+func _1528395615_lsifCommitConstraintsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395615_lsifCommitConstraintsUpSql,
+		"1528395615_lsif-commit-constraints.up.sql",
+	)
+}
+
+func _1528395615_lsifCommitConstraintsUpSql() (*asset, error) {
+	bytes, err := _1528395615_lsifCommitConstraintsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395615_lsif-commit-constraints.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x50, 0x8, 0x8b, 0xa9, 0xbc, 0x49, 0xe6, 0xd6, 0x5, 0x51, 0x6d, 0x25, 0x96, 0x77, 0xc, 0x8, 0xa4, 0x24, 0x98, 0x7, 0x98, 0xf8, 0xc1, 0x17, 0xb0, 0xae, 0x22, 0x25, 0xe0, 0x5d, 0x95, 0x1a}}
+	return a, nil
+}
+
+var __1528395616_lsif_processed_atDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x74\x8c\xcd\x0a\x02\x21\x10\x80\xef\xf3\x14\x73\xac\x67\xf0\xe4\xba\x43\x08\x3a\x86\x18\x74\x93\x25\x37\x08\x36\x94\x5c\xdf\x3f\x08\x82\xe9\xd0\xf9\xfb\x99\xe8\x64\x59\x01\x68\x97\x28\x62\xd2\x93\x23\xdc\xfa\xe3\x9e\xcb\x78\xb6\x8e\x73\x0c\x67\x34\xc1\x5d\x3c\xe3\x68\x5b\x5d\xca\x5a\xf2\xb2\xab\x7f\x7e\x24\xd6\x9e\xbe\x45\x7b\xd5\xdb\xda\xfb\x27\xc1\xbd\xfe\x1e\x4c\x24\x9d\x08\x2d\xcf\x74\x15\x8b\x2c\x24\x0c\x2c\xc8\x41\x90\xa3\x02\x30\xc1\x7b\x9b\x14\xbc\x03\x00\x00\xff\xff\x10\xb0\x3d\xbf\xc3\x00\x00\x00")
+
+func _1528395616_lsif_processed_atDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395616_lsif_processed_atDownSql,
+		"1528395616_lsif_processed_at.down.sql",
+	)
+}
+
+func _1528395616_lsif_processed_atDownSql() (*asset, error) {
+	bytes, err := _1528395616_lsif_processed_atDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395616_lsif_processed_at.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x6e, 0x7a, 0x76, 0x73, 0x37, 0xd2, 0x4d, 0x8f, 0xc4, 0x70, 0x49, 0x19, 0x19, 0x12, 0x4e, 0x46, 0x29, 0xe0, 0x9c, 0xe6, 0xd4, 0xc1, 0x53, 0x51, 0xa, 0xca, 0xfa, 0x3, 0x32, 0x55, 0x43, 0x4e}}
+	return a, nil
+}
+
+var __1528395616_lsif_processed_atUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\x8e\xcd\x6a\xc3\x30\x10\x84\xef\xfb\x14\x7b\x6c\x9f\x41\xf4\x20\x5b\x4b\x31\xe8\xc7\xa8\x32\xf4\x66\x4c\xad\x12\x83\x1d\x89\x48\x26\x90\xa7\x0f\xf6\x49\x86\x24\xe4\x38\x3b\xf3\xcd\x6c\x45\xdf\x8d\x66\x00\x5c\x3a\xb2\xe8\x78\x25\x09\xe7\x34\xfd\xf7\xe3\xba\xc4\x84\x96\x34\x57\x84\x6b\x9c\xc3\x30\xfa\xb1\x1f\x32\xe6\x80\xf1\x12\xfe\x7c\x4a\xbb\x66\xcf\x50\x2e\x04\xd6\x46\x76\x4a\x1f\xf1\x69\xf1\x29\x0f\x4b\xc4\xeb\x94\x4f\xbb\xc4\x5b\x38\x7b\x06\x5d\x2b\xb8\x3b\x54\xfc\x90\x3b\xb0\x5f\x6f\x2e\xef\xe7\x07\xdb\x5b\x9f\x36\x0e\x75\x27\x25\x03\x61\x4d\x8b\x8d\x16\xf4\x5b\xc0\x7d\x91\x67\x50\x5b\xda\x5e\x7a\x15\x42\xa3\x0b\xe7\xa3\x70\x3e\x19\x40\x6d\x94\x6a\x1c\x83\x7b\x00\x00\x00\xff\xff\x45\x1f\x10\x06\x67\x01\x00\x00")
+
+func _1528395616_lsif_processed_atUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395616_lsif_processed_atUpSql,
+		"1528395616_lsif_processed_at.up.sql",
+	)
+}
+
+func _1528395616_lsif_processed_atUpSql() (*asset, error) {
+	bytes, err := _1528395616_lsif_processed_atUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395616_lsif_processed_at.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x58, 0xb4, 0xba, 0x4a, 0x9, 0x76, 0x40, 0x1c, 0xbd, 0x77, 0x3f, 0xed, 0x54, 0x16, 0x41, 0xbf, 0x2d, 0x44, 0xa0, 0xd9, 0x9, 0xfc, 0xfe, 0x18, 0xfd, 0x7b, 0x9f, 0xad, 0x22, 0x76, 0x82, 0xe9}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1435,6 +1687,18 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395609_create_campaign_jobs_table.up.sql":                             _1528395609_create_campaign_jobs_tableUpSql,
 	"1528395610_change_campaign_plan_arguments_to_text.down.sql":               _1528395610_change_campaign_plan_arguments_to_textDownSql,
 	"1528395610_change_campaign_plan_arguments_to_text.up.sql":                 _1528395610_change_campaign_plan_arguments_to_textUpSql,
+	"1528395611_add_unique_constraint_to_campaign_jobs.down.sql":               _1528395611_add_unique_constraint_to_campaign_jobsDownSql,
+	"1528395611_add_unique_constraint_to_campaign_jobs.up.sql":                 _1528395611_add_unique_constraint_to_campaign_jobsUpSql,
+	"1528395612_validate_campaign_plan_completion_with_trigger.down.sql":       _1528395612_validate_campaign_plan_completion_with_triggerDownSql,
+	"1528395612_validate_campaign_plan_completion_with_trigger.up.sql":         _1528395612_validate_campaign_plan_completion_with_triggerUpSql,
+	"1528395613_create_changeset_jobs_table.down.sql":                          _1528395613_create_changeset_jobs_tableDownSql,
+	"1528395613_create_changeset_jobs_table.up.sql":                            _1528395613_create_changeset_jobs_tableUpSql,
+	"1528395614_lsif_nullable_parent_commits.down.sql":                         _1528395614_lsif_nullable_parent_commitsDownSql,
+	"1528395614_lsif_nullable_parent_commits.up.sql":                           _1528395614_lsif_nullable_parent_commitsUpSql,
+	"1528395615_lsif-commit-constraints.down.sql":                              _1528395615_lsifCommitConstraintsDownSql,
+	"1528395615_lsif-commit-constraints.up.sql":                                _1528395615_lsifCommitConstraintsUpSql,
+	"1528395616_lsif_processed_at.down.sql":                                    _1528395616_lsif_processed_atDownSql,
+	"1528395616_lsif_processed_at.up.sql":                                      _1528395616_lsif_processed_atUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1536,6 +1800,18 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395609_create_campaign_jobs_table.up.sql":                             {_1528395609_create_campaign_jobs_tableUpSql, map[string]*bintree{}},
 	"1528395610_change_campaign_plan_arguments_to_text.down.sql":               {_1528395610_change_campaign_plan_arguments_to_textDownSql, map[string]*bintree{}},
 	"1528395610_change_campaign_plan_arguments_to_text.up.sql":                 {_1528395610_change_campaign_plan_arguments_to_textUpSql, map[string]*bintree{}},
+	"1528395611_add_unique_constraint_to_campaign_jobs.down.sql":               {_1528395611_add_unique_constraint_to_campaign_jobsDownSql, map[string]*bintree{}},
+	"1528395611_add_unique_constraint_to_campaign_jobs.up.sql":                 {_1528395611_add_unique_constraint_to_campaign_jobsUpSql, map[string]*bintree{}},
+	"1528395612_validate_campaign_plan_completion_with_trigger.down.sql":       {_1528395612_validate_campaign_plan_completion_with_triggerDownSql, map[string]*bintree{}},
+	"1528395612_validate_campaign_plan_completion_with_trigger.up.sql":         {_1528395612_validate_campaign_plan_completion_with_triggerUpSql, map[string]*bintree{}},
+	"1528395613_create_changeset_jobs_table.down.sql":                          {_1528395613_create_changeset_jobs_tableDownSql, map[string]*bintree{}},
+	"1528395613_create_changeset_jobs_table.up.sql":                            {_1528395613_create_changeset_jobs_tableUpSql, map[string]*bintree{}},
+	"1528395614_lsif_nullable_parent_commits.down.sql":                         {_1528395614_lsif_nullable_parent_commitsDownSql, map[string]*bintree{}},
+	"1528395614_lsif_nullable_parent_commits.up.sql":                           {_1528395614_lsif_nullable_parent_commitsUpSql, map[string]*bintree{}},
+	"1528395615_lsif-commit-constraints.down.sql":                              {_1528395615_lsifCommitConstraintsDownSql, map[string]*bintree{}},
+	"1528395615_lsif-commit-constraints.up.sql":                                {_1528395615_lsifCommitConstraintsUpSql, map[string]*bintree{}},
+	"1528395616_lsif_processed_at.down.sql":                                    {_1528395616_lsif_processed_atDownSql, map[string]*bintree{}},
+	"1528395616_lsif_processed_at.up.sql":                                      {_1528395616_lsif_processed_atUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

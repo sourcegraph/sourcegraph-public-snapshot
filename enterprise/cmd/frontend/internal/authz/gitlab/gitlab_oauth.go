@@ -17,12 +17,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
-var _ authz.Provider = ((*GitLabOAuthAuthzProvider)(nil))
+var _ authz.Provider = (*OAuthAuthzProvider)(nil)
 
-type GitLabOAuthAuthzProvider struct {
+type OAuthAuthzProvider struct {
 	clientProvider *gitlab.ClientProvider
 	clientURL      *url.URL
 	codeHost       *extsvc.CodeHost
@@ -30,7 +30,7 @@ type GitLabOAuthAuthzProvider struct {
 	cacheTTL       time.Duration
 }
 
-type GitLabOAuthAuthzProviderOp struct {
+type OAuthAuthzProviderOp struct {
 	// BaseURL is the URL of the GitLab instance.
 	BaseURL *url.URL
 
@@ -42,8 +42,8 @@ type GitLabOAuthAuthzProviderOp struct {
 	MockCache cache
 }
 
-func NewOAuthProvider(op GitLabOAuthAuthzProviderOp) *GitLabOAuthAuthzProvider {
-	p := &GitLabOAuthAuthzProvider{
+func newOAuthProvider(op OAuthAuthzProviderOp) *OAuthAuthzProvider {
+	p := &OAuthAuthzProvider{
 		clientProvider: gitlab.NewClientProvider(op.BaseURL, nil),
 		clientURL:      op.BaseURL,
 		codeHost:       extsvc.NewCodeHost(op.BaseURL, gitlab.ServiceType),
@@ -56,23 +56,23 @@ func NewOAuthProvider(op GitLabOAuthAuthzProviderOp) *GitLabOAuthAuthzProvider {
 	return p
 }
 
-func (p *GitLabOAuthAuthzProvider) Validate() (problems []string) {
+func (p *OAuthAuthzProvider) Validate() (problems []string) {
 	return nil
 }
 
-func (p *GitLabOAuthAuthzProvider) ServiceID() string {
+func (p *OAuthAuthzProvider) ServiceID() string {
 	return p.codeHost.ServiceID
 }
 
-func (p *GitLabOAuthAuthzProvider) ServiceType() string {
+func (p *OAuthAuthzProvider) ServiceType() string {
 	return p.codeHost.ServiceType
 }
 
-func (p *GitLabOAuthAuthzProvider) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.ExternalAccount) (mine *extsvc.ExternalAccount, err error) {
+func (p *OAuthAuthzProvider) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.ExternalAccount) (mine *extsvc.ExternalAccount, err error) {
 	return nil, nil
 }
 
-func (p *GitLabOAuthAuthzProvider) RepoPerms(ctx context.Context, account *extsvc.ExternalAccount, repos []*types.Repo) (
+func (p *OAuthAuthzProvider) RepoPerms(ctx context.Context, account *extsvc.ExternalAccount, repos []*types.Repo) (
 	[]authz.RepoPerms, error,
 ) {
 	accountID := "" // empty means public / unauthenticated to the code host
@@ -164,7 +164,7 @@ func (p *GitLabOAuthAuthzProvider) RepoPerms(ctx context.Context, account *extsv
 // - whether the repository contents are accessible to usr, and
 // - any error encountered in fetching (not including an error due to the repository not being visible);
 //   if the error is non-nil, all other return values should be disregraded
-func (p *GitLabOAuthAuthzProvider) fetchProjVis(ctx context.Context, oauthToken string, projID int) (
+func (p *OAuthAuthzProvider) fetchProjVis(ctx context.Context, oauthToken string, projID int) (
 	isAccessible bool, vis gitlab.Visibility, isContentAccessible bool, err error,
 ) {
 	proj, err := p.clientProvider.GetOAuthClient(oauthToken).GetProject(ctx, gitlab.GetProjectOp{

@@ -1,10 +1,11 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
-import { isEqual, upperFirst } from 'lodash'
+import { isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import FileIcon from 'mdi-react/FileIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
@@ -12,7 +13,6 @@ import { debounceTime, distinctUntilChanged, filter, first, map, skip, skipUntil
 import { parseSearchURLQuery, PatternTypeProps } from '..'
 import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
 import { FileMatch } from '../../../../shared/src/components/FileMatch'
-import { RepositoryIcon } from '../../../../shared/src/components/icons' // TODO: Switch to mdi icon
 import { displayRepoName } from '../../../../shared/src/components/RepoFileLink'
 import { VirtualList } from '../../../../shared/src/components/VirtualList'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
@@ -30,6 +30,7 @@ import { ThemeProps } from '../../../../shared/src/theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { shouldDisplayPerformanceWarning } from '../backend'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
+import { ErrorAlert } from '../../components/alerts'
 
 const isSearchResults = (val: any): val is GQL.ISearchResults => val && val.__typename === 'SearchResults'
 
@@ -336,10 +337,11 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                         </div>
                     ) : isErrorLike(this.props.resultsOrError) ? (
                         /* GraphQL, network, query syntax error */
-                        <div className="alert alert-warning m-2" data-testid="search-results-list-error">
-                            <AlertCircleIcon className="icon-inline" />
-                            {upperFirst(this.props.resultsOrError.message)}
-                        </div>
+                        <ErrorAlert
+                            className="m-2"
+                            data-testid="search-results-list-error"
+                            error={this.props.resultsOrError}
+                        />
                     ) : (
                         (() => {
                             const results = this.props.resultsOrError
@@ -514,7 +516,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     <FileMatch
                         key={'file:' + result.file.url}
                         location={this.props.location}
-                        icon={result.lineMatches && result.lineMatches.length > 0 ? RepositoryIcon : FileIcon}
+                        icon={result.lineMatches && result.lineMatches.length > 0 ? SourceRepositoryIcon : FileIcon}
                         result={result}
                         onSelect={this.logEvent}
                         expanded={false}

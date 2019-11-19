@@ -1,5 +1,4 @@
 import format from 'date-fns/format'
-import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
@@ -11,6 +10,7 @@ import { RadioButtons } from '../components/RadioButtons'
 import { Timestamp } from '../components/time/Timestamp'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchSiteUsageStatistics, fetchUserUsageStatistics } from './backend'
+import { ErrorAlert } from '../components/alerts'
 
 interface ChartData {
     label: string
@@ -218,7 +218,10 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
         eventLogger.logViewEvent('SiteAdminUsageStatistics')
 
         this.subscriptions.add(
-            fetchSiteUsageStatistics().subscribe(stats => this.setState({ stats }), error => this.setState({ error }))
+            fetchSiteUsageStatistics().subscribe(
+                stats => this.setState({ stats }),
+                error => this.setState({ error })
+            )
         )
     }
 
@@ -237,7 +240,7 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
                 <div className="d-flex justify-content-between align-items-center mt-3 mb-1">
                     <h2 className="mb-0">Usage statistics</h2>
                 </div>
-                {this.state.error && <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>}
+                {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}
                 {this.state.stats && (
                     <>
                         <RadioButtons

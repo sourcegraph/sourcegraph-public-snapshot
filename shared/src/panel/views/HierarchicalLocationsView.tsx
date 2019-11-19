@@ -1,11 +1,11 @@
 import { Location } from '@sourcegraph/extension-api-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import H from 'history'
 import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, endWith, map, startWith, switchMap, tap } from 'rxjs/operators'
 import { FetchFileCtx } from '../../components/CodeExcerpt'
-import { RepositoryIcon } from '../../components/icons' // TODO: Switch to mdi icon
 import { RepoLink } from '../../components/RepoLink'
 import { Resizable } from '../../components/Resizable'
 import { ExtensionsControllerProps } from '../../extensions/controller'
@@ -244,7 +244,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                     location={this.props.location}
                     locations={of(visibleLocations)}
                     onSelect={this.props.onSelectLocation}
-                    icon={RepositoryIcon}
+                    icon={SourceRepositoryIcon}
                     isLightTheme={this.props.isLightTheme}
                     fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
                     settingsCascade={this.props.settingsCascade}

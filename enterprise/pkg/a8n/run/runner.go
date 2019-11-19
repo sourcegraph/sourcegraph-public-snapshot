@@ -25,6 +25,10 @@ import (
 // development.
 var maxRepositories = env.Get("A8N_MAX_REPOS", "200", "maximum number of repositories over which to run campaigns")
 
+// maxWorkers defines the maximum number of repositories over which a Runner
+// executes CampaignJobs in parallel.
+var maxWorkers = env.Get("A8N_MAX_WORKERS", "8", "maximum number of repositories run campaigns over in parallel")
+
 // ErrTooManyResults is returned by the Runner's Run method when the
 // CampaignType's searchQuery produced more than maxRepositories number of
 // repositories.
@@ -135,45 +139,71 @@ func (r *Runner) Run(ctx context.Context, plan *a8n.CampaignPlan) error {
 		return err
 	}
 
-	for _, job := range jobs {
-		r.wg.Add(1)
-
-		go func(ctx context.Context, ct CampaignType, job *a8n.CampaignJob) {
-			defer func() {
-				defer r.wg.Done()
-				job.FinishedAt = r.clock()
-				err := r.store.UpdateCampaignJob(ctx, job)
-				if err != nil {
-					log15.Error("UpdateCampaignJob failed", "err", err)
-				}
-			}()
-
-			job.StartedAt = r.clock()
-
-			// We load the repository here again so that we decouple the
-			// creation and running of jobs from the start.
-			store := repos.NewDBStore(r.store.DB(), sql.TxOptions{})
-			opts := repos.StoreListReposArgs{IDs: []uint32{uint32(job.RepoID)}}
-			rs, err := store.ListRepos(ctx, opts)
-			if err != nil {
-				job.Error = err.Error()
-				return
-			}
-			if len(rs) != 1 {
-				job.Error = fmt.Sprintf("repository %d not found", job.RepoID)
-				return
-			}
-
-			diff, err := ct.generateDiff(ctx, api.RepoName(rs[0].Name), api.CommitID(job.Rev))
-			if err != nil {
-				job.Error = err.Error()
-			}
-
-			job.Diff = diff
-		}(ctx, r.ct, job)
+	numWorkers, err := strconv.ParseInt(maxWorkers, 10, 64)
+	if err != nil {
+		return err
 	}
 
+	queue := make(chan *a8n.CampaignJob)
+	worker := func(queue chan *a8n.CampaignJob) {
+		for job := range queue {
+			r.runJob(ctx, job)
+		}
+	}
+
+	for i := 0; i < int(numWorkers); i++ {
+		go worker(queue)
+	}
+
+	r.wg.Add(len(jobs))
+
+	go func() {
+		for _, job := range jobs {
+			queue <- job
+		}
+
+		close(queue)
+	}()
+
 	return nil
+}
+
+func (r *Runner) runJob(ctx context.Context, job *a8n.CampaignJob) {
+	defer func() {
+		defer r.wg.Done()
+
+		job.FinishedAt = r.clock()
+
+		// We're passing a new context here because we want to persist the job
+		// even if we ran into a timeout earlier.
+		err := r.store.UpdateCampaignJob(context.Background(), job)
+		if err != nil {
+			log15.Error("UpdateCampaignJob failed", "err", err)
+		}
+	}()
+
+	job.StartedAt = r.clock()
+
+	// We load the repository here again so that we decouple the
+	// creation and running of jobs from the start.
+	reposStore := repos.NewDBStore(r.store.DB(), sql.TxOptions{})
+	opts := repos.StoreListReposArgs{IDs: []uint32{uint32(job.RepoID)}}
+	rs, err := reposStore.ListRepos(ctx, opts)
+	if err != nil {
+		job.Error = err.Error()
+		return
+	}
+	if len(rs) != 1 {
+		job.Error = fmt.Sprintf("repository %d not found", job.RepoID)
+		return
+	}
+
+	diff, err := r.ct.generateDiff(ctx, api.RepoName(rs[0].Name), api.CommitID(job.Rev))
+	if err != nil {
+		job.Error = err.Error()
+	}
+
+	job.Diff = diff
 }
 
 func (r *Runner) createPlanAndJobs(
@@ -198,6 +228,10 @@ func (r *Runner) createPlanAndJobs(
 
 	jobs := make([]*a8n.CampaignJob, 0, len(rs))
 	for _, repo := range rs {
+		if !a8n.IsRepoSupported(repo.ExternalRepo()) {
+			continue
+		}
+
 		var repoID int32
 		if err = relay.UnmarshalSpec(repo.ID(), &repoID); err != nil {
 			return jobs, err

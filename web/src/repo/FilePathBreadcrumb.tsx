@@ -44,12 +44,10 @@ const Breadcrumb: React.FunctionComponent<Props> = props => {
  * Displays a file path in a repository in breadcrumb style, with ancestor path
  * links.
  */
-export const FilePathBreadcrumb: React.FunctionComponent<
-    RepoRev & {
-        filePath: string
-        isDir: boolean
-    }
-> = ({ repoName, rev, filePath, isDir }) => {
+export const FilePathBreadcrumb: React.FunctionComponent<RepoRev & {
+    filePath: string
+    isDir: boolean
+}> = ({ repoName, rev, filePath, isDir }) => {
     const parts = filePath.split('/')
     return (
         /* eslint-disable react/jsx-no-bind */

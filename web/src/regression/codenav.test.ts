@@ -304,4 +304,68 @@ describe('Code navigation regression test suite', () => {
         },
         30 * 1000
     )
+
+    test(
+        'File sidebar, multiple levels of directories',
+        async () => {
+            await driver.page.goto(
+                config.sourcegraphBaseUrl +
+                    '/github.com/sourcegraph/sourcegraph@c543dfd3936019befe94b881ade89e637d1a3dc3'
+            )
+            for (const file of ['cmd', 'frontend', 'auth', 'providers', 'providers.go']) {
+                await (
+                    await driver.findElementWithText(file, {
+                        selector: '.e2e-repo-rev-sidebar a',
+                        wait: { timeout: 2 * 1000 },
+                    })
+                ).click()
+            }
+            await driver.waitUntilURL(
+                `${config.sourcegraphBaseUrl}/github.com/sourcegraph/sourcegraph@c543dfd3936019befe94b881ade89e637d1a3dc3/-/blob/cmd/frontend/auth/providers/providers.go`,
+                { timeout: 2 * 1000 }
+            )
+        },
+        20 * 1000
+    )
+
+    test('Symbols sidebar', async () => {
+        await driver.page.goto(
+            config.sourcegraphBaseUrl + '/github.com/sourcegraph/sourcegraph@c543dfd3936019befe94b881ade89e637d1a3dc3'
+        )
+        await (
+            await driver.findElementWithText('SYMBOLS', {
+                selector: '.e2e-repo-rev-sidebar button',
+                wait: { timeout: 10 * 1000 },
+            })
+        ).click()
+        await (
+            await driver.findElementWithText('backgroundEntry', {
+                selector: '.e2e-repo-rev-sidebar a span',
+                wait: { timeout: 2 * 1000 },
+            })
+        ).click()
+        await driver.replaceText({
+            selector: 'input[placeholder="Search symbols..."]',
+            newText: 'buildentry',
+        })
+        await driver.page.waitForFunction(
+            () => {
+                const sidebar = document.querySelector<HTMLElement>('.e2e-repo-rev-sidebar')
+                return sidebar && !sidebar.innerText.includes('backgroundEntry')
+            },
+            {
+                timeout: 2 * 1000,
+            }
+        )
+        await (
+            await driver.findElementWithText('buildEntry', {
+                selector: '.e2e-repo-rev-sidebar a span',
+                wait: { timeout: 2 * 1000 },
+            })
+        ).click()
+        await driver.waitUntilURL(
+            `${config.sourcegraphBaseUrl}/github.com/sourcegraph/sourcegraph@c543dfd3936019befe94b881ade89e637d1a3dc3/-/blob/browser/config/webpack/base.config.ts#L6:7-6:17`,
+            { timeout: 2 * 1000 }
+        )
+    })
 })

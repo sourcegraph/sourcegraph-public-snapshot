@@ -46,7 +46,7 @@ func TestCampaignType_Comby(t *testing.T) {
 
 				fmt.Fprintln(w, combyJsonLineDiffs[0])
 			},
-			wantDiff: `diff a/file1.txt b/file1.txt
+			wantDiff: `diff file1.txt file1.txt
 --- file1.txt
 +++ file1.txt
 @@ -1,3 +1,3 @@
@@ -71,7 +71,7 @@ func TestCampaignType_Comby(t *testing.T) {
 				fmt.Fprintln(w, combyJsonLineDiffs[0])
 				fmt.Fprintln(w, combyJsonLineDiffs[1])
 			},
-			wantDiff: `diff a/file1.txt b/file1.txt
+			wantDiff: `diff file1.txt file1.txt
 --- file1.txt
 +++ file1.txt
 @@ -1,3 +1,3 @@
@@ -79,7 +79,7 @@ func TestCampaignType_Comby(t *testing.T) {
 -file1-line2
 +file1-lineFOO
  file1-line3
-diff a/file2.txt b/file2.txt
+diff file2.txt file2.txt
 --- file2.txt
 +++ file2.txt
 @@ -1,3 +1,3 @@

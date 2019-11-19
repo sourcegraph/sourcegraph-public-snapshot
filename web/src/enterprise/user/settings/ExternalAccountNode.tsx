@@ -1,4 +1,3 @@
-import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
@@ -9,6 +8,7 @@ import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../
 import { mutateGraphQL } from '../../../backend/graphql'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { userURL } from '../../../user'
+import { ErrorAlert } from '../../../components/alerts'
 
 export const externalAccountFragment = gql`
     fragment ExternalAccountFields on ExternalAccount {
@@ -90,7 +90,10 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
                         )
                     )
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    error => console.error(error)
+                )
         )
     }
 
@@ -150,9 +153,7 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
                             Delete
                         </button>
                         {isErrorLike(this.state.deletionOrError) && (
-                            <div className="alert alert-danger mt-2">
-                                Error: {upperFirst(this.state.deletionOrError.message)}
-                            </div>
+                            <ErrorAlert className="mt-2" error={this.state.deletionOrError} />
                         )}
                     </div>
                 </div>

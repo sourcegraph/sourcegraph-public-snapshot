@@ -29,6 +29,8 @@ import { userAreaRoutes } from './user/area/routes'
 import { userSettingsAreaRoutes } from './user/settings/routes'
 import { userSettingsSideBarItems } from './user/settings/sidebaritems'
 import { KEYBOARD_SHORTCUTS } from './keyboardShortcuts/keyboardShortcuts'
+import { repoSettingsAreaRoutes } from './repo/settings/routes'
+import { repoSettingsSidebarItems } from './repo/settings/sidebaritems'
 
 window.addEventListener('DOMContentLoaded', () => {
     render(
@@ -50,6 +52,8 @@ window.addEventListener('DOMContentLoaded', () => {
             repoContainerRoutes={repoContainerRoutes}
             repoRevContainerRoutes={repoRevContainerRoutes}
             repoHeaderActionButtons={repoHeaderActionButtons}
+            repoSettingsAreaRoutes={repoSettingsAreaRoutes}
+            repoSettingsSidebarItems={repoSettingsSidebarItems}
             routes={routes}
             keyboardShortcuts={KEYBOARD_SHORTCUTS}
             showCampaigns={false}

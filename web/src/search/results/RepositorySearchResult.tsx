@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { RepositoryIcon } from '../../../../shared/src/components/icons' // TODO: Switch to mdi icon
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { RepoLink } from '../../../../shared/src/components/RepoLink'
 import { ResultContainer } from '../../../../shared/src/components/ResultContainer'
 import * as GQL from '../../../../shared/src/graphql/schema'
@@ -20,7 +20,7 @@ interface Props {
 export const RepositorySearchResult: React.FunctionComponent<Props> = (props: Props) => (
     <ResultContainer
         titleClassName="repository-search-result__title"
-        icon={RepositoryIcon}
+        icon={SourceRepositoryIcon}
         title={
             <>
                 {/* eslint-disable react/jsx-no-bind */}

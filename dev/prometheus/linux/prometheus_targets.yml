@@ -44,3 +44,8 @@
   targets:
     # lsif-worker
     - 127.0.0.1:3187
+- labels:
+    job: postgres_exporter
+  targets:
+    # postgres exporter
+    - 127.0.0.1:9187

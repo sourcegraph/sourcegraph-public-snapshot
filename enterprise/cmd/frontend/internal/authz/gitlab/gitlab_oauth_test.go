@@ -21,7 +21,7 @@ func Test_GitLab_RepoPerms(t *testing.T) {
 	}
 	type test struct {
 		description string
-		op          GitLabOAuthAuthzProviderOp
+		op          OAuthAuthzProviderOp
 		calls       []call
 	}
 
@@ -83,7 +83,7 @@ func Test_GitLab_RepoPerms(t *testing.T) {
 	tests := []test{
 		{
 			description: "standard config",
-			op: GitLabOAuthAuthzProviderOp{
+			op: OAuthAuthzProviderOp{
 				BaseURL: mustURL(t, "https://gitlab.mine"),
 			},
 			calls: []call{
@@ -174,7 +174,7 @@ func Test_GitLab_RepoPerms(t *testing.T) {
 				ctx := context.Background()
 				op := test.op
 				op.MockCache = make(mockCache)
-				authzProvider := NewOAuthProvider(op)
+				authzProvider := newOAuthProvider(op)
 
 				for i := 0; i < 2; i++ {
 					t.Logf("iter %d", i)
@@ -221,7 +221,7 @@ func Test_GitLab_RepoPerms_cache(t *testing.T) {
 	gitlab.MockListTree = gitlabMock.ListTree
 
 	ctx := context.Background()
-	authzProvider := NewOAuthProvider(GitLabOAuthAuthzProviderOp{
+	authzProvider := newOAuthProvider(OAuthAuthzProviderOp{
 		BaseURL:   mustURL(t, "https://gitlab.mine"),
 		MockCache: make(mockCache),
 		CacheTTL:  3 * time.Hour,

@@ -7,12 +7,11 @@ import { GraphQLClient, createGraphQLClient } from './util/GraphQLClient'
 import { Driver } from '../../../shared/src/e2e/driver'
 import { getConfig } from '../../../shared/src/e2e/config'
 import { getTestTools } from './util/init'
-import { ensureLoggedInOrCreateTestUser } from './util/helpers'
-import { setUserEmailVerified, getViewerSettings } from './util/api'
+import { ensureLoggedInOrCreateTestUser, getGlobalSettings } from './util/helpers'
+import { setUserEmailVerified } from './util/api'
 import { ScreenshotVerifier } from './util/ScreenshotVerifier'
 import { gql, dataOrThrowErrors } from '../../../shared/src/graphql/graphql'
 import { map } from 'rxjs/operators'
-import { first } from 'lodash'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { applyEdits, parse } from '@sqs/jsonc-parser'
 import { overwriteSettings } from '../../../shared/src/settings/edit'
@@ -250,26 +249,13 @@ describe('Core functionality regression test suite', () => {
     })
 
     test('2.5 Quicklinks: add a quicklink, test that it appears on the front page and works.', async () => {
-        const getGlobalSettings = async () => {
-            const settings = await getViewerSettings(gqlClient)
-            const globalSettingsSubject = first(settings.subjects.filter(subject => subject.__typename === 'Site'))
-            if (!globalSettingsSubject || !globalSettingsSubject.latestSettings) {
-                throw new Error('Could not get global settings')
-            }
-            return {
-                subjectID: globalSettingsSubject.id,
-                settingsID: globalSettingsSubject.latestSettings.id,
-                contents: globalSettingsSubject.latestSettings.contents,
-            }
-        }
-
         const quicklinkInfo = {
             name: 'Quicklink',
             url: config.sourcegraphBaseUrl + '/api/console',
             description: 'This is a quicklink',
         }
 
-        const { subjectID, settingsID, contents: oldContents } = await getGlobalSettings()
+        const { subjectID, settingsID, contents: oldContents } = await getGlobalSettings(gqlClient)
         if (parse(oldContents).quicklinks) {
             throw new Error('Global setting quicklinks already exists, aborting test')
         }
@@ -283,32 +269,30 @@ describe('Core functionality regression test suite', () => {
         )
         await overwriteSettings(gqlClient, subjectID, settingsID, newContents)
         alwaysCleanupManager.add('Global setting', 'quicklinks', async () => {
-            const { subjectID: currentSubjectID, settingsID: currentSettingsID } = await getGlobalSettings()
+            const { subjectID: currentSubjectID, settingsID: currentSettingsID } = await getGlobalSettings(gqlClient)
             await overwriteSettings(gqlClient, currentSubjectID, currentSettingsID, oldContents)
         })
 
         await driver.page.goto(config.sourcegraphBaseUrl + '/search')
-        await (await driver.findElementWithText(quicklinkInfo.name, {
-            tagName: 'a',
-            wait: { timeout: 1000 },
-        })).hover()
+        await (
+            await driver.findElementWithText(quicklinkInfo.name, {
+                selector: 'a',
+                wait: { timeout: 1000 },
+            })
+        ).hover()
         await driver.findElementWithText(quicklinkInfo.description, {
             wait: { timeout: 1000 },
         })
-        await (await driver.findElementWithText(quicklinkInfo.name, {
-            tagName: 'a',
-            wait: { timeout: 1000 },
-        })).click()
+        await (
+            await driver.findElementWithText(quicklinkInfo.name, {
+                selector: 'a',
+                wait: { timeout: 1000 },
+            })
+        ).click()
         await driver.page.waitForNavigation()
         expect(driver.page.url()).toEqual(quicklinkInfo.url)
     })
 
-    test('2.3.1 Organizations (admin user)', async () => {
-        // TODO(@sourcegraph/web)
-    })
-    test('2.3.2 Organizations (non-admin user)', async () => {
-        // TODO(@sourcegraph/web)
-    })
     test('2.4 Explore page', async () => {
         // TODO(@sourcegraph/web)
     })

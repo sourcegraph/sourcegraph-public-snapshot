@@ -5,12 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/uber/gonduit"
 	"github.com/uber/gonduit/core"
 	"github.com/uber/gonduit/requests"
@@ -21,15 +23,23 @@ type Client struct {
 	conn *gonduit.Conn
 }
 
+var requestCounter = metrics.NewRequestMeter("phabricator", "Total number of requests sent to the Phabricator API.")
+
 // NewClient returns an authenticated Client, using the given URL and
 // token. If provided, cli will be used to perform the underlying HTTP requests.
 // This constructor needs a context because it calls the Conduit API to negotiate
 // capabilities as part of the dial process.
-func NewClient(ctx context.Context, url, token string, cli httpcli.Doer) (*Client, error) {
+func NewClient(ctx context.Context, phabUrl, token string, cli httpcli.Doer) (*Client, error) {
 	if cli == nil {
 		cli = http.DefaultClient
 	}
-	conn, err := gonduit.DialContext(ctx, url, &core.ClientOptions{
+
+	cli = requestCounter.Doer(cli, func(u *url.URL) string {
+		// TODO(uwedeportivo): needs proper category function
+		return "unknown"
+	})
+
+	conn, err := gonduit.DialContext(ctx, phabUrl, &core.ClientOptions{
 		APIToken: token,
 		Client:   httpcli.HeadersMiddleware("User-Agent", "sourcegraph/phabricator-client")(cli),
 	})

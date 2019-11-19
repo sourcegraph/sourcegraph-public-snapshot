@@ -1,6 +1,6 @@
 # LSIF data model
 
-This document outlines the data model for a single LSIF dump. The definition of the database tables and the entities encoded within it can be found in [../src/database.models.ts](../src/database.models.ts).
+This document outlines the data model for a single LSIF dump. The definition of the database tables and the entities encoded within it can be found in [../src/shared/models/dump.ts](../src/shared/models/dump.ts).
 
 In the following document, we collapse ranges to keep the document readable, where `a:b-c:d` is shorthand for the following:
 
@@ -170,7 +170,10 @@ Each payload has the following form.
     "55": [{ "documentId": "4", "rangeId": "4" }],
     "61": [{ "documentId": "4", "rangeId": "21" }],
     "71": [{ "documentId": "4", "rangeId": "47" }],
-    "52": [{ "documentId": "4", "rangeId": "9" }, { "documentId": "80", "rangeId": "95" }],
+    "52": [
+      { "documentId": "4", "rangeId": "9" },
+      { "documentId": "80", "rangeId": "95" }
+    ],
     "58": [
       { "documentId": "4", "rangeId": "14" },
       { "documentId": "80", "rangeId": "91" },
@@ -188,7 +191,10 @@ Each payload has the following form.
     "125": [{ "documentId": "80", "rangeId": "100" }],
     "128": [{ "documentId": "80", "rangeId": "100" }],
     "131": [{ "documentId": "80", "rangeId": "107" }],
-    "134": [{ "documentId": "80", "rangeId": "107" }, { "documentId": "80", "rangeId": "115" }]
+    "134": [
+      { "documentId": "80", "rangeId": "107" },
+      { "documentId": "80", "rangeId": "115" }
+    ]
   }
 }
 ```

@@ -1,5 +1,4 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -19,6 +18,7 @@ import { ExtensionAreaRouteContext } from '../../../extensions/extension/Extensi
 import { eventLogger } from '../../../tracking/eventLogger'
 import { RegistryExtensionDeleteButton } from './RegistryExtensionDeleteButton'
 import { RegistryExtensionNameFormGroup, RegistryPublisherFormGroup } from './RegistryExtensionForm'
+import { ErrorAlert } from '../../../components/alerts'
 
 function updateExtension(
     args: Pick<
@@ -101,7 +101,10 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
                             )
                         )
                     )
-                    .subscribe(stateUpdate => this.setState(stateUpdate as State), err => console.error(err))
+                    .subscribe(
+                        stateUpdate => this.setState(stateUpdate as State),
+                        err => console.error(err)
+                    )
             )
 
             this.componentUpdates.next(this.props)
@@ -178,9 +181,7 @@ export const RegistryExtensionManagePage = withAuthenticatedUser(
                             )}
                         </button>
                     </Form>
-                    {isErrorLike(this.state.updateOrError) && (
-                        <div className="alert alert-danger">{upperFirst(this.state.updateOrError.message)}</div>
-                    )}
+                    {isErrorLike(this.state.updateOrError) && <ErrorAlert error={this.state.updateOrError} />}
                     <div className="card mt-5 registry-extension-manage-page__other-actions">
                         <div className="card-header">Other actions</div>
                         <div className="card-body">

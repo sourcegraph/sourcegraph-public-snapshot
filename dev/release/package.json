@@ -1,24 +1,12 @@
 {
   "name": "release",
   "description": "Scripts for managing release captain duties",
-  "author": "Sourcegraph",
-  "license": "MIT",
-  "version": "0.0.1",
+  "private": true,
   "scripts": {
     "release": "node ./out/release.js",
-    "build": "tsc",
-    "watch": "tsc -w",
-    "typecheck": "tsc --noEmit",
-    "tslint": "../../node_modules/.bin/tslint --project tsconfig.json --config ../../tslint.config.js '*.ts'",
-    "eslint": "../../node_modules/.bin/eslint '*.ts'"
-  },
-  "dependencies": {
-    "@octokit/rest": "^16.34.0",
-    "@slack/web-api": "^5.3.0",
-    "googleapis": "^44.0.0",
-    "open": "^7.0.0"
-  },
-  "devDependencies": {
-    "typescript": "^3.6.4"
+    "build": "tsc -b .",
+    "watch": "tsc -b . -w",
+    "tslint": "../../node_modules/.bin/tslint --project tsconfig.json --config ../../tslint.config.js 'src/**/*.ts'",
+    "eslint": "../../node_modules/.bin/eslint 'src/**/*.ts'"
   }
 }

@@ -7,7 +7,14 @@ import { GraphQLClient } from './util/GraphQLClient'
 import { Driver } from '../../../shared/src/e2e/driver'
 import { getConfig } from '../../../shared/src/e2e/config'
 import { getTestTools } from './util/init'
-import { ensureLoggedInOrCreateTestUser, createAuthProviderGUI } from './util/helpers'
+import {
+    ensureLoggedInOrCreateTestUser,
+    createAuthProviderGUI,
+    login,
+    loginToOkta,
+    loginToGitHub,
+    loginToGitLab,
+} from './util/helpers'
 import { setUserSiteAdmin, getUser, getManagementConsoleState } from './util/api'
 import {
     GitHubAuthProvider,
@@ -43,48 +50,14 @@ async function testLogin(
         authProvider.displayName,
         await createAuthProviderGUI(driver, managementConsoleUrl, managementConsolePassword, authProvider)
     )
-    await driver.page.goto(sourcegraphBaseUrl + '/-/sign-out')
-    await driver.newPage()
-    await driver.page.goto(sourcegraphBaseUrl)
-    await driver.page.reload()
-    await (await driver.findElementWithText('Sign in with ' + authProvider.displayName, {
-        tagName: 'a',
-        wait: { timeout: 5000 },
-    })).click()
-    await driver.page.waitForNavigation()
-    if (driver.page.url() !== sourcegraphBaseUrl + '/search') {
-        await loginToAuthProvider()
-        try {
-            await driver.page.waitForFunction(
-                url => document.location.href === url,
-                { timeout: 5 * 1000 },
-                sourcegraphBaseUrl + '/search'
-            )
-        } catch (err) {
-            throw new Error('unsuccessful login')
-        }
-    }
+    await login(driver, { sourcegraphBaseUrl, authProviderDisplayName: authProvider.displayName }, loginToAuthProvider)
 
     await (await driver.page.waitForSelector('.e2e-user-nav-item-toggle')).click()
     await (await driver.findElementWithText('Sign out', { wait: { timeout: 2000 } })).click()
     await driver.findElementWithText('Signed out of Sourcegraph', { wait: { timeout: 2000 } })
     await driver.page.goto(sourcegraphBaseUrl)
-    // >>>>>> TODO: this assumes > 1 auth provider
     await driver.findElementWithText('Sign in', { wait: { timeout: 5000 } })
     await driver.findElementWithText('Forgot password?', { wait: { timeout: 5000 } })
-}
-
-async function loginToOkta(driver: Driver, username: string, password: string): Promise<void> {
-    await driver.page.waitForSelector('#okta-signin-username')
-    await driver.replaceText({
-        selector: '#okta-signin-username',
-        newText: username,
-    })
-    await driver.replaceText({
-        selector: '#okta-signin-password',
-        newText: password,
-    })
-    await (await driver.page.waitForSelector('#okta-signin-submit')).click()
 }
 
 describe('Auth regression test suite', () => {
@@ -161,22 +134,8 @@ describe('Auth regression test suite', () => {
                     clientSecret: config.gitHubClientSecret,
                     allowSignup: true,
                 },
-                loginToAuthProvider: async () => {
-                    await driver.page.waitForSelector('#login_field')
-                    await driver.replaceText({
-                        selector: '#login_field',
-                        newText: 'sg-e2e-regression-test-amy',
-                        selectMethod: 'keyboard',
-                        enterTextMethod: 'paste',
-                    })
-                    await driver.replaceText({
-                        selector: '#password',
-                        newText: config.gitHubUserAmyPassword,
-                        selectMethod: 'keyboard',
-                        enterTextMethod: 'paste',
-                    })
-                    await driver.page.keyboard.press('Enter')
-                },
+                loginToAuthProvider: () =>
+                    loginToGitHub(driver, 'sg-e2e-regression-test-amy', config.gitHubUserAmyPassword),
             })
         },
         20 * 1000
@@ -195,18 +154,8 @@ describe('Auth regression test suite', () => {
                     clientSecret: config.gitLabClientSecret,
                     allowSignup: true,
                 },
-                loginToAuthProvider: async () => {
-                    await driver.page.waitForSelector('input[name="user[login]"]', { timeout: 2000 })
-                    await driver.replaceText({
-                        selector: '#user_login',
-                        newText: 'sg-e2e-regression-test-amy',
-                    })
-                    await driver.replaceText({
-                        selector: '#user_password',
-                        newText: config.gitLabUserAmyPassword,
-                    })
-                    await (await driver.page.waitForSelector('input[data-qa-selector="sign_in_button"]')).click()
-                },
+                loginToAuthProvider: () =>
+                    loginToGitLab(driver, 'sg-e2e-regression-test-amy', config.gitLabUserAmyPassword),
             })
         },
         20 * 1000
