@@ -1,3 +1,7 @@
+//
+// Generate SVG with: dot -Tsvg -o architecture.svg architecture.dot
+//
+
 digraph architecture {
     label="Sourcegraph Architecture Overview\n\nBox => horizontally scalable service, Rectangle => singleton service"
     rankdir=TD
@@ -147,7 +151,7 @@ digraph architecture {
 
         github_dot_com [label="github.com"]
         gitlab_dot_com [label="gitlab.com"]
-        bitbucket_cloud [label="bitbucket.com"]
+        bitbucket_cloud [label="bitbucket.org"]
         github_enterprise [label="GitHub\nEnterprise"]
         bitbucket_server [label="Bitbucket\nServer"]
     }
