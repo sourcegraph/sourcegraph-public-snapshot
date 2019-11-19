@@ -46,6 +46,13 @@ export async function ensureTrackingIssue({
     return { url: createdIssue.data.html_url, created: true }
 }
 
+export async function listIssues(
+    octokit: Octokit,
+    query: string
+): Promise<Octokit.SearchIssuesAndPullRequestsResponseItemsItem[]> {
+    return (await octokit.search.issuesAndPullRequests({ per_page: 100, q: query })).data.items
+}
+
 export async function getTrackingIssueURL(octokit: Octokit, version: string): Promise<string | null> {
     const title = issueTitle(version)
     const resp = await octokit.search.issuesAndPullRequests({
