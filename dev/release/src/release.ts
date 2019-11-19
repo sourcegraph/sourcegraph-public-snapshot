@@ -1,6 +1,6 @@
 import { ensureEvent, getClient, EventOptions } from './google-calendar'
 import { postMessage } from './slack'
-import { ensureTrackingIssue, getTrackingIssueURL, getAuthenticatedGitHubClient } from './github'
+import { ensureTrackingIssue, getTrackingIssueURL, getAuthenticatedGitHubClient, listIssues } from './github'
 import * as persistedConfig from './config.json'
 import { addHours, addMinutes, subMinutes } from 'date-fns'
 import { spawn } from 'child_process'
@@ -32,6 +32,7 @@ type StepID =
     | 'release-candidate:dev-announce'
     | 'qa-start:dev-announce'
     | '_test:google-calendar'
+    | '_test:slack'
 
 interface Step {
     id: StepID
@@ -69,6 +70,12 @@ const steps: Step[] = [
                 },
                 googleCalendar
             )
+        },
+    },
+    {
+        id: '_test:slack',
+        run: async (_config, message) => {
+            await postMessage(message, '_test-channel')
         },
     },
     {
@@ -190,14 +197,17 @@ const steps: Step[] = [
                     dateStyle: 'medium',
                     timeStyle: 'short',
                 } as Intl.DateTimeFormatOptions)} (Berlin time)`
-            await postMessage(`:captain: ${c.majorMinorVersion} Release :captain:
+            await postMessage(
+                `:captain: ${c.majorMinorVersion} Release :captain:
 Release captain: @${c.captainSlackUsername}
 Tracking issue: ${trackingIssueURL}
 Key dates:
 - Release branch cut, testing commences: ${formatDate(new Date(c.fourWorkingDaysBeforeRelease))}
 - Final release tag: ${formatDate(new Date(c.oneWorkingDayBeforeRelease))}
 - Release: ${formatDate(new Date(c.releaseDateTime))}}
-- Retrospective: ${formatDate(new Date(c.retrospectiveDateTime))}`)
+- Retrospective: ${formatDate(new Date(c.retrospectiveDateTime))}`,
+                'dev-announce'
+            )
         },
     },
     {
@@ -217,9 +227,25 @@ Key dates:
     },
     {
         id: 'release-candidate:dev-announce',
-        run: () => {
-            console.log('NOT YET IMPLEMENTED')
-            process.exit(1)
+        run: async (c, version) => {
+            const query = `is:open is:issue milestone:${c.majorMinorVersion} label:release-blocker`
+            const issues = await listIssues(await getAuthenticatedGitHubClient(), query)
+            const issuesURL = `https://github.com/issues?q=${encodeURIComponent(query)}`
+            const releaseBlockerMessage =
+                issues.length === 0
+                    ? 'There are currently ZERO release blocking issues'
+                    : issues.length === 1
+                    ? `There is 1 release blocking issue: ${issuesURL}`
+                    : `There are ${issues.length} release blocking issues: ${issuesURL}`
+
+            const message = `:captain: ${c.majorMinorVersion} Release :captain:
+
+Release ${version} has been cut.
+
+- It should be deployed to k8s.sgdev.org within the next hour (https://k8s.sgdev.org/site-admin/updates)
+- ${releaseBlockerMessage}
+`
+            await postMessage(message, 'dev-announce')
         },
     },
     {
