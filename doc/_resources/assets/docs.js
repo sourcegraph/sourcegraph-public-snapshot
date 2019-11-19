@@ -4,7 +4,7 @@ window.sgdocs = (() => {
     BREADCRUMBS,
     BREADCRUMBS_DATA = [],
     MOBILE_NAV_BUTTON,
-    START_SOURCEGRAPH_COMMAND_SNIPPETS
+    START_SOURCEGRAPH_COMMAND_SNIPPET
 
   return {
     init: breadcrumbs => {
