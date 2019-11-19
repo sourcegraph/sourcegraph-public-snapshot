@@ -1,5 +1,6 @@
 import * as crc32 from 'crc-32'
 import * as metrics from './metrics'
+import * as sharedMetrics from '../database/metrics'
 import * as xrepoModels from '../models/xrepo'
 import { addrFor, getCommitsNear, gitserverExecLines } from './commits'
 import { ADVISORY_LOCK_ID_SALT, MAX_CONCURRENT_GITSERVER_REQUESTS, MAX_TRAVERSAL_LIMIT } from '../constants'
@@ -7,8 +8,8 @@ import { Brackets, Connection, EntityManager } from 'typeorm'
 import { chunk } from 'lodash'
 import { createFilter, testFilter } from './bloom-filter'
 import { dbFilename, tryDeleteFile } from '../paths'
-import { instrument } from '../metrics'
-import { logAndTraceCall, TracingContext, logSpan } from '../tracing'
+import { logAndTraceCall, logSpan, TracingContext } from '../tracing'
+import { PostgresDataManager } from '../database/postgres'
 import { TableInserter } from '../database/inserter'
 
 /**
@@ -16,7 +17,7 @@ import { TableInserter } from '../database/inserter'
  */
 const insertionMetrics = {
     durationHistogram: metrics.xrepoInsertionDurationHistogram,
-    errorsCounter: metrics.xrepoQueryErrorsCounter,
+    errorsCounter: sharedMetrics.xrepoQueryErrorsCounter,
 }
 
 /**
@@ -54,39 +55,6 @@ export interface SymbolReferences {
      * The unique identifiers of the symbols imported from the package.
      */
     identifiers: string[]
-}
-
-/**
- * A wrapper around a Postgres database.
- */
-export abstract class PostgresDataManager {
-    /**
-     * Create a new `PostgresDataManager` backed by the given database connection.
-     *
-     * @param connection The Postgres connection.
-     */
-    constructor(protected connection: Connection) {}
-
-    /**
-     * Invoke `callback` with the wrapped Postgres connection.
-     *
-     * @param callback The function invoke with the connection.
-     */
-    protected withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
-        return instrument(metrics.xrepoQueryDurationHistogram, metrics.xrepoQueryErrorsCounter, () =>
-            callback(this.connection)
-        )
-    }
-
-    /**
-     * Invoke `callback` with a transactional Postgres entity manager created
-     * from the wrapped connection.
-     *
-     * @param callback The function invoke with the entity manager.
-     */
-    protected withTransactionalEntityManager<T>(callback: (connection: EntityManager) => Promise<T>): Promise<T> {
-        return this.withConnection(connection => connection.transaction(callback))
-    }
 }
 
 /**

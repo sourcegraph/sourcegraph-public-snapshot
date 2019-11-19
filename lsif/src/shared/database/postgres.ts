@@ -1,11 +1,13 @@
-import * as xrepoModels from '../models/xrepo'
-import pRetry from 'p-retry'
-import { Configuration } from '../config/config'
-import { Connection, createConnection as _createConnection } from 'typeorm'
-import { Logger } from 'winston'
-import { PostgresConnectionCredentialsOptions } from 'typeorm/driver/postgres/PostgresConnectionCredentialsOptions'
-import { readEnvInt } from '../settings'
-import { TlsOptions } from 'tls'
+import * as metrics from './metrics';
+import * as xrepoModels from '../models/xrepo';
+import pRetry from 'p-retry';
+import { Configuration } from '../config/config';
+import { Connection, createConnection as _createConnection, EntityManager } from 'typeorm';
+import { instrument } from '../metrics';
+import { Logger } from 'winston';
+import { PostgresConnectionCredentialsOptions } from 'typeorm/driver/postgres/PostgresConnectionCredentialsOptions';
+import { readEnvInt } from '../settings';
+import { TlsOptions } from 'tls';
 
 /**
  * The minimum migration version required by this instance of the LSIF process.
@@ -161,4 +163,37 @@ async function getMigrationVersion(connection: Connection): Promise<string> {
     }
 
     throw new Error('Unusable migration state.')
+}
+
+/**
+ * A wrapper around a Postgres database.
+ */
+export abstract class PostgresDataManager {
+    /**
+     * Create a new `PostgresDataManager` backed by the given database connection.
+     *
+     * @param connection The Postgres connection.
+     */
+    constructor(protected connection: Connection) {}
+
+    /**
+     * Invoke `callback` with the wrapped Postgres connection.
+     *
+     * @param callback The function invoke with the connection.
+     */
+    protected withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
+        return instrument(metrics.xrepoQueryDurationHistogram, metrics.xrepoQueryErrorsCounter, () =>
+            callback(this.connection)
+        )
+    }
+
+    /**
+     * Invoke `callback` with a transactional Postgres entity manager created
+     * from the wrapped connection.
+     *
+     * @param callback The function invoke with the entity manager.
+     */
+    protected withTransactionalEntityManager<T>(callback: (connection: EntityManager) => Promise<T>): Promise<T> {
+        return this.withConnection(connection => connection.transaction(callback))
+    }
 }
