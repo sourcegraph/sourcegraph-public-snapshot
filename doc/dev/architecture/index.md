@@ -2,7 +2,10 @@
 
 This is a high level overview of Sourcegraph's architecture so you can understand how our systems fit together.
 
-![Overview Diagram](architecture.svg)
+<object data="/dev/architecture/architecture.svg" type="image/svg+xml" style="width:100%; height: 100%">
+</object>
+
+To re-generate this diagram from the `architecture.dot` file with Graphviz, run: `dot -Tsvg -o architecture.svg architecture.dot`.
 
 ## Clients
 
