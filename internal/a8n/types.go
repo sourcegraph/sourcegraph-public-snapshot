@@ -52,8 +52,9 @@ type CampaignJob struct {
 	ID             int64
 	CampaignPlanID int64
 
-	RepoID int32
-	Rev    api.CommitID
+	RepoID  int32
+	Rev     api.CommitID
+	BaseRef string
 
 	Diff string
 
