@@ -70,7 +70,7 @@ export abstract class PostgresDataManager {
     /**
      * Invoke `callback` with the wrapped Postgres connection.
      *
-     * @param callback The function invoke with the SQLite connection.
+     * @param callback The function invoke with the connection.
      */
     protected withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
         return instrument(metrics.xrepoQueryDurationHistogram, metrics.xrepoQueryErrorsCounter, () =>
