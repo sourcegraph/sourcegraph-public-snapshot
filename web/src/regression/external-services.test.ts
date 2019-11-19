@@ -14,7 +14,6 @@ import {
     getUser,
     ensureNoTestExternalServices,
     ensureTestExternalService,
-    getManagementConsoleState,
     waitForRepos,
     getExternalServices,
     updateExternalService,
@@ -256,14 +255,8 @@ describe('External services permissions', () => {
     let driver: Driver
     let gqlClient: GraphQLClient
     let resourceManager: TestResourceManager
-    let managementConsolePassword: string
     beforeAll(async () => {
         ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
-        const { plaintextPassword } = await getManagementConsoleState(gqlClient)
-        if (!plaintextPassword) {
-            throw new Error('empty management console password')
-        }
-        managementConsolePassword = plaintextPassword
     })
     afterAll(async () => {
         if (!config.noCleanup) {
@@ -309,7 +302,7 @@ describe('External services permissions', () => {
             resourceManager.add(
                 'Authentication provider',
                 authProvider.displayName,
-                await editCriticalSiteConfig(config.managementConsoleUrl, managementConsolePassword, contents =>
+                await editCriticalSiteConfig(config.managementConsoleUrl, contents =>
                     jsoncEdit.setProperty(contents, ['auth.providers', -1], authProvider, formattingOptions)
                 )
             )

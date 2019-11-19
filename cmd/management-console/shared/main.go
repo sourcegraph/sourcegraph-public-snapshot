@@ -7,23 +7,19 @@ package shared
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"strconv"
 	"syscall"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/management-console/assets"
-	"github.com/sourcegraph/sourcegraph/cmd/management-console/shared/internal/tlscertgen"
 	"github.com/sourcegraph/sourcegraph/internal/db/confdb"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -32,71 +28,8 @@ import (
 const port = "2633"
 
 var (
-	tlsCert              = env.Get("TLS_CERT", "/etc/sourcegraph/management/cert.pem", "TLS certificate (automatically generated if file does not exist)")
-	tlsKey               = env.Get("TLS_KEY", "/etc/sourcegraph/management/key.pem", "TLS key (automatically generated if file does not exist)")
-	customTLS            = env.Get("CUSTOM_TLS", "false", "When true, disables TLS cert/key generation to prevent accidents.")
-	unsafeNoHTTPS        = env.Get("UNSAFE_NO_HTTPS", "false", "(unsafe) When true, disables HTTPS entirely. Anyone who can MITM your traffic to the management console can steal the admin password and act on your behalf!")
 	disableConfigUpdates = env.Get("DISABLE_CONFIG_UPDATES", "false", "When true, disables updating the configuration. Useful when using CRITICAL_CONFIG_FILE on the frontend service.")
 )
-
-func configureTLS() error {
-	customTLS, _ := strconv.ParseBool(customTLS)
-
-	generate := false
-	_, err := os.Stat(tlsCert)
-	if os.IsNotExist(err) {
-		if customTLS {
-			return err
-		}
-		generate = true
-	} else if err != nil {
-		return err
-	}
-
-	_, err = os.Stat(tlsKey)
-	if os.IsNotExist(err) {
-		if customTLS {
-			return err
-		}
-		generate = true
-	} else if err != nil {
-		return err
-	}
-
-	if customTLS || !generate {
-		return nil // cert files exist
-	}
-	log.Println("Generating and using self-signed TLS cert/key")
-
-	if err := os.MkdirAll(filepath.Dir(tlsCert), 0700); err != nil {
-		return err
-	}
-	if err := os.MkdirAll(filepath.Dir(tlsKey), 0700); err != nil {
-		return err
-	}
-
-	// Generate a TLS cert.
-	certOut, err := os.Create(tlsCert)
-	if err != nil {
-		return errors.Wrap(err, "failed to open cert.pem for writing")
-	}
-	defer certOut.Close()
-
-	keyOut, err := os.OpenFile(tlsKey, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
-	if err != nil {
-		return errors.Wrap(err, "failed to open key.pem for writing")
-	}
-	defer keyOut.Close()
-
-	return tlscertgen.Generate(tlscertgen.Options{
-		Cert:         certOut,
-		Key:          keyOut,
-		Hosts:        []string{"management-console.sourcegraph.com"},
-		ValidFor:     100 * 365 * 24 * time.Hour,
-		ECDSACurve:   "P256",
-		Organization: "Sourcegraph",
-	})
-}
 
 func Main() {
 	env.Lock()
@@ -118,20 +51,10 @@ func Main() {
 		log.Fatalf("Fatal error connecting to Postgres DB: %s", err)
 	}
 
-	// 🚨 SECURITY: ALL management console API routes MUST go through the
-	// authentication middleware, otherwise they would be exposed to the public
-	// internet.
-	protectedRoutes := http.NewServeMux()
-	protectedRoutes.HandleFunc("/api/get", serveGet)
-	protectedRoutes.HandleFunc("/api/update", serveUpdate)
-
-	// Static assets are excluded from the authentication middleware because
-	// they are the same for all Sourcegraph users AND because the
-	// authentication middleware is intentionally slow/costly (i.e. it would
-	// add ~1s to the load time of each asset).
-	unprotectedRoutes := http.NewServeMux()
-	unprotectedRoutes.Handle("/", http.FileServer(assets.Assets))
-	unprotectedRoutes.Handle("/api/", AuthMiddleware(protectedRoutes))
+	routes := http.NewServeMux()
+	routes.Handle("/", http.FileServer(assets.Assets))
+	routes.HandleFunc("/api/get", serveGet)
+	routes.HandleFunc("/api/update", serveUpdate)
 
 	host := ""
 	if env.InsecureDev {
@@ -146,18 +69,8 @@ func Main() {
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
-
-	unsafeNoHTTPS, _ := strconv.ParseBool(unsafeNoHTTPS)
-	if unsafeNoHTTPS {
-		s.Handler = unprotectedRoutes
-		log.Fatalf("Fatal error serving: %s", s.ListenAndServe())
-	}
-
-	if err := configureTLS(); err != nil {
-		log.Fatal("failed to configure TLS: error:", err)
-	}
-	s.Handler = HSTSMiddleware(unprotectedRoutes)
-	log.Fatalf("Fatal error serving: %s", s.ListenAndServeTLS(tlsCert, tlsKey))
+	s.Handler = routes
+	log.Fatalf("Fatal error serving: %s", s.ListenAndServe())
 }
 
 type jsonConfiguration struct {
@@ -253,44 +166,4 @@ func serveUpdate(w http.ResponseWriter, r *http.Request) {
 		logger.Error("json response encoding failed", "error", err)
 		httpError(w, errors.Wrap(err, "Error encoding JSON response").Error(), "internal_error")
 	}
-}
-
-// HSTSMiddleware effectively instructs browsers to change all HTTP requests to
-// HTTPS.
-func HSTSMiddleware(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
-		h.ServeHTTP(w, r)
-	})
-}
-
-// AuthMiddleware wraps h and performs authentication for ALL management
-// console routes.
-//
-// 🚨 SECURITY: This function handles all authentication for the management
-// console. Any regression here would be of EXTREME concern.
-func AuthMiddleware(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user, pass, haveUserPass := r.BasicAuth()
-		if !haveUserPass {
-			// User has not yet been prompted for auth.
-			w.Header().Set("WWW-Authenticate", `Basic realm="Sourcegraph management console (enter any username)."`)
-			w.WriteHeader(http.StatusUnauthorized)
-			fmt.Fprintf(w, "%s\n", http.StatusText(http.StatusUnauthorized))
-			return
-		}
-
-		// Attempt authentication.
-		err := globalstatedb.AuthenticateManagementConsole(r.Context(), pass)
-		if err != nil {
-			log15.Warn("Rejecting request with failed authentication", "username", user)
-			w.Header().Set("WWW-Authenticate", `Basic realm="Sourcegraph management console (enter any username)."`)
-			w.WriteHeader(http.StatusUnauthorized)
-			fmt.Fprintf(w, "%s\n", http.StatusText(http.StatusUnauthorized))
-			return
-		}
-
-		// Successfully authenticated.
-		h.ServeHTTP(w, r)
-	})
 }

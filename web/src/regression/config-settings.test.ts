@@ -3,9 +3,7 @@ import { getConfig } from '../../../shared/src/e2e/config'
 import { editCriticalSiteConfig, getCriticalSiteConfig } from './util/helpers'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import * as jsonc from '@sqs/jsonc-parser'
-import { getManagementConsoleState } from './util/api'
 import { Driver } from '../../../shared/src/e2e/driver'
-import { GraphQLClient } from './util/GraphQLClient'
 import { TestResourceManager } from './util/TestResourceManager'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 import { CriticalConfiguration, BuiltinAuthProvider } from '../schema/critical.schema'
@@ -29,16 +27,9 @@ describe('Critical config test suite', () => {
         'logBrowserConsole'
     )
     let driver: Driver
-    let gqlClient: GraphQLClient
     let resourceManager: TestResourceManager
-    let managementConsolePassword: string
     beforeAll(async () => {
-        ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
-        const { plaintextPassword } = await getManagementConsoleState(gqlClient)
-        if (!plaintextPassword) {
-            throw new Error('empty management console password')
-        }
-        managementConsolePassword = plaintextPassword
+        ;({ driver, resourceManager } = await getTestTools(config))
     })
     beforeEach(() => {
         resourceManager = new TestResourceManager()
@@ -52,7 +43,7 @@ describe('Critical config test suite', () => {
             resourceManager.add(
                 'Configuration',
                 'htmlBodyTop',
-                await editCriticalSiteConfig(config.managementConsoleUrl, managementConsolePassword, contents =>
+                await editCriticalSiteConfig(config.managementConsoleUrl, contents =>
                     jsoncEdit.setProperty(
                         contents,
                         ['htmlBodyTop'],
@@ -77,7 +68,7 @@ describe('Critical config test suite', () => {
     test(
         'builtin auth provider: allowSignup',
         async () => {
-            const criticalConfig = await getCriticalSiteConfig(config.managementConsoleUrl, managementConsolePassword)
+            const criticalConfig = await getCriticalSiteConfig(config.managementConsoleUrl)
             const criticalConfigParsed: CriticalConfiguration = jsonc.parse(criticalConfig.Contents)
             const setBuiltinAuthProvider = async (p: BuiltinAuthProvider) => {
                 let builtinAuthProviderIndex = -1
@@ -103,7 +94,7 @@ describe('Critical config test suite', () => {
                 editFns.push((contents: string) =>
                     jsoncEdit.setProperty(contents, ['auth.providers', -1], p, formattingOptions)
                 )
-                return await editCriticalSiteConfig(config.managementConsoleUrl, managementConsolePassword, ...editFns)
+                return await editCriticalSiteConfig(config.managementConsoleUrl, ...editFns)
             }
 
             resourceManager.add(

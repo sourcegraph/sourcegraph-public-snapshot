@@ -117,14 +117,8 @@ export async function clickAndWaitForNavigation(handle: puppeteer.ElementHandle,
 export async function createAuthProviderGUI(
     driver: Driver,
     managementConsoleUrl: string,
-    managementConsolePassword: string,
     authProvider: GitHubAuthProvider | GitLabAuthProvider | OpenIDConnectAuthProvider | SAMLAuthProvider
 ): Promise<ResourceDestructor> {
-    const authHeaders = {
-        Authorization: `Basic ${new Buffer(`:${managementConsolePassword}`).toString('base64')}`,
-    }
-
-    await driver.page.setExtraHTTPHeaders(authHeaders)
     await driver.goToURLWithInvalidTLS(managementConsoleUrl)
 
     const oldCriticalConfig = await driver.page.evaluate(async managementConsoleUrl => {
@@ -158,7 +152,6 @@ export async function createAuthProviderGUI(
     await driver.page.setExtraHTTPHeaders({})
 
     return async () => {
-        await driver.page.setExtraHTTPHeaders(authHeaders)
         await driver.goToURLWithInvalidTLS(managementConsoleUrl)
 
         await driver.replaceText({
@@ -188,25 +181,17 @@ interface Configuration {
  */
 export async function getCriticalSiteConfig(
     managementConsoleUrl: string,
-    managementConsolePassword: string
 ): Promise<Configuration> {
     const results = await fromFetch(`${managementConsoleUrl}/api/get`, {
-        headers: {
-            Authorization: `Basic ${new Buffer(`:${managementConsolePassword}`).toString('base64')}`,
-        },
     }).toPromise()
     return await results.json()
 }
 
 export async function setCriticalSiteConfig(
     managementConsoleUrl: string,
-    managementConsolePassword: string,
     configuration: { Contents: string; LastID: number }
 ): Promise<Configuration> {
     const results = await fromFetch(`${managementConsoleUrl}/api/update`, {
-        headers: {
-            Authorization: `Basic ${new Buffer(`:${managementConsolePassword}`).toString('base64')}`,
-        },
         method: 'POST',
         body: JSON.stringify(configuration),
     }).toPromise()
@@ -299,22 +284,21 @@ export async function editGlobalSettings(
 
 export async function editCriticalSiteConfig(
     managementConsoleUrl: string,
-    managementConsolePassword: string,
     ...edits: ((contents: string) => jsonc.Edit[])[]
 ): Promise<{ destroy: ResourceDestructor; result: Configuration }> {
-    const origCriticalConfig = await getCriticalSiteConfig(managementConsoleUrl, managementConsolePassword)
+    const origCriticalConfig = await getCriticalSiteConfig(managementConsoleUrl)
     let newContents = origCriticalConfig.Contents
     for (const editFn of edits) {
         newContents = jsonc.applyEdits(newContents, editFn(newContents))
     }
     return {
-        result: await setCriticalSiteConfig(managementConsoleUrl, managementConsolePassword, {
+        result: await setCriticalSiteConfig(managementConsoleUrl, {
             Contents: newContents,
             LastID: origCriticalConfig.ID,
         }),
         destroy: async () => {
-            const c = await getCriticalSiteConfig(managementConsoleUrl, managementConsolePassword)
-            await setCriticalSiteConfig(managementConsoleUrl, managementConsolePassword, {
+            const c = await getCriticalSiteConfig(managementConsoleUrl)
+            await setCriticalSiteConfig(managementConsoleUrl, {
                 LastID: c.ID,
                 Contents: origCriticalConfig.Contents,
             })

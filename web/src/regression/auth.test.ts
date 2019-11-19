@@ -15,7 +15,7 @@ import {
     loginToGitHub,
     loginToGitLab,
 } from './util/helpers'
-import { setUserSiteAdmin, getUser, getManagementConsoleState } from './util/api'
+import { setUserSiteAdmin, getUser } from './util/api'
 import {
     GitHubAuthProvider,
     GitLabAuthProvider,
@@ -31,14 +31,12 @@ async function testLogin(
     {
         sourcegraphBaseUrl,
         managementConsoleUrl,
-        managementConsolePassword,
         authProvider,
         loginToAuthProvider,
     }: {
         sourcegraphBaseUrl: string
 
         managementConsoleUrl: string
-        managementConsolePassword: string
         authProvider: (GitHubAuthProvider | GitLabAuthProvider | SAMLAuthProvider | OpenIDConnectAuthProvider) & {
             displayName: string
         }
@@ -48,7 +46,7 @@ async function testLogin(
     resourceManager.add(
         'Authentication provider',
         authProvider.displayName,
-        await createAuthProviderGUI(driver, managementConsoleUrl, managementConsolePassword, authProvider)
+        await createAuthProviderGUI(driver, managementConsoleUrl, authProvider)
     )
     await login(driver, { sourcegraphBaseUrl, authProviderDisplayName: authProvider.displayName }, loginToAuthProvider)
 
@@ -87,7 +85,6 @@ describe('Auth regression test suite', () => {
     let driver: Driver
     let gqlClient: GraphQLClient
     let resourceManager: TestResourceManager
-    let managementConsolePassword: string
     beforeAll(async () => {
         ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
         resourceManager.add(
@@ -104,12 +101,6 @@ describe('Auth regression test suite', () => {
             throw new Error(`test user ${testUsername} does not exist`)
         }
         await setUserSiteAdmin(gqlClient, user.id, true)
-
-        const { plaintextPassword } = await getManagementConsoleState(gqlClient)
-        if (!plaintextPassword) {
-            throw new Error('empty management console password')
-        }
-        managementConsolePassword = plaintextPassword
     })
 
     afterAll(async () => {
@@ -126,7 +117,6 @@ describe('Auth regression test suite', () => {
         async () => {
             await testLogin(driver, resourceManager, {
                 ...config,
-                managementConsolePassword,
                 authProvider: {
                     type: 'github',
                     displayName: '[TEST] GitHub.com',
@@ -146,7 +136,6 @@ describe('Auth regression test suite', () => {
         async () => {
             await testLogin(driver, resourceManager, {
                 ...config,
-                managementConsolePassword,
                 authProvider: {
                     type: 'gitlab',
                     displayName: '[TEST] GitLab.com',
@@ -166,7 +155,6 @@ describe('Auth regression test suite', () => {
         async () => {
             await testLogin(driver, resourceManager, {
                 ...config,
-                managementConsolePassword,
                 authProvider: {
                     type: 'saml',
                     displayName: '[TEST] Okta SAML',
@@ -183,7 +171,6 @@ describe('Auth regression test suite', () => {
         async () => {
             await testLogin(driver, resourceManager, {
                 ...config,
-                managementConsolePassword,
                 authProvider: {
                     type: 'openidconnect',
                     displayName: '[TEST] Okta OpenID Connect',
