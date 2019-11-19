@@ -261,10 +261,10 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 }
 
 func (r *RepositoryResolver) LSIFDumps(ctx context.Context, args *LSIFDumpsQueryArgs) (LSIFDumpConnectionResolver, error) {
-	if OptionalResolvers.codeIntelResolver == nil {
+	if EnterpriseResolvers.codeIntelResolver == nil {
 		return nil, codeIntelOnlyInEnterprise
 	}
-	return OptionalResolvers.codeIntelResolver.LSIFDumps(ctx, &LSIFRepositoryDumpsQueryArgs{
+	return EnterpriseResolvers.codeIntelResolver.LSIFDumps(ctx, &LSIFRepositoryDumpsQueryArgs{
 		LSIFDumpsQueryArgs: args,
 		Repository:         r.ID(),
 	})

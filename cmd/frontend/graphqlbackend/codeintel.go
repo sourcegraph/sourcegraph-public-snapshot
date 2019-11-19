@@ -87,15 +87,15 @@ type LSIFJobConnectionResolver interface {
 var codeIntelOnlyInEnterprise = errors.New("lsif dumps and jobs are only available in enterprise")
 
 func (r *schemaResolver) LSIFJobs(ctx context.Context, args *LSIFJobsQueryArgs) (LSIFJobConnectionResolver, error) {
-	if OptionalResolvers.codeIntelResolver == nil {
+	if EnterpriseResolvers.codeIntelResolver == nil {
 		return nil, codeIntelOnlyInEnterprise
 	}
-	return OptionalResolvers.codeIntelResolver.LSIFJobs(ctx, args)
+	return EnterpriseResolvers.codeIntelResolver.LSIFJobs(ctx, args)
 }
 
 func (r *schemaResolver) LSIFJobStats(ctx context.Context) (LSIFJobStatsResolver, error) {
-	if OptionalResolvers.codeIntelResolver == nil {
+	if EnterpriseResolvers.codeIntelResolver == nil {
 		return nil, codeIntelOnlyInEnterprise
 	}
-	return OptionalResolvers.codeIntelResolver.LSIFJobStats(ctx)
+	return EnterpriseResolvers.codeIntelResolver.LSIFJobStats(ctx)
 }
