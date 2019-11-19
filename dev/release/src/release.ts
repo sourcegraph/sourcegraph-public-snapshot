@@ -3,6 +3,8 @@ import { postMessage } from './slack'
 import { ensureTrackingIssue, getTrackingIssueURL, getAuthenticatedGitHubClient } from './github'
 import * as persistedConfig from './config.json'
 import { addHours, subMinutes } from 'date-fns'
+import { spawn } from 'child_process'
+import * as semver from 'semver'
 
 interface Config {
     teamEmail: string
@@ -10,7 +12,7 @@ interface Config {
     captainSlackUsername: string
     captainGitHubUsername: string
 
-    version: string
+    majorMinorVersion: string
     releaseDateTime: string
     oneWorkingDayBeforeRelease: string
     threeWorkingDaysBeforeRelease: string
@@ -33,8 +35,8 @@ type StepID =
 
 interface Step {
     id: StepID
-    deps?: StepID[]
-    run?: ((config: Config) => Promise<void>) | ((config: Config) => void)
+    run?: ((config: Config, ...args: string[]) => Promise<void>) | ((config: Config, ...args: string[]) => void)
+    argNames?: string[]
 }
 
 const steps: Step[] = [
@@ -45,7 +47,12 @@ const steps: Step[] = [
             console.error(
                 steps
                     .filter(({ id }) => !id.startsWith('_'))
-                    .map(({ id, deps }) => '\t' + id + (deps && deps.length > 0 ? ':\t' + deps.join(' ') : ''))
+                    .map(
+                        ({ id, argNames }) =>
+                            '\t' +
+                            id +
+                            (argNames && argNames.length > 0 ? ' ' + argNames.map(n => `<${n}>`).join(' ') : '')
+                    )
                     .join('\n')
             )
         },
@@ -94,7 +101,7 @@ const steps: Step[] = [
                     endDateTime: addHours(new Date(c.oneWorkingDayBeforeRelease), 1).toISOString(),
                 },
                 {
-                    title: `Cut release branch ${c.version}`,
+                    title: `Cut release branch ${c.majorMinorVersion}`,
                     description: '(This is not an actual event to attend, just a calendar marker.)',
                     anyoneCanAddSelf: true,
                     attendees: [c.teamEmail],
@@ -102,14 +109,14 @@ const steps: Step[] = [
                     endDateTime: addHours(new Date(c.fourWorkingDaysBeforeRelease), 1).toISOString(),
                 },
                 {
-                    title: `Release Sourcegraph ${c.version}`,
+                    title: `Release Sourcegraph ${c.majorMinorVersion}`,
                     anyoneCanAddSelf: true,
                     attendees: [c.teamEmail],
                     startDateTime: new Date(c.releaseDateTime).toISOString(),
                     endDateTime: addHours(new Date(c.releaseDateTime), 1).toISOString(),
                 },
                 {
-                    title: `Reminder to submit feedback for ${c.version} Engineering Retrospective`,
+                    title: `Reminder to submit feedback for ${c.majorMinorVersion} Engineering Retrospective`,
                     description: `(This is not an actual event to attend, just a calendar marker.)
 
 Retrospective document: ${c.retrospectiveDocURL}`,
@@ -126,7 +133,7 @@ Retrospective document: ${c.retrospectiveDocURL}`,
                     endDateTime: new Date(c.retrospectiveDateTime).toISOString(),
                 },
                 {
-                    title: `Engineering Retrospective ${c.version}`,
+                    title: `Engineering Retrospective ${c.majorMinorVersion}`,
                     description: `Retrospective document: ${c.retrospectiveDocURL}`,
                     anyoneCanAddSelf: true,
                     attendees: [c.teamEmail],
@@ -144,7 +151,7 @@ Retrospective document: ${c.retrospectiveDocURL}`,
     {
         id: 'tracking-issue:create',
         run: async ({
-            version,
+            majorMinorVersion: version,
             releaseDateTime,
             captainGitHubUsername,
             oneWorkingDayBeforeRelease,
@@ -167,9 +174,12 @@ Retrospective document: ${c.retrospectiveDocURL}`,
     {
         id: 'tracking-issue:announce',
         run: async c => {
-            const trackingIssueURL = await getTrackingIssueURL(await getAuthenticatedGitHubClient(), c.version)
+            const trackingIssueURL = await getTrackingIssueURL(
+                await getAuthenticatedGitHubClient(),
+                c.majorMinorVersion
+            )
             if (!trackingIssueURL) {
-                throw new Error(`Tracking issue for version ${c.version} not found--has it been create yet?`)
+                throw new Error(`Tracking issue for version ${c.majorMinorVersion} not found--has it been create yet?`)
             }
             const formatDate = (d: Date): string =>
                 `${d.toLocaleString('en-US', {
@@ -181,7 +191,7 @@ Retrospective document: ${c.retrospectiveDocURL}`,
                     dateStyle: 'medium',
                     timeStyle: 'short',
                 } as Intl.DateTimeFormatOptions)} (Berlin time)`
-            await postMessage(`:captain: ${c.version} Release :captain:
+            await postMessage(`:captain: ${c.majorMinorVersion} Release :captain:
 Release captain: @${c.captainSlackUsername}
 Tracking issue: ${trackingIssueURL}
 Key dates:
@@ -193,10 +203,17 @@ Key dates:
     },
     {
         id: 'release-candidate:create',
-        run: () => {
-            // Note(beyang): it would be nice to accept additional command-line arguments
-            console.log('NOT YET IMPLEMENTED')
-            process.exit(1)
+        argNames: ['version'],
+        run: (_config, version) => {
+            const parsedVersion = semver.parse(version, { loose: false })
+            if (!parsedVersion) {
+                throw new Error(`version ${version} is not valid semver`)
+            }
+            const tag = JSON.stringify(`v${parsedVersion.version}`)
+            console.log(`Creating and pushing tag ${tag}`)
+            const child = spawn('bash', ['-c', `git tag -a ${tag} -m ${tag} && git push origin ${tag}`])
+            child.stdout.pipe(process.stdout)
+            child.stderr.pipe(process.stderr)
         },
     },
     {
@@ -215,18 +232,13 @@ Key dates:
     },
 ]
 
-async function run(config: Config, stepIDToRun: StepID): Promise<void> {
+async function run(config: Config, stepIDToRun: StepID, ...stepArgs: string[]): Promise<void> {
     await Promise.all(
         steps
             .filter(({ id }) => id === stepIDToRun)
             .map(async step => {
-                if (step.deps) {
-                    for (const dep of step.deps) {
-                        await run(config, dep)
-                    }
-                }
                 if (step.run) {
-                    await step.run(config)
+                    await step.run(config, ...stepArgs)
                 }
             })
     )
@@ -238,8 +250,8 @@ async function run(config: Config, stepIDToRun: StepID): Promise<void> {
 async function main(): Promise<void> {
     const config = persistedConfig
     const args = process.argv.slice(2)
-    if (args.length !== 1) {
-        console.error('This command expects exactly 1 argument')
+    if (args.length < 1) {
+        console.error('This command expects at least 1 argument')
         await run(config, 'help')
         return
     }
@@ -248,7 +260,8 @@ async function main(): Promise<void> {
         console.error('Unrecognized step', JSON.stringify(step))
         return
     }
-    await run(config, step as StepID)
+    const stepArgs = args.slice(1)
+    await run(config, step as StepID, ...stepArgs)
 }
 
 main().catch(err => console.error(err))
