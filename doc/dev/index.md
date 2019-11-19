@@ -24,6 +24,7 @@ Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](h
 - [Renovate updates](renovate.md)
 - [Telemetry](telemetry.md)
 - [Phabricator/Gitolite documentation](phabricator_gitolite.md)
+- [Local automation development](local_automation_development.md)
 
 ### Other
 
