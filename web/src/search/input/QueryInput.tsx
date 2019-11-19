@@ -1,6 +1,6 @@
 import * as H from 'history'
 import * as React from 'react'
-import { fromEvent, Subject, Subscription } from 'rxjs'
+import { fromEvent, Subject, Subscription, merge, of } from 'rxjs'
 import {
     debounceTime,
     distinctUntilChanged,
@@ -8,11 +8,11 @@ import {
     repeat,
     startWith,
     takeUntil,
-    tap,
     switchMap,
     map,
     toArray,
     catchError,
+    delay,
 } from 'rxjs/operators'
 import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
@@ -27,11 +27,14 @@ import {
     filterStaticSuggestions,
     insertSuggestionInQuery,
     isFuzzyWordSearch,
-    lastFilterAndValueBeforeCursor,
+    validFilterAndValueBeforeCursor,
     formatQueryForFuzzySearch,
 } from '../helpers'
 import { fetchSuggestions } from '../backend'
 import { isDefined } from '../../../../shared/src/util/types'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import _ from 'lodash'
+import { dedupeWhitespace } from '../../../../shared/src/util/strings'
 
 /**
  * The query input field is clobbered and updated to contain this subject's values, as
@@ -82,11 +85,16 @@ interface ComponentSuggestions {
 }
 
 interface State {
+    /** Indicates if suggestions are being loaded from the back-end */
+    loadingSuggestions?: boolean
     /** The suggestions shown to the user */
     suggestions: ComponentSuggestions
 }
 
 const noSuggestions: State['suggestions'] = { values: [], cursorPosition: 0 }
+
+// Used for fetching suggestions and updating query history (undo/redo)
+const typingDebounceTime = 300
 
 export class QueryInput extends React.Component<Props, State> {
     private componentUpdates = new Subject<Props>()
@@ -106,10 +114,8 @@ export class QueryInput extends React.Component<Props, State> {
     /** Used for scrolling suggestions into view while scrolling with keyboard */
     private containerElement = React.createRef<HTMLDivElement>()
 
-    /** Only used to keep track if the user has typed a single character into the input field so we can log an event once. */
-    private hasLoggedFirstInput = false
-
     public state: State = {
+        loadingSuggestions: false,
         suggestions: {
             cursorPosition: 0,
             values: [],
@@ -119,14 +125,25 @@ export class QueryInput extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
 
+        // Update parent component
+        // (will be used in next PR to push to queryHistory (undo/redo))
+        this.subscriptions.add(this.inputValues.subscribe(queryState => this.props.onChange(queryState)))
+
+        // Trigger suggestions.
+        // This is set on componentDidUpdate so the data flow can be easier to manage, making it
+        // only depend on props.value updates, and not both from props.value and this.inputValues
         this.subscriptions.add(
-            // Trigger new suggestions every time the input field is typed into.
-            this.inputValues
+            this.componentUpdates
                 .pipe(
-                    tap(queryState => this.props.onChange(queryState)),
-                    distinctUntilChanged(),
-                    debounceTime(200),
-                    switchMap(queryState => {
+                    debounceTime(typingDebounceTime),
+                    // Only show suggestions for when the user has typed (explicitly changed the query).
+                    // Also: Prevents suggestions from showing on page load because of componentUpdates.
+                    filter(props => !!props.value.fromUserInput),
+                    distinctUntilChanged(
+                        (previous, current) =>
+                            dedupeWhitespace(previous.value.query) === dedupeWhitespace(current.value.query)
+                    ),
+                    switchMap(({ value: queryState }) => {
                         if (queryState.query.length === 0) {
                             return [{ suggestions: noSuggestions }]
                         }
@@ -141,35 +158,36 @@ export class QueryInput extends React.Component<Props, State> {
                         }
 
                         // Used to know if a filter value, and not just a separate word, is being typed
-                        const filterAndValueBeforeCursor = lastFilterAndValueBeforeCursor(queryState)
+                        const filterAndValueBeforeCursor = validFilterAndValueBeforeCursor(queryState)
 
                         // If a filter value is being typed but selected filter does not use
                         // fuzzy-search suggestions, then return only static suggestions
                         if (
                             filterAndValueBeforeCursor &&
-                            !fuzzySearchFilters.includes(filterAndValueBeforeCursor.filter)
+                            !fuzzySearchFilters.includes(filterAndValueBeforeCursor.resolvedFilterType)
                         ) {
                             return [{ suggestions: staticSuggestions }]
                         }
 
+                        // Because of API limitations, we need to modify the query before the request,
+                        // see definition of `formatQueryForFuzzySearch`
                         const queryForFuzzySearch = formatQueryForFuzzySearch(queryState)
                         const fullQuery = this.props.prependQueryForSuggestions
                             ? this.props.prependQueryForSuggestions + ' ' + queryForFuzzySearch
                             : queryForFuzzySearch
 
-                        // Dos a fuzzy search and formats suggestions for display.
-                        return fetchSuggestions(fullQuery).pipe(
+                        const fuzzySearchSuggestions = fetchSuggestions(fullQuery).pipe(
                             map(createSuggestion),
                             filter(isDefined),
                             map((suggestion): Suggestion => ({ ...suggestion, fromFuzzySearch: true })),
                             filter(suggestion => {
                                 // Only show fuzzy-suggestions that are relevant to the typed filter
-                                if (filterAndValueBeforeCursor?.filter) {
-                                    switch (filterAndValueBeforeCursor.filter) {
+                                if (filterAndValueBeforeCursor?.resolvedFilterType) {
+                                    switch (filterAndValueBeforeCursor.resolvedFilterType) {
                                         case SuggestionTypes.repohasfile:
                                             return suggestion.type === SuggestionTypes.file
                                         default:
-                                            return suggestion.type === filterAndValueBeforeCursor.filter
+                                            return suggestion.type === filterAndValueBeforeCursor.resolvedFilterType
                                     }
                                 }
                                 return true
@@ -186,7 +204,33 @@ export class QueryInput extends React.Component<Props, State> {
                                 // If fuzzy-search is not capable of returning suggestions for the query
                                 // or there is an internal error, then at least return the static suggestions
                                 return [{ suggestions: staticSuggestions }]
-                            })
+                            }),
+                            map(state => ({
+                                ...state,
+                                loadingSuggestions: false,
+                            }))
+                        )
+
+                        // Prevent jitter when no static suggestions are found but fuzzy-suggestions are.
+                        // Jitter being the suggestions list going blank unnecessarily during update.
+                        // (This is a fix for 3.10 release, and will be improved on next PR)
+                        const currentSuggestions = {
+                            ...staticSuggestions,
+                            values: staticSuggestions.values.concat(
+                                this.state.suggestions.values.filter(({ fromFuzzySearch }) => fromFuzzySearch)
+                            ),
+                        }
+
+                        return merge(
+                            // Render static suggestions first
+                            [{ suggestions: currentSuggestions }],
+                            // Prevent loading indicator jitter, only showing it after 1s delay
+                            of({ suggestions: staticSuggestions, loadingSuggestions: true }).pipe(
+                                delay(1000),
+                                takeUntil(fuzzySearchSuggestions)
+                            ),
+                            // Fetch and format fuzzy-search suggestions
+                            fuzzySearchSuggestions
                         )
                     }),
                     // Abort suggestion display on route change or suggestion hiding
@@ -221,7 +265,7 @@ export class QueryInput extends React.Component<Props, State> {
                     )
                     .subscribe(() => {
                         const selection = String(window.getSelection() || '')
-                        this.props.onChange({ query: selection, cursorPosition: selection.length })
+                        this.inputValues.next({ query: selection, cursorPosition: selection.length })
                         if (this.inputElement.current) {
                             this.inputElement.current.focus()
                             // Select whole input text
@@ -234,7 +278,7 @@ export class QueryInput extends React.Component<Props, State> {
             // currently viewing).
             this.subscriptions.add(
                 queryUpdates.pipe(distinctUntilChanged()).subscribe(query =>
-                    this.props.onChange({
+                    this.inputValues.next({
                         query,
                         cursorPosition: query.length,
                     })
@@ -290,7 +334,7 @@ export class QueryInput extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const showSuggestions = this.state.suggestions.values.length > 0
+        const showSuggestions = this.state.suggestions.values.length > 0 || this.state.loadingSuggestions
         // If last typed word is not a filter type,
         // suggestions should show url label and redirect on select.
         const showUrlLabel = isFuzzyWordSearch({
@@ -349,6 +393,12 @@ export class QueryInput extends React.Component<Props, State> {
                                                 />
                                             )
                                         })}
+                                        {this.state.loadingSuggestions && (
+                                            <li className="suggestion suggestion--selected">
+                                                <LoadingSpinner className="icon-inline" />
+                                                <div className="suggestion__description">fetching suggestions...</div>
+                                            </li>
+                                        )}
                                     </ul>
                                 )}
                                 <RegexpToggle
@@ -372,7 +422,7 @@ export class QueryInput extends React.Component<Props, State> {
 
     private onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
         // Ctrl+Space to show all available filter type suggestions
-        if (!this.props.value.query && event.ctrlKey && event.key === ' ') {
+        if (event.ctrlKey && event.key === ' ') {
             this.setState({
                 suggestions: {
                     cursorPosition: event.currentTarget.selectionStart ?? 0,
@@ -383,8 +433,7 @@ export class QueryInput extends React.Component<Props, State> {
     }
 
     private hideSuggestions = (): void => {
-        this.suggestionsHidden.next()
-        this.setState({ suggestions: noSuggestions })
+        this.setState({ suggestions: noSuggestions }, () => this.suggestionsHidden.next())
     }
 
     /**
@@ -392,11 +441,10 @@ export class QueryInput extends React.Component<Props, State> {
      * else: add selected suggestion to query
      */
     private onSuggestionSelect = (suggestion: Suggestion | undefined): void => {
-        this.setState((state, props) => {
+        this.setState(({ suggestions }, { value, history }) => {
+            // If downshift selects an item with value undefined
             if (!suggestion) {
-                return {
-                    suggestions: noSuggestions,
-                }
+                return { suggestions: noSuggestions }
             }
 
             // 🚨 PRIVACY: never provide any private data in { code_search: { suggestion: { type } } }.
@@ -411,42 +459,24 @@ export class QueryInput extends React.Component<Props, State> {
             // if separate word is being typed and suggestion with url is selected
             if (
                 isFuzzyWordSearch({
-                    query: props.value.query,
-                    cursorPosition: state.suggestions.cursorPosition,
+                    query: value.query,
+                    cursorPosition: suggestions.cursorPosition,
                 }) &&
                 suggestion.url
             ) {
-                this.props.history.push(suggestion.url)
+                history.push(suggestion.url)
                 return { suggestions: noSuggestions }
             }
 
-            const isValueSuggestion = suggestion.type !== SuggestionTypes.filters
+            // Add "regex end of string boundary" to limit future suggestion results
+            const selectedSuggestion = !suggestion.fromFuzzySearch
+                ? suggestion
+                : { ...suggestion, value: suggestion.value + '$' }
 
-            const { cursorPosition } = state.suggestions
-            const { query: newQuery, cursorPosition: newCursorPosition } = insertSuggestionInQuery(
-                props.value.query,
-                // Add regex end of string boundary to limit future suggestion results
-                !suggestion.fromFuzzySearch
-                    ? suggestion
-                    : {
-                          ...suggestion,
-                          value: suggestion.value + '$',
-                      },
-                cursorPosition
-            )
-
-            props.onChange({
-                query: newQuery,
-                cursorPosition: newCursorPosition,
+            this.inputValues.next({
+                ...insertSuggestionInQuery(value.query, selectedSuggestion, suggestions.cursorPosition),
+                fromUserInput: true,
             })
-
-            // If a filter was selected, show filter value suggestions
-            if (!isValueSuggestion) {
-                this.inputValues.next({
-                    cursorPosition: newCursorPosition,
-                    query: newQuery,
-                })
-            }
 
             return { suggestions: noSuggestions }
         })
@@ -465,12 +495,15 @@ export class QueryInput extends React.Component<Props, State> {
         }
     }
 
+    /** Only log when user has typed the first character into the input. */
+    private logFirstInput = _.once((): void => {
+        eventLogger.log('SearchInitiated')
+    })
+
     private onInputChange: React.ChangeEventHandler<HTMLInputElement> = event => {
-        if (!this.hasLoggedFirstInput) {
-            eventLogger.log('SearchInitiated')
-            this.hasLoggedFirstInput = true
-        }
+        this.logFirstInput()
         this.inputValues.next({
+            fromUserInput: true,
             query: event.currentTarget.value,
             cursorPosition: event.currentTarget.selectionStart || 0,
         })
