@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -60,7 +61,7 @@ func TestGetLang_language(t *testing.T) {
 			lang, err := getLang(context.Background(),
 				test.file,
 				make([]byte, fileReadBufferSize),
-				ioutil.NopCloser(strings.NewReader(test.file.Contents)))
+				makeFileReader(context.Background(), test.file.Path, test.file.Contents))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -68,6 +69,12 @@ func TestGetLang_language(t *testing.T) {
 				t.Errorf("Got %q, want %q", lang, test.want)
 			}
 		})
+	}
+}
+
+func makeFileReader(ctx context.Context, path string, contents string) func(context.Context, string) (io.ReadCloser, error) {
+	return func(ctx context.Context, path string) (io.ReadCloser, error) {
+		return ioutil.NopCloser(strings.NewReader(contents)), nil
 	}
 }
 
@@ -117,8 +124,8 @@ func TestGet_readFile(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.file.Name(), func(t *testing.T) {
-			rc := ioutil.NopCloser(bytes.NewReader([]byte(test.file.(fi).Contents)))
-			lang, err := getLang(context.Background(), test.file, make([]byte, fileReadBufferSize), rc)
+			fr := makeFileReader(context.Background(), test.file.(fi).Path, test.file.(fi).Contents)
+			lang, err := getLang(context.Background(), test.file, make([]byte, fileReadBufferSize), fr)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -130,7 +137,12 @@ func TestGet_readFile(t *testing.T) {
 }
 
 type nopReadCloser struct {
-	io.Reader
+	data   []byte
+	reader *bytes.Reader
+}
+
+func (n *nopReadCloser) Read(p []byte) (int, error) {
+	return n.reader.Read((p))
 }
 
 func (n *nopReadCloser) Close() error {
@@ -142,24 +154,13 @@ func BenchmarkGetLang(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	dataMap := make(map[string][]byte)
-	for _, f := range files {
-		dataMap[f.Name()] = []byte(f.(fi).Contents)
-	}
-	b.Logf("Calling Get on %d files.", len(files))
-	r := bytes.NewReader(nil)
-	// We use a custom nopReadCloser here instead of ioutil.NopCloser so that we can reset the
-	// internal buffer and avoid allocations in the benchmark loop
-	rc := &nopReadCloser{
-		Reader: r,
-	}
+	fr := newFileReader(files)
 	buf := make([]byte, fileReadBufferSize)
+	b.Logf("Calling Get on %d files.", len(files))
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		for _, file := range files {
-			data := dataMap[file.Name()]
-			r.Reset(data)
-			_, err = getLang(context.Background(), file, buf, rc)
+			_, err = getLang(context.Background(), file, buf, fr)
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -179,6 +180,25 @@ func BenchmarkIsVendor(b *testing.B) {
 		for _, f := range files {
 			_ = enry.IsVendor(f.Name())
 		}
+	}
+}
+
+func newFileReader(files []os.FileInfo) func(_ context.Context, path string) (io.ReadCloser, error) {
+	m := make(map[string]*nopReadCloser, len(files))
+	for _, f := range files {
+		data := []byte(f.(fi).Contents)
+		m[f.Name()] = &nopReadCloser{
+			data:   data,
+			reader: bytes.NewReader(data),
+		}
+	}
+	return func(_ context.Context, path string) (io.ReadCloser, error) {
+		nc, ok := m[path]
+		if !ok {
+			return nil, fmt.Errorf("no file: %s", path)
+		}
+		nc.reader.Reset(nc.data)
+		return nc, nil
 	}
 }
 

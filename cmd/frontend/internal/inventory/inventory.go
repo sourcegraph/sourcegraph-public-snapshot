@@ -36,13 +36,21 @@ type Lang struct {
 
 var newLine = []byte{'\n'}
 
-func getLang(ctx context.Context, file os.FileInfo, buf []byte, rc io.ReadCloser) (*Lang, error) {
-	if rc != nil {
-		defer rc.Close()
+func getLang(ctx context.Context, file os.FileInfo, buf []byte, getFileReader func(ctx context.Context, path string) (io.ReadCloser, error)) (*Lang, error) {
+	if file == nil {
+		return nil, nil
 	}
 	if !file.Mode().IsRegular() || enry.IsVendor(file.Name()) {
 		return nil, nil
 	}
+	rc, err := getFileReader(ctx, file.Name())
+	if err != nil {
+		return nil, errors.Wrap(err, "getting file reader")
+	}
+	if rc != nil {
+		defer rc.Close()
+	}
+
 	lang := Lang{
 		TotalBytes: uint64(file.Size()),
 	}

@@ -58,11 +58,7 @@ func (c *Context) tree(ctx context.Context, tree os.FileInfo, buf []byte) (inv I
 	for _, e := range entries {
 		switch {
 		case e.Mode().IsRegular(): // file
-			rc, err := c.NewFileReader(ctx, e.Name())
-			if err != nil {
-				return Inventory{}, errors.Wrap(err, "getting file reader")
-			}
-			lang, err := getLang(ctx, e, buf, rc)
+			lang, err := getLang(ctx, e, buf, c.NewFileReader)
 			if err != nil {
 				return Inventory{}, errors.Wrapf(err, "inventory file %q", e.Name())
 			}
