@@ -1044,6 +1044,8 @@ func testStore(db *sql.DB) func(*testing.T) {
 					c := &a8n.CampaignJob{
 						CampaignPlanID: int64(i + 1),
 						RepoID:         1,
+						Rev:            api.CommitID("deadbeef"),
+						BaseRef:        "master",
 						Diff:           "+ foobar - barfoo",
 						Error:          "only set on error",
 					}
@@ -1433,6 +1435,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					j.CampaignPlanID = campaignPlanID
 					j.RepoID = int32(i)
 					j.Rev = api.CommitID(fmt.Sprintf("deadbeef-%d", i))
+					j.BaseRef = "master"
 
 					err := s.CreateCampaignJob(ctx, j)
 					if err != nil {
@@ -1532,6 +1535,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					j.CampaignPlanID = plan.ID
 					j.RepoID = int32(i)
 					j.Rev = api.CommitID(fmt.Sprintf("deadbeef-%d", i))
+					j.BaseRef = "master"
 
 					err := s.CreateCampaignJob(ctx, j)
 					if err != nil {
