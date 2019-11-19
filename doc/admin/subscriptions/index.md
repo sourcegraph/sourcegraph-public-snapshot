@@ -17,6 +17,7 @@ You can [contact Sourcegraph](https://about.sourcegraph.com/contact/sales) to pu
 A Sourcegraph active user is a user who visits or uses your Sourcegraph while signed in over the course of the month.
 
 This includes:
+
 - Successfully signing in to your instance (via https://sourcegraph.example.com/sign-in).
 - Running a search on your instance.
 - Clicking a link to a page on your instance.
@@ -24,6 +25,7 @@ This includes:
 - Receiving a saved search notification from your Sourcegraph instance.
 
 This does not include:
+
 - Viewing the sign-up page (at https://sourcegraph.example.com/sign-up) without signing up
 - Viewing the sign-in page (at https://sourcegraph.example.com/sign-in) without signing in.
 - Viewing and submitting a forgotten password form.
