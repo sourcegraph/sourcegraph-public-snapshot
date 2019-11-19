@@ -57,7 +57,7 @@ func (r *lsifDumpResolver) ProcessedAt() graphqlbackend.DateTime {
 // Connection Resolver
 
 type LSIFDumpsListOptions struct {
-	Repository      graphql.ID
+	RepositoryID    graphql.ID
 	Query           *string
 	IsLatestForRepo *bool
 	Limit           *int32
@@ -114,7 +114,7 @@ func (r *lsifDumpConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil
 
 func (r *lsifDumpConnectionResolver) compute(ctx context.Context) ([]*lsif.LSIFDump, *graphqlbackend.RepositoryResolver, int, string, error) {
 	r.once.Do(func() {
-		repo, err := graphqlbackend.RepositoryByID(ctx, r.opt.Repository)
+		repo, err := graphqlbackend.RepositoryByID(ctx, r.opt.RepositoryID)
 		if err != nil {
 			r.err = err
 			return

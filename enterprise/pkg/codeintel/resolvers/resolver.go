@@ -59,7 +59,7 @@ func (r *Resolver) LSIFDumpByID(ctx context.Context, id graphql.ID) (graphqlback
 
 func (r *Resolver) LSIFDumps(ctx context.Context, args *graphqlbackend.LSIFRepositoryDumpsQueryArgs) (graphqlbackend.LSIFDumpConnectionResolver, error) {
 	opt := LSIFDumpsListOptions{
-		Repository:      args.RepositoryID,
+		RepositoryID:    args.RepositoryID,
 		Query:           args.Query,
 		IsLatestForRepo: args.IsLatestForRepo,
 	}
