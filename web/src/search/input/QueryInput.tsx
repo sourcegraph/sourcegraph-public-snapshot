@@ -13,6 +13,7 @@ import {
     toArray,
     catchError,
     delay,
+    share,
 } from 'rxjs/operators'
 import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
@@ -33,7 +34,7 @@ import {
 import { fetchSuggestions } from '../backend'
 import { isDefined } from '../../../../shared/src/util/types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import _ from 'lodash'
+import { once } from 'lodash'
 import { dedupeWhitespace } from '../../../../shared/src/util/strings'
 
 /**
@@ -208,7 +209,8 @@ export class QueryInput extends React.Component<Props, State> {
                             map(state => ({
                                 ...state,
                                 loadingSuggestions: false,
-                            }))
+                            })),
+                            share()
                         )
 
                         // Prevent jitter when no static suggestions are found but fuzzy-suggestions are.
@@ -396,7 +398,7 @@ export class QueryInput extends React.Component<Props, State> {
                                         {this.state.loadingSuggestions && (
                                             <li className="suggestion suggestion--selected">
                                                 <LoadingSpinner className="icon-inline" />
-                                                <div className="suggestion__description">fetching suggestions...</div>
+                                                <div className="suggestion__description">Loading</div>
                                             </li>
                                         )}
                                     </ul>
@@ -496,7 +498,7 @@ export class QueryInput extends React.Component<Props, State> {
     }
 
     /** Only log when user has typed the first character into the input. */
-    private logFirstInput = _.once((): void => {
+    private logFirstInput = once((): void => {
         eventLogger.log('SearchInitiated')
     })
 
