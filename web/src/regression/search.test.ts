@@ -182,7 +182,7 @@ describe('Search regression test suite', () => {
                 )
             },
             // Cloning the repositories takes ~1 minute, so give initialization ~3 minutes
-            3.5 * 60 * 1000
+            3 * 60 * 1000 + 30 * 1000
         )
 
         afterAll(async () => {

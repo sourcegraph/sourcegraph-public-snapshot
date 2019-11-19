@@ -41,37 +41,41 @@ describe('Code navigation regression test suite', () => {
     let gqlClient: GraphQLClient
     let resourceManager: TestResourceManager
     let screenshots: ScreenshotVerifier
-    beforeAll(async () => {
-        ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
-        resourceManager.add(
-            'User',
-            testUsername,
-            await ensureLoggedInOrCreateTestUser(driver, gqlClient, {
-                username: testUsername,
-                deleteIfExists: true,
-                ...config,
-            })
-        )
-        resourceManager.add(
-            'External service',
-            testExternalServiceInfo.uniqueDisplayName,
-            await ensureTestExternalService(
-                gqlClient,
-                {
-                    ...testExternalServiceInfo,
-                    config: {
-                        url: 'https://github.com',
-                        token: config.gitHubToken,
-                        repos: testRepoSlugs,
-                        repositoryQuery: ['none'],
-                    },
-                    waitForRepos: testRepoSlugs.map(slug => 'github.com/' + slug),
-                },
-                config
+    beforeAll(
+        async () => {
+            ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
+            resourceManager.add(
+                'User',
+                testUsername,
+                await ensureLoggedInOrCreateTestUser(driver, gqlClient, {
+                    username: testUsername,
+                    deleteIfExists: true,
+                    ...config,
+                })
             )
-        )
-        screenshots = new ScreenshotVerifier(driver)
-    })
+            resourceManager.add(
+                'External service',
+                testExternalServiceInfo.uniqueDisplayName,
+                await ensureTestExternalService(
+                    gqlClient,
+                    {
+                        ...testExternalServiceInfo,
+                        config: {
+                            url: 'https://github.com',
+                            token: config.gitHubToken,
+                            repos: testRepoSlugs,
+                            repositoryQuery: ['none'],
+                        },
+                        waitForRepos: testRepoSlugs.map(slug => 'github.com/' + slug),
+                    },
+                    { ...config, timeout: 2 * 60 * 1000 }
+                )
+            )
+            screenshots = new ScreenshotVerifier(driver)
+        },
+        // Cloning sourcegraph/sourcegraph takes awhile
+        2 * 60 * 1000 + 10 * 1000
+    )
     afterAll(async () => {
         if (!config.noCleanup) {
             await resourceManager.destroyAll()
