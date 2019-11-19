@@ -1,5 +1,5 @@
 digraph architecture {
-    label="Sourcegraph Architecture Overview"
+    label="Sourcegraph Architecture Overview\n\nBox => horizontally scalable service, Rectangle => singleton service"
     rankdir=TD
     ratio=fill
     concentrate=true
@@ -16,7 +16,7 @@ digraph architecture {
         colorscheme="set312"
         style="filled"
         fillcolor="white"
-        shape="box3d"
+        shape="rectangle"
         fontname="Iosevka"
         fontsize=10
         margin=0.15
@@ -33,7 +33,7 @@ digraph architecture {
         fixedsize=true
         width=1.2
         height=1.2
-        shape="tripleoctagon"
+        shape="box3d"
         label="frontend"
         fillcolor="1"
         URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/frontend"
@@ -45,6 +45,7 @@ digraph architecture {
         gitserver [
             label="gitserver"
             fillcolor="2"
+            shape="box3d"
             URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/gitserver"
         ]
         repo_updater [
@@ -55,11 +56,13 @@ digraph architecture {
         searcher [
             label="searcher"
             fillcolor="4"
+            shape="box3d"
             URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/searcher"
         ]
         replacer [
             label="replacer"
             fillcolor="5"
+            shape="box3d"
             URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/replacer"
         ]
         query_runner [
@@ -84,6 +87,7 @@ digraph architecture {
         symbols [
             label="symbols"
             fillcolor="8"
+            shape="box3d"
             URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/symbols"
         ]
 
@@ -91,10 +95,19 @@ digraph architecture {
             label="LSIF"
             rank="same"
             graph [style="dotted"]
-            node [fillcolor="9"]
+            node [
+                fillcolor="9"
+                shape="box3d"
+            ]
 
-            lsif_server [label="lsif\nserver" URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/server"]
-            lsif_worker [label="lsif\nworker" URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/worker"]
+            lsif_server [
+                label="lsif\nserver"
+                URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/server"
+            ]
+            lsif_worker [
+                label="lsif\nworker"
+                URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/worker"
+            ]
         }
 
         subgraph cluster_zoekt {
@@ -109,6 +122,7 @@ digraph architecture {
             ]
             zoekt_indexserver [
                 label="zoekt\nindexserver"
+                shape="box3d"
                 URL="https://github.com/sourcegraph/zoekt/tree/master/cmd/zoekt-sourcegraph-indexserver"
             ]
         }
