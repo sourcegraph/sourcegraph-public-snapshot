@@ -166,34 +166,24 @@ async function getMigrationVersion(connection: Connection): Promise<string> {
 }
 
 /**
- * A wrapper around a Postgres database.
+ * Instrument `callback` with Postgres histogrom and error counter.
+ *
+ * @param callback The function invoke with the connection.
  */
-export abstract class PostgresManager {
-    /**
-     * Create a new `PostgresManager` backed by the given database connection.
-     *
-     * @param connection The Postgres connection.
-     */
-    constructor(protected connection: Connection) {}
+export function instrumentQuery<T>(callback: () => Promise<T>): Promise<T> {
+    return instrument(metrics.xrepoQueryDurationHistogram, metrics.xrepoQueryErrorsCounter, callback)
+}
 
-    /**
-     * Invoke `callback` with the wrapped Postgres connection.
-     *
-     * @param callback The function invoke with the connection.
-     */
-    protected withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
-        return instrument(metrics.xrepoQueryDurationHistogram, metrics.xrepoQueryErrorsCounter, () =>
-            callback(this.connection)
-        )
-    }
-
-    /**
-     * Invoke `callback` with a transactional Postgres entity manager created
-     * from the wrapped connection.
-     *
-     * @param callback The function invoke with the entity manager.
-     */
-    protected withTransactionalEntityManager<T>(callback: (connection: EntityManager) => Promise<T>): Promise<T> {
-        return this.withConnection(connection => connection.transaction(callback))
-    }
+/**
+ * Invoke `callback` with a transactional Postgres entity manager created
+ * from the wrapped connection.
+ *
+ * @param connection The Postgres connection.
+ * @param callback The function invoke with the entity manager.
+ */
+export function withInstrumentedTransaction<T>(
+    connection: Connection,
+    callback: (connection: EntityManager) => Promise<T>
+): Promise<T> {
+    return instrumentQuery(() => connection.transaction(callback))
 }

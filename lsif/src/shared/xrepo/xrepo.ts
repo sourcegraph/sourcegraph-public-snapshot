@@ -8,7 +8,7 @@ import { chunk } from 'lodash'
 import { createFilter, testFilter } from './bloom-filter'
 import { dbFilename, tryDeleteFile } from '../paths'
 import { logAndTraceCall, logSpan, TracingContext } from '../tracing'
-import { PostgresManager } from '../database/postgres'
+import { instrumentQuery, withInstrumentedTransaction } from '../database/postgres'
 import { TableInserter } from '../database/inserter'
 
 /**
@@ -61,16 +61,14 @@ export interface SymbolReferences {
  * between projects at a specific commit. This is used for cross-repository jump to
  * definition and find references features.
  */
-export class XrepoDatabase extends PostgresManager {
+export class XrepoDatabase {
     /**
      * Create a new `XrepoDatabase` backed by the given database connection.
      *
      * @param connection The Postgres connection.
      * @param storageRoot The path where SQLite databases are stored.
      */
-    constructor(connection: Connection, private storageRoot: string) {
-        super(connection)
-    }
+    constructor(private connection: Connection, private storageRoot: string) {}
 
     /**
      * Get the dumps for a repository.
@@ -88,8 +86,8 @@ export class XrepoDatabase extends PostgresManager {
         limit: number,
         offset: number
     ): Promise<{ dumps: xrepoModels.LsifDump[]; totalCount: number }> {
-        const [dumps, totalCount] = await this.withConnection(connection => {
-            let queryBuilder = connection
+        const [dumps, totalCount] = await instrumentQuery(() => {
+            let queryBuilder = this.connection
                 .getRepository(xrepoModels.LsifDump)
                 .createQueryBuilder()
                 .where({ repository })
@@ -123,15 +121,15 @@ export class XrepoDatabase extends PostgresManager {
      * @param id The dump identifier.
      */
     public getDumpById(id: xrepoModels.DumpId): Promise<xrepoModels.LsifDump | undefined> {
-        return this.withConnection(connection => connection.getRepository(xrepoModels.LsifDump).findOne({ id }))
+        return instrumentQuery(() => this.connection.getRepository(xrepoModels.LsifDump).findOne({ id }))
     }
 
     /**
      * Return the list of all repositories that have LSIF data.
      */
     public async getTrackedRepositories(): Promise<string[]> {
-        const payload = await this.withConnection(connection =>
-            connection
+        const payload = await instrumentQuery(() =>
+            this.connection
                 .getRepository(xrepoModels.LsifDump)
                 .createQueryBuilder()
                 .select('DISTINCT repository')
@@ -147,9 +145,10 @@ export class XrepoDatabase extends PostgresManager {
      * @param repository The repository name.
      */
     public isRepositoryTracked(repository: string): Promise<boolean> {
-        return this.withConnection(
-            async connection =>
-                (await connection.getRepository(xrepoModels.LsifDump).findOne({ where: { repository } })) !== undefined
+        return instrumentQuery(
+            async () =>
+                (await this.connection.getRepository(xrepoModels.LsifDump).findOne({ where: { repository } })) !==
+                undefined
         )
     }
 
@@ -160,9 +159,9 @@ export class XrepoDatabase extends PostgresManager {
      * @param commit The target commit.
      */
     public isCommitTracked(repository: string, commit: string): Promise<boolean> {
-        return this.withConnection(
-            async connection =>
-                (await connection.getRepository(xrepoModels.Commit).findOne({ where: { repository, commit } })) !==
+        return instrumentQuery(
+            async () =>
+                (await this.connection.getRepository(xrepoModels.Commit).findOne({ where: { repository, commit } })) !==
                 undefined
         )
     }
@@ -199,7 +198,7 @@ export class XrepoDatabase extends PostgresManager {
         `
 
         return logAndTraceCall(ctx, 'Updating dumps visible from tip', () =>
-            this.withConnection(connection => connection.query(query, [repository, commit]))
+            instrumentQuery(() => this.connection.query(query, [repository, commit]))
         )
     }
 
@@ -230,22 +229,22 @@ undefined.s
             await this.discoverAndUpdateCommit({ repository, commit, gitserverUrls, ctx })
         }
 
-        return logAndTraceCall(ctx, 'Finding closest dump', () =>
-            this.withConnection(async connection => {
-                const results = (await connection.query('select * from closest_dump($1, $2, $3, $4)', [
+        return logAndTraceCall(ctx, 'Finding closest dump', async () => {
+            const results: xrepoModels.LsifDump[] = await instrumentQuery(() =>
+                this.connection.query('select * from closest_dump($1, $2, $3, $4)', [
                     repository,
                     commit,
                     file,
                     MAX_TRAVERSAL_LIMIT,
-                ])) as xrepoModels.LsifDump[]
+                ])
+            )
 
-                if (results.length === 0) {
-                    return undefined
-                }
+            if (results.length === 0) {
+                return undefined
+            }
 
-                return results[0]
-            })
-        )
+            return results[0]
+        })
     }
 
     /**
@@ -262,7 +261,7 @@ undefined.s
         ctx: TracingContext = {}
     ): Promise<void> {
         return logAndTraceCall(ctx, 'Updating commits', () =>
-            this.withTransactionalEntityManager(async entityManager => {
+            withInstrumentedTransaction(this.connection, async entityManager => {
                 const commitInserter = new TableInserter(
                     entityManager,
                     xrepoModels.Commit,
@@ -292,8 +291,8 @@ undefined.s
         name: string,
         version: string | null
     ): Promise<xrepoModels.PackageModel | undefined> {
-        return this.withConnection(connection =>
-            connection.getRepository(xrepoModels.PackageModel).findOne({
+        return instrumentQuery(() =>
+            this.connection.getRepository(xrepoModels.PackageModel).findOne({
                 where: {
                     scheme,
                     name,
@@ -324,7 +323,7 @@ undefined.s
         references: SymbolReferences[],
         ctx: TracingContext = {}
     ): Promise<xrepoModels.LsifDump> {
-        return this.withTransactionalEntityManager(async entityManager => {
+        return withInstrumentedTransaction(this.connection, async entityManager => {
             const dump = await logAndTraceCall(ctx, 'Inserting dump', () =>
                 this.insertDump(repository, commit, root, uploadedAt, entityManager)
             )
@@ -397,7 +396,6 @@ undefined.s
             )
             .getMany()
 
-        // Delete conflicting dumps
         for (const dump of dumps) {
             await this.deleteDump(dump, entityManager)
         }
@@ -419,8 +417,8 @@ undefined.s
      * @param file A filename that should be included in the dump.
      */
     public getDump(repository: string, commit: string, file: string): Promise<xrepoModels.LsifDump | undefined> {
-        return this.withConnection(connection =>
-            connection
+        return instrumentQuery(() =>
+            this.connection
                 .getRepository(xrepoModels.LsifDump)
                 .createQueryBuilder()
                 .select()
@@ -434,8 +432,8 @@ undefined.s
      * Get the oldest dump that is not visible at the tip of its repository.
      */
     public getOldestPrunableDump(): Promise<xrepoModels.LsifDump | undefined> {
-        return this.withConnection(connection =>
-            connection
+        return instrumentQuery(() =>
+            this.connection
                 .getRepository(xrepoModels.LsifDump)
                 .createQueryBuilder()
                 .select()
@@ -475,8 +473,8 @@ undefined.s
      * @param repository The repository.
      */
     public getVisibleDumps(repository: string): Promise<xrepoModels.LsifDump[]> {
-        return this.withConnection(connection =>
-            connection
+        return instrumentQuery(() =>
+            this.connection
                 .getRepository(xrepoModels.LsifDump)
                 .createQueryBuilder()
                 .select()
@@ -526,7 +524,7 @@ undefined.s
         // We do this inside of a transaction so that we get consistent results from multiple
         // distinct queries: one count query and one or more select queries, depending on the
         // sparsity of the use of the given identifier.
-        return this.withTransactionalEntityManager(async entityManager => {
+        return withInstrumentedTransaction(this.connection, async entityManager => {
             // Create a base query that selects all active uses of the target package. This
             // is used as the common prefix for both the count and the getPage queries.
             const baseQuery = entityManager
@@ -648,7 +646,7 @@ undefined.s
         // We do this inside of a transaction so that we get consistent results from multiple
         // distinct queries: one count query and one or more select queries, depending on the
         // sparsity of the use of the given identifier.
-        return this.withTransactionalEntityManager(async entityManager => {
+        return withInstrumentedTransaction(this.connection, async entityManager => {
             // Extract numeric ids from query results that return objects
             const extractIds = (results: { id: number }[]): number[] => results.map(r => r.id)
 

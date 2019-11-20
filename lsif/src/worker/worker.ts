@@ -16,7 +16,6 @@ import { followsFrom, FORMAT_TEXT_MAP, Span, Tracer } from 'opentracing'
 import { instrumentWithLabels } from '../shared/metrics'
 import { Job } from 'bull'
 import { Logger } from 'winston'
-import { PostgresLocker } from '../shared/locker/locker'
 import { startMetricsServer } from './server'
 import { waitForConfiguration } from '../shared/config/config'
 import { XrepoDatabase } from '../shared/xrepo/xrepo'
@@ -83,7 +82,6 @@ async function main(logger: Logger): Promise<void> {
     // Create cross-repo database
     const connection = await createPostgresConnection(fetchConfiguration(), logger)
     const xrepoDatabase = new XrepoDatabase(connection, settings.STORAGE_ROOT)
-    const locker = new PostgresLocker(connection)
 
     // Start metrics server
     startMetricsServer(logger)
@@ -93,7 +91,7 @@ async function main(logger: Logger): Promise<void> {
 
     const convertJobProcessor = wrapJobProcessor(
         'convert',
-        createConvertJobProcessor(xrepoDatabase, locker, fetchConfiguration),
+        createConvertJobProcessor(connection, xrepoDatabase, fetchConfiguration),
         logger,
         tracer
     )

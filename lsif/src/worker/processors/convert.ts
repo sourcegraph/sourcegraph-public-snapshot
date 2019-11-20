@@ -3,11 +3,12 @@ import * as fs from 'mz/fs'
 import * as path from 'path'
 import * as settings from '../settings'
 import { addTags, TracingContext } from '../../shared/tracing'
+import { Connection } from 'typeorm'
 import { convertLsif } from '../importer/importer'
 import { createSilentLogger } from '../../shared/logging'
 import { dbFilename } from '../../shared/paths'
 import { Job } from 'bull'
-import { PostgresLocker } from '../../shared/locker/locker'
+import { withLock } from '../../shared/locker/locker'
 import { XrepoDatabase } from '../../shared/xrepo/xrepo'
 
 /**
@@ -15,13 +16,13 @@ import { XrepoDatabase } from '../../shared/xrepo/xrepo'
  * input of an LSIF dump and converts it to a SQLite database. This will also populate
  * the cross-repo database for this dump.
  *
+ * @param connection The Postgres connection.
  * @param xrepoDatabase The cross-repo database.
- * @param locker The Postgres locker instance.
  * @param fetchConfiguration A function that returns the current configuration.
  */
 export const createConvertJobProcessor = (
+    connection: Connection,
     xrepoDatabase: XrepoDatabase,
-    locker: PostgresLocker,
     fetchConfiguration: () => { gitServers: string[] }
 ) => async (
     job: Job,
@@ -82,7 +83,7 @@ export const createConvertJobProcessor = (
         // Clean up disk space if necessary - use original tracing context so the labels
         // repository, commit, and root do not get ambiguous between the job arguments
         // and the properties of the dump being purged.
-        await purgeOldDumps(xrepoDatabase, locker, settings.STORAGE_ROOT, settings.DBS_DIR_MAXIMUM_SIZE_BYTES, ctx)
+        await purgeOldDumps(connection, xrepoDatabase, settings.STORAGE_ROOT, settings.DBS_DIR_MAXIMUM_SIZE_BYTES, ctx)
     } catch (error) {
         // At this point, the job has already completed successfully. Catch
         // any error that happens from `purgeOldDumps` and swallow it. There
@@ -95,15 +96,15 @@ export const createConvertJobProcessor = (
  * Remove dumps until the space occupied by the dbs directory is below
  * the given limit.
  *
+ * @param connection The Postgres connection.
  * @param xrepoDatabase The cross-repo database.
- * @param locker The Postgres locker instance.
  * @param storageRoot The path where SQLite databases are stored.
  * @param maximumSizeBytes The maximum number of bytes.
  * @param ctx The tracing context.
  */
 function purgeOldDumps(
+    connection: Connection,
     xrepoDatabase: XrepoDatabase,
-    locker: PostgresLocker,
     storageRoot: string,
     maximumSizeBytes: number,
     { logger = createSilentLogger() }: TracingContext = {}
@@ -146,7 +147,7 @@ function purgeOldDumps(
     // choose more dumps than necessary to purge. This can happen if the directory
     // size check and the selection of a purgeable dump are interleaved between
     // multiple workers.
-    return locker.withLock('retention', purge)
+    return withLock(connection, 'retention', purge)
 }
 
 /**
