@@ -101,6 +101,9 @@ func countLines(r io.Reader, buf []byte) (int, error) {
 	for {
 		n, err := r.Read(buf)
 		totalLines += bytes.Count(buf[:n], newLine)
+		// We need this check because the last read will often
+		// return (0, io.EOF) and we want to look at the last
+		// valid read to determine if there was a trailing newline
 		if n > 0 {
 			trailingNewLine = bytes.HasSuffix(buf[:n], newLine)
 		}
