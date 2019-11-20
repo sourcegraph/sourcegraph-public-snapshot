@@ -31,6 +31,7 @@ func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Requ
 		repoGitDir = filepath.Join(s.ReposDir, repo)
 		if _, err := os.Stat(repoGitDir); os.IsNotExist(err) {
 			http.Error(w, "gitserver: repo does not exist - "+err.Error(), http.StatusInternalServerError)
+			return
 		}
 	}
 
