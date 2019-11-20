@@ -12,7 +12,8 @@ interface Config {
     captainSlackUsername: string
     captainGitHubUsername: string
 
-    majorMinorVersion: string
+    majorVersion: string
+    minorVersion: string
     releaseDateTime: string
     oneWorkingDayBeforeRelease: string
     threeWorkingDaysBeforeRelease: string
@@ -108,7 +109,7 @@ const steps: Step[] = [
                     endDateTime: addMinutes(new Date(c.oneWorkingDayBeforeRelease), 1).toISOString(),
                 },
                 {
-                    title: `Cut release branch ${c.majorMinorVersion}`,
+                    title: `Cut release branch ${c.majorVersion}.${c.minorVersion}`,
                     description: '(This is not an actual event to attend, just a calendar marker.)',
                     anyoneCanAddSelf: true,
                     attendees: [c.teamEmail],
@@ -116,7 +117,7 @@ const steps: Step[] = [
                     endDateTime: addMinutes(new Date(c.fourWorkingDaysBeforeRelease), 1).toISOString(),
                 },
                 {
-                    title: `Release Sourcegraph ${c.majorMinorVersion}`,
+                    title: `Release Sourcegraph ${c.majorVersion}.${c.minorVersion}`,
                     description: '(This is not an actual event to attend, just a calendar marker.)',
                     anyoneCanAddSelf: true,
                     attendees: [c.teamEmail],
@@ -124,7 +125,7 @@ const steps: Step[] = [
                     endDateTime: addMinutes(new Date(c.releaseDateTime), 1).toISOString(),
                 },
                 {
-                    title: `Reminder to submit feedback for ${c.majorMinorVersion} Engineering Retrospective`,
+                    title: `Reminder to submit feedback for ${c.majorVersion}.${c.minorVersion} Engineering Retrospective`,
                     description: `Retrospective document: ${c.retrospectiveDocURL}\n\n(This is not an actual event to attend, just a calendar marker.)`,
                     anyoneCanAddSelf: true,
                     attendees: [c.teamEmail],
@@ -139,7 +140,7 @@ const steps: Step[] = [
                     endDateTime: new Date(c.retrospectiveDateTime).toISOString(),
                 },
                 {
-                    title: `Engineering Retrospective ${c.majorMinorVersion}`,
+                    title: `Engineering Retrospective ${c.majorVersion}.${c.minorVersion}`,
                     description: `Retrospective document: ${c.retrospectiveDocURL}`,
                     anyoneCanAddSelf: true,
                     attendees: [c.teamEmail],
@@ -157,7 +158,8 @@ const steps: Step[] = [
     {
         id: 'tracking-issue:create',
         run: async ({
-            majorMinorVersion: version,
+            majorVersion,
+            minorVersion,
             releaseDateTime,
             captainGitHubUsername,
             oneWorkingDayBeforeRelease,
@@ -166,7 +168,8 @@ const steps: Step[] = [
             fiveWorkingDaysBeforeRelease,
         }: Config) => {
             const { url, created } = await ensureTrackingIssue({
-                version,
+                majorVersion,
+                minorVersion,
                 assignees: [captainGitHubUsername],
                 releaseDateTime: new Date(releaseDateTime),
                 oneWorkingDayBeforeRelease: new Date(oneWorkingDayBeforeRelease),
@@ -182,10 +185,13 @@ const steps: Step[] = [
         run: async c => {
             const trackingIssueURL = await getTrackingIssueURL(
                 await getAuthenticatedGitHubClient(),
-                c.majorMinorVersion
+                c.majorVersion,
+                c.minorVersion
             )
             if (!trackingIssueURL) {
-                throw new Error(`Tracking issue for version ${c.majorMinorVersion} not found--has it been create yet?`)
+                throw new Error(
+                    `Tracking issue for version ${c.majorVersion}.${c.minorVersion} not found--has it been create yet?`
+                )
             }
             const formatDate = (d: Date): string =>
                 `${d.toLocaleString('en-US', {
@@ -198,7 +204,7 @@ const steps: Step[] = [
                     timeStyle: 'short',
                 } as Intl.DateTimeFormatOptions)} (Berlin time)`
             await postMessage(
-                `:captain: ${c.majorMinorVersion} Release :captain:
+                `:captain: ${c.majorVersion}.${c.minorVersion} Release :captain:
 Release captain: @${c.captainSlackUsername}
 Tracking issue: ${trackingIssueURL}
 Key dates:
@@ -228,31 +234,29 @@ Key dates:
     {
         id: 'release-candidate:dev-announce',
         run: async (c, version) => {
-            const query = `is:open is:issue milestone:${c.majorMinorVersion} label:release-blocker`
+            const parsedVersion = semver.parse(version, { loose: false })
+            if (!parsedVersion) {
+                throw new Error(`version ${version} is not valid semver`)
+            }
+
+            const query = `is:open is:issue milestone:${c.majorVersion}.${c.minorVersion} label:release-blocker`
             const issues = await listIssues(await getAuthenticatedGitHubClient(), query)
             const issuesURL = `https://github.com/issues?q=${encodeURIComponent(query)}`
             const releaseBlockerMessage =
                 issues.length === 0
                     ? 'There are currently ZERO release blocking issues'
                     : issues.length === 1
-                    ? `There is 1 release blocking issue: ${issuesURL}`
-                    : `There are ${issues.length} release blocking issues: ${issuesURL}`
+                    ? `There is 1 release-blocking issue: ${issuesURL}`
+                    : `There are ${issues.length} release-blocking issues: ${issuesURL}`
 
-            const message = `:captain: ${c.majorMinorVersion} Release :captain:
+            const message = `:captain: Release \`${version}\` has been cut :captain:
 
-Release ${version} has been cut.
-
-- It should be deployed to k8s.sgdev.org within the next hour (https://k8s.sgdev.org/site-admin/updates)
+- Please ensure \`CHANGELOG.md\` on \`master\` is up-to-date.
+- Run this release locally with \`IMAGE=sourcegraph/server:${version} ./dev/run-server-image.sh\`
+- It will be deployed to k8s.sgdev.org within approximately one hour (https://k8s.sgdev.org/site-admin/updates)
 - ${releaseBlockerMessage}
-`
+            `
             await postMessage(message, 'dev-announce')
-        },
-    },
-    {
-        id: 'qa-start:dev-announce',
-        run: () => {
-            console.log('NOT YET IMPLEMENTED')
-            process.exit(1)
         },
     },
 ]
