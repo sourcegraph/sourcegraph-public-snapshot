@@ -85,26 +85,37 @@ func getLang(ctx context.Context, file os.FileInfo, buf []byte, getFileReader fu
 	}
 	lang.Name = matchedLang
 
-	// Count lines
+	count, err := countLines(rc, buf)
+	if err != nil {
+		return nil, err
+	}
+	lang.TotalLines += uint64(count)
+	return &lang, nil
+}
+
+// countLines counts the number of lines in the supplied reader
+// it uses buf as a temporary buffer
+func countLines(r io.Reader, buf []byte) (int, error) {
 	var trailingNewLine bool
+	var totalLines int
 	for {
-		n, err := rc.Read(buf)
-		lang.TotalLines += uint64(bytes.Count(buf[:n], newLine))
+		n, err := r.Read(buf)
+		totalLines += bytes.Count(buf[:n], newLine)
 		if n > 0 {
 			trailingNewLine = bytes.HasSuffix(buf[:n], newLine)
 		}
 		if err == io.EOF {
 			if !trailingNewLine {
 				// Add final line
-				lang.TotalLines++
+				totalLines++
 			}
 			break
 		}
 		if err != nil {
-			return nil, errors.Wrap(err, "reading lines")
+			return 0, errors.Wrap(err, "counting lines")
 		}
 	}
-	return &lang, nil
+	return totalLines, nil
 }
 
 // GetLanguageByFilename returns the guessed language for the named file (and safe == true if this
