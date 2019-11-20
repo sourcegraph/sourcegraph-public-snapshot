@@ -5,9 +5,9 @@ describe('UndoRedoHistory', () => {
         const history = new UndoRedoHistory<string>({
             current: 'undone',
             onChange: () => null,
-        })
-            .push('')
-            .undo()
+        }).push('')
+        expect(history.current).toBe('')
+        history.undo()
         expect(history.current).toBe('undone')
     })
 
@@ -18,7 +18,8 @@ describe('UndoRedoHistory', () => {
         })
             .push('redone')
             .undo()
-            .redo()
+        expect(history.current).toBe('')
+        history.redo()
         expect(history.current).toBe('redone')
     })
 
@@ -34,13 +35,13 @@ describe('UndoRedoHistory', () => {
     it('maintains the correct amount of items in history (historyLength prop)', () => {
         const history = new UndoRedoHistory<string>({
             current: 'a',
-            historyLength: 1,
+            historyLength: 2,
             onChange: () => null,
         })
             .push('b')
             .push('c')
-            .undo()
-            .undo()
+        expect(history.current).toBe('c')
+        history.undo().undo()
         expect(history.current).toBe('b')
     })
 })

@@ -1,17 +1,16 @@
 import { Unsubscribable } from 'rxjs'
 
-interface Props<T> {
+interface Props<ItemType> {
     /**
-     * Callback that receives value from undo/redo
+     * Callback that receives current value on undo/redo
      */
-    onChange(currentValue: T): void
+    onChange(currentValue: ItemType): void
     /**
      * Current value that the history should start with
      */
-    current: T
+    current: ItemType
     /**
-     * Max number of items that should be stored in each history (past, future).
-     * E.g: If given 10, then past + future + current = 21
+     * Maximum number of items to be stored in history
      */
     historyLength?: number
 }
@@ -19,56 +18,52 @@ interface Props<T> {
 /**
  * Provides generic undo/redo capabilities
  */
-export class UndoRedoHistory<T> implements Unsubscribable {
-    public current: T
+export class UndoRedoHistory<ItemType> implements Unsubscribable {
     /**
+     * See Props['current']
+     */
+    public get current(): ItemType {
+        return this.history[this.currentIndex]
+    }
+    /**
+     * See Props['onChange'].
      * Can be undefined after unsubscribe
      */
-    private onChange?: Props<T>['onChange']
-
-    private past: T[] = []
-    private future: T[] = []
+    private onChange?: Props<ItemType>['onChange']
+    /**
+     * Array containing current and pushed values
+     */
+    private history: ItemType[]
+    /**
+     * Cursor defining which index is the current value in history
+     */
+    private currentIndex = 0
+    /**
+     * See Props['historyLength']
+     */
     private historyLength = 50
 
-    constructor(props: Props<T>) {
+    constructor(props: Props<ItemType>) {
+        this.history = [props.current]
         this.onChange = value => props.onChange(value)
-        this.current = props.current
         this.historyLength = props.historyLength ?? this.historyLength
     }
 
     /**
-     * Generic function to append items to this.past or this.future
+     * (DRY) Method for actual undo/redo.
+     * Moves the currentIndex cursor and emits change.
      */
-    private addToHistoryArray = (history: T[], value: T): T[] =>
-        history.length === this.historyLength ? history.slice(1).concat(value) : history.concat(value)
-
-    /**
-     * (DRY) Function that does the actual undo/redo.
-     * if action === 'undo':
-     *     push current to future
-     *     take from past, set to current
-     * if action === 'redo':
-     *     push current to past
-     *     take from future, set to current
-     */
-    private moveHistory(action: 'undo' | 'redo'): void {
-        const from = action === 'undo' ? 'past' : 'future'
-        const to = action === 'undo' ? 'future' : 'past'
-        const fromValue = this[from]
-        const toValue = this[to]
-
-        // No items to take, exit
-        if (fromValue.length === 0) {
-            return
+    private moveHistory(action: 'undo' | 'redo'): this {
+        if (action === 'undo' && this.currentIndex > 0) {
+            this.currentIndex--
         }
-
-        this[from] = fromValue.slice(0, fromValue.length - 1)
-        this[to] = this.addToHistoryArray(toValue, this.current)
-        this.current = fromValue[fromValue.length - 1]
-
+        if (action === 'redo' && this.currentIndex < this.historyLength) {
+            this.currentIndex++
+        }
         if (this.onChange) {
             this.onChange(this.current)
         }
+        return this
     }
 
     // All public methods should return `this` for method chaining
@@ -82,23 +77,25 @@ export class UndoRedoHistory<T> implements Unsubscribable {
     }
 
     /**
-     * Standard undo/redo behavior: once a new value is pushed the future
-     * history is erased, and will be populated on the next `undo()`
+     * Standard undo/redo behavior: once a new value is pushed the future (redo) history is erased.
+     * On a push: concat new value to history and set currentIndex to last item of history
      */
-    public push(value: T): this {
-        this.past = this.addToHistoryArray(this.past, this.current)
-        this.current = value
-        this.future = []
+    public push(value: ItemType): this {
+        if (this.currentIndex < this.historyLength) {
+            this.history = this.history
+                // respect this.historyLength, and clear redo values when a new value is pushed
+                .slice(this.currentIndex - this.historyLength, this.currentIndex + 1)
+                .concat(value)
+            this.currentIndex = this.history.length - 1
+        }
         return this
     }
 
     public undo(): this {
-        this.moveHistory('undo')
-        return this
+        return this.moveHistory('undo')
     }
 
     public redo(): this {
-        this.moveHistory('redo')
-        return this
+        return this.moveHistory('redo')
     }
 }
