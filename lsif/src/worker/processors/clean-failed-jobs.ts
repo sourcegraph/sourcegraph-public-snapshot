@@ -10,7 +10,7 @@ import { logAndTraceCall, TracingContext } from '../../shared/tracing'
  * than this interval during healthy operation.
  */
 export const createCleanFailedJobsProcessor = () => async (_: unknown, ctx: TracingContext): Promise<void> => {
-    await logAndTraceCall(ctx, 'cleaning failed jobs', async () => {
+    await logAndTraceCall(ctx, 'Cleaning failed jobs', async () => {
         const purgeFile = async (filename: string): Promise<void> => {
             const stat = await fs.stat(filename)
             if (Date.now() - stat.mtimeMs >= settings.FAILED_JOB_MAX_AGE) {

@@ -142,6 +142,9 @@ type CreateCommitFromPatchRequest struct {
 	CommitInfo PatchCommitInfo
 	// Push specifies whether the target ref will be pushed to the code host
 	Push bool
+	// GitApplyArgs are the arguments that will be passed to `git apply` along
+	// with `--cached`.
+	GitApplyArgs []string
 }
 
 // PatchCommitInfo will be used for commit information when creating a commit from a patch

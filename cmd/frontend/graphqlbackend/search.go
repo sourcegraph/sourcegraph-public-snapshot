@@ -698,10 +698,6 @@ func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.Repositor
 						continue
 					}
 
-					if ctx.Err() != nil {
-						err = errors.New("timeout due to repohascommitafter: filter, please try setting a larger timeout: in your query (we are improving this, see https://github.com/sourcegraph/sourcegraph/issues/4614)")
-					}
-
 					run.Error(err)
 					continue
 				}

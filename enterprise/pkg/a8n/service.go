@@ -131,8 +131,8 @@ func (s *Service) runChangesetJob(
 				err = multierror.Append(err, e)
 			}
 		}
-		return
 	}()
+
 	job.StartedAt = s.clock()
 
 	campaignJob, err := s.store.GetCampaignJob(ctx, GetCampaignJobOpts{ID: job.CampaignJobID})
@@ -165,7 +165,11 @@ func (s *Service) runChangesetJob(
 			AuthorEmail: "automation@sourcegraph.com",
 			Date:        job.StartedAt,
 		},
-		Push: true,
+		// We use unified diffs, not git diffs, which means they're missing the
+		// `a/` and `/b` filename prefixes. `-p0` tells `git apply` to not
+		// expect and strip prefixes.
+		GitApplyArgs: []string{"-p0"},
+		Push:         true,
 	})
 
 	if err != nil {
@@ -212,10 +216,15 @@ func (s *Service) runChangesetJob(
 		return err
 	}
 
+	baseRef := "master"
+	if campaignJob.BaseRef != "" {
+		baseRef = campaignJob.BaseRef
+	}
+
 	cs := repos.Changeset{
 		Title:       c.Name,
 		Body:        c.Description,
-		BaseRefName: "master",
+		BaseRefName: baseRef,
 		HeadRefName: headRefName,
 		Repo:        repo,
 		Changeset: &a8n.Changeset{

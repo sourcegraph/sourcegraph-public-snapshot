@@ -96,7 +96,7 @@ async function main(logger: Logger): Promise<void> {
             level: 'debug',
             ignoredRoutes: ['/ping', '/healthz', '/metrics'],
             requestWhitelist: ['method', 'url', 'query'],
-            msg: 'request',
+            msg: 'Handled request',
         })
     )
     app.use(metricsMiddleware)
@@ -110,7 +110,7 @@ async function main(logger: Logger): Promise<void> {
     // Error handler must be registered last
     app.use(errorHandler(logger))
 
-    app.listen(settings.HTTP_PORT, () => logger.debug('listening', { port: settings.HTTP_PORT }))
+    app.listen(settings.HTTP_PORT, () => logger.debug('LSIF API server listening on', { port: settings.HTTP_PORT }))
 }
 
 /**

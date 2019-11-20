@@ -31,7 +31,7 @@ describe('getCommitsNear', () => {
 
 describe('flattenCommitParents', () => {
     it('should handle multiple commits', () => {
-        expect(flattenCommitParents(['a', 'b c', 'd e f', 'g h i j k l'])).toEqual([
+        expect(flattenCommitParents(['a', 'b c', 'd e f', '', 'g h i j k l', 'm '])).toEqual([
             ['a', undefined],
             ['b', 'c'],
             ['d', 'e'],
@@ -41,6 +41,7 @@ describe('flattenCommitParents', () => {
             ['g', 'j'],
             ['g', 'k'],
             ['g', 'l'],
+            ['m', undefined],
         ])
     })
 })
@@ -102,7 +103,7 @@ describe('hashmod', () => {
 describe('gitserverExec', () => {
     it('should not allow git as first argument', async () => {
         await expect(gitserverExecLines('', 'r', ['git', 'log'])).rejects.toThrowError(
-            new Error('gitserver commands should not be prefixed with `git`')
+            new Error('Gitserver commands should not be prefixed with `git`')
         )
     })
 })

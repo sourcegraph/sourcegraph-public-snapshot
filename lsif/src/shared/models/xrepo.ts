@@ -1,6 +1,6 @@
 import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from 'typeorm'
 import { EncodedBloomFilter } from '../xrepo/bloom-filter'
-import { getBatchSize } from './util'
+import { MAX_POSTGRES_BATCH_SIZE } from '../constants'
 
 /**
  * An entity within the cross-repo database. This tracks commit parentage and branch
@@ -11,7 +11,7 @@ export class Commit {
     /**
      * The number of model instances that can be inserted at once.
      */
-    public static BatchSize = getBatchSize(3)
+    public static BatchSize = MAX_POSTGRES_BATCH_SIZE
 
     /**
      * A unique ID required by typeorm entities.
@@ -99,7 +99,7 @@ export class LsifDump {
     /**
      * The number of model instances that can be inserted at once.
      */
-    public static BatchSize = getBatchSize(7)
+    public static BatchSize = MAX_POSTGRES_BATCH_SIZE
 }
 
 /**
@@ -155,7 +155,7 @@ export class PackageModel extends Package {
     /**
      * The number of model instances that can be inserted at once.
      */
-    public static BatchSize = getBatchSize(4)
+    public static BatchSize = MAX_POSTGRES_BATCH_SIZE
 }
 
 /**
@@ -167,7 +167,7 @@ export class ReferenceModel extends Package {
     /**
      * The number of model instances that can be inserted at once.
      */
-    public static BatchSize = getBatchSize(6)
+    public static BatchSize = MAX_POSTGRES_BATCH_SIZE
 
     /**
      * A serialized bloom filter that encodes the set of symbols that this repository

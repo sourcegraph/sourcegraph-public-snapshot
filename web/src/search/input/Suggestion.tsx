@@ -25,7 +25,7 @@ export enum SuggestionTypes {
     symbol = 'symbol',
 }
 
-export const filterAliases = {
+export const filterAliases: Record<string, FiltersSuggestionTypes | undefined> = {
     r: SuggestionTypes.repo,
     g: SuggestionTypes.repogroup,
     f: SuggestionTypes.file,

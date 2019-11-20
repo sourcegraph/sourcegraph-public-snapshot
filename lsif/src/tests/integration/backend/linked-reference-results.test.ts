@@ -3,7 +3,7 @@ import * as util from '../integration-test-util'
 describe('Backend', () => {
     const ctx = new util.BackendTestContext()
     const repository = 'main'
-    const commit = util.createCommit(0)
+    const commit = util.createCommit()
 
     beforeAll(async () => {
         await ctx.init()
@@ -29,7 +29,7 @@ describe('Backend', () => {
 
         for (const position of positions) {
             const { locations } = util.filterNodeModules(
-                await ctx.backend.references(repository, commit, 'src/index.ts', position)
+                (await ctx.backend.references(repository, commit, 'src/index.ts', position)) || { locations: [] }
             )
 
             expect(locations).toContainEqual(util.createLocation('src/index.ts', 1, 4, 1, 7)) // abstract def in I

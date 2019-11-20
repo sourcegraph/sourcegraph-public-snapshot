@@ -1044,6 +1044,8 @@ func testStore(db *sql.DB) func(*testing.T) {
 					c := &a8n.CampaignJob{
 						CampaignPlanID: int64(i + 1),
 						RepoID:         1,
+						Rev:            api.CommitID("deadbeef"),
+						BaseRef:        "master",
 						Diff:           "+ foobar - barfoo",
 						Error:          "only set on error",
 					}
@@ -1376,12 +1378,14 @@ func testStore(db *sql.DB) func(*testing.T) {
 				},
 				{
 					jobs: []*a8n.CampaignJob{
-						// completed, no errors
+						// completed, no errors, no diff
 						{StartedAt: now, FinishedAt: now},
+						// completed, no errors, diff
+						{StartedAt: now, FinishedAt: now, Diff: "+foobar\n-barfoo"},
 					},
 					want: &a8n.BackgroundProcessStatus{
 						ProcessState:  a8n.BackgroundProcessStateCompleted,
-						Total:         1,
+						Total:         2,
 						Completed:     1,
 						Pending:       0,
 						ProcessErrors: nil,
@@ -1406,8 +1410,10 @@ func testStore(db *sql.DB) func(*testing.T) {
 						{},
 						// started (pending)
 						{StartedAt: now},
-						// completed, no errors
+						// completed, no errors, no diff
 						{StartedAt: now, FinishedAt: now},
+						// completed, no errors, diff
+						{StartedAt: now, FinishedAt: now, Diff: "+foobar\n-barfoo"},
 						// completed, error
 						{StartedAt: now, FinishedAt: now, Error: "error1"},
 						// completed, another error
@@ -1415,7 +1421,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					},
 					want: &a8n.BackgroundProcessStatus{
 						ProcessState:  a8n.BackgroundProcessStateProcessing,
-						Total:         5,
+						Total:         6,
 						Completed:     3,
 						Pending:       2,
 						ProcessErrors: []string{"error1", "error2"},
@@ -1429,6 +1435,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					j.CampaignPlanID = campaignPlanID
 					j.RepoID = int32(i)
 					j.Rev = api.CommitID(fmt.Sprintf("deadbeef-%d", i))
+					j.BaseRef = "master"
 
 					err := s.CreateCampaignJob(ctx, j)
 					if err != nil {
@@ -1528,6 +1535,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					j.CampaignPlanID = plan.ID
 					j.RepoID = int32(i)
 					j.Rev = api.CommitID(fmt.Sprintf("deadbeef-%d", i))
+					j.BaseRef = "master"
 
 					err := s.CreateCampaignJob(ctx, j)
 					if err != nil {

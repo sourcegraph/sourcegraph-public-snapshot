@@ -34,7 +34,7 @@ const wrapJobProcessor = <T>(
     logger: Logger,
     tracer: Tracer | undefined
 ): ((job: Job) => Promise<void>) => async (job: Job) => {
-    logger.debug(`${type} job accepted`, { jobId: job.id })
+    logger.debug(`Accepted ${type} job`, { jobId: job.id })
 
     // Destructure arguments and injected tracing context
     const { args, tracing }: { args: T; tracing: object } = job.data
@@ -53,7 +53,8 @@ const wrapJobProcessor = <T>(
         metrics.jobDurationHistogram,
         metrics.jobDurationErrorsCounter,
         { class: type },
-        (): Promise<void> => logAndTraceCall(ctx, `${type} job`, (ctx: TracingContext) => jobProcessor(job, args, ctx))
+        (): Promise<void> =>
+            logAndTraceCall(ctx, `Running ${type} job`, (ctx: TracingContext) => jobProcessor(job, args, ctx))
     )
 }
 
@@ -128,7 +129,7 @@ const appLogger = createLogger('lsif-worker')
 
 // Launch!
 main(appLogger).catch(error => {
-    appLogger.error('failed to start process', { error })
+    appLogger.error('Failed to start process', { error })
     appLogger.on('finish', () => process.exit(1))
     appLogger.end()
 })

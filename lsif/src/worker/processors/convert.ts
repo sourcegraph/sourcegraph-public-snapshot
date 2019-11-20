@@ -5,7 +5,7 @@ import * as settings from '../settings'
 import { convertLsif } from '../importer/importer'
 import { createSilentLogger } from '../../shared/logging'
 import { dbFilename } from '../../shared/paths'
-import { logAndTraceCall, TracingContext } from '../../shared/tracing'
+import { TracingContext, addTags } from '../../shared/tracing'
 import { XrepoDatabase } from '../../shared/xrepo/xrepo'
 import { Job } from 'bull'
 
@@ -25,47 +25,67 @@ export const createConvertJobProcessor = (
     { repository, commit, root, filename }: { repository: string; commit: string; root: string; filename: string },
     ctx: TracingContext
 ): Promise<void> => {
-    await logAndTraceCall(ctx, 'converting LSIF data', async (ctx: TracingContext) => {
-        const tempFile = path.join(settings.STORAGE_ROOT, constants.TEMP_DIR, path.basename(filename))
+    const { logger = createSilentLogger(), span } = addTags(ctx, { repository, commit, root })
+    const tempFile = path.join(settings.STORAGE_ROOT, constants.TEMP_DIR, path.basename(filename))
 
-        try {
-            // Create database in a temp path
-            const { packages, references } = await convertLsif(filename, tempFile, ctx)
+    try {
+        // Create database in a temp path
+        const { packages, references } = await convertLsif(filename, tempFile, { logger, span })
 
-            // Add packages and references to the xrepo db
-            const dump = await logAndTraceCall(ctx, 'populating cross-repo database', () =>
-                xrepoDatabase.addPackagesAndReferences(
-                    repository,
-                    commit,
-                    root,
-                    new Date(job.timestamp),
-                    packages,
-                    references
-                )
-            )
+        // Insert dump and add packages and references to the xrepo db
+        const dump = await xrepoDatabase.addPackagesAndReferences(
+            repository,
+            commit,
+            root,
+            new Date(job.timestamp),
+            packages,
+            references,
+            ctx
+        )
 
-            // Move the temp file where it can be found by the server
-            await fs.rename(tempFile, dbFilename(settings.STORAGE_ROOT, dump.id, repository, commit))
-        } catch (error) {
-            // Don't leave busted artifacts
-            await fs.unlink(tempFile)
-            throw error
-        }
-    })
+        // Move the temp file where it can be found by the server
+        await fs.rename(tempFile, dbFilename(settings.STORAGE_ROOT, dump.id, repository, commit))
 
-    // Update commit parentage information for this commit
-    await xrepoDatabase.discoverAndUpdateCommit({
-        repository,
-        commit,
-        gitserverUrls: fetchConfiguration().gitServers,
-        ctx,
-    })
+        logger.info('Created dump', {
+            repository: dump.repository,
+            commit: dump.commit,
+            root: dump.root,
+        })
+    } catch (error) {
+        // Don't leave busted artifacts
+        await fs.unlink(tempFile)
+        throw error
+    }
 
     // Remove input
     await fs.unlink(filename)
 
-    // Clean up disk space if necessary
-    await purgeOldDumps(settings.STORAGE_ROOT, xrepoDatabase, settings.DBS_DIR_MAXIMUM_SIZE_BYTES, ctx)
+    try {
+        // Update commit parentage information for this commit
+        await xrepoDatabase.discoverAndUpdateCommit({
+            repository,
+            commit,
+            gitserverUrls: fetchConfiguration().gitServers,
+            ctx: { logger, span },
+        })
+    } catch (error) {
+        // At this point, the job has already completed successfully. Catch
+        // any error that happens from `discoverAndUpdateCommit` and swallow
+        // it. There is no need to log here as any error that occurs within
+        // the call will already be logged by `instrument` blocks.
+    }
+
+    try {
+        // Clean up disk space if necessary - use original tracing context so the labels
+        // repository, commit, and root do not get ambiguous between the job arguments
+        // and the properties of the dump being purged.
+        await purgeOldDumps(settings.STORAGE_ROOT, xrepoDatabase, settings.DBS_DIR_MAXIMUM_SIZE_BYTES, ctx)
+    } catch (error) {
+        // At this point, the job has already completed successfully. Catch
+        // any error that happens from `purgeOldDumps` and swallow it. There
+        // is no need to log here as any error that occurs within the call
+        // will already be logged by `instrument` blocks.
+    }
 }
 
 /**
@@ -94,7 +114,7 @@ function purgeOldDumps(
             // While our current data usage is too big, find candidate dumps to delete
             const dump = await xrepoDatabase.getOldestPrunableDump()
             if (!dump) {
-                logger.warning(
+                logger.warn(
                     'Unable to reduce disk usage of the DB directory because deleting any single dump would drop in-use code intel for a repository.',
                     { currentSizeBytes, softMaximumSizeBytes: maximumSizeBytes }
                 )
@@ -102,9 +122,10 @@ function purgeOldDumps(
                 break
             }
 
-            logger.debug('pruning dump', {
+            logger.info('Pruning dump', {
                 repository: dump.repository,
                 commit: dump.commit,
+                root: dump.root,
             })
 
             // Delete this dump and subtract its size from the current dir size

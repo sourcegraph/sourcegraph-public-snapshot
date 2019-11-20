@@ -4,12 +4,13 @@ import { ReferencePaginationContext } from '../../../server/backend/backend'
 
 describe('Backend', () => {
     const ctx = new util.BackendTestContext()
+    const commit = util.createCommit()
 
     beforeAll(async () => {
         await ctx.init()
         await Promise.all(
             ['a', 'b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'b10'].map(r =>
-                ctx.convertTestData(r, util.createCommit(0), '', `reference-pagination/data/${r}.lsif.gz`)
+                ctx.convertTestData(r, commit, '', `reference-pagination/data/${r}.lsif.gz`)
             )
         )
     })
@@ -26,16 +27,16 @@ describe('Backend', () => {
 
         const fetch = async (paginationContext?: ReferencePaginationContext) =>
             util.filterNodeModules(
-                await backend.references(
+                (await backend.references(
                     'a',
-                    util.createCommit(0),
+                    commit,
                     'src/index.ts',
                     {
                         line: 0,
                         character: 17,
                     },
                     paginationContext
-                )
+                )) || { locations: [] }
             )
 
         const { locations: locations0, cursor: cursor0 } = await fetch() // everything
