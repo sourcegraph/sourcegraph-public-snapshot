@@ -200,7 +200,7 @@ export const getFilterAndValueBeforeCursor = (queryState: QueryState): FilterAnd
     // get string before ":" char until a space is found or start of string
     const match = firstPart.match(/([^\s:]+)?(:(\S?)+)?$/) || []
     const [filterAndValue, matchedFilter] = match
-    const value = filterAndValue?.split(':')[1]?.trim()
+    const value = filterAndValue?.split(':')[1]?.trim() ?? ''
     return {
         value,
         matchedFilter,
