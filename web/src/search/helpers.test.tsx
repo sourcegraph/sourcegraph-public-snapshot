@@ -196,6 +196,16 @@ describe('search/helpers', () => {
                 value: 'package.json',
             })
         })
+        it('returns correct values for filter query without a value', () => {
+            const query = '-f'
+            expect(validFilterAndValueBeforeCursor({ query, cursorPosition: query.length })).toEqual({
+                filterIndex: 0,
+                filterAndValue: query,
+                matchedFilter: query,
+                resolvedFilterType: 'file',
+                value: '',
+            })
+        })
     })
 
     describe('isFuzzyWordSearch', () => {
