@@ -24,7 +24,7 @@ import (
 
 const singletonSiteGQLID = "site"
 
-var disableManagementConsoleAuth = env.Get("DISABLE_MANAGEMENT_CONSOLE_AUTH", "false", "When true, no password for accessing managment console is generated (and needed).")
+var disableManagementConsoleAuth = env.Get("DISABLE_MANAGEMENT_CONSOLE_AUTH", "false", "When true, management console passwords are not shown.")
 
 func siteByGQLID(ctx context.Context, id graphql.ID) (Node, error) {
 	siteGQLID, err := unmarshalSiteGQLID(id)
