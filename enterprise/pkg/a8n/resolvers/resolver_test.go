@@ -886,10 +886,6 @@ func TestCampaignPlanResolver(t *testing.T) {
 		Nodes    []FileDiff
 	}
 
-	type Repository struct {
-		Name string
-	}
-
 	type ChangesetPlan struct {
 		Repository struct{ Name, URL string }
 		FileDiffs  FileDiffs

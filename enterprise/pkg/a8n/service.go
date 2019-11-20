@@ -131,8 +131,8 @@ func (s *Service) runChangesetJob(
 				err = multierror.Append(err, e)
 			}
 		}
-		return
 	}()
+
 	job.StartedAt = s.clock()
 
 	campaignJob, err := s.store.GetCampaignJob(ctx, GetCampaignJobOpts{ID: job.CampaignJobID})
