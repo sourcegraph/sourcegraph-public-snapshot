@@ -1,7 +1,10 @@
 package inventory
 
 import (
+	"bytes"
 	"context"
+	"io"
+	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
@@ -11,10 +14,10 @@ import (
 
 func TestContext_Tree(t *testing.T) {
 	var (
-		readTreeCalls []string
-		readFileCalls []string
-		cacheGetCalls []string
-		cacheSetCalls = map[string]Inventory{}
+		readTreeCalls      []string
+		newFileReaderCalls []string
+		cacheGetCalls      []string
+		cacheSetCalls      = map[string]Inventory{}
 	)
 	c := Context{
 		ReadTree: func(ctx context.Context, path string) ([]os.FileInfo, error) {
@@ -31,16 +34,18 @@ func TestContext_Tree(t *testing.T) {
 				panic("unhandled mock ReadTree " + path)
 			}
 		},
-		ReadFile: func(ctx context.Context, path string, minBytes int64) ([]byte, error) {
-			readFileCalls = append(readFileCalls, path)
+		NewFileReader: func(ctx context.Context, path string) (io.ReadCloser, error) {
+			newFileReaderCalls = append(newFileReaderCalls, path)
+			var data []byte
 			switch path {
 			case "b.go":
-				return []byte("package main"), nil
+				data = []byte("package main")
 			case "a/c.m":
-				return []byte("@interface X:NSObject {}"), nil
+				data = []byte("@interface X:NSObject {}")
 			default:
 				panic("unhandled mock ReadFile " + path)
 			}
+			return ioutil.NopCloser(bytes.NewReader(data)), nil
 		},
 		CacheGet: func(e os.FileInfo) (Inventory, bool) {
 			cacheGetCalls = append(cacheGetCalls, e.Name())
@@ -60,8 +65,8 @@ func TestContext_Tree(t *testing.T) {
 	}
 	if want := (Inventory{
 		Languages: []Lang{
-			{Name: "Objective-C", TotalBytes: 24},
-			{Name: "Go", TotalBytes: 12},
+			{Name: "Objective-C", TotalBytes: 24, TotalLines: 1},
+			{Name: "Go", TotalBytes: 12, TotalLines: 1},
 		},
 	}); !reflect.DeepEqual(inv, want) {
 		t.Errorf("got  %#v\nwant %#v", inv, want)
@@ -72,10 +77,11 @@ func TestContext_Tree(t *testing.T) {
 		t.Errorf("ReadTree calls: got %q, want %q", readTreeCalls, want)
 	}
 	if want := []string{
-		// "b.go" file extension is unambiguous, no ReadFile call needed
+		// We need to read all files to get line counts
 		"a/c.m",
-	}; !reflect.DeepEqual(readFileCalls, want) {
-		t.Errorf("ReadFile calls: got %q, want %q", readFileCalls, want)
+		"b.go",
+	}; !reflect.DeepEqual(newFileReaderCalls, want) {
+		t.Errorf("GetFileReader calls: got %q, want %q", newFileReaderCalls, want)
 	}
 	if want := []string{"", "a"}; !reflect.DeepEqual(cacheGetCalls, want) {
 		t.Errorf("CacheGet calls: got %q, want %q", cacheGetCalls, want)
@@ -83,13 +89,13 @@ func TestContext_Tree(t *testing.T) {
 	if want := map[string]Inventory{
 		"": {
 			Languages: []Lang{
-				{Name: "Objective-C", TotalBytes: 24},
-				{Name: "Go", TotalBytes: 12},
+				{Name: "Objective-C", TotalBytes: 24, TotalLines: 1},
+				{Name: "Go", TotalBytes: 12, TotalLines: 1},
 			},
 		},
 		"a": {
 			Languages: []Lang{
-				{Name: "Objective-C", TotalBytes: 24},
+				{Name: "Objective-C", TotalBytes: 24, TotalLines: 1},
 			},
 		},
 	}; !reflect.DeepEqual(cacheSetCalls, want) {

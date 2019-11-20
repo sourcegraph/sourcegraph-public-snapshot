@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"strconv"
@@ -156,7 +157,7 @@ func (s *repos) ListDefault(ctx context.Context) (repos []*types.Repo, err error
 	return db.DefaultRepos.List(ctx)
 }
 
-var inventoryCache = rcache.New("inv")
+var inventoryCache = rcache.New("inv:v2")
 
 // Feature flag for enhanced (but much slower) language detection that uses file contents, not just
 // filenames.
@@ -200,8 +201,8 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 			// to avoid sequential tree traversal calls.
 			return git.ReadDir(ctx, *cachedRepo, commitID, path, false)
 		},
-		ReadFile: func(ctx context.Context, path string, minBytes int64) ([]byte, error) {
-			return git.ReadFile(ctx, *cachedRepo, commitID, path, minBytes)
+		NewFileReader: func(ctx context.Context, path string) (io.ReadCloser, error) {
+			return git.NewFileReader(ctx, *cachedRepo, commitID, path)
 		},
 		CacheGet: func(tree os.FileInfo) (inventory.Inventory, bool) {
 			if b, ok := inventoryCache.Get(cacheKey(tree)); ok {
@@ -226,8 +227,8 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 
 	if !useEnhancedLanguageDetection {
 		// If USE_ENHANCED_LANGUAGE_DETECTION is disabled, do not read file contents to determine
-		// the language.
-		invCtx.ReadFile = func(ctx context.Context, path string, minBytes int64) ([]byte, error) {
+		// the language. This means we won't calculate the number of lines per language.
+		invCtx.NewFileReader = func(ctx context.Context, path string) (io.ReadCloser, error) {
 			return nil, nil
 		}
 	}
