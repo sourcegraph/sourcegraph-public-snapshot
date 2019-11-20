@@ -37,7 +37,7 @@ var (
 	customTLS            = env.Get("CUSTOM_TLS", "false", "When true, disables TLS cert/key generation to prevent accidents.")
 	unsafeNoHTTPS        = env.Get("UNSAFE_NO_HTTPS", "false", "(unsafe) When true, disables HTTPS entirely. Anyone who can MITM your traffic to the management console can steal the admin password and act on your behalf!")
 	disableConfigUpdates = env.Get("DISABLE_CONFIG_UPDATES", "false", "When true, disables updating the configuration. Useful when using CRITICAL_CONFIG_FILE on the frontend service.")
-	disableAuth          = env.Get("DISABLE_MANAGEMENT_CONSOLE_AUTH", "false", "When true, disables basic authentication for access to management console and disables HTTPS entirely.")
+	disableAuth          = env.Get("DISABLE_MANAGEMENT_CONSOLE_AUTH", "false", "When true, management console password and HTTPS authentication is disabled.")
 )
 
 func configureTLS() error {
