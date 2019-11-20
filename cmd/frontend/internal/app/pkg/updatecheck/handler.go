@@ -28,12 +28,12 @@ var (
 	// non-cluster installations what the latest version is. The version here _must_ be
 	// available at https://hub.docker.com/r/sourcegraph/server/tags/ before
 	// landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("3.9.4")
+	latestReleaseDockerServerImageBuild = newBuild("3.10.0")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("3.9.4")
+	latestReleaseKubernetesBuild = newBuild("3.10.0")
 )
 
 func getLatestRelease(deployType string) build {
@@ -168,7 +168,7 @@ func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 	}
 
 	// Prevent nil activity data (i.e., "") from breaking json marshaling.
-	// This is an issue with all instances at versions < 2.7.0.
+	// This is an issue with all instances at versions < 2.7.0
 	if activity == "" {
 		activity = `{}`
 	}
