@@ -166,7 +166,7 @@ async function getMigrationVersion(connection: Connection): Promise<string> {
 }
 
 /**
- * Instrument `callback` with Postgres histogrom and error counter.
+ * Instrument `callback` with Postgres query histogram and error counter.
  *
  * @param callback The function invoke with the connection.
  */
