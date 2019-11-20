@@ -20,24 +20,24 @@ import (
 func TestGetLang_language(t *testing.T) {
 	tests := map[string]struct {
 		file fi
-		want *Lang
+		want Lang
 	}{
-		"empty file": {file: fi{"a.java", ""}, want: &Lang{
+		"empty file": {file: fi{"a.java", ""}, want: Lang{
 			Name:       "Java",
 			TotalBytes: 0,
 			TotalLines: 0,
 		}},
-		"java": {file: fi{"a.java", "a"}, want: &Lang{
+		"java": {file: fi{"a.java", "a"}, want: Lang{
 			Name:       "Java",
 			TotalBytes: 1,
 			TotalLines: 1,
 		}},
-		"go": {file: fi{"a.go", "a"}, want: &Lang{
+		"go": {file: fi{"a.go", "a"}, want: Lang{
 			Name:       "Go",
 			TotalBytes: 1,
 			TotalLines: 1,
 		}},
-		"go-with-newline": {file: fi{"a.go", "a\n"}, want: &Lang{
+		"go-with-newline": {file: fi{"a.go", "a\n"}, want: Lang{
 			Name:       "Go",
 			TotalBytes: 2,
 			TotalLines: 1,
@@ -45,12 +45,12 @@ func TestGetLang_language(t *testing.T) {
 
 		// Ensure that .tsx and .jsx are considered as valid extensions for TypeScript and JavaScript,
 		// respectively.
-		"override tsx": {file: fi{"a.tsx", "xx"}, want: &Lang{
+		"override tsx": {file: fi{"a.tsx", "xx"}, want: Lang{
 			Name:       "TypeScript",
 			TotalBytes: 2,
 			TotalLines: 1,
 		}},
-		"override jsx": {file: fi{"b.jsx", "x"}, want: &Lang{
+		"override jsx": {file: fi{"b.jsx", "x"}, want: Lang{
 			Name:       "JavaScript",
 			TotalBytes: 1,
 			TotalLines: 1,

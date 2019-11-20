@@ -62,7 +62,7 @@ func (c *Context) tree(ctx context.Context, tree os.FileInfo, buf []byte) (inv I
 			if err != nil {
 				return Inventory{}, errors.Wrapf(err, "inventory file %q", e.Name())
 			}
-			if lang != nil && lang.Name != "" {
+			if lang.Name != "" {
 				l := langStats[lang.Name]
 				if l == nil {
 					l = &Lang{

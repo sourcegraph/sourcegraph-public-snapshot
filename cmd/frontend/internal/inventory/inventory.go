@@ -36,16 +36,16 @@ type Lang struct {
 
 var newLine = []byte{'\n'}
 
-func getLang(ctx context.Context, file os.FileInfo, buf []byte, getFileReader func(ctx context.Context, path string) (io.ReadCloser, error)) (*Lang, error) {
+func getLang(ctx context.Context, file os.FileInfo, buf []byte, getFileReader func(ctx context.Context, path string) (io.ReadCloser, error)) (Lang, error) {
 	if file == nil {
-		return nil, nil
+		return Lang{}, nil
 	}
 	if !file.Mode().IsRegular() || enry.IsVendor(file.Name()) {
-		return nil, nil
+		return Lang{}, nil
 	}
 	rc, err := getFileReader(ctx, file.Name())
 	if err != nil {
-		return nil, errors.Wrap(err, "getting file reader")
+		return Lang{}, errors.Wrap(err, "getting file reader")
 	}
 	if rc != nil {
 		defer rc.Close()
@@ -62,14 +62,14 @@ func getLang(ctx context.Context, file os.FileInfo, buf []byte, getFileReader fu
 	// No content
 	if rc == nil || lang.TotalBytes == 0 {
 		lang.Name = matchedLang
-		return &lang, nil
+		return lang, nil
 	}
 
 	if !safe {
 		// Detect language from content
 		n, err := io.ReadFull(rc, buf)
 		if err != nil && err != io.ErrUnexpectedEOF {
-			return nil, errors.Wrap(err, "reading initial file data")
+			return lang, errors.Wrap(err, "reading initial file data")
 		}
 		matchedLang = enry.GetLanguage(file.Name(), buf[:n])
 		lang.TotalLines += uint64(bytes.Count(buf[:n], newLine))
@@ -80,17 +80,17 @@ func getLang(ctx context.Context, file os.FileInfo, buf []byte, getFileReader fu
 				// Add final line
 				lang.TotalLines++
 			}
-			return &lang, nil
+			return lang, nil
 		}
 	}
 	lang.Name = matchedLang
 
 	count, err := countLines(rc, buf)
 	if err != nil {
-		return nil, err
+		return lang, err
 	}
 	lang.TotalLines += uint64(count)
-	return &lang, nil
+	return lang, nil
 }
 
 // countLines counts the number of lines in the supplied reader
