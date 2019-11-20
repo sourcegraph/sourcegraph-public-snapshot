@@ -86,6 +86,8 @@ interface ComponentSuggestions {
 }
 
 interface State {
+    /** Only show suggestions if search input is focused */
+    showSuggestions: boolean
     /** Indicates if suggestions are being loaded from the back-end */
     loadingSuggestions?: boolean
     /** The suggestions shown to the user */
@@ -116,6 +118,7 @@ export class QueryInput extends React.Component<Props, State> {
     private containerElement = React.createRef<HTMLDivElement>()
 
     public state: State = {
+        showSuggestions: false,
         loadingSuggestions: false,
         suggestions: {
             cursorPosition: 0,
@@ -302,18 +305,6 @@ export class QueryInput extends React.Component<Props, State> {
                     })
             )
         }
-
-        this.subscriptions.add(
-            // hide suggestions when clicking outside search input
-            fromEvent<MouseEvent>(window, 'click').subscribe(event => {
-                if (
-                    this.state.suggestions.values.length > 0 && // prevent unnecessary render
-                    (!this.containerElement.current || !this.containerElement.current.contains(event.target as Node))
-                ) {
-                    this.hideSuggestions()
-                }
-            })
-        )
     }
 
     public componentDidMount(): void {
@@ -336,7 +327,8 @@ export class QueryInput extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const showSuggestions = this.state.suggestions.values.length > 0 || this.state.loadingSuggestions
+        const showSuggestions =
+            this.state.showSuggestions && (this.state.suggestions.values.length > 0 || this.state.loadingSuggestions)
         // If last typed word is not a filter type,
         // suggestions should show url label and redirect on select.
         const showUrlLabel = isFuzzyWordSearch({
@@ -355,6 +347,8 @@ export class QueryInput extends React.Component<Props, State> {
                         <div className="query-input2">
                             <div ref={this.containerElement}>
                                 <input
+                                    onFocus={this.onInputFocus}
+                                    onBlur={this.onInputBlur}
                                     className="form-control query-input2__input rounded-left e2e-query-input"
                                     value={this.props.value.query}
                                     autoFocus={this.props.autoFocus === true}
@@ -434,8 +428,12 @@ export class QueryInput extends React.Component<Props, State> {
         }
     }
 
-    private hideSuggestions = (): void => {
-        this.setState({ suggestions: noSuggestions }, () => this.suggestionsHidden.next())
+    private onInputBlur = (): void => {
+        this.setState({ showSuggestions: false }, () => this.suggestionsHidden.next())
+    }
+
+    private onInputFocus = (): void => {
+        this.setState({ showSuggestions: true })
     }
 
     /**
