@@ -1,8 +1,11 @@
 package backend
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
@@ -135,18 +138,20 @@ func TestReposGetInventory(t *testing.T) {
 			panic("unhandled mock ReadDir " + name)
 		}
 	}
-	git.Mocks.ReadFile = func(commit api.CommitID, name string) ([]byte, error) {
+	git.Mocks.NewFileReader = func(commit api.CommitID, name string) (io.ReadCloser, error) {
 		if commit != wantCommitID {
 			t.Errorf("got commit %q, want %q", commit, wantCommitID)
 		}
+		var data []byte
 		switch name {
 		case "b.go":
-			return []byte("package main"), nil
+			data = []byte("package main")
 		case "a/c.m":
-			return []byte("@interface X:NSObject {}"), nil
+			data = []byte("@interface X:NSObject {}")
 		default:
 			panic("unhandled mock ReadFile " + name)
 		}
+		return ioutil.NopCloser(bytes.NewReader(data)), nil
 	}
 	defer git.ResetMocks()
 
@@ -158,8 +163,8 @@ func TestReposGetInventory(t *testing.T) {
 			useEnhancedLanguageDetection: false,
 			want: &inventory.Inventory{
 				Languages: []inventory.Lang{
-					{Name: "MATLAB", TotalBytes: 24}, // obviously incorrect, but this is how the pre-enhanced lang detection worked
-					{Name: "Go", TotalBytes: 12},
+					{Name: "Limbo", TotalBytes: 24, TotalLines: 0}, // obviously incorrect, but this is how the pre-enhanced lang detection worked
+					{Name: "Go", TotalBytes: 12, TotalLines: 0},
 				},
 			},
 		},
@@ -167,8 +172,8 @@ func TestReposGetInventory(t *testing.T) {
 			useEnhancedLanguageDetection: true,
 			want: &inventory.Inventory{
 				Languages: []inventory.Lang{
-					{Name: "Objective-C", TotalBytes: 24},
-					{Name: "Go", TotalBytes: 12},
+					{Name: "Objective-C", TotalBytes: 24, TotalLines: 1},
+					{Name: "Go", TotalBytes: 12, TotalLines: 1},
 				},
 			},
 		},

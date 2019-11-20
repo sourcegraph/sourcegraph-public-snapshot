@@ -33,7 +33,7 @@ func uploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *htt
 			return
 		}
 
-		resp, err := client.BuildAndTraceRequest(
+		resp, err := client.DefaultClient.BuildAndTraceRequest(
 			ctx,
 			"POST",
 			"/upload",

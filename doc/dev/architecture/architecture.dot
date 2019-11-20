@@ -1,7 +1,3 @@
-//
-// Generate SVG with: dot -Tsvg -o architecture.svg architecture.dot
-//
-
 digraph architecture {
     label="Sourcegraph Architecture Overview\n\nBox => horizontally scalable service, Rectangle => singleton service"
     rankdir=TD
@@ -9,6 +5,7 @@ digraph architecture {
     concentrate=true
     ranksep=1.4
     nodesep=0.4
+    stylesheet="/assets/architecture.css"
 
     graph [
         fontname="Iosevka"
@@ -24,6 +21,7 @@ digraph architecture {
         fontname="Iosevka"
         fontsize=10
         margin=0.15
+        target="_blank"
     ]
 
     edge [

@@ -41,8 +41,8 @@ func ReadFile(ctx context.Context, repo gitserver.Repo, commit api.CommitID, nam
 // NewFileReader returns an io.ReadCloser reading from the named file at commit.
 // The caller should always close the reader after use
 func NewFileReader(ctx context.Context, repo gitserver.Repo, commit api.CommitID, name string) (io.ReadCloser, error) {
-	if Mocks.GetFileReader != nil {
-		return Mocks.GetFileReader(commit, name)
+	if Mocks.NewFileReader != nil {
+		return Mocks.NewFileReader(commit, name)
 	}
 
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: GetFileReader")
@@ -52,7 +52,7 @@ func NewFileReader(ctx context.Context, repo gitserver.Repo, commit api.CommitID
 	name = util.Rel(name)
 	br, err := newBlobReader(ctx, repo, commit, name)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "getting blobReader for %q", name)
 	}
 	return br, nil
 }

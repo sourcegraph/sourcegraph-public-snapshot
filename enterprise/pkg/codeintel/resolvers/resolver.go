@@ -39,7 +39,7 @@ func (r *Resolver) LSIFDumpByGQLID(ctx context.Context, id graphql.ID) (graphqlb
 	path := fmt.Sprintf("/dumps/%s/%d", url.PathEscape(repoName), dumpID)
 
 	var lsifDump *lsif.LSIFDump
-	if err := client.TraceRequestAndUnmarshalPayload(ctx, "GET", path, nil, nil, &lsifDump); err != nil {
+	if err := client.DefaultClient.TraceRequestAndUnmarshalPayload(ctx, "GET", path, nil, nil, &lsifDump); err != nil {
 		return nil, err
 	}
 
@@ -102,7 +102,7 @@ func (r *Resolver) LSIFJobByGQLID(ctx context.Context, id graphql.ID) (graphqlba
 	path := fmt.Sprintf("/jobs/%s", url.PathEscape(jobID))
 
 	var lsifJob *lsif.LSIFJob
-	if err := client.TraceRequestAndUnmarshalPayload(ctx, "GET", path, nil, nil, &lsifJob); err != nil {
+	if err := client.DefaultClient.TraceRequestAndUnmarshalPayload(ctx, "GET", path, nil, nil, &lsifJob); err != nil {
 		return nil, err
 	}
 
@@ -158,7 +158,7 @@ func (r *Resolver) LSIFJobStatsByGQLID(ctx context.Context, id graphql.ID) (grap
 	}
 
 	var stats *lsif.LSIFJobStats
-	if err := client.TraceRequestAndUnmarshalPayload(ctx, "GET", "/jobs/stats", nil, nil, &stats); err != nil {
+	if err := client.DefaultClient.TraceRequestAndUnmarshalPayload(ctx, "GET", "/jobs/stats", nil, nil, &stats); err != nil {
 		return nil, err
 	}
 
