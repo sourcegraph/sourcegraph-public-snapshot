@@ -74,8 +74,8 @@ func getLang(ctx context.Context, file os.FileInfo, buf []byte, getFileReader fu
 		matchedLang = enry.GetLanguage(file.Name(), buf[:n])
 		lang.TotalLines += uint64(bytes.Count(buf[:n], newLine))
 		lang.Name = matchedLang
-		// File is smaller than buf, we can exit early
 		if err == io.ErrUnexpectedEOF {
+			// File is smaller than buf, we can exit early
 			if !bytes.HasSuffix(buf[:n], newLine) {
 				// Add final line
 				lang.TotalLines++
