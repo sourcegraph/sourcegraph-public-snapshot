@@ -90,7 +90,7 @@ func (r *searchResultsResolver) PageInfo() *graphqlutil.PageInfo {
 func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchResultsResolver, err error) {
 	start := time.Now()
 	if r.pagination == nil {
-		panic("(bug) this method should never be called in this state")
+		panic("never here: this method should never be called in this state")
 	}
 
 	tr, ctx := trace.New(ctx, "graphql.SearchResults.paginatedResults", r.rawQuery())
@@ -175,8 +175,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchRe
 
 	common := searchResultsCommon{maxResultsCount: r.maxResults()}
 	cursor, results, fileCommon, err := paginatedSearchFilesInRepos(ctx, &args, r.pagination)
-	// Timeouts are reported through searchResultsCommon so don't report an error for them
-	if err != nil && !(err == context.DeadlineExceeded || err == context.Canceled) {
+	if err != nil {
 		return nil, err
 	}
 	common.update(*fileCommon)
@@ -250,8 +249,16 @@ func paginatedSearchFilesInRepos(ctx context.Context, args *search.Args, paginat
 		batchArgs := *args
 		batchArgs.Repos = batch
 		fileResults, fileCommon, err := searchFilesInRepos(ctx, &batchArgs)
-		if err != nil {
+		// Timeouts are reported through searchResultsCommon so don't report an error for them
+		if err != nil && !(err == context.DeadlineExceeded || err == context.Canceled) {
 			return nil, nil, err
+		}
+		if fileCommon == nil {
+			// searchFilesInRepos can return a nil structure, but the executor
+			// requires a non-nil one always (which is more sane).
+			fileCommon = &searchResultsCommon{
+				partial: map[api.RepoName]struct{}{},
+			}
 		}
 		// fileResults is not sorted so we must sort it now. fileCommon may or
 		// may not be sorted, but we do not rely on its order.
@@ -297,6 +304,9 @@ type repoPaginationPlan struct {
 }
 
 // executor is a function which searches a batch of repositories.
+//
+// A non-nil searchResultsCommon must always be returned, even if an error is
+// returned.
 type executor func(batch []*search.RepositoryRevisions) ([]searchResultResolver, *searchResultsCommon, error)
 
 // execute executes the repository pagination plan by invoking the executor to
@@ -339,6 +349,9 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 
 		batch := repos[start:clamp(start+batchSize, 0, len(repos))]
 		batchResults, batchCommon, err := exec(batch)
+		if batchCommon == nil {
+			panic("never here: repoPaginationPlan.executor illegally returned nil searchResultsCommon structure")
+		}
 		if err != nil {
 			return nil, nil, nil, err
 		}
