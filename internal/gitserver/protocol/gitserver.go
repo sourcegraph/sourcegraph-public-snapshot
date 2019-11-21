@@ -155,9 +155,47 @@ type PatchCommitInfo struct {
 	Date        time.Time
 }
 
-// CreatePatchFromPatchResponse is the response type returned after creating
-// a staging object for Phabricator
-type CreatePatchFromPatchResponse struct {
+// CreateCommitFromPatchResponse is the response type returned after creating
+// a commit from a patch
+type CreateCommitFromPatchResponse struct {
 	// Rev is the tag that the staging object can be found at
 	Rev string
+
+	// RepositoryName is the name of the repository
+	RepositoryName string
+
+	// Error is populated only on error
+	Error *CreateCommitFromPatchError
+}
+
+// AddError adds the supplied error to e
+func (e *CreateCommitFromPatchResponse) AddError(err error) {
+	if e.Error == nil {
+		e.Error = &CreateCommitFromPatchError{
+			Err: err,
+		}
+	} else {
+		e.Error.Err = err
+	}
+}
+
+// CreateCommitFromPatchError is populated on errors running
+// CreateCommitFromPatch
+type CreateCommitFromPatchError struct {
+	// Error is the internal error
+	Err error
+	// Command is the last git command that was attempted
+	Command string
+	// CombinedOutput is the combined stderr and stdout from running the command
+	CombinedOutput string
+}
+
+// Error returns a detailed error conforming to the error interface
+func (e *CreateCommitFromPatchError) Error() string {
+	return e.Err.Error()
+}
+
+// Unwrap return the original error and satisfies the errors.Unwrap interface
+func (e *CreateCommitFromPatchError) Unwrap() error {
+	return e.Err
 }
