@@ -363,8 +363,7 @@ func (c *internalClient) post(ctx context.Context, route string, reqBody, respBo
 	}
 
 	if respBody != nil {
-		err = json.NewDecoder(resp.Body).Decode(respBody)
-		return resp.StatusCode, err
+		return resp.StatusCode, json.NewDecoder(resp.Body).Decode(respBody)
 	}
 	return resp.StatusCode, nil
 }
