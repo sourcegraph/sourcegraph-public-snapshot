@@ -13,33 +13,32 @@ export function fetchLsifDumps({
     after,
     query,
     isLatestForRepo,
-}: GQL.ILsifDumpsOnQueryArguments): Observable<GQL.ILSIFDumpConnection> {
+}: { repository: string } & GQL.ILsifDumpsOnRepositoryArguments): Observable<GQL.ILSIFDumpConnection> {
     return queryGraphQL(
         gql`
             query LsifDumps($repository: ID!, $first: Int, $after: String, $query: String, $isLatestForRepo: Boolean) {
-                lsifDumps(
-                    repository: $repository
-                    first: $first
-                    after: $after
-                    query: $query
-                    isLatestForRepo: $isLatestForRepo
-                ) {
-                    nodes {
-                        id
-                        projectRoot {
-                            commit {
-                                abbreviatedOID
+                node(id: $repository) {
+                    __typename
+                    ... on Repository {
+                        lsifDumps(first: $first, after: $after, query: $query, isLatestForRepo: $isLatestForRepo) {
+                            nodes {
+                                id
+                                projectRoot {
+                                    commit {
+                                        abbreviatedOID
+                                    }
+                                    path
+                                    url
+                                }
+                                processedAt
                             }
-                            path
-                            url
-                        }
-                        processedAt
-                    }
 
-                    totalCount
-                    pageInfo {
-                        endCursor
-                        hasNextPage
+                            totalCount
+                            pageInfo {
+                                endCursor
+                                hasNextPage
+                            }
+                        }
                     }
                 }
             }
@@ -47,7 +46,16 @@ export function fetchLsifDumps({
         { repository, first, after, query, isLatestForRepo }
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.lsifDumps)
+        map(({ node }) => {
+            if (!node) {
+                throw new Error('Invalid repository')
+            }
+            if (node.__typename !== 'Repository') {
+                throw new Error(`The given ID is a ${node.__typename}, not a Repository`)
+            }
+
+            return node.lsifDumps
+        })
     )
 }
 
