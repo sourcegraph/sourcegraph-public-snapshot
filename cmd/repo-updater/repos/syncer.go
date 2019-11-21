@@ -28,7 +28,7 @@ type Syncer struct {
 	Store   Store
 	Sourcer Sourcer
 
-	// PreSync is called in Run before this Syncer's Sync method.
+	// PreSync is called before this Syncer's Sync method.
 	PreSync func(context.Context) error
 
 	// DisableStreaming if true will prevent the syncer from streaming in new
@@ -61,35 +61,60 @@ type Syncer struct {
 }
 
 // Run runs the Sync at the specified interval.
-func (s *Syncer) Run(ctx context.Context, interval time.Duration) error {
-	for ctx.Err() == nil {
-		if s.PreSync != nil {
-			if err := s.PreSync(ctx); err != nil && s.Logger != nil {
-				s.Logger.Error("PreSync", "error", err)
-			}
-		}
+func (s *Syncer) Run(pctx context.Context, interval time.Duration) error {
+	for pctx.Err() == nil {
+		ctx, cancel := contextWithSignalCancel(pctx, s.syncSignal.Watch())
 
 		if err := s.Sync(ctx); err != nil && s.Logger != nil {
 			s.Logger.Error("Syncer", "error", err)
 		}
 
-		select {
-		case <-time.After(interval):
-		case <-s.syncSignal.Watch():
-		}
+		sleep(ctx, interval)
+
+		cancel()
 	}
 
-	return ctx.Err()
+	return pctx.Err()
 }
 
-// TriggerSync will run Sync as soon as the current Sync has finished running
-// or if no Sync is running.
+// contextWithSignalCancel will return a context which will be cancelled if
+// signal fires. Callers need to call cancel when done.
+func contextWithSignalCancel(ctx context.Context, signal <-chan struct{}) (context.Context, context.CancelFunc) {
+	ctx, cancel := context.WithCancel(ctx)
+
+	go func() {
+		select {
+		case <-ctx.Done():
+		case <-signal:
+			cancel()
+		}
+	}()
+
+	return ctx, cancel
+}
+
+// sleep is a context aware time.Sleep
+func sleep(ctx context.Context, d time.Duration) {
+	select {
+	case <-ctx.Done():
+	case <-time.After(d):
+	}
+}
+
+// TriggerSync will run Sync now. If a sync is currently running it is
+// cancelled.
 func (s *Syncer) TriggerSync() {
 	s.syncSignal.Trigger()
 }
 
 // Sync synchronizes the repositories.
 func (s *Syncer) Sync(ctx context.Context) (err error) {
+	if s.PreSync != nil {
+		if err := s.PreSync(ctx); err != nil && s.Logger != nil {
+			s.Logger.Error("PreSync", "error", err)
+		}
+	}
+
 	var diff Diff
 
 	ctx, save := s.observe(ctx, "Syncer.Sync", "")
