@@ -3,7 +3,7 @@
 # This function installs the comby dependency for cmd/searcher and cmd/replacer.
 # The main /dev/launch.sh script and CI pipeline call this script to install or
 # upgrade comby for tests or development environments.
-REQUIRE_VERSION="0.11.2"
+REQUIRE_VERSION="0.11.3"
 
 RELEASE_VERSION=$REQUIRE_VERSION
 RELEASE_TAG=$REQUIRE_VERSION
