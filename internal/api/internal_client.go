@@ -349,13 +349,13 @@ func (c *internalClient) post(ctx context.Context, route string, reqBody, respBo
 		var err error
 		data, err = json.Marshal(reqBody)
 		if err != nil {
-			return 0, err
+			return -1, err
 		}
 	}
 
 	resp, err := ctxhttp.Post(ctx, nil, c.URL+route, "application/json", bytes.NewBuffer(data))
 	if err != nil {
-		return 0, err
+		return -1, err
 	}
 	defer resp.Body.Close()
 	if err := checkAPIResponse(resp); err != nil {
