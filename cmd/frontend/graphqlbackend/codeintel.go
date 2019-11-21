@@ -114,3 +114,4 @@ func (r *schemaResolver) DeleteLSIFJob(ctx context.Context, args *struct{ ID gra
 		return nil, codeIntelOnlyInEnterprise
 	}
 	return EnterpriseResolvers.codeIntelResolver.DeleteLSIFJob(ctx, args.ID)
+}
