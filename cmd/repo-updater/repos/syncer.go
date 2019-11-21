@@ -62,35 +62,8 @@ type Syncer struct {
 
 // Run runs the Sync at the specified interval.
 func (s *Syncer) Run(pctx context.Context, interval time.Duration) error {
-	next := make(chan struct{})
-	go func() {
-		next <- struct{}{}
-	}()
-
-	for range next {
-		ctx, cancel := context.WithCancel(pctx)
-
-		// This goroutine will either close next or send an empty struct to
-		// allow it to continue. It is run here since it needs the cancel func
-		// for the current Sync call.
-		go func() {
-			select {
-			case <-pctx.Done():
-				// Stop the run loop
-				cancel()
-				close(next)
-
-			case <-ctx.Done():
-				// Sync and interval sleep are done, so we can allow Sync to
-				// run again.
-				next <- struct{}{}
-
-			case <-s.syncSignal.Watch():
-				// We restart the sync process if syncSignal fires.
-				cancel()
-				next <- struct{}{}
-			}
-		}()
+	for pctx.Err() == nil {
+		ctx, cancel := contextWithSignalCancel(pctx, s.syncSignal.Watch())
 
 		if err := s.Sync(ctx); err != nil && s.Logger != nil {
 			s.Logger.Error("Syncer", "error", err)
@@ -102,6 +75,22 @@ func (s *Syncer) Run(pctx context.Context, interval time.Duration) error {
 	}
 
 	return pctx.Err()
+}
+
+// contextWithSignalCancel will return a context which will be cancelled if
+// signal fires. Callers need to call cancel when done.
+func contextWithSignalCancel(ctx context.Context, signal <-chan struct{}) (context.Context, context.CancelFunc) {
+	ctx, cancel := context.WithCancel(ctx)
+
+	go func() {
+		select {
+		case <-ctx.Done():
+		case <-signal:
+			cancel()
+		}
+	}()
+
+	return ctx, cancel
 }
 
 // sleep is a context aware time.Sleep
