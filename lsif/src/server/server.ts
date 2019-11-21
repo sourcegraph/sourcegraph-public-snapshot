@@ -4,7 +4,6 @@ import * as metrics from './metrics'
 import * as path from 'path'
 import * as settings from './settings'
 import * as xrepoModels from '../shared/models/xrepo'
-import cors from 'cors'
 import express from 'express'
 import promClient from 'prom-client'
 import { Backend } from './backend/backend'
@@ -84,7 +83,6 @@ async function main(logger: Logger): Promise<void> {
     const scriptedClient = await defineRedisCommands(queue.client)
 
     const app = express()
-    app.use(cors())
 
     if (tracer !== undefined) {
         app.use(tracingMiddleware({ tracer }))
