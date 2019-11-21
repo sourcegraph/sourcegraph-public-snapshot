@@ -15,6 +15,9 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- Management console authentication is turned off by default and management console is served over HTTP by default. 
+  For details see the [management console documentation](doc/admin/management_console.md)
+
 ### Removed
 
 ## 3.10.0

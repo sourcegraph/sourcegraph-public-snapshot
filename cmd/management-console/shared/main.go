@@ -37,7 +37,7 @@ var (
 	customTLS            = env.Get("CUSTOM_TLS", "false", "When true, disables TLS cert/key generation to prevent accidents.")
 	unsafeNoHTTPS        = env.Get("UNSAFE_NO_HTTPS", "false", "(unsafe) When true, disables HTTPS entirely. Anyone who can MITM your traffic to the management console can steal the admin password and act on your behalf!")
 	disableConfigUpdates = env.Get("DISABLE_CONFIG_UPDATES", "false", "When true, disables updating the configuration. Useful when using CRITICAL_CONFIG_FILE on the frontend service.")
-	disableAuth          = env.Get("DISABLE_MANAGEMENT_CONSOLE_AUTH", "false", "When true, management console password and HTTPS authentication is disabled.")
+	disableAuth          = env.Get("DISABLE_MANAGEMENT_CONSOLE_AUTH", "true", "When true (the default), management console password and HTTPS authentication is disabled.")
 )
 
 func configureTLS() error {
@@ -134,11 +134,11 @@ func Main() {
 	unprotectedRoutes.Handle("/", http.FileServer(assets.Assets))
 
 	disableAuth, _ := strconv.ParseBool(disableAuth)
-	prs := http.Handler(protectedRoutes)
-	if !disableAuth {
-		prs = AuthMiddleware(prs)
+	if disableAuth {
+		unprotectedRoutes.Handle("/api/", protectedRoutes)
+	} else {
+		unprotectedRoutes.Handle("/api/", AuthMiddleware(protectedRoutes))
 	}
-	unprotectedRoutes.Handle("/api/", prs)
 
 	host := ""
 	if env.InsecureDev {

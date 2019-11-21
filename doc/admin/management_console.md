@@ -8,15 +8,38 @@ Critical configuration includes things like authentication providers, the extern
 
 ### When running Sourcegraph in a single Docker container
 
-The management console is built-in to the same Docker image and published on port 2633:
+The management console is built-in to the same Docker image and published on port 2633. We recommend publishing port 2633 like this:
+
+<pre class="pre-wrap start-sourcegraph-command"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:2633:2633 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.10.0</code></pre>
+
+because by default the management console authentication is turned off. This opens the port only to the local host running the docker command.
+
+```
+$ docker ps
+CONTAINER ID        IMAGE                              PORTS
+394ff36a8c3c        sourcegraph/server:3.10.0           127.0.0.1:2633->2633/tcp, 0.0.0.0:7080->7080/tcp
+```
+
+You can use [sshuttle](https://github.com/sshuttle/sshuttle) to establish a secure connection to the host running
+the Sourcegraph Docker container:
+
+```bash script
+sshuttle -r user@host 0/0
+```
+
+and then access the management console via http://localhost:2633.
+
+If on the other hand you want to access it through the public internet via https://my.server.ip:2633 use:
+
+<pre class="pre-wrap start-sourcegraph-command"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 -e DISABLE_MANAGEMENT_CONSOLE_AUTH=false --publish 2633:2633 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.10.0</code></pre>
+
+Note the additional environment variable `-e DISABLE_MANAGEMENT_CONSOLE_AUTH=false` which turns on password protection. 
 
 ```
 $ docker ps
 CONTAINER ID        IMAGE                              PORTS
 394ff36a8c3c        sourcegraph/server:3.10.0           0.0.0.0:2633->2633/tcp, 0.0.0.0:7080->7080/tcp
 ```
-
-Usually, you can access it through the public internet via https://my.server.ip:2633, or https://localhost:2633 when testing locally.
 
 ### When running Sourcegraph in a cluster deployment
 
@@ -26,15 +49,15 @@ The management console is a separate service running in your cluster. You will n
 $ kubectl port-forward svc/management-console 2633:2633
 ```
 
-Then visit https://localhost:2633 to access the management console.
+Then visit http://localhost:2633 to access the management console.
 
 ## Troubleshooting
 
 ### I am getting "The server sent an invalid response" errors from my browser, why?
 
-Ensure you are connecting via `https://` and _not_ `http://`.
+Ensure you are connecting via `https://` and _not_ `http://` if you turned on password protection with `-e DISABLE_MANAGEMENT_CONSOLE_AUTH=false`.
 
-This type of browser error often indicates you are connecting via HTTP instead of HTTPS. The management console **only** serves over HTTPS for security reasons.
+This type of browser error often indicates you are connecting via HTTP instead of HTTPS. The management console serves over HTTPS when authentication is turned on.
 
 ### I am seeing TLS / SSL warnings in my browser, why?
 
@@ -120,10 +143,3 @@ Restart the container once you have copied the files there for the changes to ta
 It is **unsafe** to do so if the management console is exposed to the public internet as anyone who can MITM your traffic to the management console can steal the admin password and act on your behalf.
 
 If you understand the risks and still wish to, you can set the environment variable `UNSAFE_NO_HTTPS` to `true` on the Docker container. This will entirely disable HTTPS (the port will remain the same).
-
-### Can I disable password authentication on the management console?
-
-It is **unsafe** to do so if the management console is exposed to the public internet.
-
-If you understand the risks and still wish to, you can set the environment variable `DISABLE_MANAGEMENT_CONSOLE_AUTH` to `true` on the Docker container. This will allow access to the management console without
- requiring a password and will entirely disable HTTPS (the port will remain the same).
