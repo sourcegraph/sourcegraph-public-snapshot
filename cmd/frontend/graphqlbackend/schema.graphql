@@ -1233,54 +1233,9 @@ type Query {
     # Look up a namespace by ID.
     namespace(id: ID!): Namespace
 
-    # (experimental) The LSIF API may change substantially in the near future as we
-    # continue to adjust it for our use cases. Changes will not be documented in the
-    # CHANGELOG during this time.
-    # Lookup an LSIF dump by ID.
-    lsifDump(id: ID!): LSIFDump
-
-    # (experimental) The LSIF API may change substantially in the near future as we
-    # continue to adjust it for our use cases. Changes will not be documented in the
-    # CHANGELOG during this time.
-    # Retrieve the LSIF dumps for a repository.
-    lsifDumps(
-        # The repository ID that this LSIF dump belongs to.
-        repository: ID!
-
-        # An (optional) search query that searches over the commit and root properties.
-        query: String
-
-        # When specified, shows only dumps that are latest for the given repository.
-        isLatestForRepo: Boolean
-
-        # When specified, indicates that this request should be paginated and
-        # the first N results (relative to the cursor) should be returned. i.e.
-        # how many results to return per page. It must be in the range of 0-5000.
-        first: Int
-
-        # When specified, indicates that this request should be paginated and
-        # to fetch results starting at this cursor.
-        #
-        # A future request can be made for more results by passing in the
-        # 'LSIFDumpConnection.pageInfo.endCursor' that is returned.
-        after: String
-    ): LSIFDumpConnection!
-
-    # (experimental) The LSIF API may change substantially in the near future as we
-    # continue to adjust it for our use cases. Changes will not be documented in the
-    # CHANGELOG during this time.
     # Retrieve counts of jobs by state in the LSIF work queue.
     lsifJobStats: LSIFJobStats!
 
-    # (experimental) The LSIF API may change substantially in the near future as we
-    # continue to adjust it for our use cases. Changes will not be documented in the
-    # CHANGELOG during this time.
-    # Look up an LSIF job by ID.
-    lsifJob(id: ID!): LSIFJob
-
-    # (experimental) The LSIF API may change substantially in the near future as we
-    # continue to adjust it for our use cases. Changes will not be documented in the
-    # CHANGELOG during this time.
     # Search for LSIF jobs by state and query term.
     lsifJobs(
         # The state of returned jobs.
@@ -1800,6 +1755,27 @@ type Repository implements Node & GenericSearchResultInterface {
     detail: Markdown!
     # The result previews of the result.
     matches: [SearchResultMatch!]!
+
+    # The repository's LSIF dumps.
+    lsifDumps(
+        # An (optional) search query that searches over the commit and root properties.
+        query: String
+
+        # When specified, shows only dumps that are latest for the given repository.
+        isLatestForRepo: Boolean
+
+        # When specified, indicates that this request should be paginated and
+        # the first N results (relative to the cursor) should be returned. i.e.
+        # how many results to return per page. It must be in the range of 0-5000.
+        first: Int
+
+        # When specified, indicates that this request should be paginated and
+        # to fetch results starting at this cursor.
+        #
+        # A future request can be made for more results by passing in the
+        # 'LSIFDumpConnection.pageInfo.endCursor' that is returned.
+        after: String
+    ): LSIFDumpConnection!
 }
 
 # A URL to a resource on an external service, such as the URL to a repository on its external (origin) code host.

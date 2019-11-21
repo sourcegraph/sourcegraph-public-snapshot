@@ -26,11 +26,7 @@ func NewResolver() graphqlbackend.CodeIntelResolver {
 //
 // Dump Node Resolvers
 
-func (r *Resolver) LSIFDump(ctx context.Context, args *struct{ ID graphql.ID }) (graphqlbackend.LSIFDumpResolver, error) {
-	return r.LSIFDumpByGQLID(ctx, args.ID)
-}
-
-func (r *Resolver) LSIFDumpByGQLID(ctx context.Context, id graphql.ID) (graphqlbackend.LSIFDumpResolver, error) {
+func (r *Resolver) LSIFDumpByID(ctx context.Context, id graphql.ID) (graphqlbackend.LSIFDumpResolver, error) {
 	repoName, dumpID, err := unmarshalLSIFDumpGQLID(id)
 	if err != nil {
 		return nil, err
@@ -61,9 +57,9 @@ func (r *Resolver) LSIFDumpByGQLID(ctx context.Context, id graphql.ID) (graphqlb
 // dependent on the limit, so we can overwrite this value if the user has changed its
 // value since making the last request.
 
-func (r *Resolver) LSIFDumps(ctx context.Context, args *graphqlbackend.LSIFDumpsQueryArgs) (graphqlbackend.LSIFDumpConnectionResolver, error) {
+func (r *Resolver) LSIFDumps(ctx context.Context, args *graphqlbackend.LSIFRepositoryDumpsQueryArgs) (graphqlbackend.LSIFDumpConnectionResolver, error) {
 	opt := LSIFDumpsListOptions{
-		Repository:      args.Repository,
+		RepositoryID:    args.RepositoryID,
 		Query:           args.Query,
 		IsLatestForRepo: args.IsLatestForRepo,
 	}
@@ -89,11 +85,7 @@ func (r *Resolver) LSIFDumps(ctx context.Context, args *graphqlbackend.LSIFDumps
 //
 // Job Node Resolvers
 
-func (r *Resolver) LSIFJob(ctx context.Context, args *struct{ ID graphql.ID }) (graphqlbackend.LSIFJobResolver, error) {
-	return r.LSIFJobByGQLID(ctx, args.ID)
-}
-
-func (r *Resolver) LSIFJobByGQLID(ctx context.Context, id graphql.ID) (graphqlbackend.LSIFJobResolver, error) {
+func (r *Resolver) LSIFJobByID(ctx context.Context, id graphql.ID) (graphqlbackend.LSIFJobResolver, error) {
 	jobID, err := unmarshalLSIFJobGQLID(id)
 	if err != nil {
 		return nil, err
@@ -145,10 +137,10 @@ func (r *Resolver) LSIFJobs(ctx context.Context, args *graphqlbackend.LSIFJobsQu
 const lsifJobStatsGQLID = "lsifJobStats"
 
 func (r *Resolver) LSIFJobStats(ctx context.Context) (graphqlbackend.LSIFJobStatsResolver, error) {
-	return r.LSIFJobStatsByGQLID(ctx, marshalLSIFJobStatsGQLID(lsifJobStatsGQLID))
+	return r.LSIFJobStatsByID(ctx, marshalLSIFJobStatsGQLID(lsifJobStatsGQLID))
 }
 
-func (r *Resolver) LSIFJobStatsByGQLID(ctx context.Context, id graphql.ID) (graphqlbackend.LSIFJobStatsResolver, error) {
+func (r *Resolver) LSIFJobStatsByID(ctx context.Context, id graphql.ID) (graphqlbackend.LSIFJobStatsResolver, error) {
 	lsifJobStatsID, err := unmarshalLSIFJobStatsGQLID(id)
 	if err != nil {
 		return nil, err

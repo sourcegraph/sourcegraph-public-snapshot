@@ -1,9 +1,9 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
 import { Markdown } from '../../../../../shared/src/components/Markdown'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { renderMarkdown } from '../../../../../shared/src/util/markdown'
 import { CampaignsIcon } from '../icons'
+import { Link } from '../../../../../shared/src/components/Link'
 
 interface Props {
     node: GQL.ICampaign
