@@ -59,7 +59,7 @@ func (r *Resolver) DeleteLSIFDump(ctx context.Context, id graphql.ID) (*graphqlb
 	}
 
 	path := fmt.Sprintf("/dumps/%s/%d", url.PathEscape(repoName), dumpID)
-	if err := client.TraceRequestAndUnmarshalPayload(ctx, "DELETE", path, nil, nil, nil); !client.IsNotFound(err) {
+	if err := client.DefaultClient.TraceRequestAndUnmarshalPayload(ctx, "DELETE", path, nil, nil, nil); !client.IsNotFound(err) {
 		return nil, err
 	}
 	return &graphqlbackend.EmptyResponse{}, nil
@@ -131,7 +131,7 @@ func (r *Resolver) DeleteLSIFJob(ctx context.Context, id graphql.ID) (*graphqlba
 	}
 
 	path := fmt.Sprintf("/jobs/%s", url.PathEscape(jobID))
-	if err := client.TraceRequestAndUnmarshalPayload(ctx, "DELETE", path, nil, nil, nil); !client.IsNotFound(err) {
+	if err := client.DefaultClient.TraceRequestAndUnmarshalPayload(ctx, "DELETE", path, nil, nil, nil); !client.IsNotFound(err) {
 		return nil, err
 	}
 	return &graphqlbackend.EmptyResponse{}, nil
