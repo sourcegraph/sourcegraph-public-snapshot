@@ -103,7 +103,7 @@ describe('hashmod', () => {
 describe('gitserverExec', () => {
     it('should not allow git as first argument', async () => {
         await expect(gitserverExecLines('', 'r', ['git', 'log'])).rejects.toThrowError(
-            new Error('gitserver commands should not be prefixed with `git`')
+            new Error('Gitserver commands should not be prefixed with `git`')
         )
     })
 })

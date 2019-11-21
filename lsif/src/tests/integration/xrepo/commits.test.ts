@@ -4,9 +4,9 @@ import { XrepoDatabase } from '../../../shared/xrepo/xrepo'
 
 describe('discoverAndUpdateCommit', () => {
     it('should update tracked commits', async () => {
-        const ca = util.createCommit(0)
-        const cb = util.createCommit(1)
-        const cc = util.createCommit(2)
+        const ca = util.createCommit()
+        const cb = util.createCommit()
+        const cc = util.createCommit()
 
         nock('http://gitserver1')
             .post('/exec')
@@ -22,7 +22,6 @@ describe('discoverAndUpdateCommit', () => {
                 repository: 'test-repo', // hashes to gitserver1
                 commit: cc,
                 gitserverUrls: ['gitserver0', 'gitserver1', 'gitserver2'],
-                ctx: {},
             })
 
             // Ensure all commits are now tracked
@@ -35,8 +34,8 @@ describe('discoverAndUpdateCommit', () => {
     })
 
     it('should early-out if commit is tracked', async () => {
-        const ca = util.createCommit(0)
-        const cb = util.createCommit(1)
+        const ca = util.createCommit()
+        const cb = util.createCommit()
 
         const { connection, cleanup } = await util.createCleanPostgresDatabase()
 
@@ -53,7 +52,6 @@ describe('discoverAndUpdateCommit', () => {
                 repository: 'test-repo', // hashes to gitserver1
                 commit: cb,
                 gitserverUrls: ['gitserver0', 'gitserver1', 'gitserver2'],
-                ctx: {},
             })
         } finally {
             await cleanup()
@@ -61,7 +59,7 @@ describe('discoverAndUpdateCommit', () => {
     })
 
     it('should early-out if repository is unknown', async () => {
-        const ca = util.createCommit(0)
+        const ca = util.createCommit()
 
         const { connection, cleanup } = await util.createCleanPostgresDatabase()
 
@@ -76,7 +74,6 @@ describe('discoverAndUpdateCommit', () => {
                 repository: 'test-repo', // hashes to gitserver1
                 commit: ca,
                 gitserverUrls: ['gitserver0', 'gitserver1', 'gitserver2'],
-                ctx: {},
             })
         } finally {
             await cleanup()
@@ -86,11 +83,11 @@ describe('discoverAndUpdateCommit', () => {
 
 describe('discoverAndUpdateTips', () => {
     it('should update tips', async () => {
-        const ca = util.createCommit(0)
-        const cb = util.createCommit(1)
-        const cc = util.createCommit(2)
-        const cd = util.createCommit(3)
-        const ce = util.createCommit(4)
+        const ca = util.createCommit()
+        const cb = util.createCommit()
+        const cc = util.createCommit()
+        const cd = util.createCommit()
+        const ce = util.createCommit()
 
         nock('http://gitserver0')
             .post('/exec', { repo: 'test-repo', args: ['rev-parse', 'HEAD'] })
@@ -113,7 +110,6 @@ describe('discoverAndUpdateTips', () => {
 
             await xrepoDatabase.discoverAndUpdateTips({
                 gitserverUrls: ['gitserver0'],
-                ctx: {},
             })
 
             const d1 = await xrepoDatabase.getDump('test-repo', ca, 'foo/test.ts')
@@ -159,12 +155,11 @@ describe('discoverTips', () => {
             const xrepoDatabase = new XrepoDatabase('', connection)
 
             for (let i = 0; i < 15; i++) {
-                await xrepoDatabase.insertDump(`test-repo-${i}`, util.createCommit(0), '')
+                await xrepoDatabase.insertDump(`test-repo-${i}`, util.createCommit(), '')
             }
 
             const tips = await xrepoDatabase.discoverTips({
                 gitserverUrls: ['gitserver0', 'gitserver1', 'gitserver2'],
-                ctx: {},
                 batchSize: 5,
             })
 

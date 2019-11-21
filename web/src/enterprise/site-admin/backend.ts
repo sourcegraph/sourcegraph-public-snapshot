@@ -70,7 +70,7 @@ export function fetchLsifJobs({
 /**
  * Fetch a single LSIF job by id.
  */
-export function fetchLsifJob({ id }: GQL.ILsifJobOnQueryArguments): Observable<GQL.ILSIFJob | null> {
+export function fetchLsifJob({ id }: { id: string }): Observable<GQL.ILSIFJob | null> {
     return queryGraphQL(
         gql`
             query LsifJob($id: ID!) {

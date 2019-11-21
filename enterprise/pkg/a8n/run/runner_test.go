@@ -30,6 +30,11 @@ func init() {
 	dbtesting.DBNameSuffix = "a8nrunnerdb"
 }
 
+type refAndTarget struct {
+	ref    string
+	target string
+}
+
 func TestRunner(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -45,10 +50,10 @@ func TestRunner(t *testing.T) {
 
 	store := ee.NewStoreWithClock(dbconn.Global, clock)
 
-	revs := []string{
-		"fc21c1a0a79047416c14642b3ca964faba9442e2",
-		"f3c08ec74a9b3f8af7b5609c9f47cfcb3dc6949b",
-		"09d6921f5ccae24dc2cb3ca2cf263a05e547cf4f",
+	defaultBranches := []refAndTarget{
+		{"master", "fc21c1a0a79047416c14642b3ca964faba9442e2"},
+		{"develop", "f3c08ec74a9b3f8af7b5609c9f47cfcb3dc6949b"},
+		{"staging", "09d6921f5ccae24dc2cb3ca2cf263a05e547cf4f"},
 	}
 
 	rs := []*repos.Repo{
@@ -71,20 +76,20 @@ func TestRunner(t *testing.T) {
 		name string
 
 		search       repoSearch
-		commitID     repoCommitID
+		commitID     repoDefaultBranch
 		campaignType CampaignType
 
 		runErr string
 
 		wantPlan *a8n.CampaignPlan
-		wantJobs func(plan *a8n.CampaignPlan, rs []*repos.Repo, revs []string) []*a8n.CampaignJob
+		wantJobs func(plan *a8n.CampaignPlan, rs []*repos.Repo, branches []refAndTarget) []*a8n.CampaignJob
 	}{
 		{
 			name: "no search results",
 			search: func(ctx context.Context, query string) ([]*graphqlbackend.RepositoryResolver, error) {
 				return []*graphqlbackend.RepositoryResolver{}, nil
 			},
-			commitID:     yieldCommitIDs(revs),
+			commitID:     yieldDefaultBranches(defaultBranches),
 			campaignType: &testCampaignType{},
 			wantPlan: func() *a8n.CampaignPlan {
 				p := testPlan.Clone()
@@ -99,7 +104,7 @@ func TestRunner(t *testing.T) {
 			search: func(ctx context.Context, query string) ([]*graphqlbackend.RepositoryResolver, error) {
 				return nil, errors.New("search failed")
 			},
-			commitID:     yieldCommitIDs(revs),
+			commitID:     yieldDefaultBranches(defaultBranches),
 			campaignType: &testCampaignType{},
 			runErr:       "search failed",
 			wantPlan:     nil,
@@ -117,7 +122,7 @@ func TestRunner(t *testing.T) {
 				}
 				return resolvers, nil
 			},
-			commitID:     yieldCommitIDs(revs),
+			commitID:     yieldDefaultBranches(defaultBranches),
 			campaignType: &testCampaignType{},
 			runErr:       ErrTooManyResults.Error(),
 			wantPlan:     nil,
@@ -126,7 +131,7 @@ func TestRunner(t *testing.T) {
 		{
 			name:         "multi search results and successfull execution",
 			search:       yieldRepos(rs...),
-			commitID:     yieldCommitIDs(revs),
+			commitID:     yieldDefaultBranches(defaultBranches),
 			campaignType: &testCampaignType{diff: testDiff},
 			wantPlan: func() *a8n.CampaignPlan {
 				p := testPlan.Clone()
@@ -134,13 +139,14 @@ func TestRunner(t *testing.T) {
 				p.UpdatedAt = now
 				return p
 			}(),
-			wantJobs: func(plan *a8n.CampaignPlan, rs []*repos.Repo, revs []string) []*a8n.CampaignJob {
+			wantJobs: func(plan *a8n.CampaignPlan, rs []*repos.Repo, branches []refAndTarget) []*a8n.CampaignJob {
 				return []*a8n.CampaignJob{
 					{
 						CampaignPlanID: plan.ID,
 						RepoID:         int32(rs[0].ID),
 						Diff:           testDiff,
-						Rev:            api.CommitID(revs[0]),
+						Rev:            api.CommitID(branches[0].target),
+						BaseRef:        branches[0].ref,
 						CreatedAt:      now,
 						UpdatedAt:      now,
 						StartedAt:      now,
@@ -150,7 +156,8 @@ func TestRunner(t *testing.T) {
 						CampaignPlanID: plan.ID,
 						RepoID:         int32(rs[1].ID),
 						Diff:           testDiff,
-						Rev:            api.CommitID(revs[1]),
+						Rev:            api.CommitID(branches[1].target),
+						BaseRef:        branches[1].ref,
 						CreatedAt:      now,
 						UpdatedAt:      now,
 						StartedAt:      now,
@@ -160,7 +167,8 @@ func TestRunner(t *testing.T) {
 						CampaignPlanID: plan.ID,
 						RepoID:         int32(rs[2].ID),
 						Diff:           testDiff,
-						Rev:            api.CommitID(revs[2]),
+						Rev:            api.CommitID(branches[2].target),
+						BaseRef:        branches[2].ref,
 						CreatedAt:      now,
 						UpdatedAt:      now,
 						StartedAt:      now,
@@ -172,7 +180,7 @@ func TestRunner(t *testing.T) {
 		{
 			name:         "multi search results but getting a commit ID fails",
 			search:       yieldRepos(rs...),
-			commitID:     errorOnCall(yieldCommitIDs(revs), 2, errors.New("no commit ID found")),
+			commitID:     errorOnCall(yieldDefaultBranches(defaultBranches), 2, errors.New("no commit ID found")),
 			campaignType: &testCampaignType{diff: testDiff},
 			runErr:       "no commit ID found",
 			wantPlan:     nil,
@@ -181,7 +189,7 @@ func TestRunner(t *testing.T) {
 		{
 			name:         "two search results but one repo has no default branch",
 			search:       yieldRepos(rs[0], rs[1]),
-			commitID:     errorOnCall(yieldCommitIDs(revs), 1, ErrNoDefaultBranch),
+			commitID:     errorOnCall(yieldDefaultBranches(defaultBranches), 1, ErrNoDefaultBranch),
 			campaignType: &testCampaignType{diff: testDiff},
 			wantPlan: func() *a8n.CampaignPlan {
 				p := testPlan.Clone()
@@ -189,13 +197,14 @@ func TestRunner(t *testing.T) {
 				p.UpdatedAt = now
 				return p
 			}(),
-			wantJobs: func(plan *a8n.CampaignPlan, rs []*repos.Repo, revs []string) []*a8n.CampaignJob {
+			wantJobs: func(plan *a8n.CampaignPlan, rs []*repos.Repo, branches []refAndTarget) []*a8n.CampaignJob {
 				return []*a8n.CampaignJob{
 					{
 						CampaignPlanID: plan.ID,
 						RepoID:         int32(rs[0].ID),
 						Diff:           testDiff,
-						Rev:            api.CommitID(revs[0]),
+						Rev:            api.CommitID(branches[0].target),
+						BaseRef:        branches[0].ref,
 						CreatedAt:      now,
 						UpdatedAt:      now,
 						StartedAt:      now,
@@ -207,7 +216,7 @@ func TestRunner(t *testing.T) {
 		{
 			name:     "generating diff fails",
 			search:   yieldRepos(rs[0]),
-			commitID: yieldCommitIDs(revs),
+			commitID: yieldDefaultBranches(defaultBranches),
 			campaignType: &testCampaignType{
 				diff:    testDiff,
 				diffErr: "could not generate diff",
@@ -218,14 +227,15 @@ func TestRunner(t *testing.T) {
 				p.UpdatedAt = now
 				return p
 			}(),
-			wantJobs: func(plan *a8n.CampaignPlan, rs []*repos.Repo, revs []string) []*a8n.CampaignJob {
+			wantJobs: func(plan *a8n.CampaignPlan, rs []*repos.Repo, branches []refAndTarget) []*a8n.CampaignJob {
 				return []*a8n.CampaignJob{
 					{
 						CampaignPlanID: plan.ID,
 						RepoID:         int32(rs[0].ID),
 						Diff:           "",
 						Error:          "could not generate diff",
-						Rev:            api.CommitID(revs[0]),
+						Rev:            api.CommitID(branches[0].target),
+						BaseRef:        branches[0].ref,
 						CreatedAt:      now,
 						UpdatedAt:      now,
 						StartedAt:      now,
@@ -281,7 +291,7 @@ func TestRunner(t *testing.T) {
 				return haveJobs[i].RepoID < haveJobs[j].RepoID
 			})
 
-			wantJobs := tc.wantJobs(plan, rs, revs)
+			wantJobs := tc.wantJobs(plan, rs, defaultBranches)
 			jobIgnore := cmpopts.IgnoreFields(a8n.CampaignJob{}, "ID")
 			if diff := cmp.Diff(haveJobs, wantJobs, jobIgnore); diff != "" {
 				t.Fatalf("CampaignJobs diff: %s", diff)
@@ -334,7 +344,7 @@ func waitRunner(t *testing.T, r *Runner) {
 	}
 }
 
-func wantNoJobs(plan *a8n.CampaignPlan, rs []*repos.Repo, revs []string) []*a8n.CampaignJob {
+func wantNoJobs(plan *a8n.CampaignPlan, rs []*repos.Repo, branches []refAndTarget) []*a8n.CampaignJob {
 	return []*a8n.CampaignJob{}
 }
 
@@ -373,30 +383,34 @@ func repoToResolver(r *repos.Repo) *graphqlbackend.RepositoryResolver {
 	})
 }
 
-func yieldCommitIDs(ids []string) repoCommitID {
+func yieldDefaultBranches(branches []refAndTarget) repoDefaultBranch {
 	count := 0
-	return func(ctx context.Context, repo *graphqlbackend.RepositoryResolver) (api.CommitID, error) {
+	return func(ctx context.Context, repo *graphqlbackend.RepositoryResolver) (string, api.CommitID, error) {
+		branch := "invalid"
 		id := api.CommitID("invalid")
 
-		if count >= len(ids) {
-			return id, errors.New("exhausted commit ids")
+		if count >= len(branches) {
+			return branch, id, errors.New("exhausted commit ids")
 		}
 
-		id = api.CommitID(ids[count])
+		branch = branches[count].ref
+		id = api.CommitID(branches[count].target)
+
 		count++
 
-		return id, nil
+		return branch, id, nil
 	}
 }
 
-func errorOnCall(f repoCommitID, num int, err error) repoCommitID {
+func errorOnCall(f repoDefaultBranch, num int, err error) repoDefaultBranch {
 	count := 0
 
-	return func(ctx context.Context, repo *graphqlbackend.RepositoryResolver) (api.CommitID, error) {
+	return func(ctx context.Context, repo *graphqlbackend.RepositoryResolver) (string, api.CommitID, error) {
+		branch := "invalid"
 		id := api.CommitID("invalid")
 
 		if count == num {
-			return id, err
+			return branch, id, err
 		}
 
 		count++

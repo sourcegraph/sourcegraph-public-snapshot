@@ -90,7 +90,7 @@ func (r *searchResultsResolver) PageInfo() *graphqlutil.PageInfo {
 func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchResultsResolver, err error) {
 	start := time.Now()
 	if r.pagination == nil {
-		panic("(bug) this method should never be called in this state")
+		panic("never here: this method should never be called in this state")
 	}
 
 	tr, ctx := trace.New(ctx, "graphql.SearchResults.paginatedResults", r.rawQuery())
@@ -116,14 +116,20 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchRe
 		tr.Finish()
 	}()
 
-	// All paginated search requests should complete within this timeframe.
+	// All paginated search requests must complete within this timeframe.
 	//
-	// This should not be increased or made to be configurable, because from a
-	// product POV it should never take longer than 10s to fetch 5,000 results
-	// (the max you can fetch in one request). If it does timeout and you are
-	// thinking of increasing this value, it means there is a different part of
-	// the underlying system which needs to be improved instead.
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	// In an ideal world, all paginated search requests would complete in under
+	// just a few seconds and we could safely have e.g. a 10s hard limit in
+	// place here. But in practice, some queries can take longer:
+	//
+	// 	`repo:^github\.com/kubernetes/kubernetes$ .` (so many results it often can't complete in under 1m)
+	// 	`repo:^github\.com/torvalds/linux$ type:diff error index:no ` (times out after 1m)
+	//
+	// These cases would make a UI paginated search experience bad, but from an
+	// API use case you are very willing to wait as long as you get accurate
+	// results so for now we use a 2m hard timeout (based on the non-paginated
+	// search upper bound, it should not be increased further).
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
 
 	repos, missingRepoRevs, alertResult, err := r.determineRepos(ctx, tr, start)
@@ -175,8 +181,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchRe
 
 	common := searchResultsCommon{maxResultsCount: r.maxResults()}
 	cursor, results, fileCommon, err := paginatedSearchFilesInRepos(ctx, &args, r.pagination)
-	// Timeouts are reported through searchResultsCommon so don't report an error for them
-	if err != nil && !(err == context.DeadlineExceeded || err == context.Canceled) {
+	if err != nil {
 		return nil, err
 	}
 	common.update(*fileCommon)
@@ -250,8 +255,16 @@ func paginatedSearchFilesInRepos(ctx context.Context, args *search.Args, paginat
 		batchArgs := *args
 		batchArgs.Repos = batch
 		fileResults, fileCommon, err := searchFilesInRepos(ctx, &batchArgs)
-		if err != nil {
+		// Timeouts are reported through searchResultsCommon so don't report an error for them
+		if err != nil && !(err == context.DeadlineExceeded || err == context.Canceled) {
 			return nil, nil, err
+		}
+		if fileCommon == nil {
+			// searchFilesInRepos can return a nil structure, but the executor
+			// requires a non-nil one always (which is more sane).
+			fileCommon = &searchResultsCommon{
+				partial: map[api.RepoName]struct{}{},
+			}
 		}
 		// fileResults is not sorted so we must sort it now. fileCommon may or
 		// may not be sorted, but we do not rely on its order.
@@ -297,6 +310,9 @@ type repoPaginationPlan struct {
 }
 
 // executor is a function which searches a batch of repositories.
+//
+// A non-nil searchResultsCommon must always be returned, even if an error is
+// returned.
 type executor func(batch []*search.RepositoryRevisions) ([]searchResultResolver, *searchResultsCommon, error)
 
 // execute executes the repository pagination plan by invoking the executor to
@@ -339,6 +355,9 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 
 		batch := repos[start:clamp(start+batchSize, 0, len(repos))]
 		batchResults, batchCommon, err := exec(batch)
+		if batchCommon == nil {
+			panic("never here: repoPaginationPlan.executor illegally returned nil searchResultsCommon structure")
+		}
 		if err != nil {
 			return nil, nil, nil, err
 		}

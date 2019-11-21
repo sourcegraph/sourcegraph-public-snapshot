@@ -56,8 +56,8 @@ export function createQueue(endpoint: string, logger: Logger): Queue {
     }
 
     const queue = new Bull(QUEUE_NAME, { redis })
-    queue.on('error', (error: Error) => logger.error('queue error', { error }))
-    queue.on('global:stalled', (id: string) => logger.error('job stalled', { jobId: id }))
+    queue.on('error', (error: Error) => logger.error('Queue error', { error }))
+    queue.on('global:stalled', (id: string) => logger.error('Job stalled', { jobId: id }))
 
     return queue
 }

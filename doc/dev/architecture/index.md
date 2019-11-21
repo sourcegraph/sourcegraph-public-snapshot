@@ -1,6 +1,12 @@
 # Sourcegraph Architecture Overview
 
 This is a high level overview of Sourcegraph's architecture so you can understand how our systems fit together.
+You can click on each component to jump to its respective code repository or subtree.
+
+<object data="/dev/architecture/architecture.svg" type="image/svg+xml" style="width:100%; height: 100%">
+</object>
+
+To re-generate this diagram from the `architecture.dot` file with Graphviz, run: `dot -Tsvg -o architecture.svg architecture.dot`.
 
 ## Clients
 

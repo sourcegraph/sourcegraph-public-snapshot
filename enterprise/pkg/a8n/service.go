@@ -131,8 +131,8 @@ func (s *Service) runChangesetJob(
 				err = multierror.Append(err, e)
 			}
 		}
-		return
 	}()
+
 	job.StartedAt = s.clock()
 
 	campaignJob, err := s.store.GetCampaignJob(ctx, GetCampaignJobOpts{ID: job.CampaignJobID})
@@ -216,10 +216,15 @@ func (s *Service) runChangesetJob(
 		return err
 	}
 
+	baseRef := "master"
+	if campaignJob.BaseRef != "" {
+		baseRef = campaignJob.BaseRef
+	}
+
 	cs := repos.Changeset{
 		Title:       c.Name,
 		Body:        c.Description,
-		BaseRefName: "master",
+		BaseRefName: baseRef,
 		HeadRefName: headRefName,
 		Repo:        repo,
 		Changeset: &a8n.Changeset{

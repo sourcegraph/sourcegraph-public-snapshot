@@ -85,73 +85,73 @@ type A8NResolver interface {
 var a8nOnlyInEnterprise = errors.New("campaigns and changesets are only available in enterprise")
 
 func (r *schemaResolver) AddChangesetsToCampaign(ctx context.Context, args *AddChangesetsToCampaignArgs) (CampaignResolver, error) {
-	if r.a8nResolver == nil {
+	if EnterpriseResolvers.a8nResolver == nil {
 		return nil, a8nOnlyInEnterprise
 	}
-	return r.a8nResolver.AddChangesetsToCampaign(ctx, args)
+	return EnterpriseResolvers.a8nResolver.AddChangesetsToCampaign(ctx, args)
 }
 
 func (r *schemaResolver) PreviewCampaignPlan(ctx context.Context, args PreviewCampaignPlanArgs) (CampaignPlanResolver, error) {
-	if r.a8nResolver == nil {
+	if EnterpriseResolvers.a8nResolver == nil {
 		return nil, a8nOnlyInEnterprise
 	}
-	return r.a8nResolver.PreviewCampaignPlan(ctx, args)
+	return EnterpriseResolvers.a8nResolver.PreviewCampaignPlan(ctx, args)
 }
 
 func (r *schemaResolver) CancelCampaignPlan(ctx context.Context, args CancelCampaignPlanArgs) (*EmptyResponse, error) {
-	if r.a8nResolver == nil {
+	if EnterpriseResolvers.a8nResolver == nil {
 		return nil, a8nOnlyInEnterprise
 	}
-	return r.a8nResolver.CancelCampaignPlan(ctx, args)
+	return EnterpriseResolvers.a8nResolver.CancelCampaignPlan(ctx, args)
 }
 
 func (r *schemaResolver) CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (CampaignResolver, error) {
-	if r.a8nResolver == nil {
+	if EnterpriseResolvers.a8nResolver == nil {
 		return nil, a8nOnlyInEnterprise
 	}
-	return r.a8nResolver.CreateCampaign(ctx, args)
+	return EnterpriseResolvers.a8nResolver.CreateCampaign(ctx, args)
 }
 
 func (r *schemaResolver) UpdateCampaign(ctx context.Context, args *UpdateCampaignArgs) (CampaignResolver, error) {
-	if r.a8nResolver == nil {
+	if EnterpriseResolvers.a8nResolver == nil {
 		return nil, a8nOnlyInEnterprise
 	}
-	return r.a8nResolver.UpdateCampaign(ctx, args)
+	return EnterpriseResolvers.a8nResolver.UpdateCampaign(ctx, args)
 }
 
 func (r *schemaResolver) DeleteCampaign(ctx context.Context, args *DeleteCampaignArgs) (*EmptyResponse, error) {
-	if r.a8nResolver == nil {
+	if EnterpriseResolvers.a8nResolver == nil {
 		return nil, a8nOnlyInEnterprise
 	}
-	return r.a8nResolver.DeleteCampaign(ctx, args)
+	return EnterpriseResolvers.a8nResolver.DeleteCampaign(ctx, args)
 }
 
 func (r *schemaResolver) RetryCampaign(ctx context.Context, args *RetryCampaignArgs) (CampaignResolver, error) {
-	if r.a8nResolver == nil {
+	if EnterpriseResolvers.a8nResolver == nil {
 		return nil, a8nOnlyInEnterprise
 	}
-	return r.a8nResolver.RetryCampaign(ctx, args)
+	return EnterpriseResolvers.a8nResolver.RetryCampaign(ctx, args)
 }
 
 func (r *schemaResolver) Campaigns(ctx context.Context, args *graphqlutil.ConnectionArgs) (CampaignsConnectionResolver, error) {
-	if r.a8nResolver == nil {
+	if EnterpriseResolvers.a8nResolver == nil {
 		return nil, a8nOnlyInEnterprise
 	}
-	return r.a8nResolver.Campaigns(ctx, args)
+	return EnterpriseResolvers.a8nResolver.Campaigns(ctx, args)
 }
 
 func (r *schemaResolver) CreateChangesets(ctx context.Context, args *CreateChangesetsArgs) ([]ExternalChangesetResolver, error) {
-	if r.a8nResolver == nil {
+	if EnterpriseResolvers.a8nResolver == nil {
 		return nil, a8nOnlyInEnterprise
 	}
-	return r.a8nResolver.CreateChangesets(ctx, args)
+	return EnterpriseResolvers.a8nResolver.CreateChangesets(ctx, args)
 }
 
 func (r *schemaResolver) Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) (ExternalChangesetsConnectionResolver, error) {
-	if r.a8nResolver == nil {
+	if EnterpriseResolvers.a8nResolver == nil {
 		return nil, a8nOnlyInEnterprise
 	}
-	return r.a8nResolver.Changesets(ctx, args)
+	return EnterpriseResolvers.a8nResolver.Changesets(ctx, args)
 }
 
 type ChangesetCountsArgs struct {

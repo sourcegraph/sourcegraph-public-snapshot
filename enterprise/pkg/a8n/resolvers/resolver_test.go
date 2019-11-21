@@ -847,6 +847,7 @@ func TestCampaignPlanResolver(t *testing.T) {
 			FinishedAt:     now,
 			RepoID:         int32(repo.ID),
 			Rev:            testingRev,
+			BaseRef:        "master",
 			Diff:           testDiff,
 		}
 
@@ -883,10 +884,6 @@ func TestCampaignPlanResolver(t *testing.T) {
 		RawDiff  string
 		DiffStat DiffStat
 		Nodes    []FileDiff
-	}
-
-	type Repository struct {
-		Name string
 	}
 
 	type ChangesetPlan struct {

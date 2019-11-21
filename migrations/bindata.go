@@ -70,6 +70,8 @@
 // 1528395615_lsif-commit-constraints.up.sql (471B)
 // 1528395616_lsif_processed_at.down.sql (195B)
 // 1528395616_lsif_processed_at.up.sql (359B)
+// 1528395617_add_base_ref_to_campaign_jobs.down.sql (65B)
+// 1528395617_add_base_ref_to_campaign_jobs.up.sql (271B)
 
 package migrations
 
@@ -1538,6 +1540,46 @@ func _1528395616_lsif_processed_atUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395617_add_base_ref_to_campaign_jobsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\x4e\xcc\x2d\x48\xcc\x4c\xcf\x8b\xcf\xca\x4f\x2a\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\x48\x4a\x2c\x4e\x8d\x2f\x4a\x4d\xb3\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xb9\x02\xf3\xb3\x41\x00\x00\x00")
+
+func _1528395617_add_base_ref_to_campaign_jobsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395617_add_base_ref_to_campaign_jobsDownSql,
+		"1528395617_add_base_ref_to_campaign_jobs.down.sql",
+	)
+}
+
+func _1528395617_add_base_ref_to_campaign_jobsDownSql() (*asset, error) {
+	bytes, err := _1528395617_add_base_ref_to_campaign_jobsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395617_add_base_ref_to_campaign_jobs.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x96, 0xbe, 0x41, 0x23, 0xe4, 0x8f, 0x13, 0x8b, 0x82, 0xa2, 0x65, 0xf2, 0xf9, 0x20, 0xc3, 0xc4, 0x86, 0x7f, 0x38, 0xb9, 0xe1, 0xe4, 0xb0, 0x6e, 0x89, 0x5c, 0xaa, 0x8e, 0x97, 0xe2, 0x43, 0xd0}}
+	return a, nil
+}
+
+var __1528395617_add_base_ref_to_campaign_jobsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\x8e\xcd\xae\x82\x30\x10\x46\xf7\xf3\x14\x73\x57\xbd\x3e\x43\xc3\xa2\x94\x46\x89\x65\x30\x30\xac\x9b\x42\xea\x6f\x50\x03\x5d\xf8\xf8\x46\x12\x35\xb2\x60\xfd\x9d\x39\x67\x52\xb3\xce\x49\x02\x28\xcb\xa6\x42\x56\xa9\x35\xd8\xf9\xfe\xee\x4f\x87\xab\x3b\xdf\xda\x11\x55\x96\xa1\x2e\x6d\x53\x10\xb6\x7e\x0c\x6e\x08\x7b\x8c\xe1\x11\x25\x34\xbb\x4c\xf1\x1c\xaf\x0d\x7f\xb9\x04\x45\xef\xc7\x18\x06\x21\x97\x0a\xd3\x32\x6f\xbc\x44\x54\x32\x52\x63\xed\xe2\xf5\xf4\x1f\xd5\x5c\xa9\x9c\xf8\x77\x74\x6f\x9b\xeb\x8e\xa1\xbb\xa0\xde\x18\xbd\xc5\xff\x4f\xe3\x2f\x41\x21\x56\x12\x40\x97\x45\x91\xb3\x84\x67\x00\x00\x00\xff\xff\x78\x81\xa2\x2c\x0f\x01\x00\x00")
+
+func _1528395617_add_base_ref_to_campaign_jobsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395617_add_base_ref_to_campaign_jobsUpSql,
+		"1528395617_add_base_ref_to_campaign_jobs.up.sql",
+	)
+}
+
+func _1528395617_add_base_ref_to_campaign_jobsUpSql() (*asset, error) {
+	bytes, err := _1528395617_add_base_ref_to_campaign_jobsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395617_add_base_ref_to_campaign_jobs.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xf2, 0xad, 0x9b, 0xe5, 0x75, 0x4a, 0xe1, 0xd2, 0xeb, 0x43, 0x3, 0xd5, 0xe6, 0x80, 0x64, 0x36, 0x1d, 0x77, 0xca, 0x5b, 0x2e, 0x76, 0x8f, 0xc2, 0xcc, 0x1c, 0x65, 0x46, 0x24, 0x69, 0xfd, 0xcf}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1699,6 +1741,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395615_lsif-commit-constraints.up.sql":                                _1528395615_lsifCommitConstraintsUpSql,
 	"1528395616_lsif_processed_at.down.sql":                                    _1528395616_lsif_processed_atDownSql,
 	"1528395616_lsif_processed_at.up.sql":                                      _1528395616_lsif_processed_atUpSql,
+	"1528395617_add_base_ref_to_campaign_jobs.down.sql":                        _1528395617_add_base_ref_to_campaign_jobsDownSql,
+	"1528395617_add_base_ref_to_campaign_jobs.up.sql":                          _1528395617_add_base_ref_to_campaign_jobsUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1812,6 +1856,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395615_lsif-commit-constraints.up.sql":                                {_1528395615_lsifCommitConstraintsUpSql, map[string]*bintree{}},
 	"1528395616_lsif_processed_at.down.sql":                                    {_1528395616_lsif_processed_atDownSql, map[string]*bintree{}},
 	"1528395616_lsif_processed_at.up.sql":                                      {_1528395616_lsif_processed_atUpSql, map[string]*bintree{}},
+	"1528395617_add_base_ref_to_campaign_jobs.down.sql":                        {_1528395617_add_base_ref_to_campaign_jobsDownSql, map[string]*bintree{}},
+	"1528395617_add_base_ref_to_campaign_jobs.up.sql":                          {_1528395617_add_base_ref_to_campaign_jobsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

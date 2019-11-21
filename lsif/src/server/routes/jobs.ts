@@ -179,7 +179,7 @@ export function createJobRouter(
 
                 // Enqueue job
                 const ctx = createTracingContext(req, { name })
-                logger.debug(`enqueueing ${name} job`)
+                logger.debug(`Enqueueing ${name} job`)
                 const job = await enqueue(queue, name, {}, {}, tracer, ctx.span)
 
                 if (blocking && (await waitForJob(job, maxWait))) {
@@ -289,6 +289,23 @@ export function createJobRouter(
                 }
 
                 res.send(formatJob(job, state))
+            }
+        )
+    )
+
+    router.delete(
+        '/jobs/:id',
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const job = await queue.getJob(req.params.id)
+                if (!job) {
+                    throw Object.assign(new Error('Job not found'), {
+                        status: 404,
+                    })
+                }
+
+                await job.remove()
+                res.status(204).send()
             }
         )
     )

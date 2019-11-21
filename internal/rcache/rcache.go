@@ -12,7 +12,7 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
-// dataVersion is used for releases that change type struture for
+// dataVersion is used for releases that change type structure for
 // data that may already be cached. Increasing this number will
 // change the key prefix that is used for all hash keys,
 // effectively resetting the cache at the same time the new code

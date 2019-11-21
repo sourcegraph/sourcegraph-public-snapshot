@@ -120,7 +120,7 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
                                     </div>
                                     <div className="text-nowrap flex-wrap-reverse">
                                         <a
-                                            href="http://sourcegraph.com/subscriptions/new"
+                                            href="http://about.sourcegraph.com/contact/sales"
                                             className="btn btn-primary btn-sm"
                                             // eslint-disable-next-line react/jsx-no-target-blank
                                             target="_blank"

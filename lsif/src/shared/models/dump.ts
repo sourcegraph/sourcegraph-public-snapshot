@@ -1,6 +1,6 @@
 import * as lsif from 'lsif-protocol'
 import { Column, Entity, Index, PrimaryColumn } from 'typeorm'
-import { getBatchSize } from './util'
+import { MAX_POSTGRES_BATCH_SIZE } from '../constants'
 
 export type DocumentId = lsif.Id
 export type DocumentPath = string
@@ -33,7 +33,7 @@ export class MetaModel {
     /**
      * The number of model instances that can be inserted at once.
      */
-    public static BatchSize = getBatchSize(4)
+    public static BatchSize = MAX_POSTGRES_BATCH_SIZE
 
     /**
      * A unique ID required by typeorm entities: always zero here.
@@ -73,7 +73,7 @@ export class DocumentModel {
     /**
      * The number of model instances that can be inserted at once.
      */
-    public static BatchSize = getBatchSize(2)
+    public static BatchSize = MAX_POSTGRES_BATCH_SIZE
 
     /**
      * The root-relative path of the document.
@@ -98,7 +98,7 @@ export class ResultChunkModel {
     /**
      * The number of model instances that can be inserted at once.
      */
-    public static BatchSize = getBatchSize(2)
+    public static BatchSize = MAX_POSTGRES_BATCH_SIZE
 
     /**
      * The identifier of the chunk. This is also the index of the chunk during its
@@ -123,7 +123,7 @@ class Symbols {
     /**
      * The number of model instances that can be inserted at once.
      */
-    public static BatchSize = getBatchSize(7)
+    public static BatchSize = MAX_POSTGRES_BATCH_SIZE
 
     /**
      * A unique ID required by typeorm entities.

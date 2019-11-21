@@ -1,6 +1,9 @@
 import * as crypto from 'crypto'
 import got from 'got'
 import { MAX_COMMITS_PER_UPDATE } from '../constants'
+import { TracingContext, logAndTraceCall } from '../tracing'
+import { instrument } from '../metrics'
+import * as metrics from './metrics'
 
 /**
  * Determine the gitserver that holds data for the given repository. This matches the
@@ -64,16 +67,18 @@ export function mod(sum: string, max: number): number {
  * @param gitserverUrl The url of the gitserver for this repository.
  * @param repository The repository name.
  * @param commit The commit from which the gitserver queries should start.
+ * @param ctx The tracing context.
  */
 export async function getCommitsNear(
     gitserverUrl: string,
     repository: string,
-    commit: string
+    commit: string,
+    ctx: TracingContext = {}
 ): Promise<[string, string | undefined][]> {
     const args = ['log', '--pretty=%H %P', commit, `-${MAX_COMMITS_PER_UPDATE}`]
 
     try {
-        return flattenCommitParents(await gitserverExecLines(gitserverUrl, repository, args))
+        return flattenCommitParents(await gitserverExecLines(gitserverUrl, repository, args, ctx))
     } catch (error) {
         if (error.statusCode === 404) {
             // repository unknown
@@ -114,9 +119,15 @@ export function flattenCommitParents(lines: string[]): [string, string | undefin
  * @param gitserverUrl The url of the gitserver for this repository.
  * @param repository The repository name.
  * @param args The command to run in the repository's git directory.
+ * * @param ctx The tracing context.
  */
-export async function gitserverExecLines(gitserverUrl: string, repository: string, args: string[]): Promise<string[]> {
-    return (await gitserverExec(gitserverUrl, repository, args)).split('\n').filter(line => Boolean(line))
+export async function gitserverExecLines(
+    gitserverUrl: string,
+    repository: string,
+    args: string[],
+    ctx: TracingContext = {}
+): Promise<string[]> {
+    return (await gitserverExec(gitserverUrl, repository, args, ctx)).split('\n').filter(line => Boolean(line))
 }
 
 /**
@@ -125,30 +136,40 @@ export async function gitserverExecLines(gitserverUrl: string, repository: strin
  * @param gitserverUrl The url of the gitserver for this repository.
  * @param repository The repository name.
  * @param args The command to run in the repository's git directory.
+ * @param ctx The tracing context.
  */
-async function gitserverExec(gitserverUrl: string, repository: string, args: string[]): Promise<string> {
+function gitserverExec(
+    gitserverUrl: string,
+    repository: string,
+    args: string[],
+    ctx: TracingContext = {}
+): Promise<string> {
     if (args[0] === 'git') {
         // Prevent this from happening again:
         // https://github.com/sourcegraph/sourcegraph/pull/5941
         // https://github.com/sourcegraph/sourcegraph/pull/6548
-        throw new Error('gitserver commands should not be prefixed with `git`')
+        throw new Error('Gitserver commands should not be prefixed with `git`')
     }
 
-    // Perform request - this may fail with a 404 or 500
-    const resp = await got(new URL(`http://${gitserverUrl}/exec`).href, {
-        body: JSON.stringify({ repo: repository, args }),
-    })
+    return logAndTraceCall(ctx, 'Executing git command', () =>
+        instrument(metrics.gitserverDurationHistogram, metrics.gitserverErrorsCounter, async () => {
+            // Perform request - this may fail with a 404 or 500
+            const resp = await got(new URL(`http://${gitserverUrl}/exec`).href, {
+                body: JSON.stringify({ repo: repository, args }),
+            })
 
-    // Read trailers on a 200-level response
-    const status = resp.trailers['x-exec-exit-status']
-    const stderr = resp.trailers['x-exec-stderr']
+            // Read trailers on a 200-level response
+            const status = resp.trailers['x-exec-exit-status']
+            const stderr = resp.trailers['x-exec-stderr']
 
-    // Determine if underlying git command failed and throw an error
-    // in that case. Status will be undefined in some of our tests and
-    // will be the process exit code (given as a string) otherwise.
-    if (status !== undefined && status !== '0') {
-        throw new Error(`Failed to run git command ${['git', ...args].join(' ')}: ${stderr}`)
-    }
+            // Determine if underlying git command failed and throw an error
+            // in that case. Status will be undefined in some of our tests and
+            // will be the process exit code (given as a string) otherwise.
+            if (status !== undefined && status !== '0') {
+                throw new Error(`Failed to run git command ${['git', ...args].join(' ')}: ${stderr}`)
+            }
 
-    return resp.body
+            return resp.body
+        })
+    )
 }
