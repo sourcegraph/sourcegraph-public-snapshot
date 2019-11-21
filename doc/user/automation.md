@@ -16,7 +16,7 @@ In order to use the Automation preview, a site-admin of your Sourcegraph instanc
 }
 ```
 
-Automation requires that your [external service](/admin/external_service) is using a token with **write access** in order to create changesets on your code host.
+Automation requires that your [external service](../admin/external_service.md) is using a token with **write access** in order to create changesets on your code host.
 
 ## Supported campaign types
 
@@ -51,4 +51,4 @@ Parameters:
 
 ---
 
-If you are looking to run automation on a larger scale in the local dev environment, follow the [guide on automation development](/dev/automation_development).
+If you are looking to run automation on a larger scale in the local dev environment, follow the [guide on automation development](../dev/automation_development.md).

@@ -20,4 +20,4 @@ Automation features require creating changesets (PRs) on code hosts. If you are 
         }
 
 1. run `NO_KEYCLOAK=1 ./enterprise/dev/start.sh` — Wait until all ~187 repositories are cloned.
-1. Follow the [user guide on creating campaigns](/user/automation). Careful: if you use something like `repo:github` as a `scopeQuery` that will match all your repos. It takes a while to preview/create a campaign but also helps a lot with finding bugs/errors, etc.
+1. Follow the [user guide on creating campaigns](../user/automation.md). Careful: if you use something like `repo:github` as a `scopeQuery` that will match all your repos. It takes a while to preview/create a campaign but also helps a lot with finding bugs/errors, etc.
