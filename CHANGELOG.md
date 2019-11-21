@@ -15,6 +15,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- `repohascommitafter:` search filter uses a more efficient git command to determine inclusion. [#6739](https://github.com/sourcegraph/sourcegraph/pull/6739)
+
 ### Fixed
 
 - The experimental search pagination API no longer times out when large repositories are encountered. [#6384](https://github.com/sourcegraph/sourcegraph/issues/6384)

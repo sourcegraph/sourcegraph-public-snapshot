@@ -122,6 +122,7 @@ func HasCommitAfter(ctx context.Context, repo gitserver.Repo, date string, revsp
 	}
 
 	n, err := CommitCount(ctx, repo, CommitsOptions{
+		N:     1,
 		After: date,
 		Range: string(commitid),
 	})
