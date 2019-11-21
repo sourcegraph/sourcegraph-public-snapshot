@@ -211,7 +211,7 @@ export class Backend {
                         dumpModels.DefinitionModel,
                         ctx
                     )
-                    if (remoteDefinitions) {
+                    if (remoteDefinitions.length > 0) {
                         return remoteDefinitions
                     }
                 } else {
@@ -221,7 +221,7 @@ export class Backend {
 
                     const monikerResults = await database.monikerResults(dumpModels.DefinitionModel, moniker, ctx)
                     const localDefinitions = monikerResults.map(loc => this.locationFromDatabase(dump.root, loc))
-                    if (localDefinitions) {
+                    if (localDefinitions.length > 0) {
                         return localDefinitions
                     }
                 }
@@ -472,7 +472,7 @@ export class Backend {
                 paginationContext.cursor,
                 ctx
             )
-            if (results) {
+            if (results !== undefined) {
                 return results
             }
 
@@ -559,7 +559,7 @@ export class Backend {
                     ctx
                 )
 
-                if (results) {
+                if (results !== undefined) {
                     return {
                         ...results,
                         // TODO - determine source of duplication
