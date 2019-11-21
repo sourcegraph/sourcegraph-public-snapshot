@@ -395,6 +395,12 @@ type Mutation {
     ): SavedSearch!
     # Deletes a saved search
     deleteSavedSearch(id: ID!): EmptyResponse
+
+    # Deletes an LSIF dump.
+    deleteLSIFDump(id: ID!): EmptyResponse
+
+    # Deletes an LSIF job.
+    deleteLSIFJob(id: ID!): EmptyResponse
 }
 
 # The specification of what changesets Sourcegraph will open when the campaign is created.

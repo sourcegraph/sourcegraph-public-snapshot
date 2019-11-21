@@ -18,6 +18,8 @@ type CodeIntelResolver interface {
 	LSIFJobs(ctx context.Context, args *LSIFJobsQueryArgs) (LSIFJobConnectionResolver, error)
 	LSIFJobStats(ctx context.Context) (LSIFJobStatsResolver, error)
 	LSIFJobStatsByID(ctx context.Context, id graphql.ID) (LSIFJobStatsResolver, error)
+	DeleteLSIFDump(ctx context.Context, id graphql.ID) (*EmptyResponse, error)
+	DeleteLSIFJob(ctx context.Context, id graphql.ID) (*EmptyResponse, error)
 }
 
 type LSIFDumpsQueryArgs struct {
@@ -99,3 +101,16 @@ func (r *schemaResolver) LSIFJobStats(ctx context.Context) (LSIFJobStatsResolver
 	}
 	return EnterpriseResolvers.codeIntelResolver.LSIFJobStats(ctx)
 }
+
+func (r *schemaResolver) DeleteLSIFDump(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error) {
+	if EnterpriseResolvers.codeIntelResolver == nil {
+		return nil, codeIntelOnlyInEnterprise
+	}
+	return EnterpriseResolvers.codeIntelResolver.DeleteLSIFDump(ctx, args.ID)
+}
+
+func (r *schemaResolver) DeleteLSIFJob(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error) {
+	if EnterpriseResolvers.codeIntelResolver == nil {
+		return nil, codeIntelOnlyInEnterprise
+	}
+	return EnterpriseResolvers.codeIntelResolver.DeleteLSIFJob(ctx, args.ID)
