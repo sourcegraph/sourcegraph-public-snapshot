@@ -8,6 +8,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -17,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type changesetsConnectionResolver struct {
@@ -197,7 +199,11 @@ func (r *changesetResolver) Diff(ctx context.Context) (*graphqlbackend.Repositor
 		return nil, err
 	}
 	if base == "" {
-		return nil, errors.New("changeset base ref name could not be determined")
+		// Fallback to the ref name if we can't get the OID
+		base, err = r.Changeset.BaseRefName()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	head, err := r.Changeset.HeadRefOid()
@@ -205,13 +211,81 @@ func (r *changesetResolver) Diff(ctx context.Context) (*graphqlbackend.Repositor
 		return nil, err
 	}
 	if head == "" {
-		return nil, errors.New("changeset head ref name could not be determined")
+		// Fallback to the ref name if we can't get the OID
+		head, err = r.Changeset.HeadRefName()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return graphqlbackend.NewRepositoryComparison(ctx, repo, &graphqlbackend.RepositoryComparisonInput{
 		Base: &base,
 		Head: &head,
 	})
+}
+
+func (r *changesetResolver) Head(ctx context.Context) (*graphqlbackend.GitRefResolver, error) {
+	name, err := r.Changeset.HeadRefName()
+	if err != nil {
+		return nil, err
+	}
+	if name == "" {
+		return nil, errors.New("changeset head ref name could not be determined")
+	}
+
+	oid, err := r.Changeset.HeadRefOid()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.gitRef(ctx, name, oid)
+}
+
+func (r *changesetResolver) Base(ctx context.Context) (*graphqlbackend.GitRefResolver, error) {
+	name, err := r.Changeset.BaseRefName()
+	if err != nil {
+		return nil, err
+	}
+	if name == "" {
+		return nil, errors.New("changeset base ref name could not be determined")
+	}
+
+	oid, err := r.Changeset.BaseRefOid()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.gitRef(ctx, name, oid)
+}
+
+func (r *changesetResolver) gitRef(ctx context.Context, name, oid string) (*graphqlbackend.GitRefResolver, error) {
+	repo, err := r.repoResolver(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if oid == "" {
+		commitID, err := r.commitID(ctx, repo, name)
+		if err != nil {
+			return nil, err
+		}
+		oid = string(commitID)
+	}
+
+	return graphqlbackend.NewGitRefResolver(repo, name, graphqlbackend.GitObjectID(oid)), nil
+}
+
+func (r *changesetResolver) commitID(ctx context.Context, repo *graphqlbackend.RepositoryResolver, refName string) (api.CommitID, error) {
+	grepo, err := backend.CachedGitRepo(ctx, &types.Repo{
+		ExternalRepo: *repo.ExternalRepo(),
+		Name:         api.RepoName(repo.Name()),
+	})
+	if err != nil {
+		return api.CommitID(""), err
+	}
+	// Call ResolveRevision to trigger fetches from remote (in case base/head commits don't
+	// exist).
+	return git.ResolveRevision(ctx, *grepo, nil, refName, nil)
 }
 
 func newRepositoryResolver(r *repos.Repo) *graphqlbackend.RepositoryResolver {

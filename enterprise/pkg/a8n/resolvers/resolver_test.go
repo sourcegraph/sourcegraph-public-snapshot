@@ -323,6 +323,28 @@ func TestCampaigns(t *testing.T) {
 		TotalCount int
 	}
 
+	git.Mocks.ResolveRevision = func(spec string, opt *git.ResolveRevisionOptions) (api.CommitID, error) {
+		return "mockcommitid", nil
+	}
+	defer func() { git.Mocks.ResolveRevision = nil }()
+
+	type GitTarget struct {
+		OID            string
+		AbbreviatedOID string
+		TargetType     string `json:"type"`
+	}
+
+	type GitRef struct {
+		Name        string
+		AbbrevName  string
+		DisplayName string
+		Prefix      string
+		RefType     string `json:"type"`
+		Repository  struct{ ID string }
+		URL         string
+		Target      GitTarget
+	}
+
 	type Changeset struct {
 		ID          string
 		Repository  struct{ ID string }
@@ -338,6 +360,8 @@ func TestCampaigns(t *testing.T) {
 		}
 		ReviewState string
 		Events      ChangesetEventConnection
+		Head        GitRef
+		Base        GitRef
 	}
 
 	var result struct {
@@ -354,6 +378,20 @@ func TestCampaigns(t *testing.T) {
 	)
 
 	mustExec(ctx, t, s, nil, &result, fmt.Sprintf(`
+		fragment gitRef on GitRef {
+			name
+			abbrevName
+			displayName
+			prefix
+			type
+			repository { id }
+			url
+			target {
+				oid
+				abbreviatedOID
+				type
+			}
+		}
 		fragment cs on ExternalChangeset {
 			id
 			repository { id }
@@ -370,6 +408,8 @@ func TestCampaigns(t *testing.T) {
 			events(first: 100) {
 				totalCount
 			}
+			head { ...gitRef }
+			base { ...gitRef }
 		}
 		mutation() {
 			changesets: createChangesets(input: %s) {
@@ -395,6 +435,35 @@ func TestCampaigns(t *testing.T) {
 				Events: ChangesetEventConnection{
 					TotalCount: 26,
 				},
+				Head: GitRef{
+					Name:        "refs/heads/vo/add-type-issue-filter",
+					AbbrevName:  "vo/add-type-issue-filter",
+					DisplayName: "vo/add-type-issue-filter",
+					Prefix:      "refs/heads/",
+					RefType:     "GIT_BRANCH",
+					Repository:  struct{ ID string }{ID: "UmVwb3NpdG9yeTox"},
+					URL:         "/github.com/sourcegraph/sourcegraph@vo/add-type-issue-filter",
+
+					Target: GitTarget{
+						OID:            "7db302f07955e41d50e656d5faebefb4d87bce8a",
+						AbbreviatedOID: "7db302f",
+						TargetType:     "GIT_COMMIT",
+					},
+				},
+				Base: GitRef{
+					Name:        "refs/heads/master",
+					AbbrevName:  "master",
+					DisplayName: "master",
+					Prefix:      "refs/heads/",
+					RefType:     "GIT_BRANCH",
+					Repository:  struct{ ID string }{ID: "UmVwb3NpdG9yeTox"},
+					URL:         "/github.com/sourcegraph/sourcegraph@master",
+					Target: GitTarget{
+						OID:            "fa3815ba9ddd49db9111c5e9691e16d27e8f1f60",
+						AbbreviatedOID: "fa3815b",
+						TargetType:     "GIT_COMMIT",
+					},
+				},
 			},
 			{
 				Repository: struct{ ID string }{ID: graphqlBBSRepoID},
@@ -410,6 +479,34 @@ func TestCampaigns(t *testing.T) {
 				ReviewState: "PENDING",
 				Events: ChangesetEventConnection{
 					TotalCount: 9,
+				},
+				Head: GitRef{
+					Name:        "refs/heads/release-testing-pr",
+					AbbrevName:  "release-testing-pr",
+					DisplayName: "release-testing-pr",
+					Prefix:      "refs/heads/",
+					RefType:     "GIT_BRANCH",
+					Repository:  struct{ ID string }{ID: "UmVwb3NpdG9yeToy"},
+					URL:         "/bitbucket.sgdev.org/SOUR/vegeta@release-testing-pr",
+					Target: GitTarget{
+						OID:            "mockcommitid",
+						AbbreviatedOID: "mockcom",
+						TargetType:     "GIT_COMMIT",
+					},
+				},
+				Base: GitRef{
+					Name:        "refs/heads/master",
+					AbbrevName:  "master",
+					DisplayName: "master",
+					Prefix:      "refs/heads/",
+					RefType:     "GIT_BRANCH",
+					Repository:  struct{ ID string }{ID: "UmVwb3NpdG9yeToy"},
+					URL:         "/bitbucket.sgdev.org/SOUR/vegeta@master",
+					Target: GitTarget{
+						OID:            "mockcommitid",
+						AbbreviatedOID: "mockcom",
+						TargetType:     "GIT_COMMIT",
+					},
 				},
 			},
 		}

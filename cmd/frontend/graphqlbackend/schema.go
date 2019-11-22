@@ -654,6 +654,12 @@ type ExternalChangeset implements Node {
     # The review state of this changeset.
     reviewState: ChangesetReviewState!
 
+    # The head of the diff ("new" or "right-hand side").
+    head: GitRef!
+
+    # The base of the diff ("old" or "left-hand side").
+    base: GitRef!
+
     # The diff of this changeset.
     # Only returned if the changeset has not been merged or closed.
     diff: RepositoryComparison
