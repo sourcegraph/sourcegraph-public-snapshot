@@ -436,7 +436,7 @@ export class Backend {
             this.connectionCache,
             this.documentCache,
             this.resultChunkCache,
-            dump,
+            dump.id,
             dbFilename(this.storageRoot, dump.id, dump.repository, dump.commit)
         )
     }
