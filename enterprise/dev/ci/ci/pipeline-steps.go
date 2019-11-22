@@ -50,10 +50,12 @@ func addWebApp(pipeline *bk.Pipeline) {
 		bk.Env("ENTERPRISE", "0"))
 
 	// Webapp enterprise build
-	pipeline.AddStep(":webpack::globe_with_meridians::moneybag:",
-		bk.Cmd("dev/ci/yarn-build.sh web"),
-		bk.Env("NODE_ENV", "production"),
-		bk.Env("ENTERPRISE", "1"))
+	// todo: this is done in the server candidate step also, hopefully we can extract it to make it a separate job in the UI so failure is easier to narrow down
+	// pipeline.AddStep(":webpack::globe_with_meridians::moneybag:",
+	// 	bk.Cmd("dev/ci/yarn-build.sh web"),
+	// 	bk.Env("NODE_ENV", "production"),
+	// 	bk.ArtifactPaths("ui/assets"),
+	// 	bk.Env("ENTERPRISE", "1"))
 
 	// Webapp tests
 	pipeline.AddStep(":jest::globe_with_meridians:",
@@ -210,7 +212,8 @@ func addServerDockerImageCandidate(c Config) func(*bk.Pipeline) {
 			bk.Env("IMAGE", "sourcegraph/server:"+c.version+"_candidate"),
 			bk.Env("VERSION", c.version),
 			bk.Cmd("./cmd/server/build.sh"),
-			bk.Cmd("popd"))
+			bk.Cmd("popd"),
+			bk.ArtifactPaths("ui/assets/**/*"))
 	}
 }
 
@@ -260,6 +263,10 @@ func addDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 			bk.Cmd(fmt.Sprintf(`echo "Building %s..."`, app)),
 		}
 
+		if app == "frontend" || app == "server" {
+			cmds = append(cmds, bk.Cmd("buildkite-agent artifact download 'ui/assets/*' . || true"))
+		}
+
 		cmdDir := func() string {
 			cmdDirByApp := map[string]string{
 				"lsif-server": "lsif",
@@ -276,7 +283,7 @@ func addDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 
 		preBuildScript := cmdDir + "/pre-build.sh"
 		if _, err := os.Stat(preBuildScript); err == nil {
-			cmds = append(cmds, bk.Cmd(preBuildScript))
+			cmds = append(cmds, bk.Env("SKIP_WEB_BUILD", "1"), bk.Cmd(preBuildScript))
 		}
 
 		baseImage := "sourcegraph/" + app
