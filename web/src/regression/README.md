@@ -43,6 +43,25 @@ Run the tests:
    Screenshots files are deposited in the current directory and are named descriptively for what
    should be checked.
 
+At least the following is necessary to run, for example, the search regression
+tests against the a local running Sourcegraph Docker image:
+
+The following environment variables must be set:
+
+```bash
+export SOURCEGRAPH_BASE_URL=http://localhost:7080
+export GITHUB_TOKEN=<your-github-token>
+export SOURCEGRAPH_SUDO_TOKEN=<your-sourcegraph-instance-token>
+export SOURCEGRAPH_SUDO_USER=sourcegraph
+export TEST_USER_PASSWORD=sourcegraph
+export INCLUDE_ADMIN_ONBOARDING=false
+export LOG_STATUS_MESSAGES=false
+export NO_CLEANUP=true
+```
+
+Then run `yarn jest src/regression/search.test.ts`.
+
+
 Tips:
 
 - Use [`direnv`](https://direnv.net) to set environment variables automatically when you `cd` into
@@ -53,6 +72,9 @@ Tips:
   docs](https://github.com/GoogleChrome/puppeteer#debugging-tips)
 - The `SLOWMO` environment variable will slow down Puppeteer execution by the specified number of
   milliseconds. `HEADLESS` will cause Puppeteer to run in headless mode (no visible browser window).
+- Tests can be flakey. For the search tests, at least the following are known to be flakey:
+  - `Global search for a filename with a few results`
+  - `Text search non-master branch, large repository, many results`
 
 ## Adding a test
 
