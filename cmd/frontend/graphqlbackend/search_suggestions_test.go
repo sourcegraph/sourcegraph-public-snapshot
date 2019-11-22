@@ -6,6 +6,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
@@ -54,7 +55,6 @@ func TestSearchSuggestions(t *testing.T) {
 		for _, v := range searchVersions {
 			testSuggestions(t, "", v, []string{})
 		}
-
 	})
 
 	t.Run("whitespace", func(t *testing.T) {
@@ -110,7 +110,6 @@ func TestSearchSuggestions(t *testing.T) {
 				t.Error("!calledSearchFilesInRepos")
 			}
 		}
-
 	})
 
 	// This test is only valid for Regexp searches. Literal searches won't return suggestions for an invalid regexp.
@@ -249,11 +248,21 @@ func TestSearchSuggestions(t *testing.T) {
 				t.Error("!calledSearchFilesInRepos")
 			}
 		}
-
 	})
 
 	t.Run("repo: field for language suggestions", func(t *testing.T) {
-		db.Mocks.Repos.List = func(_ context.Context, _ db.ReposListOptions) ([]*types.Repo, error) {
+		db.Mocks.Repos.List = func(_ context.Context, have db.ReposListOptions) ([]*types.Repo, error) {
+			want := db.ReposListOptions{
+				IncludePatterns: []string{"foo"},
+				OnlyRepoIDs:     true,
+				Enabled:         true,
+				LimitOffset: &db.LimitOffset{
+					Limit: 1,
+				},
+			}
+			if !reflect.DeepEqual(have, want) {
+				t.Error(cmp.Diff(have, want))
+			}
 			return []*types.Repo{{Name: "foo-repo"}}, nil
 		}
 		defer func() { db.Mocks.Repos.List = nil }()
@@ -280,7 +289,7 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { mockShowSymbolMatches = nil }()
 
 		for _, v := range searchVersions {
-			testSuggestions(t, "repo:foo", v, []string{"lang:go", "lang:java", "lang:typescript"})
+			testSuggestions(t, "repo:foo@master", v, []string{"lang:go", "lang:java", "lang:typescript"})
 			if !calledReposGetInventory {
 				t.Error("!calledReposGetInventory")
 			}

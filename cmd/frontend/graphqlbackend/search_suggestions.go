@@ -136,6 +136,12 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 
 		validValues := effectiveRepoFieldValues[:0]
 		for _, v := range effectiveRepoFieldValues {
+			if i := strings.LastIndexByte(v, '@'); i > -1 {
+				// Strip off the @revision suffix so that we can use
+				// the trigram index on the name column in Postgres.
+				v = v[:i]
+			}
+
 			if _, err := regexp.Compile(v); err == nil {
 				validValues = append(validValues, v)
 			}
