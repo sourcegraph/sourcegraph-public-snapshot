@@ -99,7 +99,7 @@ Foreign-key constraints:
     "campaigns_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
     "campaigns_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
 Referenced by:
-    TABLE "changeset_jobs" CONSTRAINT "changeset_jobs_campaign_id_fkey" FOREIGN KEY (campaign_id) REFERENCES campaigns(id) DEFERRABLE
+    TABLE "changeset_jobs" CONSTRAINT "changeset_jobs_campaign_id_fkey" FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE DEFERRABLE
 Triggers:
     trig_delete_campaign_reference_on_changesets AFTER DELETE ON campaigns FOR EACH ROW EXECUTE PROCEDURE delete_campaign_reference_on_changesets()
     trig_validate_campaign_plan_is_finished BEFORE INSERT OR UPDATE ON campaigns FOR EACH ROW EXECUTE PROCEDURE validate_campaign_plan_is_finished()
@@ -149,7 +149,7 @@ Indexes:
     "changeset_jobs_finished_at" btree (finished_at)
     "changeset_jobs_started_at" btree (started_at)
 Foreign-key constraints:
-    "changeset_jobs_campaign_id_fkey" FOREIGN KEY (campaign_id) REFERENCES campaigns(id) DEFERRABLE
+    "changeset_jobs_campaign_id_fkey" FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE DEFERRABLE
     "changeset_jobs_campaign_job_id_fkey" FOREIGN KEY (campaign_job_id) REFERENCES campaign_jobs(id) DEFERRABLE
     "changeset_jobs_changeset_id_fkey" FOREIGN KEY (changeset_id) REFERENCES changesets(id) DEFERRABLE
 
