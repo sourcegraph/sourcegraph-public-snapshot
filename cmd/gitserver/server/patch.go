@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -63,7 +62,6 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	defer cleanUpTmpRepo(tmpRepoDir)
 
 	// Temporary logging command wrapper
-	// TODO: We mix stdlib log and log15, we should pick one
 	prefix := fmt.Sprintf("%d %s ", atomic.AddUint64(&patchID, 1), repo)
 	run := func(cmd *exec.Cmd, reason string) ([]byte, error) {
 		t := time.Now()
@@ -72,10 +70,9 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 			resp.AddError(errors.Wrap(err, "gitserver: "+reason))
 			resp.Error.Command = strings.Join(cmd.Args, " ")
 			resp.Error.CombinedOutput = string(out)
-			log.Printf("%scommand %s failed (%v): %v\nOUT: %s",
-				prefix, cmd.Args, time.Since(t), err, string(out))
+			log15.Info("command failed", "prefix", prefix, "command", strings.Join(cmd.Args, " "), "duration", time.Since(t), "error", err, "output", string(out))
 		} else {
-			log.Printf("%sran successfully %s (%v)\nOUT: %s", prefix, cmd.Args, time.Since(t), string(out))
+			log15.Info("command ran successfully", "prefix", prefix, "command", strings.Join(cmd.Args, " "), "duration", time.Since(t), "output", string(out))
 		}
 		return out, err
 	}
@@ -220,6 +217,6 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 func cleanUpTmpRepo(path string) {
 	err := os.RemoveAll(path)
 	if err != nil {
-		log.Printf("unable to clean up tmp repo %s: %v", path, err)
+		log15.Info("unable to clean up tmp repo", "path", path, "err", err)
 	}
 }
