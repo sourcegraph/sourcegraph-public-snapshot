@@ -59,7 +59,7 @@
     "@babel/runtime": "^7.7.2",
     "@gql2ts/from-schema": "^1.10.1",
     "@gql2ts/language-typescript": "^1.9.0",
-    "@octokit/rest": "^16.34.1",
+    "@octokit/rest": "^16.35.0",
     "@percy/puppeteer": "^1.0.8",
     "@slack/web-api": "^5.4.0",
     "@sourcegraph/babel-plugin-transform-react-hot-loader-wrapper": "^1.0.0",
