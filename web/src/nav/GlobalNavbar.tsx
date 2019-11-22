@@ -16,7 +16,7 @@ import { NavLinks } from './NavLinks'
 import { ThemeProps } from '../../../shared/src/theme'
 import { ThemePreferenceProps } from '../search/theme'
 import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
-import { QueryState } from '../search/helpers'
+import { QueryState, createQueryState } from '../search/helpers'
 
 interface Props
     extends SettingsCascadeProps,
@@ -60,14 +60,16 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
          */
         const query = parseSearchURLQuery(props.location.search || '')
         if (query) {
-            props.onNavbarQueryChange({ query, cursorPosition: query.length })
+            props.onNavbarQueryChange(createQueryState({ query, cursorPosition: query.length }))
         } else {
             // If we have no component state, then we may have gotten unmounted during a route change.
             const query = props.location.state ? props.location.state.query : ''
-            props.onNavbarQueryChange({
-                query,
-                cursorPosition: query.length,
-            })
+            props.onNavbarQueryChange(
+                createQueryState({
+                    query,
+                    cursorPosition: query.length,
+                })
+            )
         }
     }
 
@@ -79,7 +81,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
         if (prevProps.location.search !== this.props.location.search) {
             const query = parseSearchURLQuery(this.props.location.search || '')
             if (query) {
-                this.props.onNavbarQueryChange({ query, cursorPosition: query.length })
+                this.props.onNavbarQueryChange(createQueryState({ query, cursorPosition: query.length }))
             }
         }
     }

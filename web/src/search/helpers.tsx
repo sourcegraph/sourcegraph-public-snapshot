@@ -257,7 +257,19 @@ export interface QueryState {
      * Prevents fetching/showing suggestions on every component update.
      */
     fromUserInput?: true
+    /**
+     * Toggle suggestions visibility.
+     * Example usage: Hiding on search submit, toggle on search input focus/blur.
+     */
+    showSuggestions: boolean
 }
+
+export const createQueryState = (initialState: Partial<QueryState> = {}): QueryState => ({
+    showSuggestions: false,
+    query: '',
+    cursorPosition: 0,
+    ...initialState,
+})
 
 /**
  * Used to decide if the search is for a filter value or a fuzzy-search word.
@@ -270,12 +282,9 @@ export const isTypingWordAndNotFilterValue = (value: string): boolean => Boolean
  * Adds suggestions value to search query where cursor was positioned.
  * ('a test: query', { value: 'suggestion' }, 7) => 'a test:suggestion query'
  */
-export const insertSuggestionInQuery = (
-    queryToInsertIn: string,
-    selectedSuggestion: Suggestion,
-    cursorPosition: number
-): QueryState => {
-    const { firstPart, lastPart } = splitStringAtPosition(queryToInsertIn, cursorPosition)
+export const insertSuggestionInQuery = (queryState: QueryState, selectedSuggestion: Suggestion): QueryState => {
+    const { query, cursorPosition } = queryState
+    const { firstPart, lastPart } = splitStringAtPosition(query, cursorPosition)
     const isFiltersSuggestion = selectedSuggestion.type === SuggestionTypes.filters
     // Know where to place the suggestion later on
     const separatorIndex = firstPart.lastIndexOf(!isFiltersSuggestion ? ':' : ' ')
@@ -305,6 +314,7 @@ export const insertSuggestionInQuery = (
     })()
 
     return {
+        ...queryState,
         // .replace() to remove excess whitespace in query
         query: (newFirstPart + lastPart).replace(/\s+/g, ' '),
         cursorPosition: newFirstPart.length,

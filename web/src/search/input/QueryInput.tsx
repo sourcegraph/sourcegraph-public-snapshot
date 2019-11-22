@@ -30,6 +30,7 @@ import {
     isFuzzyWordSearch,
     validFilterAndValueBeforeCursor,
     formatQueryForFuzzySearch,
+    createQueryState,
 } from '../helpers'
 import { fetchSuggestions } from '../backend'
 import { isDefined } from '../../../../shared/src/util/types'
@@ -87,7 +88,7 @@ interface ComponentSuggestions {
 
 interface State {
     /** Only show suggestions if search input is focused */
-    showSuggestions: boolean
+
     /** Indicates if suggestions are being loaded from the back-end */
     loadingSuggestions?: boolean
     /** The suggestions shown to the user */
@@ -118,7 +119,6 @@ export class QueryInput extends React.Component<Props, State> {
     private containerElement = React.createRef<HTMLDivElement>()
 
     public state: State = {
-        showSuggestions: false,
         loadingSuggestions: false,
         suggestions: {
             cursorPosition: 0,
@@ -270,7 +270,11 @@ export class QueryInput extends React.Component<Props, State> {
                     )
                     .subscribe(() => {
                         const selection = String(window.getSelection() || '')
-                        this.inputValues.next({ query: selection, cursorPosition: selection.length })
+                        this.inputValues.next({
+                            ...props.value,
+                            query: selection,
+                            cursorPosition: selection.length,
+                        })
                         if (this.inputElement.current) {
                             this.inputElement.current.focus()
                             // Select whole input text
@@ -284,6 +288,7 @@ export class QueryInput extends React.Component<Props, State> {
             this.subscriptions.add(
                 queryUpdates.pipe(distinctUntilChanged()).subscribe(query =>
                     this.inputValues.next({
+                        ...props.value,
                         query,
                         cursorPosition: query.length,
                     })
@@ -328,10 +333,12 @@ export class QueryInput extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         const showSuggestions =
-            this.state.showSuggestions && (this.state.suggestions.values.length > 0 || this.state.loadingSuggestions)
+            this.props.value.showSuggestions &&
+            (this.state.suggestions.values.length > 0 || this.state.loadingSuggestions)
         // If last typed word is not a filter type,
         // suggestions should show url label and redirect on select.
         const showUrlLabel = isFuzzyWordSearch({
+            ...this.props.value,
             query: this.props.value.query,
             cursorPosition: this.state.suggestions.cursorPosition,
         })
@@ -428,12 +435,17 @@ export class QueryInput extends React.Component<Props, State> {
         }
     }
 
+    private toggleSuggestions = (showSuggestions: boolean): void => {
+        this.props.onChange({ ...this.props.value, showSuggestions })
+    }
+
     private onInputBlur = (): void => {
-        this.setState({ showSuggestions: false }, () => this.suggestionsHidden.next())
+        this.toggleSuggestions(false)
+        this.suggestionsHidden.next()
     }
 
     private onInputFocus = (): void => {
-        this.setState({ showSuggestions: true })
+        this.toggleSuggestions(true)
     }
 
     /**
@@ -459,6 +471,7 @@ export class QueryInput extends React.Component<Props, State> {
             // if separate word is being typed and suggestion with url is selected
             if (
                 isFuzzyWordSearch({
+                    ...this.props.value,
                     query: value.query,
                     cursorPosition: suggestions.cursorPosition,
                 }) &&
@@ -474,7 +487,14 @@ export class QueryInput extends React.Component<Props, State> {
                 : { ...suggestion, value: suggestion.value + '$' }
 
             this.inputValues.next({
-                ...insertSuggestionInQuery(value.query, selectedSuggestion, suggestions.cursorPosition),
+                ...insertSuggestionInQuery(
+                    createQueryState({
+                        query: value.query,
+                        cursorPosition: suggestions.cursorPosition,
+                        showSuggestions: true,
+                    }),
+                    selectedSuggestion
+                ),
                 fromUserInput: true,
             })
 
@@ -503,9 +523,11 @@ export class QueryInput extends React.Component<Props, State> {
     private onInputChange: React.ChangeEventHandler<HTMLInputElement> = event => {
         this.logFirstInput()
         this.inputValues.next({
+            ...this.props.value,
             fromUserInput: true,
             query: event.currentTarget.value,
             cursorPosition: event.currentTarget.selectionStart || 0,
+            showSuggestions: true,
         })
     }
 }
