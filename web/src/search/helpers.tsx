@@ -264,6 +264,10 @@ export interface QueryState {
     showSuggestions: boolean
 }
 
+/**
+ * QueryState constructor.
+ * Values chosen based on their frequent use by parent components of QueryInput
+ */
 export const createQueryState = (initialState: Partial<QueryState> = {}): QueryState => ({
     showSuggestions: false,
     query: '',
