@@ -111,17 +111,17 @@ async function updateCommitsAndDumpsVisibleFromTip(
 ): Promise<void> {
     const gitserverUrls = fetchConfiguration().gitServers
 
+    const tipCommit = await xrepoDatabase.discoverTip({ repository, gitserverUrls, ctx })
+    if (tipCommit === undefined) {
+        throw new Error('No tip commit available for repository')
+    }
+
     const commits = await xrepoDatabase.discoverCommits({
         repository,
         commit,
         gitserverUrls,
         ctx,
     })
-
-    const tipCommit = await xrepoDatabase.discoverTip({ repository, gitserverUrls, ctx })
-    if (tipCommit === undefined) {
-        throw new Error('No tip commit available for repository')
-    }
 
     if (tipCommit !== commit) {
         // If the tip is ahead of this commit, we also want to discover all of
@@ -132,7 +132,7 @@ async function updateCommitsAndDumpsVisibleFromTip(
 
         const tipCommits = await xrepoDatabase.discoverCommits({
             repository,
-            commit,
+            commit: tipCommit,
             gitserverUrls,
             ctx,
         })
