@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"github.com/pkg/errors"
 	"net/url"
 
 	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintel/lsifserver/client"
