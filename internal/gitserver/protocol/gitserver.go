@@ -168,8 +168,8 @@ type CreateCommitFromPatchResponse struct {
 	Error *CreateCommitFromPatchError
 }
 
-// AddError adds the supplied error to e
-func (e *CreateCommitFromPatchResponse) AddError(err error) {
+// SetError adds the supplied error to e
+func (e *CreateCommitFromPatchResponse) SetError(err error) {
 	if e.Error == nil {
 		e.Error = &CreateCommitFromPatchError{
 			Err: err,
