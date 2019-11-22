@@ -7,6 +7,7 @@ Feature | Supported?
 [Repository syncing](../admin/external_service/gitlab.md#repository-syncing) | ✅
 [Repository permissions](../admin/external_service/gitlab.md#repository-permissions) | ✅
 [User authentication](../admin/external_service/gitlab.md#user-authentication) | ✅
+[GitLab UI native integration](#gitlab-ui-native-integration) | ✅
 [Browser extension](#browser-extension) | ✅
 
 ## Repository syncing
@@ -20,6 +21,8 @@ Site admins can [configure Sourcegraph to respect GitLab repository access permi
 ## User authentication
 
 Site admins can [configure Sourcegraph to allow users to sign in via GitLab](../admin/external_service/gitlab.md#user-authentication).
+
+## GitLab UI native integration
 
 ## Browser extension
 
