@@ -4,10 +4,10 @@ go 1.13
 
 require (
 	cloud.google.com/go v0.49.0 // indirect
-	cloud.google.com/go/bigquery v1.1.0 // indirect
+	cloud.google.com/go/bigquery v1.3.0 // indirect
 	cloud.google.com/go/pubsub v1.1.0
-	cloud.google.com/go/storage v1.1.0 // indirect
-	github.com/DataDog/zstd v1.4.1 // indirect
+	cloud.google.com/go/storage v1.4.0 // indirect
+	github.com/DataDog/zstd v1.4.4 // indirect
 	github.com/Microsoft/go-winio v0.4.14 // indirect
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/RoaringBitmap/roaring v0.4.21
@@ -73,7 +73,7 @@ require (
 	github.com/google/go-querystring v1.0.0
 	github.com/google/uuid v1.1.1
 	github.com/google/zoekt v0.0.0-20191031082336-5851b63aed4d
-	github.com/gopherjs/gopherjs v0.0.0-20190915194858-d3ddacdb130f // indirect
+	github.com/gopherjs/gopherjs v0.0.0-20191106031601-ce3c9ade29de // indirect
 	github.com/gorilla/context v1.1.1
 	github.com/gorilla/csrf v1.6.2
 	github.com/gorilla/handlers v1.4.2
@@ -91,6 +91,7 @@ require (
 	github.com/honeycombio/libhoney-go v1.12.2
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/joho/godotenv v1.3.0
+	github.com/json-iterator/go v1.1.8 // indirect
 	github.com/jstemmer/go-junit-report v0.9.1 // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0
 	github.com/karlseguin/expect v1.0.1 // indirect
@@ -121,7 +122,7 @@ require (
 	github.com/peterh/liner v1.1.0 // indirect
 	github.com/peterhellberg/link v1.1.0
 	github.com/pkg/errors v0.8.1
-	github.com/pkg/profile v1.3.0 // indirect
+	github.com/pkg/profile v1.4.0 // indirect
 	github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35 // indirect
 	github.com/prometheus/client_golang v1.2.1
 	github.com/prometheus/procfs v0.0.7 // indirect
@@ -180,7 +181,8 @@ require (
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
 	golang.org/x/sys v0.0.0-20191120155948-bd437916bb0e
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
-	golang.org/x/tools v0.0.0-20191122071640-df8e87c2cec0
+	golang.org/x/tools v0.0.0-20191122080028-f774e2e2e5be
+	golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898 // indirect
 	google.golang.org/appengine v1.6.5 // indirect
 	google.golang.org/genproto v0.0.0-20191115221424-83cc0476cb11 // indirect
 	google.golang.org/grpc v1.25.1 // indirect
