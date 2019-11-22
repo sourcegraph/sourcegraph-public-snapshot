@@ -127,9 +127,10 @@ describe('discoverAndUpdateTips', () => {
                 repository: 'test-repo',
                 gitserverUrls: ['gitserver0'],
             })
-            if (tipCommit) {
-                await xrepoDatabase.updateDumpsVisibleFromTip('test-repo', tipCommit)
+            if (!tipCommit) {
+                throw new Error('Expected a tip commit')
             }
+            await xrepoDatabase.updateDumpsVisibleFromTip('test-repo', tipCommit)
 
             const d1 = await xrepoDatabase.getDump('test-repo', ca, 'foo/test.ts')
             const d2 = await xrepoDatabase.getDump('test-repo', cb, 'foo/test.ts')
