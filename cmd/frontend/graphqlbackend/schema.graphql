@@ -2289,6 +2289,16 @@ type GitCommitConnection {
     pageInfo: PageInfo!
 }
 
+# Statistics about a specific language
+type LanguageStatistics {
+    # The name of the programming language
+    Name: String!
+    # The total bytes of the language
+    TotalBytes: Float!
+    # The total lines of the language
+    TotalLines: Int!
+}
+
 # A Git commit.
 type GitCommit implements Node {
     # The globally addressable ID for this commit.
@@ -2335,6 +2345,8 @@ type GitCommit implements Node {
     file(path: String!): File2
     # Lists the programming languages present in the tree at this commit.
     languages: [String!]!
+    # List statistics for each language present in the repository.
+    languageStatistics: [LanguageStatistics!]!
     # The log of commits consisting of this commit and its ancestors.
     ancestors(
         # Returns the first n commits from the list.
