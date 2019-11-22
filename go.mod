@@ -102,7 +102,6 @@ require (
 	github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513
 	github.com/kevinburke/go-bindata v3.16.0+incompatible
 	github.com/klauspost/compress v1.9.2 // indirect
-	github.com/klauspost/cpuid v1.2.1 // indirect
 	github.com/kr/text v0.1.0
 	github.com/kylelemons/godebug v1.1.0
 	github.com/leanovate/gopter v0.2.4
@@ -159,7 +158,6 @@ require (
 	github.com/stripe/stripe-go v67.5.0+incompatible
 	github.com/temoto/robotstxt v1.1.1
 	github.com/tomnomnom/linkheader v0.0.0-20180905144013-02ca5825eb80
-	github.com/uber-go/atomic v1.4.0 // indirect
 	github.com/uber/gonduit v0.5.0
 	github.com/uber/jaeger-client-go v2.20.1+incompatible
 	github.com/uber/jaeger-lib v2.2.0+incompatible
