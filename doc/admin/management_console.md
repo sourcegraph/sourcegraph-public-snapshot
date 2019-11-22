@@ -8,32 +8,29 @@ Critical configuration includes things like authentication providers, the extern
 
 ### When running Sourcegraph in a single Docker container
 
-The management console is built-in to the same Docker image and published on port 2633. We recommend publishing port 2633 like this:
+#### Sourcegraph v3.11+
 
-<pre class="pre-wrap start-sourcegraph-command"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:2633:2633 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.10.0</code></pre>
+In Sourcegraph v3.11+, the management console is accessible only via `localhost` / `127.0.0.1` on the host machine. This allows admins to easily access it via a secure SSH port forwarding command without needing secondary authentication or HTTPS configuration.
 
-because by default the management console authentication is turned off. This opens the port only to the local host running the docker command.
+The management console is built-in to the same Docker image and published on port 2633:
 
 ```
 $ docker ps
 CONTAINER ID        IMAGE                              PORTS
-394ff36a8c3c        sourcegraph/server:3.10.0           127.0.0.1:2633->2633/tcp, 0.0.0.0:7080->7080/tcp
+394ff36a8c3c        sourcegraph/server:3.11.0          127.0.0.1:2633->2633/tcp, 0.0.0.0:7080->7080/tcp
 ```
 
-You can use [sshuttle](https://github.com/sshuttle/sshuttle) to establish a secure connection to the host running
-the Sourcegraph Docker container:
+Use [sshuttle](https://github.com/sshuttle/sshuttle) to establish a secure connection to the host running the Sourcegraph Docker container:
 
 ```bash script
 sshuttle -r user@host 0/0
 ```
 
-and then access the management console via http://localhost:2633.
+Then simply access the management console at http://localhost:2633.
 
-If on the other hand you want to access it through the public internet via https://my.server.ip:2633 use:
+#### Legacy Sourcegraph versions
 
-<pre class="pre-wrap start-sourcegraph-command"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 -e DISABLE_MANAGEMENT_CONSOLE_AUTH=false --publish 2633:2633 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.10.0</code></pre>
-
-Note the additional environment variable `-e DISABLE_MANAGEMENT_CONSOLE_AUTH=false` which turns on password protection. 
+The management console is built-in to the same Docker image and published on port 2633:
 
 ```
 $ docker ps
@@ -41,9 +38,13 @@ CONTAINER ID        IMAGE                              PORTS
 394ff36a8c3c        sourcegraph/server:3.10.0           0.0.0.0:2633->2633/tcp, 0.0.0.0:7080->7080/tcp
 ```
 
+Usually, you can access it through the public internet via https://my.server.ip:2633, or https://localhost:2633 when testing locally.
+
 ### When running Sourcegraph in a cluster deployment
 
-The management console is a separate service running in your cluster. You will need to either port-forward / VPN into your cluster in order to access the service via a browser, or you may expose the service to the public internet (which is generally secure) and access it with a browser through the public internet. For example, using Kubernetes you can forward port 2633 of the management console service to your local machine:
+#### Sourcegraph v3.11+
+
+In Sourcegraph v3.11+, the management console is accessible only via `localhost` / `127.0.0.1`. This allows admins to easily access it via a secure Kubernetes SSL port forwarding command without needing secondary authentication or HTTPS configuration. To do so simply run:
 
 ```
 $ kubectl port-forward svc/management-console 2633:2633
@@ -51,15 +52,29 @@ $ kubectl port-forward svc/management-console 2633:2633
 
 Then visit http://localhost:2633 to access the management console.
 
+#### Legacy Sourcegraph versions
+
+The management console is a separate service running in your cluster. You will need to either port-forward / VPN into your cluster in order to access the service via a browser, or you may expose the service to the public internet (which is generally secure) and access it with a browser through the public internet. For example, using Kubernetes you can forward port 2633 of the management console service to your local machine:
+
+```
+$ kubectl port-forward svc/management-console 2633:2633
+```
+
+Then visit https://localhost:2633 to access the management console.
+
 ## Troubleshooting
 
 ### I am getting "The server sent an invalid response" errors from my browser, why?
 
-Ensure you are connecting via `https://` and _not_ `http://` if you turned on password protection with `-e DISABLE_MANAGEMENT_CONSOLE_AUTH=false`.
+> NOTE: This section applies to legacy Sourcegraph versions. Sourcegraph v3.11+ uses secure SSH port forwarding in order to securely access the management console without secondary authentication or HTTPS configuration.
 
-This type of browser error often indicates you are connecting via HTTP instead of HTTPS. The management console serves over HTTPS when authentication is turned on.
+Ensure you are connecting via `https://` and _not_ `http://`.
+
+This type of browser error often indicates you are connecting via HTTP instead of HTTPS. The management console **only** serves over HTTPS for security reasons.
 
 ### I am seeing TLS / SSL warnings in my browser, why?
+
+> NOTE: This section applies to legacy Sourcegraph versions. Sourcegraph v3.11+ uses secure SSH port forwarding in order to securely access the management console without secondary authentication or HTTPS configuration.
 
 You must click the **Advanced** option in your browser and continue anyway (**Proceed to localhost (unsafe)**).
 
@@ -68,6 +83,8 @@ The management console uses self-signed TLS certificates by default. The first t
 The self-signed TLS certificate in use ensures that your interaction with the management console cannot be sniffed via [MITM attacks](https://en.wikipedia.org/wiki/Man-in-the-middle_attack). If desired, you can configure the management console to use your own TLS certificates (but you do not need to).
 
 ### What is the password to my management console?
+
+> NOTE: This section applies to legacy Sourcegraph versions. Sourcegraph v3.11+ uses secure SSH port forwarding in order to securely access the management console without secondary authentication or HTTPS configuration.
 
 -> Visit Sourcegraph's **Site admin** area (https://sourcegraph.example.com/site-admin) to retrieve your management console password (**enter any username**):
 
@@ -79,9 +96,13 @@ This password is automatically generated for you to ensure it is very long and s
 
 ### How can I reset my management console password?
 
+> NOTE: This section applies to legacy Sourcegraph versions. Sourcegraph v3.11+ uses secure SSH port forwarding in order to securely access the management console without secondary authentication or HTTPS configuration.
+
 Resetting the management console password can be done manually via the database.
 
 #### (Option 1): If you have access to Sourcegraph still
+
+> NOTE: This section applies to legacy Sourcegraph versions. Sourcegraph v3.11+ uses secure SSH port forwarding in order to securely access the management console without secondary authentication or HTTPS configuration.
 
 Open a `psql` prompt on your Sourcegraph instance (see ["How do I access my Sourcegraph database?"](faq.md#how-do-i-access-the-sourcegraph-database)) and run:
 
@@ -92,6 +113,8 @@ UPDATE global_state SET mgmt_password_plaintext='', mgmt_password_bcrypt='';
 When you next visit sourcegraph.example.com/site-admin, a new password will be generated and presented to you.
 
 #### (Option 2) If you _don't_ have access Sourcegraph
+
+> NOTE: This section applies to legacy Sourcegraph versions. Sourcegraph v3.11+ uses secure SSH port forwarding in order to securely access the management console without secondary authentication or HTTPS configuration.
 
 First, determine what your new password will be. If your management console is exposed to the public internet, it is important that this be a **very** long and random password (e.g. 128 characters in length). For this example, we will use `abc123`.
 
@@ -123,6 +146,8 @@ You may now sign into the management console using your plaintext password `abc1
 
 ### How can I use my own TLS certificates with the management console?
 
+> NOTE: This section applies to legacy Sourcegraph versions. Sourcegraph v3.11+ uses secure SSH port forwarding in order to securely access the management console without secondary authentication or HTTPS configuration.
+
 The management console looks for TLS certificates in the following location inside the Docker container:
 
 - `/etc/sourcegraph/management/cert.pem`
@@ -140,6 +165,8 @@ Restart the container once you have copied the files there for the changes to ta
 
 ### Can I disable HTTPS on the management console?
 
-It is **unsafe** to do so if the management console is exposed to the public internet as anyone who can MITM your traffic to the management console can steal the admin password and act on your behalf.
+> NOTE: This section applies to legacy Sourcegraph versions. Sourcegraph v3.11+ uses secure SSH port forwarding in order to securely access the management console without secondary authentication or HTTPS configuration.
+
+It is **unsafe** to do so as anyone who can MITM your traffic to the management console can steal the admin password and act on your behalf.
 
 If you understand the risks and still wish to, you can set the environment variable `UNSAFE_NO_HTTPS` to `true` on the Docker container. This will entirely disable HTTPS (the port will remain the same).
