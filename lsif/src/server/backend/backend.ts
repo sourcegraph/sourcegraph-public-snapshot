@@ -297,19 +297,7 @@ export class Backend {
             packageCommit: packageEntity.dump.commit,
         })
 
-        const db = new Database(
-            this.connectionCache,
-            this.documentCache,
-            this.resultChunkCache,
-            packageEntity.dump.id,
-            dbFilename(
-                this.storageRoot,
-                packageEntity.dump.id,
-                packageEntity.dump.repository,
-                packageEntity.dump.commit
-            )
-        )
-        return (await db.monikerResults(model, moniker, ctx)).map(loc =>
+        return (await this.createDatabase(packageEntity.dump).monikerResults(model, moniker, ctx)).map(loc =>
             mapLocation(
                 uri => createRemoteUri(packageEntity.dump, uri),
                 this.locationFromDatabase(packageEntity.dump.root, loc)
@@ -424,15 +412,9 @@ export class Backend {
                 continue
             }
 
-            const db = new Database(
-                this.connectionCache,
-                this.documentCache,
-                this.resultChunkCache,
-                dump.id,
-                dbFilename(this.storageRoot, dump.id, dump.repository, dump.commit)
-            )
-
-            const references = (await db.monikerResults(dumpModels.ReferenceModel, moniker, ctx)).map(loc =>
+            const references = (
+                await this.createDatabase(dump).monikerResults(dumpModels.ReferenceModel, moniker, ctx)
+            ).map(loc =>
                 mapLocation(
                     uri => (remote ? createRemoteUri(dump, uri) : uri),
                     this.locationFromDatabase(dump.root, loc)
@@ -442,6 +424,21 @@ export class Backend {
         }
 
         return locations
+    }
+
+    /**
+     * Create a database instance backed by the given dump.
+     *
+     * @param dump The dump.
+     */
+    private createDatabase(dump: xrepoModels.LsifDump): Database {
+        return new Database(
+            this.connectionCache,
+            this.documentCache,
+            this.resultChunkCache,
+            dump.id,
+            dbFilename(this.storageRoot, dump.id, dump.repository, dump.commit)
+        )
     }
 
     /**
@@ -729,15 +726,7 @@ export class Backend {
             this.fetchConfiguration().gitServers
         )
         if (dump) {
-            const database = new Database(
-                this.connectionCache,
-                this.documentCache,
-                this.resultChunkCache,
-                dump.id,
-                dbFilename(this.storageRoot, dump.id, dump.repository, dump.commit)
-            )
-
-            return { database, dump, ctx: addTags(ctx, { closestCommit: dump.commit }) }
+            return { database: this.createDatabase(dump), dump, ctx: addTags(ctx, { closestCommit: dump.commit }) }
         }
 
         return undefined
