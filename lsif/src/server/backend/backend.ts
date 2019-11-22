@@ -4,7 +4,7 @@ import * as settings from '../settings'
 import * as xrepoModels from '../../shared/models/xrepo'
 import { addTags, logSpan, TracingContext } from '../../shared/tracing'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
-import { createRemoteUri, Database, sortMonikers } from './database'
+import { Database, sortMonikers, InternalLocation } from './database'
 import { dbFilename } from '../../shared/paths'
 import { isEqual, uniqWith } from 'lodash'
 import { mustGet } from '../../shared/maps'
@@ -71,6 +71,49 @@ export interface ReferencePaginationCursor {
      * The number of remote dumps to skip.
      */
     offset: number
+}
+
+/**
+ * Converts a file in the repository to the corresponding file in the
+ * database.
+ *
+ * @param root The root of the dump.
+ * @param path The path within the dump.
+ */
+const pathToDatabase = (root: string, path: string): string => (path.startsWith(root) ? path.slice(root.length) : path)
+
+/**
+ * Converts a location in a dump to the corresponding location in the repository.
+ *
+ * @param root The root of the dump.
+ * @param location The original location.
+ */
+const locationFromDatabase = (root: string, { dump, path, range }: InternalLocation): InternalLocation => ({
+    dump,
+    path: `${root}${path}`,
+    range,
+})
+
+/**
+ * Convert an `InternalLocation` to an LSP location object. The URI of the resulting
+ * location object will be a relative if the dump describes a location in the source
+ * repository and wil be an absolute URI otherwise.
+ *
+ * @param repository The source repository.
+ * @param location The location object.
+ */
+export const internalLocationToLocation = (
+    repository: string,
+    { dump, path, range }: InternalLocation
+): lsp.Location => {
+    if (dump.repository !== repository) {
+        const url = new URL(`git://${dump.repository}`)
+        url.search = dump.commit
+        url.hash = path
+        path = url.href
+    }
+
+    return lsp.Location.create(path, range)
 }
 
 /**
@@ -145,7 +188,7 @@ export class Backend {
             return false
         }
         const { database, dump } = closestDatabaseAndDump
-        return database.exists(this.pathToDatabase(dump.root, path))
+        return database.exists(pathToDatabase(dump.root, path))
     }
 
     /**
@@ -165,6 +208,21 @@ export class Backend {
         position: lsp.Position,
         ctx: TracingContext = {}
     ): Promise<lsp.Location[] | undefined> {
+        const result = await this.internalDefinitions(repository, commit, path, position, ctx)
+        if (result === undefined) {
+            return undefined
+        }
+
+        return result.locations.map(loc => internalLocationToLocation(repository, loc))
+    }
+
+    private async internalDefinitions(
+        repository: string,
+        commit: string,
+        path: string,
+        position: lsp.Position,
+        ctx: TracingContext = {}
+    ): Promise<{ dump: xrepoModels.LsifDump; locations: InternalLocation[] } | undefined> {
         const closestDatabaseAndDump = await this.loadClosestDatabase(repository, commit, path, ctx)
         if (!closestDatabaseAndDump) {
             if (ctx.logger) {
@@ -176,19 +234,19 @@ export class Backend {
         const { database, dump, ctx: newCtx } = closestDatabaseAndDump
 
         // Construct path within dump
-        const pathInDb = this.pathToDatabase(dump.root, path)
+        const pathInDb = pathToDatabase(dump.root, path)
 
         // Try to find definitions in the same dump
         const dbDefinitions = await database.definitions(pathInDb, position, newCtx)
-        const definitions = dbDefinitions.map(loc => this.locationFromDatabase(dump.root, loc))
+        const definitions = dbDefinitions.map(loc => locationFromDatabase(dump.root, loc))
         if (definitions.length > 0) {
-            return definitions
+            return { dump, locations: definitions }
         }
 
         // Try to find definitions in other dumps
         const { document, ranges } = await database.getRangeByPosition(pathInDb, position, ctx)
         if (!document || ranges.length === 0) {
-            return []
+            return { dump, locations: [] }
         }
 
         // First, we find the monikers for each range, from innermost to
@@ -212,7 +270,7 @@ export class Backend {
                         ctx
                     )
                     if (remoteDefinitions.length > 0) {
-                        return remoteDefinitions
+                        return { dump, locations: remoteDefinitions }
                     }
                 } else {
                     // This symbol was not imported from another database. We search the definitions
@@ -220,14 +278,14 @@ export class Backend {
                     // attached to a result set but did have the correct monikers attached.
 
                     const monikerResults = await database.monikerResults(dumpModels.DefinitionModel, moniker, ctx)
-                    const localDefinitions = monikerResults.map(loc => this.locationFromDatabase(dump.root, loc))
+                    const localDefinitions = monikerResults.map(loc => locationFromDatabase(dump.root, loc))
                     if (localDefinitions.length > 0) {
-                        return localDefinitions
+                        return { dump, locations: localDefinitions }
                     }
                 }
             }
         }
-        return []
+        return { dump, locations: [] }
     }
 
     /**
@@ -275,7 +333,7 @@ export class Backend {
         moniker: dumpModels.MonikerData,
         model: typeof dumpModels.DefinitionModel | typeof dumpModels.ReferenceModel,
         ctx: TracingContext = {}
-    ): Promise<lsp.Location[]> {
+    ): Promise<InternalLocation[]> {
         const packageInformation = this.lookupPackageInformation(document, moniker, ctx)
         if (!packageInformation) {
             return []
@@ -298,10 +356,7 @@ export class Backend {
         })
 
         return (await this.createDatabase(packageEntity.dump).monikerResults(model, moniker, ctx)).map(loc =>
-            mapLocation(
-                uri => createRemoteUri(packageEntity.dump, uri),
-                this.locationFromDatabase(packageEntity.dump.root, loc)
-            )
+            locationFromDatabase(packageEntity.dump.root, loc)
         )
     }
 
@@ -327,7 +382,7 @@ export class Backend {
         limit: number,
         offset: number,
         ctx: TracingContext = {}
-    ): Promise<{ locations: lsp.Location[]; totalCount: number; newOffset: number }> {
+    ): Promise<{ locations: InternalLocation[]; totalCount: number; newOffset: number }> {
         const { references, totalCount, newOffset } = await this.xrepoDatabase.getReferences({
             repository,
             scheme: moniker.scheme,
@@ -367,7 +422,7 @@ export class Backend {
         limit: number,
         offset: number,
         ctx: TracingContext = {}
-    ): Promise<{ locations: lsp.Location[]; totalCount: number; newOffset: number }> {
+    ): Promise<{ locations: InternalLocation[]; totalCount: number; newOffset: number }> {
         const { references, totalCount, newOffset } = await this.xrepoDatabase.getSameRepoRemoteReferences({
             repository,
             commit,
@@ -399,12 +454,12 @@ export class Backend {
         dumps: xrepoModels.LsifDump[],
         remote: boolean,
         ctx: TracingContext = {}
-    ): Promise<lsp.Location[]> {
+    ): Promise<InternalLocation[]> {
         logSpan(ctx, 'package_references', {
             references: dumps.map(d => ({ repository: d.repository, commit: d.commit })),
         })
 
-        let locations: lsp.Location[] = []
+        let locations: InternalLocation[] = []
         for (const dump of dumps) {
             // Skip the remote reference that show up for ourselves - we've already gathered
             // these in the previous step of the references query.
@@ -414,12 +469,7 @@ export class Backend {
 
             const references = (
                 await this.createDatabase(dump).monikerResults(dumpModels.ReferenceModel, moniker, ctx)
-            ).map(loc =>
-                mapLocation(
-                    uri => (remote ? createRemoteUri(dump, uri) : uri),
-                    this.locationFromDatabase(dump.root, loc)
-                )
-            )
+            ).map(loc => locationFromDatabase(dump.root, loc))
             locations = locations.concat(references)
         }
 
@@ -436,7 +486,7 @@ export class Backend {
             this.connectionCache,
             this.documentCache,
             this.resultChunkCache,
-            dump.id,
+            dump,
             dbFilename(this.storageRoot, dump.id, dump.repository, dump.commit)
         )
     }
@@ -460,7 +510,33 @@ export class Backend {
         paginationContext: ReferencePaginationContext = { limit: 10 },
         ctx: TracingContext = {}
     ): Promise<{ locations: lsp.Location[]; cursor?: ReferencePaginationCursor } | undefined> {
+        const result = await this.internalReferences(repository, commit, path, position, paginationContext, ctx)
+        if (result === undefined) {
+            return undefined
+        }
+
+        return {
+            ...result,
+            locations: result.locations.map(loc => internalLocationToLocation(repository, loc)),
+        }
+    }
+
+    private async internalReferences(
+        repository: string,
+        commit: string,
+        path: string,
+        position: lsp.Position,
+        paginationContext: ReferencePaginationContext = { limit: 10 },
+        ctx: TracingContext = {}
+    ): Promise<
+        { dump: xrepoModels.LsifDump; locations: InternalLocation[]; cursor?: ReferencePaginationCursor } | undefined
+    > {
         if (paginationContext.cursor) {
+            const dump = await this.xrepoDatabase.getDumpById(paginationContext.cursor.dumpId)
+            if (dump === undefined) {
+                return undefined
+            }
+
             // Continue from previous page
             const results = await this.performRemoteReferences(
                 repository,
@@ -470,11 +546,11 @@ export class Backend {
                 ctx
             )
             if (results !== undefined) {
-                return results
+                return { dump, ...results }
             }
 
             // Do not fall through
-            return { locations: [] }
+            return { dump, locations: [] }
         }
 
         const closestDatabaseAndDump = await this.loadClosestDatabase(repository, commit, path, ctx)
@@ -488,11 +564,11 @@ export class Backend {
         const { database, dump, ctx: newCtx } = closestDatabaseAndDump
 
         // Construct path within dump
-        const pathInDb = this.pathToDatabase(dump.root, path)
+        const pathInDb = pathToDatabase(dump.root, path)
 
         // Try to find references in the same dump
         const dbReferences = await database.references(pathInDb, position, newCtx)
-        let locations = dbReferences.map(loc => this.locationFromDatabase(dump.root, loc))
+        let locations = dbReferences.map(loc => locationFromDatabase(dump.root, loc))
 
         // Next, we do a moniker search in two stages, described below. We process the
         // monikers for each range sequentially in order of priority for each stage, such
@@ -500,7 +576,7 @@ export class Backend {
 
         const { document, ranges } = await database.getRangeByPosition(pathInDb, position, ctx)
         if (!document || ranges.length === 0) {
-            return { locations: [] }
+            return { dump, locations: [] }
         }
 
         for (const range of ranges) {
@@ -515,7 +591,7 @@ export class Backend {
 
             for (const moniker of monikers) {
                 const monikerResults = await database.monikerResults(dumpModels.ReferenceModel, moniker, ctx)
-                locations = locations.concat(monikerResults.map(loc => this.locationFromDatabase(dump.root, loc)))
+                locations = locations.concat(monikerResults.map(loc => locationFromDatabase(dump.root, loc)))
             }
 
             // Next, we perform an xrepo search for uses of each nonlocal moniker. We stop processing after
@@ -558,6 +634,7 @@ export class Backend {
 
                 if (results !== undefined) {
                     return {
+                        dump,
                         ...results,
                         // TODO - determine source of duplication
                         locations: uniqWith(locations.concat(results.locations), isEqual),
@@ -567,7 +644,7 @@ export class Backend {
         }
 
         // TODO - determine source of duplication
-        return { locations: uniqWith(locations, isEqual) }
+        return { dump, locations: uniqWith(locations, isEqual) }
     }
 
     /**
@@ -587,7 +664,7 @@ export class Backend {
         limit: number,
         cursor: ReferencePaginationCursor,
         ctx: TracingContext = {}
-    ): Promise<{ locations: lsp.Location[]; cursor?: ReferencePaginationCursor } | undefined> {
+    ): Promise<{ locations: InternalLocation[]; cursor?: ReferencePaginationCursor } | undefined> {
         const moniker = { scheme: cursor.scheme, identifier: cursor.identifier }
         const packageInformation = { name: cursor.name, version: cursor.version }
 
@@ -693,7 +770,7 @@ export class Backend {
             return undefined
         }
         const { database, dump, ctx: newCtx } = closestDatabaseAndDump
-        return database.hover(this.pathToDatabase(dump.root, path), position, newCtx)
+        return database.hover(pathToDatabase(dump.root, path), position, newCtx)
     }
 
     /**
@@ -731,38 +808,4 @@ export class Backend {
 
         return undefined
     }
-
-    /**
-     * Converts a file in the repository to the corresponding file in the
-     * database.
-     *
-     * @param root The root of the dump.
-     * @param path The path within the dump.
-     */
-    private pathToDatabase(root: string, path: string): string {
-        return path.startsWith(root) ? path.slice(root.length) : path
-    }
-
-    /**
-     * Converts a file in the database to the corresponding file in the
-     * repository.
-     *
-     * @param root The root of the dump.
-     * @param path The path within the dump.
-     */
-    private pathFromDatabase(root: string, path: string): string {
-        return `${root}${path}`
-    }
-
-    /**
-     * Converts a location in the database to the corresponding location in the
-     * repository.
-     */
-    private locationFromDatabase(root: string, { uri, range }: lsp.Location): lsp.Location {
-        return lsp.Location.create(this.pathFromDatabase(root, uri), range)
-    }
-}
-
-function mapLocation(map: (uri: string) => string, { uri, range }: lsp.Location): lsp.Location {
-    return lsp.Location.create(map(uri), range)
 }

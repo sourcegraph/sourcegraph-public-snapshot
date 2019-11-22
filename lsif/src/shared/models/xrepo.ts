@@ -52,6 +52,11 @@ export type DumpId = number
 @Entity({ name: 'lsif_dumps' })
 export class LsifDump {
     /**
+     * The number of model instances that can be inserted at once.
+     */
+    public static BatchSize = MAX_POSTGRES_BATCH_SIZE
+
+    /**
      * A unique ID required by typeorm entities.
      */
     @PrimaryGeneratedColumn('increment', { type: 'int' })
@@ -95,11 +100,6 @@ export class LsifDump {
      */
     @Column('timestamp with time zone', { name: 'processed_at' })
     public processedAt!: Date
-
-    /**
-     * The number of model instances that can be inserted at once.
-     */
-    public static BatchSize = MAX_POSTGRES_BATCH_SIZE
 }
 
 /**
