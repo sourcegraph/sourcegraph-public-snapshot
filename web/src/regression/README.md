@@ -43,8 +43,10 @@ Run the tests:
    Screenshots files are deposited in the current directory and are named descriptively for what
    should be checked.
 
-At least the following is necessary to run, for example, the search regression
-tests against the a local running Sourcegraph Docker image:
+Example:
+
+At least the following is necessary to run the search regression tests against
+the a local running Sourcegraph Docker image:
 
 The following environment variables must be set:
 
@@ -59,8 +61,9 @@ export LOG_STATUS_MESSAGES=false
 export NO_CLEANUP=true
 ```
 
-Then run `yarn jest src/regression/search.test.ts`.
+- Start the Docker image `IMAGE=sourcegraph/server:VERSION ./dev/run-server-image.sh`
 
+- Then run `yarn jest src/regression/search.test.ts`
 
 Tips:
 
