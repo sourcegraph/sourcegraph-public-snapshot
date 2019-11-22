@@ -3,11 +3,11 @@ package resolvers
 import (
 	"context"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"net/url"
 
 	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintel/lsifserver/client"
@@ -45,6 +45,24 @@ func (r *Resolver) LSIFDumpByID(ctx context.Context, id graphql.ID) (graphqlback
 	}
 
 	return &lsifDumpResolver{repo: repo, lsifDump: lsifDump}, nil
+}
+
+func (r *Resolver) DeleteLSIFDump(ctx context.Context, id graphql.ID) (*graphqlbackend.EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins may delete LSIF data for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	repoName, dumpID, err := unmarshalLSIFDumpGQLID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	path := fmt.Sprintf("/dumps/%s/%d", url.PathEscape(repoName), dumpID)
+	if err := client.DefaultClient.TraceRequestAndUnmarshalPayload(ctx, "DELETE", path, nil, nil, nil); !client.IsNotFound(err) {
+		return nil, err
+	}
+	return &graphqlbackend.EmptyResponse{}, nil
 }
 
 //
@@ -99,6 +117,24 @@ func (r *Resolver) LSIFJobByID(ctx context.Context, id graphql.ID) (graphqlbacke
 	}
 
 	return &lsifJobResolver{lsifJob: lsifJob}, nil
+}
+
+func (r *Resolver) DeleteLSIFJob(ctx context.Context, id graphql.ID) (*graphqlbackend.EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins may delete LSIF data for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	jobID, err := unmarshalLSIFJobGQLID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	path := fmt.Sprintf("/jobs/%s", url.PathEscape(jobID))
+	if err := client.DefaultClient.TraceRequestAndUnmarshalPayload(ctx, "DELETE", path, nil, nil, nil); !client.IsNotFound(err) {
+		return nil, err
+	}
+	return &graphqlbackend.EmptyResponse{}, nil
 }
 
 //
