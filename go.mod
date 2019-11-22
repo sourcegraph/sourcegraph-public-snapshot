@@ -7,11 +7,9 @@ require (
 	cloud.google.com/go/pubsub v1.0.1
 	cloud.google.com/go/storage v1.1.0 // indirect
 	github.com/DataDog/zstd v1.4.1 // indirect
-	github.com/Depado/bfchroma v1.1.2 // indirect
 	github.com/Microsoft/go-winio v0.4.14 // indirect
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/RoaringBitmap/roaring v0.4.21
-	github.com/alecthomas/chroma v0.6.9 // indirect
 	github.com/aws/aws-sdk-go-v2 v0.14.0
 	github.com/beevik/etree v1.1.0
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
@@ -27,7 +25,6 @@ require (
 	github.com/daviddengcn/go-colortext v0.0.0-20180409174941-186a3d44e920
 	github.com/dghubble/gologin v2.1.0+incompatible
 	github.com/dhui/dktest v0.3.1 // indirect
-	github.com/dlclark/regexp2 v1.2.0 // indirect
 	github.com/dnaeon/go-vcr v1.0.1
 	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/docker/docker v0.7.3-0.20190817195342-4760db040282
@@ -108,7 +105,6 @@ require (
 	github.com/lib/pq v1.2.0
 	github.com/lightstep/lightstep-tracer-go v0.17.1
 	github.com/magiconair/properties v1.8.1 // indirect
-	github.com/mattn/go-isatty v0.0.10 // indirect
 	github.com/mattn/go-runewidth v0.0.6 // indirect
 	github.com/mattn/go-sqlite3 v1.11.0
 	github.com/mattn/goreman v0.3.4
@@ -130,7 +126,6 @@ require (
 	github.com/prometheus/procfs v0.0.7 // indirect
 	github.com/russellhaering/gosaml2 v0.3.2-0.20190403162508-649841e7f48a
 	github.com/russellhaering/goxmldsig v0.0.0-20180430223755-7acd5e4a6ef7
-	github.com/russross/blackfriday v2.0.0+incompatible // indirect
 	github.com/securego/gosec v0.0.0-20191008095658-28c1128b7336 // indirect
 	github.com/segmentio/fasthash v1.0.1
 	github.com/sergi/go-diff v1.0.0
@@ -145,9 +140,9 @@ require (
 	github.com/sloonz/go-qprintable v0.0.0-20160203160305-775b3a4592d5 // indirect
 	github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d // indirect
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
-	github.com/sourcegraph/docsite v1.1.0
+	github.com/sourcegraph/docsite v1.3.1-0.20191122075004-8df06ae22b02
 	github.com/sourcegraph/go-diff v0.5.1
-	github.com/sourcegraph/go-jsonschema v0.0.0-20191016093209-4dfde5805930
+	github.com/sourcegraph/go-jsonschema v0.0.0-20191016093751-6a4f2b621f5d
 	github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible
 	github.com/sourcegraph/go-lsp v0.0.0-20181119182933-0c7d621186c1
 	github.com/sourcegraph/gosyntect v0.0.0-20191003053245-e91d603ba4eb
@@ -180,12 +175,12 @@ require (
 	golang.org/x/crypto v0.0.0-20191010185427-af544f31c8ac
 	golang.org/x/exp v0.0.0-20191002040644-a1355ae1e2c3 // indirect
 	golang.org/x/lint v0.0.0-20190930215403-16217165b5de // indirect
-	golang.org/x/net v0.0.0-20191009170851-d66e71096ffb
+	golang.org/x/net v0.0.0-20191119073136-fc4aabc6c914
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
-	golang.org/x/sys v0.0.0-20191010194322-b09406accb47
+	golang.org/x/sys v0.0.0-20191120155948-bd437916bb0e
 	golang.org/x/time v0.0.0-20190921001708-c4c64cad1fd0
-	golang.org/x/tools v0.0.0-20191010201905-e5ffc44a6fee
+	golang.org/x/tools v0.0.0-20191122071640-df8e87c2cec0
 	google.golang.org/appengine v1.6.5 // indirect
 	google.golang.org/genproto v0.0.0-20191009194640-548a555dbc03 // indirect
 	google.golang.org/grpc v1.24.0 // indirect
@@ -208,10 +203,5 @@ replace (
 )
 
 replace github.com/dghubble/gologin => github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8
-
-replace (
-	github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
-	gopkg.in/russross/blackfriday.v2 v2.0.1 => github.com/russross/blackfriday/v2 v2.0.1
-)
 
 replace github.com/golang/lint => golang.org/x/lint v0.0.0-20190409202823-959b441ac422
