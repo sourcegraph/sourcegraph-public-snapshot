@@ -48,7 +48,7 @@ Example:
 At least the following is necessary to run the search regression tests against
 the a local running Sourcegraph Docker image:
 
-The following environment variables must be set:
+- The following environment variables must be set:
 
 ```bash
 export SOURCEGRAPH_BASE_URL=http://localhost:7080
