@@ -564,7 +564,6 @@ components:
           type: string
           description: The job type.
           enum:
-            - update-tips
             - clean-old-jobs
             - clean-failed-jobs
       required:
@@ -607,7 +606,6 @@ components:
           description: The type of job.
           enum:
             - convert
-            - update-tips
             - clean-old-jobs
             - clean-failed-jobs
         arguments:
