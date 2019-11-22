@@ -7,17 +7,14 @@ describe('getCommitsNear', () => {
             .post('/exec', { repo: 'r', args: ['log', '--pretty=%H %P', 'l', '-150'] })
             .reply(200, 'a\nb c\nd e f\ng h i j k l')
 
-        expect(await getCommitsNear('gitserver0', 'r', 'l')).toEqual([
-            ['a', undefined],
-            ['b', 'c'],
-            ['d', 'e'],
-            ['d', 'f'],
-            ['g', 'h'],
-            ['g', 'i'],
-            ['g', 'j'],
-            ['g', 'k'],
-            ['g', 'l'],
-        ])
+        expect(await getCommitsNear('gitserver0', 'r', 'l')).toEqual(
+            new Map([
+                ['a', new Set()],
+                ['b', new Set(['c'])],
+                ['d', new Set(['e', 'f'])],
+                ['g', new Set(['h', 'i', 'j', 'k', 'l'])],
+            ])
+        )
     })
 
     it('should handle request for unknown repository', async () => {
@@ -25,24 +22,21 @@ describe('getCommitsNear', () => {
             .post('/exec')
             .reply(404)
 
-        expect(await getCommitsNear('gitserver0', 'r', 'l')).toEqual([])
+        expect(await getCommitsNear('gitserver0', 'r', 'l')).toEqual(new Map())
     })
 })
 
 describe('flattenCommitParents', () => {
     it('should handle multiple commits', () => {
-        expect(flattenCommitParents(['a', 'b c', 'd e f', '', 'g h i j k l', 'm '])).toEqual([
-            ['a', undefined],
-            ['b', 'c'],
-            ['d', 'e'],
-            ['d', 'f'],
-            ['g', 'h'],
-            ['g', 'i'],
-            ['g', 'j'],
-            ['g', 'k'],
-            ['g', 'l'],
-            ['m', undefined],
-        ])
+        expect(flattenCommitParents(['a', 'b c', 'd e f', '', 'g h i j k l', 'm '])).toEqual(
+            new Map([
+                ['a', new Set()],
+                ['b', new Set(['c'])],
+                ['d', new Set(['e', 'f'])],
+                ['g', new Set(['h', 'i', 'j', 'k', 'l'])],
+                ['m', new Set()],
+            ])
+        )
     })
 })
 

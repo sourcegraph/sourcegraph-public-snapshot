@@ -160,7 +160,10 @@ export async function convertTestData(
     await fs.rename(tmp, dbFilename(storageRoot, dump.id, repository, commit))
 
     if (updateCommits) {
-        await xrepoDatabase.updateCommits(repository, [[commit, undefined]])
+        await xrepoDatabase.updateCommits(
+            repository,
+            new Map<string, Set<string>>([[commit, new Set<string>()]])
+        )
         await xrepoDatabase.updateDumpsVisibleFromTip(repository, commit)
     }
 }

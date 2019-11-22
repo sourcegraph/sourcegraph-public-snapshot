@@ -2,9 +2,8 @@ import * as metrics from './metrics'
 import * as sharedMetrics from '../database/metrics'
 import * as xrepoModels from '../models/xrepo'
 import { addrFor, getCommitsNear, gitserverExecLines } from './commits'
-import { MAX_CONCURRENT_GITSERVER_REQUESTS, MAX_TRAVERSAL_LIMIT } from '../constants'
+import { MAX_TRAVERSAL_LIMIT } from '../constants'
 import { Brackets, Connection, EntityManager } from 'typeorm'
-import { chunk } from 'lodash'
 import { createFilter, testFilter } from './bloom-filter'
 import { dbFilename, tryDeleteFile } from '../paths'
 import { logAndTraceCall, logSpan, TracingContext } from '../tracing'
@@ -125,21 +124,6 @@ export class XrepoDatabase {
     }
 
     /**
-     * Return the list of all repositories that have LSIF data.
-     */
-    public async getTrackedRepositories(): Promise<string[]> {
-        const payload = await instrumentQuery(() =>
-            this.connection
-                .getRepository(xrepoModels.LsifDump)
-                .createQueryBuilder()
-                .select('DISTINCT repository')
-                .getRawMany()
-        )
-
-        return payload.map((e: { repository: string }) => e.repository)
-    }
-
-    /**
      * Determine if we have any LSIf data for this repository.
      *
      * @param repository The repository name.
@@ -203,9 +187,8 @@ export class XrepoDatabase {
     }
 
     /**
-     * Return the commit that has LSIF data 'closest' to the given target commit (a direct descendant
-or ancestor of the target commit). If no closest commit can be determined, this method returns
-undefined.s
+     * Return the dump 'closest' to the given target commit (a direct descendant or ancestor of
+     * the target commit). If no closest commit can be determined, this method returns undefined.
      *
      * @param repository The repository name.
      * @param commit The target commit.
@@ -226,7 +209,11 @@ undefined.s
         // cross-repository database. This populates the necessary data for
         // the following query.
         if (gitserverUrls) {
-            await this.discoverAndUpdateCommit({ repository, commit, gitserverUrls, ctx })
+            await this.updateCommits(
+                repository,
+                await this.discoverCommits({ repository, commit, gitserverUrls, ctx }),
+                ctx
+            )
         }
 
         return logAndTraceCall(ctx, 'Finding closest dump', async () => {
@@ -248,8 +235,9 @@ undefined.s
     }
 
     /**
-     * Update the known commits for a repository. The given commit list is a set of pairs of the
-     * form `(child, parent)`. Commits without a parent will be returned as `(child, undefined)`.
+     * Update the known commits for a repository. The input commits must be a map from commits to
+     * a set of parent commits. Commits without a parent should have an empty set of parents, but
+     * should still be present in the map.
      *
      * @param repository The repository name.
      * @param commits The commit parentage data.
@@ -257,7 +245,7 @@ undefined.s
      */
     public updateCommits(
         repository: string,
-        commits: [string, string | undefined][],
+        commits: Map<string, Set<string>>,
         ctx: TracingContext = {}
     ): Promise<void> {
         return logAndTraceCall(ctx, 'Updating commits', () =>
@@ -270,8 +258,14 @@ undefined.s
                     true // Do nothing on conflict
                 )
 
-                for (const [commit, parentCommit] of commits) {
-                    await commitInserter.insert({ repository, commit, parentCommit })
+                for (const [commit, parentCommits] of commits) {
+                    if (parentCommits.size === 0) {
+                        await commitInserter.insert({ repository, commit, parentCommit: null })
+                    }
+
+                    for (const parentCommit of parentCommits) {
+                        await commitInserter.insert({ repository, commit, parentCommit })
+                    }
                 }
 
                 await commitInserter.flush()
@@ -812,14 +806,15 @@ undefined.s
     }
 
     /**
-     * Update the commits tables in the cross-repository database with the current
-     * output of gitserver for the given repository around the given commit. If we
-     * already have commit parentage information for this commit, this function
+     * Get a list of commits for the given repository with their parent starting at the
+     * given commit and returning at most `MAX_COMMITS_PER_UPDATE` commits. The output
+     * is a map from commits to a set of parent commits. The set of parents may be empty.
+     * If we already have commit parentage information for this commit, this function
      * will do nothing.
      *
      * @param args Parameter bag.
      */
-    public async discoverAndUpdateCommit({
+    public async discoverCommits({
         repository,
         commit,
         gitserverUrls,
@@ -833,104 +828,37 @@ undefined.s
         gitserverUrls: string[]
         /** The tracing context. */
         ctx?: TracingContext
-    }): Promise<void> {
-        // No need to update if we already know about this commit
-        if (await this.isCommitTracked(repository, commit)) {
-            return
+    }): Promise<Map<string, Set<string>>> {
+        // No need to update if we already know about this commit or don't know about the repo
+        if ((await this.isCommitTracked(repository, commit)) || !(await this.isRepositoryTracked(repository))) {
+            return new Map()
         }
 
-        // No need to pull commits for repos we don't have data for
-        if (!(await this.isRepositoryTracked(repository))) {
-            return
-        }
-
-        const gitserverUrl = addrFor(repository, gitserverUrls)
-        const commits = await getCommitsNear(gitserverUrl, repository, commit, ctx)
-        await this.updateCommits(repository, commits, ctx)
+        return getCommitsNear(addrFor(repository, gitserverUrls), repository, commit, ctx)
     }
 
     /**
-     * Update the known tip of the default branch for every repository for which
-     * we have LSIF data. This queries gitserver for the last known tip. From that,
-     * we determine the closest commit with LSIF data and mark those as commits for
-     * which we can return results in a global find-references query.
+     * Query gitserver for the head of the default branch for the given repository.
      *
      * @param args Parameter bag.
      */
-    public async discoverAndUpdateTips({
+    public async discoverTip({
+        repository,
         gitserverUrls,
         ctx = {},
-        batchSize = MAX_CONCURRENT_GITSERVER_REQUESTS,
     }: {
+        /** The repository name. */
+        repository: string
         /** The set of ordered gitserver urls. */
         gitserverUrls: string[]
         /** The tracing context. */
         ctx?: TracingContext
-        /** The maximum number of requests to make at once. Set during testing.*/
-        batchSize?: number
-    }): Promise<void> {
-        for (const [repository, commit] of (
-            await this.discoverTips({
-                gitserverUrls,
-                ctx,
-                batchSize,
-            })
-        ).entries()) {
-            await this.updateDumpsVisibleFromTip(repository, commit, ctx)
-        }
-    }
+    }): Promise<string | undefined> {
+        const lines = await logAndTraceCall(ctx, 'Getting repository metadata', () =>
+            gitserverExecLines(addrFor(repository, gitserverUrls), repository, ['rev-parse', 'HEAD'], ctx)
+        )
 
-    /**
-     * Query gitserver for the head of the default branch for every repository that has
-     * LSIF data.
-     *
-     * @param args Parameter bag.
-     */
-    public async discoverTips({
-        gitserverUrls,
-        ctx = {},
-        batchSize = MAX_CONCURRENT_GITSERVER_REQUESTS,
-    }: {
-        /** The set of ordered gitserver urls. */
-        gitserverUrls: string[]
-        /** The tracing context. */
-        ctx?: TracingContext
-        /** The maximum number of requests to make at once. Set during testing.*/
-        batchSize?: number
-    }): Promise<Map<string, string>> {
-        // Construct the calls we need to make to gitserver for each repository that
-        // we know about. We're going to construct these as factories so they do not
-        // start immediately and we can apply them in batches to not overload us or
-        // gitserver with too many in-flight requests.
-
-        const factories: (() => Promise<{ repository: string; commit: string }>)[] = []
-        for (const repository of await this.getTrackedRepositories()) {
-            factories.push(async () => {
-                const lines = await gitserverExecLines(
-                    addrFor(repository, gitserverUrls),
-                    repository,
-                    ['rev-parse', 'HEAD'],
-                    ctx
-                )
-
-                return { repository, commit: lines ? lines[0] : '' }
-            })
-        }
-
-        const tips = new Map<string, string>()
-        for (const batch of chunk(factories, batchSize)) {
-            // Perform this batch of calls to the appropriate gitserver instance
-            const responses = await logAndTraceCall(ctx, 'Getting repository metadata', () =>
-                Promise.all(batch.map(factory => factory()))
-            )
-
-            // Combine the results
-            for (const { repository, commit } of responses) {
-                tips.set(repository, commit)
-            }
-        }
-
-        return tips
+        return lines ? lines[0] : undefined
     }
 }
 
