@@ -770,7 +770,28 @@ export class Backend {
             return undefined
         }
         const { database, dump, ctx: newCtx } = closestDatabaseAndDump
-        return database.hover(pathToDatabase(dump.root, path), position, newCtx)
+
+        // Try to find hover in the same dump
+        const hover = await database.hover(pathToDatabase(dump.root, path), position, newCtx)
+        if (hover !== null) {
+            return hover
+        }
+
+        // If we don't have a local hover, lookup the definitions of the
+        // range and read the hover data from the remote database. This
+        // can happen when the indexer only gives a moniker but does not
+        // give hover data for externally defined symbols.
+
+        const result = await this.internalDefinitions(repository, commit, path, position, ctx)
+        if (result === undefined || result.locations.length === 0) {
+            return null
+        }
+
+        return this.createDatabase(result.locations[0].dump).hover(
+            pathToDatabase(result.locations[0].dump.root, result.locations[0].path),
+            result.locations[0].range.start,
+            newCtx
+        )
     }
 
     /**
