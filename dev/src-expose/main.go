@@ -112,6 +112,7 @@ func main() {
 		syncFlags = flag.NewFlagSet("sync", flag.ExitOnError)
 
 		serveFlags = flag.NewFlagSet("serve", flag.ExitOnError)
+		serveAddr  = serveFlags.String("addr", "127.0.0.1:3434", "address on which to serve (end with : for unused port)")
 	)
 
 	newLogger := func(prefix string) *log.Logger {
@@ -184,7 +185,7 @@ src-expose will default to serving ~/.sourcegraph/src-expose-repos`,
 				return &usageError{"requires zero or one arguments"}
 			}
 
-			return serveRepos(newLogger("serve: "), *globalAddr, repoDir)
+			return serveRepos(newLogger("serve: "), *serveAddr, repoDir)
 		},
 	}
 
