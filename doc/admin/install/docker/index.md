@@ -25,6 +25,8 @@ For next steps and further configuration options, visit the [site administration
 
 > NOTE: If you get stuck or need help, [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide), [tweet (@srcgraph)](https://twitter.com/srcgraph) or [email](mailto:support@sourcegraph.com?subject=Sourcegraph%20quickstart%20guide).
 
+> NOTE: Port 2633 and 3370 should never be made accessible to the public internet, in most cases publishing only to 127.0.0.1 is sufficient to ensure this. If your routing or the way you are exposing Sourcegraph is unique, please ensure 2633 and 3370 are not accessible to non-admins / the public internet.
+
 ## Cloud installation guides
 
 Cloud specific Sourcegraph installation guides for AWS, Google Cloud and Digital Ocean.
@@ -54,14 +56,16 @@ Sourcegraph can be **tested** on Windows 10 using roughly the same steps provide
 
 <pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:2633:2633 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> sourcegraph/server:3.10.0</code></pre>
 
+> NOTE: Port 2633 and 3370 should never be made accessible to the public internet, in most cases publishing only to 127.0.0.1 is sufficient to ensure this. If your routing or the way you are exposing Sourcegraph is unique, please ensure 2633 and 3370 are not accessible to non-admins / the public internet.
+
 ## Insiders build
 
-To test new development builds of Sourcegraph (triggered by commits to master), change the tag to `insiders` in the `docker run` command.
+To test new development builds of Sourcegraph (triggered by commits to master), change the tag to `insiders` in the `docker run` command provided at the top of this page.
 
 > WARNING: `insiders` builds may be unstable, so back up Sourcegraph's data and config (usually `~/.sourcegraph`) beforehand.
 
 ```
-docker run --publish 7080:7080 --publish 2633:2633 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:insiders
+docker run [...] sourcegraph/server:insiders
 ```
 
 To keep this up to date, run `docker pull sourcegraph/server:insiders` to pull in the latest image, and restart the container to access new changes.
