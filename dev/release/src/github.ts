@@ -3,7 +3,8 @@ import { readLine } from './util'
 import { readFile } from 'mz/fs'
 
 export async function ensureTrackingIssue({
-    version,
+    majorVersion,
+    minorVersion,
     assignees,
     releaseDateTime,
     oneWorkingDayBeforeRelease,
@@ -11,7 +12,8 @@ export async function ensureTrackingIssue({
     fourWorkingDaysBeforeRelease,
     fiveWorkingDaysBeforeRelease,
 }: {
-    version: string
+    majorVersion: string
+    minorVersion: string
     assignees: string[]
     releaseDateTime: Date
     oneWorkingDayBeforeRelease: Date
@@ -20,16 +22,20 @@ export async function ensureTrackingIssue({
     fiveWorkingDaysBeforeRelease: Date
 }): Promise<{ url: string; created: boolean }> {
     const octokit = await getAuthenticatedGitHubClient()
-    const url = await getTrackingIssueURL(octokit, version)
+    const url = await getTrackingIssueURL(octokit, majorVersion, minorVersion)
     if (url) {
         return { url, created: false }
     }
 
     const formatDate = (d: Date): string => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
 
-    const releaseIssueTemplate = await readFile('../../doc/dev/release_issue_template.md', { encoding: 'utf8' })
+    const releaseIssueTemplate = await readFile(
+        '../../../about/handbook/engineering/releases/release_issue_template.md',
+        { encoding: 'utf8' }
+    )
     const releaseIssueBody = releaseIssueTemplate
-        .replace(/\$VERSION/g, version)
+        .replace(/\$MAJOR/g, majorVersion)
+        .replace(/\$MINOR/g, minorVersion)
         .replace(/\$RELEASE_DATE/g, formatDate(releaseDateTime))
         .replace(/\$FIVE_WORKING_DAYS_BEFORE_RELEASE/g, formatDate(fiveWorkingDaysBeforeRelease))
         .replace(/\$FOUR_WORKING_DAYS_BEFORE_RELEASE/g, formatDate(fourWorkingDaysBeforeRelease))
@@ -37,7 +43,7 @@ export async function ensureTrackingIssue({
         .replace(/\$ONE_WORKING_DAY_BEFORE_RELEASE/g, formatDate(oneWorkingDayBeforeRelease))
 
     const createdIssue = await octokit.issues.create({
-        title: issueTitle(version),
+        title: issueTitle(majorVersion, minorVersion),
         owner: 'sourcegraph',
         repo: 'sourcegraph',
         assignees,
@@ -46,8 +52,19 @@ export async function ensureTrackingIssue({
     return { url: createdIssue.data.html_url, created: true }
 }
 
-export async function getTrackingIssueURL(octokit: Octokit, version: string): Promise<string | null> {
-    const title = issueTitle(version)
+export async function listIssues(
+    octokit: Octokit,
+    query: string
+): Promise<Octokit.SearchIssuesAndPullRequestsResponseItemsItem[]> {
+    return (await octokit.search.issuesAndPullRequests({ per_page: 100, q: query })).data.items
+}
+
+export async function getTrackingIssueURL(
+    octokit: Octokit,
+    majorVersion: string,
+    minorVersion: string
+): Promise<string | null> {
+    const title = issueTitle(majorVersion, minorVersion)
     const resp = await octokit.search.issuesAndPullRequests({
         per_page: 100,
         q: `type:issue repo:sourcegraph/sourcegraph is:open ${JSON.stringify(title)}`,
@@ -63,8 +80,8 @@ export async function getTrackingIssueURL(octokit: Octokit, version: string): Pr
     return matchingIssues[0].html_url
 }
 
-function issueTitle(version: string): string {
-    return `${version} release tracking issue`
+function issueTitle(major: string, minor: string): string {
+    return `${major}.${minor} release tracking issue`
 }
 
 export async function getAuthenticatedGitHubClient(): Promise<Octokit> {
