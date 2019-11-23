@@ -2,14 +2,11 @@ package search
 
 import (
 	"context"
-	"io/ioutil"
-	"os"
 	"reflect"
 	"sort"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/store"
 )
 
 // Tests that structural search correctly infers the Go matcher from the .go
@@ -31,7 +28,7 @@ func foo(real string) {}
 	if err != nil {
 		t.Fatal(err)
 	}
-	zf, cleanup, err := MockZipFileOnDisk(zipData)
+	zf, cleanup, err := TempZipFileOnDisk(zipData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,7 +80,7 @@ func TestIncludePatterns(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	zf, cleanup, err := MockZipFileOnDisk(zipData)
+	zf, cleanup, err := TempZipFileOnDisk(zipData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -106,24 +103,4 @@ func TestIncludePatterns(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("got file matches %v, want %v", got, want)
 	}
-}
-
-func MockZipFileOnDisk(data []byte) (string, func(), error) {
-	z, err := store.MockZipFile(data)
-	if err != nil {
-		return "", nil, err
-	}
-	d, err := ioutil.TempDir("", "search_test")
-	if err != nil {
-		return "", nil, err
-	}
-	f, err := ioutil.TempFile(d, "search_zip")
-	if err != nil {
-		return "", nil, err
-	}
-	_, err = f.Write(z.Data)
-	if err != nil {
-		return "", nil, err
-	}
-	return f.Name(), func() { os.RemoveAll(d) }, nil
 }

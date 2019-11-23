@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"sort"
@@ -190,6 +191,26 @@ func MockZipFile(data []byte) (*ZipFile, error) {
 	// zf.f is intentionally left nil;
 	// this is an indicator that this is a mock ZipFile.
 	return zf, nil
+}
+
+func TempZipFileOnDisk(data []byte) (string, func(), error) {
+	z, err := MockZipFile(data)
+	if err != nil {
+		return "", nil, err
+	}
+	d, err := ioutil.TempDir("", "temp_zip_dir")
+	if err != nil {
+		return "", nil, err
+	}
+	f, err := ioutil.TempFile(d, "temp_zip")
+	if err != nil {
+		return "", nil, err
+	}
+	_, err = f.Write(z.Data)
+	if err != nil {
+		return "", nil, err
+	}
+	return f.Name(), func() { os.RemoveAll(d) }, nil
 }
 
 // A SrcFile is a single file inside a ZipFile.
