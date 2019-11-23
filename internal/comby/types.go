@@ -17,6 +17,9 @@ type Args struct {
 	// A template pattern that expresses what to match
 	MatchTemplate string
 
+	// A rule that places constraints on matching or rewriting
+	Rule string
+
 	// A template pattern that expresses how matches should be rewritten
 	RewriteTemplate string
 
