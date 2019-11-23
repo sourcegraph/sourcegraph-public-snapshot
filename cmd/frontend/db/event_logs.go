@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -47,151 +48,161 @@ func (*eventLogs) Insert(ctx context.Context, e *Event) error {
 	return nil
 }
 
-func (*eventLogs) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.Event, error) {
-	rows, err := dbconn.Global.QueryContext(ctx, "SELECT id, name, url, user_id, anonymous_user_id, source, argument, version, timestamp FROM event_logs "+query, args...)
+func (*eventLogs) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Event, error) {
+	q := sqlf.Sprintf("SELECT id, name, url, user_id, anonymous_user_id, source, argument, version, timestamp FROM event_logs %s", querySuffix)
+	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	}
-	responses := []*types.Event{}
 	defer rows.Close()
+	events := []*types.Event{}
 	for rows.Next() {
 		r := types.Event{}
 		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.UserID, &r.AnonymousUserID, &r.Source, &r.Argument, &r.Version, &r.Timestamp)
 		if err != nil {
 			return nil, err
 		}
-		responses = append(responses, &r)
+		events = append(events, &r)
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
-	return responses, nil
+	return events, nil
 }
 
-// GetAll gets all event logs.
+// GetAll gets all event logs in descending order of timestamp.
 func (l *eventLogs) GetAll(ctx context.Context) ([]*types.Event, error) {
-	return l.getBySQL(ctx, "ORDER BY timestamp DESC")
+	return l.getBySQL(ctx, sqlf.Sprintf("ORDER BY timestamp DESC"))
 }
 
-// GetByUserID gets all survey responses by a given user.
+// GetByUserID gets all event logs by a given user in descending order of timestamp.
 func (l *eventLogs) GetByUserID(ctx context.Context, userID int32) ([]*types.Event, error) {
-	return l.getBySQL(ctx, "WHERE user_id=$1 ORDER BY created_at DESC", userID)
+	return l.getBySQL(ctx, sqlf.Sprintf("WHERE user_id=%d ORDER BY timestamp DESC", userID))
 }
 
+// CountByUserIDAndEventName gets a count of events logged by a given user and with a given event name.
 func (l *eventLogs) CountByUserIDAndEventName(ctx context.Context, userID int32, name string) (int, error) {
-	return l.countBySQL(ctx, "WHERE user_id=$1 AND name = $2", userID, name)
+	return l.countBySQL(ctx, sqlf.Sprintf("WHERE user_id=%d AND name = %s", userID, name))
 }
 
+// CountByUserIDAndEventNamePrefix gets a count of events logged by a given user and with a given event name prefix.
 func (l *eventLogs) CountByUserIDAndEventNamePrefix(ctx context.Context, userID int32, namePrefix string) (int, error) {
-	return l.countBySQL(ctx, "WHERE user_id=$1 AND name LIKE $2 || '%'", userID, namePrefix)
+	return l.countBySQL(ctx, sqlf.Sprintf("WHERE user_id=%d AND name LIKE %s || '%'", userID, namePrefix))
 }
 
+// CountByUserIDAndEventNames gets a count of events logged by a given user that match a list of given event names.
 func (l *eventLogs) CountByUserIDAndEventNames(ctx context.Context, userID int32, names []string) (int, error) {
 	items := []*sqlf.Query{}
 	for _, v := range names {
 		items = append(items, sqlf.Sprintf("%s", v))
 	}
-	q := sqlf.Sprintf("WHERE user_id=%s AND name IN (%s)", userID, sqlf.Join(items, ","))
-	return l.countBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	return l.countBySQL(ctx, sqlf.Sprintf("WHERE user_id=%d AND name IN (%s)", userID, sqlf.Join(items, ",")))
 }
 
-// Count returns the count of all survey responses.
-func (*eventLogs) countBySQL(ctx context.Context, query string, args ...interface{}) (int, error) {
-	r := dbconn.Global.QueryRowContext(ctx, "SELECT COUNT(*) FROM event_logs "+query, args...)
+// countBySQL gets a count of event logs.
+func (*eventLogs) countBySQL(ctx context.Context, querySuffix *sqlf.Query) (int, error) {
+	q := sqlf.Sprintf("SELECT COUNT(*) FROM event_logs %s", querySuffix)
+	r := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	var count int
 	err := r.Scan(&count)
 	return count, err
 }
 
+// MaxTimestampByUserID gets the max timestamp among event logs for a given user.
 func (l *eventLogs) MaxTimestampByUserID(ctx context.Context, userID int32) (*time.Time, error) {
-	return l.getMaxTimestampBySQL(ctx, "WHERE user_id=$1", userID)
+	return l.maxTimestampBySQL(ctx, sqlf.Sprintf("WHERE user_id=%d", userID))
 }
 
+// MaxTimestampByUserIDAndSource gets the max timestamp among event logs for a given user and event source.
 func (l *eventLogs) MaxTimestampByUserIDAndSource(ctx context.Context, userID int32, source string) (*time.Time, error) {
-	return l.getMaxTimestampBySQL(ctx, "WHERE user_id=$1 AND source=$2", userID, source)
+	return l.maxTimestampBySQL(ctx, sqlf.Sprintf("WHERE user_id=%d AND source=%s", userID, source))
 }
 
-func (*eventLogs) getMaxTimestampBySQL(ctx context.Context, query string, args ...interface{}) (*time.Time, error) {
-	r := dbconn.Global.QueryRowContext(ctx, "SELECT MAX(timestamp) FROM event_logs "+query, args...)
+// maxTimestampBySQL gets the max timestamp among event logs.
+func (*eventLogs) maxTimestampBySQL(ctx context.Context, querySuffix *sqlf.Query) (*time.Time, error) {
+	q := sqlf.Sprintf("SELECT MAX(timestamp) FROM event_logs %s", querySuffix)
+	r := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 
-	var t *time.Time
+	var t time.Time
 	err := r.Scan(&t)
-	return t, err
+	return &t, err
 }
 
-type UsageDatum struct {
+// UsageValue is a single count of usage for a time period starting on a given date.
+type UsageValue struct {
 	Start time.Time
 	Count int
 }
 
-func (l *eventLogs) CountDAUs(ctx context.Context, startDate time.Time, dayPeriods int) ([]UsageDatum, error) {
-	return l.countUniqueUsersBySQL(ctx, "day", "DATE_TRUNC('day', timestamp)", "", startDate, startDate.AddDate(0, 0, dayPeriods))
-}
-func (l *eventLogs) CountRegisteredDAUs(ctx context.Context, startDate time.Time, dayPeriods int) ([]UsageDatum, error) {
-	return l.countUniqueUsersBySQL(ctx, "day", "DATE_TRUNC('day', timestamp)", "WHERE user_id > 0", startDate, startDate.AddDate(0, 0, dayPeriods))
-}
-func (l *eventLogs) CountIntegrationDAUs(ctx context.Context, startDate time.Time, dayPeriods int) ([]UsageDatum, error) {
-	return l.countUniqueUsersBySQL(ctx, "day", "DATE_TRUNC('day', timestamp)", "WHERE source = $3", startDate, startDate.AddDate(0, 0, dayPeriods), integrationSource)
+// UniqueUserCountType is the type of period in which to count unique users.
+type UniqueUserCountType string
+
+const (
+	// Daily is used to get a count of unique daily active users.
+	Daily UniqueUserCountType = "daily"
+	// Weekly is used to get a count of unique weekly active users.
+	Weekly UniqueUserCountType = "weekly"
+	// Monthly is used to get a count of unique monthly active users.
+	Monthly UniqueUserCountType = "monthly"
+)
+
+// CountUniquesOptions provides options for counting unique users.
+type CountUniquesOptions struct {
+	// If true, only include registered users. Otherwise, include all users.
+	RegisteredOnly bool
+	// If true, only include code host integration users. Otherwise, include all users.
+	IntegrationOnly bool
 }
 
-func (l *eventLogs) CountWAUs(ctx context.Context, startDate time.Time, weekPeriods int) ([]UsageDatum, error) {
-	return l.countUniqueUsersBySQL(ctx, "week", "DATE_TRUNC('week', timestamp + '1 day'::interval) - '1 day'::interval", "", startDate, startDate.AddDate(0, 0, weekPeriods*7))
-}
-func (l *eventLogs) CountRegisteredWAUs(ctx context.Context, startDate time.Time, weekPeriods int) ([]UsageDatum, error) {
-	return l.countUniqueUsersBySQL(ctx, "week", "DATE_TRUNC('week', timestamp + '1 day'::interval) - '1 day'::interval", "WHERE user_id > 0", startDate, startDate.AddDate(0, 0, weekPeriods*7))
-}
-func (l *eventLogs) CountIntegrationWAUs(ctx context.Context, startDate time.Time, weekPeriods int) ([]UsageDatum, error) {
-	return l.countUniqueUsersBySQL(ctx, "week", "DATE_TRUNC('week', timestamp + '1 day'::interval) - '1 day'::interval", "WHERE source = $3", startDate, startDate.AddDate(0, 0, weekPeriods*7), integrationSource)
+// CountUniquesPerPeriod provides a count of unique active users in a given time span, broken up into periods of a given type.
+func (l *eventLogs) CountUniquesPerPeriod(ctx context.Context, periodType UniqueUserCountType, startDate time.Time, periods int, opt *CountUniquesOptions) ([]UsageValue, error) {
+	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	if opt != nil {
+		if opt.RegisteredOnly {
+			conds = append(conds, sqlf.Sprintf("user_id > 0"))
+		}
+		if opt.IntegrationOnly {
+			conds = append(conds, sqlf.Sprintf("source = %s", integrationSource))
+		}
+	}
+	switch periodType {
+	case "daily":
+		return l.countUniquesPerPeriodBySQL(ctx, "day", "DATE_TRUNC('day', timestamp)", startDate, startDate.AddDate(0, 0, periods), conds)
+	case "weekly":
+		return l.countUniquesPerPeriodBySQL(ctx, "week", "DATE_TRUNC('week', timestamp + '1 day'::interval) - '1 day'::interval", startDate, startDate.AddDate(0, 0, 7*periods), conds)
+	case "monthly":
+		return l.countUniquesPerPeriodBySQL(ctx, "month", "DATE_TRUNC('month', timestamp)", startDate, startDate.AddDate(0, periods, 0), conds)
+	}
+	return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
 }
 
-func (l *eventLogs) CountMAUs(ctx context.Context, startDate time.Time, monthPeriods int) ([]UsageDatum, error) {
-	return l.countUniqueUsersBySQL(ctx, "month", "DATE_TRUNC('month', timestamp)", "", startDate, startDate.AddDate(0, monthPeriods, 0))
-}
-func (l *eventLogs) CountRegisteredMAUs(ctx context.Context, startDate time.Time, monthPeriods int) ([]UsageDatum, error) {
-	return l.countUniqueUsersBySQL(ctx, "month", "DATE_TRUNC('month', timestamp)", "WHERE user_id > 0", startDate, startDate.AddDate(0, monthPeriods, 0))
-}
-func (l *eventLogs) CountIntegrationMAUs(ctx context.Context, startDate time.Time, monthPeriods int) ([]UsageDatum, error) {
-	return l.countUniqueUsersBySQL(ctx, "month", "DATE_TRUNC('month', timestamp)", "WHERE source = $3", startDate, startDate.AddDate(0, monthPeriods, 0), integrationSource)
-}
+func (l *eventLogs) countUniquesPerPeriodBySQL(ctx context.Context, interval string, period string, startDate time.Time, endDate time.Time, conds []*sqlf.Query) ([]UsageValue, error) {
+	allPeriods := sqlf.Sprintf("SELECT generate_series((%s)::timestamp, (%s)::timestamp, interval '1 %s') AS period", startDate, endDate, interval)
+	usersByPeriod := sqlf.Sprintf(`SELECT %s AS period, COUNT(DISTINCT CASE WHEN user_id=0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END) AS count
+		FROM event_logs
+		WHERE (%s)
+		GROUP BY period`, period, sqlf.Join(conds, ") AND ("))
+	q := sqlf.Sprintf(`WITH all_periods AS (%s), users_by_period AS (%s)
+		SELECT all_periods.period, COALESCE(count, 0)
+		FROM all_periods
+		LEFT OUTER JOIN users_by_period ON all_periods.period = users_by_period.period
+		ORDER BY period DESC`, allPeriods, usersByPeriod)
 
-func (l *eventLogs) countUniqueUsersBySQL(ctx context.Context, interval string, period string, cond string, args ...interface{}) ([]UsageDatum, error) {
-	rows, err := dbconn.Global.QueryContext(ctx, `
-WITH
-	all_periods AS (SELECT generate_series(($1)::timestamp, ($2)::timestamp, interval '1 `+interval+`') AS period),
-	users_by_period AS (
-		SELECT
-			`+period+` AS period,
-			COUNT(DISTINCT CASE
-				WHEN user_id=0 THEN anonymous_user_id
-				ELSE CAST(user_id AS TEXT)
-				END) AS count
-		FROM event_logs `+cond+`
-		GROUP BY 1
-	)
-SELECT
-	all_periods.period,
-	COALESCE(count, 0)
-FROM all_periods
-LEFT OUTER JOIN users_by_period
-ON all_periods.period = users_by_period.period
-ORDER BY 1 DESC`, args...)
+	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	}
 
-	counts := []UsageDatum{}
+	counts := []UsageValue{}
 	defer rows.Close()
 	for rows.Next() {
-		var (
-			c *int
-			d *time.Time
-		)
-		err := rows.Scan(&d, &c)
+		var v UsageValue
+		err := rows.Scan(&v.Start, &v.Count)
 		if err != nil {
 			return nil, err
 		}
-		u := &UsageDatum{Count: *c, Start: (*d).UTC()}
-		counts = append(counts, *u)
+		v.Start = v.Start.UTC()
+		counts = append(counts, v)
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
@@ -199,29 +210,33 @@ ORDER BY 1 DESC`, args...)
 	return counts, nil
 }
 
+// CountUniquesAll provides a count of unique active users in a given time span.
 func (l *eventLogs) CountUniquesAll(ctx context.Context, startDate time.Time, endDate time.Time) (int, error) {
-	return l.countUniquesBySQL(ctx, "WHERE DATE(timestamp) >= $1 AND DATE(timestamp) <= $2", startDate, endDate)
+	return l.countUniquesBySQL(ctx, sqlf.Sprintf("WHERE DATE(timestamp) >= %s AND DATE(timestamp) <= %s", startDate, endDate))
 }
 
+// CountUniquesByEventNamePrefix provides a count of unique active users in a given time span that logged an event with a given prefix.
 func (l *eventLogs) CountUniquesByEventNamePrefix(ctx context.Context, startDate time.Time, endDate time.Time, namePrefix string) (int, error) {
-	return l.countUniquesBySQL(ctx, "WHERE DATE(timestamp) >= $1 AND DATE(timestamp) <= $2 AND name LIKE $3 || '%'", startDate, endDate, namePrefix)
+	return l.countUniquesBySQL(ctx, sqlf.Sprintf("WHERE DATE(timestamp) >= %s AND DATE(timestamp) <= %s AND name LIKE %s || '%'", startDate, endDate, namePrefix))
 }
 
+// CountUniquesByEventName provides a count of unique active users in a given time span that logged a given event.
 func (l *eventLogs) CountUniquesByEventName(ctx context.Context, startDate time.Time, endDate time.Time, name string) (int, error) {
-	return l.countUniquesBySQL(ctx, "WHERE DATE(timestamp) >= $1 AND DATE(timestamp) <= $2 AND name = $3", startDate, endDate, name)
+	return l.countUniquesBySQL(ctx, sqlf.Sprintf("WHERE DATE(timestamp) >= %s AND DATE(timestamp) <= %s AND name = %s", startDate, endDate, name))
 }
 
+// CountUniquesByEventNames provides a count of unique active users in a given time span that logged any event that matches a list of given event names
 func (l *eventLogs) CountUniquesByEventNames(ctx context.Context, startDate time.Time, endDate time.Time, names []string) (int, error) {
 	items := []*sqlf.Query{}
 	for _, v := range names {
 		items = append(items, sqlf.Sprintf("%s", v))
 	}
-	q := sqlf.Sprintf("WHERE DATE(timestamp) >= %s AND DATE(timestamp) <= %s AND name IN (%s)", startDate.Format("2006-01-02 15:04:05 UTC"), endDate.Format("2006-01-02 15:04:05 UTC"), sqlf.Join(items, ","))
-	return l.countUniquesBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	return l.countUniquesBySQL(ctx, sqlf.Sprintf("WHERE DATE(timestamp) >= %s AND DATE(timestamp) <= %s AND name IN (%s)", startDate, endDate, sqlf.Join(items, ",")))
 }
 
-func (*eventLogs) countUniquesBySQL(ctx context.Context, query string, args ...interface{}) (int, error) {
-	r := dbconn.Global.QueryRowContext(ctx, "SELECT COUNT(DISTINCT CASE WHEN user_id=0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END) FROM event_logs "+query, args...)
+func (*eventLogs) countUniquesBySQL(ctx context.Context, querySuffix *sqlf.Query) (int, error) {
+	q := sqlf.Sprintf("SELECT COUNT(DISTINCT CASE WHEN user_id=0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END) FROM event_logs %s", querySuffix)
+	r := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	var count int
 	err := r.Scan(&count)
 	return count, err
