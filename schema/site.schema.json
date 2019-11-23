@@ -182,6 +182,30 @@
       ],
       "group": "Security"
     },
+    "permissions.userMapping": {
+      "description": "Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's `authorization` field is set).",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "description": "Whether permissions user mapping is enabled. There must be no `authorization` field in any external service configuration before enabling this.",
+          "type": "boolean",
+          "default": false
+        },
+        "bindID": {
+          "description": "The type of identifier to identify a user. The default is \"email\", which uses the email address to identify a user. Use \"username\" to identify a user by their username. Changing this setting will erase any permissions created for users that do not yet exist.",
+          "type": "string",
+          "enum": ["email", "username"],
+          "default": "email"
+        }
+      },
+      "default": {
+        "enabled": true,
+        "bindID": "email"
+      },
+      "examples": [{ "bindID": "email" }, { "bindID": "username" }],
+      "group": "Security"
+    },
     "branding": {
       "description": "Customize Sourcegraph homepage logo and search icon.\n\nOnly available in Sourcegraph Enterprise.",
       "type": "object",
