@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sourcegraph-server-{{ID}}
+  labels:
+    app: sourcegraph-server-{{ID}}
+spec:
+  containers:
+  - name: sourcegraph-server
+    image: sourcegraph/server:{{IMAGE_VERSION}}
+    ports:
+    - containerPort: 7080
+      name: web-app
+    - containerPort: 2633
+      name: console
+    resources:
+      limits:
+        cpu: "4"
+        memory: "4Gi"
+      requests:
+        cpu: "1.7"
+        memory: "2Gi"

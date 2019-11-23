@@ -1,5 +1,7 @@
 .git/
 
+e2e.Dockerfile
+
 /vagrant_ansible_inventory_default
 /.vagrant
 
@@ -97,7 +99,6 @@ cmd/indexer/debug
 
 # Web
 node_modules/
-/web
 
 # Extensions
 /packages/sourcegraph-extension-api/dist
