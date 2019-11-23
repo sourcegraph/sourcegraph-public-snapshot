@@ -1106,14 +1106,14 @@ func Test_commitAndDiffSearchLimits(t *testing.T) {
 			resultTypes:          []string{"diff"},
 			numRepoRevs:          51,
 			wantResultTypes:      []string{}, // diff is removed from the resultTypes
-			wantAlertDescription: `Your search for diffs would run on more than 50 repositories. That's a bit much to process at once. Instead, try using the "repo:" filter to narrow down which repos to search.`,
+			wantAlertDescription: `Your search for diffs would run on more than 50 repositories. That's a bit much to process at once. Instead, try using the "repo:" filter to narrow down which repositories to search.`,
 		},
 		{
 			name:                 "commit_search_warns_on_repos_greater_than_search_limit",
 			resultTypes:          []string{"commit"},
 			numRepoRevs:          51,
 			wantResultTypes:      []string{}, // diff is removed from the resultTypes
-			wantAlertDescription: `Your search for commits would run on more than 50 repositories. That's a bit much to process at once. Instead, try using the "repo:" filter to narrow down which repos to search.`,
+			wantAlertDescription: `Your search for commits would run on more than 50 repositories. That's a bit much to process at once. Instead, try using the "repo:" filter to narrow down which repositories to search.`,
 		},
 		{
 			name:                 "no_warning_when_commit_search_within_search_limit",

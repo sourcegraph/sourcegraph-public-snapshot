@@ -825,7 +825,7 @@ func alertOnSearchLimit(resultTypes []string, args *search.Args) ([]string, *sea
 				resultTypes = []string{}
 				alert = &searchAlert{
 					title:       "Too many repositories need to be searched",
-					description: fmt.Sprintf(`Your search for %ss would run on more than %d repositories. That's a bit much to process at once. Instead, try using the "repo:" filter to narrow down which repos to search.`, resultType, repoLimit),
+					description: fmt.Sprintf(`Your search for %ss would run on more than %d repositories. That's a bit much to process at once. Instead, try using the "repo:" filter to narrow down which repositories to search.`, resultType, repoLimit),
 				}
 			}
 		}
