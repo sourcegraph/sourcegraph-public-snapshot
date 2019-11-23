@@ -395,6 +395,12 @@ type Mutation {
     ): SavedSearch!
     # Deletes a saved search
     deleteSavedSearch(id: ID!): EmptyResponse
+
+    # Deletes an LSIF dump.
+    deleteLSIFDump(id: ID!): EmptyResponse
+
+    # Deletes an LSIF job.
+    deleteLSIFJob(id: ID!): EmptyResponse
 }
 
 # The specification of what changesets Sourcegraph will open when the campaign is created.
@@ -1171,7 +1177,7 @@ type Query {
     # The configuration for clients.
     clientConfiguration: ClientConfigurationDetails!
     # Fetch search filter suggestions for autocompletion.
-    searchFilterSuggestions: SearchFilterSuggestions
+    searchFilterSuggestions: SearchFilterSuggestions!
     # Runs a search.
     search(
         # The version of the search syntax being used.
@@ -1226,38 +1232,8 @@ type Query {
     # Look up a namespace by ID.
     namespace(id: ID!): Namespace
 
-    # Lookup an LSIF dump by ID.
-    lsifDump(id: ID!): LSIFDump
-
-    # Retrieve the LSIF dumps for a repository.
-    lsifDumps(
-        # The repository ID that this LSIF dump belongs to.
-        repository: ID!
-
-        # An (optional) search query that searches over the commit and root properties.
-        query: String
-
-        # When specified, shows only dumps that are latest for the given repository.
-        isLatestForRepo: Boolean
-
-        # When specified, indicates that this request should be paginated and
-        # the first N results (relative to the cursor) should be returned. i.e.
-        # how many results to return per page. It must be in the range of 0-5000.
-        first: Int
-
-        # When specified, indicates that this request should be paginated and
-        # to fetch results starting at this cursor.
-        #
-        # A future request can be made for more results by passing in the
-        # 'LSIFDumpConnection.pageInfo.endCursor' that is returned.
-        after: String
-    ): LSIFDumpConnection!
-
     # Retrieve counts of jobs by state in the LSIF work queue.
     lsifJobStats: LSIFJobStats!
-
-    # Look up an LSIF job by ID.
-    lsifJob(id: ID!): LSIFJob
 
     # Search for LSIF jobs by state and query term.
     lsifJobs(
@@ -1294,6 +1270,7 @@ enum SearchVersion {
 enum SearchPatternType {
     literal
     regexp
+    structural
 }
 
 # Configuration details for the browser extension, editor extensions, etc.
@@ -1777,6 +1754,27 @@ type Repository implements Node & GenericSearchResultInterface {
     detail: Markdown!
     # The result previews of the result.
     matches: [SearchResultMatch!]!
+
+    # The repository's LSIF dumps.
+    lsifDumps(
+        # An (optional) search query that searches over the commit and root properties.
+        query: String
+
+        # When specified, shows only dumps that are latest for the given repository.
+        isLatestForRepo: Boolean
+
+        # When specified, indicates that this request should be paginated and
+        # the first N results (relative to the cursor) should be returned. i.e.
+        # how many results to return per page. It must be in the range of 0-5000.
+        first: Int
+
+        # When specified, indicates that this request should be paginated and
+        # to fetch results starting at this cursor.
+        #
+        # A future request can be made for more results by passing in the
+        # 'LSIFDumpConnection.pageInfo.endCursor' that is returned.
+        after: String
+    ): LSIFDumpConnection!
 }
 
 # A URL to a resource on an external service, such as the URL to a repository on its external (origin) code host.
@@ -2290,6 +2288,16 @@ type GitCommitConnection {
     pageInfo: PageInfo!
 }
 
+# Statistics about a specific language
+type LanguageStatistics {
+    # The name of the programming language
+    Name: String!
+    # The total bytes of the language
+    TotalBytes: Float!
+    # The total lines of the language
+    TotalLines: Int!
+}
+
 # A Git commit.
 type GitCommit implements Node {
     # The globally addressable ID for this commit.
@@ -2336,6 +2344,8 @@ type GitCommit implements Node {
     file(path: String!): File2
     # Lists the programming languages present in the tree at this commit.
     languages: [String!]!
+    # List statistics for each language present in the repository.
+    languageStatistics: [LanguageStatistics!]!
     # The log of commits consisting of this commit and its ancestors.
     ancestors(
         # Returns the first n commits from the list.
@@ -3919,6 +3929,9 @@ type LSIFDump implements Node {
 
     # The time the dump was uploaded.
     uploadedAt: DateTime!
+
+    # The time the dump became available for use.
+    processedAt: DateTime!
 }
 
 # A list of LSIF dumps.
@@ -3972,37 +3985,40 @@ type LSIFJobStats implements Node {
     scheduledCount: Int!
 }
 
-# A queued, active, or completed LSIF job.
+# Metadata and status about an LSIF job.
 type LSIFJob implements Node {
     # The ID.
     id: ID!
 
-    # The job type (convert, or clean-old-jobs).
-    name: String!
+    # The job type.
+    type: String!
 
     # The job's arguments.
-    args: JSONValue!
+    arguments: JSONValue!
 
     # The job's current state.
     state: LSIFJobState!
 
-    # The current job progress (0 to 100).
-    progress: Float!
-
-    # If the job failed, its failure message.
-    failedReason: String
-
-    # If the job failed, its stacktrace.
-    stacktrace: [String!]
+    # Metadata about a job's failure (not set if state is not ERRORED).
+    failure: LSIFJobFailureReason
 
     # The time the job was queued.
-    timestamp: DateTime!
+    queuedAt: DateTime!
 
     # The time the job was processed.
-    processedOn: DateTime
+    startedAt: DateTime
 
-    # The time the job was finished.
-    finishedOn: DateTime
+    # The time the job compelted or errored.
+    completedOrErroredAt: DateTime
+}
+
+# Metadata about a LSIF job failure.
+type LSIFJobFailureReason {
+    # A summary of the failure.
+    summary: String!
+
+    # The stacktrace from each failed attempt of the job.
+    stacktraces: [String!]!
 }
 
 # A list of LSIF jobs.

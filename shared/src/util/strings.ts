@@ -31,3 +31,11 @@ export function pluralize(str: string, n: number, plural = str + 's'): string {
 export function sanitizeClass(value: string): string {
     return value.replace(/[^A-Za-z]/g, '-').toLowerCase()
 }
+
+/**
+ * In the given string, deduplicate whitespace.
+ * E.g: " a  b  c  " => " a b c "
+ */
+export function dedupeWhitespace(value: string): string {
+    return value.replace(/\s+/g, ' ')
+}

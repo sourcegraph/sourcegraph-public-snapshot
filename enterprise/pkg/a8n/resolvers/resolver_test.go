@@ -65,7 +65,7 @@ func TestCampaigns(t *testing.T) {
 		httpFactory: cf,
 	}
 
-	s, err := graphqlbackend.NewSchema(sr)
+	s, err := graphqlbackend.NewSchema(sr, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -847,6 +847,7 @@ func TestCampaignPlanResolver(t *testing.T) {
 			FinishedAt:     now,
 			RepoID:         int32(repo.ID),
 			Rev:            testingRev,
+			BaseRef:        "master",
 			Diff:           testDiff,
 		}
 
@@ -885,19 +886,23 @@ func TestCampaignPlanResolver(t *testing.T) {
 		Nodes    []FileDiff
 	}
 
-	type Repository struct {
-		Name string
-	}
-
 	type ChangesetPlan struct {
 		Repository struct{ Name, URL string }
 		FileDiffs  FileDiffs
+	}
+
+	type Status struct {
+		CompletedCount int
+		PendingCount   int
+		State          string
+		Errors         []string
 	}
 
 	type CampaignPlan struct {
 		ID           string
 		CampaignType string `json:"type"`
 		Arguments    string
+		Status       Status
 		Changesets   struct {
 			Nodes []ChangesetPlan
 		}
@@ -908,7 +913,7 @@ func TestCampaignPlanResolver(t *testing.T) {
 	}
 
 	sr := &Resolver{store: store}
-	s, err := graphqlbackend.NewSchema(sr)
+	s, err := graphqlbackend.NewSchema(sr, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -977,6 +982,16 @@ func TestCampaignPlanResolver(t *testing.T) {
 
 	if have, want := response.Node.Arguments, plan.Arguments; have != want {
 		t.Fatalf("have Arguments %q, want %q", have, want)
+	}
+
+	wantStatus := Status{
+		State:          "COMPLETED",
+		CompletedCount: len(jobs),
+		Errors:         []string{},
+	}
+
+	if diff := cmp.Diff(response.Node.Status, wantStatus); diff != "" {
+		t.Fatalf("wrong Status. diff=%s", diff)
 	}
 
 	if have, want := len(response.Node.Changesets.Nodes), len(jobs); have != want {

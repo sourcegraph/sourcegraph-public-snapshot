@@ -165,7 +165,9 @@ func lsTree(ctx context.Context, repo gitserver.Repo, commit api.CommitID, path 
 }
 
 func lsTreeUncached(ctx context.Context, repo gitserver.Repo, commit api.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
-	ensureAbsCommit(commit)
+	if err := ensureAbsoluteCommit(commit); err != nil {
+		return nil, err
+	}
 
 	// Don't call filepath.Clean(path) because ReadDir needs to pass
 	// path with a trailing slash.

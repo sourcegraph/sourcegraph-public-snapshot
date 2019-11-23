@@ -1,6 +1,6 @@
 import { createHoverifier, HoveredToken, Hoverifier, HoverState } from '@sourcegraph/codeintellify'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { isEqual, upperFirst } from 'lodash'
+import { isEqual } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
@@ -25,10 +25,11 @@ import { WebHoverOverlay } from '../../components/shared'
 import { eventLogger, EventLoggerProps } from '../../tracking/eventLogger'
 import { GitCommitNode } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
-import { FileDiffConnection } from '../compare/FileDiffConnection'
-import { FileDiffNode } from '../compare/FileDiffNode'
+import { FileDiffConnection } from '../../components/diff/FileDiffConnection'
+import { FileDiffNode } from '../../components/diff/FileDiffNode'
 import { queryRepositoryComparisonFileDiffs } from '../compare/RepositoryCompareDiffPage'
 import { ThemeProps } from '../../../../shared/src/theme'
+import { ErrorAlert } from '../../components/alerts'
 
 const queryCommit = memoizeObservable(
     (args: { repo: GQL.ID; revspec: string }): Observable<GQL.IGitCommit> =>
@@ -169,7 +170,10 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                         )
                     )
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    error => console.error(error)
+                )
         )
         this.componentUpdates.next(this.props)
     }
@@ -200,7 +204,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                 {this.state.commitOrError === undefined ? (
                     <LoadingSpinner className="icon-inline mt-2" />
                 ) : isErrorLike(this.state.commitOrError) ? (
-                    <div className="alert alert-danger mt-2">Error: {upperFirst(this.state.commitOrError.message)}</div>
+                    <ErrorAlert className="mt-2" error={this.state.commitOrError} />
                 ) : (
                     <>
                         <div className="card repository-commit-page__card">
@@ -221,20 +225,23 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                             nodeComponent={FileDiffNode}
                             nodeComponentProps={{
                                 ...this.props,
-                                base: {
-                                    repoName: this.props.repo.name,
-                                    repoID: this.props.repo.id,
-                                    rev: commitParentOrEmpty(this.state.commitOrError),
-                                    commitID: commitParentOrEmpty(this.state.commitOrError),
-                                },
-                                head: {
-                                    repoName: this.props.repo.name,
-                                    repoID: this.props.repo.id,
-                                    rev: this.state.commitOrError.oid,
-                                    commitID: this.state.commitOrError.oid,
+                                extensionInfo: {
+                                    base: {
+                                        repoName: this.props.repo.name,
+                                        repoID: this.props.repo.id,
+                                        rev: commitParentOrEmpty(this.state.commitOrError),
+                                        commitID: commitParentOrEmpty(this.state.commitOrError),
+                                    },
+                                    head: {
+                                        repoName: this.props.repo.name,
+                                        repoID: this.props.repo.id,
+                                        rev: this.state.commitOrError.oid,
+                                        commitID: this.state.commitOrError.oid,
+                                    },
+                                    hoverifier: this.hoverifier,
+                                    extensionsController: this.props.extensionsController,
                                 },
                                 lineNumbers: true,
-                                hoverifier: this.hoverifier,
                             }}
                             updateOnChange={`${this.props.repo.id}:${this.state.commitOrError.oid}`}
                             defaultFirst={25}
@@ -242,7 +249,6 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                             noSummaryIfAllNodesVisible={true}
                             history={this.props.history}
                             location={this.props.location}
-                            extensionsController={this.props.extensionsController}
                         />
                     </>
                 )}

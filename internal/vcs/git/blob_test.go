@@ -2,13 +2,14 @@ package git_test
 
 import (
 	"context"
+	"io/ioutil"
 	"os"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-func TestReadFile(t *testing.T) {
+func TestRead(t *testing.T) {
 	t.Parallel()
 
 	const wantData = "abcd\n"
@@ -21,25 +22,51 @@ func TestReadFile(t *testing.T) {
 
 	ctx := context.Background()
 
-	t.Run("all", func(t *testing.T) {
-		data, err := git.ReadFile(ctx, repo, commitID, "file1", -1)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if string(data) != wantData {
-			t.Errorf("got %q, want %q", data, wantData)
-		}
-	})
+	tests := map[string]struct {
+		file     string
+		maxBytes int64
+		checkFn  func(*testing.T, error, []byte)
+	}{
+		"all": {
+			file: "file1",
+			checkFn: func(t *testing.T, err error, data []byte) {
+				if err != nil {
+					t.Fatal(err)
+				}
+				if string(data) != wantData {
+					t.Errorf("got %q, want %q", data, wantData)
+				}
+			},
+		},
 
-	t.Run("nonexistent", func(t *testing.T) {
-		_, err := git.ReadFile(ctx, repo, commitID, "filexyz", -1)
-		if err == nil {
-			t.Fatal("err == nil")
-		}
-		if !os.IsNotExist(err) {
-			t.Fatalf("got err %v, want os.IsNotExist", err)
-		}
-	})
+		"nonexistent": {
+			file: "filexyz",
+			checkFn: func(t *testing.T, err error, data []byte) {
+				if err == nil {
+					t.Fatal("err == nil")
+				}
+				if !os.IsNotExist(err) {
+					t.Fatalf("got err %v, want os.IsNotExist", err)
+				}
+			},
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name+"-ReadFile", func(t *testing.T) {
+			data, err := git.ReadFile(ctx, repo, commitID, test.file, test.maxBytes)
+			test.checkFn(t, err, data)
+		})
+		t.Run(name+"-GetFileReader", func(t *testing.T) {
+			rc, err := git.NewFileReader(ctx, repo, commitID, test.file)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer rc.Close()
+			data, err := ioutil.ReadAll(rc)
+			test.checkFn(t, err, data)
+		})
+	}
 
 	t.Run("maxBytes", func(t *testing.T) {
 		data, err := git.ReadFile(ctx, repo, commitID, "file1", 3)

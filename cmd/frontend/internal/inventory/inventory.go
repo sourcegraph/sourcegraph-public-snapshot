@@ -3,10 +3,13 @@
 package inventory
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"os"
 	"path/filepath"
 
+	"github.com/pkg/errors"
 	"github.com/src-d/enry/v2"
 	"github.com/src-d/enry/v2/data"
 )
@@ -26,30 +29,96 @@ type Lang struct {
 	// TotalBytes is the total number of bytes of code written in the
 	// programming language.
 	TotalBytes uint64 `json:"TotalBytes,omitempty"`
+	// TotalLines is the total number of lines of code written in the
+	// programming language.
+	TotalLines uint64 `json:"TotalLines,omitempty"`
 }
 
-// minFileBytes is the minimum byte size prefix for each file to read when using file contents for
-// language detection.
-const minFileBytes = 16 * 1024
+var newLine = []byte{'\n'}
 
-// detect performs an inventory of the file passed in. If readFile is provided, the language
-// detection uses heuristics based on the file content for greater accuracy.
-func detect(ctx context.Context, file os.FileInfo, readFile func(ctx context.Context, path string, minBytes int64) ([]byte, error)) (string, error) {
+func getLang(ctx context.Context, file os.FileInfo, buf []byte, getFileReader func(ctx context.Context, path string) (io.ReadCloser, error)) (Lang, error) {
+	if file == nil {
+		return Lang{}, nil
+	}
 	if !file.Mode().IsRegular() || enry.IsVendor(file.Name()) {
-		return "", nil
+		return Lang{}, nil
+	}
+	rc, err := getFileReader(ctx, file.Name())
+	if err != nil {
+		return Lang{}, errors.Wrap(err, "getting file reader")
+	}
+	if rc != nil {
+		defer rc.Close()
+	}
+
+	lang := Lang{
+		TotalBytes: uint64(file.Size()),
 	}
 
 	// In many cases, GetLanguageByFilename can detect the language conclusively just from the
-	// filename. Only try to read the file (which is much slower) if needed.
+	// filename. If not, we pass a subset of the file contents for analysis.
 	matchedLang, safe := GetLanguageByFilename(file.Name())
-	if !safe && readFile != nil {
-		data, err := readFile(ctx, file.Name(), minFileBytes)
-		if err != nil {
-			return "", err
-		}
-		matchedLang = enry.GetLanguage(file.Name(), data)
+
+	// No content
+	if rc == nil || lang.TotalBytes == 0 {
+		lang.Name = matchedLang
+		return lang, nil
 	}
-	return matchedLang, nil
+
+	if !safe {
+		// Detect language from content
+		n, err := io.ReadFull(rc, buf)
+		if err != nil && err != io.ErrUnexpectedEOF {
+			return lang, errors.Wrap(err, "reading initial file data")
+		}
+		matchedLang = enry.GetLanguage(file.Name(), buf[:n])
+		lang.TotalLines += uint64(bytes.Count(buf[:n], newLine))
+		lang.Name = matchedLang
+		if err == io.ErrUnexpectedEOF {
+			// File is smaller than buf, we can exit early
+			if !bytes.HasSuffix(buf[:n], newLine) {
+				// Add final line
+				lang.TotalLines++
+			}
+			return lang, nil
+		}
+	}
+	lang.Name = matchedLang
+
+	count, err := countLines(rc, buf)
+	if err != nil {
+		return lang, err
+	}
+	lang.TotalLines += uint64(count)
+	return lang, nil
+}
+
+// countLines counts the number of lines in the supplied reader
+// it uses buf as a temporary buffer
+func countLines(r io.Reader, buf []byte) (int, error) {
+	var trailingNewLine bool
+	var totalLines int
+	for {
+		n, err := r.Read(buf)
+		totalLines += bytes.Count(buf[:n], newLine)
+		// We need this check because the last read will often
+		// return (0, io.EOF) and we want to look at the last
+		// valid read to determine if there was a trailing newline
+		if n > 0 {
+			trailingNewLine = bytes.HasSuffix(buf[:n], newLine)
+		}
+		if err == io.EOF {
+			if !trailingNewLine {
+				// Add final line
+				totalLines++
+			}
+			break
+		}
+		if err != nil {
+			return 0, errors.Wrap(err, "counting lines")
+		}
+	}
+	return totalLines, nil
 }
 
 // GetLanguageByFilename returns the guessed language for the named file (and safe == true if this

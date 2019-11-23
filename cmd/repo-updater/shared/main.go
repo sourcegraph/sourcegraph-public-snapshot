@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -30,7 +31,7 @@ import (
 
 const port = "3182"
 
-func Main(newPreSync repos.NewPreSync) {
+func Main(newPreSync repos.NewPreSync, dbInitHook func(db *sql.DB)) {
 	streamingSyncer, _ := strconv.ParseBool(env.Get("SRC_STREAMING_SYNCER_ENABLED", "true", "Use the new, streaming repo metadata syncer."))
 
 	ctx := context.Background()
@@ -67,6 +68,10 @@ func Main(newPreSync repos.NewPreSync) {
 		log.Fatalf("failed to initialize db store: %v", err)
 	}
 
+	if dbInitHook != nil {
+		go dbInitHook(db)
+	}
+
 	var store repos.Store
 	{
 		m := repos.NewStoreMetrics()
@@ -90,7 +95,7 @@ func Main(newPreSync repos.NewPreSync) {
 		)
 	}
 
-	cf := repos.NewHTTPClientFactory()
+	cf := httpcli.NewHTTPClientFactory()
 	var src repos.Sourcer
 	{
 		m := repos.NewSourceMetrics()

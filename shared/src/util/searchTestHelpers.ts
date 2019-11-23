@@ -53,7 +53,10 @@ export const MULTIPLE_MATCH_RESULT = {
         {
             preview: 'func TestTokenSourceGrantTypeOverride(t *testing.T) {',
             lineNumber: 36,
-            offsetAndLengths: [[5, 4], [41, 4]],
+            offsetAndLengths: [
+                [5, 4],
+                [41, 4],
+            ],
             limitHit: false,
         },
         {
@@ -65,7 +68,10 @@ export const MULTIPLE_MATCH_RESULT = {
         {
             preview: 'func TestTokenRequest(t *testing.T) {',
             lineNumber: 73,
-            offsetAndLengths: [[5, 4], [25, 4]],
+            offsetAndLengths: [
+                [5, 4],
+                [25, 4],
+            ],
             limitHit: false,
         },
         {
@@ -77,7 +83,10 @@ export const MULTIPLE_MATCH_RESULT = {
         {
             preview: 'func TestTokenRefreshRequest(t *testing.T) {',
             lineNumber: 115,
-            offsetAndLengths: [[5, 4], [32, 4]],
+            offsetAndLengths: [
+                [5, 4],
+                [32, 4],
+            ],
             limitHit: false,
         },
         {

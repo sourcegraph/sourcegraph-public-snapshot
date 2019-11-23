@@ -23,6 +23,7 @@ import { PageTitle } from '../../../components/PageTitle'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { ProductSubscriptionForm, ProductSubscriptionFormData } from './ProductSubscriptionForm'
 import { ThemeProps } from '../../../../../shared/src/theme'
+import { ErrorAlert } from '../../../components/alerts'
 
 interface Props extends RouteComponentProps<{ subscriptionUUID: string }>, ThemeProps {
     user: GQL.IUser
@@ -125,9 +126,7 @@ export class UserSubscriptionsEditProductSubscriptionPage extends React.Componen
                 {this.state.productSubscriptionOrError === LOADING ? (
                     <LoadingSpinner className="icon-inline" />
                 ) : isErrorLike(this.state.productSubscriptionOrError) ? (
-                    <div className="alert alert-danger my-2">
-                        Error: {this.state.productSubscriptionOrError.message}
-                    </div>
+                    <ErrorAlert className="my-2" error={this.state.productSubscriptionOrError} />
                 ) : (
                     <>
                         <Link to={this.state.productSubscriptionOrError.url} className="btn btn-link btn-sm mb-3">

@@ -1,5 +1,4 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { Observable, Subscription } from 'rxjs'
 import { catchError, map, startWith, tap } from 'rxjs/operators'
@@ -9,6 +8,7 @@ import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../
 import { queryGraphQL } from '../../../backend/graphql'
 import { ProductPlanPrice } from './ProductPlanPrice'
 import { ProductPlanTiered } from './ProductPlanTiered'
+import { ErrorAlert } from '../../../components/alerts'
 
 interface Props {
     /** The selected plan's billing ID. */
@@ -71,7 +71,7 @@ export class ProductPlanFormControl extends React.Component<Props, State> {
                 {this.state.plansOrError === LOADING ? (
                     <LoadingSpinner className="icon-inline" />
                 ) : isErrorLike(this.state.plansOrError) ? (
-                    <div className="alert alert-danger">{upperFirst(this.state.plansOrError.message)}</div>
+                    <ErrorAlert error={this.state.plansOrError.message} />
                 ) : (
                     <>
                         <div className="list-group">

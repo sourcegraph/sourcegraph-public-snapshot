@@ -2,9 +2,12 @@
 package conf
 
 import (
+	"context"
 	"log"
 	"os"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -94,6 +97,43 @@ func init() {
 	}
 }
 
+// cachedConfigurationSource caches reads for a specified duration to reduce
+// the number of reads against the underlying configuration source (e.g. a
+// Postgres DB).
+type cachedConfigurationSource struct {
+	source ConfigurationSource
+
+	ttl       time.Duration
+	entryMu   sync.Mutex
+	entry     *conftypes.RawUnified
+	entryTime time.Time
+}
+
+func (c *cachedConfigurationSource) Read(ctx context.Context) (conftypes.RawUnified, error) {
+	c.entryMu.Lock()
+	defer c.entryMu.Unlock()
+	if c.entry == nil || time.Since(c.entryTime) > c.ttl {
+		updatedEntry, err := c.source.Read(ctx)
+		if err != nil {
+			return updatedEntry, err
+		}
+		c.entry = &updatedEntry
+		c.entryTime = time.Now()
+	}
+	return *c.entry, nil
+}
+
+func (c *cachedConfigurationSource) Write(ctx context.Context, input conftypes.RawUnified) error {
+	c.entryMu.Lock()
+	defer c.entryMu.Unlock()
+	if err := c.source.Write(ctx, input); err != nil {
+		return err
+	}
+	c.entry = &input
+	c.entryTime = time.Now()
+	return nil
+}
+
 // InitConfigurationServerFrontendOnly creates and returns a configuration
 // server. This should only be invoked by the frontend, or else a panic will
 // occur. This function should only ever be called once.
@@ -108,7 +148,11 @@ func InitConfigurationServerFrontendOnly(source ConfigurationSource) *Server {
 		panic("cannot call this function while in client mode")
 	}
 
-	server := NewServer(source)
+	server := NewServer(&cachedConfigurationSource{
+		source: source,
+		// conf.Watch poll rate is 5s, so we use half that.
+		ttl: 2500 * time.Millisecond,
+	})
 	server.Start()
 
 	// Install the passthrough configuration source for defaultClient. This is

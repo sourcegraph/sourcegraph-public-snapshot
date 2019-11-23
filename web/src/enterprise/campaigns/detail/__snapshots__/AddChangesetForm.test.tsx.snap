@@ -1,0 +1,34 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`AddChangesetForm renders the form 1`] = `
+<form
+  className="form-inline "
+  onInvalid={[Function]}
+  onSubmit={[Function]}
+>
+  <input
+    className="form-control mr-1"
+    onChange={[Function]}
+    placeholder="Repository name"
+    required={true}
+    size={35}
+    type="text"
+    value=""
+  />
+  <input
+    className="form-control mr-1"
+    onChange={[Function]}
+    placeholder="Changeset number"
+    required={true}
+    size={16}
+    type="text"
+    value=""
+  />
+  <button
+    className="btn btn-primary mr-1"
+    type="submit"
+  >
+    Add changeset
+  </button>
+</form>
+`;

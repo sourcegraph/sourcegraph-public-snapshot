@@ -29,10 +29,16 @@ const FIXTURE_CONTRIBUTIONS_1: Contributions = {
     },
 }
 const FIXTURE_CONTRIBUTIONS_1_EVALUATED: Evaluated<Contributions> = {
-    actions: [{ id: '1.a', command: 'c', title: '1.A' }, { id: '1.b', command: 'c', title: '1.B' }],
+    actions: [
+        { id: '1.a', command: 'c', title: '1.A' },
+        { id: '1.b', command: 'c', title: '1.B' },
+    ],
     menus: {
         [ContributableMenu.CommandPalette]: [{ action: '1.a', when: undefined }],
-        [ContributableMenu.GlobalNav]: [{ action: '1.a', when: undefined }, { action: '1.b', when: undefined }],
+        [ContributableMenu.GlobalNav]: [
+            { action: '1.a', when: undefined },
+            { action: '1.b', when: undefined },
+        ],
     },
 }
 
@@ -47,10 +53,16 @@ const FIXTURE_CONTRIBUTIONS_2: Contributions = {
     },
 }
 const FIXTURE_CONTRIBUTIONS_2_EVALUATED: Evaluated<Contributions> = {
-    actions: [{ id: '2.a', command: 'c', title: '2.A' }, { id: '2.b', command: 'c', title: '2.B' }],
+    actions: [
+        { id: '2.a', command: 'c', title: '2.A' },
+        { id: '2.b', command: 'c', title: '2.B' },
+    ],
     menus: {
         [ContributableMenu.CommandPalette]: [{ action: '2.a', when: undefined }],
-        [ContributableMenu.EditorTitle]: [{ action: '2.a', when: undefined }, { action: '2.b', when: undefined }],
+        [ContributableMenu.EditorTitle]: [
+            { action: '2.a', when: undefined },
+            { action: '2.b', when: undefined },
+        ],
     },
 }
 
@@ -62,9 +74,18 @@ const FIXTURE_CONTRIBUTIONS_MERGED: Evaluated<Contributions> = {
         { id: '2.b', command: 'c', title: '2.B' },
     ],
     menus: {
-        [ContributableMenu.CommandPalette]: [{ action: '1.a', when: undefined }, { action: '2.a', when: undefined }],
-        [ContributableMenu.GlobalNav]: [{ action: '1.a', when: undefined }, { action: '1.b', when: undefined }],
-        [ContributableMenu.EditorTitle]: [{ action: '2.a', when: undefined }, { action: '2.b', when: undefined }],
+        [ContributableMenu.CommandPalette]: [
+            { action: '1.a', when: undefined },
+            { action: '2.a', when: undefined },
+        ],
+        [ContributableMenu.GlobalNav]: [
+            { action: '1.a', when: undefined },
+            { action: '1.b', when: undefined },
+        ],
+        [ContributableMenu.EditorTitle]: [
+            { action: '2.a', when: undefined },
+            { action: '2.b', when: undefined },
+        ],
     },
 }
 
@@ -289,7 +310,10 @@ describe('ContributionRegistry', () => {
 
 describe('mergeContributions()', () => {
     const FIXTURE_CONTRIBUTIONS_1: Evaluated<Contributions> = {
-        actions: [{ id: '1.a', command: 'c', title: '1.A' }, { id: '1.b', command: 'c', title: '1.B' }],
+        actions: [
+            { id: '1.a', command: 'c', title: '1.A' },
+            { id: '1.b', command: 'c', title: '1.B' },
+        ],
         menus: {
             [ContributableMenu.CommandPalette]: [{ action: '1.a' }],
             [ContributableMenu.GlobalNav]: [{ action: '1.a' }, { action: '1.b' }],
@@ -297,7 +321,10 @@ describe('mergeContributions()', () => {
     }
 
     const FIXTURE_CONTRIBUTIONS_2: Evaluated<Contributions> = {
-        actions: [{ id: '2.a', command: 'c', title: '2.A' }, { id: '2.b', command: 'c', title: '2.B' }],
+        actions: [
+            { id: '2.a', command: 'c', title: '2.A' },
+            { id: '2.b', command: 'c', title: '2.B' },
+        ],
         menus: {
             [ContributableMenu.CommandPalette]: [{ action: '2.a' }],
             [ContributableMenu.EditorTitle]: [{ action: '2.a' }, { action: '2.b' }],
@@ -359,7 +386,11 @@ describe('filterContributions()', () => {
 
     it('handles non-empty contributions', () => {
         const expected: Evaluated<Contributions> = {
-            actions: [{ id: 'a1', command: 'c' }, { id: 'a2', command: 'c' }, { id: 'a3', command: 'c' }],
+            actions: [
+                { id: 'a1', command: 'c' },
+                { id: 'a2', command: 'c' },
+                { id: 'a3', command: 'c' },
+            ],
             menus: {
                 [ContributableMenu.CommandPalette]: [{ action: 'a1', when: true }, { action: 'a3' }],
                 [ContributableMenu.GlobalNav]: [{ action: 'a1', when: true }, { action: 'a2' }],
@@ -367,7 +398,11 @@ describe('filterContributions()', () => {
         }
         expect(
             filterContributions({
-                actions: [{ id: 'a1', command: 'c' }, { id: 'a2', command: 'c' }, { id: 'a3', command: 'c' }],
+                actions: [
+                    { id: 'a1', command: 'c' },
+                    { id: 'a2', command: 'c' },
+                    { id: 'a3', command: 'c' },
+                ],
                 menus: {
                     [ContributableMenu.CommandPalette]: [
                         { action: 'a1', when: true },

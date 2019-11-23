@@ -12,10 +12,11 @@ import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { createAggregateError } from '../../../../shared/src/util/errors'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
 import { queryGraphQL } from '../../backend/graphql'
-import { FileDiffConnection } from './FileDiffConnection'
-import { FileDiffNode } from './FileDiffNode'
+import { FileDiffConnection } from '../../components/diff/FileDiffConnection'
+import { FileDiffNode } from '../../components/diff/FileDiffNode'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 import { ThemeProps } from '../../../../shared/src/theme'
+import { FileDiffFields, FileDiffHunkRangeFields, DiffStatFields } from '../../backend/diff'
 
 export function queryRepositoryComparisonFileDiffs(args: {
     repo: GQL.ID
@@ -46,39 +47,11 @@ export function queryRepositoryComparisonFileDiffs(args: {
                 }
             }
 
-            fragment FileDiffFields on FileDiff {
-                oldPath
-                newPath
-                mostRelevantFile {
-                    url
-                }
-                hunks {
-                    oldRange {
-                        ...FileDiffHunkRangeFields
-                    }
-                    oldNoNewlineAt
-                    newRange {
-                        ...FileDiffHunkRangeFields
-                    }
-                    section
-                    body
-                }
-                stat {
-                    ...DiffStatFields
-                }
-                internalID
-            }
+            ${FileDiffFields}
 
-            fragment FileDiffHunkRangeFields on FileDiffHunkRange {
-                startLine
-                lines
-            }
+            ${FileDiffHunkRangeFields}
 
-            fragment DiffStatFields on DiffStat {
-                added
-                changed
-                deleted
-            }
+            ${DiffStatFields}
         `,
         args
     ).pipe(
@@ -122,8 +95,12 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
                     nodeComponent={FileDiffNode}
                     nodeComponentProps={{
                         ...this.props,
-                        base: { ...this.props.base, rev: this.props.base.rev || 'HEAD' },
-                        head: { ...this.props.head, rev: this.props.head.rev || 'HEAD' },
+                        extensionInfo: {
+                            base: { ...this.props.base, rev: this.props.base.rev || 'HEAD' },
+                            head: { ...this.props.head, rev: this.props.head.rev || 'HEAD' },
+                            hoverifier: this.props.hoverifier,
+                            extensionsController: this.props.extensionsController,
+                        },
                         lineNumbers: true,
                     }}
                     defaultFirst={25}
@@ -131,7 +108,6 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
                     noSummaryIfAllNodesVisible={true}
                     history={this.props.history}
                     location={this.props.location}
-                    extensionsController={this.props.extensionsController}
                 />
             </div>
         )

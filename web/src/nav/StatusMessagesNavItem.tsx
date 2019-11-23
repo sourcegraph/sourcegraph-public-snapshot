@@ -1,4 +1,3 @@
-import { startCase } from 'lodash'
 import CloudAlertIcon from 'mdi-react/CloudAlertIcon'
 import CloudCheckIcon from 'mdi-react/CloudCheckIcon'
 import CloudSyncIcon from 'mdi-react/CloudSyncIcon'
@@ -12,6 +11,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { queryGraphQL } from '../backend/graphql'
 import classNames from 'classnames'
+import { ErrorAlert } from '../components/alerts'
 
 export function fetchAllStatusMessages(): Observable<GQL.StatusMessage[]> {
     return queryGraphQL(
@@ -216,10 +216,11 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                 <DropdownMenu right={true} className="status-messages-nav-item__dropdown-menu">
                     <h3>External service status</h3>
                     {isErrorLike(this.state.messagesOrError) ? (
-                        <div className="status-messages-nav-item__entry alert alert-danger mb-0">
-                            <h4>Failed to load status messages:</h4>
-                            <p>{startCase(this.state.messagesOrError.message)}</p>
-                        </div>
+                        <ErrorAlert
+                            className="status-messages-nav-item__entry mb-0"
+                            prefix="Failed to load status messages"
+                            error={this.state.messagesOrError}
+                        />
                     ) : this.state.messagesOrError.length > 0 ? (
                         this.state.messagesOrError.map(m => this.renderMessage(m))
                     ) : (

@@ -11,10 +11,8 @@ import { HeroPage } from '../../components/HeroPage'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { fetchRepository } from './backend'
-import { RepoSettingsIndexPage } from './RepoSettingsIndexPage'
-import { RepoSettingsMirrorPage } from './RepoSettingsMirrorPage'
-import { RepoSettingsOptionsPage } from './RepoSettingsOptionsPage'
-import { RepoSettingsSidebar } from './RepoSettingsSidebar'
+import { RepoSettingsSidebar, RepoSettingsSideBarItems } from './RepoSettingsSidebar'
+import { RouteDescriptor } from '../../util/contributions'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -24,7 +22,16 @@ const NotFoundPage: React.FunctionComponent = () => (
     />
 )
 
+export interface RepoSettingsAreaRouteContext {
+    repo: GQL.IRepository
+    onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
+}
+
+export interface RepoSettingsAreaRoute extends RouteDescriptor<RepoSettingsAreaRouteContext> {}
+
 interface Props extends RouteComponentProps<any>, RepoHeaderContributionsLifecycleProps {
+    repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
+    repoSettingsSidebarItems: RepoSettingsSideBarItems
     repo: GQL.IRepository
     authenticatedUser: GQL.IUser | null
     onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
@@ -53,7 +60,10 @@ export class RepoSettingsArea extends React.Component<Props> {
                     distinctUntilChanged(),
                     switchMap(name => fetchRepository(name))
                 )
-                .subscribe(repo => this.setState({ repo }), err => this.setState({ error: err.message }))
+                .subscribe(
+                    repo => this.setState({ repo }),
+                    err => this.setState({ error: err.message })
+                )
         )
         this.componentUpdates.next(this.props)
     }
@@ -90,8 +100,9 @@ export class RepoSettingsArea extends React.Component<Props> {
             return null
         }
 
-        const transferProps = {
+        const context: RepoSettingsAreaRouteContext = {
             repo: this.state.repo,
+            onDidUpdateRepository: this.props.onDidUpdateRepository,
         }
 
         return (
@@ -105,44 +116,29 @@ export class RepoSettingsArea extends React.Component<Props> {
                     }
                     repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
-                <RepoSettingsSidebar className="flex-0 mr-3" {...this.props} {...transferProps} />
+                <RepoSettingsSidebar
+                    className="flex-0 mr-3"
+                    repoSettingsSidebarItems={this.props.repoSettingsSidebarItems}
+                    {...this.props}
+                    {...context}
+                />
                 <div className="flex-1">
                     <Switch>
-                        {/* eslint-disable react/jsx-no-bind */}
-                        <Route
-                            path={`${this.props.match.url}`}
-                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            exact={true}
-                            render={routeComponentProps => (
-                                <RepoSettingsOptionsPage
-                                    {...routeComponentProps}
-                                    {...transferProps}
-                                    onDidUpdateRepository={this.props.onDidUpdateRepository}
-                                />
-                            )}
-                        />
-                        <Route
-                            path={`${this.props.match.url}/index`}
-                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            exact={true}
-                            render={routeComponentProps => (
-                                <RepoSettingsIndexPage {...routeComponentProps} {...transferProps} />
-                            )}
-                        />
-                        <Route
-                            path={`${this.props.match.url}/mirror`}
-                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            exact={true}
-                            render={routeComponentProps => (
-                                <RepoSettingsMirrorPage
-                                    {...routeComponentProps}
-                                    {...transferProps}
-                                    onDidUpdateRepository={this.props.onDidUpdateRepository}
-                                />
-                            )}
-                        />
+                        {this.props.repoSettingsAreaRoutes.map(
+                            ({ render, path, exact, condition = () => true }) =>
+                                /* eslint-disable react/jsx-no-bind */
+                                condition(context) && (
+                                    <Route
+                                        // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                        key="hardcoded-key"
+                                        path={this.props.match.url + path}
+                                        exact={exact}
+                                        render={routeComponentProps => render({ ...context, ...routeComponentProps })}
+                                    />
+                                )
+                        )}
+
                         <Route key="hardcoded-key" component={NotFoundPage} />
-                        {/* eslint-enable react/jsx-no-bind */}
                     </Switch>
                 </div>
             </div>

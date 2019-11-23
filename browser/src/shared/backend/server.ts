@@ -26,7 +26,10 @@ export const fetchCurrentUser = (
         mightContainPrivateInfo: false,
     }).pipe(
         map(dataOrThrowErrors),
-        map(({ currentUser }) => currentUser || undefined, catchError((err, caught) => caught))
+        map(
+            ({ currentUser }) => currentUser || undefined,
+            catchError((err, caught) => caught)
+        )
     )
 
 export const fetchSite = (requestGraphQL: PlatformContext['requestGraphQL']): Observable<GQL.ISite> =>
@@ -44,5 +47,8 @@ export const fetchSite = (requestGraphQL: PlatformContext['requestGraphQL']): Ob
         mightContainPrivateInfo: false,
     }).pipe(
         map(dataOrThrowErrors),
-        map(({ site }) => site, catchError((err, caught) => caught))
+        map(
+            ({ site }) => site,
+            catchError((err, caught) => caught)
+        )
     )

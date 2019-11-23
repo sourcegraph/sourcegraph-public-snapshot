@@ -17,6 +17,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { userURL } from '../user'
 import { setUserEmailVerified } from '../user/settings/backend'
 import { deleteUser, fetchAllUsers, randomizeUserPassword, setUserIsSiteAdmin } from './backend'
+import { ErrorAlert } from '../components/alerts'
 
 interface UserNodeProps {
     /**
@@ -164,9 +165,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                         )}
                     </div>
                 </div>
-                {this.state.errorDescription && (
-                    <div className="alert alert-danger mt-2">{this.state.errorDescription}</div>
-                )}
+                {this.state.errorDescription && <ErrorAlert className="mt-2" error={this.state.errorDescription} />}
                 {this.state.resetPasswordURL && (
                     <div className="alert alert-success mt-2">
                         <p>

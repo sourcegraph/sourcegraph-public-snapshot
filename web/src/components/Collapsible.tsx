@@ -1,12 +1,13 @@
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import React, { useCallback, useState } from 'react'
+import classNames from 'classnames'
 
 interface Props {
     /**
      * Content in the always-visible, single-line title bar.
      */
-    title: string
+    title: React.ReactNode
 
     /**
      * Optional children that appear below the title bar that can be expanded/collapsed. If present,
@@ -21,6 +22,11 @@ interface Props {
 
     className?: string
     titleClassName?: string
+
+    /**
+     * Whether the whole title section should be clickable to expand the content
+     */
+    wholeTitleClickable?: boolean
 }
 
 /**
@@ -33,6 +39,7 @@ export const Collapsible: React.FunctionComponent<Props> = ({
     defaultExpanded = false,
     className = '',
     titleClassName = '',
+    wholeTitleClickable = true,
 }) => {
     const [isExpanded, setIsExpanded] = useState(defaultExpanded)
     const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(
@@ -53,7 +60,7 @@ export const Collapsible: React.FunctionComponent<Props> = ({
                 <span className={titleClassName}>{title}</span>
                 <button
                     type="button"
-                    className="btn btn-icon stretched-link"
+                    className={classNames('btn btn-icon', wholeTitleClickable && 'stretched-link')}
                     aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                     onClick={toggleIsExpanded}
                 >

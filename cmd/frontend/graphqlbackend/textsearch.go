@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go"
@@ -37,13 +38,21 @@ var (
 	// A global limiter on number of concurrent searcher searches.
 	textSearchLimiter = mutablelimiter.New(32)
 
+	requestCounter = metrics.NewRequestMeter("textsearch", "Total number of requests sent to the textsearch API.")
+
 	searchHTTPClient = &http.Client{
 		// nethttp.Transport will propagate opentracing spans
 		Transport: &nethttp.Transport{
-			RoundTripper: &http.Transport{
+			RoundTripper: requestCounter.Transport(&http.Transport{
 				// Default is 2, but we can send many concurrent requests
 				MaxIdleConnsPerHost: 500,
-			},
+			}, func(u *url.URL) string {
+				// TODO(uwedeportivo): remove once codemod has its own client
+				if strings.Contains(u.String(), "replacer") {
+					return "replace"
+				}
+				return "search"
+			}),
 		},
 	}
 )

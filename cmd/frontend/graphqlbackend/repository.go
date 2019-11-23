@@ -74,6 +74,10 @@ func (r *RepositoryResolver) Name() string {
 	return string(r.repo.Name)
 }
 
+func (r *RepositoryResolver) ExternalRepo() *api.ExternalRepoSpec {
+	return &r.repo.ExternalRepo
+}
+
 func (r *RepositoryResolver) URI(ctx context.Context) (string, error) {
 	err := r.hydrate(ctx)
 	if err != nil {
@@ -234,6 +238,10 @@ func (r *RepositoryResolver) resultCount() int32 {
 	return 1
 }
 
+func (r *RepositoryResolver) Type() *types.Repo {
+	return r.repo
+}
+
 func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 	r.hydration.Do(func() {
 		if r.repo.RepoFields != nil {
@@ -250,6 +258,16 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 	})
 
 	return r.err
+}
+
+func (r *RepositoryResolver) LSIFDumps(ctx context.Context, args *LSIFDumpsQueryArgs) (LSIFDumpConnectionResolver, error) {
+	if EnterpriseResolvers.codeIntelResolver == nil {
+		return nil, codeIntelOnlyInEnterprise
+	}
+	return EnterpriseResolvers.codeIntelResolver.LSIFDumps(ctx, &LSIFRepositoryDumpsQueryArgs{
+		LSIFDumpsQueryArgs: args,
+		RepositoryID:       r.ID(),
+	})
 }
 
 func (*schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {

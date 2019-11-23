@@ -60,6 +60,9 @@ $alert-bg-level-light: -10;
 $alert-border-level-light: -9;
 $alert-color-level-light: 6;
 
+$alert-padding-y: 0.75rem;
+$alert-padding-x: 0.75rem;
+
 // Forms
 
 $input-btn-focus-width: 2px;
@@ -253,6 +256,7 @@ body,
 @import './repo/blob/discussions/DiscussionsTree';
 @import './components/SearchResult';
 @import './components/SearchResultMatch';
+@import './components/diff/FileDiffNode';
 @import '~@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
 
 @import '../../shared/src/index';

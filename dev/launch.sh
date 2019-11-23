@@ -97,6 +97,14 @@ if ! ./dev/go-install.sh; then
 	exit 1
 fi
 
+# Install or upgrade comby.
+if ! ./dev/comby-install-or-upgrade.sh; then
+    # Wait for everything to finish up to here.
+    wait
+    echo >&2 "WARNING: comby-install-or-upgrade.sh failed, some builds may have failed."
+    exit 1
+fi
+
 # Wait for yarn if it is still running
 if [[ -n "$yarn_pid" ]]; then
     wait "$yarn_pid"
@@ -117,6 +125,11 @@ export PATH="$PWD/.bin:$PWD/node_modules/.bin:$PATH"
 [ -n "${OFFLINE-}" ] || {
     pushd ./lsif && yarn --no-progress && popd
 }
+
+# Build once to make sure editor codeintel works
+# This is fast if no changes were made.
+# Don't fail if it errors as this is only for codeintel, not for the build.
+yarn run build-ts || true
 
 printf >&2 "\nStarting all binaries...\n\n"
 export GOREMAN="goreman --set-ports=false --exit-on-error -f dev/Procfile"

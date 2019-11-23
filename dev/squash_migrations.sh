@@ -14,20 +14,30 @@ hash migrate 2>/dev/null || {
 }
 
 if [ -z "$1" ]; then
-    echo "USAGE: $0 <migration>"
+    echo "USAGE: $0 <tag>"
     echo ""
-    echo "To use this tool, first find the migration version you want to squash. All"
-    echo "migrations prior to this version will be squashed into that version."
+    echo "This tool will squash all migrations up to and including the last migration defined"
+    echo "in the given tag branch. The input to this tool should be three minor releases before"
+    echo "the current release. For example, if we're currently on 3.10, the input should be the"
+    echo "tag 'v3.7.0' as we need to maintain compatibility with versions 3.8 and 3.9."
     echo ""
-    echo "For example, if the latest release of Sourcegraph is v3.9.x then since we must"
-    echo "maintain backwards compatability for upgrading from 3.7.x and 3.8.x (two minor"
-    echo "versions), you should find the last migration that v3.6.x performed and specify"
-    echo "that as the version to squash to."
+    exit 1
+fi
+
+# Find the last migration defined in the given tag
+VERSION=$(git ls-tree -r --name-only "$1" ./ \
+    | cut -d'_' -f1 \
+    | grep -v [^0-9] \
+    | sort \
+    | tail -n1)
+
+if [ -z "${VERSION}" ]; then
+    echo "failed to retrieve migration version"
     exit 1
 fi
 
 # First, apply migrations up to the version we want to squash
-migrate -database "postgres://${PGHOST}:${PGPORT}/${PGDATABASE}" -path . goto $1
+migrate -database "postgres://${PGHOST}:${PGPORT}/${PGDATABASE}?sslmode=disable" -path . goto "${VERSION}"
 
 # Dump the database into a temporary file that we need to post-process
 pg_dump -s --no-owner --no-comments --clean --if-exists -f tmp_squashed.sql
@@ -61,22 +71,22 @@ for file in $(ls *.sql); do
     # version comes first, then the up version. Make sure we only break the
     # loop once we remove both files.
 
-    if [[ "$file" == "$1"* && "$file" == *'up.sql' ]]; then
+    if [[ "$file" == "${VERSION}"* && "$file" == *'up.sql' ]]; then
         break
     fi
 done
 
 # Wrap squashed migration in transaction
-printf "BEGIN;\n" > "./$1_squashed_migrations.up.sql"
-cat tmp_squashed.sql >> "./$1_squashed_migrations.up.sql"
-printf "\nCOMMIT;\n" >> "./$1_squashed_migrations.up.sql"
+printf "BEGIN;\n" > "./${VERSION}_squashed_migrations.up.sql"
+cat tmp_squashed.sql >> "./${VERSION}_squashed_migrations.up.sql"
+printf "\nCOMMIT;\n" >> "./${VERSION}_squashed_migrations.up.sql"
 rm tmp_squashed.sql
 
 # Create down migration. This needs to drop everything, so we just drop the
 # schema and recreate it. This happens to also drop the schema_migrations
 # table, which blows up the migrate tool if we don't put it back.
 
-cat > "./$1_squashed_migrations.down.sql" << EOL
+cat > "./${VERSION}_squashed_migrations.down.sql" << EOL
 DROP SCHEMA IF EXISTS public CASCADE;
 CREATE SCHEMA public;
 
@@ -87,7 +97,7 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
 EOL
 
 echo ""
-echo "squashed migrations written to $1_squashed_migrations.{up,down}.sql"
+echo "squashed migrations written to ${VERSION}_squashed_migrations.{up,down}.sql"
 
 # Regenerate bindata
 go generate

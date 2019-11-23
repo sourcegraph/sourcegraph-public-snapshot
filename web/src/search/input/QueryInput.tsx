@@ -1,28 +1,41 @@
 import * as H from 'history'
 import * as React from 'react'
-import { fromEvent, Observable, Subject, Subscription } from 'rxjs'
+import { fromEvent, Subject, Subscription, merge, of } from 'rxjs'
 import {
-    catchError,
     debounceTime,
     distinctUntilChanged,
     filter,
-    map,
     repeat,
     startWith,
-    switchMap,
     takeUntil,
-    tap,
+    switchMap,
+    map,
     toArray,
+    catchError,
+    delay,
+    share,
 } from 'rxjs/operators'
-import { Key } from 'ts-key-enum'
 import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
-import { fetchSuggestions } from '../backend'
-import { createSuggestion, Suggestion, SuggestionItem } from './Suggestion'
+import { Suggestion, SuggestionItem, SuggestionTypes, createSuggestion, fuzzySearchFilters } from './Suggestion'
 import RegexpToggle from './RegexpToggle'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 import { PatternTypeProps } from '..'
+import Downshift from 'downshift'
+import { searchFilterSuggestions } from '../searchFilterSuggestions'
+import {
+    QueryState,
+    filterStaticSuggestions,
+    insertSuggestionInQuery,
+    isFuzzyWordSearch,
+    validFilterAndValueBeforeCursor,
+    formatQueryForFuzzySearch,
+} from '../helpers'
+import { fetchSuggestions } from '../backend'
 import { isDefined } from '../../../../shared/src/util/types'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { once } from 'lodash'
+import { dedupeWhitespace } from '../../../../shared/src/util/strings'
 
 /**
  * The query input field is clobbered and updated to contain this subject's values, as
@@ -35,10 +48,10 @@ interface Props extends PatternTypeProps {
     history: H.History
 
     /** The value of the query input */
-    value: string
+    value: QueryState
 
     /** Called when the value changes */
-    onChange: (newValue: string) => void
+    onChange: (newValue: QueryState) => void
 
     /**
      * A string that is appended to the query input's query before
@@ -63,89 +76,166 @@ interface Props extends PatternTypeProps {
     hasGlobalQueryBehavior?: boolean
 }
 
-interface State {
-    /** Whether the query input is focused */
-    inputFocused: boolean
-
-    /** Whether suggestions are shown or not */
-    hideSuggestions: boolean
-
-    /** The suggestions shown to the user */
-    suggestions: Suggestion[]
-
-    /** Index of the currently selected suggestion (-1 if none selected) */
-    selectedSuggestion: number
+/**
+ * The search suggestions and cursor position of where the last character was inserted.
+ * Cursor position is used to correctly insert the suggestion when it's selected.
+ */
+interface ComponentSuggestions {
+    values: Suggestion[]
+    cursorPosition: number
 }
 
-export class QueryInput extends React.Component<Props, State> {
-    private static SUGGESTIONS_QUERY_MIN_LENGTH = 2
+interface State {
+    /** Only show suggestions if search input is focused */
+    showSuggestions: boolean
+    /** Indicates if suggestions are being loaded from the back-end */
+    loadingSuggestions?: boolean
+    /** The suggestions shown to the user */
+    suggestions: ComponentSuggestions
+}
 
+const noSuggestions: State['suggestions'] = { values: [], cursorPosition: 0 }
+
+// Used for fetching suggestions and updating query history (undo/redo)
+const typingDebounceTime = 300
+
+export class QueryInput extends React.Component<Props, State> {
     private componentUpdates = new Subject<Props>()
 
     /** Subscriptions to unsubscribe from on component unmount */
     private subscriptions = new Subscription()
 
-    /** Emits on keydown events in the input field */
-    private inputKeyDowns = new Subject<React.KeyboardEvent<HTMLInputElement>>()
-
     /** Emits new input values */
-    private inputValues = new Subject<string>()
-
-    /** Emits when the input field is clicked */
-    private inputFocuses = new Subject<void>()
+    private inputValues = new Subject<QueryState>()
 
     /** Emits when the suggestions are hidden */
     private suggestionsHidden = new Subject<void>()
 
     /** Only used for selection and focus management */
-    private inputElement?: HTMLInputElement
+    private inputElement = React.createRef<HTMLInputElement>()
 
-    /** Only used for scroll state management */
-    private suggestionListElement?: HTMLElement
+    /** Used for scrolling suggestions into view while scrolling with keyboard */
+    private containerElement = React.createRef<HTMLDivElement>()
 
-    /** Only used for scroll state management */
-    private selectedSuggestionElement?: HTMLElement
-
-    /** Only used to keep track if the user has typed a single character into the input field so we can log an event once. */
-    private hasLoggedFirstInput = false
+    public state: State = {
+        showSuggestions: false,
+        loadingSuggestions: false,
+        suggestions: {
+            cursorPosition: 0,
+            values: [],
+        },
+    }
 
     constructor(props: Props) {
         super(props)
 
-        this.state = {
-            hideSuggestions: false,
-            inputFocused: false,
-            selectedSuggestion: -1,
-            suggestions: [],
-        }
+        // Update parent component
+        // (will be used in next PR to push to queryHistory (undo/redo))
+        this.subscriptions.add(this.inputValues.subscribe(queryState => this.props.onChange(queryState)))
 
+        // Trigger suggestions.
+        // This is set on componentDidUpdate so the data flow can be easier to manage, making it
+        // only depend on props.value updates, and not both from props.value and this.inputValues
         this.subscriptions.add(
-            // Trigger new suggestions every time the input field is typed into
-            this.inputValues
+            this.componentUpdates
                 .pipe(
-                    tap(query => this.props.onChange(query)),
-                    distinctUntilChanged(),
-                    debounceTime(200),
-                    switchMap(query => {
-                        if (query.length < QueryInput.SUGGESTIONS_QUERY_MIN_LENGTH) {
-                            return [{ suggestions: [], selectedSuggestion: -1 }]
+                    debounceTime(typingDebounceTime),
+                    // Only show suggestions for when the user has typed (explicitly changed the query).
+                    // Also: Prevents suggestions from showing on page load because of componentUpdates.
+                    filter(props => !!props.value.fromUserInput),
+                    distinctUntilChanged(
+                        (previous, current) =>
+                            dedupeWhitespace(previous.value.query) === dedupeWhitespace(current.value.query)
+                    ),
+                    switchMap(({ value: queryState }) => {
+                        if (queryState.query.length === 0) {
+                            return [{ suggestions: noSuggestions }]
                         }
-                        const fullQuery = [this.props.prependQueryForSuggestions, this.props.value]
-                            .filter(s => !!s)
-                            .join(' ')
-                        return fetchSuggestions(fullQuery).pipe(
+
+                        // A filter value (in "archive:yes", "archive" is the filter and "yes" is the value)
+                        // can either be from `searchFilterSuggestions` or from the fuzzy-search.
+
+                        // First get static suggestions
+                        const staticSuggestions = {
+                            cursorPosition: queryState.cursorPosition,
+                            values: filterStaticSuggestions(queryState, searchFilterSuggestions),
+                        }
+
+                        // Used to know if a filter value, and not just a separate word, is being typed
+                        const filterAndValueBeforeCursor = validFilterAndValueBeforeCursor(queryState)
+
+                        // If a filter value is being typed but selected filter does not use
+                        // fuzzy-search suggestions, then return only static suggestions
+                        if (
+                            filterAndValueBeforeCursor &&
+                            !fuzzySearchFilters.includes(filterAndValueBeforeCursor.resolvedFilterType)
+                        ) {
+                            return [{ suggestions: staticSuggestions }]
+                        }
+
+                        // Because of API limitations, we need to modify the query before the request,
+                        // see definition of `formatQueryForFuzzySearch`
+                        const queryForFuzzySearch = formatQueryForFuzzySearch(queryState)
+                        const fullQuery = this.props.prependQueryForSuggestions
+                            ? this.props.prependQueryForSuggestions + ' ' + queryForFuzzySearch
+                            : queryForFuzzySearch
+
+                        const fuzzySearchSuggestions = fetchSuggestions(fullQuery).pipe(
                             map(createSuggestion),
                             filter(isDefined),
+                            map((suggestion): Suggestion => ({ ...suggestion, fromFuzzySearch: true })),
+                            filter(suggestion => {
+                                // Only show fuzzy-suggestions that are relevant to the typed filter
+                                if (filterAndValueBeforeCursor?.resolvedFilterType) {
+                                    switch (filterAndValueBeforeCursor.resolvedFilterType) {
+                                        case SuggestionTypes.repohasfile:
+                                            return suggestion.type === SuggestionTypes.file
+                                        default:
+                                            return suggestion.type === filterAndValueBeforeCursor.resolvedFilterType
+                                    }
+                                }
+                                return true
+                            }),
                             toArray(),
                             map(suggestions => ({
-                                suggestions,
-                                selectedSuggestion: -1,
-                                hideSuggestions: false,
+                                suggestions: {
+                                    cursorPosition: queryState.cursorPosition,
+                                    values: staticSuggestions.values.concat(suggestions),
+                                },
                             })),
-                            catchError((err: Error) => {
-                                console.error(err)
-                                return []
-                            })
+                            catchError(error => {
+                                console.error(error)
+                                // If fuzzy-search is not capable of returning suggestions for the query
+                                // or there is an internal error, then at least return the static suggestions
+                                return [{ suggestions: staticSuggestions }]
+                            }),
+                            map(state => ({
+                                ...state,
+                                loadingSuggestions: false,
+                            })),
+                            share()
+                        )
+
+                        // Prevent jitter when no static suggestions are found but fuzzy-suggestions are.
+                        // Jitter being the suggestions list going blank unnecessarily during update.
+                        // (This is a fix for 3.10 release, and will be improved on next PR)
+                        const currentSuggestions = {
+                            ...staticSuggestions,
+                            values: staticSuggestions.values.concat(
+                                this.state.suggestions.values.filter(({ fromFuzzySearch }) => fromFuzzySearch)
+                            ),
+                        }
+
+                        return merge(
+                            // Render static suggestions first
+                            [{ suggestions: currentSuggestions }],
+                            // Prevent loading indicator jitter, only showing it after 1s delay
+                            of({ suggestions: staticSuggestions, loadingSuggestions: true }).pipe(
+                                delay(1000),
+                                takeUntil(fuzzySearchSuggestions)
+                            ),
+                            // Fetch and format fuzzy-search suggestions
+                            fuzzySearchSuggestions
                         )
                     }),
                     // Abort suggestion display on route change or suggestion hiding
@@ -155,7 +245,7 @@ export class QueryInput extends React.Component<Props, State> {
                 )
                 .subscribe(
                     state => {
-                        this.setState(state as State)
+                        this.setState(state)
                     },
                     err => {
                         console.error(err)
@@ -170,40 +260,21 @@ export class QueryInput extends React.Component<Props, State> {
                     .pipe(
                         filter(
                             event =>
-                                // Slash shortcut (if no input element is focused)
-                                (event.key === '/' &&
-                                    !!document.activeElement &&
-                                    !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)) ||
-                                // Cmd/Ctrl+Shift+F shortcut
-                                ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key === 'f')
-                        ),
-                        switchMap(event => {
-                            event.preventDefault()
-                            // Use selection as query
-                            const selection = window.getSelection()
-                            if (selection && selection.toString() !== '') {
-                                return new Observable<void>(observer =>
-                                    this.setState(
-                                        {
-                                            // query: selection.toString(), TODO(sqs): add back this behavior
-                                            suggestions: [],
-                                            selectedSuggestion: -1,
-                                        },
-                                        () => {
-                                            observer.next()
-                                            observer.complete()
-                                        }
-                                    )
-                                )
-                            }
-                            return [undefined]
-                        })
+                                // Cmd/Ctrl+Shift+F
+                                (event.metaKey || event.ctrlKey) &&
+                                event.shiftKey &&
+                                event.key.toLowerCase() === 'f' &&
+                                !!document.activeElement &&
+                                !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)
+                        )
                     )
                     .subscribe(() => {
-                        if (this.inputElement) {
-                            // Select all input
-                            this.inputElement.focus()
-                            this.inputElement.setSelectionRange(0, this.inputElement.value.length)
+                        const selection = String(window.getSelection() || '')
+                        this.inputValues.next({ query: selection, cursorPosition: selection.length })
+                        if (this.inputElement.current) {
+                            this.inputElement.current.focus()
+                            // Select whole input text
+                            this.inputElement.current.setSelectionRange(0, this.inputElement.current.value.length)
                         }
                     })
             )
@@ -211,7 +282,12 @@ export class QueryInput extends React.Component<Props, State> {
             // Allow other components to update the query (e.g., to be relevant to what the user is
             // currently viewing).
             this.subscriptions.add(
-                queryUpdates.pipe(distinctUntilChanged()).subscribe(query => this.props.onChange(query))
+                queryUpdates.pipe(distinctUntilChanged()).subscribe(query =>
+                    this.inputValues.next({
+                        query,
+                        cursorPosition: query.length,
+                    })
+                )
             )
 
             /** Whenever the URL query has a "focus" property, remove it and focus the query input. */
@@ -223,7 +299,6 @@ export class QueryInput extends React.Component<Props, State> {
                     )
                     .subscribe(props => {
                         this.focusInputAndPositionCursorAtEnd()
-
                         const q = new URLSearchParams(props.location.search)
                         q.delete('focus')
                         this.props.history.replace({ search: q.toString() })
@@ -244,156 +319,193 @@ export class QueryInput extends React.Component<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-    public componentDidUpdate(prevProps: Props, prevState: State): void {
+    public componentDidUpdate(prevProps: Props): void {
+        if (this.props.value.cursorPosition && prevProps.value.cursorPosition !== this.props.value.cursorPosition) {
+            this.focusInputAndPositionCursor(this.props.value.cursorPosition)
+        }
         this.componentUpdates.next(this.props)
-        // Check if selected suggestion is out of view
-        scrollIntoView(this.suggestionListElement, this.selectedSuggestionElement)
     }
 
     public render(): JSX.Element | null {
         const showSuggestions =
-            this.props.value.length >= QueryInput.SUGGESTIONS_QUERY_MIN_LENGTH &&
-            this.state.inputFocused &&
-            !this.state.hideSuggestions &&
-            this.state.suggestions.length !== 0
-
+            this.state.showSuggestions && (this.state.suggestions.values.length > 0 || this.state.loadingSuggestions)
+        // If last typed word is not a filter type,
+        // suggestions should show url label and redirect on select.
+        const showUrlLabel = isFuzzyWordSearch({
+            query: this.props.value.query,
+            cursorPosition: this.state.suggestions.cursorPosition,
+        })
         return (
-            <div className="query-input2">
-                <input
-                    className="form-control query-input2__input rounded-left e2e-query-input"
-                    value={this.props.value}
-                    autoFocus={this.props.autoFocus === true}
-                    onChange={this.onInputChange}
-                    onKeyDown={this.onInputKeyDown}
-                    onFocus={this.onInputFocus}
-                    onBlur={this.onInputBlur}
-                    spellCheck={false}
-                    autoCapitalize="off"
-                    placeholder={this.props.placeholder === undefined ? 'Search code...' : this.props.placeholder}
-                    ref={ref => (this.inputElement = ref!)}
-                    name="query"
-                    autoComplete="off"
-                />
-                {showSuggestions && (
-                    <ul className="query-input2__suggestions" ref={this.setSuggestionListElement}>
-                        {this.state.suggestions.map((suggestion, i) => {
-                            /* eslint-disable react/jsx-no-bind */
-                            const isSelected = this.state.selectedSuggestion === i
-                            return (
-                                <SuggestionItem
-                                    key={i}
-                                    suggestion={suggestion}
-                                    isSelected={isSelected}
-                                    onClick={() => this.selectSuggestion(suggestion)}
-                                    liRef={(ref: HTMLLIElement | null) => {
-                                        if (isSelected) {
-                                            this.selectedSuggestionElement = ref || undefined
-                                        }
+            <Downshift
+                scrollIntoView={this.downshiftScrollIntoView}
+                onSelect={this.onSuggestionSelect}
+                itemToString={this.downshiftItemToString}
+            >
+                {({ getInputProps, getItemProps, getMenuProps, highlightedIndex }) => {
+                    const { onChange: downshiftChange, onKeyDown } = getInputProps()
+                    return (
+                        <div className="query-input2">
+                            <div ref={this.containerElement}>
+                                <input
+                                    onFocus={this.onInputFocus}
+                                    onBlur={this.onInputBlur}
+                                    className="form-control query-input2__input rounded-left e2e-query-input"
+                                    value={this.props.value.query}
+                                    autoFocus={this.props.autoFocus === true}
+                                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                                        downshiftChange(event)
+                                        this.onInputChange(event)
                                     }}
+                                    onKeyDown={event => {
+                                        this.onInputKeyDown(event)
+                                        onKeyDown(event)
+                                    }}
+                                    spellCheck={false}
+                                    autoCapitalize="off"
+                                    placeholder={
+                                        this.props.placeholder === undefined ? 'Search code...' : this.props.placeholder
+                                    }
+                                    ref={this.inputElement}
+                                    name="query"
+                                    autoComplete="off"
                                 />
-                            )
-                            /* eslint-enable react/jsx-no-bind */
-                        })}
-                    </ul>
-                )}
-                <RegexpToggle
-                    {...this.props}
-                    toggled={this.props.patternType === SearchPatternType.regexp}
-                    navbarSearchQuery={this.props.value}
-                />
-            </div>
+                                {showSuggestions && (
+                                    <ul className="query-input2__suggestions e2e-query-suggestions" {...getMenuProps()}>
+                                        {this.state.suggestions.values.map((suggestion, index) => {
+                                            const isSelected = highlightedIndex === index
+                                            const key = `${index}-${suggestion}`
+                                            return (
+                                                <SuggestionItem
+                                                    key={key}
+                                                    {...getItemProps({
+                                                        key,
+                                                        index,
+                                                        item: suggestion,
+                                                    })}
+                                                    suggestion={suggestion}
+                                                    isSelected={isSelected}
+                                                    showUrlLabel={showUrlLabel}
+                                                    defaultLabel="add to query"
+                                                />
+                                            )
+                                        })}
+                                        {this.state.loadingSuggestions && (
+                                            <li className="suggestion suggestion--selected">
+                                                <LoadingSpinner className="icon-inline" />
+                                                <div className="suggestion__description">Loading</div>
+                                            </li>
+                                        )}
+                                    </ul>
+                                )}
+                                <RegexpToggle
+                                    {...this.props}
+                                    toggled={this.props.patternType === SearchPatternType.regexp}
+                                    navbarSearchQuery={this.props.value.query}
+                                />
+                            </div>
+                        </div>
+                    )
+                }}
+            </Downshift>
         )
     }
 
-    private setSuggestionListElement = (ref: HTMLElement | null): void => {
-        this.suggestionListElement = ref || undefined
+    private downshiftItemToString = (suggestion?: Suggestion): string => (suggestion ? suggestion.value : '')
+
+    private downshiftScrollIntoView = (node: HTMLElement, menuNode: HTMLElement): void => {
+        scrollIntoView(menuNode, node)
     }
 
-    private selectSuggestion = (suggestion: Suggestion): void => {
-        // 🚨 PRIVACY: never provide any private data in { code_search: { suggestion: { type } } }.
-        eventLogger.log('SearchSuggestionSelected', {
-            code_search: {
-                suggestion: {
-                    type: suggestion.type,
-                    url: suggestion.url,
+    private onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
+        // Ctrl+Space to show all available filter type suggestions
+        if (event.ctrlKey && event.key === ' ') {
+            this.setState({
+                suggestions: {
+                    cursorPosition: event.currentTarget.selectionStart ?? 0,
+                    values: searchFilterSuggestions.filters.values,
                 },
-            },
+            })
+        }
+    }
+
+    private onInputBlur = (): void => {
+        this.setState({ showSuggestions: false }, () => this.suggestionsHidden.next())
+    }
+
+    private onInputFocus = (): void => {
+        this.setState({ showSuggestions: true })
+    }
+
+    /**
+     * if query only has one word and selected suggestion is not a filter: redirect to suggestion URL
+     * else: add selected suggestion to query
+     */
+    private onSuggestionSelect = (suggestion: Suggestion | undefined): void => {
+        this.setState(({ suggestions }, { value, history }) => {
+            // If downshift selects an item with value undefined
+            if (!suggestion) {
+                return { suggestions: noSuggestions }
+            }
+
+            // 🚨 PRIVACY: never provide any private data in { code_search: { suggestion: { type } } }.
+            eventLogger.log('SearchSuggestionSelected', {
+                code_search: {
+                    suggestion: {
+                        type: suggestion.type,
+                    },
+                },
+            })
+
+            // if separate word is being typed and suggestion with url is selected
+            if (
+                isFuzzyWordSearch({
+                    query: value.query,
+                    cursorPosition: suggestions.cursorPosition,
+                }) &&
+                suggestion.url
+            ) {
+                history.push(suggestion.url)
+                return { suggestions: noSuggestions }
+            }
+
+            // Add "regex end of string boundary" to limit future suggestion results
+            const selectedSuggestion = !suggestion.fromFuzzySearch
+                ? suggestion
+                : { ...suggestion, value: suggestion.value + '$' }
+
+            this.inputValues.next({
+                ...insertSuggestionInQuery(value.query, selectedSuggestion, suggestions.cursorPosition),
+                fromUserInput: true,
+            })
+
+            return { suggestions: noSuggestions }
         })
+    }
 
-        this.props.history.push(suggestion.url)
-
-        this.suggestionsHidden.next()
-        this.setState({ hideSuggestions: true, selectedSuggestion: -1 })
+    private focusInputAndPositionCursor(cursorPosition: number): void {
+        if (this.inputElement.current) {
+            this.inputElement.current.focus()
+            this.inputElement.current.setSelectionRange(cursorPosition, cursorPosition)
+        }
     }
 
     private focusInputAndPositionCursorAtEnd(): void {
-        if (this.inputElement) {
-            // Focus the input element and set cursor to the end
-            this.inputElement.focus()
-            this.inputElement.setSelectionRange(this.inputElement.value.length, this.inputElement.value.length)
+        if (this.inputElement.current) {
+            this.focusInputAndPositionCursor(this.inputElement.current.value.length)
         }
     }
+
+    /** Only log when user has typed the first character into the input. */
+    private logFirstInput = once((): void => {
+        eventLogger.log('SearchInitiated')
+    })
 
     private onInputChange: React.ChangeEventHandler<HTMLInputElement> = event => {
-        if (!this.hasLoggedFirstInput) {
-            eventLogger.log('SearchInitiated')
-            this.hasLoggedFirstInput = true
-        }
-        this.inputValues.next(event.currentTarget.value)
-    }
-
-    private onInputFocus: React.FocusEventHandler<HTMLInputElement> = (): void => {
-        this.inputFocuses.next()
-        this.setState({ inputFocused: true })
-    }
-
-    private onInputBlur: React.FocusEventHandler<HTMLInputElement> = (): void => {
-        this.suggestionsHidden.next()
-        this.setState({ inputFocused: false, hideSuggestions: true })
-    }
-
-    private onInputKeyDown: React.KeyboardEventHandler<HTMLInputElement> = event => {
-        event.persist()
-        this.inputKeyDowns.next(event)
-        switch (event.key) {
-            case Key.Escape: {
-                this.suggestionsHidden.next()
-                this.setState({ hideSuggestions: true, selectedSuggestion: -1 })
-                break
-            }
-            case Key.ArrowDown: {
-                event.preventDefault()
-                this.moveSelection(1)
-                break
-            }
-            case Key.ArrowUp: {
-                event.preventDefault()
-                this.moveSelection(-1)
-                break
-            }
-            case Key.Enter: {
-                if (this.state.selectedSuggestion === -1) {
-                    // Submit form and hide suggestions
-                    this.suggestionsHidden.next()
-                    this.setState({ hideSuggestions: true })
-                    break
-                }
-
-                // Select suggestion
-                event.preventDefault()
-                if (this.state.suggestions.length === 0) {
-                    break
-                }
-                this.selectSuggestion(this.state.suggestions[Math.max(this.state.selectedSuggestion, 0)])
-                this.setState({ hideSuggestions: true })
-                break
-            }
-        }
-    }
-
-    private moveSelection(steps: number): void {
-        this.setState(state => ({
-            selectedSuggestion: Math.max(Math.min(state.selectedSuggestion + steps, state.suggestions.length - 1), -1),
-        }))
+        this.logFirstInput()
+        this.inputValues.next({
+            fromUserInput: true,
+            query: event.currentTarget.value,
+            cursorPosition: event.currentTarget.selectionStart || 0,
+        })
     }
 }

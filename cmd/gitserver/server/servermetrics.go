@@ -43,8 +43,20 @@ func (s *Server) RegisterMetrics() {
 		Help:      "Amount of free space disk space on the repos mount.",
 	}, func() float64 {
 		var stat syscall.Statfs_t
-		syscall.Statfs(s.ReposDir, &stat)
+		_ = syscall.Statfs(s.ReposDir, &stat)
 		return float64(stat.Bavail * uint64(stat.Bsize))
+	})
+	prometheus.MustRegister(c)
+
+	c = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Namespace: "src",
+		Subsystem: "gitserver",
+		Name:      "disk_space_total",
+		Help:      "Amount of total disk space in the repos directory.",
+	}, func() float64 {
+		var stat syscall.Statfs_t
+		_ = syscall.Statfs(s.ReposDir, &stat)
+		return float64(stat.Blocks * uint64(stat.Bsize))
 	})
 	prometheus.MustRegister(c)
 }

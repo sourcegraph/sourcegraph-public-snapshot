@@ -17,6 +17,7 @@ import { BackToAllSubscriptionsLink } from './BackToAllSubscriptionsLink'
 import { ProductSubscriptionBilling } from './ProductSubscriptionBilling'
 import { ProductSubscriptionHistory } from './ProductSubscriptionHistory'
 import { UserProductSubscriptionStatus } from './UserProductSubscriptionStatus'
+import { ErrorAlert } from '../../../components/alerts'
 
 interface Props extends RouteComponentProps<{ subscriptionUUID: string }> {
     user: GQL.IUser
@@ -96,9 +97,7 @@ export class UserSubscriptionsProductSubscriptionPage extends React.Component<Pr
                 {this.state.productSubscriptionOrError === LOADING ? (
                     <LoadingSpinner className="icon-inline" />
                 ) : isErrorLike(this.state.productSubscriptionOrError) ? (
-                    <div className="alert alert-danger my-2">
-                        Error: {this.state.productSubscriptionOrError.message}
-                    </div>
+                    <ErrorAlert className="my-2" error={this.state.productSubscriptionOrError} />
                 ) : (
                     <>
                         <h2>Subscription {this.state.productSubscriptionOrError.name}</h2>

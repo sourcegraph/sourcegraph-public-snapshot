@@ -17,6 +17,7 @@ export const SearchResultTypeTabs: React.FunctionComponent<Props> = props => (
             <SearchResultTabHeader {...props} type="commit" />
             <SearchResultTabHeader {...props} type="symbol" />
             <SearchResultTabHeader {...props} type="repo" />
+            <SearchResultTabHeader {...props} type="path" />
         </ul>
     </div>
 )

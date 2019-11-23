@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -34,10 +35,11 @@ func testStore(db *sql.DB) func(*testing.T) {
 			t.Run("Create", func(t *testing.T) {
 				for i := 0; i < cap(campaigns); i++ {
 					c := &a8n.Campaign{
-						Name:         fmt.Sprintf("Upgrade ES-Lint %d", i),
-						Description:  "All the Javascripts are belong to us",
-						AuthorID:     23,
-						ChangesetIDs: []int64{int64(i) + 1},
+						Name:           fmt.Sprintf("Upgrade ES-Lint %d", i),
+						Description:    "All the Javascripts are belong to us",
+						AuthorID:       23,
+						ChangesetIDs:   []int64{int64(i) + 1},
+						CampaignPlanID: 42,
 					}
 
 					if i%2 == 0 {
@@ -272,6 +274,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					}
 				}
 			})
+
 		})
 
 		t.Run("Changesets", func(t *testing.T) {
@@ -1041,6 +1044,8 @@ func testStore(db *sql.DB) func(*testing.T) {
 					c := &a8n.CampaignJob{
 						CampaignPlanID: int64(i + 1),
 						RepoID:         1,
+						Rev:            api.CommitID("deadbeef"),
+						BaseRef:        "master",
 						Diff:           "+ foobar - barfoo",
 						Error:          "only set on error",
 					}
@@ -1160,6 +1165,116 @@ func testStore(db *sql.DB) func(*testing.T) {
 				}
 			})
 
+			t.Run("Listing and Couting OnlyFinished", func(t *testing.T) {
+				listOpts := ListCampaignJobsOpts{OnlyFinished: true}
+				countOpts := CountCampaignJobsOpts{OnlyFinished: true}
+
+				have, _, err := s.ListCampaignJobs(ctx, listOpts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if len(have) != 0 {
+					t.Errorf("jobs returned: %d", len(have))
+				}
+
+				count, err := s.CountCampaignJobs(ctx, countOpts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if count != 0 {
+					t.Errorf("jobs counted: %d", count)
+				}
+
+				for _, j := range campaignJobs {
+					j.FinishedAt = now
+
+					err := s.UpdateCampaignJob(ctx, j)
+					if err != nil {
+						t.Fatal(err)
+					}
+				}
+
+				have, _, err = s.ListCampaignJobs(ctx, listOpts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				have, want := have, campaignJobs
+				if len(have) != len(want) {
+					t.Fatalf("listed %d campaignJobs, want: %d", len(have), len(want))
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
+				}
+
+				count, err = s.CountCampaignJobs(ctx, countOpts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if int(count) != len(campaignJobs) {
+					t.Errorf("jobs counted: %d", count)
+				}
+			})
+
+			t.Run("Listing and Counting OnlyWithDiff", func(t *testing.T) {
+				listOpts := ListCampaignJobsOpts{OnlyWithDiff: true}
+				countOpts := CountCampaignJobsOpts{OnlyWithDiff: true}
+
+				have, _, err := s.ListCampaignJobs(ctx, listOpts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				have, want := have, campaignJobs
+				if len(have) != len(want) {
+					t.Fatalf("listed %d campaignJobs, want: %d", len(have), len(want))
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
+				}
+
+				count, err := s.CountCampaignJobs(ctx, countOpts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if int(count) != len(want) {
+					t.Errorf("jobs counted: %d", count)
+				}
+
+				for _, j := range campaignJobs {
+					j.Diff = ""
+
+					err := s.UpdateCampaignJob(ctx, j)
+					if err != nil {
+						t.Fatal(err)
+					}
+				}
+
+				have, _, err = s.ListCampaignJobs(ctx, listOpts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if len(have) != 0 {
+					t.Errorf("jobs returned: %d", len(have))
+				}
+
+				count, err = s.CountCampaignJobs(ctx, countOpts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if count != 0 {
+					t.Errorf("jobs counted: %d", count)
+				}
+			})
+
 			t.Run("Update", func(t *testing.T) {
 				for _, c := range campaignJobs {
 					now = now.Add(time.Second)
@@ -1226,6 +1341,557 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 					if have, want := count, int64(len(campaignJobs)-(i+1)); have != want {
 						t.Fatalf("have count: %d, want: %d", have, want)
+					}
+				}
+			})
+		})
+
+		t.Run("CampaignPlan BackgroundProcessStatus", func(t *testing.T) {
+			tests := []struct {
+				jobs []*a8n.CampaignJob
+				want *a8n.BackgroundProcessStatus
+			}{
+				{
+					jobs: []*a8n.CampaignJob{}, // no jobs
+					want: &a8n.BackgroundProcessStatus{
+						ProcessState:  a8n.BackgroundProcessStateCompleted,
+						Total:         0,
+						Completed:     0,
+						Pending:       0,
+						ProcessErrors: nil,
+					},
+				},
+				{
+					jobs: []*a8n.CampaignJob{
+						// not started (pending)
+						{},
+						// started (pending)
+						{StartedAt: now},
+					},
+					want: &a8n.BackgroundProcessStatus{
+						ProcessState:  a8n.BackgroundProcessStateProcessing,
+						Total:         2,
+						Completed:     0,
+						Pending:       2,
+						ProcessErrors: nil,
+					},
+				},
+				{
+					jobs: []*a8n.CampaignJob{
+						// completed, no errors, no diff
+						{StartedAt: now, FinishedAt: now},
+						// completed, no errors, diff
+						{StartedAt: now, FinishedAt: now, Diff: "+foobar\n-barfoo"},
+					},
+					want: &a8n.BackgroundProcessStatus{
+						ProcessState:  a8n.BackgroundProcessStateCompleted,
+						Total:         2,
+						Completed:     1,
+						Pending:       0,
+						ProcessErrors: nil,
+					},
+				},
+				{
+					jobs: []*a8n.CampaignJob{
+						// completed, error
+						{StartedAt: now, FinishedAt: now, Error: "error1"},
+					},
+					want: &a8n.BackgroundProcessStatus{
+						ProcessState:  a8n.BackgroundProcessStateErrored,
+						Total:         1,
+						Completed:     1,
+						Pending:       0,
+						ProcessErrors: []string{"error1"},
+					},
+				},
+				{
+					jobs: []*a8n.CampaignJob{
+						// not started (pending)
+						{},
+						// started (pending)
+						{StartedAt: now},
+						// completed, no errors, no diff
+						{StartedAt: now, FinishedAt: now},
+						// completed, no errors, diff
+						{StartedAt: now, FinishedAt: now, Diff: "+foobar\n-barfoo"},
+						// completed, error
+						{StartedAt: now, FinishedAt: now, Error: "error1"},
+						// completed, another error
+						{StartedAt: now, FinishedAt: now, Error: "error2"},
+					},
+					want: &a8n.BackgroundProcessStatus{
+						ProcessState:  a8n.BackgroundProcessStateProcessing,
+						Total:         6,
+						Completed:     3,
+						Pending:       2,
+						ProcessErrors: []string{"error1", "error2"},
+					},
+				},
+			}
+			for num, tc := range tests {
+				campaignPlanID := int64(num + 1)
+
+				for i, j := range tc.jobs {
+					j.CampaignPlanID = campaignPlanID
+					j.RepoID = int32(i)
+					j.Rev = api.CommitID(fmt.Sprintf("deadbeef-%d", i))
+					j.BaseRef = "master"
+
+					err := s.CreateCampaignJob(ctx, j)
+					if err != nil {
+						t.Fatal(err)
+					}
+				}
+
+				status, err := s.GetCampaignPlanStatus(ctx, campaignPlanID)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(status, tc.want); diff != "" {
+					t.Fatalf("wrong diff: %s", diff)
+				}
+			}
+		})
+
+		t.Run("CampaignPlan DeleteExpired", func(t *testing.T) {
+			tests := []struct {
+				hasCampaign bool
+				jobs        []*a8n.CampaignJob
+				wantDeleted bool
+				want        *a8n.BackgroundProcessStatus
+			}{
+				{
+					hasCampaign: false,
+					jobs: []*a8n.CampaignJob{
+						// completed more than 1 hour ago
+						{FinishedAt: now.Add(-61 * time.Minute)},
+					},
+					wantDeleted: true,
+				},
+				{
+					hasCampaign: false,
+					jobs: []*a8n.CampaignJob{
+						// completed 30 min ago
+						{FinishedAt: now.Add(30 * time.Minute)},
+					},
+					wantDeleted: false,
+				},
+				{
+					hasCampaign: false,
+					jobs: []*a8n.CampaignJob{
+						// completed more than 1 hour ago
+						{FinishedAt: now.Add(-61 * time.Minute)},
+						// completed 30 min ago
+						{FinishedAt: now.Add(30 * time.Minute)},
+					},
+					wantDeleted: false,
+				},
+				{
+					hasCampaign: false,
+					jobs: []*a8n.CampaignJob{
+						// completed more than 1 hour ago
+						{FinishedAt: now.Add(-61 * time.Minute)},
+						// not completed
+						{},
+					},
+					wantDeleted: false,
+				},
+				{
+					hasCampaign: false,
+					jobs: []*a8n.CampaignJob{
+						// completed more than 1 hour ago
+						{FinishedAt: now.Add(-61 * time.Minute)},
+						// completed more than 2 hours ago
+						{FinishedAt: now.Add(-121 * time.Minute)},
+					},
+					wantDeleted: true,
+				},
+			}
+
+			for _, tc := range tests {
+				plan := &a8n.CampaignPlan{CampaignType: "comby", Arguments: `{"foobar":"barfoo"}`}
+
+				err := s.CreateCampaignPlan(ctx, plan)
+				if err != nil {
+					t.Fatal(err)
+				}
+				// Clean up before test
+				existingJobs, _, err := s.ListCampaignJobs(ctx, ListCampaignJobsOpts{CampaignPlanID: plan.ID})
+				if err != nil {
+					t.Fatal(err)
+				}
+				for _, j := range existingJobs {
+					err := s.DeleteCampaignJob(ctx, j.ID)
+					if err != nil {
+						t.Fatal(err)
+					}
+				}
+
+				// TODO(a8n): Create a Campaign with CampaignPlanID = plan.ID
+
+				for i, j := range tc.jobs {
+					j.StartedAt = now.Add(-2 * time.Hour)
+					j.CampaignPlanID = plan.ID
+					j.RepoID = int32(i)
+					j.Rev = api.CommitID(fmt.Sprintf("deadbeef-%d", i))
+					j.BaseRef = "master"
+
+					err := s.CreateCampaignJob(ctx, j)
+					if err != nil {
+						t.Fatal(err)
+					}
+				}
+
+				err = s.DeleteExpiredCampaignPlans(ctx)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				havePlan, err := s.GetCampaignPlan(ctx, GetCampaignPlanOpts{ID: plan.ID})
+				if err != nil && err != ErrNoResults {
+					t.Fatal(err)
+				}
+
+				if tc.wantDeleted && err == nil {
+					t.Fatalf("want campaign to be deleted. got: %v", havePlan)
+				}
+
+				if !tc.wantDeleted && err == ErrNoResults {
+					t.Fatalf("want campaign not to be deletedbut got deleted")
+				}
+			}
+		})
+
+		t.Run("ChangesetJobs", func(t *testing.T) {
+			changesetJobs := make([]*a8n.ChangesetJob, 0, 3)
+
+			t.Run("Create", func(t *testing.T) {
+				for i := 0; i < cap(changesetJobs); i++ {
+					c := &a8n.ChangesetJob{
+						CampaignID:    int64(i + 1),
+						CampaignJobID: int64(i + 1),
+						ChangesetID:   int64(i + 1),
+						Error:         "only set on error",
+						StartedAt:     now,
+						FinishedAt:    now,
+					}
+
+					want := c.Clone()
+					have := c
+
+					err := s.CreateChangesetJob(ctx, have)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if have.ID == 0 {
+						t.Fatal("ID should not be zero")
+					}
+
+					want.ID = have.ID
+					want.CreatedAt = now
+					want.UpdatedAt = now
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
+					}
+
+					changesetJobs = append(changesetJobs, c)
+				}
+			})
+
+			t.Run("Count", func(t *testing.T) {
+				count, err := s.CountChangesetJobs(ctx, CountChangesetJobsOpts{})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := count, int64(len(changesetJobs)); have != want {
+					t.Fatalf("have count: %d, want: %d", have, want)
+				}
+
+				count, err = s.CountChangesetJobs(ctx, CountChangesetJobsOpts{CampaignID: 1})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := count, int64(1); have != want {
+					t.Fatalf("have count: %d, want: %d", have, want)
+				}
+			})
+
+			t.Run("List", func(t *testing.T) {
+				for i := 1; i <= len(changesetJobs); i++ {
+					opts := ListChangesetJobsOpts{CampaignID: int64(i)}
+
+					ts, next, err := s.ListChangesetJobs(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if have, want := next, int64(0); have != want {
+						t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+					}
+
+					have, want := ts, changesetJobs[i-1:i]
+					if len(have) != len(want) {
+						t.Fatalf("listed %d changesetJobs, want: %d", len(have), len(want))
+					}
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatalf("opts: %+v, diff: %s", opts, diff)
+					}
+				}
+
+				for i := 1; i <= len(changesetJobs); i++ {
+					cs, next, err := s.ListChangesetJobs(ctx, ListChangesetJobsOpts{Limit: i})
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					{
+						have, want := next, int64(0)
+						if i < len(changesetJobs) {
+							want = changesetJobs[i].ID
+						}
+
+						if have != want {
+							t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
+						}
+					}
+
+					{
+						have, want := cs, changesetJobs[:i]
+						if len(have) != len(want) {
+							t.Fatalf("listed %d changesetJobs, want: %d", len(have), len(want))
+						}
+
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatal(diff)
+						}
+					}
+				}
+
+				{
+					var cursor int64
+					for i := 1; i <= len(changesetJobs); i++ {
+						opts := ListChangesetJobsOpts{Cursor: cursor, Limit: 1}
+						have, next, err := s.ListChangesetJobs(ctx, opts)
+						if err != nil {
+							t.Fatal(err)
+						}
+
+						want := changesetJobs[i-1 : i]
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatalf("opts: %+v, diff: %s", opts, diff)
+						}
+
+						cursor = next
+					}
+				}
+			})
+
+			t.Run("Update", func(t *testing.T) {
+				for _, c := range changesetJobs {
+					now = now.Add(time.Second)
+					c.StartedAt = now.Add(1 * time.Second)
+					c.FinishedAt = now.Add(1 * time.Second)
+					c.Error = "updated-error"
+
+					want := c
+					want.UpdatedAt = now
+
+					have := c.Clone()
+					if err := s.UpdateChangesetJob(ctx, have); err != nil {
+						t.Fatal(err)
+					}
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
+					}
+				}
+			})
+
+			t.Run("Get", func(t *testing.T) {
+				t.Run("ByID", func(t *testing.T) {
+					if len(changesetJobs) == 0 {
+						t.Fatal("changesetJobs is empty")
+					}
+					want := changesetJobs[0]
+					opts := GetChangesetJobOpts{ID: want.ID}
+
+					have, err := s.GetChangesetJob(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
+					}
+				})
+
+				t.Run("ByCampaignJobID", func(t *testing.T) {
+					if len(changesetJobs) == 0 {
+						t.Fatal("changesetJobs is empty")
+					}
+					want := changesetJobs[0]
+					opts := GetChangesetJobOpts{CampaignJobID: want.CampaignJobID}
+
+					have, err := s.GetChangesetJob(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
+					}
+				})
+
+				t.Run("ByChangesetID", func(t *testing.T) {
+					if len(changesetJobs) == 0 {
+						t.Fatal("changesetJobs is empty")
+					}
+					want := changesetJobs[0]
+					opts := GetChangesetJobOpts{ChangesetID: want.ChangesetID}
+
+					have, err := s.GetChangesetJob(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
+					}
+				})
+
+				t.Run("NoResults", func(t *testing.T) {
+					opts := GetChangesetJobOpts{ID: 0xdeadbeef}
+
+					_, have := s.GetChangesetJob(ctx, opts)
+					want := ErrNoResults
+
+					if have != want {
+						t.Fatalf("have err %v, want %v", have, want)
+					}
+				})
+			})
+
+			t.Run("Delete", func(t *testing.T) {
+				for i := range changesetJobs {
+					err := s.DeleteChangesetJob(ctx, changesetJobs[i].ID)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					count, err := s.CountChangesetJobs(ctx, CountChangesetJobsOpts{})
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if have, want := count, int64(len(changesetJobs)-(i+1)); have != want {
+						t.Fatalf("have count: %d, want: %d", have, want)
+					}
+				}
+			})
+
+			t.Run("BackgroundProcessStatus", func(t *testing.T) {
+				tests := []struct {
+					jobs []*a8n.ChangesetJob
+					want *a8n.BackgroundProcessStatus
+				}{
+					{
+						jobs: []*a8n.ChangesetJob{}, // no jobs
+						want: &a8n.BackgroundProcessStatus{
+							ProcessState:  a8n.BackgroundProcessStateCompleted,
+							Total:         0,
+							Completed:     0,
+							Pending:       0,
+							ProcessErrors: nil,
+						},
+					},
+					{
+						jobs: []*a8n.ChangesetJob{
+							// not started (pending)
+							{},
+							// started (pending)
+							{StartedAt: now},
+						},
+						want: &a8n.BackgroundProcessStatus{
+							ProcessState:  a8n.BackgroundProcessStateProcessing,
+							Total:         2,
+							Completed:     0,
+							Pending:       2,
+							ProcessErrors: nil,
+						},
+					},
+					{
+						jobs: []*a8n.ChangesetJob{
+							// completed, no errors
+							{StartedAt: now, FinishedAt: now, ChangesetID: 23},
+						},
+						want: &a8n.BackgroundProcessStatus{
+							ProcessState:  a8n.BackgroundProcessStateCompleted,
+							Total:         1,
+							Completed:     1,
+							Pending:       0,
+							ProcessErrors: nil,
+						},
+					},
+					{
+						jobs: []*a8n.ChangesetJob{
+							// completed, error
+							{StartedAt: now, FinishedAt: now, Error: "error1"},
+						},
+						want: &a8n.BackgroundProcessStatus{
+							ProcessState:  a8n.BackgroundProcessStateErrored,
+							Total:         1,
+							Completed:     1,
+							Pending:       0,
+							ProcessErrors: []string{"error1"},
+						},
+					},
+					{
+						jobs: []*a8n.ChangesetJob{
+							// not started (pending)
+							{},
+							// started (pending)
+							{StartedAt: now},
+							// completed, no errors
+							{StartedAt: now, FinishedAt: now, ChangesetID: 23},
+							// completed, error
+							{StartedAt: now, FinishedAt: now, Error: "error1"},
+							// completed, another error
+							{StartedAt: now, FinishedAt: now, Error: "error2"},
+						},
+						want: &a8n.BackgroundProcessStatus{
+							ProcessState:  a8n.BackgroundProcessStateProcessing,
+							Total:         5,
+							Completed:     3,
+							Pending:       2,
+							ProcessErrors: []string{"error1", "error2"},
+						},
+					},
+				}
+
+				for campaignID, tc := range tests {
+					for i, j := range tc.jobs {
+						j.CampaignID = int64(campaignID)
+						j.CampaignJobID = int64(i)
+
+						err := s.CreateChangesetJob(ctx, j)
+						if err != nil {
+							t.Fatal(err)
+						}
+					}
+
+					status, err := s.GetCampaignStatus(ctx, int64(campaignID))
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if diff := cmp.Diff(status, tc.want); diff != "" {
+						t.Fatalf("wrong diff: %s", diff)
 					}
 				}
 			})

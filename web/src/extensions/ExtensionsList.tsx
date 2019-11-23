@@ -19,6 +19,7 @@ import { Form } from '../components/Form'
 import { extensionsQuery, isExtensionAdded } from './extension/extension'
 import { ExtensionCard } from './ExtensionCard'
 import { ExtensionsQueryInputToolbar } from './ExtensionsQueryInputToolbar'
+import { ErrorAlert } from '../components/alerts'
 
 export const registryExtensionFragment = gql`
     fragment RegistryExtensionFields on RegistryExtension {
@@ -156,10 +157,7 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                             catchError(err => [asError(err)])
                         )
                         return concat(
-                            of(LOADING).pipe(
-                                delay(immediate ? 0 : 250),
-                                takeUntil(resultOrError)
-                            ),
+                            of(LOADING).pipe(delay(immediate ? 0 : 250), takeUntil(resultOrError)),
                             resultOrError
                         ).pipe(map(resultOrError => ({ data: { query, resultOrError } })))
                     })
@@ -206,11 +204,11 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                 {this.state.data.resultOrError === LOADING ? (
                     <LoadingSpinner className="icon-inline" />
                 ) : isErrorLike(this.state.data.resultOrError) ? (
-                    <div className="alert alert-danger">{this.state.data.resultOrError.message}</div>
+                    <ErrorAlert error={this.state.data.resultOrError} />
                 ) : (
                     <>
                         {this.state.data.resultOrError.error && (
-                            <div className="alert alert-danger mb-2">{this.state.data.resultOrError.error}</div>
+                            <ErrorAlert className="mb-2" error={this.state.data.resultOrError.error} />
                         )}
                         {this.state.data.resultOrError.extensions.length === 0 ? (
                             this.state.data.query ? (

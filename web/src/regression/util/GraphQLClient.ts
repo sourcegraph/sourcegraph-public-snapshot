@@ -27,6 +27,11 @@ export interface GraphQLClient {
      * exist).
      */
     requestGraphQL: PlatformContext['requestGraphQL']
+
+    /**
+     * Mimics the {@link eventLogger} property expected in shared backend functions.
+     */
+    eventLogger: { log: (eventLabel: string, eventProperties?: any) => void }
 }
 
 /**
@@ -72,5 +77,6 @@ export const createGraphQLClient = ({
                 headers,
                 baseUrl,
             }),
+        eventLogger: { log: () => undefined },
     }
 }

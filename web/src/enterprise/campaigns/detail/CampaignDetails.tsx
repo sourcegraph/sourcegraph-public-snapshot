@@ -1,3 +1,4 @@
+import { parse as parseJSONC } from '@sqs/jsonc-parser'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
@@ -7,22 +8,40 @@ import { PageTitle } from '../../../components/PageTitle'
 import { UserAvatar } from '../../../user/UserAvatar'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { CampaignsIcon } from '../icons'
-import { ExternalChangesetNode } from './changesets/ExternalChangesetNode'
-import { noop, upperFirst } from 'lodash'
+import { ChangesetNode, ChangesetNodeProps } from './changesets/ChangesetNode'
+import { isEqual, noop } from 'lodash'
 import { Form } from '../../../components/Form'
-import { fetchCampaignById, updateCampaign, deleteCampaign, createCampaign, queryChangesets } from './backend'
-import { useError } from '../../../util/useObservable'
+import {
+    fetchCampaignById,
+    updateCampaign,
+    deleteCampaign,
+    createCampaign,
+    queryChangesets,
+    previewCampaignPlan,
+    fetchCampaignPlanById,
+} from './backend'
+import { useError, useObservable } from '../../../util/useObservable'
 import { asError } from '../../../../../shared/src/util/errors'
 import * as H from 'history'
 import { queryNamespaces } from '../../namespaces/backend'
 import { CampaignBurndownChart } from './BurndownChart'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 import { AddChangesetForm } from './AddChangesetForm'
-import { Subject } from 'rxjs'
-import { Markdown } from '../../../../../shared/src/components/Markdown'
+import { Subject, of, timer, merge, Observable } from 'rxjs'
+import { MonacoSettingsEditor } from '../../../settings/MonacoSettingsEditor'
 import { renderMarkdown } from '../../../../../shared/src/util/markdown'
+import { ErrorAlert } from '../../../components/alerts'
+import { Markdown } from '../../../../../shared/src/components/Markdown'
+import { Link } from '../../../../../shared/src/components/Link'
+import { switchMap, tap, catchError, takeWhile, concatMap, repeatWhen, delay } from 'rxjs/operators'
+import { ThemeProps } from '../../../../../shared/src/theme'
+import { TabsWithLocalStorageViewStatePersistence } from '../../../../../shared/src/components/Tabs'
+import SourcePullIcon from 'mdi-react/SourcePullIcon'
+import { LinkOrSpan } from '../../../../../shared/src/components/LinkOrSpan'
+import { FileDiffNode } from '../../../components/diff/FileDiffNode'
+import { isDefined } from '../../../../../shared/src/util/types'
 
-interface Props {
+interface Props extends ThemeProps {
     /**
      * The campaign ID.
      * If not given, will display a creation form.
@@ -31,6 +50,31 @@ interface Props {
     authenticatedUser: GQL.IUser
     history: H.History
     location: H.Location
+    isSourcegraphDotCom: boolean
+}
+
+const combyJsonSchema = {
+    $id: 'comby-spec.json#',
+    $schema: 'http://json-schema.org/draft-07/schema#',
+    description: 'Schema for comby options',
+    type: 'object',
+    properties: {
+        scopeQuery: {
+            type: 'string',
+            description:
+                'Define a scope to narrow down repositories affected by this change. Only GitHub and Bitbucket are supported.',
+        },
+        matchTemplate: {
+            type: 'string',
+            description: 'See https://comby.dev/#match-syntax for syntax',
+        },
+        rewriteTemplate: {
+            type: 'string',
+            description: 'See https://comby.dev/#match-syntax for syntax',
+        },
+    },
+    required: ['scopeQuery', 'matchTemplate', 'rewriteTemplate'],
+    additionalProperties: false,
 }
 
 /**
@@ -41,10 +85,14 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     history,
     location,
     authenticatedUser,
+    isLightTheme,
+    isSourcegraphDotCom,
 }) => {
     // State for the form in editing mode
     const [name, setName] = useState<string>('')
     const [description, setDescription] = useState<string>('')
+    const [type, setType] = useState<'manual' | 'comby'>('manual')
+    const [campaignPlanArguments, setCampaignPlanArguments] = useState<string>('')
     const [namespace, setNamespace] = useState<GQL.ID>()
 
     const [namespaces, setNamespaces] = useState<GQL.Namespace[]>()
@@ -65,15 +113,56 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         return () => subscription.unsubscribe()
     }, [campaignID, triggerError])
 
+    const changesetUpdates = useMemo(() => new Subject<void>(), [])
+    const nextChangesetUpdate = useCallback(changesetUpdates.next.bind(changesetUpdates), [changesetUpdates])
+
     // Fetch campaign if ID was given
-    const [campaign, setCampaign] = useState<GQL.ICampaign | null>()
+    const [campaign, setCampaign] = useState<GQL.ICampaign | GQL.ICampaignPlan | null>()
     useEffect(() => {
         if (!campaignID) {
             return
         }
-        const subscription = fetchCampaignById(campaignID).subscribe({ next: setCampaign, error: triggerError })
+        const subscription = merge(of(undefined), changesetUpdates)
+            .pipe(
+                switchMap(
+                    () =>
+                        new Observable<GQL.ICampaign | null>(observer => {
+                            let currentCampaign: GQL.ICampaign | null
+                            const subscription = fetchCampaignById(campaignID)
+                                .pipe(
+                                    tap(campaign => {
+                                        currentCampaign = campaign
+                                    }),
+                                    repeatWhen(obs =>
+                                        obs.pipe(
+                                            // todo(a8n): why does this not unsubscribe when takeWhile is in outer pipe
+                                            takeWhile(
+                                                () =>
+                                                    !!currentCampaign &&
+                                                    !!currentCampaign.changesetCreationStatus &&
+                                                    currentCampaign.changesetCreationStatus.state === 'PROCESSING'
+                                            ),
+                                            delay(2000)
+                                        )
+                                    )
+                                )
+                                .subscribe(observer)
+                            return subscription
+                        })
+                )
+            )
+            .subscribe({
+                next: fetchedCampaign => {
+                    setCampaign(fetchedCampaign)
+                    setType(fetchedCampaign && fetchedCampaign.plan ? (fetchedCampaign.plan.type as 'comby') : 'manual')
+                    setCampaignPlanArguments(
+                        fetchedCampaign && fetchedCampaign.plan ? fetchedCampaign.plan.arguments : null
+                    )
+                },
+                error: triggerError,
+            })
         return () => subscription.unsubscribe()
-    }, [campaignID, triggerError])
+    }, [campaignID, triggerError, changesetUpdates])
 
     const queryChangesetsConnection = useCallback(
         (args: FilteredConnectionQueryArgs) => queryChangesets(campaignID!, args),
@@ -95,8 +184,47 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         return unblockHistoryRef.current
     }, [campaignID, history])
 
-    const changesetUpdates = useMemo(() => new Subject<void>(), [])
-    const nextChangesetUpdate = useCallback(changesetUpdates.next.bind(changesetUpdates), [changesetUpdates])
+    const previewCampaignPlans = useMemo(() => new Subject<GQL.ICampaignPlanSpecification>(), [])
+    const nextPreviewCampaignPlan = useCallback(previewCampaignPlans.next.bind(previewCampaignPlans), [
+        previewCampaignPlans,
+    ])
+    const [isLoadingPreview, setIsLoadingPreview] = useState<boolean>(false)
+    useObservable(
+        useMemo(
+            () =>
+                previewCampaignPlans.pipe(
+                    tap(() => {
+                        setAlertError(undefined)
+                        setIsLoadingPreview(true)
+                        setCampaign(undefined)
+                    }),
+                    switchMap(plan =>
+                        previewCampaignPlan(plan, false).pipe(
+                            tap(() => {
+                                setIsLoadingPreview(false)
+                            }),
+                            catchError(error => {
+                                setAlertError(asError(error))
+                                setIsLoadingPreview(false)
+                                return []
+                            }),
+                            switchMap(previewPlan =>
+                                merge(
+                                    of(previewPlan),
+                                    timer(0, 2000).pipe(
+                                        concatMap(() => fetchCampaignPlanById(previewPlan.id)),
+                                        takeWhile(isDefined),
+                                        takeWhile(plan => plan.status.state === 'PROCESSING', true)
+                                    )
+                                )
+                            )
+                        )
+                    ),
+                    tap(setCampaign)
+                ),
+            [previewCampaignPlans]
+        )
+    )
 
     if (campaign === undefined && campaignID) {
         return <LoadingSpinner className="icon-inline mx-auto my-4" />
@@ -113,15 +241,28 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 setCampaign(await updateCampaign({ id: campaignID, name, description }))
                 unblockHistoryRef.current()
             } else {
-                const createdCampaign = await createCampaign({ name, description, namespace: getNamespace()! })
+                const createdCampaign = await createCampaign({
+                    name,
+                    description,
+                    namespace: getNamespace()!,
+                    plan:
+                        type === 'comby' && campaign && campaign.__typename === 'CampaignPlan'
+                            ? campaign.id
+                            : undefined,
+                })
                 unblockHistoryRef.current()
                 history.push(`/campaigns/${createdCampaign.id}`)
             }
             setMode('viewing')
+            setAlertError(undefined)
         } catch (err) {
             setMode('editing')
             setAlertError(asError(err))
         }
+    }
+
+    const onChangeArguments = (newText: string): void => {
+        setCampaignPlanArguments(newText)
     }
 
     const discardChangesMessage = 'Do you want to discard your changes?'
@@ -130,10 +271,12 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         event.preventDefault()
         unblockHistoryRef.current = history.block(discardChangesMessage)
         {
-            const { name, description } = campaign!
+            const { name, description, plan } = campaign as GQL.ICampaign
             setName(name)
             setDescription(description)
             setMode('editing')
+            setType(plan ? (plan.type as 'comby' | 'manual') : 'manual')
+            setCampaignPlanArguments(plan ? plan.arguments : '')
         }
     }
 
@@ -144,6 +287,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         }
         unblockHistoryRef.current()
         setMode('viewing')
+        setAlertError(undefined)
     }
 
     const onDelete: React.MouseEventHandler = async event => {
@@ -161,16 +305,51 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         }
     }
 
-    const author = campaign ? campaign.author : authenticatedUser
+    const author = campaign && campaign.__typename === 'Campaign' ? campaign.author : authenticatedUser
+
+    const calculateDiff = (field: 'added' | 'deleted'): number =>
+        campaign && campaign.__typename === 'CampaignPlan'
+            ? campaign.changesets.nodes.reduce(
+                  (prev, next) => prev + next.fileDiffs.diffStat[field] + next.fileDiffs.diffStat.changed,
+                  0
+              )
+            : campaign
+            ? campaign.changesets.nodes.reduce(
+                  (prev, next) =>
+                      prev +
+                      (next.diff ? next.diff.fileDiffs.diffStat[field] + next.diff.fileDiffs.diffStat.changed : 0),
+                  0
+              )
+            : 0
+
+    const totalAdditions = calculateDiff('added')
+    const totalDeletions = calculateDiff('deleted')
+
+    const status = campaign
+        ? campaign.__typename === 'CampaignPlan'
+            ? campaign.status
+            : campaign.changesetCreationStatus
+        : null
+
+    const currentSpec = campaign && campaign.__typename === 'CampaignPlan' ? parseJSONC(campaign.arguments) : undefined
+    // Tracks if a refresh of the campaignPlan is required before the campaign can be created
+    const previewRefreshNeeded =
+        !currentSpec ||
+        !isEqual(currentSpec, parseJSONC(campaignPlanArguments)) ||
+        (status && status.state !== 'COMPLETED')
 
     return (
         <>
-            <PageTitle title={campaign ? campaign.name : 'New Campaign'} />
+            <PageTitle title={campaign && campaign.__typename === 'Campaign' ? campaign.name : 'New Campaign'} />
             <Form onSubmit={onSubmit} onReset={onCancel}>
                 <h2 className="d-flex">
                     <CampaignsIcon className="icon-inline mr-2" />
+                    <span>
+                        <Link to="/campaigns">Campaigns</Link>
+                    </span>
+                    <span className="text-muted d-inline-block mx-2">/</span>
                     {/* The namespace of a campaign can only be set on creation */}
-                    {campaign ? (
+                    {campaign && campaign.__typename === 'Campaign' ? (
                         <span>{campaign.namespace.namespaceName}</span>
                     ) : (
                         <select
@@ -201,50 +380,49 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             required={true}
                         />
                     ) : (
-                        <span>{campaign!.name}</span>
+                        <span>{campaign && campaign.__typename === 'Campaign' && campaign.name}</span>
                     )}
                     <span className="flex-grow-1 d-flex justify-content-end align-items-center">
                         {(mode === 'saving' || mode === 'deleting') && <LoadingSpinner className="mr-2" />}
-                        {mode === 'editing' || mode === 'saving' ? (
-                            <>
-                                <button type="submit" className="btn btn-primary mr-1" disabled={mode === 'saving'}>
-                                    Save
-                                </button>
-                                {campaignID && (
+                        {campaignID &&
+                            (mode === 'editing' || mode === 'saving' ? (
+                                <>
+                                    <button type="submit" className="btn btn-primary mr-1" disabled={mode === 'saving'}>
+                                        Save
+                                    </button>
                                     <button type="reset" className="btn btn-secondary" disabled={mode === 'saving'}>
                                         Cancel
                                     </button>
-                                )}
-                            </>
-                        ) : (
-                            <>
-                                <button
-                                    type="button"
-                                    className="btn btn-secondary mr-1"
-                                    onClick={onEdit}
-                                    disabled={mode === 'deleting'}
-                                >
-                                    Edit
-                                </button>
-                                <button
-                                    type="button"
-                                    className="btn btn-danger"
-                                    onClick={onDelete}
-                                    disabled={mode === 'deleting'}
-                                >
-                                    Delete
-                                </button>
-                            </>
-                        )}
+                                </>
+                            ) : (
+                                <>
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary mr-1"
+                                        onClick={onEdit}
+                                        disabled={mode === 'deleting'}
+                                    >
+                                        Edit
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-danger"
+                                        onClick={onDelete}
+                                        disabled={mode === 'deleting'}
+                                    >
+                                        Delete
+                                    </button>
+                                </>
+                            ))}
                     </span>
                 </h2>
-                {alertError && <div className="alert alert-danger">{upperFirst(alertError.message)}</div>}
-                <div className="card mb-3">
+                {alertError && <ErrorAlert error={alertError} />}
+                <div className="card">
                     <div className="card-header">
                         <strong>
                             <UserAvatar user={author} className="icon-inline" /> {author.username}
                         </strong>
-                        {campaign && (
+                        {campaign && campaign.__typename === 'Campaign' && (
                             <>
                                 {' '}
                                 started <Timestamp date={campaign.createdAt} />
@@ -257,42 +435,226 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             value={description}
                             onChange={event => setDescription(event.target.value)}
                             placeholder="Describe the purpose of this campaign, link to relevant internal documentation, etc."
+                            rows={8}
                             disabled={mode === 'saving'}
                         />
                     ) : (
-                        <div className="card-body">
-                            <Markdown dangerousInnerHTML={renderMarkdown(campaign!.description)}></Markdown>
-                        </div>
+                        campaign &&
+                        campaign.__typename === 'Campaign' && (
+                            <div className="card-body">
+                                <Markdown dangerousInnerHTML={renderMarkdown(campaign.description)}></Markdown>
+                            </div>
+                        )
                     )}
                 </div>
+                {mode === 'editing' && (
+                    <p className="ml-1 mb-0">
+                        <small>
+                            <a
+                                rel="noopener noreferrer"
+                                target="_blank"
+                                href={
+                                    (isSourcegraphDotCom ? 'https://docs.sourcegraph.com' : '/help') + '/user/markdown'
+                                }
+                            >
+                                Markdown supported
+                            </a>
+                        </small>
+                    </p>
+                )}
+                <h3 className="mt-3">Campaign type</h3>
+                <select
+                    className="form-control w-auto d-inline-block"
+                    placeholder="Select campaign type"
+                    onChange={event => setType(event.target.value as 'comby' | 'manual')}
+                    disabled={!!(campaign && campaign.__typename === 'Campaign')}
+                    value={type}
+                    required={true}
+                >
+                    <option value="manual">Manual</option>
+                    <option value="comby">Comby search and replace</option>
+                </select>
+                {type === 'comby' && (
+                    <small className="ml-1">
+                        <a rel="noopener noreferrer" target="_blank" href="https://comby.dev/#match-syntax">
+                            Learn about comby syntax
+                        </a>
+                    </small>
+                )}
+                <MonacoSettingsEditor
+                    className="my-3"
+                    isLightTheme={isLightTheme}
+                    value={campaignPlanArguments}
+                    jsonSchema={type === 'comby' ? combyJsonSchema : undefined}
+                    height={110}
+                    onChange={onChangeArguments}
+                    readOnly={!!(campaign && campaign.__typename === 'Campaign')}
+                ></MonacoSettingsEditor>
+                {(!campaign || (campaign && campaign.__typename === 'CampaignPlan')) && mode === 'editing' && (
+                    <>
+                        {type === 'comby' && (
+                            <button
+                                type="button"
+                                className="btn btn-primary mr-1"
+                                disabled={!previewRefreshNeeded}
+                                onClick={() => nextPreviewCampaignPlan({ type, arguments: campaignPlanArguments })}
+                            >
+                                {isLoadingPreview && <LoadingSpinner className="icon-inline mr-1" />}
+                                Preview changes
+                            </button>
+                        )}
+                        <button
+                            type="submit"
+                            className="btn btn-primary"
+                            disabled={(type === 'comby' && previewRefreshNeeded) || mode !== 'editing'}
+                        >
+                            Create
+                        </button>
+                    </>
+                )}
             </Form>
-            {campaign && (
+
+            {status && (
+                <>
+                    {status.state === 'PROCESSING' && (
+                        <div className="d-flex mt-3">
+                            <LoadingSpinner className="icon-inline" />{' '}
+                            <span data-tooltip="Computing changesets">
+                                {status.completedCount} / {status.pendingCount + status.completedCount}
+                            </span>
+                        </div>
+                    )}
+                    {status.errors.map((error, i) => (
+                        <ErrorAlert error={error} className="mt-3" key={i} />
+                    ))}
+                </>
+            )}
+
+            {campaign && campaign.__typename === 'Campaign' && (
                 <>
                     <h3>Progress</h3>
                     <CampaignBurndownChart
                         changesetCountsOverTime={campaign.changesetCountsOverTime}
                         history={history}
                     />
-
-                    <h3>
-                        Changesets{' '}
-                        <span className="badge badge-secondary badge-pill">{campaign.changesets.totalCount}</span>
-                    </h3>
-
-                    <AddChangesetForm campaignID={campaign.id} onAdd={nextChangesetUpdate} />
-
-                    <FilteredConnection<GQL.IExternalChangeset>
-                        className="mt-2"
-                        updates={changesetUpdates}
-                        nodeComponent={ExternalChangesetNode}
-                        queryConnection={queryChangesetsConnection}
-                        hideSearch={true}
-                        defaultFirst={15}
-                        noun="Changeset"
-                        pluralNoun="Changesets"
-                        history={history}
-                        location={location}
-                    />
+                    {/* only campaigns that have no plan can add changesets manually */}
+                    {!campaign.plan && <AddChangesetForm campaignID={campaign.id} onAdd={nextChangesetUpdate} />}
+                </>
+            )}
+            {/* is already created or a preview is available */}
+            {campaign && (
+                <>
+                    <TabsWithLocalStorageViewStatePersistence
+                        storageKey="campaignTab"
+                        className="mt-3"
+                        tabs={[
+                            {
+                                id: 'diff',
+                                label: (
+                                    <span>
+                                        Diff <span className="text-success">+{totalAdditions}</span>{' '}
+                                        <span className="text-danger">-{totalDeletions}</span>
+                                    </span>
+                                ),
+                            },
+                            {
+                                id: 'changesets',
+                                label: (
+                                    <span>
+                                        Changesets{' '}
+                                        {campaign && (
+                                            <span className="badge badge-secondary badge-pill">
+                                                {campaign.changesets.totalCount}
+                                            </span>
+                                        )}
+                                    </span>
+                                ),
+                            },
+                        ]}
+                        tabClassName="tab-bar__tab--h5like"
+                    >
+                        <div className="list-group mt-3" key="changesets">
+                            {campaign && campaign.__typename === 'Campaign' && (
+                                <FilteredConnection<
+                                    GQL.IExternalChangeset | GQL.IChangesetPlan,
+                                    Omit<ChangesetNodeProps, 'node'>
+                                >
+                                    className="mt-2"
+                                    updates={changesetUpdates}
+                                    nodeComponent={ChangesetNode}
+                                    nodeComponentProps={{ isLightTheme, history, location }}
+                                    queryConnection={queryChangesetsConnection}
+                                    hideSearch={true}
+                                    defaultFirst={15}
+                                    noun="Changeset"
+                                    pluralNoun="Changesets"
+                                    history={history}
+                                    location={location}
+                                />
+                            )}
+                            {campaign &&
+                                campaign.__typename === 'CampaignPlan' &&
+                                campaign.changesets.nodes.map((changeset, i) => (
+                                    <ChangesetNode
+                                        node={changeset}
+                                        isLightTheme={isLightTheme}
+                                        key={i}
+                                        location={location}
+                                        history={history}
+                                    ></ChangesetNode>
+                                ))}
+                        </div>
+                        <div className="mt-3" key="diff">
+                            {campaign &&
+                                campaign.__typename === 'CampaignPlan' &&
+                                campaign.changesets.nodes.map((changesetNode, i) => (
+                                    <div key={i}>
+                                        <h3>
+                                            <SourcePullIcon className="icon-inline mr-2" />{' '}
+                                            <LinkOrSpan to={changesetNode.repository.url || undefined}>
+                                                {changesetNode.repository.name}
+                                            </LinkOrSpan>
+                                        </h3>
+                                        {changesetNode.fileDiffs.nodes.map(fileDiffNode => (
+                                            <FileDiffNode
+                                                isLightTheme={isLightTheme}
+                                                node={fileDiffNode}
+                                                lineNumbers={true}
+                                                location={location}
+                                                history={history}
+                                                persistLines={false}
+                                                key={fileDiffNode.internalID}
+                                            ></FileDiffNode>
+                                        ))}
+                                    </div>
+                                ))}
+                            {campaign &&
+                                campaign.__typename === 'Campaign' &&
+                                campaign.changesets.nodes.map(
+                                    (changesetNode, i) =>
+                                        changesetNode.diff && (
+                                            <div key={i}>
+                                                <h3>
+                                                    <SourcePullIcon className="icon-inline mr-2" />{' '}
+                                                    <LinkOrSpan to={changesetNode.repository.url || undefined}>
+                                                        {changesetNode.repository.name}
+                                                    </LinkOrSpan>
+                                                </h3>
+                                                {changesetNode.diff.fileDiffs.nodes.map(fileDiffNode => (
+                                                    <FileDiffNode
+                                                        isLightTheme={isLightTheme}
+                                                        node={fileDiffNode}
+                                                        lineNumbers={true}
+                                                        location={location}
+                                                        history={history}
+                                                        key={fileDiffNode.internalID}
+                                                    ></FileDiffNode>
+                                                ))}
+                                            </div>
+                                        )
+                                )}
+                        </div>
+                    </TabsWithLocalStorageViewStatePersistence>
                 </>
             )}
         </>

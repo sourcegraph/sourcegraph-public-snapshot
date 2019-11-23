@@ -33,6 +33,114 @@ func TestExampleRepositoryQuerySplit(t *testing.T) {
 	}
 }
 
+func TestGithubSource_CreateChangeset(t *testing.T) {
+	repo := &Repo{
+		Metadata: &github.Repository{
+			ID:            "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+			NameWithOwner: "sourcegraph/automation-testing",
+		},
+	}
+
+	testCases := []struct {
+		name string
+		cs   *Changeset
+		err  string
+	}{
+		{
+			name: "success",
+			cs: &Changeset{
+				Title:       "This is a test PR",
+				Body:        "This is the description of the test PR",
+				HeadRefName: "test-pr-6",
+				BaseRefName: "master",
+				Repo:        repo,
+				Changeset:   &a8n.Changeset{},
+			},
+		},
+		{
+			name: "already exists",
+			cs: &Changeset{
+				Title:       "This is a test PR",
+				Body:        "This is the description of the test PR",
+				HeadRefName: "always-open-pr",
+				BaseRefName: "master",
+				Repo:        repo,
+				Changeset:   &a8n.Changeset{},
+			},
+			err: github.ErrPullRequestAlreadyExists.Error(),
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		tc.name = "GithubSource_CreateChangeset_" + tc.name
+
+		t.Run(tc.name, func(t *testing.T) {
+			// The GithubSource uses the github.Client under the hood, which
+			// uses rcache, a caching layer that uses Redis.
+			// We need to clear the cache before we run the tests
+			rcache.SetupForTest(t)
+
+			cf, save := newClientFactory(t, tc.name)
+			defer save(t)
+
+			lg := log15.New()
+			lg.SetHandler(log15.DiscardHandler())
+
+			svc := &ExternalService{
+				Kind: "GITHUB",
+				Config: marshalJSON(t, &schema.GitHubConnection{
+					Url:   "https://github.com",
+					Token: os.Getenv("GITHUB_TOKEN"),
+				}),
+			}
+
+			githubSrc, err := NewGithubSource(svc, cf)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			ctx := context.Background()
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			err = githubSrc.CreateChangeset(ctx, tc.cs)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if err != nil {
+				return
+			}
+
+			pr := tc.cs.Changeset.Metadata.(*github.PullRequest)
+			data, err := json.MarshalIndent(pr, " ", " ")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			path := "testdata/golden/" + tc.name
+			if update(tc.name) {
+				if err = ioutil.WriteFile(path, data, 0640); err != nil {
+					t.Fatalf("failed to update golden file %q: %s", path, err)
+				}
+			}
+
+			golden, err := ioutil.ReadFile(path)
+			if err != nil {
+				t.Fatalf("failed to read golden file %q: %s", path, err)
+			}
+
+			if have, want := string(data), string(golden); have != want {
+				dmp := diffmatchpatch.New()
+				diffs := dmp.DiffMain(have, want, false)
+				t.Error(dmp.DiffPrettyText(diffs))
+			}
+		})
+	}
+}
+
 func TestGithubSource_LoadChangesets(t *testing.T) {
 	testCases := []struct {
 		name string

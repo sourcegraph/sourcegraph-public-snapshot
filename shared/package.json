@@ -19,7 +19,6 @@
     "tslint": "tslint -t stylish -c ../tslint.config.js -p tsconfig.json",
     "eslint": "eslint '**/*.[jt]s?(x)'",
     "stylelint": "stylelint 'src/**/*.scss'",
-    "typecheck": "tsc -p .",
     "test": "jest",
     "graphql": "gulp graphQLTypes",
     "schema": "gulp schema",

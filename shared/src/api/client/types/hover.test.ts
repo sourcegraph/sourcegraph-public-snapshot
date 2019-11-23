@@ -30,7 +30,10 @@ describe('HoverMerged', () => {
                     { contents: { kind: MarkupKind.Markdown, value: 'y' } },
                 ])
             ).toEqual({
-                contents: [{ kind: MarkupKind.Markdown, value: 'x' }, { kind: MarkupKind.Markdown, value: 'y' }],
+                contents: [
+                    { kind: MarkupKind.Markdown, value: 'x' },
+                    { kind: MarkupKind.Markdown, value: 'y' },
+                ],
                 range: FIXTURE_RANGE,
             }))
     })

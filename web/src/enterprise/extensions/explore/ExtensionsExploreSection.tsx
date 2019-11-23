@@ -8,6 +8,7 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../../backend/graphql'
 import { ExtensionsExploreSectionExtensionCard } from './ExtensionsExploreSectionExtensionCard'
+import { ErrorAlert } from '../../../components/alerts'
 
 interface Props {}
 
@@ -65,7 +66,7 @@ export class ExtensionsExploreSection extends React.PureComponent<Props, State> 
             <div className="card">
                 <h3 className="card-header">Top Sourcegraph extensions</h3>
                 {isErrorLike(extensionsOrError) ? (
-                    <div className="alert alert-danger">Error: {extensionsOrError.message}</div>
+                    <ErrorAlert error={extensionsOrError} />
                 ) : extensionsOrError.length === 0 ? (
                     <p>No extensions are available.</p>
                 ) : (

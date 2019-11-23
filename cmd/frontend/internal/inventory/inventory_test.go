@@ -2,40 +2,79 @@ package inventory
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/src-d/enry/v2"
 )
 
-func TestDetect_noReadFile(t *testing.T) {
+func TestGetLang_language(t *testing.T) {
 	tests := map[string]struct {
 		file fi
-		want string
+		want Lang
 	}{
-		"empty file": {file: fi{"a", ""}, want: ""},
-		"java":       {file: fi{"a.java", "a"}, want: "Java"},
-		"go":         {file: fi{"a.go", "a"}, want: "Go"},
+		"empty file": {file: fi{"a.java", ""}, want: Lang{
+			Name:       "Java",
+			TotalBytes: 0,
+			TotalLines: 0,
+		}},
+		"java": {file: fi{"a.java", "a"}, want: Lang{
+			Name:       "Java",
+			TotalBytes: 1,
+			TotalLines: 1,
+		}},
+		"go": {file: fi{"a.go", "a"}, want: Lang{
+			Name:       "Go",
+			TotalBytes: 1,
+			TotalLines: 1,
+		}},
+		"go-with-newline": {file: fi{"a.go", "a\n"}, want: Lang{
+			Name:       "Go",
+			TotalBytes: 2,
+			TotalLines: 1,
+		}},
 
 		// Ensure that .tsx and .jsx are considered as valid extensions for TypeScript and JavaScript,
 		// respectively.
-		"override tsx": {file: fi{"a.tsx", "xx"}, want: "TypeScript"},
-		"override jsx": {file: fi{"b.jsx", "x"}, want: "JavaScript"},
+		"override tsx": {file: fi{"a.tsx", "xx"}, want: Lang{
+			Name:       "TypeScript",
+			TotalBytes: 2,
+			TotalLines: 1,
+		}},
+		"override jsx": {file: fi{"b.jsx", "x"}, want: Lang{
+			Name:       "JavaScript",
+			TotalBytes: 1,
+			TotalLines: 1,
+		}},
 	}
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
-			lang, err := detect(context.Background(), test.file, nil)
+			lang, err := getLang(context.Background(),
+				test.file,
+				make([]byte, fileReadBufferSize),
+				makeFileReader(context.Background(), test.file.Path, test.file.Contents))
 			if err != nil {
 				t.Fatal(err)
 			}
-			if lang != test.want {
-				t.Fatalf("got %q, want %q", lang, test.want)
+			if !reflect.DeepEqual(lang, test.want) {
+				t.Errorf("Got %q, want %q", lang, test.want)
 			}
 		})
+	}
+}
+
+func makeFileReader(ctx context.Context, path string, contents string) func(context.Context, string) (io.ReadCloser, error) {
+	return func(ctx context.Context, path string) (io.ReadCloser, error) {
+		return ioutil.NopCloser(strings.NewReader(contents)), nil
 	}
 }
 
@@ -68,20 +107,6 @@ func (f fi) Sys() interface{} {
 	return interface{}(nil)
 }
 
-func newReadFile(files []os.FileInfo) func(_ context.Context, path string, minFileBytes int64) ([]byte, error) {
-	m := make(map[string][]byte, len(files))
-	for _, f := range files {
-		m[f.Name()] = []byte(f.(fi).Contents)
-	}
-	return func(_ context.Context, path string, minFileBytes int64) ([]byte, error) {
-		data, ok := m[path]
-		if !ok {
-			return nil, fmt.Errorf("no file: %s", path)
-		}
-		return data, nil
-	}
-}
-
 func TestGet_readFile(t *testing.T) {
 	tests := []struct {
 		file os.FileInfo
@@ -99,31 +124,43 @@ func TestGet_readFile(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.file.Name(), func(t *testing.T) {
-			lang, err := detect(context.Background(), test.file, func(_ context.Context, path string, minFileBytes int64) ([]byte, error) {
-				return []byte(test.file.(fi).Contents), nil
-			})
+			fr := makeFileReader(context.Background(), test.file.(fi).Path, test.file.(fi).Contents)
+			lang, err := getLang(context.Background(), test.file, make([]byte, fileReadBufferSize), fr)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if lang != test.want {
-				t.Errorf("got %q, want %q", lang, test.want)
+			if lang.Name != test.want {
+				t.Errorf("got %q, want %q", lang.Name, test.want)
 			}
 		})
 	}
 }
 
-func BenchmarkGet(b *testing.B) {
+type nopReadCloser struct {
+	data   []byte
+	reader *bytes.Reader
+}
+
+func (n *nopReadCloser) Read(p []byte) (int, error) {
+	return n.reader.Read((p))
+}
+
+func (n *nopReadCloser) Close() error {
+	return nil
+}
+
+func BenchmarkGetLang(b *testing.B) {
 	files, err := readFileTree("prom-repo-tree.txt")
 	if err != nil {
 		b.Fatal(err)
 	}
-	readFile := newReadFile(files)
+	fr := newFileReader(files)
+	buf := make([]byte, fileReadBufferSize)
 	b.Logf("Calling Get on %d files.", len(files))
-
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		for _, file := range files {
-			_, err = detect(context.Background(), file, readFile)
+			_, err = getLang(context.Background(), file, buf, fr)
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -143,6 +180,25 @@ func BenchmarkIsVendor(b *testing.B) {
 		for _, f := range files {
 			_ = enry.IsVendor(f.Name())
 		}
+	}
+}
+
+func newFileReader(files []os.FileInfo) func(_ context.Context, path string) (io.ReadCloser, error) {
+	m := make(map[string]*nopReadCloser, len(files))
+	for _, f := range files {
+		data := []byte(f.(fi).Contents)
+		m[f.Name()] = &nopReadCloser{
+			data:   data,
+			reader: bytes.NewReader(data),
+		}
+	}
+	return func(_ context.Context, path string) (io.ReadCloser, error) {
+		nc, ok := m[path]
+		if !ok {
+			return nil, fmt.Errorf("no file: %s", path)
+		}
+		nc.reader.Reset(nc.data)
+		return nc, nil
 	}
 }
 

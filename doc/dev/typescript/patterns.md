@@ -58,6 +58,7 @@ For example, in a UI that fetches user data from the network, you need to show a
 A naive approach to model this would look like this:
 
 ```ts
+// BAD
 {
   isLoading: boolean
   error?: Error
@@ -78,6 +79,7 @@ There are two bad effects of this:
 This can be easily avoided by expressing the mutually exclusive nature of the state slots in the type system through a union type:
 
 ```ts
+// GOOD
 {
   userOrError?: User | Error
 }

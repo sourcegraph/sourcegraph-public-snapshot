@@ -210,12 +210,16 @@ export function getFilePath(): string {
             `Unable to determine the file path because the a.js-permalink-shortcut element's href's path was ${url.pathname} (it is expected to be of the form /<user>/<repo>/blob/<commitID>/<path/to/file>).`
         )
     }
-    return path.join('/')
+    return decodeURIComponent(path.join('/'))
 }
 
 type GitHubURL =
     | ({ pageType: 'tree' | 'commit' | 'pull' | 'compare' | 'other' } & RawRepoSpec)
-    | ({ pageType: 'blob'; revAndFilePath: string } & RawRepoSpec)
+    | ({
+          pageType: 'blob'
+          /** rev and file path separated by a slash, URL-decoded. */
+          revAndFilePath: string
+      } & RawRepoSpec)
 
 export function isDiffPageType(pageType: GitHubURL['pageType']): boolean {
     switch (pageType) {
@@ -240,7 +244,7 @@ export function parseURL(loc: Pick<Location, 'host' | 'pathname'> = window.locat
             return {
                 pageType,
                 rawRepoName,
-                revAndFilePath: rest.join('/'),
+                revAndFilePath: decodeURIComponent(rest.join('/')),
             }
         case 'tree':
         case 'pull':
