@@ -462,6 +462,7 @@ func searchCommitDiffsInRepos(ctx context.Context, args *search.Args) ([]searchR
 		unflattened [][]*commitSearchResultResolver
 		common      = &searchResultsCommon{}
 	)
+
 	for _, repoRev := range args.Repos {
 		wg.Add(1)
 		go func(repoRev *search.RepositoryRevisions) {
