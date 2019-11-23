@@ -13,10 +13,6 @@ Convert an LSIF dump into a SQLite database and add cross-repository information
 | root       | The directory from which LSIF data was generated.         |
 | filepath   | The path on disk where the LSIF upload data can be found. |
 
-### `update-tips({})`
-
-Fetch the tip of the default branch for each repository with LSIF data from gitserver and update the `lsif_dumps` table.
-
 ### `clean-old-jobs({})`
 
 Remove old job data from the system. This is based on a configurable age, `JOB_MAX_AGE`, within the worker process.

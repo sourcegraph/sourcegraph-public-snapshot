@@ -10,7 +10,6 @@ import { createConvertJobProcessor } from './processors/convert'
 import { createLogger } from '../shared/logging'
 import { createPostgresConnection } from '../shared/database/postgres'
 import { createQueue } from '../shared/queue/queue'
-import { createUpdateTipsJobProcessor } from './processors/update-tips'
 import { ensureDirectory } from '../shared/paths'
 import { followsFrom, FORMAT_TEXT_MAP, Span, Tracer } from 'opentracing'
 import { instrumentWithLabels } from '../shared/metrics'
@@ -96,13 +95,6 @@ async function main(logger: Logger): Promise<void> {
         tracer
     )
 
-    const updateTipsJobProcessor = wrapJobProcessor(
-        'update-tips',
-        createUpdateTipsJobProcessor(xrepoDatabase, fetchConfiguration),
-        logger,
-        tracer
-    )
-
     const cleanOldJobsProcessor = wrapJobProcessor(
         'clean-old-jobs',
         createCleanOldJobsProcessor(queue, logger),
@@ -119,7 +111,6 @@ async function main(logger: Logger): Promise<void> {
 
     // Start processing work
     queue.process('convert', convertJobProcessor).catch(() => {})
-    queue.process('update-tips', updateTipsJobProcessor).catch(() => {})
     queue.process('clean-old-jobs', cleanOldJobsProcessor).catch(() => {})
     queue.process('clean-failed-jobs', cleanFailedJobsProcessor).catch(() => {})
 }

@@ -1,6 +1,5 @@
 import * as dumpModels from '../../shared/models/dump'
-import * as lsp from 'vscode-languageserver-protocol'
-import { comparePosition, createRemoteUri, findRanges, mapRangesToLocations } from './database'
+import { comparePosition, findRanges, mapRangesToInternalLocations } from './database'
 
 describe('findRanges', () => {
     it('should return ranges containing position', () => {
@@ -112,11 +111,11 @@ describe('comparePosition', () => {
     })
 })
 
-describe('createRemoteUri', () => {
-    it('should generate a URI to another project', () => {
+describe('mapRangesToInternalLocations', () => {
+    it('should map ranges to locations', () => {
         const dump = {
-            id: 0,
-            repository: 'github.com/sourcegraph/codeintellify',
+            id: 42,
+            repository: 'test-repo',
             commit: 'deadbeef',
             root: '',
             visibleAtTip: false,
@@ -124,13 +123,6 @@ describe('createRemoteUri', () => {
             processedAt: new Date(),
         }
 
-        const uri = createRemoteUri(dump, 'src/position.ts')
-        expect(uri).toEqual('git://github.com/sourcegraph/codeintellify?deadbeef#src/position.ts')
-    })
-})
-
-describe('mapRangesToLocations', () => {
-    it('should map ranges to locations', () => {
         const ranges = new Map<dumpModels.RangeId, dumpModels.RangeData>()
         ranges.set(1, {
             startLine: 1,
@@ -154,16 +146,23 @@ describe('mapRangesToLocations', () => {
             monikerIds: new Set<dumpModels.MonikerId>(),
         })
 
-        const locations = mapRangesToLocations(ranges, 'src/position.ts', new Set([1, 2, 4]))
-        expect(locations).toContainEqual(
-            lsp.Location.create('src/position.ts', { start: { line: 1, character: 1 }, end: { line: 1, character: 2 } })
-        )
-        expect(locations).toContainEqual(
-            lsp.Location.create('src/position.ts', { start: { line: 3, character: 1 }, end: { line: 3, character: 2 } })
-        )
-        expect(locations).toContainEqual(
-            lsp.Location.create('src/position.ts', { start: { line: 2, character: 1 }, end: { line: 2, character: 2 } })
-        )
+        const path = 'src/position.ts'
+        const locations = mapRangesToInternalLocations(dump, ranges, path, new Set([1, 2, 4]))
+        expect(locations).toContainEqual({
+            dump,
+            path,
+            range: { start: { line: 1, character: 1 }, end: { line: 1, character: 2 } },
+        })
+        expect(locations).toContainEqual({
+            dump,
+            path,
+            range: { start: { line: 3, character: 1 }, end: { line: 3, character: 2 } },
+        })
+        expect(locations).toContainEqual({
+            dump,
+            path,
+            range: { start: { line: 2, character: 1 }, end: { line: 2, character: 2 } },
+        })
         expect(locations).toHaveLength(3)
     })
 })
