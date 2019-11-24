@@ -177,6 +177,7 @@ const steps: Step[] = [
             oneWorkingDayBeforeRelease,
             fourWorkingDaysBeforeRelease,
             fiveWorkingDaysBeforeRelease,
+            retrospectiveDateTime,
         }: Config) => {
             const { url, created } = await ensureTrackingIssue({
                 majorVersion,
@@ -186,6 +187,7 @@ const steps: Step[] = [
                 oneWorkingDayBeforeRelease: new Date(oneWorkingDayBeforeRelease),
                 fourWorkingDaysBeforeRelease: new Date(fourWorkingDaysBeforeRelease),
                 fiveWorkingDaysBeforeRelease: new Date(fiveWorkingDaysBeforeRelease),
+                retrospectiveDateTime: new Date(retrospectiveDateTime),
             })
             console.log(created ? `Created tracking issue ${url}` : `Tracking issue already exists: ${url}`)
         },
