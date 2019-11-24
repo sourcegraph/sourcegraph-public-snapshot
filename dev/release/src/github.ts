@@ -27,7 +27,7 @@ export async function ensureTrackingIssue({
         return { url, created: false }
     }
 
-    const formatDate = (d: Date): string => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+    const formatDate = (d: Date): string => `${d.getMonth() + 1}/${d.getDate()}`
 
     const releaseIssueTemplate = await readFile(
         '../../../about/handbook/engineering/releases/release_issue_template.md',
@@ -42,12 +42,25 @@ export async function ensureTrackingIssue({
         .replace(/\$ONE_WORKING_DAY_BEFORE_RELEASE/g, formatDate(oneWorkingDayBeforeRelease))
         .replace(/\$RETROSPECTIVE_DATE/g, formatDate(retrospectiveDateTime))
 
+    const milestoneTitle = `${majorVersion}.${minorVersion}`
+    const milestones = await octokit.issues.listMilestonesForRepo({
+        owner: 'sourcegraph',
+        repo: 'sourcegraph',
+        per_page: 100,
+        direction: 'desc',
+    })
+    const milestone = milestones.data.filter(m => m.title === milestoneTitle)
+    if (milestone.length === 0) {
+        console.log(`Milestone ${JSON.stringify(milestoneTitle)} not found—you'll need to manually create this.`)
+    }
+
     const createdIssue = await octokit.issues.create({
         title: issueTitle(majorVersion, minorVersion),
         owner: 'sourcegraph',
         repo: 'sourcegraph',
         assignees,
         body: releaseIssueBody,
+        milestone: milestone.length > 0 ? milestone[0].number : undefined,
     })
     return { url: createdIssue.data.html_url, created: true }
 }
