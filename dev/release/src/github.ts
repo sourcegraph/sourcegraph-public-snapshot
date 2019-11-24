@@ -1,6 +1,9 @@
 import Octokit from '@octokit/rest'
 import { readLine } from './util'
 import { readFile } from 'mz/fs'
+import * as semver from 'semver'
+
+const formatDate = (d: Date): string => `${d.getMonth() + 1}/${d.getDate()}`
 
 export async function ensureTrackingIssue({
     majorVersion,
@@ -22,13 +25,6 @@ export async function ensureTrackingIssue({
     retrospectiveDateTime: Date
 }): Promise<{ url: string; created: boolean }> {
     const octokit = await getAuthenticatedGitHubClient()
-    const url = await getTrackingIssueURL(octokit, majorVersion, minorVersion)
-    if (url) {
-        return { url, created: false }
-    }
-
-    const formatDate = (d: Date): string => `${d.getMonth() + 1}/${d.getDate()}`
-
     const releaseIssueTemplate = await readFile(
         '../../../about/handbook/engineering/releases/release_issue_template.md',
         { encoding: 'utf8' }
@@ -51,16 +47,77 @@ export async function ensureTrackingIssue({
     })
     const milestone = milestones.data.filter(m => m.title === milestoneTitle)
     if (milestone.length === 0) {
-        console.log(`Milestone ${JSON.stringify(milestoneTitle)} not found—you'll need to manually create this.`)
+        console.log(
+            `Milestone ${JSON.stringify(
+                milestoneTitle
+            )} is closed or not found—you'll need to manually create it and add this issue to it.`
+        )
     }
 
-    const createdIssue = await octokit.issues.create({
-        title: issueTitle(majorVersion, minorVersion),
+    return await ensureIssue(octokit, {
+        title: trackingIssueTitle(majorVersion, minorVersion),
         owner: 'sourcegraph',
         repo: 'sourcegraph',
         assignees,
         body: releaseIssueBody,
         milestone: milestone.length > 0 ? milestone[0].number : undefined,
+    })
+}
+
+export async function ensurePatchReleaseIssue({
+    version,
+    assignees,
+}: {
+    version: semver.SemVer
+    assignees: string[]
+}): Promise<{ url: string; created: boolean }> {
+    const octokit = await getAuthenticatedGitHubClient()
+    const issueTemplate = await readFile(
+        '../../../about/handbook/engineering/releases/patch_release_issue_template.md',
+        { encoding: 'utf8' }
+    )
+    const issueBody = issueTemplate
+        .replace(/\$MAJOR/g, version.major.toString())
+        .replace(/\$MINOR/g, version.minor.toString())
+        .replace(/\$PATCH/g, version.patch.toString())
+    return await ensureIssue(octokit, {
+        title: `${version.version} patch release`,
+        owner: 'sourcegraph',
+        repo: 'sourcegraph',
+        assignees,
+        body: issueBody,
+    })
+}
+
+async function ensureIssue(
+    octokit: Octokit,
+    {
+        title,
+        owner,
+        repo,
+        assignees,
+        body,
+        milestone,
+    }: {
+        title: string
+        owner: string
+        repo: string
+        assignees: string[]
+        body: string
+        milestone?: number
+    }
+): Promise<{ url: string; created: boolean }> {
+    const url = await getIssueByTitle(octokit, title)
+    if (url) {
+        return { url, created: false }
+    }
+    const createdIssue = await octokit.issues.create({
+        title,
+        owner,
+        repo,
+        assignees,
+        body,
+        milestone,
     })
     return { url: createdIssue.data.html_url, created: true }
 }
@@ -72,12 +129,19 @@ export async function listIssues(
     return (await octokit.search.issuesAndPullRequests({ per_page: 100, q: query })).data.items
 }
 
-export async function getTrackingIssueURL(
-    octokit: Octokit,
-    majorVersion: string,
-    minorVersion: string
-): Promise<string | null> {
-    const title = issueTitle(majorVersion, minorVersion)
+export function trackingIssueTitle(major: string, minor: string): string {
+    return `${major}.${minor} release tracking issue`
+}
+
+export async function getAuthenticatedGitHubClient(): Promise<Octokit> {
+    const githubPAT = await readLine(
+        'Enter a GitHub personal access token with "repo" scope (https://github.com/settings/tokens/new): ',
+        '.secrets/github.txt'
+    )
+    return new Octokit({ auth: githubPAT })
+}
+
+export async function getIssueByTitle(octokit: Octokit, title: string): Promise<string | null> {
     const resp = await octokit.search.issuesAndPullRequests({
         per_page: 100,
         q: `type:issue repo:sourcegraph/sourcegraph is:open ${JSON.stringify(title)}`,
@@ -91,16 +155,4 @@ export async function getTrackingIssueURL(
         throw new Error(`Multiple issues matched issue title ${JSON.stringify(title)}`)
     }
     return matchingIssues[0].html_url
-}
-
-function issueTitle(major: string, minor: string): string {
-    return `${major}.${minor} release tracking issue`
-}
-
-export async function getAuthenticatedGitHubClient(): Promise<Octokit> {
-    const githubPAT = await readLine(
-        'Enter a GitHub personal access token with "repo" scope (https://github.com/settings/tokens/new): ',
-        '.secrets/github.txt'
-    )
-    return new Octokit({ auth: githubPAT })
 }

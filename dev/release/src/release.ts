@@ -1,6 +1,13 @@
 import { ensureEvent, getClient, EventOptions } from './google-calendar'
 import { postMessage } from './slack'
-import { ensureTrackingIssue, getTrackingIssueURL, getAuthenticatedGitHubClient, listIssues } from './github'
+import {
+    ensureTrackingIssue,
+    getAuthenticatedGitHubClient,
+    listIssues,
+    getIssueByTitle,
+    trackingIssueTitle,
+    ensurePatchReleaseIssue,
+} from './github'
 import * as persistedConfig from './config.json'
 import { addHours, addMinutes, subMinutes } from 'date-fns'
 import { spawn } from 'child_process'
@@ -21,6 +28,8 @@ interface Config {
     retrospectiveReminderDateTime: string
     retrospectiveDateTime: string
     retrospectiveDocURL: string
+
+    slackAnnounceChannel: string
 }
 
 type StepID =
@@ -31,6 +40,8 @@ type StepID =
     | 'release-candidate:create'
     | 'release-candidate:dev-announce'
     | 'qa-start:dev-announce'
+    | 'patch:issue'
+    | 'release:publish'
     | '_test:google-calendar'
     | '_test:slack'
 
@@ -195,10 +206,9 @@ const steps: Step[] = [
     {
         id: 'tracking-issue:announce',
         run: async c => {
-            const trackingIssueURL = await getTrackingIssueURL(
+            const trackingIssueURL = await getIssueByTitle(
                 await getAuthenticatedGitHubClient(),
-                c.majorVersion,
-                c.minorVersion
+                trackingIssueTitle(c.majorVersion, c.minorVersion)
             )
             if (!trackingIssueURL) {
                 throw new Error(
@@ -224,7 +234,7 @@ Key dates:
 - Final release tag: ${formatDate(new Date(c.oneWorkingDayBeforeRelease))}
 - Release: ${formatDate(new Date(c.releaseDateTime))}}
 - Retrospective: ${formatDate(new Date(c.retrospectiveDateTime))}`,
-                'dev-announce'
+                c.slackAnnounceChannel
             )
         },
     },
@@ -237,8 +247,12 @@ Key dates:
                 throw new Error(`version ${version} is not valid semver`)
             }
             const tag = JSON.stringify(`v${parsedVersion.version}`)
+            const branch = JSON.stringify(`${parsedVersion.major}.${parsedVersion.minor}`)
             console.log(`Creating and pushing tag ${tag}`)
-            const child = spawn('bash', ['-c', `git tag -a ${tag} -m ${tag} && git push origin ${tag}`])
+            const child = spawn('bash', [
+                '-c',
+                `git diff --quiet && git checkout ${branch} && git pull --rebase && git tag -a ${tag} -m ${tag} && git push origin ${tag}`,
+            ])
             child.stdout.pipe(process.stdout)
             child.stderr.pipe(process.stderr)
         },
@@ -268,9 +282,45 @@ Key dates:
 - It will be deployed to k8s.sgdev.org within approximately one hour (https://k8s.sgdev.org/site-admin/updates)
 - ${releaseBlockerMessage}
             `
-            await postMessage(message, 'dev-announce')
+            await postMessage(message, c.slackAnnounceChannel)
         },
     },
+    {
+        id: 'patch:issue',
+        run: async ({ captainGitHubUsername, slackAnnounceChannel }, version) => {
+            const parsedVersion = semver.parse(version, { loose: false })
+            if (!parsedVersion) {
+                throw new Error(`version ${version} is not valid semver`)
+            }
+            if (parsedVersion.prerelease.length > 0) {
+                throw new Error(`version ${version} is pre-release`)
+            }
+
+            // Create issue
+            const { url, created } = await ensurePatchReleaseIssue({
+                version: parsedVersion,
+                assignees: [captainGitHubUsername],
+            })
+            const existsText = created ? '' : ' (already exists)'
+            console.log(`Patch release issue URL${existsText}: ${url}`)
+            if (!created) {
+                return
+            }
+
+            // - Announce issue if issue does not already exist
+            await postMessage(
+                `:captain: Patch release ${parsedVersion.version} will be published soon. If you have changes that should go into this patch release, please add your item to the checklist in the issue description: ${url}`,
+                slackAnnounceChannel
+            )
+            console.log(`Posted to Slack channel ${slackAnnounceChannel}`)
+        },
+    },
+    // {
+    //     id: 'release:publish',
+    //     run: async (c, version) => {
+    //         // TODO: update the docs...
+    //     },
+    // },
 ]
 
 async function run(config: Config, stepIDToRun: StepID, ...stepArgs: string[]): Promise<void> {
