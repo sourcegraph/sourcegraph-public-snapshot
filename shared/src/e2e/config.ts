@@ -22,6 +22,7 @@ export interface Config {
     sourcegraphBaseUrl: string
     managementConsoleUrl: string
     includeAdminOnboarding: boolean
+    init: boolean
     testUserPassword: string
     noCleanup: boolean
     logStatusMessages: boolean
@@ -138,6 +139,12 @@ const configFields: ConfigFields = {
         parser: parseBool,
         description:
             'If true, include admin onboarding tests, which assume none of the admin onboarding steps have yet completed on the instance. If those steps have already been completed, this test will fail.',
+    },
+    init: {
+        envVar: 'E2E_INIT',
+        parser: parseBool,
+        defaultValue: false,
+        description: 'If true, run the test for initializing a brand new instance of Sourcegraph',
     },
     testUserPassword: {
         envVar: 'TEST_USER_PASSWORD',
