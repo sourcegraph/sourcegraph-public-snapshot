@@ -16,7 +16,6 @@ interface Config {
     minorVersion: string
     releaseDateTime: string
     oneWorkingDayBeforeRelease: string
-    threeWorkingDaysBeforeRelease: string
     fourWorkingDaysBeforeRelease: string
     fiveWorkingDaysBeforeRelease: string
     retrospectiveReminderDateTime: string
@@ -83,27 +82,40 @@ const steps: Step[] = [
         id: 'add-timeline-to-calendar',
         run: async c => {
             const googleCalendar = await getClient()
+
+            const datesBetween = []
+            const fourDaysBefore = new Date(c.fourWorkingDaysBeforeRelease)
+            const oneDayBefore = new Date(c.oneWorkingDayBeforeRelease)
+            const d = new Date(fourDaysBefore)
+            d.setDate(d.getDate() + 1)
+            while (d < oneDayBefore) {
+                datesBetween.push(new Date(d))
+                d.setDate(d.getDate() + 1)
+            }
+
             const events: EventOptions[] = [
                 {
-                    title: 'Release captain reminder: 5 working days before release',
+                    title: 'Release captain: prepare for branch cut (5 working days until release)',
                     description: 'See the release tracking issue for TODOs',
                     startDateTime: new Date(c.fiveWorkingDaysBeforeRelease).toISOString(),
                     endDateTime: addMinutes(new Date(c.fiveWorkingDaysBeforeRelease), 1).toISOString(),
                 },
                 {
-                    title: 'Release captain reminder: 4 working days before release',
+                    title: 'Release captain: branch cut (4 working days until release)',
                     description: 'See the release tracking issue for TODOs',
                     startDateTime: new Date(c.fourWorkingDaysBeforeRelease).toISOString(),
                     endDateTime: addMinutes(new Date(c.fourWorkingDaysBeforeRelease), 1).toISOString(),
                 },
+                ...datesBetween
+                    .filter(d => d.getDay() !== 0 && d.getDay() !== 6)
+                    .map(d => ({
+                        title: 'Release captain: cut new release candidate',
+                        description: 'See release tracking issue for TODOs',
+                        startDateTime: d.toISOString(),
+                        endDateTime: addMinutes(d, 1).toISOString(),
+                    })),
                 {
-                    title: 'Release captain reminder: 3 working days before release',
-                    description: 'See the release tracking issue for TODOs',
-                    startDateTime: new Date(c.threeWorkingDaysBeforeRelease).toISOString(),
-                    endDateTime: addMinutes(new Date(c.threeWorkingDaysBeforeRelease), 1).toISOString(),
-                },
-                {
-                    title: 'Release captain reminder: 1 working day before release',
+                    title: 'Release captain: tag final release (1 working day before release)',
                     description: 'See the release tracking issue for TODOs',
                     startDateTime: new Date(c.oneWorkingDayBeforeRelease).toISOString(),
                     endDateTime: addMinutes(new Date(c.oneWorkingDayBeforeRelease), 1).toISOString(),
@@ -141,7 +153,7 @@ const steps: Step[] = [
                 },
                 {
                     title: `Engineering Retrospective ${c.majorVersion}.${c.minorVersion}`,
-                    description: `Retrospective document: ${c.retrospectiveDocURL}`,
+                    description: `Rpetrospective document: ${c.retrospectiveDocURL}`,
                     anyoneCanAddSelf: true,
                     attendees: [c.teamEmail],
                     startDateTime: new Date(c.retrospectiveDateTime).toISOString(),
@@ -150,7 +162,7 @@ const steps: Step[] = [
             ]
 
             for (const event of events) {
-                console.log(`Create calendar event: ${event.title}`)
+                console.log(`Create calendar event: ${event.title}: ${event.startDateTime}`)
                 await ensureEvent(event, googleCalendar)
             }
         },
@@ -163,7 +175,6 @@ const steps: Step[] = [
             releaseDateTime,
             captainGitHubUsername,
             oneWorkingDayBeforeRelease,
-            threeWorkingDaysBeforeRelease,
             fourWorkingDaysBeforeRelease,
             fiveWorkingDaysBeforeRelease,
         }: Config) => {
@@ -173,7 +184,6 @@ const steps: Step[] = [
                 assignees: [captainGitHubUsername],
                 releaseDateTime: new Date(releaseDateTime),
                 oneWorkingDayBeforeRelease: new Date(oneWorkingDayBeforeRelease),
-                threeWorkingDaysBeforeRelease: new Date(threeWorkingDaysBeforeRelease),
                 fourWorkingDaysBeforeRelease: new Date(fourWorkingDaysBeforeRelease),
                 fiveWorkingDaysBeforeRelease: new Date(fiveWorkingDaysBeforeRelease),
             })

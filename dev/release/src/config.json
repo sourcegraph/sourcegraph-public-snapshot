@@ -8,9 +8,8 @@
   "minorVersion": "10",
   "releaseDateTime": "20 Nov 2019 10:00 PST",
   "oneWorkingDayBeforeRelease": "19 Nov 2019 10:00 PST",
-  "threeWorkingDaysBeforeRelease": "15 Nov 2019 10:00 PST",
   "fourWorkingDaysBeforeRelease": "14 Nov 2019 10:00 PST",
-  "fiveWorkingDaysBeforeRelease": "13 Nov 2019 10:00 PST'",
+  "fiveWorkingDaysBeforeRelease": "13 Nov 2019 10:00 PST",
 
   "retrospectiveReminderDateTime": "25 Nov 2019 10:00 PST",
   "retrospectiveDateTime": "26 Nov 2019 10:00 PST",

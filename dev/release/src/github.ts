@@ -8,7 +8,6 @@ export async function ensureTrackingIssue({
     assignees,
     releaseDateTime,
     oneWorkingDayBeforeRelease,
-    threeWorkingDaysBeforeRelease,
     fourWorkingDaysBeforeRelease,
     fiveWorkingDaysBeforeRelease,
 }: {
@@ -17,7 +16,6 @@ export async function ensureTrackingIssue({
     assignees: string[]
     releaseDateTime: Date
     oneWorkingDayBeforeRelease: Date
-    threeWorkingDaysBeforeRelease: Date
     fourWorkingDaysBeforeRelease: Date
     fiveWorkingDaysBeforeRelease: Date
 }): Promise<{ url: string; created: boolean }> {
@@ -39,7 +37,6 @@ export async function ensureTrackingIssue({
         .replace(/\$RELEASE_DATE/g, formatDate(releaseDateTime))
         .replace(/\$FIVE_WORKING_DAYS_BEFORE_RELEASE/g, formatDate(fiveWorkingDaysBeforeRelease))
         .replace(/\$FOUR_WORKING_DAYS_BEFORE_RELEASE/g, formatDate(fourWorkingDaysBeforeRelease))
-        .replace(/\$THREE_WORKING_DAYS_BEFORE_RELEASE/g, formatDate(threeWorkingDaysBeforeRelease))
         .replace(/\$ONE_WORKING_DAY_BEFORE_RELEASE/g, formatDate(oneWorkingDayBeforeRelease))
 
     const createdIssue = await octokit.issues.create({
