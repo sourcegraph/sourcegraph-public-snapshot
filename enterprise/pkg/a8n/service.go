@@ -173,6 +173,9 @@ func (s *Service) runChangesetJob(
 	})
 
 	if err != nil {
+		if diffErr, ok := err.(*protocol.CreateCommitFromPatchError); ok {
+			return errors.Errorf("creating commit from patch for repo %q: %v (command: %q)", diffErr.RepositoryName, diffErr.Err, diffErr.Command)
+		}
 		return err
 	}
 
