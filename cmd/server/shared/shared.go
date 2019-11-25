@@ -126,7 +126,7 @@ func Main() {
 		log.Fatal("Failed to setup nginx:", err)
 	}
 
-	postgresEporter, err := postgresExporterProcFile()
+	postgresExporter, err := postgresExporterProcFile()
 	if err != nil {
 		log.Fatal("Failed to setup postgres exporter:", err)
 	}
@@ -147,7 +147,7 @@ func Main() {
 		`syntect_server: sh -c 'env QUIET=true ROCKET_ENV=production ROCKET_PORT=9238 ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_SECRET_KEY='"'"'SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA='"'"' ROCKET_KEEP_ALIVE=0 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' syntect_server | grep -v "Rocket has launched" | grep -v "Warning: environment is"' | grep -v 'Configured for production'`,
 		`prometheus: prometheus --config.file=/sg_config_prometheus/prometheus.yml  --storage.tsdb.path=/var/opt/sourcegraph/prometheus --web.console.libraries=/usr/share/prometheus/console_libraries --web.console.templates=/usr/share/prometheus/consoles >> /var/opt/sourcegraph/prometheus.log 2>&1`,
 		`grafana: /usr/share/grafana/bin/grafana-server -config /sg_config_grafana/grafana-single-container.ini -homepath /usr/share/grafana >> /var/opt/sourcegraph/grafana.log 2>&1`,
-		postgresEporter,
+		postgresExporter,
 	}
 	procfile = append(procfile, ProcfileAdditions...)
 
