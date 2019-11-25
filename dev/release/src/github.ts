@@ -1,7 +1,13 @@
 import Octokit from '@octokit/rest'
 import { readLine } from './util'
 import { readFile } from 'mz/fs'
+import { promisify } from 'util'
 import * as semver from 'semver'
+import { mkdtemp as original_mkdtemp } from 'fs'
+import { spawn } from 'child_process'
+import * as os from 'os'
+import * as path from 'path'
+const mkdtemp = promisify(original_mkdtemp)
 
 const formatDate = (d: Date): string => `${d.getMonth() + 1}/${d.getDate()}`
 
@@ -155,4 +161,52 @@ export async function getIssueByTitle(octokit: Octokit, title: string): Promise<
         throw new Error(`Multiple issues matched issue title ${JSON.stringify(title)}`)
     }
     return matchingIssues[0].html_url
+}
+
+export async function createBranchWithChanges({
+    owner,
+    repo,
+    base: baseRev,
+    head: headBranch,
+    commitMessage,
+    bashEditCommands,
+}: {
+    owner: string
+    repo: string
+    base: string
+    head: string
+    commitMessage: string
+    bashEditCommands: string[]
+}): Promise<void> {
+    const tmpdir = await mkdtemp(path.join(os.tmpdir(), `sg-release-${owner}-${repo}-`))
+    console.log(`Created temp directory ${tmpdir}`)
+
+    const bashScript = `set -ex
+
+    cd ${tmpdir};
+    git clone --depth 10 git@github.com:${owner}/${repo} || git clone --depth 10 https://github.com/${owner}/${repo};
+    cd ./${repo};
+    git checkout ${baseRev};
+    ${bashEditCommands.join(';\n    ')};
+    git add :/;
+    git commit -a -m ${JSON.stringify(commitMessage)};
+    git push origin HEAD:${headBranch};
+    `
+    const child = spawn('bash', ['-c', bashScript])
+    child.stdout.pipe(process.stdout)
+    child.stderr.pipe(process.stderr)
+    await new Promise(resolve => child.on('exit', code => resolve(code)))
+}
+
+export async function createPR(options: {
+    owner: string
+    repo: string
+    head: string
+    base: string
+    title: string
+    body: string
+}): Promise<string> {
+    const octokit = await getAuthenticatedGitHubClient()
+    const response = await octokit.pulls.create(options)
+    return response.data.html_url
 }

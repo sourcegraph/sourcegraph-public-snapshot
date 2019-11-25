@@ -7,11 +7,14 @@ import {
     getIssueByTitle,
     trackingIssueTitle,
     ensurePatchReleaseIssue,
+    createBranchWithChanges,
+    createPR,
 } from './github'
 import * as persistedConfig from './config.json'
 import { addHours, addMinutes, subMinutes } from 'date-fns'
 import { spawn } from 'child_process'
 import * as semver from 'semver'
+import commandExists from 'command-exists'
 
 interface Config {
     teamEmail: string
@@ -241,7 +244,7 @@ Key dates:
     {
         id: 'release-candidate:create',
         argNames: ['version'],
-        run: (_config, version) => {
+        run: async (_config, version) => {
             const parsedVersion = semver.parse(version, { loose: false })
             if (!parsedVersion) {
                 throw new Error(`version ${version} is not valid semver`)
@@ -255,6 +258,7 @@ Key dates:
             ])
             child.stdout.pipe(process.stdout)
             child.stderr.pipe(process.stderr)
+            await new Promise(resolve => child.on('exit', code => resolve(code)))
         },
     },
     {
@@ -315,12 +319,77 @@ Key dates:
             console.log(`Posted to Slack channel ${slackAnnounceChannel}`)
         },
     },
-    // {
-    //     id: 'release:publish',
-    //     run: async (c, version) => {
-    //         // TODO: update the docs...
-    //     },
-    // },
+    {
+        id: 'release:publish',
+        run: async ({ slackAnnounceChannel }, version) => {
+            const parsedVersion = semver.parse(version, { loose: false })
+            if (!parsedVersion) {
+                throw new Error(`version ${version} is not valid semver`)
+            }
+            if (parsedVersion.prerelease.length > 0) {
+                throw new Error(`version ${version} is pre-release`)
+            }
+            const requiredCommands = ['comby', 'sed', 'find']
+            for (const cmd of requiredCommands) {
+                try {
+                    await commandExists(cmd)
+                } catch (err) {
+                    throw new Error(`Required command ${cmd} does not exist`)
+                }
+            }
+
+            const changes = [
+                {
+                    owner: 'sourcegraph',
+                    repo: 'sourcegraph',
+                    base: 'master',
+                    head: `publish-${parsedVersion.version}`,
+                    commitMessage: `Update latest release to ${parsedVersion.version}`,
+                    bashEditCommands: [
+                        "find . -type f -name '*.md' -exec sed -i -E 's/sourcegraph\\/server:[0-9]+\\.[0-9]+\\.[0-9]+/sourcegraph\\/server:3.11.0/g' {} +",
+                        `comby -in-place 'currentReleaseRevspec := ":[1]"' "currentReleaseRevspec := \\"v${parsedVersion.version}\\"" doc/_resources/templates/document.html`,
+                        `comby -in-place 'latestReleaseKubernetesBuild = newBuild(":[1]")' "latestReleaseKubernetesBuild = newBuild(\\"${parsedVersion.version}\\")" cmd/frontend/internal/app/pkg/updatecheck/handler.go`,
+                        `comby -in-place 'latestReleaseDockerServerImageBuild = newBuild(":[1]")' "latestReleaseDockerServerImageBuild = newBuild(\\"${parsedVersion.version}\\")" cmd/frontend/internal/app/pkg/updatecheck/handler.go`,
+                    ],
+                    title: `Update latest release to ${parsedVersion.version}`,
+                    body: '',
+                },
+                {
+                    owner: 'sourcegraph',
+                    repo: 'deploy-sourcegraph-aws',
+                    base: 'master',
+                    head: `publish-${parsedVersion.version}`,
+                    commitMessage: `Update latest release to ${parsedVersion.version}`,
+                    bashEditCommands: [
+                        `sed -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${parsedVersion.version}/g' resources/user-data.sh`,
+                    ],
+                    title: `Update latest release to ${parsedVersion.version}`,
+                    body: '',
+                },
+                {
+                    owner: 'sourcegraph',
+                    repo: 'deploy-sourcegraph-digitalocean',
+                    base: 'master',
+                    head: `publish-${parsedVersion.version}`,
+                    commitMessage: `Update latest release to ${parsedVersion.version}`,
+                    bashEditCommands: [
+                        `sed -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${parsedVersion.version}/g' resources/user-data.sh`,
+                    ],
+                    title: `Update latest release to ${parsedVersion.version}`,
+                    body: '',
+                },
+            ]
+            for (const changeset of changes) {
+                await createBranchWithChanges(changeset)
+                const prURL = await createPR(changeset)
+                console.log(`Pull request created: ${prURL}`)
+            }
+            await postMessage(
+                `${parsedVersion.version} has been released, update deploy-sourcegraph-docker as needed, cc @stephen`,
+                slackAnnounceChannel
+            )
+        },
+    },
 ]
 
 async function run(config: Config, stepIDToRun: StepID, ...stepArgs: string[]): Promise<void> {

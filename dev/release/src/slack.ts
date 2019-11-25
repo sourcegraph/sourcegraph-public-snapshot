@@ -7,6 +7,6 @@ export async function postMessage(message: string, channel: string): Promise<got
         `.secrets/slackWebhookURL-${channel}.txt`
     )
     return await got.post(webhookURL, {
-        body: JSON.stringify({ text: message }),
+        body: JSON.stringify({ text: message, link_names: true }),
     })
 }

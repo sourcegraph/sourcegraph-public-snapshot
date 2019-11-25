@@ -15,5 +15,5 @@
   "retrospectiveDateTime": "7 Jan 2020 10:00 PST",
   "retrospectiveDocURL": "https://docs.google.com/document/d/1pzl_csACLWbUcLOtDZQEPEJFZcDofXbyqKMCHf7TScY/edit",
 
-  "slackAnnounceChannel": "_test-channel"
+  "slackAnnounceChannel": "dev-announce"
 }
