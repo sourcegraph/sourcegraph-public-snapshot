@@ -9,6 +9,6 @@ yarn --mutex network install
 popd
 
 pushd web/
-yarn install
-yarn  --mutex network run build
+yarn --mutex network install
+yarn run build
 popd
