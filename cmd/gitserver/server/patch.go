@@ -21,11 +21,12 @@ var patchID uint64
 
 func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Request) {
 	var req protocol.CreateCommitFromPatchRequest
+	var resp protocol.CreateCommitFromPatchResponse
 	status := http.StatusOK
-	resp := new(protocol.CreateCommitFromPatchResponse)
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		resp.SetError(errors.Wrap(err, "decoding CreateCommitFromPatchRequest"))
+		resp := new(protocol.CreateCommitFromPatchResponse)
+		resp.SetError("", errors.Wrap(err, "decoding CreateCommitFromPatchRequest"))
 		status = http.StatusBadRequest
 	} else {
 		status, resp = s.createCommitFromPatch(r.Context(), req)
@@ -38,15 +39,15 @@ func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (int, *protocol.CreateCommitFromPatchResponse) {
-	resp := new(protocol.CreateCommitFromPatchResponse)
+func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse) {
+	var resp protocol.CreateCommitFromPatchResponse
 
 	repo := string(protocol.NormalizeRepo(req.Repo))
 	repoGitDir := filepath.Join(s.ReposDir, repo, ".git")
 	if _, err := os.Stat(repoGitDir); os.IsNotExist(err) {
 		repoGitDir = filepath.Join(s.ReposDir, repo)
 		if _, err := os.Stat(repoGitDir); os.IsNotExist(err) {
-			resp.SetError(errors.Wrap(err, "gitserver: repo does not exist"))
+			resp.SetError(repo, errors.Wrap(err, "gitserver: repo does not exist"))
 			return http.StatusInternalServerError, resp
 		}
 	}
@@ -56,7 +57,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	// Ensure tmp directory exists
 	tmpRepoDir, err := s.tempDir("patch-repo-")
 	if err != nil {
-		resp.SetError(errors.Wrap(err, "gitserver: make tmp repo"))
+		resp.SetError(repo, errors.Wrap(err, "gitserver: make tmp repo"))
 		return http.StatusInternalServerError, resp
 	}
 	defer cleanUpTmpRepo(tmpRepoDir)
@@ -67,7 +68,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		t := time.Now()
 		out, err := cmd.CombinedOutput()
 		if err != nil {
-			resp.SetError(errors.Wrap(err, "gitserver: "+reason))
+			resp.SetError(repo, errors.Wrap(err, "gitserver: "+reason))
 			resp.Error.Command = strings.Join(cmd.Args, " ")
 			resp.Error.CombinedOutput = string(out)
 			log15.Info("command failed", "prefix", prefix, "command", strings.Join(cmd.Args, " "), "duration", time.Since(t), "error", err, "output", string(out))
@@ -150,7 +151,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	// We don't use 'run' here as we only want stdout
 	out, err := cmd.Output()
 	if err != nil {
-		resp.SetError(errors.Wrap(err, "retrieving new commit id"))
+		resp.SetError(repo, errors.Wrap(err, "retrieving new commit id"))
 		resp.Error.Command = strings.Join(cmd.Args, " ")
 		resp.Error.CombinedOutput = string(out)
 		return http.StatusInternalServerError, resp
@@ -181,7 +182,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		return nil
 	})
 	if err != nil {
-		resp.SetError(errors.Wrap(err, "copying git objects"))
+		resp.SetError(repo, errors.Wrap(err, "copying git objects"))
 		return http.StatusInternalServerError, resp
 	}
 
@@ -197,7 +198,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		remoteURL, err := repoRemoteURL(ctx, GitDir(repoGitDir))
 		if err != nil {
 			log15.Error("Failed to get remote URL", "ref", req.TargetRef, "commit", cmtHash, "err", err)
-			resp.SetError(errors.Wrap(err, "repoRemoteURL"))
+			resp.SetError(repo, errors.Wrap(err, "repoRemoteURL"))
 			return http.StatusInternalServerError, resp
 		}
 

@@ -161,27 +161,24 @@ type CreateCommitFromPatchResponse struct {
 	// Rev is the tag that the staging object can be found at
 	Rev string
 
-	// RepositoryName is the name of the repository
-	RepositoryName string
-
 	// Error is populated only on error
 	Error *CreateCommitFromPatchError
 }
 
 // SetError adds the supplied error to e
-func (e *CreateCommitFromPatchResponse) SetError(err error) {
+func (e *CreateCommitFromPatchResponse) SetError(repo string, err error) {
 	if e.Error == nil {
-		e.Error = &CreateCommitFromPatchError{
-			Err: err,
-		}
-	} else {
-		e.Error.Err = err
+		e.Error = &CreateCommitFromPatchError{}
 	}
+	e.Error.RepositoryName = repo
+	e.Error.Err = err
 }
 
 // CreateCommitFromPatchError is populated on errors running
 // CreateCommitFromPatch
 type CreateCommitFromPatchError struct {
+	// RepositoryName is the name of the repository
+	RepositoryName string
 	// Error is the internal error
 	Err error
 	// Command is the last git command that was attempted
