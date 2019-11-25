@@ -12,7 +12,7 @@ parallel_run() {
 }
 
 echo "--- yarn root"
-# --mutex is necessary since frontend and the management-console can
+# mutex is necessary since frontend and the management-console can
 # run concurrent "yarn" installs
 yarn --mutex network --frozen-lockfile --network-timeout 60000
 
