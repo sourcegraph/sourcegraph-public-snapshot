@@ -27,6 +27,10 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## 3.10.1
 
+### Added
+
+- Syntax highlighting for Starlark (Bazel) files. [#6827](https://github.com/sourcegraph/sourcegraph/issues/6827)
+
 ### Fixed
 
 - The experimental search pagination API no longer times out when large repositories are encountered. [#6384](https://github.com/sourcegraph/sourcegraph/issues/6384) [#6383](https://github.com/sourcegraph/sourcegraph/issues/6383)
