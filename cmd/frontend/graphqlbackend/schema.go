@@ -3258,7 +3258,6 @@ type DiscussionCommentConnection {
 
 # RepositoryOrderBy enumerates the ways a repositories list can be ordered.
 enum RepositoryOrderBy {
-    REPO_URI # deprecated (use the equivalent REPOSITORY_NAME)
     REPOSITORY_NAME
     REPO_CREATED_AT # deprecated (use the equivalent REPOSITORY_CREATED_AT)
     REPOSITORY_CREATED_AT
