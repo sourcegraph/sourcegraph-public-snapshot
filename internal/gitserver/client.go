@@ -809,5 +809,8 @@ func (c *Client) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 		return "", &url.Error{URL: resp.Request.URL.String(), Op: "CreateCommitFromPatch", Err: fmt.Errorf("CreateCommitFromPatch: http status %d %s", resp.StatusCode, string(data))}
 	}
 
-	return res.Rev, res.Error
+	if res.Error != nil {
+		return res.Rev, res.Error
+	}
+	return res.Rev, nil
 }

@@ -189,6 +189,9 @@ type CreateCommitFromPatchError struct {
 
 // Error returns a detailed error conforming to the error interface
 func (e *CreateCommitFromPatchError) Error() string {
+	if e.Err == nil {
+		return ""
+	}
 	return e.Err.Error()
 }
 
