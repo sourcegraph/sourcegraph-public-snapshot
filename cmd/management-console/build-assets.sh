@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 
 cd $(dirname "${BASH_SOURCE[0]}")
-set -ex
+set -euxo pipefail
 
 # for node_modules/@sourcegraph/tsconfig/tsconfig.json
 pushd ../..
-yarn install
+yarn --mutex network install
 popd
 
 pushd web/
 yarn install
-yarn run build
+yarn  --mutex network run build
 popd
