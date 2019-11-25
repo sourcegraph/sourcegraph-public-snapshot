@@ -59,6 +59,11 @@ export interface Suggestion {
     type: SuggestionTypes
     /** The value to be suggested and that will be added to queries */
     value: string
+    /**
+     * Optional value to use when suggestion is displayed to the user.
+     * Useful for displaying a "human-readable" suggestion value
+     */
+    displayValue?: string
     /** Description that will be displayed together with suggestion value */
     description?: string
     /** Fuzzy-search suggestions may have a url for redirect when selected */
@@ -81,7 +86,10 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
         case 'Repository': {
             return {
                 type: SuggestionTypes.repo,
-                value: item.name,
+                // Add "regex start and end boundaries" to
+                // correctly scope additional suggestions
+                value: '^' + item.name + '$',
+                displayValue: item.name,
                 url: `/${item.name}`,
                 label: 'go to repository',
             }
@@ -104,7 +112,8 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
             }
             return {
                 type: SuggestionTypes.file,
-                value: item.name,
+                value: item.name + '$',
+                displayValue: item.name,
                 description: descriptionParts.join(' — '),
                 url: `${item.url}?suggestion`,
                 label: 'go to file',
@@ -166,7 +175,7 @@ export const SuggestionItem: React.FunctionComponent<SuggestionProps> = ({
 }) => (
     <li className={'suggestion' + (isSelected ? ' suggestion--selected' : '')} {...props}>
         <SuggestionIcon className="icon-inline suggestion__icon" suggestion={suggestion} />
-        <div className="suggestion__title">{suggestion.value}</div>
+        <div className="suggestion__title">{suggestion.displayValue ?? suggestion.value}</div>
         <div className="suggestion__description">{suggestion.description}</div>
         {(showUrlLabel || defaultLabel) && (
             <div className="suggestion__action" hidden={!isSelected}>
