@@ -149,7 +149,7 @@ declare module 'worker-loader?*' {
 }
 
 /**
- * `KP` should only have properties defied in `T` and their types should match.
+ * `KP` should only have properties defined in `T` and their types should match.
  * https://stackoverflow.com/a/54497408
  *
  * @example
