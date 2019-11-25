@@ -170,6 +170,14 @@ func (r *campaignJobResolver) Repository(ctx context.Context) (*graphqlbackend.R
 	return repo, err
 }
 
+func (r *campaignJobResolver) BaseRepository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
+	return r.Repository(ctx)
+}
+
+func (r *campaignJobResolver) Diff() graphqlbackend.ChangesetPlanResolver {
+	return r
+}
+
 func (r *campaignJobResolver) FileDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.PreviewFileDiffConnection, error) {
 	_, commit, err := r.computeRepoCommit(ctx)
 	if err != nil {
