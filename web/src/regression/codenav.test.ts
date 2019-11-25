@@ -11,7 +11,7 @@ import { ensureLoggedInOrCreateTestUser } from './util/helpers'
 import { ScreenshotVerifier } from './util/ScreenshotVerifier'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { ensureTestExternalService } from './util/api'
-import { TestCase, testCodeIntel } from './util/codeintel'
+import { testCodeIntel } from './util/codeintel'
 
 describe('Code navigation regression test suite', () => {
     const testUsername = 'test-codenav'
