@@ -812,6 +812,27 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 	return repos, missingRepoRevs, nil, nil
 }
 
+// Surface an alert if a query exceeds limits that we place on search. Currently limits
+// diff and commit searches where more than repoLimit repos need to be searched.
+func alertOnSearchLimit(resultTypes []string, args *search.Args) ([]string, *searchAlert) {
+	var alert *searchAlert
+	repoLimit := 50
+	if len(args.Repos) > repoLimit {
+		if len(resultTypes) == 1 {
+			resultType := resultTypes[0]
+			switch resultType {
+			case "commit", "diff":
+				resultTypes = []string{}
+				alert = &searchAlert{
+					title:       fmt.Sprintf("Too many matching repositories for %s search to handle", resultType),
+					description: fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(resultType), repoLimit),
+				}
+			}
+		}
+	}
+	return resultTypes, alert
+}
+
 func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType string) (res *searchResultsResolver, err error) {
 	tr, ctx := trace.New(ctx, "graphql.SearchResults", r.rawQuery())
 	defer func() {
@@ -877,6 +898,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		// to merge multiple results of different types for the same file
 		fileMatches   = make(map[string]*fileMatchResolver)
 		fileMatchesMu sync.Mutex
+		// Alert is a potential alert shown to the user.
+		alert *searchAlert
 	)
 
 	waitGroup := func(required bool) *sync.WaitGroup {
@@ -889,6 +912,11 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		}
 		return &optionalWg
 	}
+
+	// Apply search limits and generate warnings before firing off workers.
+	// This currently limits diff and commit search to a set number of
+	// repos, and removes the diff and commit resultTypes if it is breached.
+	resultTypes, alert = alertOnSearchLimit(resultTypes, &args)
 
 	searchedFileContentsOrPaths := false
 	for _, resultType := range resultTypes {
@@ -1084,9 +1112,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	timer.Stop()
 
 	tr.LazyPrintf("results=%d limitHit=%v cloning=%d missing=%d timedout=%d", len(results), common.limitHit, len(common.cloning), len(common.missing), len(common.timedout))
-
-	// Alert is a potential alert shown to the user.
-	var alert *searchAlert
 
 	if len(missingRepoRevs) > 0 {
 		alert = r.alertForMissingRepoRevs(missingRepoRevs)
