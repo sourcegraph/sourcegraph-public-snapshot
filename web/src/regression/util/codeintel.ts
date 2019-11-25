@@ -80,7 +80,7 @@ async function getTooltip(driver: Driver): Promise<string> {
     return driver.page.evaluate(() => (document.querySelector('.e2e-tooltip-content') as HTMLElement).innerText)
 }
 
-async function collectLinks(driver: Driver, selector: string): Promise<string[]> {
+function collectLinks(driver: Driver, selector: string): Promise<string[]> {
     return driver.page.evaluate(selector => {
         const links: string[] = []
         document.querySelectorAll<HTMLElement>(selector).forEach(e => {
