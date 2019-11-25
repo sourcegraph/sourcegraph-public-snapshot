@@ -1,14 +1,13 @@
-import * as crc32 from 'crc-32'
 import * as metrics from './metrics'
+import * as sharedMetrics from '../database/metrics'
 import * as xrepoModels from '../models/xrepo'
 import { addrFor, getCommitsNear, gitserverExecLines } from './commits'
-import { ADVISORY_LOCK_ID_SALT, MAX_CONCURRENT_GITSERVER_REQUESTS, MAX_TRAVERSAL_LIMIT } from '../constants'
+import { MAX_TRAVERSAL_LIMIT } from '../constants'
 import { Brackets, Connection, EntityManager } from 'typeorm'
-import { chunk } from 'lodash'
 import { createFilter, testFilter } from './bloom-filter'
 import { dbFilename, tryDeleteFile } from '../paths'
-import { instrument } from '../metrics'
-import { logAndTraceCall, TracingContext, logSpan } from '../tracing'
+import { logAndTraceCall, logSpan, TracingContext } from '../tracing'
+import { instrumentQuery, withInstrumentedTransaction } from '../database/postgres'
 import { TableInserter } from '../database/inserter'
 
 /**
@@ -16,7 +15,7 @@ import { TableInserter } from '../database/inserter'
  */
 const insertionMetrics = {
     durationHistogram: metrics.xrepoInsertionDurationHistogram,
-    errorsCounter: metrics.xrepoQueryErrorsCounter,
+    errorsCounter: sharedMetrics.xrepoQueryErrorsCounter,
 }
 
 /**
@@ -57,18 +56,18 @@ export interface SymbolReferences {
 }
 
 /**
- * A wrapper around a SQLite database that stitches together the references
- * between projects at a specific commit. This is used for cross-repository
- * jump to definition and find references features.
+ * A wrapper around the cross-repository database that stitches together the references
+ * between projects at a specific commit. This is used for cross-repository jump to
+ * definition and find references features.
  */
 export class XrepoDatabase {
     /**
      * Create a new `XrepoDatabase` backed by the given database connection.
      *
-     * @param storageRoot The path where SQLite databases are stored.
      * @param connection The Postgres connection.
+     * @param storageRoot The path where SQLite databases are stored.
      */
-    constructor(private storageRoot: string, private connection: Connection) {}
+    constructor(private connection: Connection, private storageRoot: string) {}
 
     /**
      * Get the dumps for a repository.
@@ -86,8 +85,8 @@ export class XrepoDatabase {
         limit: number,
         offset: number
     ): Promise<{ dumps: xrepoModels.LsifDump[]; totalCount: number }> {
-        const [dumps, totalCount] = await this.withConnection(connection => {
-            let queryBuilder = connection
+        const [dumps, totalCount] = await instrumentQuery(() => {
+            let queryBuilder = this.connection
                 .getRepository(xrepoModels.LsifDump)
                 .createQueryBuilder()
                 .where({ repository })
@@ -121,22 +120,7 @@ export class XrepoDatabase {
      * @param id The dump identifier.
      */
     public getDumpById(id: xrepoModels.DumpId): Promise<xrepoModels.LsifDump | undefined> {
-        return this.withConnection(connection => connection.getRepository(xrepoModels.LsifDump).findOne({ id }))
-    }
-
-    /**
-     * Return the list of all repositories that have LSIF data.
-     */
-    public async getTrackedRepositories(): Promise<string[]> {
-        const payload = await this.withConnection(connection =>
-            connection
-                .getRepository(xrepoModels.LsifDump)
-                .createQueryBuilder()
-                .select('DISTINCT repository')
-                .getRawMany()
-        )
-
-        return payload.map((e: { repository: string }) => e.repository)
+        return instrumentQuery(() => this.connection.getRepository(xrepoModels.LsifDump).findOne({ id }))
     }
 
     /**
@@ -145,9 +129,10 @@ export class XrepoDatabase {
      * @param repository The repository name.
      */
     public isRepositoryTracked(repository: string): Promise<boolean> {
-        return this.withConnection(
-            async connection =>
-                (await connection.getRepository(xrepoModels.LsifDump).findOne({ where: { repository } })) !== undefined
+        return instrumentQuery(
+            async () =>
+                (await this.connection.getRepository(xrepoModels.LsifDump).findOne({ where: { repository } })) !==
+                undefined
         )
     }
 
@@ -158,9 +143,9 @@ export class XrepoDatabase {
      * @param commit The target commit.
      */
     public isCommitTracked(repository: string, commit: string): Promise<boolean> {
-        return this.withConnection(
-            async connection =>
-                (await connection.getRepository(xrepoModels.Commit).findOne({ where: { repository, commit } })) !==
+        return instrumentQuery(
+            async () =>
+                (await this.connection.getRepository(xrepoModels.Commit).findOne({ where: { repository, commit } })) !==
                 undefined
         )
     }
@@ -197,14 +182,13 @@ export class XrepoDatabase {
         `
 
         return logAndTraceCall(ctx, 'Updating dumps visible from tip', () =>
-            this.withConnection(connection => connection.query(query, [repository, commit]))
+            instrumentQuery(() => this.connection.query(query, [repository, commit]))
         )
     }
 
     /**
-     * Return the commit that has LSIF data 'closest' to the given target commit (a direct descendant
-or ancestor of the target commit). If no closest commit can be determined, this method returns
-undefined.s
+     * Return the dump 'closest' to the given target commit (a direct descendant or ancestor of
+     * the target commit). If no closest commit can be determined, this method returns undefined.
      *
      * @param repository The repository name.
      * @param commit The target commit.
@@ -225,30 +209,35 @@ undefined.s
         // cross-repository database. This populates the necessary data for
         // the following query.
         if (gitserverUrls) {
-            await this.discoverAndUpdateCommit({ repository, commit, gitserverUrls, ctx })
+            await this.updateCommits(
+                repository,
+                await this.discoverCommits({ repository, commit, gitserverUrls, ctx }),
+                ctx
+            )
         }
 
-        return logAndTraceCall(ctx, 'Finding closest dump', () =>
-            this.withConnection(async connection => {
-                const results = (await connection.query('select * from closest_dump($1, $2, $3, $4)', [
+        return logAndTraceCall(ctx, 'Finding closest dump', async () => {
+            const results: xrepoModels.LsifDump[] = await instrumentQuery(() =>
+                this.connection.query('select * from closest_dump($1, $2, $3, $4)', [
                     repository,
                     commit,
                     file,
                     MAX_TRAVERSAL_LIMIT,
-                ])) as xrepoModels.LsifDump[]
+                ])
+            )
 
-                if (results.length === 0) {
-                    return undefined
-                }
+            if (results.length === 0) {
+                return undefined
+            }
 
-                return results[0]
-            })
-        )
+            return results[0]
+        })
     }
 
     /**
-     * Update the known commits for a repository. The given commit list is a set of pairs of the
-     * form `(child, parent)`. Commits without a parent will be returned as `(child, undefined)`.
+     * Update the known commits for a repository. The input commits must be a map from commits to
+     * a set of parent commits. Commits without a parent should have an empty set of parents, but
+     * should still be present in the map.
      *
      * @param repository The repository name.
      * @param commits The commit parentage data.
@@ -256,11 +245,11 @@ undefined.s
      */
     public updateCommits(
         repository: string,
-        commits: [string, string | undefined][],
+        commits: Map<string, Set<string>>,
         ctx: TracingContext = {}
     ): Promise<void> {
         return logAndTraceCall(ctx, 'Updating commits', () =>
-            this.withTransactionalEntityManager(async entityManager => {
+            withInstrumentedTransaction(this.connection, async entityManager => {
                 const commitInserter = new TableInserter(
                     entityManager,
                     xrepoModels.Commit,
@@ -269,8 +258,14 @@ undefined.s
                     true // Do nothing on conflict
                 )
 
-                for (const [commit, parentCommit] of commits) {
-                    await commitInserter.insert({ repository, commit, parentCommit })
+                for (const [commit, parentCommits] of commits) {
+                    if (parentCommits.size === 0) {
+                        await commitInserter.insert({ repository, commit, parentCommit: null })
+                    }
+
+                    for (const parentCommit of parentCommits) {
+                        await commitInserter.insert({ repository, commit, parentCommit })
+                    }
                 }
 
                 await commitInserter.flush()
@@ -290,8 +285,8 @@ undefined.s
         name: string,
         version: string | null
     ): Promise<xrepoModels.PackageModel | undefined> {
-        return this.withConnection(connection =>
-            connection.getRepository(xrepoModels.PackageModel).findOne({
+        return instrumentQuery(() =>
+            this.connection.getRepository(xrepoModels.PackageModel).findOne({
                 where: {
                     scheme,
                     name,
@@ -322,7 +317,7 @@ undefined.s
         references: SymbolReferences[],
         ctx: TracingContext = {}
     ): Promise<xrepoModels.LsifDump> {
-        return this.withTransactionalEntityManager(async entityManager => {
+        return withInstrumentedTransaction(this.connection, async entityManager => {
             const dump = await logAndTraceCall(ctx, 'Inserting dump', () =>
                 this.insertDump(repository, commit, root, uploadedAt, entityManager)
             )
@@ -395,7 +390,6 @@ undefined.s
             )
             .getMany()
 
-        // Delete conflicting dumps
         for (const dump of dumps) {
             await this.deleteDump(dump, entityManager)
         }
@@ -417,8 +411,8 @@ undefined.s
      * @param file A filename that should be included in the dump.
      */
     public getDump(repository: string, commit: string, file: string): Promise<xrepoModels.LsifDump | undefined> {
-        return this.withConnection(connection =>
-            connection
+        return instrumentQuery(() =>
+            this.connection
                 .getRepository(xrepoModels.LsifDump)
                 .createQueryBuilder()
                 .select()
@@ -432,8 +426,8 @@ undefined.s
      * Get the oldest dump that is not visible at the tip of its repository.
      */
     public getOldestPrunableDump(): Promise<xrepoModels.LsifDump | undefined> {
-        return this.withConnection(connection =>
-            connection
+        return instrumentQuery(() =>
+            this.connection
                 .getRepository(xrepoModels.LsifDump)
                 .createQueryBuilder()
                 .select()
@@ -473,8 +467,8 @@ undefined.s
      * @param repository The repository.
      */
     public getVisibleDumps(repository: string): Promise<xrepoModels.LsifDump[]> {
-        return this.withConnection(connection =>
-            connection
+        return instrumentQuery(() =>
+            this.connection
                 .getRepository(xrepoModels.LsifDump)
                 .createQueryBuilder()
                 .select()
@@ -524,7 +518,7 @@ undefined.s
         // We do this inside of a transaction so that we get consistent results from multiple
         // distinct queries: one count query and one or more select queries, depending on the
         // sparsity of the use of the given identifier.
-        return this.withTransactionalEntityManager(async entityManager => {
+        return withInstrumentedTransaction(this.connection, async entityManager => {
             // Create a base query that selects all active uses of the target package. This
             // is used as the common prefix for both the count and the getPage queries.
             const baseQuery = entityManager
@@ -646,7 +640,7 @@ undefined.s
         // We do this inside of a transaction so that we get consistent results from multiple
         // distinct queries: one count query and one or more select queries, depending on the
         // sparsity of the use of the given identifier.
-        return this.withTransactionalEntityManager(async entityManager => {
+        return withInstrumentedTransaction(this.connection, async entityManager => {
             // Extract numeric ids from query results that return objects
             const extractIds = (results: { id: number }[]): number[] => results.map(r => r.id)
 
@@ -812,74 +806,15 @@ undefined.s
     }
 
     /**
-     * Acquire an advisory lock with the given name. This will block until the lock can be
-     * acquired.
-     *
-     * See https://www.postgresql.org/docs/9.6/static/explicit-locking.html#ADVISORY-LOCKS.
-     *
-     * @param name The lock name.
-     */
-    public lock(name: string): Promise<void> {
-        return this.withConnection(connection =>
-            connection.query('SELECT pg_advisory_lock($1)', [this.generateLockId(name)])
-        )
-    }
-
-    /**
-     * Release an advisory lock acquired by `lock`.
-     *
-     * @param name The lock name.
-     */
-    public unlock(name: string): Promise<void> {
-        return this.withConnection(connection =>
-            connection.query('SELECT pg_advisory_unlock($1)', [this.generateLockId(name)])
-        )
-    }
-
-    /**
-     * Generate an advisory lock identifier from the given name and application salt. This is
-     * based on golang-migrate's advisory lock identifier generation technique, which is in turn
-     * inspired by rails migrations.
-     *
-     * See https://github.com/golang-migrate/migrate/blob/6c96ef02dfbf9430f7286b58afc15718588f2e13/database/util.go#L12.
-     *
-     * @param name The lock name.
-     */
-    private generateLockId(name: string): number {
-        return crc32.str(name) * ADVISORY_LOCK_ID_SALT
-    }
-
-    /**
-     * Invoke `callback` with a SQLite connection object obtained from the
-     * cache or created on cache miss.
-     *
-     * @param callback The function invoke with the SQLite connection.
-     */
-    private withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
-        return instrument(metrics.xrepoQueryDurationHistogram, metrics.xrepoQueryErrorsCounter, () =>
-            callback(this.connection)
-        )
-    }
-
-    /**
-     * Invoke `callback` with a transactional SQLite manager manager object
-     * obtained from the cache or created on cache miss.
-     *
-     * @param callback The function invoke with the entity manager.
-     */
-    private withTransactionalEntityManager<T>(callback: (connection: EntityManager) => Promise<T>): Promise<T> {
-        return this.withConnection(connection => connection.transaction(callback))
-    }
-
-    /**
-     * Update the commits tables in the cross-repository database with the current
-     * output of gitserver for the given repository around the given commit. If we
-     * already have commit parentage information for this commit, this function
+     * Get a list of commits for the given repository with their parent starting at the
+     * given commit and returning at most `MAX_COMMITS_PER_UPDATE` commits. The output
+     * is a map from commits to a set of parent commits. The set of parents may be empty.
+     * If we already have commit parentage information for this commit, this function
      * will do nothing.
      *
      * @param args Parameter bag.
      */
-    public async discoverAndUpdateCommit({
+    public async discoverCommits({
         repository,
         commit,
         gitserverUrls,
@@ -893,104 +828,37 @@ undefined.s
         gitserverUrls: string[]
         /** The tracing context. */
         ctx?: TracingContext
-    }): Promise<void> {
-        // No need to update if we already know about this commit
-        if (await this.isCommitTracked(repository, commit)) {
-            return
+    }): Promise<Map<string, Set<string>>> {
+        // No need to update if we already know about this commit or don't know about the repo
+        if ((await this.isCommitTracked(repository, commit)) || !(await this.isRepositoryTracked(repository))) {
+            return new Map()
         }
 
-        // No need to pull commits for repos we don't have data for
-        if (!(await this.isRepositoryTracked(repository))) {
-            return
-        }
-
-        const gitserverUrl = addrFor(repository, gitserverUrls)
-        const commits = await getCommitsNear(gitserverUrl, repository, commit, ctx)
-        await this.updateCommits(repository, commits, ctx)
+        return getCommitsNear(addrFor(repository, gitserverUrls), repository, commit, ctx)
     }
 
     /**
-     * Update the known tip of the default branch for every repository for which
-     * we have LSIF data. This queries gitserver for the last known tip. From that,
-     * we determine the closest commit with LSIF data and mark those as commits for
-     * which we can return results in a global find-references query.
+     * Query gitserver for the head of the default branch for the given repository.
      *
      * @param args Parameter bag.
      */
-    public async discoverAndUpdateTips({
+    public async discoverTip({
+        repository,
         gitserverUrls,
         ctx = {},
-        batchSize = MAX_CONCURRENT_GITSERVER_REQUESTS,
     }: {
+        /** The repository name. */
+        repository: string
         /** The set of ordered gitserver urls. */
         gitserverUrls: string[]
         /** The tracing context. */
         ctx?: TracingContext
-        /** The maximum number of requests to make at once. Set during testing.*/
-        batchSize?: number
-    }): Promise<void> {
-        for (const [repository, commit] of (
-            await this.discoverTips({
-                gitserverUrls,
-                ctx,
-                batchSize,
-            })
-        ).entries()) {
-            await this.updateDumpsVisibleFromTip(repository, commit, ctx)
-        }
-    }
+    }): Promise<string | undefined> {
+        const lines = await logAndTraceCall(ctx, 'Getting repository metadata', () =>
+            gitserverExecLines(addrFor(repository, gitserverUrls), repository, ['rev-parse', 'HEAD'], ctx)
+        )
 
-    /**
-     * Query gitserver for the head of the default branch for every repository that has
-     * LSIF data.
-     *
-     * @param args Parameter bag.
-     */
-    public async discoverTips({
-        gitserverUrls,
-        ctx = {},
-        batchSize = MAX_CONCURRENT_GITSERVER_REQUESTS,
-    }: {
-        /** The set of ordered gitserver urls. */
-        gitserverUrls: string[]
-        /** The tracing context. */
-        ctx?: TracingContext
-        /** The maximum number of requests to make at once. Set during testing.*/
-        batchSize?: number
-    }): Promise<Map<string, string>> {
-        // Construct the calls we need to make to gitserver for each repository that
-        // we know about. We're going to construct these as factories so they do not
-        // start immediately and we can apply them in batches to not overload us or
-        // gitserver with too many in-flight requests.
-
-        const factories: (() => Promise<{ repository: string; commit: string }>)[] = []
-        for (const repository of await this.getTrackedRepositories()) {
-            factories.push(async () => {
-                const lines = await gitserverExecLines(
-                    addrFor(repository, gitserverUrls),
-                    repository,
-                    ['rev-parse', 'HEAD'],
-                    ctx
-                )
-
-                return { repository, commit: lines ? lines[0] : '' }
-            })
-        }
-
-        const tips = new Map<string, string>()
-        for (const batch of chunk(factories, batchSize)) {
-            // Perform this batch of calls to the appropriate gitserver instance
-            const responses = await logAndTraceCall(ctx, 'Getting repository metadata', () =>
-                Promise.all(batch.map(factory => factory()))
-            )
-
-            // Combine the results
-            for (const { repository, commit } of responses) {
-                tips.set(repository, commit)
-            }
-        }
-
-        return tips
+        return lines ? lines[0] : undefined
     }
 }
 

@@ -4,7 +4,8 @@
   "captainSlackUsername": "beyang",
   "captainGitHubUsername": "beyang",
 
-  "version": "3.10",
+  "majorVersion": "3",
+  "minorVersion": "10",
   "releaseDateTime": "20 Nov 2019 10:00 PST",
   "oneWorkingDayBeforeRelease": "19 Nov 2019 10:00 PST",
   "threeWorkingDaysBeforeRelease": "15 Nov 2019 10:00 PST",

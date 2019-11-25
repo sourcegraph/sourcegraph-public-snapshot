@@ -367,7 +367,7 @@ func parsePattern(p string) ([]*sqlf.Query, error) {
 		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(likeConds, " OR ")))
 	}
 	if pattern != "" {
-		conds = append(conds, sqlf.Sprintf("lower(name) ~* %s", pattern))
+		conds = append(conds, sqlf.Sprintf("lower(name) ~ lower(%s)", pattern))
 	}
 	return conds, nil
 }

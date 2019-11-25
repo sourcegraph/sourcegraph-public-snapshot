@@ -35,8 +35,3 @@ export const ADVISORY_LOCK_ID_SALT = 1688730858
  * limit.
  */
 export const MAX_COMMITS_PER_UPDATE = MAX_TRAVERSAL_LIMIT * 1.5
-
-/**
- * The maximum number of requests we can make to gitserver in a single batch.
- */
-export const MAX_CONCURRENT_GITSERVER_REQUESTS = 100

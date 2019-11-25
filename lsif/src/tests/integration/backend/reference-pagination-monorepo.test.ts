@@ -69,10 +69,12 @@ describe('Backend', () => {
 
         await ctx.xrepoDatabase.updateCommits(
             repository,
-            Array.from({ length: MAX_TRAVERSAL_LIMIT * 2 + 1 }, (_, i) => [
-                util.createCommit(i),
-                util.createCommit(i + 1),
-            ])
+            new Map<string, Set<string>>(
+                Array.from({ length: MAX_TRAVERSAL_LIMIT * 2 + 1 }, (_, i) => [
+                    util.createCommit(i),
+                    new Set<string>([util.createCommit(i + 1)]),
+                ])
+            )
         )
     })
 

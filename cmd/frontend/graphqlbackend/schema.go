@@ -395,6 +395,12 @@ type Mutation {
     ): SavedSearch!
     # Deletes a saved search
     deleteSavedSearch(id: ID!): EmptyResponse
+
+    # Deletes an LSIF dump.
+    deleteLSIFDump(id: ID!): EmptyResponse
+
+    # Deletes an LSIF job.
+    deleteLSIFJob(id: ID!): EmptyResponse
 }
 
 # The specification of what changesets Sourcegraph will open when the campaign is created.
@@ -647,6 +653,12 @@ type ExternalChangeset implements Node {
 
     # The review state of this changeset.
     reviewState: ChangesetReviewState!
+
+    # The head of the diff ("new" or "right-hand side").
+    head: GitRef!
+
+    # The base of the diff ("old" or "left-hand side").
+    base: GitRef!
 
     # The diff of this changeset.
     # Only returned if the changeset has not been merged or closed.
@@ -2282,6 +2294,16 @@ type GitCommitConnection {
     pageInfo: PageInfo!
 }
 
+# Statistics about a specific language
+type LanguageStatistics {
+    # The name of the programming language
+    Name: String!
+    # The total bytes of the language
+    TotalBytes: Float!
+    # The total lines of the language
+    TotalLines: Int!
+}
+
 # A Git commit.
 type GitCommit implements Node {
     # The globally addressable ID for this commit.
@@ -2328,6 +2350,8 @@ type GitCommit implements Node {
     file(path: String!): File2
     # Lists the programming languages present in the tree at this commit.
     languages: [String!]!
+    # List statistics for each language present in the repository.
+    languageStatistics: [LanguageStatistics!]!
     # The log of commits consisting of this commit and its ancestors.
     ancestors(
         # Returns the first n commits from the list.
@@ -3240,7 +3264,6 @@ type DiscussionCommentConnection {
 
 # RepositoryOrderBy enumerates the ways a repositories list can be ordered.
 enum RepositoryOrderBy {
-    REPO_URI # deprecated (use the equivalent REPOSITORY_NAME)
     REPOSITORY_NAME
     REPO_CREATED_AT # deprecated (use the equivalent REPOSITORY_CREATED_AT)
     REPOSITORY_CREATED_AT

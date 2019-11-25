@@ -2,12 +2,15 @@ package resolvers
 
 import (
 	"context"
+	"database/sql"
 	"errors"
+	"fmt"
 	"sort"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -17,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type changesetsConnectionResolver struct {
@@ -26,19 +30,31 @@ type changesetsConnectionResolver struct {
 	// cache results because they are used by multiple fields
 	once       sync.Once
 	changesets []*a8n.Changeset
+	reposByID  map[int32]*repos.Repo
 	next       int64
 	err        error
 }
 
 func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ExternalChangesetResolver, error) {
-	changesets, _, err := r.compute(ctx)
+	changesets, reposByID, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	resolvers := make([]graphqlbackend.ExternalChangesetResolver, 0, len(changesets))
 	for _, c := range changesets {
-		resolvers = append(resolvers, &changesetResolver{store: r.store, Changeset: c})
+		repo, ok := reposByID[c.RepoID]
+		if !ok {
+			return nil, fmt.Errorf("failed to load repo %d", c.RepoID)
+		}
+
+		resolvers = append(resolvers, &changesetResolver{
+			store:         r.store,
+			Changeset:     c,
+			preloadedRepo: repo,
+		})
 	}
+
 	return resolvers, nil
 }
 
@@ -49,24 +65,50 @@ func (r *changesetsConnectionResolver) TotalCount(ctx context.Context) (int32, e
 }
 
 func (r *changesetsConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	_, next, err := r.compute(ctx)
+	_, _, next, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return graphqlutil.HasNextPage(next != 0), nil
 }
 
-func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*a8n.Changeset, int64, error) {
+func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*a8n.Changeset, map[int32]*repos.Repo, int64, error) {
 	r.once.Do(func() {
 		r.changesets, r.next, r.err = r.store.ListChangesets(ctx, r.opts)
+		if r.err != nil {
+			return
+		}
+
+		reposStore := repos.NewDBStore(r.store.DB(), sql.TxOptions{})
+		repoIDs := make([]uint32, len(r.changesets))
+		for i, c := range r.changesets {
+			repoIDs[i] = uint32(c.RepoID)
+		}
+
+		rs, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: repoIDs})
+		if err != nil {
+			r.err = err
+			return
+		}
+
+		r.reposByID = make(map[int32]*repos.Repo, len(rs))
+		for _, repo := range rs {
+			r.reposByID[int32(repo.ID)] = repo
+		}
 	})
-	return r.changesets, r.next, r.err
+
+	return r.changesets, r.reposByID, r.next, r.err
 }
 
 type changesetResolver struct {
 	store *ee.Store
 	*a8n.Changeset
-	repo *repos.Repo
+	preloadedRepo *repos.Repo
+
+	// cache repo because it's called more than once
+	once sync.Once
+	repo *graphqlbackend.RepositoryResolver
+	err  error
 }
 
 const changesetIDKind = "Changeset"
@@ -80,19 +122,26 @@ func unmarshalChangesetID(id graphql.ID) (cid int64, err error) {
 	return
 }
 
+func (r *changesetResolver) computeRepo(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
+	r.once.Do(func() {
+		if r.preloadedRepo != nil {
+			r.repo = newRepositoryResolver(r.preloadedRepo)
+		} else {
+			r.repo, r.err = graphqlbackend.RepositoryByIDInt32(ctx, api.RepoID(r.RepoID))
+			if r.err != nil {
+				return
+			}
+		}
+	})
+	return r.repo, r.err
+}
+
 func (r *changesetResolver) ID() graphql.ID {
 	return marshalChangesetID(r.Changeset.ID)
 }
 
 func (r *changesetResolver) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
-	return r.repoResolver(ctx)
-}
-
-func (r *changesetResolver) repoResolver(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
-	if r.repo != nil {
-		return newRepositoryResolver(r.repo), nil
-	}
-	return graphqlbackend.RepositoryByIDInt32(ctx, api.RepoID(r.Changeset.RepoID))
+	return r.computeRepo(ctx)
 }
 
 func (r *changesetResolver) Campaigns(ctx context.Context, args *struct {
@@ -187,7 +236,7 @@ func (r *changesetResolver) Diff(ctx context.Context) (*graphqlbackend.Repositor
 		return nil, nil
 	}
 
-	repo, err := r.repoResolver(ctx)
+	repo, err := r.computeRepo(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -197,7 +246,11 @@ func (r *changesetResolver) Diff(ctx context.Context) (*graphqlbackend.Repositor
 		return nil, err
 	}
 	if base == "" {
-		return nil, errors.New("changeset base ref name could not be determined")
+		// Fallback to the ref name if we can't get the OID
+		base, err = r.Changeset.BaseRefName()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	head, err := r.Changeset.HeadRefOid()
@@ -205,13 +258,81 @@ func (r *changesetResolver) Diff(ctx context.Context) (*graphqlbackend.Repositor
 		return nil, err
 	}
 	if head == "" {
-		return nil, errors.New("changeset head ref name could not be determined")
+		// Fallback to the ref name if we can't get the OID
+		head, err = r.Changeset.HeadRefName()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return graphqlbackend.NewRepositoryComparison(ctx, repo, &graphqlbackend.RepositoryComparisonInput{
 		Base: &base,
 		Head: &head,
 	})
+}
+
+func (r *changesetResolver) Head(ctx context.Context) (*graphqlbackend.GitRefResolver, error) {
+	name, err := r.Changeset.HeadRefName()
+	if err != nil {
+		return nil, err
+	}
+	if name == "" {
+		return nil, errors.New("changeset head ref name could not be determined")
+	}
+
+	oid, err := r.Changeset.HeadRefOid()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.gitRef(ctx, name, oid)
+}
+
+func (r *changesetResolver) Base(ctx context.Context) (*graphqlbackend.GitRefResolver, error) {
+	name, err := r.Changeset.BaseRefName()
+	if err != nil {
+		return nil, err
+	}
+	if name == "" {
+		return nil, errors.New("changeset base ref name could not be determined")
+	}
+
+	oid, err := r.Changeset.BaseRefOid()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.gitRef(ctx, name, oid)
+}
+
+func (r *changesetResolver) gitRef(ctx context.Context, name, oid string) (*graphqlbackend.GitRefResolver, error) {
+	repo, err := r.computeRepo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if oid == "" {
+		commitID, err := r.commitID(ctx, repo, name)
+		if err != nil {
+			return nil, err
+		}
+		oid = string(commitID)
+	}
+
+	return graphqlbackend.NewGitRefResolver(repo, name, graphqlbackend.GitObjectID(oid)), nil
+}
+
+func (r *changesetResolver) commitID(ctx context.Context, repo *graphqlbackend.RepositoryResolver, refName string) (api.CommitID, error) {
+	grepo, err := backend.CachedGitRepo(ctx, &types.Repo{
+		ExternalRepo: *repo.ExternalRepo(),
+		Name:         api.RepoName(repo.Name()),
+	})
+	if err != nil {
+		return api.CommitID(""), err
+	}
+	// Call ResolveRevision to trigger fetches from remote (in case base/head commits don't
+	// exist).
+	return git.ResolveRevision(ctx, *grepo, nil, refName, nil)
 }
 
 func newRepositoryResolver(r *repos.Repo) *graphqlbackend.RepositoryResolver {

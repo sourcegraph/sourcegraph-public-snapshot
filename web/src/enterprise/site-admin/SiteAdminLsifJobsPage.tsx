@@ -143,7 +143,7 @@ export class SiteAdminLsifJobsPage extends React.Component<Props, State> {
                     </div>
                 ) : (
                     <div className="mb-3">
-                        {this.state.statsOrError.processingCount} processing, {this.state.statsOrError.erroredCount}{' '}
+                        {this.state.statsOrError.processingCount} processing, {this.state.statsOrError.erroredCount},{' '}
                         errored {this.state.statsOrError.completedCount} completed,{' '}
                         {this.state.statsOrError.queuedCount} queued, and {this.state.statsOrError.scheduledCount}{' '}
                         scheduled

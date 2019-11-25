@@ -23,11 +23,6 @@ export const REDIS_ENDPOINT = process.env.REDIS_STORE_ENDPOINT || process.env.RE
 export const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 
 /**
- * The interval (in seconds) to schedule the update-tips job.
- */
-export const UPDATE_TIPS_JOB_SCHEDULE_INTERVAL = readEnvInt('UPDATE_TIPS_JOB_SCHEDULE_INTERVAL', 60 * 5)
-
-/**
  * The interval (in seconds) to schedule the clean-old-jobs job.
  */
 export const CLEAN_OLD_JOBS_INTERVAL = readEnvInt('CLEAN_OLD_JOBS_INTERVAL', 60 * 60 * 8)

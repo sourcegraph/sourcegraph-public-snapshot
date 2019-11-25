@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 	"strconv"
 	"time"
 
@@ -133,7 +134,7 @@ func Init(options ...Option) {
 			log.Printf("Could not initialize jaeger tracer from env: %s", err.Error())
 			return
 		}
-		if *cfg.Sampler == (jaegercfg.SamplerConfig{}) {
+		if reflect.DeepEqual(cfg.Sampler, &jaegercfg.SamplerConfig{}) {
 			// Default sampler configuration for when it is not specified via
 			// JAEGER_SAMPLER_* env vars. In most cases, this is sufficient
 			// enough to connect Sourcegraph to Jaeger without any env vars.

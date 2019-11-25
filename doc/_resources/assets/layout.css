@@ -569,6 +569,11 @@ code {
     list-style: none;
 }
 
+.content-nav-section li.selected .badge {
+    background: var(--body-bg);
+    color: var(--primary);
+}
+
 .content-nav-section .close--icon+li {
     padding-right: 17px;
 }

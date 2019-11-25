@@ -311,7 +311,7 @@ async function populateDefinitionsAndReferencesTables(
 
     const insertMonikerRanges = async (
         data: Map<dumpModels.DefinitionReferenceResultId, Map<dumpModels.DocumentId, lsif.RangeId[]>>,
-        monikers: Map<dumpModels.MonikerId, Set<lsif.RangeId>>,
+        monikers: Map<dumpModels.DefinitionReferenceResultId, Set<lsif.RangeId>>,
         inserter: TableInserter<
             dumpModels.DefinitionModel | dumpModels.ReferenceModel,
             new () => dumpModels.DefinitionModel | dumpModels.ReferenceModel
@@ -468,7 +468,7 @@ function canonicalizeReferenceResults(
 
             if (linkedId !== canonicalId) {
                 // If it's a different identifier, then normalize all data from the linked result
-                // set into the canoical one.
+                // set into the canonical one.
                 for (const [documentId, rangeIds] of mustGet(correlator.referenceData, linkedId, 'referenceResult')) {
                     canonicalReferenceResult.getOrDefault(documentId).push(...rangeIds)
                 }

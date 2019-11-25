@@ -71,6 +71,7 @@ function findElementRegexpStrings(
     if (fuzziness === 'prefix') {
         return regexps
     }
+    regexps.push(`^\\s+${escapedText}$`) // Still prefer exact
     regexps.push(`^\\s+${escapedText}\\b`)
     if (fuzziness === 'space-prefix') {
         return regexps

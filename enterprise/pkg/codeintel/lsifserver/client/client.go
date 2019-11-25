@@ -147,6 +147,10 @@ func (c *Client) do(ctx context.Context, method, url string, body io.ReadCloser)
 func UnmarshalPayload(resp *http.Response, payload interface{}) error {
 	defer resp.Body.Close()
 
+	if payload == nil {
+		return nil
+	}
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err
@@ -175,4 +179,12 @@ type lsifError struct {
 
 func (e *lsifError) Error() string {
 	return e.Message
+}
+
+func IsNotFound(err error) bool {
+	if e, ok := errors.Cause(err).(*lsifError); ok {
+		return e.StatusCode == http.StatusNotFound
+	}
+
+	return false
 }

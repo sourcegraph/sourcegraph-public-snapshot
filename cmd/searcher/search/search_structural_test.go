@@ -15,11 +15,6 @@ import (
 // Tests that structural search correctly infers the Go matcher from the .go
 // file extension.
 func TestInferredMatcher(t *testing.T) {
-	// If we are not on CI skip the test.
-	if os.Getenv("CI") == "" {
-		t.Skip("Not on CI, skipping comby-dependent test")
-	}
-
 	input := map[string]string{
 		"main.go": `
 /* This foo(ignore string) {} is in a Go comment should not match */
@@ -66,11 +61,6 @@ func foo(real string) {}
 // instead (currently) expects a list of patterns that represent a set of file
 // paths to search.
 func TestIncludePatterns(t *testing.T) {
-	// If we are not on CI skip the test.
-	if os.Getenv("CI") == "" {
-		t.Skip("Not on CI, skipping comby-dependent test")
-	}
-
 	input := map[string]string{
 		"/a/b/c":         "",
 		"/a/b/c/foo.go":  "",

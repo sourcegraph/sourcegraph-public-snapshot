@@ -389,9 +389,9 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 	csr := make([]graphqlbackend.ExternalChangesetResolver, len(cs))
 	for i := range cs {
 		csr[i] = &changesetResolver{
-			store:     r.store,
-			Changeset: cs[i],
-			repo:      repoSet[uint32(cs[i].RepoID)],
+			store:         r.store,
+			Changeset:     cs[i],
+			preloadedRepo: repoSet[uint32(cs[i].RepoID)],
 		}
 	}
 

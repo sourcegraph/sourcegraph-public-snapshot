@@ -160,7 +160,10 @@ export async function convertTestData(
     await fs.rename(tmp, dbFilename(storageRoot, dump.id, repository, commit))
 
     if (updateCommits) {
-        await xrepoDatabase.updateCommits(repository, [[commit, undefined]])
+        await xrepoDatabase.updateCommits(
+            repository,
+            new Map<string, Set<string>>([[commit, new Set<string>()]])
+        )
         await xrepoDatabase.updateDumpsVisibleFromTip(repository, commit)
     }
 }
@@ -204,7 +207,7 @@ export class BackendTestContext {
         this.storageRoot = await createStorageRoot()
         const { connection, cleanup } = await createCleanPostgresDatabase()
         this.cleanup = cleanup
-        this.xrepoDatabase = new XrepoDatabase(this.storageRoot, connection)
+        this.xrepoDatabase = new XrepoDatabase(connection, this.storageRoot)
         this.backend = new Backend(this.storageRoot, this.xrepoDatabase, () => ({ gitServers: [] }))
     }
 

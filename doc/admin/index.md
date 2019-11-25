@@ -20,6 +20,7 @@ Site administrators are the admins responsible for deploying, managing, and conf
 - [Monitoring and tracing](monitoring_and_tracing.md)
     - [Troubleshooting](monitoring_and_tracing.md#troubleshooting)
 - [Repository permissions](repo/permissions.md)
+- [PostgreSQL configuration](postgres-conf.md)
 - [Upgrading PostgreSQL](postgres.md)
 - [Using external databases (PostgreSQL and Redis)](external_database.md)
 - [User data deletion](user_data_deletion.md)
