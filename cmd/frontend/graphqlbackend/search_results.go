@@ -824,7 +824,7 @@ func alertOnSearchLimit(resultTypes []string, args *search.Args) ([]string, *sea
 			case "commit", "diff":
 				resultTypes = []string{}
 				alert = &searchAlert{
-					title:       "Too many repositories need to be searched",
+					title:       fmt.Sprintf("Too many matching repositories for %s search to handle", resultType),
 					description: fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(resultType), repoLimit),
 				}
 			}
