@@ -145,7 +145,7 @@ export class SearchPage extends React.Component<Props, State> {
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
         this.setState(({ userQueryState }) => ({
-            userQueryState: { showSuggestions: false, ...userQueryState },
+            userQueryState: { ...userQueryState, showSuggestions: false },
         }))
         const query = [this.state.builderQuery, this.state.userQueryState.query].filter(s => !!s).join(' ')
         submitSearch(this.props.history, query, 'home', this.props.patternType, this.props.activation)

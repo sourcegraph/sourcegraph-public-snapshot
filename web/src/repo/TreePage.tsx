@@ -370,7 +370,7 @@ export class TreePage extends React.PureComponent<Props, State> {
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
         this.setState(({ queryState }) => ({
-            queryState: { showSuggestions: false, ...queryState },
+            queryState: { ...queryState, showSuggestions: false },
         }))
         submitSearch(
             this.props.history,
