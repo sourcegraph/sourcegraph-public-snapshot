@@ -1,5 +1,6 @@
 import { Driver } from '../../../../shared/src/e2e/driver'
 import { Config } from '../../../../shared/src/e2e/config'
+import { ElementHandle } from 'puppeteer'
 
 export interface TestCase {
     repoRev: string
@@ -15,10 +16,14 @@ export interface TestCase {
     }[]
 }
 
-export async function testCodeIntel(driver: Driver, config: Pick<Config, 'sourcegraphBaseUrl'>, testCases: TestCase[]) {
-    const getTooltip = () =>
+export async function testCodeIntel(
+    driver: Driver,
+    config: Pick<Config, 'sourcegraphBaseUrl'>,
+    testCases: TestCase[]
+): Promise<void> {
+    const getTooltip = (): Promise<string> =>
         driver.page.evaluate(() => (document.querySelector('.e2e-tooltip-content') as HTMLElement).innerText)
-    const collectLinks = (selector: string) =>
+    const collectLinks = (selector: string): Promise<string[]> =>
         driver.page.evaluate(selector => {
             const links: string[] = []
             document.querySelectorAll<HTMLElement>(selector).forEach(e => {
@@ -31,8 +36,12 @@ export async function testCodeIntel(driver: Driver, config: Pick<Config, 'source
             })
             return links
         }, selector)
-    const clickOnEmptyPartOfCodeView = () => driver.page.$x('//*[contains(@class, "e2e-blob")]//tr[1]//*[text() = ""]')
-    const findTokenElement = async (line: number, token: string) => {
+    const clickOnEmptyPartOfCodeView = (): Promise<ElementHandle<Element>[]> =>
+        driver.page.$x('//*[contains(@class, "e2e-blob")]//tr[1]//*[text() = ""]')
+    const findTokenElement = async (
+        line: number,
+        token: string
+    ): Promise<{ tokenEl: ElementHandle<Element>[]; xpathQuery: string }> => {
         const xpathQuery = `//*[contains(@class, "e2e-blob")]//tr[${line}]//*[normalize-space(text()) = ${JSON.stringify(
             token
         )}]`
@@ -41,8 +50,8 @@ export async function testCodeIntel(driver: Driver, config: Pick<Config, 'source
             xpathQuery,
         }
     }
-    const normalizeWhitespace = (s: string) => s.replace(/\s+/g, ' ')
-    const waitForHover = async (expectedHoverContains: string) => {
+    const normalizeWhitespace = (s: string): string => s.replace(/\s+/g, ' ')
+    const waitForHover = async (expectedHoverContains: string): Promise<void> => {
         await driver.page.waitForSelector('.e2e-tooltip-go-to-definition')
         await driver.page.waitForSelector('.e2e-tooltip-content')
         expect(normalizeWhitespace(await getTooltip())).toContain(normalizeWhitespace(expectedHoverContains))
