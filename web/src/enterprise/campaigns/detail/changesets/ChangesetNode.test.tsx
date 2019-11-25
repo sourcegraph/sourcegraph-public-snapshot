@@ -28,12 +28,14 @@ describe('ChangesetNode', () => {
                         node={
                             {
                                 __typename: 'ChangesetPlan',
-                                fileDiffs: {
-                                    __typename: 'PreviewFileDiffConnection',
-                                    diffStat: {
-                                        added: 100,
-                                        changed: 200,
-                                        deleted: 100,
+                                diff: {
+                                    fileDiffs: {
+                                        __typename: 'PreviewFileDiffConnection',
+                                        diffStat: {
+                                            added: 100,
+                                            changed: 200,
+                                            deleted: 100,
+                                        },
                                     },
                                 },
                                 repository: {
