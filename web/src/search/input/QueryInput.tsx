@@ -271,7 +271,7 @@ export class QueryInput extends React.Component<Props, State> {
                     .subscribe(() => {
                         const selection = String(window.getSelection() || '')
                         this.inputValues.next({
-                            ...props.value,
+                            ...this.props.value,
                             query: selection,
                             cursorPosition: selection.length,
                         })
@@ -288,7 +288,7 @@ export class QueryInput extends React.Component<Props, State> {
             this.subscriptions.add(
                 queryUpdates.pipe(distinctUntilChanged()).subscribe(query =>
                     this.inputValues.next({
-                        ...props.value,
+                        ...this.props.value,
                         query,
                         cursorPosition: query.length,
                     })
