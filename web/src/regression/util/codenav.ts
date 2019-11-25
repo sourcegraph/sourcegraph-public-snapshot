@@ -2,6 +2,33 @@ import { Driver } from '../../../../shared/src/e2e/driver'
 import { Config } from '../../../../shared/src/e2e/config'
 import { ElementHandle } from 'puppeteer'
 
+async function setGlobalLSIFSetting(
+    driver: Driver,
+    config: Pick<Config, 'sourcegraphBaseUrl'>,
+    enabled: boolean
+): Promise<void> {
+    await driver.page.goto(`${config.sourcegraphBaseUrl}/site-admin/global-settings`)
+    const globalSettings = `{"codeIntel.lsif": ${enabled}}`
+    await driver.replaceText({
+        selector: '.monaco-editor',
+        newText: globalSettings,
+        selectMethod: 'keyboard',
+        enterTextMethod: 'type',
+    })
+    await (
+        await driver.findElementWithText('Save changes', {
+            selector: 'button',
+            wait: { timeout: 500 },
+        })
+    ).click()
+}
+
+export const enableLSIF = (driver: Driver, config: Pick<Config, 'sourcegraphBaseUrl'>): Promise<void> =>
+    setGlobalLSIFSetting(driver, config, true)
+
+export const disableLSIF = (driver: Driver, config: Pick<Config, 'sourcegraphBaseUrl'>): Promise<void> =>
+    setGlobalLSIFSetting(driver, config, false)
+
 export interface TestCase {
     repoRev: string
     files: {
@@ -16,7 +43,7 @@ export interface TestCase {
     }[]
 }
 
-export async function testCodeIntel(
+export async function testCodeNavigation(
     driver: Driver,
     config: Pick<Config, 'sourcegraphBaseUrl'>,
     testCases: TestCase[]
@@ -104,9 +131,26 @@ async function findTokenElement(
     line: number,
     token: string
 ): Promise<{ tokenEl: ElementHandle<Element>[]; xpathQuery: string }> {
-    const xpathQuery = `//*[contains(@class, "e2e-blob")]//tr[${line}]//*[normalize-space(text()) = ${JSON.stringify(
-        token
-    )}]`
+    const lineQuery = `//*[contains(@class, "e2e-blob")]//tr[${line}]`
+    const xpathQuery = `${lineQuery}//*[normalize-space(text()) = ${JSON.stringify(token)}]`
+
+    const lineEl = await driver.page.$x(lineQuery)
+    if (lineEl.length === 0) {
+        throw new Error(`line ${line} does not exist`)
+    }
+
+    // Force tokenization if the line requires it. If we don't do this then some tokens
+    // will not be found as they have additional punctuation next to it (eg. `Type{`).
+    await lineEl[0].hover()
+
+    // If there's an open toast, close it. If the toast remains open and our target
+    // identifier happens to be hidden by it, we won't be able to select the correct
+    // token. This condition was reproducible in the codenav test for `StdioLogger`.
+    const closeToast = await driver.page.$('.e2e-close-toast')
+    if (closeToast) {
+        await closeToast.click()
+    }
+
     return {
         tokenEl: await driver.page.$x(xpathQuery),
         xpathQuery,
