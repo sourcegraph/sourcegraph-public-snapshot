@@ -151,7 +151,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	// We don't use 'run' here as we only want stdout
 	out, err := cmd.Output()
 	if err != nil {
-		resp.SetError(repo, errors.Wrap(err, "retrieving new commit id"))
+		resp.SetError(repo, errors.Wrap(err, "gitserver: retrieving new commit id"))
 		resp.Error.Command = strings.Join(cmd.Args, " ")
 		resp.Error.CombinedOutput = string(out)
 		return http.StatusInternalServerError, resp
