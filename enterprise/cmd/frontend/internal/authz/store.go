@@ -123,65 +123,52 @@ func (s *Store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err
 	toAdd.AndNot(p.UserIDs)
 
 	// Load stored user IDs of both toAdd and toRemove.
-	xor := p.UserIDs.Clone()
-	xor.Xor(oldIDs)
-	xorIDs := xor.ToArray()
-	q := loadUserPermissionsBatchQuery(xorIDs, p.Perm, PermRepos, p.Provider)
+	both := toAdd.Clone()
+	both.Or(toRemove)
+	bothIDs := both.ToArray()
+
+	// In case there is nothing to add or remove.
+	if len(bothIDs) == 0 {
+		return nil
+	}
+
+	q := loadUserPermissionsBatchQuery(bothIDs, p.Perm, PermRepos, p.Provider)
 	loadedIDs, err := txs.batchLoadIDs(ctx, q)
 	if err != nil {
 		return err
 	}
 
-	// We have two sets of IDs that one needs to check and add, the other needs to check and remove.
-	batchSets := []struct {
-		ids      []uint32
-		checkAdd bool
-	}{
-		{
-			ids:      toAdd.ToArray(),
-			checkAdd: true,
-		},
-		{
-			ids:      toRemove.ToArray(),
-			checkAdd: false,
-		},
-	}
-
+	// We have two sets of IDs that one needs to add, and the other needs to remove.
 	updatedAt := txs.clock()
-	updatedPerms := make([]*UserPermissions, 0, len(xorIDs))
-	for _, bSet := range batchSets {
-		for i := range bSet.ids {
-			userID := int32(bSet.ids[i])
-			oldIDs := loadedIDs[userID]
-			if oldIDs == nil {
-				oldIDs = roaring.NewBitmap()
-			}
-
-			// It is guaranteed only one of OR conditions could be true at a time
-			// because bSet.checkAdd and !bSet.checkAdd are the opposite of each other.
-			updated := bSet.checkAdd && oldIDs.CheckedAdd(uint32(p.RepoID)) ||
-				!bSet.checkAdd && oldIDs.CheckedRemove(uint32(p.RepoID))
-			if !updated {
-				continue
-			}
-
-			updatedPerms = append(updatedPerms, &UserPermissions{
-				UserID:    userID,
-				Perm:      p.Perm,
-				Type:      PermRepos,
-				IDs:       oldIDs,
-				Provider:  p.Provider,
-				UpdatedAt: updatedAt,
-			})
+	updatedPerms := make([]*UserPermissions, 0, len(bothIDs))
+	for _, id := range bothIDs {
+		userID := int32(id)
+		repoIDs := loadedIDs[userID]
+		if repoIDs == nil {
+			repoIDs = roaring.NewBitmap()
 		}
+
+		switch {
+		case toAdd.Contains(id):
+			repoIDs.Add(uint32(p.RepoID))
+		case toRemove.Contains(id):
+			repoIDs.Remove(uint32(p.RepoID))
+		}
+
+		updatedPerms = append(updatedPerms, &UserPermissions{
+			UserID:    userID,
+			Perm:      p.Perm,
+			Type:      PermRepos,
+			IDs:       repoIDs,
+			Provider:  p.Provider,
+			UpdatedAt: updatedAt,
+		})
 	}
 
-	if len(updatedPerms) > 0 {
-		if q, err = upsertUserPermissionsBatchQuery(updatedPerms...); err != nil {
-			return err
-		} else if err = txs.execute(ctx, q); err != nil {
-			return err
-		}
+	if q, err = upsertUserPermissionsBatchQuery(updatedPerms...); err != nil {
+		return err
+	} else if err = txs.execute(ctx, q); err != nil {
+		return err
 	}
 
 	p.UpdatedAt = updatedAt
@@ -392,46 +379,41 @@ func (s *Store) SetRepoPendingPermissions(
 		loadedIDs[id] = set
 	}
 
-	// We have two sets of IDs that one needs to check and add, the other needs to check and remove.
-	batchSets := []struct {
-		ids      []uint32
-		checkAdd bool
-	}{
-		{
-			ids:      toAdd.ToArray(),
-			checkAdd: true,
-		},
-		{
-			ids:      toRemove.ToArray(),
-			checkAdd: false,
-		},
+	// We have two sets of IDs that one needs to add, and the other needs to remove.
+	both := toAdd.Clone()
+	both.Or(toRemove)
+	bothIDs := both.ToArray()
+
+	// In case there is nothing to add or remove.
+	if len(bothIDs) == 0 {
+		return nil
 	}
 
 	updatedPerms := make([]*UserPendingPermissions, 0, len(bindIDSet))
-	for _, bSet := range batchSets {
-		for i := range bSet.ids {
-			id := int32(bSet.ids[i])
-			oldIDs := loadedIDs[id]
-			if oldIDs == nil {
-				oldIDs = roaring.NewBitmap()
-			}
-
-			// It is guaranteed only one of OR conditions could be true at a time
-			// because bSet.checkAdd and !bSet.checkAdd are the opposite of each other.
-			updated := bSet.checkAdd && oldIDs.CheckedAdd(uint32(p.RepoID)) ||
-				!bSet.checkAdd && oldIDs.CheckedRemove(uint32(p.RepoID))
-			if !updated {
-				continue
-			}
-
-			updatedPerms = append(updatedPerms, &UserPendingPermissions{
-				BindID:    bindIDSet[id],
-				Perm:      p.Perm,
-				Type:      PermRepos,
-				IDs:       oldIDs,
-				UpdatedAt: updatedAt,
-			})
+	for _, id := range bothIDs {
+		userID := int32(id)
+		repoIDs := loadedIDs[userID]
+		if repoIDs == nil {
+			repoIDs = roaring.NewBitmap()
 		}
+
+		// It is guaranteed only one of OR conditions could be true at a time because
+		// an id could only be contained by either toAdd or toRemove. This check is
+		// needed to filter out the new rows of user_pending_permissions table that
+		// were inserted previously, which already contain the p.RepoID upon insertion.
+		updated := toAdd.Contains(id) && repoIDs.CheckedAdd(uint32(p.RepoID)) ||
+			toRemove.Contains(id) && repoIDs.CheckedRemove(uint32(p.RepoID))
+		if !updated {
+			continue
+		}
+
+		updatedPerms = append(updatedPerms, &UserPendingPermissions{
+			BindID:    bindIDSet[userID],
+			Perm:      p.Perm,
+			Type:      PermRepos,
+			IDs:       repoIDs,
+			UpdatedAt: updatedAt,
+		})
 	}
 
 	if len(updatedPerms) > 0 {
