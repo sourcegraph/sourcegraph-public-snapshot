@@ -109,6 +109,9 @@ func NewWithClock(store *ee.Store, ct CampaignType, search repoSearch, defaultBr
 	return runner
 }
 
+// The time after which a CampaignJob's execution times out
+const jobTimeout = 2 * time.Minute
+
 // Run executes the CampaignPlan by searching for relevant repositories using
 // the CampaignType specific searchQuery and then executing CampaignJobs for
 // each repository.
@@ -170,11 +173,18 @@ func (r *Runner) Run(ctx context.Context, plan *a8n.CampaignPlan) error {
 	return nil
 }
 
-func (r *Runner) runJob(ctx context.Context, job *a8n.CampaignJob) {
+func (r *Runner) runJob(pctx context.Context, job *a8n.CampaignJob) {
+	ctx, cancel := context.WithTimeout(pctx, jobTimeout)
+	defer cancel()
+
 	defer func() {
 		defer r.wg.Done()
 
 		job.FinishedAt = r.clock()
+
+		if ctx.Err() == context.DeadlineExceeded {
+			job.Error = "Generating diff took longer than expected. Aborted."
+		}
 
 		// We're passing a new context here because we want to persist the job
 		// even if we ran into a timeout earlier.
