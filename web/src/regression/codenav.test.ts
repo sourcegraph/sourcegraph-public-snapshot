@@ -91,8 +91,8 @@ describe('Code navigation regression test suite', () => {
 
     test(
         'Basic code intel',
-        async () => {
-            const testCases: TestCase[] = [
+        async () =>
+            testCodeIntel(driver, config, [
                 {
                     repoRev: 'github.com/sourcegraph/sourcegraph@7d557b9cbcaa5d4f612016bddd2f4ef0a7efed25',
                     files: [
@@ -199,10 +199,7 @@ describe('Code navigation regression test suite', () => {
                         },
                     ],
                 },
-            ]
-
-            return testCodeIntel(driver, config, testCases)
-        },
+            ]),
         30 * 1000
     )
 
