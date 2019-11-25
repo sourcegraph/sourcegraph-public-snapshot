@@ -165,12 +165,14 @@ type CreateCommitFromPatchResponse struct {
 	Error *CreateCommitFromPatchError
 }
 
-// SetError adds the supplied error to e
-func (e *CreateCommitFromPatchResponse) SetError(repo string, err error) {
+// SetError adds the supplied error related details to e.
+func (e *CreateCommitFromPatchResponse) SetError(repo, command, out string, err error) {
 	if e.Error == nil {
 		e.Error = &CreateCommitFromPatchError{}
 	}
 	e.Error.RepositoryName = repo
+	e.Error.Command = command
+	e.Error.CombinedOutput = out
 	e.Error.Err = err
 }
 
