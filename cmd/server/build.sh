@@ -33,7 +33,7 @@ additional_images=${@:-github.com/sourcegraph/sourcegraph/cmd/frontend github.co
 server_pkg=${SERVER_PKG:-github.com/sourcegraph/sourcegraph/cmd/server}
 
 cp -a ./cmd/server/rootfs/. "$OUTPUT"
-bindir="$OUTPUT/usr/local/bin"
+export bindir="$OUTPUT/usr/local/bin"
 mkdir -p "$bindir"
 
 go_build() {
@@ -45,14 +45,14 @@ go_build() {
       -buildmode exe \
       -installsuffix netgo \
       -tags "dist netgo" \
-      -o "$BINDIR/$(basename "$package")" "$package"
+      -o "$bindir/$(basename "$package")" "$package"
 }
 export -f go_build
 
 echo "--- go build"
 
 PACKAGES=(
-    $server_pkg
+    $server_pkg \
     github.com/sourcegraph/sourcegraph/cmd/github-proxy \
     github.com/sourcegraph/sourcegraph/cmd/gitserver \
     github.com/sourcegraph/sourcegraph/cmd/query-runner \
