@@ -268,7 +268,7 @@ export interface QueryState {
  * QueryState constructor.
  * Values chosen based on their frequent use by parent components of QueryInput
  */
-export const createQueryState = (initialState: Partial<QueryState> = {}): QueryState => ({
+export const createQueryState = <T>(initialState: T & StrictPartial<QueryState, T>): QueryState => ({
     showSuggestions: false,
     query: '',
     cursorPosition: 0,
