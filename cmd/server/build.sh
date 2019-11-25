@@ -10,6 +10,14 @@ cleanup() {
 }
 trap cleanup EXIT
 
+parallel_run() {
+    log_file=$(mktemp)
+    trap "rm -rf $log_file" EXIT
+
+    parallel --keep-order --line-buffer --tag --joblog $log_file "$@"
+    cat $log_file
+}
+
 # Environment for building linux binaries
 export GO111MODULE=on
 export GOARCH=amd64
@@ -28,16 +36,8 @@ cp -a ./cmd/server/rootfs/. "$OUTPUT"
 bindir="$OUTPUT/usr/local/bin"
 mkdir -p "$bindir"
 
-echo "--- go build"
-for pkg in $server_pkg \
-    github.com/sourcegraph/sourcegraph/cmd/github-proxy \
-    github.com/sourcegraph/sourcegraph/cmd/gitserver \
-    github.com/sourcegraph/sourcegraph/cmd/query-runner \
-    github.com/sourcegraph/sourcegraph/cmd/replacer \
-    github.com/sourcegraph/sourcegraph/cmd/searcher \
-    github.com/google/zoekt/cmd/zoekt-archive-index \
-    github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver \
-    github.com/google/zoekt/cmd/zoekt-webserver $additional_images; do
+go_build() {
+    package="$1"
 
     go build \
       -trimpath \
@@ -45,8 +45,25 @@ for pkg in $server_pkg \
       -buildmode exe \
       -installsuffix netgo \
       -tags "dist netgo" \
-      -o "$bindir/$(basename "$pkg")" "$pkg"
-done
+      -o "$BINDIR/$(basename "$package")" "$package"
+}
+export -f go_build
+
+echo "--- go build"
+
+PACKAGES=(
+    $server_pkg
+    github.com/sourcegraph/sourcegraph/cmd/github-proxy \
+    github.com/sourcegraph/sourcegraph/cmd/gitserver \
+    github.com/sourcegraph/sourcegraph/cmd/query-runner \
+    github.com/sourcegraph/sourcegraph/cmd/replacer \
+    github.com/sourcegraph/sourcegraph/cmd/searcher \
+    github.com/google/zoekt/cmd/zoekt-archive-index \
+    github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver \
+    github.com/google/zoekt/cmd/zoekt-webserver $additional_images
+)
+
+parallel_run go_build {} ::: "${PACKAGES[@]}"
 
 echo "--- build sqlite for symbols"
 env CTAGS_D_OUTPUT_PATH="$OUTPUT/.ctags.d" SYMBOLS_EXECUTABLE_OUTPUT_PATH="$bindir/symbols" BUILD_TYPE=dist ./cmd/symbols/build.sh buildSymbolsDockerImageDependencies
