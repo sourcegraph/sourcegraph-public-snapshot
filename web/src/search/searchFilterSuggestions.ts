@@ -131,7 +131,7 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
         values: [],
     },
     repohascommitafter: {
-        values: [{ value: '1 week ago' }, { value: '1 month ago' }].map(
+        values: [{ value: "'1 week ago'" }, { value: "'1 month ago'" }].map(
             assign({
                 type: SuggestionTypes.repohascommitafter,
             })
