@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -328,11 +329,10 @@ func (c *internalClient) postInternal(ctx context.Context, route string, reqBody
 
 func (c *internalClient) meteredPost(ctx context.Context, route string, reqBody, respBody interface{}) error {
 	start := time.Now()
-	err := c.post(ctx, route, reqBody, respBody)
+	statusCode, err := c.post(ctx, route, reqBody, respBody)
 	d := time.Since(start)
 
-	// TODO(uwedeportivo): might be useful to use actual response status code value
-	code := "200"
+	code := strconv.Itoa(statusCode)
 	if err != nil {
 		code = "error"
 	}
@@ -343,29 +343,29 @@ func (c *internalClient) meteredPost(ctx context.Context, route string, reqBody,
 // post sends an HTTP post request to the provided route. If reqBody is
 // non-nil it will Marshal it as JSON and set that as the Request body. If
 // respBody is non-nil the response body will be JSON unmarshalled to resp.
-func (c *internalClient) post(ctx context.Context, route string, reqBody, respBody interface{}) error {
+func (c *internalClient) post(ctx context.Context, route string, reqBody, respBody interface{}) (int, error) {
 	var data []byte
 	if reqBody != nil {
 		var err error
 		data, err = json.Marshal(reqBody)
 		if err != nil {
-			return err
+			return -1, err
 		}
 	}
 
 	resp, err := ctxhttp.Post(ctx, nil, c.URL+route, "application/json", bytes.NewBuffer(data))
 	if err != nil {
-		return err
+		return -1, err
 	}
 	defer resp.Body.Close()
 	if err := checkAPIResponse(resp); err != nil {
-		return err
+		return resp.StatusCode, err
 	}
 
 	if respBody != nil {
-		return json.NewDecoder(resp.Body).Decode(respBody)
+		return resp.StatusCode, json.NewDecoder(resp.Body).Decode(respBody)
 	}
-	return nil
+	return resp.StatusCode, nil
 }
 
 func checkAPIResponse(resp *http.Response) error {
