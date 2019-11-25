@@ -148,7 +148,7 @@ async function findTokenElement(
     // token. This condition was reproducible in the codenav test for `StdioLogger`.
     const closeToast = await driver.page.$('.e2e-close-toast')
     if (closeToast) {
-        closeToast.click()
+        await closeToast.click()
     }
 
     return {
