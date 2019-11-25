@@ -1129,6 +1129,13 @@ func Test_commitAndDiffSearchLimits(t *testing.T) {
 			wantResultTypes:      []string{"file"},
 			wantAlertDescription: "",
 		},
+		{
+			name:                 "multiple_result_type_search_is_unaffected",
+			resultTypes:          []string{"file", "commit"},
+			numRepoRevs:          200,
+			wantResultTypes:      []string{"file", "commit"},
+			wantAlertDescription: "",
+		},
 	}
 
 	for _, test := range cases {
