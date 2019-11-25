@@ -1093,6 +1093,83 @@ func Test_dedupSort(t *testing.T) {
 	}
 }
 
+func Test_commitAndDiffSearchLimits(t *testing.T) {
+	cases := []struct {
+		name                 string
+		resultTypes          []string
+		numRepoRevs          int
+		wantResultTypes      []string
+		wantAlertDescription string
+	}{
+		{
+			name:                 "diff_search_warns_on_repos_greater_than_search_limit",
+			resultTypes:          []string{"diff"},
+			numRepoRevs:          51,
+			wantResultTypes:      []string{}, // diff is removed from the resultTypes
+			wantAlertDescription: `Diff search can currently only handle searching over 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
+		},
+		{
+			name:                 "commit_search_warns_on_repos_greater_than_search_limit",
+			resultTypes:          []string{"commit"},
+			numRepoRevs:          51,
+			wantResultTypes:      []string{}, // diff is removed from the resultTypes
+			wantAlertDescription: `Commit search can currently only handle searching over 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
+		},
+		{
+			name:                 "no_warning_when_commit_search_within_search_limit",
+			resultTypes:          []string{"commit"},
+			numRepoRevs:          50,
+			wantResultTypes:      []string{"commit"}, // commit is preserved in resultTypes
+			wantAlertDescription: "",
+		},
+		{
+			name:                 "no_search_limit_on_repos_for_file_search",
+			resultTypes:          []string{"file"},
+			numRepoRevs:          200,
+			wantResultTypes:      []string{"file"},
+			wantAlertDescription: "",
+		},
+		{
+			name:                 "multiple_result_type_search_is_unaffected",
+			resultTypes:          []string{"file", "commit"},
+			numRepoRevs:          200,
+			wantResultTypes:      []string{"file", "commit"},
+			wantAlertDescription: "",
+		},
+	}
+
+	for _, test := range cases {
+		repoRevs := make([]*search.RepositoryRevisions, test.numRepoRevs)
+		for i := range repoRevs {
+			repoRevs[i] = &search.RepositoryRevisions{
+				Repo: &types.Repo{ID: api.RepoID(i)},
+			}
+		}
+
+		haveResultTypes, alert := alertOnSearchLimit(test.resultTypes, &search.Args{Repos: repoRevs})
+
+		haveAlertDescription := ""
+		if alert != nil {
+			haveAlertDescription = *alert.Description()
+		}
+
+		if haveAlertDescription != test.wantAlertDescription {
+			t.Fatalf("test %s, have alert %q, want: %q", test.name, haveAlertDescription, test.wantAlertDescription)
+		}
+		if !reflect.DeepEqual(haveResultTypes, test.wantResultTypes) {
+			haveResultType := "is empty"
+			wantResultType := "is empty"
+			if len(haveResultTypes) > 0 {
+				haveResultType = haveResultTypes[0]
+			}
+			if len(test.wantResultTypes) > 0 {
+				wantResultType = test.wantResultTypes[0]
+			}
+			t.Fatalf("test %s, have result type: %q, want result type: %q", test.name, haveResultType, wantResultType)
+		}
+	}
+}
+
 func Test_searchResultsResolver_ApproximateResultCount(t *testing.T) {
 	type fields struct {
 		results             []searchResultResolver
