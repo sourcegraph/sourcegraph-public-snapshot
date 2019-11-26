@@ -1393,6 +1393,7 @@ describe('e2e test suite', () => {
             // check if there have been any errors
             const errorCount = await driver.page.evaluate(() => document.querySelectorAll('.alert.alert-danger').length)
             expect(errorCount).toEqual(0)
+            await percySnapshot(driver.page, 'Campaign preview page')
         })
     })
 })
