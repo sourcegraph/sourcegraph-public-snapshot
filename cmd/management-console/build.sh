@@ -22,6 +22,7 @@ for pkg in $path_to_package; do
 done
 
 docker build -f cmd/management-console/Dockerfile -t $IMAGE $OUTPUT \
+    --progress=plain \
     --build-arg COMMIT_SHA \
     --build-arg DATE \
     --build-arg VERSION

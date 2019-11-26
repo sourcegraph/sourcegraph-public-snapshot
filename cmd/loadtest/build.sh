@@ -21,6 +21,7 @@ for pkg in github.com/sourcegraph/sourcegraph/cmd/loadtest; do
 done
 
 docker build -f cmd/loadtest/Dockerfile -t $IMAGE $OUTPUT \
+    --progress=plain \
     --build-arg COMMIT_SHA \
     --build-arg DATE \
     --build-arg VERSION
