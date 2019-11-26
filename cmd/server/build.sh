@@ -4,7 +4,7 @@
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 set -eux
 
-OUTPUT=$(mktemp -d -t sgserver_XXXXXXX)
+export OUTPUT=$(mktemp -d -t sgserver_XXXXXXX)
 cleanup() {
     rm -rf "$OUTPUT"
 }
@@ -17,6 +17,7 @@ parallel_run() {
     parallel --jobs 4 --keep-order --line-buffer --tag --joblog $log_file "$@"
     cat $log_file
 }
+export -f parallel_run
 
 # Environment for building linux binaries
 export GO111MODULE=on
@@ -26,11 +27,11 @@ export CGO_ENABLED=0
 
 # Additional images passed in here when this script is called externally by our
 # enterprise build scripts.
-additional_images=${@:-github.com/sourcegraph/sourcegraph/cmd/frontend github.com/sourcegraph/sourcegraph/cmd/management-console github.com/sourcegraph/sourcegraph/cmd/repo-updater}
+export additional_images=${@:-github.com/sourcegraph/sourcegraph/cmd/frontend github.com/sourcegraph/sourcegraph/cmd/management-console github.com/sourcegraph/sourcegraph/cmd/repo-updater}
 
 # Overridable server package path for when this script is called externally by
 # our enterprise build scripts.
-server_pkg=${SERVER_PKG:-github.com/sourcegraph/sourcegraph/cmd/server}
+export server_pkg=${SERVER_PKG:-github.com/sourcegraph/sourcegraph/cmd/server}
 
 cp -a ./cmd/server/rootfs/. "$OUTPUT"
 export bindir="$OUTPUT/usr/local/bin"
@@ -49,9 +50,12 @@ go_build() {
 }
 export -f go_build
 
-echo "--- go build"
+echo "--- build go, symbols, and lsif concurrently"
 
-PACKAGES=(
+build_go_packages(){
+   echo "--- go build"
+
+   PACKAGES=(
     github.com/sourcegraph/sourcegraph/cmd/github-proxy \
     github.com/sourcegraph/sourcegraph/cmd/gitserver \
     github.com/sourcegraph/sourcegraph/cmd/query-runner \
@@ -64,15 +68,25 @@ PACKAGES=(
     github.com/google/zoekt/cmd/zoekt-webserver \
     \
     $server_pkg
-)
+   )
 
-parallel_run go_build {} ::: "${PACKAGES[@]}"
+   parallel_run go_build {} ::: "${PACKAGES[@]}"
+}
+export -f build_go_packages
 
-echo "--- build sqlite for symbols"
-env CTAGS_D_OUTPUT_PATH="$OUTPUT/.ctags.d" SYMBOLS_EXECUTABLE_OUTPUT_PATH="$bindir/symbols" BUILD_TYPE=dist ./cmd/symbols/build.sh buildSymbolsDockerImageDependencies
+build_symbols() {
+    echo "--- build sqlite for symbols"
+    env CTAGS_D_OUTPUT_PATH="$OUTPUT/.ctags.d" SYMBOLS_EXECUTABLE_OUTPUT_PATH="$bindir/symbols" BUILD_TYPE=dist ./cmd/symbols/build.sh buildSymbolsDockerImageDependencies
+}
+export -f build_symbols
 
-echo "--- build lsif-server"
-IMAGE=sourcegraph/lsif-server:ci ./lsif/build.sh
+build_lsif() {
+    echo "--- build lsif-server"
+    IMAGE=sourcegraph/lsif-server:ci ./lsif/build.sh
+}
+export -f build_lsif
+
+parallel_run {} ::: build_lsif build_symbols build_go_packages
 
 echo "--- prometheus config"
 cp -r docker-images/prometheus/config "$OUTPUT/sg_config_prometheus"
