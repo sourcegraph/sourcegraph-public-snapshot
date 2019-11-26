@@ -128,7 +128,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 	}
 }
 
-func TestStructuralPatToQuery(t *testing.T) {
+func TestStructuralPatToZoektQuery(t *testing.T) {
 	cases := []struct {
 		Name     string
 		Pattern  string
