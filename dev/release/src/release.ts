@@ -12,7 +12,7 @@ import {
     CreateBranchWithChangesOptions,
 } from './github'
 import * as persistedConfig from './config.json'
-import { addHours, addMinutes, subMinutes, isWeekend, eachDayOfInterval, addDays, subDays } from 'date-fns'
+import { addMinutes, isWeekend, eachDayOfInterval, addDays, subDays } from 'date-fns'
 import * as semver from 'semver'
 import commandExists from 'command-exists'
 import { PullsCreateParams } from '@octokit/rest'
@@ -30,9 +30,6 @@ interface Config {
     oneWorkingDayBeforeRelease: string
     fourWorkingDaysBeforeRelease: string
     fiveWorkingDaysBeforeRelease: string
-    retrospectiveReminderDateTime: string
-    retrospectiveDateTime: string
-    retrospectiveDocURL: string
 
     slackAnnounceChannel: string
 }
@@ -144,29 +141,6 @@ const steps: Step[] = [
                     startDateTime: new Date(c.releaseDateTime).toISOString(),
                     endDateTime: addMinutes(new Date(c.releaseDateTime), 1).toISOString(),
                 },
-                {
-                    title: `Reminder to submit feedback for ${c.majorVersion}.${c.minorVersion} Engineering Retrospective`,
-                    description: `Retrospective document: ${c.retrospectiveDocURL}\n\n(This is not an actual event to attend, just a calendar marker.)`,
-                    anyoneCanAddSelf: true,
-                    attendees: [c.teamEmail],
-                    startDateTime: new Date(c.retrospectiveReminderDateTime).toISOString(),
-                    endDateTime: addMinutes(new Date(c.retrospectiveReminderDateTime), 1).toISOString(),
-                },
-                {
-                    title: 'Release captain reminder: set up Zoom for engineering retrospective',
-                    description:
-                        'Go to https://zoom.us/, click "Host a meeting > With Video On", and add the link to the Retrospective calendar event',
-                    startDateTime: subMinutes(new Date(c.retrospectiveDateTime), 15).toISOString(),
-                    endDateTime: new Date(c.retrospectiveDateTime).toISOString(),
-                },
-                {
-                    title: `Engineering Retrospective ${c.majorVersion}.${c.minorVersion}`,
-                    description: `Retrospective document: ${c.retrospectiveDocURL}`,
-                    anyoneCanAddSelf: true,
-                    attendees: [c.teamEmail],
-                    startDateTime: new Date(c.retrospectiveDateTime).toISOString(),
-                    endDateTime: addHours(new Date(c.retrospectiveDateTime), 1).toISOString(),
-                },
             ]
 
             for (const event of events) {
@@ -185,7 +159,6 @@ const steps: Step[] = [
             oneWorkingDayBeforeRelease,
             fourWorkingDaysBeforeRelease,
             fiveWorkingDaysBeforeRelease,
-            retrospectiveDateTime,
         }: Config) => {
             const { url, created } = await ensureTrackingIssue({
                 majorVersion,
@@ -195,7 +168,6 @@ const steps: Step[] = [
                 oneWorkingDayBeforeRelease: new Date(oneWorkingDayBeforeRelease),
                 fourWorkingDaysBeforeRelease: new Date(fourWorkingDaysBeforeRelease),
                 fiveWorkingDaysBeforeRelease: new Date(fiveWorkingDaysBeforeRelease),
-                retrospectiveDateTime: new Date(retrospectiveDateTime),
             })
             console.log(created ? `Created tracking issue ${url}` : `Tracking issue already exists: ${url}`)
         },
@@ -229,8 +201,7 @@ Tracking issue: ${trackingIssueURL}
 Key dates:
 - Release branch cut, testing commences: ${formatDate(new Date(c.fourWorkingDaysBeforeRelease))}
 - Final release tag: ${formatDate(new Date(c.oneWorkingDayBeforeRelease))}
-- Release: ${formatDate(new Date(c.releaseDateTime))}
-- Retrospective: ${formatDate(new Date(c.retrospectiveDateTime))}`,
+- Release: ${formatDate(new Date(c.releaseDateTime))}`,
                 c.slackAnnounceChannel
             )
         },

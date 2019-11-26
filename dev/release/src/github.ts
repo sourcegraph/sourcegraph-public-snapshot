@@ -19,7 +19,6 @@ export async function ensureTrackingIssue({
     oneWorkingDayBeforeRelease,
     fourWorkingDaysBeforeRelease,
     fiveWorkingDaysBeforeRelease,
-    retrospectiveDateTime,
 }: {
     majorVersion: string
     minorVersion: string
@@ -28,7 +27,6 @@ export async function ensureTrackingIssue({
     oneWorkingDayBeforeRelease: Date
     fourWorkingDaysBeforeRelease: Date
     fiveWorkingDaysBeforeRelease: Date
-    retrospectiveDateTime: Date
 }): Promise<{ url: string; created: boolean }> {
     const octokit = await getAuthenticatedGitHubClient()
     const releaseIssueTemplate = await readFile(
@@ -42,7 +40,6 @@ export async function ensureTrackingIssue({
         .replace(/\$FIVE_WORKING_DAYS_BEFORE_RELEASE/g, formatDate(fiveWorkingDaysBeforeRelease))
         .replace(/\$FOUR_WORKING_DAYS_BEFORE_RELEASE/g, formatDate(fourWorkingDaysBeforeRelease))
         .replace(/\$ONE_WORKING_DAY_BEFORE_RELEASE/g, formatDate(oneWorkingDayBeforeRelease))
-        .replace(/\$RETROSPECTIVE_DATE/g, formatDate(retrospectiveDateTime))
 
     const milestoneTitle = `${majorVersion}.${minorVersion}`
     const milestones = await octokit.issues.listMilestonesForRepo({
