@@ -1,4 +1,4 @@
-package run
+package a8n
 
 import (
 	"context"
@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -25,10 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )
-
-func init() {
-	dbtesting.DBNameSuffix = "a8nrunnerdb"
-}
 
 type refAndTarget struct {
 	ref    string
@@ -48,7 +43,7 @@ func TestRunner(t *testing.T) {
 		return now.UTC().Truncate(time.Microsecond)
 	}
 
-	store := ee.NewStoreWithClock(dbconn.Global, clock)
+	store := NewStoreWithClock(dbconn.Global, clock)
 
 	defaultBranches := []refAndTarget{
 		{"master", "fc21c1a0a79047416c14642b3ca964faba9442e2"},
@@ -255,7 +250,7 @@ func TestRunner(t *testing.T) {
 
 			plan := testPlan.Clone()
 
-			runner := NewWithClock(store, tc.campaignType, tc.search, tc.commitID, clock)
+			runner := NewRunnerWithClock(store, tc.campaignType, tc.search, tc.commitID, clock)
 			err := runner.Run(ctx, plan)
 			if have, want := fmt.Sprint(err), tc.runErr; have != want {
 				t.Fatalf("have runner.Run error: %q\nwant error: %q", have, want)
@@ -267,8 +262,8 @@ func TestRunner(t *testing.T) {
 				return
 			}
 
-			havePlan, err := store.GetCampaignPlan(ctx, ee.GetCampaignPlanOpts{ID: plan.ID})
-			if err == ee.ErrNoResults && tc.wantPlan == nil {
+			havePlan, err := store.GetCampaignPlan(ctx, GetCampaignPlanOpts{ID: plan.ID})
+			if err == ErrNoResults && tc.wantPlan == nil {
 				return
 			}
 			if err != nil {
@@ -280,7 +275,7 @@ func TestRunner(t *testing.T) {
 				t.Fatalf("CampaignPlan diff: %s", diff)
 			}
 
-			haveJobs, _, err := store.ListCampaignJobs(ctx, ee.ListCampaignJobsOpts{
+			haveJobs, _, err := store.ListCampaignJobs(ctx, ListCampaignJobsOpts{
 				CampaignPlanID: plan.ID,
 			})
 			if err != nil {

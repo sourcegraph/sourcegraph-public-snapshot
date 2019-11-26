@@ -3,7 +3,6 @@ package a8n
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"testing"
 	"time"
 
@@ -11,9 +10,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
@@ -50,7 +49,7 @@ func TestService(t *testing.T) {
 
 	var rs []*repos.Repo
 	for i := 0; i < 3; i++ {
-		rs = append(rs, testRepo(i))
+		rs = append(rs, testRepo(i, github.ServiceType))
 	}
 
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
@@ -113,25 +112,6 @@ func TestService(t *testing.T) {
 
 	if len(haveJobs) != len(campaignJobs) {
 		t.Errorf("wrong number of ChangesetJobs: %d. want=%d", len(haveJobs), len(campaignJobs))
-	}
-}
-
-func testRepo(num int) *repos.Repo {
-	return &repos.Repo{
-		Name:    fmt.Sprintf("repo-%d", num),
-		URI:     fmt.Sprintf("repo-%d", num),
-		Enabled: true,
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          fmt.Sprintf("external-id-%d", num),
-			ServiceType: "github",
-			ServiceID:   "https://github.com/",
-		},
-		Sources: map[string]*repos.SourceInfo{
-			"extsvc:github:4": {
-				ID:       "extsvc:github:4",
-				CloneURL: "https://secrettoken@github.com/sourcegraph/sourcegraph",
-			},
-		},
 	}
 }
 

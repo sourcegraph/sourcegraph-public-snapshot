@@ -1,4 +1,4 @@
-package run
+package a8n
 
 import (
 	"context"
@@ -12,7 +12,6 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	ee "github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -37,7 +36,7 @@ var ErrTooManyResults = errors.New("search yielded too many results")
 // A Runner executes a CampaignPlan by creating and running CampaignJobs
 // according to the CampaignPlan's Arguments and CampaignType.
 type Runner struct {
-	store         *ee.Store
+	store         *Store
 	search        repoSearch
 	defaultBranch repoDefaultBranch
 	clock         func() time.Time
@@ -85,16 +84,16 @@ var defaultRepoDefaultBranch = func(ctx context.Context, repo *graphqlbackend.Re
 	return branch, commitID, nil
 }
 
-// New returns a Runner for a given CampaignType.
-func New(store *ee.Store, ct CampaignType, search repoSearch, defaultBranch repoDefaultBranch) *Runner {
-	return NewWithClock(store, ct, search, defaultBranch, func() time.Time {
+// NewRunner returns a Runner for a given CampaignType.
+func NewRunner(store *Store, ct CampaignType, search repoSearch, defaultBranch repoDefaultBranch) *Runner {
+	return NewRunnerWithClock(store, ct, search, defaultBranch, func() time.Time {
 		return time.Now().UTC().Truncate(time.Microsecond)
 	})
 }
 
-// NewWithClock returns a Runner for a given CampaignType with the given clock used
+// NewRunnerWithClock returns a Runner for a given CampaignType with the given clock used
 // to generate timestamps
-func NewWithClock(store *ee.Store, ct CampaignType, search repoSearch, defaultBranch repoDefaultBranch, clock func() time.Time) *Runner {
+func NewRunnerWithClock(store *Store, ct CampaignType, search repoSearch, defaultBranch repoDefaultBranch, clock func() time.Time) *Runner {
 	runner := &Runner{
 		store:         store,
 		search:        search,
@@ -225,7 +224,7 @@ func (r *Runner) createPlanAndJobs(
 ) ([]*a8n.CampaignJob, error) {
 	var (
 		err error
-		tx  *ee.Store
+		tx  *Store
 	)
 	tx, err = r.store.Transact(ctx)
 	if err != nil {
