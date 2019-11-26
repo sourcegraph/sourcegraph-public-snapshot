@@ -374,7 +374,7 @@ export class Driver {
         return response
     }
 
-    public async ensureHasCORSOrigin({ corsOriginURL }: { corsOriginURL: string }): Promise<void> {
+    public async setConfig(path: jsonc.JSONPath, f: (oldValue: jsonc.Node | undefined) => any): Promise<void> {
         const currentConfigResponse = await this.makeGraphQLRequest<IQuery>({
             request: gql`
                 query Site {
@@ -392,10 +392,7 @@ export class Driver {
         })
         const { site } = dataOrThrowErrors(currentConfigResponse)
         const currentConfig = site.configuration.effectiveContents
-        const newConfig = modifyJSONC(currentConfig, ['corsOrigin'], oldCorsOrigin => {
-            const urls = oldCorsOrigin ? oldCorsOrigin.value.split(' ') : []
-            return (urls.includes(corsOriginURL) ? urls : [...urls, corsOriginURL]).join(' ')
-        })
+        const newConfig = modifyJSONC(currentConfig, path, f)
         const updateConfigResponse = await this.makeGraphQLRequest<IMutation>({
             request: gql`
                 mutation UpdateSiteConfiguration($lastID: Int!, $input: String!) {
@@ -407,34 +404,11 @@ export class Driver {
         dataOrThrowErrors(updateConfigResponse)
     }
 
-    public async ensureAutomationEnabled(): Promise<void> {
-        const currentConfigResponse = await this.makeGraphQLRequest<IQuery>({
-            request: gql`
-                query Site {
-                    site {
-                        id
-                        configuration {
-                            id
-                            effectiveContents
-                            validationMessages
-                        }
-                    }
-                }
-            `,
-            variables: {},
+    public async ensureHasCORSOrigin({ corsOriginURL }: { corsOriginURL: string }): Promise<void> {
+        await this.setConfig(['corsOrigin'], oldCorsOrigin => {
+            const urls = oldCorsOrigin ? oldCorsOrigin.value.split(' ') : []
+            return (urls.includes(corsOriginURL) ? urls : [...urls, corsOriginURL]).join(' ')
         })
-        const { site } = dataOrThrowErrors(currentConfigResponse)
-        const currentConfig = site.configuration.effectiveContents
-        const newConfig = modifyJSONC(currentConfig, ['experimentalFeatures'], () => ({ automation: 'enabled' }))
-        const updateConfigResponse = await this.makeGraphQLRequest<IMutation>({
-            request: gql`
-                mutation UpdateSiteConfiguration($lastID: Int!, $input: String!) {
-                    updateSiteConfiguration(lastID: $lastID, input: $input)
-                }
-            `,
-            variables: { lastID: site.configuration.id, input: newConfig },
-        })
-        dataOrThrowErrors(updateConfigResponse)
     }
 
     public async resetUserSettings(): Promise<void> {

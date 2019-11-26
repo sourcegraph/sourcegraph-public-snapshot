@@ -50,7 +50,6 @@ describe('e2e test suite', () => {
         ]
         await driver.ensureLoggedIn({ username: 'test', password: 'test', email: 'test@test.com' })
         await driver.resetUserSettings()
-        await driver.ensureAutomationEnabled()
         await driver.ensureHasExternalService({
             kind: ExternalServiceKind.GITHUB,
             displayName: 'e2e-test-github',
@@ -1370,6 +1369,12 @@ describe('e2e test suite', () => {
     })
 
     describe('Campaigns', () => {
+        beforeAll(async () => {
+            await driver.setConfig(['experimentalFeatures'], prev => ({ ...prev?.value, automation: 'enabled' }))
+        })
+        afterAll(async () => {
+            await driver.setConfig(['experimentalFeatures'], prev => ({ ...prev?.value, automation: 'disabled' }))
+        })
         test('Create campaign preview for comby campaign type', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/campaigns/new')
             await driver.page.waitForSelector('.e2e-campaign-form')
@@ -1389,7 +1394,10 @@ describe('e2e test suite', () => {
             })
 
             await driver.page.click('.e2e-preview-campaign')
-            await driver.page.waitForSelector('.e2e-preview-done', { timeout: 10000 })
+            // first wait for loader to appear
+            await driver.page.waitForSelector('.e2e-preview-loading', { timeout: 10000 })
+            // then wait for loader to disappear
+            await driver.page.waitForSelector('.e2e-preview-loading', { timeout: 10000, hidden: true })
             // check if there have been any errors
             const errorCount = await driver.page.evaluate(() => document.querySelectorAll('.alert.alert-danger').length)
             expect(errorCount).toEqual(0)

@@ -507,7 +507,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             {status && (
                 <>
                     {status.state === 'PROCESSING' && (
-                        <div className="d-flex mt-3">
+                        <div className="d-flex mt-3 e2e-preview-loading">
                             <LoadingSpinner className="icon-inline" />{' '}
                             <span data-tooltip="Computing changesets">
                                 {status.completedCount} / {status.pendingCount + status.completedCount}
@@ -517,7 +517,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     {status.errors.map((error, i) => (
                         <ErrorAlert error={error} className="mt-3" key={i} />
                     ))}
-                    {status.state !== 'PROCESSING' && <span className="e2e-preview-done"></span>}
                 </>
             )}
 
