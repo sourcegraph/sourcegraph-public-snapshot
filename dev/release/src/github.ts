@@ -9,7 +9,7 @@ import * as os from 'os'
 import * as path from 'path'
 const mkdtemp = promisify(original_mkdtemp)
 
-const formatDate = (d: Date): string => `${d.getMonth() + 1}/${d.getDate()}`
+const formatDate = (d: Date): string => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`
 
 export async function ensureTrackingIssue({
     majorVersion,
