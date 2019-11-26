@@ -13,7 +13,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintel/lsifserver/client"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/client"
 	"github.com/sourcegraph/sourcegraph/internal/lsif"
 )
 

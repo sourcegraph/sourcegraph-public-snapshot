@@ -10,7 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )

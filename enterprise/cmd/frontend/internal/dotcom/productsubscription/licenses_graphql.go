@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/enterprise/pkg/license"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 )
 
 func init() {
