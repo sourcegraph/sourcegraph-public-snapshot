@@ -14,7 +14,7 @@ parallel_run() {
     log_file=$(mktemp)
     trap "rm -rf $log_file" EXIT
 
-    parallel --keep-order --line-buffer --tag --joblog $log_file "$@"
+    parallel --jobs 4 --keep-order --line-buffer --tag --joblog $log_file "$@"
     cat $log_file
 }
 
