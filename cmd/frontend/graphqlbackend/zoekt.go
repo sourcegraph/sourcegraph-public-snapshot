@@ -429,7 +429,8 @@ func StructuralPatToRegexpQuery(pattern string) (zoektquery.Q, error) {
 	var children []zoektquery.Q
 	for _, s := range substrings {
 		rs := regexp.QuoteMeta(s)
-		rs = strings.ReplaceAll(rs, " ", "[\\s]+")
+		onMatchWhitespace := lazyregexp.New(`[\s]+`)
+		rs = onMatchWhitespace.ReplaceAllLiteralString(rs, `[\s]+`)
 		re, err := syntax.Parse(rs, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
 		if err != nil {
 			return nil, err

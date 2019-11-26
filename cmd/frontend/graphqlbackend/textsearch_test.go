@@ -193,6 +193,13 @@ lines
 			Function: StructuralPatToRegexpQuery,
 			Want:     `(and case_content_substr:"ParseInt(" case_regex:",[\\t-\\n\\f-\\r ]+" case_regex:"\\)[\\t-\\n\\f-\\r ]+if[\\t-\\n\\f-\\r ]+err[\\t-\\n\\f-\\r ]+")`,
 		},
+		{
+			Name: "Contiguous whitespace is replaced by regex",
+			Pattern: `ParseInt(:[stuff],    :[x])
+             if err `,
+			Function: StructuralPatToRegexpQuery,
+			Want:     `(and case_content_substr:"ParseInt(" case_regex:",[\\t-\\n\\f-\\r ]+" case_regex:"\\)[\\t-\\n\\f-\\r ]+if[\\t-\\n\\f-\\r ]+err[\\t-\\n\\f-\\r ]+")`,
+		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
