@@ -15,7 +15,7 @@ describe('Correlator', () => {
 
         const projectRoot = c.projectRoot
         expect(c.lsifVersion).toEqual('0.4.3')
-        expect(projectRoot && projectRoot.href).toEqual('file:///lsif-test')
+        expect(projectRoot?.href).toEqual('file:///lsif-test')
     })
 
     it('should require metadata vertex before document vertices', () => {
@@ -112,10 +112,10 @@ describe('Correlator', () => {
         })
 
         const defs = c.definitionData.get('4')
-        expect(defs && defs.get('2')).toEqual(['3'])
+        expect(defs?.get('2')).toEqual(['3'])
 
         const refs = c.referenceData.get('5')
-        expect(refs && refs.get('2')).toEqual(['3'])
+        expect(refs?.get('2')).toEqual(['3'])
     })
 
     it('should correlate linked reference results', () => {
@@ -300,7 +300,7 @@ describe('Correlator', () => {
         })
 
         const range = c.rangeData.get('1')
-        expect(range && range.monikerIds).toEqual(new Set(['2']))
+        expect(range?.monikerIds).toEqual(new Set(['2']))
         expect(c.linkedMonikers.extractSet('2')).toEqual(new Set(['2', '3', '4']))
         expect(c.linkedMonikers.extractSet('3')).toEqual(new Set(['2', '3', '4']))
         expect(c.linkedMonikers.extractSet('4')).toEqual(new Set(['2', '3', '4']))

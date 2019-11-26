@@ -71,7 +71,7 @@ describe('Core functionality regression test suite', () => {
     test('2.2.1 User settings are saved and applied', async () => {
         const getSettings = async () => {
             await driver.page.waitForSelector('.view-line')
-            return await driver.page.evaluate(() => {
+            return driver.page.evaluate(() => {
                 const editor = document.querySelector('.monaco-editor') as HTMLElement
                 return editor ? editor.innerText : null
             })

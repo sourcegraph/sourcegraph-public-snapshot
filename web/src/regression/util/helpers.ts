@@ -196,7 +196,7 @@ export async function getCriticalSiteConfig(
             Authorization: `Basic ${new Buffer(`:${managementConsolePassword}`).toString('base64')}`,
         },
     }).toPromise()
-    return await results.json()
+    return results.json()
 }
 
 export async function setCriticalSiteConfig(
@@ -211,7 +211,7 @@ export async function setCriticalSiteConfig(
         method: 'POST',
         body: JSON.stringify(configuration),
     }).toPromise()
-    return await results.json()
+    return results.json()
 }
 
 /**

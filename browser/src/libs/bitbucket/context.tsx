@@ -32,7 +32,7 @@ function getRevSpecFromRevisionSelector(): RevSpec {
     } catch (err) {
         throw new Error(`Could not parse revisionRefStr: ${revisionRefStr}`)
     }
-    if (revisionRefInfo && revisionRefInfo.latestCommit) {
+    if (revisionRefInfo?.latestCommit) {
         return {
             rev: revisionRefInfo.latestCommit,
         }

@@ -209,7 +209,7 @@ export interface CustomMergeFunctions {
 export function merge(base: any, add: any, custom?: CustomMergeFunctions): void {
     for (const key of Object.keys(add)) {
         if (key in base) {
-            const customEntry = custom && custom[key]
+            const customEntry = custom?.[key]
             if (customEntry && isFunction(customEntry)) {
                 base[key] = customEntry(base[key], add[key])
             } else {
