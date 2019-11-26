@@ -13,10 +13,10 @@ import {
 } from './github'
 import * as persistedConfig from './config.json'
 import { addHours, addMinutes, subMinutes, isWeekend } from 'date-fns'
-import { spawn } from 'child_process'
 import * as semver from 'semver'
 import commandExists from 'command-exists'
 import { PullsCreateParams } from '@octokit/rest'
+import execa from 'execa'
 
 interface Config {
     teamEmail: string
@@ -254,13 +254,14 @@ Key dates:
             const tag = JSON.stringify(`v${parsedVersion.version}`)
             const branch = JSON.stringify(`${parsedVersion.major}.${parsedVersion.minor}`)
             console.log(`Creating and pushing tag ${tag}`)
-            const child = spawn('bash', [
-                '-c',
-                `git diff --quiet && git checkout ${branch} && git pull --rebase && git tag -a ${tag} -m ${tag} && git push origin ${tag}`,
-            ])
-            child.stdout.pipe(process.stdout)
-            child.stderr.pipe(process.stderr)
-            await new Promise(resolve => child.on('exit', code => resolve(code)))
+            await execa(
+                'bash',
+                [
+                    '-c',
+                    `git diff --quiet && git checkout ${branch} && git pull --rebase && git tag -a ${tag} -m ${tag} && git push origin ${tag}`,
+                ],
+                { stdio: 'inherit' }
+            )
         },
     },
     {
