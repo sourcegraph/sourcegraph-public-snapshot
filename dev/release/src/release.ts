@@ -97,7 +97,7 @@ const steps: Step[] = [
         run: async c => {
             const googleCalendar = await getClient()
 
-            const datesBetween = []
+            const datesBetween: Date[] = []
             const fourDaysBefore = new Date(c.fourWorkingDaysBeforeRelease)
             const oneDayBefore = new Date(c.oneWorkingDayBeforeRelease)
             const d = new Date(fourDaysBefore)
