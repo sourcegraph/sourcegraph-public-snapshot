@@ -16,7 +16,15 @@ type ChangesetSyncer struct {
 	Store       *Store
 	ReposStore  repos.Store
 	HTTPFactory *httpcli.Factory
+
+	// ChangesetBatchSize determines how many changesets to load at a time.
+	// If 0 it falls back to DefaultBatchLoadSize
+	ChangesetBatchSize int
 }
+
+// DefaultChangesetBatchSize is the default number of changesets we should
+// load at a time
+const DefaultChangesetBatchSize = 10
 
 // Sync refreshes the metadata of all changesets and updates them in the
 // database
@@ -114,6 +122,11 @@ func (s *ChangesetSyncer) SyncChangesets(ctx context.Context, cs ...*a8n.Changes
 			Changeset: c,
 			Repo:      repoSet[repoID],
 		})
+	}
+
+	changesetBatchSize := s.ChangesetBatchSize
+	if changesetBatchSize == 0 {
+		changesetBatchSize = DefaultChangesetBatchSize
 	}
 
 	var events []*a8n.ChangesetEvent
