@@ -167,7 +167,7 @@ const steps: Step[] = [
                 },
                 {
                     title: `Engineering Retrospective ${c.majorVersion}.${c.minorVersion}`,
-                    description: `Rpetrospective document: ${c.retrospectiveDocURL}`,
+                    description: `Retrospective document: ${c.retrospectiveDocURL}`,
                     anyoneCanAddSelf: true,
                     attendees: [c.teamEmail],
                     startDateTime: new Date(c.retrospectiveDateTime).toISOString(),
