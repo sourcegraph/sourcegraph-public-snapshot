@@ -212,6 +212,8 @@ type ChangesetPlansConnectionResolver interface {
 
 type ChangesetPlanResolver interface {
 	Repository(ctx context.Context) (*RepositoryResolver, error)
+	BaseRepository(ctx context.Context) (*RepositoryResolver, error)
+	Diff() ChangesetPlanResolver
 	FileDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (PreviewFileDiffConnection, error)
 }
 

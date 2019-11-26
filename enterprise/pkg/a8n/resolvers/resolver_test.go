@@ -985,7 +985,9 @@ func TestCampaignPlanResolver(t *testing.T) {
 
 	type ChangesetPlan struct {
 		Repository struct{ Name, URL string }
-		FileDiffs  FileDiffs
+		Diff       struct {
+			FileDiffs FileDiffs
+		}
 	}
 
 	type Status struct {
@@ -1035,37 +1037,39 @@ func TestCampaignPlanResolver(t *testing.T) {
                 repository {
                   name
                 }
-                fileDiffs {
-                  rawDiff
-                  diffStat {
-                    added
-                    deleted
-                    changed
-                  }
-                  nodes {
-                    oldPath
-                    newPath
-                    hunks {
-                      body
-                      section
-                      newRange { startLine, lines }
-                      oldRange { startLine, lines }
-                      oldNoNewlineAt
-                    }
-                    stat {
+				diff {
+                  fileDiffs {
+                    rawDiff
+                    diffStat {
                       added
                       deleted
                       changed
                     }
-                    oldFile {
-                      name
-                      externalURLs {
-                        serviceType
-                        url
+                    nodes {
+                      oldPath
+                      newPath
+                      hunks {
+                        body
+                        section
+                        newRange { startLine, lines }
+                        oldRange { startLine, lines }
+                        oldNoNewlineAt
+                      }
+                      stat {
+                        added
+                        deleted
+                        changed
+                      }
+                      oldFile {
+                        name
+                        externalURLs {
+                          serviceType
+                          url
+                        }
                       }
                     }
                   }
-                }
+				}
               }
             }
           }
@@ -1100,11 +1104,11 @@ func TestCampaignPlanResolver(t *testing.T) {
 			t.Fatalf("wrong Repository Name %q. want=%q", have, want)
 		}
 
-		if have, want := changesetPlan.FileDiffs.RawDiff, testDiff; have != want {
+		if have, want := changesetPlan.Diff.FileDiffs.RawDiff, testDiff; have != want {
 			t.Fatalf("wrong RawDiff. diff=%s", cmp.Diff(have, want))
 		}
 
-		if have, want := changesetPlan.FileDiffs.DiffStat.Changed, 2; have != want {
+		if have, want := changesetPlan.Diff.FileDiffs.DiffStat.Changed, 2; have != want {
 			t.Fatalf("wrong DiffStat.Changed %d, want=%d", have, want)
 		}
 
@@ -1140,7 +1144,7 @@ func TestCampaignPlanResolver(t *testing.T) {
 				},
 			},
 		}
-		haveFileDiffs := changesetPlan.FileDiffs
+		haveFileDiffs := changesetPlan.Diff.FileDiffs
 		if !reflect.DeepEqual(haveFileDiffs, wantFileDiffs) {
 			t.Fatal(cmp.Diff(haveFileDiffs, wantFileDiffs))
 		}

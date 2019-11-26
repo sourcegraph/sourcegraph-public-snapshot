@@ -615,8 +615,8 @@ type ChangesetPlan {
     # The repository changed by the changeset.
     repository: Repository!
 
-    # The preview of the file diffs for each file in the diff.
-    fileDiffs(first: Int): PreviewFileDiffConnection!
+    # The diff of the changeset.
+    diff: PreviewRepositoryComparison!
 }
 
 # A changeset in a code host (e.g. a PR on Github)
@@ -1906,6 +1906,15 @@ type GitRefConnection {
     totalCount: Int!
     # Pagination information.
     pageInfo: PageInfo!
+}
+
+# A not-yet-committed preview of a diff on a repository.
+type PreviewRepositoryComparison {
+    # The repository that this diff is targeting.
+    baseRepository: Repository!
+
+    # The preview of the file diffs for each file in the diff.
+    fileDiffs(first: Int): PreviewFileDiffConnection!
 }
 
 # A list of file diffs that might be applied.

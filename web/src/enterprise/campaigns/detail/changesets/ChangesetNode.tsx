@@ -34,7 +34,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
     history,
     location,
 }) => {
-    const fileDiffs = node.__typename === 'ExternalChangeset' ? node.diff && node.diff.fileDiffs : node.fileDiffs
+    const fileDiffs = node.diff?.fileDiffs
     const fileDiffNodes: (IFileDiff | IPreviewFileDiff)[] | undefined = fileDiffs ? fileDiffs.nodes : undefined
     const ReviewStateIcon =
         node.__typename === 'ExternalChangeset'
