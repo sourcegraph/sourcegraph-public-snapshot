@@ -88,15 +88,6 @@ main.go:1:package main
 main.go:5:func main() {
 `},
 
-		{protocol.PatternInfo{Pattern: "main", IsStructuralPat: true}, `
-main.go:1:main
-main.go:5:main
-`},
-
-		{protocol.PatternInfo{Pattern: "Println(:[args])", IsStructuralPat: true}, `
-main.go:6:Println("Hello world")
-`},
-
 		// Ensure we handle CaseInsensitive regexp searches with
 		// special uppercase chars in pattern.
 		{protocol.PatternInfo{Pattern: `printL\B`, IsRegExp: true}, `
