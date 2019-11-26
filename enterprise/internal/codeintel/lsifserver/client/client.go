@@ -12,7 +12,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/enterprise/pkg/codeintel/lsifserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver"
 	"github.com/tomnomnom/linkheader"
 )
 
