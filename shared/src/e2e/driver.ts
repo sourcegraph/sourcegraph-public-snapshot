@@ -407,6 +407,36 @@ export class Driver {
         dataOrThrowErrors(updateConfigResponse)
     }
 
+    public async ensureAutomationEnabled(): Promise<void> {
+        const currentConfigResponse = await this.makeGraphQLRequest<IQuery>({
+            request: gql`
+                query Site {
+                    site {
+                        id
+                        configuration {
+                            id
+                            effectiveContents
+                            validationMessages
+                        }
+                    }
+                }
+            `,
+            variables: {},
+        })
+        const { site } = dataOrThrowErrors(currentConfigResponse)
+        const currentConfig = site.configuration.effectiveContents
+        const newConfig = modifyJSONC(currentConfig, ['experimentalFeatures'], () => ({ automation: 'enabled' }))
+        const updateConfigResponse = await this.makeGraphQLRequest<IMutation>({
+            request: gql`
+                mutation UpdateSiteConfiguration($lastID: Int!, $input: String!) {
+                    updateSiteConfiguration(lastID: $lastID, input: $input)
+                }
+            `,
+            variables: { lastID: site.configuration.id, input: newConfig },
+        })
+        dataOrThrowErrors(updateConfigResponse)
+    }
+
     public async resetUserSettings(): Promise<void> {
         const currentSettingsResponse = await this.makeGraphQLRequest<IQuery>({
             request: gql`

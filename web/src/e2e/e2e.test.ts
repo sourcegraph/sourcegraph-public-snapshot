@@ -50,6 +50,7 @@ describe('e2e test suite', () => {
         ]
         await driver.ensureLoggedIn({ username: 'test', password: 'test', email: 'test@test.com' })
         await driver.resetUserSettings()
+        await driver.ensureAutomationEnabled()
         await driver.ensureHasExternalService({
             kind: ExternalServiceKind.GITHUB,
             displayName: 'e2e-test-github',
