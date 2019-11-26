@@ -253,21 +253,19 @@ function evaluateActionContributions(
 ): Evaluated<Contributions['actions']> {
     return actions?.map(action => ({
         ...action,
-        title: action.title && action.title.exec(context),
-        category: action.category && action.category.exec(context),
-        description: action.description && action.description.exec(context),
-        iconURL: action.iconURL && action.iconURL.exec(context),
+        title: action.title?.exec(context),
+        category: action.category?.exec(context),
+        description: action.description?.exec(context),
+        iconURL: action.iconURL?.exec(context),
         actionItem: action.actionItem && {
             ...action.actionItem,
-            label: action.actionItem.label && action.actionItem.label.exec(context),
-            description: action.actionItem.description && action.actionItem.description.exec(context),
-            iconURL: action.actionItem.iconURL && action.actionItem.iconURL.exec(context),
-            iconDescription: action.actionItem.iconDescription && action.actionItem.iconDescription.exec(context),
-            pressed: action.actionItem.pressed && action.actionItem.pressed.exec(context),
+            label: action.actionItem.label?.exec(context),
+            description: action.actionItem.description?.exec(context),
+            iconURL: action.actionItem.iconURL?.exec(context),
+            iconDescription: action.actionItem.iconDescription?.exec(context),
+            pressed: action.actionItem.pressed?.exec(context),
         },
-        commandArguments:
-            action.commandArguments &&
-            action.commandArguments.map(arg => (arg instanceof Expression ? arg.exec(context) : arg)),
+        commandArguments: action.commandArguments?.map(arg => (arg instanceof Expression ? arg.exec(context) : arg)),
     }))
 }
 
@@ -310,8 +308,6 @@ function parseActionContributionExpressions(actions: Raw<Contributions['actions'
             iconDescription: maybe(action.actionItem.iconDescription, parseTemplate),
             pressed: maybe(action.actionItem.pressed, pressed => parse(pressed)),
         },
-        commandArguments:
-            action.commandArguments &&
-            action.commandArguments.map(arg => (typeof arg === 'string' ? parseTemplate(arg) : arg)),
+        commandArguments: action.commandArguments?.map(arg => (typeof arg === 'string' ? parseTemplate(arg) : arg)),
     }))
 }
