@@ -1,10 +1,22 @@
 import { ensureEvent, getClient, EventOptions } from './google-calendar'
 import { postMessage } from './slack'
-import { ensureTrackingIssue, getTrackingIssueURL, getAuthenticatedGitHubClient, listIssues } from './github'
+import {
+    ensureTrackingIssue,
+    getAuthenticatedGitHubClient,
+    listIssues,
+    getIssueByTitle,
+    trackingIssueTitle,
+    ensurePatchReleaseIssue,
+    createBranchWithChanges,
+    createPR,
+    CreateBranchWithChangesOptions,
+} from './github'
 import * as persistedConfig from './config.json'
-import { addHours, addMinutes, subMinutes } from 'date-fns'
-import { spawn } from 'child_process'
+import { addHours, addMinutes, subMinutes, isWeekend, eachDayOfInterval, addDays, subDays } from 'date-fns'
 import * as semver from 'semver'
+import commandExists from 'command-exists'
+import { PullsCreateParams } from '@octokit/rest'
+import execa from 'execa'
 
 interface Config {
     teamEmail: string
@@ -16,12 +28,13 @@ interface Config {
     minorVersion: string
     releaseDateTime: string
     oneWorkingDayBeforeRelease: string
-    threeWorkingDaysBeforeRelease: string
     fourWorkingDaysBeforeRelease: string
     fiveWorkingDaysBeforeRelease: string
     retrospectiveReminderDateTime: string
     retrospectiveDateTime: string
     retrospectiveDocURL: string
+
+    slackAnnounceChannel: string
 }
 
 type StepID =
@@ -32,6 +45,8 @@ type StepID =
     | 'release-candidate:create'
     | 'release-candidate:dev-announce'
     | 'qa-start:dev-announce'
+    | 'patch:issue'
+    | 'release:publish'
     | '_test:google-calendar'
     | '_test:slack'
 
@@ -85,25 +100,30 @@ const steps: Step[] = [
             const googleCalendar = await getClient()
             const events: EventOptions[] = [
                 {
-                    title: 'Release captain reminder: 5 working days before release',
+                    title: 'Release captain: prepare for branch cut (5 working days until release)',
                     description: 'See the release tracking issue for TODOs',
                     startDateTime: new Date(c.fiveWorkingDaysBeforeRelease).toISOString(),
                     endDateTime: addMinutes(new Date(c.fiveWorkingDaysBeforeRelease), 1).toISOString(),
                 },
                 {
-                    title: 'Release captain reminder: 4 working days before release',
+                    title: 'Release captain: branch cut (4 working days until release)',
                     description: 'See the release tracking issue for TODOs',
                     startDateTime: new Date(c.fourWorkingDaysBeforeRelease).toISOString(),
                     endDateTime: addMinutes(new Date(c.fourWorkingDaysBeforeRelease), 1).toISOString(),
                 },
+                ...eachDayOfInterval({
+                    start: addDays(new Date(c.fourWorkingDaysBeforeRelease), 1),
+                    end: subDays(new Date(c.oneWorkingDayBeforeRelease), 1),
+                })
+                    .filter(d => !isWeekend(d))
+                    .map(d => ({
+                        title: 'Release captain: cut new release candidate',
+                        description: 'See release tracking issue for TODOs',
+                        startDateTime: d.toISOString(),
+                        endDateTime: addMinutes(d, 1).toISOString(),
+                    })),
                 {
-                    title: 'Release captain reminder: 3 working days before release',
-                    description: 'See the release tracking issue for TODOs',
-                    startDateTime: new Date(c.threeWorkingDaysBeforeRelease).toISOString(),
-                    endDateTime: addMinutes(new Date(c.threeWorkingDaysBeforeRelease), 1).toISOString(),
-                },
-                {
-                    title: 'Release captain reminder: 1 working day before release',
+                    title: 'Release captain: tag final release (1 working day before release)',
                     description: 'See the release tracking issue for TODOs',
                     startDateTime: new Date(c.oneWorkingDayBeforeRelease).toISOString(),
                     endDateTime: addMinutes(new Date(c.oneWorkingDayBeforeRelease), 1).toISOString(),
@@ -150,7 +170,7 @@ const steps: Step[] = [
             ]
 
             for (const event of events) {
-                console.log(`Create calendar event: ${event.title}`)
+                console.log(`Create calendar event: ${event.title}: ${event.startDateTime}`)
                 await ensureEvent(event, googleCalendar)
             }
         },
@@ -163,9 +183,9 @@ const steps: Step[] = [
             releaseDateTime,
             captainGitHubUsername,
             oneWorkingDayBeforeRelease,
-            threeWorkingDaysBeforeRelease,
             fourWorkingDaysBeforeRelease,
             fiveWorkingDaysBeforeRelease,
+            retrospectiveDateTime,
         }: Config) => {
             const { url, created } = await ensureTrackingIssue({
                 majorVersion,
@@ -173,9 +193,9 @@ const steps: Step[] = [
                 assignees: [captainGitHubUsername],
                 releaseDateTime: new Date(releaseDateTime),
                 oneWorkingDayBeforeRelease: new Date(oneWorkingDayBeforeRelease),
-                threeWorkingDaysBeforeRelease: new Date(threeWorkingDaysBeforeRelease),
                 fourWorkingDaysBeforeRelease: new Date(fourWorkingDaysBeforeRelease),
                 fiveWorkingDaysBeforeRelease: new Date(fiveWorkingDaysBeforeRelease),
+                retrospectiveDateTime: new Date(retrospectiveDateTime),
             })
             console.log(created ? `Created tracking issue ${url}` : `Tracking issue already exists: ${url}`)
         },
@@ -183,10 +203,9 @@ const steps: Step[] = [
     {
         id: 'tracking-issue:announce',
         run: async c => {
-            const trackingIssueURL = await getTrackingIssueURL(
+            const trackingIssueURL = await getIssueByTitle(
                 await getAuthenticatedGitHubClient(),
-                c.majorVersion,
-                c.minorVersion
+                trackingIssueTitle(c.majorVersion, c.minorVersion)
             )
             if (!trackingIssueURL) {
                 throw new Error(
@@ -212,23 +231,29 @@ Key dates:
 - Final release tag: ${formatDate(new Date(c.oneWorkingDayBeforeRelease))}
 - Release: ${formatDate(new Date(c.releaseDateTime))}}
 - Retrospective: ${formatDate(new Date(c.retrospectiveDateTime))}`,
-                'dev-announce'
+                c.slackAnnounceChannel
             )
         },
     },
     {
         id: 'release-candidate:create',
         argNames: ['version'],
-        run: (_config, version) => {
+        run: async (_config, version) => {
             const parsedVersion = semver.parse(version, { loose: false })
             if (!parsedVersion) {
                 throw new Error(`version ${version} is not valid semver`)
             }
             const tag = JSON.stringify(`v${parsedVersion.version}`)
+            const branch = JSON.stringify(`${parsedVersion.major}.${parsedVersion.minor}`)
             console.log(`Creating and pushing tag ${tag}`)
-            const child = spawn('bash', ['-c', `git tag -a ${tag} -m ${tag} && git push origin ${tag}`])
-            child.stdout.pipe(process.stdout)
-            child.stderr.pipe(process.stderr)
+            await execa(
+                'bash',
+                [
+                    '-c',
+                    `git diff --quiet && git checkout ${branch} && git pull --rebase && git tag -a ${tag} -m ${tag} && git push origin ${tag}`,
+                ],
+                { stdio: 'inherit' }
+            )
         },
     },
     {
@@ -256,7 +281,105 @@ Key dates:
 - It will be deployed to k8s.sgdev.org within approximately one hour (https://k8s.sgdev.org/site-admin/updates)
 - ${releaseBlockerMessage}
             `
-            await postMessage(message, 'dev-announce')
+            await postMessage(message, c.slackAnnounceChannel)
+        },
+    },
+    {
+        id: 'patch:issue',
+        run: async ({ captainGitHubUsername, slackAnnounceChannel }, version) => {
+            const parsedVersion = semver.parse(version, { loose: false })
+            if (!parsedVersion) {
+                throw new Error(`version ${version} is not valid semver`)
+            }
+            if (parsedVersion.prerelease.length > 0) {
+                throw new Error(`version ${version} is pre-release`)
+            }
+
+            // Create issue
+            const { url, created } = await ensurePatchReleaseIssue({
+                version: parsedVersion,
+                assignees: [captainGitHubUsername],
+            })
+            const existsText = created ? '' : ' (already exists)'
+            console.log(`Patch release issue URL${existsText}: ${url}`)
+            if (!created) {
+                return
+            }
+
+            // - Announce issue if issue does not already exist
+            await postMessage(
+                `:captain: Patch release ${parsedVersion.version} will be published soon. If you have changes that should go into this patch release, please add your item to the checklist in the issue description: ${url}`,
+                slackAnnounceChannel
+            )
+            console.log(`Posted to Slack channel ${slackAnnounceChannel}`)
+        },
+    },
+    {
+        id: 'release:publish',
+        run: async ({ slackAnnounceChannel }, version) => {
+            const parsedVersion = semver.parse(version, { loose: false })
+            if (!parsedVersion) {
+                throw new Error(`version ${version} is not valid semver`)
+            }
+            if (parsedVersion.prerelease.length > 0) {
+                throw new Error(`version ${version} is pre-release`)
+            }
+            const requiredCommands = ['comby', 'sed', 'find']
+            for (const cmd of requiredCommands) {
+                try {
+                    await commandExists(cmd)
+                } catch (err) {
+                    throw new Error(`Required command ${cmd} does not exist`)
+                }
+            }
+
+            const changes: (PullsCreateParams & CreateBranchWithChangesOptions)[] = [
+                {
+                    owner: 'sourcegraph',
+                    repo: 'sourcegraph',
+                    base: 'master',
+                    head: `publish-${parsedVersion.version}`,
+                    commitMessage: `Update latest release to ${parsedVersion.version}`,
+                    bashEditCommands: [
+                        "find . -type f -name '*.md' -exec sed -i -E 's/sourcegraph\\/server:[0-9]+\\.[0-9]+\\.[0-9]+/sourcegraph\\/server:3.11.0/g' {} +",
+                        `comby -in-place 'currentReleaseRevspec := ":[1]"' "currentReleaseRevspec := \\"v${parsedVersion.version}\\"" doc/_resources/templates/document.html`,
+                        `comby -in-place 'latestReleaseKubernetesBuild = newBuild(":[1]")' "latestReleaseKubernetesBuild = newBuild(\\"${parsedVersion.version}\\")" cmd/frontend/internal/app/pkg/updatecheck/handler.go`,
+                        `comby -in-place 'latestReleaseDockerServerImageBuild = newBuild(":[1]")' "latestReleaseDockerServerImageBuild = newBuild(\\"${parsedVersion.version}\\")" cmd/frontend/internal/app/pkg/updatecheck/handler.go`,
+                    ],
+                    title: `Update latest release to ${parsedVersion.version}`,
+                },
+                {
+                    owner: 'sourcegraph',
+                    repo: 'deploy-sourcegraph-aws',
+                    base: 'master',
+                    head: `publish-${parsedVersion.version}`,
+                    commitMessage: `Update latest release to ${parsedVersion.version}`,
+                    bashEditCommands: [
+                        `sed -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${parsedVersion.version}/g' resources/user-data.sh`,
+                    ],
+                    title: `Update latest release to ${parsedVersion.version}`,
+                },
+                {
+                    owner: 'sourcegraph',
+                    repo: 'deploy-sourcegraph-digitalocean',
+                    base: 'master',
+                    head: `publish-${parsedVersion.version}`,
+                    commitMessage: `Update latest release to ${parsedVersion.version}`,
+                    bashEditCommands: [
+                        `sed -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${parsedVersion.version}/g' resources/user-data.sh`,
+                    ],
+                    title: `Update latest release to ${parsedVersion.version}`,
+                },
+            ]
+            for (const changeset of changes) {
+                await createBranchWithChanges(changeset)
+                const prURL = await createPR(changeset)
+                console.log(`Pull request created: ${prURL}`)
+            }
+            await postMessage(
+                `${parsedVersion.version} has been released, update deploy-sourcegraph-docker as needed, cc @stephen`,
+                slackAnnounceChannel
+            )
         },
     },
 ]
