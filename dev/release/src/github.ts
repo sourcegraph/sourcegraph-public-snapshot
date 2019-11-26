@@ -60,7 +60,7 @@ export async function ensureTrackingIssue({
         )
     }
 
-    return await ensureIssue(octokit, {
+    return ensureIssue(octokit, {
         title: trackingIssueTitle(majorVersion, minorVersion),
         owner: 'sourcegraph',
         repo: 'sourcegraph',
@@ -86,7 +86,7 @@ export async function ensurePatchReleaseIssue({
         .replace(/\$MAJOR/g, version.major.toString())
         .replace(/\$MINOR/g, version.minor.toString())
         .replace(/\$PATCH/g, version.patch.toString())
-    return await ensureIssue(octokit, {
+    return ensureIssue(octokit, {
         title: `${version.version} patch release`,
         owner: 'sourcegraph',
         repo: 'sourcegraph',
