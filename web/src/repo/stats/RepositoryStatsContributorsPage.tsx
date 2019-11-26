@@ -77,8 +77,7 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
                         to={`/search?${buildSearchURLQuery(query, patternType)}`}
                         className="font-weight-bold"
                         data-tooltip={
-                            revisionRange &&
-                            revisionRange.includes('..') &&
+                            revisionRange?.includes('..') &&
                             'All commits will be shown (revision end ranges are not yet supported)'
                         }
                     >

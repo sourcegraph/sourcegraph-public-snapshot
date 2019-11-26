@@ -31,7 +31,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
         props.extension.manifest && !isErrorLike(props.extension.manifest) ? props.extension.manifest : undefined
     let iconURL: URL | undefined
     try {
-        if (manifest && manifest.icon) {
+        if (manifest?.icon) {
             iconURL = new URL(manifest.icon)
         }
     } catch (e) {
@@ -47,8 +47,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                     <>
                         <div className="mb-3">
                             <div className="d-flex align-items-start">
-                                {manifest &&
-                                    manifest.icon &&
+                                {manifest?.icon &&
                                     iconURL &&
                                     iconURL.protocol === 'data:' &&
                                     /^data:image\/png(;base64)?,/.test(manifest.icon) && (

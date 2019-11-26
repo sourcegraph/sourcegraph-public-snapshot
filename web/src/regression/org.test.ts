@@ -159,7 +159,7 @@ describe('Organizations regression test suite', () => {
 
             {
                 const quicklinks = await getQuickLinks()
-                if (quicklinks && quicklinks.some(l => l.name === quicklink.name && l.url === quicklink.url)) {
+                if (quicklinks?.some(l => l.name === quicklink.name && l.url === quicklink.url)) {
                     throw new Error(
                         `Found quicklink ${JSON.stringify(quicklink)} in quicklinks: ${JSON.stringify(quicklinks)}`
                     )

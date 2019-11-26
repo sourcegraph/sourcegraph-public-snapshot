@@ -39,7 +39,7 @@ export const ExtensionREADME: React.FunctionComponent<{
                 extension={extension}
                 alertClass="alert-danger"
                 text={`This extension's manifest is invalid: ${
-                    manifest && manifest.message ? manifest.message : 'JSON parse error'
+                    manifest?.message ? manifest.message : 'JSON parse error'
                 }`}
                 buttonLabel="Fix manifest and publish new release"
             />

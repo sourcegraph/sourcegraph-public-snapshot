@@ -149,7 +149,7 @@ describe('e2e test suite', () => {
             const token: string = await (
                 await driver.page.waitForFunction(() => {
                     const elem = document.querySelector<HTMLInputElement>('.e2e-access-token input[type=text]')
-                    return elem && elem.value
+                    return elem?.value
                 })
             ).jsonValue()
 
@@ -321,7 +321,7 @@ describe('e2e test suite', () => {
             const blob: string = await (
                 await driver.page.waitFor(() => {
                     const elem = document.querySelector<HTMLElement>('.e2e-repo-blob')
-                    return elem && elem.textContent
+                    return elem?.textContent
                 })
             ).jsonValue()
 
@@ -351,7 +351,7 @@ describe('e2e test suite', () => {
             const blob: string = await (
                 await driver.page.waitFor(() => {
                     const elem = document.querySelector<HTMLElement>('.e2e-repo-blob')
-                    return elem && elem.textContent
+                    return elem?.textContent
                 })
             ).jsonValue()
 
@@ -797,7 +797,7 @@ describe('e2e test suite', () => {
                     await driver.page.waitForSelector('.e2e-blob .selected .line')
                     const selectedLineNumber = await driver.page.evaluate(() => {
                         const elem = document.querySelector<HTMLElement>('.e2e-blob .selected .line')
-                        return elem && elem.dataset.line && parseInt(elem.dataset.line, 10)
+                        return elem?.dataset.line && parseInt(elem.dataset.line, 10)
                     })
 
                     expect(selectedLineNumber).toEqual(line)
