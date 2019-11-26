@@ -4,8 +4,6 @@ import * as path from 'path'
 import * as settings from './settings'
 import promClient from 'prom-client'
 import { addTags, createTracer, logAndTraceCall, TracingContext } from '../shared/tracing'
-import { createCleanFailedJobsProcessor } from './processors/clean-failed-jobs'
-import { createCleanOldJobsProcessor } from './processors/clean-old-jobs'
 import { createConvertJobProcessor } from './processors/convert'
 import { createLogger } from '../shared/logging'
 import { createPostgresConnection } from '../shared/database/postgres'
@@ -95,24 +93,8 @@ async function main(logger: Logger): Promise<void> {
         tracer
     )
 
-    const cleanOldJobsProcessor = wrapJobProcessor(
-        'clean-old-jobs',
-        createCleanOldJobsProcessor(queue, logger),
-        logger,
-        tracer
-    )
-
-    const cleanFailedJobsProcessor = wrapJobProcessor(
-        'clean-failed-jobs',
-        createCleanFailedJobsProcessor(),
-        logger,
-        tracer
-    )
-
     // Start processing work
     queue.process('convert', convertJobProcessor).catch(() => {})
-    queue.process('clean-old-jobs', cleanOldJobsProcessor).catch(() => {})
-    queue.process('clean-failed-jobs', cleanFailedJobsProcessor).catch(() => {})
 }
 
 // Initialize logger

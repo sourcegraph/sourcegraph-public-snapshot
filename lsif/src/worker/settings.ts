@@ -23,16 +23,6 @@ export const REDIS_ENDPOINT = process.env.REDIS_STORE_ENDPOINT || process.env.RE
 export const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 
 /**
- * The maximum age (in seconds) that a job (completed or queued) will remain in redis.
- */
-export const JOB_MAX_AGE = readEnvInt('JOB_MAX_AGE', 60 * 60 * 24 * 7)
-
-/**
- * The maximum age (in seconds) that the files for a failed job can remain on disk.
- */
-export const FAILED_JOB_MAX_AGE = readEnvInt('FAILED_JOB_MAX_AGE', 24 * 60 * 60)
-
-/**
  * The maximum space (in bytes) that the dbs directory can use.
  */
 export const DBS_DIR_MAXIMUM_SIZE_BYTES = readEnvInt('DBS_DIR_MAXIMUM_SIZE_BYTES', 1024 * 1024 * 1024 * 10)
