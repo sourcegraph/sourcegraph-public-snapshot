@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n"
-	"github.com/sourcegraph/sourcegraph/enterprise/pkg/a8n/run"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -424,14 +423,14 @@ func (r *Resolver) PreviewCampaignPlan(ctx context.Context, args graphqlbackend.
 		return nil, errors.New("cannot create CampaignPlan without Type")
 	}
 
-	campaignType, err := run.NewCampaignType(typeName, specArgs, r.httpFactory)
+	campaignType, err := ee.NewCampaignType(typeName, specArgs, r.httpFactory)
 	if err != nil {
 		return nil, err
 	}
 
 	plan := &a8n.CampaignPlan{CampaignType: typeName, Arguments: specArgs}
 
-	runner := run.New(r.store, campaignType, graphqlbackend.SearchRepos, nil)
+	runner := ee.NewRunner(r.store, campaignType, graphqlbackend.SearchRepos, nil)
 
 	if args.Wait {
 		err := runner.Run(ctx, plan)

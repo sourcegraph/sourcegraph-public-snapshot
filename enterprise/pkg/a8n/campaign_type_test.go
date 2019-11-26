@@ -1,4 +1,4 @@
-package run
+package a8n
 
 import (
 	"context"
