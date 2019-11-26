@@ -45,7 +45,7 @@ describe('Initialize new instance', () => {
             })
             await driver.replaceText({
                 selector: 'input[name="password"]',
-                newText: config.sudoUsername,
+                newText: config.testUserPassword,
             })
             await driver.page.keyboard.press(Key.Enter)
             await driver.waitUntilURL(`${config.sourcegraphBaseUrl}/site-admin`)
