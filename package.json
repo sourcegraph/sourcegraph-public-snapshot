@@ -63,7 +63,7 @@
     "@percy/puppeteer": "^1.0.8",
     "@slack/web-api": "^5.4.0",
     "@sourcegraph/babel-plugin-transform-react-hot-loader-wrapper": "^1.0.0",
-    "@sourcegraph/eslint-config": "^0.4.8",
+    "@sourcegraph/eslint-config": "^0.5.0",
     "@sourcegraph/prettierrc": "^3.0.1",
     "@sourcegraph/stylelint-config": "^1.1.4",
     "@sourcegraph/tsconfig": "^4.0.0",
