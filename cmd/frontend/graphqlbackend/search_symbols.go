@@ -43,13 +43,13 @@ func (s *searchSymbolResult) uri() *gituri.URI {
 	return s.baseURI.WithFilePath(s.symbol.Path)
 }
 
-var mockSearchSymbols func(ctx context.Context, args *search.Args, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error)
+var mockSearchSymbols func(ctx context.Context, args *search.Args, limit int) (res []*FileMatchResolver, common *searchResultsCommon, err error)
 
 // searchSymbols searches the given repos in parallel for symbols matching the given search query
 // it can be used for both search suggestions and search results
 //
 // May return partial results and an error
-func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
+func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*FileMatchResolver, common *searchResultsCommon, err error) {
 	if mockSearchSymbols != nil {
 		return mockSearchSymbols(ctx, args, limit)
 	}
@@ -126,12 +126,12 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 		run = parallel.NewRun(conf.SearchSymbolsParallelism())
 		mu  sync.Mutex
 
-		unflattened       [][]*fileMatchResolver
+		unflattened       [][]*FileMatchResolver
 		flattenedSize     int
 		overLimitCanceled bool
 	)
 
-	addMatches := func(matches []*fileMatchResolver) {
+	addMatches := func(matches []*FileMatchResolver) {
 		if len(matches) > 0 {
 			common.resultCount += int32(len(matches))
 			sort.Slice(matches, func(i, j int) bool {
@@ -216,8 +216,8 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*fi
 }
 
 // limitSymbolResults returns a new version of res containing no more than limit symbol matches.
-func limitSymbolResults(res []*fileMatchResolver, limit int) []*fileMatchResolver {
-	res2 := make([]*fileMatchResolver, 0, len(res))
+func limitSymbolResults(res []*FileMatchResolver, limit int) []*FileMatchResolver {
+	res2 := make([]*FileMatchResolver, 0, len(res))
 	nsym := 0
 	for _, r := range res {
 		r2 := *r
@@ -236,7 +236,7 @@ func limitSymbolResults(res []*fileMatchResolver, limit int) []*fileMatchResolve
 }
 
 // symbolCount returns the total number of symbols in a slice of fileMatchResolvers.
-func symbolCount(fmrs []*fileMatchResolver) int {
+func symbolCount(fmrs []*FileMatchResolver) int {
 	nsym := 0
 	for _, fmr := range fmrs {
 		nsym += len(fmr.symbols)
@@ -244,7 +244,7 @@ func symbolCount(fmrs []*fileMatchResolver) int {
 	return nsym
 }
 
-func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.PatternInfo, query *query.Query, limit int) (res []*fileMatchResolver, err error) {
+func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.PatternInfo, query *query.Query, limit int) (res []*FileMatchResolver, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Search symbols in repo")
 	defer func() {
 		if err != nil {
@@ -282,8 +282,8 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 		// Ask for limit + 1 so we can detect whether there are more results than the limit.
 		First: limit + 1,
 	})
-	fileMatchesByURI := make(map[string]*fileMatchResolver)
-	fileMatches := make([]*fileMatchResolver, 0)
+	fileMatchesByURI := make(map[string]*FileMatchResolver)
+	fileMatches := make([]*FileMatchResolver, 0)
 	for _, symbol := range symbols {
 		commit := &GitCommitResolver{
 			repo:     &RepositoryResolver{repo: repoRevs.Repo},
@@ -301,7 +301,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 		if fileMatch, ok := fileMatchesByURI[uri]; ok {
 			fileMatch.symbols = append(fileMatch.symbols, symbolRes)
 		} else {
-			fileMatch := &fileMatchResolver{
+			fileMatch := &FileMatchResolver{
 				JPath:   symbolRes.symbol.Path,
 				symbols: []*searchSymbolResult{symbolRes},
 				uri:     uri,

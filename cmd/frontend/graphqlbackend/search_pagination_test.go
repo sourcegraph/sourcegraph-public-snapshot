@@ -42,8 +42,8 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 	repo := func(name string) *types.Repo {
 		return &types.Repo{Name: api.RepoName(name)}
 	}
-	result := func(repo *types.Repo, path string) *fileMatchResolver {
-		return &fileMatchResolver{JPath: path, repo: repo}
+	result := func(repo *types.Repo, path string) *FileMatchResolver {
+		return &FileMatchResolver{JPath: path, repo: repo}
 	}
 	format := func(r slicedSearchResults) string {
 		var b bytes.Buffer
@@ -61,7 +61,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 		fmt.Fprintf(&b, "limitHit: %v\n", r.limitHit)
 		return b.String()
 	}
-	sharedResult := []searchResultResolver{
+	sharedResult := []SearchResultResolver{
 		result(repo("org/repo1"), "a.go"),
 		result(repo("org/repo1"), "b.go"),
 		result(repo("org/repo1"), "c.go"),
@@ -85,19 +85,19 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 	}
 	tests := []struct {
 		name          string
-		results       []searchResultResolver
+		results       []SearchResultResolver
 		common        *searchResultsCommon
 		offset, limit int
 		want          slicedSearchResults
 	}{
 		{
 			name:    "empty result set",
-			results: []searchResultResolver{},
+			results: []SearchResultResolver{},
 			common:  &searchResultsCommon{},
 			offset:  0,
 			limit:   3,
 			want: slicedSearchResults{
-				results: []searchResultResolver{},
+				results: []SearchResultResolver{},
 				common: &searchResultsCommon{
 					resultCount: 0,
 					repos:       nil,
@@ -114,7 +114,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 			offset:  0,
 			limit:   3,
 			want: slicedSearchResults{
-				results: []searchResultResolver{
+				results: []SearchResultResolver{
 					result(repo("org/repo1"), "a.go"),
 					result(repo("org/repo1"), "b.go"),
 					result(repo("org/repo1"), "c.go"),
@@ -135,7 +135,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 			offset:  0,
 			limit:   2,
 			want: slicedSearchResults{
-				results: []searchResultResolver{
+				results: []SearchResultResolver{
 					result(repo("org/repo1"), "a.go"),
 					result(repo("org/repo1"), "b.go"),
 				},
@@ -155,7 +155,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 			offset:  3,
 			limit:   3,
 			want: slicedSearchResults{
-				results: []searchResultResolver{
+				results: []SearchResultResolver{
 					result(repo("org/repo2"), "a.go"),
 					result(repo("org/repo2"), "b.go"),
 					result(repo("org/repo3"), "a.go"),
@@ -176,7 +176,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 			offset:  2,
 			limit:   3,
 			want: slicedSearchResults{
-				results: []searchResultResolver{
+				results: []SearchResultResolver{
 					result(repo("org/repo1"), "c.go"),
 					result(repo("org/repo2"), "a.go"),
 					result(repo("org/repo2"), "b.go"),
@@ -192,7 +192,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 		},
 		{
 			name: "offset repo boundary fully consumed",
-			results: []searchResultResolver{
+			results: []SearchResultResolver{
 				result(repo("org/repo1"), "a.go"),
 				result(repo("org/repo1"), "b.go"),
 				result(repo("org/repo1"), "c.go"),
@@ -207,7 +207,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 			offset: 3,
 			limit:  3,
 			want: slicedSearchResults{
-				results: []searchResultResolver{
+				results: []SearchResultResolver{
 					result(repo("org/repo2"), "a.go"),
 					result(repo("org/repo2"), "b.go"),
 					result(repo("org/repo2"), "c.go"),
@@ -228,7 +228,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 			offset:  1,
 			limit:   1,
 			want: slicedSearchResults{
-				results: []searchResultResolver{
+				results: []SearchResultResolver{
 					result(repo("org/repo1"), "b.go"),
 				},
 				common: &searchResultsCommon{
@@ -272,8 +272,8 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 	repo := func(name string) *types.Repo {
 		return &types.Repo{Name: api.RepoName(name)}
 	}
-	result := func(repo *types.Repo, path, rev string) *fileMatchResolver {
-		return &fileMatchResolver{JPath: path, repo: repo, inputRev: &rev}
+	result := func(repo *types.Repo, path, rev string) *FileMatchResolver {
+		return &FileMatchResolver{JPath: path, repo: repo, inputRev: &rev}
 	}
 	repoRevs := func(name string, rev ...string) *search.RepositoryRevisions {
 		return &search.RepositoryRevisions{
@@ -289,14 +289,14 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 		repoRevs("5", "master"),
 	}
 	var searchedBatches [][]*search.RepositoryRevisions
-	resultsExecutor := func(batch []*search.RepositoryRevisions) (results []searchResultResolver, common *searchResultsCommon, err error) {
+	resultsExecutor := func(batch []*search.RepositoryRevisions) (results []SearchResultResolver, common *searchResultsCommon, err error) {
 		searchedBatches = append(searchedBatches, batch)
 		common = &searchResultsCommon{}
 		for _, repoRev := range batch {
 			for _, rev := range repoRev.Revs {
 				rev := rev.RevSpec
 				for i := 0; i < 3; i++ {
-					results = append(results, &fileMatchResolver{
+					results = append(results, &FileMatchResolver{
 						JPath:    fmt.Sprintf("some/file%d.go", i),
 						repo:     repoRev.Repo,
 						inputRev: &rev,
@@ -307,7 +307,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 		}
 		return
 	}
-	noResultsExecutor := func(batch []*search.RepositoryRevisions) (results []searchResultResolver, common *searchResultsCommon, err error) {
+	noResultsExecutor := func(batch []*search.RepositoryRevisions) (results []SearchResultResolver, common *searchResultsCommon, err error) {
 		return nil, &searchResultsCommon{}, nil
 	}
 	ctx := context.Background()
@@ -318,7 +318,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 		request             *searchPaginationInfo
 		wantSearchedBatches [][]*search.RepositoryRevisions
 		wantCursor          *searchCursor
-		wantResults         []searchResultResolver
+		wantResults         []SearchResultResolver
 		wantCommon          *searchResultsCommon
 		wantErr             error
 	}{
@@ -337,7 +337,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 				},
 			},
 			wantCursor: &searchCursor{RepositoryOffset: 2, ResultOffset: 4},
-			wantResults: []searchResultResolver{
+			wantResults: []SearchResultResolver{
 				result(repo("1"), "some/file0.go", "master"),
 				result(repo("1"), "some/file1.go", "master"),
 				result(repo("1"), "some/file2.go", "master"),
@@ -369,7 +369,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 				},
 			},
 			wantCursor: &searchCursor{RepositoryOffset: 5, ResultOffset: 0, Finished: true},
-			wantResults: []searchResultResolver{
+			wantResults: []SearchResultResolver{
 				result(repo("3"), "some/file1.go", "feature"),
 				result(repo("3"), "some/file2.go", "feature"),
 				result(repo("4"), "some/file0.go", "master"),
@@ -399,7 +399,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 				},
 			},
 			wantCursor: &searchCursor{RepositoryOffset: 0, ResultOffset: 1},
-			wantResults: []searchResultResolver{
+			wantResults: []SearchResultResolver{
 				result(repo("1"), "some/file0.go", "master"),
 			},
 			wantCommon: &searchResultsCommon{
@@ -423,7 +423,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 				},
 			},
 			wantCursor: &searchCursor{RepositoryOffset: 0, ResultOffset: 2},
-			wantResults: []searchResultResolver{
+			wantResults: []SearchResultResolver{
 				result(repo("1"), "some/file1.go", "master"),
 			},
 			wantCommon: &searchResultsCommon{
@@ -490,8 +490,8 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 	repo := func(name string) *types.Repo {
 		return &types.Repo{Name: api.RepoName(name)}
 	}
-	result := func(repo *types.Repo, path string) *fileMatchResolver {
-		return &fileMatchResolver{JPath: path, repo: repo}
+	result := func(repo *types.Repo, path string) *FileMatchResolver {
+		return &FileMatchResolver{JPath: path, repo: repo}
 	}
 	repoRevs := func(name string, rev ...string) *search.RepositoryRevisions {
 		return &search.RepositoryRevisions{
@@ -499,7 +499,7 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 			Revs: revs(rev...),
 		}
 	}
-	repoResults := map[string][]searchResultResolver{
+	repoResults := map[string][]SearchResultResolver{
 		"1": {
 			result(repo("1"), "a.go"),
 			result(repo("1"), "b.go"),
@@ -516,7 +516,7 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 		repoRevs("1", "master"),
 		repoRevs("2", "master"),
 	}
-	executor := func(batch []*search.RepositoryRevisions) (results []searchResultResolver, common *searchResultsCommon, err error) {
+	executor := func(batch []*search.RepositoryRevisions) (results []SearchResultResolver, common *searchResultsCommon, err error) {
 		common = &searchResultsCommon{}
 		for _, repoRev := range batch {
 			results = append(results, repoResults[string(repoRev.Repo.Name)]...)
@@ -530,7 +530,7 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 		name        string
 		request     *searchPaginationInfo
 		wantCursor  *searchCursor
-		wantResults []searchResultResolver
+		wantResults []SearchResultResolver
 		wantErr     error
 	}{
 		{
@@ -540,7 +540,7 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 				limit:  3,
 			},
 			wantCursor: &searchCursor{RepositoryOffset: 1, ResultOffset: 1},
-			wantResults: []searchResultResolver{
+			wantResults: []SearchResultResolver{
 				result(repo("1"), "a.go"),
 				result(repo("1"), "b.go"),
 				result(repo("2"), "a.go"),
@@ -553,7 +553,7 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 				limit:  3,
 			},
 			wantCursor: &searchCursor{RepositoryOffset: 1, ResultOffset: 4},
-			wantResults: []searchResultResolver{
+			wantResults: []SearchResultResolver{
 				result(repo("2"), "b.go"),
 				result(repo("2"), "c.go"),
 				result(repo("2"), "d.go"),
@@ -566,7 +566,7 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 				limit:  3,
 			},
 			wantCursor: &searchCursor{RepositoryOffset: 2, ResultOffset: 0, Finished: true},
-			wantResults: []searchResultResolver{
+			wantResults: []SearchResultResolver{
 				result(repo("2"), "e.go"),
 			},
 		},

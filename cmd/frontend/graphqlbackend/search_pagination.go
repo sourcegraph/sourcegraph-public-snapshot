@@ -69,7 +69,7 @@ type searchPaginationInfo struct {
 	limit int32
 }
 
-func (r *searchResultsResolver) PageInfo() *graphqlutil.PageInfo {
+func (r *SearchResultsResolver) PageInfo() *graphqlutil.PageInfo {
 	if r.cursor == nil || r.cursor.Finished {
 		return graphqlutil.HasNextPage(false)
 	}
@@ -87,7 +87,7 @@ func (r *searchResultsResolver) PageInfo() *graphqlutil.PageInfo {
 //    a timeout, searcing result types in parallel) is fundamentally incompatible
 //    with the absolute ordering we do here for pagination.
 //
-func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchResultsResolver, err error) {
+func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchResultsResolver, err error) {
 	start := time.Now()
 	if r.pagination == nil {
 		panic("never here: this method should never be called in this state")
@@ -202,7 +202,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *searchRe
 		"Finished", cursor.Finished,
 	)
 
-	return &searchResultsResolver{
+	return &SearchResultsResolver{
 		start:               start,
 		searchResultsCommon: common,
 		results:             results,
@@ -243,7 +243,7 @@ func repoIsLess(i, j *types.Repo) bool {
 //    top of the penalty we incur from the larger `count:` mentioned in point
 //    2 above (in the worst case scenario).
 //
-func paginatedSearchFilesInRepos(ctx context.Context, args *search.Args, pagination *searchPaginationInfo) (*searchCursor, []searchResultResolver, *searchResultsCommon, error) {
+func paginatedSearchFilesInRepos(ctx context.Context, args *search.Args, pagination *searchPaginationInfo) (*searchCursor, []SearchResultResolver, *searchResultsCommon, error) {
 	plan := &repoPaginationPlan{
 		pagination:          pagination,
 		repositories:        args.Repos,
@@ -251,7 +251,7 @@ func paginatedSearchFilesInRepos(ctx context.Context, args *search.Args, paginat
 		searchBucketMin:     10,
 		searchBucketMax:     1000,
 	}
-	return plan.execute(ctx, func(batch []*search.RepositoryRevisions) ([]searchResultResolver, *searchResultsCommon, error) {
+	return plan.execute(ctx, func(batch []*search.RepositoryRevisions) ([]SearchResultResolver, *searchResultsCommon, error) {
 		batchArgs := *args
 		batchArgs.Repos = batch
 		fileResults, fileCommon, err := searchFilesInRepos(ctx, &batchArgs)
@@ -271,7 +271,7 @@ func paginatedSearchFilesInRepos(ctx context.Context, args *search.Args, paginat
 		sort.Slice(fileResults, func(i, j int) bool {
 			return fileResults[i].uri < fileResults[j].uri
 		})
-		results := make([]searchResultResolver, 0, len(fileResults))
+		results := make([]SearchResultResolver, 0, len(fileResults))
 		for _, r := range fileResults {
 			results = append(results, r)
 		}
@@ -313,14 +313,14 @@ type repoPaginationPlan struct {
 //
 // A non-nil searchResultsCommon must always be returned, even if an error is
 // returned.
-type executor func(batch []*search.RepositoryRevisions) ([]searchResultResolver, *searchResultsCommon, error)
+type executor func(batch []*search.RepositoryRevisions) ([]SearchResultResolver, *searchResultsCommon, error)
 
 // execute executes the repository pagination plan by invoking the executor to
 // search batches of repositories.
 //
 // If the executor returns any error, the search will be cancelled and the error
 // returned.
-func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *searchCursor, results []searchResultResolver, common *searchResultsCommon, err error) {
+func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *searchCursor, results []SearchResultResolver, common *searchResultsCommon, err error) {
 	// Determine how large the batches of repositories we will search over will be.
 	var totalRepos int
 	if p.mockNumTotalRepos != nil {
@@ -393,7 +393,7 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 
 type slicedSearchResults struct {
 	// results is the new results, sliced.
-	results []searchResultResolver
+	results []SearchResultResolver
 
 	// common is the new common results structure, updated to reflect the sliced results only.
 	common *searchResultsCommon
@@ -414,7 +414,7 @@ type slicedSearchResults struct {
 // sliceSearchResults effectively slices results[offset:offset+limit] and
 // returns an updated searchResultsCommon structure to reflect that, as well as
 // information about the slicing that was performed.
-func sliceSearchResults(results []searchResultResolver, common *searchResultsCommon, offset, limit int) (final slicedSearchResults) {
+func sliceSearchResults(results []SearchResultResolver, common *searchResultsCommon, offset, limit int) (final slicedSearchResults) {
 	// First we handle the case of having few enough results that we do not
 	// need to slice anything.
 	if len(results[offset:]) <= limit {
@@ -433,7 +433,7 @@ func sliceSearchResults(results []searchResultResolver, common *searchResultsCom
 	for _, r := range common.repos {
 		reposByName[string(r.Name)] = r
 	}
-	resultsByRepo := map[*types.Repo][]searchResultResolver{}
+	resultsByRepo := map[*types.Repo][]SearchResultResolver{}
 	for _, r := range results[:limit] {
 		repoName, _ := r.searchResultURIs()
 		repo := reposByName[repoName]
@@ -469,7 +469,7 @@ func sliceSearchResults(results []searchResultResolver, common *searchResultsCom
 
 	// Construct the new searchResultsCommon structure for just the results
 	// we're returning.
-	final.results = make([]searchResultResolver, 0, limit)
+	final.results = make([]SearchResultResolver, 0, limit)
 	final.common = &searchResultsCommon{
 		limitHit:         false, // irrelevant in paginated search
 		indexUnavailable: common.indexUnavailable,

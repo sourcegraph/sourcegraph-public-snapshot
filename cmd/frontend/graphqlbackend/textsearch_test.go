@@ -322,17 +322,17 @@ func TestQueryToZoektFileOnlyQueries(t *testing.T) {
 }
 
 func TestSearchFilesInRepos(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
-			return []*fileMatchResolver{
+			return []*FileMatchResolver{
 				{
 					uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
 				},
 			}, false, nil
 		case "foo/two":
-			return []*fileMatchResolver{
+			return []*FileMatchResolver{
 				{
 					uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
 				},
@@ -409,17 +409,17 @@ func TestSearchFilesInRepos(t *testing.T) {
 }
 
 func TestRepoShouldBeSearched(t *testing.T) {
-	mockTextSearch = func(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
+	mockTextSearch = func(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p *search.PatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
-			return []*fileMatchResolver{
+			return []*FileMatchResolver{
 				{
 					uri: "git://" + string(repoName) + "?1a2b3c#" + "main.go",
 				},
 			}, false, nil
 		case "foo/no-filematch":
-			return []*fileMatchResolver{}, false, nil
+			return []*FileMatchResolver{}, false, nil
 		default:
 			return nil, false, errors.New("Unexpected repo")
 		}
@@ -513,7 +513,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 	tests := []struct {
 		name              string
 		args              args
-		wantFm            []*fileMatchResolver
+		wantFm            []*FileMatchResolver
 		wantLimitHit      bool
 		wantReposLimitHit map[string]struct{}
 		wantErr           bool
