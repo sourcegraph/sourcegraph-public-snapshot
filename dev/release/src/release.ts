@@ -12,7 +12,7 @@ import {
     CreateBranchWithChangesOptions,
 } from './github'
 import * as persistedConfig from './config.json'
-import { addHours, addMinutes, subMinutes, isWeekend } from 'date-fns'
+import { addHours, addMinutes, subMinutes, isWeekend, eachDayOfInterval, addDays, subDays } from 'date-fns'
 import * as semver from 'semver'
 import commandExists from 'command-exists'
 import { PullsCreateParams } from '@octokit/rest'
@@ -98,17 +98,6 @@ const steps: Step[] = [
         id: 'add-timeline-to-calendar',
         run: async c => {
             const googleCalendar = await getClient()
-
-            const datesBetween: Date[] = []
-            const fourDaysBefore = new Date(c.fourWorkingDaysBeforeRelease)
-            const oneDayBefore = new Date(c.oneWorkingDayBeforeRelease)
-            const d = new Date(fourDaysBefore)
-            d.setDate(d.getDate() + 1)
-            while (d < oneDayBefore) {
-                datesBetween.push(new Date(d))
-                d.setDate(d.getDate() + 1)
-            }
-
             const events: EventOptions[] = [
                 {
                     title: 'Release captain: prepare for branch cut (5 working days until release)',
@@ -122,7 +111,10 @@ const steps: Step[] = [
                     startDateTime: new Date(c.fourWorkingDaysBeforeRelease).toISOString(),
                     endDateTime: addMinutes(new Date(c.fourWorkingDaysBeforeRelease), 1).toISOString(),
                 },
-                ...datesBetween
+                ...eachDayOfInterval({
+                    start: addDays(new Date(c.fourWorkingDaysBeforeRelease), 1),
+                    end: subDays(new Date(c.oneWorkingDayBeforeRelease), 1),
+                })
                     .filter(d => !isWeekend(d))
                     .map(d => ({
                         title: 'Release captain: cut new release candidate',
