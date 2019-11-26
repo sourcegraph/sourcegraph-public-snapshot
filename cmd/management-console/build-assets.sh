@@ -1,14 +1,18 @@
 #!/usr/bin/env bash
 
 cd $(dirname "${BASH_SOURCE[0]}")
-set -ex
+set -euxo pipefail
 
 # for node_modules/@sourcegraph/tsconfig/tsconfig.json
 pushd ../..
-yarn install
+# mutex is necessary since frontend and the management-console can
+# run concurrent "yarn" installs
+yarn --mutex network install
 popd
 
 pushd web/
-yarn install
+# mutex is necessary since frontend and the management-console can
+# run concurrent "yarn" installs
+yarn --mutex network install
 yarn run build
 popd
