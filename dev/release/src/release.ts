@@ -229,7 +229,7 @@ Tracking issue: ${trackingIssueURL}
 Key dates:
 - Release branch cut, testing commences: ${formatDate(new Date(c.fourWorkingDaysBeforeRelease))}
 - Final release tag: ${formatDate(new Date(c.oneWorkingDayBeforeRelease))}
-- Release: ${formatDate(new Date(c.releaseDateTime))}}
+- Release: ${formatDate(new Date(c.releaseDateTime))}
 - Retrospective: ${formatDate(new Date(c.retrospectiveDateTime))}`,
                 c.slackAnnounceChannel
             )
