@@ -1369,11 +1369,15 @@ describe('e2e test suite', () => {
     })
 
     describe('Campaigns', () => {
+        let previousExperimentalFeatures: any
         beforeAll(async () => {
-            await driver.setConfig(['experimentalFeatures'], prev => ({ ...prev?.value, automation: 'enabled' }))
+            await driver.setConfig(['experimentalFeatures'], prev => {
+                previousExperimentalFeatures = prev
+                return { automation: 'enabled' }
+            })
         })
         afterAll(async () => {
-            await driver.setConfig(['experimentalFeatures'], prev => ({ ...prev?.value, automation: 'disabled' }))
+            await driver.setConfig(['experimentalFeatures'], () => previousExperimentalFeatures)
         })
         test('Create campaign preview for comby campaign type', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/campaigns/new')
