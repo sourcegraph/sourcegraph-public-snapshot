@@ -163,6 +163,15 @@ export async function getIssueByTitle(octokit: Octokit, title: string): Promise<
     return matchingIssues[0].html_url
 }
 
+export interface CreateBranchWithChangesOptions {
+    owner: string
+    repo: string
+    base: string
+    head: string
+    commitMessage: string
+    bashEditCommands: string[]
+}
+
 export async function createBranchWithChanges({
     owner,
     repo,
@@ -170,14 +179,7 @@ export async function createBranchWithChanges({
     head: headBranch,
     commitMessage,
     bashEditCommands,
-}: {
-    owner: string
-    repo: string
-    base: string
-    head: string
-    commitMessage: string
-    bashEditCommands: string[]
-}): Promise<void> {
+}: CreateBranchWithChangesOptions): Promise<void> {
     const tmpdir = await mkdtemp(path.join(os.tmpdir(), `sg-release-${owner}-${repo}-`))
     console.log(`Created temp directory ${tmpdir}`)
 
@@ -204,7 +206,7 @@ export async function createPR(options: {
     head: string
     base: string
     title: string
-    body: string
+    body?: string
 }): Promise<string> {
     const octokit = await getAuthenticatedGitHubClient()
     const response = await octokit.pulls.create(options)

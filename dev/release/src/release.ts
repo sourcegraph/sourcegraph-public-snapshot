@@ -9,12 +9,14 @@ import {
     ensurePatchReleaseIssue,
     createBranchWithChanges,
     createPR,
+    CreateBranchWithChangesOptions,
 } from './github'
 import * as persistedConfig from './config.json'
-import { addHours, addMinutes, subMinutes } from 'date-fns'
+import { addHours, addMinutes, subMinutes, isWeekend } from 'date-fns'
 import { spawn } from 'child_process'
 import * as semver from 'semver'
 import commandExists from 'command-exists'
+import { PullsCreateParams } from '@octokit/rest'
 
 interface Config {
     teamEmail: string
@@ -121,7 +123,7 @@ const steps: Step[] = [
                     endDateTime: addMinutes(new Date(c.fourWorkingDaysBeforeRelease), 1).toISOString(),
                 },
                 ...datesBetween
-                    .filter(d => d.getDay() !== 0 && d.getDay() !== 6)
+                    .filter(d => !isWeekend(d))
                     .map(d => ({
                         title: 'Release captain: cut new release candidate',
                         description: 'See release tracking issue for TODOs',
@@ -338,7 +340,7 @@ Key dates:
                 }
             }
 
-            const changes: octokit.PullsCreateParams & CreateBranchWithChangesOptions  = [
+            const changes: (PullsCreateParams & CreateBranchWithChangesOptions)[] = [
                 {
                     owner: 'sourcegraph',
                     repo: 'sourcegraph',
@@ -352,7 +354,6 @@ Key dates:
                         `comby -in-place 'latestReleaseDockerServerImageBuild = newBuild(":[1]")' "latestReleaseDockerServerImageBuild = newBuild(\\"${parsedVersion.version}\\")" cmd/frontend/internal/app/pkg/updatecheck/handler.go`,
                     ],
                     title: `Update latest release to ${parsedVersion.version}`,
-                    body: '',
                 },
                 {
                     owner: 'sourcegraph',
@@ -364,7 +365,6 @@ Key dates:
                         `sed -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${parsedVersion.version}/g' resources/user-data.sh`,
                     ],
                     title: `Update latest release to ${parsedVersion.version}`,
-                    body: '',
                 },
                 {
                     owner: 'sourcegraph',
@@ -376,7 +376,6 @@ Key dates:
                         `sed -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${parsedVersion.version}/g' resources/user-data.sh`,
                     ],
                     title: `Update latest release to ${parsedVersion.version}`,
-                    body: '',
                 },
             ]
             for (const changeset of changes) {
