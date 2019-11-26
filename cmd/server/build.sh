@@ -52,15 +52,18 @@ export -f go_build
 echo "--- go build"
 
 PACKAGES=(
-    $server_pkg \
     github.com/sourcegraph/sourcegraph/cmd/github-proxy \
     github.com/sourcegraph/sourcegraph/cmd/gitserver \
     github.com/sourcegraph/sourcegraph/cmd/query-runner \
     github.com/sourcegraph/sourcegraph/cmd/replacer \
     github.com/sourcegraph/sourcegraph/cmd/searcher \
+    $additional_images
+    \
     github.com/google/zoekt/cmd/zoekt-archive-index \
     github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver \
-    github.com/google/zoekt/cmd/zoekt-webserver $additional_images
+    github.com/google/zoekt/cmd/zoekt-webserver \
+    \
+    $server_pkg
 )
 
 parallel_run go_build {} ::: "${PACKAGES[@]}"
