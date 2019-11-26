@@ -4,9 +4,9 @@ import { readFile } from 'mz/fs'
 import { promisify } from 'util'
 import * as semver from 'semver'
 import { mkdtemp as original_mkdtemp } from 'fs'
-import { spawn } from 'child_process'
 import * as os from 'os'
 import * as path from 'path'
+import execa from 'execa'
 const mkdtemp = promisify(original_mkdtemp)
 
 const formatDate = (d: Date): string => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`
@@ -194,10 +194,7 @@ export async function createBranchWithChanges({
     git commit -a -m ${JSON.stringify(commitMessage)};
     git push origin HEAD:${headBranch};
     `
-    const child = spawn('bash', ['-c', bashScript])
-    child.stdout.pipe(process.stdout)
-    child.stderr.pipe(process.stderr)
-    await new Promise(resolve => child.on('exit', code => resolve(code)))
+    await execa('bash', ['-c', bashScript], { stdio: 'inherit' })
 }
 
 export async function createPR(options: {

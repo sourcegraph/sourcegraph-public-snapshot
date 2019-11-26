@@ -229,7 +229,7 @@ Tracking issue: ${trackingIssueURL}
 Key dates:
 - Release branch cut, testing commences: ${formatDate(new Date(c.fourWorkingDaysBeforeRelease))}
 - Final release tag: ${formatDate(new Date(c.oneWorkingDayBeforeRelease))}
-- Release: ${formatDate(new Date(c.releaseDateTime))}}
+- Release: ${formatDate(new Date(c.releaseDateTime))}
 - Retrospective: ${formatDate(new Date(c.retrospectiveDateTime))}`,
                 c.slackAnnounceChannel
             )
@@ -341,8 +341,10 @@ Key dates:
                     head: `publish-${parsedVersion.version}`,
                     commitMessage: `Update latest release to ${parsedVersion.version}`,
                     bashEditCommands: [
-                        "find . -type f -name '*.md' -exec sed -i -E 's/sourcegraph\\/server:[0-9]+\\.[0-9]+\\.[0-9]+/sourcegraph\\/server:3.11.0/g' {} +",
-                        `comby -in-place 'currentReleaseRevspec := ":[1]"' "currentReleaseRevspec := \\"v${parsedVersion.version}\\"" doc/_resources/templates/document.html`,
+                        `find . -type f -name '*.md' -exec sed -i -E 's/sourcegraph\\/server:[0-9]+\\.[0-9]+\\.[0-9]+/sourcegraph\\/server:${parsedVersion.version}/g' {} +`,
+                        parsedVersion.patch === 0
+                            ? `comby -in-place '{{$previousReleaseRevspec := ":[1]"}} {{$previousReleaseVersion := ":[2]"}} {{$currentReleaseRevspec := ":[3]"}} {{$currentReleaseVersion := ":[4]"}}' '{{$previousReleaseRevspec := ":[3]"}} {{$previousReleaseVersion := ":[4]"}} {{$currentReleaseRevspec := "v${parsedVersion.version}"}} {{$currentReleaseVersion := "${parsedVersion.major}.${parsedVersion.minor}"}}' doc/_resources/templates/document.html`
+                            : `comby -in-place 'currentReleaseRevspec := ":[1]"' 'currentReleaseRevspec := "v${parsedVersion.version}"' doc/_resources/templates/document.html`,
                         `comby -in-place 'latestReleaseKubernetesBuild = newBuild(":[1]")' "latestReleaseKubernetesBuild = newBuild(\\"${parsedVersion.version}\\")" cmd/frontend/internal/app/pkg/updatecheck/handler.go`,
                         `comby -in-place 'latestReleaseDockerServerImageBuild = newBuild(":[1]")' "latestReleaseDockerServerImageBuild = newBuild(\\"${parsedVersion.version}\\")" cmd/frontend/internal/app/pkg/updatecheck/handler.go`,
                     ],
