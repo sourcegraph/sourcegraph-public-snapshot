@@ -112,8 +112,12 @@ func (s *Store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err
 	if err != nil {
 		return err
 	}
+
 	if oldIDs == nil {
 		oldIDs = roaring.NewBitmap()
+	}
+	if p.UserIDs == nil {
+		p.UserIDs = roaring.NewBitmap()
 	}
 
 	// Fisrt get the intersection (And), then use the intersection to compute diffs (AndNot)
@@ -344,6 +348,7 @@ func (s *Store) SetRepoPendingPermissions(
 	}
 
 	// Make up p.UserIDs from the result set.
+	p.UserIDs = roaring.NewBitmap()
 	for id := range bindIDSet {
 		p.UserIDs.Add(uint32(id))
 	}
