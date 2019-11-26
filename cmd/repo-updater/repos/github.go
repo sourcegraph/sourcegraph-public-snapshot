@@ -172,6 +172,21 @@ func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) error {
 
 // LoadChangesets loads the latest state of the given Changesets from the codehost.
 func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) error {
+	const batchSize = 10
+	// We load changesets in batches to avoid hitting Github's GraphQL node limit
+	for i := 0; i < len(cs); i += batchSize {
+		j := i + batchSize
+		if j > len(cs) {
+			j = len(cs)
+		}
+		if err := s.loadChangesets(ctx, cs[i:j]...); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s GithubSource) loadChangesets(ctx context.Context, cs ...*Changeset) error {
 	prs := make([]*github.PullRequest, len(cs))
 	for i := range cs {
 		repo := cs[i].Repo.Metadata.(*github.Repository)

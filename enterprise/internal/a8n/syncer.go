@@ -16,15 +16,7 @@ type ChangesetSyncer struct {
 	Store       *Store
 	ReposStore  repos.Store
 	HTTPFactory *httpcli.Factory
-
-	// ChangesetBatchSize determines how many changesets to load at a time.
-	// If 0 it falls back to DefaultBatchLoadSize
-	ChangesetBatchSize int
 }
-
-// DefaultChangesetBatchSize is the default number of changesets we should
-// load at a time
-const DefaultChangesetBatchSize = 10
 
 // Sync refreshes the metadata of all changesets and updates them in the
 // database
@@ -124,21 +116,10 @@ func (s *ChangesetSyncer) SyncChangesets(ctx context.Context, cs ...*a8n.Changes
 		})
 	}
 
-	changesetBatchSize := s.ChangesetBatchSize
-	if changesetBatchSize == 0 {
-		changesetBatchSize = DefaultChangesetBatchSize
-	}
-
 	var events []*a8n.ChangesetEvent
 	for _, s := range bySource {
-		for i := 0; i < len(s.Changesets); i += changesetBatchSize {
-			j := i + changesetBatchSize
-			if j > len(s.Changesets) {
-				j = len(s.Changesets)
-			}
-			if err = s.LoadChangesets(ctx, s.Changesets[i:j]...); err != nil {
-				return err
-			}
+		if err := s.LoadChangesets(ctx, s.Changesets...); err != nil {
+			return err
 		}
 		for _, c := range s.Changesets {
 			events = append(events, c.Events()...)
