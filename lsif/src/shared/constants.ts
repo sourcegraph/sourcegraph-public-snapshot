@@ -4,7 +4,8 @@
 export const DBS_DIR = 'dbs'
 
 /**
- * The directory relative to the storage where scratch SQLite databases create created during processing.
+ * The directory relative to the storage where scratch SQLite databases create
+ * created during conversion.
  */
 export const TEMP_DIR = 'temp'
 

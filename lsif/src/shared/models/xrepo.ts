@@ -3,6 +3,43 @@ import { EncodedBloomFilter } from '../xrepo/bloom-filter'
 import { MAX_POSTGRES_BATCH_SIZE } from '../constants'
 
 /**
+ * TODO
+ */
+export type LsifUploadState = 'queued' | 'completed' | 'errored' | 'processing'
+
+/**
+ * TODO
+ */
+@Entity({ name: 'lsif_uploads' })
+export class LsifUpload {
+    @PrimaryGeneratedColumn('increment', { type: 'int' })
+    public id!: number
+
+    @Column('text')
+    public repository!: string
+    @Column('text')
+    public commit!: string
+    @Column('text')
+    public root!: string
+    @Column('text')
+    public filename!: string
+
+    @Column('text')
+    public state!: LsifUploadState
+    @Column('text', { name: 'failure_summary', nullable: true })
+    public failureSummary!: string
+    @Column('text', { name: 'failure_stacktrace', nullable: true })
+    public failureStacktrace!: string
+
+    @Column('timestamp with time zone', { name: 'uploaded_at' })
+    public uploadedAt!: Date
+    @Column('timestamp with time zone', { name: 'started_at', nullable: true })
+    public startedAt!: Date
+    @Column('timestamp with time zone', { name: 'completed_or_errored_at', nullable: true })
+    public completedOrFailedAt!: Date
+}
+
+/**
  * An entity within the cross-repo database. This tracks commit parentage and branch
  * heads for all known repositories.
  */
@@ -182,4 +219,4 @@ export class ReferenceModel extends Package {
 /**
  * The entities composing the cross-repository database models.
  */
-export const entities = [Commit, LsifDump, PackageModel, ReferenceModel]
+export const entities = [LsifUpload, Commit, LsifDump, PackageModel, ReferenceModel]

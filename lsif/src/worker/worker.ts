@@ -4,61 +4,53 @@ import * as path from 'path'
 import * as settings from './settings'
 import promClient from 'prom-client'
 import { addTags, createTracer, logAndTraceCall, TracingContext } from '../shared/tracing'
-import { createCleanFailedJobsProcessor } from './processors/clean-failed-jobs'
-import { createCleanOldJobsProcessor } from './processors/clean-old-jobs'
-import { createConvertJobProcessor } from './processors/convert'
 import { createLogger } from '../shared/logging'
 import { createPostgresConnection } from '../shared/database/postgres'
-import { createQueue } from '../shared/queue/queue'
 import { ensureDirectory } from '../shared/paths'
 import { followsFrom, FORMAT_TEXT_MAP, Span, Tracer } from 'opentracing'
-import { instrumentWithLabels } from '../shared/metrics'
-import { Job } from 'bull'
+import { instrument } from '../shared/metrics'
 import { Logger } from 'winston'
 import { startMetricsServer } from './server'
 import { waitForConfiguration } from '../shared/config/config'
 import { XrepoDatabase } from '../shared/xrepo/xrepo'
+import * as xrepoModels from '../shared/models/xrepo'
+import { Queue } from '../shared/uploads/uploads'
+import { createUploadConverter, uploadConverter } from './conversion'
 
 /**
- * Wrap a job processor with instrumentation.
+ * Wrap an upload converter with logging and tracing.
  *
- * @param type The job name.
- * @param jobProcessor The job processor.
+ * @param convert The upload converter.
  * @param logger The logger instance.
  * @param tracer The tracer instance.
  */
-const wrapJobProcessor = <T>(
-    type: string,
-    jobProcessor: (job: Job, args: T, ctx: TracingContext) => Promise<void>,
-    logger: Logger,
-    tracer: Tracer | undefined
-): ((job: Job) => Promise<void>) => async (job: Job) => {
-    logger.debug(`Accepted ${type} job`, { jobId: job.id })
-
-    // Destructure arguments and injected tracing context
-    const { args, tracing }: { args: T; tracing: object } = job.data
-
+const wrapUploadConverter = (convert: uploadConverter, logger: Logger, tracer?: Tracer) => async (
+    upload: xrepoModels.LsifUpload
+): Promise<void> => {
     let span: Span | undefined
     if (tracer) {
-        // Extract tracing context from job payload
-        const publisher = tracer.extract(FORMAT_TEXT_MAP, tracing)
-        span = tracer.startSpan(type, publisher ? { references: [followsFrom(publisher)] } : {})
+        // Extract tracing context from upload record
+        const publisher = tracer.extract(FORMAT_TEXT_MAP, {}) // TODO - from upload
+        span = tracer.startSpan('convert', publisher ? { references: [followsFrom(publisher)] } : {})
     }
 
-    // Tag tracing context with jobId and arguments
-    const ctx = addTags({ logger, span }, { jobId: job.id, ...args })
+    const args = {
+        repository: upload.repository,
+        commit: upload.commit,
+        root: upload.root,
+        filename: upload.filename,
+    }
 
-    await instrumentWithLabels(
-        metrics.jobDurationHistogram,
-        metrics.jobDurationErrorsCounter,
-        { class: type },
-        (): Promise<void> =>
-            logAndTraceCall(ctx, `Running ${type} job`, (ctx: TracingContext) => jobProcessor(job, args, ctx))
+    // Tag tracing context with uploadId and arguments
+    const ctx = addTags({ logger, span }, { uploadId: upload.id, ...args })
+
+    await instrument(metrics.uploadConversionDurationHistogram, metrics.uploadConversionDurationErrorsCounter, () =>
+        logAndTraceCall(ctx, 'Converting upload', (ctx: TracingContext) => convert(args, upload.uploadedAt, ctx))
     )
 }
 
 /**
- * Runs the worker which accepts LSIF conversion jobs from the work queue.
+ * Runs the worker which converts raw LSIF uploads into SQLite databases.
  *
  * @param logger The logger instance.
  */
@@ -78,41 +70,31 @@ async function main(logger: Logger): Promise<void> {
     await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.TEMP_DIR))
     await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR))
 
-    // Create cross-repo database
+    // Create cross-repo database, queue, and upload converter
     const connection = await createPostgresConnection(fetchConfiguration(), logger)
     const xrepoDatabase = new XrepoDatabase(connection, settings.STORAGE_ROOT)
+    const queue = new Queue(connection)
+    const convertUpload = wrapUploadConverter(
+        createUploadConverter(connection, xrepoDatabase, fetchConfiguration),
+        logger,
+        tracer
+    )
 
     // Start metrics server
     startMetricsServer(logger)
 
-    // Create queue to poll for jobs
-    const queue = createQueue(settings.REDIS_ENDPOINT, logger)
+    // TODO - find a library that does this
+    while (true) {
+        logger.debug('Polling')
 
-    const convertJobProcessor = wrapJobProcessor(
-        'convert',
-        createConvertJobProcessor(connection, xrepoDatabase, fetchConfiguration),
-        logger,
-        tracer
-    )
-
-    const cleanOldJobsProcessor = wrapJobProcessor(
-        'clean-old-jobs',
-        createCleanOldJobsProcessor(queue, logger),
-        logger,
-        tracer
-    )
-
-    const cleanFailedJobsProcessor = wrapJobProcessor(
-        'clean-failed-jobs',
-        createCleanFailedJobsProcessor(),
-        logger,
-        tracer
-    )
-
-    // Start processing work
-    queue.process('convert', convertJobProcessor).catch(() => {})
-    queue.process('clean-old-jobs', cleanOldJobsProcessor).catch(() => {})
-    queue.process('clean-failed-jobs', cleanFailedJobsProcessor).catch(() => {})
+        // TODO - catch errors here
+        const handled = await queue.dequeueAndConvert(convertUpload)
+        if (!handled) {
+            // TODO - configure polling interval
+            // TODO - some kind of polling interval here
+            await new Promise(r => setTimeout(r, 1000))
+        }
+    }
 }
 
 // Initialize logger

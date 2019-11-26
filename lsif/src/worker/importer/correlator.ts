@@ -49,14 +49,12 @@ export interface ResultSetData {
  */
 export class Correlator {
     /**
-     * The LSIF version of the input. This is extracted from the metadata vertex at
-     * the beginning of processing.
+     * The LSIF version of the input. This is extracted from the metadata vertex.
      */
     public lsifVersion?: string
 
     /**
-     * The root of all document URIs. This is extracted from the metadata vertex at
-     * the beginning of processing.
+     * The root of all document URIs. This is extracted from the metadata vertex.
      */
     public projectRoot?: URL
 
@@ -102,7 +100,7 @@ export class Correlator {
     }
 
     /**
-     * Process a single vertex or edge.
+     * Insert data from a single vertex or edge into the correlator state.
      *
      * @param element A vertex or edge element from the LSIF dump.
      */

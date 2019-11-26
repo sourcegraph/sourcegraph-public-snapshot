@@ -106,7 +106,7 @@ describe('parseJsonLines', () => {
 
         await expect(consume(parseJsonLines(generate(input)))).rejects.toThrowError(
             new Error(
-                'Failed to process line #4 ({"type": "edge" "label": "moniker"}): Unexpected string in JSON at position 16'
+                'Failed to parse line #4 ({"type": "edge" "label": "moniker"}): Unexpected string in JSON at position 16'
             )
         )
     })

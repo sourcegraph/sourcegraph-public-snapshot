@@ -1,18 +1,23 @@
-import * as constants from '../../shared/constants'
+import * as constants from '../shared/constants'
 import * as fs from 'mz/fs'
 import * as path from 'path'
-import * as settings from '../settings'
-import { addTags, TracingContext } from '../../shared/tracing'
+import * as settings from './settings'
+import { addTags, TracingContext } from '../shared/tracing'
 import { Connection } from 'typeorm'
-import { convertLsif } from '../importer/importer'
-import { createSilentLogger } from '../../shared/logging'
-import { dbFilename } from '../../shared/paths'
-import { Job } from 'bull'
-import { withLock } from '../../shared/locker/locker'
-import { XrepoDatabase } from '../../shared/xrepo/xrepo'
+import { convertLsif } from './importer/importer'
+import { createSilentLogger } from '../shared/logging'
+import { dbFilename } from '../shared/paths'
+import { withLock } from '../shared/locks/locks'
+import { XrepoDatabase } from '../shared/xrepo/xrepo'
+
+export type uploadConverter = (
+    { repository, commit, root, filename }: { repository: string; commit: string; root: string; filename: string },
+    uploadedAt: Date,
+    ctx: TracingContext
+) => Promise<void>
 
 /**
- * Create a job that takes a repository, commit, and filename containing the gzipped
+ * Create a function that takes a repository, commit, and filename containing the gzipped
  * input of an LSIF dump and converts it to a SQLite database. This will also populate
  * the cross-repo database for this dump.
  *
@@ -20,17 +25,17 @@ import { XrepoDatabase } from '../../shared/xrepo/xrepo'
  * @param xrepoDatabase The cross-repo database.
  * @param fetchConfiguration A function that returns the current configuration.
  */
-export const createConvertJobProcessor = (
+export const createUploadConverter = (
     connection: Connection,
     xrepoDatabase: XrepoDatabase,
     fetchConfiguration: () => { gitServers: string[] }
 ) => async (
-    job: Job,
     { repository, commit, root, filename }: { repository: string; commit: string; root: string; filename: string },
+    uploadedAt: Date,
     ctx: TracingContext
 ): Promise<void> => {
     const { logger = createSilentLogger(), span } = addTags(ctx, { repository, commit, root })
-    await convertDatabase(xrepoDatabase, repository, commit, root, filename, job.timestamp, ctx)
+    await convertDatabase(xrepoDatabase, repository, commit, root, filename, uploadedAt, ctx)
     await updateCommitsAndDumpsVisibleFromTip(xrepoDatabase, fetchConfiguration, repository, commit, { logger, span })
     await purgeOldDumps(connection, xrepoDatabase, settings.STORAGE_ROOT, settings.DBS_DIR_MAXIMUM_SIZE_BYTES, ctx)
 }
@@ -45,7 +50,7 @@ export const createConvertJobProcessor = (
  * @param commit The commit.
  * @param root The root of the dump.
  * @param filename The path to gzipped LSIF dump.
- * @param timestamp The time the job was enqueued.
+ * @param uploadedAt The time of the upload.
  * @param ctx The tracing context.
  */
 async function convertDatabase(
@@ -54,7 +59,7 @@ async function convertDatabase(
     commit: string,
     root: string,
     filename: string,
-    timestamp: number,
+    uploadedAt: Date,
     { logger = createSilentLogger(), span }: TracingContext
 ): Promise<void> {
     const tempFile = path.join(settings.STORAGE_ROOT, constants.TEMP_DIR, path.basename(filename))
@@ -68,7 +73,7 @@ async function convertDatabase(
             repository,
             commit,
             root,
-            new Date(timestamp),
+            uploadedAt,
             packages,
             references,
             { logger, span }
@@ -94,7 +99,7 @@ async function convertDatabase(
 /**
  * Update the commits for this repo, and update the visible_at_tip flag on the dumps
  * of this repository. This will query for commits starting from both the current tip
- * of the repo and from the commit that was just processed.
+ * of the repo and from the commit for the upload that was just converted.
  *
  * @param xrepoDatabase The cross-repo database.
  * @param fetchConfiguration A function that returns the current configuration.

@@ -16,7 +16,7 @@ import { TlsOptions } from 'tls'
  * version prior to making use of the DB (which the frontend may still be
  * migrating).
  */
-const MINIMUM_MIGRATION_VERSION = 1528395616
+const MINIMUM_MIGRATION_VERSION = 1528395619
 
 /**
  * How many times to try to check the current database migration version on startup.
@@ -183,7 +183,7 @@ export function instrumentQuery<T>(callback: () => Promise<T>): Promise<T> {
  */
 export function withInstrumentedTransaction<T>(
     connection: Connection,
-    callback: (connection: EntityManager) => Promise<T>
+    callback: (entityManager: EntityManager) => Promise<T>
 ): Promise<T> {
     return instrumentQuery(() => connection.transaction(callback))
 }
