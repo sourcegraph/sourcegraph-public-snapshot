@@ -175,7 +175,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                 if (parent === this.node) {
                     return true
                 }
-                parent = parent && parent.parent
+                parent = parent?.parent
             }
 
             // Update if currently selected node.
@@ -189,7 +189,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                 if (currentParent === this.node) {
                     return true
                 }
-                currentParent = currentParent && currentParent.parent
+                currentParent = currentParent?.parent
             }
 
             // If none of the above conditions are met, there's no need to update.

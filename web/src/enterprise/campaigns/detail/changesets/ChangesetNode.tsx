@@ -102,18 +102,17 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                 }
                 wholeTitleClickable={false}
             >
-                {fileDiffNodes &&
-                    fileDiffNodes.map((fileDiffNode, i) => (
-                        <FileDiffNode
-                            isLightTheme={isLightTheme}
-                            node={fileDiffNode}
-                            lineNumbers={true}
-                            location={location}
-                            history={history}
-                            persistLines={node.__typename === 'ExternalChangeset'}
-                            key={i}
-                        ></FileDiffNode>
-                    ))}
+                {fileDiffNodes?.map((fileDiffNode, i) => (
+                    <FileDiffNode
+                        isLightTheme={isLightTheme}
+                        node={fileDiffNode}
+                        lineNumbers={true}
+                        location={location}
+                        history={history}
+                        persistLines={node.__typename === 'ExternalChangeset'}
+                        key={i}
+                    ></FileDiffNode>
+                ))}
             </Collapsible>
         </li>
     )

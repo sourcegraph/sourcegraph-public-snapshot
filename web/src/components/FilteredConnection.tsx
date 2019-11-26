@@ -571,7 +571,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
 
                                 const pageInfo = connectionOrError.pageInfo
                                 nodes = connectionOrError.nodes
-                                after = (pageInfo && pageInfo.endCursor) || undefined
+                                after = pageInfo?.endCursor || undefined
                             }
 
                             return {

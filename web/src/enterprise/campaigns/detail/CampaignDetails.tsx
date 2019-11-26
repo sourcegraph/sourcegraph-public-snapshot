@@ -94,10 +94,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     const [namespace, setNamespace] = useState<GQL.ID>()
 
     const [namespaces, setNamespaces] = useState<GQL.Namespace[]>()
-    const getNamespace = useCallback((): GQL.ID | undefined => namespace || (namespaces && namespaces[0].id), [
-        namespace,
-        namespaces,
-    ])
+    const getNamespace = useCallback((): GQL.ID | undefined => namespace || namespaces?.[0].id, [namespace, namespaces])
 
     // For errors during fetching
     const triggerError = useError()
@@ -152,10 +149,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             .subscribe({
                 next: fetchedCampaign => {
                     setCampaign(fetchedCampaign)
-                    setType(fetchedCampaign && fetchedCampaign.plan ? (fetchedCampaign.plan.type as 'comby') : 'manual')
-                    setCampaignPlanArguments(
-                        fetchedCampaign && fetchedCampaign.plan ? fetchedCampaign.plan.arguments : null
-                    )
+                    setType(fetchedCampaign?.plan ? (fetchedCampaign.plan.type as 'comby') : 'manual')
+                    setCampaignPlanArguments(fetchedCampaign?.plan ? fetchedCampaign.plan.arguments : null)
                 },
                 error: triggerError,
             })
@@ -305,7 +300,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
     const author = campaign && campaign.__typename === 'Campaign' ? campaign.author : authenticatedUser
 
-    const nodes: (GQL.IExternalChangeset | GQL.IChangesetPlan)[] | undefined = campaign && campaign.changesets.nodes
+    const nodes: (GQL.IExternalChangeset | GQL.IChangesetPlan)[] | undefined = campaign?.changesets.nodes
 
     const calculateDiff = (field: 'added' | 'deleted'): number => {
         if (!nodes) {
@@ -356,12 +351,11 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             value={getNamespace()}
                             onChange={event => setNamespace(event.target.value)}
                         >
-                            {namespaces &&
-                                namespaces.map(namespace => (
-                                    <option value={namespace.id} key={namespace.id}>
-                                        {namespace.namespaceName}
-                                    </option>
-                                ))}
+                            {namespaces?.map(namespace => (
+                                <option value={namespace.id} key={namespace.id}>
+                                    {namespace.namespaceName}
+                                </option>
+                            ))}
                         </select>
                     )}
                     <span className="text-muted d-inline-block mx-2">/</span>
