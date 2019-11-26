@@ -112,27 +112,25 @@ func (s *Store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err
 	if err != nil {
 		return err
 	}
+	if oldIDs == nil {
+		oldIDs = roaring.NewBitmap()
+	}
 
 	// Fisrt get the intersection (And), then use the intersection to compute diffs (AndNot)
 	// with both the old and new sets to get user IDs to remove and to add respectively.
-	common := p.UserIDs.Clone()
-	common.And(oldIDs)
-	toRemove := common.Clone()
-	toRemove.AndNot(oldIDs)
-	toAdd := common.Clone()
-	toAdd.AndNot(p.UserIDs)
+	common := roaring.And(oldIDs, p.UserIDs)
+	removed := roaring.Xor(common, oldIDs)
+	added := roaring.Xor(common, p.UserIDs)
 
-	// Load stored user IDs of both toAdd and toRemove.
-	both := toAdd.Clone()
-	both.Or(toRemove)
-	bothIDs := both.ToArray()
+	// Load stored user IDs of both added and removed.
+	changedIDs := roaring.Or(added, removed).ToArray()
 
 	// In case there is nothing to add or remove.
-	if len(bothIDs) == 0 {
+	if len(changedIDs) == 0 {
 		return nil
 	}
 
-	q := loadUserPermissionsBatchQuery(bothIDs, p.Perm, PermRepos, p.Provider)
+	q := loadUserPermissionsBatchQuery(changedIDs, p.Perm, PermRepos, p.Provider)
 	loadedIDs, err := txs.batchLoadIDs(ctx, q)
 	if err != nil {
 		return err
@@ -140,8 +138,8 @@ func (s *Store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err
 
 	// We have two sets of IDs that one needs to add, and the other needs to remove.
 	updatedAt := txs.clock()
-	updatedPerms := make([]*UserPermissions, 0, len(bothIDs))
-	for _, id := range bothIDs {
+	updatedPerms := make([]*UserPermissions, 0, len(changedIDs))
+	for _, id := range changedIDs {
 		userID := int32(id)
 		repoIDs := loadedIDs[userID]
 		if repoIDs == nil {
@@ -149,9 +147,9 @@ func (s *Store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err
 		}
 
 		switch {
-		case toAdd.Contains(id):
+		case added.Contains(id):
 			repoIDs.Add(uint32(p.RepoID))
-		case toRemove.Contains(id):
+		case removed.Contains(id):
 			repoIDs.Remove(uint32(p.RepoID))
 		}
 
@@ -358,14 +356,11 @@ func (s *Store) SetRepoPendingPermissions(
 
 	// Fisrt get the intersection (And), then use the intersection to compute diffs (AndNot)
 	// with both the old and new sets to get user IDs to remove and to add respectively.
-	common := p.UserIDs.Clone()
-	common.And(oldIDs)
-	toRemove := common.Clone()
-	toRemove.AndNot(oldIDs)
-	toAdd := common.Clone()
-	toAdd.AndNot(p.UserIDs)
+	common := roaring.And(oldIDs, p.UserIDs)
+	removed := roaring.Xor(common, oldIDs)
+	added := roaring.Xor(common, p.UserIDs)
 
-	q = loadUserPendingPermissionsByIDBatchQuery(toRemove.ToArray(), p.Perm, PermRepos)
+	q = loadUserPendingPermissionsByIDBatchQuery(removed.ToArray(), p.Perm, PermRepos)
 	idSet, loaded, err := txs.loadUserPendingPermissions(ctx, q)
 	if err != nil {
 		return err
@@ -380,17 +375,15 @@ func (s *Store) SetRepoPendingPermissions(
 	}
 
 	// We have two sets of IDs that one needs to add, and the other needs to remove.
-	both := toAdd.Clone()
-	both.Or(toRemove)
-	bothIDs := both.ToArray()
+	changedIDs := roaring.Or(added, removed).ToArray()
 
 	// In case there is nothing to add or remove.
-	if len(bothIDs) == 0 {
+	if len(changedIDs) == 0 {
 		return nil
 	}
 
 	updatedPerms := make([]*UserPendingPermissions, 0, len(bindIDSet))
-	for _, id := range bothIDs {
+	for _, id := range changedIDs {
 		userID := int32(id)
 		repoIDs := loadedIDs[userID]
 		if repoIDs == nil {
@@ -401,8 +394,8 @@ func (s *Store) SetRepoPendingPermissions(
 		// an id could only be contained by either toAdd or toRemove. This check is
 		// needed to filter out the new rows of user_pending_permissions table that
 		// were inserted previously, which already contain the p.RepoID upon insertion.
-		updated := toAdd.Contains(id) && repoIDs.CheckedAdd(uint32(p.RepoID)) ||
-			toRemove.Contains(id) && repoIDs.CheckedRemove(uint32(p.RepoID))
+		updated := added.Contains(id) && repoIDs.CheckedAdd(uint32(p.RepoID)) ||
+			removed.Contains(id) && repoIDs.CheckedRemove(uint32(p.RepoID))
 		if !updated {
 			continue
 		}
