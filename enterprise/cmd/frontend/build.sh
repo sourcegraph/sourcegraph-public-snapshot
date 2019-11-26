@@ -21,6 +21,7 @@ for pkg in github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend; do
 done
 
 docker build -f enterprise/cmd/frontend/Dockerfile -t $IMAGE $OUTPUT \
+    --progress=plain \
     --build-arg COMMIT_SHA \
     --build-arg DATE \
     --build-arg VERSION

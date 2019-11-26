@@ -65,6 +65,7 @@ cp -r dev/grafana/linux "$OUTPUT/sg_config_grafana/provisioning/datasources"
 
 echo "--- docker build"
 docker build -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" \
+    --progress=plain \
     --build-arg COMMIT_SHA \
     --build-arg DATE \
     --build-arg VERSION

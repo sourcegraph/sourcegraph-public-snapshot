@@ -21,6 +21,7 @@ for pkg in github.com/sourcegraph/sourcegraph/cmd/replacer; do
 done
 
 docker build -f cmd/replacer/Dockerfile -t $IMAGE $OUTPUT \
+    --progress=plain \
     --build-arg COMMIT_SHA \
     --build-arg DATE \
     --build-arg VERSION
