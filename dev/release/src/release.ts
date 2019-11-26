@@ -338,7 +338,7 @@ Key dates:
                 }
             }
 
-            const changes = [
+            const changes: octokit.PullsCreateParams & CreateBranchWithChangesOptions  = [
                 {
                     owner: 'sourcegraph',
                     repo: 'sourcegraph',
