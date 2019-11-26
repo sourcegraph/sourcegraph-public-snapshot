@@ -1375,13 +1375,13 @@ describe('e2e test suite', () => {
                 previousExperimentalFeatures = prev?.value
                 return { automation: 'enabled' }
             })
+            // wait for configuration to propagate
+            await new Promise(resolve => setTimeout(resolve, 5000))
         })
         afterAll(async () => {
             await driver.setConfig(['experimentalFeatures'], () => previousExperimentalFeatures)
         })
         test('Create campaign preview for comby campaign type', async () => {
-            // need to reload to apply automation config
-            await driver.page.reload()
             await driver.page.goto(sourcegraphBaseUrl + '/campaigns/new')
             await driver.page.waitForSelector('.e2e-campaign-form')
 
