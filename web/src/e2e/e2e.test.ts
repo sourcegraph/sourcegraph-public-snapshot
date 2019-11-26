@@ -46,7 +46,7 @@ describe('e2e test suite', () => {
             'sourcegraph/go-vcs',
             'sourcegraph/appdash',
             'sourcegraph/sourcegraph-typescript',
-            'sourcegraph/automation-testing',
+            'sourcegraph/automation-e2e-test',
         ]
         await driver.ensureLoggedIn({ username: 'test', password: 'test', email: 'test@test.com' })
         await driver.resetUserSettings()
@@ -1394,7 +1394,7 @@ describe('e2e test suite', () => {
                 newText: JSON.stringify({
                     matchTemplate: 'file',
                     rewriteTemplate: 'files',
-                    scopeQuery: 'repo:github.com/sourcegraph/automation-testing',
+                    scopeQuery: 'repo:github.com/sourcegraph/automation-e2e-test',
                 }),
                 selectMethod: 'keyboard',
             })
