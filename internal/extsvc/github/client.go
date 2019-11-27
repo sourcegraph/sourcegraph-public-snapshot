@@ -110,7 +110,7 @@ func canonicalizedURL(apiURL *url.URL) *url.URL {
 // checksum of the access token and API URL are used as a Redis key prefix to prevent collisions
 // with caches for different tokens and API URLs. An optional keyPrefix may also be specified,
 // typically used in tests.
-func NewRepoCache(apiURL *url.URL, token string, keyPrefix string, cacheTTL time.Duration) *rcache.Cache {
+func NewRepoCache(apiURL *url.URL, token, keyPrefix string, cacheTTL time.Duration) *rcache.Cache {
 	if keyPrefix == "" {
 		keyPrefix = "gh_repo:"
 	}
