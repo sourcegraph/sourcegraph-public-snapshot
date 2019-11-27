@@ -1415,6 +1415,9 @@ describe('e2e test suite', () => {
             // check if there have been any errors
             const errorCount = await driver.page.evaluate(() => document.querySelectorAll('.alert.alert-danger').length)
             expect(errorCount).toEqual(0)
+            // check there were exactly 3 diffs generated
+            const diffCount = await driver.page.evaluate(() => document.querySelectorAll('.file-diff-node').length)
+            expect(diffCount).toEqual(3)
             await percySnapshot(driver.page, 'Campaign preview page')
         })
     })
