@@ -19,6 +19,7 @@ type HorizontalSearcher struct {
 
 	mu      sync.RWMutex
 	clients map[string]zoekt.Searcher // addr -> client
+	gen     uint64                    // used for leader election
 }
 
 // Search aggregates search over every endpoint in Map.
@@ -141,6 +142,7 @@ func (s *HorizontalSearcher) searchers() (map[string]zoekt.Searcher, error) {
 	// We structure our state to optimize for the fast-path.
 	s.mu.RLock()
 	clients := s.clients
+	gen := s.gen
 	s.mu.RUnlock()
 	if equalKeys(clients, eps) {
 		return clients, nil
@@ -150,13 +152,14 @@ func (s *HorizontalSearcher) searchers() (map[string]zoekt.Searcher, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	// Double check someone didn't beat us to the update
+	// Double check someone didn't beat us to the update.
+	if gen != s.gen {
+		return s.clients, nil
+	}
+
 	eps, err = s.Map.Endpoints()
 	if err != nil {
 		return nil, err
-	}
-	if equalKeys(s.clients, eps) {
-		return s.clients, nil
 	}
 
 	// Disconnect first
@@ -177,6 +180,10 @@ func (s *HorizontalSearcher) searchers() (map[string]zoekt.Searcher, error) {
 		clients[addr] = client
 	}
 	s.clients = clients
+
+	// Increase gen so that anyone waiting on the write lock can avoid calling
+	// s.Map.Endpoints()
+	s.gen++
 
 	return s.clients, nil
 }
