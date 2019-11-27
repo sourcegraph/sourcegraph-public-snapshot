@@ -25,7 +25,7 @@ export const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 /**
  * The interval (in seconds) to invoke the cleanOldJobs task.
  */
-export const CLEAN_OLD_JOBS_INTERVAL = readEnvInt('CLEAN_OLD_JOBS_INTERVAL', 5)
+export const CLEAN_OLD_JOBS_INTERVAL = readEnvInt('CLEAN_OLD_JOBS_INTERVAL', 60 * 60 * 8)
 
 /**
  * The default number of remote dumps to open when performing a global find-reference operation.
@@ -35,7 +35,7 @@ export const DEFAULT_REFERENCES_NUM_REMOTE_DUMPS = readEnvInt('DEFAULT_REFERENCE
 /**
  * The interval (in seconds) to invoke the cleanFailedJobs task.
  */
-export const CLEAN_FAILED_JOBS_INTERVAL = readEnvInt('CLEAN_FAILED_JOBS_INTERVAL', 1)
+export const CLEAN_FAILED_JOBS_INTERVAL = readEnvInt('CLEAN_FAILED_JOBS_INTERVAL', 60 * 60 * 8)
 
 /**
  * The interval (in seconds) to invoke the updateQueueSizeGaugeInterval task.
