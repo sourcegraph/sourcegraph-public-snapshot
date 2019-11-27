@@ -51,7 +51,7 @@ export function createDumpRouter(backend: Backend): express.Router {
     )
 
     router.get(
-        '/dumps/:repository/:id',
+        '/dumps/:repository/:id([0-9]+)',
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { repository, id } = req.params
@@ -66,7 +66,7 @@ export function createDumpRouter(backend: Backend): express.Router {
     )
 
     router.delete(
-        '/dumps/:repository/:id',
+        '/dumps/:repository/:id([0-9]+)',
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { repository, id } = req.params

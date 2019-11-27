@@ -25,6 +25,8 @@ import { Logger } from 'winston'
 import { metricsMiddleware } from './middleware/metrics'
 import { waitForConfiguration } from '../shared/config/config'
 import { XrepoDatabase } from '../shared/xrepo/xrepo'
+import { UploadsManager } from '../shared/uploads/uploads'
+import { createUploadRouter } from './routes/uploads'
 
 /**
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
@@ -52,10 +54,11 @@ async function main(logger: Logger): Promise<void> {
     await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.TEMP_DIR))
     await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR))
 
-    // Create cross-repo database
+    // Create database connection and entity wrapper classes
     const connection = await createPostgresConnection(fetchConfiguration(), logger)
     const xrepoDatabase = new XrepoDatabase(connection, settings.STORAGE_ROOT)
     const backend = new Backend(settings.STORAGE_ROOT, xrepoDatabase, fetchConfiguration)
+    const uploadsManager = new UploadsManager(connection)
 
     // Temporary migrations
     await moveDatabaseFilesToSubdir() // TODO - remove after 3.12
@@ -100,9 +103,10 @@ async function main(logger: Logger): Promise<void> {
 
     // Register endpoints
     app.use(createMetaRouter())
-    app.use(createLsifRouter(backend, queue, logger, tracer))
     app.use(createDumpRouter(backend))
     app.use(createJobRouter(queue, scriptedClient, logger, tracer))
+    app.use(createUploadRouter(uploadsManager))
+    app.use(createLsifRouter(backend, queue, logger, tracer))
 
     // Error handler must be registered last
     app.use(errorHandler(logger))
