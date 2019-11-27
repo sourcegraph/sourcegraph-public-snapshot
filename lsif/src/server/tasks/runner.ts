@@ -30,18 +30,21 @@ export function startTasks(connection: Connection, queue: Queue, logger: Logger)
      * than `setInterval` so we do not stack long running tasks when intervals are
      * configured to be small.
      *
+     * @param name The name of the task.
      * @param task The task function.
      * @param intervalMs The interval (in milliseconds) between invocations.
      */
-    const startTask = (task: () => Promise<void>, intervalMs: number): void => {
-        const recur = async (): Promise<void> => {
+    const startTask = (name: string, task: () => Promise<void>, intervalMs: number): void => {
+        async function recur(): Promise<unknown> {
             await task()
-            setTimeout(() => {
-                recur().catch(() => {})
-            }, intervalMs)
+            return setTimeout(recurCatch, intervalMs)
         }
 
-        recur().catch(() => {})
+        function recurCatch(): void {
+            recur().catch(error => logger.error('Background task failed', { name, error }))
+        }
+
+        recurCatch()
     }
 
     // Wrap tasks
@@ -50,7 +53,7 @@ export function startTasks(connection: Connection, queue: Queue, logger: Logger)
     const cleanFailedUploadsTask = wrapTask('Cleaning failed uploads', ctx => cleanFailedJobs(ctx))
 
     // Start tasks on intervals
-    startTask(updateQueueSizeGaugeTask, settings.UPDATE_QUEUE_SIZE_GAUGE_INTERVAL * 1000)
-    startTask(cleanOldUploadsTask, settings.CLEAN_OLD_JOBS_INTERVAL * 1000)
-    startTask(cleanFailedUploadsTask, settings.CLEAN_FAILED_JOBS_INTERVAL * 1000)
+    startTask('updateQueueSizeGaugeTask', updateQueueSizeGaugeTask, settings.UPDATE_QUEUE_SIZE_GAUGE_INTERVAL * 1000)
+    startTask('cleanOldUploadsTask', cleanOldUploadsTask, settings.CLEAN_OLD_JOBS_INTERVAL * 1000)
+    startTask('cleanFailedUploadsTask', cleanFailedUploadsTask, settings.CLEAN_FAILED_JOBS_INTERVAL * 1000)
 }
