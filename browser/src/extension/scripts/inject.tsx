@@ -26,7 +26,7 @@ window.addEventListener('unload', () => subscriptions.unsubscribe(), { once: tru
 assertEnv('CONTENT')
 
 const codeHost = determineCodeHost()
-initSentry('content', codeHost && codeHost.type)
+initSentry('content', codeHost?.type)
 
 setLinkComponent(({ to, children, ...props }) => (
     <a href={to && typeof to !== 'string' ? H.createPath(to) : to} {...props}>

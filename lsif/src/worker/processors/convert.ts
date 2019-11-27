@@ -7,7 +7,7 @@ import { Connection } from 'typeorm'
 import { convertLsif } from '../importer/importer'
 import { createSilentLogger } from '../../shared/logging'
 import { dbFilename } from '../../shared/paths'
-import { withLock } from '../../shared/locker/locker'
+import { withLock } from '../../shared/locks/locks'
 import { XrepoDatabase } from '../../shared/xrepo/xrepo'
 
 /**

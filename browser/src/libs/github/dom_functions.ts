@@ -162,8 +162,8 @@ export const diffDomFunctions: DOMFunctions = {
 
         // Some versions of GitHub have data-code-marker attributes instead of the first character diff indicator.
         const tr = codeElement.closest('tr')
-        const hasDataCodeMarkerUnified = tr && tr.querySelector('td[data-code-marker]')
-        const hasDataCodeMarkerSplit = blobCodeInner && blobCodeInner.hasAttribute('data-code-marker')
+        const hasDataCodeMarkerUnified = tr?.querySelector('td[data-code-marker]')
+        const hasDataCodeMarkerSplit = blobCodeInner?.hasAttribute('data-code-marker')
         const hasDataCodeMarker = hasDataCodeMarkerUnified || hasDataCodeMarkerSplit
 
         // Refined GitHub used to strip the first character diff indicator.

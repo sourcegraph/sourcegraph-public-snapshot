@@ -77,7 +77,7 @@ describe('Backend', () => {
         expect(locations).toContainEqual(util.createRemoteLocation('b3', commit, 'src/index.ts', 3, 26, 3, 29)) // 2nd use
 
         // Ensure no additional references
-        expect(locations && locations.length).toEqual(10)
+        expect(locations?.length).toEqual(10)
     })
 
     it('should find all cross-repo refs of `mul` from repo b1', async () => {
@@ -104,7 +104,7 @@ describe('Backend', () => {
         expect(locations).toContainEqual(util.createRemoteLocation('b3', commit, 'src/index.ts', 3, 26, 3, 29)) // 2nd use
 
         // Ensure no additional references
-        expect(locations && locations.length).toEqual(10)
+        expect(locations?.length).toEqual(10)
     })
 
     it('should find all cross-repo refs of `add` from repo a', async () => {
@@ -141,7 +141,7 @@ describe('Backend', () => {
         expect(locations).toContainEqual(util.createRemoteLocation('c3', commit, 'src/index.ts', 3, 26, 3, 29)) // 3rd use
 
         // Ensure no additional references
-        expect(locations && locations.length).toEqual(20)
+        expect(locations?.length).toEqual(20)
     })
 
     it('should find all cross-repo refs of `add` from repo c1', async () => {
@@ -178,6 +178,6 @@ describe('Backend', () => {
         expect(locations).toContainEqual(util.createRemoteLocation('c3', commit, 'src/index.ts', 3, 26, 3, 29)) // 3rd use
 
         // Ensure no additional references
-        expect(locations && locations.length).toEqual(20)
+        expect(locations?.length).toEqual(20)
     })
 })
