@@ -1,6 +1,6 @@
 #! Run this before committing changes to this file
 #! go generate github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend
-#! This will happen automatically if you are running ./dev/launch.sh
+#! This will happen automatically if you are running ./dev/start.sh
 #!
 #! Lines that begin with #! are treated as internal comments. They are stripped
 #! from the schema before the documentation for each field is generated.

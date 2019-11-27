@@ -8,7 +8,7 @@ oldest_supported="2017.09-r1"
 version="$1"
 if [ -z "$1" ]
 then
-    echo "Usage: dev/phabricator/launch.sh <tag>"
+    echo "Usage: dev/phabricator/start.sh <tag>"
     echo "where <tag> is a release version from https://hub.docker.com/r/bitnami/phabricator/tags/"
     echo "NOTE: the oldest release we support is ${oldest_supported}"
     echo
