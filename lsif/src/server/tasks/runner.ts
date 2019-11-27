@@ -1,10 +1,11 @@
 import * as settings from '../settings'
+import AsyncPolling from 'async-polling'
+import { cleanFailedJobs, cleanOldJobs, updateQueueSizeGauge } from './jobs'
 import { Connection } from 'typeorm'
 import { logAndTraceCall, TracingContext } from '../../shared/tracing'
 import { Logger } from 'winston'
 import { Queue } from 'bull'
 import { tryWithLock } from '../../shared/locks/locks'
-import { updateQueueSizeGauge, cleanOldJobs, cleanFailedJobs } from './jobs'
 
 /**
  * Begin running cleanup tasks on a schedule in the background.
@@ -25,35 +26,13 @@ export function startTasks(connection: Connection, queue: Queue, logger: Logger)
     const wrapTask = (name: string, task: (ctx: TracingContext) => Promise<void>): (() => Promise<void>) => () =>
         tryWithLock(connection, name, () => logAndTraceCall({ logger }, name, task))
 
-    /**
-     * Invoke the task function in a loop. This uses `setTimeout` recursively rather
-     * than `setInterval` so we do not stack long running tasks when intervals are
-     * configured to be small.
-     *
-     * @param name The name of the task.
-     * @param task The task function.
-     * @param intervalMs The interval (in milliseconds) between invocations.
-     */
-    const startTask = (name: string, task: () => Promise<void>, intervalMs: number): void => {
-        async function recur(): Promise<unknown> {
-            await task()
-            return setTimeout(recurCatch, intervalMs)
-        }
-
-        function recurCatch(): void {
-            recur().catch(error => logger.error('Background task failed', { name, error }))
-        }
-
-        recurCatch()
-    }
-
     // Wrap tasks
     const updateQueueSizeGaugeTask = (): Promise<void> => updateQueueSizeGauge(queue)
     const cleanOldUploadsTask = wrapTask('Cleaning old uploads', ctx => cleanOldJobs(queue, ctx))
     const cleanFailedUploadsTask = wrapTask('Cleaning failed uploads', ctx => cleanFailedJobs(ctx))
 
     // Start tasks on intervals
-    startTask('updateQueueSizeGaugeTask', updateQueueSizeGaugeTask, settings.UPDATE_QUEUE_SIZE_GAUGE_INTERVAL * 1000)
-    startTask('cleanOldUploadsTask', cleanOldUploadsTask, settings.CLEAN_OLD_JOBS_INTERVAL * 1000)
-    startTask('cleanFailedUploadsTask', cleanFailedUploadsTask, settings.CLEAN_FAILED_JOBS_INTERVAL * 1000)
+    AsyncPolling(updateQueueSizeGaugeTask, settings.UPDATE_QUEUE_SIZE_GAUGE_INTERVAL * 1000).run()
+    AsyncPolling(cleanOldUploadsTask, settings.CLEAN_OLD_JOBS_INTERVAL * 1000).run()
+    AsyncPolling(cleanFailedUploadsTask, settings.CLEAN_FAILED_JOBS_INTERVAL * 1000).run()
 }
