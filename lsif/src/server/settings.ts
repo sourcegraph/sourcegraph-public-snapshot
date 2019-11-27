@@ -23,7 +23,7 @@ export const REDIS_ENDPOINT = process.env.REDIS_STORE_ENDPOINT || process.env.RE
 export const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 
 /**
- * The interval (in seconds) to schedule the clean-old-jobs job.
+ * The interval (in seconds) to invoke the cleanOldJobs task.
  */
 export const CLEAN_OLD_JOBS_INTERVAL = readEnvInt('CLEAN_OLD_JOBS_INTERVAL', 60 * 60 * 8)
 
@@ -33,10 +33,14 @@ export const CLEAN_OLD_JOBS_INTERVAL = readEnvInt('CLEAN_OLD_JOBS_INTERVAL', 60 
 export const DEFAULT_REFERENCES_NUM_REMOTE_DUMPS = readEnvInt('DEFAULT_REFERENCES_NUM_REMOTE_DUMPS', 10)
 
 /**
- * The interval (in seconds) to schedule the clean-failed-jobs job.
+ * The interval (in seconds) to invoke the cleanFailedJobs task.
  */
 export const CLEAN_FAILED_JOBS_INTERVAL = readEnvInt('CLEAN_FAILED_JOBS_INTERVAL', 60 * 60 * 8)
 
+/**
+ * The interval (in seconds) to invoke the updateQueueSizeGaugeInterval task.
+ */
+export const UPDATE_QUEUE_SIZE_GAUGE_INTERVAL = readEnvInt('UPDATE_QUEUE_SIZE_GAUGE_INTERVAL', 5)
 /**
  * The default page size for the job endpoints.
  */
@@ -68,3 +72,13 @@ export const DOCUMENT_CACHE_CAPACITY = readEnvInt('DOCUMENT_CACHE_CAPACITY', 102
  * The maximum number of result chunks that can be held in memory at once.
  */
 export const RESULT_CHUNK_CACHE_CAPACITY = readEnvInt('RESULT_CHUNK_CACHE_CAPACITY', 1024 * 1024 * 1024)
+
+/**
+ * The maximum age (in seconds) that a job (completed or queued) will remain in redis.
+ */
+export const JOB_MAX_AGE = readEnvInt('JOB_MAX_AGE', 60 * 60 * 24 * 7)
+
+/**
+ * The maximum age (in seconds) that the files for a failed job can remain on disk.
+ */
+export const FAILED_JOB_MAX_AGE = readEnvInt('FAILED_JOB_MAX_AGE', 24 * 60 * 60)
