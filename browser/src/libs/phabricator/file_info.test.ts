@@ -110,7 +110,7 @@ const DEFAULT_GRAPHQL_RESPONSES: GraphQLResponseMap = {
 
 function mockQueryConduit(responseMap?: ConduitResponseMap): QueryConduitHelper<any> {
     return (endpoint, params) => {
-        const mock = (responseMap && responseMap[endpoint]) || DEFAULT_CONDUIT_RESPONSES[endpoint]
+        const mock = responseMap?.[endpoint] || DEFAULT_CONDUIT_RESPONSES[endpoint]
         if (!mock) {
             return throwError(new Error(`No mock for endpoint ${endpoint}`))
         }

@@ -304,7 +304,7 @@ export function filterAndRankItems(
             return scores[i] > 0
         })
         .map((item, i) => {
-            const index = recentActions && recentActions.indexOf(item.action.id)
+            const index = recentActions?.indexOf(item.action.id)
             return { item, score: scores[i], recentIndex: index === -1 ? null : index }
         })
     return sortBy(scoredItems, 'recentIndex', 'score', ({ item }) => item.action.id).map(({ item }) => item)
@@ -356,10 +356,9 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
             >
                 <CommandList {...props} onSelect={close} />
             </TooltipPopoverWrapper>
-            {keyboardShortcutForShow &&
-                keyboardShortcutForShow.keybindings.map((keybinding, i) => (
-                    <Shortcut key={i} {...keybinding} onMatch={toggleIsOpen} />
-                ))}
+            {keyboardShortcutForShow?.keybindings.map((keybinding, i) => (
+                <Shortcut key={i} {...keybinding} onMatch={toggleIsOpen} />
+            ))}
         </ButtonElement>
     )
 }

@@ -220,12 +220,8 @@ describe('HoverOverlay', () => {
             // extract the markdown rendering into another small component
             // and unit test that in isolation
             const r = renderShallow(<HoverOverlay {...commonProps} hoverOrError={hover} />)
-            const contents = castArray(r.props.children).find(
-                element =>
-                    element &&
-                    element.props &&
-                    element.props.className &&
-                    element.props.className.includes('hover-overlay__contents')
+            const contents = castArray(r.props.children).find(element =>
+                element?.props?.className?.includes('hover-overlay__contents')
             )
             if (!contents) {
                 return null

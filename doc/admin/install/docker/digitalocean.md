@@ -22,7 +22,7 @@ If you're just starting out, we recommend [installing Sourcegraph locally](index
   runcmd:
   - mkdir -p /root/.sourcegraph/config
   - mkdir -p /root/.sourcegraph/data
-  - [ sh, -c, 'docker run -d --publish 80:7080 --publish 443:7443 --publish 2633:2633 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.10.0' ]
+  - [ sh, -c, 'docker run -d --publish 80:7080 --publish 443:7443 --publish 2633:2633 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.10.1' ]
   ```
 
 - Launch your instance, then navigate to its IP address.

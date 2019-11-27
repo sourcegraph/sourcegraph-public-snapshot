@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"net/url"
+	"regexp"
 	"regexp/syntax"
 	"strings"
 	"time"
@@ -397,7 +398,7 @@ var matchHoleRegexp = lazyregexp.New(splitOnHolesPattern())
 // "foo(:[args])"          -> "foo(" AND ")"
 // ":[fn](:[[1]], :[[2]])" -> "(" AND ", " AND ")"
 // ":[1\n] :[ whitespace]" -> " "
-func StructuralPatToQuery(pattern string) zoektquery.Q {
+func StructuralPatToConjunctedLiteralsQuery(pattern string) (zoektquery.Q, error) {
 	var children []zoektquery.Q
 	substrings := matchHoleRegexp.Split(pattern, -1)
 	for _, s := range substrings {
@@ -410,24 +411,85 @@ func StructuralPatToQuery(pattern string) zoektquery.Q {
 		}
 	}
 	if len(children) == 0 {
-		return &zoektquery.Const{Value: true}
+		return &zoektquery.Const{Value: true}, nil
 	}
-	return &zoektquery.And{Children: children}
+	return &zoektquery.And{Children: children}, nil
+}
+
+// Converts comby a structural pattern to a Zoekt regular expression query. This
+// conversion conceptually performs the same conversion as
+// StructuralPatToConjunctedLiteralsQuery, except that whitespace in the pattern
+// is converted so that content across newlines can be matched in the index. The
+// function produces a conjunction of regular expressions where whitespace is
+// converted to \s+, rather than a conjunction of literal strings.
+// Example:
+// "ParseInt(:[args]) if err != nil" -> "ParseInt(" AND ")\s+if\s+err!=\s+nil"
+func StructuralPatToRegexpQuery(pattern string) (zoektquery.Q, error) {
+	substrings := matchHoleRegexp.Split(pattern, -1)
+	var children []zoektquery.Q
+	for _, s := range substrings {
+		rs := regexp.QuoteMeta(s)
+		onMatchWhitespace := lazyregexp.New(`[\s]+`)
+		rs = onMatchWhitespace.ReplaceAllLiteralString(rs, `[\s]+`)
+		re, err := syntax.Parse(rs, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
+		if err != nil {
+			return nil, err
+		}
+		// zoekt decides to use its literal optimization at the query parser
+		// level, so we check if our regex can just be a literal.
+		if re.Op == syntax.OpLiteral {
+			children = append(children, &zoektquery.Substring{
+				Pattern:       s,
+				CaseSensitive: true,
+				Content:       true,
+			})
+		} else {
+			children = append(children, &zoektquery.Regexp{
+				Regexp:        re,
+				CaseSensitive: true,
+				Content:       true,
+			})
+		}
+	}
+	if len(children) == 0 {
+		return &zoektquery.Const{Value: true}, nil
+	}
+	return &zoektquery.And{Children: children}, nil
+}
+
+func StructuralPatToQuery(pattern string) (zoektquery.Q, error) {
+	// ToConjunctedLiteralsQuery cannot return an error. @rvantonder added
+	// an error type so that the function signatures below are equal,
+	// resulting in cleaner test code.
+	conjunctedLiteralsQuery, _ := StructuralPatToConjunctedLiteralsQuery(pattern)
+	regexpQuery, err := StructuralPatToRegexpQuery(pattern)
+	if err != nil {
+		return nil, err
+	}
+	return &zoektquery.Or{
+		Children: []zoektquery.Q{
+			conjunctedLiteralsQuery,
+			regexpQuery,
+		},
+	}, nil
 }
 
 func queryToZoektQuery(query *search.PatternInfo, isSymbol bool) (zoektquery.Q, error) {
 	var and []zoektquery.Q
 
 	var q zoektquery.Q
+	var err error
 	if query.IsRegExp {
-		var err error
 		fileNameOnly := query.PatternMatchesPath && !query.PatternMatchesContent
 		q, err = parseRe(query.Pattern, fileNameOnly, query.IsCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
 	} else if query.IsStructuralPat {
-		q = StructuralPatToQuery(query.Pattern)
+		q, err = StructuralPatToQuery(query.Pattern)
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		q = &zoektquery.Substring{
 			Pattern:       query.Pattern,

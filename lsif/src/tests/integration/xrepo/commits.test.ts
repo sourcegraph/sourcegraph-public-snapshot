@@ -136,9 +136,9 @@ describe('discoverAndUpdateTips', () => {
             const d2 = await xrepoDatabase.getDump('test-repo', cb, 'foo/test.ts')
             const d3 = await xrepoDatabase.getDump('test-repo', cc, 'bar/test.ts')
 
-            expect(d1 && d1.visibleAtTip).toBeFalsy()
-            expect(d2 && d2.visibleAtTip).toBeTruthy()
-            expect(d3 && d3.visibleAtTip).toBeTruthy()
+            expect(d1?.visibleAtTip).toBeFalsy()
+            expect(d2?.visibleAtTip).toBeTruthy()
+            expect(d3?.visibleAtTip).toBeTruthy()
         } finally {
             await cleanup()
         }

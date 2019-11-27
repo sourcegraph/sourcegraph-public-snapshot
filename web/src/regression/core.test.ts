@@ -71,7 +71,7 @@ describe('Core functionality regression test suite', () => {
     test('2.2.1 User settings are saved and applied', async () => {
         const getSettings = async () => {
             await driver.page.waitForSelector('.view-line')
-            return await driver.page.evaluate(() => {
+            return driver.page.evaluate(() => {
                 const editor = document.querySelector('.monaco-editor') as HTMLElement
                 return editor ? editor.innerText : null
             })
@@ -165,7 +165,7 @@ describe('Core functionality regression test suite', () => {
         await driver.page.waitForFunction(
             displayName => {
                 const el = document.querySelector('.e2e-user-area-header__display-name')
-                return el && el.textContent && el.textContent.trim() === displayName
+                return el?.textContent && el.textContent.trim() === displayName
             },
             undefined,
             displayName

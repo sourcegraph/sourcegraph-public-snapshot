@@ -200,6 +200,8 @@ type ExternalChangesetResolver interface {
 	Campaigns(ctx context.Context, args *struct{ graphqlutil.ConnectionArgs }) (CampaignsConnectionResolver, error)
 	Events(ctx context.Context, args *struct{ graphqlutil.ConnectionArgs }) (ChangesetEventsConnectionResolver, error)
 	Diff(ctx context.Context) (*RepositoryComparisonResolver, error)
+	Head(ctx context.Context) (*GitRefResolver, error)
+	Base(ctx context.Context) (*GitRefResolver, error)
 }
 
 type ChangesetPlansConnectionResolver interface {
@@ -210,6 +212,8 @@ type ChangesetPlansConnectionResolver interface {
 
 type ChangesetPlanResolver interface {
 	Repository(ctx context.Context) (*RepositoryResolver, error)
+	BaseRepository(ctx context.Context) (*RepositoryResolver, error)
+	Diff() ChangesetPlanResolver
 	FileDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (PreviewFileDiffConnection, error)
 }
 

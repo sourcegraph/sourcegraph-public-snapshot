@@ -52,8 +52,8 @@ export class ClientWindows implements ClientWindowsAPI {
 
     public $showInputBox(options?: sourcegraph.InputBoxOptions): Promise<string | undefined> {
         return this.showInput({
-            message: options && options.prompt ? options.prompt : '',
-            defaultValue: options && options.value,
+            message: options?.prompt ? options.prompt : '',
+            defaultValue: options?.value,
         }).then(v =>
             // TODO(sqs): update the showInput API to unify null/undefined etc between the old internal API and the new
             // external API.

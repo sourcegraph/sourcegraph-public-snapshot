@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"net/url"
 	"os"
 	"os/user"
 	"strings"
@@ -19,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/db/confdb"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -240,7 +240,7 @@ func serviceConnections() conftypes.ServiceConnections {
 
 		serviceConnectionsVal = conftypes.ServiceConnections{
 			GitServers:  gitServers(),
-			PostgresDSN: postgresDSN(username, os.Getenv),
+			PostgresDSN: dbutil.PostgresDSN(username, os.Getenv),
 		}
 	})
 	return serviceConnectionsVal
@@ -256,53 +256,4 @@ func gitServers() []string {
 		}
 	}
 	return strings.Fields(v)
-}
-
-func postgresDSN(currentUser string, getenv func(string) string) string {
-	// PGDATASOURCE is a sourcegraph specific variable for just setting the DSN
-	if dsn := getenv("PGDATASOURCE"); dsn != "" {
-		return dsn
-	}
-
-	// TODO match logic in lib/pq
-	// https://sourcegraph.com/github.com/lib/pq@d6156e141ac6c06345c7c73f450987a9ed4b751f/-/blob/connector.go#L42
-	dsn := &url.URL{
-		Scheme: "postgres",
-		Host:   "127.0.0.1:5432",
-	}
-
-	// Username preference: PGUSER, $USER, postgres
-	username := "postgres"
-	if currentUser != "" {
-		username = currentUser
-	}
-	if user := getenv("PGUSER"); user != "" {
-		username = user
-	}
-
-	if password := getenv("PGPASSWORD"); password != "" {
-		dsn.User = url.UserPassword(username, password)
-	} else {
-		dsn.User = url.User(username)
-	}
-
-	if host := getenv("PGHOST"); host != "" {
-		dsn.Host = host
-	}
-
-	if port := getenv("PGPORT"); port != "" {
-		dsn.Host += ":" + port
-	}
-
-	if db := getenv("PGDATABASE"); db != "" {
-		dsn.Path = db
-	}
-
-	if sslmode := getenv("PGSSLMODE"); sslmode != "" {
-		qry := dsn.Query()
-		qry.Set("sslmode", sslmode)
-		dsn.RawQuery = qry.Encode()
-	}
-
-	return dsn.String()
 }

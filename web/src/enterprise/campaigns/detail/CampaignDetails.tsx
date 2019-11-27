@@ -36,10 +36,8 @@ import { Link } from '../../../../../shared/src/components/Link'
 import { switchMap, tap, catchError, takeWhile, concatMap, repeatWhen, delay } from 'rxjs/operators'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { TabsWithLocalStorageViewStatePersistence } from '../../../../../shared/src/components/Tabs'
-import SourcePullIcon from 'mdi-react/SourcePullIcon'
-import { LinkOrSpan } from '../../../../../shared/src/components/LinkOrSpan'
-import { FileDiffNode } from '../../../components/diff/FileDiffNode'
 import { isDefined } from '../../../../../shared/src/util/types'
+import { FileDiffTab } from './FileDiffTab'
 
 interface Props extends ThemeProps {
     /**
@@ -96,10 +94,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     const [namespace, setNamespace] = useState<GQL.ID>()
 
     const [namespaces, setNamespaces] = useState<GQL.Namespace[]>()
-    const getNamespace = useCallback((): GQL.ID | undefined => namespace || (namespaces && namespaces[0].id), [
-        namespace,
-        namespaces,
-    ])
+    const getNamespace = useCallback((): GQL.ID | undefined => namespace || namespaces?.[0].id, [namespace, namespaces])
 
     // For errors during fetching
     const triggerError = useError()
@@ -154,10 +149,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             .subscribe({
                 next: fetchedCampaign => {
                     setCampaign(fetchedCampaign)
-                    setType(fetchedCampaign && fetchedCampaign.plan ? (fetchedCampaign.plan.type as 'comby') : 'manual')
-                    setCampaignPlanArguments(
-                        fetchedCampaign && fetchedCampaign.plan ? fetchedCampaign.plan.arguments : null
-                    )
+                    setType(fetchedCampaign?.plan ? (fetchedCampaign.plan.type as 'comby') : 'manual')
+                    setCampaignPlanArguments(fetchedCampaign?.plan ? fetchedCampaign.plan.arguments : null)
                 },
                 error: triggerError,
             })
@@ -307,20 +300,18 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
     const author = campaign && campaign.__typename === 'Campaign' ? campaign.author : authenticatedUser
 
-    const calculateDiff = (field: 'added' | 'deleted'): number =>
-        campaign && campaign.__typename === 'CampaignPlan'
-            ? campaign.changesets.nodes.reduce(
-                  (prev, next) => prev + next.fileDiffs.diffStat[field] + next.fileDiffs.diffStat.changed,
-                  0
-              )
-            : campaign
-            ? campaign.changesets.nodes.reduce(
-                  (prev, next) =>
-                      prev +
-                      (next.diff ? next.diff.fileDiffs.diffStat[field] + next.diff.fileDiffs.diffStat.changed : 0),
-                  0
-              )
-            : 0
+    const nodes: (GQL.IExternalChangeset | GQL.IChangesetPlan)[] | undefined = campaign?.changesets.nodes
+
+    const calculateDiff = (field: 'added' | 'deleted'): number => {
+        if (!nodes) {
+            return 0
+        }
+        return nodes.reduce(
+            (prev, next) =>
+                prev + (next.diff ? next.diff.fileDiffs.diffStat[field] + next.diff.fileDiffs.diffStat.changed : 0),
+            0
+        )
+    }
 
     const totalAdditions = calculateDiff('added')
     const totalDeletions = calculateDiff('deleted')
@@ -360,12 +351,11 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             value={getNamespace()}
                             onChange={event => setNamespace(event.target.value)}
                         >
-                            {namespaces &&
-                                namespaces.map(namespace => (
-                                    <option value={namespace.id} key={namespace.id}>
-                                        {namespace.namespaceName}
-                                    </option>
-                                ))}
+                            {namespaces?.map(namespace => (
+                                <option value={namespace.id} key={namespace.id}>
+                                    {namespace.namespaceName}
+                                </option>
+                            ))}
                         </select>
                     )}
                     <span className="text-muted d-inline-block mx-2">/</span>
@@ -605,54 +595,15 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                 ))}
                         </div>
                         <div className="mt-3" key="diff">
-                            {campaign &&
-                                campaign.__typename === 'CampaignPlan' &&
-                                campaign.changesets.nodes.map((changesetNode, i) => (
-                                    <div key={i}>
-                                        <h3>
-                                            <SourcePullIcon className="icon-inline mr-2" />{' '}
-                                            <LinkOrSpan to={changesetNode.repository.url || undefined}>
-                                                {changesetNode.repository.name}
-                                            </LinkOrSpan>
-                                        </h3>
-                                        {changesetNode.fileDiffs.nodes.map(fileDiffNode => (
-                                            <FileDiffNode
-                                                isLightTheme={isLightTheme}
-                                                node={fileDiffNode}
-                                                lineNumbers={true}
-                                                location={location}
-                                                history={history}
-                                                persistLines={false}
-                                                key={fileDiffNode.internalID}
-                                            ></FileDiffNode>
-                                        ))}
-                                    </div>
-                                ))}
-                            {campaign &&
-                                campaign.__typename === 'Campaign' &&
-                                campaign.changesets.nodes.map(
-                                    (changesetNode, i) =>
-                                        changesetNode.diff && (
-                                            <div key={i}>
-                                                <h3>
-                                                    <SourcePullIcon className="icon-inline mr-2" />{' '}
-                                                    <LinkOrSpan to={changesetNode.repository.url || undefined}>
-                                                        {changesetNode.repository.name}
-                                                    </LinkOrSpan>
-                                                </h3>
-                                                {changesetNode.diff.fileDiffs.nodes.map(fileDiffNode => (
-                                                    <FileDiffNode
-                                                        isLightTheme={isLightTheme}
-                                                        node={fileDiffNode}
-                                                        lineNumbers={true}
-                                                        location={location}
-                                                        history={history}
-                                                        key={fileDiffNode.internalID}
-                                                    ></FileDiffNode>
-                                                ))}
-                                            </div>
-                                        )
-                                )}
+                            {nodes && (
+                                <FileDiffTab
+                                    nodes={nodes}
+                                    persistLines={campaign.__typename === 'Campaign'}
+                                    history={history}
+                                    location={location}
+                                    isLightTheme={isLightTheme}
+                                ></FileDiffTab>
+                            )}
                         </div>
                     </TabsWithLocalStorageViewStatePersistence>
                 </>

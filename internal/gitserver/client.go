@@ -787,6 +787,8 @@ func (c *Client) do(ctx context.Context, repo api.RepoName, method, op string, p
 	return c.HTTPClient.Do(req)
 }
 
+// CreateCommitFromPatch will attempt to create a commit from a patch
+// If possible, the error returned will be of type protocol.CreateCommitFromPatchError
 func (c *Client) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
 	resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch", req)
 	if err != nil {
@@ -794,14 +796,21 @@ func (c *Client) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		b, _ := ioutil.ReadAll(resp.Body)
-		log15.Warn("gitserver create-commit-from-patch error", "err", string(b))
-
-		return "", &url.Error{URL: resp.Request.URL.String(), Op: "CreateCommitFromPatch", Err: fmt.Errorf("CreateCommitFromPatch: http status %d %s", resp.StatusCode, string(b))}
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log15.Warn("reading gitserver create-commit-from-patch response", "err", err.Error())
+		return "", &url.Error{URL: resp.Request.URL.String(), Op: "CreateCommitFromPatch", Err: fmt.Errorf("CreateCommitFromPatch: http status %d %s", resp.StatusCode, err.Error())}
 	}
 
-	var res protocol.CreatePatchFromPatchResponse
+	var res protocol.CreateCommitFromPatchResponse
+	err = json.Unmarshal(data, &res)
+	if err != nil {
+		log15.Warn("decoding gitserver create-commit-from-patch response", "err", err.Error())
+		return "", &url.Error{URL: resp.Request.URL.String(), Op: "CreateCommitFromPatch", Err: fmt.Errorf("CreateCommitFromPatch: http status %d %s", resp.StatusCode, string(data))}
+	}
 
-	return res.Rev, json.NewDecoder(resp.Body).Decode(&res)
+	if res.Error != nil {
+		return res.Rev, res.Error
+	}
+	return res.Rev, nil
 }

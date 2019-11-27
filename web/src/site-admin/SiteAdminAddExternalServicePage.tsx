@@ -104,7 +104,7 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
             <div className="add-external-service-page mt-3">
                 <PageTitle title="Add external service" />
                 <h1>Add external service</h1>
-                {createdExternalService && createdExternalService.warning ? (
+                {createdExternalService?.warning ? (
                     <div>
                         <div className="mb-3">
                             <ExternalServiceCard

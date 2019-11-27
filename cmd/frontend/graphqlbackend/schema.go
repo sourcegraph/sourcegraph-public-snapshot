@@ -615,8 +615,8 @@ type ChangesetPlan {
     # The repository changed by the changeset.
     repository: Repository!
 
-    # The preview of the file diffs for each file in the diff.
-    fileDiffs(first: Int): PreviewFileDiffConnection!
+    # The diff of the changeset.
+    diff: PreviewRepositoryComparison!
 }
 
 # A changeset in a code host (e.g. a PR on Github)
@@ -653,6 +653,12 @@ type ExternalChangeset implements Node {
 
     # The review state of this changeset.
     reviewState: ChangesetReviewState!
+
+    # The head of the diff ("new" or "right-hand side").
+    head: GitRef!
+
+    # The base of the diff ("old" or "left-hand side").
+    base: GitRef!
 
     # The diff of this changeset.
     # Only returned if the changeset has not been merged or closed.
@@ -1900,6 +1906,15 @@ type GitRefConnection {
     totalCount: Int!
     # Pagination information.
     pageInfo: PageInfo!
+}
+
+# A not-yet-committed preview of a diff on a repository.
+type PreviewRepositoryComparison {
+    # The repository that this diff is targeting.
+    baseRepository: Repository!
+
+    # The preview of the file diffs for each file in the diff.
+    fileDiffs(first: Int): PreviewFileDiffConnection!
 }
 
 # A list of file diffs that might be applied.
@@ -3258,7 +3273,6 @@ type DiscussionCommentConnection {
 
 # RepositoryOrderBy enumerates the ways a repositories list can be ordered.
 enum RepositoryOrderBy {
-    REPO_URI # deprecated (use the equivalent REPOSITORY_NAME)
     REPOSITORY_NAME
     REPO_CREATED_AT # deprecated (use the equivalent REPOSITORY_CREATED_AT)
     REPOSITORY_CREATED_AT
