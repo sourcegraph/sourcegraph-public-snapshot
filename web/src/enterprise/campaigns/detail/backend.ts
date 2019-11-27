@@ -104,16 +104,18 @@ const campaignPlanFragment = gql`
                     name
                     url
                 }
-                fileDiffs {
-                    nodes {
-                        ...PreviewFileDiffFields
-                    }
-                    totalCount
-                    pageInfo {
-                        hasNextPage
-                    }
-                    diffStat {
-                        ...DiffStatFields
+                diff {
+                    fileDiffs {
+                        nodes {
+                            ...PreviewFileDiffFields
+                        }
+                        totalCount
+                        pageInfo {
+                            hasNextPage
+                        }
+                        diffStat {
+                            ...DiffStatFields
+                        }
                     }
                 }
             }
