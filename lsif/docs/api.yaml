@@ -17,7 +17,7 @@ tags:
   - name: Jobs
     description: Job operations
   - name: Uploads
-    description: Uploads operations
+    description: Upload operations
 paths:
   /upload:
     post:
