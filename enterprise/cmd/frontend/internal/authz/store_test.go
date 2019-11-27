@@ -50,7 +50,7 @@ func bitmap(ids ...uint32) *roaring.Bitmap {
 	return bm
 }
 
-var now = time.Now().UTC().UnixNano()
+var now = time.Now().Truncate(time.Microsecond).UnixNano()
 
 func clock() time.Time {
 	return time.Unix(0, atomic.LoadInt64(&now)).Truncate(time.Microsecond)
