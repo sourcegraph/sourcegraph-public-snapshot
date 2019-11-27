@@ -95,7 +95,7 @@ async function main(logger: Logger): Promise<void> {
     // Register endpoints
     app.use(createMetaRouter())
     app.use(createDumpRouter(backend))
-    app.use(createJobRouter(queue, scriptedClient, logger))
+    app.use(createJobRouter(queue, scriptedClient))
     app.use(createLsifRouter(backend, queue, logger, tracer))
 
     // Error handler must be registered last
