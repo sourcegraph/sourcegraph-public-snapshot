@@ -443,6 +443,26 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.lsif_uploads"
+```
+         Column          |           Type           |                         Modifiers                         
+-------------------------+--------------------------+-----------------------------------------------------------
+ id                      | bigint                   | not null default nextval('lsif_uploads_id_seq'::regclass)
+ repository              | text                     | not null
+ commit                  | text                     | not null
+ root                    | text                     | not null
+ filename                | text                     | not null
+ state                   | lsif_upload_state        | not null default 'queued'::lsif_upload_state
+ failure_summary         | text                     | 
+ failure_stacktrace      | text                     | 
+ uploaded_at             | timestamp with time zone | not null default now()
+ started_at              | timestamp with time zone | 
+ completed_or_errored_at | timestamp with time zone | 
+Indexes:
+    "lsif_uploads_pkey" PRIMARY KEY, btree (id)
+
+```
+
 # Table "public.names"
 ```
  Column  |  Type   | Modifiers 
