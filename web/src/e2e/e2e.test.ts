@@ -1375,8 +1375,16 @@ describe('e2e test suite', () => {
                 previousExperimentalFeatures = prev?.value
                 return { automation: 'enabled' }
             })
-            // wait for configuration to propagate
-            await new Promise(resolve => setTimeout(resolve, 5000))
+            // wait for configuration to be applied
+            for (let i = 0; i < 10; i++) {
+                await driver.page.goto(sourcegraphBaseUrl + '/campaigns/new')
+                if (
+                    (await driver.page.evaluate(() => document.querySelectorAll('.e2e-campaign-nav-entry').length)) > 0
+                ) {
+                    break
+                }
+                await new Promise(resolve => setTimeout(resolve, 1000))
+            }
         })
         afterAll(async () => {
             await driver.setConfig(['experimentalFeatures'], () => previousExperimentalFeatures)
