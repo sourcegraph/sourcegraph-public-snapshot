@@ -15,7 +15,7 @@ The documentation is organized into the following top-level directories:
 
 ### Previewing changes locally
 
-You can preview the documentation site at http://localhost:5080 when running Sourcegraph in [local development](local_development.md) (using `dev/launch.sh` or `enterprise/dev/start.sh`). It uses content, templates, and assets from the local disk. There is no caching or background build process, so you'll see all changes reflected immediately after you reload the page in your browser.
+You can preview the documentation site at http://localhost:5080 when running Sourcegraph in [local development](local_development.md) (using `dev/start.sh` or `enterprise/dev/start.sh`). It uses content, templates, and assets from the local disk. There is no caching or background build process, so you'll see all changes reflected immediately after you reload the page in your browser.
 
 ## Linking to documentation in-product
 

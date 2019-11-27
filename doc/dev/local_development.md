@@ -19,7 +19,7 @@ Have a look around, our code is on [GitHub](https://sourcegraph.com/github.com/s
 
 ## Environment
 
-Sourcegraph server is a collection of smaller binaries. The development server, [dev/launch.sh](https://github.com/sourcegraph/sourcegraph/blob/master/dev/launch.sh), initializes the environment and starts a process manager that runs all of the binaries. See the [Architecture doc](architecture/index.md) for a full description of what each of these services does. The sections below describe the dependencies you need to run `dev/launch.sh`.
+Sourcegraph server is a collection of smaller binaries. The development server, [dev/start.sh](https://github.com/sourcegraph/sourcegraph/blob/master/dev/start.sh), initializes the environment and starts a process manager that runs all of the binaries. See the [Architecture doc](architecture/index.md) for a full description of what each of these services does. The sections below describe the dependencies you need to run `dev/start.sh`.
 
 ## Step 1: Install dependencies
 
@@ -217,7 +217,7 @@ git clone https://github.com/sourcegraph/sourcegraph.git
 
 ```bash
 cd sourcegraph
-./dev/launch.sh
+./dev/start.sh
 ```
 
 This will continuously compile your code and live reload your locally running instance of Sourcegraph.
@@ -279,7 +279,7 @@ in the terminal.
 
 #### Increase maximum available file descriptors.
 
-`./dev/launch.sh` may ask you to run ulimit to increase the maximum number
+`./dev/start.sh` may ask you to run ulimit to increase the maximum number
 of available file descriptors for a process. You can make this setting
 permanent for every shell session by adding the following line to your
 `.*rc` file (usually `.bashrc` or `.zshrc`):
@@ -361,7 +361,7 @@ Then install `pgrep`:
 brew install proctools
 ```
 
-Make sure to run `env DELVE=true dev/launch.sh` to disable optimizations during compilation, otherwise Delve will have difficulty stepping through optimized functions (line numbers will be off, you won't be able to print local variables, etc.).
+Make sure to run `env DELVE=true dev/start.sh` to disable optimizations during compilation, otherwise Delve will have difficulty stepping through optimized functions (line numbers will be off, you won't be able to print local variables, etc.).
 
 Now you can attach a debugger to any Go process (e.g. frontend, searcher, go-langserver) in 1 command:
 
@@ -430,5 +430,5 @@ further, for the year is 2019, and you *can* develop Sourcegraph with no connect
 `OFFLINE` environment variable:
 
 ```bash
-OFFLINE=true dev/launch.sh
+OFFLINE=true dev/start.sh
 ```

@@ -49,7 +49,7 @@ To use Sourcegraph OSS:
 1.  Start the development server
 
     ```
-    ./dev/launch.sh
+    ./dev/start.sh
     ```
 
 Sourcegraph should now be running at http://localhost:3080.
