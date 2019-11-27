@@ -23,13 +23,7 @@ export const syncSubscription = (
  * Runs f and returns a resolved promise with its value or a rejected promise with its exception,
  * regardless of whether it returns a promise or not.
  */
-export function tryCatchPromise<T>(f: () => T | Promise<T>): Promise<T> {
-    try {
-        return Promise.resolve(f())
-    } catch (err) {
-        return Promise.reject(err)
-    }
-}
+export const tryCatchPromise = async <T>(f: () => T | Promise<T>): Promise<T> => f()
 
 /**
  * Reports whether value is a Promise.

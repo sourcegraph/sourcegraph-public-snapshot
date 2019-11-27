@@ -52,7 +52,7 @@ export function toConfiguredRegistryExtension<X extends MinimalRegistryExtension
     return {
         id: extension.extensionID,
         manifest: extension.manifest ? parseExtensionManifestOrError(extension.manifest.raw) : null,
-        rawManifest: (extension && extension.manifest && extension.manifest.raw) || null,
+        rawManifest: extension?.manifest?.raw || null,
         registryExtension: extension,
     }
 }

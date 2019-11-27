@@ -207,7 +207,7 @@ describe('CodeEditor (integration)', () => {
 })
 
 async function getFirstCodeEditor(extensionAPI: typeof sourcegraph): Promise<sourcegraph.CodeEditor> {
-    return await from(extensionAPI.app.activeWindowChanges)
+    return from(extensionAPI.app.activeWindowChanges)
         .pipe(
             first(isDefined),
             switchMap(win => win.activeViewComponentChanges),

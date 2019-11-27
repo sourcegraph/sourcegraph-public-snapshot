@@ -8,7 +8,7 @@ import { convertLsif } from '../importer/importer'
 import { createSilentLogger } from '../../shared/logging'
 import { dbFilename } from '../../shared/paths'
 import { Job } from 'bull'
-import { withLock } from '../../shared/locker/locker'
+import { withLock } from '../../shared/locks/locks'
 import { XrepoDatabase } from '../../shared/xrepo/xrepo'
 
 /**

@@ -75,12 +75,13 @@ export class UploadsManager {
                 .offset(offset)
 
             if (query) {
+                const clauses = ['repository', 'commit', 'root', 'failure_summary', 'failure_stacktrace'].map(
+                    field => `"${field}" LIKE '%' || :query || '%'`
+                )
+
                 queryBuilder = queryBuilder.andWhere(
                     new Brackets(qb =>
-                        qb
-                            .where("repository LIKE '%' || :query || '%'", { query })
-                            .orWhere("\"commit\" LIKE '%' || :query || '%'", { query })
-                            .orWhere("root LIKE '%' || :query || '%'", { query })
+                        clauses.slice(1).reduce((ob, c) => ob.orWhere(c, { query }), qb.where(clauses[0], { query }))
                     )
                 )
             }
