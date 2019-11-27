@@ -385,7 +385,7 @@ paths:
               - queued
         - name: query
           in: query
-          description: A search query applied over repository, commit, root, failure reason, and failure stacktarace properties.
+          description: A search query applied over repository, commit, root, failure reason, and failure stacktrace properties.
           required: false
           schema:
             type: string
@@ -800,8 +800,8 @@ components:
         - root
         - filename
         - state
-        - failedReason
-        - failedStacktrace
+        - failureSummary
+        - failureStacktrace
         - uploadedAt
         - startedAt
         - completedOrErroredAt
