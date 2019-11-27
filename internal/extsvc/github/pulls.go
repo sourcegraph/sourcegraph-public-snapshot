@@ -396,7 +396,7 @@ func (c *Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestInp
 
 // LoadPullRequests loads a list of PullRequests from Github.
 func (c *Client) LoadPullRequests(ctx context.Context, prs ...*PullRequest) error {
-	const batchSize = 10
+	const batchSize = 15
 	// We load prs in batches to avoid hitting Github's GraphQL node limit
 	for i := 0; i < len(prs); i += batchSize {
 		j := i + batchSize
