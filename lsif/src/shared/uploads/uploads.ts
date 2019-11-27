@@ -145,12 +145,12 @@ export class UploadsManager {
             tracer.inject(span, FORMAT_TEXT_MAP, tracing)
         }
 
-        // TODO -need fields for tracer
         const upload = new xrepoModels.LsifUpload()
         upload.repository = repository
         upload.commit = commit
         upload.root = root
         upload.filename = filename
+        upload.tracingContext = JSON.stringify(tracing)
         await instrumentQuery(() => this.connection.createEntityManager().save(upload))
 
         return upload
@@ -171,7 +171,6 @@ export class UploadsManager {
                 this.connection.getRepository(xrepoModels.LsifUpload).findOneOrFail({ id: uploadId })
             )
             if (upload.state === 'errored') {
-                // TODO - test this
                 const error = new Error(upload.failureSummary)
                 error.stack = upload.failureStacktrace
                 throw error
