@@ -89,7 +89,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     // State for the form in editing mode
     const [name, setName] = useState<string>('')
     const [description, setDescription] = useState<string>('')
-    const [type, setType] = useState<'manual' | 'comby'>('manual')
+    const [type, setType] = useState<'manual' | 'comby' | 'credentials'>('manual')
     const [campaignPlanArguments, setCampaignPlanArguments] = useState<string>('')
     const [namespace, setNamespace] = useState<GQL.ID>()
 
@@ -238,10 +238,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     name,
                     description,
                     namespace: getNamespace()!,
-                    plan:
-                        type === 'comby' && campaign && campaign.__typename === 'CampaignPlan'
-                            ? campaign.id
-                            : undefined,
+                    plan: campaign && campaign.__typename === 'CampaignPlan' ? campaign.id : undefined,
                 })
                 unblockHistoryRef.current()
                 history.push(`/campaigns/${createdCampaign.id}`)
@@ -463,6 +460,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 >
                     <option value="manual">Manual</option>
                     <option value="comby">Comby search and replace</option>
+                    <option value="credentials">NPM Credentials</option>
                 </select>
                 {type === 'comby' && (
                     <small className="ml-1">
@@ -482,7 +480,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 ></MonacoSettingsEditor>
                 {(!campaign || (campaign && campaign.__typename === 'CampaignPlan')) && mode === 'editing' && (
                     <>
-                        {type === 'comby' && (
+                        {(type === 'comby' || type === 'credentials') && (
                             <button
                                 type="button"
                                 className="btn btn-primary mr-1 e2e-preview-campaign"
@@ -496,7 +494,10 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         <button
                             type="submit"
                             className="btn btn-primary"
-                            disabled={(type === 'comby' && previewRefreshNeeded) || mode !== 'editing'}
+                            disabled={
+                                ((type === 'comby' || type === 'credentials') && previewRefreshNeeded) ||
+                                mode !== 'editing'
+                            }
                         >
                             Create
                         </button>
