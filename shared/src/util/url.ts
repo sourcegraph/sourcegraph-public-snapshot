@@ -145,7 +145,7 @@ export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
     const repoName = parsed.hostname + parsed.pathname
     const rev = parsed.search.substr('?'.length) || undefined
     let commitID: string | undefined
-    if (rev && rev.match(/[0-9a-fA-f]{40}/)) {
+    if (rev?.match(/[0-9a-fA-f]{40}/)) {
         commitID = rev
     }
     const fragmentSplit = parsed.hash
@@ -529,7 +529,7 @@ export function withWorkspaceRootInputRevision(
         const rootURI = parseRepoURI(root.uri)
         return rootURI.repoName === uri.repoName && rootURI.rev === uri.rev
     })
-    if (inWorkspaceRoot && inWorkspaceRoot.inputRevision !== undefined) {
+    if (inWorkspaceRoot?.inputRevision !== undefined) {
         return { ...uri, commitID: undefined, rev: inWorkspaceRoot.inputRevision }
     }
     return uri // unchanged
@@ -564,7 +564,7 @@ export function buildSearchURLQuery(query: string, patternType: SearchPatternTyp
 function parsePatternTypeFromQuery(query: string): SearchPatternType | undefined {
     const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal)\b/i
     const matches = query.match(patternTypeRegexp)
-    if (matches && matches.groups && matches.groups.type) {
+    if (matches?.groups?.type) {
         return matches.groups.type as SearchPatternType
     }
 

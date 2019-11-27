@@ -21,7 +21,7 @@
     "rootDir": "src",
     "skipLibCheck": true,
     "strict": true,
-    "target": "esnext",
+    "target": "es2019",
     "typeRoots": ["src/@types", "node_modules/@types"],
   },
   "files": [],

@@ -38,7 +38,7 @@ export function applyLinkPreview(
         afterElement = link.nextSibling
     }
 
-    if (linkPreview && linkPreview.content && linkPreview.content.length > 0) {
+    if (linkPreview?.content && linkPreview.content.length > 0) {
         if (afterElement) {
             afterElement.innerHTML = '' // clear for updated content
         } else {
