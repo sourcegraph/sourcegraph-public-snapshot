@@ -280,12 +280,12 @@ export class XrepoDatabase {
      * @param name The package name.
      * @param version The package version.
      */
-    public getPackage(
+    public async getPackage(
         scheme: string,
         name: string,
         version: string | null
     ): Promise<xrepoModels.PackageModel | undefined> {
-        return instrumentQuery(() =>
+        const pkg = await instrumentQuery(() =>
             this.connection.getRepository(xrepoModels.PackageModel).findOne({
                 where: {
                     scheme,
@@ -293,6 +293,21 @@ export class XrepoDatabase {
                     version,
                 },
             })
+        )
+
+        if (pkg) {
+            return pkg
+        }
+
+        return instrumentQuery(() =>
+            this.connection
+                .getRepository(xrepoModels.PackageModel)
+                .createQueryBuilder()
+                .select('package')
+                .leftJoinAndSelect('package.dump', 'dump')
+                .where({ scheme, name })
+                .andWhere('dump.visible_at_tip = true')
+                .getOne()
         )
     }
 
