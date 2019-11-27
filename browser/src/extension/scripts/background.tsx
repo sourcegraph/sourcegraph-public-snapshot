@@ -133,7 +133,7 @@ async function main(): Promise<void> {
         },
 
         async createBlobURL(bundleUrl: string): Promise<string> {
-            return await createBlobURLForBundle(bundleUrl)
+            return createBlobURLForBundle(bundleUrl)
         },
 
         async requestGraphQL<T extends GQL.IQuery | GQL.IMutation>({
@@ -143,7 +143,7 @@ async function main(): Promise<void> {
             request: string
             variables: {}
         }): Promise<GraphQLResult<T>> {
-            return await requestGraphQL<T>({ request, variables }).toPromise()
+            return requestGraphQL<T>({ request, variables }).toPromise()
         },
     }
 
@@ -153,7 +153,7 @@ async function main(): Promise<void> {
         if (!handlers[method]) {
             throw new Error(`Invalid RPC call for "${method}"`)
         }
-        return await handlers[method](message.payload)
+        return handlers[method](message.payload)
     })
 
     await browser.runtime.setUninstallURL('https://about.sourcegraph.com/uninstall/')
@@ -167,9 +167,9 @@ async function main(): Promise<void> {
 
     const ENDPOINT_KIND_REGEX = /^(proxy|expose)-/
 
-    const portKind = (port: browser.runtime.Port): string | null => {
+    const portKind = (port: browser.runtime.Port): string | undefined => {
         const match = port.name.match(ENDPOINT_KIND_REGEX)
-        return match && match[1]
+        return match?.[1]
     }
 
     /**

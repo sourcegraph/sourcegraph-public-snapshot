@@ -98,12 +98,12 @@ if ! ./dev/go-install.sh; then
 fi
 
 # Install or upgrade comby.
-if ! ./dev/comby-install-or-upgrade.sh; then
-    # Wait for everything to finish up to here.
-    wait
-    echo >&2 "WARNING: comby-install-or-upgrade.sh failed, some builds may have failed."
-    exit 1
-fi
+# if ! ./dev/comby-install-or-upgrade.sh; then
+#     # Wait for everything to finish up to here.
+#     wait
+#     echo >&2 "WARNING: comby-install-or-upgrade.sh failed, some builds may have failed."
+#     exit 1
+# fi
 
 # Wait for yarn if it is still running
 if [[ -n "$yarn_pid" ]]; then

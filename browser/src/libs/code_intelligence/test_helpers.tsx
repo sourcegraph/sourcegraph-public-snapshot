@@ -98,7 +98,7 @@ export const mockRequestGraphQL = (
     mightContainPrivateInfo?: boolean
 }) => {
     const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
-    const requestName = nameMatch && nameMatch[1]
+    const requestName = nameMatch?.[1]
     if (!requestName || !responseMap[requestName]) {
         return throwError(new Error(`No mock for GraphQL request ${requestName}`))
     }

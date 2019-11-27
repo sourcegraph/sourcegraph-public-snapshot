@@ -130,7 +130,7 @@ export const diffDomFunctions: DOMFunctions = {
     },
     isFirstCharacterDiffIndicator: (codeElement: HTMLElement) => {
         const firstChild = codeElement.firstElementChild as HTMLElement
-        if (firstChild && firstChild.classList.contains('aural-only')) {
+        if (firstChild?.classList.contains('aural-only')) {
             return true
         }
 

@@ -151,7 +151,7 @@ export class Driver {
         await this.page.waitForFunction(
             () => {
                 const element = document.querySelector('.e2e-connection-status')
-                return element && element.textContent && element.textContent.includes('Connected')
+                return element?.textContent?.includes('Connected')
             },
             { timeout: 5000 }
         )
@@ -429,7 +429,7 @@ export class Driver {
 
         const { currentUser } = dataOrThrowErrors(currentSettingsResponse)
 
-        if (currentUser && currentUser.settingsCascade) {
+        if (currentUser?.settingsCascade) {
             const emptySettings = '{}'
             const [{ latestSettings }] = currentUser.settingsCascade.subjects.slice(-1)
 

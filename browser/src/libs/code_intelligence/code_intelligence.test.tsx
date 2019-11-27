@@ -31,7 +31,7 @@ const RENDER = jest.fn()
 
 const elementRenderedAtMount = (mount: Element): renderer.ReactTestRendererJSON | undefined => {
     const call = RENDER.mock.calls.find(call => call[1] === mount)
-    return call && call[0]
+    return call?.[0]
 }
 
 jest.mock('uuid', () => ({
