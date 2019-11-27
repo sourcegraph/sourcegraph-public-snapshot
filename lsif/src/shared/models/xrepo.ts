@@ -88,6 +88,12 @@ export class LsifUpload {
      */
     @Column('timestamp with time zone', { name: 'completed_or_errored_at', nullable: true })
     public completedOrErroredAt!: Date
+
+    /**
+     * The opentracing headers from the upload request.
+     */
+    @Column('text', { name: 'tracing_context' })
+    public tracingContext!: string
 }
 
 /**
@@ -270,4 +276,4 @@ export class ReferenceModel extends Package {
 /**
  * The entities composing the cross-repository database models.
  */
-export const entities = [Commit, LsifDump, PackageModel, ReferenceModel]
+export const entities = [LsifUpload, Commit, LsifDump, PackageModel, ReferenceModel]

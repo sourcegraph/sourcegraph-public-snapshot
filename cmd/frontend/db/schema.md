@@ -458,6 +458,7 @@ Foreign-key constraints:
  uploaded_at             | timestamp with time zone | not null default now()
  started_at              | timestamp with time zone | 
  completed_or_errored_at | timestamp with time zone | 
+ tracing_context         | text                     | not null
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
 
