@@ -7,7 +7,7 @@ import { addTags, createTracer, logAndTraceCall, TracingContext } from '../share
 import { createLogger } from '../shared/logging'
 import { createPostgresConnection } from '../shared/database/postgres'
 import { ensureDirectory } from '../shared/paths'
-import { Span } from 'opentracing'
+import { Span, FORMAT_TEXT_MAP, followsFrom } from 'opentracing'
 import { instrument } from '../shared/metrics'
 import { Logger } from 'winston'
 import { startMetricsServer } from './server'
@@ -17,6 +17,7 @@ import { UploadsManager } from '../shared/uploads/uploads'
 import * as xrepoModels from '../shared/models/xrepo'
 import { convertUpload } from './processors/convert'
 import { pick } from 'lodash'
+import AsyncPolling from 'async-polling'
 
 /**
  * Runs the worker which accepts LSIF conversion jobs from the work queue.
@@ -47,51 +48,41 @@ async function main(logger: Logger): Promise<void> {
     // Start metrics server
     startMetricsServer(logger)
 
-    // TODO - find a library that does this
-    while (true) {
-        logger.debug('Polling')
+    const convert = async (upload: xrepoModels.LsifUpload): Promise<void> => {
+        logger.debug('Selected upload to convert', { uploadId: upload.id })
 
-        const handled = await uploadsManager.dequeueAndConvert(
-            async (upload: xrepoModels.LsifUpload): Promise<void> => {
-                logger.debug('Selected upload to convert', { uploadId: upload.id })
-
-                let span: Span | undefined
-                if (tracer) {
-                    // TODO - pull this from upload record
-                    // Extract tracing context from job payload
-                    //     const publisher = tracer.extract(FORMAT_TEXT_MAP, tracing)
-                    //     span = tracer.startSpan(type, publisher ? { references: [followsFrom(publisher)] } : {})
-                }
-
-                // Tag tracing context with uploadId and arguments
-                const ctx = addTags(
-                    { logger, span },
-                    { uploadId: upload.id, ...pick(upload, 'repository', 'commit', 'root') }
-                )
-
-                await instrument(
-                    metrics.jobDurationHistogram,
-                    metrics.jobDurationErrorsCounter,
-                    (): Promise<void> =>
-                        logAndTraceCall(ctx, 'Converting upload', (ctx: TracingContext) =>
-                            convertUpload(
-                                connection,
-                                xrepoDatabase,
-                                fetchConfiguration,
-                                pick(upload, 'repository', 'commit', 'root', 'filename', 'uploadedAt'),
-                                ctx
-                            )
-                        )
-                )
-            }
-        )
-
-        if (!handled) {
-            // TODO - configure polling interval
-            // TODO - some kind of polling interval here
-            await new Promise(r => setTimeout(r, 1000))
+        let span: Span | undefined
+        if (tracer) {
+            // Extract tracing context from upload
+            const publisher = tracer.extract(FORMAT_TEXT_MAP, JSON.parse(upload.tracingContext))
+            span = tracer.startSpan(
+                'Upload selected by worker',
+                publisher ? { references: [followsFrom(publisher)] } : {}
+            )
         }
+
+        // Tag tracing context with uploadId and arguments
+        const ctx = addTags({ logger, span }, { uploadId: upload.id, ...pick(upload, 'repository', 'commit', 'root') })
+
+        await instrument(
+            metrics.jobDurationHistogram,
+            metrics.jobDurationErrorsCounter,
+            (): Promise<void> =>
+                logAndTraceCall(ctx, 'Converting upload', (ctx: TracingContext) =>
+                    convertUpload(connection, xrepoDatabase, fetchConfiguration, upload, ctx)
+                )
+        )
     }
+
+    logger.debug('Worker polling database for unconverted uploads')
+
+    AsyncPolling(async end => {
+        while (await uploadsManager.dequeueAndConvert(convert, logger)) {
+            // Immediately poll again if we converted an upload
+        }
+
+        end()
+    }, settings.WORKER_POLLING_INTERVAL * 1000).run()
 }
 
 // Initialize logger
