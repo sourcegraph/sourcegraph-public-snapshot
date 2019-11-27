@@ -211,7 +211,7 @@ lines
 	}
 }
 
-func queryEqual(a zoektquery.Q, b zoektquery.Q) bool {
+func queryEqual(a, b zoektquery.Q) bool {
 	sortChildren := func(q zoektquery.Q) zoektquery.Q {
 		switch s := q.(type) {
 		case *zoektquery.And:
