@@ -38,7 +38,7 @@ Global find-references is a resource-intensive operation that's sensitive to the
 
 ## Cross-repository code intelligence
 
-Cross-repository code intelligence will only be powered by LSIF when **both** repositories have LSIF data. If only one has LSIF data, Sourcegraph will fall back to default fuzzy code intelligence.
+Cross-repository code intelligence will only be powered by LSIF when **both** repositories have LSIF data. When the current file has LSIF data and the other repository doesn't, there will be no code intelligence results (we're working on fallback to fuzzy code intelligence for 3.10).
 
 ## More about LSIF
 
