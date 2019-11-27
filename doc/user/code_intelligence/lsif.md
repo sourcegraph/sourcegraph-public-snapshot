@@ -26,6 +26,10 @@ When LSIF data does not exist for a particular file in a repository, Sourcegraph
 
 LSIF code intelligence will be out-of-sync when you're viewing a file that has changed since the LSIF data was uploaded.
 
+## Data retention policy
+
+The bulk of LSIF data is stored on-disk, and as code intelligence data for a commit ages it becomes less useful. Sourcegraph will automatically remove the least recently uploaded data if the amount of disk space falls above a threshold (10 gigabytes by default). This value can be changed via the `DBS_DIR_MAXIMUM_SIZE_BYTES` environment variable.
+
 ## Warning about uploading too much data
 
 Global find-references is a resource-intensive operation that's sensitive to the number of packages for which you have uploaded LSIF data into your Sourcegraph instance. Improvements to this are planned for Sourcegraph 3.10 (see the [RFC](https://docs.google.com/document/d/1VZB0Y4tWKeOUN1JvdDgo4LHwQn875MPOI9xztzqoSRc/edit#)).
