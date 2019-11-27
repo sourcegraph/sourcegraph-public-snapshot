@@ -1,9 +1,12 @@
 import * as xrepoModels from '../models/xrepo'
+import pRetry from 'p-retry'
 import { Brackets, Connection, EntityManager } from 'typeorm'
+import { FORMAT_TEXT_MAP, Span, Tracer } from 'opentracing'
 import { instrumentQuery, withInstrumentedTransaction } from '../database/postgres'
 
 /**
- * A wrapper around the database tables that control uploads.
+ * A wrapper around the database tables that control uploads. This class has
+ * behaviors to enqueue uploads.
  */
 export class UploadsManager {
     /**
@@ -108,5 +111,84 @@ export class UploadsManager {
         )
 
         return results[0].length > 0
+    }
+
+    /**
+     * Create a new uploaded with a state of `queued`.
+     *
+     * @param args The upload payload.
+     * @param tracer The tracer instance.
+     * @param span The parent span.
+     */
+    public async enqueue(
+        {
+            repository,
+            commit,
+            root,
+            filename,
+        }: {
+            /** The repository. */
+            repository: string
+            /** The commit. */
+            commit: string
+            /** The root. */
+            root: string
+            /** The filename. */
+            filename: string
+        },
+        tracer?: Tracer,
+        span?: Span
+    ): Promise<xrepoModels.LsifUpload> {
+        const tracing = {}
+        if (tracer && span) {
+            tracer.inject(span, FORMAT_TEXT_MAP, tracing)
+        }
+
+        // TODO -need fields for tracer
+        const upload = new xrepoModels.LsifUpload()
+        upload.repository = repository
+        upload.commit = commit
+        upload.root = root
+        upload.filename = filename
+        await instrumentQuery(() => this.connection.createEntityManager().save(upload))
+
+        return upload
+    }
+
+    /**
+     * Wait for the given upload to be converted. The function resolves to true if the
+     * conversion completed within the given timeout and false otherwise. If the upload
+     * conversion throws an error, that error is thrown in-band. A NaN-valued max wait
+     * will block forever.
+     *
+     * @param uploadId The id of the upload to block on.
+     * @param maxWait The maximum time (in seconds) to wait for the promise to resolve.
+     */
+    public waitForUploadToConvert(uploadId: number, maxWait: number): Promise<boolean> {
+        const checkUploadState = async (): Promise<boolean> => {
+            const upload = await instrumentQuery(() =>
+                this.connection.getRepository(xrepoModels.LsifUpload).findOneOrFail({ id: uploadId })
+            )
+            if (upload.state === 'errored') {
+                // TODO - test this
+                const error = new Error(upload.failureSummary)
+                error.stack = upload.failureStacktrace
+                throw error
+            }
+
+            return upload.state === 'completed'
+        }
+
+        return pRetry(
+            checkUploadState,
+            isNaN(maxWait)
+                ? { forever: true }
+                : {
+                      factor: 1,
+                      retries: maxWait,
+                      minTimeout: 1000,
+                      maxTimeout: 1000,
+                  }
+        )
     }
 }
