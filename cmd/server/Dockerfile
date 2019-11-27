@@ -50,7 +50,7 @@ RUN apk update && apk add --no-cache \
 # the ENV variables from its Dockerfile (https://github.com/sourcegraph/syntect_server/blob/master/Dockerfile)
 # have been appropriately set in cmd/server/shared/shared.go.
 # hadolint ignore=DL3022
-COPY --from=comby/comby:0.11.3@sha256:9a9c7d5d6f3ed7707546861fd9be36b1549c3942a4ad24868d2532e3fc31c317 /usr/local/bin/comby /usr/local/bin/comby
+COPY --from=comby/comby:0.12.0@sha256:4bacc37aa640924c07958826475fe91d40a0102a0047b8f74efd79d064975482 /usr/local/bin/comby /usr/local/bin/comby
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/syntect_server:2b5a3fb@sha256:ef5529cafdc68d5a21edea472ee8ad966878b173044aa5c3db93bc3d84765b1f /syntect_server /usr/local/bin/
 COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
