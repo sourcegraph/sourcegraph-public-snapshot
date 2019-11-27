@@ -14,6 +14,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"gopkg.in/inconshreveable/log15.v2"
 )
@@ -169,7 +170,7 @@ func TestBitbucketCloudSource_MakeRepo(t *testing.T) {
 				t.Fatal(err)
 			}
 			if !bytes.Equal(actual, expect) {
-				d, err := diff(actual, expect)
+				d, err := testutil.Diff(string(actual), string(expect))
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -270,7 +271,7 @@ func TestBitbucketCloudSource_Exclude(t *testing.T) {
 				t.Fatal(err)
 			}
 			if !bytes.Equal(actual, expect) {
-				d, err := diff(actual, expect)
+				d, err := testutil.Diff(string(actual), string(expect))
 				if err != nil {
 					t.Fatal(err)
 				}

@@ -8,7 +8,7 @@ import { DEFAULT_SOURCEGRAPH_URL, getExtensionVersion, observeSourcegraphURL } f
 const IS_EXTENSION = true
 
 const isExtensionStackTrace = (stacktrace: Sentry.Stacktrace, extensionID: string): boolean =>
-    !!(stacktrace.frames && stacktrace.frames.some(({ filename }) => !!(filename && filename.includes(extensionID))))
+    !!(stacktrace.frames && stacktrace.frames.some(({ filename }) => !!filename?.includes(extensionID)))
 
 const callSentryInit = once((extensionID: string) => {
     Sentry.init({

@@ -222,19 +222,19 @@ export class APIConsole extends React.PureComponent<Props, State> {
     }
 }
 
-function fetcher(graphQLParams: _graphiqlModule.GraphQLParams): Promise<string> {
-    return fetch('/.api/graphql', {
-        method: 'post',
+async function fetcher(graphQLParams: _graphiqlModule.GraphQLParams): Promise<string> {
+    const response = await fetch('/.api/graphql', {
+        method: 'POST',
         body: JSON.stringify(graphQLParams),
         credentials: 'include',
-        headers: new Headers({ 'x-requested-with': 'Sourcegraph GraphQL Explorer' }), // enables authenticated queries
+        headers: new Headers({ 'x-requested-with': 'Sourcegraph GraphQL Explorer' }),
     })
-        .then(response => response.text())
-        .then(responseBody => {
-            try {
-                return JSON.parse(responseBody)
-            } catch (error) {
-                return responseBody
-            }
-        })
+    const responseBody = await response.text()
+    try {
+        // False positive https://github.com/typescript-eslint/typescript-eslint/issues/1269
+        // eslint-disable-next-line @typescript-eslint/return-await
+        return JSON.parse(responseBody)
+    } catch (error) {
+        return responseBody
+    }
 }

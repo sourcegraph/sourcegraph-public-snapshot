@@ -11,9 +11,5 @@
   "fourWorkingDaysBeforeRelease": "16 Dec 2019 10:00 PST",
   "fiveWorkingDaysBeforeRelease": "13 Dec 2019 10:00 PST",
 
-  "retrospectiveReminderDateTime": "20 Dec 2019 10:00 PST",
-  "retrospectiveDateTime": "7 Jan 2020 10:00 PST",
-  "retrospectiveDocURL": "https://docs.google.com/document/d/1pzl_csACLWbUcLOtDZQEPEJFZcDofXbyqKMCHf7TScY/edit",
-
   "slackAnnounceChannel": "dev-announce"
 }

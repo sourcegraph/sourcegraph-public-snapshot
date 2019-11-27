@@ -145,7 +145,7 @@ class Tabs<ID extends string, T extends Tab<ID>> extends React.PureComponent<
                     tabComponent={this.props.tabComponent}
                 />
                 {this.props.toolbarFragment && <div className="tabs__toolbar small">{this.props.toolbarFragment}</div>}
-                {children && children.find(c => c && c.key === this.props.activeTab)}
+                {children?.find(c => c && c.key === this.props.activeTab)}
             </div>
         )
     }

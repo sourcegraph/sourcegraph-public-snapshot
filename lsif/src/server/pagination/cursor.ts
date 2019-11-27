@@ -9,6 +9,8 @@ export function parseCursor<T>(cursorRaw: string | undefined): T | undefined {
     }
 
     try {
+        // False positive https://github.com/typescript-eslint/typescript-eslint/issues/1269
+        // eslint-disable-next-line @typescript-eslint/return-await
         return JSON.parse(Buffer.from(cursorRaw, 'base64').toString())
     } catch {
         throw Object.assign(new Error(`Malformed cursor supplied ${cursorRaw}`), { status: 400 })
