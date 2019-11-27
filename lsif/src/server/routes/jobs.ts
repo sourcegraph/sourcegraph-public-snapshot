@@ -4,7 +4,6 @@ import express from 'express'
 import { ApiJobState, QUEUE_PREFIX, queueTypes, statesByQueue } from '../../shared/queue/queue'
 import { chunk } from 'lodash'
 import { Job, Queue } from 'bull'
-import { Logger } from 'winston'
 import { nextLink } from '../pagination/link'
 import { ScriptedRedis } from '../redis/redis'
 import { wrap } from 'async-middleware'
@@ -123,9 +122,8 @@ const formatJobFromMap = (values: Map<string, string>, state: ApiJobState): ApiJ
  *
  * @param queue The queue instance.
  * @param scriptedClient The Redis client with scripts loaded.
- * @param logger The logger instance.
  */
-export function createJobRouter(queue: Queue, scriptedClient: ScriptedRedis, logger: Logger): express.Router {
+export function createJobRouter(queue: Queue, scriptedClient: ScriptedRedis): express.Router {
     const router = express.Router()
 
     router.get(
