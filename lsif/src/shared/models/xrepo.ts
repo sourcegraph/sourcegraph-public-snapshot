@@ -3,7 +3,7 @@ import { EncodedBloomFilter } from '../xrepo/bloom-filter'
 import { MAX_POSTGRES_BATCH_SIZE } from '../constants'
 
 /**
- * TODO
+ * The possible states of an LsifUpload entity.
  */
 export type LsifUploadState = 'queued' | 'completed' | 'errored' | 'processing'
 
