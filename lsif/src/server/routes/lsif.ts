@@ -97,6 +97,7 @@ export function createLsifRouter(
 
                 if (blocking) {
                     logger.debug('Blocking on upload conversion', { repository, commit, root })
+
                     if (await uploadsManager.waitForUploadToConvert(upload.id, maxWait)) {
                         // Upload converted successfully while blocked, send success
                         res.status(200).send({ id: upload.id })
