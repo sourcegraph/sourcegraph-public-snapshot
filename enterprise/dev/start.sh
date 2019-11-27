@@ -24,7 +24,7 @@ export EXTSVC_CONFIG_FILE=$DEV_PRIVATE_PATH/enterprise/dev/external-services-con
 export SITE_CONFIG_ALLOW_EDITS=true
 export EXTSVC_CONFIG_ALLOW_EDITS=true
 
-export WATCH_ADDITIONAL_GO_DIRS="$PWD/cmd $PWD/dev $PWD/pkg"
+export WATCH_ADDITIONAL_GO_DIRS="$PWD/cmd $PWD/dev $PWD/internal"
 export ENTERPRISE_COMMANDS="frontend management-console repo-updater"
 export ENTERPRISE=1
 ../dev/launch.sh
