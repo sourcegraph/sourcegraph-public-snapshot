@@ -233,8 +233,8 @@ export class UploadsManager {
                 await convert(uploads[0])
             } catch (error) {
                 state = 'errored'
-                failureSummary = error && error.message
-                failureStacktrace = error && error.stack
+                failureSummary = error?.message
+                failureStacktrace = error?.stack
             }
 
             await entityManager.query(
