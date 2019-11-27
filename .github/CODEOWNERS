@@ -99,7 +99,7 @@ tslint.json @felixfbecker
 tslint.config.js @felixfbecker
 .eslintrc.* @felixfbecker
 /enterprise/cmd @beyang
-/enterprise/pkg @beyang
+/enterprise/internal @beyang
 /enterprise @beyang
 /doc.go @beyang
 /.gitignore @beyang
@@ -132,7 +132,7 @@ tslint.config.js @felixfbecker
 
 # Automation
 */a8n/* @sourcegraph/automation
-/enterprise/pkg/a8n @sourcegraph/automation
+/enterprise/internal/a8n @sourcegraph/automation
 /internal/a8n @sourcegraph/automation
 **/campaigns/** @sourcegraph/automation
 web/**/campaigns/** @sourcegraph/automation @sourcegraph/web
@@ -255,7 +255,7 @@ README.md @sqs
 # LSIF
 /lsif/ @sourcegraph/code-intel
 /internal/lsif @sourcegraph/code-intel
-/enterprise/pkg/codeintel @sourcegraph/code-intel
+/enterprise/internal/codeintel @sourcegraph/code-intel
 /cmd/frontend/graphqlbackend/codeintel.go @sourcegraph/code-intel
 
 # Development
@@ -266,7 +266,7 @@ README.md @sqs
 
 # Misc and special overrides
 /LICENSE* @sqs @beyang @slimsag
-/enterprise/pkg/license @beyang
+/enterprise/internal/license @beyang
 /cmd/frontend/external/session @beyang
 /cmd/frontend/external @beyang
 /babel.config.js @felixfbecker
