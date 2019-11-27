@@ -116,7 +116,7 @@ function fetchViewerSettings(): Observable<GQL.ISettingsCascade> {
         ${settingsCascadeFragment}
     `).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.viewerSettings) {
+            if (!data?.viewerSettings) {
                 throw createAggregateError(errors)
             }
             return data.viewerSettings

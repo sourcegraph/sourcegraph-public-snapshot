@@ -299,7 +299,7 @@ describe('Search regression test suite', () => {
                     Array.from(document.querySelectorAll('.e2e-search-result'))
                         .map(el => {
                             const header = el.querySelector('[data-testid="result-container-header"')
-                            if (!header || !header.textContent) {
+                            if (!header?.textContent) {
                                 return null
                             }
                             const components = header.textContent.split(/\s/)

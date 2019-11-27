@@ -147,7 +147,7 @@ export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolb
     mountEl.className = className
     const rawURLLink = codeViewElement.querySelector('#raw-url')
     const buttonGroup = rawURLLink?.closest('.BtnGroup')
-    if (!buttonGroup || !buttonGroup.parentNode) {
+    if (!buttonGroup?.parentNode) {
         throw new Error('File actions not found')
     }
     buttonGroup.parentNode.insertBefore(mountEl, buttonGroup)
