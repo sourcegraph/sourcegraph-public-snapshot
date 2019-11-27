@@ -16,6 +16,19 @@ import { tryWithLock } from '../../shared/locks/locks'
  */
 export function startTasks(connection: Connection, queue: Queue, logger: Logger): void {
     /**
+     * Start invoking the given task on an interval.
+     *
+     * @param task The task to invoke.
+     * @param intervalMs The interval between invocations.
+     */
+    const runTask = (task: () => Promise<void>, intervalMs: number): void => {
+        AsyncPolling(async end => {
+            await task()
+            end()
+        }, intervalMs * 1000).run()
+    }
+
+    /**
      * Each task is performed with an exclusive advisory lock in Postgres. If another
      * server is already running this task, then this server instance will skip the
      * attempt.
@@ -32,7 +45,7 @@ export function startTasks(connection: Connection, queue: Queue, logger: Logger)
     const cleanFailedUploadsTask = wrapTask('Cleaning failed uploads', ctx => cleanFailedJobs(ctx))
 
     // Start tasks on intervals
-    AsyncPolling(updateQueueSizeGaugeTask, settings.UPDATE_QUEUE_SIZE_GAUGE_INTERVAL * 1000).run()
-    AsyncPolling(cleanOldUploadsTask, settings.CLEAN_OLD_JOBS_INTERVAL * 1000).run()
-    AsyncPolling(cleanFailedUploadsTask, settings.CLEAN_FAILED_JOBS_INTERVAL * 1000).run()
+    runTask(updateQueueSizeGaugeTask, settings.UPDATE_QUEUE_SIZE_GAUGE_INTERVAL)
+    runTask(cleanOldUploadsTask, settings.CLEAN_OLD_JOBS_INTERVAL)
+    runTask(cleanFailedUploadsTask, settings.CLEAN_FAILED_JOBS_INTERVAL)
 }
