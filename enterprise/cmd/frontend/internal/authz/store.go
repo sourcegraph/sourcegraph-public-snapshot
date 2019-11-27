@@ -120,11 +120,9 @@ func (s *Store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err
 		p.UserIDs = roaring.NewBitmap()
 	}
 
-	// Fisrt get the intersection (And), then use the intersection to compute diffs (AndNot)
-	// with both the old and new sets to get user IDs to remove and to add respectively.
-	common := roaring.And(oldIDs, p.UserIDs)
-	removed := roaring.Xor(common, oldIDs)
-	added := roaring.Xor(common, p.UserIDs)
+	// Compute differences between the old and new sets.
+	added := roaring.AndNot(p.UserIDs, oldIDs)
+	removed := roaring.AndNot(oldIDs, p.UserIDs)
 
 	// Load stored user IDs of both added and removed.
 	changedIDs := roaring.Or(added, removed).ToArray()
@@ -359,11 +357,9 @@ func (s *Store) SetRepoPendingPermissions(
 		return err
 	}
 
-	// Fisrt get the intersection (And), then use the intersection to compute diffs (AndNot)
-	// with both the old and new sets to get user IDs to remove and to add respectively.
-	common := roaring.And(oldIDs, p.UserIDs)
-	removed := roaring.Xor(common, oldIDs)
-	added := roaring.Xor(common, p.UserIDs)
+	// Compute differences between the old and new sets.
+	added := roaring.AndNot(p.UserIDs, oldIDs)
+	removed := roaring.AndNot(oldIDs, p.UserIDs)
 
 	q = loadUserPendingPermissionsByIDBatchQuery(removed.ToArray(), p.Perm, PermRepos)
 	idSet, loaded, err := txs.loadUserPendingPermissions(ctx, q)
@@ -371,7 +367,7 @@ func (s *Store) SetRepoPendingPermissions(
 		return err
 	}
 
-	// Merge toRemove data into the full sets.
+	// Merge removed data into the full sets.
 	for id, bindID := range idSet {
 		bindIDSet[id] = bindID
 	}
