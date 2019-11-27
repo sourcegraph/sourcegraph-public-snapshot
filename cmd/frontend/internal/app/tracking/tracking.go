@@ -15,7 +15,7 @@ import (
 
 // SyncUser handles creating or syncing a user profile in HubSpot, and if provided,
 // logs a user event.
-func SyncUser(email string, eventID string, contactParams *hubspot.ContactProperties) {
+func SyncUser(email, eventID string, contactParams *hubspot.ContactProperties) {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Printf("panic in tracking.SyncUser: %s", err)
