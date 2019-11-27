@@ -19,7 +19,7 @@ import { Key } from 'ts-key-enum'
  */
 function getNumResults() {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const matches = document.querySelector('body')!.textContent!.match(/([0-9]+)\+?\sresults?/)
+    const matches = document.body.textContent!.match(/([0-9]+)\+?\sresults?/)
     if (!matches || matches.length < 2) {
         return null
     }

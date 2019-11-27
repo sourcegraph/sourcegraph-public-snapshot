@@ -25,6 +25,7 @@ import { Settings, QuickLink } from '../schema/settings.schema'
 import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
+import delay from 'delay'
 
 /**
  * @jest-environment node
@@ -130,7 +131,7 @@ describe('Organizations regression test suite', () => {
             await driver.page.keyboard.up(Key.Shift)
             await driver.page.keyboard.up(Key.Control)
             await (await driver.findElementWithText('Save changes')).click()
-            await new Promise(resolve => setTimeout(resolve, 500)) // Wait for save
+            await delay(500) // Wait for save
             await driver.findElementWithText('Save changes')
 
             {

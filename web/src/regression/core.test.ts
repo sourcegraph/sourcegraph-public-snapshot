@@ -15,6 +15,7 @@ import { map } from 'rxjs/operators'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { applyEdits, parse } from '@sqs/jsonc-parser'
 import { overwriteSettings } from '../../../shared/src/settings/edit'
+import delay from 'delay'
 
 describe('Core functionality regression test suite', () => {
     const testUsername = 'test-core'
@@ -225,7 +226,7 @@ describe('Core functionality regression test suite', () => {
             baseUrl: config.sourcegraphBaseUrl,
             token,
         })
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        await delay(2000)
         const currentUsernameQuery = gql`
             query {
                 currentUser {
