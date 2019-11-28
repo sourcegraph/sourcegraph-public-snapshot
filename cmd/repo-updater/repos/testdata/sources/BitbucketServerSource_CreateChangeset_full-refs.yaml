@@ -1,0 +1,47 @@
+---
+version: 1
+interactions:
+- request:
+    body: |
+      {"title":"This is a test PR","description":"This is the body of a test PR","state":"OPEN","open":true,"closed":false,"fromRef":{"id":"refs/heads/test-pr-bbs-10","repository":{"slug":"automation-testing","project":{"key":"SOUR"}}},"toRef":{"id":"refs/heads/master","repository":{"slug":"automation-testing","project":{"key":"SOUR"}}},"locked":false}
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/automation-testing/pull-requests
+    method: POST
+  response:
+    body: '{"id":13,"version":0,"title":"This is a test PR","description":"This is
+      the body of a test PR","state":"OPEN","open":true,"closed":false,"createdDate":1574934427542,"updatedDate":1574934427542,"fromRef":{"id":"refs/heads/test-pr-bbs-10","displayId":"test-pr-bbs-10","latestCommit":"c9324a86ac324cdf48f3db3595d2dd013e43b56c","repository":{"slug":"automation-testing","id":10070,"name":"automation-testing","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/automation-testing.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/browse"}]}}},"toRef":{"id":"refs/heads/master","displayId":"master","latestCommit":"e0fc523591f7776902b54a9953b4d7d72bf84ac4","repository":{"slug":"automation-testing","id":10070,"name":"automation-testing","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/automation-testing.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/browse"}]}}},"locked":false,"author":{"user":{"name":"milton","emailAddress":"dev@sourcegraph.com","id":1,"displayName":"milton
+      woof","active":true,"slug":"milton","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/milton"}]}},"role":"AUTHOR","approved":false,"status":"UNAPPROVED"},"reviewers":[],"participants":[],"links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/13"}]}}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Thu, 28 Nov 2019 09:47:07 GMT
+      Location:
+      - https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/automation-testing/pull-requests/13
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - X-AUSERNAME,Accept-Encoding
+      X-Arequestid:
+      - '@1IK17DGx587x3129707x0'
+      X-Asen:
+      - SEN-L13789548
+      X-Asessionid:
+      - 1ib988r
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - milton
+      X-Content-Type-Options:
+      - nosniff
+    status: 201 Created
+    code: 201
+    duration: ""
