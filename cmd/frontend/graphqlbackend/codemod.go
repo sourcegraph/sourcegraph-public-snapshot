@@ -50,7 +50,7 @@ type codemodResultResolver struct {
 }
 
 func (r *codemodResultResolver) ToRepository() (*RepositoryResolver, bool) { return nil, false }
-func (r *codemodResultResolver) ToFileMatch() (*fileMatchResolver, bool)   { return nil, false }
+func (r *codemodResultResolver) ToFileMatch() (*FileMatchResolver, bool)   { return nil, false }
 func (r *codemodResultResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
 	return nil, false
 }
@@ -144,7 +144,7 @@ func validateQuery(q *query.Query) (*args, error) {
 }
 
 // Calls the codemod backend replacer service for a set of repository revisions.
-func performCodemod(ctx context.Context, args *search.Args) ([]searchResultResolver, *searchResultsCommon, error) {
+func performCodemod(ctx context.Context, args *search.Args) ([]SearchResultResolver, *searchResultsCommon, error) {
 	cmodArgs, err := validateQuery(args.Query)
 	if err != nil {
 		return nil, nil, err
@@ -197,7 +197,7 @@ func performCodemod(ctx context.Context, args *search.Args) ([]searchResultResol
 		return nil, nil, err
 	}
 
-	var results []searchResultResolver
+	var results []SearchResultResolver
 	for _, ur := range unflattened {
 		for _, resolver := range ur {
 			v := resolver
