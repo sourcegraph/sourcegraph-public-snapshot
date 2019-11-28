@@ -74,7 +74,7 @@ func zoektSearchOpts(k int, query *search.PatternInfo) zoekt.SearchOptions {
 	return searchOpts
 }
 
-func zoektSearchHEAD(ctx context.Context, args *search.Args, repos []*search.RepositoryRevisions, isSymbol bool, since func(t time.Time) time.Duration) (fm []*fileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
+func zoektSearchHEAD(ctx context.Context, args *search.Args, repos []*search.RepositoryRevisions, isSymbol bool, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
 	if len(repos) == 0 {
 		return nil, false, nil, nil
 	}
@@ -188,7 +188,7 @@ func zoektSearchHEAD(ctx context.Context, args *search.Args, repos []*search.Rep
 		limitHit = true
 	}
 
-	matches := make([]*fileMatchResolver, len(resp.Files))
+	matches := make([]*FileMatchResolver, len(resp.Files))
 	for i, file := range resp.Files {
 		fileLimitHit := false
 		if len(file.LineMatches) > maxLineMatches {
@@ -242,7 +242,7 @@ func zoektSearchHEAD(ctx context.Context, args *search.Args, repos []*search.Rep
 				}
 			}
 		}
-		matches[i] = &fileMatchResolver{
+		matches[i] = &FileMatchResolver{
 			JPath:        file.FileName,
 			JLineMatches: lines,
 			JLimitHit:    fileLimitHit,

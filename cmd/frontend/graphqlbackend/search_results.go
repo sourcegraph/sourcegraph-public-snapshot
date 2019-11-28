@@ -143,9 +143,9 @@ func dedupSort(repos *types.Repos) {
 	*repos = (*repos)[:j+1]
 }
 
-// searchResultsResolver is a resolver for the GraphQL type `SearchResults`
-type searchResultsResolver struct {
-	results []searchResultResolver
+// SearchResultsResolver is a resolver for the GraphQL type `SearchResults`
+type SearchResultsResolver struct {
+	results []SearchResultResolver
 	searchResultsCommon
 	alert *searchAlert
 	start time.Time // when the results started being computed
@@ -155,11 +155,11 @@ type searchResultsResolver struct {
 	cursor *searchCursor
 }
 
-func (sr *searchResultsResolver) Results() []searchResultResolver {
+func (sr *SearchResultsResolver) Results() []SearchResultResolver {
 	return sr.results
 }
 
-func (sr *searchResultsResolver) MatchCount() int32 {
+func (sr *SearchResultsResolver) MatchCount() int32 {
 	var totalResults int32
 	for _, result := range sr.results {
 		totalResults += result.resultCount()
@@ -167,9 +167,9 @@ func (sr *searchResultsResolver) MatchCount() int32 {
 	return totalResults
 }
 
-func (sr *searchResultsResolver) ResultCount() int32 { return sr.MatchCount() }
+func (sr *SearchResultsResolver) ResultCount() int32 { return sr.MatchCount() }
 
-func (sr *searchResultsResolver) ApproximateResultCount() string {
+func (sr *SearchResultsResolver) ApproximateResultCount() string {
 	count := sr.ResultCount()
 	if sr.LimitHit() || len(sr.cloning) > 0 || len(sr.timedout) > 0 {
 		return fmt.Sprintf("%d+", count)
@@ -177,9 +177,9 @@ func (sr *searchResultsResolver) ApproximateResultCount() string {
 	return strconv.Itoa(int(count))
 }
 
-func (sr *searchResultsResolver) Alert() *searchAlert { return sr.alert }
+func (sr *SearchResultsResolver) Alert() *searchAlert { return sr.alert }
 
-func (sr *searchResultsResolver) ElapsedMilliseconds() int32 {
+func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
 	return int32(time.Since(sr.start).Nanoseconds() / int64(time.Millisecond))
 }
 
@@ -206,7 +206,7 @@ var commonFileFilters = []struct {
 	},
 }
 
-func (sr *searchResultsResolver) DynamicFilters() []*searchFilterResolver {
+func (sr *SearchResultsResolver) DynamicFilters() []*searchFilterResolver {
 	filters := map[string]*searchFilterResolver{}
 	repoToMatchCount := make(map[string]int)
 	add := func(value string, label string, count int, limitHit bool, kind string) {
@@ -351,7 +351,7 @@ func (sf *searchFilterResolver) Kind() string {
 
 // blameFileMatch blames the specified file match to produce the time at which
 // the first line match inside of it was authored.
-func (sr *searchResultsResolver) blameFileMatch(ctx context.Context, fm *fileMatchResolver) (t time.Time, err error) {
+func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *FileMatchResolver) (t time.Time, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "blameFileMatch")
 	defer func() {
 		if err != nil {
@@ -380,7 +380,7 @@ func (sr *searchResultsResolver) blameFileMatch(ctx context.Context, fm *fileMat
 	return hunks[0].Author.Date, nil
 }
 
-func (sr *searchResultsResolver) Sparkline(ctx context.Context) (sparkline []int32, err error) {
+func (sr *SearchResultsResolver) Sparkline(ctx context.Context) (sparkline []int32, err error) {
 	var (
 		days     = 30                 // number of days the sparkline represents
 		maxBlame = 100                // maximum number of file results to blame for date/time information.
@@ -423,7 +423,7 @@ loop:
 		case *commitSearchResultResolver:
 			// Diff searches are cheap, because we implicitly have author date info.
 			addPoint(m.commit.author.date)
-		case *fileMatchResolver:
+		case *FileMatchResolver:
 			// File match searches are more expensive, because we must blame the
 			// (first) line in order to know its placement in our sparkline.
 			blameOps++
@@ -458,7 +458,7 @@ loop:
 	return sparkline, nil
 }
 
-func (r *searchResolver) Results(ctx context.Context) (*searchResultsResolver, error) {
+func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
 	// If the request is a paginated one, we handle it separately. See
 	// paginatedResults for more details.
 	if r.pagination != nil {
@@ -476,14 +476,14 @@ func (r *searchResolver) Results(ctx context.Context) (*searchResultsResolver, e
 // resultsWithTimeoutSuggestion calls doResults, and in case of deadline
 // exceeded returns a search alert with a did-you-mean link for the same
 // query with a longer timeout.
-func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*searchResultsResolver, error) {
+func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*SearchResultsResolver, error) {
 	start := time.Now()
 	rr, err := r.doResults(ctx, "")
 	if err != nil {
 		if err == context.DeadlineExceeded {
 			dt := time.Since(start)
 			dt2 := longer(2, dt)
-			rr = &searchResultsResolver{
+			rr = &SearchResultsResolver{
 				alert: &searchAlert{
 					title:       "Timeout",
 					description: fmt.Sprintf("Deadline exceeded after about %s.", roundStr(dt.String())),
@@ -589,7 +589,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	// Calculate value from scratch.
 	searchResultsStatsCounter.WithLabelValues("miss").Inc()
 	attempts := 0
-	var v *searchResultsResolver
+	var v *SearchResultsResolver
 	for {
 		// Query search results.
 		var err error
@@ -789,7 +789,7 @@ func (r *searchResolver) determineResultTypes(args search.Args, forceOnlyResultT
 	return resultTypes, seenResultTypes
 }
 
-func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (repos, missingRepoRevs []*search.RepositoryRevisions, res *searchResultsResolver, err error) {
+func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (repos, missingRepoRevs []*search.RepositoryRevisions, res *SearchResultsResolver, err error) {
 	repos, missingRepoRevs, overLimit, err := r.resolveRepositories(ctx, nil)
 	if err != nil {
 		return nil, nil, nil, err
@@ -800,14 +800,14 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 		if err != nil {
 			return nil, nil, nil, err
 		}
-		return nil, nil, &searchResultsResolver{alert: alert, start: start}, nil
+		return nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
 	}
 	if overLimit {
 		alert, err := r.alertForOverRepoLimit(ctx)
 		if err != nil {
 			return nil, nil, nil, err
 		}
-		return nil, nil, &searchResultsResolver{alert: alert, start: start}, nil
+		return nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
 	}
 	return repos, missingRepoRevs, nil, nil
 }
@@ -833,7 +833,7 @@ func alertOnSearchLimit(resultTypes []string, args *search.Args) ([]string, *sea
 	return resultTypes, alert
 }
 
-func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType string) (res *searchResultsResolver, err error) {
+func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType string) (res *SearchResultsResolver, err error) {
 	tr, ctx := trace.New(ctx, "graphql.SearchResults", r.rawQuery())
 	defer func() {
 		tr.SetError(err)
@@ -888,7 +888,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	var (
 		requiredWg sync.WaitGroup
 		optionalWg sync.WaitGroup
-		results    []searchResultResolver
+		results    []SearchResultResolver
 		resultsMu  sync.Mutex
 		common     = searchResultsCommon{maxResultsCount: r.maxResults()}
 		commonMu   sync.Mutex
@@ -896,7 +896,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		multiErrMu sync.Mutex
 		// fileMatches is a map from git:// URI of the file to FileMatch resolver
 		// to merge multiple results of different types for the same file
-		fileMatches   = make(map[string]*fileMatchResolver)
+		fileMatches   = make(map[string]*FileMatchResolver)
 		fileMatchesMu sync.Mutex
 		// Alert is a potential alert shown to the user.
 		alert *searchAlert
@@ -1130,7 +1130,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	sortResults(results)
 
-	resultsResolver := searchResultsResolver{
+	resultsResolver := SearchResultsResolver{
 		start:               start,
 		searchResultsCommon: common,
 		results:             results,
@@ -1146,7 +1146,7 @@ func isContextError(ctx context.Context, err error) bool {
 	return ctx.Err() != nil || err == context.Canceled || err == context.DeadlineExceeded
 }
 
-// searchResultResolver is a resolver for the GraphQL union type `SearchResult`.
+// SearchResultResolver is a resolver for the GraphQL union type `SearchResult`.
 //
 // Supported types:
 //
@@ -1156,9 +1156,9 @@ func isContextError(ctx context.Context, err error) bool {
 //   - *codemodResultResolver      // code modification
 //
 // Note: Any new result types added here also need to be handled properly in search_results.go:301 (sparklines)
-type searchResultResolver interface {
+type SearchResultResolver interface {
 	ToRepository() (*RepositoryResolver, bool)
-	ToFileMatch() (*fileMatchResolver, bool)
+	ToFileMatch() (*FileMatchResolver, bool)
 	ToCommitSearchResult() (*commitSearchResultResolver, bool)
 	ToCodemodResult() (*codemodResultResolver, bool)
 
@@ -1169,7 +1169,7 @@ type searchResultResolver interface {
 
 // compareSearchResults checks to see if a is less than b.
 // It is implemented separately for easier testing.
-func compareSearchResults(a, b searchResultResolver) bool {
+func compareSearchResults(a, b SearchResultResolver) bool {
 	arepo, afile := a.searchResultURIs()
 	brepo, bfile := b.searchResultURIs()
 
@@ -1180,7 +1180,7 @@ func compareSearchResults(a, b searchResultResolver) bool {
 	return arepo < brepo
 }
 
-func sortResults(r []searchResultResolver) {
+func sortResults(r []SearchResultResolver) {
 	sort.Slice(r, func(i, j int) bool { return compareSearchResults(r[i], r[j]) })
 }
 

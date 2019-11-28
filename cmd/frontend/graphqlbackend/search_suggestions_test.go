@@ -21,7 +21,7 @@ func TestSearchSuggestions(t *testing.T) {
 
 	getSuggestions := func(t *testing.T, query, version string) []string {
 		t.Helper()
-		r, err := (&schemaResolver{}).Search(&searchArgs{Query: query, Version: version})
+		r, err := (&schemaResolver{}).Search(&SearchArgs{Query: query, Version: version})
 		if err != nil {
 			t.Fatal("Search:", err)
 		}
@@ -43,7 +43,7 @@ func TestSearchSuggestions(t *testing.T) {
 		}
 	}
 
-	mockSearchSymbols = func(ctx context.Context, args *search.Args, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
+	mockSearchSymbols = func(ctx context.Context, args *search.Args, limit int) (res []*FileMatchResolver, common *searchResultsCommon, err error) {
 		// TODO test symbol suggestions
 		return nil, nil, nil
 	}
@@ -88,12 +88,12 @@ func TestSearchSuggestions(t *testing.T) {
 		defer git.ResetMocks()
 
 		calledSearchFilesInRepos := false
-		mockSearchFilesInRepos = func(args *search.Args) ([]*fileMatchResolver, *searchResultsCommon, error) {
+		mockSearchFilesInRepos = func(args *search.Args) ([]*FileMatchResolver, *searchResultsCommon, error) {
 			calledSearchFilesInRepos = true
 			if want := "foo"; args.Pattern.Pattern != want {
 				t.Errorf("got %q, want %q", args.Pattern.Pattern, want)
 			}
-			return []*fileMatchResolver{
+			return []*FileMatchResolver{
 				{uri: "git://repo?rev#dir/file", JPath: "dir/file", repo: &types.Repo{Name: "repo"}, commitID: "rev"},
 			}, &searchResultsCommon{}, nil
 		}
@@ -114,7 +114,7 @@ func TestSearchSuggestions(t *testing.T) {
 
 	// This test is only valid for Regexp searches. Literal searches won't return suggestions for an invalid regexp.
 	t.Run("single term invalid regex", func(t *testing.T) {
-		sr, err := (&schemaResolver{}).Search(&searchArgs{Query: "[foo", PatternType: nil, Version: "V1"})
+		sr, err := (&schemaResolver{}).Search(&SearchArgs{Query: "[foo", PatternType: nil, Version: "V1"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -154,14 +154,14 @@ func TestSearchSuggestions(t *testing.T) {
 		backend.Mocks.Repos.MockResolveRev_NoCheck(t, api.CommitID("deadbeef"))
 
 		calledSearchFilesInRepos := false
-		mockSearchFilesInRepos = func(args *search.Args) ([]*fileMatchResolver, *searchResultsCommon, error) {
+		mockSearchFilesInRepos = func(args *search.Args) ([]*FileMatchResolver, *searchResultsCommon, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledSearchFilesInRepos = true
 			if args.Pattern.Pattern != "." && args.Pattern.Pattern != "foo" {
 				t.Errorf("got %q, want %q", args.Pattern.Pattern, `"foo" or "."`)
 			}
-			return []*fileMatchResolver{
+			return []*FileMatchResolver{
 				{uri: "git://repo?rev#dir/foo-repo3-file-name-match", JPath: "dir/foo-repo3-file-name-match", repo: &types.Repo{Name: "repo3"}, commitID: "rev"},
 				{uri: "git://repo?rev#dir/foo-repo1-file-name-match", JPath: "dir/foo-repo1-file-name-match", repo: &types.Repo{Name: "repo1"}, commitID: "rev"},
 				{uri: "git://repo?rev#dir/file-content-match", JPath: "dir/file-content-match", repo: &types.Repo{Name: "repo"}, commitID: "rev"},
@@ -226,14 +226,14 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { mockShowLangSuggestions = nil }()
 
 		calledSearchFilesInRepos := false
-		mockSearchFilesInRepos = func(args *search.Args) ([]*fileMatchResolver, *searchResultsCommon, error) {
+		mockSearchFilesInRepos = func(args *search.Args) ([]*FileMatchResolver, *searchResultsCommon, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledSearchFilesInRepos = true
 			if want := "foo-repo"; len(args.Repos) != 1 || string(args.Repos[0].Repo.Name) != want {
 				t.Errorf("got %q, want %q", args.Repos, want)
 			}
-			return []*fileMatchResolver{
+			return []*FileMatchResolver{
 				{uri: "git://foo-repo?rev#dir/file", JPath: "dir/file", repo: &types.Repo{Name: "foo-repo"}, commitID: ""},
 			}, &searchResultsCommon{}, nil
 		}
@@ -323,14 +323,14 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { mockShowLangSuggestions = nil }()
 
 		calledSearchFilesInRepos := false
-		mockSearchFilesInRepos = func(args *search.Args) ([]*fileMatchResolver, *searchResultsCommon, error) {
+		mockSearchFilesInRepos = func(args *search.Args) ([]*FileMatchResolver, *searchResultsCommon, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledSearchFilesInRepos = true
 			if want := "foo-repo"; len(args.Repos) != 1 || string(args.Repos[0].Repo.Name) != want {
 				t.Errorf("got %q, want %q", args.Repos, want)
 			}
-			return []*fileMatchResolver{
+			return []*FileMatchResolver{
 				{uri: "git://foo-repo?rev#dir/bar-file", JPath: "dir/bar-file", repo: &types.Repo{Name: "foo-repo"}, commitID: ""},
 			}, &searchResultsCommon{}, nil
 		}

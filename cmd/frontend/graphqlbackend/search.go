@@ -51,7 +51,7 @@ func maxReposToSearch() int {
 	}
 }
 
-type searchArgs struct {
+type SearchArgs struct {
 	Version     string
 	PatternType *string
 	Query       string
@@ -59,8 +59,8 @@ type searchArgs struct {
 	First       *int32
 }
 
-type searchImplementer interface {
-	Results(context.Context) (*searchResultsResolver, error)
+type SearchImplementer interface {
+	Results(context.Context) (*SearchResultsResolver, error)
 	Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error)
 	//lint:ignore U1000 is used by graphql via reflection
 	Stats(context.Context) (*searchResultsStats, error)
@@ -74,8 +74,8 @@ const (
 	SearchTypeStructural
 )
 
-// Search provides search results and suggestions.
-func (r *schemaResolver) Search(args *searchArgs) (searchImplementer, error) {
+// NewSearchImplementer returns a SearchImplementer that provides search results and suggestions.
+func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 	tr, _ := trace.New(context.Background(), "graphql.schemaResolver", "Search")
 	defer tr.Finish()
 
@@ -122,6 +122,10 @@ func (r *schemaResolver) Search(args *searchArgs) (searchImplementer, error) {
 		zoekt:         search.Indexed(),
 		searcherURLs:  search.SearcherURLs(),
 	}, nil
+}
+
+func (r *schemaResolver) Search(args *SearchArgs) (SearchImplementer, error) {
+	return NewSearchImplementer(args)
 }
 
 // detectSearchType returns the search type to perfrom ("regexp", or
