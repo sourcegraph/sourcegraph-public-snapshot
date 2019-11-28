@@ -717,6 +717,7 @@ DO UPDATE SET
 }
 
 // GrantPendingPermissions grants the user has given ID with pending permissions found in p.
+// It "moves" rows in pending permissions tables to effective permissions tables.
 func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *UserPendingPermissions) (err error) {
 	ctx, save := s.observe(ctx, "GrantPendingPermissions", "")
 	defer func() { save(&err, append(p.TracingFields(), otlog.Object("userID", userID))...) }()
@@ -786,10 +787,12 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 		})
 	}
 
-	if q, err = upsertRepoPermissionsBatchQuery(updatedPerms...); err != nil {
-		return err
-	} else if err = txs.execute(ctx, q); err != nil {
-		return err
+	if len(updatedPerms) > 0 {
+		if q, err = upsertRepoPermissionsBatchQuery(updatedPerms...); err != nil {
+			return err
+		} else if err = txs.execute(ctx, q); err != nil {
+			return err
+		}
 	}
 
 	if err = txs.execute(ctx, deleteUserPendingPermissionsQuery(p)); err != nil {
@@ -812,7 +815,8 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 			oldIDs = roaring.NewBitmap()
 		}
 
-		if !oldIDs.CheckedRemove(uint32(userID)) {
+		// Here we need to check the stub "id" column in "user_pending_permissions" table.
+		if !oldIDs.CheckedRemove(uint32(p.ID)) {
 			continue
 		}
 
@@ -824,10 +828,12 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 		})
 	}
 
-	if q, err = upsertRepoPendingPermissionsBatchQuery(updatedPerms...); err != nil {
-		return err
-	} else if err = txs.execute(ctx, q); err != nil {
-		return err
+	if len(updatedPerms) > 0 {
+		if q, err = upsertRepoPendingPermissionsBatchQuery(updatedPerms...); err != nil {
+			return err
+		} else if err = txs.execute(ctx, q); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -850,7 +856,7 @@ AND provider = %s
 	return sqlf.Sprintf(
 		format,
 		sqlf.Join(items, ","),
-		perm,
+		perm.String(),
 		provider,
 	)
 }
@@ -929,7 +935,7 @@ AND permission = %s
 	return sqlf.Sprintf(
 		format,
 		sqlf.Join(items, ","),
-		perm,
+		perm.String(),
 	)
 }
 
