@@ -111,7 +111,7 @@ type changesetResolver struct {
 	err  error
 }
 
-const changesetIDKind = "Changeset"
+const changesetIDKind = "ExternalChangeset"
 
 func marshalChangesetID(id int64) graphql.ID {
 	return relay.MarshalID(changesetIDKind, id)
