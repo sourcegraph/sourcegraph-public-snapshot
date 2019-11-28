@@ -91,14 +91,12 @@ describe('Code intelligence regression test suite', () => {
             const clientRepo = 'prometheus-client-golang'
             const commonCommit = '287d3e634a1e550c9e463dd7e5a75a422c614505'
             const clientCommit = '333f01cef0d61f9ef05ada3d94e00e69c8d5cdda'
+            const olderCommonCommit = 'e8215224146358493faab0295ce364cd386223b9' // 2 behind commonCommit
 
             interface Location {
                 path: string
                 position: { line: number; character: number }
             }
-
-            const makePath = (repository: string, commit: string, { path, position: { line, character } }: Location) =>
-                `/${repoBase}/${repository}@${commit}/-/blob/${path}#L${line}:${character}`
 
             const commonLocations = [
                 { path: 'model/value.go', position: { line: 31, character: 19 } },
@@ -120,7 +118,7 @@ describe('Code intelligence regression test suite', () => {
                 // { path: 'model/value.go', position: { line: 104, character: 31 } },
                 // { path: 'model/value.go', position: { line: 150, character: 10 } },
                 // { path: 'model/value.go', position: { line: 166, character: 10 } },
-            ].map(reference => makePath(commonRepo, commonCommit, reference))
+            ]
 
             const clientLocations = [
                 { path: 'api/prometheus/v1/api.go', position: { line: 41, character: 15 } },
@@ -147,10 +145,20 @@ describe('Code intelligence regression test suite', () => {
                 // These (should) also come back from the backend, but the UI merges
                 // these into one of the results above.
                 // { path: 'api/prometheus/v1/api_bench_test.go', position: { line: 37, character: 24 } },
-            ].map(reference => makePath(clientRepo, clientCommit, reference))
+            ]
 
-            const makeTestCase = (repository: string, commit: string, path: string, line: number) => ({
-                repoRev: `${repoBase}/${repository}@${commit}`,
+            const makePath = (repository: string, commit: string, { path, position: { line, character } }: Location) =>
+                `/${repoBase}/${repository}@${commit}/-/blob/${path}#L${line}:${character}`
+
+            const makeTestCase = (
+                repository: string,
+                sourceCommit: string,
+                /** The commit to use for the definition (changes with nearest commit). */
+                commonCommit: string,
+                path: string,
+                line: number
+            ) => ({
+                repoRev: `${repoBase}/${repository}@${sourceCommit}`,
                 files: [
                     {
                         path,
@@ -159,8 +167,10 @@ describe('Code intelligence regression test suite', () => {
                                 line,
                                 token: 'SamplePair',
                                 expectedHoverContains: 'SamplePair pairs a SampleValue with a Timestamp.',
-                                expectedDefinition: `/${repoBase}/prometheus-common@287d3e634a1e550c9e463dd7e5a75a422c614505/-/blob/model/value.go#L78:6`,
-                                expectedReferences: commonLocations.concat(clientLocations),
+                                expectedDefinition: `/${repoBase}/prometheus-common@${commonCommit}/-/blob/model/value.go#L78:6`,
+                                expectedReferences: commonLocations
+                                    .map(r => makePath(commonRepo, commonCommit, r))
+                                    .concat(clientLocations.map(r => makePath(clientRepo, clientCommit, r))),
                             },
                         ],
                     },
@@ -183,15 +193,14 @@ describe('Code intelligence regression test suite', () => {
             await enableLSIF(driver, config)
 
             await testCodeNavigation(driver, config, [
-                makeTestCase(commonRepo, commonCommit, '/model/value.go', 31),
-                makeTestCase(commonRepo, commonCommit, '/model/value_test.go', 133),
-                makeTestCase(clientRepo, clientCommit, '/api/prometheus/v1/api.go', 41),
-                makeTestCase(clientRepo, clientCommit, '/api/prometheus/v1/api_test.go', 1119),
-                makeTestCase(clientRepo, clientCommit, '/api/prometheus/v1/api_bench_test.go', 34),
+                makeTestCase(commonRepo, commonCommit, commonCommit, '/model/value.go', 31),
+                makeTestCase(commonRepo, commonCommit, commonCommit, '/model/value_test.go', 133),
+                makeTestCase(clientRepo, clientCommit, commonCommit, '/api/prometheus/v1/api.go', 41),
+                makeTestCase(clientRepo, clientCommit, commonCommit, '/api/prometheus/v1/api_test.go', 1119),
+                makeTestCase(clientRepo, clientCommit, commonCommit, '/api/prometheus/v1/api_bench_test.go', 34),
+                makeTestCase(commonRepo, olderCommonCommit, olderCommonCommit, '/model/value.go', 31),
             ])
         },
         60 * 1000
     )
-
-    // TODO - test closest commit as well
 })
