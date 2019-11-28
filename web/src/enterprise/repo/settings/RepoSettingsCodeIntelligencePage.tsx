@@ -15,10 +15,10 @@ const LsifDumpNode: FunctionComponent<{ node: GQL.ILSIFDump }> = ({ node }) => (
     <div className="w-100 list-group-item py-2 lsif-data__main">
         <div className="lsif-data__meta">
             <div className="lsif-data__meta-root">
-                <code>{node.projectRoot.commit.abbreviatedOID}</code>
+                <code className="e2e-dump-commit">{node.projectRoot.commit.abbreviatedOID}</code>
                 <span className="ml-2">
                     <Link to={node.projectRoot.url}>
-                        <strong>{node.projectRoot.path || '/'}</strong>
+                        <strong className="e2e-dump-path">{node.projectRoot.path || '/'}</strong>
                     </Link>
                 </span>
             </div>

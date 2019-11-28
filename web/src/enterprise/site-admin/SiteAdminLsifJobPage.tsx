@@ -61,20 +61,26 @@ export const SiteAdminLsifJobPage: FunctionComponent<Props> = ({
 
                     {jobOrError.state === GQL.LSIFJobState.PROCESSING ? (
                         <div className="alert alert-primary mb-4 mt-3">
-                            <LoadingSpinner className="icon-inline" /> Job is currently being processed...
+                            <LoadingSpinner className="icon-inline" />{' '}
+                            <span className="e2e-job-state">Job is currently being processed...</span>
                         </div>
                     ) : jobOrError.state === GQL.LSIFJobState.COMPLETED ? (
                         <div className="alert alert-success mb-4 mt-3">
-                            <CheckIcon className="icon-inline" /> Job completed successfully.
+                            <CheckIcon className="icon-inline" />{' '}
+                            <span className="e2e-job-state">Job completed successfully.</span>
                         </div>
                     ) : jobOrError.state === GQL.LSIFJobState.ERRORED ? (
                         <div className="alert alert-danger mb-4 mt-3">
-                            <AlertCircleIcon className="icon-inline" /> Job failed to complete:{' '}
-                            <code>{jobOrError.failure && jobOrError.failure.summary}</code>
+                            <AlertCircleIcon className="icon-inline" />{' '}
+                            <span className="e2e-job-state">
+                                Job failed to complete:
+                                <code>{jobOrError.failure && jobOrError.failure.summary}</code>
+                            </span>
                         </div>
                     ) : (
                         <div className="alert alert-primary mb-4 mt-3">
-                            <ClockOutlineIcon className="icon-inline" /> Job is queued.
+                            <ClockOutlineIcon className="icon-inline" />{' '}
+                            <span className="e2e-job-state">Job is queued.</span>
                         </div>
                     )}
 

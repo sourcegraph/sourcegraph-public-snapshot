@@ -11,7 +11,8 @@ import { ensureLoggedInOrCreateTestUser } from './util/helpers'
 import { ScreenshotVerifier } from './util/ScreenshotVerifier'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { ensureTestExternalService, setUserSiteAdmin, getUser } from './util/api'
-import { testCodeNavigation, disableLSIF } from './util/codenav'
+import { testCodeNavigation } from './util/codenav'
+import { disableLSIF } from './util/codeintel'
 
 describe('Code navigation regression test suite', () => {
     const testUsername = 'test-codenav'

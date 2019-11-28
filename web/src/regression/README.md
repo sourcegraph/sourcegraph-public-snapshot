@@ -20,6 +20,7 @@ Prerequisites:
 
 - A running Sourcegraph instance to which you have admin access (you'll need to create an
   admin-level access token).
+- Ensure [src](https://github.com/sourcegraph/src-cli) is in your PATH.
 - The regression tests will create test users as a side-effect. These are cleaned up if the tests
   run to completion, but if the tests are aborted, the lingering users should be cleaned up manually
   (failure to do so is a security risk, as the test user passwords may not be secure). Test

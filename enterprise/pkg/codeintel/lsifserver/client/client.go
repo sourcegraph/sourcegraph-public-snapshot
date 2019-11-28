@@ -49,7 +49,7 @@ func (c *Client) TraceRequestAndUnmarshalPayload(ctx context.Context, method, pa
 		return err
 	}
 
-	return UnmarshalPayload(resp, &payload)
+	return UnmarshalPayload(resp, payload)
 }
 
 // buildURL constructs a URL to the backend LSIF server with the given path

@@ -2,33 +2,6 @@ import { Driver } from '../../../../shared/src/e2e/driver'
 import { Config } from '../../../../shared/src/e2e/config'
 import { ElementHandle } from 'puppeteer'
 
-async function setGlobalLSIFSetting(
-    driver: Driver,
-    config: Pick<Config, 'sourcegraphBaseUrl'>,
-    enabled: boolean
-): Promise<void> {
-    await driver.page.goto(`${config.sourcegraphBaseUrl}/site-admin/global-settings`)
-    const globalSettings = `{"codeIntel.lsif": ${enabled}}`
-    await driver.replaceText({
-        selector: '.monaco-editor',
-        newText: globalSettings,
-        selectMethod: 'keyboard',
-        enterTextMethod: 'type',
-    })
-    await (
-        await driver.findElementWithText('Save changes', {
-            selector: 'button',
-            wait: { timeout: 500 },
-        })
-    ).click()
-}
-
-export const enableLSIF = (driver: Driver, config: Pick<Config, 'sourcegraphBaseUrl'>): Promise<void> =>
-    setGlobalLSIFSetting(driver, config, true)
-
-export const disableLSIF = (driver: Driver, config: Pick<Config, 'sourcegraphBaseUrl'>): Promise<void> =>
-    setGlobalLSIFSetting(driver, config, false)
-
 export interface TestCase {
     repoRev: string
     files: {
@@ -53,41 +26,45 @@ export async function testCodeNavigation(
             await driver.page.goto(config.sourcegraphBaseUrl + `/${repoRev}/-/blob${path}`)
             await driver.page.waitForSelector('.e2e-blob')
             for (const { line, token, expectedHoverContains, expectedDefinition, expectedReferences } of locations) {
-                const { tokenEl, xpathQuery } = await findTokenElement(driver, line, token)
-                if (tokenEl.length === 0) {
-                    throw new Error(
-                        `did not find token ${JSON.stringify(token)} on page. XPath query was: ${xpathQuery}`
-                    )
-                }
+                const tokenEl = await findTokenElement(driver, line, token)
 
-                // Check hover and click
-                await tokenEl[0].hover()
+                // Check hover
+                await tokenEl.hover()
                 await waitForHover(driver, expectedHoverContains)
-                const { tokenEl: emptyTokenEl } = await findTokenElement(driver, line, '')
-                await emptyTokenEl[0].hover()
-                await driver.page.waitForFunction(
-                    () => document.querySelectorAll('.e2e-tooltip-go-to-definition').length === 0
-                )
-                await tokenEl[0].click()
+
+                // Check click
+                await clickOnEmptyPartOfCodeView(driver)
+                await tokenEl.click()
                 await waitForHover(driver, expectedHoverContains)
 
                 // Find-references
                 if (expectedReferences) {
+                    await clickOnEmptyPartOfCodeView(driver)
+                    await tokenEl.hover()
+                    await waitForHover(driver, expectedHoverContains)
                     await (await driver.findElementWithText('Find references')).click()
+
                     await driver.page.waitForSelector('.e2e-search-result')
-                    const refLinks = await collectLinks(driver, '.e2e-search-result')
+                    const refLinks = await collectLinks(driver)
                     for (const expectedReference of expectedReferences) {
-                        expect(refLinks.includes(expectedReference)).toBeTruthy()
+                        expect(refLinks).toContain(expectedReference)
                     }
                     await clickOnEmptyPartOfCodeView(driver)
                 }
 
                 // Go-to-definition
+
+                await clickOnEmptyPartOfCodeView(driver)
+                await tokenEl.hover()
+                await waitForHover(driver, expectedHoverContains)
                 await (await driver.findElementWithText('Go to definition')).click()
+
                 if (Array.isArray(expectedDefinition)) {
                     await driver.page.waitForSelector('.e2e-search-result')
-                    const defLinks = await collectLinks(driver, '.e2e-search-result')
-                    expect(expectedDefinition.every(l => defLinks.includes(l))).toBeTruthy()
+                    const defLinks = await collectLinks(driver)
+                    for (const definition of expectedDefinition) {
+                        expect(defLinks).toContain(definition)
+                    }
                 } else {
                     await driver.page.waitForFunction(
                         defURL => document.location.href.endsWith(defURL),
@@ -107,62 +84,72 @@ async function getTooltip(driver: Driver): Promise<string> {
     return driver.page.evaluate(() => (document.querySelector('.e2e-tooltip-content') as HTMLElement).innerText)
 }
 
-function collectLinks(driver: Driver, selector: string): Promise<string[]> {
-    return driver.page.evaluate(selector => {
-        const links: string[] = []
-        document.querySelectorAll<HTMLElement>(selector).forEach(e => {
-            e.querySelectorAll<HTMLElement>('a[href]').forEach(a => {
-                const href = a.getAttribute('href')
-                if (href) {
-                    links.push(href)
-                }
-            })
-        })
-        return links
-    }, selector)
-}
-
-async function clickOnEmptyPartOfCodeView(driver: Driver): Promise<ElementHandle<Element>[]> {
-    return driver.page.$x('//*[contains(@class, "e2e-blob")]//tr[1]//*[text() = ""]')
-}
-
-async function findTokenElement(
-    driver: Driver,
-    line: number,
-    token: string
-): Promise<{ tokenEl: ElementHandle<Element>[]; xpathQuery: string }> {
-    const lineQuery = `//*[contains(@class, "e2e-blob")]//tr[${line}]`
-    const xpathQuery = `${lineQuery}//*[normalize-space(text()) = ${JSON.stringify(token)}]`
-
-    const lineEl = await driver.page.$x(lineQuery)
-    if (lineEl.length === 0) {
-        throw new Error(`line ${line} does not exist`)
+async function collectLinks(driver: Driver): Promise<Set<string>> {
+    const panelTabTitles = await getPanelTabTitles(driver)
+    if (panelTabTitles.length === 0) {
+        return new Set(await collectVisibleLinks(driver))
     }
 
-    // Force tokenization if the line requires it. If we don't do this then some tokens
-    // will not be found as they have additional punctuation next to it (eg. `Type{`).
-    await lineEl[0].hover()
+    const links = new Set<string>()
+    for (const title of panelTabTitles) {
+        const tabElem = await driver.page.$$(`.e2e-hierarchical-locations-view-list span[title="${title}"]`)
+        if (tabElem.length > 0) {
+            await tabElem[0].click()
+        }
 
-    // If there's an open toast, close it. If the toast remains open and our target
-    // identifier happens to be hidden by it, we won't be able to select the correct
-    // token. This condition was reproducible in the codenav test for `StdioLogger`.
-    const closeToast = await driver.page.$('.e2e-close-toast')
-    if (closeToast) {
-        await closeToast.click()
+        for (const link of await collectVisibleLinks(driver)) {
+            links.add(link)
+        }
     }
 
-    return {
-        tokenEl: await driver.page.$x(xpathQuery),
-        xpathQuery,
-    }
+    return links
 }
 
-function normalizeWhitespace(s: string): string {
-    return s.replace(/\s+/g, ' ')
+async function getPanelTabTitles(driver: Driver): Promise<string[]> {
+    return (
+        await Promise.all(
+            (await driver.page.$$('.hierarchical-locations-view > div:nth-child(1) span[title]')).map(e =>
+                e.evaluate(e => e.getAttribute('title') || '')
+            )
+        )
+    ).map(normalizeWhitespace)
+}
+
+function collectVisibleLinks(driver: Driver): Promise<string[]> {
+    return driver.page.evaluate(() =>
+        Array.from(document.querySelectorAll<HTMLElement>('.e2e-search-result')).flatMap(e =>
+            Array.from(e.querySelectorAll<HTMLElement>('a[href]')).map(a => a.getAttribute('href') || '')
+        )
+    )
+}
+
+async function clickOnEmptyPartOfCodeView(driver: Driver): Promise<void> {
+    await driver.page.click('.e2e-blob tr:nth-child(1) .line')
+    await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-tooltip-go-to-definition').length === 0)
+}
+
+async function findTokenElement(driver: Driver, line: number, token: string): Promise<ElementHandle<Element>> {
+    try {
+        // If there's an open toast, close it. If the toast remains open and our target
+        // identifier happens to be hidden by it, we won't be able to select the correct
+        // token. This condition was reproducible in the code navigation test that searches
+        // for the identifier `StdioLogger`.
+        await driver.page.click('.e2e-close-toast')
+    } catch (error) {
+        // No toast open, this is fine
+    }
+
+    const selector = `.e2e-blob tr:nth-child(${line}) span`
+    await driver.page.hover(selector)
+    return driver.findElementWithText(token, { selector, fuzziness: 'exact' })
 }
 
 async function waitForHover(driver: Driver, expectedHoverContains: string): Promise<void> {
     await driver.page.waitForSelector('.e2e-tooltip-go-to-definition')
     await driver.page.waitForSelector('.e2e-tooltip-content')
     expect(normalizeWhitespace(await getTooltip(driver))).toContain(normalizeWhitespace(expectedHoverContains))
+}
+
+function normalizeWhitespace(s: string): string {
+    return s.replace(/\s+/g, ' ')
 }
