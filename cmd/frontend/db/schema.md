@@ -39,7 +39,6 @@ Foreign-key constraints:
 Indexes:
     "campaign_jobs_pkey" PRIMARY KEY, btree (id)
     "campaign_jobs_campaign_plan_repo_rev_unique" UNIQUE CONSTRAINT, btree (campaign_plan_id, repo_id, rev) DEFERRABLE
-    "campaign_jobs_campaign_plan_id" btree (campaign_plan_id)
     "campaign_jobs_finished_at" btree (finished_at)
     "campaign_jobs_started_at" btree (started_at)
 Check constraints:
@@ -245,7 +244,6 @@ Foreign-key constraints:
  deleted_at | timestamp with time zone | 
 Indexes:
     "discussion_mail_reply_tokens_pkey" PRIMARY KEY, btree (token)
-    "discussion_mail_reply_tokens_token_idx" btree (token)
     "discussion_mail_reply_tokens_user_id_thread_id_idx" btree (user_id, thread_id)
 Foreign-key constraints:
     "discussion_mail_reply_tokens_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE CASCADE
@@ -268,7 +266,6 @@ Foreign-key constraints:
 Indexes:
     "discussion_threads_pkey" PRIMARY KEY, btree (id)
     "discussion_threads_author_user_id_idx" btree (author_user_id)
-    "discussion_threads_id_idx" btree (id)
 Foreign-key constraints:
     "discussion_threads_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     "discussion_threads_target_repo_id_fk" FOREIGN KEY (target_repo_id) REFERENCES discussion_threads_target_repo(id) ON DELETE CASCADE
