@@ -1407,7 +1407,7 @@ describe('e2e test suite', () => {
                 newText: JSON.stringify({
                     matchTemplate: 'file',
                     rewriteTemplate: 'files',
-                    scopeQuery: 'repo:github.com/sourcegraph/automation-e2e-test',
+                    scopeQuery: 'repo:github.com/sourcegraph-testing/automation-e2e-test',
                 }),
                 selectMethod: 'keyboard',
             })
