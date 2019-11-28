@@ -12,6 +12,7 @@ import { random } from 'lodash'
 import MockDate from 'mockdate'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { getConfig } from '../../../shared/src/e2e/config'
+import * as assert from 'assert'
 
 const { gitHubToken, sourcegraphBaseUrl } = getConfig('gitHubToken', 'sourcegraphBaseUrl')
 
@@ -46,7 +47,7 @@ describe('e2e test suite', () => {
             'sourcegraph/go-vcs',
             'sourcegraph/appdash',
             'sourcegraph/sourcegraph-typescript',
-            'sourcegraph/automation-e2e-test',
+            'sourcegraph-testing/automation-e2e-test',
         ]
         await driver.ensureLoggedIn({ username: 'test', password: 'test', email: 'test@test.com' })
         await driver.resetUserSettings()
@@ -1376,15 +1377,14 @@ describe('e2e test suite', () => {
                 return { automation: 'enabled' }
             })
             // wait for configuration to be applied
-            for (let i = 0; i < 10; i++) {
+            await retry(async () => {
                 await driver.page.goto(sourcegraphBaseUrl + '/campaigns/new')
-                if (
-                    (await driver.page.evaluate(() => document.querySelectorAll('.e2e-campaign-nav-entry').length)) > 0
-                ) {
-                    break
-                }
+                assert.notStrictEqual(
+                    await driver.page.evaluate(() => document.querySelectorAll('.e2e-campaign-nav-entry').length),
+                    0
+                )
                 await new Promise(resolve => setTimeout(resolve, 1000))
-            }
+            })
         })
         afterAll(async () => {
             await driver.setConfig(['experimentalFeatures'], () => previousExperimentalFeatures)
