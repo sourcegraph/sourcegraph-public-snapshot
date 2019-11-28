@@ -219,7 +219,7 @@ func (s *Service) runChangesetJob(
 		return err
 	}
 
-	baseRef := "master"
+	baseRef := "refs/heads/master"
 	if campaignJob.BaseRef != "" {
 		baseRef = campaignJob.BaseRef
 	}
