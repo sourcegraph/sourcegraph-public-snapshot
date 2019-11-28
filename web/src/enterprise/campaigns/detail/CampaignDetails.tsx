@@ -447,7 +447,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     value={type}
                     required={true}
                 >
-                    <option value={undefined}>Manual</option>
+                    <option value="">Manual</option>
                     <option value="comby">Comby search and replace</option>
                     <option value="credentials">NPM Credentials</option>
                 </select>

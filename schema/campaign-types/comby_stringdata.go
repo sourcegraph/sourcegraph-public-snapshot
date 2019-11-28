@@ -11,7 +11,7 @@ const CombyCampaignTypeSchemaJSON = `{
   "properties": {
     "scopeQuery": {
       "type": "string",
-      "description": "Define a scope to narrow down repositories affected by this change. Only GitHub and Bitbucket are supported."
+      "description": "Define a scope to narrow down repositories affected by this change. Only GitHub and Bitbucket Server are supported."
     },
     "matchTemplate": {
       "type": "string",
