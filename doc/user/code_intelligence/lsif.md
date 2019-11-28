@@ -36,6 +36,10 @@ Global find-references is a resource-intensive operation that's sensitive to the
 
 **Do not upload more than 10-40 LSIF dumps to Sourcegraph instance or you risk harming other parts of Sourcegraph. We are working to validate its performance at scale and eliminate this concern.**
 
+## Cross-repository code intelligence
+
+Cross-repository code intelligence will only be powered by LSIF when **both** repositories have LSIF data. When the current file has LSIF data and the other repository doesn't, there will be no code intelligence results (we're working on fallback to fuzzy code intelligence for 3.10).
+
 ## More about LSIF
 
 To learn more, check out our lightning talk about LSIF from GopherCon 2019 or the [introductory blog post](https://about.sourcegraph.com/blog/code-intelligence-with-lsif):
