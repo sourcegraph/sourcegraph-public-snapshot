@@ -46,9 +46,9 @@ func TestRunner(t *testing.T) {
 	store := NewStoreWithClock(dbconn.Global, clock)
 
 	defaultBranches := []refAndTarget{
-		{"master", "fc21c1a0a79047416c14642b3ca964faba9442e2"},
-		{"develop", "f3c08ec74a9b3f8af7b5609c9f47cfcb3dc6949b"},
-		{"staging", "09d6921f5ccae24dc2cb3ca2cf263a05e547cf4f"},
+		{"refs/heads/master", "fc21c1a0a79047416c14642b3ca964faba9442e2"},
+		{"refs/heads/develop", "f3c08ec74a9b3f8af7b5609c9f47cfcb3dc6949b"},
+		{"refs/heads/staging", "09d6921f5ccae24dc2cb3ca2cf263a05e547cf4f"},
 	}
 
 	rs := []*repos.Repo{

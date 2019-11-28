@@ -111,11 +111,21 @@ func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset
 
 	pr.ToRef.Repository.Slug = repo.Slug
 	pr.ToRef.Repository.Project.Key = repo.Project.Key
-	pr.ToRef.ID = fmt.Sprintf("refs/heads/%s", c.BaseRefName)
+
+	if strings.HasPrefix(c.BaseRefName, "refs/heads/") {
+		pr.ToRef.ID = c.BaseRefName
+	} else {
+		pr.ToRef.ID = fmt.Sprintf("refs/heads/%s", c.BaseRefName)
+	}
 
 	pr.FromRef.Repository.Slug = repo.Slug
 	pr.FromRef.Repository.Project.Key = repo.Project.Key
-	pr.FromRef.ID = fmt.Sprintf("refs/heads/%s", c.HeadRefName)
+
+	if strings.HasPrefix(c.HeadRefName, "refs/heads/") {
+		pr.FromRef.ID = c.HeadRefName
+	} else {
+		pr.FromRef.ID = fmt.Sprintf("refs/heads/%s", c.HeadRefName)
+	}
 
 	err := s.client.CreatePullRequest(ctx, pr)
 	if err != nil {
