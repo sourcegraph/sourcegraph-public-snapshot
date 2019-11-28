@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -20,6 +21,10 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
+
+// defaultFetchTimeout determines how long we wait for the replacer service to fetch
+// zip archives
+const defaultFetchTimeout = 2 * time.Second
 
 // NewCampaignType returns a new CampaignType for the given campaign type name
 // and arguments.
@@ -41,7 +46,11 @@ func NewCampaignType(campaignTypeName, args string, cf *httpcli.Factory) (Campai
 		return nil, err
 	}
 
-	ct := &comby{replacerURL: graphqlbackend.ReplacerURL, httpClient: cli}
+	ct := &comby{
+		replacerURL:  graphqlbackend.ReplacerURL,
+		httpClient:   cli,
+		fetchTimeout: defaultFetchTimeout,
+	}
 
 	if err := jsonc.Unmarshal(args, &ct.args); err != nil {
 		return nil, err
@@ -78,8 +87,9 @@ type combyArgs struct {
 type comby struct {
 	args combyArgs
 
-	replacerURL string
-	httpClient  httpcli.Doer
+	replacerURL  string
+	httpClient   httpcli.Doer
+	fetchTimeout time.Duration
 }
 
 func (c *comby) searchQuery() string { return c.args.ScopeQuery }
@@ -92,6 +102,9 @@ func (c *comby) generateDiff(ctx context.Context, repo api.RepoName, commit api.
 	q := u.Query()
 	q.Set("repo", string(repo))
 	q.Set("commit", string(commit))
+	if c.fetchTimeout > 0 {
+		q.Set("fetchtimeout", c.fetchTimeout.String())
+	}
 	q.Set("matchtemplate", c.args.MatchTemplate)
 	q.Set("rewritetemplate", c.args.RewriteTemplate)
 	u.RawQuery = q.Encode()
