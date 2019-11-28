@@ -149,8 +149,7 @@ func (r *schemaResolver) CreateSavedSearch(ctx context.Context, args *struct {
 	OrgID       *graphql.ID
 	UserID      *graphql.ID
 }) (*savedSearchResolver, error) {
-	var userID *int32
-	var orgID *int32
+	var userID, orgID *int32
 	// 🚨 SECURITY: Make sure the current user has permission to create a saved search for the specified user or org.
 	if args.UserID != nil {
 		u, err := unmarshalSavedSearchID(*args.UserID)
