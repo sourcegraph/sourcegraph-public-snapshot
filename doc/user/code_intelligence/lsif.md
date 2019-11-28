@@ -28,7 +28,7 @@ LSIF code intelligence will be out-of-sync when you're viewing a file that has c
 
 ## Data retention policy
 
-The bulk of LSIF data is stored on-disk, and as code intelligence data for a commit ages it becomes less useful. Sourcegraph will automatically remove the least recently uploaded data if the amount of disk space falls above a threshold (10 gigabytes by default). This value can be changed via the `DBS_DIR_MAXIMUM_SIZE_BYTES` environment variable.
+The bulk of LSIF data is stored on-disk, and as code intelligence data for a commit ages it becomes less useful. Sourcegraph will automatically remove the least recently uploaded data if the amount of disk space falls above a threshold. This value can be changed via the `DBS_DIR_MAXIMUM_SIZE_BYTES` environment variable. The default value of this variable is `10737418240`, which is `1024 * 1024 * 1024 * 10` bytes, or `10` gigabytes.
 
 ## Warning about uploading too much data
 
