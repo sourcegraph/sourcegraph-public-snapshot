@@ -220,10 +220,7 @@ export function filterContributions(contributions: Evaluated<Contributions>): Ev
     }
     return {
         ...contributions,
-        menus: mapValues(
-            contributions.menus,
-            menuItems => menuItems && menuItems.filter(menuItem => menuItem.when !== false)
-        ),
+        menus: mapValues(contributions.menus, menuItems => menuItems?.filter(menuItem => menuItem.when !== false)),
     }
 }
 
@@ -240,14 +237,8 @@ export function evaluateContributions(
         ...contributions,
         menus:
             contributions.menus &&
-            mapValues(
-                contributions.menus,
-                (menuItems): Evaluated<MenuItemContribution>[] | undefined =>
-                    menuItems &&
-                    menuItems.map(menuItem => ({
-                        ...menuItem,
-                        when: menuItem.when && !!menuItem.when.exec(context),
-                    }))
+            mapValues(contributions.menus, (menuItems): Evaluated<MenuItemContribution>[] | undefined =>
+                menuItems?.map(menuItem => ({ ...menuItem, when: menuItem.when && !!menuItem.when.exec(context) }))
             ),
         actions: evaluateActionContributions(context, contributions.actions),
     }
@@ -260,27 +251,22 @@ function evaluateActionContributions(
     context: ComputedContext,
     actions: Contributions['actions']
 ): Evaluated<Contributions['actions']> {
-    return (
-        actions &&
-        actions.map(action => ({
-            ...action,
-            title: action.title && action.title.exec(context),
-            category: action.category && action.category.exec(context),
-            description: action.description && action.description.exec(context),
-            iconURL: action.iconURL && action.iconURL.exec(context),
-            actionItem: action.actionItem && {
-                ...action.actionItem,
-                label: action.actionItem.label && action.actionItem.label.exec(context),
-                description: action.actionItem.description && action.actionItem.description.exec(context),
-                iconURL: action.actionItem.iconURL && action.actionItem.iconURL.exec(context),
-                iconDescription: action.actionItem.iconDescription && action.actionItem.iconDescription.exec(context),
-                pressed: action.actionItem.pressed && action.actionItem.pressed.exec(context),
-            },
-            commandArguments:
-                action.commandArguments &&
-                action.commandArguments.map(arg => (arg instanceof Expression ? arg.exec(context) : arg)),
-        }))
-    )
+    return actions?.map(action => ({
+        ...action,
+        title: action.title?.exec(context),
+        category: action.category?.exec(context),
+        description: action.description?.exec(context),
+        iconURL: action.iconURL?.exec(context),
+        actionItem: action.actionItem && {
+            ...action.actionItem,
+            label: action.actionItem.label?.exec(context),
+            description: action.actionItem.description?.exec(context),
+            iconURL: action.actionItem.iconURL?.exec(context),
+            iconDescription: action.actionItem.iconDescription?.exec(context),
+            pressed: action.actionItem.pressed?.exec(context),
+        },
+        commandArguments: action.commandArguments?.map(arg => (arg instanceof Expression ? arg.exec(context) : arg)),
+    }))
 }
 
 /**
@@ -291,14 +277,11 @@ export function parseContributionExpressions(contributions: Raw<Contributions>):
         ...contributions,
         menus:
             contributions.menus &&
-            mapValues(
-                contributions.menus,
-                (menuItems): MenuItemContribution[] | undefined =>
-                    menuItems &&
-                    menuItems.map(menuItem => ({
-                        ...menuItem,
-                        when: typeof menuItem.when === 'string' ? parse<boolean>(menuItem.when) : undefined,
-                    }))
+            mapValues(contributions.menus, (menuItems): MenuItemContribution[] | undefined =>
+                menuItems?.map(menuItem => ({
+                    ...menuItem,
+                    when: typeof menuItem.when === 'string' ? parse<boolean>(menuItem.when) : undefined,
+                }))
             ),
         actions: contributions && parseActionContributionExpressions(contributions.actions),
     }
@@ -311,25 +294,20 @@ const maybe = <T, R>(value: T | undefined, fn: (value: T) => R): R | undefined =
  * Evaluates expressions in contribution definitions against the given context.
  */
 function parseActionContributionExpressions(actions: Raw<Contributions['actions']>): Contributions['actions'] {
-    return (
-        actions &&
-        actions.map(action => ({
-            ...action,
-            title: maybe(action.title, parseTemplate),
-            category: maybe(action.category, parseTemplate),
-            description: maybe(action.description, parseTemplate),
-            iconURL: maybe(action.iconURL, parseTemplate),
-            actionItem: action.actionItem && {
-                ...action.actionItem,
-                label: maybe(action.actionItem.label, parseTemplate),
-                description: maybe(action.actionItem.description, parseTemplate),
-                iconURL: maybe(action.actionItem.iconURL, parseTemplate),
-                iconDescription: maybe(action.actionItem.iconDescription, parseTemplate),
-                pressed: maybe(action.actionItem.pressed, pressed => parse(pressed)),
-            },
-            commandArguments:
-                action.commandArguments &&
-                action.commandArguments.map(arg => (typeof arg === 'string' ? parseTemplate(arg) : arg)),
-        }))
-    )
+    return actions?.map(action => ({
+        ...action,
+        title: maybe(action.title, parseTemplate),
+        category: maybe(action.category, parseTemplate),
+        description: maybe(action.description, parseTemplate),
+        iconURL: maybe(action.iconURL, parseTemplate),
+        actionItem: action.actionItem && {
+            ...action.actionItem,
+            label: maybe(action.actionItem.label, parseTemplate),
+            description: maybe(action.actionItem.description, parseTemplate),
+            iconURL: maybe(action.actionItem.iconURL, parseTemplate),
+            iconDescription: maybe(action.actionItem.iconDescription, parseTemplate),
+            pressed: maybe(action.actionItem.pressed, pressed => parse(pressed)),
+        },
+        commandArguments: action.commandArguments?.map(arg => (typeof arg === 'string' ? parseTemplate(arg) : arg)),
+    }))
 }

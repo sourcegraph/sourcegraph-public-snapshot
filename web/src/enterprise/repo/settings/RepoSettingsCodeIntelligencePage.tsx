@@ -93,9 +93,9 @@ export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ rep
     const queuedLsifJobs = useObservable(useMemo(() => fetchJobs(repo.name, GQL.LSIFJobState.QUEUED), [repo.name]))
     const failedLsifJobs = useObservable(useMemo(() => fetchJobs(repo.name, GQL.LSIFJobState.ERRORED), [repo.name]))
 
-    const activeCount = (activeLsifJobs && activeLsifJobs.nodes.length) || 0
-    const queuedCount = (queuedLsifJobs && queuedLsifJobs.nodes.length) || 0
-    const failedCount = (failedLsifJobs && failedLsifJobs.nodes.length) || 0
+    const activeCount = activeLsifJobs?.nodes.length || 0
+    const queuedCount = queuedLsifJobs?.nodes.length || 0
+    const failedCount = failedLsifJobs?.nodes.length || 0
 
     return (
         <div className="repo-settings-code-intelligence-page">
@@ -153,13 +153,15 @@ export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ rep
                                 <p>These uploads have been accepted but have not yet been processed.</p>
 
                                 <div className="list-group list-group-flush mt-3">
-                                    {activeLsifJobs &&
-                                        activeLsifJobs.nodes.map(job => <LsifJobNode key={job.id} node={job} />)}
-                                    {queuedLsifJobs &&
-                                        queuedLsifJobs.nodes.map(job => <LsifJobNode key={job.id} node={job} />)}
+                                    {activeLsifJobs?.nodes.map(job => (
+                                        <LsifJobNode key={job.id} node={job} />
+                                    ))}
+                                    {queuedLsifJobs?.nodes.map(job => (
+                                        <LsifJobNode key={job.id} node={job} />
+                                    ))}
                                 </div>
 
-                                {queuedLsifJobs && queuedLsifJobs.pageInfo.hasNextPage && (
+                                {queuedLsifJobs?.pageInfo.hasNextPage && (
                                     <div className="mt-2">
                                         Showing five queued uploads.{' '}
                                         <Link
@@ -192,7 +194,7 @@ export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ rep
                                     ))}
                                 </div>
 
-                                {failedLsifJobs && failedLsifJobs.pageInfo.hasNextPage && (
+                                {failedLsifJobs?.pageInfo.hasNextPage && (
                                     <div className="mt-2">
                                         Showing five recent failures.{' '}
                                         <Link

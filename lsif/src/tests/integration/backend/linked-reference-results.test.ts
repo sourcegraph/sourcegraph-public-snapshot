@@ -39,7 +39,7 @@ describe('Backend', () => {
             expect(locations).toContainEqual(util.createLocation('src/index.ts', 16, 2, 16, 5)) // use via B
 
             // Ensure no additional references
-            expect(locations && locations.length).toEqual(5)
+            expect(locations?.length).toEqual(5)
         }
     })
 })

@@ -132,7 +132,7 @@ export class Panel extends React.PureComponent<Props, State> {
                                         ? {
                                               type: 'panelView',
                                               id: activePanelViewID,
-                                              hasLocations: Boolean(activePanelView && activePanelView.hasLocations),
+                                              hasLocations: Boolean(activePanelView?.hasLocations),
                                           }
                                         : undefined
                                 }
@@ -143,7 +143,7 @@ export class Panel extends React.PureComponent<Props, State> {
                         tabClassName="tab-bar__tab--h5like"
                         location={this.props.location}
                     >
-                        {items && items.map(({ id, element }) => React.cloneElement(element, { key: id }))}
+                        {items?.map(({ id, element }) => React.cloneElement(element, { key: id }))}
                     </TabsWithURLViewStatePersistence>
                 ) : (
                     <EmptyPanelView />

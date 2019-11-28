@@ -46,7 +46,7 @@
     },
     {
       "label": "launch",
-      "command": "${workspaceRoot}/dev/launch.sh",
+      "command": "${workspaceRoot}/dev/start.sh",
       "isBackground": true,
       "problemMatcher": [],
     },

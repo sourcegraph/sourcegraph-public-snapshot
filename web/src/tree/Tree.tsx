@@ -145,7 +145,7 @@ export class Tree extends React.PureComponent<Props, State> {
                 return
             }
             const parent = this.state.selectedNode.parent
-            if (parent !== null && parent.parent !== null) {
+            if (parent?.parent) {
                 this.selectNode(parent)
                 return
             }

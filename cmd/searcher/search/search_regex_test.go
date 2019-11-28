@@ -481,7 +481,7 @@ func TestMaxMatches(t *testing.T) {
 // - A path must match all (not any) of the IncludePatterns
 // - An empty pattern is allowed
 func TestPathMatches(t *testing.T) {
-	zipData, err := createZip(map[string]string{
+	zipData, err := testutil.CreateZip(map[string]string{
 		"a":   "",
 		"a/b": "",
 		"a/c": "",
@@ -520,27 +520,6 @@ func TestPathMatches(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("got file matches %v, want %v", got, want)
 	}
-}
-
-func createZip(files map[string]string) ([]byte, error) {
-	buf := new(bytes.Buffer)
-	zw := zip.NewWriter(buf)
-	for name, body := range files {
-		w, err := zw.CreateHeader(&zip.FileHeader{
-			Name:   name,
-			Method: zip.Store,
-		})
-		if err != nil {
-			return nil, err
-		}
-		if _, err := w.Write([]byte(body)); err != nil {
-			return nil, err
-		}
-	}
-	if err := zw.Close(); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
 }
 
 // githubStore fetches from github and caches across test runs.

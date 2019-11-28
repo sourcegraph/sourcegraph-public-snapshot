@@ -1,18 +1,12 @@
 package comby
 
 import (
-	"archive/tar"
 	"bufio"
 	"bytes"
-	"context"
-	"io"
-	"io/ioutil"
 	"os"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
 func TestMatchesUnmarshalling(t *testing.T) {
@@ -32,7 +26,7 @@ func main() {
 `,
 	}
 
-	zipPath, cleanup, err := newZip(files)
+	zipPath, cleanup, err := testutil.TempZipFromFiles(files)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +81,7 @@ func main() {
 `,
 	}
 
-	zipPath, cleanup, err := newZip(files)
+	zipPath, cleanup, err := testutil.TempZipFromFiles(files)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -122,68 +116,4 @@ func main() {
 			continue
 		}
 	}
-}
-
-func newZip(files map[string]string) (path string, cleanup func(), err error) {
-	s, cleanup, err := newStore(files)
-	if err != nil {
-		return "", cleanup, err
-	}
-
-	ctx := context.Background()
-	repo := gitserver.Repo{Name: "foo", URL: "u"}
-	var commit api.CommitID = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
-	path, err = s.PrepareZip(ctx, repo, commit)
-	if err != nil {
-		return "", cleanup, err
-	}
-	return path, cleanup, nil
-}
-
-func newStore(files map[string]string) (*store.Store, func(), error) {
-	buf := new(bytes.Buffer)
-	w := tar.NewWriter(buf)
-	for name, body := range files {
-		hdr := &tar.Header{
-			Name: name,
-			Mode: 0600,
-			Size: int64(len(body)),
-		}
-		if err := w.WriteHeader(hdr); err != nil {
-			return nil, nil, err
-		}
-		if _, err := w.Write([]byte(body)); err != nil {
-			return nil, nil, err
-		}
-	}
-	// git-archive usually includes a pax header we should ignore.
-	// use a body which matches a test case. Ensures we don't return this
-	// false entry as a result.
-	if err := addpaxheader(w, "Hello world\n"); err != nil {
-		return nil, nil, err
-	}
-
-	err := w.Close()
-	if err != nil {
-		return nil, nil, err
-	}
-	d, err := ioutil.TempDir("", "comby_test")
-	if err != nil {
-		return nil, nil, err
-	}
-	return &store.Store{
-		FetchTar: func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error) {
-			return ioutil.NopCloser(bytes.NewReader(buf.Bytes())), nil
-		},
-		Path: d,
-	}, func() { os.RemoveAll(d) }, nil
-}
-
-func addpaxheader(w *tar.Writer, body string) error {
-	hdr := &tar.Header{
-		Name:       "pax_global_header",
-		Typeflag:   tar.TypeXGlobalHeader,
-		PAXRecords: map[string]string{"somekey": body},
-	}
-	return w.WriteHeader(hdr)
 }

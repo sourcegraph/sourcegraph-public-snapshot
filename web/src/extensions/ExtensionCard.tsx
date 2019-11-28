@@ -38,7 +38,7 @@ export class ExtensionCard extends React.PureComponent<Props> {
             node.manifest && !isErrorLike(node.manifest) ? node.manifest : undefined
         let iconURL: URL | undefined
         try {
-            if (manifest && manifest.icon) {
+            if (manifest?.icon) {
                 iconURL = new URL(manifest.icon)
             }
         } catch (e) {
@@ -55,8 +55,7 @@ export class ExtensionCard extends React.PureComponent<Props> {
                         onClick={stopPropagation}
                     >
                         <div className="d-flex">
-                            {manifest &&
-                                manifest.icon &&
+                            {manifest?.icon &&
                                 iconURL &&
                                 iconURL.protocol === 'data:' &&
                                 /^data:image\/png(;base64)?,/.test(manifest.icon) && (

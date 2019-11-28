@@ -20,6 +20,7 @@ import { Key } from 'ts-key-enum'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 import { ScreenshotVerifier } from './util/ScreenshotVerifier'
 import { TestResourceManager } from './util/TestResourceManager'
+import delay from 'delay'
 
 const activationNavBarSelector = '.e2e-activation-nav-item-toggle'
 
@@ -31,7 +32,7 @@ async function getActivationStatus(driver: Driver): Promise<{ complete: number; 
     await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
     await driver.page.waitForSelector(activationNavBarSelector)
     await driver.page.click(activationNavBarSelector)
-    await new Promise(resolve => setTimeout(resolve, 2000)) // TODO: replace/delete
+    await delay(2000) // TODO: replace/delete
     return driver.page.evaluate(() => {
         const dropdownMenu = document.querySelector('.activation-dropdown')
         if (!dropdownMenu) {
@@ -154,7 +155,7 @@ describe('Onboarding', () => {
                 displayName: testExternalServiceConfig.uniqueDisplayName,
                 config: JSON.stringify(testExternalServiceConfig.config),
             })
-            await new Promise(resolve => setTimeout(resolve, 500)) // wait for confetti to play a bit
+            await delay(500) // wait for confetti to play a bit
             await screenshots.verifyScreenshot({
                 filename: 'confetti-appears-after-adding-first-external-service.png',
                 description: 'confetti coming out of "Setup" navbar item',
@@ -190,7 +191,7 @@ describe('Onboarding', () => {
             // Do a search
             await driver.page.type('.e2e-query-input', 'asdf')
             await driver.page.keyboard.press(Key.Enter)
-            await new Promise(resolve => setTimeout(resolve, 500)) // allow some time for confetti to play
+            await delay(500) // allow some time for confetti to play
             await screenshots.verifyScreenshot({
                 filename: 'confetti-appears-after-first-search.png',
                 description: 'confetti coming out of "Setup" navbar item',
@@ -217,7 +218,7 @@ describe('Onboarding', () => {
             await driver.page.click(findRefsSelector)
             await driver.page.waitForSelector('.e2e-search-result')
 
-            await new Promise(resolve => setTimeout(resolve, 500)) // allow some time for confetti to play
+            await delay(500) // allow some time for confetti to play
             await screenshots.verifyScreenshot({
                 filename: 'confetti-appears-after-find-refs.png',
                 description: 'confetti coming out of "Setup" navbar item',

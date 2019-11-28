@@ -39,7 +39,7 @@ export function fuzzyMatches(text: string, pattern: string): Span[] {
         if (ti === -1) {
             break
         }
-        if (last && last.match && ti === i) {
+        if (last?.match && ti === i) {
             last.end = ti + 1
         } else if ((last && !last.match) || ti > i) {
             matches.push({ start: i, end: ti, match: false })

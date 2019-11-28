@@ -146,8 +146,8 @@ export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolb
     mountEl.style.alignItems = 'center'
     mountEl.className = className
     const rawURLLink = codeViewElement.querySelector('#raw-url')
-    const buttonGroup = rawURLLink && rawURLLink.closest('.BtnGroup')
-    if (!buttonGroup || !buttonGroup.parentNode) {
+    const buttonGroup = rawURLLink?.closest('.BtnGroup')
+    if (!buttonGroup?.parentNode) {
         throw new Error('File actions not found')
     }
     buttonGroup.parentNode.insertBefore(mountEl, buttonGroup)
@@ -279,7 +279,7 @@ export const githubCodeHost: CodeHost = {
     nativeTooltipResolvers: [nativeTooltipResolver],
     getContext: () => {
         const header = document.querySelector('.repohead-details-container')
-        const repoHeaderHasPrivateMarker = !!(header && header.querySelector('.private'))
+        const repoHeaderHasPrivateMarker = !!header?.querySelector('.private')
         return {
             ...parseURL(),
             privateRepository: window.location.hostname !== 'github.com' || repoHeaderHasPrivateMarker,

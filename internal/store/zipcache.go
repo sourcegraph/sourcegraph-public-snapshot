@@ -121,7 +121,7 @@ func readZipFile(path string) (*ZipFile, error) {
 
 	// Create at populate ZipFile from contents.
 	zf := &ZipFile{f: f}
-	if err := zf.populateFiles(r); err != nil {
+	if err := zf.PopulateFiles(r); err != nil {
 		return nil, err
 	}
 
@@ -138,7 +138,7 @@ func readZipFile(path string) (*ZipFile, error) {
 	return zf, nil
 }
 
-func (f *ZipFile) populateFiles(r *zip.Reader) error {
+func (f *ZipFile) PopulateFiles(r *zip.Reader) error {
 	f.Files = make([]SrcFile, len(r.File))
 	for i, file := range r.File {
 		if file.Method != zip.Store {
@@ -180,7 +180,7 @@ func MockZipFile(data []byte) (*ZipFile, error) {
 		return nil, err
 	}
 	zf := new(ZipFile)
-	if err := zf.populateFiles(r); err != nil {
+	if err := zf.PopulateFiles(r); err != nil {
 		return nil, err
 	}
 	// Make a copy of data to avoid accidental alias/re-use bugs.

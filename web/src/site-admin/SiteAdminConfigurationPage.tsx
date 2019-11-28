@@ -66,7 +66,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                     tap(() => this.setState({ saving: true, error: undefined })),
                     concatMap(newContents => {
                         const lastConfiguration = this.state.site && this.state.site.configuration
-                        const lastConfigurationID = (lastConfiguration && lastConfiguration.id) || 0
+                        const lastConfigurationID = lastConfiguration?.id || 0
 
                         return updateSiteConfiguration(lastConfigurationID, newContents).pipe(
                             catchError(error => {
@@ -212,7 +212,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             'rbac',
             'storageClass',
             'useAlertManager',
-        ].filter(prop => contents && contents.includes(`"${prop}"`))
+        ].filter(prop => contents?.includes(`"${prop}"`))
         if (legacyKubernetesConfigProps.length > 0) {
             alerts.push(
                 <div

@@ -65,12 +65,7 @@ export function queryConfiguredRegistryExtensions(
         })
     ).pipe(
         map(({ data, errors }) => {
-            if (
-                !data ||
-                !data.extensionRegistry ||
-                !data.extensionRegistry.extensions ||
-                !data.extensionRegistry.extensions.nodes
-            ) {
+            if (!data?.extensionRegistry?.extensions?.nodes) {
                 throw createAggregateError(errors)
             }
             return data.extensionRegistry.extensions.nodes.map(

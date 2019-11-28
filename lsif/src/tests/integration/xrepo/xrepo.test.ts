@@ -84,16 +84,16 @@ describe('XrepoDatabase', () => {
         const d8 = await xrepoDatabase.findClosestDump('foo', ch, 'file')
 
         // Test closest commit
-        expect(d1 && d1.commit).toEqual(ca)
-        expect(d2 && d2.commit).toEqual(ca)
-        expect(d3 && d3.commit).toEqual(cc)
-        expect(d4 && d4.commit).toEqual(cc)
-        expect(d5 && d5.commit).toEqual(cg)
-        expect(d6 && d6.commit).toEqual(cg)
+        expect(d1?.commit).toEqual(ca)
+        expect(d2?.commit).toEqual(ca)
+        expect(d3?.commit).toEqual(cc)
+        expect(d4?.commit).toEqual(cc)
+        expect(d5?.commit).toEqual(cg)
+        expect(d6?.commit).toEqual(cg)
 
         // Multiple nearest are chosen arbitrarily
-        expect([ca, cc, cg]).toContain(d7 && d7.commit)
-        expect([ca, cc]).toContain(d8 && d8.commit)
+        expect([ca, cc, cg]).toContain(d7?.commit)
+        expect([ca, cc]).toContain(d8?.commit)
     })
 
     it('should return empty string as closest commit with no reachable lsif data', async () => {
@@ -141,9 +141,9 @@ describe('XrepoDatabase', () => {
         const d3 = await xrepoDatabase.findClosestDump('foo', cc, 'file')
 
         // Test closest commit
-        expect(d1 && d1.commit).toEqual(cb)
-        expect(d2 && d2.commit).toEqual(cb)
-        expect(d3 && d3.commit).toEqual(cb)
+        expect(d1?.commit).toEqual(cb)
+        expect(d2?.commit).toEqual(cb)
+        expect(d3?.commit).toEqual(cb)
         expect(await xrepoDatabase.findClosestDump('foo', cd, 'file')).toBeUndefined()
         expect(await xrepoDatabase.findClosestDump('foo', ce, 'file')).toBeUndefined()
         expect(await xrepoDatabase.findClosestDump('foo', cf, 'file')).toBeUndefined()
@@ -247,9 +247,9 @@ describe('XrepoDatabase', () => {
         const d3 = await xrepoDatabase.findClosestDump('foo', cpen, 'file')
 
         // Test closest commit
-        expect(d1 && d1.commit).toEqual(c0)
-        expect(d2 && d2.commit).toEqual(c0)
-        expect(d3 && d3.commit).toEqual(c0)
+        expect(d1?.commit).toEqual(c0)
+        expect(d2?.commit).toEqual(c0)
+        expect(d3?.commit).toEqual(c0)
 
         // (Assuming MAX_TRAVERSAL_LIMIT = 100)
         // At commit `50`, the traversal limit will be reached before visiting commit `0`
@@ -274,7 +274,7 @@ describe('XrepoDatabase', () => {
 
         // Now commit 1 should be found
         const dump = await xrepoDatabase.findClosestDump('foo', cmax, 'file')
-        expect(dump && dump.commit).toEqual(c1)
+        expect(dump?.commit).toEqual(c1)
     })
 
     it('should prune overlapping roots during visibility check', async () => {

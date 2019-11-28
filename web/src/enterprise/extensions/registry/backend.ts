@@ -24,12 +24,7 @@ export function deleteRegistryExtensionWithConfirmation(extension: GQL.ID): Obse
                 { extension }
             ).pipe(
                 map(({ data, errors }) => {
-                    if (
-                        !data ||
-                        !data.extensionRegistry ||
-                        !data.extensionRegistry.deleteExtension ||
-                        (errors && errors.length > 0)
-                    ) {
+                    if (!data?.extensionRegistry?.deleteExtension || (errors && errors.length > 0)) {
                         throw createAggregateError(errors)
                     }
                 }),
@@ -59,12 +54,7 @@ export function queryViewerRegistryPublishers(): Observable<GQL.RegistryPublishe
         }
     `).pipe(
         map(({ data, errors }) => {
-            if (
-                !data ||
-                !data.extensionRegistry ||
-                !data.extensionRegistry.viewerPublishers ||
-                (errors && errors.length > 0)
-            ) {
+            if (!data?.extensionRegistry?.viewerPublishers || (errors && errors.length > 0)) {
                 throw createAggregateError(errors)
             }
             return data.extensionRegistry.viewerPublishers.map(p => ({

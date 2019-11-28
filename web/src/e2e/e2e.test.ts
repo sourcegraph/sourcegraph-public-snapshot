@@ -149,7 +149,7 @@ describe('e2e test suite', () => {
             const token: string = await (
                 await driver.page.waitForFunction(() => {
                     const elem = document.querySelector<HTMLInputElement>('.e2e-access-token input[type=text]')
-                    return elem && elem.value
+                    return elem?.value
                 })
             ).jsonValue()
 
@@ -321,7 +321,7 @@ describe('e2e test suite', () => {
             const blob: string = await (
                 await driver.page.waitFor(() => {
                     const elem = document.querySelector<HTMLElement>('.e2e-repo-blob')
-                    return elem && elem.textContent
+                    return elem?.textContent
                 })
             ).jsonValue()
 
@@ -351,7 +351,7 @@ describe('e2e test suite', () => {
             const blob: string = await (
                 await driver.page.waitFor(() => {
                     const elem = document.querySelector<HTMLElement>('.e2e-repo-blob')
-                    return elem && elem.textContent
+                    return elem?.textContent
                 })
             ).jsonValue()
 
@@ -436,7 +436,7 @@ describe('e2e test suite', () => {
             const selector =
                 expectedCount > 1 ? `.e2e-tooltip-content:nth-child(${expectedCount})` : '.e2e-tooltip-content'
             await driver.page.waitForSelector(selector, { visible: true })
-            return await driver.page.evaluate(() =>
+            return driver.page.evaluate(() =>
                 // You can't reference hoverContentSelector in puppeteer's driver.page.evaluate
                 Array.from(document.querySelectorAll('.e2e-tooltip-content')).map(t => t.textContent || '')
             )
@@ -797,7 +797,7 @@ describe('e2e test suite', () => {
                     await driver.page.waitForSelector('.e2e-blob .selected .line')
                     const selectedLineNumber = await driver.page.evaluate(() => {
                         const elem = document.querySelector<HTMLElement>('.e2e-blob .selected .line')
-                        return elem && elem.dataset.line && parseInt(elem.dataset.line, 10)
+                        return elem?.dataset.line && parseInt(elem.dataset.line, 10)
                     })
 
                     expect(selectedLineNumber).toEqual(line)
@@ -957,7 +957,7 @@ describe('e2e test suite', () => {
                                 '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L25:10'
                         )
                         await clickHoverJ2D()
-                        return await driver.assertWindowLocation(
+                        await driver.assertWindowLocation(
                             '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6'
                         )
                     })
@@ -972,12 +972,9 @@ describe('e2e test suite', () => {
                             '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/diff.pb.go#L38:6'
                         )
                         // Verify file tree is highlighting the new path.
-                        return await driver.page.waitForSelector(
-                            '.tree__row--active [data-tree-path="diff/diff.pb.go"]',
-                            {
-                                visible: true,
-                            }
-                        )
+                        await driver.page.waitForSelector('.tree__row--active [data-tree-path="diff/diff.pb.go"]', {
+                            visible: true,
+                        })
                     })
 
                     // basic code intel doesn't support cross-repo jump-to-definition yet.

@@ -2,19 +2,23 @@ package search
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"sort"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
 // Tests that structural search correctly infers the Go matcher from the .go
 // file extension.
 func TestInferredMatcher(t *testing.T) {
+	// If we are not on CI skip the test.
+	if os.Getenv("CI") == "" {
+		t.Skip("Not on CI, skipping comby-dependent test")
+	}
+
 	input := map[string]string{
 		"main.go": `
 /* This foo(ignore string) {} is in a Go comment should not match */
@@ -27,11 +31,11 @@ func foo(real string) {}
 
 	includePatterns := []string{"main.go"}
 
-	zipData, err := createZip(input)
+	zipData, err := testutil.CreateZip(input)
 	if err != nil {
 		t.Fatal(err)
 	}
-	zf, cleanup, err := MockZipFileOnDisk(zipData)
+	zf, cleanup, err := testutil.TempZipFileOnDisk(zipData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,6 +65,11 @@ func foo(real string) {}
 // instead (currently) expects a list of patterns that represent a set of file
 // paths to search.
 func TestIncludePatterns(t *testing.T) {
+	// If we are not on CI skip the test.
+	if os.Getenv("CI") == "" {
+		t.Skip("Not on CI, skipping comby-dependent test")
+	}
+
 	input := map[string]string{
 		"/a/b/c":         "",
 		"/a/b/c/foo.go":  "",
@@ -79,11 +88,11 @@ func TestIncludePatterns(t *testing.T) {
 
 	includePatterns := []string{"a/b/c/foo.go", "bar.go"}
 
-	zipData, err := createZip(input)
+	zipData, err := testutil.CreateZip(input)
 	if err != nil {
 		t.Fatal(err)
 	}
-	zf, cleanup, err := MockZipFileOnDisk(zipData)
+	zf, cleanup, err := testutil.TempZipFileOnDisk(zipData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -106,24 +115,4 @@ func TestIncludePatterns(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("got file matches %v, want %v", got, want)
 	}
-}
-
-func MockZipFileOnDisk(data []byte) (string, func(), error) {
-	z, err := store.MockZipFile(data)
-	if err != nil {
-		return "", nil, err
-	}
-	d, err := ioutil.TempDir("", "search_test")
-	if err != nil {
-		return "", nil, err
-	}
-	f, err := ioutil.TempFile(d, "search_zip")
-	if err != nil {
-		return "", nil, err
-	}
-	_, err = f.Write(z.Data)
-	if err != nil {
-		return "", nil, err
-	}
-	return f.Name(), func() { os.RemoveAll(d) }, nil
 }

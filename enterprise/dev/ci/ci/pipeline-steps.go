@@ -209,6 +209,7 @@ func addServerDockerImageCandidate(c Config) func(*bk.Pipeline) {
 			bk.Cmd("./cmd/server/pre-build.sh"),
 			bk.Env("IMAGE", "sourcegraph/server:"+c.version+"_candidate"),
 			bk.Env("VERSION", c.version),
+			bk.Env("DOCKER_BUILDKIT", "1"),
 			bk.Cmd("./cmd/server/build.sh"),
 			bk.Cmd("popd"))
 	}
@@ -258,6 +259,7 @@ func addDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		cmds := []bk.StepOpt{
 			bk.Cmd(fmt.Sprintf(`echo "Building %s..."`, app)),
+			bk.Env("DOCKER_BUILDKIT", "1"),
 		}
 
 		cmdDir := func() string {
