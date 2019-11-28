@@ -2,12 +2,14 @@ package search
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"reflect"
 	"sort"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
@@ -114,5 +116,100 @@ func TestIncludePatterns(t *testing.T) {
 	sort.Strings(got)
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("got file matches %v, want %v", got, want)
+	}
+}
+
+func TestHighlightMultipleLines(t *testing.T) {
+	cases := []struct {
+		Name  string
+		Match *comby.Match
+		Want  []protocol.LineMatch
+	}{
+		{
+			Name: "Single line",
+			Match: &comby.Match{
+				Range: comby.Range{
+					Start: comby.Location{
+						Line:   1,
+						Column: 1,
+					},
+					End: comby.Location{
+						Line:   1,
+						Column: 2,
+					},
+				},
+				Matched: "this is a single line match",
+			},
+			Want: []protocol.LineMatch{
+				{
+					LineNumber: 0,
+					OffsetAndLengths: [][2]int{
+						{
+							0,
+							1,
+						},
+					},
+					Preview: "this is a single line match",
+				},
+			},
+		},
+		{
+			Name: "Three lines",
+			Match: &comby.Match{
+				Range: comby.Range{
+					Start: comby.Location{
+						Line:   1,
+						Column: 1,
+					},
+					End: comby.Location{
+						Line:   3,
+						Column: 5,
+					},
+				},
+				Matched: "this is a match across\nthree\nlines",
+			},
+			Want: []protocol.LineMatch{
+				{
+					LineNumber: 0,
+					OffsetAndLengths: [][2]int{
+						{
+							0,
+							23,
+						},
+					},
+					Preview: "this is a match across",
+				},
+				{
+					LineNumber: 1,
+					OffsetAndLengths: [][2]int{
+						{
+							0,
+							6,
+						},
+					},
+					Preview: "three",
+				},
+				{
+					LineNumber: 2,
+					OffsetAndLengths: [][2]int{
+						{
+							0,
+							5,
+						},
+					},
+					Preview: "lines",
+				},
+			},
+		},
+	}
+	for _, tt := range cases {
+		t.Run(tt.Name, func(t *testing.T) {
+			got := highlightMultipleLines(tt.Match)
+			if !reflect.DeepEqual(got, tt.Want) {
+				jsonGot, _ := json.Marshal(got)
+				jsonWant, _ := json.Marshal(tt.Want)
+				t.Errorf("got: %s, want: %s", jsonGot, jsonWant)
+			}
+		})
 	}
 }

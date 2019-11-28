@@ -13,9 +13,8 @@ import (
 // Our current highlighting doesn't allow specifying a line and column range
 // spanning multiple lines. This function chops up potentially multiline matches into
 // multiple LineMatches.
-func highlightMultipleLines(r comby.Match) (matches []protocol.LineMatch) {
+func highlightMultipleLines(r *comby.Match) (matches []protocol.LineMatch) {
 	lineSpan := r.Range.End.Line - r.Range.Start.Line + 1
-	log15.Info("structural search", "line span", lineSpan)
 	if lineSpan == 1 {
 		return []protocol.LineMatch{
 			{
@@ -66,7 +65,7 @@ func ToFileMatch(combyMatches []comby.FileMatch) (matches []protocol.FileMatch) 
 	for _, m := range combyMatches {
 		var lineMatches []protocol.LineMatch
 		for _, r := range m.Matches {
-			lineMatches = append(lineMatches, highlightMultipleLines(r)...)
+			lineMatches = append(lineMatches, highlightMultipleLines(&r)...)
 		}
 		matches = append(matches,
 			protocol.FileMatch{
