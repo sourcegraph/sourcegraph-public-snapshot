@@ -10,9 +10,10 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-// Our current highlighting doesn't allow specifying a line and column range
-// spanning multiple lines. This function chops up potentially multiline matches into
-// multiple LineMatches.
+// The Sourcegraph frontend and interface only allow LineMatches (matches on a
+// single line) and it isn't possible to specify a line and column range
+// spanning multiple lines for highlighting. This function chops up potentially
+// multiline matches into multiple LineMatches.
 func highlightMultipleLines(r *comby.Match) (matches []protocol.LineMatch) {
 	lineSpan := r.Range.End.Line - r.Range.Start.Line + 1
 	if lineSpan == 1 {
@@ -38,11 +39,11 @@ func highlightMultipleLines(r *comby.Match) (matches []protocol.LineMatch) {
 			columnStart = r.Range.Start.Column - 1
 			columnEnd = len(lines) + 1
 		} else if i == (lineSpan - 1) {
-			// In between line.
+			// Last line.
 			columnStart = 0
 			columnEnd = r.Range.End.Column
 		} else {
-			// Last line.
+			// In between line.
 			columnStart = 0
 			columnEnd = len(lines) + 1
 		}
