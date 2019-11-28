@@ -93,6 +93,26 @@ AND provider = %s
 // SetRepoPermissions performs a full update for p, new user IDs found in p will be upserted
 // and user IDs no longer in p will be removed. This method updates both `user_permissions`
 // and `repo_permissions` tables.
+//
+// Example input:
+// &RepoPermissions{
+//     RepoID: 1,
+//     Perm: authz.Read,
+//     UserIDs: bitmap{1, 2},
+//     Provider: ProviderSourcegraph,
+// }
+//
+// Table states for input:
+// 	"user_permissions":
+//   user_id | permission | object_type | object_ids | updated_at |  provider
+//  ---------+------------+-------------+------------+------------+------------
+//         1 |       read |       repos |  bitmap{1} | <DateTime> | sourcegraph
+//         2 |       read |       repos |  bitmap{1} | <DateTime> | sourcegraph
+//
+//  "repo_permissions":
+//   repo_id | permission |   user_ids   |   provider  | updated_at
+//  ---------+------------+--------------+-------------+------------
+//         1 |       read | bitmap{1, 2} | sourcegraph | <DateTime>
 func (s *Store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err error) {
 	ctx, save := s.observe(ctx, "SetRepoPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
@@ -308,6 +328,25 @@ AND object_type = %s
 // SetRepoPendingPermissions performs a full update for p with given bindIDs, new bind IDs
 // found will be upserted and bind IDs no longer in bindIDs will be removed. This method
 // updates both `user_pending_permissions` and `repo_pending_permissions` tables.
+//
+// Example input:
+// string{"alice", "bob"}
+// &RepoPermissions{
+//     RepoID: 1,
+//     Perm: authz.Read,
+// }
+//
+// Table states for input:
+// 	"user_pending_permissions":
+//   id | bind_id | permission | object_type | object_ids | updated_at
+//  ----+---------+------------+-------------+------------+------------
+//    1 |   alice |       read |       repos |  bitmap{1} | <DateTime>
+//    2 |     bob |       read |       repos |  bitmap{1} | <DateTime>
+//
+//  "repo_permissions":
+//   repo_id | permission |   user_ids   | updated_at
+//  ---------+------------+--------------+------------
+//         1 |       read | bitmap{1, 2} | <DateTime>
 func (s *Store) SetRepoPendingPermissions(
 	ctx context.Context,
 	bindIDs []string,
