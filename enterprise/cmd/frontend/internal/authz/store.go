@@ -91,8 +91,8 @@ AND provider = %s
 }
 
 // SetRepoPermissions performs a full update for p, new user IDs found in p will be upserted
-// and user IDs no longer in p will be removed. This method updates both the user and
-// repository permissions tables.
+// and user IDs no longer in p will be removed. This method updates both `user_permissions`
+// and `repo_permissions` tables.
 func (s *Store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err error) {
 	ctx, save := s.observe(ctx, "SetRepoPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
@@ -307,7 +307,7 @@ AND object_type = %s
 
 // SetRepoPendingPermissions performs a full update for p with given bindIDs, new bind IDs
 // found will be upserted and bind IDs no longer in bindIDs will be removed. This method
-// updates both the user and repository pending permissions tables.
+// updates both `user_pending_permissions` and `repo_pending_permissions` tables.
 func (s *Store) SetRepoPendingPermissions(
 	ctx context.Context,
 	bindIDs []string,
@@ -326,23 +326,30 @@ func (s *Store) SetRepoPendingPermissions(
 	// Make another Store with this underlying transaction.
 	txs := NewStore(tx, s.clock)
 
-	updatedAt := txs.clock()
-	p.UpdatedAt = updatedAt
+	var (
+		q         *sqlf.Query
+		bindIDSet = make(map[int32]string)
+		loadedIDs = make(map[int32]*roaring.Bitmap)
+	)
 
 	// Insert rows for bindIDs without one in the user_pending_permissions table.
 	// This help guarantees rows of all bindIDs exist in next load step.
-	q, err := insertUserPendingPermissionsBatchQuery(bindIDs, p)
-	if err != nil {
-		return err
-	} else if err = txs.execute(ctx, q); err != nil {
-		return err
-	}
+	updatedAt := txs.clock()
+	p.UpdatedAt = updatedAt
+	if len(bindIDs) > 0 {
+		q, err = insertUserPendingPermissionsBatchQuery(bindIDs, p)
+		if err != nil {
+			return err
+		} else if err = txs.execute(ctx, q); err != nil {
+			return err
+		}
 
-	// Load all user pending permissions by bindIDs from the table.
-	q = loadUserPendingPermissionsBatchQuery(bindIDs, p.Perm, PermRepos)
-	bindIDSet, loadedIDs, err := txs.loadUserPendingPermissions(ctx, q)
-	if err != nil {
-		return err
+		// Load all user pending permissions by bindIDs from the table.
+		q = loadUserPendingPermissionsBatchQuery(bindIDs, p.Perm, PermRepos)
+		bindIDSet, loadedIDs, err = txs.loadUserPendingPermissions(ctx, q)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Make up p.UserIDs from the result set.
@@ -356,23 +363,30 @@ func (s *Store) SetRepoPendingPermissions(
 	if err != nil {
 		return err
 	}
+	if oldIDs == nil {
+		oldIDs = roaring.NewBitmap()
+	}
 
 	// Compute differences between the old and new sets.
 	added := roaring.AndNot(p.UserIDs, oldIDs)
 	removed := roaring.AndNot(oldIDs, p.UserIDs)
 
-	q = loadUserPendingPermissionsByIDBatchQuery(removed.ToArray(), p.Perm, PermRepos)
-	idSet, loaded, err := txs.loadUserPendingPermissions(ctx, q)
-	if err != nil {
-		return err
-	}
+	// Load data for removed IDs if any.
+	removedIDs := removed.ToArray()
+	if len(removedIDs) > 0 {
+		q = loadUserPendingPermissionsByIDBatchQuery(removedIDs, p.Perm, PermRepos)
+		idSet, loaded, err := txs.loadUserPendingPermissions(ctx, q)
+		if err != nil {
+			return err
+		}
 
-	// Merge removed data into the full sets.
-	for id, bindID := range idSet {
-		bindIDSet[id] = bindID
-	}
-	for id, set := range loaded {
-		loadedIDs[id] = set
+		// Merge data of removed IDs into the full sets.
+		for id, bindID := range idSet {
+			bindIDSet[id] = bindID
+		}
+		for id, set := range loaded {
+			loadedIDs[id] = set
+		}
 	}
 
 	// We have two sets of IDs that one needs to add, and the other needs to remove.
@@ -501,7 +515,7 @@ DO NOTHING
 	for i := range bindIDs {
 		items[i] = sqlf.Sprintf("(%s, %s, %s, %s, %s)",
 			bindIDs[i],
-			p.Perm,
+			p.Perm.String(),
 			PermRepos,
 			bs,
 			p.UpdatedAt.UTC(),
@@ -521,7 +535,7 @@ func loadUserPendingPermissionsBatchQuery(
 ) *sqlf.Query {
 	const format = `
 -- source: enterprise/cmd/frontend/internal/authz/store.go:loadUserPendingPermissionsBatchQuery
-SELECT id, bind_id, object_ids, updated_at
+SELECT id, bind_id, object_ids
 FROM user_pending_permissions
 WHERE bind_id IN (%s)
 AND permission = %s
@@ -563,7 +577,7 @@ func loadUserPendingPermissionsByIDBatchQuery(
 ) *sqlf.Query {
 	const format = `
 -- source: enterprise/cmd/frontend/internal/authz/store.go:loadUserPendingPermissionsByIDBatchQuery
-SELECT id, bind_id, object_ids, updated_at
+SELECT id, bind_id, object_ids
 FROM user_pending_permissions
 WHERE id IN (%s)
 AND permission = %s

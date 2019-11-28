@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"reflect"
+	"sort"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -231,8 +232,8 @@ func testStoreSetRepoPermissions(db *sql.DB) func(*testing.T) {
 	tests := []struct {
 		name            string
 		updates         []*RepoPermissions
-		expectUserPerms map[int32][]uint32
-		expectRepoPerms map[int32][]uint32
+		expectUserPerms map[int32][]uint32 // user_id -> object_ids
+		expectRepoPerms map[int32][]uint32 // repo_id -> user_ids
 	}{
 		{
 			name: "empty",
@@ -362,11 +363,12 @@ func testStoreSetRepoPermissions(db *sql.DB) func(*testing.T) {
 				return err
 			}
 
+			objIDs := array(bm)
 			if expects[id] == nil {
-				return fmt.Errorf("unexpected row in table: %v, %v", id, array(bm))
+				return fmt.Errorf("unexpected row in table: %v, %v", id, objIDs)
 			}
 
-			have := fmt.Sprintf("%v", array(bm))
+			have := fmt.Sprintf("%v", objIDs)
 			want := fmt.Sprintf("%v", expects[id])
 			if have != want {
 				return fmt.Errorf("key %v want %v but got %v", id, want, have)
@@ -400,12 +402,361 @@ func testStoreSetRepoPermissions(db *sql.DB) func(*testing.T) {
 
 				err := checkTable(s, `SELECT user_id, object_ids FROM user_permissions`, test.expectUserPerms)
 				if err != nil {
-					t.Fatal("user_permissions", err)
+					t.Fatal("user_permissions:", err)
 				}
 
 				err = checkTable(s, `SELECT repo_id, user_ids FROM repo_permissions`, test.expectRepoPerms)
 				if err != nil {
-					t.Fatal("repo_permissions", err)
+					t.Fatal("repo_permissions:", err)
+				}
+			})
+		}
+	}
+}
+
+func testStoreLoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
+	return func(t *testing.T) {
+		t.Run("no matching", func(t *testing.T) {
+			s := NewStore(db, clock)
+			defer cleanup(t, s)
+
+			bindIDs := []string{"bob"}
+			rp := &RepoPermissions{
+				RepoID: 1,
+				Perm:   authz.Read,
+			}
+			if err := s.SetRepoPendingPermissions(context.Background(), bindIDs, rp); err != nil {
+				t.Fatal(err)
+			}
+
+			up := &UserPendingPermissions{
+				BindID: "alice",
+				Perm:   authz.Read,
+				Type:   PermRepos,
+			}
+			if err := s.LoadUserPendingPermissions(context.Background(), up); err != nil {
+				t.Fatal(err)
+			}
+			equal(t, "IDs", len(array(up.IDs)), 0)
+		})
+
+		t.Run("found matching", func(t *testing.T) {
+			s := NewStore(db, clock)
+			defer cleanup(t, s)
+
+			bindIDs := []string{"alice"}
+			rp := &RepoPermissions{
+				RepoID: 1,
+				Perm:   authz.Read,
+			}
+			if err := s.SetRepoPendingPermissions(context.Background(), bindIDs, rp); err != nil {
+				t.Fatal(err)
+			}
+
+			up := &UserPendingPermissions{
+				BindID: "alice",
+				Perm:   authz.Read,
+				Type:   PermRepos,
+			}
+			if err := s.LoadUserPendingPermissions(context.Background(), up); err != nil {
+				t.Fatal(err)
+			}
+			equal(t, "IDs", array(up.IDs), []uint32{1})
+			equal(t, "UpdatedAt", up.UpdatedAt.UnixNano(), now)
+		})
+
+		t.Run("add and change", func(t *testing.T) {
+			s := NewStore(db, clock)
+			defer cleanup(t, s)
+
+			bindIDs := []string{"alice", "bob"}
+			rp := &RepoPermissions{
+				RepoID: 1,
+				Perm:   authz.Read,
+			}
+			if err := s.SetRepoPendingPermissions(context.Background(), bindIDs, rp); err != nil {
+				t.Fatal(err)
+			}
+
+			bindIDs = []string{"bob", "cindy"}
+			rp = &RepoPermissions{
+				RepoID: 1,
+				Perm:   authz.Read,
+			}
+			if err := s.SetRepoPendingPermissions(context.Background(), bindIDs, rp); err != nil {
+				t.Fatal(err)
+			}
+
+			up1 := &UserPendingPermissions{
+				BindID: "alice",
+				Perm:   authz.Read,
+				Type:   PermRepos,
+			}
+			if err := s.LoadUserPendingPermissions(context.Background(), up1); err != nil {
+				t.Fatal(err)
+			}
+			equal(t, "IDs", len(array(up1.IDs)), 0)
+
+			up2 := &UserPendingPermissions{
+				BindID: "bob",
+				Perm:   authz.Read,
+				Type:   PermRepos,
+			}
+			if err := s.LoadUserPendingPermissions(context.Background(), up2); err != nil {
+				t.Fatal(err)
+			}
+			equal(t, "IDs", array(up2.IDs), []uint32{1})
+			equal(t, "UpdatedAt", up2.UpdatedAt.UnixNano(), now)
+
+			up3 := &UserPendingPermissions{
+				BindID: "cindy",
+				Perm:   authz.Read,
+				Type:   PermRepos,
+			}
+			if err := s.LoadUserPendingPermissions(context.Background(), up3); err != nil {
+				t.Fatal(err)
+			}
+			equal(t, "IDs", array(up3.IDs), []uint32{1})
+			equal(t, "UpdatedAt", up3.UpdatedAt.UnixNano(), now)
+		})
+	}
+}
+
+func testStoreSetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
+	type update struct {
+		bindIDs []string
+		*RepoPermissions
+	}
+	tests := []struct {
+		name            string
+		updates         []update
+		expectUserPerms map[string][]uint32 // bind_id -> object_ids
+		expectRepoPerms map[int32][]string  // repo_id -> bind_ids
+	}{
+		{
+			name: "empty",
+			updates: []update{
+				{
+					bindIDs: nil,
+					RepoPermissions: &RepoPermissions{
+						RepoID: 1,
+						Perm:   authz.Read,
+					},
+				},
+			},
+		},
+		{
+			name: "add",
+			updates: []update{
+				{
+					bindIDs: []string{"alice"},
+					RepoPermissions: &RepoPermissions{
+						RepoID: 1,
+						Perm:   authz.Read,
+					},
+				},
+				{
+					bindIDs: []string{"alice", "bob"},
+					RepoPermissions: &RepoPermissions{
+						RepoID: 2,
+						Perm:   authz.Read,
+					},
+				},
+				{
+					bindIDs: []string{"cindy", "david"},
+					RepoPermissions: &RepoPermissions{
+						RepoID: 3,
+						Perm:   authz.Read,
+					},
+				},
+			},
+			expectUserPerms: map[string][]uint32{
+				"alice": {1, 2},
+				"bob":   {2},
+				"cindy": {3},
+				"david": {3},
+			},
+			expectRepoPerms: map[int32][]string{
+				1: {"alice"},
+				2: {"alice", "bob"},
+				3: {"cindy", "david"},
+			},
+		},
+		{
+			name: "add and update",
+			updates: []update{
+				{
+					bindIDs: []string{"alice"},
+					RepoPermissions: &RepoPermissions{
+						RepoID: 1,
+						Perm:   authz.Read,
+					},
+				},
+				{
+					bindIDs: []string{"bob", "cindy"},
+					RepoPermissions: &RepoPermissions{
+						RepoID: 1,
+						Perm:   authz.Read,
+					},
+				},
+				{
+					bindIDs: []string{"alice", "bob"},
+					RepoPermissions: &RepoPermissions{
+						RepoID: 2,
+						Perm:   authz.Read,
+					},
+				},
+				{
+					bindIDs: []string{"cindy", "david"},
+					RepoPermissions: &RepoPermissions{
+						RepoID: 2,
+						Perm:   authz.Read,
+					},
+				},
+			},
+			expectUserPerms: map[string][]uint32{
+				"alice": {},
+				"bob":   {1},
+				"cindy": {1, 2},
+				"david": {2},
+			},
+			expectRepoPerms: map[int32][]string{
+				1: {"bob", "cindy"},
+				2: {"cindy", "david"},
+			},
+		},
+		{
+			name: "add and clear",
+			updates: []update{
+				{
+					bindIDs: []string{"alice", "bob", "cindy"},
+					RepoPermissions: &RepoPermissions{
+						RepoID: 1,
+						Perm:   authz.Read,
+					},
+				},
+				{
+					bindIDs: []string{},
+					RepoPermissions: &RepoPermissions{
+						RepoID: 1,
+						Perm:   authz.Read,
+					},
+				},
+			},
+			expectUserPerms: map[string][]uint32{
+				"alice": {},
+				"bob":   {},
+				"cindy": {},
+			},
+			expectRepoPerms: map[int32][]string{
+				1: {},
+			},
+		},
+	}
+
+	return func(t *testing.T) {
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				s := NewStore(db, clock)
+				defer cleanup(t, s)
+
+				for _, update := range test.updates {
+					if err := s.SetRepoPendingPermissions(context.Background(), update.bindIDs, update.RepoPermissions); err != nil {
+						t.Fatal(err)
+					}
+				}
+
+				// Query and check rows in "user_pending_permissions" table.
+				rows, err := s.db.QueryContext(context.Background(), `SELECT id, bind_id, object_ids FROM user_pending_permissions`)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				// Collect id -> bind_id mappings for later use to check "repo_pending_permissions" table.
+				bindIDs := make(map[int32]string)
+				for rows.Next() {
+					var id int32
+					var bindID string
+					var ids []byte
+					if err := rows.Scan(&id, &bindID, &ids); err != nil {
+						t.Fatal(err)
+					}
+					bindIDs[id] = bindID
+
+					bm := roaring.NewBitmap()
+					if err = bm.UnmarshalBinary(ids); err != nil {
+						t.Fatal(err)
+					}
+
+					repoIDs := array(bm)
+					if test.expectUserPerms[bindID] == nil {
+						t.Fatalf("unexpected row in table: %v, %v", bindID, repoIDs)
+					}
+
+					have := fmt.Sprintf("%v", repoIDs)
+					want := fmt.Sprintf("%v", test.expectUserPerms[bindID])
+					if have != want {
+						t.Fatalf("bindID %q want %v but got %v", bindID, want, have)
+					}
+					delete(test.expectUserPerms, bindID)
+				}
+
+				if err = rows.Close(); err != nil {
+					t.Fatal(err)
+				}
+
+				if len(test.expectUserPerms) > 0 {
+					t.Fatalf("missing rows from table: %v", test.expectUserPerms)
+				}
+
+				// Query and check rows in "repo_pending_permissions" table.
+				rows, err = s.db.QueryContext(context.Background(), `SELECT repo_id, user_ids FROM repo_pending_permissions`)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				for rows.Next() {
+					var id int32
+					var ids []byte
+					if err := rows.Scan(&id, &ids); err != nil {
+						t.Fatal(err)
+					}
+
+					bm := roaring.NewBitmap()
+					if err = bm.UnmarshalBinary(ids); err != nil {
+						t.Fatal(err)
+					}
+
+					userIDs := array(bm)
+					if test.expectRepoPerms[id] == nil {
+						t.Fatalf("unexpected row in table: %v, %v", id, userIDs)
+					}
+
+					haveBindIDs := make([]string, 0, len(userIDs))
+					for _, userID := range userIDs {
+						bindID, ok := bindIDs[int32(userID)]
+						if !ok {
+							continue
+						}
+
+						haveBindIDs = append(haveBindIDs, bindID)
+					}
+					sort.Strings(haveBindIDs)
+
+					have := fmt.Sprintf("%v", haveBindIDs)
+					want := fmt.Sprintf("%v", test.expectRepoPerms[id])
+					if have != want {
+						t.Fatalf("id %d want %v but got %v", id, want, have)
+					}
+					delete(test.expectRepoPerms, id)
+				}
+
+				if err = rows.Close(); err != nil {
+					t.Fatal(err)
+				}
+
+				if len(test.expectRepoPerms) > 0 {
+					t.Fatalf("missing rows from table: %v", test.expectRepoPerms)
 				}
 			})
 		}

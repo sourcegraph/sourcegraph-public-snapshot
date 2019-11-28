@@ -26,6 +26,8 @@ func TestIntegration(t *testing.T) {
 		{"Store/LoadUserPermissions", testStoreLoadUserPermissions(db)},
 		{"Store/LoadRepoPermissions", testStoreLoadRepoPermissions(db)},
 		{"Store/SetRepoPermissions", testStoreSetRepoPermissions(db)},
+		{"Store/LoadUserPendingPermissions", testStoreLoadUserPendingPermissions(db)},
+		{"Store/SetRepoPendingPermissions", testStoreSetRepoPendingPermissions(db)},
 	} {
 		t.Run(tc.name, tc.test)
 	}
