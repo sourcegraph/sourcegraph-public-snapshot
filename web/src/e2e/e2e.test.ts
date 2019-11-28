@@ -13,6 +13,7 @@ import MockDate from 'mockdate'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { getConfig } from '../../../shared/src/e2e/config'
 import * as assert from 'assert'
+import { asError } from '../../../shared/src/util/errors'
 
 const { gitHubToken, sourcegraphBaseUrl } = getConfig('gitHubToken', 'sourcegraphBaseUrl')
 
@@ -1379,11 +1380,15 @@ describe('e2e test suite', () => {
             // wait for configuration to be applied
             await retry(async () => {
                 await driver.page.goto(sourcegraphBaseUrl + '/campaigns/new')
-                assert.notStrictEqual(
-                    await driver.page.evaluate(() => document.querySelectorAll('.e2e-campaign-nav-entry').length),
-                    0
-                )
-                await new Promise(resolve => setTimeout(resolve, 1000))
+                try {
+                    assert.notStrictEqual(
+                        await driver.page.evaluate(() => document.querySelectorAll('.e2e-campaign-nav-entry').length),
+                        0
+                    )
+                } catch (error) {
+                    await new Promise(resolve => setTimeout(resolve, 1000))
+                    throw asError(error)
+                }
             })
         })
         afterAll(async () => {
