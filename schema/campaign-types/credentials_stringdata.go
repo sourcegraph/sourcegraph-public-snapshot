@@ -14,7 +14,6 @@ const CredentialsCampaignTypeSchemaJSON = `{
       "description": "Define matchers to be used",
       "minItems": 1,
       "uniqueItems": true,
-      "additionalItems": false,
       "items": {
         "description": "Defines a matcher and it's associated configuration",
         "oneOf": [
