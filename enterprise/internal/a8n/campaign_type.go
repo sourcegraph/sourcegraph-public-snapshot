@@ -6,8 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -19,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httputil"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -30,10 +34,6 @@ const defaultFetchTimeout = 2 * time.Second
 // NewCampaignType returns a new CampaignType for the given campaign type name
 // and arguments.
 func NewCampaignType(campaignTypeName, args string, cf *httpcli.Factory) (CampaignType, error) {
-	if strings.ToLower(campaignTypeName) != "comby" {
-		return nil, fmt.Errorf("unknown campaign type: %s", campaignTypeName)
-	}
-
 	if cf == nil {
 		cf = httpcli.NewFactory(
 			httpcli.NewMiddleware(httpcli.ContextErrorMiddleware),
@@ -47,26 +47,58 @@ func NewCampaignType(campaignTypeName, args string, cf *httpcli.Factory) (Campai
 		return nil, err
 	}
 
-	ct := &comby{
-		replacerURL:  graphqlbackend.ReplacerURL,
-		httpClient:   cli,
-		fetchTimeout: defaultFetchTimeout,
-	}
+	var ct CampaignType
 
-	if err := jsonc.Unmarshal(args, &ct.args); err != nil {
-		return nil, err
-	}
+	switch strings.ToLower(campaignTypeName) {
+	case "comby":
+		c := &comby{
+			replacerURL:  graphqlbackend.ReplacerURL,
+			httpClient:   cli,
+			fetchTimeout: defaultFetchTimeout,
+		}
 
-	if ct.args.ScopeQuery == "" {
-		return nil, errors.New("missing argument in specification: scopeQuery")
-	}
+		if err := jsonc.Unmarshal(args, &c.args); err != nil {
+			return nil, err
+		}
 
-	if ct.args.MatchTemplate == "" {
-		return nil, errors.New("missing argument in specification: matchTemplate")
-	}
+		if c.args.ScopeQuery == "" {
+			return nil, errors.New("missing argument in specification: scopeQuery")
+		}
 
-	if ct.args.RewriteTemplate == "" {
-		return nil, errors.New("missing argument in specification: rewriteTemplate")
+		if c.args.MatchTemplate == "" {
+			return nil, errors.New("missing argument in specification: matchTemplate")
+		}
+
+		if c.args.RewriteTemplate == "" {
+			return nil, errors.New("missing argument in specification: rewriteTemplate")
+		}
+
+		ct = c
+
+	case "credentials":
+		c := &credentials{}
+
+		if err := jsonc.Unmarshal(args, &c.args); err != nil {
+			return nil, err
+		}
+
+		if c.args.ScopeQuery == "" {
+			return nil, errors.New("missing argument in specification: scopeQuery")
+		}
+
+		if len(c.args.Matchers) != 1 {
+			return nil, errors.New("missing argument in specification: matchers")
+		}
+
+		if strings.ToLower(c.args.Matchers[0].MatcherType) != "npm" {
+			t := c.args.Matchers[0].MatcherType
+			return nil, fmt.Errorf("wrong matcher type in specification: %q", t)
+		}
+
+		ct = c
+
+	default:
+		return nil, fmt.Errorf("unknown campaign type: %s", campaignTypeName)
 	}
 
 	return ct, nil
@@ -181,4 +213,121 @@ func (c *comby) generateDiff(ctx context.Context, repo api.RepoName, commit api.
 	}
 
 	return result.String(), nil
+}
+
+type credentialsMatcher struct {
+	MatcherType string `json:"type"`
+}
+
+type credentialsArgs struct {
+	ScopeQuery string               `json:"scopeQuery"`
+	Matchers   []credentialsMatcher `json:"matchers"`
+}
+
+var npmTokenRegexp = regexp.MustCompile(`((?:^|:)_(?:auth|authToken|password)\s*=\s*)(.+)$`)
+var npmTokenRegexpMultiline = regexp.MustCompile(`(?m)((?:^|:)_(?:auth|authToken|password)\s*=\s*)(.+)$`)
+
+type credentials struct {
+	args credentialsArgs
+}
+
+func (c *credentials) searchQuery() string {
+	return c.args.ScopeQuery + " " + npmTokenRegexp.String() + " file:.npmrc"
+}
+
+func (c *credentials) searchQueryForRepo(n api.RepoName) string {
+	return fmt.Sprintf(
+		"file:.npmrc repo:%s %s",
+		regexp.QuoteMeta(string(n)),
+		npmTokenRegexp.String(),
+	)
+}
+
+func (c *credentials) generateDiff(ctx context.Context, repo api.RepoName, commit api.CommitID) (string, error) {
+	t := "regexp"
+	search, err := graphqlbackend.NewSearchImplementer(&graphqlbackend.SearchArgs{
+		Version:     "V2",
+		PatternType: &t,
+		Query:       c.searchQueryForRepo(repo),
+	})
+	if err != nil {
+		return "", err
+	}
+
+	resultsResolver, err := search.Results(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	diffs := []string{}
+
+	for _, res := range resultsResolver.Results() {
+		fm, ok := res.ToFileMatch()
+		if !ok {
+			continue
+		}
+
+		path := fm.File().Path()
+		content, err := fm.File().Content(ctx)
+		if err != nil {
+			return "", err
+		}
+		newContent := npmTokenRegexpMultiline.ReplaceAllString(content, `${1}REMOVED_TOKEN`)
+
+		diff, err := tmpfileDiff(path, content, newContent)
+		if err != nil {
+			return "", err
+		}
+
+		withHeader := fmt.Sprintf("diff %s %s\n%s", path, path, diff)
+
+		diffs = append(diffs, withHeader)
+	}
+
+	return strings.Join(diffs, "\n"), nil
+}
+
+func tmpfileDiff(filename, a, b string) (string, error) {
+	dir, err := ioutil.TempDir("", fmt.Sprintf("diffing-%s", filename))
+	if err != nil {
+		return "", err
+	}
+	defer os.RemoveAll(dir)
+
+	tmpFile := func(name, content string) (string, error) {
+		p := filepath.Join(dir, name)
+		if err := ioutil.WriteFile(p, []byte(content), 0666); err != nil {
+			return "", err
+		}
+		return p, nil
+	}
+
+	fileA, err := tmpFile("a", a)
+	if err != nil {
+		return "", err
+	}
+
+	fileB, err := tmpFile("b", b)
+	if err != nil {
+		return "", err
+	}
+
+	cmd := exec.Command(
+		"diff",
+		"-u",
+		"--label", filename,
+		"--label", filename,
+		fileA,
+		fileB,
+	)
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		// diff's exit code is 0 if no differences were found, 1 if differences
+		// were found and 2+ if it ran into an error.
+		if cmd.ProcessState.ExitCode() >= 2 {
+			return string(out), err
+		}
+	}
+	return string(out), nil
 }

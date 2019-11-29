@@ -1394,36 +1394,77 @@ describe('e2e test suite', () => {
         afterAll(async () => {
             await driver.setConfig(['experimentalFeatures'], () => previousExperimentalFeatures)
         })
-        test('Create campaign preview for comby campaign type', async () => {
+        async function createCampaignPreview({
+            specification,
+            diffCount,
+            snapshotName,
+            campaignType,
+        }: {
+            specification: string
+            diffCount: number
+            snapshotName: string
+            campaignType: string
+        }): Promise<void> {
             await driver.page.goto(sourcegraphBaseUrl + '/campaigns/new')
             await driver.page.waitForSelector('.e2e-campaign-form')
 
             // fill campaign preview form
             await driver.page.type('.e2e-campaign-title', 'E2E campaign')
-            await driver.page.select('.e2e-campaign-type', 'comby')
+            await driver.page.select('.e2e-campaign-type', campaignType)
             await driver.page.waitForSelector('.e2e-campaign-arguments .monaco-editor')
             await driver.replaceText({
                 selector: '.e2e-campaign-arguments .monaco-editor',
-                newText: JSON.stringify({
-                    matchTemplate: 'file',
-                    rewriteTemplate: 'files',
-                    scopeQuery: 'repo:github.com/sourcegraph-testing/automation-e2e-test',
-                }),
+                newText: specification,
                 selectMethod: 'keyboard',
             })
 
             await driver.page.click('.e2e-preview-campaign')
             // first wait for loader to appear
-            await driver.page.waitForSelector('.e2e-preview-loading', { timeout: 10000 })
+            try {
+                await driver.page.waitForSelector('.e2e-preview-loading', { timeout: 500 })
+            } catch (error) {
+                if (error.name === 'TimeoutError') {
+                    // ignore this error as campaign previews can finish at the initial request also, we check below for errors and actual completion
+                } else {
+                    throw error
+                }
+            }
             // then wait for loader to disappear
             await driver.page.waitForSelector('.e2e-preview-loading', { timeout: 10000, hidden: true })
             // check if there have been any errors
             const errorCount = await driver.page.evaluate(() => document.querySelectorAll('.alert.alert-danger').length)
             expect(errorCount).toEqual(0)
-            // check there were exactly 3 diffs generated
-            const diffCount = await driver.page.evaluate(() => document.querySelectorAll('.file-diff-node').length)
-            expect(diffCount).toEqual(3)
-            await percySnapshot(driver.page, 'Campaign preview page')
+            // check if the completion marker is rendered
+            await driver.page.waitForSelector('.e2e-preview-success')
+            // check there were exactly as expected diffs generated
+            const generatedDiffCount = await driver.page.evaluate(
+                () => document.querySelectorAll('.file-diff-node').length
+            )
+            expect(generatedDiffCount).toEqual(diffCount)
+            await percySnapshot(driver.page, snapshotName)
+        }
+        test('Create campaign preview for comby campaign type', async () => {
+            await createCampaignPreview({
+                specification: JSON.stringify({
+                    matchTemplate: 'file',
+                    rewriteTemplate: 'files',
+                    scopeQuery: 'repo:github.com/sourcegraph-testing/automation-e2e-test',
+                }),
+                diffCount: 3,
+                snapshotName: 'Campaign preview page for comby',
+                campaignType: 'comby',
+            })
+        })
+        test('Create campaign preview for credentials campaign type', async () => {
+            await createCampaignPreview({
+                specification: JSON.stringify({
+                    matchers: [{ type: 'npm' }],
+                    scopeQuery: 'repo:github.com/sourcegraph-testing/automation-e2e-test',
+                }),
+                diffCount: 1,
+                snapshotName: 'Campaign preview page for credentials',
+                campaignType: 'credentials',
+            })
         })
     })
 })

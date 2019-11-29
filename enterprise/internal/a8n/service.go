@@ -168,7 +168,9 @@ func (s *Service) runChangesetJob(
 		// We use unified diffs, not git diffs, which means they're missing the
 		// `a/` and `/b` filename prefixes. `-p0` tells `git apply` to not
 		// expect and strip prefixes.
-		GitApplyArgs: []string{"-p0"},
+		// Since we also produce diffs manually, we might not have context lines,
+		// so we need to disable that check with `--unidiff-zero`.
+		GitApplyArgs: []string{"-p0", "--unidiff-zero"},
 		Push:         true,
 	})
 

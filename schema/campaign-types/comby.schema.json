@@ -1,0 +1,22 @@
+{
+  "$id": "comby-spec.json#",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Schema for comby options",
+  "type": "object",
+  "properties": {
+    "scopeQuery": {
+      "type": "string",
+      "description": "Define a scope to narrow down repositories affected by this change. Only GitHub and Bitbucket Server are supported."
+    },
+    "matchTemplate": {
+      "type": "string",
+      "description": "See https://comby.dev/#match-syntax for syntax"
+    },
+    "rewriteTemplate": {
+      "type": "string",
+      "description": "See https://comby.dev/#match-syntax for syntax"
+    }
+  },
+  "required": ["scopeQuery", "matchTemplate", "rewriteTemplate"],
+  "additionalProperties": false
+}
