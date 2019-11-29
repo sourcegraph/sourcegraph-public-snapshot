@@ -445,7 +445,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     onChange={onChangeType}
                     disabled={!!(campaign && campaign.__typename === 'Campaign')}
                     value={type}
-                    required={true}
                 >
                     <option value="">Manual</option>
                     <option value="comby">Comby search and replace</option>
