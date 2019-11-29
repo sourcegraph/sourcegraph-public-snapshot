@@ -209,7 +209,6 @@ func (s *Service) runChangesetJob(
 	}
 
 	var externalService *repos.ExternalService
-	// TODO: Why is the block below wrapped in braces? Does it need its own scope?
 	{
 		args := repos.StoreListExternalServicesArgs{IDs: repo.ExternalServiceIDs()}
 
