@@ -161,8 +161,10 @@ func (c *comby) generateDiff(ctx context.Context, repo api.RepoName, commit api.
 	}
 
 	sort.Slice(diffs, func(i, j int) bool {
-		return diffs[i].diff.OrigName < diffs[j].diff.OrigName &&
-			diffs[i].diff.NewName < diffs[j].diff.NewName
+		if diffs[i].diff.OrigName != diffs[j].diff.OrigName {
+			return diffs[i].diff.OrigName < diffs[j].diff.OrigName
+		}
+		return diffs[i].diff.NewName < diffs[j].diff.NewName
 	})
 
 	var result strings.Builder
