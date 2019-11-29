@@ -26,6 +26,7 @@ const CredentialsCampaignTypeSchemaJSON = `{
               },
               "replaceWith": {
                 "type": "string",
+                "minLength": 1,
                 "description": "Define a string to use as a replacement for the found credentials"
               }
             },
