@@ -19,7 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 // Resolver is the GraphQL resolver of all things A8N.
@@ -158,6 +158,12 @@ func (r *Resolver) AddChangesetsToCampaign(ctx context.Context, args *graphqlbac
 }
 
 func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.CreateCampaignArgs) (graphqlbackend.CampaignResolver, error) {
+	var err error
+	tr, ctx := trace.New(ctx, "Resolver.CreateCampaign", args.Input.Name)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 	user, err := db.Users.GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "%v", backend.ErrNotAuthenticated)
@@ -200,13 +206,6 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 	if err != nil {
 		return nil, err
 	}
-
-	go func() {
-		err := svc.RunChangesetJobs(context.Background(), campaign)
-		if err != nil {
-			log15.Error("RunChangesetJobs", "err", err)
-		}
-	}()
 
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
