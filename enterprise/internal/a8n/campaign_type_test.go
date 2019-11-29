@@ -18,6 +18,24 @@ func TestCampaignType_Comby(t *testing.T) {
 		`{"uri":"file1.txt","diff":"--- file1.txt\n+++ file1.txt\n@@ -1,3 +1,3 @@\n file1-line1\n-file1-line2\n+file1-lineFOO\n file1-line3"}`,
 		`{"uri":"file2.txt","diff":"--- file2.txt\n+++ file2.txt\n@@ -1,3 +1,3 @@\n file2-line1\n-file2-line2\n+file2-lineFOO\n file2-line3"}`,
 	}
+	diffs := []string{
+		`diff file1.txt file1.txt
+--- file1.txt
++++ file1.txt
+@@ -1,3 +1,3 @@
+ file1-line1
+-file1-line2
++file1-lineFOO
+ file1-line3`,
+		`diff file2.txt file2.txt
+--- file2.txt
++++ file2.txt
+@@ -1,3 +1,3 @@
+ file2-line1
+-file2-line2
++file2-lineFOO
+ file2-line3`,
+	}
 
 	tests := []struct {
 		name string
@@ -46,14 +64,7 @@ func TestCampaignType_Comby(t *testing.T) {
 
 				fmt.Fprintln(w, combyJsonLineDiffs[0])
 			},
-			wantDiff: `diff file1.txt file1.txt
---- file1.txt
-+++ file1.txt
-@@ -1,3 +1,3 @@
- file1-line1
--file1-line2
-+file1-lineFOO
- file1-line3`,
+			wantDiff: diffs[0],
 		},
 		{
 			name:     "success multiple file diffs",
@@ -71,22 +82,25 @@ func TestCampaignType_Comby(t *testing.T) {
 				fmt.Fprintln(w, combyJsonLineDiffs[0])
 				fmt.Fprintln(w, combyJsonLineDiffs[1])
 			},
-			wantDiff: `diff file1.txt file1.txt
---- file1.txt
-+++ file1.txt
-@@ -1,3 +1,3 @@
- file1-line1
--file1-line2
-+file1-lineFOO
- file1-line3
-diff file2.txt file2.txt
---- file2.txt
-+++ file2.txt
-@@ -1,3 +1,3 @@
- file2-line1
--file2-line2
-+file2-lineFOO
- file2-line3`,
+			wantDiff: diffs[0] + "\n" + diffs[1],
+		},
+		{
+			name:     "success multiple file diffs unsorted",
+			repoName: "github.com/sourcegraph/sourcegraph",
+			commitID: "deadbeef",
+			args: combyArgs{
+				ScopeQuery:      "repo:gorilla",
+				MatchTemplate:   "example.com",
+				RewriteTemplate: "sourcegraph.com",
+			},
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Transfer-Encoding", "chunked")
+				w.WriteHeader(http.StatusOK)
+
+				fmt.Fprintln(w, combyJsonLineDiffs[1])
+				fmt.Fprintln(w, combyJsonLineDiffs[0])
+			},
+			wantDiff: diffs[0] + "\n" + diffs[1],
 		},
 		{
 			name:     "error",
