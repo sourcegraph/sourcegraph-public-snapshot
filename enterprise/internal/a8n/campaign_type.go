@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"sort"
 	"strings"
 	"time"
 
@@ -126,7 +127,13 @@ func (c *comby) generateDiff(ctx context.Context, repo api.RepoName, commit api.
 	scanner := bufio.NewScanner(resp.Body)
 	scanner.Buffer(make([]byte, 100), 10*bufio.MaxScanTokenSize)
 
-	var result strings.Builder
+	type fileDiffRaw struct {
+		diff *diff.FileDiff
+		raw  *string
+	}
+
+	var diffs []fileDiffRaw
+
 	for scanner.Scan() {
 		b := scanner.Bytes()
 		if err := scanner.Err(); err != nil {
@@ -150,15 +157,25 @@ func (c *comby) generateDiff(ctx context.Context, repo api.RepoName, commit api.
 			log15.Error("parsing diff failed", "err", err)
 			continue
 		}
+		diffs = append(diffs, fileDiffRaw{diff: parsed, raw: &raw.Diff})
+	}
+
+	sort.Slice(diffs, func(i, j int) bool {
+		return diffs[i].diff.OrigName < diffs[j].diff.OrigName &&
+			diffs[i].diff.NewName < diffs[j].diff.NewName
+	})
+
+	var result strings.Builder
+	for _, fdr := range diffs {
 		if result.Len() != 0 {
 			// We already wrote a diff to the builder, so we need to add
 			// a newline
 			result.WriteRune('\n')
 		}
 
-		header := fmt.Sprintf("diff %s %s\n", parsed.OrigName, parsed.NewName)
+		header := fmt.Sprintf("diff %s %s\n", fdr.diff.OrigName, fdr.diff.NewName)
 		result.WriteString(header)
-		result.WriteString(raw.Diff)
+		result.WriteString(*fdr.raw)
 	}
 
 	return result.String(), nil
