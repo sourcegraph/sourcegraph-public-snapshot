@@ -23,6 +23,10 @@ const CredentialsCampaignTypeSchemaJSON = `{
               "type": {
                 "type": "string",
                 "enum": ["npm"]
+              },
+              "replaceWith": {
+                "type": "string",
+                "description": "Define a string to use as a replacement for the found credentials"
               }
             },
             "required": ["type"],
