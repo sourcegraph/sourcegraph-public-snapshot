@@ -501,14 +501,15 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             </span>
                         </div>
                     )}
-                    {type && status.state === 'COMPLETED' && (
-                        <div className="d-flex my-3 e2e-preview-success">
-                            <CheckCircleIcon className="icon-inline text-success mr-1" /> Creation complete
-                        </div>
-                    )}
-                    {type && status.state === 'ERRORED' && (
+                    {type && status.state !== 'PROCESSING' && (
                         <div className="d-flex my-3">
-                            <AlertCircleIcon className="icon-inline text-danger mr-1" /> Creation failed
+                            {status.state === 'COMPLETED' && (
+                                <CheckCircleIcon className="icon-inline text-success mr-1 e2e-preview-success" />
+                            )}
+                            {status.state === 'ERRORED' && <AlertCircleIcon className="icon-inline text-danger mr-1" />}{' '}
+                            {/* Status asserts on campaign being set, this will never be null */}
+                            {campaign!.__typename === 'Campaign' ? 'Creation' : 'Preview'}{' '}
+                            {status.state.toLocaleLowerCase()}
                         </div>
                     )}
                     {status.errors.map((error, i) => (
