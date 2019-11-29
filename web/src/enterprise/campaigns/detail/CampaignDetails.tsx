@@ -501,14 +501,19 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             </span>
                         </div>
                     )}
-                    {status.errors.map((error, i) => (
-                        <ErrorAlert error={error} className="mt-3" key={i} />
-                    ))}
                     {type && status.state === 'COMPLETED' && (
                         <div className="d-flex my-3 e2e-preview-success">
                             <CheckCircleIcon className="icon-inline text-success mr-1" /> Creation complete
                         </div>
                     )}
+                    {type && status.state === 'ERRORED' && (
+                        <div className="d-flex my-3">
+                            <AlertCircleIcon className="icon-inline text-danger mr-1" /> Creation failed
+                        </div>
+                    )}
+                    {status.errors.map((error, i) => (
+                        <ErrorAlert error={error} className="mt-3" key={i} />
+                    ))}
                 </>
             )}
 
