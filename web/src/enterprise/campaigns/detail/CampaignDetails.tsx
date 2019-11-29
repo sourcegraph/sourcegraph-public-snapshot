@@ -41,6 +41,7 @@ import { isDefined } from '../../../../../shared/src/util/types'
 import { FileDiffTab } from './FileDiffTab'
 import combyJsonSchema from '../../../../../schema/campaign-types/comby.schema.json'
 import credentialsJsonSchema from '../../../../../schema/campaign-types/credentials.schema.json'
+import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 
 interface Props extends ThemeProps {
     /**
@@ -503,6 +504,11 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     {status.errors.map((error, i) => (
                         <ErrorAlert error={error} className="mt-3" key={i} />
                     ))}
+                    {type && status.state === 'COMPLETED' && (
+                        <div className="d-flex my-3 e2e-preview-success">
+                            <CheckCircleIcon className="icon-inline text-success mr-1" /> Creation complete
+                        </div>
+                    )}
                 </>
             )}
 
