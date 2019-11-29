@@ -12,6 +12,8 @@ import { random } from 'lodash'
 import MockDate from 'mockdate'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { getConfig } from '../../../shared/src/e2e/config'
+import * as assert from 'assert'
+import { asError } from '../../../shared/src/util/errors'
 
 const { gitHubToken, sourcegraphBaseUrl } = getConfig('gitHubToken', 'sourcegraphBaseUrl')
 
@@ -46,6 +48,7 @@ describe('e2e test suite', () => {
             'sourcegraph/go-vcs',
             'sourcegraph/appdash',
             'sourcegraph/sourcegraph-typescript',
+            'sourcegraph-testing/automation-e2e-test',
         ]
         await driver.ensureLoggedIn({ username: 'test', password: 'test', email: 'test@test.com' })
         await driver.resetUserSettings()
@@ -1364,6 +1367,63 @@ describe('e2e test suite', () => {
                 () => document.querySelectorAll('.e2e-literal-search-toast').length
             )
             expect(nodes).toEqual(0)
+        })
+    })
+
+    describe('Campaigns', () => {
+        let previousExperimentalFeatures: any
+        beforeAll(async () => {
+            await driver.setConfig(['experimentalFeatures'], prev => {
+                previousExperimentalFeatures = prev?.value
+                return { automation: 'enabled' }
+            })
+            // wait for configuration to be applied
+            await retry(async () => {
+                await driver.page.goto(sourcegraphBaseUrl + '/campaigns/new')
+                try {
+                    assert.notStrictEqual(
+                        await driver.page.evaluate(() => document.querySelectorAll('.e2e-campaign-nav-entry').length),
+                        0
+                    )
+                } catch (error) {
+                    await new Promise(resolve => setTimeout(resolve, 1000))
+                    throw asError(error)
+                }
+            })
+        })
+        afterAll(async () => {
+            await driver.setConfig(['experimentalFeatures'], () => previousExperimentalFeatures)
+        })
+        test('Create campaign preview for comby campaign type', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/campaigns/new')
+            await driver.page.waitForSelector('.e2e-campaign-form')
+
+            // fill campaign preview form
+            await driver.page.type('.e2e-campaign-title', 'E2E campaign')
+            await driver.page.select('.e2e-campaign-type', 'comby')
+            await driver.page.waitForSelector('.e2e-campaign-arguments .monaco-editor')
+            await driver.replaceText({
+                selector: '.e2e-campaign-arguments .monaco-editor',
+                newText: JSON.stringify({
+                    matchTemplate: 'file',
+                    rewriteTemplate: 'files',
+                    scopeQuery: 'repo:github.com/sourcegraph-testing/automation-e2e-test',
+                }),
+                selectMethod: 'keyboard',
+            })
+
+            await driver.page.click('.e2e-preview-campaign')
+            // first wait for loader to appear
+            await driver.page.waitForSelector('.e2e-preview-loading', { timeout: 10000 })
+            // then wait for loader to disappear
+            await driver.page.waitForSelector('.e2e-preview-loading', { timeout: 10000, hidden: true })
+            // check if there have been any errors
+            const errorCount = await driver.page.evaluate(() => document.querySelectorAll('.alert.alert-danger').length)
+            expect(errorCount).toEqual(0)
+            // check there were exactly 3 diffs generated
+            const diffCount = await driver.page.evaluate(() => document.querySelectorAll('.file-diff-node').length)
+            expect(diffCount).toEqual(3)
+            await percySnapshot(driver.page, 'Campaign preview page')
         })
     })
 })

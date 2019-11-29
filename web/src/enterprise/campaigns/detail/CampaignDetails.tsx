@@ -332,7 +332,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     return (
         <>
             <PageTitle title={campaign && campaign.__typename === 'Campaign' ? campaign.name : 'New Campaign'} />
-            <Form onSubmit={onSubmit} onReset={onCancel}>
+            <Form onSubmit={onSubmit} onReset={onCancel} className="e2e-campaign-form">
                 <h2 className="d-flex">
                     <CampaignsIcon className="icon-inline mr-2" />
                     <span>
@@ -361,7 +361,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     <span className="text-muted d-inline-block mx-2">/</span>
                     {mode === 'editing' || mode === 'saving' ? (
                         <input
-                            className="form-control w-auto d-inline-block"
+                            className="form-control w-auto d-inline-block e2e-campaign-title"
                             value={name}
                             onChange={event => setName(event.target.value)}
                             placeholder="Campaign title"
@@ -454,7 +454,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 )}
                 <h3 className="mt-3">Campaign type</h3>
                 <select
-                    className="form-control w-auto d-inline-block"
+                    className="form-control w-auto d-inline-block e2e-campaign-type"
                     placeholder="Select campaign type"
                     onChange={event => setType(event.target.value as 'comby' | 'manual')}
                     disabled={!!(campaign && campaign.__typename === 'Campaign')}
@@ -472,7 +472,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     </small>
                 )}
                 <MonacoSettingsEditor
-                    className="my-3"
+                    className="my-3 e2e-campaign-arguments"
                     isLightTheme={isLightTheme}
                     value={campaignPlanArguments}
                     jsonSchema={type === 'comby' ? combyJsonSchema : undefined}
@@ -485,7 +485,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         {type === 'comby' && (
                             <button
                                 type="button"
-                                className="btn btn-primary mr-1"
+                                className="btn btn-primary mr-1 e2e-preview-campaign"
                                 disabled={!previewRefreshNeeded}
                                 onClick={() => nextPreviewCampaignPlan({ type, arguments: campaignPlanArguments })}
                             >
@@ -507,7 +507,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             {status && (
                 <>
                     {status.state === 'PROCESSING' && (
-                        <div className="d-flex mt-3">
+                        <div className="d-flex mt-3 e2e-preview-loading">
                             <LoadingSpinner className="icon-inline" />{' '}
                             <span data-tooltip="Computing changesets">
                                 {status.completedCount} / {status.pendingCount + status.completedCount}
