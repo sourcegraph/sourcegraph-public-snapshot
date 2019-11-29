@@ -131,7 +131,8 @@ func (r *Runner) Run(ctx context.Context, plan *a8n.CampaignPlan) error {
 	}()
 	tr.LogFields(log.Bool("started", r.started))
 	if r.started {
-		return errors.New("already started")
+		err = errors.New("already started")
+		return err
 	}
 	r.started = true
 
@@ -144,7 +145,8 @@ func (r *Runner) Run(ctx context.Context, plan *a8n.CampaignPlan) error {
 		return err
 	}
 	if len(rs) > int(max) {
-		return ErrTooManyResults
+		err = ErrTooManyResults
+		return err
 	}
 
 	jobs, err := r.createPlanAndJobs(ctx, plan, rs)
