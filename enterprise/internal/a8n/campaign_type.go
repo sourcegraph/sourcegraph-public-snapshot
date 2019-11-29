@@ -6,8 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
@@ -86,7 +90,7 @@ func NewCampaignType(campaignTypeName, args string, cf *httpcli.Factory) (Campai
 			return nil, errors.New("missing argument in specification: matchers")
 		}
 
-		if c.args.Matchers[0].MatcherType != "npm" {
+		if strings.ToLower(c.args.Matchers[0].MatcherType) != "npm" {
 			t := c.args.Matchers[0].MatcherType
 			return nil, fmt.Errorf("wrong matcher type in specification: %q", t)
 		}
@@ -221,6 +225,7 @@ type credentialsArgs struct {
 }
 
 var npmTokenRegexp = regexp.MustCompile(`((?:^|:)_(?:auth|authToken|password)\s*=\s*)(.+)$`)
+var npmTokenRegexpMultiline = regexp.MustCompile(`(?m)((?:^|:)_(?:auth|authToken|password)\s*=\s*)(.+)$`)
 
 type credentials struct {
 	args credentialsArgs
@@ -263,29 +268,66 @@ func (c *credentials) generateDiff(ctx context.Context, repo api.RepoName, commi
 		}
 
 		path := fm.File().Path()
-		header := fmt.Sprintf("diff %s %s\n--- %s\n+++ %s\n", path, path, path, path)
+		content, err := fm.File().Content(ctx)
+		if err != nil {
+			return "", err
+		}
+		newContent := npmTokenRegexpMultiline.ReplaceAllString(content, `${1}REMOVED_TOKEN`)
 
-		var d strings.Builder
-		d.WriteString(header)
-
-		for _, lm := range fm.LineMatches() {
-			oldLine := lm.Preview()
-			lineNum := lm.LineNumber() + 1
-
-			newLine := npmTokenRegexp.ReplaceAllString(oldLine, `${1}REMOVED_TOKEN`)
-
-			hunk := fmt.Sprintf("@@ -%d +%d @@\n-%s\n+%s\n",
-				lineNum,
-				lineNum,
-				oldLine,
-				newLine,
-			)
-
-			d.WriteString(hunk)
+		diff, err := tmpfileDiff(path, content, newContent)
+		if err != nil {
+			return "", err
 		}
 
-		diffs = append(diffs, d.String())
+		withHeader := fmt.Sprintf("diff %s %s\n%s", path, path, diff)
+
+		diffs = append(diffs, withHeader)
 	}
 
 	return strings.Join(diffs, "\n"), nil
+}
+
+func tmpfileDiff(filename, a, b string) (string, error) {
+	dir, err := ioutil.TempDir("", fmt.Sprintf("diffing-%s", filename))
+	if err != nil {
+		return "", err
+	}
+	defer os.RemoveAll(dir)
+
+	tmpFile := func(name, content string) (string, error) {
+		p := filepath.Join(dir, name)
+		if err := ioutil.WriteFile(p, []byte(content), 0666); err != nil {
+			return "", err
+		}
+		return p, nil
+	}
+
+	fileA, err := tmpFile("a", a)
+	if err != nil {
+		return "", err
+	}
+
+	fileB, err := tmpFile("b", b)
+	if err != nil {
+		return "", err
+	}
+
+	cmd := exec.Command(
+		"diff",
+		"-u",
+		"--label", filename,
+		"--label", filename,
+		fileA,
+		fileB,
+	)
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		// diff's exit code is 0 if no differences were found, 1 if differences
+		// were found and 2+ if it ran into an error.
+		if cmd.ProcessState.ExitCode() >= 2 {
+			return string(out), err
+		}
+	}
+	return string(out), nil
 }
