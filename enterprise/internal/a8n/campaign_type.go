@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -17,6 +16,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -24,6 +25,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httputil"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	schema "github.com/sourcegraph/sourcegraph/schema/campaign-types"
+	"github.com/xeipuuv/gojsonschema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -31,9 +34,16 @@ import (
 // zip archives
 const defaultFetchTimeout = 2 * time.Second
 
+var schemas = map[string]string{
+	"comby":       schema.CombyCampaignTypeSchemaJSON,
+	"credentials": schema.CredentialsCampaignTypeSchemaJSON,
+}
+
 // NewCampaignType returns a new CampaignType for the given campaign type name
 // and arguments.
 func NewCampaignType(campaignTypeName, args string, cf *httpcli.Factory) (CampaignType, error) {
+	campaignTypeName = strings.ToLower(campaignTypeName)
+
 	if cf == nil {
 		cf = httpcli.NewFactory(
 			httpcli.NewMiddleware(httpcli.ContextErrorMiddleware),
@@ -47,9 +57,14 @@ func NewCampaignType(campaignTypeName, args string, cf *httpcli.Factory) (Campai
 		return nil, err
 	}
 
+	normalizedArgs, err := validateArgs(campaignTypeName, args)
+	if err != nil {
+		return nil, err
+	}
+
 	var ct CampaignType
 
-	switch strings.ToLower(campaignTypeName) {
+	switch campaignTypeName {
 	case "comby":
 		c := &comby{
 			replacerURL:  graphqlbackend.ReplacerURL,
@@ -57,20 +72,8 @@ func NewCampaignType(campaignTypeName, args string, cf *httpcli.Factory) (Campai
 			fetchTimeout: defaultFetchTimeout,
 		}
 
-		if err := jsonc.Unmarshal(args, &c.args); err != nil {
+		if err := json.Unmarshal(normalizedArgs, &c.args); err != nil {
 			return nil, err
-		}
-
-		if c.args.ScopeQuery == "" {
-			return nil, errors.New("missing argument in specification: scopeQuery")
-		}
-
-		if c.args.MatchTemplate == "" {
-			return nil, errors.New("missing argument in specification: matchTemplate")
-		}
-
-		if c.args.RewriteTemplate == "" {
-			return nil, errors.New("missing argument in specification: rewriteTemplate")
 		}
 
 		ct = c
@@ -78,21 +81,8 @@ func NewCampaignType(campaignTypeName, args string, cf *httpcli.Factory) (Campai
 	case "credentials":
 		c := &credentials{}
 
-		if err := jsonc.Unmarshal(args, &c.args); err != nil {
+		if err := json.Unmarshal(normalizedArgs, &c.args); err != nil {
 			return nil, err
-		}
-
-		if c.args.ScopeQuery == "" {
-			return nil, errors.New("missing argument in specification: scopeQuery")
-		}
-
-		if len(c.args.Matchers) != 1 {
-			return nil, errors.New("missing argument in specification: matchers")
-		}
-
-		if strings.ToLower(c.args.Matchers[0].MatcherType) != "npm" {
-			t := c.args.Matchers[0].MatcherType
-			return nil, fmt.Errorf("wrong matcher type in specification: %q", t)
 		}
 
 		ct = c
@@ -102,6 +92,39 @@ func NewCampaignType(campaignTypeName, args string, cf *httpcli.Factory) (Campai
 	}
 
 	return ct, nil
+}
+
+func validateArgs(campaignType, args string) ([]byte, error) {
+	typeSchema, ok := schemas[campaignType]
+	if !ok {
+		return nil, fmt.Errorf("unknown campaign type: %s", campaignType)
+	}
+
+	sl := gojsonschema.NewSchemaLoader()
+	sc, err := sl.Compile(gojsonschema.NewStringLoader(typeSchema))
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to compile schema for campaign type %q", campaignType)
+	}
+
+	normalized, err := jsonc.Parse(args)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to normalize JSON")
+	}
+
+	res, err := sc.Validate(gojsonschema.NewBytesLoader(normalized))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to validate specification against schema")
+	}
+
+	var errs *multierror.Error
+	for _, err := range res.Errors() {
+		e := err.String()
+		// Remove `(root): ` from error formatting since these errors are
+		// presented to users.
+		e = strings.TrimPrefix(e, "(root): ")
+		errs = multierror.Append(errs, errors.New(e))
+	}
+	return normalized, errs.ErrorOrNil()
 }
 
 // A CampaignType provides a search query, argument validation and generates a

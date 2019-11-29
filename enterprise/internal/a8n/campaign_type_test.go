@@ -6,10 +6,85 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
+
+func TestNewCampaignType_ArgsValidation(t *testing.T) {
+	tests := []struct {
+		name               string
+		campaignType, args string
+
+		wantArgs interface{}
+		err      string
+	}{
+		{
+			name:         "valid comby",
+			campaignType: "comby",
+			args:         `{"scopeQuery":"repo:github","matchTemplate":"foobar","rewriteTemplate":"barfoo"}`,
+			wantArgs: combyArgs{
+				ScopeQuery:      "repo:github",
+				MatchTemplate:   "foobar",
+				RewriteTemplate: "barfoo",
+			},
+		},
+		{
+			name:         "invalid comby",
+			campaignType: "comby",
+			args:         `{"scopeQuery":""}`,
+			err:          "3 errors occurred:\n\t* matchTemplate is required\n\t* rewriteTemplate is required\n\t* scopeQuery: String length must be greater than or equal to 1\n\n",
+		},
+		{
+			name:         "valid credentials",
+			campaignType: "credentials",
+			args:         `{"scopeQuery":"repo:github","matchers":[{"type":"npm"}]}`,
+			wantArgs: credentialsArgs{
+				ScopeQuery: "repo:github",
+				Matchers:   []credentialsMatcher{{MatcherType: "npm"}},
+			},
+		},
+		{
+			name:         "invalid credentials",
+			campaignType: "credentials",
+			args:         `{"scopeQuery":"","matchers":[]}`,
+			err:          "2 errors occurred:\n\t* matchers: Array must have at least 1 items\n\t* scopeQuery: String length must be greater than or equal to 1\n\n",
+		},
+	}
+
+	for _, tc := range tests {
+		ct, err := NewCampaignType(tc.campaignType, tc.args, nil)
+
+		var have string
+		if err != nil {
+			have = err.Error()
+		}
+		if have != tc.err {
+			t.Errorf("got error %q, want %q", have, tc.err)
+		}
+
+		if tc.err != "" {
+			continue
+		}
+
+		switch ct := ct.(type) {
+		case *comby:
+			wantArgs, _ := tc.wantArgs.(combyArgs)
+			if !reflect.DeepEqual(ct.args, wantArgs) {
+				t.Errorf("wrong args:\n%s", cmp.Diff(ct.args, wantArgs))
+			}
+		case *credentials:
+			wantArgs, _ := tc.wantArgs.(credentialsArgs)
+			if !reflect.DeepEqual(ct.args, wantArgs) {
+				t.Errorf("wrong args:\n%s", cmp.Diff(ct.args, wantArgs))
+			}
+		default:
+			t.Fatal("unknown campaign type")
+		}
+	}
+}
 
 func TestCampaignType_Comby(t *testing.T) {
 	ctx := context.Background()
