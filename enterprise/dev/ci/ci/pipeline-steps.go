@@ -130,6 +130,7 @@ func addDockerfileLint(pipeline *bk.Pipeline) {
 func addE2E(c Config) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		opts := []bk.StepOpt{
+			bk.Key("e2e"),
 			// Avoid crashing the sourcegraph/server containers. See
 			// https://github.com/sourcegraph/sourcegraph/issues/2657
 			bk.ConcurrencyGroup("e2e"),
@@ -226,6 +227,9 @@ func addServerDockerImageCandidate(c Config) func(*bk.Pipeline) {
 func addCleanUpServerDockerImageCandidate(c Config) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":sparkles:",
+			// this causes manual reruns to not succeed, but this is no change over previous behavior
+			bk.AllowDependencyFailure(true),
+			bk.DependsOn([]string{"e2e"}),
 			bk.SoftFail(true),
 			bk.Cmd("docker image rm -f sourcegraph/server:"+c.version+"_candidate"))
 	}
@@ -237,24 +241,24 @@ func addDockerImages(c Config) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		switch {
 		case c.taggedRelease:
+			pipeline.AddWait()
 			for _, dockerImage := range allDockerImages {
 				addDockerImage(c, dockerImage, false)(pipeline)
 			}
-			pipeline.AddWait()
 		case c.releaseBranch:
-			addDockerImage(c, "server", false)(pipeline)
 			pipeline.AddWait()
+			addDockerImage(c, "server", false)(pipeline)
 		case strings.HasPrefix(c.branch, "master-dry-run/"): // replicates `master` build but does not deploy
 			fallthrough
 		case c.branch == "master":
+			pipeline.AddWait()
 			for _, dockerImage := range allDockerImages {
 				addDockerImage(c, dockerImage, true)(pipeline)
 			}
-			pipeline.AddWait()
 
 		case strings.HasPrefix(c.branch, "docker-images-patch/"):
-			addDockerImage(c, c.branch[20:], false)(pipeline)
 			pipeline.AddWait()
+			addDockerImage(c, c.branch[20:], false)(pipeline)
 		}
 	}
 }

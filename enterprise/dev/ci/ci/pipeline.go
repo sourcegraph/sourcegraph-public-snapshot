@@ -51,7 +51,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		pipelineOperations = append(pipelineOperations, addDockerImage(c, app, false))
 		if app == "server" {
 			pipelineOperations = append(pipelineOperations,
-				wait,
 				addCleanUpServerDockerImageCandidate(c),
 			)
 		}
@@ -102,9 +101,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addCodeCov,
 			wait,
 			addE2E(c),
-			wait,
-			addDockerImages(c),
 			addCleanUpServerDockerImageCandidate(c),
+			addDockerImages(c),
 		}
 	}
 
