@@ -35,13 +35,10 @@ func addCheck(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":white_check_mark:", bk.Cmd("./dev/check/all.sh"))
 }
 
-// Adds the lint test steps.
+// Adds the lint test step.
 func addLint(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":lipstick: :lint-roller: :stylelint: :typescript: :graphql:",
-		bk.Cmd("dev/ci/yarn-run.sh prettier-check build-ts all:stylelint graphql-lint"))
-
-	pipeline.AddStep(":lipstick: :eslint:",
-		bk.Cmd("dev/ci/yarn-run.sh all:eslint all:tslint"))
+	pipeline.AddStep(":lipstick: :lint-roller: :eslint: :stylelint: :typescript: :graphql:",
+		bk.Cmd("dev/ci/yarn-run.sh prettier-check build-ts all:eslint all:tslint all:stylelint graphql-lint"))
 }
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
