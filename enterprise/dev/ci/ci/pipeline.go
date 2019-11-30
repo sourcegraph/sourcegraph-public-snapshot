@@ -63,8 +63,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addLint,
 			addBrowserExt,
 			addSharedTests,
-			wait,
 			addCodeCov,
+			wait,
 			addBrowserExtensionReleaseSteps,
 		}
 
@@ -80,7 +80,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addGoTests,
 			addGoBuild,
 			addDockerfileLint,
-			wait,
 			addCodeCov,
 		}
 
@@ -100,10 +99,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addGoTests,
 			addGoBuild,
 			addDockerfileLint,
+			addCodeCov,
 			wait,
 			addE2E(c),
-			wait,
-			addCodeCov,
 			wait,
 			addDockerImages(c),
 			addCleanUpServerDockerImageCandidate(c),

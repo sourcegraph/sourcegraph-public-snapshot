@@ -24,18 +24,21 @@ type BuildOptions struct {
 }
 
 type Step struct {
-	Label            string                 `json:"label"`
-	Command          []string               `json:"command,omitempty"`
-	Trigger          string                 `json:"trigger,omitempty"`
-	Async            bool                   `json:"async,omitempty"`
-	Build            *BuildOptions          `json:"build,omitempty"`
-	Env              map[string]string      `json:"env,omitempty"`
-	Plugins          map[string]interface{} `json:"plugins,omitempty"`
-	ArtifactPaths    string                 `json:"artifact_paths,omitempty"`
-	ConcurrencyGroup string                 `json:"concurrency_group,omitempty"`
-	Concurrency      int                    `json:"concurrency,omitempty"`
-	SoftFail         bool                   `json:"soft_fail,omitempty"`
-	Retry            *RetryOptions          `json:"retry,omitempty"`
+	Key                    string                 `json:"key"`
+	Label                  string                 `json:"label"`
+	Command                []string               `json:"command,omitempty"`
+	Trigger                string                 `json:"trigger,omitempty"`
+	Async                  bool                   `json:"async,omitempty"`
+	Build                  *BuildOptions          `json:"build,omitempty"`
+	Env                    map[string]string      `json:"env,omitempty"`
+	Plugins                map[string]interface{} `json:"plugins,omitempty"`
+	ArtifactPaths          string                 `json:"artifact_paths,omitempty"`
+	ConcurrencyGroup       string                 `json:"concurrency_group,omitempty"`
+	Concurrency            int                    `json:"concurrency,omitempty"`
+	SoftFail               bool                   `json:"soft_fail,omitempty"`
+	Retry                  *RetryOptions          `json:"retry,omitempty"`
+	DependsOn              []string               `json:"depends_on,omitempty"`
+	AllowDependencyFailure bool                   `json:"allow_dependency_failure,omitempty"`
 }
 
 type RetryOptions struct {
@@ -91,6 +94,12 @@ func (p *Pipeline) WriteTo(w io.Writer) (int64, error) {
 }
 
 type StepOpt func(step *Step)
+
+func Key(key string) StepOpt {
+	return func(step *Step) {
+		step.Key = key
+	}
+}
 
 func Cmd(command string) StepOpt {
 	return func(step *Step) {
@@ -153,6 +162,18 @@ func AutomaticRetry(limit int) StepOpt {
 func ArtifactPaths(paths string) StepOpt {
 	return func(step *Step) {
 		step.ArtifactPaths = paths
+	}
+}
+
+func DependsOn(dependencies []string) StepOpt {
+	return func(step *Step) {
+		step.DependsOn = dependencies
+	}
+}
+
+func AllowDependencyFailure(allow bool) StepOpt {
+	return func(step *Step) {
+		step.AllowDependencyFailure = allow
 	}
 }
 

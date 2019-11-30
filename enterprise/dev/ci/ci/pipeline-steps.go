@@ -57,6 +57,7 @@ func addWebApp(pipeline *bk.Pipeline) {
 
 	// Webapp tests
 	pipeline.AddStep(":jest::globe_with_meridians:",
+		bk.Key("webapp-test"),
 		bk.Cmd("dev/ci/yarn-test.sh web"),
 		bk.ArtifactPaths("web/coverage/coverage-final.json"))
 }
@@ -69,6 +70,7 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 
 	// Browser extension tests
 	pipeline.AddStep(":jest::chrome:",
+		bk.Key("bext-test"),
 		bk.Cmd("dev/ci/yarn-test.sh browser"),
 		bk.ArtifactPaths("browser/coverage/coverage-final.json"))
 }
@@ -76,6 +78,7 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 // Tests the LSIF server.
 func addLSIFServer(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest:",
+		bk.Key("lsif-test"),
 		bk.Cmd("dev/ci/yarn-test-separate.sh lsif"),
 		bk.ArtifactPaths("lsif/coverage/coverage-final.json"))
 }
@@ -84,6 +87,7 @@ func addLSIFServer(pipeline *bk.Pipeline) {
 func addSharedTests(pipeline *bk.Pipeline) {
 	// Shared tests
 	pipeline.AddStep(":jest:",
+		bk.Key("shared-test"),
 		bk.Cmd("dev/ci/yarn-test.sh shared"),
 		bk.ArtifactPaths("shared/coverage/coverage-final.json"))
 
@@ -100,6 +104,7 @@ func addPostgresBackcompat(pipeline *bk.Pipeline) {
 // Adds the Go test step.
 func addGoTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go:",
+		bk.Key("go-test"),
 		bk.Cmd("./cmd/symbols/build.sh buildLibsqlite3Pcre"), // for symbols tests
 		bk.Cmd("./dev/comby-install-or-upgrade.sh"),          // for searcher and replacer tests
 		bk.Cmd("go test -timeout 4m -coverprofile=coverage.txt -covermode=atomic -race ./..."),
@@ -149,6 +154,8 @@ func addE2E(c Config) func(*bk.Pipeline) {
 // Code coverage.
 func addCodeCov(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":codecov:",
+		bk.AllowDependencyFailure(true),
+		bk.DependsOn([]string{"webapp-test", "bext-test", "shared-test", "lsif-test", "go-test"}),
 		bk.Cmd("buildkite-agent artifact download 'coverage.txt' . || true"), // ignore error when no report exists
 		bk.Cmd("buildkite-agent artifact download '*/coverage-final.json' . || true"),
 		bk.Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode"))
