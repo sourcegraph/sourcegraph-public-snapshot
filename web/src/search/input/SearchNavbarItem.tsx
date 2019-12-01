@@ -44,7 +44,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = ({
             <QueryInput
                 value={navbarSearchState}
                 onChange={onChange}
-                autoFocus={autoFocus ? 'cursor-at-end' : undefined}
+                autoFocus={autoFocus}
                 hasGlobalQueryBehavior={true}
                 location={location}
                 history={history}

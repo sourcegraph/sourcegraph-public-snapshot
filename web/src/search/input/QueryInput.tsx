@@ -36,6 +36,7 @@ import { isDefined } from '../../../../shared/src/util/types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { once } from 'lodash'
 import { dedupeWhitespace } from '../../../../shared/src/util/strings'
+import { ContentEditableQuery, ContentEditableQueryHandler } from './ContentEditableQuery'
 
 /**
  * The query input field is clobbered and updated to contain this subject's values, as
@@ -59,8 +60,8 @@ interface Props extends PatternTypeProps {
      */
     prependQueryForSuggestions?: string
 
-    /** Whether the input should be autofocused (and the behavior thereof) */
-    autoFocus?: true | 'cursor-at-end'
+    /** Whether the input should be auto-focused */
+    autoFocus?: boolean
 
     /** The input placeholder, if different from the default is desired. */
     placeholder?: string
@@ -112,7 +113,7 @@ export class QueryInput extends React.Component<Props, State> {
     private suggestionsHidden = new Subject<void>()
 
     /** Only used for selection and focus management */
-    private inputElement = React.createRef<HTMLInputElement>()
+    private inputElement = React.createRef<ContentEditableQuery>()
 
     /** Used for scrolling suggestions into view while scrolling with keyboard */
     private containerElement = React.createRef<HTMLDivElement>()
@@ -271,11 +272,6 @@ export class QueryInput extends React.Component<Props, State> {
                     .subscribe(() => {
                         const selection = String(window.getSelection() || '')
                         this.inputValues.next({ query: selection, cursorPosition: selection.length })
-                        if (this.inputElement.current) {
-                            this.inputElement.current.focus()
-                            // Select whole input text
-                            this.inputElement.current.setSelectionRange(0, this.inputElement.current.value.length)
-                        }
                     })
             )
 
@@ -307,14 +303,6 @@ export class QueryInput extends React.Component<Props, State> {
         }
     }
 
-    public componentDidMount(): void {
-        switch (this.props.autoFocus) {
-            case 'cursor-at-end':
-                this.focusInputAndPositionCursorAtEnd()
-                break
-        }
-    }
-
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
     }
@@ -341,33 +329,41 @@ export class QueryInput extends React.Component<Props, State> {
                 onSelect={this.onSuggestionSelect}
                 itemToString={this.downshiftItemToString}
             >
-                {({ getInputProps, getItemProps, getMenuProps, highlightedIndex }) => {
-                    const { onChange: downshiftChange, onKeyDown } = getInputProps()
+                {({ getInputProps, getItemProps, getMenuProps, highlightedIndex, reset }) => {
+                    const { onKeyDown: downshiftOnKeydown } = getInputProps()
+                    const onKeyDown: React.KeyboardEventHandler<HTMLInputElement> = event => {
+                        this.onInputKeyDown(event)
+                        downshiftOnKeydown(event)
+                    }
+                    // Only submit if no suggestion is highlighted.
+                    // Prevents 'Enter' key to submit instead of selecting a suggestion
+                    const shouldSubmit = (): boolean => highlightedIndex === null
+                    const onBlur: React.FocusEventHandler = () => {
+                        // Reset to remove any current highlightedIndex so it
+                        // does not prevent submit next time there's a text input
+                        reset()
+                        this.onInputBlur()
+                    }
                     return (
                         <div className="query-input2">
                             <div ref={this.containerElement}>
-                                <input
-                                    onFocus={this.onInputFocus}
-                                    onBlur={this.onInputBlur}
-                                    className="form-control query-input2__input rounded-left e2e-query-input"
-                                    value={this.props.value.query}
-                                    autoFocus={this.props.autoFocus === true}
-                                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                                        downshiftChange(event)
-                                        this.onInputChange(event)
-                                    }}
-                                    onKeyDown={event => {
-                                        this.onInputKeyDown(event)
-                                        onKeyDown(event)
-                                    }}
-                                    spellCheck={false}
-                                    autoCapitalize="off"
-                                    placeholder={
-                                        this.props.placeholder === undefined ? 'Search code...' : this.props.placeholder
-                                    }
+                                <ContentEditableQuery
+                                    autoFocus={this.props.autoFocus}
+                                    shouldSubmit={shouldSubmit}
+                                    focus={this.state.showSuggestions}
                                     ref={this.inputElement}
-                                    name="query"
-                                    autoComplete="off"
+                                    className="form-control rounded-left query-input2__input"
+                                    value={this.props.value}
+                                    onChange={this.onInputChange}
+                                    placeholder={this.props.placeholder ?? 'Search code...'}
+                                    inputProps={{
+                                        onBlur,
+                                        onKeyDown,
+                                        autoCapitalize: 'off',
+                                        spellCheck: false,
+                                        onFocus: this.onInputFocus,
+                                        className: 'e2e-query-input',
+                                    }}
                                 />
                                 {showSuggestions && (
                                     <ul className="query-input2__suggestions e2e-query-suggestions" {...getMenuProps()}>
@@ -426,6 +422,9 @@ export class QueryInput extends React.Component<Props, State> {
                 },
             })
         }
+        if (event.key === 'Escape') {
+            this.setState({ showSuggestions: false })
+        }
     }
 
     private onInputBlur = (): void => {
@@ -483,16 +482,15 @@ export class QueryInput extends React.Component<Props, State> {
     }
 
     private focusInputAndPositionCursor(cursorPosition: number): void {
-        if (this.inputElement.current) {
-            this.inputElement.current.focus()
-            this.inputElement.current.setSelectionRange(cursorPosition, cursorPosition)
-        }
+        this.props.onChange({
+            ...this.props.value,
+            cursorPosition,
+        })
+        this.setState({ showSuggestions: true })
     }
 
     private focusInputAndPositionCursorAtEnd(): void {
-        if (this.inputElement.current) {
-            this.focusInputAndPositionCursor(this.inputElement.current.value.length)
-        }
+        this.focusInputAndPositionCursor(this.props.value.query.length)
     }
 
     /** Only log when user has typed the first character into the input. */
@@ -500,12 +498,11 @@ export class QueryInput extends React.Component<Props, State> {
         eventLogger.log('SearchInitiated')
     })
 
-    private onInputChange: React.ChangeEventHandler<HTMLInputElement> = event => {
+    private onInputChange: ContentEditableQueryHandler = (_, queryState) => {
         this.logFirstInput()
         this.inputValues.next({
+            ...queryState,
             fromUserInput: true,
-            query: event.currentTarget.value,
-            cursorPosition: event.currentTarget.selectionStart || 0,
         })
     }
 }

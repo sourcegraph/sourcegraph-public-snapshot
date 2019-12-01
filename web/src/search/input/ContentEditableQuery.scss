@@ -1,0 +1,30 @@
+.content-editable-query {
+    overflow: hidden;
+
+    &:focus-within {
+        border-color: #1c7ed6;
+        box-shadow: 0 0 0 2px rgba(28, 126, 214, 0.25);
+    }
+
+    &__input {
+        border: none;
+        outline: none;
+        box-shadow: none;
+        white-space: pre;
+        overflow: hidden;
+        height: 100%;
+        &:focus {
+            outline: none;
+            box-shadow: none;
+        }
+    }
+
+    &__input:empty:not(:focus)::before {
+        content: attr(data-placeholder);
+        color: $gray-07;
+    }
+
+    &__submit-input {
+        display: none;
+    }
+}

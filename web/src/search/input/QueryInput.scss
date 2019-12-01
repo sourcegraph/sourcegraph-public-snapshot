@@ -1,8 +1,10 @@
 @import './Suggestion';
+@import './ContentEditableQuery';
 
 .query-input2 {
     flex: 1 1 auto;
     position: relative;
+    min-width: 0;
 
     // The width of the toggle icons in the query input.
     $toggle-icon-width: 24px;

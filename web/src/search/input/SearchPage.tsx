@@ -80,7 +80,7 @@ export class SearchPage extends React.Component<Props, State> {
                             {...this.props}
                             value={this.state.userQueryState}
                             onChange={this.onUserQueryChange}
-                            autoFocus="cursor-at-end"
+                            autoFocus={true}
                             hasGlobalQueryBehavior={true}
                             patternType={this.props.patternType}
                             togglePatternType={this.props.togglePatternType}
