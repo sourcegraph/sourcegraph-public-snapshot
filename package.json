@@ -106,7 +106,7 @@
     "@types/mini-css-extract-plugin": "0.8.0",
     "@types/mkdirp-promise": "5.0.0",
     "@types/mockdate": "2.0.0",
-    "@types/mz": "0.0.32",
+    "@types/mz": "2.7.0",
     "@types/node": "10.12.21",
     "@types/optimize-css-assets-webpack-plugin": "5.0.1",
     "@types/puppeteer": "1.20.2",
