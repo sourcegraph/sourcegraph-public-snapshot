@@ -3223,10 +3223,10 @@ levn@~0.3.0:
     prelude-ls "~1.1.2"
     type-check "~0.3.2"
 
-lightstep-tracer@^0.22.3:
-  version "0.22.3"
-  resolved "https://registry.npmjs.org/lightstep-tracer/-/lightstep-tracer-0.22.3.tgz#d7cfe345d35f81a7405feb11d6eafd22d3dfd3b1"
-  integrity sha512-IBImMI3rsbJceHr+KRNxIBGGxOCcZYTBzYg/WIFzxxg39Ib12ray8K8qVsp+h+KXNDIP092jzBZwNz/moJ51FQ==
+lightstep-tracer@^0.24.1:
+  version "0.24.1"
+  resolved "https://registry.npmjs.org/lightstep-tracer/-/lightstep-tracer-0.24.1.tgz#7d91a81410acd402c96a55558c5a9cb00a37f42a"
+  integrity sha512-RjbfO6DxesjZMq4xNeChhWCmQyK3VC+6P8LlPIpFReAcdIrMsdFnWspYe5z3XIuML5Ab5Az4frRC6gTHWZUdlg==
   dependencies:
     async "1.5.0"
     eventemitter3 "1.1.1"
