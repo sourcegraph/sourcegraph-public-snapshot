@@ -87,7 +87,7 @@
     "@types/chalk": "2.2.0",
     "@types/chrome": "0.0.91",
     "@types/classnames": "2.2.9",
-    "@types/command-exists": "^1.2.0",
+    "@types/command-exists": "1.2.0",
     "@types/d3-axis": "1.0.12",
     "@types/d3-scale": "2.1.1",
     "@types/d3-selection": "1.4.1",
