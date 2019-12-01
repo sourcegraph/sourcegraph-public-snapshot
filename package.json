@@ -154,7 +154,7 @@
     "command-exists": "^1.2.8",
     "cross-env": "^6.0.3",
     "css-loader": "^3.2.0",
-    "eslint": "^6.6.0",
+    "eslint": "^6.7.2",
     "execa": "^3.2.0",
     "fancy-log": "^1.3.3",
     "get-port": "^5.0.0",
