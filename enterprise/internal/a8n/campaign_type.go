@@ -79,7 +79,7 @@ func NewCampaignType(campaignTypeName, args string, cf *httpcli.Factory) (Campai
 		ct = c
 
 	case "credentials":
-		c := &credentials{}
+		c := &credentials{newSearch: graphqlbackend.NewSearchImplementer}
 
 		if err := json.Unmarshal(normalizedArgs, &c.args); err != nil {
 			return nil, err
@@ -252,6 +252,8 @@ var npmTokenRegexpMultiline = regexp.MustCompile(`(?m)((?:^|:)_(?:auth|authToken
 
 type credentials struct {
 	args credentialsArgs
+
+	newSearch func(*graphqlbackend.SearchArgs) (graphqlbackend.SearchImplementer, error)
 }
 
 func (c *credentials) searchQuery() string {
@@ -268,7 +270,7 @@ func (c *credentials) searchQueryForRepo(n api.RepoName) string {
 
 func (c *credentials) generateDiff(ctx context.Context, repo api.RepoName, commit api.CommitID) (string, error) {
 	t := "regexp"
-	search, err := graphqlbackend.NewSearchImplementer(&graphqlbackend.SearchArgs{
+	search, err := c.newSearch(&graphqlbackend.SearchArgs{
 		Version:     "V2",
 		PatternType: &t,
 		Query:       c.searchQueryForRepo(repo),
