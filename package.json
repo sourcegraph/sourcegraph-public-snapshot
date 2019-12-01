@@ -195,7 +195,7 @@
     "sinon": "^7.5.0",
     "socket.io": "^2.2.0",
     "socket.io-client": "^2.2.0",
-    "style-loader": "^1.0.0",
+    "style-loader": "^1.0.1",
     "stylelint": "^12.0.0",
     "terser-webpack-plugin": "^2.2.1",
     "ts-node": "^8.4.1",
