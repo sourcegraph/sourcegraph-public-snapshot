@@ -119,7 +119,7 @@
     "@types/react-stripe-elements": "1.3.5",
     "@types/react-test-renderer": "16.9.1",
     "@types/reactstrap": "8.0.4",
-    "@types/recharts": "1.8.2",
+    "@types/recharts": "1.8.3",
     "@types/sanitize-html": "1.18.3",
     "@types/semver": "6.2.0",
     "@types/shelljs": "0.8.6",
