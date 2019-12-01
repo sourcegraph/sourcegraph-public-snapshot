@@ -54,7 +54,7 @@
     "@types/json5": "0.0.30",
     "@types/lodash": "4.14.149",
     "@types/logform": "1.2.0",
-    "@types/mz": "0.0.32",
+    "@types/mz": "2.7.0",
     "@types/on-finished": "2.3.1",
     "@types/p-timeout": "1.2.2",
     "@types/relateurl": "0.2.28",

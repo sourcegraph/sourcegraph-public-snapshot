@@ -2895,6 +2895,13 @@
   dependencies:
     "@types/node" "*"
 
+"@types/mz@2.7.0":
+  version "2.7.0"
+  resolved "https://registry.npmjs.org/@types/mz/-/mz-2.7.0.tgz#3ef27f457c4c3e8b197ca2670ee41d6f4effddf2"
+  integrity sha512-Q5TZYMKnH0hdV5fNstmMWL2LLw5eRRtTd73KNtsZxoQ2gtCQyET5X79uERUEwGneuxPglg441I7OSY00+9CkSw==
+  dependencies:
+    "@types/node" "*"
+
 "@types/node@*", "@types/node@>= 8", "@types/node@>=8.9.0", "@types/node@^11.10.4":
   version "11.13.21"
   resolved "https://registry.npmjs.org/@types/node/-/node-11.13.21.tgz#afcf913437eeb1f9e1994a62a03b1762ee4600d3"
