@@ -101,7 +101,7 @@
     "@types/is-absolute-url": "3.0.0",
     "@types/jest": "24.0.22",
     "@types/jsdom": "12.2.4",
-    "@types/lodash": "4.14.145",
+    "@types/lodash": "4.14.149",
     "@types/marked": "0.7.2",
     "@types/mini-css-extract-plugin": "0.8.0",
     "@types/mkdirp-promise": "5.0.0",
