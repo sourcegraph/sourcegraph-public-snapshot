@@ -148,7 +148,7 @@
     "bundlesize": "^0.17.2",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
-    "chalk": "^2.4.2",
+    "chalk": "^3.0.0",
     "chokidar-cli": "^2.1.0",
     "chrome-webstore-upload-cli": "^1.2.0",
     "command-exists": "^1.2.8",
