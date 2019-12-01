@@ -6,19 +6,19 @@ This quickstart guide will walk you through installing and generating LSIF data 
 
 1. Install the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) - used for uploading LSIF data to your Sourcegraph instance.
 1. Install the LSIF indexer for your repository's language:
-     - Go to https://lsif.dev
-     - Find the LSIF indexer for your language
-     - Install the indexer as a command-line tool using the installation instructions in the indexer's README
+     1. Go to https://lsif.dev
+     1. Find the LSIF indexer for your language
+     1. Install the indexer as a command-line tool using the installation instructions in the indexer's README
 
 ### What is an LSIF indexer?
 
 An LSIF indexer is a command line tool that analyzes your project's source code and generates a file in LSIF format containing all the definitions, references, and hover documentation in your project. That LSIF file is later uploaded to Sourcegraph to provide code intelligence.
 
-## 2. Generate the data
+## 2. Generate the LSIF data
 
 You now need to generate the LSIF data for your repository. Each language's LSIF is unique to that language, so run the command in the _generate LSIF data_ step found in the README of the installed indexer.
 
-## 3. Upload the data
+## 3. Upload the LSIF data
 
 For all languages, the upload step is the same. Make sure the current working directory is somewhere inside your repository, then use the Sourcegraph CLI to run:
 
@@ -53,7 +53,7 @@ Possible errors include:
 
 ### Authentication
 
-If you're uploading to Sourcegraph.com, you must authenticate your upload by passing a GitHub access token with [`public_repo` scope](https://developer.github.com/apps/building-oauth-apps/understanding-scopes-for-oauth-apps/#available-scopes) as `-github-token=abc...`. You can create one at https://github.com/settings/tokens
+If you're uploading to Sourcegraph.com, you must authenticate your upload by passing a GitHub access token with [`public_repo` scope](https://developer.github.com/apps/building-oauth-apps/understanding-scopes-for-oauth-apps/#available-scopes) as `-github-token=abc...`. You can create one at https://github.com/settings/tokens.
 
 ## 4. Test out code intelligence
 
@@ -66,10 +66,10 @@ To verify that code intelligence is coming from LSIF:
 1. Open your browser's Developer Tools
 1. Click on the *Network* tab
 1. Reload the page to see all network requests logged
-1. Filter network requests by searching for `lsif`.
+1. Filter network requests by searching for `lsif`
 
 > NOTE: We are investigating how to make it easier to verify code intelligence is coming from LSIF
 
 ## 5. Productionize the process
 
-Now that you're happy with the code intelligence on your repository, you need to make sure that is stays up to date with your repository. This can be done by periodically generating LSIF data, and pushing it to Sourcegraph. You can either [add a step to your CI](lsif_in_ci.md), or run it as a [GitHub Action](lsif_on_github.md)
+Now that you're happy with the code intelligence on your repository, you need to make sure that is stays up to date with your repository. This can be done by periodically generating LSIF data, and pushing it to Sourcegraph. You can either [add a step to your CI](lsif_in_ci.md), or run it as a [GitHub Action](lsif_on_github.md).
