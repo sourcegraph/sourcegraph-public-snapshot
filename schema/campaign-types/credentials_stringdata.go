@@ -38,6 +38,7 @@ const CredentialsCampaignTypeSchemaJSON = `{
     },
     "scopeQuery": {
       "type": "string",
+      "minLength": 1,
       "description": "Define a scope to narrow down repositories affected by this change. Only GitHub and Bitbucket Server are supported."
     }
   },

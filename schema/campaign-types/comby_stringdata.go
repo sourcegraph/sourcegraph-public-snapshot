@@ -11,14 +11,17 @@ const CombyCampaignTypeSchemaJSON = `{
   "properties": {
     "scopeQuery": {
       "type": "string",
+      "minLength": 1,
       "description": "Define a scope to narrow down repositories affected by this change. Only GitHub and Bitbucket Server are supported."
     },
     "matchTemplate": {
       "type": "string",
+      "minLength": 1,
       "description": "See https://comby.dev/#match-syntax for syntax"
     },
     "rewriteTemplate": {
       "type": "string",
+      "minLength": 1,
       "description": "See https://comby.dev/#match-syntax for syntax"
     }
   },
