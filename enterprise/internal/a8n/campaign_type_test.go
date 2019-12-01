@@ -248,9 +248,7 @@ func TestCampaignType_Credentials(t *testing.T) {
 		wantErr  string
 	}{
 		{
-			name:     "success no NPM tokens",
-			repoName: "github.com/sourcegraph/sourcegraph",
-			commitID: "deadbeef",
+			name: "success no NPM tokens",
 			args: credentialsArgs{
 				ScopeQuery: "repo:github",
 				Matchers:   []credentialsMatcher{{MatcherType: "npm"}},
@@ -259,9 +257,7 @@ func TestCampaignType_Credentials(t *testing.T) {
 			wantDiff:              ``,
 		},
 		{
-			name:     "success single NPM token",
-			repoName: "github.com/sourcegraph/sourcegraph",
-			commitID: "deadbeef",
+			name: "success single NPM token",
 			args: credentialsArgs{
 				ScopeQuery: "repo:github",
 				Matchers:   []credentialsMatcher{{MatcherType: "npm"}},
@@ -279,9 +275,7 @@ func TestCampaignType_Credentials(t *testing.T) {
 `,
 		},
 		{
-			name:     "success multiple NPM tokens",
-			repoName: "github.com/sourcegraph/sourcegraph",
-			commitID: "deadbeef",
+			name: "success multiple NPM tokens",
 			args: credentialsArgs{
 				ScopeQuery: "repo:github",
 				Matchers:   []credentialsMatcher{{MatcherType: "npm"}},
@@ -306,7 +300,23 @@ func TestCampaignType_Credentials(t *testing.T) {
 	for _, tc := range tests {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			git.Mocks.ReadFile = func(_ api.CommitID, name string) ([]byte, error) {
+			if tc.wantErr == "" {
+				tc.wantErr = "<nil>"
+			}
+
+			if tc.repoName == "" {
+				tc.repoName = "github.com/sourcegraph/sourcegraph"
+			}
+
+			if tc.commitID == "" {
+				tc.commitID = "deadbeef"
+			}
+
+			git.Mocks.ReadFile = func(commit api.CommitID, name string) ([]byte, error) {
+				if string(commit) != tc.commitID {
+					return nil, fmt.Errorf("wrong commit ID. have=%q, want=%q", commit, tc.commitID)
+				}
+
 				content, ok := tc.searchResultsContents[name]
 				if !ok {
 					return nil, fmt.Errorf("no fake file content for %s set up", name)
@@ -333,10 +343,6 @@ func TestCampaignType_Credentials(t *testing.T) {
 			}
 
 			ct := &credentials{args: tc.args, newSearch: testSearch}
-
-			if tc.wantErr == "" {
-				tc.wantErr = "<nil>"
-			}
 
 			haveDiff, err := ct.generateDiff(ctx, api.RepoName(tc.repoName), api.CommitID(tc.commitID))
 			if have, want := fmt.Sprint(err), tc.wantErr; have != want {
