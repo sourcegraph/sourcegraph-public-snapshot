@@ -468,10 +468,10 @@
     "@types/istanbul-lib-coverage" "*"
     "@types/istanbul-lib-report" "*"
 
-"@types/jaeger-client@3.15.1":
-  version "3.15.1"
-  resolved "https://registry.npmjs.org/@types/jaeger-client/-/jaeger-client-3.15.1.tgz#1105852053ca5aad35315d99517366273715b5f8"
-  integrity sha512-7NPTwEbw5sBU68O3B9qLroAXQ3gkxjbaWCXU5Sa82/1opUg1BDgpVSLOo70npUfay4kIHRKuVhcx/Tp37g0Cxw==
+"@types/jaeger-client@3.15.3":
+  version "3.15.3"
+  resolved "https://registry.npmjs.org/@types/jaeger-client/-/jaeger-client-3.15.3.tgz#d9bee71dc7441c46b1e1e06826f657c6859de03d"
+  integrity sha512-Hby2o9/oj3KzeVwoSzP/A7fA2jGfpnxEsZISZvsk75ZckqIJJovx7rAwSoj22yGAyu3vGo43Ad0K/YImEO1dXw==
   dependencies:
     opentracing "~0.14.3"
     prom-client "~11.3.0"
