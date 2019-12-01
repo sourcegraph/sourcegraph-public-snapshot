@@ -29,7 +29,7 @@ $ src \
   -file=<LSIF file (e.g. ./cmd/dump.lsif)>
 ```
 
-If uploading to Sourcegraph.com, you will need to additionally supply the `-github-token=<token>` flag. This token must have the `repo` or `public_repo` scope. It is used to verify that you have collaborator access to the repository for which you are uploading data.
+> NOTE: If you're using Sourcegraph.com or have enabled [`lsifEnforceAuth`](https://docs.sourcegraph.com/admin/config/site_config#lsifEnforceAuth), you need to [supply a GitHub token](#proving-ownership-of-a-github-repository) (to confirm you have collaborator access to the repository) by using the `src lsif upload -github-token` flag.
 
 If successful, you'll see the following message:
 
@@ -47,13 +47,13 @@ Possible errors include:
 
 - Unknown repository (404): check your `-endpoint` and make sure you can view the repository on your Sourcegraph instance
 - Invalid commit (404): try visiting the repository at that commit on your Sourcegraph instance to trigger an update
-- Invalid auth only when [`lsifEnforceAuth`](https://docs.sourcegraph.com/admin/config/site_config#lsifEnforceAuth) is `true` (401 for an invalid token or 404 if the repository cannot be found on GitHub.com): make sure your token is valid and that the repository is correct
+- Invalid auth when using Sourcegraph.com or when [`lsifEnforceAuth`](https://docs.sourcegraph.com/admin/config/site_config#lsifEnforceAuth) is `true` (401 for an invalid token or 404 if the repository cannot be found on GitHub.com): make sure your GitHub token is valid and that the repository is correct
 - Unexpected errors (500s): [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new)
 - LSIF processing failures for a repository are listed in **Repository settings > Code intelligence > Activity for this repository**. Failures can occur if the LSIF data is invalid (e.g., malformed indexer output), or problems were encountered during processing (e.g., system-level bug, flaky connections, etc). Try again or [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new) if the problem persists.
 
-### Authentication
+### Proving ownership of a GitHub repository
 
-If you're uploading to Sourcegraph.com, you must authenticate your upload by passing a GitHub access token with [`public_repo` scope](https://developer.github.com/apps/building-oauth-apps/understanding-scopes-for-oauth-apps/#available-scopes) as `-github-token=abc...`. You can create one at https://github.com/settings/tokens.
+If you're uploading to Sourcegraph.com or another Sourcegraph instance with [`lsifEnforceAuth`](https://docs.sourcegraph.com/admin/config/site_config#lsifEnforceAuth) enabled, you must prove that you own the GitHub repository in order to upload LSIF data for it. To do so, authenticate your upload by passing a GitHub access token with [`public_repo` scope](https://developer.github.com/apps/building-oauth-apps/understanding-scopes-for-oauth-apps/#available-scopes) as `-github-token=abc...`. You can create' one at https://github.com/settings/tokens.
 
 ## 4. Test out code intelligence
 
