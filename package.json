@@ -248,7 +248,7 @@
     "react-dom-confetti": "^0.1.1",
     "react-router": "^5.1.2",
     "react-router-dom": "^5.1.2",
-    "react-stripe-elements": "^4.0.2",
+    "react-stripe-elements": "^6.0.1",
     "react-visibility-sensor": "^5.1.1",
     "reactstrap": "^8.0.1",
     "recharts": "^1.8.5",
