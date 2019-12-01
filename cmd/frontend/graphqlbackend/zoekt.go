@@ -248,8 +248,8 @@ func zoektSearchHEAD(ctx context.Context, args *search.Args, repos []*search.Rep
 			JLimitHit:    fileLimitHit,
 			uri:          fileMatchURI(repoRev.Repo.Name, "", file.FileName),
 			symbols:      symbols,
-			repo:         repoRev.Repo,
-			commitID:     repoRev.IndexedHEADCommit(),
+			Repo:         repoRev.Repo,
+			CommitID:     repoRev.IndexedHEADCommit(),
 		}
 	}
 

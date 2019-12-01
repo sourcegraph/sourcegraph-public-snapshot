@@ -205,7 +205,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	return &SearchResultsResolver{
 		start:               start,
 		searchResultsCommon: common,
-		results:             results,
+		SearchResults:       results,
 		alert:               alert,
 		cursor:              cursor,
 	}, nil

@@ -67,12 +67,12 @@ type FileMatchResolver struct {
 	JLimitHit    bool         `json:"LimitHit"`
 	symbols      []*searchSymbolResult
 	uri          string
-	repo         *types.Repo
-	commitID     api.CommitID
-	// inputRev is the Git revspec that the user originally requested to search. It is used to
+	Repo         *types.Repo
+	CommitID     api.CommitID
+	// InputRev is the Git revspec that the user originally requested to search. It is used to
 	// preserve the original revision specifier from the user instead of navigating them to the
 	// absolute commit ID when they select a result.
-	inputRev *string
+	InputRev *string
 }
 
 func (fm *FileMatchResolver) Equal(other *FileMatchResolver) bool {
@@ -89,16 +89,16 @@ func (fm *FileMatchResolver) File() *GitTreeEntryResolver {
 	// values for all other fields.
 	return &GitTreeEntryResolver{
 		commit: &GitCommitResolver{
-			repo:     &RepositoryResolver{repo: fm.repo},
-			oid:      GitObjectID(fm.commitID),
-			inputRev: fm.inputRev,
+			repo:     &RepositoryResolver{repo: fm.Repo},
+			oid:      GitObjectID(fm.CommitID),
+			inputRev: fm.InputRev,
 		},
 		stat: CreateFileInfo(fm.JPath, false),
 	}
 }
 
 func (fm *FileMatchResolver) Repository() *RepositoryResolver {
-	return &RepositoryResolver{repo: fm.repo}
+	return &RepositoryResolver{repo: fm.Repo}
 }
 
 func (fm *FileMatchResolver) Resource() string {
@@ -132,7 +132,7 @@ func (r *FileMatchResolver) ToCodemodResult() (*codemodResultResolver, bool) {
 }
 
 func (fm *FileMatchResolver) searchResultURIs() (string, string) {
-	return string(fm.repo.Name), fm.JPath
+	return string(fm.Repo.Name), fm.JPath
 }
 
 func (fm *FileMatchResolver) resultCount() int32 {
@@ -143,7 +143,7 @@ func (fm *FileMatchResolver) resultCount() int32 {
 	return 1 // 1 to count "empty" results like type:path results
 }
 
-// LineMatch is the struct used by vscode to receive search results for a line
+// lineMatch is the struct used by vscode to receive search results for a line
 type lineMatch struct {
 	JPreview          string     `json:"Preview"`
 	JOffsetAndLengths [][2]int32 `json:"OffsetAndLengths"`
@@ -376,9 +376,9 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *ty
 	workspace := fileMatchURI(repo.Name, rev, "")
 	for _, fm := range matches {
 		fm.uri = workspace + fm.JPath
-		fm.repo = repo
-		fm.commitID = commit
-		fm.inputRev = &rev
+		fm.Repo = repo
+		fm.CommitID = commit
+		fm.InputRev = &rev
 	}
 
 	return matches, limitHit, err
@@ -688,7 +688,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*FileMatc
 			var repos []*search.RepositoryRevisions
 
 			for _, m := range matches {
-				name := string(m.repo.Name)
+				name := string(m.Repo.Name)
 				partition[name] = append(partition[name], m.JPath)
 			}
 

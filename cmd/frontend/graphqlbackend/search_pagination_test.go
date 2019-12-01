@@ -43,14 +43,14 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 		return &types.Repo{Name: api.RepoName(name)}
 	}
 	result := func(repo *types.Repo, path string) *FileMatchResolver {
-		return &FileMatchResolver{JPath: path, repo: repo}
+		return &FileMatchResolver{JPath: path, Repo: repo}
 	}
 	format := func(r slicedSearchResults) string {
 		var b bytes.Buffer
 		fmt.Fprintf(&b, "results:\n")
 		for i, result := range r.results {
 			fm, _ := result.ToFileMatch()
-			fmt.Fprintf(&b, "	[%d] %s %s\n", i, fm.repo.Name, fm.JPath)
+			fmt.Fprintf(&b, "	[%d] %s %s\n", i, fm.Repo.Name, fm.JPath)
 		}
 		fmt.Fprintf(&b, "common.repos:\n")
 		for i, r := range r.common.repos {
@@ -273,7 +273,7 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 		return &types.Repo{Name: api.RepoName(name)}
 	}
 	result := func(repo *types.Repo, path, rev string) *FileMatchResolver {
-		return &FileMatchResolver{JPath: path, repo: repo, inputRev: &rev}
+		return &FileMatchResolver{JPath: path, Repo: repo, InputRev: &rev}
 	}
 	repoRevs := func(name string, rev ...string) *search.RepositoryRevisions {
 		return &search.RepositoryRevisions{
@@ -298,8 +298,8 @@ func TestSearchPagination_repoPaginationPlan(t *testing.T) {
 				for i := 0; i < 3; i++ {
 					results = append(results, &FileMatchResolver{
 						JPath:    fmt.Sprintf("some/file%d.go", i),
-						repo:     repoRev.Repo,
-						inputRev: &rev,
+						Repo:     repoRev.Repo,
+						InputRev: &rev,
 					})
 				}
 			}
@@ -491,7 +491,7 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 		return &types.Repo{Name: api.RepoName(name)}
 	}
 	result := func(repo *types.Repo, path string) *FileMatchResolver {
-		return &FileMatchResolver{JPath: path, repo: repo}
+		return &FileMatchResolver{JPath: path, Repo: repo}
 	}
 	repoRevs := func(name string, rev ...string) *search.RepositoryRevisions {
 		return &search.RepositoryRevisions{

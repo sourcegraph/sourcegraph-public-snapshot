@@ -103,7 +103,7 @@ func reposToAdd(ctx context.Context, args *search.Args, repos []*search.Reposito
 				return nil, err
 			}
 			for _, m := range matches {
-				matchingIDs[m.repo.ID] = true
+				matchingIDs[m.Repo.ID] = true
 			}
 		}
 	} else {
@@ -130,7 +130,7 @@ func reposToAdd(ctx context.Context, args *search.Args, repos []*search.Reposito
 				return nil, err
 			}
 			for _, m := range matches {
-				matchingIDs[m.repo.ID] = false
+				matchingIDs[m.Repo.ID] = false
 			}
 		}
 	}

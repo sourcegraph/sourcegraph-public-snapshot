@@ -305,10 +305,10 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 				JPath:   symbolRes.symbol.Path,
 				symbols: []*searchSymbolResult{symbolRes},
 				uri:     uri,
-				repo:    symbolRes.commit.repo.repo,
+				Repo:    symbolRes.commit.repo.repo,
 				// Don't get commit from GitCommitResolver.OID() because we don't want to
 				// slow search results down when they are coming from zoekt.
-				commitID: api.CommitID(symbolRes.commit.oid),
+				CommitID: api.CommitID(symbolRes.commit.oid),
 			}
 			fileMatchesByURI[uri] = fileMatch
 			fileMatches = append(fileMatches, fileMatch)
