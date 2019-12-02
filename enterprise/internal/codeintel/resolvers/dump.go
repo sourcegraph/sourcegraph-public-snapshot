@@ -137,7 +137,7 @@ func (r *lsifDumpConnectionResolver) compute(ctx context.Context) ([]*lsif.LSIFD
 			query.Set("visibleAtTip", "true")
 		}
 		if r.opt.Limit != nil {
-			query.Set("limit", strconv.FormatInt(int64(*r.opt.Limit), 10))
+			query.Set("limit", strconv.Itoa(*r.opt.Limit))
 		}
 
 		resp, err := client.DefaultClient.BuildAndTraceRequest(ctx, "GET", path, query, nil)

@@ -124,7 +124,7 @@ func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset
 	}
 
 	c.Changeset.Metadata = pr
-	c.Changeset.ExternalID = strconv.FormatInt(int64(pr.ID), 10)
+	c.Changeset.ExternalID = strconv.Itoa(pr.ID)
 	c.Changeset.ExternalServiceType = bitbucketserver.ServiceType
 
 	return nil

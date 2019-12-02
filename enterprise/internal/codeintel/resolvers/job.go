@@ -153,7 +153,7 @@ func (r *lsifJobConnectionResolver) compute(ctx context.Context) ([]*lsif.LSIFJo
 			query.Set("query", *r.opt.Query)
 		}
 		if r.opt.Limit != nil {
-			query.Set("limit", strconv.FormatInt(int64(*r.opt.Limit), 10))
+			query.Set("limit", strconv.Itoa(*r.opt.Limit))
 		}
 
 		resp, err := client.DefaultClient.BuildAndTraceRequest(ctx, "GET", path, query, nil)
