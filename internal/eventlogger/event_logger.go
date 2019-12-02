@@ -81,7 +81,7 @@ func (logger *eventLogger) newPayload(userEmail string, event *Event) *Payload {
 		BatchInfo: &BatchInfo{
 			BatchID:     uuid.New().String(),
 			TotalEvents: 1,
-			ServerTime:  strconv.Itoa(time.Now().UTC().Unix()*1000),
+			ServerTime:  strconv.Itoa(time.Now().UTC().Unix() * 1000),
 		},
 		UserInfo: userInfo,
 	}
