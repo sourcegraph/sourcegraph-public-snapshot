@@ -140,7 +140,7 @@
     "@types/webpack-dev-server": "3.9.0",
     "@types/whatwg-url": "6.4.0",
     "abort-controller": "^3.0.0",
-    "autoprefixer": "^9.7.1",
+    "autoprefixer": "^9.7.3",
     "babel-jest": "^24.9.0",
     "babel-loader": "^8.0.6",
     "babel-plugin-lodash": "^3.3.4",
