@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -155,8 +156,8 @@ func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) error {
 		RepositoryID: repo.ID,
 		Title:        c.Title,
 		Body:         c.Body,
-		HeadRefName:  c.HeadRefName,
-		BaseRefName:  c.BaseRefName,
+		HeadRefName:  git.AbbreviateRef(c.HeadRef),
+		BaseRefName:  git.AbbreviateRef(c.BaseRef),
 	})
 
 	if err != nil {

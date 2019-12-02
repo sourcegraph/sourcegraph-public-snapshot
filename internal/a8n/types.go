@@ -363,9 +363,9 @@ func (t *Changeset) HeadRefOid() (string, error) {
 	}
 }
 
-// HeadRefName returns the full ref name (e.g. `refs/heads/my-branch`) of the
+// HeadRef returns the full ref (e.g. `refs/heads/my-branch`) of the
 // HEAD reference associated with the Changeset on the codehost.
-func (t *Changeset) HeadRefName() (string, error) {
+func (t *Changeset) HeadRef() (string, error) {
 	switch m := t.Metadata.(type) {
 	case *github.PullRequest:
 		return "refs/heads/" + m.HeadRefName, nil
@@ -390,9 +390,9 @@ func (t *Changeset) BaseRefOid() (string, error) {
 	}
 }
 
-// BaseRefName returns the full ref name (e.g. `refs/heads/my-branch`) of the
-// base reference associated with the Changeset on the codehost.
-func (t *Changeset) BaseRefName() (string, error) {
+// BaseRef returns the full ref (e.g. `refs/heads/my-branch`) of the base ref
+// associated with the Changeset on the codehost.
+func (t *Changeset) BaseRef() (string, error) {
 	switch m := t.Metadata.(type) {
 	case *github.PullRequest:
 		return "refs/heads/" + m.BaseRefName, nil

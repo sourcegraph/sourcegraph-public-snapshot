@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -247,11 +248,11 @@ func (s *Service) runChangesetJob(
 	}
 
 	cs := repos.Changeset{
-		Title:       c.Name,
-		Body:        c.Description,
-		BaseRefName: baseRef,
-		HeadRefName: headRefName,
-		Repo:        repo,
+		Title:   c.Name,
+		Body:    c.Description,
+		BaseRef: baseRef,
+		HeadRef: git.EnsureRefPrefix(headRefName),
+		Repo:    repo,
 		Changeset: &a8n.Changeset{
 			RepoID:      int32(repo.ID),
 			CampaignIDs: []int64{job.CampaignID},
