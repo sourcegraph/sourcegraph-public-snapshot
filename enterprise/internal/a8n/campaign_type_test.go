@@ -125,8 +125,9 @@ func TestCampaignType_Comby(t *testing.T) {
 
 		handler func(w http.ResponseWriter, r *http.Request)
 
-		wantDiff string
-		wantErr  string
+		wantDiff        string
+		wantDescription string
+		wantErr         string
 	}{
 		{
 			name:     "success single file diff",
@@ -216,13 +217,17 @@ func TestCampaignType_Comby(t *testing.T) {
 				tc.wantErr = "<nil>"
 			}
 
-			haveDiff, err := ct.generateDiff(ctx, api.RepoName(tc.repoName), api.CommitID(tc.commitID))
+			haveDiff, haveDescription, err := ct.generateDiff(ctx, api.RepoName(tc.repoName), api.CommitID(tc.commitID))
 			if have, want := fmt.Sprint(err), tc.wantErr; have != want {
 				t.Fatalf("have error: %q\nwant error: %q", have, want)
 			}
 
 			if haveDiff != tc.wantDiff {
 				t.Fatalf("wrong diff.\nhave=%q\nwant=%q", haveDiff, tc.wantDiff)
+			}
+
+			if haveDescription != tc.wantDescription {
+				t.Fatalf("wrong description.\nhave=%q\nwant=%q", haveDescription, tc.wantDescription)
 			}
 		})
 	}
@@ -244,8 +249,9 @@ func TestCampaignType_Credentials(t *testing.T) {
 
 		searchResultsContents map[string]string
 
-		wantDiff string
-		wantErr  string
+		wantDiff        string
+		wantDescription string
+		wantErr         string
 	}{
 		{
 			name: "no NPM tokens",
@@ -362,13 +368,17 @@ func TestCampaignType_Credentials(t *testing.T) {
 
 			ct := &credentials{args: tc.args, newSearch: testSearch}
 
-			haveDiff, err := ct.generateDiff(ctx, api.RepoName(tc.repoName), api.CommitID(tc.commitID))
+			haveDiff, haveDescription, err := ct.generateDiff(ctx, api.RepoName(tc.repoName), api.CommitID(tc.commitID))
 			if have, want := fmt.Sprint(err), tc.wantErr; have != want {
 				t.Fatalf("have error: %q\nwant error: %q", have, want)
 			}
 
 			if haveDiff != tc.wantDiff {
 				t.Fatalf("wrong diff.\nhave=%q\nwant=%q", haveDiff, tc.wantDiff)
+			}
+
+			if haveDescription != tc.wantDescription {
+				t.Fatalf("wrong description.\nhave=%q\nwant=%q", haveDescription, tc.wantDescription)
 			}
 		})
 	}

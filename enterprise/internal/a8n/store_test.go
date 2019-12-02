@@ -1047,7 +1047,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 						Rev:            api.CommitID("deadbeef"),
 						BaseRef:        "master",
 						Diff:           "+ foobar - barfoo",
-						Description:  "- Removed 3 instances of foobar\n",
+						Description:    "- Removed 3 instances of foobar\n",
 						Error:          "only set on error",
 					}
 

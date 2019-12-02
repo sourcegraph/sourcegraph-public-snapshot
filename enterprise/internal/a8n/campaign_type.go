@@ -135,8 +135,14 @@ func validateArgs(campaignType, args string) ([]byte, error) {
 // A CampaignType provides a search query, argument validation and generates a
 // diff in a given repository.
 type CampaignType interface {
+	// searchQuery returns a search query that returns the repositories over
+	// which to execute the CampaignType. It changes depending on the arguments
+	// with which the CampaignType was initialized and the type of the
+	// CampaignType.
 	searchQuery() string
-	generateDiff(context.Context, api.RepoName, api.CommitID) (string, error)
+	// generateDiff returns a diff (can be blank), a description of the diff in
+	// GitHub flavored Markdown (can be blank) and, optionally, an error.
+	generateDiff(context.Context, api.RepoName, api.CommitID) (diff, description string, err error)
 }
 
 type combyArgs struct {
@@ -154,10 +160,10 @@ type comby struct {
 }
 
 func (c *comby) searchQuery() string { return c.args.ScopeQuery }
-func (c *comby) generateDiff(ctx context.Context, repo api.RepoName, commit api.CommitID) (string, error) {
+func (c *comby) generateDiff(ctx context.Context, repo api.RepoName, commit api.CommitID) (string, string, error) {
 	u, err := url.Parse(c.replacerURL)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	q := u.Query()
@@ -172,16 +178,16 @@ func (c *comby) generateDiff(ctx context.Context, repo api.RepoName, commit api.
 
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	resp, err := c.httpClient.Do(req.WithContext(ctx))
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("unexpected response status from replacer service: %q", resp.Status)
+		return "", "", fmt.Errorf("unexpected response status from replacer service: %q", resp.Status)
 	}
 
 	scanner := bufio.NewScanner(resp.Body)
@@ -240,7 +246,7 @@ func (c *comby) generateDiff(ctx context.Context, repo api.RepoName, commit api.
 		result.WriteString(*fdr.raw)
 	}
 
-	return result.String(), nil
+	return result.String(), "", nil
 }
 
 type credentialsMatcher struct {
@@ -274,7 +280,7 @@ func (c *credentials) searchQueryForRepo(n api.RepoName) string {
 	)
 }
 
-func (c *credentials) generateDiff(ctx context.Context, repo api.RepoName, commit api.CommitID) (string, error) {
+func (c *credentials) generateDiff(ctx context.Context, repo api.RepoName, commit api.CommitID) (string, string, error) {
 	t := "regexp"
 	search, err := c.newSearch(&graphqlbackend.SearchArgs{
 		Version:     "V2",
@@ -282,12 +288,12 @@ func (c *credentials) generateDiff(ctx context.Context, repo api.RepoName, commi
 		Query:       c.searchQueryForRepo(repo),
 	})
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	resultsResolver, err := search.Results(ctx)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	diffs := []string{}
@@ -301,7 +307,7 @@ func (c *credentials) generateDiff(ctx context.Context, repo api.RepoName, commi
 		path := fm.File().Path()
 		content, err := fm.File().Content(ctx)
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
 
 		replacement := fmt.Sprintf("${1}%s", c.args.Matchers[0].ReplaceWith)
@@ -309,7 +315,7 @@ func (c *credentials) generateDiff(ctx context.Context, repo api.RepoName, commi
 
 		diff, err := tmpfileDiff(path, content, newContent)
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
 
 		withHeader := fmt.Sprintf("diff %s %s\n%s", path, path, diff)
@@ -317,7 +323,7 @@ func (c *credentials) generateDiff(ctx context.Context, repo api.RepoName, commi
 		diffs = append(diffs, withHeader)
 	}
 
-	return strings.Join(diffs, "\n"), nil
+	return strings.Join(diffs, "\n"), "", nil
 }
 
 func tmpfileDiff(filename, a, b string) (string, error) {

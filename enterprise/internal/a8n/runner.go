@@ -225,12 +225,13 @@ func (r *Runner) runJob(pctx context.Context, job *a8n.CampaignJob) {
 		return
 	}
 
-	diff, err := r.ct.generateDiff(ctx, api.RepoName(rs[0].Name), api.CommitID(job.Rev))
+	diff, desc, err := r.ct.generateDiff(ctx, api.RepoName(rs[0].Name), api.CommitID(job.Rev))
 	if err != nil {
 		job.Error = err.Error()
 	}
 
 	job.Diff = diff
+	job.Description = desc
 }
 
 func (r *Runner) createPlanAndJobs(
