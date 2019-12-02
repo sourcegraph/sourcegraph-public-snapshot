@@ -122,8 +122,7 @@ const jobTimeout = 2 * time.Minute
 // CampaignType set on CampaignPlan.
 // This is a non-blocking method that will possibly return before all
 // CampaignJobs are finished.
-func (r *Runner) Run(ctx context.Context, plan *a8n.CampaignPlan) error {
-	var err error
+func (r *Runner) Run(ctx context.Context, plan *a8n.CampaignPlan) (err error) {
 	tr, ctx := trace.New(ctx, "Runner.Run", fmt.Sprintf("plan_id %d", plan.ID))
 	defer func() {
 		tr.SetError(err)
@@ -131,8 +130,7 @@ func (r *Runner) Run(ctx context.Context, plan *a8n.CampaignPlan) error {
 	}()
 	tr.LogFields(log.Bool("started", r.started))
 	if r.started {
-		err = errors.New("already started")
-		return err
+		return errors.New("already started")
 	}
 	r.started = true
 
