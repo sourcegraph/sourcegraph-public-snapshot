@@ -248,7 +248,7 @@ func TestCampaignType_Credentials(t *testing.T) {
 		wantErr  string
 	}{
 		{
-			name: "success no NPM tokens",
+			name: "no NPM tokens",
 			args: credentialsArgs{
 				ScopeQuery: "repo:github",
 				Matchers:   []credentialsMatcher{{MatcherType: "npm"}},
@@ -257,7 +257,7 @@ func TestCampaignType_Credentials(t *testing.T) {
 			wantDiff:              ``,
 		},
 		{
-			name: "success single NPM token",
+			name: "single NPM token",
 			args: credentialsArgs{
 				ScopeQuery: "repo:github",
 				Matchers:   []credentialsMatcher{{MatcherType: "npm"}},
@@ -271,11 +271,11 @@ func TestCampaignType_Credentials(t *testing.T) {
 +++ .npmrc
 @@ -1 +1 @@
 -//npm.fontawesome.com/:_authToken=12345678-2323-1111-1111-12345670B312
-+//npm.fontawesome.com/:_authToken=REMOVED_TOKEN
++//npm.fontawesome.com/:_authToken=
 `,
 		},
 		{
-			name: "success multiple NPM tokens",
+			name: "multiple NPM tokens",
 			args: credentialsArgs{
 				ScopeQuery: "repo:github",
 				Matchers:   []credentialsMatcher{{MatcherType: "npm"}},
@@ -291,7 +291,25 @@ func TestCampaignType_Credentials(t *testing.T) {
 @@ -1,2 +1,2 @@
 -//registry.npmjs.org/:_authToken=${NPM_TOKEN}
 -//npm.fontawesome.com/:_authToken=12345678-2323-1111-1111-12345670B312
-+//registry.npmjs.org/:_authToken=REMOVED_TOKEN
++//registry.npmjs.org/:_authToken=
++//npm.fontawesome.com/:_authToken=
+`,
+		},
+		{
+			name: "single NPM token and replaceWith",
+			args: credentialsArgs{
+				ScopeQuery: "repo:github",
+				Matchers:   []credentialsMatcher{{MatcherType: "npm", ReplaceWith: "REMOVED_TOKEN"}},
+			},
+			searchResultsContents: map[string]string{
+				".npmrc": `//npm.fontawesome.com/:_authToken=12345678-2323-1111-1111-12345670B312
+`,
+			},
+			wantDiff: `diff .npmrc .npmrc
+--- .npmrc
++++ .npmrc
+@@ -1 +1 @@
+-//npm.fontawesome.com/:_authToken=12345678-2323-1111-1111-12345670B312
 +//npm.fontawesome.com/:_authToken=REMOVED_TOKEN
 `,
 		},
