@@ -198,8 +198,8 @@ Examples:
 		// confirm the status code. You can test this easily with e.g. an invalid
 		// endpoint like -endpoint=https://google.com
 		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-			if resp.StatusCode == http.StatusUnauthorized && string(body) == "Must provide github_token.\n" {
-				return fmt.Errorf("error: you have to provide -github-token with 'public_repo' scope")
+			if resp.StatusCode == http.StatusUnauthorized && strings.Contains(strings.ToLower(string(body)), "must provide github_token") {
+				return fmt.Errorf("error: you must provide -github-token=TOKEN, where TOKEN is a GitHub personal access token with 'repo' or 'public_repo' scope")
 			}
 
 			if resp.StatusCode == http.StatusUnauthorized && isatty.IsTerminal(os.Stdout.Fd()) {
