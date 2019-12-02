@@ -280,20 +280,24 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 func (r *Resolver) RetryCampaign(ctx context.Context, args *graphqlbackend.RetryCampaignArgs) (graphqlbackend.CampaignResolver, error) {
 	// 🚨 SECURITY: Only site admins may update campaigns for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "checking if user is admin")
 	}
 
 	campaignID, err := unmarshalCampaignID(args.Campaign)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "unmarshaling campaign id")
 	}
 
 	campaign, err := r.store.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "getting campaign")
 	}
 
-	// TODO(a8n): Implement the retrying of turning "diffs" into changesets
+	// TODO: Rerun failed jobs
+	_, err = r.store.GetFailedChangesetJobs(ctx, ee.GetFailedChangesetJobOpts{CampaignID: campaignID})
+	if err != nil {
+		return nil, errors.Wrap(err, "getting failed changeset jobs")
+	}
 
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
