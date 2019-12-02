@@ -10,7 +10,11 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestNewCampaignType_ArgsValidation(t *testing.T) {
@@ -224,6 +228,134 @@ func TestCampaignType_Comby(t *testing.T) {
 	}
 }
 
+func TestCampaignType_Credentials(t *testing.T) {
+	ctx := context.Background()
+
+	tests := []struct {
+		name string
+
+		repoName string
+		commitID string
+		args     credentialsArgs
+
+		newSearch func(*graphqlbackend.SearchArgs) (graphqlbackend.SearchImplementer, error)
+
+		gitFileContent string
+
+		searchResultsContents map[string]string
+
+		wantDiff string
+		wantErr  string
+	}{
+		{
+			name: "success no NPM tokens",
+			args: credentialsArgs{
+				ScopeQuery: "repo:github",
+				Matchers:   []credentialsMatcher{{MatcherType: "npm"}},
+			},
+			searchResultsContents: map[string]string{},
+			wantDiff:              ``,
+		},
+		{
+			name: "success single NPM token",
+			args: credentialsArgs{
+				ScopeQuery: "repo:github",
+				Matchers:   []credentialsMatcher{{MatcherType: "npm"}},
+			},
+			searchResultsContents: map[string]string{
+				".npmrc": `//npm.fontawesome.com/:_authToken=12345678-2323-1111-1111-12345670B312
+`,
+			},
+			wantDiff: `diff .npmrc .npmrc
+--- .npmrc
++++ .npmrc
+@@ -1 +1 @@
+-//npm.fontawesome.com/:_authToken=12345678-2323-1111-1111-12345670B312
++//npm.fontawesome.com/:_authToken=REMOVED_TOKEN
+`,
+		},
+		{
+			name: "success multiple NPM tokens",
+			args: credentialsArgs{
+				ScopeQuery: "repo:github",
+				Matchers:   []credentialsMatcher{{MatcherType: "npm"}},
+			},
+			searchResultsContents: map[string]string{
+				".npmrc": `//registry.npmjs.org/:_authToken=${NPM_TOKEN}
+//npm.fontawesome.com/:_authToken=12345678-2323-1111-1111-12345670B312
+`,
+			},
+			wantDiff: `diff .npmrc .npmrc
+--- .npmrc
++++ .npmrc
+@@ -1,2 +1,2 @@
+-//registry.npmjs.org/:_authToken=${NPM_TOKEN}
+-//npm.fontawesome.com/:_authToken=12345678-2323-1111-1111-12345670B312
++//registry.npmjs.org/:_authToken=REMOVED_TOKEN
++//npm.fontawesome.com/:_authToken=REMOVED_TOKEN
+`,
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.wantErr == "" {
+				tc.wantErr = "<nil>"
+			}
+
+			if tc.repoName == "" {
+				tc.repoName = "github.com/sourcegraph/sourcegraph"
+			}
+
+			if tc.commitID == "" {
+				tc.commitID = "deadbeef"
+			}
+
+			git.Mocks.ReadFile = func(commit api.CommitID, name string) ([]byte, error) {
+				if string(commit) != tc.commitID {
+					return nil, fmt.Errorf("wrong commit ID. have=%q, want=%q", commit, tc.commitID)
+				}
+
+				content, ok := tc.searchResultsContents[name]
+				if !ok {
+					return nil, fmt.Errorf("no fake file content for %s set up", name)
+				}
+
+				return []byte(content), nil
+			}
+			defer func() { git.Mocks.ReadFile = nil }()
+
+			testSearch := func(*graphqlbackend.SearchArgs) (graphqlbackend.SearchImplementer, error) {
+				results := make([]graphqlbackend.SearchResultResolver, 0, len(tc.searchResultsContents))
+
+				for path := range tc.searchResultsContents {
+					results = append(results, &fakeSearchResultResolver{
+						commitID: api.CommitID(tc.commitID),
+						repo: &types.Repo{
+							ExternalRepo: api.ExternalRepoSpec{ServiceType: github.ServiceType},
+						},
+						path: path,
+					})
+				}
+
+				return &fakeSearch{results: results}, nil
+			}
+
+			ct := &credentials{args: tc.args, newSearch: testSearch}
+
+			haveDiff, err := ct.generateDiff(ctx, api.RepoName(tc.repoName), api.CommitID(tc.commitID))
+			if have, want := fmt.Sprint(err), tc.wantErr; have != want {
+				t.Fatalf("have error: %q\nwant error: %q", have, want)
+			}
+
+			if haveDiff != tc.wantDiff {
+				t.Fatalf("wrong diff.\nhave=%q\nwant=%q", haveDiff, tc.wantDiff)
+			}
+		})
+	}
+}
+
 func validateReplacerQuery(t *testing.T, vals url.Values, repo, commit string, args combyArgs) {
 	t.Helper()
 
@@ -246,4 +378,31 @@ func validateReplacerQuery(t *testing.T, vals url.Values, repo, commit string, a
 			t.Errorf("wrong %q param: %s (want=%s)", tc.name, have[0], tc.want)
 		}
 	}
+}
+
+type fakeSearchResultResolver struct {
+	graphqlbackend.SearchResultResolver
+
+	commitID api.CommitID
+	repo     *types.Repo
+	path     string
+}
+
+func (r *fakeSearchResultResolver) ToFileMatch() (*graphqlbackend.FileMatchResolver, bool) {
+	fm := &graphqlbackend.FileMatchResolver{
+		JPath:    r.path,
+		Repo:     r.repo,
+		CommitID: r.commitID,
+	}
+
+	return fm, true
+}
+
+type fakeSearch struct {
+	graphqlbackend.SearchImplementer
+	results []graphqlbackend.SearchResultResolver
+}
+
+func (s *fakeSearch) Results(ctx context.Context) (*graphqlbackend.SearchResultsResolver, error) {
+	return &graphqlbackend.SearchResultsResolver{SearchResults: s.results}, nil
 }

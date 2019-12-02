@@ -145,7 +145,7 @@ func dedupSort(repos *types.Repos) {
 
 // SearchResultsResolver is a resolver for the GraphQL type `SearchResults`
 type SearchResultsResolver struct {
-	results []SearchResultResolver
+	SearchResults []SearchResultResolver
 	searchResultsCommon
 	alert *searchAlert
 	start time.Time // when the results started being computed
@@ -156,12 +156,12 @@ type SearchResultsResolver struct {
 }
 
 func (sr *SearchResultsResolver) Results() []SearchResultResolver {
-	return sr.results
+	return sr.SearchResults
 }
 
 func (sr *SearchResultsResolver) MatchCount() int32 {
 	var totalResults int32
-	for _, result := range sr.results {
+	for _, result := range sr.SearchResults {
 		totalResults += result.resultCount()
 	}
 	return totalResults
@@ -260,13 +260,13 @@ func (sr *SearchResultsResolver) DynamicFilters() []*searchFilterResolver {
 		}
 	}
 
-	for _, result := range sr.results {
+	for _, result := range sr.SearchResults {
 		if fm, ok := result.ToFileMatch(); ok {
 			rev := ""
-			if fm.inputRev != nil {
-				rev = *fm.inputRev
+			if fm.InputRev != nil {
+				rev = *fm.InputRev
 			}
-			addRepoFilter(string(fm.repo.Name), rev, len(fm.LineMatches()))
+			addRepoFilter(string(fm.Repo.Name), rev, len(fm.LineMatches()))
 			addLangFilter(fm.JPath, len(fm.LineMatches()), fm.JLimitHit)
 			addFileFilter(fm.JPath, len(fm.LineMatches()), fm.JLimitHit)
 
@@ -368,8 +368,8 @@ func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *FileMat
 		return time.Time{}, nil
 	}
 	lm := fm.LineMatches()[0]
-	hunks, err := git.BlameFile(ctx, gitserver.Repo{Name: fm.repo.Name}, fm.JPath, &git.BlameOptions{
-		NewestCommit: fm.commitID,
+	hunks, err := git.BlameFile(ctx, gitserver.Repo{Name: fm.Repo.Name}, fm.JPath, &git.BlameOptions{
+		NewestCommit: fm.CommitID,
 		StartLine:    int(lm.LineNumber()),
 		EndLine:      int(lm.LineNumber()),
 	})
@@ -414,7 +414,7 @@ func (sr *SearchResultsResolver) Sparkline(ctx context.Context) (sparkline []int
 	// Consider all of our search results as a potential data point in our
 	// sparkline.
 loop:
-	for _, r := range sr.results {
+	for _, r := range sr.SearchResults {
 		r := r // shadow so it doesn't change in the goroutine
 		switch m := r.(type) {
 		case *RepositoryResolver:
@@ -1133,7 +1133,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	resultsResolver := SearchResultsResolver{
 		start:               start,
 		searchResultsCommon: common,
-		results:             results,
+		SearchResults:       results,
 		alert:               alert,
 	}
 

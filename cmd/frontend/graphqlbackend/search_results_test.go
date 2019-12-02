@@ -39,8 +39,8 @@ func TestSearchResults(t *testing.T) {
 		if err != nil {
 			t.Fatal("Results:", err)
 		}
-		resultDescriptions := make([]string, len(results.results))
-		for i, result := range results.results {
+		resultDescriptions := make([]string, len(results.SearchResults))
+		for i, result := range results.SearchResults {
 			// NOTE: Only supports one match per line. If we need to test other cases,
 			// just remove that assumption in the following line of code.
 			switch m := result.(type) {
@@ -147,7 +147,7 @@ func TestSearchResults(t *testing.T) {
 					uri:          "git://repo?rev#dir/file",
 					JPath:        "dir/file",
 					JLineMatches: []*lineMatch{{JLineNumber: 123}},
-					repo:         &types.Repo{ID: 1},
+					Repo:         &types.Repo{ID: 1},
 				},
 			}, &searchResultsCommon{}, nil
 		}
@@ -218,7 +218,7 @@ func TestSearchResults(t *testing.T) {
 					uri:          "git://repo?rev#dir/file",
 					JPath:        "dir/file",
 					JLineMatches: []*lineMatch{{JLineNumber: 123}},
-					repo:         &types.Repo{ID: 1},
+					Repo:         &types.Repo{ID: 1},
 				},
 			}, &searchResultsCommon{}, nil
 		}
@@ -548,24 +548,24 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 
 	fileMatch := &FileMatchResolver{
 		JPath: "/testFile.md",
-		repo:  repo,
+		Repo:  repo,
 	}
 
 	tsFileMatch := &FileMatchResolver{
 		JPath: "/testFile.ts",
-		repo:  repo,
+		Repo:  repo,
 	}
 
 	tsxFileMatch := &FileMatchResolver{
 		JPath: "/testFile.tsx",
-		repo:  repo,
+		Repo:  repo,
 	}
 
 	rev := "develop"
 	fileMatchRev := &FileMatchResolver{
 		JPath:    "/testFile.md",
-		repo:     repo,
-		inputRev: &rev,
+		Repo:     repo,
+		InputRev: &rev,
 	}
 
 	type testCase struct {
@@ -633,7 +633,7 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.descr, func(t *testing.T) {
-			actualDynamicFilters := (&SearchResultsResolver{results: test.searchResults}).DynamicFilters()
+			actualDynamicFilters := (&SearchResultsResolver{SearchResults: test.searchResults}).DynamicFilters()
 			actualDynamicFilterStrs := make(map[string]struct{})
 
 			for _, filter := range actualDynamicFilters {
@@ -773,7 +773,7 @@ func TestCompareSearchResults(t *testing.T) {
 	}, {
 		// Repo match vs file match in same repo
 		a: &FileMatchResolver{
-			repo: &types.Repo{Name: api.RepoName("a")},
+			Repo: &types.Repo{Name: api.RepoName("a")},
 
 			JPath: "a",
 		},
@@ -784,12 +784,12 @@ func TestCompareSearchResults(t *testing.T) {
 	}, {
 		// Same repo, different files
 		a: &FileMatchResolver{
-			repo: &types.Repo{Name: api.RepoName("a")},
+			Repo: &types.Repo{Name: api.RepoName("a")},
 
 			JPath: "a",
 		},
 		b: &FileMatchResolver{
-			repo: &types.Repo{Name: api.RepoName("a")},
+			Repo: &types.Repo{Name: api.RepoName("a")},
 
 			JPath: "b",
 		},
@@ -797,12 +797,12 @@ func TestCompareSearchResults(t *testing.T) {
 	}, {
 		// different repo, same file name
 		a: &FileMatchResolver{
-			repo: &types.Repo{Name: api.RepoName("a")},
+			Repo: &types.Repo{Name: api.RepoName("a")},
 
 			JPath: "a",
 		},
 		b: &FileMatchResolver{
-			repo: &types.Repo{Name: api.RepoName("b")},
+			Repo: &types.Repo{Name: api.RepoName("b")},
 
 			JPath: "a",
 		},
@@ -1243,7 +1243,7 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sr := &SearchResultsResolver{
-				results:             tt.fields.results,
+				SearchResults:       tt.fields.results,
 				searchResultsCommon: tt.fields.searchResultsCommon,
 				alert:               tt.fields.alert,
 				start:               tt.fields.start,
