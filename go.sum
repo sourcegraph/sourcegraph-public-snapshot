@@ -491,6 +491,8 @@ github.com/karrick/tparse v2.4.2+incompatible h1:+cW306qKAzrASC5XieHkgN7/vPaGKIu
 github.com/karrick/tparse v2.4.2+incompatible/go.mod h1:ASPA+vrIcN1uEW6BZg8vfWbzm69ODPSYZPU6qJyfdK0=
 github.com/karrick/tparse v2.7.1+incompatible h1:jtyvadhKN1gUxREeq3AOQRg4esLdCZXXE7kZyLP4HrQ=
 github.com/karrick/tparse v2.7.1+incompatible/go.mod h1:+W+261znlunLv92MRBLwvIKcokE/Kg8kdUF8V7goreg=
+github.com/karrick/tparse/v2 v2.7.1 h1:SSfwxsbxZS3yai0V8EcCyYjpsiYIOvQj/kvzTLu/zS4=
+github.com/karrick/tparse/v2 v2.7.1/go.mod h1:OzmKMqNal7LYYHaO/Ie1f/wXmLWAaGKwJmxUFNQCVxg=
 github.com/keegancsmith/rpc v1.1.0 h1:bXVRk3EzbtrEegTGKxNTc+St1lR7t/Z1PAO8misBnCc=
 github.com/keegancsmith/rpc v1.1.0/go.mod h1:Xow74TKX34OPPiPCdz6x1o9c0SCxRqGxDuKGk7ZOo8s=
 github.com/keegancsmith/sqlf v1.1.0 h1:lQ2YFRqdEyjDZ/OHsh417gs/2Fz+Jc7qEM7kRrc3ofw=

@@ -97,7 +97,7 @@ require (
 	github.com/karlseguin/expect v1.0.1 // indirect
 	github.com/karlseguin/typed v1.1.7 // indirect
 	github.com/karrick/godirwalk v1.13.0
-	github.com/karrick/tparse v2.7.1+incompatible
+	github.com/karrick/tparse/v2 v2.7.1
 	github.com/keegancsmith/sqlf v1.1.0
 	github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513
 	github.com/kevinburke/go-bindata v3.16.0+incompatible
