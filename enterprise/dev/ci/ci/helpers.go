@@ -24,6 +24,8 @@ type Config struct {
 	// in the branch. If empty, then no check is enforced.
 	mustIncludeCommit []string
 
+	useE2EPipeline bool
+
 	taggedRelease       bool
 	releaseBranch       bool
 	isBextReleaseBranch bool
@@ -68,7 +70,7 @@ func ComputeConfig() Config {
 			mustIncludeCommits[i] = strings.TrimSpace(mustIncludeCommits[i])
 		}
 	}
-	return Config{
+	c := Config{
 		now:               now,
 		branch:            branch,
 		version:           version,
@@ -83,6 +85,11 @@ func ComputeConfig() Config {
 		patchNoTest:         patchNoTest,
 		isQuick:             isQuick,
 	}
+
+	// Try out new e2e pipeline only on PRs
+	c.useE2EPipeline = !(c.branch == "master" || c.isRenovateBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch)
+
+	return c
 }
 
 func (c Config) ensureCommit() error {
