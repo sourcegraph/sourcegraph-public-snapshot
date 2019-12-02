@@ -537,7 +537,7 @@ func roundStr(s string) string {
 			return s
 		}
 		f = math.Round(f)
-		return fmt.Sprintf("%d", int(f))
+		return strconv.Itoa(int(f))
 	})
 }
 
