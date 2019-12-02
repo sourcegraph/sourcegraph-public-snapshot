@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // NewService returns a Service.
@@ -94,14 +93,6 @@ func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign) error {
 			return err
 		}
 	}
-
-	go func() {
-		ctx := trace.ContextWithTrace(context.Background(), tr)
-		err := s.RunChangesetJobs(ctx, c)
-		if err != nil {
-			log15.Error("RunChangesetJobs", "err", err)
-		}
-	}()
 
 	return nil
 }
