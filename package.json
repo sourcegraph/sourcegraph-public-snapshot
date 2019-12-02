@@ -161,7 +161,7 @@
     "googleapis": "^45.0.0",
     "gql2ts": "^1.10.1",
     "graphql": "^14.4.2",
-    "graphql-schema-linter": "^0.2.2",
+    "graphql-schema-linter": "^0.2.3",
     "gulp": "^4.0.2",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^24.9.0",
