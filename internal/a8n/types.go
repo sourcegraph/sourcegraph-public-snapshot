@@ -56,7 +56,8 @@ type CampaignJob struct {
 	Rev     api.CommitID
 	BaseRef string
 
-	Diff string
+	Diff        string
+	Description string
 
 	StartedAt  time.Time
 	FinishedAt time.Time
