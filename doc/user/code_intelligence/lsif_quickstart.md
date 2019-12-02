@@ -29,7 +29,7 @@ $ src \
   -file=<LSIF file (e.g. ./cmd/dump.lsif)>
 ```
 
-If uploading to sourcegraph.com, you will need to additionally supply the `-github-token=<token>` argument. This token should have repo read access to your user account and ensures that you have collaborator access to the repository for which you are uploading data.
+If uploading to Sourcegraph.com, you will need to additionally supply the `-github-token=<token>` flag. This token must have the `repo` or `public_repo` scope. It is used to verify that you have collaborator access to the repository for which you are uploading data.
 
 If successful, you'll see the following message:
 
