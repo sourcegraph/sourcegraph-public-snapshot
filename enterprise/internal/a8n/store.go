@@ -2005,7 +2005,7 @@ type GetFailedChangesetJobOpts struct {
 
 // GetFailedChangesetJobs gets a list of failed ChangesetJobs for a campaign
 func (s *Store) GetFailedChangesetJobs(ctx context.Context, opts GetFailedChangesetJobOpts) ([]*a8n.ChangesetJob, error) {
-	q := sqlf.Sprintf(getFailedChangesetJobsQueryFmtstr, opts.CampaignID)
+	q := getFailedChangesetJobsQuery(opts)
 
 	cs := make([]*a8n.ChangesetJob, 0)
 	_, _, err := s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
@@ -2023,29 +2023,15 @@ func (s *Store) GetFailedChangesetJobs(ctx context.Context, opts GetFailedChange
 	return cs, nil
 }
 
-var getFailedChangesetJobsQueryFmtstr = `
--- source: internal/a8n/store.go:GetFailedChangesetJobs
-SELECT
-  id,
-  campaign_id,
-  campaign_job_id,
-  changeset_id,
-  error,
-  started_at,
-  finished_at,
-  created_at,
-  updated_at
-FROM changeset_jobs
-WHERE
-  campaign_id = %s
-  AND
-    (
-		finished_at is null
-        OR changeset_id is null
-		OR error <> ''
-	)
-ORDER BY id ASC
-`
+func getFailedChangesetJobsQuery(opts GetFailedChangesetJobOpts) *sqlf.Query {
+	whereFmtStr := `campaign_id = %s
+	AND (
+		  finished_at is null OR
+		  changeset_id is null OR
+		  error <> ''
+		)`
+	return sqlf.Sprintf(getChangesetJobsQueryFmtstr, sqlf.Sprintf(whereFmtStr, opts.CampaignID))
+}
 
 var getChangesetJobsQueryFmtstr = `
 -- source: internal/a8n/store.go:GetChangesetJob
