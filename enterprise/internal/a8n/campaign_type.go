@@ -245,6 +245,7 @@ func (c *comby) generateDiff(ctx context.Context, repo api.RepoName, commit api.
 
 type credentialsMatcher struct {
 	MatcherType string `json:"type"`
+	ReplaceWith string `json:"replaceWith"`
 }
 
 type credentialsArgs struct {
@@ -302,7 +303,9 @@ func (c *credentials) generateDiff(ctx context.Context, repo api.RepoName, commi
 		if err != nil {
 			return "", err
 		}
-		newContent := npmTokenRegexpMultiline.ReplaceAllString(content, `${1}REMOVED_TOKEN`)
+
+		replacement := fmt.Sprintf("${1}%s", c.args.Matchers[0].ReplaceWith)
+		newContent := npmTokenRegexpMultiline.ReplaceAllString(content, replacement)
 
 		diff, err := tmpfileDiff(path, content, newContent)
 		if err != nil {
