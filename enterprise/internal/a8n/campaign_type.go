@@ -116,8 +116,13 @@ func validateArgs(campaignType, args string) ([]byte, error) {
 		return nil, errors.Wrap(err, "failed to validate specification against schema")
 	}
 
+	validationErrs := res.Errors()
+	sort.Slice(validationErrs, func(i, j int) bool {
+		return validationErrs[i].Field() < validationErrs[j].Field()
+	})
+
 	var errs *multierror.Error
-	for _, err := range res.Errors() {
+	for _, err := range validationErrs {
 		e := err.String()
 		// Remove `(root): ` from error formatting since these errors are
 		// presented to users.
