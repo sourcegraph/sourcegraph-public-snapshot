@@ -3,16 +3,19 @@ package a8n
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"strconv"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -49,12 +52,17 @@ type Service struct {
 // CreateCampaign creates the Campaign. When a CampaignPlanID is set, it also
 // creates one ChangesetJob for each CampaignJob belonging to the respective
 // CampaignPlan, together with the Campaign in a transaction.
-func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign) (err error) {
+func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign) error {
+	var err error
+	tr, ctx := trace.New(ctx, "Service.CreateCampaign", fmt.Sprintf("Name: %q", c.Name))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
 		return err
 	}
-
 	defer tx.Done(&err)
 
 	if err := tx.CreateCampaign(ctx, c); err != nil {
@@ -76,7 +84,6 @@ func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign) (err erro
 	}
 
 	for _, job := range jobs {
-
 		changesetJob := &a8n.ChangesetJob{
 			CampaignID:    c.ID,
 			CampaignJobID: job.ID,
@@ -91,6 +98,12 @@ func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign) (err erro
 }
 
 func (s *Service) RunChangesetJobs(ctx context.Context, c *a8n.Campaign) error {
+	var err error
+	tr, ctx := trace.New(ctx, "Service.RunChangesetJobs", fmt.Sprintf("Campaign: %q", c.Name))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 	jobs, _, err := s.store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
 		CampaignID: c.ID,
 		Limit:      10000,
@@ -116,6 +129,13 @@ func (s *Service) runChangesetJob(
 	c *a8n.Campaign,
 	job *a8n.ChangesetJob,
 ) (err error) {
+	tr, ctx := trace.New(ctx, "service.runChangeSetJob", fmt.Sprintf("job_id: %d", job.ID))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	tr.LogFields(log.Int64("job_id", job.ID), log.Int64("campaign_id", c.ID))
+
 	// TODO(a8n):
 	//   - Ensure all of these calls are idempotent so they can be safely retried.
 	defer func() {

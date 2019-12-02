@@ -10,11 +10,13 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -120,7 +122,13 @@ const jobTimeout = 2 * time.Minute
 // CampaignType set on CampaignPlan.
 // This is a non-blocking method that will possibly return before all
 // CampaignJobs are finished.
-func (r *Runner) Run(ctx context.Context, plan *a8n.CampaignPlan) error {
+func (r *Runner) Run(ctx context.Context, plan *a8n.CampaignPlan) (err error) {
+	tr, ctx := trace.New(ctx, "Runner.Run", fmt.Sprintf("plan_id %d", plan.ID))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	tr.LogFields(log.Bool("started", r.started))
 	if r.started {
 		return errors.New("already started")
 	}
@@ -135,7 +143,8 @@ func (r *Runner) Run(ctx context.Context, plan *a8n.CampaignPlan) error {
 		return err
 	}
 	if len(rs) > int(max) {
-		return ErrTooManyResults
+		err = ErrTooManyResults
+		return err
 	}
 
 	jobs, err := r.createPlanAndJobs(ctx, plan, rs)
@@ -147,6 +156,7 @@ func (r *Runner) Run(ctx context.Context, plan *a8n.CampaignPlan) error {
 	if err != nil {
 		return err
 	}
+	tr.LogFields(log.Int64("num_workers", numWorkers), log.Int("num_jobs", len(jobs)))
 
 	queue := make(chan *a8n.CampaignJob)
 	worker := func(queue chan *a8n.CampaignJob) {
@@ -173,7 +183,13 @@ func (r *Runner) Run(ctx context.Context, plan *a8n.CampaignPlan) error {
 }
 
 func (r *Runner) runJob(pctx context.Context, job *a8n.CampaignJob) {
-	ctx, cancel := context.WithTimeout(pctx, jobTimeout)
+	var err error
+	tr, ctx := trace.New(pctx, "Runner.runJob", fmt.Sprintf("job_id %d", job.ID))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	ctx, cancel := context.WithTimeout(ctx, jobTimeout)
 	defer cancel()
 
 	defer func() {
