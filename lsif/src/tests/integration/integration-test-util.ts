@@ -336,7 +336,14 @@ export function filterNodeModules<T>({
     return { locations: locations.filter(l => !l.uri.includes('node_modules')), cursor }
 }
 
-// TODO
+/**
+ * Map locations into the 'legacy' shape. Tests will need to be updated do that
+ * the assertions work against internal locations rather than the lsp.Location
+ * object (it does not hold enough data).
+ *
+ * @param repository The source repository.
+ * @param resp The input containing a locations array.
+ */
 export function mapInternalLocations<T extends { locations: InternalLocation[] }>(
     repository: string,
     resp: T
