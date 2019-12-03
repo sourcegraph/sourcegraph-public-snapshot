@@ -480,11 +480,17 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 	start := time.Now()
 	rr, err := r.doResults(ctx, "")
 
-	allReposTimedout := err == context.DeadlineExceeded
+	// If we encountered a contex timeout, it indicates one of the many result
+	// type searchers (file, diff, symbol, etc) completely timed out and could not
+	// produce even partial results. Other searcher types may have produced results.
+	//
+	// In this case, or if we got a partial timeout where ALL repositories timed out,
+	// we do not return partial results and instead display a timeout alert.
+	shouldShowAlert := err == context.DeadlineExceeded
 	if err == nil && len(rr.searchResultsCommon.timedout) == len(rr.searchResultsCommon.repos) {
-		allReposTimedout = true
+		shouldShowAlert = true
 	}
-	if allReposTimedout {
+	if shouldShowAlert {
 		dt := time.Since(start)
 		dt2 := longer(2, dt)
 		rr = &SearchResultsResolver{
@@ -835,6 +841,12 @@ func alertOnSearchLimit(resultTypes []string, args *search.Args) ([]string, *sea
 	return resultTypes, alert
 }
 
+// doResults is one of the highest level search functions that handles finding results.
+//
+// If forceOnlyResultType is specified, only results of the given type are returned,
+// regardless of what `type:` is specified in the query string.
+//
+// Partial results AND an error may be returned.
 func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType string) (res *SearchResultsResolver, err error) {
 	tr, ctx := trace.New(ctx, "graphql.SearchResults", r.rawQuery())
 	defer func() {
