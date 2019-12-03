@@ -48,7 +48,7 @@ class UserCreateSubscriptionNode extends React.PureComponent<UserCreateSubscript
                             className="btn btn-sm btn-secondary"
                             onClick={this.createProductSubscription}
                         >
-                            <AddIcon className="icon-inline" /> Create new Subscription
+                            <AddIcon className="icon-inline" /> Create new subscription
                         </button>
                     </div>
                 </div>
