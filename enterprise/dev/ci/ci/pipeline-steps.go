@@ -234,8 +234,7 @@ func addServerDockerImageCandidate(c Config) func(*bk.Pipeline) {
 func copyEnv(keys ...string) map[string]string {
 	m := map[string]string{}
 	for _, k := range keys {
-		v := os.Getenv(k)
-		if v != "" {
+		if v, ok := os.LookupEnv(k); ok {
 			m[k] = v
 		}
 	}
