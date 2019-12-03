@@ -79,9 +79,8 @@ func testStoreLoadUserPermissions(db *sql.DB) func(*testing.T) {
 				Type:     PermRepos,
 				Provider: ProviderSourcegraph,
 			}
-			if err := s.LoadUserPermissions(context.Background(), up); err != nil {
-				t.Fatal(err)
-			}
+			err := s.LoadUserPermissions(context.Background(), up)
+			equal(t, "err", err, ErrNotFound)
 			equal(t, "IDs", len(array(up.IDs)), 0)
 		})
 
@@ -195,9 +194,8 @@ func testStoreLoadRepoPermissions(db *sql.DB) func(*testing.T) {
 				Perm:     authz.Read,
 				Provider: ProviderSourcegraph,
 			}
-			if err := s.LoadRepoPermissions(context.Background(), rp); err != nil {
-				t.Fatal(err)
-			}
+			err := s.LoadRepoPermissions(context.Background(), rp)
+			equal(t, "err", err, ErrNotFound)
 			equal(t, "rp.UserIDs", len(array(rp.UserIDs)), 0)
 		})
 
@@ -434,9 +432,8 @@ func testStoreLoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 				Perm:   authz.Read,
 				Type:   PermRepos,
 			}
-			if err := s.LoadUserPendingPermissions(context.Background(), up); err != nil {
-				t.Fatal(err)
-			}
+			err := s.LoadUserPendingPermissions(context.Background(), up)
+			equal(t, "err", err, ErrNotFound)
 			equal(t, "IDs", len(array(up.IDs)), 0)
 		})
 
@@ -800,6 +797,7 @@ func testStoreGrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 		name                   string
 		updates                []update
 		grant                  grant
+		grantErr               error               // Expected error during grant process
 		expectUserPerms        map[int32][]uint32  // user_id -> object_ids
 		expectRepoPerms        map[int32][]uint32  // repo_id -> user_ids
 		expectUserPendingPerms map[string][]uint32 // bind_id -> object_ids
@@ -815,6 +813,7 @@ func testStoreGrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 					Type:   PermRepos,
 				},
 			},
+			grantErr: ErrNotFound,
 		},
 		{
 			name: "no matching pending permissions",
@@ -860,6 +859,7 @@ func testStoreGrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 					Type:   PermRepos,
 				},
 			},
+			grantErr: ErrNotFound,
 			expectUserPerms: map[int32][]uint32{
 				1: {1, 2},
 				2: {2},
@@ -960,11 +960,10 @@ func testStoreGrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 					}
 				}
 
-				if err := s.GrantPendingPermissions(ctx, test.grant.userID, test.grant.perm); err != nil {
-					t.Fatal(err)
-				}
+				err := s.GrantPendingPermissions(ctx, test.grant.userID, test.grant.perm)
+				equal(t, "err", err, test.grantErr)
 
-				err := checkRegularTable(s, `SELECT user_id, object_ids FROM user_permissions`, test.expectUserPerms)
+				err = checkRegularTable(s, `SELECT user_id, object_ids FROM user_permissions`, test.expectUserPerms)
 				if err != nil {
 					t.Fatal("user_permissions:", err)
 				}

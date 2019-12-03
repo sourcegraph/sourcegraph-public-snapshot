@@ -32,7 +32,7 @@ func NewStore(db dbutil.DB, clock func() time.Time) *Store {
 	}
 }
 
-// LoadUserPermissions loads stored user permissions into p. An error is returned
+// LoadUserPermissions loads stored user permissions into p. An ErrNotFound is returned
 // when there are no valid permissions available.
 func (s *Store) LoadUserPermissions(ctx context.Context, p *UserPermissions) (err error) {
 	ctx, save := s.observe(ctx, "LoadUserPermissions", "")
@@ -62,7 +62,7 @@ AND provider = %s
 	)
 }
 
-// LoadRepoPermissions loads stored repository permissions into p. An error is
+// LoadRepoPermissions loads stored repository permissions into p. An ErrNotFound is
 // returned when there are no valid permissions available.
 func (s *Store) LoadRepoPermissions(ctx context.Context, p *RepoPermissions) (err error) {
 	ctx, save := s.observe(ctx, "LoadRepoPermissions", "")
@@ -129,7 +129,7 @@ func (s *Store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err
 
 	// Retrieve currently stored user IDs of this repository.
 	oldIDs, _, err := txs.load(ctx, loadRepoPermissionsQuery(p))
-	if err != nil {
+	if err != nil && err != ErrNotFound {
 		return err
 	}
 
@@ -273,7 +273,7 @@ DO UPDATE SET
 }
 
 // LoadUserPendingPermissions returns pending permissions found by given parameters.
-// An error is returned when there are no pending permissions available.
+// An ErrNotFound is returned when there are no pending permissions available.
 func (s *Store) LoadUserPendingPermissions(ctx context.Context, p *UserPendingPermissions) (err error) {
 	ctx, save := s.observe(ctx, "LoadUserPendingPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
@@ -285,7 +285,12 @@ func (s *Store) LoadUserPendingPermissions(ctx context.Context, p *UserPendingPe
 	}
 
 	if !rows.Next() {
-		return rows.Err()
+		// One row is expected, return ErrNotFound if no other errors occurred.
+		err = rows.Err()
+		if err == nil {
+			err = ErrNotFound
+		}
+		return err
 	}
 
 	var ids []byte
@@ -343,7 +348,7 @@ AND object_type = %s
 //    1 |   alice |       read |       repos |  bitmap{1} | <DateTime>
 //    2 |     bob |       read |       repos |  bitmap{1} | <DateTime>
 //
-//  "repo_permissions":
+//  "repo_pending_permissions":
 //   repo_id | permission |   user_ids   | updated_at
 //  ---------+------------+--------------+------------
 //         1 |       read | bitmap{1, 2} | <DateTime>
@@ -385,7 +390,7 @@ func (s *Store) SetRepoPendingPermissions(
 
 		// Load all user pending permissions by bindIDs from the table.
 		q = loadUserPendingPermissionsBatchQuery(bindIDs, p.Perm, PermRepos)
-		bindIDSet, loadedIDs, err = txs.loadUserPendingPermissions(ctx, q)
+		bindIDSet, loadedIDs, err = txs.batchLoadUserPendingPermissions(ctx, q)
 		if err != nil {
 			return err
 		}
@@ -399,7 +404,7 @@ func (s *Store) SetRepoPendingPermissions(
 
 	// Retrieve currently stored user IDs of this repository.
 	oldIDs, _, err := txs.load(ctx, loadRepoPendingPermissionsQuery(p))
-	if err != nil {
+	if err != nil && err != ErrNotFound {
 		return err
 	}
 	if oldIDs == nil {
@@ -414,7 +419,7 @@ func (s *Store) SetRepoPendingPermissions(
 	removedIDs := removed.ToArray()
 	if len(removedIDs) > 0 {
 		q = loadUserPendingPermissionsByIDBatchQuery(removedIDs, p.Perm, PermRepos)
-		idSet, loaded, err := txs.loadUserPendingPermissions(ctx, q)
+		idSet, loaded, err := txs.batchLoadUserPendingPermissions(ctx, q)
 		if err != nil {
 			return err
 		}
@@ -480,12 +485,12 @@ func (s *Store) SetRepoPendingPermissions(
 	return nil
 }
 
-func (s *Store) loadUserPendingPermissions(ctx context.Context, q *sqlf.Query) (
+func (s *Store) batchLoadUserPendingPermissions(ctx context.Context, q *sqlf.Query) (
 	bindIDSet map[int32]string,
 	loaded map[int32]*roaring.Bitmap,
 	err error,
 ) {
-	ctx, save := s.observe(ctx, "loadUserPendingPermissions", "")
+	ctx, save := s.observe(ctx, "batchLoadUserPendingPermissions", "")
 	defer func() {
 		save(&err,
 			otlog.String("Query.Query", q.Query(sqlf.PostgresBindVar)),
@@ -951,6 +956,8 @@ func (s *Store) execute(ctx context.Context, q *sqlf.Query) (err error) {
 	return rows.Close()
 }
 
+var ErrNotFound = errors.New("permissions not found")
+
 // load runs the query and returns unmarshalled IDs and last updated time.
 func (s *Store) load(ctx context.Context, q *sqlf.Query) (*roaring.Bitmap, time.Time, error) {
 	var err error
@@ -969,7 +976,12 @@ func (s *Store) load(ctx context.Context, q *sqlf.Query) (*roaring.Bitmap, time.
 	}
 
 	if !rows.Next() {
-		return nil, time.Time{}, rows.Err()
+		// One row is expected, return ErrNotFound if no other errors occurred.
+		err = rows.Err()
+		if err == nil {
+			err = ErrNotFound
+		}
+		return nil, time.Time{}, err
 	}
 
 	var ids []byte
