@@ -1915,7 +1915,7 @@
     regenerator-runtime "^0.12.1"
     ts-dedent "^1.1.0"
 
-"@storybook/addons@5.2.8", "@storybook/addons@^5.2.8":
+"@storybook/addons@5.2.8", "@storybook/addons@^5.2.0", "@storybook/addons@^5.2.8":
   version "5.2.8"
   resolved "https://registry.npmjs.org/@storybook/addons/-/addons-5.2.8.tgz#f8bf8bd555b7a69fb1e9a52ab8cdb96384d931ff"
   integrity sha512-yAo1N5z/45bNIQP8SD+HVTr7X898bYAtz1EZBrQ6zD8bGamzA2Br06rOLL9xXw29eQhsaVnPlqgDwCS1sTC7aQ==
@@ -3012,13 +3012,14 @@
   resolved "https://registry.npmjs.org/@types/storybook__addon-actions/-/storybook__addon-actions-3.4.3.tgz#bb0c3fd066e1f495d3f2b724487e2b99194b3f1a"
   integrity sha512-RSFFfruUHL7La4CZpuiKZ0mZvr5orjenFA2jc31tfPwvA3fYNH4/9XSfA2MB08IpJbF3aErtYWT5Dtigkxnltg==
 
-"@types/storybook__addon-info@4.1.2":
-  version "4.1.2"
-  resolved "https://registry.npmjs.org/@types/storybook__addon-info/-/storybook__addon-info-4.1.2.tgz#a61c0b201e23380b6ec6ed3902a87350d92652d8"
-  integrity sha512-zr2+pLF+BYHz0gNKtFj+oorXyJsOoaeyvrtOLrGUABPUKc1lv/k/7sALK0bjX8lfaYpgsukWD+k8uPf79EABtA==
+"@types/storybook__addon-info@5.2.1":
+  version "5.2.1"
+  resolved "https://registry.npmjs.org/@types/storybook__addon-info/-/storybook__addon-info-5.2.1.tgz#be6fb8c670ec6afc1fa36f313fb7978040e10618"
+  integrity sha512-sUP6gXXNu7VPYhacysIptr6bLTJyJfZWdvFyd80cPNfDoAzFzGM0oMn4ENfTeZcezikO+1Lu7gJKLgheS5H2og==
   dependencies:
+    "@storybook/addons" "^5.2.0"
+    "@storybook/react" "^5.2.0"
     "@types/react" "*"
-    "@types/storybook__react" "*"
 
 "@types/storybook__addon-knobs@5.0.4":
   version "5.0.4"

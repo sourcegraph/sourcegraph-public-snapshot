@@ -129,7 +129,7 @@
     "@types/socket.io": "2.1.4",
     "@types/socket.io-client": "1.4.32",
     "@types/storybook__addon-actions": "3.4.3",
-    "@types/storybook__addon-info": "4.1.2",
+    "@types/storybook__addon-info": "5.2.1",
     "@types/storybook__addon-knobs": "5.0.4",
     "@types/storybook__addon-options": "4.0.2",
     "@types/storybook__addon-storyshots": "5.1.2",
