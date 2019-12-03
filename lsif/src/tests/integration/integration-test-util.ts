@@ -12,6 +12,8 @@ import { dbFilename, ensureDirectory } from '../../shared/paths'
 import { lsp } from 'lsif-protocol'
 import { userInfo } from 'os'
 import { XrepoDatabase } from '../../shared/xrepo/xrepo'
+import { internalLocationToLocation } from '../../server/routes/lsif'
+import { InternalLocation } from '../../server/backend/database'
 
 /**
  * Create a temporary directory with a subdirectory for dbs.
@@ -332,4 +334,15 @@ export function filterNodeModules<T>({
     cursor?: ReferencePaginationCursor
 }): { locations: lsp.Location[]; cursor?: ReferencePaginationCursor } {
     return { locations: locations.filter(l => !l.uri.includes('node_modules')), cursor }
+}
+
+// TODO
+export function mapInternalLocations<T extends { locations: InternalLocation[] }>(
+    repository: string,
+    resp: T
+): Omit<T, 'locations'> & { locations: lsp.Location[] } {
+    return {
+        ...resp,
+        locations: resp.locations.map(l => internalLocationToLocation(repository, l)),
+    }
 }
