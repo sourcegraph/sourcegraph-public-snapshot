@@ -1,9 +1,12 @@
 package resolvers
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/url"
 
 	graphql "github.com/graph-gophers/graphql-go"
@@ -24,10 +27,81 @@ func NewResolver() graphqlbackend.CodeIntelResolver {
 }
 
 //
+// LSIF Request Resolvers
+
+func (r *Resolver) Definitions(ctx context.Context, args *graphqlbackend.LSIFFilePositionArgs) (graphqlbackend.LocationWithConfidenceConnectionResolver, error) {
+	opt := LocationsQueryOptions{
+		Operation:  "definitions",
+		Repository: args.Repository,
+		Commit:     args.Commit,
+		Path:       args.Path,
+		Line:       args.Line,
+		Character:  args.Character,
+	}
+
+	return &locationWithConfidenceConnectionResolver{opt: opt}, nil
+}
+
+func (r *Resolver) References(ctx context.Context, args *graphqlbackend.LSIFPagedFilePositionArgs) (graphqlbackend.LocationWithConfidenceConnectionResolver, error) {
+	opt := LocationsQueryOptions{
+		Operation:  "references",
+		Repository: args.Repository,
+		Commit:     args.Commit,
+		Path:       args.Path,
+		Line:       args.Line,
+		Character:  args.Character,
+	}
+	if args.First != nil {
+		opt.Limit = args.First
+	}
+	if args.After != nil {
+		decoded, err := base64.StdEncoding.DecodeString(*args.After)
+		if err != nil {
+			return nil, err
+		}
+		nextURL := string(decoded)
+		opt.NextURL = &nextURL
+	}
+
+	return &locationWithConfidenceConnectionResolver{opt: opt}, nil
+}
+
+func (r *Resolver) Hover(ctx context.Context, args *graphqlbackend.LSIFFilePositionArgs) (graphqlbackend.MarkdownWithConfidenceResolver, error) {
+	path := fmt.Sprintf("/request")
+	values := url.Values{}
+	values.Set("repository", args.Repository)
+	values.Set("commit", args.Commit)
+
+	body, err := json.Marshal(map[string]interface{}{
+		"method": "hover",
+		"path":   args.Path,
+		"position": map[string]interface{}{
+			"line":      args.Line,
+			"character": args.Character,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	payload := struct {
+		Text string `json:"contents"`
+	}{}
+
+	if err := client.DefaultClient.TraceRequestAndUnmarshalPayload(ctx, "POST", path, values, ioutil.NopCloser(bytes.NewReader(body)), &payload); err != nil {
+		return nil, err
+	}
+
+	return &markdownWithConfidenceResolver{
+		MarkdownResolver: graphqlbackend.NewMarkdownResolver(payload.Text),
+	}, nil
+}
+
+//
 // Dump Node Resolvers
 
 func (r *Resolver) LSIFDumpByID(ctx context.Context, id graphql.ID) (graphqlbackend.LSIFDumpResolver, error) {
-	repoName, dumpID, err := unmarshalLSIFDumpGQLID(id)
+	repoName, dumpID, inputRevision, err := unmarshalLSIFDumpGQLID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +118,7 @@ func (r *Resolver) LSIFDumpByID(ctx context.Context, id graphql.ID) (graphqlback
 		return nil, err
 	}
 
-	return &lsifDumpResolver{repo: repo, lsifDump: lsifDump}, nil
+	return &lsifDumpResolver{repo: repo, lsifDump: lsifDump, inputRevision: inputRevision}, nil
 }
 
 func (r *Resolver) DeleteLSIFDump(ctx context.Context, id graphql.ID) (*graphqlbackend.EmptyResponse, error) {
@@ -53,7 +127,7 @@ func (r *Resolver) DeleteLSIFDump(ctx context.Context, id graphql.ID) (*graphqlb
 		return nil, err
 	}
 
-	repoName, dumpID, err := unmarshalLSIFDumpGQLID(id)
+	repoName, dumpID, _, err := unmarshalLSIFDumpGQLID(id)
 	if err != nil {
 		return nil, err
 	}

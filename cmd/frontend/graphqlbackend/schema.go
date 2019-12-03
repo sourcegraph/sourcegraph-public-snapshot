@@ -1317,7 +1317,16 @@ type SearchFilterSuggestions {
 union SearchResult = FileMatch | CommitSearchResult | Repository | CodemodResult
 
 # An object representing a markdown string.
-type Markdown {
+interface MarkdownBase {
+    # The raw markdown string.
+    text: String!
+    # HTML for the rendered markdown string, or null if there is no HTML representation provided.
+    # If specified, clients should render this directly.
+    html: String!
+}
+
+# An object representing a markdown string.
+type Markdown implements MarkdownBase {
     # The raw markdown string.
     text: String!
     # HTML for the rendered markdown string, or null if there is no HTML representation provided.
@@ -2102,7 +2111,19 @@ type Symbol {
 }
 
 # A location inside a resource (in a repository at a specific commit).
-type Location {
+interface LocationBase {
+    # The file that this location refers to.
+    resource: GitBlob!
+    # The range inside the file that this location refers to.
+    range: Range
+    # The URL to this location (using the input revision specifier, which may not be immutable).
+    url: String!
+    # The canonical URL to this location (using an immutable revision specifier).
+    canonicalURL: String!
+}
+
+# A location inside a resource (in a repository at a specific commit).
+type Location implements LocationBase {
     # The file that this location refers to.
     resource: GitBlob!
     # The range inside the file that this location refers to.
@@ -2618,6 +2639,15 @@ type GitBlob implements TreeEntry & File2 {
         # Recurse into sub-trees of single-child directories
         recursiveSingleChild: Boolean = false
     ): Boolean!
+
+    # A list of definitions of the symbol under the given document position.
+    definitions(path: String!, line: Int!, character: Int!): LocationWithConfidenceConnection!
+
+    # A list of references of the symbol under the given document position.
+    references(path: String!, line: Int!, character: Int!, after: String, first: Int): LocationWithConfidenceConnection!
+
+    # The hover result of the symbol under the given document position.
+    hover(path: String!, line: Int!, character: Int!): MarkdownWithConfidence!
 }
 
 # A highlighted file.
@@ -3936,6 +3966,9 @@ type LSIFDump implements Node {
     # The project for which this dump provides code intelligence.
     projectRoot: GitTree!
 
+    # Optional input commit supplied when the dump was contructed as a closest dump of a file in the git tree.
+    inputRevision: GitObjectID
+
     # Whether or not this dump provides intelligence for the tip of the default branch. Find reference queries
     # will return symbols from remote repositories only when this property is true. This property is updated
     # asynchronously and is eventually consistent with the git data known by the Sourcegraph instance.
@@ -3946,6 +3979,48 @@ type LSIFDump implements Node {
 
     # The time the dump became available for use.
     processedAt: DateTime!
+}
+
+# Fields of an LSIF result that are populated when the response contains approximate data.
+interface WithConfidence {
+    # A field that will be replaced in RFC 89.
+    placeholder: String
+}
+
+# A location inside a resource with confidence fields.
+type LocationWithConfidence implements LocationBase & WithConfidence {
+    # The file that this location refers to.
+    resource: GitBlob!
+    # The range inside the file that this location refers to.
+    range: Range
+    # The URL to this location (using the input revision specifier, which may not be immutable).
+    url: String!
+    # The canonical URL to this location (using an immutable revision specifier).
+    canonicalURL: String!
+
+    # A field that will be replaced in RFC 89.
+    placeholder: String
+}
+
+# An object representing a markdown string with confidence fields.
+type MarkdownWithConfidence implements MarkdownBase & WithConfidence {
+    # The raw markdown string.
+    text: String!
+    # HTML for the rendered markdown string, or null if there is no HTML representation provided.
+    # If specified, clients should render this directly.
+    html: String!
+
+    # A field that will be replaced in RFC 89.
+    placeholder: String
+}
+
+# A list of locations within a file.
+type LocationWithConfidenceConnection {
+    # A list of locations within a file.
+    nodes: [LocationWithConfidence!]!
+
+    # Pagination information.
+    pageInfo: PageInfo!
 }
 
 # A list of LSIF dumps.

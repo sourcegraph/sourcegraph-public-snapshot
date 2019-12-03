@@ -20,6 +20,9 @@ type CodeIntelResolver interface {
 	LSIFJobStatsByID(ctx context.Context, id graphql.ID) (LSIFJobStatsResolver, error)
 	DeleteLSIFDump(ctx context.Context, id graphql.ID) (*EmptyResponse, error)
 	DeleteLSIFJob(ctx context.Context, id graphql.ID) (*EmptyResponse, error)
+	Definitions(ctx context.Context, args *LSIFFilePositionArgs) (LocationWithConfidenceConnectionResolver, error)
+	References(ctx context.Context, args *LSIFPagedFilePositionArgs) (LocationWithConfidenceConnectionResolver, error)
+	Hover(ctx context.Context, args *LSIFFilePositionArgs) (MarkdownWithConfidenceResolver, error)
 }
 
 type LSIFDumpsQueryArgs struct {
@@ -41,9 +44,24 @@ type LSIFJobsQueryArgs struct {
 	After *string
 }
 
+type LSIFFilePositionArgs struct {
+	Repository string
+	Commit     string
+	Path       string
+	Line       int32
+	Character  int32
+}
+
+type LSIFPagedFilePositionArgs struct {
+	LSIFFilePositionArgs
+	graphqlutil.ConnectionArgs
+	After *string
+}
+
 type LSIFDumpResolver interface {
 	ID() graphql.ID
-	ProjectRoot() (*GitTreeEntryResolver, error)
+	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
+	InputRevision() *GitObjectID
 	IsLatestForRepo() bool
 	UploadedAt() DateTime
 	ProcessedAt() DateTime
@@ -53,6 +71,25 @@ type LSIFDumpConnectionResolver interface {
 	Nodes(ctx context.Context) ([]LSIFDumpResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type LocationWithConfidenceConnectionResolver interface {
+	Nodes(ctx context.Context) ([]LocationWithConfidenceResolver, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type LocationWithConfidenceResolver interface {
+	Resource() *GitTreeEntryResolver
+	Range() *RangeResolver
+	URL(ctx context.Context) (string, error)
+	CanonicalURL() (string, error)
+	Placeholder() *string
+}
+
+type MarkdownWithConfidenceResolver interface {
+	Text() string
+	HTML() string
+	Placeholder() *string
 }
 
 type LSIFJobStatsResolver interface {

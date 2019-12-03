@@ -21,24 +21,29 @@ import (
 // Node Resolver
 
 type lsifDumpResolver struct {
-	repo     *types.Repo
-	lsifDump *lsif.LSIFDump
+	repo          *types.Repo
+	lsifDump      *lsif.LSIFDump
+	inputRevision *graphqlbackend.GitObjectID
 }
 
 var _ graphqlbackend.LSIFDumpResolver = &lsifDumpResolver{}
 
 func (r *lsifDumpResolver) ID() graphql.ID {
-	return marshalLSIFDumpGQLID(r.lsifDump.Repository, r.lsifDump.ID)
+	return marshalLSIFDumpGQLID(r.lsifDump.Repository, r.lsifDump.ID, r.inputRevision)
 }
 
-func (r *lsifDumpResolver) ProjectRoot() (*graphqlbackend.GitTreeEntryResolver, error) {
+func (r *lsifDumpResolver) ProjectRoot(ctx context.Context) (*graphqlbackend.GitTreeEntryResolver, error) {
 	repo := graphqlbackend.NewRepositoryResolver(r.repo)
-	commitResolver, err := repo.Commit(context.Background(), &graphqlbackend.RepositoryCommitArgs{Rev: r.lsifDump.Commit})
+	commitResolver, err := repo.Commit(ctx, &graphqlbackend.RepositoryCommitArgs{Rev: r.lsifDump.Commit})
 	if err != nil {
 		return nil, err
 	}
 
 	return graphqlbackend.NewGitTreeEntryResolver(commitResolver, graphqlbackend.CreateFileInfo(r.lsifDump.Root, true)), nil
+}
+
+func (r *lsifDumpResolver) InputRevision() *graphqlbackend.GitObjectID {
+	return r.inputRevision
 }
 
 func (r *lsifDumpResolver) IsLatestForRepo() bool {
@@ -171,27 +176,29 @@ func (r *lsifDumpConnectionResolver) compute(ctx context.Context) ([]*lsif.LSIFD
 // ID Serialization
 
 type lsifDumpIDPayload struct {
-	RepoName string
-	ID       string
+	RepoName      string
+	ID            string
+	InputRevision *graphqlbackend.GitObjectID
 }
 
-func marshalLSIFDumpGQLID(repoName string, lsifDumpID int64) graphql.ID {
+func marshalLSIFDumpGQLID(repoName string, lsifDumpID int64, inputRevision *graphqlbackend.GitObjectID) graphql.ID {
 	return relay.MarshalID("LSIFDump", lsifDumpIDPayload{
-		RepoName: repoName,
-		ID:       strconv.FormatInt(lsifDumpID, 36),
+		RepoName:      repoName,
+		ID:            strconv.FormatInt(lsifDumpID, 36),
+		InputRevision: inputRevision,
 	})
 }
 
-func unmarshalLSIFDumpGQLID(id graphql.ID) (string, int64, error) {
+func unmarshalLSIFDumpGQLID(id graphql.ID) (string, int64, *graphqlbackend.GitObjectID, error) {
 	var raw lsifDumpIDPayload
 	if err := relay.UnmarshalSpec(id, &raw); err != nil {
-		return "", 0, err
+		return "", 0, nil, err
 	}
 
 	dumpID, err := strconv.ParseInt(raw.ID, 36, 64)
 	if err != nil {
-		return "", 0, err
+		return "", 0, nil, err
 	}
 
-	return raw.RepoName, dumpID, nil
+	return raw.RepoName, dumpID, raw.InputRevision, nil
 }

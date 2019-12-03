@@ -6,6 +6,14 @@ type markdownResolver struct {
 	text string
 }
 
+type MarkdownResolver = markdownResolver
+
+func NewMarkdownResolver(text string) *MarkdownResolver {
+	return &markdownResolver{
+		text: text,
+	}
+}
+
 func (m *markdownResolver) Text() string {
 	return m.text
 }

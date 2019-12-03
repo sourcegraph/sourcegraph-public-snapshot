@@ -35,7 +35,7 @@ func (r *lsifJobResolver) Type() string {
 }
 
 func (r *lsifJobResolver) Arguments() graphqlbackend.JSONValue {
-	return graphqlbackend.JSONValue{Value: r.lsifJob.Argumentss}
+	return graphqlbackend.JSONValue{Value: r.lsifJob.Arguments}
 }
 
 func (r *lsifJobResolver) State() string {
