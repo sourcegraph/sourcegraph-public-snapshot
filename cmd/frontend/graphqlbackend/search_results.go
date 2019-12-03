@@ -489,8 +489,8 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 		dt2 := longer(2, dt)
 		rr = &SearchResultsResolver{
 			alert: &searchAlert{
-				title:       "Timeout",
-				description: fmt.Sprintf("Deadline exceeded after about %s.", roundStr(dt.String())),
+				title:       "Timed out while searching",
+				description: fmt.Sprintf("We weren't able to find any results in %s.", roundStr(dt.String())),
 				proposedQueries: []*searchQueryDescription{
 					{
 						description: "query with longer timeout",
