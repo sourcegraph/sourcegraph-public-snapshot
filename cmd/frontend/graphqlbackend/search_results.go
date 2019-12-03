@@ -479,25 +479,27 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*SearchResultsResolver, error) {
 	start := time.Now()
 	rr, err := r.doResults(ctx, "")
-	if err != nil {
-		if err == context.DeadlineExceeded {
-			dt := time.Since(start)
-			dt2 := longer(2, dt)
-			rr = &SearchResultsResolver{
-				alert: &searchAlert{
-					title:       "Timeout",
-					description: fmt.Sprintf("Deadline exceeded after about %s.", roundStr(dt.String())),
-					proposedQueries: []*searchQueryDescription{
-						{
-							description: "query with longer timeout",
-							query:       fmt.Sprintf("timeout:%v %s", dt2, omitQueryFields(r, query.FieldTimeout)),
-						},
+
+	allReposTimedout := err == context.DeadlineExceeded
+	if err == nil && len(rr.searchResultsCommon.timedout) == len(rr.searchResultsCommon.repos) {
+		allReposTimedout = true
+	}
+	if allReposTimedout {
+		dt := time.Since(start)
+		dt2 := longer(2, dt)
+		rr = &SearchResultsResolver{
+			alert: &searchAlert{
+				title:       "Timeout",
+				description: fmt.Sprintf("Deadline exceeded after about %s.", roundStr(dt.String())),
+				proposedQueries: []*searchQueryDescription{
+					{
+						description: "query with longer timeout",
+						query:       fmt.Sprintf("timeout:%v %s", dt2, omitQueryFields(r, query.FieldTimeout)),
 					},
 				},
-			}
-			return rr, nil
+			},
 		}
-		return nil, err
+		return rr, nil
 	}
 	return rr, nil
 }
