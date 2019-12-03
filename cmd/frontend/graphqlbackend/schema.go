@@ -396,9 +396,15 @@ type Mutation {
     # Deletes a saved search
     deleteSavedSearch(id: ID!): EmptyResponse
 
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
     # Deletes an LSIF dump.
     deleteLSIFDump(id: ID!): EmptyResponse
 
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
     # Deletes an LSIF job.
     deleteLSIFJob(id: ID!): EmptyResponse
 }
@@ -1238,9 +1244,15 @@ type Query {
     # Look up a namespace by ID.
     namespace(id: ID!): Namespace
 
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
     # Retrieve counts of jobs by state in the LSIF work queue.
     lsifJobStats: LSIFJobStats!
 
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
     # Search for LSIF jobs by state and query term.
     lsifJobs(
         # The state of returned jobs.
@@ -1761,6 +1773,9 @@ type Repository implements Node & GenericSearchResultInterface {
     # The result previews of the result.
     matches: [SearchResultMatch!]!
 
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
     # The repository's LSIF dumps.
     lsifDumps(
         # An (optional) search query that searches over the commit and root properties.
@@ -2619,12 +2634,21 @@ type GitBlob implements TreeEntry & File2 {
         recursiveSingleChild: Boolean = false
     ): Boolean!
 
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
     # A list of definitions of the symbol under the given document position.
     definitions(line: Int!, character: Int!): LocationConnection!
 
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
     # A list of references of the symbol under the given document position.
     references(line: Int!, character: Int!, after: String, first: Int): LocationConnection!
 
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
     # The hover result of the symbol under the given document position.
     hover(line: Int!, character: Int!): Markdown!
 }
