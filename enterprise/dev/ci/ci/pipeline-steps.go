@@ -23,6 +23,19 @@ var allDockerImages = []string{
 	"lsif-server",
 }
 
+var hackTestCount int
+
+func hackTestStep(step *bk.Step) {
+	step.Key = fmt.Sprintf("test_%d", hackTestCount)
+	hackTestCount++
+}
+
+func hackTestDependsStep(step *bk.Step) {
+	for i := 0; i < hackTestCount; i++ {
+		step.DependsOn = append(step.DependsOn, fmt.Sprintf("test_%d", i))
+	}
+}
+
 // Verifies the docs formatting and builds the `docsite` command.
 func addDocs(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":memo:",
@@ -58,6 +71,7 @@ func addWebApp(pipeline *bk.Pipeline) {
 	// Webapp tests
 	pipeline.AddStep(":jest::globe_with_meridians:",
 		bk.Cmd("dev/ci/yarn-test.sh web"),
+		hackTestStep,
 		bk.ArtifactPaths("web/coverage/coverage-final.json"))
 }
 
@@ -70,6 +84,7 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 	// Browser extension tests
 	pipeline.AddStep(":jest::chrome:",
 		bk.Cmd("dev/ci/yarn-test.sh browser"),
+		hackTestStep,
 		bk.ArtifactPaths("browser/coverage/coverage-final.json"))
 }
 
@@ -77,6 +92,7 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 func addLSIFServer(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest:",
 		bk.Cmd("dev/ci/yarn-test-separate.sh lsif"),
+		hackTestStep,
 		bk.ArtifactPaths("lsif/coverage/coverage-final.json"))
 }
 
@@ -85,6 +101,7 @@ func addSharedTests(pipeline *bk.Pipeline) {
 	// Shared tests
 	pipeline.AddStep(":jest:",
 		bk.Cmd("dev/ci/yarn-test.sh shared"),
+		hackTestStep,
 		bk.ArtifactPaths("shared/coverage/coverage-final.json"))
 
 	// Storybook
@@ -103,6 +120,7 @@ func addGoTests(pipeline *bk.Pipeline) {
 		bk.Cmd("./cmd/symbols/build.sh buildLibsqlite3Pcre"), // for symbols tests
 		bk.Cmd("./dev/comby-install-or-upgrade.sh"),          // for searcher and replacer tests
 		bk.Cmd("go test -timeout 4m -coverprofile=coverage.txt -covermode=atomic -race ./..."),
+		hackTestStep,
 		bk.ArtifactPaths("coverage.txt"))
 }
 
@@ -149,6 +167,7 @@ func addE2E(c Config) func(*bk.Pipeline) {
 // Code coverage.
 func addCodeCov(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":codecov:",
+		hackTestDependsStep,
 		bk.Cmd("buildkite-agent artifact download 'coverage.txt' . || true"), // ignore error when no report exists
 		bk.Cmd("buildkite-agent artifact download '*/coverage-final.json' . || true"),
 		bk.Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode"))

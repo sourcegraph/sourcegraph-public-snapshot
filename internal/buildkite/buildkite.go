@@ -29,7 +29,9 @@ type Step struct {
 	Trigger          string                 `json:"trigger,omitempty"`
 	Async            bool                   `json:"async,omitempty"`
 	Build            *BuildOptions          `json:"build,omitempty"`
+	DependsOn        []string               `json:"depends_on,omitempty"`
 	Env              map[string]string      `json:"env,omitempty"`
+	Key              string                 `json:"key,omitempty"`
 	Plugins          map[string]interface{} `json:"plugins,omitempty"`
 	ArtifactPaths    string                 `json:"artifact_paths,omitempty"`
 	ConcurrencyGroup string                 `json:"concurrency_group,omitempty"`
