@@ -8,12 +8,6 @@ import (
 	bk "github.com/sourcegraph/sourcegraph/internal/buildkite"
 )
 
-func init() {
-	bk.Plugins["gopath-checkout#v1.0.1"] = map[string]string{
-		"import": "github.com/sourcegraph/sourcegraph",
-	}
-}
-
 // GeneratePipeline is the main pipeline generation function. It defines the build pipeline for each of the
 // main CI cases, which are defined in the main switch statement in the function.
 func GeneratePipeline(c Config) (*bk.Pipeline, error) {

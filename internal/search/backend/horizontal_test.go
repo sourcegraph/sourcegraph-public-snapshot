@@ -101,6 +101,47 @@ func TestHorizontalSearcher(t *testing.T) {
 	searcher.Close()
 }
 
+func TestSyncSearchers(t *testing.T) {
+	// This test exists to ensure we test the fast path returns in
+	// syncSearchers. TestHorizontalSearcher tests the same code paths, but
+	// isn't guaranteed to trigger the fast-path returns.
+	var endpoints atomicMap
+	endpoints.Store(prefixMap{"a"})
+
+	type mock struct {
+		mockSearcher
+		dialNum int
+	}
+
+	dialNumCounter := 0
+	searcher := &HorizontalSearcher{
+		Map: &endpoints,
+		Dial: func(endpoint string) zoekt.Searcher {
+			dialNumCounter++
+			return &mock{
+				dialNum: dialNumCounter,
+			}
+		},
+	}
+	defer searcher.Close()
+
+	// First call initializes the list, second should use the fast-path so
+	// should have the same dialNum.
+	for i := 0; i < 2; i++ {
+		t.Log("gen", i)
+		m, err := searcher.syncSearchers()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(m) != 1 {
+			t.Fatal(err)
+		}
+		if got, want := m["a"].(*mock).dialNum, 1; got != want {
+			t.Fatalf("expected immutable dail num %d, got %d", want, got)
+		}
+	}
+}
+
 func TestDedupper(t *testing.T) {
 	parse := func(s string) []zoekt.FileMatch {
 		t.Helper()

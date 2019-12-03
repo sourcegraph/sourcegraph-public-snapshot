@@ -36,6 +36,7 @@ Foreign-key constraints:
  created_at       | timestamp with time zone | not null default now()
  updated_at       | timestamp with time zone | not null default now()
  base_ref         | text                     | not null
+ description      | text                     | 
 Indexes:
     "campaign_jobs_pkey" PRIMARY KEY, btree (id)
     "campaign_jobs_campaign_plan_repo_rev_unique" UNIQUE CONSTRAINT, btree (campaign_plan_id, repo_id, rev) DEFERRABLE

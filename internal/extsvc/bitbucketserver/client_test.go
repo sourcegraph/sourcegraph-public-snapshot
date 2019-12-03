@@ -514,6 +514,15 @@ func TestClient_CreatePullRequest(t *testing.T) {
 			},
 			err: ErrAlreadyExists.Error(),
 		},
+		{
+			name: "description includes GFM tasklist items",
+			pr: func() *PullRequest {
+				pr := *pr
+				pr.FromRef.ID = "refs/heads/test-pr-bbs-17"
+				pr.Description = "- [ ] One\n- [ ] Two\n"
+				return &pr
+			},
+		},
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
