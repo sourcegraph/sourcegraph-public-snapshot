@@ -79,8 +79,6 @@ func (r *locationConnectionResolver) compute(ctx context.Context) ([]*lsif.LSIFL
 			// first page of results
 			path = fmt.Sprintf("/%s", r.opt.Operation)
 		} else {
-			fmt.Printf("paths: %#v\n", *r.opt.NextURL)
-
 			// subsequent page of results
 			path = *r.opt.NextURL
 		}
