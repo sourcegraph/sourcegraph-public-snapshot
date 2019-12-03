@@ -1,6 +1,6 @@
 import * as constants from '../../shared/constants'
 import * as fs from 'mz/fs'
-import * as path from 'path'
+import * as nodepath from 'path'
 import * as settings from '../settings'
 import * as validation from '../middleware/validation'
 import bodyParser from 'body-parser'
@@ -91,7 +91,7 @@ export function createLsifRouter(
                 const { repository, commit, root: rootRaw, blocking, maxWait }: UploadQueryArgs = req.query
                 const root = sanitizeRoot(rootRaw)
                 const ctx = createTracingContext(req, { repository, commit, root })
-                const filename = path.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR, uuid.v4())
+                const filename = nodepath.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR, uuid.v4())
                 const output = fs.createWriteStream(filename)
                 await logAndTraceCall(ctx, 'Uploading dump', () => pipeline(req, output))
 
@@ -353,10 +353,7 @@ export function createLsifRouter(
  * @param repository The source repository.
  * @param location The location object.
  */
-export const internalLocationToLocation = (
-    repository: string,
-    { dump, path, range }: InternalLocation
-): lsp.Location => {
+export function internalLocationToLocation(repository: string, { dump, path, range }: InternalLocation): lsp.Location {
     if (dump.repository !== repository) {
         const url = new URL(`git://${dump.repository}`)
         url.search = dump.commit
