@@ -9,9 +9,12 @@ jobs:
       - name: Generate LSIF Data
         uses: sourcegraph/lsif-go-action@master
         with:
+          project_root: cmd/
+          file: cmd/dump.lsif
           verbose: "true"
       - name: Upload LSIF data
         uses: sourcegraph/lsif-upload-action@master
         continue-on-error: true
         with:
+          file: cmd/dump.lsif
           github_token: ${{ secrets.PUBLIC_REPO_GITHUB_TOKEN }}
