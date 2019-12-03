@@ -29,4 +29,4 @@ Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](h
 ### Other
 
 - [Open source FAQ](https://about.sourcegraph.com/community/faq)
-- [Code of conduct](https://about.sourcegraph.com/community/conduct)
+- [Code of conduct](https://about.sourcegraph.com/community/code_of_conduct)
