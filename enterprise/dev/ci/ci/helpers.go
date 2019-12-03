@@ -24,8 +24,6 @@ type Config struct {
 	// in the branch. If empty, then no check is enforced.
 	mustIncludeCommit []string
 
-	useE2EPipeline bool
-
 	taggedRelease       bool
 	releaseBranch       bool
 	isBextReleaseBranch bool
@@ -70,7 +68,7 @@ func ComputeConfig() Config {
 			mustIncludeCommits[i] = strings.TrimSpace(mustIncludeCommits[i])
 		}
 	}
-	c := Config{
+	return Config{
 		now:               now,
 		branch:            branch,
 		version:           version,
@@ -85,11 +83,6 @@ func ComputeConfig() Config {
 		patchNoTest:         patchNoTest,
 		isQuick:             isQuick,
 	}
-
-	// Try out new e2e pipeline only on PRs
-	c.useE2EPipeline = !(c.branch == "master" || c.isRenovateBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch)
-
-	return c
 }
 
 func (c Config) ensureCommit() error {
@@ -123,6 +116,11 @@ func (c Config) isPR() bool {
 		c.branch != "master" &&
 		!strings.HasPrefix(c.branch, "master-dry-run/") &&
 		!strings.HasPrefix(c.branch, "docker-images-patch/")
+}
+
+func (c Config) useE2EPipeline() bool {
+	// We want to run E2E the old blocking way if we are going to do a deploy.
+	return !(c.branch == "master" || c.isRenovateBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch)
 }
 
 func isDocsOnly() bool {

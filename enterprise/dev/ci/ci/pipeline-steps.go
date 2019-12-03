@@ -124,7 +124,7 @@ func addDockerfileLint(pipeline *bk.Pipeline) {
 // End-to-end tests.
 func addE2E(c Config) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		if c.useE2EPipeline {
+		if c.useE2EPipeline() {
 			return
 		}
 
@@ -208,7 +208,7 @@ func wait(pipeline *bk.Pipeline) {
 // Build Sourcegraph Server Docker image candidate
 func addServerDockerImageCandidate(c Config) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		if c.useE2EPipeline {
+		if c.useE2EPipeline() {
 			pipeline.AddTrigger(":chromium:",
 				bk.Trigger("sourcegraph-e2e"),
 				bk.Async(true),
@@ -247,7 +247,7 @@ func copyEnv(keys ...string) map[string]string {
 // Clean up Sourcegraph Server Docker image candidate
 func addCleanUpServerDockerImageCandidate(c Config) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		if c.useE2EPipeline {
+		if c.useE2EPipeline() {
 			return
 		}
 
