@@ -4,7 +4,7 @@
 
 import * as GQL from '../../../shared/src/graphql/schema'
 import { Driver } from '../../../shared/src/e2e/driver'
-import { enableLSIF, uploadDumps } from './util/codeintel'
+import { enableLSIF, uploadAndEnsureDump } from './util/codeintel'
 import { ensureLoggedInOrCreateTestUser } from './util/helpers'
 import { ensureTestExternalService, getUser, setUserSiteAdmin } from './util/api'
 import { getConfig } from '../../../shared/src/e2e/config'
@@ -34,6 +34,13 @@ describe('Code intelligence regression test suite', () => {
         uniqueDisplayName: '[TEST] GitHub (codeintel.test.ts)',
     }
     const testRepoSlugs = ['sourcegraph-testing/prometheus-common', 'sourcegraph-testing/prometheus-client-golang']
+
+    const repoBase = 'github.com/sourcegraph-testing'
+    const commonRepo = 'prometheus-common'
+    const clientRepo = 'prometheus-client-golang'
+    const commonCommit = '287d3e634a1e550c9e463dd7e5a75a422c614505'
+    const clientCommit = '333f01cef0d61f9ef05ada3d94e00e69c8d5cdda'
+    const olderCommonCommit = 'e8215224146358493faab0295ce364cd386223b9' // 2 behind commonCommit
 
     let driver: Driver
     let gqlClient: GraphQLClient
@@ -72,6 +79,23 @@ describe('Code intelligence regression test suite', () => {
             throw new Error(`test user ${testUsername} does not exist`)
         }
         await setUserSiteAdmin(gqlClient, user.id, true)
+
+        //
+        // Upload dumps for tests
+
+        resourceManager.add(
+            'LSIF dump',
+            'prometheus-common dump',
+            await uploadAndEnsureDump(driver, config, gqlClient, repoBase, commonRepo, commonCommit, '/')
+        )
+        resourceManager.add(
+            'LSIF dump',
+            'prometheus-client-golang dump',
+            await uploadAndEnsureDump(driver, config, gqlClient, repoBase, clientRepo, clientCommit, '/')
+        )
+
+        // Ensure precise code intel is enabled for navigation assertions
+        resourceManager.add('Global setting', 'codeIntel.lsif', await enableLSIF(driver, gqlClient))
     }, 30 * 1000)
 
     afterAll(async () => {
@@ -86,13 +110,6 @@ describe('Code intelligence regression test suite', () => {
     test(
         'Dumps',
         async () => {
-            const repoBase = 'github.com/sourcegraph-testing'
-            const commonRepo = 'prometheus-common'
-            const clientRepo = 'prometheus-client-golang'
-            const commonCommit = '287d3e634a1e550c9e463dd7e5a75a422c614505'
-            const clientCommit = '333f01cef0d61f9ef05ada3d94e00e69c8d5cdda'
-            const olderCommonCommit = 'e8215224146358493faab0295ce364cd386223b9' // 2 behind commonCommit
-
             interface Location {
                 path: string
                 position: { line: number; character: number }
@@ -176,21 +193,6 @@ describe('Code intelligence regression test suite', () => {
                     },
                 ],
             })
-
-            await uploadDumps(driver, config, gqlClient, repoBase, [
-                {
-                    repository: commonRepo,
-                    commit: commonCommit,
-                    root: '/',
-                },
-                {
-                    repository: clientRepo,
-                    commit: clientCommit,
-                    root: '/',
-                },
-            ])
-
-            await enableLSIF(driver, config)
 
             await testCodeNavigation(driver, config, [
                 makeTestCase(commonRepo, commonCommit, commonCommit, '/model/value.go', 31),

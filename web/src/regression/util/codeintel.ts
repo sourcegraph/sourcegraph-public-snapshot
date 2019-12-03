@@ -6,37 +6,38 @@ import { Driver } from '../../../../shared/src/e2e/driver'
 import { map } from 'rxjs/operators'
 import { GraphQLClient } from './GraphQLClient'
 import { range } from 'lodash'
+import { applyEdits } from '@sqs/jsonc-parser'
+import { setProperty } from '@sqs/jsonc-parser/lib/edit'
+import { getGlobalSettings } from './helpers'
+import { overwriteSettings } from '../../../../shared/src/settings/edit'
 
 async function setGlobalLSIFSetting(
     driver: Driver,
-    config: Pick<Config, 'sourcegraphBaseUrl'>,
+    gqlClient: GraphQLClient,
     enabled: boolean
-): Promise<void> {
-    await driver.page.goto(`${config.sourcegraphBaseUrl}/site-admin/global-settings`)
-    const globalSettings = `{"codeIntel.lsif": ${enabled}}`
-    await driver.replaceText({
-        selector: '.monaco-editor',
-        newText: globalSettings,
-        selectMethod: 'keyboard',
-        enterTextMethod: 'type',
-    })
-    await (
-        await driver.findElementWithText('Save changes', {
-            selector: 'button',
-            wait: { timeout: 500 },
+): Promise<() => Promise<void>> {
+    const { subjectID, settingsID, contents: oldContents } = await getGlobalSettings(gqlClient)
+    const newContents = applyEdits(
+        oldContents,
+        setProperty(oldContents, ['codeIntel.lsif'], [enabled], {
+            eol: '\n',
+            insertSpaces: true,
+            tabSize: 2,
         })
-    ).click()
-
-    await driver.page.waitForFunction(
-        () => document.querySelectorAll('[title="No changes to save or discard"]').length > 0
     )
+
+    await overwriteSettings(gqlClient, subjectID, settingsID, newContents)
+    return async () => {
+        const { subjectID: currentSubjectID, settingsID: currentSettingsID } = await getGlobalSettings(gqlClient)
+        await overwriteSettings(gqlClient, currentSubjectID, currentSettingsID, oldContents)
+    }
 }
 
-export const enableLSIF = (driver: Driver, config: Pick<Config, 'sourcegraphBaseUrl'>): Promise<void> =>
-    setGlobalLSIFSetting(driver, config, true)
+export const enableLSIF = (driver: Driver, gqlClient: GraphQLClient): Promise<() => Promise<void>> =>
+    setGlobalLSIFSetting(driver, gqlClient, true)
 
-export const disableLSIF = (driver: Driver, config: Pick<Config, 'sourcegraphBaseUrl'>): Promise<void> =>
-    setGlobalLSIFSetting(driver, config, false)
+export const disableLSIF = (driver: Driver, gqlClient: GraphQLClient): Promise<() => Promise<void>> =>
+    setGlobalLSIFSetting(driver, gqlClient, false)
 
 export interface Dump {
     repository: string
@@ -77,6 +78,38 @@ export async function uploadDumps(
             jobUrl: jobUrls[i],
         })
     }
+}
+
+export async function uploadAndEnsureDump(
+    driver: Driver,
+    config: Pick<Config, 'sourcegraphBaseUrl'>,
+    gqlClient: GraphQLClient,
+    repoBase: string,
+    repository: string,
+    commit: string,
+    root: string
+): Promise<() => Promise<void>> {
+    // First, remove all existing dumps for the repository
+    await clearDumps(gqlClient, `${repoBase}/${repository}`)
+
+    // Upload each dump in parallel and get back the job status URLs
+    const jobUrl = await uploadDump(config, {
+        repository: `${repoBase}/${repository}`,
+        commit,
+        root,
+        filename: `lsif-data/${repository}@${commit.substring(0, 12)}.lsif`,
+    })
+
+    // Check the job status URLs to ensure that they succeed, then ensure
+    // that they are all listed as one of the "active" dumps for that repo
+    await ensureDump(driver, config, {
+        repository: `${repoBase}/${repository}`,
+        commit,
+        root,
+        jobUrl,
+    })
+
+    return (): Promise<void> => clearDumps(gqlClient, `${repoBase}/${repository}`)
 }
 
 //

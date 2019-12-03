@@ -79,6 +79,9 @@ describe('Code navigation regression test suite', () => {
             }
             await setUserSiteAdmin(gqlClient, user.id, true)
             screenshots = new ScreenshotVerifier(driver)
+
+            // Ensure precise code intel is disabled for navigation assertions
+            resourceManager.add('Global setting', 'codeIntel.lsif', await disableLSIF(driver, gqlClient))
         },
         // Cloning sourcegraph/sourcegraph takes awhile
         2 * 60 * 1000 + 10 * 1000
@@ -98,7 +101,6 @@ describe('Code navigation regression test suite', () => {
     test(
         'Basic code intel',
         async () => {
-            await disableLSIF(driver, config)
             await testCodeNavigation(driver, config, [
                 {
                     repoRev: 'github.com/sourcegraph/sourcegraph@7d557b9cbcaa5d4f612016bddd2f4ef0a7efed25',
