@@ -38,7 +38,7 @@ func rawArgs(args Args) (rawArgs []string) {
 	if args.NumWorkers == 0 {
 		rawArgs = append(rawArgs, "-sequential")
 	} else {
-		rawArgs = append(rawArgs, "-jobs", strconv.Itoa(args.NumWorkers))
+		rawArgs = append(rawArgs, "-jobs", strconv.FormatInt(int64(args.NumWorkers), 10))
 	}
 
 	if args.Matcher != "" {
