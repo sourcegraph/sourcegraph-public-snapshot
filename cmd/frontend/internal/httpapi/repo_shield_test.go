@@ -21,7 +21,7 @@ func TestRepoShieldFmt(t *testing.T) {
 		15410: " 15.4k projects",
 	}
 	for input, want := range want {
-		t.Run(strconv.FormatInt(int64(input), 10), func(t *testing.T) {
+		t.Run(strconv.Itoa(input), func(t *testing.T) {
 			got := badgeValueFmt(input)
 			if got != want {
 				t.Fatalf("input %d got %q want %q", input, got, want)

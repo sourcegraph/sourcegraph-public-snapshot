@@ -174,7 +174,7 @@ func (sr *SearchResultsResolver) ApproximateResultCount() string {
 	if sr.LimitHit() || len(sr.cloning) > 0 || len(sr.timedout) > 0 {
 		return fmt.Sprintf("%d+", count)
 	}
-	return strconv.FormatInt(int64(int(count)), 10)
+	return strconv.Itoa(int(count))
 }
 
 func (sr *SearchResultsResolver) Alert() *searchAlert { return sr.alert }
