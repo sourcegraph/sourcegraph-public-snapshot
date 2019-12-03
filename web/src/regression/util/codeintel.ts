@@ -198,6 +198,13 @@ async function uploadDump(
         ].join(' ')
         ;[out] = await child_process.exec(uploadCommand, { cwd: path.join(__dirname, '..') })
     } catch (error) {
+        try {
+            // See if the error is due to a missing utility
+            await child_process.exec('which src')
+        } catch (error) {
+            throw new Error('src-cli is not available on PATH')
+        }
+
         throw new Error(`Failed to upload LSIF dump: ${error.stderr || error.stdout || '(no output)'}`)
     }
 
