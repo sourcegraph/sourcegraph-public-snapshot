@@ -996,7 +996,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 				fileResults, fileCommon, err := searchFilesInRepos(ctx, &args)
 				// Timeouts are reported through searchResultsCommon so don't report an error for them
-				if err != nil && !(err == context.DeadlineExceeded || err == context.Canceled) {
+				if err != nil && !isContextError(ctx, err) {
 					multiErrMu.Lock()
 					multiErr = multierror.Append(multiErr, errors.Wrap(err, "text search failed"))
 					multiErrMu.Unlock()
