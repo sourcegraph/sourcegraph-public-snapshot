@@ -63,6 +63,9 @@ export function search(
                                 cloning {
                                     name
                                 }
+                                repositories {
+                                    name
+                                }
                                 timedout {
                                     name
                                 }
