@@ -74,7 +74,7 @@ func zoektSearchOpts(k int, query *search.PatternInfo) zoekt.SearchOptions {
 	return searchOpts
 }
 
-var errNoResultsInTimeout = errors.New("no results found in specified timeout:")
+var errNoResultsInTimeout = errors.New("no results found in specified timeout")
 
 // zoektSearchHEAD searches repositories using zoekt.
 //
