@@ -765,7 +765,7 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 
 	// Batch query all repository permissions object IDs in one go.
 	q = loadRepoPermissionsBatchQuery(ids, p.Perm, ProviderSourcegraph)
-	loadedIDs, err := s.batchLoadIDs(ctx, q)
+	loadedIDs, err := txs.batchLoadIDs(ctx, q)
 	if err != nil {
 		return err
 	}
@@ -806,7 +806,7 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 
 	// Clean up repo pending permissions table.
 	q = loadRepoPendingPermissionsBatchQuery(ids, p.Perm)
-	loadedIDs, err = s.batchLoadIDs(ctx, q)
+	loadedIDs, err = txs.batchLoadIDs(ctx, q)
 	if err != nil {
 		return err
 	}
