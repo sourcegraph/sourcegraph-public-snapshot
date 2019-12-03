@@ -10,7 +10,7 @@
     "build": "cp ../../../ui/assets/img/favicon.png ./src && ./node_modules/.bin/tsc --noEmit && ./node_modules/.bin/parcel build --out-dir=../assets --no-source-maps --no-minify src/index.html"
   },
   "devDependencies": {
-    "monaco-editor": "^0.17.1",
+    "monaco-editor": "^0.18.1",
     "node-sass": "^4.13.0",
     "parcel-bundler": "^1.12.4",
     "typescript": "^3.6.3"
