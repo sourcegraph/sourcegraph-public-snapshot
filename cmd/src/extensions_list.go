@@ -32,7 +32,7 @@ Examples:
 	var (
 		firstFlag  = flagSet.Int("first", 1000, "Returns the first n extensions from the list. (use -1 for unlimited)")
 		queryFlag  = flagSet.String("query", "", `Returns extensions whose extension IDs match the query. (e.g. "myextension")`)
-		formatFlag = flagSet.String("f", "{{.ExtensionID}}", `Format for the output, using the syntax of Go package text/template. (e.g. "{{.ExtensionID}}: {{.Manifest.Title}} ({{.RemoteURL}})" or "{{.|json}}")`)
+		formatFlag = flagSet.String("f", "{{.ExtensionID}}", `Format for the output, using the syntax of Go package text/template. (e.g. "{{.ExtensionID}}: {{.Manifest.Description}} ({{.RemoteURL}})" or "{{.|json}}")`)
 		apiFlags   = newAPIFlags(flagSet)
 	)
 

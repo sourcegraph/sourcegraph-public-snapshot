@@ -59,7 +59,6 @@ fragment RegistryExtensionFields on RegistryExtension {
     isLocal
     manifest {
         raw
-        title
         description
         bundleURL
     }
