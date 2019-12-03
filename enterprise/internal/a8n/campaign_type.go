@@ -297,6 +297,7 @@ func (c *credentials) generateDiff(ctx context.Context, repo api.RepoName, commi
 	}
 
 	diffs := []string{}
+	tokens := []string{}
 
 	for _, res := range resultsResolver.Results() {
 		fm, ok := res.ToFileMatch()
@@ -308,6 +309,11 @@ func (c *credentials) generateDiff(ctx context.Context, repo api.RepoName, commi
 		content, err := fm.File().Content(ctx)
 		if err != nil {
 			return "", "", err
+		}
+
+		submatches := npmTokenRegexpMultiline.FindAllStringSubmatch(content, -1)
+		for _, match := range submatches {
+			tokens = append(tokens, match[len(match)-1])
 		}
 
 		replacement := fmt.Sprintf("${1}%s", c.args.Matchers[0].ReplaceWith)
@@ -323,7 +329,15 @@ func (c *credentials) generateDiff(ctx context.Context, repo api.RepoName, commi
 		diffs = append(diffs, withHeader)
 	}
 
-	return strings.Join(diffs, "\n"), "", nil
+	var description strings.Builder
+	if len(tokens) > 0 {
+		description.WriteString("Tokens found:\n\n")
+		for _, tok := range tokens {
+			description.WriteString(fmt.Sprintf("- [ ] `%s`\n", tok))
+		}
+	}
+
+	return strings.Join(diffs, "\n"), description.String(), nil
 }
 
 func tmpfileDiff(filename, a, b string) (string, error) {

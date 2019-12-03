@@ -279,6 +279,7 @@ func TestCampaignType_Credentials(t *testing.T) {
 -//npm.fontawesome.com/:_authToken=12345678-2323-1111-1111-12345670B312
 +//npm.fontawesome.com/:_authToken=
 `,
+			wantDescription: "Tokens found:\n\n- [ ] `12345678-2323-1111-1111-12345670B312`\n",
 		},
 		{
 			name: "multiple NPM tokens",
@@ -289,17 +290,24 @@ func TestCampaignType_Credentials(t *testing.T) {
 			searchResultsContents: map[string]string{
 				".npmrc": `//registry.npmjs.org/:_authToken=${NPM_TOKEN}
 //npm.fontawesome.com/:_authToken=12345678-2323-1111-1111-12345670B312
+:_authToken=ANOTHER_TOKEN
+_authToken=YET_ANOTHER_TOKEN_LEAKED
 `,
 			},
 			wantDiff: `diff .npmrc .npmrc
 --- .npmrc
 +++ .npmrc
-@@ -1,2 +1,2 @@
+@@ -1,4 +1,4 @@
 -//registry.npmjs.org/:_authToken=${NPM_TOKEN}
 -//npm.fontawesome.com/:_authToken=12345678-2323-1111-1111-12345670B312
+-:_authToken=ANOTHER_TOKEN
+-_authToken=YET_ANOTHER_TOKEN_LEAKED
 +//registry.npmjs.org/:_authToken=
 +//npm.fontawesome.com/:_authToken=
++:_authToken=
++_authToken=
 `,
+			wantDescription: "Tokens found:\n\n- [ ] `${NPM_TOKEN}`\n- [ ] `12345678-2323-1111-1111-12345670B312`\n- [ ] `ANOTHER_TOKEN`\n- [ ] `YET_ANOTHER_TOKEN_LEAKED`\n",
 		},
 		{
 			name: "single NPM token and replaceWith",
@@ -318,6 +326,7 @@ func TestCampaignType_Credentials(t *testing.T) {
 -//npm.fontawesome.com/:_authToken=12345678-2323-1111-1111-12345670B312
 +//npm.fontawesome.com/:_authToken=REMOVED_TOKEN
 `,
+			wantDescription: "Tokens found:\n\n- [ ] `12345678-2323-1111-1111-12345670B312`\n",
 		},
 	}
 
