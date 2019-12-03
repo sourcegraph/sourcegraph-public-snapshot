@@ -1,12 +1,9 @@
 package resolvers
 
 import (
-	"bytes"
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"strconv"
 	"sync"
@@ -18,17 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/lsif"
 )
-
-//
-// Node Resolver
-
-type locationWithConfidenceResolver struct {
-	*graphqlbackend.LocationResolver
-}
-
-var _ graphqlbackend.LocationWithConfidenceResolver = &locationWithConfidenceResolver{}
-
-func (r *locationWithConfidenceResolver) Placeholder() *string { return nil }
 
 //
 // Connection Resolver
@@ -44,7 +30,7 @@ type LocationsQueryOptions struct {
 	NextURL    *string
 }
 
-type locationWithConfidenceConnectionResolver struct {
+type locationConnectionResolver struct {
 	opt LocationsQueryOptions
 
 	once      sync.Once
@@ -53,15 +39,17 @@ type locationWithConfidenceConnectionResolver struct {
 	err       error
 }
 
-func (r *locationWithConfidenceConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.LocationWithConfidenceResolver, error) {
+var _ graphqlbackend.LocationConnectionResolver = &locationConnectionResolver{}
+
+func (r *locationConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.LocationResolver, error) {
 	locations, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	var l []graphqlbackend.LocationWithConfidenceResolver
+	var l []graphqlbackend.LocationResolver
 	for _, location := range locations {
-		resolver, err := rangeToLocationWithConfidenceResolver(ctx, location)
+		resolver, err := rangeToLocationResolver(ctx, location)
 		if err != nil {
 			return nil, err
 		}
@@ -71,7 +59,7 @@ func (r *locationWithConfidenceConnectionResolver) Nodes(ctx context.Context) ([
 	return l, nil
 }
 
-func (r *locationWithConfidenceConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *locationConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	_, nextURL, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
@@ -84,12 +72,12 @@ func (r *locationWithConfidenceConnectionResolver) PageInfo(ctx context.Context)
 	return graphqlutil.HasNextPage(false), nil
 }
 
-func (r *locationWithConfidenceConnectionResolver) compute(ctx context.Context) ([]*lsif.LSIFLocation, string, error) {
+func (r *locationConnectionResolver) compute(ctx context.Context) ([]*lsif.LSIFLocation, string, error) {
 	r.once.Do(func() {
 		var path string
 		if r.opt.NextURL == nil {
 			// first page of results
-			path = fmt.Sprintf("/request")
+			path = fmt.Sprintf("/%s", r.opt.Operation)
 		} else {
 			fmt.Printf("paths: %#v\n", *r.opt.NextURL)
 
@@ -100,36 +88,31 @@ func (r *locationWithConfidenceConnectionResolver) compute(ctx context.Context) 
 		values := url.Values{}
 		values.Set("repository", r.opt.Repository)
 		values.Set("commit", r.opt.Commit)
+		values.Set("path", r.opt.Path)
+		values.Set("line", strconv.FormatInt(int64(r.opt.Line), 10))
+		values.Set("character", strconv.FormatInt(int64(r.opt.Character), 10))
 		if r.opt.Limit != nil {
 			values.Set("limit", strconv.FormatInt(int64(*r.opt.Limit), 10))
 		}
 
-		body, err := json.Marshal(map[string]interface{}{
-			"method": r.opt.Operation,
-			"path":   r.opt.Path,
-			"position": map[string]interface{}{
-				"line":      r.opt.Line,
-				"character": r.opt.Character,
-			},
-		})
+		resp, err := client.DefaultClient.BuildAndTraceRequest(ctx, "GET", path, values, nil)
 		if err != nil {
 			r.err = err
 			return
 		}
 
-		resp, err := client.DefaultClient.BuildAndTraceRequest(ctx, "POST", path, values, ioutil.NopCloser(bytes.NewReader(body)))
-		if err != nil {
-			r.err = err
-			return
+		payload := struct {
+			Locations []*lsif.LSIFLocation
+		}{
+			Locations: []*lsif.LSIFLocation{},
 		}
 
-		var payload []*lsif.LSIFLocation
 		if err := client.UnmarshalPayload(resp, &payload); err != nil {
 			r.err = err
 			return
 		}
 
-		r.locations = payload
+		r.locations = payload.Locations
 		r.nextURL = client.ExtractNextURL(resp)
 	})
 
@@ -139,7 +122,7 @@ func (r *locationWithConfidenceConnectionResolver) compute(ctx context.Context) 
 //
 // Helpers
 
-func rangeToLocationWithConfidenceResolver(ctx context.Context, location *lsif.LSIFLocation) (*locationWithConfidenceResolver, error) {
+func rangeToLocationResolver(ctx context.Context, location *lsif.LSIFLocation) (graphqlbackend.LocationResolver, error) {
 	repo, err := backend.Repos.GetByName(ctx, api.RepoName(location.Repository))
 	if err != nil {
 		return nil, err
@@ -160,7 +143,5 @@ func rangeToLocationWithConfidenceResolver(ctx context.Context, location *lsif.L
 		return nil, err
 	}
 
-	return &locationWithConfidenceResolver{
-		LocationResolver: graphqlbackend.NewLocationResolver(gitTreeResolver, location.Range),
-	}, nil
+	return graphqlbackend.NewLocationResolver(gitTreeResolver, location.Range), nil
 }

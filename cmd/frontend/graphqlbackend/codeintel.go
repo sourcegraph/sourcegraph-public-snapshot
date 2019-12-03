@@ -20,9 +20,9 @@ type CodeIntelResolver interface {
 	LSIFJobStatsByID(ctx context.Context, id graphql.ID) (LSIFJobStatsResolver, error)
 	DeleteLSIFDump(ctx context.Context, id graphql.ID) (*EmptyResponse, error)
 	DeleteLSIFJob(ctx context.Context, id graphql.ID) (*EmptyResponse, error)
-	Definitions(ctx context.Context, args *LSIFFilePositionArgs) (LocationWithConfidenceConnectionResolver, error)
-	References(ctx context.Context, args *LSIFPagedFilePositionArgs) (LocationWithConfidenceConnectionResolver, error)
-	Hover(ctx context.Context, args *LSIFFilePositionArgs) (MarkdownWithConfidenceResolver, error)
+	Definitions(ctx context.Context, args *LSIFFilePositionArgs) (LocationConnectionResolver, error)
+	References(ctx context.Context, args *LSIFPagedFilePositionArgs) (LocationConnectionResolver, error)
+	Hover(ctx context.Context, args *LSIFFilePositionArgs) (MarkdownResolver, error)
 }
 
 type LSIFDumpsQueryArgs struct {
@@ -61,7 +61,6 @@ type LSIFPagedFilePositionArgs struct {
 type LSIFDumpResolver interface {
 	ID() graphql.ID
 	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
-	InputRevision() *GitObjectID
 	IsLatestForRepo() bool
 	UploadedAt() DateTime
 	ProcessedAt() DateTime
@@ -73,23 +72,9 @@ type LSIFDumpConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
-type LocationWithConfidenceConnectionResolver interface {
-	Nodes(ctx context.Context) ([]LocationWithConfidenceResolver, error)
+type LocationConnectionResolver interface {
+	Nodes(ctx context.Context) ([]LocationResolver, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
-}
-
-type LocationWithConfidenceResolver interface {
-	Resource() *GitTreeEntryResolver
-	Range() *RangeResolver
-	URL(ctx context.Context) (string, error)
-	CanonicalURL() (string, error)
-	Placeholder() *string
-}
-
-type MarkdownWithConfidenceResolver interface {
-	Text() string
-	HTML() string
-	Placeholder() *string
 }
 
 type LSIFJobStatsResolver interface {

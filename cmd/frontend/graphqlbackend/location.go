@@ -13,9 +13,14 @@ type locationResolver struct {
 	lspRange *lsp.Range
 }
 
-type LocationResolver = locationResolver
+type LocationResolver interface {
+	Resource() *GitTreeEntryResolver
+	Range() *rangeResolver
+	URL(ctx context.Context) (string, error)
+	CanonicalURL() (string, error)
+}
 
-func NewLocationResolver(resource *GitTreeEntryResolver, lspRange *lsp.Range) *LocationResolver {
+func NewLocationResolver(resource *GitTreeEntryResolver, lspRange *lsp.Range) LocationResolver {
 	return &locationResolver{
 		resource: resource,
 		lspRange: lspRange,
@@ -56,8 +61,6 @@ func (r *locationResolver) urlPath(prefix string) string {
 }
 
 type rangeResolver struct{ lspRange lsp.Range }
-
-type RangeResolver = rangeResolver
 
 func (r *rangeResolver) Start() *positionResolver { return &positionResolver{r.lspRange.Start} }
 func (r *rangeResolver) End() *positionResolver   { return &positionResolver{r.lspRange.End} }

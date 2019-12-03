@@ -1,13 +1,11 @@
 package resolvers
 
 import (
-	"bytes"
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/url"
+	"strconv"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
@@ -29,7 +27,7 @@ func NewResolver() graphqlbackend.CodeIntelResolver {
 //
 // LSIF Request Resolvers
 
-func (r *Resolver) Definitions(ctx context.Context, args *graphqlbackend.LSIFFilePositionArgs) (graphqlbackend.LocationWithConfidenceConnectionResolver, error) {
+func (r *Resolver) Definitions(ctx context.Context, args *graphqlbackend.LSIFFilePositionArgs) (graphqlbackend.LocationConnectionResolver, error) {
 	opt := LocationsQueryOptions{
 		Operation:  "definitions",
 		Repository: args.Repository,
@@ -39,10 +37,10 @@ func (r *Resolver) Definitions(ctx context.Context, args *graphqlbackend.LSIFFil
 		Character:  args.Character,
 	}
 
-	return &locationWithConfidenceConnectionResolver{opt: opt}, nil
+	return &locationConnectionResolver{opt: opt}, nil
 }
 
-func (r *Resolver) References(ctx context.Context, args *graphqlbackend.LSIFPagedFilePositionArgs) (graphqlbackend.LocationWithConfidenceConnectionResolver, error) {
+func (r *Resolver) References(ctx context.Context, args *graphqlbackend.LSIFPagedFilePositionArgs) (graphqlbackend.LocationConnectionResolver, error) {
 	opt := LocationsQueryOptions{
 		Operation:  "references",
 		Repository: args.Repository,
@@ -63,45 +61,34 @@ func (r *Resolver) References(ctx context.Context, args *graphqlbackend.LSIFPage
 		opt.NextURL = &nextURL
 	}
 
-	return &locationWithConfidenceConnectionResolver{opt: opt}, nil
+	return &locationConnectionResolver{opt: opt}, nil
 }
 
-func (r *Resolver) Hover(ctx context.Context, args *graphqlbackend.LSIFFilePositionArgs) (graphqlbackend.MarkdownWithConfidenceResolver, error) {
-	path := fmt.Sprintf("/request")
+func (r *Resolver) Hover(ctx context.Context, args *graphqlbackend.LSIFFilePositionArgs) (graphqlbackend.MarkdownResolver, error) {
+	path := fmt.Sprintf("/hover")
 	values := url.Values{}
 	values.Set("repository", args.Repository)
 	values.Set("commit", args.Commit)
-
-	body, err := json.Marshal(map[string]interface{}{
-		"method": "hover",
-		"path":   args.Path,
-		"position": map[string]interface{}{
-			"line":      args.Line,
-			"character": args.Character,
-		},
-	})
-	if err != nil {
-		return nil, err
-	}
+	values.Set("path", args.Path)
+	values.Set("line", strconv.FormatInt(int64(args.Line), 10))
+	values.Set("character", strconv.FormatInt(int64(args.Character), 10))
 
 	payload := struct {
-		Text string `json:"contents"`
+		Text string `json:"text"`
 	}{}
 
-	if err := client.DefaultClient.TraceRequestAndUnmarshalPayload(ctx, "POST", path, values, ioutil.NopCloser(bytes.NewReader(body)), &payload); err != nil {
+	if err := client.DefaultClient.TraceRequestAndUnmarshalPayload(ctx, "GET", path, values, nil, &payload); err != nil {
 		return nil, err
 	}
 
-	return &markdownWithConfidenceResolver{
-		MarkdownResolver: graphqlbackend.NewMarkdownResolver(payload.Text),
-	}, nil
+	return graphqlbackend.NewMarkdownResolver(payload.Text), nil
 }
 
 //
 // Dump Node Resolvers
 
 func (r *Resolver) LSIFDumpByID(ctx context.Context, id graphql.ID) (graphqlbackend.LSIFDumpResolver, error) {
-	repoName, dumpID, inputRevision, err := unmarshalLSIFDumpGQLID(id)
+	repoName, dumpID, err := unmarshalLSIFDumpGQLID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +105,7 @@ func (r *Resolver) LSIFDumpByID(ctx context.Context, id graphql.ID) (graphqlback
 		return nil, err
 	}
 
-	return &lsifDumpResolver{repo: repo, lsifDump: lsifDump, inputRevision: inputRevision}, nil
+	return &lsifDumpResolver{repo: repo, lsifDump: lsifDump}, nil
 }
 
 func (r *Resolver) DeleteLSIFDump(ctx context.Context, id graphql.ID) (*graphqlbackend.EmptyResponse, error) {
@@ -127,7 +114,7 @@ func (r *Resolver) DeleteLSIFDump(ctx context.Context, id graphql.ID) (*graphqlb
 		return nil, err
 	}
 
-	repoName, dumpID, _, err := unmarshalLSIFDumpGQLID(id)
+	repoName, dumpID, err := unmarshalLSIFDumpGQLID(id)
 	if err != nil {
 		return nil, err
 	}

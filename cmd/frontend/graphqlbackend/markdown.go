@@ -6,9 +6,12 @@ type markdownResolver struct {
 	text string
 }
 
-type MarkdownResolver = markdownResolver
+type MarkdownResolver interface {
+	Text() string
+	HTML() string
+}
 
-func NewMarkdownResolver(text string) *MarkdownResolver {
+func NewMarkdownResolver(text string) MarkdownResolver {
 	return &markdownResolver{
 		text: text,
 	}

@@ -208,7 +208,7 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	return len(entries) == 1, nil
 }
 
-func (r *GitTreeEntryResolver) Definitions(ctx context.Context, args *LSIFFilePositionArgs) (LocationWithConfidenceConnectionResolver, error) {
+func (r *GitTreeEntryResolver) Definitions(ctx context.Context, args *LSIFFilePositionArgs) (LocationConnectionResolver, error) {
 	if EnterpriseResolvers.codeIntelResolver == nil {
 		return nil, codeIntelOnlyInEnterprise
 	}
@@ -222,7 +222,7 @@ func (r *GitTreeEntryResolver) Definitions(ctx context.Context, args *LSIFFilePo
 	})
 }
 
-func (r *GitTreeEntryResolver) References(ctx context.Context, args *LSIFPagedFilePositionArgs) (LocationWithConfidenceConnectionResolver, error) {
+func (r *GitTreeEntryResolver) References(ctx context.Context, args *LSIFPagedFilePositionArgs) (LocationConnectionResolver, error) {
 	if EnterpriseResolvers.codeIntelResolver == nil {
 		return nil, codeIntelOnlyInEnterprise
 	}
@@ -240,7 +240,7 @@ func (r *GitTreeEntryResolver) References(ctx context.Context, args *LSIFPagedFi
 	})
 }
 
-func (r *GitTreeEntryResolver) Hover(ctx context.Context, args *LSIFFilePositionArgs) (MarkdownWithConfidenceResolver, error) {
+func (r *GitTreeEntryResolver) Hover(ctx context.Context, args *LSIFFilePositionArgs) (MarkdownResolver, error) {
 	if EnterpriseResolvers.codeIntelResolver == nil {
 		return nil, codeIntelOnlyInEnterprise
 	}

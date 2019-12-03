@@ -21,15 +21,14 @@ import (
 // Node Resolver
 
 type lsifDumpResolver struct {
-	repo          *types.Repo
-	lsifDump      *lsif.LSIFDump
-	inputRevision *graphqlbackend.GitObjectID
+	repo     *types.Repo
+	lsifDump *lsif.LSIFDump
 }
 
 var _ graphqlbackend.LSIFDumpResolver = &lsifDumpResolver{}
 
 func (r *lsifDumpResolver) ID() graphql.ID {
-	return marshalLSIFDumpGQLID(r.lsifDump.Repository, r.lsifDump.ID, r.inputRevision)
+	return marshalLSIFDumpGQLID(r.lsifDump.Repository, r.lsifDump.ID)
 }
 
 func (r *lsifDumpResolver) ProjectRoot(ctx context.Context) (*graphqlbackend.GitTreeEntryResolver, error) {
@@ -40,10 +39,6 @@ func (r *lsifDumpResolver) ProjectRoot(ctx context.Context) (*graphqlbackend.Git
 	}
 
 	return graphqlbackend.NewGitTreeEntryResolver(commitResolver, graphqlbackend.CreateFileInfo(r.lsifDump.Root, true)), nil
-}
-
-func (r *lsifDumpResolver) InputRevision() *graphqlbackend.GitObjectID {
-	return r.inputRevision
 }
 
 func (r *lsifDumpResolver) IsLatestForRepo() bool {
@@ -176,29 +171,27 @@ func (r *lsifDumpConnectionResolver) compute(ctx context.Context) ([]*lsif.LSIFD
 // ID Serialization
 
 type lsifDumpIDPayload struct {
-	RepoName      string
-	ID            string
-	InputRevision *graphqlbackend.GitObjectID
+	RepoName string
+	ID       string
 }
 
-func marshalLSIFDumpGQLID(repoName string, lsifDumpID int64, inputRevision *graphqlbackend.GitObjectID) graphql.ID {
+func marshalLSIFDumpGQLID(repoName string, lsifDumpID int64) graphql.ID {
 	return relay.MarshalID("LSIFDump", lsifDumpIDPayload{
-		RepoName:      repoName,
-		ID:            strconv.FormatInt(lsifDumpID, 36),
-		InputRevision: inputRevision,
+		RepoName: repoName,
+		ID:       strconv.FormatInt(lsifDumpID, 36),
 	})
 }
 
-func unmarshalLSIFDumpGQLID(id graphql.ID) (string, int64, *graphqlbackend.GitObjectID, error) {
+func unmarshalLSIFDumpGQLID(id graphql.ID) (string, int64, error) {
 	var raw lsifDumpIDPayload
 	if err := relay.UnmarshalSpec(id, &raw); err != nil {
-		return "", 0, nil, err
+		return "", 0, err
 	}
 
 	dumpID, err := strconv.ParseInt(raw.ID, 36, 64)
 	if err != nil {
-		return "", 0, nil, err
+		return "", 0, err
 	}
 
-	return raw.RepoName, dumpID, raw.InputRevision, nil
+	return raw.RepoName, dumpID, nil
 }
