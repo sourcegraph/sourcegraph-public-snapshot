@@ -16264,12 +16264,10 @@ react-addons-create-fragment@^15.6.2:
     loose-envify "^1.3.1"
     object-assign "^4.1.0"
 
-react-circular-progressbar@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.npmjs.org/react-circular-progressbar/-/react-circular-progressbar-1.0.0.tgz#0d2a6c07c9f14fcafca4510f27829e4276dee3e0"
-  integrity sha512-6QOqwsYJCeFDPYTparTS3FdFGlSItafJWD8BloLG3k1sW8ZG7JGdHo7FQsqtGEIK0bldwTO9v+nD2nEYAU1OYg==
-  dependencies:
-    prop-types "^15.5.10"
+react-circular-progressbar@^2.0.3:
+  version "2.0.3"
+  resolved "https://registry.npmjs.org/react-circular-progressbar/-/react-circular-progressbar-2.0.3.tgz#fa8eb59f8db168d2904bae4590641792c80f5991"
+  integrity sha512-YKN+xAShXA3gYihevbQZbavfiJxo83Dt1cUxqg/cltj4VVsRQpDr7Fg1mvjDG3x1KHGtd9NmYKvJ2mMrPwbKyw==
 
 react-clientside-effect@^1.2.0:
   version "1.2.0"
