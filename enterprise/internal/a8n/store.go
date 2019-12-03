@@ -1998,42 +1998,6 @@ func (s *Store) GetChangesetJob(ctx context.Context, opts GetChangesetJobOpts) (
 	return &c, nil
 }
 
-// GetFailedChangesetJobOpts captures query options needed for getting failed ChangesetJobs
-type GetFailedChangesetJobOpts struct {
-	CampaignID int64
-}
-
-// GetFailedChangesetJobs gets a list of failed ChangesetJobs for a campaign
-func (s *Store) GetFailedChangesetJobs(ctx context.Context, opts GetFailedChangesetJobOpts) ([]*a8n.ChangesetJob, error) {
-	q := getFailedChangesetJobsQuery(opts)
-
-	cs := make([]*a8n.ChangesetJob, 0)
-	_, _, err := s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
-		var c a8n.ChangesetJob
-		if err = scanChangesetJob(&c, sc); err != nil {
-			return 0, 0, err
-		}
-		cs = append(cs, &c)
-		return int64(c.ID), 1, err
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return cs, nil
-}
-
-func getFailedChangesetJobsQuery(opts GetFailedChangesetJobOpts) *sqlf.Query {
-	whereFmtStr := `campaign_id = %s
-	AND (
-		  finished_at is null OR
-		  changeset_id is null OR
-		  error <> ''
-		)`
-	// TODO: Pull out common query and make limit optional
-	return sqlf.Sprintf(listChangesetJobsQueryFmtstr, sqlf.Sprintf(whereFmtStr, opts.CampaignID), 10000)
-}
-
 var getChangesetJobsQueryFmtstr = `
 -- source: internal/a8n/store.go:GetChangesetJob
 SELECT

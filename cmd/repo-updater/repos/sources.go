@@ -91,6 +91,7 @@ type Source interface {
 type ChangesetSource interface {
 	LoadChangesets(context.Context, ...*Changeset) error
 	CreateChangeset(context.Context, *Changeset) error
+	IsDuplicatePullRequestError(err error) bool
 }
 
 // A SourceResult is sent by a Source over a channel for each repository it

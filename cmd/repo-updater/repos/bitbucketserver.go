@@ -168,6 +168,11 @@ func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Change
 	return nil
 }
 
+// IsDuplicatePullRequestError returns whether the error is caused by the pull request already existsing
+func (s BitbucketServerSource) IsDuplicatePullRequestError(err error) bool {
+	return err == bitbucketserver.ErrAlreadyExists
+}
+
 // ExternalServices returns a singleton slice containing the external service.
 func (s BitbucketServerSource) ExternalServices() ExternalServices {
 	return ExternalServices{s.svc}

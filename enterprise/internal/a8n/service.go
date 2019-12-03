@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/schema"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // NewService returns a Service.
@@ -97,6 +98,8 @@ func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign) error {
 	return nil
 }
 
+// RunChangesetJobs will run all the changeset jobs for the supplied campaign.
+// It is idempotent and jobs that have already completed will not be rerun
 func (s *Service) RunChangesetJobs(ctx context.Context, c *a8n.Campaign) error {
 	var err error
 	tr, ctx := trace.New(ctx, "Service.RunChangesetJobs", fmt.Sprintf("Campaign: %q", c.Name))
@@ -134,10 +137,13 @@ func (s *Service) runChangesetJob(
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	tr.LogFields(log.Int64("job_id", job.ID), log.Int64("campaign_id", c.ID))
+	tr.LogFields(log.Bool("completed", job.Completed()), log.Int64("job_id", job.ID), log.Int64("campaign_id", c.ID))
 
-	// TODO(a8n):
-	//   - Ensure all of these calls are idempotent so they can be safely retried.
+	if job.Completed() {
+		log15.Info("ChangesetJob already completed", "id", job.ID)
+		return nil
+	}
+
 	defer func() {
 		if err != nil {
 			job.Error = err.Error()
@@ -263,7 +269,8 @@ func (s *Service) runChangesetJob(
 		return errors.Errorf("creating changesets on code host of repo %q is not implemented", repo.Name)
 	}
 
-	if err = ccs.CreateChangeset(ctx, &cs); err != nil {
+	// In order to be idempotent, an existing pull request is not an error
+	if err = ccs.CreateChangeset(ctx, &cs); err != nil && !ccs.IsDuplicatePullRequestError(err) {
 		return err
 	}
 
@@ -271,7 +278,6 @@ func (s *Service) runChangesetJob(
 	if err != nil {
 		return err
 	}
-
 	defer tx.Done(&err)
 
 	if err = tx.CreateChangesets(ctx, cs.Changeset); err != nil {

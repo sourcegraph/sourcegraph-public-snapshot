@@ -198,6 +198,11 @@ func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) erro
 	return nil
 }
 
+// IsDuplicatePullRequestError returns whether the error is caused by the pull request already existsing
+func (s GithubSource) IsDuplicatePullRequestError(err error) bool {
+	return err == github.ErrPullRequestAlreadyExists
+}
+
 // GetRepo returns the Github repository with the given name and owner
 // ("org/repo-name")
 func (s GithubSource) GetRepo(ctx context.Context, nameWithOwner string) (*Repo, error) {

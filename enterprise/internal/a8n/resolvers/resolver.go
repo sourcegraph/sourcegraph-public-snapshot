@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"strings"
 
 	"github.com/graph-gophers/graphql-go"
@@ -278,6 +279,13 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 }
 
 func (r *Resolver) RetryCampaign(ctx context.Context, args *graphqlbackend.RetryCampaignArgs) (graphqlbackend.CampaignResolver, error) {
+	var err error
+	tr, ctx := trace.New(ctx, "Resolver.CreateCampaign", fmt.Sprintf("Campaign: %q", args.Campaign))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	// 🚨 SECURITY: Only site admins may update campaigns for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, errors.Wrap(err, "checking if user is admin")
@@ -293,11 +301,14 @@ func (r *Resolver) RetryCampaign(ctx context.Context, args *graphqlbackend.Retry
 		return nil, errors.Wrap(err, "getting campaign")
 	}
 
-	// TODO: Rerun failed jobs
-	_, err = r.store.GetFailedChangesetJobs(ctx, ee.GetFailedChangesetJobOpts{CampaignID: campaignID})
-	if err != nil {
-		return nil, errors.Wrap(err, "getting failed changeset jobs")
-	}
+	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
+	go func() {
+		ctx := trace.ContextWithTrace(context.Background(), tr)
+		err := svc.RunChangesetJobs(ctx, campaign)
+		if err != nil {
+			log15.Error("RunChangesetJobs", "err", err)
+		}
+	}()
 
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
