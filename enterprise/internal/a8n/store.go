@@ -2030,7 +2030,8 @@ func getFailedChangesetJobsQuery(opts GetFailedChangesetJobOpts) *sqlf.Query {
 		  changeset_id is null OR
 		  error <> ''
 		)`
-	return sqlf.Sprintf(getChangesetJobsQueryFmtstr, sqlf.Sprintf(whereFmtStr, opts.CampaignID))
+	// TODO: Pull out common query and make limit optional
+	return sqlf.Sprintf(listChangesetJobsQueryFmtstr, sqlf.Sprintf(whereFmtStr, opts.CampaignID), 10000)
 }
 
 var getChangesetJobsQueryFmtstr = `
