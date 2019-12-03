@@ -48,7 +48,7 @@
     "@types/express": "4.17.2",
     "@types/express-winston": "3.0.4",
     "@types/got": "9.6.9",
-    "@types/ioredis": "4.0.20",
+    "@types/ioredis": "4.0.21",
     "@types/jaeger-client": "3.15.3",
     "@types/jest": "24.0.22",
     "@types/json5": "0.0.30",
