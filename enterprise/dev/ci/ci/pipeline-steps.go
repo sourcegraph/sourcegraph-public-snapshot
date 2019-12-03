@@ -216,7 +216,10 @@ func addServerDockerImageCandidate(c Config) func(*bk.Pipeline) {
 					Message: fmt.Sprintf("Test"),
 					Commit:  c.commit,
 					Branch:  c.branch,
-					Env:     copyEnv("BUILDKITE_PULL_REQUEST", "BUILDKITE_PULL_REQUEST_BASE_BRANCH", "BUILDKITE_PULL_REQUEST_REPO"),
+					Env: copyEnv(
+						"BUILDKITE_PULL_REQUEST",
+						"BUILDKITE_PULL_REQUEST_BASE_BRANCH",
+						"BUILDKITE_PULL_REQUEST_REPO"),
 				}))
 			return
 		}
