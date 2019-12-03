@@ -1504,13 +1504,14 @@ INSERT INTO campaign_jobs (
   rev,
   base_ref,
   diff,
+  description,
   error,
   started_at,
   finished_at,
   created_at,
   updated_at
 )
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING
   id,
   campaign_plan_id,
@@ -1518,6 +1519,7 @@ RETURNING
   rev,
   base_ref,
   diff,
+  description,
   error,
   started_at,
   finished_at,
@@ -1541,6 +1543,7 @@ func (s *Store) createCampaignJobQuery(c *a8n.CampaignJob) (*sqlf.Query, error) 
 		c.Rev,
 		c.BaseRef,
 		c.Diff,
+		c.Description,
 		c.Error,
 		nullTimeColumn(c.StartedAt),
 		nullTimeColumn(c.FinishedAt),
@@ -1571,11 +1574,12 @@ SET (
   rev,
   base_ref,
   diff,
+  description,
   error,
   started_at,
   finished_at,
   updated_at
-) = (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   id,
@@ -1584,6 +1588,7 @@ RETURNING
   rev,
   base_ref,
   diff,
+  description,
   error,
   started_at,
   finished_at,
@@ -1601,6 +1606,7 @@ func (s *Store) updateCampaignJobQuery(c *a8n.CampaignJob) (*sqlf.Query, error) 
 		c.Rev,
 		c.BaseRef,
 		c.Diff,
+		c.Description,
 		c.Error,
 		c.StartedAt,
 		c.FinishedAt,
@@ -1703,6 +1709,7 @@ SELECT
   rev,
   base_ref,
   diff,
+  description,
   error,
   started_at,
   finished_at,
@@ -1767,6 +1774,7 @@ SELECT
   rev,
   base_ref,
   diff,
+  description,
   error,
   started_at,
   finished_at,
@@ -2242,6 +2250,7 @@ func scanCampaignJob(c *a8n.CampaignJob, s scanner) error {
 		&c.Rev,
 		&c.BaseRef,
 		&c.Diff,
+		&c.Description,
 		&c.Error,
 		&dbutil.NullTime{Time: &c.StartedAt},
 		&dbutil.NullTime{Time: &c.FinishedAt},

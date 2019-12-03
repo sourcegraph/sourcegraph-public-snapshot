@@ -125,8 +125,9 @@ func TestCampaignType_Comby(t *testing.T) {
 
 		handler func(w http.ResponseWriter, r *http.Request)
 
-		wantDiff string
-		wantErr  string
+		wantDiff        string
+		wantDescription string
+		wantErr         string
 	}{
 		{
 			name:     "success single file diff",
@@ -216,13 +217,17 @@ func TestCampaignType_Comby(t *testing.T) {
 				tc.wantErr = "<nil>"
 			}
 
-			haveDiff, err := ct.generateDiff(ctx, api.RepoName(tc.repoName), api.CommitID(tc.commitID))
+			haveDiff, haveDescription, err := ct.generateDiff(ctx, api.RepoName(tc.repoName), api.CommitID(tc.commitID))
 			if have, want := fmt.Sprint(err), tc.wantErr; have != want {
 				t.Fatalf("have error: %q\nwant error: %q", have, want)
 			}
 
 			if haveDiff != tc.wantDiff {
 				t.Fatalf("wrong diff.\nhave=%q\nwant=%q", haveDiff, tc.wantDiff)
+			}
+
+			if haveDescription != tc.wantDescription {
+				t.Fatalf("wrong description.\nhave=%q\nwant=%q", haveDescription, tc.wantDescription)
 			}
 		})
 	}
@@ -244,8 +249,9 @@ func TestCampaignType_Credentials(t *testing.T) {
 
 		searchResultsContents map[string]string
 
-		wantDiff string
-		wantErr  string
+		wantDiff        string
+		wantDescription string
+		wantErr         string
 	}{
 		{
 			name: "no NPM tokens",
@@ -273,6 +279,7 @@ func TestCampaignType_Credentials(t *testing.T) {
 -//npm.fontawesome.com/:_authToken=12345678-2323-1111-1111-12345670B312
 +//npm.fontawesome.com/:_authToken=
 `,
+			wantDescription: "Tokens found:\n\n- [ ] `12345678-2323-1111-1111-12345670B312`\n",
 		},
 		{
 			name: "multiple NPM tokens",
@@ -283,17 +290,24 @@ func TestCampaignType_Credentials(t *testing.T) {
 			searchResultsContents: map[string]string{
 				".npmrc": `//registry.npmjs.org/:_authToken=${NPM_TOKEN}
 //npm.fontawesome.com/:_authToken=12345678-2323-1111-1111-12345670B312
+:_authToken=ANOTHER_TOKEN
+_authToken=YET_ANOTHER_TOKEN_LEAKED
 `,
 			},
 			wantDiff: `diff .npmrc .npmrc
 --- .npmrc
 +++ .npmrc
-@@ -1,2 +1,2 @@
+@@ -1,4 +1,4 @@
 -//registry.npmjs.org/:_authToken=${NPM_TOKEN}
 -//npm.fontawesome.com/:_authToken=12345678-2323-1111-1111-12345670B312
+-:_authToken=ANOTHER_TOKEN
+-_authToken=YET_ANOTHER_TOKEN_LEAKED
 +//registry.npmjs.org/:_authToken=
 +//npm.fontawesome.com/:_authToken=
++:_authToken=
++_authToken=
 `,
+			wantDescription: "Tokens found:\n\n- [ ] `${NPM_TOKEN}`\n- [ ] `12345678-2323-1111-1111-12345670B312`\n- [ ] `ANOTHER_TOKEN`\n- [ ] `YET_ANOTHER_TOKEN_LEAKED`\n",
 		},
 		{
 			name: "single NPM token and replaceWith",
@@ -312,6 +326,7 @@ func TestCampaignType_Credentials(t *testing.T) {
 -//npm.fontawesome.com/:_authToken=12345678-2323-1111-1111-12345670B312
 +//npm.fontawesome.com/:_authToken=REMOVED_TOKEN
 `,
+			wantDescription: "Tokens found:\n\n- [ ] `12345678-2323-1111-1111-12345670B312`\n",
 		},
 	}
 
@@ -362,13 +377,17 @@ func TestCampaignType_Credentials(t *testing.T) {
 
 			ct := &credentials{args: tc.args, newSearch: testSearch}
 
-			haveDiff, err := ct.generateDiff(ctx, api.RepoName(tc.repoName), api.CommitID(tc.commitID))
+			haveDiff, haveDescription, err := ct.generateDiff(ctx, api.RepoName(tc.repoName), api.CommitID(tc.commitID))
 			if have, want := fmt.Sprint(err), tc.wantErr; have != want {
 				t.Fatalf("have error: %q\nwant error: %q", have, want)
 			}
 
 			if haveDiff != tc.wantDiff {
 				t.Fatalf("wrong diff.\nhave=%q\nwant=%q", haveDiff, tc.wantDiff)
+			}
+
+			if haveDescription != tc.wantDescription {
+				t.Fatalf("wrong description.\nhave=%q\nwant=%q", haveDescription, tc.wantDescription)
 			}
 		})
 	}

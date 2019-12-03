@@ -247,9 +247,14 @@ func (s *Service) runChangesetJob(
 		baseRef = campaignJob.BaseRef
 	}
 
+	body := c.Description
+	if campaignJob.Description != "" {
+		body += "\n\n---\n\n" + campaignJob.Description
+	}
+
 	cs := repos.Changeset{
 		Title:   c.Name,
-		Body:    c.Description,
+		Body:    body,
 		BaseRef: baseRef,
 		HeadRef: git.EnsureRefPrefix(headRefName),
 		Repo:    repo,
