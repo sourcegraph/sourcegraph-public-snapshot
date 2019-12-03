@@ -76,22 +76,25 @@ async function main(): Promise<void> {
 
     // Add style sheet and wait for it to load to avoid rendering unstyled elements (which causes an
     // annoying flash/jitter when the stylesheet loads shortly thereafter).
-    let styleSheet = document.getElementById('ext-style-sheet') as HTMLLinkElement | null
-    // If does not exist, create
-    if (!styleSheet) {
-        styleSheet = document.createElement('link')
-        styleSheet.id = 'ext-style-sheet'
-        styleSheet.rel = 'stylesheet'
-        styleSheet.type = 'text/css'
-        styleSheet.href = browser.extension.getURL('css/style.bundle.css')
-    }
+    const styleSheet = (() => {
+        let styleSheet = document.getElementById('ext-style-sheet') as HTMLLinkElement | null
+        // If does not exist, create
+        if (!styleSheet) {
+            styleSheet = document.createElement('link')
+            styleSheet.id = 'ext-style-sheet'
+            styleSheet.rel = 'stylesheet'
+            styleSheet.type = 'text/css'
+            styleSheet.href = browser.extension.getURL('css/style.bundle.css')
+        }
+        return styleSheet
+    })()
     // If not loaded yet, wait for it to load
     if (!styleSheet.sheet) {
         await new Promise(resolve => {
-            styleSheet!.addEventListener('load', resolve, { once: true })
+            styleSheet.addEventListener('load', resolve, { once: true })
             // If not appended yet, append to <head>
-            if (!styleSheet!.parentNode) {
-                document.head.appendChild(styleSheet!)
+            if (!styleSheet.parentNode) {
+                document.head.appendChild(styleSheet)
             }
         })
     }

@@ -17,13 +17,13 @@ type didYouMeanQuotedResolver struct {
 	err   error
 }
 
-func (r *didYouMeanQuotedResolver) Results(context.Context) (*searchResultsResolver, error) {
+func (r *didYouMeanQuotedResolver) Results(context.Context) (*SearchResultsResolver, error) {
 	sqds := proposedQuotedQueries(r.query)
 	switch e := r.err.(type) {
 	case *types.TypeError:
 		switch e := e.Err.(type) {
 		case *rxsyntax.Error:
-			srr := &searchResultsResolver{
+			srr := &SearchResultsResolver{
 				alert: &searchAlert{
 					title:           capFirst(e.Error()),
 					description:     "Quoting the query may help if you want a literal match instead of a regular expression match.",
@@ -35,7 +35,7 @@ func (r *didYouMeanQuotedResolver) Results(context.Context) (*searchResultsResol
 			return nil, r.err
 		}
 	case *syntax.ParseError:
-		srr := &searchResultsResolver{
+		srr := &SearchResultsResolver{
 			alert: &searchAlert{
 				title:           capFirst(e.Msg),
 				description:     "Quoting the query may help if you want a literal match.",

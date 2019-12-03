@@ -28,7 +28,7 @@ var defaultLogger = new()
 // to wait for the frontend to start.
 //
 // Note: This does not block since it creates a new goroutine.
-func LogEvent(userID int32, userEmail string, eventLabel string, eventProperties json.RawMessage) {
+func LogEvent(userID int32, userEmail, eventLabel string, eventProperties json.RawMessage) {
 	go func() {
 		err := defaultLogger.logEvent(userID, userEmail, eventLabel, eventProperties)
 		if err != nil {

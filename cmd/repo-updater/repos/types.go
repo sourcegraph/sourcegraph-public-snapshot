@@ -26,10 +26,10 @@ import (
 
 // A Changeset of an existing Repo.
 type Changeset struct {
-	Title       string
-	Body        string
-	HeadRefName string
-	BaseRefName string
+	Title   string
+	Body    string
+	HeadRef string
+	BaseRef string
 
 	*a8n.Changeset
 	*Repo

@@ -68,7 +68,8 @@ func TestOrgs_Delete(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	ctx := context.Background()
 
-	org, err := Orgs.Create(ctx, "a", nil)
+	displayName := "a"
+	org, err := Orgs.Create(ctx, "a", &displayName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,7 +84,7 @@ func TestOrgs_Delete(t *testing.T) {
 	if _, ok := err.(*OrgNotFoundError); !ok {
 		t.Errorf("got error %v, want *OrgNotFoundError", err)
 	}
-	orgs, err := Orgs.List(ctx, nil)
+	orgs, err := Orgs.List(ctx, &OrgsListOptions{Query: "a"})
 	if err != nil {
 		t.Fatal(err)
 	}

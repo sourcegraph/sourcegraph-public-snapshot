@@ -163,13 +163,7 @@ const fetchHighlightedFile = memoizeObservable(
             ctx
         ).pipe(
             map(({ data, errors }) => {
-                if (
-                    !data ||
-                    !data.repository ||
-                    !data.repository.commit ||
-                    !data.repository.commit.file ||
-                    !data.repository.commit.file.highlight
-                ) {
+                if (!data?.repository?.commit?.file?.highlight) {
                     throw createAggregateError(errors)
                 }
                 const file = data.repository.commit.file
@@ -221,13 +215,7 @@ export const fetchFileExternalLinks = memoizeObservable(
             ctx
         ).pipe(
             map(({ data, errors }) => {
-                if (
-                    !data ||
-                    !data.repository ||
-                    !data.repository.commit ||
-                    !data.repository.commit.file ||
-                    !data.repository.commit.file.externalURLs
-                ) {
+                if (!data?.repository?.commit?.file?.externalURLs) {
                     throw createAggregateError(errors)
                 }
                 return data.repository.commit.file.externalURLs
@@ -260,7 +248,7 @@ export const fetchTree = memoizeObservable(
             args
         ).pipe(
             map(({ data, errors }) => {
-                if (!data || errors || !data.repository || !data.repository.commit || !data.repository.commit.tree) {
+                if (errors || !data?.repository?.commit?.tree) {
                     throw createAggregateError(errors)
                 }
                 return data.repository.commit.tree
@@ -296,7 +284,7 @@ export const fetchTreeEntries = memoizeObservable(
             args
         ).pipe(
             map(({ data, errors }) => {
-                if (!data || errors || !data.repository || !data.repository.commit || !data.repository.commit.tree) {
+                if (errors || !data?.repository?.commit?.tree) {
                     throw createAggregateError(errors)
                 }
                 return data.repository.commit.tree

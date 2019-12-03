@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -15,6 +14,7 @@ import (
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -84,7 +84,7 @@ func TestBitbucketServerSource_MakeRepo(t *testing.T) {
 				t.Fatal(err)
 			}
 			if !bytes.Equal(actual, expect) {
-				d, err := diff(actual, expect)
+				d, err := testutil.Diff(string(actual), string(expect))
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -190,7 +190,7 @@ func TestBitbucketServerSource_Exclude(t *testing.T) {
 				t.Fatal(err)
 			}
 			if !bytes.Equal(actual, expect) {
-				d, err := diff(actual, expect)
+				d, err := testutil.Diff(string(actual), string(expect))
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -329,25 +329,36 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 		err  string
 	}{
 		{
+			name: "abbreviated refs",
+			cs: &Changeset{
+				Title:     "This is a test PR",
+				Body:      "This is the body of a test PR",
+				BaseRef:   "master",
+				HeadRef:   "test-pr-bbs-9",
+				Repo:      repo,
+				Changeset: &a8n.Changeset{},
+			},
+		},
+		{
 			name: "success",
 			cs: &Changeset{
-				Title:       "This is a test PR",
-				Body:        "This is the body of a test PR",
-				BaseRefName: "master",
-				HeadRefName: "test-pr-bbs-6",
-				Repo:        repo,
-				Changeset:   &a8n.Changeset{},
+				Title:     "This is a test PR",
+				Body:      "This is the body of a test PR",
+				BaseRef:   "refs/heads/master",
+				HeadRef:   "refs/heads/test-pr-bbs-10",
+				Repo:      repo,
+				Changeset: &a8n.Changeset{},
 			},
 		},
 		{
 			name: "already exists",
 			cs: &Changeset{
-				Title:       "This is a test PR",
-				Body:        "This is the body of a test PR",
-				BaseRefName: "master",
-				HeadRefName: "always-open-pr-bbs",
-				Repo:        repo,
-				Changeset:   &a8n.Changeset{},
+				Title:     "This is a test PR",
+				Body:      "This is the body of a test PR",
+				BaseRef:   "refs/heads/master",
+				HeadRef:   "refs/heads/always-open-pr-bbs",
+				Repo:      repo,
+				Changeset: &a8n.Changeset{},
 			},
 			err: bitbucketserver.ErrAlreadyExists.Error(),
 		},
@@ -418,29 +429,4 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 			}
 		})
 	}
-}
-
-func diff(b1, b2 []byte) (string, error) {
-	f1, err := ioutil.TempFile("", "repos_test")
-	if err != nil {
-		return "", err
-	}
-	defer os.Remove(f1.Name())
-	defer f1.Close()
-
-	f2, err := ioutil.TempFile("", "repos_test")
-	if err != nil {
-		return "", err
-	}
-	defer os.Remove(f2.Name())
-	defer f2.Close()
-
-	_, _ = f1.Write(b1)
-	_, _ = f2.Write(b2)
-
-	data, err := exec.Command("diff", "-u", f1.Name(), f2.Name()).CombinedOutput()
-	if len(data) > 0 {
-		err = nil
-	}
-	return string(data), err
 }

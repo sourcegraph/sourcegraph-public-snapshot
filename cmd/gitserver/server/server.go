@@ -541,13 +541,19 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 
 		var tr *trace.Trace
 		tr, ctx = trace.New(ctx, "exec."+cmd, string(req.Repo))
-		tr.LazyPrintf("args: %s", args)
+		tr.LogFields(
+			otlog.Object("args", args),
+			otlog.String("remote_url", req.URL),
+			otlog.String("ensure_revision", req.EnsureRevision),
+		)
+
 		execRunning.WithLabelValues(cmd, repo).Inc()
 		defer func() {
 			tr.LogFields(
 				otlog.String("status", status),
 				otlog.Int64("stdout", stdoutN),
 				otlog.Int64("stderr", stderrN),
+				otlog.String("ensure_revision_status", ensureRevisionStatus),
 			)
 			tr.SetError(execErr)
 			tr.Finish()

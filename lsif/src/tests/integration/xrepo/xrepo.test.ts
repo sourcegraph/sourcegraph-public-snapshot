@@ -278,6 +278,10 @@ describe('XrepoDatabase', () => {
     })
 
     it('should prune overlapping roots during visibility check', async () => {
+        if (!xrepoDatabase) {
+            fail('failed beforeAll')
+        }
+
         // This database has the following commit graph:
         //
         // a -- b -- c -- d -- e -- f -- g
@@ -318,6 +322,10 @@ describe('XrepoDatabase', () => {
     })
 
     it('should traverse branching paths during visibility check', async () => {
+        if (!xrepoDatabase) {
+            fail('failed beforeAll')
+        }
+
         // This database has the following commit graph:
         //
         // a --+-- [b] --- c ---+
@@ -423,6 +431,10 @@ describe('XrepoDatabase', () => {
     })
 
     it('should respect bloom filter', async () => {
+        if (!xrepoDatabase) {
+            fail('failed beforeAll')
+        }
+
         const ca = util.createCommit()
         const cb = util.createCommit()
         const cc = util.createCommit()
@@ -489,6 +501,10 @@ describe('XrepoDatabase', () => {
     })
 
     it('should re-query if bloom filter prunes too many results', async () => {
+        if (!xrepoDatabase) {
+            fail('failed beforeAll')
+        }
+
         const updatePackages = (commit: string, root: string, identifiers: string[]): Promise<xrepoModels.LsifDump> =>
             xrepoDatabase.addPackagesAndReferences(
                 'foo',
@@ -540,6 +556,10 @@ describe('XrepoDatabase', () => {
     })
 
     it('references only returned if dumps visible at tip', async () => {
+        if (!xrepoDatabase) {
+            fail('failed beforeAll')
+        }
+
         const ca = util.createCommit()
         const cb = util.createCommit()
         const cc = util.createCommit()

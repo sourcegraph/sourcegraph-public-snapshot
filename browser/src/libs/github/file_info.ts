@@ -63,7 +63,7 @@ export const resolveSnippetFileInfo = (codeView: HTMLElement): Observable<FileIn
             throw new Error('Could not find commit link in snippet code view')
         }
         const commitIDMatch = commitLinkElement.href.match(COMMIT_HASH_REGEX)
-        if (!commitIDMatch || !commitIDMatch[1]) {
+        if (!commitIDMatch?.[1]) {
             throw new Error(`Could not parse commitID from snippet commit link href: ${commitLinkElement.href}`)
         }
         const commitID = commitIDMatch[1]

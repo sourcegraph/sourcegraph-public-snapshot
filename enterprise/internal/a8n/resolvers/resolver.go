@@ -7,6 +7,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -19,7 +20,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // Resolver is the GraphQL resolver of all things A8N.
@@ -158,6 +160,12 @@ func (r *Resolver) AddChangesetsToCampaign(ctx context.Context, args *graphqlbac
 }
 
 func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.CreateCampaignArgs) (graphqlbackend.CampaignResolver, error) {
+	var err error
+	tr, ctx := trace.New(ctx, "Resolver.CreateCampaign", args.Input.Name)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 	user, err := db.Users.GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "%v", backend.ErrNotAuthenticated)
@@ -202,7 +210,8 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 	}
 
 	go func() {
-		err := svc.RunChangesetJobs(context.Background(), campaign)
+		ctx := trace.ContextWithTrace(context.Background(), tr)
+		err := svc.RunChangesetJobs(ctx, campaign)
 		if err != nil {
 			log15.Error("RunChangesetJobs", "err", err)
 		}
@@ -412,6 +421,13 @@ func (r *Resolver) Changesets(ctx context.Context, args *graphqlutil.ConnectionA
 }
 
 func (r *Resolver) PreviewCampaignPlan(ctx context.Context, args graphqlbackend.PreviewCampaignPlanArgs) (graphqlbackend.CampaignPlanResolver, error) {
+	var err error
+	tr, ctx := trace.New(ctx, "Resolver.PreviewCampaignPlan", args.Specification.Type)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	// 🚨 SECURITY: Only site admins may update campaigns for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -422,15 +438,14 @@ func (r *Resolver) PreviewCampaignPlan(ctx context.Context, args graphqlbackend.
 	if typeName == "" {
 		return nil, errors.New("cannot create CampaignPlan without Type")
 	}
-
 	campaignType, err := ee.NewCampaignType(typeName, specArgs, r.httpFactory)
 	if err != nil {
 		return nil, err
 	}
-
 	plan := &a8n.CampaignPlan{CampaignType: typeName, Arguments: specArgs}
-
 	runner := ee.NewRunner(r.store, campaignType, graphqlbackend.SearchRepos, nil)
+
+	tr.LogFields(log.Int64("plan_id", plan.ID), log.Bool("Wait", args.Wait))
 
 	if args.Wait {
 		err := runner.Run(ctx, plan)
@@ -442,8 +457,10 @@ func (r *Resolver) PreviewCampaignPlan(ctx context.Context, args graphqlbackend.
 			return nil, err
 		}
 	} else {
-		backgroundCtx := actor.WithActor(context.Background(), actor.FromContext(ctx))
-		err := runner.Run(backgroundCtx, plan)
+		act := actor.FromContext(ctx)
+		ctx := trace.ContextWithTrace(context.Background(), tr)
+		ctx = actor.WithActor(ctx, act)
+		err := runner.Run(ctx, plan)
 		if err != nil {
 			return nil, err
 		}

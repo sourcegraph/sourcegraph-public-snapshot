@@ -126,17 +126,10 @@ export function waitForRepo(
               // and we have no guarantee that all the repositories from that external service
               // will exist when the add-external-service endpoint returns.
               tap(({ repository }) => {
-                  if (!repository || !repository.mirrorInfo || !repository.mirrorInfo.cloned) {
+                  if (!repository?.mirrorInfo?.cloned) {
                       throw new CloneInProgressError(repoName)
                   }
-                  if (
-                      mustBeIndexed &&
-                      !(
-                          repository.textSearchIndex &&
-                          repository.textSearchIndex.status &&
-                          repository.textSearchIndex.status.updatedAt
-                      )
-                  ) {
+                  if (mustBeIndexed && !repository?.textSearchIndex?.status?.updatedAt) {
                       throw new CloneInProgressError(repoName)
                   }
               }),
@@ -602,7 +595,7 @@ export function createOrganization(
         mightContainPrivateInfo: false,
     }).pipe(
         mergeMap(({ data, errors }) => {
-            if (!data || !data.createOrganization) {
+            if (!data?.createOrganization) {
                 eventLogger.log('NewOrgFailed')
                 throw createAggregateError(errors)
             }
@@ -723,7 +716,7 @@ export function addExternalService(
         mightContainPrivateInfo: true,
     }).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.addExternalService || (errors && errors.length > 0)) {
+            if (!data?.addExternalService || (errors && errors.length > 0)) {
                 eventLogger.log('AddExternalServiceFailed')
                 throw createAggregateError(errors)
             }
