@@ -1577,56 +1577,56 @@
     react-lifecycles-compat "^3.0.4"
     warning "^3.0.0"
 
-"@sentry/browser@^5.9.1":
-  version "5.9.1"
-  resolved "https://registry.npmjs.org/@sentry/browser/-/browser-5.9.1.tgz#b2ec27ead501a49f26807a9c0774f44f4292f236"
-  integrity sha512-7AOabwp9yAH9h6Xe6TfDwlLxHbUSWs+SPWHI7bPlht2yDSAqkXYGSzRr5X0XQJX9oBQdx2cEPMqHyJrbNaP/og==
+"@sentry/browser@^5.10.0":
+  version "5.10.0"
+  resolved "https://registry.npmjs.org/@sentry/browser/-/browser-5.10.0.tgz#2952e85cd11de7e4eac6178b7bdd68187fd552df"
+  integrity sha512-E3vat2B94MfmGJ3xS202xClCaxcSO67h4tMCpyk13xPzZxIbftJ4dpDmXNlvrxzv9URCQPDOA6v8ZbvGHxJ1xQ==
   dependencies:
-    "@sentry/core" "5.8.0"
-    "@sentry/types" "5.7.1"
-    "@sentry/utils" "5.8.0"
+    "@sentry/core" "5.10.0"
+    "@sentry/types" "5.10.0"
+    "@sentry/utils" "5.10.0"
     tslib "^1.9.3"
 
-"@sentry/core@5.8.0":
-  version "5.8.0"
-  resolved "https://registry.npmjs.org/@sentry/core/-/core-5.8.0.tgz#bbfd2f4711491951a8e3a0e8fa8b172fdf7bff6f"
-  integrity sha512-aAh2KLidIXJVGrxmHSVq2eVKbu7tZiYn5ylW6yzJXFetS5z4MA+JYaSBaG2inVYDEEqqMIkb17TyWxxziUDieg==
+"@sentry/core@5.10.0":
+  version "5.10.0"
+  resolved "https://registry.npmjs.org/@sentry/core/-/core-5.10.0.tgz#9f65ce9077e980a370bd5410f6464f01962a8f67"
+  integrity sha512-sPtgZIRFDKgIvmASi5/kLn+bTRuqhj/NkBlY2SkVgCKfo4Plu1uLJt4zEFF7UC3+MP+2PQA4F6gnAwWIqisbXQ==
   dependencies:
-    "@sentry/hub" "5.8.0"
-    "@sentry/minimal" "5.8.0"
-    "@sentry/types" "5.7.1"
-    "@sentry/utils" "5.8.0"
+    "@sentry/hub" "5.10.0"
+    "@sentry/minimal" "5.10.0"
+    "@sentry/types" "5.10.0"
+    "@sentry/utils" "5.10.0"
     tslib "^1.9.3"
 
-"@sentry/hub@5.8.0":
-  version "5.8.0"
-  resolved "https://registry.npmjs.org/@sentry/hub/-/hub-5.8.0.tgz#56aaeb7324cb66d90db838011cb0127f5558007f"
-  integrity sha512-VdApn1ZCNwH1wwQwoO6pu53PM/qgHG+DQege0hbByluImpLBhAj9w50nXnF/8KzV4UoMIVbzCb6jXzMRmqqp9A==
+"@sentry/hub@5.10.0":
+  version "5.10.0"
+  resolved "https://registry.npmjs.org/@sentry/hub/-/hub-5.10.0.tgz#7f64f7d86a754e5aaba4d4ac0f8b39a54e24deaa"
+  integrity sha512-GJjsmu6oI02uL+HnO504XvExhsD6TW7qwOKuIdy27Apq9d/+ZGsjnMigI9bR9UT3JqVQr3OzreDC4LBCGehTqw==
   dependencies:
-    "@sentry/types" "5.7.1"
-    "@sentry/utils" "5.8.0"
+    "@sentry/types" "5.10.0"
+    "@sentry/utils" "5.10.0"
     tslib "^1.9.3"
 
-"@sentry/minimal@5.8.0":
-  version "5.8.0"
-  resolved "https://registry.npmjs.org/@sentry/minimal/-/minimal-5.8.0.tgz#b7ad5113504ab67f1ef2b0f465b7ba608e6b8dc5"
-  integrity sha512-MIlFOgd+JvAUrBBmq7vr9ovRH1HvckhnwzHdoUPpKRBN+rQgTyZy1o6+kA2fASCbrRqFCP+Zk7EHMACKg8DpIw==
+"@sentry/minimal@5.10.0":
+  version "5.10.0"
+  resolved "https://registry.npmjs.org/@sentry/minimal/-/minimal-5.10.0.tgz#8bf22cfd362da2679afe29495d3bdb7ed712d22b"
+  integrity sha512-ZZd+IJewSZDuxKKQgzLdSKGNDsDIL6IW/9jGHY+uX1D9t7NnZIBmfpaIUsMPe1rJxag+fEk0FJH+g/z4uIZI2w==
   dependencies:
-    "@sentry/hub" "5.8.0"
-    "@sentry/types" "5.7.1"
+    "@sentry/hub" "5.10.0"
+    "@sentry/types" "5.10.0"
     tslib "^1.9.3"
 
-"@sentry/types@5.7.1":
-  version "5.7.1"
-  resolved "https://registry.npmjs.org/@sentry/types/-/types-5.7.1.tgz#4c4c1d4d891b6b8c2c3c7b367d306a8b1350f090"
-  integrity sha512-tbUnTYlSliXvnou5D4C8Zr+7/wJrHLbpYX1YkLXuIJRU0NSi81bHMroAuHWILcQKWhVjaV/HZzr7Y/hhWtbXVQ==
+"@sentry/types@5.10.0":
+  version "5.10.0"
+  resolved "https://registry.npmjs.org/@sentry/types/-/types-5.10.0.tgz#4f0ba31b6e4d5371112c38279f11f66c73b43746"
+  integrity sha512-TW20GzkCWsP6uAxR2JIpIkiitCKyIOfkyDsKBeLqYj4SaZjfvBPnzgNCcYR0L0UsP1/Es6oHooZfIGSkp6GGxQ==
 
-"@sentry/utils@5.8.0":
-  version "5.8.0"
-  resolved "https://registry.npmjs.org/@sentry/utils/-/utils-5.8.0.tgz#34683088159b9935f973b6e6cad1a1cc26bbddac"
-  integrity sha512-KDxUvBSYi0/dHMdunbxAxD3389pcQioLtcO6CI6zt/nJXeVFolix66cRraeQvqupdLhvOk/el649W4fCPayTHw==
+"@sentry/utils@5.10.0":
+  version "5.10.0"
+  resolved "https://registry.npmjs.org/@sentry/utils/-/utils-5.10.0.tgz#98ee0db868438c4572b0bad03231ab2e888c134d"
+  integrity sha512-wcxwqtAomr1O65aXx41oHsgl/AGJTJ9C4c03FAMg9wHWEfzEby0el6BZCMq3IAG09zY7vY43zhEFWFghI5u2eg==
   dependencies:
-    "@sentry/types" "5.7.1"
+    "@sentry/types" "5.10.0"
     tslib "^1.9.3"
 
 "@sheerun/mutationobserver-shim@^0.3.2":
