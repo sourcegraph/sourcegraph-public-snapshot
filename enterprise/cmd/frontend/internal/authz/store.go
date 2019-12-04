@@ -16,6 +16,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
+var (
+	ErrNotFound        = errors.New("permissions not found")
+	ErrUpdatedAtNotSet = errors.New("UpdatedAt timestamp must be set")
+)
+
 // Store is the unified interface for managing permissions explicitly in the database.
 // It is concurrency-safe and maintains data consistency over the 'user_permissions',
 // 'repo_permissions', 'user_pending_permissions', and 'repo_pending_permissions' tables.
@@ -130,7 +135,7 @@ func (s *Store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err
 	// Retrieve currently stored user IDs of this repository.
 	oldIDs, _, err := txs.load(ctx, loadRepoPermissionsQuery(p))
 	if err != nil && err != ErrNotFound {
-		return err
+		return errors.Wrap(err, "load repo permissions")
 	}
 
 	if oldIDs == nil {
@@ -155,7 +160,7 @@ func (s *Store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err
 	q := loadUserPermissionsBatchQuery(changedIDs, p.Perm, PermRepos, p.Provider)
 	loadedIDs, err := txs.batchLoadIDs(ctx, q)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "batch load user permissions")
 	}
 
 	// We have two sets of IDs that one needs to add, and the other needs to remove.
@@ -188,25 +193,20 @@ func (s *Store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err
 	if q, err = upsertUserPermissionsBatchQuery(updatedPerms...); err != nil {
 		return err
 	} else if err = txs.execute(ctx, q); err != nil {
-		return err
+		return errors.Wrap(err, "execute upsert user permissions batch query")
 	}
 
 	p.UpdatedAt = updatedAt
 	if q, err = upsertRepoPermissionsBatchQuery(p); err != nil {
 		return err
 	} else if err = txs.execute(ctx, q); err != nil {
-		return err
+		return errors.Wrap(err, "execute upsert repo permissions batch query")
 	}
 
 	return nil
 }
 
-func loadUserPermissionsBatchQuery(
-	userIDs []uint32,
-	perm authz.Perms,
-	typ PermType,
-	provider ProviderType,
-) *sqlf.Query {
+func loadUserPermissionsBatchQuery(userIDs []uint32, perm authz.Perms, typ PermType, provider ProviderType) *sqlf.Query {
 	const format = `
 -- source: enterprise/cmd/frontend/internal/authz/store.go:loadUserPermissionsBatchQuery
 SELECT user_id, object_ids
@@ -253,7 +253,7 @@ DO UPDATE SET
 		}
 
 		if ps[i].UpdatedAt.IsZero() {
-			return nil, errors.New("UpdatedAt timestamp must be set")
+			return nil, ErrUpdatedAtNotSet
 		}
 
 		items[i] = sqlf.Sprintf("(%s, %s, %s, %s, %s, %s)",
@@ -352,11 +352,7 @@ AND object_type = %s
 //   repo_id | permission |   user_ids   | updated_at
 //  ---------+------------+--------------+------------
 //         1 |       read | bitmap{1, 2} | <DateTime>
-func (s *Store) SetRepoPendingPermissions(
-	ctx context.Context,
-	bindIDs []string,
-	p *RepoPermissions,
-) (err error) {
+func (s *Store) SetRepoPendingPermissions(ctx context.Context, bindIDs []string, p *RepoPermissions) (err error) {
 	ctx, save := s.observe(ctx, "SetRepoPendingPermissions", "")
 	defer func() { save(&err, append(p.TracingFields(), otlog.String("bindIDs", strings.Join(bindIDs, ",")))...) }()
 
@@ -385,14 +381,14 @@ func (s *Store) SetRepoPendingPermissions(
 		if err != nil {
 			return err
 		} else if err = txs.execute(ctx, q); err != nil {
-			return err
+			return errors.Wrap(err, "execute insert user pending permissions batch query")
 		}
 
 		// Load all user pending permissions by bindIDs from the table.
 		q = loadUserPendingPermissionsBatchQuery(bindIDs, p.Perm, PermRepos)
 		bindIDSet, loadedIDs, err = txs.batchLoadUserPendingPermissions(ctx, q)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "batch load user pending permissions")
 		}
 	}
 
@@ -405,7 +401,7 @@ func (s *Store) SetRepoPendingPermissions(
 	// Retrieve currently stored user IDs of this repository.
 	oldIDs, _, err := txs.load(ctx, loadRepoPendingPermissionsQuery(p))
 	if err != nil && err != ErrNotFound {
-		return err
+		return errors.Wrap(err, "load repo pending permissions")
 	}
 	if oldIDs == nil {
 		oldIDs = roaring.NewBitmap()
@@ -421,7 +417,7 @@ func (s *Store) SetRepoPendingPermissions(
 		q = loadUserPendingPermissionsByIDBatchQuery(removedIDs, p.Perm, PermRepos)
 		idSet, loaded, err := txs.batchLoadUserPendingPermissions(ctx, q)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "batch load user pending permissions")
 		}
 
 		// Merge data of removed IDs into the full sets.
@@ -472,14 +468,14 @@ func (s *Store) SetRepoPendingPermissions(
 		if q, err = upsertUserPendingPermissionsBatchQuery(updatedPerms...); err != nil {
 			return err
 		} else if err = txs.execute(ctx, q); err != nil {
-			return err
+			return errors.Wrap(err, "execute upsert user pending permissions batch query")
 		}
 	}
 
 	if q, err = upsertRepoPendingPermissionsBatchQuery(p); err != nil {
 		return err
 	} else if err = txs.execute(ctx, q); err != nil {
-		return err
+		return errors.Wrap(err, "execute upsert repo pending permissions batch query")
 	}
 
 	return nil
@@ -552,7 +548,7 @@ DO NOTHING
 	}
 
 	if p.UpdatedAt.IsZero() {
-		return nil, errors.New("UpdatedAt timestamp must be set")
+		return nil, ErrUpdatedAtNotSet
 	}
 
 	items := make([]*sqlf.Query, len(bindIDs))
@@ -663,7 +659,7 @@ DO UPDATE SET
 		}
 
 		if ps[i].UpdatedAt.IsZero() {
-			return nil, errors.New("UpdatedAt timestamp must be set")
+			return nil, ErrUpdatedAtNotSet
 		}
 
 		items[i] = sqlf.Sprintf("(%s, %s, %s, %s, %s)",
@@ -704,7 +700,7 @@ DO UPDATE SET
 		}
 
 		if ps[i].UpdatedAt.IsZero() {
-			return nil, errors.New("UpdatedAt timestamp must be set")
+			return nil, ErrUpdatedAtNotSet
 		}
 
 		items[i] = sqlf.Sprintf("(%s, %s, %s, %s)",
@@ -889,7 +885,7 @@ DO UPDATE SET
 		}
 
 		if ps[i].UpdatedAt.IsZero() {
-			return nil, errors.New("UpdatedAt timestamp must be set")
+			return nil, ErrUpdatedAtNotSet
 		}
 
 		items[i] = sqlf.Sprintf("(%s, %s, %s, %s, %s)",
@@ -955,8 +951,6 @@ func (s *Store) execute(ctx context.Context, q *sqlf.Query) (err error) {
 	}
 	return rows.Close()
 }
-
-var ErrNotFound = errors.New("permissions not found")
 
 // load runs the query and returns unmarshalled IDs and last updated time.
 func (s *Store) load(ctx context.Context, q *sqlf.Query) (*roaring.Bitmap, time.Time, error) {
