@@ -147,14 +147,3 @@ declare module 'worker-loader?*' {
     }
     export default WebpackWorker
 }
-
-/**
- * `KP` should only have properties defined in `T` and their types should match.
- * https://stackoverflow.com/a/54497408
- *
- * @example
- *   interface T { v: string }
- *   function test (v: Partial<T>) -> test({ v: undefined }) // valid
- *   function test<S>(v: S & StrictPartial<T, S>) -> test({ v: undefined }) // error
- */
-type StrictPartial<T, KP> = Partial<T> & { [K in keyof KP]-?: K extends keyof T ? T[K] : never }

@@ -7,7 +7,7 @@ import {
     isFuzzyWordSearch,
     formatQueryForFuzzySearch,
     filterAliasForSearch,
-    createQueryState,
+    QueryState,
 } from './helpers'
 import { SearchType } from './results/SearchResults'
 import { searchFilterSuggestions } from './searchFilterSuggestions'
@@ -103,15 +103,9 @@ describe('search/helpers', () => {
         const filterQuery = 'test r test'
 
         const getArchivedSuggestions = () =>
-            filterStaticSuggestions(
-                createQueryState({ query: 'archived:', cursorPosition: 9 }),
-                searchFilterSuggestions
-            )
+            filterStaticSuggestions(new QueryState({ query: 'archived:', cursorPosition: 9 }), searchFilterSuggestions)
         const getFilterSuggestionStartingWithR = () =>
-            filterStaticSuggestions(
-                createQueryState({ query: filterQuery, cursorPosition: 6 }),
-                searchFilterSuggestions
-            )
+            filterStaticSuggestions(new QueryState({ query: filterQuery, cursorPosition: 6 }), searchFilterSuggestions)
 
         describe(`${filterStaticSuggestions.name}()`, () => {
             test('filters suggestions for filters starting with "r"', () => {
@@ -125,7 +119,7 @@ describe('search/helpers', () => {
 
             test('filters suggestions for filter aliases', () => {
                 const [{ value }] = filterStaticSuggestions(
-                    createQueryState({ query: 'l', cursorPosition: 1 }),
+                    new QueryState({ query: 'l', cursorPosition: 1 }),
                     searchFilterSuggestions
                 )
                 expect(value).toBe(filterAliases.l + ':')
@@ -133,17 +127,14 @@ describe('search/helpers', () => {
 
             test('does not throw for query ":"', () => {
                 expect(() =>
-                    filterStaticSuggestions(
-                        createQueryState({ query: ':', cursorPosition: 1 }),
-                        searchFilterSuggestions
-                    )
+                    filterStaticSuggestions(new QueryState({ query: ':', cursorPosition: 1 }), searchFilterSuggestions)
                 ).not.toThrowError()
             })
 
             test('filters suggestions for word "test"', () => {
                 expect(
                     filterStaticSuggestions(
-                        createQueryState({ query: filterQuery, cursorPosition: 4 }),
+                        new QueryState({ query: filterQuery, cursorPosition: 4 }),
                         searchFilterSuggestions
                     )
                 ).toHaveLength(0)
@@ -159,7 +150,7 @@ describe('search/helpers', () => {
             describe('inserts suggestions for a filter name', () => {
                 const [suggestion] = getFilterSuggestionStartingWithR().filter(({ value }) => value === 'repo:')
                 const { query: newQuery } = insertSuggestionInQuery(
-                    createQueryState({
+                    new QueryState({
                         query: 'test r test',
                         cursorPosition: 6,
                     }),
@@ -170,7 +161,7 @@ describe('search/helpers', () => {
             test('inserts suggestion for a filter value', () => {
                 const [suggestion] = getArchivedSuggestions()
                 const { query: newQuery } = insertSuggestionInQuery(
-                    createQueryState({ query: 'test archived: test', cursorPosition: 14 }),
+                    new QueryState({ query: 'test archived: test', cursorPosition: 14 }),
                     suggestion
                 )
                 expect(newQuery).toBe(`test archived:${suggestion.value} test`)
@@ -181,7 +172,7 @@ describe('search/helpers', () => {
     describe(`${validFilterAndValueBeforeCursor.name}()`, () => {
         const query = 'archived:yes QueryInput'
         it('returns values when a filter value is being typed', () => {
-            expect(validFilterAndValueBeforeCursor(createQueryState({ query, cursorPosition: 10 }))).toEqual({
+            expect(validFilterAndValueBeforeCursor(new QueryState({ query, cursorPosition: 10 }))).toEqual({
                 filterIndex: 0,
                 filterAndValue: 'archived:y',
                 matchedFilter: 'archived',
@@ -190,7 +181,7 @@ describe('search/helpers', () => {
             })
         })
         it('returns values when a filter is selected but no value char is typed yet', () => {
-            expect(validFilterAndValueBeforeCursor(createQueryState({ query, cursorPosition: 9 }))).toEqual({
+            expect(validFilterAndValueBeforeCursor(new QueryState({ query, cursorPosition: 9 }))).toEqual({
                 filterIndex: 0,
                 filterAndValue: 'archived:',
                 matchedFilter: 'archived',
@@ -199,11 +190,11 @@ describe('search/helpers', () => {
             })
         })
         it('does not return a value if typed whitespace char', () => {
-            expect(validFilterAndValueBeforeCursor(createQueryState({ query, cursorPosition: 13 }))).toStrictEqual(null)
+            expect(validFilterAndValueBeforeCursor(new QueryState({ query, cursorPosition: 13 }))).toStrictEqual(null)
         })
         it('correctly resolves filter aliases', () => {
             const query = 'l:go'
-            expect(validFilterAndValueBeforeCursor(createQueryState({ query, cursorPosition: query.length }))).toEqual({
+            expect(validFilterAndValueBeforeCursor(new QueryState({ query, cursorPosition: query.length }))).toEqual({
                 filterIndex: 0,
                 filterAndValue: query,
                 matchedFilter: 'l',
@@ -213,7 +204,7 @@ describe('search/helpers', () => {
         })
         it('correctly formats negated filters', () => {
             const query = '-f:package.json'
-            expect(validFilterAndValueBeforeCursor(createQueryState({ query, cursorPosition: query.length }))).toEqual({
+            expect(validFilterAndValueBeforeCursor(new QueryState({ query, cursorPosition: query.length }))).toEqual({
                 filterIndex: 0,
                 filterAndValue: query,
                 matchedFilter: '-f',
@@ -223,7 +214,7 @@ describe('search/helpers', () => {
         })
         it('returns correct values for filter query without a value', () => {
             const query = '-f'
-            expect(validFilterAndValueBeforeCursor(createQueryState({ query, cursorPosition: query.length }))).toEqual({
+            expect(validFilterAndValueBeforeCursor(new QueryState({ query, cursorPosition: query.length }))).toEqual({
                 filterIndex: 0,
                 filterAndValue: query,
                 matchedFilter: query,
@@ -236,15 +227,15 @@ describe('search/helpers', () => {
     describe('isFuzzyWordSearch', () => {
         const query = 'Query lang:g'
         it('returns false if typing a filter value', () =>
-            expect(isFuzzyWordSearch(createQueryState({ query, cursorPosition: 12 }))).toBe(false))
+            expect(isFuzzyWordSearch(new QueryState({ query, cursorPosition: 12 }))).toBe(false))
         it('returns true if typing a non filter type or value', () =>
-            expect(isFuzzyWordSearch(createQueryState({ query, cursorPosition: 5 }))).toBe(true))
+            expect(isFuzzyWordSearch(new QueryState({ query, cursorPosition: 5 }))).toBe(true))
     })
 
     describe('formatQueryForFuzzySearch', () => {
         const formatForSearchWithFilter = (filter: string) =>
             formatQueryForFuzzySearch(
-                createQueryState({
+                new QueryState({
                     query: `archived:Yes ${filter}:value Props`,
                     // 19 is position until after ':value'
                     cursorPosition: 19 + filter.length,
@@ -264,7 +255,7 @@ describe('search/helpers', () => {
         it('return absolute filter if filter being typed is negated (e.g: `-file`)', () => {
             expect(
                 formatQueryForFuzzySearch(
-                    createQueryState({
+                    new QueryState({
                         query: 'l:javascript -file:index.js archived:No',
                         cursorPosition: 27,
                     })

@@ -51,7 +51,7 @@ import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { parseSearchURLPatternType } from './search'
 import { ThemePreference } from './search/theme'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
-import { QueryState, createQueryState } from './search/helpers'
+import { QueryState } from './search/helpers'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarItem } from './repo/settings/RepoSettingsSidebar'
 
@@ -156,7 +156,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         this.state = {
             themePreference: readStoredThemePreference(),
             systemIsLightTheme: !this.darkThemeMediaList.matches,
-            navbarSearchQueryState: createQueryState({ query: '', cursorPosition: 0 }),
+            navbarSearchQueryState: new QueryState({ query: '', cursorPosition: 0 }),
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: SITE_SUBJECT_NO_ADMIN,
             searchPatternType: urlPatternType,

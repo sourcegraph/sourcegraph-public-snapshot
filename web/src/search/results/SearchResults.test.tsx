@@ -13,7 +13,7 @@ import {
 } from '../../../../shared/src/util/searchTestHelpers'
 import { SearchResults, SearchResultsProps } from './SearchResults'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
-import { createQueryState } from '../helpers'
+import { QueryState } from '../helpers'
 
 describe('SearchResults', () => {
     setLinkComponent((props: any) => <a {...props} />)
@@ -30,7 +30,7 @@ describe('SearchResults', () => {
         authenticatedUser: null,
         location: history.location,
         history,
-        navbarSearchQueryState: createQueryState({ query: '', cursorPosition: 0 }),
+        navbarSearchQueryState: new QueryState({ query: '', cursorPosition: 0 }),
         fetchHighlightedFileLines: HIGHLIGHTED_FILE_LINES_REQUEST,
         searchRequest: OBSERVABLE_SEARCH_REQUEST,
         isLightTheme: true,

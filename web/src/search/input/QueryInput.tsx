@@ -30,7 +30,6 @@ import {
     isFuzzyWordSearch,
     validFilterAndValueBeforeCursor,
     formatQueryForFuzzySearch,
-    createQueryState,
 } from '../helpers'
 import { fetchSuggestions } from '../backend'
 import { isDefined } from '../../../../shared/src/util/types'
@@ -488,7 +487,7 @@ export class QueryInput extends React.Component<Props, State> {
 
             this.inputValues.next({
                 ...insertSuggestionInQuery(
-                    createQueryState({
+                    new QueryState({
                         query: value.query,
                         cursorPosition: suggestions.cursorPosition,
                         showSuggestions: true,

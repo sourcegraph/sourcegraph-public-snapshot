@@ -11,7 +11,7 @@ import { QuickLink, Settings } from '../../schema/settings.schema'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { limitString } from '../../util'
-import { submitSearch, QueryState, createQueryState } from '../helpers'
+import { submitSearch, QueryState } from '../helpers'
 import { QuickLinks } from '../QuickLinks'
 import { QueryBuilder } from './QueryBuilder'
 import { QueryInput } from './QueryInput'
@@ -41,7 +41,7 @@ export class SearchPage extends React.Component<Props, State> {
         super(props)
         const queryFromUrl = parseSearchURLQuery(props.location.search) || ''
         this.state = {
-            userQueryState: createQueryState({
+            userQueryState: new QueryState({
                 query: queryFromUrl,
                 cursorPosition: queryFromUrl.length,
             }),
