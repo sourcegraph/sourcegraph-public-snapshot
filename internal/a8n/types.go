@@ -36,6 +36,8 @@ type CampaignPlan struct {
 	// Arguments is a JSONC string
 	Arguments string
 
+	CanceledAt time.Time
+
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

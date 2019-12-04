@@ -1156,14 +1156,16 @@ var createCampaignPlanQueryFmtstr = `
 INSERT INTO campaign_plans (
   campaign_type,
   arguments,
+  canceled_at,
   created_at,
   updated_at
 )
-VALUES (%s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s)
 RETURNING
   id,
   campaign_type,
   arguments,
+  canceled_at,
   created_at,
   updated_at
 `
@@ -1186,6 +1188,7 @@ func (s *Store) createCampaignPlanQuery(c *a8n.CampaignPlan) (*sqlf.Query, error
 		createCampaignPlanQueryFmtstr,
 		c.CampaignType,
 		arguments,
+		nullTimeColumn(c.CanceledAt),
 		c.CreatedAt,
 		c.UpdatedAt,
 	), nil
@@ -1210,13 +1213,15 @@ UPDATE campaign_plans
 SET (
   campaign_type,
   arguments,
+  canceled_at,
   updated_at
-) = (%s, %s, %s)
+) = (%s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   id,
   campaign_type,
   arguments,
+  canceled_at,
   created_at,
   updated_at
 `
@@ -1233,6 +1238,7 @@ func (s *Store) updateCampaignPlanQuery(c *a8n.CampaignPlan) (*sqlf.Query, error
 		updateCampaignPlanQueryFmtstr,
 		c.CampaignType,
 		arguments,
+		nullTimeColumn(c.CanceledAt),
 		c.UpdatedAt,
 		c.ID,
 	), nil
@@ -1342,6 +1348,7 @@ SELECT
   id,
   campaign_type,
   arguments,
+  canceled_at,
   created_at,
   updated_at
 FROM campaign_plans
@@ -1458,6 +1465,7 @@ SELECT
   id,
   campaign_type,
   arguments,
+  canceled_at,
   created_at,
   updated_at
 FROM campaign_plans
@@ -2237,6 +2245,7 @@ func scanCampaignPlan(c *a8n.CampaignPlan, s scanner) error {
 		&c.ID,
 		&c.CampaignType,
 		&c.Arguments,
+		&dbutil.NullTime{Time: &c.CanceledAt},
 		&c.CreatedAt,
 		&c.UpdatedAt,
 	)

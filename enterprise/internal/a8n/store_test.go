@@ -861,6 +861,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					c := &a8n.CampaignPlan{
 						CampaignType: "COMBY",
 						Arguments:    `{"scopeQuery": "file:README.md"}`,
+						CanceledAt:   now,
 					}
 
 					want := c.Clone()
@@ -971,6 +972,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 				for _, c := range campaignPlans {
 					c.CampaignType += "-updated"
 					c.Arguments = `{"updated": true}`
+					c.CanceledAt = now.Add(5 * time.Second)
 
 					now = now.Add(time.Second)
 					want := c
