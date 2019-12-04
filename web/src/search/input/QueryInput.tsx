@@ -30,6 +30,7 @@ import {
     isFuzzyWordSearch,
     validFilterAndValueBeforeCursor,
     formatQueryForFuzzySearch,
+    highlightInvalidFilters,
 } from '../helpers'
 import { fetchSuggestions } from '../backend'
 import { isDefined } from '../../../../shared/src/util/types'
@@ -323,6 +324,7 @@ export class QueryInput extends React.Component<Props, State> {
             query: this.props.value.query,
             cursorPosition: this.state.suggestions.cursorPosition,
         })
+        const contentState = highlightInvalidFilters(this.props.value)
         return (
             <Downshift
                 scrollIntoView={this.downshiftScrollIntoView}
@@ -353,7 +355,7 @@ export class QueryInput extends React.Component<Props, State> {
                                     focus={this.state.showSuggestions}
                                     ref={this.inputElement}
                                     className="form-control rounded-left query-input2__input"
-                                    value={this.props.value}
+                                    value={contentState}
                                     onChange={this.onInputChange}
                                     placeholder={this.props.placeholder ?? 'Search code...'}
                                     inputProps={{

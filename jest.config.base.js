@@ -35,6 +35,8 @@ const config = {
     // Needed for reusing API functions that use fetch
     // Neither NodeJS nor JSDOM have fetch + AbortController yet
     require.resolve('abort-controller/polyfill'),
+    // Node < 12 does not support String['matchAll']
+    require.resolve('core-js/features/string/match-all'),
     path.join(__dirname, 'shared/dev/fetch'),
   ],
 }

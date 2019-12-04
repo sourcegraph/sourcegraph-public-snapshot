@@ -7,10 +7,13 @@ import {
     isFuzzyWordSearch,
     formatQueryForFuzzySearch,
     filterAliasForSearch,
+    highlightInvalidFilters,
+    toInvalidFilterHtml,
 } from './helpers'
 import { SearchType } from './results/SearchResults'
 import { searchFilterSuggestions } from './searchFilterSuggestions'
 import { filterAliases, isolatedFuzzySearchFilters } from './input/Suggestion'
+import { ContentEditableState } from './input/ContentEditableQuery'
 
 describe('search/helpers', () => {
     describe('queryIndexOfScope()', () => {
@@ -241,6 +244,110 @@ describe('search/helpers', () => {
                     cursorPosition: 27,
                 })
             ).toBe('l:javascript file:index.js archived:No')
+        })
+    })
+
+    describe(`${highlightInvalidFilters.name}()`, () => {
+        const invalidKeyword = 'a1b2c3_'
+        const invalidKeyword2 = 'd4e5f6_'
+
+        it('returns a ContentEditableState when no invalid keywords are found', () => {
+            const query = 'a valid query archived:Yes test'
+            const cursorPosition = 2
+            expect(highlightInvalidFilters({ query, cursorPosition })).toStrictEqual(
+                new ContentEditableState({
+                    query,
+                    cursor: { nodeIndex: 0, index: cursorPosition },
+                })
+            )
+        })
+        describe('calculates new cursor position after matching an invalid filter keyword', () => {
+            type HighlightInvalidFiltersMock = ContentEditableState & { cursorPosition: number }
+
+            const queries = {
+                invalidAtMiddle: {
+                    title: 'With invalid keyword at the middle',
+                    query: `test ${invalidKeyword}:value repo:github.com test`,
+                },
+                invalidAtStart: {
+                    title: 'With invalid keyword at the start',
+                    query: `${invalidKeyword}:value repo:github.com test`,
+                },
+                invalidAtEnd: {
+                    title: 'With invalid keyword at the end',
+                    query: `test repo:github.com ${invalidKeyword2}:value ${invalidKeyword}:value`,
+                },
+            }
+
+            const run = ({ cursor, ...mock }: HighlightInvalidFiltersMock): void => {
+                const state = highlightInvalidFilters(mock)
+                expect(state.cursor).toStrictEqual(cursor)
+            }
+
+            describe('cursor is before the matched node', () => {
+                test(queries.invalidAtMiddle.title, () =>
+                    run({
+                        query: queries.invalidAtMiddle.query,
+                        cursorPosition: 4,
+                        cursor: { nodeIndex: 0, index: 4 },
+                    })
+                )
+                test(queries.invalidAtEnd.title, () =>
+                    run({
+                        query: queries.invalidAtEnd.query,
+                        cursorPosition: 25,
+                        cursor: { nodeIndex: 1, index: 4 },
+                    })
+                )
+            })
+            describe('cursor is in the matched node', () => {
+                test(queries.invalidAtStart.title, () =>
+                    run({
+                        query: queries.invalidAtStart.query,
+                        cursorPosition: 4,
+                        cursor: { nodeIndex: 0, index: 4 },
+                    })
+                )
+                test(queries.invalidAtMiddle.title, () =>
+                    run({
+                        query: queries.invalidAtMiddle.query,
+                        cursorPosition: 7,
+                        cursor: { nodeIndex: 1, index: 2 },
+                    })
+                )
+                test(queries.invalidAtEnd.title, () =>
+                    run({
+                        query: queries.invalidAtEnd.query,
+                        cursorPosition: 38,
+                        cursor: { nodeIndex: 3, index: 3 },
+                    })
+                )
+            })
+            describe('cursor is after the matched node', () => {
+                test(queries.invalidAtStart.title, () =>
+                    run({
+                        query: queries.invalidAtStart.query,
+                        cursorPosition: 10,
+                        cursor: { nodeIndex: 1, index: 3 },
+                    })
+                )
+                test(queries.invalidAtMiddle.title, () =>
+                    run({
+                        query: queries.invalidAtMiddle.query,
+                        cursorPosition: 18,
+                        cursor: { nodeIndex: 2, index: 6 },
+                    })
+                )
+            })
+        })
+        it('only highlights invalid filter keywords', () => {
+            const { query } = highlightInvalidFilters({
+                query: `${invalidKeyword}:value repo:git Props ${invalidKeyword2}:value count:1`,
+                cursorPosition: 0,
+            })
+            const invalidHtml = toInvalidFilterHtml(invalidKeyword)
+            const invalid2Html = toInvalidFilterHtml(invalidKeyword2)
+            expect(query).toBe(`${invalidHtml}:value repo:git Props ${invalid2Html}:value count:1`)
         })
     })
 })

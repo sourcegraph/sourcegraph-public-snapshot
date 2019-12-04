@@ -12,6 +12,7 @@ import {
     isolatedFuzzySearchFilters,
     filterAliases,
 } from './input/Suggestion'
+import { ContentEditableState } from './input/ContentEditableQuery'
 
 /**
  * @param activation If set, records the DidSearch activation event for the new user activation
@@ -365,4 +366,128 @@ export const formatQueryForFuzzySearch = (queryState: QueryState): string => {
     const { firstPart, lastPart } = splitStringAtPosition(queryState.query, queryState.cursorPosition)
 
     return firstPart.substring(0, filterIndex) + formattedFilterAndValue + lastPart
+}
+
+/**
+ * Matches filter keywords in query.
+ * See `highlightInvalidFilters()`.
+ *
+ * @example 'query archived:true' -> 'archived'
+ */
+const filterKeywordRegex = /[^\s+]?\S+(?=:)/g
+
+/**
+ * See `highlightInvalidFilters()`
+ *
+ * @returns HTML string for an invalid keyword
+ */
+export const toInvalidFilterHtml = (value: string): string =>
+    `<span title="Invalid keyword" class="query-input2__invalid-filter">${value}</span>`
+
+/**
+ * Matches and checks if filter keywords are valid in a given query string,
+ * returning a HTML string with invalid filter keywords wrapped with <mark>.
+ *
+ * @returns HTML string to be rendered
+ */
+export const highlightInvalidFilters = ({ cursorPosition, query }: QueryState): ContentEditableState => {
+    // Match all keywords which could be a filter (any word ending with a ':')
+    type ValidRegExpMatchArray = RegExpMatchArray & { index: number }
+    const keywordMatches: ValidRegExpMatchArray[] = [...query.matchAll(filterKeywordRegex)].filter(
+        (keyword): keyword is ValidRegExpMatchArray => !isValidFilter(keyword[0]) && keyword.index !== undefined
+    )
+
+    // If no filter keyword is found, return given query and cursor position
+    if (keywordMatches.length === 0) {
+        return new ContentEditableState({
+            query,
+            cursor: { nodeIndex: 0, index: cursorPosition },
+        })
+    }
+
+    // If at least one filter keyword is found, check if it's valid
+
+    // Used to correctly position cursor, see step 2. in `keywordMatches.forEach` loop below.
+    // `<div contentEditable>` need to know in which node the cursor will be positioned
+    let totalNodes = 0
+
+    // Query and cursor to be returned
+    let newQuery = query
+    let cursor = { nodeIndex: -1, index: 0 }
+
+    // eslint-disable-next-line ban/ban
+    keywordMatches.forEach((keywordMatch, matchIndex) => {
+        // 1. Format new query string
+
+        // If keywords were marked before, `newQuery` is longer than `query`, additional
+        // length is then accounted for when inserting the next keyword into `newQuery`
+        const matchedKeyword = keywordMatch[0]
+
+        // As invalid keyword tags are added, the `newQuery` length increases compared to
+        // the `query` length. For the next highlight to be inserted at the correct
+        // index it needs to be shifted forward using the additional length
+        const queryLengthDifference = newQuery.length - query.length
+        const keywordIndex = keywordMatch.index + queryLengthDifference
+
+        const queryBeforeKeyword = newQuery.substring(0, keywordIndex)
+        const queryAfterKeyword = newQuery.substring(keywordIndex + matchedKeyword.length)
+        const highlightedKeyword = toInvalidFilterHtml(matchedKeyword)
+
+        newQuery = queryBeforeKeyword + highlightedKeyword + queryAfterKeyword
+
+        // 2. Calculate new cursor position. See `ContentEditableState['cursor']`
+
+        // If cursor has not been set
+        if (cursor.nodeIndex === -1) {
+            // Where the matched keyword starts and ends in `query`
+            const start = keywordMatch.index
+            const end = keywordMatch.index + matchedKeyword.length
+
+            // Cursor is in the node
+            // 'text <>inv|alid<>:value'
+            if (cursorPosition >= start && cursorPosition < end) {
+                cursor = {
+                    // If keyword is at the start of the query: it's the first node
+                    // Else: it's the current node (`totalNodes + 1`)
+                    nodeIndex: start === 0 ? 0 : totalNodes + 1,
+                    index: cursorPosition - start,
+                }
+            }
+            // Cursor is before the node
+            // 'text| <>invalid<>:value'
+            if (cursorPosition < start) {
+                // The start of the previous node is the end of the previous match,
+                // otherwise the cursor would have been "in the node" of the previous match
+                cursor = {
+                    nodeIndex: totalNodes,
+                    index: (() => {
+                        if (matchIndex === 0) {
+                            return cursorPosition
+                        }
+                        const previousMatch = keywordMatches[matchIndex - 1]
+                        const previousEnd = previousMatch.index + previousMatch[0].length
+                        return cursorPosition - previousEnd
+                    })(),
+                }
+            }
+            // Cursor is after the node.
+            // 'text <>invalid<>:value|'
+            // If this is the last matched node, then set cursor to next node,
+            // otherwise the cursor would have been "in the node"
+            if (cursorPosition >= end && matchIndex === keywordMatches.length - 1) {
+                cursor = {
+                    nodeIndex: totalNodes + (start === 0 ? 1 : 2),
+                    index: cursorPosition - end,
+                }
+            }
+        }
+
+        // If keyword is first node -> add 1.
+        // Else: it's the second node -> add 2.
+        //   Add 2 because there should be at least one whitespace
+        //   before the keyword, see `filterKeywordRegex`
+        totalNodes += keywordMatch.index === 0 ? 1 : 2
+    })
+
+    return new ContentEditableState({ query: newQuery, cursor })
 }

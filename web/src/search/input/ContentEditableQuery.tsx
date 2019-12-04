@@ -1,6 +1,6 @@
 import React from 'react'
 import { QueryState } from '../helpers'
-import { isEqual } from 'lodash'
+import { isEqual, range } from 'lodash'
 
 /**
  * Below, 'contentEditable' refers to a `<div contentEditable>`,
@@ -13,11 +13,14 @@ import { isEqual } from 'lodash'
  * to be accessed through `document.getSelection()` instead of `selectionStart`,
  * and set through `document.createRange()` instead of `setSelectionRange`
  */
-const setCursor = (inputDiv: HTMLDivElement, cursorPosition: number): void => {
+const setCursor = (inputDiv: HTMLDivElement, cursor: ContentEditableState['cursor']): void => {
     const range = document.createRange()
     const selection = document.getSelection()
     if (selection && inputDiv.childNodes?.length > 0) {
-        range.setStart(inputDiv.childNodes[0], cursorPosition)
+        const node = inputDiv.childNodes[cursor.nodeIndex]
+        // Non-text nodes render their content as child nodes,
+        // in that case the first child node is selected.
+        range.setStart(node.childNodes.length ? node.childNodes[0] : node, cursor.index)
         range.collapse(true)
         selection.removeAllRanges()
         selection.addRange(range)
@@ -29,6 +32,37 @@ const setCursor = (inputDiv: HTMLDivElement, cursorPosition: number): void => {
  */
 export type ContentEditableQueryHandler = (event: React.ChangeEvent<HTMLDivElement>, queryState: QueryState) => void
 
+/**
+ * Content values for `ContentEditableQuery` component.
+ * See `ContentEditableQuery->Props['value']`
+ */
+export class ContentEditableState {
+    /**
+     * Query (HTML string) to be rendered inside the contentEditable
+     */
+    public query: string
+    /**
+     * Position of the cursor in the contentEditable
+     */
+    public cursor: {
+        /**
+         * In which child node the cursor is positioned
+         */
+        nodeIndex: number
+        /**
+         * Index of cursor position inside of child node
+         */
+        index: number
+    }
+    constructor(state?: Partial<ContentEditableState>) {
+        this.query = state?.query ?? ''
+        this.cursor = {
+            nodeIndex: state?.cursor?.nodeIndex ?? 0,
+            index: state?.cursor?.index ?? 0,
+        }
+    }
+}
+
 interface Props {
     /**
      * A reference to the component instance (not the contentEditable directly)
@@ -38,7 +72,7 @@ interface Props {
      * Value to be used in the HTML content of the contentEditable.
      * `state.query` can be a HTML string, it will be set as `innerHTML`
      */
-    value: QueryState
+    value: ContentEditableState
     /**
      * Placeholder text to display when `state.query` is empty
      */
@@ -50,7 +84,7 @@ interface Props {
     /**
      * See `ContentEditableQueryHandler`
      */
-    onChange: ContentEditableQueryHandler
+    onChange?: ContentEditableQueryHandler
     /**
      * contentEditable props
      */
@@ -63,11 +97,11 @@ interface Props {
      * If the contentEditable should be focused (with the given `state.cursorPosition`).
      * This can change on re-render, while `autoFocus` is only for component mount
      */
-    focus: boolean
+    focus?: boolean
     /**
      * The parent component can decide if the submit should be emitted
      */
-    shouldSubmit(): boolean
+    shouldSubmit?(): boolean
 }
 
 /**
@@ -86,19 +120,68 @@ export class ContentEditableQuery extends React.Component<Props> {
      */
     private submitInputRef = React.createRef<HTMLInputElement>()
 
+    /**
+     * Calculates cursor position to be returned for a `QueryState`.
+     * contentEditable has its content in nodes, and each node can have its own
+     * selection offset. To get the current cursor position as if it were in a single text
+     * string, it has to be summed with the content length of any previous sibling node.
+     *
+     * @example
+     *   If contentEditable has the HTML content ('|' is the cursor): "text <mark>filter</mark>:value|"
+     *   then it has 3 child nodes, and the cursor, with offset 6, will be on the third node
+     */
+    private get queryStringCursorPosition(): number {
+        const selection = document.getSelection()
+
+        // If all content of a node is deleted, the `selection.anchorNode`
+        // is the contentEditable node. In this case the cursor position
+        // will be the sum of the content length of all child nodes
+        // selected using `selection.anchorOffset`
+        if (selection?.anchorNode === this.inputRef.current) {
+            return range(selection.anchorOffset).reduce((total, nodeIndex) => {
+                const length = selection.anchorNode?.childNodes[nodeIndex].textContent?.length ?? 0
+                return total + length
+            }, 0)
+        }
+
+        // If current node is of type 'text', then its parent should be the
+        // contentEditable, otherwise it's parent is a child node to contentEditable.
+        // We need currentNode to be a child of contentEditable so we can
+        // get the nodes that come before it and calculate the final cursor position
+        const currentNode =
+            selection?.anchorNode?.parentNode === this.inputRef.current
+                ? selection?.anchorNode
+                : selection?.anchorNode?.parentNode
+
+        // The cursor position of only the node where the input occurred.
+        // This will be summed with the content length of previous sibling nodes
+        const currentNodeOffset = selection?.getRangeAt(0).startOffset ?? 0
+
+        // Sum, if any, content length of previous sibling nodes
+        let { previousSibling } = currentNode ?? {}
+        let previousContentLength = 0
+        while (previousSibling) {
+            previousContentLength += previousSibling.textContent?.length ?? 0
+            previousSibling = previousSibling.previousSibling
+        }
+
+        return currentNodeOffset + previousContentLength
+    }
+
     private onInput: React.ChangeEventHandler<HTMLDivElement> = event => {
-        this.props.onChange(event, {
-            query: event.target.textContent ?? '',
-            // On an input event there should only be the selection from the contentEditable, so `getRangeAt(0)`
-            cursorPosition: document.getSelection()?.getRangeAt(0).endOffset ?? this.props.value.cursorPosition,
-        })
+        if (this.props.onChange) {
+            this.props.onChange(event, {
+                query: event.target.textContent ?? '',
+                cursorPosition: this.queryStringCursorPosition,
+            })
+        }
     }
 
     private onKeyDown: React.KeyboardEventHandler<HTMLDivElement> = event => {
         if (this.props.inputProps?.onKeyDown) {
             this.props.inputProps.onKeyDown(event)
         }
-        if (this.props.shouldSubmit() && event.key === 'Enter' && this.submitInputRef.current) {
+        if (this.props.shouldSubmit?.call(null) && event.key === 'Enter' && this.submitInputRef.current) {
             this.submitInputRef.current.click()
         }
     }
@@ -106,12 +189,13 @@ export class ContentEditableQuery extends React.Component<Props> {
     /**
      * Focus cursor in contentEditable
      */
-    private focus(cursorPosition: number): void {
+    private focus(cursor: ContentEditableState['cursor']): void {
         if (this.inputRef.current) {
-            // Focus sets the cursor at the start of the contentEditable content
+            // Focus sets the cursor at the start
+            // of the contentEditable content
             this.inputRef.current.focus()
             // After focus, position cursor
-            setCursor(this.inputRef.current, cursorPosition)
+            setCursor(this.inputRef.current, cursor)
         }
     }
 
@@ -125,7 +209,7 @@ export class ContentEditableQuery extends React.Component<Props> {
             if (this.inputRef.current && !isEqual(newProps, this.props)) {
                 this.inputRef.current.innerHTML = newProps.value.query
                 if (newProps.focus) {
-                    this.focus(newProps.value.cursorPosition)
+                    this.focus(newProps.value.cursor)
                 }
             }
         })
@@ -134,7 +218,7 @@ export class ContentEditableQuery extends React.Component<Props> {
 
     public componentDidMount(): void {
         if (this.props.autoFocus) {
-            this.focus(this.props.value.query.length)
+            this.focus(this.props.value.cursor)
         }
     }
 
@@ -143,10 +227,11 @@ export class ContentEditableQuery extends React.Component<Props> {
         const { className: inputClassName = '', ...inputProps } = this.props.inputProps ?? {}
         return (
             <div className={'content-editable-query ' + className}>
-                {/** Used to emit submit events up the DOM tree (mostly for <Form>) */}
+                {/* Used to emit submit events up the DOM tree (mostly for <Form>) */}
                 <input type="submit" className="content-editable-query__submit-input" ref={this.submitInputRef} />
                 <div
                     {...inputProps}
+                    aria-label="search-input"
                     ref={this.inputRef}
                     className={'content-editable-query__input ' + inputClassName}
                     onInput={this.onInput}

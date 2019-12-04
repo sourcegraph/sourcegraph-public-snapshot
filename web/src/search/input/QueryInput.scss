@@ -18,6 +18,12 @@
         padding-right: calc(#{$toggle-icon-width} + 0.5rem);
     }
 
+    &__invalid-filter {
+        text-decoration: underline;
+        text-decoration-color: $red;
+        text-decoration-style: wavy;
+    }
+
     &__suggestions {
         position: absolute;
         width: 100%;
