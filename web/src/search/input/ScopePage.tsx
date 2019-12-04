@@ -15,7 +15,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { SearchScope, Settings } from '../../schema/settings.schema'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchReposByQuery } from '../backend'
-import { submitSearch, QueryState } from '../helpers'
+import { submitSearch, QueryState, createQueryState } from '../helpers'
 import { QueryInput, queryUpdates } from './QueryInput'
 import { SearchButton } from './SearchButton'
 import { PatternTypeProps } from '..'
@@ -57,7 +57,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
     private showMoreClicks = new Subject<void>()
 
     public state: State = {
-        queryState: new QueryState(),
+        queryState: createQueryState(),
         repositories: [],
         value: '',
         first: 50,

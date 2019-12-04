@@ -248,33 +248,36 @@ export const filterStaticSuggestions = (queryState: QueryState, suggestions: Sea
  * Cursor position is used to correctly insert the suggestion when it's selected,
  * and set the cursor to the end of where the suggestion was inserted.
  */
-export class QueryState {
+export interface QueryState {
     /**
      * Value to be rendered in the search input
      */
-    public query: string
+    query: string
     /**
      * Where the cursor should be placed in the search input
      */
-    public cursorPosition: number
+    cursorPosition: number
     /**
      * Used to know when the user has typed in the query or selected a suggestion.
      * Prevents fetching/showing suggestions on every component update.
      */
-    public fromUserInput?: boolean
+    fromUserInput?: boolean
     /**
      * Toggle suggestions visibility.
      * Example usage: Hiding on search submit, toggle on search input focus/blur.
      */
-    public showSuggestions?: boolean
-
-    constructor(state?: Partial<QueryState>) {
-        this.query = state?.query ?? ''
-        this.cursorPosition = state?.cursorPosition ?? 0
-        this.fromUserInput = state?.fromUserInput ?? false
-        this.showSuggestions = state?.showSuggestions ?? false
-    }
+    showSuggestions?: boolean
 }
+
+/**
+ * QueryState constructor
+ */
+export const createQueryState = (state?: Partial<QueryState>): QueryState => ({
+    query: state?.query ?? '',
+    cursorPosition: state?.cursorPosition ?? 0,
+    fromUserInput: state?.fromUserInput ?? false,
+    showSuggestions: state?.showSuggestions ?? false,
+})
 
 /**
  * Used to decide if the search is for a filter value or a fuzzy-search word.
