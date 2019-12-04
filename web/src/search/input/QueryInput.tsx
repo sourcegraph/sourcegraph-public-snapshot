@@ -86,8 +86,6 @@ interface ComponentSuggestions {
 }
 
 interface State {
-    /** Only show suggestions if search input is focused */
-
     /** Indicates if suggestions are being loaded from the back-end */
     loadingSuggestions?: boolean
     /** The suggestions shown to the user */
