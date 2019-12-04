@@ -141,6 +141,7 @@ const (
 	BackgroundProcessStateProcessing BackgroundProcessState = "PROCESSING"
 	BackgroundProcessStateErrored    BackgroundProcessState = "ERRORED"
 	BackgroundProcessStateCompleted  BackgroundProcessState = "COMPLETED"
+	BackgroundProcessStateCanceled   BackgroundProcessState = "CANCELED"
 )
 
 // ChangesetReviewState defines the possible states of a Changeset's review.

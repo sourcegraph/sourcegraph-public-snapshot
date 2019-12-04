@@ -488,6 +488,8 @@ enum BackgroundProcessState {
     ERRORED
     # The background process completed processing all items successfully.
     COMPLETED
+    # The background process was canceled.
+    CANCELED
 }
 
 # Reusable type to report progress of a background process.
