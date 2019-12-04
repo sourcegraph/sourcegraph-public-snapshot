@@ -252,21 +252,21 @@ export class QueryState {
     /**
      * Value to be rendered in the search input
      */
-    query: string
+    public query: string
     /**
      * Where the cursor should be placed in the search input
      */
-    cursorPosition: number
+    public cursorPosition: number
     /**
      * Used to know when the user has typed in the query or selected a suggestion.
      * Prevents fetching/showing suggestions on every component update.
      */
-    fromUserInput?: boolean
+    public fromUserInput?: boolean
     /**
      * Toggle suggestions visibility.
      * Example usage: Hiding on search submit, toggle on search input focus/blur.
      */
-    showSuggestions: boolean
+    public showSuggestions: boolean
 
     constructor(state?: Partial<QueryState>) {
         this.query = state?.query ?? ''
