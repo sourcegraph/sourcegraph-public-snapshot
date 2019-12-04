@@ -6,6 +6,7 @@ import FilterIcon from 'mdi-react/FilterIcon'
 import FileIcon from 'mdi-react/FileIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { SymbolIcon } from '../../../../shared/src/symbols/SymbolIcon'
+import { escapeRegExp } from 'lodash'
 
 export enum SuggestionTypes {
     filters = 'filters',
@@ -81,6 +82,11 @@ interface SuggestionIconProps {
     className?: string
 }
 
+/**
+ * @returns The given string with escaped special characters and wrapped with regex boundaries
+ */
+const formatRegExp = (value: string): string => '^' + escapeRegExp(value) + '$'
+
 export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undefined {
     switch (item.__typename) {
         case 'Repository': {
@@ -88,7 +94,7 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
                 type: SuggestionTypes.repo,
                 // Add "regex start and end boundaries" to
                 // correctly scope additional suggestions
-                value: '^' + item.name + '$',
+                value: formatRegExp(item.name),
                 displayValue: item.name,
                 url: `/${item.name}`,
                 label: 'go to repository',
@@ -104,7 +110,7 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
             if (item.isDirectory) {
                 return {
                     type: SuggestionTypes.dir,
-                    value: item.name,
+                    value: formatRegExp(item.path),
                     description: descriptionParts.join(' — '),
                     url: `${item.url}?suggestion`,
                     label: 'go to dir',
@@ -112,7 +118,7 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
             }
             return {
                 type: SuggestionTypes.file,
-                value: item.name + '$',
+                value: formatRegExp(item.path),
                 displayValue: item.name,
                 description: descriptionParts.join(' — '),
                 url: `${item.url}?suggestion`,
