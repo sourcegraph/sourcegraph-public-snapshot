@@ -136,12 +136,7 @@ func (s *Server) cleanupRepos() {
 			multi = multierror.Append(multi, err)
 		}
 		// we use the same conservative age for locks inside of refs
-		if err := filepath.Walk(filepath.Join(gitDir, "refs"), func(path string, fi os.FileInfo, err error) error {
-			if err != nil {
-				// ignore
-				return nil
-			}
-
+		if err := bestEffortWalk(filepath.Join(gitDir, "refs"), func(path string, fi os.FileInfo) error {
 			if fi.IsDir() {
 				return nil
 			}
@@ -178,11 +173,7 @@ func (s *Server) cleanupRepos() {
 	// cheaper and faster to just reclone the repository.
 	cleanups = append(cleanups, cleanupFn{"maybe reclone", maybeReclone})
 
-	err := filepath.Walk(s.ReposDir, func(dir string, fi os.FileInfo, fileErr error) error {
-		if fileErr != nil {
-			return nil
-		}
-
+	err := bestEffortWalk(s.ReposDir, func(dir string, fi os.FileInfo) error {
 		if s.ignorePath(dir) {
 			if fi.IsDir() {
 				return filepath.SkipDir
@@ -413,10 +404,7 @@ func gitDirModTime(d GitDir) (time.Time, error) {
 
 func (s *Server) findGitDirs() ([]GitDir, error) {
 	var dirs []GitDir
-	err := filepath.Walk(s.ReposDir, func(path string, fi os.FileInfo, fileErr error) error {
-		if fileErr != nil {
-			return nil
-		}
+	err := bestEffortWalk(s.ReposDir, func(path string, fi os.FileInfo) error {
 		if s.ignorePath(path) {
 			if fi.IsDir() {
 				return filepath.SkipDir
@@ -438,10 +426,7 @@ func (s *Server) findGitDirs() ([]GitDir, error) {
 // dirSize returns the total size in bytes of all the files under d.
 func dirSize(d string) (int64, error) {
 	var size int64
-	err := filepath.Walk(d, func(path string, fi os.FileInfo, fileErr error) error {
-		if fileErr != nil {
-			return nil
-		}
+	err := bestEffortWalk(d, func(path string, fi os.FileInfo) error {
 		if fi.IsDir() {
 			return nil
 		}
@@ -532,11 +517,7 @@ func (s *Server) removeRepoDirectory(gitDir GitDir) error {
 func (s *Server) cleanTmpFiles(dir GitDir) {
 	now := time.Now()
 	packdir := dir.Path("objects", "pack")
-	err := filepath.Walk(packdir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			// ignore
-			return nil
-		}
+	err := bestEffortWalk(packdir, func(path string, info os.FileInfo) error {
 		if path != packdir && info.IsDir() {
 			return filepath.SkipDir
 		}
