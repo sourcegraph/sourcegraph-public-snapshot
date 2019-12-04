@@ -89,7 +89,7 @@ export function getSearchTypeFromQuery(query: string): SearchType {
     const getTypeName = /\btype:(?<type>diff|commit|symbol|repo|path)\b/
     const matches = query.match(getTypeName)
 
-    if (matches && matches.groups && matches.groups.type) {
+    if (matches?.groups?.type) {
         // In an edge case where multiple `type:` filters are used, if
         // `type:symbol` is included, symbol results be returned, regardless of order,
         // so we must check for `type:symbol`. For other types,

@@ -72,7 +72,7 @@ func TestGetLang_language(t *testing.T) {
 	}
 }
 
-func makeFileReader(ctx context.Context, path string, contents string) func(context.Context, string) (io.ReadCloser, error) {
+func makeFileReader(ctx context.Context, path, contents string) func(context.Context, string) (io.ReadCloser, error) {
 	return func(ctx context.Context, path string) (io.ReadCloser, error) {
 		return ioutil.NopCloser(strings.NewReader(contents)), nil
 	}

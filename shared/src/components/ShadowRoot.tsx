@@ -78,7 +78,9 @@ export class ShadowRoot<H extends HostElement> extends React.Component<ShadowRoo
                     this.hostRef.current.shadowRoot &&
                     ReactDOM.createPortal(
                         <>
-                            {css && css.map((css, i) => <style key={i}>{css.toString()}</style>)}
+                            {css?.map((css, i) => (
+                                <style key={i}>{css.toString()}</style>
+                            ))}
                             {children}
                         </>,
                         this.hostRef.current.shadowRoot as any

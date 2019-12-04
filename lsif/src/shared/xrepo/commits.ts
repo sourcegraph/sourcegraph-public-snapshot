@@ -57,8 +57,7 @@ export function mod(sum: string, max: number): number {
 /**
  * Get a list of commits for the given repository with their parent starting at the
  * given commit and returning at most `MAX_COMMITS_PER_UPDATE` commits. The output
- * is a set of pairs `(child, parent)`. Commits without a parent will be returned as
- * `(child, undefined)`. Commits may appear multiple times, but each pair is unique.
+ * is a map from commits to a set of parent commits. The set of parents may be empty.
  *
  * If the repository or commit is unknown by gitserver, then the the results will be
  * empty but no error will be thrown. Any other error type will b thrown without
@@ -74,7 +73,7 @@ export async function getCommitsNear(
     repository: string,
     commit: string,
     ctx: TracingContext = {}
-): Promise<[string, string | undefined][]> {
+): Promise<Map<string, Set<string>>> {
     const args = ['log', '--pretty=%H %P', commit, `-${MAX_COMMITS_PER_UPDATE}`]
 
     try {
@@ -82,7 +81,7 @@ export async function getCommitsNear(
     } catch (error) {
         if (error.statusCode === 404) {
             // repository unknown
-            return []
+            return new Map()
         }
 
         throw error
@@ -92,25 +91,24 @@ export async function getCommitsNear(
 /**
  * Convert git log output into a parentage map. Each line of the input should have the
  * form `commit p1 p2 p3...`, where commits without a parent appear on a line of their
- * own. The output is a set of pairs `(child, parent)`. Commits without a parent will
- * be returned as `(child, undefined)`.
+ * own. The output is a map from commits a set of parent commits. The set of parents may
+ * be empty.
  *
  * @param lines The output lines of `git log`.
  */
-export function flattenCommitParents(lines: string[]): [string, string | undefined][] {
-    return lines.flatMap(line => {
+export function flattenCommitParents(lines: string[]): Map<string, Set<string>> {
+    const commits = new Map()
+    for (const line of lines) {
         const trimmed = line.trim()
         if (trimmed === '') {
-            return []
+            continue
         }
 
-        const [child, ...commits] = trimmed.split(' ')
-        if (commits.length === 0) {
-            return [[child, undefined]]
-        }
+        const [child, ...parentCommits] = trimmed.split(' ')
+        commits.set(child, new Set<string>(parentCommits))
+    }
 
-        return commits.map<[string, string | undefined]>(commit => [child, commit])
-    })
+    return commits
 }
 
 /**

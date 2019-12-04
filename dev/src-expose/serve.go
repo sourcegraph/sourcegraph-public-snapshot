@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func serveRepos(logger *log.Logger, addr string, repoDir string) error {
+func serveRepos(logger *log.Logger, addr, repoDir string) error {
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
 		return errors.Wrap(err, "listen")

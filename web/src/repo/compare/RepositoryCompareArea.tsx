@@ -165,8 +165,8 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
 
         const commonProps: RepositoryCompareAreaPageProps = {
             repo: this.props.repo,
-            base: { repoID: this.props.repo.id, repoName: this.props.repo.name, rev: spec && spec.base },
-            head: { repoID: this.props.repo.id, repoName: this.props.repo.name, rev: spec && spec.head },
+            base: { repoID: this.props.repo.id, repoName: this.props.repo.name, rev: spec?.base },
+            head: { repoID: this.props.repo.id, repoName: this.props.repo.name, rev: spec?.head },
             routePrefix: this.props.match.url,
             platformContext: this.props.platformContext,
         }

@@ -56,7 +56,8 @@ type CampaignJob struct {
 	Rev     api.CommitID
 	BaseRef string
 
-	Diff string
+	Diff        string
+	Description string
 
 	StartedAt  time.Time
 	FinishedAt time.Time
@@ -350,11 +351,25 @@ func (t *Changeset) Events() (events []*ChangesetEvent) {
 }
 
 // HeadRefOid returns the git ObjectID of the HEAD reference associated with
-// the Changeset on the codehost.
+// Changeset on the codehost. If the codehost doesn't include the ObjectID, an
+// empty string is returned.
 func (t *Changeset) HeadRefOid() (string, error) {
 	switch m := t.Metadata.(type) {
 	case *github.PullRequest:
 		return m.HeadRefOid, nil
+	case *bitbucketserver.PullRequest:
+		return "", nil
+	default:
+		return "", errors.New("unknown changeset type")
+	}
+}
+
+// HeadRef returns the full ref (e.g. `refs/heads/my-branch`) of the
+// HEAD reference associated with the Changeset on the codehost.
+func (t *Changeset) HeadRef() (string, error) {
+	switch m := t.Metadata.(type) {
+	case *github.PullRequest:
+		return "refs/heads/" + m.HeadRefName, nil
 	case *bitbucketserver.PullRequest:
 		return m.FromRef.ID, nil
 	default:
@@ -363,11 +378,25 @@ func (t *Changeset) HeadRefOid() (string, error) {
 }
 
 // BaseRefOid returns the git ObjectID of the base reference associated with the
-// Changeset on the codehost.
+// Changeset on the codehost. If the codehost doesn't include the ObjectID, an
+// empty string is returned.
 func (t *Changeset) BaseRefOid() (string, error) {
 	switch m := t.Metadata.(type) {
 	case *github.PullRequest:
 		return m.BaseRefOid, nil
+	case *bitbucketserver.PullRequest:
+		return "", nil
+	default:
+		return "", errors.New("unknown changeset type")
+	}
+}
+
+// BaseRef returns the full ref (e.g. `refs/heads/my-branch`) of the base ref
+// associated with the Changeset on the codehost.
+func (t *Changeset) BaseRef() (string, error) {
+	switch m := t.Metadata.(type) {
+	case *github.PullRequest:
+		return "refs/heads/" + m.BaseRefName, nil
 	case *bitbucketserver.PullRequest:
 		return m.ToRef.ID, nil
 	default:

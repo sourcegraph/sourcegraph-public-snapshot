@@ -12,7 +12,7 @@
     { "path": "dev/release" },
   ],
   "compilerOptions": {
-    "target": "esnext",
+    "target": "es2019",
     "module": "commonjs",
     "allowJs": false,
     "moduleResolution": "node",

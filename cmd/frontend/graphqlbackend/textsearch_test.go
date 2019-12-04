@@ -130,34 +130,40 @@ func TestQueryToZoektQuery(t *testing.T) {
 
 func TestStructuralPatToZoektQuery(t *testing.T) {
 	cases := []struct {
-		Name    string
-		Pattern string
-		Want    string
+		Name     string
+		Pattern  string
+		Function func(string) (zoektquery.Q, error)
+		Want     string
 	}{
 		{
-			Name:    "Just a hole",
-			Pattern: ":[1]",
-			Want:    `TRUE`,
+			Name:     "Just a hole",
+			Pattern:  ":[1]",
+			Function: StructuralPatToConjunctedLiteralsQuery,
+			Want:     `TRUE`,
 		},
 		{
-			Name:    "Adjacent holes",
-			Pattern: ":[1]:[2]:[3]",
-			Want:    `TRUE`,
+			Name:     "Adjacent holes",
+			Pattern:  ":[1]:[2]:[3]",
+			Function: StructuralPatToConjunctedLiteralsQuery,
+			Want:     `TRUE`,
 		},
 		{
-			Name:    "Substring between holes",
-			Pattern: ":[1] substring :[2]",
-			Want:    `(and case_content_substr:" substring ")`,
+			Name:     "Substring between holes",
+			Pattern:  ":[1] substring :[2]",
+			Function: StructuralPatToConjunctedLiteralsQuery,
+			Want:     `(and case_content_substr:" substring ")`,
 		},
 		{
-			Name:    "Substring before and after different hole kinds",
-			Pattern: "prefix :[[1]] :[2.] suffix",
-			Want:    `(and case_content_substr:"prefix " case_content_substr:" " case_content_substr:" suffix")`,
+			Name:     "Substring before and after different hole kinds",
+			Pattern:  "prefix :[[1]] :[2.] suffix",
+			Function: StructuralPatToConjunctedLiteralsQuery,
+			Want:     `(and case_content_substr:"prefix " case_content_substr:" " case_content_substr:" suffix")`,
 		},
 		{
-			Name:    "Substrings covering all hole kinds.",
-			Pattern: `1. :[1] 2. :[[2]] 3. :[3.] 4. :[4\n] 5. :[ ] 6. :[ 6] done.`,
-			Want:    `(and case_content_substr:"1. " case_content_substr:" 2. " case_content_substr:" 3. " case_content_substr:" 4. " case_content_substr:" 5. " case_content_substr:" 6. " case_content_substr:" done.")`,
+			Name:     "Substrings covering all hole kinds.",
+			Pattern:  `1. :[1] 2. :[[2]] 3. :[3.] 4. :[4\n] 5. :[ ] 6. :[ 6] done.`,
+			Function: StructuralPatToConjunctedLiteralsQuery,
+			Want:     `(and case_content_substr:"1. " case_content_substr:" 2. " case_content_substr:" 3. " case_content_substr:" 4. " case_content_substr:" 5. " case_content_substr:" 6. " case_content_substr:" done.")`,
 		},
 		{
 			Name: "Substrings across multiple lines.",
@@ -165,17 +171,39 @@ func TestStructuralPatToZoektQuery(t *testing.T) {
 multiple
 lines
  :[2]`,
-			Want: `(and case_content_substr:" spans\nmultiple\nlines\n ")`,
+			Function: StructuralPatToConjunctedLiteralsQuery,
+			Want:     `(and case_content_substr:" spans\nmultiple\nlines\n ")`,
 		},
 		{
-			Name:    "Allow alphanumeric identifiers in holes",
-			Pattern: "sub :[alphanum_ident_123] string",
-			Want:    `(and case_content_substr:"sub " case_content_substr:" string")`,
+			Name:     "Allow alphanumeric identifiers in holes",
+			Pattern:  "sub :[alphanum_ident_123] string",
+			Function: StructuralPatToConjunctedLiteralsQuery,
+			Want:     `(and case_content_substr:"sub " case_content_substr:" string")`,
+		},
+
+		{
+			Name:     "Whitespace separated holes",
+			Pattern:  ":[1] :[2]",
+			Function: StructuralPatToRegexpQuery,
+			Want:     `(and case_regex:"(?:)" case_regex:"[\\t-\\n\\f-\\r ]+" case_regex:"(?:)")`,
+		},
+		{
+			Name:     "Expect newline separated pattern",
+			Pattern:  "ParseInt(:[stuff], :[x]) if err ",
+			Function: StructuralPatToRegexpQuery,
+			Want:     `(and case_content_substr:"ParseInt(" case_regex:",[\\t-\\n\\f-\\r ]+" case_regex:"\\)[\\t-\\n\\f-\\r ]+if[\\t-\\n\\f-\\r ]+err[\\t-\\n\\f-\\r ]+")`,
+		},
+		{
+			Name: "Contiguous whitespace is replaced by regex",
+			Pattern: `ParseInt(:[stuff],    :[x])
+             if err `,
+			Function: StructuralPatToRegexpQuery,
+			Want:     `(and case_content_substr:"ParseInt(" case_regex:",[\\t-\\n\\f-\\r ]+" case_regex:"\\)[\\t-\\n\\f-\\r ]+if[\\t-\\n\\f-\\r ]+err[\\t-\\n\\f-\\r ]+")`,
 		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
-			got := StructuralPatToQuery(tt.Pattern)
+			got, _ := tt.Function(tt.Pattern)
 			if got.String() != tt.Want {
 				t.Fatalf("mismatched queries\ngot  %s\nwant %s", got.String(), tt.Want)
 			}
@@ -183,7 +211,7 @@ lines
 	}
 }
 
-func queryEqual(a zoektquery.Q, b zoektquery.Q) bool {
+func queryEqual(a, b zoektquery.Q) bool {
 	sortChildren := func(q zoektquery.Q) zoektquery.Q {
 		switch s := q.(type) {
 		case *zoektquery.And:
@@ -294,17 +322,17 @@ func TestQueryToZoektFileOnlyQueries(t *testing.T) {
 }
 
 func TestSearchFilesInRepos(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
-			return []*fileMatchResolver{
+			return []*FileMatchResolver{
 				{
 					uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
 				},
 			}, false, nil
 		case "foo/two":
-			return []*fileMatchResolver{
+			return []*FileMatchResolver{
 				{
 					uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
 				},
@@ -381,17 +409,17 @@ func TestSearchFilesInRepos(t *testing.T) {
 }
 
 func TestRepoShouldBeSearched(t *testing.T) {
-	mockTextSearch = func(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
+	mockTextSearch = func(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p *search.PatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
-			return []*fileMatchResolver{
+			return []*FileMatchResolver{
 				{
 					uri: "git://" + string(repoName) + "?1a2b3c#" + "main.go",
 				},
 			}, false, nil
 		case "foo/no-filematch":
-			return []*fileMatchResolver{}, false, nil
+			return []*FileMatchResolver{}, false, nil
 		default:
 			return nil, false, errors.New("Unexpected repo")
 		}
@@ -485,7 +513,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 	tests := []struct {
 		name              string
 		args              args
-		wantFm            []*fileMatchResolver
+		wantFm            []*FileMatchResolver
 		wantLimitHit      bool
 		wantReposLimitHit map[string]struct{}
 		wantErr           bool

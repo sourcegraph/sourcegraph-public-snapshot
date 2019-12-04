@@ -13,16 +13,29 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Language statistics by commit are available via the API. [#6737](https://github.com/sourcegraph/sourcegraph/pull/6737)
+
 ### Changed
 
 - `repohascommitafter:` search filter uses a more efficient git command to determine inclusion. [#6739](https://github.com/sourcegraph/sourcegraph/pull/6739)
 
 ### Fixed
 
-- The experimental search pagination API no longer times out when large repositories are encountered. [#6384](https://github.com/sourcegraph/sourcegraph/issues/6384)
 - Changes to external service configurations are reflected much faster. [#6058](https://github.com/sourcegraph/sourcegraph/issues/6058)
 
 ### Removed
+
+## 3.10.1
+
+### Added
+
+- Syntax highlighting for Starlark (Bazel) files. [#6827](https://github.com/sourcegraph/sourcegraph/issues/6827)
+
+### Fixed
+
+- The experimental search pagination API no longer times out when large repositories are encountered. [#6384](https://github.com/sourcegraph/sourcegraph/issues/6384) [#6383](https://github.com/sourcegraph/sourcegraph/issues/6383)
+- In single-container deployments, the builtin `postgres_exporter` now correctly respects externally configured databases. This previously caused PostgreSQL metrics to not show up in Grafana when an external DB was in use. [#6735](https://github.com/sourcegraph/sourcegraph/issues/6735)
+- If a diff/commit search would run over more than 50 repositories, users will be shown an error suggesting they scope their search to less repositories using the `repo:` filter. Global diff/commit search support is being tracked in [#6826](https://github.com/sourcegraph/sourcegraph/issues/6826). [#5519](https://github.com/sourcegraph/sourcegraph/issues/5519)
 
 ## 3.10.0
 
@@ -33,6 +46,7 @@ All notable changes to Sourcegraph are documented in this file.
 - `sourcegraph/server` Docker deployments now support the environment variable `IGNORE_PROCESS_DEATH`. If set to true the container will keep running, even if a subprocess has died. This is useful when manually fixing problems in the container which the container refuses to start. For example a bad database migration.
 - Search input now offers filter type suggestions [#6105](https://github.com/sourcegraph/sourcegraph/pull/6105).
 - The keyboard shortcut <kbd>Ctrl</kbd>+<kbd>Space</kbd> in the search input shows a list of available filter types.
+- Sourcegraph Kubernetes cluster site admins can configure PostgreSQL by specifying `postgresql.conf` via ConfigMap. [sourcegraph/deploy-sourcegraph#447](https://github.com/sourcegraph/deploy-sourcegraph/pull/447)
 
 ### Changed
 

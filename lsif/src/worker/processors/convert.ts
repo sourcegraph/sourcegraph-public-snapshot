@@ -30,6 +30,33 @@ export const createConvertJobProcessor = (
     ctx: TracingContext
 ): Promise<void> => {
     const { logger = createSilentLogger(), span } = addTags(ctx, { repository, commit, root })
+    await convertDatabase(xrepoDatabase, repository, commit, root, filename, job.timestamp, ctx)
+    await updateCommitsAndDumpsVisibleFromTip(xrepoDatabase, fetchConfiguration, repository, commit, { logger, span })
+    await purgeOldDumps(connection, xrepoDatabase, settings.STORAGE_ROOT, settings.DBS_DIR_MAXIMUM_SIZE_BYTES, ctx)
+}
+
+/**
+ * Convert the LSIF dump input into a SQLite database, create an LSIF dump record in the
+ * cross-repo database, and populate the cross-repo database with packages and reference
+ * data.
+ *
+ * @param xrepoDatabase The cross-repo database.
+ * @param repository The repository.
+ * @param commit The commit.
+ * @param root The root of the dump.
+ * @param filename The path to gzipped LSIF dump.
+ * @param timestamp The time the job was enqueued.
+ * @param ctx The tracing context.
+ */
+async function convertDatabase(
+    xrepoDatabase: XrepoDatabase,
+    repository: string,
+    commit: string,
+    root: string,
+    filename: string,
+    timestamp: number,
+    { logger = createSilentLogger(), span }: TracingContext
+): Promise<void> {
     const tempFile = path.join(settings.STORAGE_ROOT, constants.TEMP_DIR, path.basename(filename))
 
     try {
@@ -41,10 +68,10 @@ export const createConvertJobProcessor = (
             repository,
             commit,
             root,
-            new Date(job.timestamp),
+            new Date(timestamp),
             packages,
             references,
-            ctx
+            { logger, span }
         )
 
         // Move the temp file where it can be found by the server
@@ -61,35 +88,65 @@ export const createConvertJobProcessor = (
         throw error
     }
 
-    // Remove input
     await fs.unlink(filename)
+}
 
-    try {
-        // Update commit parentage information for this commit
-        await xrepoDatabase.discoverAndUpdateCommit({
+/**
+ * Update the commits for this repo, and update the visible_at_tip flag on the dumps
+ * of this repository. This will query for commits starting from both the current tip
+ * of the repo and from the commit that was just processed.
+ *
+ * @param xrepoDatabase The cross-repo database.
+ * @param fetchConfiguration A function that returns the current configuration.
+ * @param repository The repository.
+ * @param commit The commit.
+ * @param ctx The tracing context.
+ */
+async function updateCommitsAndDumpsVisibleFromTip(
+    xrepoDatabase: XrepoDatabase,
+    fetchConfiguration: () => { gitServers: string[] },
+    repository: string,
+    commit: string,
+    ctx: TracingContext
+): Promise<void> {
+    const gitserverUrls = fetchConfiguration().gitServers
+
+    const tipCommit = await xrepoDatabase.discoverTip({ repository, gitserverUrls, ctx })
+    if (tipCommit === undefined) {
+        throw new Error('No tip commit available for repository')
+    }
+
+    const commits = await xrepoDatabase.discoverCommits({
+        repository,
+        commit,
+        gitserverUrls,
+        ctx,
+    })
+
+    if (tipCommit !== commit) {
+        // If the tip is ahead of this commit, we also want to discover all of
+        // the commits between this commit and the tip so that we can accurately
+        // determine what is visible from the tip. If we do not do this before the
+        // updateDumpsVisibleFromTip call below, no dumps will be reachable from
+        // the tip and all dumps will be invisible.
+
+        const tipCommits = await xrepoDatabase.discoverCommits({
             repository,
-            commit,
-            gitserverUrls: fetchConfiguration().gitServers,
-            ctx: { logger, span },
+            commit: tipCommit,
+            gitserverUrls,
+            ctx,
         })
-    } catch (error) {
-        // At this point, the job has already completed successfully. Catch
-        // any error that happens from `discoverAndUpdateCommit` and swallow
-        // it. There is no need to log here as any error that occurs within
-        // the call will already be logged by `instrument` blocks.
+
+        for (const [k, v] of tipCommits.entries()) {
+            commits.set(
+                k,
+                new Set<string>([...(commits.get(k) || []), ...v])
+            )
+        }
     }
 
-    try {
-        // Clean up disk space if necessary - use original tracing context so the labels
-        // repository, commit, and root do not get ambiguous between the job arguments
-        // and the properties of the dump being purged.
-        await purgeOldDumps(connection, xrepoDatabase, settings.STORAGE_ROOT, settings.DBS_DIR_MAXIMUM_SIZE_BYTES, ctx)
-    } catch (error) {
-        // At this point, the job has already completed successfully. Catch
-        // any error that happens from `purgeOldDumps` and swallow it. There
-        // is no need to log here as any error that occurs within the call
-        // will already be logged by `instrument` blocks.
-    }
+    await xrepoDatabase.updateCommits(repository, commits, ctx)
+    await xrepoDatabase.updateDumpsVisibleFromTip(repository, tipCommit, ctx)
 }
 
 /**

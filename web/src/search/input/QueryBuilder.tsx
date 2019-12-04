@@ -416,6 +416,7 @@ function formatFieldForQuery(field: string, value: string, alwaysQuote?: boolean
 /**
  * Formats the value passed to the exact match field, wrapping it with quotes depending on whether
  * it's in regexp or literal mode.
+ *
  * @param value the value passed to the exactMatch
  * @param patternType the current patternType
  */

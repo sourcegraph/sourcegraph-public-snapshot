@@ -56,7 +56,7 @@ export function provideMentionCompletions(
     // Check the text that the user is currently typing to see if they have typed "@" (and aren't
     // typing an email address, i.e., the word begins with "@").
     const word = getWordAtText(positionToOffset(text, position), text)
-    if (word && word.word.startsWith('@')) {
+    if (word?.word.startsWith('@')) {
         return queryUsernamesFunction(word.word.slice(1)).pipe(
             map(usernames => ({ items: usernames.map(username => ({ label: username, insertText: `@${username} ` })) }))
         )

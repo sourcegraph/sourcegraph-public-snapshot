@@ -71,6 +71,7 @@ function findElementRegexpStrings(
     if (fuzziness === 'prefix') {
         return regexps
     }
+    regexps.push(`^\\s+${escapedText}$`) // Still prefer exact
     regexps.push(`^\\s+${escapedText}\\b`)
     if (fuzziness === 'space-prefix') {
         return regexps
@@ -150,7 +151,7 @@ export class Driver {
         await this.page.waitForFunction(
             () => {
                 const element = document.querySelector('.e2e-connection-status')
-                return element && element.textContent && element.textContent.includes('Connected')
+                return element?.textContent?.includes('Connected')
             },
             { timeout: 5000 }
         )
@@ -373,7 +374,7 @@ export class Driver {
         return response
     }
 
-    public async ensureHasCORSOrigin({ corsOriginURL }: { corsOriginURL: string }): Promise<void> {
+    public async setConfig(path: jsonc.JSONPath, f: (oldValue: jsonc.Node | undefined) => any): Promise<void> {
         const currentConfigResponse = await this.makeGraphQLRequest<IQuery>({
             request: gql`
                 query Site {
@@ -391,10 +392,7 @@ export class Driver {
         })
         const { site } = dataOrThrowErrors(currentConfigResponse)
         const currentConfig = site.configuration.effectiveContents
-        const newConfig = modifyJSONC(currentConfig, ['corsOrigin'], oldCorsOrigin => {
-            const urls = oldCorsOrigin ? oldCorsOrigin.value.split(' ') : []
-            return (urls.includes(corsOriginURL) ? urls : [...urls, corsOriginURL]).join(' ')
-        })
+        const newConfig = modifyJSONC(currentConfig, path, f)
         const updateConfigResponse = await this.makeGraphQLRequest<IMutation>({
             request: gql`
                 mutation UpdateSiteConfiguration($lastID: Int!, $input: String!) {
@@ -404,6 +402,13 @@ export class Driver {
             variables: { lastID: site.configuration.id, input: newConfig },
         })
         dataOrThrowErrors(updateConfigResponse)
+    }
+
+    public async ensureHasCORSOrigin({ corsOriginURL }: { corsOriginURL: string }): Promise<void> {
+        await this.setConfig(['corsOrigin'], oldCorsOrigin => {
+            const urls = oldCorsOrigin ? oldCorsOrigin.value.split(' ') : []
+            return (urls.includes(corsOriginURL) ? urls : [...urls, corsOriginURL]).join(' ')
+        })
     }
 
     public async resetUserSettings(): Promise<void> {
@@ -428,7 +433,7 @@ export class Driver {
 
         const { currentUser } = dataOrThrowErrors(currentSettingsResponse)
 
-        if (currentUser && currentUser.settingsCascade) {
+        if (currentUser?.settingsCascade) {
             const emptySettings = '{}'
             const [{ latestSettings }] = currentUser.settingsCascade.subjects.slice(-1)
 

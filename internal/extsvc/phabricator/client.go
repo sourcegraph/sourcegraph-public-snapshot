@@ -5,25 +5,56 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/uber/gonduit"
 	"github.com/uber/gonduit/core"
 	"github.com/uber/gonduit/requests"
 )
 
-// A Client provides high level methods to a Phabricator Conduit API.
-type Client struct {
-	conn *gonduit.Conn
+var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	Namespace: "src",
+	Subsystem: "phabricator",
+	Name:      "request_duration_seconds",
+	Help:      "Time (in seconds) spent on request.",
+	Buckets:   prometheus.DefBuckets,
+}, []string{"category", "code"})
+
+func init() {
+	prometheus.MustRegister(requestDuration)
 }
 
-var requestCounter = metrics.NewRequestMeter("phabricator", "Total number of requests sent to the Phabricator API.")
+type meteredConn struct {
+	gonduit.Conn
+}
+
+func (mc *meteredConn) CallContext(
+	ctx context.Context,
+	method string,
+	params interface{},
+	result interface{},
+) error {
+	start := time.Now()
+	err := mc.Conn.CallContext(ctx, method, params, result)
+	d := time.Since(start)
+
+	code := "200"
+	if err != nil {
+		code = "error"
+	}
+	requestDuration.WithLabelValues(method, code).Observe(d.Seconds())
+	return err
+}
+
+// A Client provides high level methods to a Phabricator Conduit API.
+type Client struct {
+	conn *meteredConn
+}
 
 // NewClient returns an authenticated Client, using the given URL and
 // token. If provided, cli will be used to perform the underlying HTTP requests.
@@ -34,11 +65,6 @@ func NewClient(ctx context.Context, phabUrl, token string, cli httpcli.Doer) (*C
 		cli = http.DefaultClient
 	}
 
-	cli = requestCounter.Doer(cli, func(u *url.URL) string {
-		// TODO(uwedeportivo): needs proper category function
-		return "unknown"
-	})
-
 	conn, err := gonduit.DialContext(ctx, phabUrl, &core.ClientOptions{
 		APIToken: token,
 		Client:   httpcli.HeadersMiddleware("User-Agent", "sourcegraph/phabricator-client")(cli),
@@ -47,7 +73,7 @@ func NewClient(ctx context.Context, phabUrl, token string, cli httpcli.Doer) (*C
 		return nil, err
 	}
 
-	return &Client{conn: conn}, nil
+	return &Client{conn: &meteredConn{*conn}}, nil
 }
 
 // Repo represents a single code repository.

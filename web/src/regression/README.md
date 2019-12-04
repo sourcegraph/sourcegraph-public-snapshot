@@ -43,16 +43,41 @@ Run the tests:
    Screenshots files are deposited in the current directory and are named descriptively for what
    should be checked.
 
+Example:
+
+At least the following is necessary to run the search regression tests against
+the a local running Sourcegraph Docker image:
+
+- The following environment variables must be set:
+
+```bash
+export SOURCEGRAPH_BASE_URL=http://localhost:7080
+export GITHUB_TOKEN=<your-github-token>
+export SOURCEGRAPH_SUDO_TOKEN=<your-sourcegraph-instance-token>
+export SOURCEGRAPH_SUDO_USER=sourcegraph
+export TEST_USER_PASSWORD=sourcegraph
+export INCLUDE_ADMIN_ONBOARDING=false
+export LOG_STATUS_MESSAGES=false
+export NO_CLEANUP=true
+```
+
+- Start the Docker image `IMAGE=sourcegraph/server:VERSION ./dev/run-server-image.sh`
+
+- Then run `yarn jest src/regression/search.test.ts`
+
 Tips:
 
 - Use [`direnv`](https://direnv.net) to set environment variables automatically when you `cd` into
   the Sourcegraph repository directory
 - Jest runs all tests even if an error occurs in initialization, so when an error occurs, you often
   have to scroll up--the first error is often the real one.
-- When debugging test failures, you can insert the line `await new Promise(resolve => setTimeout(resolve, 10 * 60 * 1000))` to pause execution. Also read the [Puppeteer debugging
+- When debugging test failures, you can insert the line `await new Promise(() => {})` to halt execution. Also read the [Puppeteer debugging
   docs](https://github.com/GoogleChrome/puppeteer#debugging-tips)
 - The `SLOWMO` environment variable will slow down Puppeteer execution by the specified number of
   milliseconds. `HEADLESS` will cause Puppeteer to run in headless mode (no visible browser window).
+- Tests can be flakey. For the search tests, at least the following are known to be flakey:
+  - `Global search for a filename with a few results`
+  - `Text search non-master branch, large repository, many results`
 
 ## Adding a test
 

@@ -3,6 +3,7 @@ import * as settings from './settings'
 import got from 'got'
 import { isEqual, pick } from 'lodash'
 import { Logger } from 'winston'
+import delay from 'delay'
 
 /**
  * Service configuration data pulled from the frontend.
@@ -94,7 +95,7 @@ async function updateConfiguration(logger: Logger, onChange: (configuration: Con
 
         // Do a jittery sleep _up to_ the config poll interval.
         const durationMs = Math.random() * settings.CONFIG_POLL_INTERVAL * 1000
-        await new Promise(resolve => setTimeout(resolve, durationMs))
+        await delay(durationMs)
     }
 }
 

@@ -396,6 +396,21 @@ func (c *Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestInp
 
 // LoadPullRequests loads a list of PullRequests from Github.
 func (c *Client) LoadPullRequests(ctx context.Context, prs ...*PullRequest) error {
+	const batchSize = 15
+	// We load prs in batches to avoid hitting Github's GraphQL node limit
+	for i := 0; i < len(prs); i += batchSize {
+		j := i + batchSize
+		if j > len(prs) {
+			j = len(prs)
+		}
+		if err := c.loadPullRequests(ctx, prs[i:j]...); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *Client) loadPullRequests(ctx context.Context, prs ...*PullRequest) error {
 	type repository struct {
 		Owner string
 		Name  string

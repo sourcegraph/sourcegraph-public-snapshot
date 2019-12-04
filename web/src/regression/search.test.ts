@@ -19,7 +19,7 @@ import { Key } from 'ts-key-enum'
  */
 function getNumResults() {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const matches = document.querySelector('body')!.textContent!.match(/([0-9]+)\+?\sresults?/)
+    const matches = document.body.textContent!.match(/([0-9]+)\+?\sresults?/)
     if (!matches || matches.length < 2) {
         return null
     }
@@ -73,7 +73,7 @@ describe('Search regression test suite', () => {
         'tuna/tunasync',
         'mthbernardes/GTRS',
         'antonmedv/expr',
-        'kshvakov/clickhouse',
+        'ClickHouse/clickhouse-go',
         'xwb1989/sqlparser',
         'henrylee2cn/pholcus_lib',
         'itcloudy/ERP',
@@ -177,12 +177,12 @@ describe('Search regression test suite', () => {
                             },
                             waitForRepos: testRepoSlugs.map(slug => 'github.com/' + slug),
                         },
-                        config
+                        { ...config, timeout: 3 * 60 * 1000, indexed: true }
                     )
                 )
             },
-            // Cloning the repositories takes ~1 minute, so give initialization 2 minutes
-            2 * 60 * 1000
+            // Cloning the repositories takes ~1 minute, so give initialization ~3 minutes
+            3 * 60 * 1000 + 30 * 1000
         )
 
         afterAll(async () => {
@@ -299,7 +299,7 @@ describe('Search regression test suite', () => {
                     Array.from(document.querySelectorAll('.e2e-search-result'))
                         .map(el => {
                             const header = el.querySelector('[data-testid="result-container-header"')
-                            if (!header || !header.textContent) {
+                            if (!header?.textContent) {
                                 return null
                             }
                             const components = header.textContent.split(/\s/)

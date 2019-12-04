@@ -54,17 +54,20 @@ describe('XrepoDatabase', () => {
         const ch = util.createCommit()
 
         // Add relations
-        await xrepoDatabase.updateCommits('foo', [
-            [ca, undefined],
-            [cb, ca],
-            [cc, ca],
-            [cd, cc],
-            [ce, cb],
-            [ce, cd],
-            [cf, ce],
-            [cg, cf],
-            [ch, cf],
-        ])
+        await xrepoDatabase.updateCommits(
+            'foo',
+            new Map<string, Set<string>>([
+                [ca, new Set()],
+                [cb, new Set([ca])],
+                [cc, new Set([ca])],
+                [cd, new Set([cc])],
+                [ce, new Set([cb])],
+                [ce, new Set([cd])],
+                [cf, new Set([ce])],
+                [cg, new Set([cf])],
+                [ch, new Set([cf])],
+            ])
+        )
 
         // Add dumps
         await xrepoDatabase.insertDump('foo', ca, '')
@@ -81,16 +84,16 @@ describe('XrepoDatabase', () => {
         const d8 = await xrepoDatabase.findClosestDump('foo', ch, 'file')
 
         // Test closest commit
-        expect(d1 && d1.commit).toEqual(ca)
-        expect(d2 && d2.commit).toEqual(ca)
-        expect(d3 && d3.commit).toEqual(cc)
-        expect(d4 && d4.commit).toEqual(cc)
-        expect(d5 && d5.commit).toEqual(cg)
-        expect(d6 && d6.commit).toEqual(cg)
+        expect(d1?.commit).toEqual(ca)
+        expect(d2?.commit).toEqual(ca)
+        expect(d3?.commit).toEqual(cc)
+        expect(d4?.commit).toEqual(cc)
+        expect(d5?.commit).toEqual(cg)
+        expect(d6?.commit).toEqual(cg)
 
         // Multiple nearest are chosen arbitrarily
-        expect([ca, cc, cg]).toContain(d7 && d7.commit)
-        expect([ca, cc]).toContain(d8 && d8.commit)
+        expect([ca, cc, cg]).toContain(d7?.commit)
+        expect([ca, cc]).toContain(d8?.commit)
     })
 
     it('should return empty string as closest commit with no reachable lsif data', async () => {
@@ -116,16 +119,19 @@ describe('XrepoDatabase', () => {
         const ch = util.createCommit()
 
         // Add relations
-        await xrepoDatabase.updateCommits('foo', [
-            [ca, undefined],
-            [cb, ca],
-            [cc, cb],
-            [cd, ca],
-            [ce, cd],
-            [cf, ce],
-            [cg, cd],
-            [ch, cg],
-        ])
+        await xrepoDatabase.updateCommits(
+            'foo',
+            new Map<string, Set<string>>([
+                [ca, new Set()],
+                [cb, new Set([ca])],
+                [cc, new Set([cb])],
+                [cd, new Set([ca])],
+                [ce, new Set([cd])],
+                [cf, new Set([ce])],
+                [cg, new Set([cd])],
+                [ch, new Set([cg])],
+            ])
+        )
 
         // Add dumps
         await xrepoDatabase.insertDump('foo', cb, '')
@@ -135,9 +141,9 @@ describe('XrepoDatabase', () => {
         const d3 = await xrepoDatabase.findClosestDump('foo', cc, 'file')
 
         // Test closest commit
-        expect(d1 && d1.commit).toEqual(cb)
-        expect(d2 && d2.commit).toEqual(cb)
-        expect(d3 && d3.commit).toEqual(cb)
+        expect(d1?.commit).toEqual(cb)
+        expect(d2?.commit).toEqual(cb)
+        expect(d3?.commit).toEqual(cb)
         expect(await xrepoDatabase.findClosestDump('foo', cd, 'file')).toBeUndefined()
         expect(await xrepoDatabase.findClosestDump('foo', ce, 'file')).toBeUndefined()
         expect(await xrepoDatabase.findClosestDump('foo', cf, 'file')).toBeUndefined()
@@ -161,10 +167,13 @@ describe('XrepoDatabase', () => {
         const fields = ['repository', 'commit', 'root']
 
         // Add relations
-        await xrepoDatabase.updateCommits('foo', [
-            [ca, undefined],
-            [cb, ca],
-        ])
+        await xrepoDatabase.updateCommits(
+            'foo',
+            new Map<string, Set<string>>([
+                [ca, new Set()],
+                [cb, new Set([ca])],
+            ])
+        )
 
         // Add dumps
         await xrepoDatabase.insertDump('foo', cb, 'root1/')
@@ -220,10 +229,12 @@ describe('XrepoDatabase', () => {
         const cpen = util.createCommit(MAX_TRAVERSAL_LIMIT / 2 - 1)
         const cmax = util.createCommit(MAX_TRAVERSAL_LIMIT / 2)
 
-        const commits: [string, string][] = Array.from({ length: MAX_TRAVERSAL_LIMIT }, (_, i) => [
-            util.createCommit(i),
-            util.createCommit(i + 1),
-        ])
+        const commits = new Map<string, Set<string>>(
+            Array.from({ length: MAX_TRAVERSAL_LIMIT }, (_, i) => [
+                util.createCommit(i),
+                new Set([util.createCommit(i + 1)]),
+            ])
+        )
 
         // Add relations
         await xrepoDatabase.updateCommits('foo', commits)
@@ -236,9 +247,9 @@ describe('XrepoDatabase', () => {
         const d3 = await xrepoDatabase.findClosestDump('foo', cpen, 'file')
 
         // Test closest commit
-        expect(d1 && d1.commit).toEqual(c0)
-        expect(d2 && d2.commit).toEqual(c0)
-        expect(d3 && d3.commit).toEqual(c0)
+        expect(d1?.commit).toEqual(c0)
+        expect(d2?.commit).toEqual(c0)
+        expect(d3?.commit).toEqual(c0)
 
         // (Assuming MAX_TRAVERSAL_LIMIT = 100)
         // At commit `50`, the traversal limit will be reached before visiting commit `0`
@@ -263,10 +274,14 @@ describe('XrepoDatabase', () => {
 
         // Now commit 1 should be found
         const dump = await xrepoDatabase.findClosestDump('foo', cmax, 'file')
-        expect(dump && dump.commit).toEqual(c1)
+        expect(dump?.commit).toEqual(c1)
     })
 
     it('should prune overlapping roots during visibility check', async () => {
+        if (!xrepoDatabase) {
+            fail('failed beforeAll')
+        }
+
         // This database has the following commit graph:
         //
         // a -- b -- c -- d -- e -- f -- g
@@ -280,15 +295,18 @@ describe('XrepoDatabase', () => {
         const cg = util.createCommit()
 
         // Add relations
-        await xrepoDatabase.updateCommits('foo', [
-            [ca, undefined],
-            [cb, ca],
-            [cc, cb],
-            [cd, cc],
-            [ce, cd],
-            [cf, ce],
-            [cg, cf],
-        ])
+        await xrepoDatabase.updateCommits(
+            'foo',
+            new Map<string, Set<string>>([
+                [ca, new Set()],
+                [cb, new Set([ca])],
+                [cc, new Set([cb])],
+                [cd, new Set([cc])],
+                [ce, new Set([cd])],
+                [cf, new Set([ce])],
+                [cg, new Set([cf])],
+            ])
+        )
 
         // Add dumps
         await xrepoDatabase.insertDump('foo', ca, 'r1')
@@ -304,6 +322,10 @@ describe('XrepoDatabase', () => {
     })
 
     it('should traverse branching paths during visibility check', async () => {
+        if (!xrepoDatabase) {
+            fail('failed beforeAll')
+        }
+
         // This database has the following commit graph:
         //
         // a --+-- [b] --- c ---+
@@ -323,19 +345,20 @@ describe('XrepoDatabase', () => {
         const cg = util.createCommit()
 
         // Add relations
-        await xrepoDatabase.updateCommits('foo', [
-            [ca, undefined],
-            [cb, ca],
-            [cc, cb],
-            [cd, ca],
-            [ce, cd],
-            [ch, cc],
-            [ch, ce],
-            [ci, ch],
-            [ci, cg],
-            [cf, ca],
-            [cg, cf],
-        ])
+        await xrepoDatabase.updateCommits(
+            'foo',
+            new Map<string, Set<string>>([
+                [ca, new Set()],
+                [cb, new Set([ca])],
+                [cc, new Set([cb])],
+                [cd, new Set([ca])],
+                [ce, new Set([cd])],
+                [ch, new Set([cc, ce])],
+                [ci, new Set([ch, cg])],
+                [cf, new Set([ca])],
+                [cg, new Set([cf])],
+            ])
+        )
 
         // Add dumps
         await xrepoDatabase.insertDump('foo', cb, 'r2')
@@ -373,10 +396,12 @@ describe('XrepoDatabase', () => {
         const cpen = util.createCommit(MAX_TRAVERSAL_LIMIT - 1)
         const cmax = util.createCommit(MAX_TRAVERSAL_LIMIT)
 
-        const commits: [string, string][] = Array.from({ length: MAX_TRAVERSAL_LIMIT + 1 }, (_, i) => [
-            util.createCommit(i),
-            util.createCommit(i + 1),
-        ])
+        const commits = new Map<string, Set<string>>(
+            Array.from({ length: MAX_TRAVERSAL_LIMIT + 1 }, (_, i) => [
+                util.createCommit(i),
+                new Set([util.createCommit(i + 1)]),
+            ])
+        )
 
         // Add relations
         await xrepoDatabase.updateCommits('foo', commits)
@@ -406,6 +431,10 @@ describe('XrepoDatabase', () => {
     })
 
     it('should respect bloom filter', async () => {
+        if (!xrepoDatabase) {
+            fail('failed beforeAll')
+        }
+
         const ca = util.createCommit()
         const cb = util.createCommit()
         const cc = util.createCommit()
@@ -454,14 +483,17 @@ describe('XrepoDatabase', () => {
             return references.map(reference => reference.dump_id).sort()
         }
 
-        await xrepoDatabase.updateCommits('foo', [
-            [ca, undefined],
-            [cb, ca],
-            [cc, cb],
-            [cd, cc],
-            [ce, cd],
-            [cf, ce],
-        ])
+        await xrepoDatabase.updateCommits(
+            'foo',
+            new Map<string, Set<string>>([
+                [ca, new Set()],
+                [cb, new Set([ca])],
+                [cc, new Set([cb])],
+                [cd, new Set([cc])],
+                [ce, new Set([cd])],
+                [cf, new Set([ce])],
+            ])
+        )
         await xrepoDatabase.updateDumpsVisibleFromTip('foo', cf)
 
         // only references containing identifier y
@@ -469,6 +501,10 @@ describe('XrepoDatabase', () => {
     })
 
     it('should re-query if bloom filter prunes too many results', async () => {
+        if (!xrepoDatabase) {
+            fail('failed beforeAll')
+        }
+
         const updatePackages = (commit: string, root: string, identifiers: string[]): Promise<xrepoModels.LsifDump> =>
             xrepoDatabase.addPackagesAndReferences(
                 'foo',
@@ -520,6 +556,10 @@ describe('XrepoDatabase', () => {
     })
 
     it('references only returned if dumps visible at tip', async () => {
+        if (!xrepoDatabase) {
+            fail('failed beforeAll')
+        }
+
         const ca = util.createCommit()
         const cb = util.createCommit()
         const cc = util.createCommit()

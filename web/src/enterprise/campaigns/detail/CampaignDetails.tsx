@@ -19,6 +19,7 @@ import {
     queryChangesets,
     previewCampaignPlan,
     fetchCampaignPlanById,
+    CampaignType,
 } from './backend'
 import { useError, useObservable } from '../../../util/useObservable'
 import { asError } from '../../../../../shared/src/util/errors'
@@ -36,10 +37,11 @@ import { Link } from '../../../../../shared/src/components/Link'
 import { switchMap, tap, catchError, takeWhile, concatMap, repeatWhen, delay } from 'rxjs/operators'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { TabsWithLocalStorageViewStatePersistence } from '../../../../../shared/src/components/Tabs'
-import SourcePullIcon from 'mdi-react/SourcePullIcon'
-import { LinkOrSpan } from '../../../../../shared/src/components/LinkOrSpan'
-import { FileDiffNode } from '../../../components/diff/FileDiffNode'
 import { isDefined } from '../../../../../shared/src/util/types'
+import { FileDiffTab } from './FileDiffTab'
+import combyJsonSchema from '../../../../../schema/campaign-types/comby.schema.json'
+import credentialsJsonSchema from '../../../../../schema/campaign-types/credentials.schema.json'
+import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 
 interface Props extends ThemeProps {
     /**
@@ -53,28 +55,9 @@ interface Props extends ThemeProps {
     isSourcegraphDotCom: boolean
 }
 
-const combyJsonSchema = {
-    $id: 'comby-spec.json#',
-    $schema: 'http://json-schema.org/draft-07/schema#',
-    description: 'Schema for comby options',
-    type: 'object',
-    properties: {
-        scopeQuery: {
-            type: 'string',
-            description:
-                'Define a scope to narrow down repositories affected by this change. Only GitHub and Bitbucket are supported.',
-        },
-        matchTemplate: {
-            type: 'string',
-            description: 'See https://comby.dev/#match-syntax for syntax',
-        },
-        rewriteTemplate: {
-            type: 'string',
-            description: 'See https://comby.dev/#match-syntax for syntax',
-        },
-    },
-    required: ['scopeQuery', 'matchTemplate', 'rewriteTemplate'],
-    additionalProperties: false,
+const jsonSchemaByType: { [K in CampaignType]: any } = {
+    comby: combyJsonSchema,
+    credentials: credentialsJsonSchema,
 }
 
 /**
@@ -91,15 +74,12 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     // State for the form in editing mode
     const [name, setName] = useState<string>('')
     const [description, setDescription] = useState<string>('')
-    const [type, setType] = useState<'manual' | 'comby'>('manual')
+    const [type, setType] = useState<CampaignType>()
     const [campaignPlanArguments, setCampaignPlanArguments] = useState<string>('')
     const [namespace, setNamespace] = useState<GQL.ID>()
 
     const [namespaces, setNamespaces] = useState<GQL.Namespace[]>()
-    const getNamespace = useCallback((): GQL.ID | undefined => namespace || (namespaces && namespaces[0].id), [
-        namespace,
-        namespaces,
-    ])
+    const getNamespace = useCallback((): GQL.ID | undefined => namespace || namespaces?.[0].id, [namespace, namespaces])
 
     // For errors during fetching
     const triggerError = useError()
@@ -154,10 +134,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             .subscribe({
                 next: fetchedCampaign => {
                     setCampaign(fetchedCampaign)
-                    setType(fetchedCampaign && fetchedCampaign.plan ? (fetchedCampaign.plan.type as 'comby') : 'manual')
-                    setCampaignPlanArguments(
-                        fetchedCampaign && fetchedCampaign.plan ? fetchedCampaign.plan.arguments : null
-                    )
+                    setType(fetchedCampaign?.plan?.type as CampaignType | undefined)
+                    setCampaignPlanArguments(fetchedCampaign?.plan ? fetchedCampaign.plan.arguments : null)
                 },
                 error: triggerError,
             })
@@ -245,10 +223,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     name,
                     description,
                     namespace: getNamespace()!,
-                    plan:
-                        type === 'comby' && campaign && campaign.__typename === 'CampaignPlan'
-                            ? campaign.id
-                            : undefined,
+                    plan: campaign && campaign.__typename === 'CampaignPlan' ? campaign.id : undefined,
                 })
                 unblockHistoryRef.current()
                 history.push(`/campaigns/${createdCampaign.id}`)
@@ -265,6 +240,11 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         setCampaignPlanArguments(newText)
     }
 
+    const onChangeType = (event: React.ChangeEvent<HTMLSelectElement>): void => {
+        setType((event.target.value as CampaignType) || undefined)
+        setCampaign(undefined)
+    }
+
     const discardChangesMessage = 'Do you want to discard your changes?'
 
     const onEdit: React.MouseEventHandler = event => {
@@ -275,7 +255,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             setName(name)
             setDescription(description)
             setMode('editing')
-            setType(plan ? (plan.type as 'comby' | 'manual') : 'manual')
+            setType(plan?.type as CampaignType | undefined)
             setCampaignPlanArguments(plan ? plan.arguments : '')
         }
     }
@@ -307,20 +287,18 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
     const author = campaign && campaign.__typename === 'Campaign' ? campaign.author : authenticatedUser
 
-    const calculateDiff = (field: 'added' | 'deleted'): number =>
-        campaign && campaign.__typename === 'CampaignPlan'
-            ? campaign.changesets.nodes.reduce(
-                  (prev, next) => prev + next.fileDiffs.diffStat[field] + next.fileDiffs.diffStat.changed,
-                  0
-              )
-            : campaign
-            ? campaign.changesets.nodes.reduce(
-                  (prev, next) =>
-                      prev +
-                      (next.diff ? next.diff.fileDiffs.diffStat[field] + next.diff.fileDiffs.diffStat.changed : 0),
-                  0
-              )
-            : 0
+    const nodes: (GQL.IExternalChangeset | GQL.IChangesetPlan)[] | undefined = campaign?.changesets.nodes
+
+    const calculateDiff = (field: 'added' | 'deleted'): number => {
+        if (!nodes) {
+            return 0
+        }
+        return nodes.reduce(
+            (prev, next) =>
+                prev + (next.diff ? next.diff.fileDiffs.diffStat[field] + next.diff.fileDiffs.diffStat.changed : 0),
+            0
+        )
+    }
 
     const totalAdditions = calculateDiff('added')
     const totalDeletions = calculateDiff('deleted')
@@ -341,7 +319,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     return (
         <>
             <PageTitle title={campaign && campaign.__typename === 'Campaign' ? campaign.name : 'New Campaign'} />
-            <Form onSubmit={onSubmit} onReset={onCancel}>
+            <Form onSubmit={onSubmit} onReset={onCancel} className="e2e-campaign-form">
                 <h2 className="d-flex">
                     <CampaignsIcon className="icon-inline mr-2" />
                     <span>
@@ -360,18 +338,17 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             value={getNamespace()}
                             onChange={event => setNamespace(event.target.value)}
                         >
-                            {namespaces &&
-                                namespaces.map(namespace => (
-                                    <option value={namespace.id} key={namespace.id}>
-                                        {namespace.namespaceName}
-                                    </option>
-                                ))}
+                            {namespaces?.map(namespace => (
+                                <option value={namespace.id} key={namespace.id}>
+                                    {namespace.namespaceName}
+                                </option>
+                            ))}
                         </select>
                     )}
                     <span className="text-muted d-inline-block mx-2">/</span>
                     {mode === 'editing' || mode === 'saving' ? (
                         <input
-                            className="form-control w-auto d-inline-block"
+                            className="form-control w-auto d-inline-block e2e-campaign-title"
                             value={name}
                             onChange={event => setName(event.target.value)}
                             placeholder="Campaign title"
@@ -464,15 +441,15 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 )}
                 <h3 className="mt-3">Campaign type</h3>
                 <select
-                    className="form-control w-auto d-inline-block"
+                    className="form-control w-auto d-inline-block e2e-campaign-type"
                     placeholder="Select campaign type"
-                    onChange={event => setType(event.target.value as 'comby' | 'manual')}
+                    onChange={onChangeType}
                     disabled={!!(campaign && campaign.__typename === 'Campaign')}
                     value={type}
-                    required={true}
                 >
-                    <option value="manual">Manual</option>
+                    <option value="">Manual</option>
                     <option value="comby">Comby search and replace</option>
+                    <option value="credentials">NPM Credentials</option>
                 </select>
                 {type === 'comby' && (
                     <small className="ml-1">
@@ -482,20 +459,20 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     </small>
                 )}
                 <MonacoSettingsEditor
-                    className="my-3"
+                    className="my-3 e2e-campaign-arguments"
                     isLightTheme={isLightTheme}
                     value={campaignPlanArguments}
-                    jsonSchema={type === 'comby' ? combyJsonSchema : undefined}
+                    jsonSchema={type ? jsonSchemaByType[type] : undefined}
                     height={110}
                     onChange={onChangeArguments}
                     readOnly={!!(campaign && campaign.__typename === 'Campaign')}
                 ></MonacoSettingsEditor>
                 {(!campaign || (campaign && campaign.__typename === 'CampaignPlan')) && mode === 'editing' && (
                     <>
-                        {type === 'comby' && (
+                        {type !== undefined && (
                             <button
                                 type="button"
-                                className="btn btn-primary mr-1"
+                                className="btn btn-primary mr-1 e2e-preview-campaign"
                                 disabled={!previewRefreshNeeded}
                                 onClick={() => nextPreviewCampaignPlan({ type, arguments: campaignPlanArguments })}
                             >
@@ -506,7 +483,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         <button
                             type="submit"
                             className="btn btn-primary"
-                            disabled={(type === 'comby' && previewRefreshNeeded) || mode !== 'editing'}
+                            disabled={(type !== undefined && previewRefreshNeeded) || mode !== 'editing'}
                         >
                             Create
                         </button>
@@ -517,11 +494,22 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             {status && (
                 <>
                     {status.state === 'PROCESSING' && (
-                        <div className="d-flex mt-3">
+                        <div className="d-flex mt-3 e2e-preview-loading">
                             <LoadingSpinner className="icon-inline" />{' '}
                             <span data-tooltip="Computing changesets">
                                 {status.completedCount} / {status.pendingCount + status.completedCount}
                             </span>
+                        </div>
+                    )}
+                    {type && status.state !== 'PROCESSING' && (
+                        <div className="d-flex my-3">
+                            {status.state === 'COMPLETED' && (
+                                <CheckCircleIcon className="icon-inline text-success mr-1 e2e-preview-success" />
+                            )}
+                            {status.state === 'ERRORED' && <AlertCircleIcon className="icon-inline text-danger mr-1" />}{' '}
+                            {/* Status asserts on campaign being set, this will never be null */}
+                            {campaign!.__typename === 'Campaign' ? 'Creation' : 'Preview'}{' '}
+                            {status.state.toLocaleLowerCase()}
                         </div>
                     )}
                     {status.errors.map((error, i) => (
@@ -605,54 +593,15 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                 ))}
                         </div>
                         <div className="mt-3" key="diff">
-                            {campaign &&
-                                campaign.__typename === 'CampaignPlan' &&
-                                campaign.changesets.nodes.map((changesetNode, i) => (
-                                    <div key={i}>
-                                        <h3>
-                                            <SourcePullIcon className="icon-inline mr-2" />{' '}
-                                            <LinkOrSpan to={changesetNode.repository.url || undefined}>
-                                                {changesetNode.repository.name}
-                                            </LinkOrSpan>
-                                        </h3>
-                                        {changesetNode.fileDiffs.nodes.map(fileDiffNode => (
-                                            <FileDiffNode
-                                                isLightTheme={isLightTheme}
-                                                node={fileDiffNode}
-                                                lineNumbers={true}
-                                                location={location}
-                                                history={history}
-                                                persistLines={false}
-                                                key={fileDiffNode.internalID}
-                                            ></FileDiffNode>
-                                        ))}
-                                    </div>
-                                ))}
-                            {campaign &&
-                                campaign.__typename === 'Campaign' &&
-                                campaign.changesets.nodes.map(
-                                    (changesetNode, i) =>
-                                        changesetNode.diff && (
-                                            <div key={i}>
-                                                <h3>
-                                                    <SourcePullIcon className="icon-inline mr-2" />{' '}
-                                                    <LinkOrSpan to={changesetNode.repository.url || undefined}>
-                                                        {changesetNode.repository.name}
-                                                    </LinkOrSpan>
-                                                </h3>
-                                                {changesetNode.diff.fileDiffs.nodes.map(fileDiffNode => (
-                                                    <FileDiffNode
-                                                        isLightTheme={isLightTheme}
-                                                        node={fileDiffNode}
-                                                        lineNumbers={true}
-                                                        location={location}
-                                                        history={history}
-                                                        key={fileDiffNode.internalID}
-                                                    ></FileDiffNode>
-                                                ))}
-                                            </div>
-                                        )
-                                )}
+                            {nodes && (
+                                <FileDiffTab
+                                    nodes={nodes}
+                                    persistLines={campaign.__typename === 'Campaign'}
+                                    history={history}
+                                    location={location}
+                                    isLightTheme={isLightTheme}
+                                ></FileDiffTab>
+                            )}
                         </div>
                     </TabsWithLocalStorageViewStatePersistence>
                 </>

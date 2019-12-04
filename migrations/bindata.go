@@ -72,6 +72,16 @@
 // 1528395616_lsif_processed_at.up.sql (359B)
 // 1528395617_add_base_ref_to_campaign_jobs.down.sql (65B)
 // 1528395617_add_base_ref_to_campaign_jobs.up.sql (271B)
+// 1528395618_add_delete_cascade_to_changeset_jobs.down.sql (237B)
+// 1528395618_add_delete_cascade_to_changeset_jobs.up.sql (255B)
+// 1528395619_remove_unused_indexes.down.sql (82B)
+// 1528395619_remove_unused_indexes.up.sql (179B)
+// 1528395620_add_description_to_campaign_jobs.down.sql (68B)
+// 1528395620_add_description_to_campaign_jobs.up.sql (72B)
+// 1528395621_add_delete_cascade_to_campaign_jobs.down.sql (217B)
+// 1528395621_add_delete_cascade_to_campaign_jobs.up.sql (235B)
+// 1528395622_add_more_delete_cascades_to_changeset_jobs.down.sql (478B)
+// 1528395622_add_more_delete_cascades_to_changeset_jobs.up.sql (514B)
 
 package migrations
 
@@ -1580,6 +1590,206 @@ func _1528395617_add_base_ref_to_campaign_jobsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395618_add_delete_cascade_to_changeset_jobsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\xce\xbd\x8a\x83\x40\x14\xc5\xf1\x7e\x9e\xe2\x94\x2e\xec\x1b\x58\x8d\xce\x55\x2e\x3b\x1f\xcb\x78\x1b\xab\xc1\x18\x63\x4c\x88\x09\x98\x26\x6f\x1f\x22\x08\x21\x5d\xea\xdf\x39\xf0\x2f\xa8\x66\x9f\x2b\xa5\xad\x50\x84\xe8\xc2\x12\xfa\x63\x37\x8f\xc3\x32\xdc\xd3\xe9\xba\x5b\x60\x62\xf8\x47\x19\x7c\x23\x51\xb3\x97\x0f\x4e\x7d\x77\xb9\x75\xd3\x38\xa7\x69\x9f\x0e\xe7\xe1\xf1\xab\x00\x6d\xcc\x17\x0f\x05\x00\x55\x88\xc4\xb5\xc7\x1f\xb5\xc8\xde\x16\x3f\xab\x46\xaa\x28\x92\x2f\xa9\xc1\x66\x4b\xb6\xa1\x79\x61\x5c\xd3\xd9\xb3\xb0\xb6\xb6\x05\x3b\x47\x86\xb5\x50\xae\x54\x19\x9c\x63\xc9\xd5\x33\x00\x00\xff\xff\xa5\x7f\x5f\x26\xed\x00\x00\x00")
+
+func _1528395618_add_delete_cascade_to_changeset_jobsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395618_add_delete_cascade_to_changeset_jobsDownSql,
+		"1528395618_add_delete_cascade_to_changeset_jobs.down.sql",
+	)
+}
+
+func _1528395618_add_delete_cascade_to_changeset_jobsDownSql() (*asset, error) {
+	bytes, err := _1528395618_add_delete_cascade_to_changeset_jobsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395618_add_delete_cascade_to_changeset_jobs.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x3b, 0x4e, 0x6d, 0x44, 0x8e, 0x36, 0xf1, 0xe4, 0x7b, 0x15, 0xa2, 0x4c, 0xec, 0x6, 0xb8, 0x92, 0xcc, 0x47, 0xe2, 0x48, 0xae, 0xb6, 0x64, 0x6d, 0xd4, 0xb, 0x20, 0x46, 0xad, 0x99, 0x7a, 0x1}}
+	return a, nil
+}
+
+var __1528395618_add_delete_cascade_to_changeset_jobsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\xcf\xbd\x4e\x84\x40\x14\xc5\xf1\x7e\x9e\xe2\x94\x98\xf8\x06\x54\x97\x99\x0b\xb9\x71\x3e\xcc\x70\x1b\xaa\x09\x22\x22\x1a\xd1\x04\x1b\xdf\xde\x2c\x09\xc9\x66\xbb\xad\x7f\xff\x53\x9c\x86\x3b\x89\xb5\x31\xe4\x95\x33\x94\x1a\xcf\x98\xde\xc7\x6d\x99\xf7\xf9\xb7\x7c\x7c\xbf\xec\x70\x39\x3d\xc3\xa6\xd8\x6b\x26\x89\x7a\xc3\x65\x1a\xbf\x7e\xc6\x75\xd9\xca\xfa\x5a\xde\x3e\xe7\xbf\x47\x03\x90\x73\x77\x2c\x0c\x00\xb4\x29\xb3\x74\x11\x4f\x3c\xa0\xba\x2a\x1e\x0e\xcd\xdc\x72\xe6\x68\xb9\xc7\x69\x7b\x75\x62\x8a\x70\xec\x59\x19\x96\x7a\x4b\x8e\xe1\x2e\x79\x3e\xce\x48\x14\x15\xf2\x7e\x80\x84\xc0\x4e\x48\xb9\x36\xc6\xa6\x10\x44\x6b\xf3\x1f\x00\x00\xff\xff\x70\x06\xad\x71\xff\x00\x00\x00")
+
+func _1528395618_add_delete_cascade_to_changeset_jobsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395618_add_delete_cascade_to_changeset_jobsUpSql,
+		"1528395618_add_delete_cascade_to_changeset_jobs.up.sql",
+	)
+}
+
+func _1528395618_add_delete_cascade_to_changeset_jobsUpSql() (*asset, error) {
+	bytes, err := _1528395618_add_delete_cascade_to_changeset_jobsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395618_add_delete_cascade_to_changeset_jobs.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x78, 0x39, 0x77, 0xce, 0x45, 0x80, 0xa8, 0xc1, 0xd6, 0xb0, 0xb1, 0x46, 0x2a, 0xa8, 0xc8, 0x74, 0xd4, 0xaa, 0x28, 0xfb, 0x64, 0xf2, 0x44, 0x3, 0x3e, 0xab, 0x16, 0x8a, 0xa, 0xf5, 0xaf, 0x86}}
+	return a, nil
+}
+
+var __1528395619_remove_unused_indexesDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x14\xca\xc1\x0d\xc2\x30\x0c\x05\xd0\x3b\x53\xfc\x01\x08\xeb\x70\x36\xf1\x17\x58\x34\xb6\x95\x38\x52\xc7\xaf\x7a\x7f\xad\xe1\x4d\xe8\x8c\x4c\x2a\x74\xe7\x61\x5d\x8a\x30\x57\x9e\x5c\x30\x47\xfd\x88\x9d\x18\xf6\x9d\x52\x16\xfe\xc4\x0a\x78\xc0\x49\x45\x05\x44\xf5\x36\x03\x1f\xe9\xff\xd7\xe3\x0a\x00\x00\xff\xff\x8c\x82\x0a\x03\x52\x00\x00\x00")
+
+func _1528395619_remove_unused_indexesDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395619_remove_unused_indexesDownSql,
+		"1528395619_remove_unused_indexes.down.sql",
+	)
+}
+
+func _1528395619_remove_unused_indexesDownSql() (*asset, error) {
+	bytes, err := _1528395619_remove_unused_indexesDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395619_remove_unused_indexes.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x68, 0xe4, 0x84, 0xdc, 0xf7, 0xda, 0xb5, 0x16, 0x23, 0x1c, 0x4c, 0x75, 0xf2, 0xec, 0x8, 0xcf, 0x69, 0x41, 0x7c, 0x7c, 0x1d, 0xe3, 0xd4, 0x7f, 0x55, 0xb1, 0xf2, 0xc4, 0xc7, 0x15, 0x6e, 0xb8}}
+	return a, nil
+}
+
+var __1528395619_remove_unused_indexesUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\xf0\xf4\x73\x71\x8d\x50\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\x4e\xcc\x2d\x48\xcc\x4c\xcf\x8b\xcf\xca\x4f\x2a\x8e\x87\xf3\x0a\x72\x12\xf3\xe2\x33\x53\xac\xb1\x6b\x4a\xc9\x2c\x4e\x2e\x2d\x2e\xce\xcc\xcf\x8b\xcf\x4d\xcc\xcc\x89\x2f\x4a\x2d\xc8\xa9\x8c\x2f\xc9\xcf\x4e\xcd\x2b\x86\x50\xf1\x99\x29\x15\x84\x35\x97\x64\x14\xa5\x26\xa6\x14\xc7\x67\xa6\x40\xd4\x73\x39\xfb\xfb\xfa\x7a\x86\x58\x73\x01\x02\x00\x00\xff\xff\xf9\x60\xf6\x03\xb3\x00\x00\x00")
+
+func _1528395619_remove_unused_indexesUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395619_remove_unused_indexesUpSql,
+		"1528395619_remove_unused_indexes.up.sql",
+	)
+}
+
+func _1528395619_remove_unused_indexesUpSql() (*asset, error) {
+	bytes, err := _1528395619_remove_unused_indexesUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395619_remove_unused_indexes.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xdf, 0x79, 0xa8, 0xbc, 0xba, 0x41, 0xc8, 0xbe, 0xe6, 0x51, 0xe7, 0x78, 0x21, 0xfe, 0xfe, 0x9a, 0x65, 0x85, 0x9f, 0x0, 0x51, 0xd4, 0xd7, 0x1e, 0xd5, 0x2c, 0x39, 0x5b, 0x10, 0x5d, 0x57, 0x82}}
+	return a, nil
+}
+
+var __1528395620_add_description_to_campaign_jobsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\x4e\xcc\x2d\x48\xcc\x4c\xcf\x8b\xcf\xca\x4f\x2a\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\x48\x49\x2d\x4e\x2e\xca\x2c\x28\xc9\xcc\xcf\xb3\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xe3\x89\x3a\xc0\x44\x00\x00\x00")
+
+func _1528395620_add_description_to_campaign_jobsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395620_add_description_to_campaign_jobsDownSql,
+		"1528395620_add_description_to_campaign_jobs.down.sql",
+	)
+}
+
+func _1528395620_add_description_to_campaign_jobsDownSql() (*asset, error) {
+	bytes, err := _1528395620_add_description_to_campaign_jobsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395620_add_description_to_campaign_jobs.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x64, 0xb1, 0x8c, 0x41, 0xe6, 0xcc, 0xc2, 0x7a, 0x99, 0xd1, 0xad, 0xc, 0x51, 0xe0, 0x2, 0x83, 0xbd, 0x0, 0xbe, 0xf6, 0x32, 0xba, 0x39, 0x10, 0x6f, 0xb6, 0xcc, 0x25, 0x66, 0xf0, 0x85, 0xad}}
+	return a, nil
+}
+
+var __1528395620_add_description_to_campaign_jobsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\x4e\xcc\x2d\x48\xcc\x4c\xcf\x8b\xcf\xca\x4f\x2a\x56\x70\x74\x71\x51\x70\xf6\xf7\x09\xf5\xf5\x53\x48\x49\x2d\x4e\x2e\xca\x2c\x28\xc9\xcc\xcf\x53\x28\x49\xad\x28\xb1\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x2f\x85\x9b\x51\x48\x00\x00\x00")
+
+func _1528395620_add_description_to_campaign_jobsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395620_add_description_to_campaign_jobsUpSql,
+		"1528395620_add_description_to_campaign_jobs.up.sql",
+	)
+}
+
+func _1528395620_add_description_to_campaign_jobsUpSql() (*asset, error) {
+	bytes, err := _1528395620_add_description_to_campaign_jobsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395620_add_description_to_campaign_jobs.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xe9, 0xa, 0x6c, 0x65, 0x84, 0x9a, 0x7c, 0x4e, 0xd6, 0x58, 0x63, 0xd3, 0x2a, 0x62, 0xca, 0x6d, 0xd5, 0x7f, 0x23, 0x62, 0xb6, 0x43, 0xb7, 0xc1, 0x40, 0xeb, 0x66, 0xe3, 0x1a, 0x89, 0xc1, 0xf1}}
+	return a, nil
+}
+
+var __1528395621_add_delete_cascade_to_campaign_jobsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\xce\xbd\x8e\x82\x40\x14\xc5\xf1\x7e\x9e\xe2\x94\x6c\xb2\x6f\x40\x35\x30\x17\x72\xb3\xf3\xb1\xb9\xdc\x86\x6a\xc2\xae\x68\xd0\x28\x44\x2b\xdf\xde\x40\xb4\xb0\xb3\xfd\xff\x4e\x71\x2a\x6a\x39\x96\xc6\x58\xaf\x24\x50\x5b\x79\xc2\xff\x70\x5e\x86\xe9\x70\xc9\xc7\xf9\xef\x06\x27\xe9\x17\x75\x8a\x9d\x8a\xe5\xa8\xef\x9a\xaf\xe3\x32\xe7\x69\x97\xf7\xa7\xf1\xfe\x6d\x00\xeb\xdc\x67\x63\x03\x00\x4d\x12\xe2\x36\xe2\x87\x7a\x14\x4f\xfd\xda\x44\xa8\x21\xa1\x58\x53\x87\xb5\x17\xaf\xee\xd6\x2e\xdb\x4d\x8e\xac\x6c\xbd\xef\xc1\x21\x90\x63\xab\x54\x1a\x53\xa7\x10\x58\x4b\xf3\x08\x00\x00\xff\xff\xf2\x14\xae\xbd\xd9\x00\x00\x00")
+
+func _1528395621_add_delete_cascade_to_campaign_jobsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395621_add_delete_cascade_to_campaign_jobsDownSql,
+		"1528395621_add_delete_cascade_to_campaign_jobs.down.sql",
+	)
+}
+
+func _1528395621_add_delete_cascade_to_campaign_jobsDownSql() (*asset, error) {
+	bytes, err := _1528395621_add_delete_cascade_to_campaign_jobsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395621_add_delete_cascade_to_campaign_jobs.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xa2, 0x76, 0x4d, 0x1, 0x86, 0x1a, 0x21, 0x8d, 0xa0, 0x6a, 0x5c, 0x15, 0x76, 0x24, 0x63, 0xfd, 0xe9, 0x34, 0xb4, 0x5d, 0xcd, 0xea, 0x93, 0xff, 0x4b, 0xb0, 0x7b, 0x64, 0xe1, 0x7f, 0x96, 0x54}}
+	return a, nil
+}
+
+var __1528395621_add_delete_cascade_to_campaign_jobsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x8c\xce\x3d\x6e\x83\x40\x10\xc5\xf1\x7e\x4f\xf1\x4a\x22\xe5\x06\x54\xc3\xee\x80\x46\xd9\x8f\x68\x99\x86\x6a\x45\x12\x12\x11\xcb\x06\xd9\x95\x6f\x6f\x81\xec\xc2\x9d\xdb\xf7\xfb\x17\xaf\xe1\x4e\x62\x6d\x0c\x79\xe5\x0c\xa5\xc6\x33\xbe\xc7\xe3\x3a\xce\x7f\xa7\xf2\xbf\x7c\x5d\xe0\x72\xfa\x84\x4d\xb1\xd7\x4c\x12\xf5\x59\xcb\x79\x5a\x97\x32\xff\x94\xdf\xc3\x74\x7d\x37\x00\x39\xf7\x5a\x6c\x00\xa0\x4d\x99\xa5\x8b\xf8\xe0\x01\xd5\x5d\xdf\x76\xc9\xdc\x72\xe6\x68\xb9\xc7\xb6\x57\x8f\x3d\x45\x38\xf6\xac\x0c\x4b\xbd\x25\xc7\x70\x5b\x99\xf7\xe3\x12\x45\x85\xbc\x1f\x20\x21\xb0\x13\x52\xae\x8d\xb1\x29\x04\xd1\xda\xdc\x02\x00\x00\xff\xff\x0e\x65\x20\x3b\xeb\x00\x00\x00")
+
+func _1528395621_add_delete_cascade_to_campaign_jobsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395621_add_delete_cascade_to_campaign_jobsUpSql,
+		"1528395621_add_delete_cascade_to_campaign_jobs.up.sql",
+	)
+}
+
+func _1528395621_add_delete_cascade_to_campaign_jobsUpSql() (*asset, error) {
+	bytes, err := _1528395621_add_delete_cascade_to_campaign_jobsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395621_add_delete_cascade_to_campaign_jobs.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x35, 0x44, 0xc9, 0xc, 0x6c, 0xf9, 0xe2, 0x61, 0x54, 0x3a, 0x38, 0x3c, 0x53, 0x29, 0x69, 0xe0, 0x90, 0x33, 0xeb, 0x8c, 0x58, 0x1e, 0x77, 0x9b, 0x73, 0xf6, 0x97, 0x5b, 0x7c, 0x5c, 0x58, 0xe5}}
+	return a, nil
+}
+
+var __1528395622_add_more_delete_cascades_to_changeset_jobsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xa4\x8f\xbd\x8a\x83\x40\x14\x46\xfb\x79\x8a\x5b\xba\xb0\x6f\x60\x35\x3a\x57\xb9\xec\xfc\x2c\xe3\x6d\xac\x06\xd7\x35\xc6\x84\x98\x80\x69\xf2\xf6\x41\xc1\x20\x26\x45\x24\xe5\xc7\x39\x5f\x71\x12\xcc\xc9\xc6\x42\x48\xcd\xe8\x81\x65\xa2\x11\xea\x7d\xd5\xb7\xcd\xd0\x5c\xc3\xe1\xfc\x37\x80\xf2\xee\x17\x52\x67\x0b\xf6\x92\x2c\xaf\x70\xa8\xab\xd3\xa5\xea\xda\x7e\x5c\xa1\xfb\x0f\xbb\x63\x73\xfb\x16\x00\x52\xa9\x8d\x2f\x01\x00\x90\x39\x8f\x94\x5b\xf8\xc1\x12\xa2\x95\xf5\x35\x19\x1e\x33\xf4\x68\x53\x2c\x60\xc9\x87\x68\x16\xd4\x28\xf8\x29\x85\x2c\x31\x49\xad\x4b\x20\x63\x50\x91\x64\xfc\x2c\xf6\x31\xdf\x2f\x5d\x5f\x5e\x64\x2e\x94\xe7\xc6\x19\x6e\x08\x4c\x9d\x31\xc4\xb1\xb8\x07\x00\x00\xff\xff\x44\xca\x26\x70\xde\x01\x00\x00")
+
+func _1528395622_add_more_delete_cascades_to_changeset_jobsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395622_add_more_delete_cascades_to_changeset_jobsDownSql,
+		"1528395622_add_more_delete_cascades_to_changeset_jobs.down.sql",
+	)
+}
+
+func _1528395622_add_more_delete_cascades_to_changeset_jobsDownSql() (*asset, error) {
+	bytes, err := _1528395622_add_more_delete_cascades_to_changeset_jobsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395622_add_more_delete_cascades_to_changeset_jobs.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x88, 0x14, 0x2d, 0xf0, 0x4b, 0x27, 0x55, 0x94, 0xbb, 0xb, 0xd7, 0x7, 0xa6, 0x26, 0xc6, 0x66, 0xee, 0x25, 0x54, 0x44, 0x4, 0xf7, 0x1e, 0x68, 0xef, 0x76, 0x9b, 0xd1, 0xa9, 0xb3, 0x45, 0x67}}
+	return a, nil
+}
+
+var __1528395622_add_more_delete_cascades_to_changeset_jobsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xa4\x8f\xbd\x4a\xc4\x40\x14\x85\xfb\x79\x8a\x53\xae\xe0\x1b\x6c\x75\x77\xe6\xee\x72\x71\x7e\x64\x72\x9b\xad\x86\xb8\xc6\x18\xc5\x28\xc4\xc6\xb7\x97\x04\x22\x21\x5a\xb8\xa4\x3c\x9c\xef\x2b\xbe\x03\x9f\x24\xee\x8d\x21\xaf\x9c\xa1\x74\xf0\x8c\xcb\x73\xdd\xb7\xcd\xd0\x7c\x96\x97\xf7\x87\x01\x2e\xa7\x7b\xd8\x14\x2b\xcd\x24\x51\x57\x77\xb9\xd4\x6f\x1f\x75\xd7\xf6\xe3\x2a\xdd\x63\x79\x7a\x6d\xbe\x6e\x0d\x40\xce\x5d\x69\x19\x00\x38\xa6\xcc\x72\x8a\xb8\xe3\x33\x76\x2b\xea\x66\x22\x32\x1f\x39\x73\xb4\x5c\x61\xf9\x0f\xbb\x19\x48\x11\x8e\x3d\x2b\xc3\x52\x65\xc9\x31\xdc\xa8\xe4\x29\x4e\xa2\xa8\x90\xf7\x67\x48\x08\xec\x84\x94\xb7\xe5\xff\xcc\xff\xb7\xaf\x95\x3f\xc2\x17\xc8\xef\xea\xf9\xdc\x94\x6c\x53\x08\xa2\x7b\xf3\x1d\x00\x00\xff\xff\x0a\x39\x5d\x0f\x02\x02\x00\x00")
+
+func _1528395622_add_more_delete_cascades_to_changeset_jobsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395622_add_more_delete_cascades_to_changeset_jobsUpSql,
+		"1528395622_add_more_delete_cascades_to_changeset_jobs.up.sql",
+	)
+}
+
+func _1528395622_add_more_delete_cascades_to_changeset_jobsUpSql() (*asset, error) {
+	bytes, err := _1528395622_add_more_delete_cascades_to_changeset_jobsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395622_add_more_delete_cascades_to_changeset_jobs.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xfe, 0x9, 0xee, 0x3d, 0xa0, 0x7d, 0xfd, 0x73, 0xcf, 0x2d, 0x64, 0x46, 0xd4, 0x3c, 0x1e, 0xe8, 0xd8, 0xfe, 0xaf, 0xda, 0xe7, 0x66, 0xd1, 0x33, 0xde, 0x7a, 0xee, 0xba, 0x36, 0x7c, 0x52, 0x44}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1743,6 +1953,16 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395616_lsif_processed_at.up.sql":                                      _1528395616_lsif_processed_atUpSql,
 	"1528395617_add_base_ref_to_campaign_jobs.down.sql":                        _1528395617_add_base_ref_to_campaign_jobsDownSql,
 	"1528395617_add_base_ref_to_campaign_jobs.up.sql":                          _1528395617_add_base_ref_to_campaign_jobsUpSql,
+	"1528395618_add_delete_cascade_to_changeset_jobs.down.sql":                 _1528395618_add_delete_cascade_to_changeset_jobsDownSql,
+	"1528395618_add_delete_cascade_to_changeset_jobs.up.sql":                   _1528395618_add_delete_cascade_to_changeset_jobsUpSql,
+	"1528395619_remove_unused_indexes.down.sql":                                _1528395619_remove_unused_indexesDownSql,
+	"1528395619_remove_unused_indexes.up.sql":                                  _1528395619_remove_unused_indexesUpSql,
+	"1528395620_add_description_to_campaign_jobs.down.sql":                     _1528395620_add_description_to_campaign_jobsDownSql,
+	"1528395620_add_description_to_campaign_jobs.up.sql":                       _1528395620_add_description_to_campaign_jobsUpSql,
+	"1528395621_add_delete_cascade_to_campaign_jobs.down.sql":                  _1528395621_add_delete_cascade_to_campaign_jobsDownSql,
+	"1528395621_add_delete_cascade_to_campaign_jobs.up.sql":                    _1528395621_add_delete_cascade_to_campaign_jobsUpSql,
+	"1528395622_add_more_delete_cascades_to_changeset_jobs.down.sql":           _1528395622_add_more_delete_cascades_to_changeset_jobsDownSql,
+	"1528395622_add_more_delete_cascades_to_changeset_jobs.up.sql":             _1528395622_add_more_delete_cascades_to_changeset_jobsUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -1858,6 +2078,16 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395616_lsif_processed_at.up.sql":                                      {_1528395616_lsif_processed_atUpSql, map[string]*bintree{}},
 	"1528395617_add_base_ref_to_campaign_jobs.down.sql":                        {_1528395617_add_base_ref_to_campaign_jobsDownSql, map[string]*bintree{}},
 	"1528395617_add_base_ref_to_campaign_jobs.up.sql":                          {_1528395617_add_base_ref_to_campaign_jobsUpSql, map[string]*bintree{}},
+	"1528395618_add_delete_cascade_to_changeset_jobs.down.sql":                 {_1528395618_add_delete_cascade_to_changeset_jobsDownSql, map[string]*bintree{}},
+	"1528395618_add_delete_cascade_to_changeset_jobs.up.sql":                   {_1528395618_add_delete_cascade_to_changeset_jobsUpSql, map[string]*bintree{}},
+	"1528395619_remove_unused_indexes.down.sql":                                {_1528395619_remove_unused_indexesDownSql, map[string]*bintree{}},
+	"1528395619_remove_unused_indexes.up.sql":                                  {_1528395619_remove_unused_indexesUpSql, map[string]*bintree{}},
+	"1528395620_add_description_to_campaign_jobs.down.sql":                     {_1528395620_add_description_to_campaign_jobsDownSql, map[string]*bintree{}},
+	"1528395620_add_description_to_campaign_jobs.up.sql":                       {_1528395620_add_description_to_campaign_jobsUpSql, map[string]*bintree{}},
+	"1528395621_add_delete_cascade_to_campaign_jobs.down.sql":                  {_1528395621_add_delete_cascade_to_campaign_jobsDownSql, map[string]*bintree{}},
+	"1528395621_add_delete_cascade_to_campaign_jobs.up.sql":                    {_1528395621_add_delete_cascade_to_campaign_jobsUpSql, map[string]*bintree{}},
+	"1528395622_add_more_delete_cascades_to_changeset_jobs.down.sql":           {_1528395622_add_more_delete_cascades_to_changeset_jobsDownSql, map[string]*bintree{}},
+	"1528395622_add_more_delete_cascades_to_changeset_jobs.up.sql":             {_1528395622_add_more_delete_cascades_to_changeset_jobsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

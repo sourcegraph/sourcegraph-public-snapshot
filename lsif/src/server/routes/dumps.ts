@@ -56,7 +56,7 @@ export function createDumpRouter(backend: Backend): express.Router {
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { repository, id } = req.params
                 const dump = await backend.dump(parseInt(id, 10))
-                if (!dump || dump.repository !== decodeURIComponent(repository)) {
+                if (dump?.repository !== decodeURIComponent(repository)) {
                     throw Object.assign(new Error('LSIF dump not found'), { status: 404 })
                 }
 
@@ -71,7 +71,7 @@ export function createDumpRouter(backend: Backend): express.Router {
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { repository, id } = req.params
                 const dump = await backend.dump(parseInt(id, 10))
-                if (!dump || dump.repository !== decodeURIComponent(repository)) {
+                if (dump?.repository !== decodeURIComponent(repository)) {
                     throw Object.assign(new Error('LSIF dump not found'), { status: 404 })
                 }
 

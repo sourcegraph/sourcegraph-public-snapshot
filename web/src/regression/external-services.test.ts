@@ -183,7 +183,7 @@ describe('External services API', () => {
             }
             const repos = ['gitlab.com/ase/ase']
             await ensureNoTestExternalServices(gqlClient, { ...externalService, deleteIfExist: true })
-            await waitForRepos(gqlClient, repos, config, true)
+            await waitForRepos(gqlClient, repos, { ...config, shouldNotExist: true })
             resourceManager.add(
                 'External service',
                 externalService.uniqueDisplayName,
@@ -213,7 +213,7 @@ describe('External services API', () => {
                 'sg-e2e-regression-test-bob/mux',
             ]
             await ensureNoTestExternalServices(gqlClient, { ...externalServiceInput, deleteIfExist: true })
-            await waitForRepos(gqlClient, repos, config, true)
+            await waitForRepos(gqlClient, repos, { ...config, shouldNotExist: true })
             resourceManager.add(
                 'External service',
                 uniqueDisplayName,
@@ -229,7 +229,7 @@ describe('External services API', () => {
                 }),
             })
             // Check that the excluded repository is no longer synced
-            await waitForRepos(gqlClient, ['sg-e2e-regression-test-bob/jsonrpc2'], config, true)
+            await waitForRepos(gqlClient, ['sg-e2e-regression-test-bob/jsonrpc2'], { ...config, shouldNotExist: true })
         },
         30 * 1000
     )

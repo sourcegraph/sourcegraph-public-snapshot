@@ -2,14 +2,15 @@ package search
 
 import (
 	"context"
-	"io/ioutil"
+	"encoding/json"
 	"os"
 	"reflect"
 	"sort"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/comby"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
 // Tests that structural search correctly infers the Go matcher from the .go
@@ -32,11 +33,11 @@ func foo(real string) {}
 
 	includePatterns := []string{"main.go"}
 
-	zipData, err := createZip(input)
+	zipData, err := testutil.CreateZip(input)
 	if err != nil {
 		t.Fatal(err)
 	}
-	zf, cleanup, err := MockZipFileOnDisk(zipData)
+	zf, cleanup, err := testutil.TempZipFileOnDisk(zipData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,11 +90,11 @@ func TestIncludePatterns(t *testing.T) {
 
 	includePatterns := []string{"a/b/c/foo.go", "bar.go"}
 
-	zipData, err := createZip(input)
+	zipData, err := testutil.CreateZip(input)
 	if err != nil {
 		t.Fatal(err)
 	}
-	zf, cleanup, err := MockZipFileOnDisk(zipData)
+	zf, cleanup, err := testutil.TempZipFileOnDisk(zipData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -118,22 +119,97 @@ func TestIncludePatterns(t *testing.T) {
 	}
 }
 
-func MockZipFileOnDisk(data []byte) (string, func(), error) {
-	z, err := store.MockZipFile(data)
-	if err != nil {
-		return "", nil, err
+func TestHighlightMultipleLines(t *testing.T) {
+	cases := []struct {
+		Name  string
+		Match *comby.Match
+		Want  []protocol.LineMatch
+	}{
+		{
+			Name: "Single line",
+			Match: &comby.Match{
+				Range: comby.Range{
+					Start: comby.Location{
+						Line:   1,
+						Column: 1,
+					},
+					End: comby.Location{
+						Line:   1,
+						Column: 2,
+					},
+				},
+				Matched: "this is a single line match",
+			},
+			Want: []protocol.LineMatch{
+				{
+					LineNumber: 0,
+					OffsetAndLengths: [][2]int{
+						{
+							0,
+							1,
+						},
+					},
+					Preview: "this is a single line match",
+				},
+			},
+		},
+		{
+			Name: "Three lines",
+			Match: &comby.Match{
+				Range: comby.Range{
+					Start: comby.Location{
+						Line:   1,
+						Column: 1,
+					},
+					End: comby.Location{
+						Line:   3,
+						Column: 5,
+					},
+				},
+				Matched: "this is a match across\nthree\nlines",
+			},
+			Want: []protocol.LineMatch{
+				{
+					LineNumber: 0,
+					OffsetAndLengths: [][2]int{
+						{
+							0,
+							23,
+						},
+					},
+					Preview: "this is a match across",
+				},
+				{
+					LineNumber: 1,
+					OffsetAndLengths: [][2]int{
+						{
+							0,
+							6,
+						},
+					},
+					Preview: "three",
+				},
+				{
+					LineNumber: 2,
+					OffsetAndLengths: [][2]int{
+						{
+							0,
+							5,
+						},
+					},
+					Preview: "lines",
+				},
+			},
+		},
 	}
-	d, err := ioutil.TempDir("", "search_test")
-	if err != nil {
-		return "", nil, err
+	for _, tt := range cases {
+		t.Run(tt.Name, func(t *testing.T) {
+			got := highlightMultipleLines(tt.Match)
+			if !reflect.DeepEqual(got, tt.Want) {
+				jsonGot, _ := json.Marshal(got)
+				jsonWant, _ := json.Marshal(tt.Want)
+				t.Errorf("got: %s, want: %s", jsonGot, jsonWant)
+			}
+		})
 	}
-	f, err := ioutil.TempFile(d, "search_zip")
-	if err != nil {
-		return "", nil, err
-	}
-	_, err = f.Write(z.Data)
-	if err != nil {
-		return "", nil, err
-	}
-	return f.Name(), func() { os.RemoveAll(d) }, nil
 }

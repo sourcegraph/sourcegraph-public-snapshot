@@ -17,7 +17,7 @@ var (
 
 // LogActivity logs any user activity (page view, integration usage, etc) to their "last active" time, and
 // adds their unique ID to the set of active users
-func LogActivity(isAuthenticated bool, userID int32, userCookieID string, event string) error {
+func LogActivity(isAuthenticated bool, userID int32, userCookieID, event string) error {
 	// Setup our GC of active key goroutine
 	gcOnce.Do(func() {
 		go gc()

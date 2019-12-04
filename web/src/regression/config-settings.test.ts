@@ -66,7 +66,7 @@ describe('Critical config test suite', () => {
                 async () => {
                     await driver.page.goto(config.sourcegraphBaseUrl)
                     await driver.page.reload()
-                    await driver.page.waitForSelector('#htmlBodyTopContent')
+                    await driver.page.waitForSelector('#htmlBodyTopContent', { timeout: 1000 })
                 },
                 { retries: 10 }
             )
@@ -103,7 +103,7 @@ describe('Critical config test suite', () => {
                 editFns.push((contents: string) =>
                     jsoncEdit.setProperty(contents, ['auth.providers', -1], p, formattingOptions)
                 )
-                return await editCriticalSiteConfig(config.managementConsoleUrl, managementConsolePassword, ...editFns)
+                return editCriticalSiteConfig(config.managementConsoleUrl, managementConsolePassword, ...editFns)
             }
 
             resourceManager.add(

@@ -131,7 +131,7 @@ function buildLibsqlite3PcreDockerImage() {
     trap "rm -rf $EMPTY_DIRECTORY" EXIT
 
     echo "Building the libsqlite3-pcre Docker image..."
-    docker build --quiet -f cmd/symbols/libsqlite3-pcre/Dockerfile -t "libsqlite3-pcre" "$EMPTY_DIRECTORY"
+    docker build --progress=plain --quiet -f cmd/symbols/libsqlite3-pcre/Dockerfile -t "libsqlite3-pcre" "$EMPTY_DIRECTORY"
     echo "Building the libsqlite3-pcre Docker image... done"
 }
 
@@ -172,7 +172,7 @@ function buildSymbolsDockerImage() {
     buildSymbolsDockerImageDependencies
 
     echo "Building the $IMAGE Docker image..."
-    docker build --quiet -f cmd/symbols/Dockerfile -t "$IMAGE" "$symbolsDockerBuildContext" \
+    docker build --progress=plain --quiet -f cmd/symbols/Dockerfile -t "$IMAGE" "$symbolsDockerBuildContext" \
         --build-arg COMMIT_SHA \
         --build-arg DATE \
         --build-arg VERSION
@@ -187,7 +187,7 @@ function buildCtagsDockerImage() {
     cp -R cmd/symbols/.ctags.d "$ctagsDockerBuildContext"
 
     echo "Building the $CTAGS_IMAGE Docker image..."
-    docker build --quiet -f cmd/symbols/internal/pkg/ctags/Dockerfile -t "$CTAGS_IMAGE" "$ctagsDockerBuildContext"
+    docker build --progress=plain --quiet -f cmd/symbols/internal/pkg/ctags/Dockerfile -t "$CTAGS_IMAGE" "$ctagsDockerBuildContext"
     echo "Building the $CTAGS_IMAGE Docker image... done"
 }
 

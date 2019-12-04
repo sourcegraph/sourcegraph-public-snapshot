@@ -23,6 +23,7 @@ done
 
 echo "--- docker build $IMAGE"
 docker build -f cmd/frontend/Dockerfile -t $IMAGE $OUTPUT \
+    --progress=plain \
     --build-arg COMMIT_SHA \
     --build-arg DATE \
     --build-arg VERSION

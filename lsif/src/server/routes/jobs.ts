@@ -161,7 +161,7 @@ export function createJobRouter(
     }
 
     const enqueueBodySchema: Record<string, ParamSchema> = {
-        name: { isIn: { options: [['update-tips', 'clean-old-jobs', 'clean-failed-jobs']] } },
+        name: { isIn: { options: [['clean-old-jobs', 'clean-failed-jobs']] } },
     }
 
     router.post(

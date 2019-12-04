@@ -136,6 +136,12 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 
 		validValues := effectiveRepoFieldValues[:0]
 		for _, v := range effectiveRepoFieldValues {
+			if i := strings.LastIndexByte(v, '@'); i > -1 {
+				// Strip off the @revision suffix so that we can use
+				// the trigram index on the name column in Postgres.
+				v = v[:i]
+			}
+
 			if _, err := regexp.Compile(v); err == nil {
 				validValues = append(validValues, v)
 			}
@@ -263,14 +269,14 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			}
 			var suggestions []*searchSuggestionResolver
 			if results != nil {
-				if len(results.results) > int(*args.First) {
-					results.results = results.results[:*args.First]
+				if len(results.SearchResults) > int(*args.First) {
+					results.SearchResults = results.SearchResults[:*args.First]
 				}
-				suggestions = make([]*searchSuggestionResolver, 0, len(results.results))
-				for i, res := range results.results {
+				suggestions = make([]*searchSuggestionResolver, 0, len(results.SearchResults))
+				for i, res := range results.SearchResults {
 					if fm, ok := res.ToFileMatch(); ok {
 						entryResolver := fm.File()
-						suggestions = append(suggestions, newSearchResultResolver(entryResolver, len(results.results)-i))
+						suggestions = append(suggestions, newSearchResultResolver(entryResolver, len(results.SearchResults)-i))
 					}
 				}
 			}

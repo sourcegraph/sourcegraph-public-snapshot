@@ -34,7 +34,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
     history,
     location,
 }) => {
-    const fileDiffs = node.__typename === 'ExternalChangeset' ? node.diff && node.diff.fileDiffs : node.fileDiffs
+    const fileDiffs = node.diff?.fileDiffs
     const fileDiffNodes: (IFileDiff | IPreviewFileDiff)[] | undefined = fileDiffs ? fileDiffs.nodes : undefined
     const ReviewStateIcon =
         node.__typename === 'ExternalChangeset'
@@ -102,18 +102,17 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                 }
                 wholeTitleClickable={false}
             >
-                {fileDiffNodes &&
-                    fileDiffNodes.map((fileDiffNode, i) => (
-                        <FileDiffNode
-                            isLightTheme={isLightTheme}
-                            node={fileDiffNode}
-                            lineNumbers={true}
-                            location={location}
-                            history={history}
-                            persistLines={node.__typename === 'ExternalChangeset'}
-                            key={i}
-                        ></FileDiffNode>
-                    ))}
+                {fileDiffNodes?.map((fileDiffNode, i) => (
+                    <FileDiffNode
+                        isLightTheme={isLightTheme}
+                        node={fileDiffNode}
+                        lineNumbers={true}
+                        location={location}
+                        history={history}
+                        persistLines={node.__typename === 'ExternalChangeset'}
+                        key={i}
+                    ></FileDiffNode>
+                ))}
             </Collapsible>
         </li>
     )

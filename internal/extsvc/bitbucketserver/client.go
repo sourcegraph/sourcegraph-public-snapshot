@@ -419,9 +419,14 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 		Locked      bool   `json:"locked"`
 	}
 
+	// Bitbucket Server doesn't support GFM taskitems. But since we might add
+	// those to a PR description for certain Automation Campaigns, we have to
+	// "downgrade" here and for now, removing taskitems is enough.
+	description := strings.ReplaceAll(pr.Description, "- [ ] ", "- ")
+
 	payload := requestBody{
 		Title:       pr.Title,
-		Description: pr.Description,
+		Description: description,
 		State:       "OPEN",
 		Open:        true,
 		Closed:      false,

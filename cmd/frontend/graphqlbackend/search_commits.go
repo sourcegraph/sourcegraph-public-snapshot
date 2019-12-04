@@ -63,7 +63,7 @@ func (r *commitSearchResultResolver) Matches() []*searchResultMatchResolver {
 }
 
 func (r *commitSearchResultResolver) ToRepository() (*RepositoryResolver, bool) { return nil, false }
-func (r *commitSearchResultResolver) ToFileMatch() (*fileMatchResolver, bool)   { return nil, false }
+func (r *commitSearchResultResolver) ToFileMatch() (*FileMatchResolver, bool)   { return nil, false }
 func (r *commitSearchResultResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
 	return r, true
 }
@@ -438,10 +438,10 @@ func highlightMatches(pattern *regexp.Regexp, data []byte) *highlightedString {
 	return hls
 }
 
-var mockSearchCommitDiffsInRepos func(args *search.Args) ([]searchResultResolver, *searchResultsCommon, error)
+var mockSearchCommitDiffsInRepos func(args *search.Args) ([]SearchResultResolver, *searchResultsCommon, error)
 
 // searchCommitDiffsInRepos searches a set of repos for matching commit diffs.
-func searchCommitDiffsInRepos(ctx context.Context, args *search.Args) ([]searchResultResolver, *searchResultsCommon, error) {
+func searchCommitDiffsInRepos(ctx context.Context, args *search.Args) ([]SearchResultResolver, *searchResultsCommon, error) {
 	if mockSearchCommitDiffsInRepos != nil {
 		return mockSearchCommitDiffsInRepos(args)
 	}
@@ -499,10 +499,10 @@ func searchCommitDiffsInRepos(ctx context.Context, args *search.Args) ([]searchR
 	return commitSearchResultsToSearchResults(flattened), common, nil
 }
 
-var mockSearchCommitLogInRepos func(args *search.Args) ([]searchResultResolver, *searchResultsCommon, error)
+var mockSearchCommitLogInRepos func(args *search.Args) ([]SearchResultResolver, *searchResultsCommon, error)
 
 // searchCommitLogInRepos searches a set of repos for matching commits.
-func searchCommitLogInRepos(ctx context.Context, args *search.Args) ([]searchResultResolver, *searchResultsCommon, error) {
+func searchCommitLogInRepos(ctx context.Context, args *search.Args) ([]SearchResultResolver, *searchResultsCommon, error) {
 	if mockSearchCommitLogInRepos != nil {
 		return mockSearchCommitLogInRepos(args)
 	}
@@ -560,13 +560,13 @@ func searchCommitLogInRepos(ctx context.Context, args *search.Args) ([]searchRes
 	return commitSearchResultsToSearchResults(flattened), common, nil
 }
 
-func commitSearchResultsToSearchResults(results []*commitSearchResultResolver) []searchResultResolver {
+func commitSearchResultsToSearchResults(results []*commitSearchResultResolver) []SearchResultResolver {
 	// Show most recent commits first.
 	sort.Slice(results, func(i, j int) bool {
 		return results[i].commit.author.Date() > results[j].commit.author.Date()
 	})
 
-	results2 := make([]searchResultResolver, len(results))
+	results2 := make([]SearchResultResolver, len(results))
 	for i, result := range results {
 		results2[i] = result
 	}

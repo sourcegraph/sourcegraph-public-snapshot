@@ -767,7 +767,7 @@ export function handleCodeHost({
                 filePath: part === 'base' ? fileInfo.baseFilePath || fileInfo.filePath : fileInfo.filePath,
                 rev: part === 'base' ? fileInfo.baseRev || fileInfo.baseCommitID! : fileInfo.rev || fileInfo.commitID,
             })
-            const adjustPosition = getPositionAdjuster && getPositionAdjuster(platformContext.requestGraphQL)
+            const adjustPosition = getPositionAdjuster?.(platformContext.requestGraphQL)
             let hoverSubscription = new Subscription()
             codeViewEvent.subscriptions.add(
                 // tslint:disable-next-line: rxjs-no-nested-subscribe

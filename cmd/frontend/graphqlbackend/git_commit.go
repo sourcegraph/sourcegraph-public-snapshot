@@ -182,6 +182,20 @@ func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
 	return names, nil
 }
 
+func (r *GitCommitResolver) LanguageStatistics(ctx context.Context) ([]*languageStatisticsResolver, error) {
+	inventory, err := backend.Repos.GetInventory(ctx, r.repo.repo, api.CommitID(r.oid))
+	if err != nil {
+		return nil, err
+	}
+	stats := make([]*languageStatisticsResolver, 0, len(inventory.Languages))
+	for _, lang := range inventory.Languages {
+		stats = append(stats, &languageStatisticsResolver{
+			l: lang,
+		})
+	}
+	return stats, nil
+}
+
 func (r *GitCommitResolver) Ancestors(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
 	Query *string

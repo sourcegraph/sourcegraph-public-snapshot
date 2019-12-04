@@ -2,7 +2,7 @@ import path from 'path'
 import webpack from 'webpack'
 
 export default ({ config }: { config: webpack.Configuration }) => {
-    if (!config.module || !config.resolve || !config.resolve.extensions) {
+    if (!config.module || !config.resolve?.extensions) {
         throw new Error('unexpected config')
     }
 

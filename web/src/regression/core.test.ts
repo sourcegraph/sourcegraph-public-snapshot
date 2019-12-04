@@ -15,6 +15,7 @@ import { map } from 'rxjs/operators'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { applyEdits, parse } from '@sqs/jsonc-parser'
 import { overwriteSettings } from '../../../shared/src/settings/edit'
+import delay from 'delay'
 
 describe('Core functionality regression test suite', () => {
     const testUsername = 'test-core'
@@ -71,7 +72,7 @@ describe('Core functionality regression test suite', () => {
     test('2.2.1 User settings are saved and applied', async () => {
         const getSettings = async () => {
             await driver.page.waitForSelector('.view-line')
-            return await driver.page.evaluate(() => {
+            return driver.page.evaluate(() => {
                 const editor = document.querySelector('.monaco-editor') as HTMLElement
                 return editor ? editor.innerText : null
             })
@@ -165,7 +166,7 @@ describe('Core functionality regression test suite', () => {
         await driver.page.waitForFunction(
             displayName => {
                 const el = document.querySelector('.e2e-user-area-header__display-name')
-                return el && el.textContent && el.textContent.trim() === displayName
+                return el?.textContent && el.textContent.trim() === displayName
             },
             undefined,
             displayName
@@ -184,7 +185,11 @@ describe('Core functionality regression test suite', () => {
         await driver.replaceText({ selector: '.e2e-user-email-add-input', newText: 'sg-test-account@protonmail.com' })
         await (await driver.findElementWithText('Add')).click()
         await driver.findElementWithText(testEmail, { wait: true })
-        await driver.findElementWithText('Verification pending')
+        try {
+            await driver.findElementWithText('Verification pending')
+        } catch (err) {
+            await driver.findElementWithText('Not verified')
+        }
         await setUserEmailVerified(gqlClient, testUsername, testEmail, true)
         await driver.page.reload()
         await driver.findElementWithText('Verified', { wait: true })
@@ -221,7 +226,7 @@ describe('Core functionality regression test suite', () => {
             baseUrl: config.sourcegraphBaseUrl,
             token,
         })
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        await delay(2000)
         const currentUsernameQuery = gql`
             query {
                 currentUser {

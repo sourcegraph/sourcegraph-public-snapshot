@@ -65,7 +65,6 @@ async function main(logger: Logger): Promise<void> {
     const queue = createQueue(settings.REDIS_ENDPOINT, logger)
 
     // Schedule jobs on timers
-    await ensureOnlyRepeatableJob(queue, 'update-tips', {}, settings.UPDATE_TIPS_JOB_SCHEDULE_INTERVAL * 1000)
     await ensureOnlyRepeatableJob(queue, 'clean-old-jobs', {}, settings.CLEAN_OLD_JOBS_INTERVAL * 1000)
     await ensureOnlyRepeatableJob(queue, 'clean-failed-jobs', {}, settings.CLEAN_FAILED_JOBS_INTERVAL * 1000)
 

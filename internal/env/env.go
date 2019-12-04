@@ -78,7 +78,7 @@ func init() {
 //
 // This should be used for only *internal* environment values. User-visible configuration should be
 // added to the Config struct in the github.com/sourcegraph/sourcegraph/config package.
-func Get(name string, defaultValue string, description string) string {
+func Get(name, defaultValue, description string) string {
 	if locked {
 		panic("env.Get has to be called on package initialization")
 	}
