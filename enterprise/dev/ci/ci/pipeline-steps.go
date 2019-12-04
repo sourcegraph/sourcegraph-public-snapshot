@@ -124,6 +124,10 @@ func addDockerfileLint(pipeline *bk.Pipeline) {
 // End-to-end tests.
 func addE2E(c Config) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
+		if c.useE2EPipeline() {
+			return
+		}
+
 		opts := []bk.StepOpt{
 			// Avoid crashing the sourcegraph/server containers. See
 			// https://github.com/sourcegraph/sourcegraph/issues/2657
@@ -204,6 +208,21 @@ func wait(pipeline *bk.Pipeline) {
 // Build Sourcegraph Server Docker image candidate
 func addServerDockerImageCandidate(c Config) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
+		if c.useE2EPipeline() {
+			pipeline.AddTrigger(":chromium:",
+				bk.Trigger("sourcegraph-e2e"),
+				bk.Async(true),
+				bk.Build(bk.BuildOptions{
+					Message: fmt.Sprintf("Test"),
+					Commit:  c.commit,
+					Branch:  c.branch,
+					Env: copyEnv(
+						"BUILDKITE_PULL_REQUEST",
+						"BUILDKITE_PULL_REQUEST_BASE_BRANCH",
+						"BUILDKITE_PULL_REQUEST_REPO"),
+				}))
+			return
+		}
 		pipeline.AddStep(":docker:",
 			bk.Cmd("pushd enterprise"),
 			bk.Cmd("./cmd/server/pre-build.sh"),
@@ -215,9 +234,23 @@ func addServerDockerImageCandidate(c Config) func(*bk.Pipeline) {
 	}
 }
 
+func copyEnv(keys ...string) map[string]string {
+	m := map[string]string{}
+	for _, k := range keys {
+		if v, ok := os.LookupEnv(k); ok {
+			m[k] = v
+		}
+	}
+	return m
+}
+
 // Clean up Sourcegraph Server Docker image candidate
 func addCleanUpServerDockerImageCandidate(c Config) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
+		if c.useE2EPipeline() {
+			return
+		}
+
 		pipeline.AddStep(":sparkles:",
 			bk.SoftFail(true),
 			bk.Cmd("docker image rm -f sourcegraph/server:"+c.version+"_candidate"))
