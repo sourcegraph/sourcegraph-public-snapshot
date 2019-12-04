@@ -1,6 +1,11 @@
 package syntax
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+	"strings"
+	"unicode"
+)
 
 // ParseError describes an error in query parsing.
 type ParseError struct {
@@ -42,6 +47,19 @@ func Parse(input string) (ParseTree, error) {
 		return nil, err
 	}
 	return exprs, nil
+}
+
+// MaybeEscapeValue will escape value if it needs escaping.
+func MaybeEscapeValue(value string) string {
+	// scanLiteral stop scanning when encountering a space. So we only need to
+	// quote if value contains a space. scanValue also treats strings that
+	// start with " or ' specially, so they need to be quoted.
+	hasSpace := strings.IndexFunc(value, unicode.IsSpace) >= 0
+	hasQuotePrefix := len(value) > 0 && (value[0] == '"' || value[1] == '\'')
+	if hasSpace || hasQuotePrefix {
+		return strconv.Quote(value)
+	}
+	return value
 }
 
 // ParseAllowingErrors works like Parse except that any errors are
