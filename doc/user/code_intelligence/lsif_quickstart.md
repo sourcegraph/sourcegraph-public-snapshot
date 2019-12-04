@@ -26,9 +26,10 @@ For all languages, the upload step is the same. Make sure the current working di
 $ src \
   -endpoint=https://sourcegraph.example.com \
   lsif upload \
-  -github-token=<token> \
   -file=<LSIF file (e.g. ./cmd/dump.lsif)>
 ```
+
+If uploading to Sourcegraph.com, you will need to additionally supply the `-github-token=<token>` flag. This token must have the `repo` or `public_repo` scope. It is used to verify that you have collaborator access to the repository for which you are uploading data.
 
 If successful, you'll see the following message:
 
