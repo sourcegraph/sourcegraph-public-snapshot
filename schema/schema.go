@@ -161,7 +161,7 @@ type BitbucketServerAuthorization struct {
 type BitbucketServerConnection struct {
 	// Authorization description: If non-null, enforces Bitbucket Server repository permissions.
 	Authorization *BitbucketServerAuthorization `json:"authorization,omitempty"`
-	// Certificate description: TLS certificate of the Bitbucket Server instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`
+	// Certificate description: TLS certificate of the Bitbucket Server instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	Certificate string `json:"certificate,omitempty"`
 	// Exclude description: A list of repositories to never mirror from this Bitbucket Server instance. Takes precedence over "repos" and "repositoryQuery".
 	//
@@ -316,7 +316,7 @@ type CriticalConfiguration struct {
 	HtmlHeadBottom string `json:"htmlHeadBottom,omitempty"`
 	// HtmlHeadTop description: HTML to inject at the top of the `<head>` element on each page, for analytics scripts
 	HtmlHeadTop string `json:"htmlHeadTop,omitempty"`
-	// LicenseKey description: The license key associated with a Sourcegraph product subscription, which is necessary to activate Sourcegraph Enterprise functionality. To obtain this value, contact Sourcegraph to purchase a subscription.
+	// LicenseKey description: The license key associated with a Sourcegraph product subscription, which is necessary to activate Sourcegraph Enterprise functionality. To obtain this value, contact Sourcegraph to purchase a subscription. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	LicenseKey string `json:"licenseKey,omitempty"`
 	// LightstepAccessToken description: Access token for sending traces to LightStep.
 	LightstepAccessToken string `json:"lightstepAccessToken,omitempty"`
@@ -449,7 +449,7 @@ type GitHubAuthorization struct {
 type GitHubConnection struct {
 	// Authorization description: If non-null, enforces GitHub repository permissions. This requires that there is an item in the `auth.providers` field of type "github" with the same `url` field as specified in this `GitHubConnection`.
 	Authorization *GitHubAuthorization `json:"authorization,omitempty"`
-	// Certificate description: TLS certificate of the GitHub Enterprise instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`
+	// Certificate description: TLS certificate of the GitHub Enterprise instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	Certificate string `json:"certificate,omitempty"`
 	// Exclude description: A list of repositories to never mirror from this GitHub instance. Takes precedence over "orgs", "repos", and "repositoryQuery" configuration.
 	//
@@ -534,7 +534,7 @@ type GitLabAuthorization struct {
 type GitLabConnection struct {
 	// Authorization description: If non-null, enforces GitLab repository permissions. This requires that there be an item in the `auth.providers` field of type "gitlab" with the same `url` field as specified in this `GitLabConnection`.
 	Authorization *GitLabAuthorization `json:"authorization,omitempty"`
-	// Certificate description: TLS certificate of the GitLab instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`
+	// Certificate description: TLS certificate of the GitLab instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	Certificate string `json:"certificate,omitempty"`
 	// Exclude description: A list of projects to never mirror from this GitLab instance. Takes precedence over "projects" and "projectQuery" configuration. Supports excluding by name ({"name": "group/name"}) or by ID ({"id": 42}).
 	Exclude []*ExcludedGitLabProject `json:"exclude,omitempty"`
@@ -749,7 +749,7 @@ type SAMLAuthProvider struct {
 	// ConfigID description: An identifier that can be used to reference this authentication provider in other parts of the config. For example, in configuration for a code host, you may want to designate this authentication provider as the identity provider for the code host.
 	ConfigID    string `json:"configID,omitempty"`
 	DisplayName string `json:"displayName,omitempty"`
-	// IdentityProviderMetadata description: The SAML Identity Provider metadata XML contents (for static configuration of the SAML Service Provider). The value of this field should be an XML document whose root element is `<EntityDescriptor>` or `<EntityDescriptors>`.
+	// IdentityProviderMetadata description: The SAML Identity Provider metadata XML contents (for static configuration of the SAML Service Provider). The value of this field should be an XML document whose root element is `<EntityDescriptor>` or `<EntityDescriptors>`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	IdentityProviderMetadata string `json:"identityProviderMetadata,omitempty"`
 	// IdentityProviderMetadataURL description: The SAML Identity Provider metadata URL (for dynamic configuration of the SAML Service Provider).
 	IdentityProviderMetadataURL string `json:"identityProviderMetadataURL,omitempty"`
@@ -757,11 +757,11 @@ type SAMLAuthProvider struct {
 	InsecureSkipAssertionSignatureValidation bool `json:"insecureSkipAssertionSignatureValidation,omitempty"`
 	// NameIDFormat description: The SAML NameID format to use when performing user authentication.
 	NameIDFormat string `json:"nameIDFormat,omitempty"`
-	// ServiceProviderCertificate description: The SAML Service Provider certificate in X.509 encoding (begins with "-----BEGIN CERTIFICATE-----"). This certificate is used by the Identity Provider to validate the Service Provider's AuthnRequests and LogoutRequests. It corresponds to the Service Provider's private key (`serviceProviderPrivateKey`).
+	// ServiceProviderCertificate description: The SAML Service Provider certificate in X.509 encoding (begins with "-----BEGIN CERTIFICATE-----"). This certificate is used by the Identity Provider to validate the Service Provider's AuthnRequests and LogoutRequests. It corresponds to the Service Provider's private key (`serviceProviderPrivateKey`). To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	ServiceProviderCertificate string `json:"serviceProviderCertificate,omitempty"`
 	// ServiceProviderIssuer description: The SAML Service Provider name, used to identify this Service Provider. This is required if the "externalURL" field is not set (as the SAML metadata endpoint is computed as "<externalURL>.auth/saml/metadata"), or when using multiple SAML authentication providers.
 	ServiceProviderIssuer string `json:"serviceProviderIssuer,omitempty"`
-	// ServiceProviderPrivateKey description: The SAML Service Provider private key in PKCS#8 encoding (begins with "-----BEGIN PRIVATE KEY-----"). This private key is used to sign AuthnRequests and LogoutRequests. It corresponds to the Service Provider's certificate (`serviceProviderCertificate`).
+	// ServiceProviderPrivateKey description: The SAML Service Provider private key in PKCS#8 encoding (begins with "-----BEGIN PRIVATE KEY-----"). This private key is used to sign AuthnRequests and LogoutRequests. It corresponds to the Service Provider's certificate (`serviceProviderCertificate`). To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	ServiceProviderPrivateKey string `json:"serviceProviderPrivateKey,omitempty"`
 	// SignRequests description: Sign AuthnRequests and LogoutRequests sent to the Identity Provider using the Service Provider's private key (`serviceProviderPrivateKey`). It defaults to true if the `serviceProviderPrivateKey` and `serviceProviderCertificate` are set, and false otherwise.
 	SignRequests *bool  `json:"signRequests,omitempty"`
