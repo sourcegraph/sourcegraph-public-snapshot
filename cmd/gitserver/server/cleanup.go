@@ -533,6 +533,10 @@ func (s *Server) cleanTmpFiles(dir GitDir) {
 	now := time.Now()
 	packdir := dir.Path("objects", "pack")
 	err := filepath.Walk(packdir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			// ignore
+			return nil
+		}
 		if path != packdir && info.IsDir() {
 			return filepath.SkipDir
 		}
