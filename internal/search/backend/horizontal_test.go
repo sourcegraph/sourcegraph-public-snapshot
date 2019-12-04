@@ -102,9 +102,10 @@ func TestHorizontalSearcher(t *testing.T) {
 }
 
 func TestSyncSearchers(t *testing.T) {
-	// This test exists to ensure we test the fast path returns in
+	// This test exists to ensure we test the slow path for
+	// HorizontalSearcher.searchers. The slow-path is
 	// syncSearchers. TestHorizontalSearcher tests the same code paths, but
-	// isn't guaranteed to trigger the fast-path returns.
+	// isn't guaranteed to trigger the all the parts of syncSearchers.
 	var endpoints atomicMap
 	endpoints.Store(prefixMap{"a"})
 
