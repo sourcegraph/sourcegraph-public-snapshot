@@ -283,3 +283,6 @@ README.md @sqs
 /go.sum @sourcegraph/core-services
 /go.mod @sourcegraph/core-services
 /CHANGELOG.md
+
+/.tool-versions @sourcegraph/distribution
+/.nvmrc @sourcegraph/web
