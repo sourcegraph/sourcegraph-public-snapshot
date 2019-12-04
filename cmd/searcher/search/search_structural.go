@@ -41,7 +41,7 @@ func highlightMultipleLines(r *comby.Match) (matches []protocol.LineMatch) {
 		} else if i == (lineSpan - 1) {
 			// Last line.
 			columnStart = 0
-			columnEnd = r.Range.End.Column - 1 /* don't include trailing newline */
+			columnEnd = r.Range.End.Column - 1 // don't include trailing newline
 		} else {
 			// In between line.
 			columnStart = 0
