@@ -480,7 +480,7 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 	start := time.Now()
 	rr, err := r.doResults(ctx, "")
 
-	// If we encountered a contex timeout, it indicates one of the many result
+	// If we encountered a context timeout, it indicates one of the many result
 	// type searchers (file, diff, symbol, etc) completely timed out and could not
 	// produce even partial results. Other searcher types may have produced results.
 	//
