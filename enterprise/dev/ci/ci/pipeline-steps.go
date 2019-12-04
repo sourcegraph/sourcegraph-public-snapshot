@@ -121,35 +121,6 @@ func addDockerfileLint(pipeline *bk.Pipeline) {
 		bk.Cmd("git ls-files | grep Dockerfile | xargs ./hadolint"))
 }
 
-// End-to-end tests.
-func addE2E(c Config) func(*bk.Pipeline) {
-	return func(pipeline *bk.Pipeline) {
-		if c.useE2EPipeline() {
-			return
-		}
-
-		opts := []bk.StepOpt{
-			// Avoid crashing the sourcegraph/server containers. See
-			// https://github.com/sourcegraph/sourcegraph/issues/2657
-			bk.ConcurrencyGroup("e2e"),
-			bk.Concurrency(1),
-
-			bk.Env("IMAGE", "sourcegraph/server:"+c.version+"_candidate"),
-			bk.Env("VERSION", c.version),
-			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
-			bk.Cmd("./dev/ci/e2e.sh"),
-			bk.ArtifactPaths("./puppeteer/*.png;./web/e2e.mp4;./web/ffmpeg.log"),
-		}
-		requireE2E := c.branch == "master" || c.isRenovateBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
-		if requireE2E {
-			opts = append(opts, bk.AutomaticRetry(2))
-		} else {
-			opts = append(opts, bk.SoftFail(true))
-		}
-		pipeline.AddStep(":chromium:", opts...)
-	}
-}
-
 // Code coverage.
 func addCodeCov(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":codecov:",
@@ -205,32 +176,23 @@ func wait(pipeline *bk.Pipeline) {
 	pipeline.AddWait()
 }
 
-// Build Sourcegraph Server Docker image candidate
-func addServerDockerImageCandidate(c Config) func(*bk.Pipeline) {
+func triggerE2E(c Config) func(*bk.Pipeline) {
+	// hardFail if we publish docker images
+	hardFail := c.branch == "master" || c.isRenovateBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
+
 	return func(pipeline *bk.Pipeline) {
-		if c.useE2EPipeline() {
-			pipeline.AddTrigger(":chromium:",
-				bk.Trigger("sourcegraph-e2e"),
-				bk.Async(true),
-				bk.Build(bk.BuildOptions{
-					Message: fmt.Sprintf("Test"),
-					Commit:  c.commit,
-					Branch:  c.branch,
-					Env: copyEnv(
-						"BUILDKITE_PULL_REQUEST",
-						"BUILDKITE_PULL_REQUEST_BASE_BRANCH",
-						"BUILDKITE_PULL_REQUEST_REPO"),
-				}))
-			return
-		}
-		pipeline.AddStep(":docker:",
-			bk.Cmd("pushd enterprise"),
-			bk.Cmd("./cmd/server/pre-build.sh"),
-			bk.Env("IMAGE", "sourcegraph/server:"+c.version+"_candidate"),
-			bk.Env("VERSION", c.version),
-			bk.Env("DOCKER_BUILDKIT", "1"),
-			bk.Cmd("./cmd/server/build.sh"),
-			bk.Cmd("popd"))
+		pipeline.AddTrigger(":chromium:",
+			bk.Trigger("sourcegraph-e2e"),
+			bk.Async(!hardFail),
+			bk.Build(bk.BuildOptions{
+				Message: fmt.Sprintf("Test"),
+				Commit:  c.commit,
+				Branch:  c.branch,
+				Env: copyEnv(
+					"BUILDKITE_PULL_REQUEST",
+					"BUILDKITE_PULL_REQUEST_BASE_BRANCH",
+					"BUILDKITE_PULL_REQUEST_REPO"),
+			}))
 	}
 }
 
@@ -242,19 +204,6 @@ func copyEnv(keys ...string) map[string]string {
 		}
 	}
 	return m
-}
-
-// Clean up Sourcegraph Server Docker image candidate
-func addCleanUpServerDockerImageCandidate(c Config) func(*bk.Pipeline) {
-	return func(pipeline *bk.Pipeline) {
-		if c.useE2EPipeline() {
-			return
-		}
-
-		pipeline.AddStep(":sparkles:",
-			bk.SoftFail(true),
-			bk.Cmd("docker image rm -f sourcegraph/server:"+c.version+"_candidate"))
-	}
 }
 
 // Build all relevant Docker images for Sourcegraph, given the current CI case (e.g., "tagged

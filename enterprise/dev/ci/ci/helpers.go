@@ -118,11 +118,6 @@ func (c Config) isPR() bool {
 		!strings.HasPrefix(c.branch, "docker-images-patch/")
 }
 
-func (c Config) useE2EPipeline() bool {
-	// We want to run E2E the old blocking way if we are going to do a deploy.
-	return !(c.branch == "master" || c.isRenovateBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch)
-}
-
 func isDocsOnly() bool {
 	output, err := exec.Command("git", "diff", "--name-only", "origin/master...").Output()
 	if err != nil {
