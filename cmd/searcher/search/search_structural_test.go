@@ -194,7 +194,7 @@ func TestHighlightMultipleLines(t *testing.T) {
 					OffsetAndLengths: [][2]int{
 						{
 							0,
-							4, /* don't include trailing newline */
+							4, // don't include trailing newline
 						},
 					},
 					Preview: "lines",
