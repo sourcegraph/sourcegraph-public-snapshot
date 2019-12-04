@@ -27,7 +27,7 @@ func NewResolver() graphqlbackend.CodeIntelResolver {
 //
 // LSIF Request Resolvers
 
-func (r *Resolver) Definitions(ctx context.Context, args *graphqlbackend.LSIFFilePositionArgs) (graphqlbackend.LocationConnectionResolver, error) {
+func (r *Resolver) Definitions(ctx context.Context, args *graphqlbackend.LSIFFilePositionArgs) (graphqlbackend.DefinitionsResultResolver, error) {
 	opt := LocationsQueryOptions{
 		Operation:  "definitions",
 		Repository: args.Repository,
@@ -37,10 +37,19 @@ func (r *Resolver) Definitions(ctx context.Context, args *graphqlbackend.LSIFFil
 		Character:  args.Character,
 	}
 
-	return &locationConnectionResolver{opt: opt}, nil
+	resolver, err := resolveLocationConnection(ctx, opt)
+	if err != nil {
+		if client.IsNotFound(err) {
+			return &noLSIFDataResolver{message: err.Error()}, nil
+		}
+
+		return nil, err
+	}
+
+	return resolver, nil
 }
 
-func (r *Resolver) References(ctx context.Context, args *graphqlbackend.LSIFPagedFilePositionArgs) (graphqlbackend.LocationConnectionResolver, error) {
+func (r *Resolver) References(ctx context.Context, args *graphqlbackend.LSIFPagedFilePositionArgs) (graphqlbackend.ReferencesResultResolver, error) {
 	opt := LocationsQueryOptions{
 		Operation:  "references",
 		Repository: args.Repository,
@@ -61,10 +70,19 @@ func (r *Resolver) References(ctx context.Context, args *graphqlbackend.LSIFPage
 		opt.NextURL = &nextURL
 	}
 
-	return &locationConnectionResolver{opt: opt}, nil
+	resolver, err := resolveLocationConnection(ctx, opt)
+	if err != nil {
+		if client.IsNotFound(err) {
+			return &noLSIFDataResolver{message: err.Error()}, nil
+		}
+
+		return nil, err
+	}
+
+	return resolver, nil
 }
 
-func (r *Resolver) Hover(ctx context.Context, args *graphqlbackend.LSIFFilePositionArgs) (graphqlbackend.MarkdownResolver, error) {
+func (r *Resolver) Hover(ctx context.Context, args *graphqlbackend.LSIFFilePositionArgs) (graphqlbackend.HoverResultResolver, error) {
 	path := fmt.Sprintf("/hover")
 	values := url.Values{}
 	values.Set("repository", args.Repository)
@@ -78,6 +96,10 @@ func (r *Resolver) Hover(ctx context.Context, args *graphqlbackend.LSIFFilePosit
 	}{}
 
 	if err := client.DefaultClient.TraceRequestAndUnmarshalPayload(ctx, "GET", path, values, nil, &payload); err != nil {
+		if client.IsNotFound(err) {
+			return &noLSIFDataResolver{message: err.Error()}, nil
+		}
+
 		return nil, err
 	}
 

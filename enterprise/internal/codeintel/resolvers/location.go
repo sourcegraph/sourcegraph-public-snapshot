@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
-	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -31,24 +30,56 @@ type LocationsQueryOptions struct {
 }
 
 type locationConnectionResolver struct {
-	opt LocationsQueryOptions
-
-	once      sync.Once
 	locations []*lsif.LSIFLocation
 	nextURL   string
-	err       error
 }
 
 var _ graphqlbackend.LocationConnectionResolver = &locationConnectionResolver{}
 
-func (r *locationConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.LocationResolver, error) {
-	locations, _, err := r.compute(ctx)
+func resolveLocationConnection(ctx context.Context, opt LocationsQueryOptions) (*locationConnectionResolver, error) {
+	var path string
+	if opt.NextURL == nil {
+		// first page of results
+		path = fmt.Sprintf("/%s", opt.Operation)
+	} else {
+		// subsequent page of results
+		path = *opt.NextURL
+	}
+
+	values := url.Values{}
+	values.Set("repository", opt.Repository)
+	values.Set("commit", opt.Commit)
+	values.Set("path", opt.Path)
+	values.Set("line", strconv.FormatInt(int64(opt.Line), 10))
+	values.Set("character", strconv.FormatInt(int64(opt.Character), 10))
+	if opt.Limit != nil {
+		values.Set("limit", strconv.FormatInt(int64(*opt.Limit), 10))
+	}
+
+	resp, err := client.DefaultClient.BuildAndTraceRequest(ctx, "GET", path, values, nil)
 	if err != nil {
 		return nil, err
 	}
 
+	payload := struct {
+		Locations []*lsif.LSIFLocation
+	}{
+		Locations: []*lsif.LSIFLocation{},
+	}
+
+	if err := client.UnmarshalPayload(resp, &payload); err != nil {
+		return nil, err
+	}
+
+	return &locationConnectionResolver{
+		locations: payload.Locations,
+		nextURL:   client.ExtractNextURL(resp),
+	}, nil
+}
+
+func (r *locationConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.LocationResolver, error) {
 	var l []graphqlbackend.LocationResolver
-	for _, location := range locations {
+	for _, location := range r.locations {
 		resolver, err := rangeToLocationResolver(ctx, location)
 		if err != nil {
 			return nil, err
@@ -56,65 +87,24 @@ func (r *locationConnectionResolver) Nodes(ctx context.Context) ([]graphqlbacken
 
 		l = append(l, resolver)
 	}
+
 	return l, nil
 }
 
 func (r *locationConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	_, nextURL, err := r.compute(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if nextURL != "" {
-		return graphqlutil.NextPageCursor(base64.StdEncoding.EncodeToString([]byte(nextURL))), nil
+	if r.nextURL != "" {
+		return graphqlutil.NextPageCursor(base64.StdEncoding.EncodeToString([]byte(r.nextURL))), nil
 	}
 
 	return graphqlutil.HasNextPage(false), nil
 }
 
-func (r *locationConnectionResolver) compute(ctx context.Context) ([]*lsif.LSIFLocation, string, error) {
-	r.once.Do(func() {
-		var path string
-		if r.opt.NextURL == nil {
-			// first page of results
-			path = fmt.Sprintf("/%s", r.opt.Operation)
-		} else {
-			// subsequent page of results
-			path = *r.opt.NextURL
-		}
+func (r *locationConnectionResolver) ToLocationConnection() (graphqlbackend.LocationConnectionResolver, bool) {
+	return r, true
+}
 
-		values := url.Values{}
-		values.Set("repository", r.opt.Repository)
-		values.Set("commit", r.opt.Commit)
-		values.Set("path", r.opt.Path)
-		values.Set("line", strconv.FormatInt(int64(r.opt.Line), 10))
-		values.Set("character", strconv.FormatInt(int64(r.opt.Character), 10))
-		if r.opt.Limit != nil {
-			values.Set("limit", strconv.FormatInt(int64(*r.opt.Limit), 10))
-		}
-
-		resp, err := client.DefaultClient.BuildAndTraceRequest(ctx, "GET", path, values, nil)
-		if err != nil {
-			r.err = err
-			return
-		}
-
-		payload := struct {
-			Locations []*lsif.LSIFLocation
-		}{
-			Locations: []*lsif.LSIFLocation{},
-		}
-
-		if err := client.UnmarshalPayload(resp, &payload); err != nil {
-			r.err = err
-			return
-		}
-
-		r.locations = payload.Locations
-		r.nextURL = client.ExtractNextURL(resp)
-	})
-
-	return r.locations, r.nextURL, r.err
+func (r *locationConnectionResolver) ToNoLSIFData() (graphqlbackend.NoLSIFDataResolver, bool) {
+	return nil, false
 }
 
 //

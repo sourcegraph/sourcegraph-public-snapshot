@@ -8,17 +8,19 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 )
 
-type locationResolver struct {
-	resource *GitTreeEntryResolver
-	lspRange *lsp.Range
-}
-
 type LocationResolver interface {
 	Resource() *GitTreeEntryResolver
 	Range() *rangeResolver
 	URL(ctx context.Context) (string, error)
 	CanonicalURL() (string, error)
 }
+
+type locationResolver struct {
+	resource *GitTreeEntryResolver
+	lspRange *lsp.Range
+}
+
+var _ LocationResolver = &locationResolver{}
 
 func NewLocationResolver(resource *GitTreeEntryResolver, lspRange *lsp.Range) LocationResolver {
 	return &locationResolver{

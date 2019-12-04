@@ -2645,20 +2645,35 @@ type GitBlob implements TreeEntry & File2 {
     # continue to adjust it for our use cases. Changes will not be documented in the
     # CHANGELOG during this time.
     # A list of definitions of the symbol under the given document position.
-    definitions(line: Int!, character: Int!): LocationConnection!
+    definitions(line: Int!, character: Int!): DefinitionsResult!
 
     # (experimental) The LSIF API may change substantially in the near future as we
     # continue to adjust it for our use cases. Changes will not be documented in the
     # CHANGELOG during this time.
     # A list of references of the symbol under the given document position.
-    references(line: Int!, character: Int!, after: String, first: Int): LocationConnection!
+    references(line: Int!, character: Int!, after: String, first: Int): ReferencesResult!
 
     # (experimental) The LSIF API may change substantially in the near future as we
     # continue to adjust it for our use cases. Changes will not be documented in the
     # CHANGELOG during this time.
     # The hover result of the symbol under the given document position.
-    hover(line: Int!, character: Int!): Markdown!
+    hover(line: Int!, character: Int!): HoverResult!
 }
+
+# TODO
+type NoLSIFData {
+    # TODO
+    message: String!
+}
+
+# TODO
+union DefinitionsResult = LocationConnection | NoLSIFData
+
+# TODO
+union ReferencesResult = LocationConnection | NoLSIFData
+
+# TODO
+union HoverResult = Markdown | NoLSIFData
 
 # A highlighted file.
 type HighlightedFile {
@@ -4027,7 +4042,7 @@ enum LSIFJobState {
     SCHEDULED
 }
 
-# Counts of LISF jobs by state.
+# Counts of LSIF jobs by state.
 type LSIFJobStats implements Node {
     # An opaque GraphQL ID.
     id: ID!

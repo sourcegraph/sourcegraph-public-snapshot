@@ -20,9 +20,9 @@ type CodeIntelResolver interface {
 	LSIFJobStatsByID(ctx context.Context, id graphql.ID) (LSIFJobStatsResolver, error)
 	DeleteLSIFDump(ctx context.Context, id graphql.ID) (*EmptyResponse, error)
 	DeleteLSIFJob(ctx context.Context, id graphql.ID) (*EmptyResponse, error)
-	Definitions(ctx context.Context, args *LSIFFilePositionArgs) (LocationConnectionResolver, error)
-	References(ctx context.Context, args *LSIFPagedFilePositionArgs) (LocationConnectionResolver, error)
-	Hover(ctx context.Context, args *LSIFFilePositionArgs) (MarkdownResolver, error)
+	Definitions(ctx context.Context, args *LSIFFilePositionArgs) (DefinitionsResultResolver, error)
+	References(ctx context.Context, args *LSIFPagedFilePositionArgs) (ReferencesResultResolver, error)
+	Hover(ctx context.Context, args *LSIFFilePositionArgs) (HoverResultResolver, error)
 }
 
 type LSIFDumpsQueryArgs struct {
@@ -72,11 +72,6 @@ type LSIFDumpConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
-type LocationConnectionResolver interface {
-	Nodes(ctx context.Context) ([]LocationResolver, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
-}
-
 type LSIFJobStatsResolver interface {
 	ID() graphql.ID
 	ProcessingCount() int32
@@ -106,6 +101,30 @@ type LSIFJobConnectionResolver interface {
 	Nodes(ctx context.Context) ([]LSIFJobResolver, error)
 	TotalCount(ctx context.Context) (*int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type LocationConnectionResolver interface {
+	Nodes(ctx context.Context) ([]LocationResolver, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type NoLSIFDataResolver interface {
+	Message() string
+}
+
+type DefinitionsResultResolver interface {
+	ToLocationConnection() (LocationConnectionResolver, bool)
+	ToNoLSIFData() (NoLSIFDataResolver, bool)
+}
+
+type ReferencesResultResolver interface {
+	ToLocationConnection() (LocationConnectionResolver, bool)
+	ToNoLSIFData() (NoLSIFDataResolver, bool)
+}
+
+type HoverResultResolver interface {
+	ToMarkdown() (MarkdownResolver, bool)
+	ToNoLSIFData() (NoLSIFDataResolver, bool)
 }
 
 var codeIntelOnlyInEnterprise = errors.New("lsif dumps and jobs are only available in enterprise")
