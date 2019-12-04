@@ -480,6 +480,47 @@ func (c *Client) loadPullRequests(ctx context.Context, prs ...*PullRequest) erro
 	return nil
 }
 
+// GetPullRequestNumber fetches the number of the pull request associated with the supplied
+// params.
+// If nothing is found (0, nil) is returned
+func (c *Client) GetPullRequestNumber(ctx context.Context, owner, name, baseRef, headRef string) (int, error) {
+	// NOTE: GitHub allows multiple PRs with the same baseRef and headRef combination but only 1 can be open
+	// at a time
+	var q strings.Builder
+	q.WriteString("query {\n")
+	q.WriteString(fmt.Sprintf("repository(owner: %q, name: %q) {\n",
+		owner, name))
+	q.WriteString(fmt.Sprintf("pullRequests(baseRefName: %q, headRefName: %q, first: 1, states: OPEN) { \n",
+		baseRef, headRef,
+	))
+	q.WriteString(fmt.Sprintf("nodes{ number }\n"))
+	q.WriteString("}\n")
+	q.WriteString("}\n")
+	q.WriteString("}")
+
+	var results struct {
+		Repository struct {
+			PullRequests struct {
+				Nodes []struct {
+					Number int
+				}
+			}
+		}
+	}
+
+	err := c.requestGraphQL(ctx, "", q.String(), nil, &results)
+	if err != nil {
+		return 0, err
+	}
+	if len(results.Repository.PullRequests.Nodes) == 0 {
+		return 0, nil
+	}
+	if len(results.Repository.PullRequests.Nodes) != 1 {
+		return 0, fmt.Errorf("expected 1 result, got %d", len(results.Repository.PullRequests.Nodes))
+	}
+	return results.Repository.PullRequests.Nodes[0].Number, nil
+}
+
 const pullRequestFragments = `
 fragment actor on Actor { avatarUrl, login, url }
 fragment commit on Commit {

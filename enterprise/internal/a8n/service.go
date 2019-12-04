@@ -176,6 +176,7 @@ func (s *Service) runChangesetJob(
 	}
 	repo := rs[0]
 
+	// TODO: This should be globally unique
 	headRefName := "sourcegraph/campaign-" + strconv.FormatInt(c.ID, 10)
 
 	_, err = s.git.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
@@ -269,9 +270,22 @@ func (s *Service) runChangesetJob(
 		return errors.Errorf("creating changesets on code host of repo %q is not implemented", repo.Name)
 	}
 
-	// In order to be idempotent, an existing pull request is not an error
-	if err = ccs.CreateChangeset(ctx, &cs); err != nil && !ccs.IsDuplicatePullRequestError(err) {
-		return err
+	err = ccs.CreateChangeset(ctx, &cs)
+	if err != nil {
+		// In order to be idempotent, an existing pull request is not an error
+		if !ccs.IsDuplicatePullRequestError(err) {
+			return err
+		}
+		// Duplicate PR, fetch the external ID
+		externalID, externalServiceType, err := ccs.FetchChangesetExternalID(ctx, "sd9", "cockroach", baseRef, headRefName)
+		if err != nil {
+			return errors.Wrap(err, "fetching external id")
+		}
+		if externalID == "" {
+			return fmt.Errorf("external id for campaign %d not found", c.ID)
+		}
+		cs.ExternalID = externalID
+		cs.ExternalServiceType = externalServiceType
 	}
 
 	tx, err := s.store.Transact(ctx)
@@ -281,6 +295,10 @@ func (s *Service) runChangesetJob(
 	defer tx.Done(&err)
 
 	if err = tx.CreateChangesets(ctx, cs.Changeset); err != nil {
+		if _, ok := err.(AlreadyExistError); ok {
+			// Safe to return here as this indicates the transaction has run before
+			return nil
+		}
 		return err
 	}
 

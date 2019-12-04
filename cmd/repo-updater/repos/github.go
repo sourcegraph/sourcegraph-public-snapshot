@@ -177,7 +177,7 @@ func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) erro
 		repo := cs[i].Repo.Metadata.(*github.Repository)
 		number, err := strconv.ParseInt(cs[i].ExternalID, 10, 64)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "parsing changeset external id")
 		}
 
 		prs[i] = &github.PullRequest{
@@ -201,6 +201,19 @@ func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) erro
 // IsDuplicatePullRequestError returns whether the error is caused by the pull request already existsing
 func (s GithubSource) IsDuplicatePullRequestError(err error) bool {
 	return err == github.ErrPullRequestAlreadyExists
+}
+
+// FetchChangesetExternalID fetches the external id for the changeset corresponding to the supplied params.
+// If not found, ("", "", nil) is returned
+func (s GithubSource) FetchChangesetExternalID(ctx context.Context, owner, name, baseRef, headRef string) (externalID string, externalServiceType string, err error) {
+	num, err := s.client.GetPullRequestNumber(ctx, owner, name, baseRef, headRef)
+	if err != nil {
+		return "", "", err
+	}
+	if num == 0 {
+		return "", "", nil
+	}
+	return strconv.Itoa(num), github.ServiceType, nil
 }
 
 // GetRepo returns the Github repository with the given name and owner
