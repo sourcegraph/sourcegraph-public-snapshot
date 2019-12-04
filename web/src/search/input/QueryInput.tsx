@@ -487,11 +487,11 @@ export class QueryInput extends React.Component<Props, State> {
 
             this.inputValues.next({
                 ...insertSuggestionInQuery(
-                    new QueryState({
+                    {
                         query: value.query,
                         cursorPosition: suggestions.cursorPosition,
                         showSuggestions: true,
-                    }),
+                    },
                     selectedSuggestion
                 ),
                 fromUserInput: true,

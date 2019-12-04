@@ -156,7 +156,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         this.state = {
             themePreference: readStoredThemePreference(),
             systemIsLightTheme: !this.darkThemeMediaList.matches,
-            navbarSearchQueryState: new QueryState({ query: '', cursorPosition: 0 }),
+            navbarSearchQueryState: { query: '', cursorPosition: 0 },
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: SITE_SUBJECT_NO_ADMIN,
             searchPatternType: urlPatternType,

@@ -41,10 +41,10 @@ export class SearchPage extends React.Component<Props, State> {
         super(props)
         const queryFromUrl = parseSearchURLQuery(props.location.search) || ''
         this.state = {
-            userQueryState: new QueryState({
+            userQueryState: {
                 query: queryFromUrl,
                 cursorPosition: queryFromUrl.length,
-            }),
+            },
             builderQuery: '',
         }
     }

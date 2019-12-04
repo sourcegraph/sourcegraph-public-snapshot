@@ -60,16 +60,14 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
          */
         const query = parseSearchURLQuery(props.location.search || '')
         if (query) {
-            props.onNavbarQueryChange(new QueryState({ query, cursorPosition: query.length }))
+            props.onNavbarQueryChange({ query, cursorPosition: query.length })
         } else {
             // If we have no component state, then we may have gotten unmounted during a route change.
             const query = props.location.state ? props.location.state.query : ''
-            props.onNavbarQueryChange(
-                new QueryState({
-                    query,
-                    cursorPosition: query.length,
-                })
-            )
+            props.onNavbarQueryChange({
+                query,
+                cursorPosition: query.length,
+            })
         }
     }
 
@@ -81,7 +79,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
         if (prevProps.location.search !== this.props.location.search) {
             const query = parseSearchURLQuery(this.props.location.search || '')
             if (query) {
-                this.props.onNavbarQueryChange(new QueryState({ query, cursorPosition: query.length }))
+                this.props.onNavbarQueryChange({ query, cursorPosition: query.length })
             }
         }
     }

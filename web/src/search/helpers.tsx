@@ -266,7 +266,7 @@ export class QueryState {
      * Toggle suggestions visibility.
      * Example usage: Hiding on search submit, toggle on search input focus/blur.
      */
-    public showSuggestions: boolean
+    public showSuggestions?: boolean
 
     constructor(state?: Partial<QueryState>) {
         this.query = state?.query ?? ''
