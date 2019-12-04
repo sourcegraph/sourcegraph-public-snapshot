@@ -63,9 +63,7 @@ export function search(
                                 cloning {
                                     name
                                 }
-                                repositories {
-                                    name
-                                }
+                                repositoriesCount
                                 timedout {
                                     name
                                 }

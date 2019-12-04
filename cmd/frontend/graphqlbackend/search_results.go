@@ -67,6 +67,10 @@ func (c *searchResultsCommon) Repositories() []*RepositoryResolver {
 	return RepositoryResolvers(c.repos)
 }
 
+func (c *searchResultsCommon) RepositoriesCount() int32 {
+	return int32(len(c.repos))
+}
+
 func (c *searchResultsCommon) RepositoriesSearched() []*RepositoryResolver {
 	return RepositoryResolvers(c.searched)
 }
