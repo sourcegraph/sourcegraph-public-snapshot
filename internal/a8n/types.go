@@ -121,6 +121,7 @@ func (s ChangesetState) Valid() bool {
 
 // BackgroundProcessStatus defines the status of a background process.
 type BackgroundProcessStatus struct {
+	Canceled      bool
 	Total         int32
 	Completed     int32
 	Pending       int32
