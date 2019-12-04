@@ -148,7 +148,7 @@ export class Database {
      * @param position The current hover position.
      * @param ctx The tracing context.
      */
-    public async hover(path: string, position: lsp.Position, ctx: TracingContext = {}): Promise<lsp.Hover | null> {
+    public async hover(path: string, position: lsp.Position, ctx: TracingContext = {}): Promise<string | null> {
         return this.logAndTraceCall(ctx, 'Fetching hover', async ctx => {
             const { document, ranges } = await this.getRangeByPosition(path, position, ctx)
             if (!document || ranges.length === 0) {
@@ -162,13 +162,8 @@ export class Database {
 
                 this.logSpan(ctx, 'hover_result', { hoverResultId: range.hoverResultId })
 
-                const contents = {
-                    kind: lsp.MarkupKind.Markdown,
-                    value: mustGet(document.hoverResults, range.hoverResultId, 'hoverResult'),
-                }
-
                 // Return first defined hover result for the inner-most range
-                return { contents, range: createRange(range) }
+                return mustGet(document.hoverResults, range.hoverResultId, 'hoverResult')
             }
 
             return null

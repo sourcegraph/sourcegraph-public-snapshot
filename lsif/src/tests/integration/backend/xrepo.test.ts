@@ -1,4 +1,5 @@
 import * as util from '../integration-test-util'
+import { internalLocationToLocation } from '../../../server/routes/lsif'
 
 describe('Backend', () => {
     const ctx = new util.BackendTestContext()
@@ -26,7 +27,9 @@ describe('Backend', () => {
             line: 11,
             character: 18,
         })
-        expect(definitions).toEqual([util.createLocation('src/index.ts', 0, 16, 0, 19)])
+        expect(definitions?.map(l => internalLocationToLocation('a', l))).toEqual([
+            util.createLocation('src/index.ts', 0, 16, 0, 19),
+        ])
     })
 
     it('should find all cross-repo defs of `add` from repo b1', async () => {
@@ -38,7 +41,9 @@ describe('Backend', () => {
             line: 3,
             character: 12,
         })
-        expect(definitions).toEqual([util.createRemoteLocation('a', commit, 'src/index.ts', 0, 16, 0, 19)])
+        expect(definitions?.map(l => internalLocationToLocation('b1', l))).toEqual([
+            util.createRemoteLocation('a', commit, 'src/index.ts', 0, 16, 0, 19),
+        ])
     })
 
     it('should find all cross-repo defs of `mul` from repo b1', async () => {
@@ -50,7 +55,9 @@ describe('Backend', () => {
             line: 3,
             character: 16,
         })
-        expect(definitions).toEqual([util.createRemoteLocation('a', commit, 'src/index.ts', 4, 16, 4, 19)])
+        expect(definitions?.map(l => internalLocationToLocation('b1', l))).toEqual([
+            util.createRemoteLocation('a', commit, 'src/index.ts', 4, 16, 4, 19),
+        ])
     })
 
     it('should find all cross-repo refs of `mul` from repo a', async () => {
@@ -59,10 +66,13 @@ describe('Backend', () => {
         }
 
         const { locations } = util.filterNodeModules(
-            (await ctx.backend.references('a', util.createCommit(0), 'src/index.ts', {
-                line: 4,
-                character: 19,
-            })) || { locations: [] }
+            util.mapInternalLocations(
+                'a',
+                (await ctx.backend.references('a', util.createCommit(0), 'src/index.ts', {
+                    line: 4,
+                    character: 19,
+                })) || { locations: [] }
+            )
         )
 
         expect(locations).toContainEqual(util.createLocation('src/index.ts', 4, 16, 4, 19)) // def
@@ -86,10 +96,13 @@ describe('Backend', () => {
         }
 
         const { locations } = util.filterNodeModules(
-            (await ctx.backend.references('b1', util.createCommit(0), 'src/index.ts', {
-                line: 3,
-                character: 16,
-            })) || { locations: [] }
+            util.mapInternalLocations(
+                'b1',
+                (await ctx.backend.references('b1', util.createCommit(0), 'src/index.ts', {
+                    line: 3,
+                    character: 16,
+                })) || { locations: [] }
+            )
         )
 
         expect(locations).toContainEqual(util.createRemoteLocation('a', commit, 'src/index.ts', 4, 16, 4, 19)) // def
@@ -113,10 +126,13 @@ describe('Backend', () => {
         }
 
         const { locations } = util.filterNodeModules(
-            (await ctx.backend.references('a', util.createCommit(0), 'src/index.ts', {
-                line: 0,
-                character: 17,
-            })) || { locations: [] }
+            util.mapInternalLocations(
+                'a',
+                (await ctx.backend.references('a', util.createCommit(0), 'src/index.ts', {
+                    line: 0,
+                    character: 17,
+                })) || { locations: [] }
+            )
         )
 
         expect(locations).toContainEqual(util.createLocation('src/index.ts', 0, 16, 0, 19)) // def
@@ -150,10 +166,13 @@ describe('Backend', () => {
         }
 
         const { locations } = util.filterNodeModules(
-            (await ctx.backend.references('c1', util.createCommit(0), 'src/index.ts', {
-                line: 3,
-                character: 16,
-            })) || { locations: [] }
+            util.mapInternalLocations(
+                'c1',
+                (await ctx.backend.references('c1', util.createCommit(0), 'src/index.ts', {
+                    line: 3,
+                    character: 16,
+                })) || { locations: [] }
+            )
         )
 
         expect(locations).toContainEqual(util.createRemoteLocation('a', commit, 'src/index.ts', 0, 16, 0, 19)) // def
