@@ -37,8 +37,26 @@ func addCheck(pipeline *bk.Pipeline) {
 
 // Adds the lint test step.
 func addLint(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":lipstick: :lint-roller: :eslint: :stylelint: :typescript: :graphql:",
-		bk.Cmd("dev/ci/yarn-run.sh prettier-check build-ts all:eslint all:tslint all:stylelint graphql-lint"))
+	// If we run all lints together it is our slow step (5m). So we split it
+	// into two and try balance the runtime. yarn is a fixed cost so we always
+	// pay it on a step. Aim for around 3m.
+	//
+	// Random sample of timings:
+	//
+	// - yarn 41s
+	// - eslint 137s
+	// - build-ts 60s
+	// - tslint 45s
+	// - prettier 29s
+	// - stylelint 7s
+	// - graphql-lint 1s
+	//
+	// yarn eslint graphql-lint 41+137+1 = 179
+	// yarn buildts tslint prettier stylelint 41+60+45+29+7 = 184
+	pipeline.AddStep(":lipstick: :lint-roller: :stylelint: :typescript:",
+		bk.Cmd("dev/ci/yarn-run.sh prettier-check build-ts all:tslint all:stylelint"))
+	pipeline.AddStep(":eslint: :graphql:",
+		bk.Cmd("dev/ci/yarn-run.sh all:eslint graphql-lint"))
 }
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
