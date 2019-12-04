@@ -17,16 +17,17 @@ import { PrivateRepoPublicSourcegraphComError } from '../backend/errors'
 import { getContributedActionItems } from '../contributions/contributions'
 import { SuccessGraphQLResult } from '../graphql/graphql'
 import { IMutation, IQuery } from '../graphql/schema'
-import { PlatformContext } from '../platform/context'
+import { PlatformContext, URLToFileContext } from '../platform/context'
 import { EMPTY_SETTINGS_CASCADE } from '../settings/settings'
 import { resetAllMemoizationCaches } from '../util/memoizeObservable'
 import { FileSpec, PositionSpec, RawRepoSpec, RepoSpec, RevSpec, toPrettyBlobURL, ViewStateSpec } from '../util/url'
 import { getDefinitionURL, getHoverActionsContext, HoverActionsContext, registerHoverContributions } from './actions'
 import { HoverContext } from './HoverOverlay'
 
-const FIXTURE_PARAMS: TextDocumentPositionParams = {
+const FIXTURE_PARAMS: TextDocumentPositionParams & URLToFileContext = {
     textDocument: { uri: 'git://r?c#f' },
     position: { line: 1, character: 1 },
+    part: undefined,
 }
 
 const FIXTURE_LOCATION: Location = {

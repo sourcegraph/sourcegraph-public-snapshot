@@ -76,17 +76,21 @@ describe('github/code_intelligence', () => {
         })
         it('returns an URL to the Sourcegraph instance if the location has a viewState', () => {
             expect(
-                urlToFile(sourcegraphURL, {
-                    repoName: 'sourcegraph/sourcegraph',
-                    rawRepoName: 'github.com/sourcegraph/sourcegraph',
-                    rev: 'master',
-                    filePath: 'browser/src/libs/code_intelligence/code_intelligence.tsx',
-                    position: {
-                        line: 5,
-                        character: 12,
+                urlToFile(
+                    sourcegraphURL,
+                    {
+                        repoName: 'sourcegraph/sourcegraph',
+                        rawRepoName: 'github.com/sourcegraph/sourcegraph',
+                        rev: 'master',
+                        filePath: 'browser/src/libs/code_intelligence/code_intelligence.tsx',
+                        position: {
+                            line: 5,
+                            character: 12,
+                        },
+                        viewState: 'references',
                     },
-                    viewState: 'references',
-                })
+                    { part: undefined }
+                )
             ).toBe(
                 'https://sourcegraph.my.org/sourcegraph/sourcegraph@master/-/blob/browser/src/libs/code_intelligence/code_intelligence.tsx#L5:12&tab=references'
             )
@@ -94,32 +98,40 @@ describe('github/code_intelligence', () => {
 
         it('returns an absolute URL if the location is not on the same code host', () => {
             expect(
-                urlToFile(sourcegraphURL, {
-                    repoName: 'sourcegraph/sourcegraph',
-                    rawRepoName: 'ghe.sgdev.org/sourcegraph/sourcegraph',
-                    rev: 'master',
-                    filePath: 'browser/src/libs/code_intelligence/code_intelligence.tsx',
-                    position: {
-                        line: 5,
-                        character: 12,
+                urlToFile(
+                    sourcegraphURL,
+                    {
+                        repoName: 'sourcegraph/sourcegraph',
+                        rawRepoName: 'ghe.sgdev.org/sourcegraph/sourcegraph',
+                        rev: 'master',
+                        filePath: 'browser/src/libs/code_intelligence/code_intelligence.tsx',
+                        position: {
+                            line: 5,
+                            character: 12,
+                        },
                     },
-                })
+                    { part: undefined }
+                )
             ).toBe(
                 'https://sourcegraph.my.org/sourcegraph/sourcegraph@master/-/blob/browser/src/libs/code_intelligence/code_intelligence.tsx#L5:12'
             )
         })
         it('returns an URL to a blob on the same code host if possible', () => {
             expect(
-                urlToFile(sourcegraphURL, {
-                    repoName: 'sourcegraph/sourcegraph',
-                    rawRepoName: 'github.com/sourcegraph/sourcegraph',
-                    rev: 'master',
-                    filePath: 'browser/src/libs/code_intelligence/code_intelligence.tsx',
-                    position: {
-                        line: 5,
-                        character: 12,
+                urlToFile(
+                    sourcegraphURL,
+                    {
+                        repoName: 'sourcegraph/sourcegraph',
+                        rawRepoName: 'github.com/sourcegraph/sourcegraph',
+                        rev: 'master',
+                        filePath: 'browser/src/libs/code_intelligence/code_intelligence.tsx',
+                        position: {
+                            line: 5,
+                            character: 12,
+                        },
                     },
-                })
+                    { part: undefined }
+                )
             ).toBe(
                 'https://github.com/sourcegraph/sourcegraph/blob/master/browser/src/libs/code_intelligence/code_intelligence.tsx#L5:12'
             )
