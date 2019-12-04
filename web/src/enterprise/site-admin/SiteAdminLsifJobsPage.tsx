@@ -131,9 +131,9 @@ export class SiteAdminLsifJobsPage extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className="site-admin-lsif-jobs-page">
-                <PageTitle title="LSIF Jobs - Admin" />
+                <PageTitle title="LSIF jobs - Admin" />
                 <div className="d-flex justify-content-between align-items-center mt-3 mb-1">
-                    <h2 className="mb-0">LSIF Jobs</h2>
+                    <h2 className="mb-0">LSIF jobs</h2>
                 </div>
                 {!this.state.statsOrError ? (
                     <LoadingSpinner className="icon-inline" />
