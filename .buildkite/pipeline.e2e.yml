@@ -1,0 +1,34 @@
+env:
+  ENTERPRISE: "1"
+  DOCKER_BUILDKIT: "1"
+  ENTERPRISE: "1"
+  FORCE_COLOR: "1"
+  GO111MODULE: "on"
+
+steps:
+- command:
+  - pushd enterprise
+  - ./cmd/server/pre-build.sh
+  - ./cmd/server/build.sh
+  - popd
+  env:
+    IMAGE: sourcegraph/server:e2e_$BUILDKITE_BUILD_NUMBER
+    VERSION: $BUILDKITE_BUILD_NUMBER
+    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
+  label: ':docker:'
+
+- wait
+
+- artifact_paths: ./puppeteer/*.png;./web/e2e.mp4;./web/ffmpeg.log
+  command: ./dev/ci/e2e.sh
+  concurrency: 1
+  concurrency_group: e2e
+  env:
+    IMAGE: sourcegraph/server:e2e_$BUILDKITE_BUILD_NUMBER
+  label: ':chromium:'
+
+- wait
+
+- command: docker image rm -f sourcegraph/server:e2e_$BUILDKITE_BUILD_NUMBER
+  label: ':sparkles:'
+  soft_fail: true
