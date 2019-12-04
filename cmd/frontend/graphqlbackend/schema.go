@@ -2653,19 +2653,19 @@ type GitBlob implements TreeEntry & File2 {
     hover(line: Int!, character: Int!): HoverResult!
 }
 
-# TODO
+# A marker that no LSIF data was available.
 type NoLSIFData {
-    # TODO
+    # A placeholder field.
     message: String!
 }
 
-# TODO
+# The result of a definitions query.
 union DefinitionsResult = LocationConnection | NoLSIFData
 
-# TODO
+# The result of a references query.
 union ReferencesResult = LocationConnection | NoLSIFData
 
-# TODO
+# The result of a hover query.
 union HoverResult = Markdown | NoLSIFData
 
 # A highlighted file.
