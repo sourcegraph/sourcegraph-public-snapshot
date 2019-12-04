@@ -186,6 +186,8 @@ func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.
 		tr.Finish()
 	}()
 
+	log15.Info("searchy", "rule", p.Rule)
+
 	q := url.Values{
 		"Repo":            []string{string(repo.Name)},
 		"URL":             []string{repo.URL},
@@ -194,6 +196,7 @@ func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.
 		"ExcludePattern":  []string{p.ExcludePattern},
 		"IncludePatterns": p.IncludePatterns,
 		"FetchTimeout":    []string{fetchTimeout.String()},
+		"Rule":            []string{p.Rule},
 	}
 	if deadline, ok := ctx.Deadline(); ok {
 		t, err := deadline.MarshalText()

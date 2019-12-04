@@ -707,6 +707,11 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Pa
 		}
 	}
 
+	var rule []string
+	for _, v := range r.query.Values(query.FieldRule) {
+		rule = append(rule, asString(v))
+	}
+
 	// Handle lang: and -lang: filters.
 	langIncludePatterns, langExcludePatterns, err := langIncludeExcludePatterns(r.query.StringValues(query.FieldLang))
 	if err != nil {
@@ -726,6 +731,7 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Pa
 		FilePatternsReposMustExclude: filePatternsReposMustExclude,
 		PathPatternsAreRegExps:       true,
 		PathPatternsAreCaseSensitive: r.query.IsCaseSensitive(),
+		Rule:                         strings.Join(rule, ""),
 	}
 	if len(excludePatterns) > 0 {
 		patternInfo.ExcludePattern = unionRegExps(excludePatterns)

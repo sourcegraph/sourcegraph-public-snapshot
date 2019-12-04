@@ -32,6 +32,9 @@ type PatternInfo struct {
 
 	PatternMatchesContent bool
 	PatternMatchesPath    bool
+
+	// Rule for structural search
+	Rule string
 }
 
 func (p *PatternInfo) IsEmpty() bool {

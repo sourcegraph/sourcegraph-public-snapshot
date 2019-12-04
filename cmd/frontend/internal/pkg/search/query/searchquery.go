@@ -23,6 +23,7 @@ const (
 	FieldRepoHasFile        = "repohasfile"
 	FieldRepoHasCommitAfter = "repohascommitafter"
 	FieldPatternType        = "patterntype"
+	FieldRule               = "rule"
 
 	// For diff and commit search only:
 	FieldBefore    = "before"
@@ -71,6 +72,7 @@ var (
 			FieldMax:     {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 			FieldTimeout: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 			FieldReplace: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
+			FieldRule:    {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 		},
 		FieldAliases: map[string]string{
 			"r":        FieldRepo,

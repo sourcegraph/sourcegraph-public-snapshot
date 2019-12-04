@@ -99,6 +99,9 @@ type PatternInfo struct {
 	// PatternMatchesPath is whether a file whose path matches Pattern (but whose contents don't) should be
 	// considered a match.
 	PatternMatchesPath bool
+
+	// Rule for structural search
+	Rule string
 }
 
 func (p *PatternInfo) String() string {

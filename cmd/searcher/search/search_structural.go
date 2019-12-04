@@ -78,14 +78,16 @@ func ToFileMatch(combyMatches []comby.FileMatch) (matches []protocol.FileMatch) 
 	return matches
 }
 
-func structuralSearch(ctx context.Context, zipPath, pattern string, includePatterns []string, repo api.RepoName) (matches []protocol.FileMatch, limitHit bool, err error) {
+func structuralSearch(ctx context.Context, zipPath, pattern string, rule string, includePatterns []string, repo api.RepoName) (matches []protocol.FileMatch, limitHit bool, err error) {
 	log15.Info("structural search", "repo", string(repo))
+	log15.Info("structural search", "rule", rule)
 
 	args := comby.Args{
 		Input:         comby.ZipPath(zipPath),
 		MatchTemplate: pattern,
 		MatchOnly:     true,
 		FilePatterns:  includePatterns,
+		Rule:          rule,
 		NumWorkers:    numWorkers,
 	}
 
