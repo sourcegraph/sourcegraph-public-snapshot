@@ -26,6 +26,8 @@ Site admins can [configure Sourcegraph to allow users to sign in via GitLab](../
 
 GitLab instances can be configured to show Sourcegraph code intelligence and navigation natively. See the [GitLab integration docs](../admin/external_service/gitlab.md#native-integration) for how to enable this on your GitLab instance.
 
+![GitLab native integration](img/gitlab-code-intel.gif)
+
 ## Browser extension
 
 The [Sourcegraph browser extension](browser_extension.md) supports GitLab. When installed in your web browser, it adds hover tooltips, go-to-definition, find-references, and code search to files and merge requests viewed on GitLab.
