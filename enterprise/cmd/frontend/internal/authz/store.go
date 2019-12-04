@@ -43,14 +43,14 @@ func (s *Store) LoadUserPermissions(ctx context.Context, p *UserPermissions) (er
 	ctx, save := s.observe(ctx, "LoadUserPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
-	p.IDs, p.UpdatedAt, err = s.load(ctx, loadUserPermissionsQuery(p))
+	_, p.IDs, p.UpdatedAt, err = s.load(ctx, loadUserPermissionsQuery(p))
 	return err
 }
 
 func loadUserPermissionsQuery(p *UserPermissions) *sqlf.Query {
 	const format = `
 -- source: enterprise/cmd/frontend/internal/authz/store.go:loadUserPermissionsQuery
-SELECT object_ids, updated_at
+SELECT user_id, object_ids, updated_at
 FROM user_permissions
 WHERE user_id = %s
 AND permission = %s
@@ -73,14 +73,14 @@ func (s *Store) LoadRepoPermissions(ctx context.Context, p *RepoPermissions) (er
 	ctx, save := s.observe(ctx, "LoadRepoPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
-	p.UserIDs, p.UpdatedAt, err = s.load(ctx, loadRepoPermissionsQuery(p))
+	_, p.UserIDs, p.UpdatedAt, err = s.load(ctx, loadRepoPermissionsQuery(p, false))
 	return err
 }
 
 func loadRepoPermissionsQuery(p *RepoPermissions) *sqlf.Query {
 	const format = `
 -- source: enterprise/cmd/frontend/internal/authz/permissions.go:loadRepoPermissionsQuery
-SELECT user_ids, updated_at
+SELECT repo_id, user_ids, updated_at
 FROM repo_permissions
 WHERE repo_id = %s
 AND permission = %s
@@ -133,7 +133,7 @@ func (s *Store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err
 	txs := NewStore(tx, s.clock)
 
 	// Retrieve currently stored user IDs of this repository.
-	oldIDs, _, err := txs.load(ctx, loadRepoPermissionsQuery(p))
+	_, oldIDs, _, err := txs.load(ctx, loadRepoPermissionsQuery(p, true))
 	if err != nil && err != ErrNotFound {
 		return errors.Wrap(err, "load repo permissions")
 	}
@@ -278,38 +278,9 @@ func (s *Store) LoadUserPendingPermissions(ctx context.Context, p *UserPendingPe
 	ctx, save := s.observe(ctx, "LoadUserPendingPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
-	q := loadUserPendingPermissionsQuery(p)
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return err
-	}
-
-	if !rows.Next() {
-		// One row is expected, return ErrNotFound if no other errors occurred.
-		err = rows.Err()
-		if err == nil {
-			err = ErrNotFound
-		}
-		return err
-	}
-
-	var ids []byte
-	if err = rows.Scan(&p.ID, &ids, &p.UpdatedAt); err != nil {
-		return err
-	}
-
-	if err = rows.Close(); err != nil {
-		return err
-	}
-
-	p.IDs = roaring.NewBitmap()
-	if len(ids) == 0 {
-		return nil
-	} else if err = p.IDs.UnmarshalBinary(ids); err != nil {
-		return err
-	}
-
-	return nil
+	q := loadUserPendingPermissionsQuery(p, false)
+	p.ID, p.IDs, p.UpdatedAt, err = s.load(ctx, q)
+	return err
 }
 
 func loadUserPendingPermissionsQuery(p *UserPendingPermissions) *sqlf.Query {
@@ -399,7 +370,7 @@ func (s *Store) SetRepoPendingPermissions(ctx context.Context, bindIDs []string,
 	}
 
 	// Retrieve currently stored user IDs of this repository.
-	oldIDs, _, err := txs.load(ctx, loadRepoPendingPermissionsQuery(p))
+	_, oldIDs, _, err := txs.load(ctx, loadRepoPendingPermissionsQuery(p, true))
 	if err != nil && err != ErrNotFound {
 		return errors.Wrap(err, "load repo pending permissions")
 	}
@@ -597,7 +568,7 @@ AND object_type = %s
 func loadRepoPendingPermissionsQuery(p *RepoPermissions) *sqlf.Query {
 	const format = `
 -- source: enterprise/cmd/frontend/internal/authz/permissions.go:loadRepoPendingPermissionsQuery
-SELECT user_ids, updated_at
+SELECT repo_id, user_ids, updated_at
 FROM repo_pending_permissions
 WHERE repo_id = %s
 AND permission = %s
@@ -733,12 +704,13 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 	// Make another Store with this underlying transaction.
 	txs := NewStore(tx, s.clock)
 
-	if err = txs.LoadUserPendingPermissions(ctx, p); err != nil {
-		return err
-	}
-
-	if p.IDs == nil || p.IDs.GetCardinality() == 0 {
-		return nil
+	q := loadUserPendingPermissionsQuery(p, true)
+	p.ID, p.IDs, p.UpdatedAt, err = txs.load(ctx, q)
+	if err != nil {
+		if err == ErrNotFound {
+			return nil
+		}
+		return errors.Wrap(err, "load user pending permissions")
 	}
 
 	up := &UserPermissions{
@@ -749,7 +721,6 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 		Provider:  ProviderSourcegraph,
 		UpdatedAt: txs.clock(),
 	}
-	var q *sqlf.Query
 	if q, err = upsertUserPermissionsBatchQuery(up); err != nil {
 		return err
 	} else if err = txs.execute(ctx, q); err != nil {
@@ -952,8 +923,8 @@ func (s *Store) execute(ctx context.Context, q *sqlf.Query) (err error) {
 	return rows.Close()
 }
 
-// load runs the query and returns unmarshalled IDs and last updated time.
-func (s *Store) load(ctx context.Context, q *sqlf.Query) (*roaring.Bitmap, time.Time, error) {
+// load runs the query and returns integer ID, unmarshalled IDs and last updated time.
+func (s *Store) load(ctx context.Context, q *sqlf.Query) (int32, *roaring.Bitmap, time.Time, error) {
 	var err error
 	ctx, save := s.observe(ctx, "load", "")
 	defer func() {
@@ -966,7 +937,7 @@ func (s *Store) load(ctx context.Context, q *sqlf.Query) (*roaring.Bitmap, time.
 	var rows *sql.Rows
 	rows, err = s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
-		return nil, time.Time{}, err
+		return -1, nil, time.Time{}, err
 	}
 
 	if !rows.Next() {
@@ -975,27 +946,28 @@ func (s *Store) load(ctx context.Context, q *sqlf.Query) (*roaring.Bitmap, time.
 		if err == nil {
 			err = ErrNotFound
 		}
-		return nil, time.Time{}, err
+		return -1, nil, time.Time{}, err
 	}
 
+	var id int32
 	var ids []byte
 	var updatedAt time.Time
-	if err = rows.Scan(&ids, &updatedAt); err != nil {
-		return nil, time.Time{}, err
+	if err = rows.Scan(&id, &ids, &updatedAt); err != nil {
+		return -1, nil, time.Time{}, err
 	}
 
 	if err = rows.Close(); err != nil {
-		return nil, time.Time{}, err
+		return -1, nil, time.Time{}, err
 	}
 
 	bm := roaring.NewBitmap()
 	if len(ids) == 0 {
-		return bm, time.Time{}, nil
+		return id, bm, updatedAt, nil
 	} else if err = bm.UnmarshalBinary(ids); err != nil {
-		return nil, time.Time{}, err
+		return -1, nil, time.Time{}, err
 	}
 
-	return bm, updatedAt, nil
+	return id, bm, updatedAt, nil
 }
 
 // batchLoadIDs runs the query and returns unmarshalled IDs with their corresponding object ID value.
