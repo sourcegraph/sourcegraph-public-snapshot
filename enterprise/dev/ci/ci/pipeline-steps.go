@@ -50,13 +50,10 @@ func addLint(pipeline *bk.Pipeline) {
 	// - prettier 29s
 	// - stylelint 7s
 	// - graphql-lint 1s
-	//
-	// yarn eslint graphql-lint 41+137+1 = 179
-	// yarn buildts tslint prettier stylelint 41+60+45+29+7 = 184
-	pipeline.AddStep(":lipstick: :lint-roller: :stylelint: :typescript:",
-		bk.Cmd("dev/ci/yarn-run.sh prettier-check build-ts all:tslint all:stylelint"))
-	pipeline.AddStep(":eslint: :graphql:",
-		bk.Cmd("dev/ci/yarn-run.sh all:eslint graphql-lint"))
+	pipeline.AddStep(":eslint:",
+		bk.Cmd("dev/ci/yarn-run.sh all:eslint"))
+	pipeline.AddStep(":lipstick: :lint-roller: :stylelint: :typescript: :graphql:",
+		bk.Cmd("dev/ci/yarn-run.sh prettier-check build-ts all:tslint all:stylelint graphql-lint"))
 }
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
