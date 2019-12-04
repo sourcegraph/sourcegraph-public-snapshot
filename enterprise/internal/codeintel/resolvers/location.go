@@ -19,14 +19,14 @@ import (
 // Connection Resolver
 
 type LocationsQueryOptions struct {
-	Operation  string
-	Repository string
-	Commit     string
-	Path       string
-	Line       int32
-	Character  int32
-	Limit      *int32
-	NextURL    *string
+	Operation string
+	RepoName  string
+	Commit    graphqlbackend.GitObjectID
+	Path      string
+	Line      int32
+	Character int32
+	Limit     *int32
+	NextURL   *string
 }
 
 type locationConnectionResolver struct {
@@ -47,8 +47,8 @@ func resolveLocationConnection(ctx context.Context, opt LocationsQueryOptions) (
 	}
 
 	values := url.Values{}
-	values.Set("repository", opt.Repository)
-	values.Set("commit", opt.Commit)
+	values.Set("repository", opt.RepoName)
+	values.Set("commit", string(opt.Commit))
 	values.Set("path", opt.Path)
 	values.Set("line", strconv.FormatInt(int64(opt.Line), 10))
 	values.Set("character", strconv.FormatInt(int64(opt.Character), 10))
@@ -61,12 +61,7 @@ func resolveLocationConnection(ctx context.Context, opt LocationsQueryOptions) (
 		return nil, err
 	}
 
-	payload := struct {
-		Locations []*lsif.LSIFLocation
-	}{
-		Locations: []*lsif.LSIFLocation{},
-	}
-
+	payload := struct{ Locations []*lsif.LSIFLocation }{}
 	if err := client.UnmarshalPayload(resp, &payload); err != nil {
 		return nil, err
 	}

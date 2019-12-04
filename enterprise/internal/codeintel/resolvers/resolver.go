@@ -29,12 +29,12 @@ func NewResolver() graphqlbackend.CodeIntelResolver {
 
 func (r *Resolver) Definitions(ctx context.Context, args *graphqlbackend.LSIFFilePositionArgs) (graphqlbackend.DefinitionsResultResolver, error) {
 	opt := LocationsQueryOptions{
-		Operation:  "definitions",
-		Repository: args.Repository,
-		Commit:     args.Commit,
-		Path:       args.Path,
-		Line:       args.Line,
-		Character:  args.Character,
+		Operation: "definitions",
+		RepoName:  args.RepoName,
+		Commit:    args.Commit,
+		Path:      args.Path,
+		Line:      args.Line,
+		Character: args.Character,
 	}
 
 	resolver, err := resolveLocationConnection(ctx, opt)
@@ -51,12 +51,12 @@ func (r *Resolver) Definitions(ctx context.Context, args *graphqlbackend.LSIFFil
 
 func (r *Resolver) References(ctx context.Context, args *graphqlbackend.LSIFPagedFilePositionArgs) (graphqlbackend.ReferencesResultResolver, error) {
 	opt := LocationsQueryOptions{
-		Operation:  "references",
-		Repository: args.Repository,
-		Commit:     args.Commit,
-		Path:       args.Path,
-		Line:       args.Line,
-		Character:  args.Character,
+		Operation: "references",
+		RepoName:  args.RepoName,
+		Commit:    args.Commit,
+		Path:      args.Path,
+		Line:      args.Line,
+		Character: args.Character,
 	}
 	if args.First != nil {
 		opt.Limit = args.First
@@ -85,8 +85,8 @@ func (r *Resolver) References(ctx context.Context, args *graphqlbackend.LSIFPage
 func (r *Resolver) Hover(ctx context.Context, args *graphqlbackend.LSIFFilePositionArgs) (graphqlbackend.HoverResultResolver, error) {
 	path := fmt.Sprintf("/hover")
 	values := url.Values{}
-	values.Set("repository", args.Repository)
-	values.Set("commit", args.Commit)
+	values.Set("repository", args.RepoName)
+	values.Set("commit", string(args.Commit))
 	values.Set("path", args.Path)
 	values.Set("line", strconv.FormatInt(int64(args.Line), 10))
 	values.Set("character", strconv.FormatInt(int64(args.Character), 10))

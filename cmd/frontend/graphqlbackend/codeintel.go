@@ -45,11 +45,11 @@ type LSIFJobsQueryArgs struct {
 }
 
 type LSIFFilePositionArgs struct {
-	Repository string
-	Commit     string
-	Path       string
-	Line       int32
-	Character  int32
+	RepoName  string
+	Commit    GitObjectID
+	Path      string
+	Line      int32
+	Character int32
 }
 
 type LSIFPagedFilePositionArgs struct {

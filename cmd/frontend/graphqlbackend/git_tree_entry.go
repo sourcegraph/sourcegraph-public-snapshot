@@ -214,11 +214,11 @@ func (r *GitTreeEntryResolver) Definitions(ctx context.Context, args *LSIFFilePo
 	}
 
 	return EnterpriseResolvers.codeIntelResolver.Definitions(ctx, &LSIFFilePositionArgs{
-		Repository: r.Repository().Name(),
-		Commit:     string(r.Commit().OID()),
-		Path:       r.Path(),
-		Line:       args.Line,
-		Character:  args.Character,
+		RepoName:  r.Repository().Name(),
+		Commit:    r.Commit().OID(),
+		Path:      r.Path(),
+		Line:      args.Line,
+		Character: args.Character,
 	})
 }
 
@@ -229,11 +229,11 @@ func (r *GitTreeEntryResolver) References(ctx context.Context, args *LSIFPagedFi
 
 	return EnterpriseResolvers.codeIntelResolver.References(ctx, &LSIFPagedFilePositionArgs{
 		LSIFFilePositionArgs: LSIFFilePositionArgs{
-			Repository: r.Repository().Name(),
-			Commit:     string(r.Commit().OID()),
-			Path:       r.Path(),
-			Line:       args.Line,
-			Character:  args.Character,
+			RepoName:  r.Repository().Name(),
+			Commit:    r.Commit().OID(),
+			Path:      r.Path(),
+			Line:      args.Line,
+			Character: args.Character,
 		},
 		ConnectionArgs: args.ConnectionArgs,
 		After:          args.After,
@@ -246,11 +246,11 @@ func (r *GitTreeEntryResolver) Hover(ctx context.Context, args *LSIFFilePosition
 	}
 
 	return EnterpriseResolvers.codeIntelResolver.Hover(ctx, &LSIFFilePositionArgs{
-		Repository: r.Repository().Name(),
-		Commit:     string(r.Commit().OID()),
-		Path:       r.Path(),
-		Line:       args.Line,
-		Character:  args.Character,
+		RepoName:  r.Repository().Name(),
+		Commit:    r.Commit().OID(),
+		Path:      r.Path(),
+		Line:      args.Line,
+		Character: args.Character,
 	})
 }
 
