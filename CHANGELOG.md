@@ -14,6 +14,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Language statistics by commit are available via the API. [#6737](https://github.com/sourcegraph/sourcegraph/pull/6737)
+- Global settings can be configured from a local file using the environment variable `GLOBAL_SETTINGS_FILE`.
 
 ### Changed
 
