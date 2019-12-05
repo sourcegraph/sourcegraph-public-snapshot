@@ -33,7 +33,7 @@ var maxWorkers = env.Get("A8N_MAX_WORKERS", "8", "maximum number of repositories
 // ErrTooManyResults is returned by the Runner's Run method when the
 // CampaignType's searchQuery produced more than maxRepositories number of
 // repositories.
-var ErrTooManyResults = errors.New("search yielded too many results")
+var ErrTooManyResults = errors.New("search yielded too many results. You can narrow down results using `scopeQuery`")
 
 // A Runner executes a CampaignPlan by creating and running CampaignJobs
 // according to the CampaignPlan's Arguments and CampaignType.
