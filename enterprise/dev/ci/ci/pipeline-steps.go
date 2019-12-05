@@ -245,9 +245,7 @@ func addDockerImages(c Config) func(*bk.Pipeline) {
 	}
 }
 
-// Build Docker image for the service defined by `app`. The Sourcegraph Server Docker image is
-// special-cased, because it is built in another step as a candidate image, so we just need to tag
-// the candidate instead of rebuilding the image.
+// Build Docker image for the service defined by `app`.
 func addDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		cmds := []bk.StepOpt{
@@ -279,9 +277,6 @@ func addDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 		getBuildScript := func() string {
 			buildScriptByApp := map[string]string{
 				"symbols": "env BUILD_TYPE=dist ./cmd/symbols/build.sh buildSymbolsDockerImage",
-
-				// The server image was built prior to e2e tests in a previous step.
-				"server": fmt.Sprintf("docker tag %s:%s_candidate %s:%s", baseImage, c.version, baseImage, c.version),
 			}
 			if buildScript, ok := buildScriptByApp[app]; ok {
 				return buildScript
