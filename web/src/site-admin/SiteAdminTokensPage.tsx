@@ -1,7 +1,6 @@
 import AddIcon from 'mdi-react/AddIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { gql } from '../../../shared/src/graphql/graphql'
@@ -16,6 +15,7 @@ import {
     FilteredAccessTokenConnection,
 } from '../settings/tokens/AccessTokenNode'
 import { eventLogger } from '../tracking/eventLogger'
+import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
 
 interface Props extends RouteComponentProps<{}> {
     authenticatedUser: GQL.IUser
@@ -47,23 +47,13 @@ export class SiteAdminTokensPage extends React.PureComponent<Props, State> {
                 <PageTitle title="Access tokens - Admin" />
                 <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
                     <h2 className="mb-0">Access tokens</h2>
-                    {accessTokensEnabled ? (
-                        <Link
-                            className="btn btn-primary ml-2"
-                            to={`${this.props.authenticatedUser.settingsURL!}/tokens/new`}
-                        >
-                            <AddIcon className="icon-inline" /> Generate access token
-                        </Link>
-                    ) : (
-                        <button
-                            title="Access token creation is disabled in site configuration"
-                            disabled={true}
-                            type="button"
-                            className="btn btn-primary ml-2"
-                        >
-                            <AddIcon className="icon-inline" /> Generate access token
-                        </button>
-                    )}
+                    <LinkOrSpan
+                        title={accessTokensEnabled ? '' : 'Access token creation is disabled in site configuration'}
+                        className={`btn btn-primary ml-2 ${accessTokensEnabled ? '' : 'disabled'}`}
+                        to={accessTokensEnabled ? `${this.props.authenticatedUser.settingsURL!}/tokens/new` : null}
+                    >
+                        <AddIcon className="icon-inline" /> Generate access token
+                    </LinkOrSpan>
                 </div>
                 <p>Tokens may be used to access the Sourcegraph API with the full privileges of the token's creator.</p>
                 <FilteredAccessTokenConnection
