@@ -441,10 +441,10 @@
     "@types/tough-cookie" "*"
     form-data "^2.5.0"
 
-"@types/ioredis@*", "@types/ioredis@4.0.21":
-  version "4.0.21"
-  resolved "https://registry.npmjs.org/@types/ioredis/-/ioredis-4.0.21.tgz#bf096853d18d90a96f71f0af03e9c979b597f803"
-  integrity sha512-IGMWaWsjPDh+aBx/HClsnUkalN+oPmSvUZxYUZVlOMPe9BZN8bi/2erTgSPDyIT52B9oHf/oSuW74OlmjJijkQ==
+"@types/ioredis@*", "@types/ioredis@4.14.0":
+  version "4.14.0"
+  resolved "https://registry.npmjs.org/@types/ioredis/-/ioredis-4.14.0.tgz#3e55c058c6ef93cbe4999e2b419b38f7e5493514"
+  integrity sha512-IgDaR4NdlXKKXUZp6jwXXi4XqxTaHO0rg+Jmb8IW3sWDjRPyD9k0tYBrV96KZzCxAjSoOiccS82KBf31oCksTA==
   dependencies:
     "@types/node" "*"
 
