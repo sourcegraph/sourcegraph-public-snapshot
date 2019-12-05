@@ -675,8 +675,14 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*FileMatc
 		if limitHit {
 			common.limitHit = true
 		}
+		if err == errNoResultsInTimeout {
+			// Effectively, all repositories have timed out.
+			for _, repo := range zoektRepos {
+				common.timedout = append(common.timedout, repo.Repo)
+			}
+		}
 		tr.LogFields(otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
-		if err != nil && searchErr == nil && !overLimitCanceled {
+		if err != nil && err != errNoResultsInTimeout && searchErr == nil && !overLimitCanceled {
 			searchErr = err
 			tr.LazyPrintf("cancel indexed search due to error: %v", err)
 			cancel()
