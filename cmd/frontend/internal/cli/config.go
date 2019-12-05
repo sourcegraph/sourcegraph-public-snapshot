@@ -102,7 +102,7 @@ func handleConfigOverrides() error {
 				if currentSettings != nil {
 					lastID = &currentSettings.ID
 				}
-				_, err = db.Settings.CreateIfUpToDate(ctx, api.SettingsSubject{Site: true}, lastID, nil, string(globalSettings))
+				_, err = db.Settings.CreateIfUpToDate(ctx, api.SettingsSubject{Site: true}, lastID, nil, globalSettings)
 				if err != nil {
 					return errors.Wrap(err, "writing global setting override to database")
 				}
