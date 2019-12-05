@@ -452,3 +452,21 @@ func fsync(path string) error {
 	}
 	return err
 }
+
+// bestEffortWalk is a filepath.Walk which ignores errors that can be passed
+// to walkFn. This is a common pattern used in gitserver for best effort work.
+//
+// Note: We still respect errors returned by walkFn.
+//
+// filepath.Walk can return errors if we run into permission errors or a file
+// disappears between readdir and the stat of the file. In either case this
+// error can be ignored for best effort code.
+func bestEffortWalk(root string, walkFn func(path string, info os.FileInfo) error) error {
+	return filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil
+		}
+
+		return walkFn(path, info)
+	})
+}
