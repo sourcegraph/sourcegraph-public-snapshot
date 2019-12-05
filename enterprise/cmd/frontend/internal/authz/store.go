@@ -43,7 +43,7 @@ func (s *Store) LoadUserPermissions(ctx context.Context, p *UserPermissions) (er
 	ctx, save := s.observe(ctx, "LoadUserPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
-	vals, err := s.load(ctx, loadUserPermissionsQuery(p))
+	vals, err := s.load(ctx, loadUserPermissionsQuery(p, "SHARE"))
 	if err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ func (s *Store) LoadUserPermissions(ctx context.Context, p *UserPermissions) (er
 	return nil
 }
 
-func loadUserPermissionsQuery(p *UserPermissions) *sqlf.Query {
+func loadUserPermissionsQuery(p *UserPermissions, lock string) *sqlf.Query {
 	const format = `
 -- source: enterprise/cmd/frontend/internal/authz/store.go:loadUserPermissionsQuery
 SELECT user_id, object_ids, updated_at
@@ -61,10 +61,11 @@ WHERE user_id = %s
 AND permission = %s
 AND object_type = %s
 AND provider = %s
+FOR
 `
 
 	return sqlf.Sprintf(
-		format,
+		format+lock,
 		p.UserID,
 		p.Perm.String(),
 		p.Type,
@@ -78,7 +79,7 @@ func (s *Store) LoadRepoPermissions(ctx context.Context, p *RepoPermissions) (er
 	ctx, save := s.observe(ctx, "LoadRepoPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
-	vals, err := s.load(ctx, loadRepoPermissionsQuery(p, false))
+	vals, err := s.load(ctx, loadRepoPermissionsQuery(p, "SHARE"))
 	if err != nil {
 		return err
 	}
@@ -87,7 +88,7 @@ func (s *Store) LoadRepoPermissions(ctx context.Context, p *RepoPermissions) (er
 	return nil
 }
 
-func loadRepoPermissionsQuery(p *RepoPermissions, forUpdate bool) *sqlf.Query {
+func loadRepoPermissionsQuery(p *RepoPermissions, lock string) *sqlf.Query {
 	const format = `
 -- source: enterprise/cmd/frontend/internal/authz/permissions.go:loadRepoPermissionsQuery
 SELECT repo_id, user_ids, updated_at
@@ -95,15 +96,11 @@ FROM repo_permissions
 WHERE repo_id = %s
 AND permission = %s
 AND provider = %s
-${FOR_UPDATE_STR}
+FOR
 `
-	forUpdateStr := ""
-	if forUpdate {
-		forUpdateStr = "FOR UPDATE"
-	}
 
 	return sqlf.Sprintf(
-		strings.ReplaceAll(format, "${FOR_UPDATE_STR}", forUpdateStr),
+		format+lock,
 		p.RepoID,
 		p.Perm.String(),
 		p.Provider,
@@ -148,7 +145,7 @@ func (s *Store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err
 	txs := NewStore(tx, s.clock)
 
 	// Retrieve currently stored user IDs of this repository.
-	vals, err := txs.load(ctx, loadRepoPermissionsQuery(p, true))
+	vals, err := txs.load(ctx, loadRepoPermissionsQuery(p, "UPDATE"))
 	if err != nil && err != ErrNotFound {
 		return errors.Wrap(err, "load repo permissions")
 	}
@@ -173,7 +170,7 @@ func (s *Store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err
 		return nil
 	}
 
-	q := loadUserPermissionsBatchQuery(changedIDs, p.Perm, PermRepos, p.Provider, true)
+	q := loadUserPermissionsBatchQuery(changedIDs, p.Perm, PermRepos, p.Provider, "UPDATE")
 	loadedIDs, err := txs.batchLoadIDs(ctx, q)
 	if err != nil {
 		return errors.Wrap(err, "batch load user permissions")
@@ -227,7 +224,7 @@ func loadUserPermissionsBatchQuery(
 	perm authz.Perms,
 	typ PermType,
 	provider ProviderType,
-	forUpdate bool,
+	lock string,
 ) *sqlf.Query {
 	const format = `
 -- source: enterprise/cmd/frontend/internal/authz/store.go:loadUserPermissionsBatchQuery
@@ -237,19 +234,15 @@ WHERE user_id IN (%s)
 AND permission = %s
 AND object_type = %s
 AND provider = %s
-${FOR_UPDATE_STR}
+FOR
 `
-	forUpdateStr := ""
-	if forUpdate {
-		forUpdateStr = "FOR UPDATE"
-	}
 
 	items := make([]*sqlf.Query, len(userIDs))
 	for i := range userIDs {
 		items[i] = sqlf.Sprintf("%d", userIDs[i])
 	}
 	return sqlf.Sprintf(
-		strings.ReplaceAll(format, "${FOR_UPDATE_STR}", forUpdateStr),
+		format+lock,
 		sqlf.Join(items, ","),
 		perm.String(),
 		typ,
@@ -305,7 +298,7 @@ func (s *Store) LoadUserPendingPermissions(ctx context.Context, p *UserPendingPe
 	ctx, save := s.observe(ctx, "LoadUserPendingPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
-	vals, err := s.load(ctx, loadUserPendingPermissionsQuery(p, false))
+	vals, err := s.load(ctx, loadUserPendingPermissionsQuery(p, "SHARE"))
 	if err != nil {
 		return err
 	}
@@ -315,7 +308,7 @@ func (s *Store) LoadUserPendingPermissions(ctx context.Context, p *UserPendingPe
 	return nil
 }
 
-func loadUserPendingPermissionsQuery(p *UserPendingPermissions, forUpdate bool) *sqlf.Query {
+func loadUserPendingPermissionsQuery(p *UserPendingPermissions, lock string) *sqlf.Query {
 	const format = `
 -- source: enterprise/cmd/frontend/internal/authz/permissions.go:loadUserPendingPermissionsQuery
 SELECT id, object_ids, updated_at
@@ -323,15 +316,10 @@ FROM user_pending_permissions
 WHERE bind_id = %s
 AND permission = %s
 AND object_type = %s
-${FOR_UPDATE_STR}
+FOR
 `
-	forUpdateStr := ""
-	if forUpdate {
-		forUpdateStr = "FOR UPDATE"
-	}
-
 	return sqlf.Sprintf(
-		strings.ReplaceAll(format, "${FOR_UPDATE_STR}", forUpdateStr),
+		format+lock,
 		p.BindID,
 		p.Perm.String(),
 		p.Type,
@@ -393,7 +381,7 @@ func (s *Store) SetRepoPendingPermissions(ctx context.Context, bindIDs []string,
 		}
 
 		// Load all user pending permissions by bindIDs from the table.
-		q = loadUserPendingPermissionsBatchQuery(bindIDs, p.Perm, PermRepos, true)
+		q = loadUserPendingPermissionsBatchQuery(bindIDs, p.Perm, PermRepos, "UPDATE")
 		bindIDSet, loadedIDs, err = txs.batchLoadUserPendingPermissions(ctx, q)
 		if err != nil {
 			return errors.Wrap(err, "batch load user pending permissions")
@@ -407,7 +395,7 @@ func (s *Store) SetRepoPendingPermissions(ctx context.Context, bindIDs []string,
 	}
 
 	// Retrieve currently stored user IDs of this repository.
-	vals, err := txs.load(ctx, loadRepoPendingPermissionsQuery(p, true))
+	vals, err := txs.load(ctx, loadRepoPendingPermissionsQuery(p, "UPDATE"))
 	if err != nil && err != ErrNotFound {
 		return errors.Wrap(err, "load repo pending permissions")
 	}
@@ -423,7 +411,7 @@ func (s *Store) SetRepoPendingPermissions(ctx context.Context, bindIDs []string,
 	// Load data for removed IDs if any.
 	removedIDs := removed.ToArray()
 	if len(removedIDs) > 0 {
-		q = loadUserPendingPermissionsByIDBatchQuery(removedIDs, p.Perm, PermRepos, true)
+		q = loadUserPendingPermissionsByIDBatchQuery(removedIDs, p.Perm, PermRepos, "UPDATE")
 		idSet, loaded, err := txs.batchLoadUserPendingPermissions(ctx, q)
 		if err != nil {
 			return errors.Wrap(err, "batch load user pending permissions")
@@ -581,7 +569,7 @@ func loadUserPendingPermissionsBatchQuery(
 	bindIDs []string,
 	perm authz.Perms,
 	typ PermType,
-	forUpdate bool,
+	lock string,
 ) *sqlf.Query {
 	const format = `
 -- source: enterprise/cmd/frontend/internal/authz/store.go:loadUserPendingPermissionsBatchQuery
@@ -590,41 +578,33 @@ FROM user_pending_permissions
 WHERE bind_id IN (%s)
 AND permission = %s
 AND object_type = %s
-${FOR_UPDATE_STR}
+FOR
 `
-	forUpdateStr := ""
-	if forUpdate {
-		forUpdateStr = "FOR UPDATE"
-	}
 
 	items := make([]*sqlf.Query, len(bindIDs))
 	for i := range bindIDs {
 		items[i] = sqlf.Sprintf("%s", bindIDs[i])
 	}
 	return sqlf.Sprintf(
-		strings.ReplaceAll(format, "${FOR_UPDATE_STR}", forUpdateStr),
+		format+lock,
 		sqlf.Join(items, ","),
 		perm.String(),
 		typ,
 	)
 }
 
-func loadRepoPendingPermissionsQuery(p *RepoPermissions, forUpdate bool) *sqlf.Query {
+func loadRepoPendingPermissionsQuery(p *RepoPermissions, lock string) *sqlf.Query {
 	const format = `
 -- source: enterprise/cmd/frontend/internal/authz/permissions.go:loadRepoPendingPermissionsQuery
 SELECT repo_id, user_ids, updated_at
 FROM repo_pending_permissions
 WHERE repo_id = %s
 AND permission = %s
-${FOR_UPDATE_STR}
+FOR
 `
-	forUpdateStr := ""
-	if forUpdate {
-		forUpdateStr = "FOR UPDATE"
-	}
 
 	return sqlf.Sprintf(
-		strings.ReplaceAll(format, "${FOR_UPDATE_STR}", forUpdateStr),
+		format+lock,
 		p.RepoID,
 		p.Perm.String(),
 	)
@@ -634,7 +614,7 @@ func loadUserPendingPermissionsByIDBatchQuery(
 	ids []uint32,
 	perm authz.Perms,
 	typ PermType,
-	forUpdate bool,
+	lock string,
 ) *sqlf.Query {
 	const format = `
 -- source: enterprise/cmd/frontend/internal/authz/store.go:loadUserPendingPermissionsByIDBatchQuery
@@ -643,19 +623,15 @@ FROM user_pending_permissions
 WHERE id IN (%s)
 AND permission = %s
 AND object_type = %s
-${FOR_UPDATE_STR}
+FOR
 `
-	forUpdateStr := ""
-	if forUpdate {
-		forUpdateStr = "FOR UPDATE"
-	}
 
 	items := make([]*sqlf.Query, len(ids))
 	for i := range ids {
 		items[i] = sqlf.Sprintf("%d", ids[i])
 	}
 	return sqlf.Sprintf(
-		strings.ReplaceAll(format, "${FOR_UPDATE_STR}", forUpdateStr),
+		format+lock,
 		sqlf.Join(items, ","),
 		perm.String(),
 		typ,
@@ -759,7 +735,7 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 	// Make another Store with this underlying transaction.
 	txs := NewStore(tx, s.clock)
 
-	vals, err := txs.load(ctx, loadUserPendingPermissionsQuery(p, true))
+	vals, err := txs.load(ctx, loadUserPendingPermissionsQuery(p, "UPDATE"))
 	if err != nil {
 		if err == ErrNotFound {
 			return nil
@@ -788,7 +764,7 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 	ids := p.IDs.ToArray()
 
 	// Batch query all repository permissions object IDs in one go.
-	q = loadRepoPermissionsBatchQuery(ids, p.Perm, ProviderSourcegraph, true)
+	q = loadRepoPermissionsBatchQuery(ids, p.Perm, ProviderSourcegraph, "UPDATE")
 	loadedIDs, err := txs.batchLoadIDs(ctx, q)
 	if err != nil {
 		return err
@@ -829,7 +805,7 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 	}
 
 	// Clean up "repo_pending_permissions" table.
-	q = loadRepoPendingPermissionsBatchQuery(ids, p.Perm, true)
+	q = loadRepoPendingPermissionsBatchQuery(ids, p.Perm, "UPDATE")
 	loadedIDs, err = txs.batchLoadIDs(ctx, q)
 	if err != nil {
 		return err
@@ -868,7 +844,7 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 	return nil
 }
 
-func loadRepoPermissionsBatchQuery(repoIDs []uint32, perm authz.Perms, provider ProviderType, forUpdate bool) *sqlf.Query {
+func loadRepoPermissionsBatchQuery(repoIDs []uint32, perm authz.Perms, provider ProviderType, lock string) *sqlf.Query {
 	const format = `
 -- source: enterprise/cmd/frontend/internal/authz/store.go:loadRepoPermissionsBatchQuery
 SELECT repo_id, user_ids
@@ -876,19 +852,15 @@ FROM repo_permissions
 WHERE repo_id IN (%s)
 AND permission = %s
 AND provider = %s
-${FOR_UPDATE_STR}
+FOR
 `
-	forUpdateStr := ""
-	if forUpdate {
-		forUpdateStr = "FOR UPDATE"
-	}
 
 	items := make([]*sqlf.Query, len(repoIDs))
 	for i := range repoIDs {
 		items[i] = sqlf.Sprintf("%d", repoIDs[i])
 	}
 	return sqlf.Sprintf(
-		strings.ReplaceAll(format, "${FOR_UPDATE_STR}", forUpdateStr),
+		format+lock,
 		sqlf.Join(items, ","),
 		perm.String(),
 		provider,
@@ -953,26 +925,22 @@ AND object_type = %s
 	)
 }
 
-func loadRepoPendingPermissionsBatchQuery(repoIDs []uint32, perm authz.Perms, forUpdate bool) *sqlf.Query {
+func loadRepoPendingPermissionsBatchQuery(repoIDs []uint32, perm authz.Perms, lock string) *sqlf.Query {
 	const format = `
 -- source: enterprise/cmd/frontend/internal/authz/store.go:loadRepoPendingPermissionsBatchQuery
 SELECT repo_id, user_ids
 FROM repo_pending_permissions
 WHERE repo_id IN (%s)
 AND permission = %s
-${FOR_UPDATE_STR}
+FOR
 `
-	forUpdateStr := ""
-	if forUpdate {
-		forUpdateStr = "FOR UPDATE"
-	}
 
 	items := make([]*sqlf.Query, len(repoIDs))
 	for i := range repoIDs {
 		items[i] = sqlf.Sprintf("%d", repoIDs[i])
 	}
 	return sqlf.Sprintf(
-		strings.ReplaceAll(format, "${FOR_UPDATE_STR}", forUpdateStr),
+		format+lock,
 		sqlf.Join(items, ","),
 		perm.String(),
 	)
