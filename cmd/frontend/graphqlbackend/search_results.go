@@ -493,6 +493,8 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 		status = "error"
 	case err == nil:
 		status = "success"
+	default:
+		status = "unknown"
 	}
 	searchResponseCounter.WithLabelValues(status).Inc()
 
