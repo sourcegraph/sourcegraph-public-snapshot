@@ -41,17 +41,29 @@ export class SiteAdminTokensPage extends React.PureComponent<Props, State> {
             onDidUpdate: this.onDidUpdateAccessToken,
         }
 
+        const accessTokensEnabled = window.context.accessTokensAllow !== 'none'
         return (
             <div className="user-settings-tokens-page">
                 <PageTitle title="Access tokens - Admin" />
                 <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
                     <h2 className="mb-0">Access tokens</h2>
-                    <Link
-                        className="btn btn-primary ml-2"
-                        to={`${this.props.authenticatedUser.settingsURL!}/tokens/new`}
-                    >
-                        <AddIcon className="icon-inline" /> Generate access token
-                    </Link>
+                    {accessTokensEnabled ? (
+                        <Link
+                            className="btn btn-primary ml-2"
+                            to={`${this.props.authenticatedUser.settingsURL!}/tokens/new`}
+                        >
+                            <AddIcon className="icon-inline" /> Generate access token
+                        </Link>
+                    ) : (
+                        <button
+                            title="Access token creation is disabled in site configuration"
+                            disabled={true}
+                            type="button"
+                            className="btn btn-primary ml-2"
+                        >
+                            <AddIcon className="icon-inline" /> Generate access token
+                        </button>
+                    )}
                 </div>
                 <p>Tokens may be used to access the Sourcegraph API with the full privileges of the token's creator.</p>
                 <FilteredAccessTokenConnection
