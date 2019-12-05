@@ -61,6 +61,7 @@ Referenced by:
  created_at    | timestamp with time zone | not null default now()
  updated_at    | timestamp with time zone | not null default now()
  arguments     | text                     | not null
+ canceled_at   | timestamp with time zone | 
 Indexes:
     "campaign_plans_pkey" PRIMARY KEY, btree (id)
 Check constraints:

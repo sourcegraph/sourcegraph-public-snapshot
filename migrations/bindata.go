@@ -82,6 +82,8 @@
 // 1528395621_add_delete_cascade_to_campaign_jobs.up.sql (235B)
 // 1528395622_add_more_delete_cascades_to_changeset_jobs.down.sql (478B)
 // 1528395622_add_more_delete_cascades_to_changeset_jobs.up.sql (514B)
+// 1528395623_add_canceled_at_to_campaign_plan.down.sql (69B)
+// 1528395623_add_canceled_at_to_campaign_plan.up.sql (80B)
 
 package migrations
 
@@ -1790,6 +1792,46 @@ func _1528395622_add_more_delete_cascades_to_changeset_jobsUpSql() (*asset, erro
 	return a, nil
 }
 
+var __1528395623_add_canceled_at_to_campaign_planDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\x4e\xcc\x2d\x48\xcc\x4c\xcf\x8b\x2f\xc8\x49\xcc\x2b\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\x48\x4e\xcc\x4b\x4e\xcd\x49\x4d\x89\x4f\x2c\xb1\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xb2\x7c\xc9\x8e\x45\x00\x00\x00")
+
+func _1528395623_add_canceled_at_to_campaign_planDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395623_add_canceled_at_to_campaign_planDownSql,
+		"1528395623_add_canceled_at_to_campaign_plan.down.sql",
+	)
+}
+
+func _1528395623_add_canceled_at_to_campaign_planDownSql() (*asset, error) {
+	bytes, err := _1528395623_add_canceled_at_to_campaign_planDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395623_add_canceled_at_to_campaign_plan.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x25, 0x6e, 0x0, 0x97, 0xbb, 0xac, 0x70, 0xe0, 0xa7, 0x48, 0x98, 0x91, 0x60, 0x15, 0xdb, 0x9a, 0xdb, 0x67, 0x43, 0xb0, 0xea, 0xdb, 0x19, 0xf6, 0x91, 0xb3, 0x78, 0xd2, 0x62, 0x24, 0x50, 0xab}}
+	return a, nil
+}
+
+var __1528395623_add_canceled_at_to_campaign_planUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x04\xc0\x39\x0a\xc5\x20\x10\x00\xd0\x7e\x4e\x31\xf7\xb0\x72\xe3\x23\xb8\xc0\xc7\xd4\x32\x18\x09\x82\x8a\xe0\x54\x39\x7d\x9e\xb2\x3f\x17\x05\x80\xf4\xd9\xfe\x31\x4b\xe5\x2d\x56\x9a\x9b\xfa\xb3\xca\x1e\xb4\x0e\x4a\x63\x50\x27\x7f\x85\x88\x95\x56\x6d\xa3\xdd\x85\x18\xb9\xcf\x76\x98\xe6\xe6\x57\x00\xe8\x14\x82\xcb\x02\xbe\x00\x00\x00\xff\xff\x9f\x9f\xa5\xae\x50\x00\x00\x00")
+
+func _1528395623_add_canceled_at_to_campaign_planUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395623_add_canceled_at_to_campaign_planUpSql,
+		"1528395623_add_canceled_at_to_campaign_plan.up.sql",
+	)
+}
+
+func _1528395623_add_canceled_at_to_campaign_planUpSql() (*asset, error) {
+	bytes, err := _1528395623_add_canceled_at_to_campaign_planUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395623_add_canceled_at_to_campaign_plan.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x3, 0x80, 0xa9, 0x5, 0xa, 0xfb, 0x55, 0xe9, 0x7a, 0xc5, 0x4b, 0x1c, 0xff, 0x81, 0xda, 0x93, 0xa0, 0x21, 0x18, 0xee, 0x14, 0x18, 0xab, 0xd9, 0xcd, 0x5b, 0xe1, 0xee, 0x89, 0x51, 0x2d, 0x4e}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -1963,6 +2005,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395621_add_delete_cascade_to_campaign_jobs.up.sql":                    _1528395621_add_delete_cascade_to_campaign_jobsUpSql,
 	"1528395622_add_more_delete_cascades_to_changeset_jobs.down.sql":           _1528395622_add_more_delete_cascades_to_changeset_jobsDownSql,
 	"1528395622_add_more_delete_cascades_to_changeset_jobs.up.sql":             _1528395622_add_more_delete_cascades_to_changeset_jobsUpSql,
+	"1528395623_add_canceled_at_to_campaign_plan.down.sql":                     _1528395623_add_canceled_at_to_campaign_planDownSql,
+	"1528395623_add_canceled_at_to_campaign_plan.up.sql":                       _1528395623_add_canceled_at_to_campaign_planUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2088,6 +2132,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395621_add_delete_cascade_to_campaign_jobs.up.sql":                    {_1528395621_add_delete_cascade_to_campaign_jobsUpSql, map[string]*bintree{}},
 	"1528395622_add_more_delete_cascades_to_changeset_jobs.down.sql":           {_1528395622_add_more_delete_cascades_to_changeset_jobsDownSql, map[string]*bintree{}},
 	"1528395622_add_more_delete_cascades_to_changeset_jobs.up.sql":             {_1528395622_add_more_delete_cascades_to_changeset_jobsUpSql, map[string]*bintree{}},
+	"1528395623_add_canceled_at_to_campaign_plan.down.sql":                     {_1528395623_add_canceled_at_to_campaign_planDownSql, map[string]*bintree{}},
+	"1528395623_add_canceled_at_to_campaign_plan.up.sql":                       {_1528395623_add_canceled_at_to_campaign_planUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

@@ -209,6 +209,17 @@ func (r *Runner) runJob(pctx context.Context, job *a8n.CampaignJob) {
 		}
 	}()
 
+	// Check whether CampaignPlan has been canceled.
+	p, err := r.store.GetCampaignPlan(ctx, GetCampaignPlanOpts{ID: job.CampaignPlanID})
+	if err != nil {
+		job.Error = err.Error()
+		return
+	}
+	if !p.CanceledAt.IsZero() {
+		job.Error = "Campaign execution canceled."
+		return
+	}
+
 	job.StartedAt = r.clock()
 
 	// We load the repository here again so that we decouple the

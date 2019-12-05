@@ -861,6 +861,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					c := &a8n.CampaignPlan{
 						CampaignType: "COMBY",
 						Arguments:    `{"scopeQuery": "file:README.md"}`,
+						CanceledAt:   now,
 					}
 
 					want := c.Clone()
@@ -971,6 +972,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 				for _, c := range campaignPlans {
 					c.CampaignType += "-updated"
 					c.Arguments = `{"updated": true}`
+					c.CanceledAt = now.Add(5 * time.Second)
 
 					now = now.Add(time.Second)
 					want := c
@@ -1350,8 +1352,9 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 		t.Run("CampaignPlan BackgroundProcessStatus", func(t *testing.T) {
 			tests := []struct {
-				jobs []*a8n.CampaignJob
-				want *a8n.BackgroundProcessStatus
+				planCanceledAt time.Time
+				jobs           []*a8n.CampaignJob
+				want           *a8n.BackgroundProcessStatus
 			}{
 				{
 					jobs: []*a8n.CampaignJob{}, // no jobs
@@ -1429,12 +1432,69 @@ func testStore(db *sql.DB) func(*testing.T) {
 						ProcessErrors: []string{"error1", "error2"},
 					},
 				},
+				{
+					planCanceledAt: now,
+					jobs: []*a8n.CampaignJob{
+						// not started (pending)
+						{},
+						// started (pending)
+						{StartedAt: now},
+					},
+					want: &a8n.BackgroundProcessStatus{
+						// Instead of "Processing" it's "Canceled"
+						ProcessState:  a8n.BackgroundProcessStateCanceled,
+						Canceled:      true,
+						Total:         2,
+						Completed:     0,
+						Pending:       2,
+						ProcessErrors: nil,
+					},
+				},
+				{
+					planCanceledAt: now,
+					jobs: []*a8n.CampaignJob{
+						// completed, error
+						{StartedAt: now, FinishedAt: now, Error: "error1"},
+					},
+					want: &a8n.BackgroundProcessStatus{
+						// Instead of "Errored" it's "Canceled"
+						ProcessState:  a8n.BackgroundProcessStateCanceled,
+						Canceled:      true,
+						Total:         1,
+						Completed:     1,
+						Pending:       0,
+						ProcessErrors: []string{"error1"},
+					},
+				},
+				{
+					planCanceledAt: now,
+					jobs: []*a8n.CampaignJob{
+						// completed, no errors
+						{StartedAt: now, FinishedAt: now, Diff: "+foobar\n-foobar"},
+					},
+					want: &a8n.BackgroundProcessStatus{
+						// Instead of "Completed" it's "Canceled"
+						ProcessState:  a8n.BackgroundProcessStateCanceled,
+						Canceled:      true,
+						Total:         1,
+						Completed:     1,
+						Pending:       0,
+						ProcessErrors: nil,
+					},
+				},
 			}
-			for num, tc := range tests {
-				campaignPlanID := int64(num + 1)
+			for _, tc := range tests {
+				plan := &a8n.CampaignPlan{
+					CampaignType: "comby",
+					CanceledAt:   tc.planCanceledAt,
+				}
+				err := s.CreateCampaignPlan(ctx, plan)
+				if err != nil {
+					t.Fatal(err)
+				}
 
 				for i, j := range tc.jobs {
-					j.CampaignPlanID = campaignPlanID
+					j.CampaignPlanID = plan.ID
 					j.RepoID = int32(i)
 					j.Rev = api.CommitID(fmt.Sprintf("deadbeef-%d", i))
 					j.BaseRef = "master"
@@ -1445,7 +1505,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					}
 				}
 
-				status, err := s.GetCampaignPlanStatus(ctx, campaignPlanID)
+				status, err := s.GetCampaignPlanStatus(ctx, plan.ID)
 				if err != nil {
 					t.Fatal(err)
 				}
