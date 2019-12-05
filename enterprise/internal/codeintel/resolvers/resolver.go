@@ -193,7 +193,6 @@ func (r *Resolver) LSIFJobStatsByID(ctx context.Context, id graphql.ID) (graphql
 	return &lsifJobStatsResolver{stats: stats}, nil
 }
 
-//
 // LSIF Query Resolvers
 
 func (r *Resolver) LSIF(args *graphqlbackend.LSIFQueryArgs) graphqlbackend.LSIFQueryResolver {
