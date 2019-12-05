@@ -95,20 +95,22 @@ func rangeToLocationResolver(ctx context.Context, location *lsif.LSIFLocation) (
 		return nil, err
 	}
 
-	repoResolver := graphqlbackend.NewRepositoryResolver(repo)
-
-	commitResolver, err := repoResolver.Commit(ctx, &graphqlbackend.RepositoryCommitArgs{Rev: location.Commit})
+	commitResolver, err := graphqlbackend.NewRepositoryResolver(repo).Commit(
+		ctx,
+		&graphqlbackend.RepositoryCommitArgs{Rev: location.Commit},
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	gitTreeResolver, err := commitResolver.Tree(ctx, &struct {
-		Path      string
-		Recursive bool
+	gitTreeResolver, err := commitResolver.Blob(ctx, &struct {
+		Path string
 	}{
-		Path:      location.Path,
-		Recursive: true,
+		Path: location.Path,
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	return graphqlbackend.NewLocationResolver(gitTreeResolver, location.Range), nil
 }
