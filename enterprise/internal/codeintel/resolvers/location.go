@@ -82,7 +82,6 @@ func (r *locationConnectionResolver) Nodes(ctx context.Context) ([]graphqlbacken
 
 		l = append(l, resolver)
 	}
-
 	return l, nil
 }
 
