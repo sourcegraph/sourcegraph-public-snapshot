@@ -2648,19 +2648,49 @@ type LSIFQueryResolver {
     # continue to adjust it for our use cases. Changes will not be documented in the
     # CHANGELOG during this time.
     # A list of definitions of the symbol under the given document position.
-    definitions(line: Int!, character: Int!): LocationConnection
+    definitions(
+        # The line on which the symbol occurs (zero-based, inclusive).
+        line: Int!
+
+        # The character (not byte) of the start line on whichthe symbol occurs (zero-based, inclusive).
+        character: Int!
+    ): LocationConnection
 
     # (experimental) The LSIF API may change substantially in the near future as we
     # continue to adjust it for our use cases. Changes will not be documented in the
     # CHANGELOG during this time.
     # A list of references of the symbol under the given document position.
-    references(line: Int!, character: Int!, after: String, first: Int): LocationConnection
+    references(
+        # The line on which the symbol occurs (zero-based, inclusive).
+        line: Int!
+
+        # The character (not byte) of the start line on whichthe symbol occurs (zero-based, inclusive).
+        character: Int!
+
+        # When specified, indicates that this request should be paginated and
+        # to fetch results starting at this cursor.
+        #
+        # A future request can be made for more results by passing in the
+        # 'LocationConnection.pageInfo.endCursor' that is returned.
+        after: String
+
+        # When specified, indicates that this request should be paginated and
+        # the first N results (relative to the cursor) should be returned. i.e.
+        # how many results to return per page.
+        first: Int
+    ): LocationConnection
 
     # (experimental) The LSIF API may change substantially in the near future as we
     # continue to adjust it for our use cases. Changes will not be documented in the
     # CHANGELOG during this time.
     # The hover result of the symbol under the given document position.
-    hover(line: Int!, character: Int!): Markdown
+    hover(
+        # The line on which the symbol occurs (zero-based, inclusive).
+        line: Int!
+
+        # The character (not byte) of the start line on whichthe symbol occurs (zero-based, inclusive).
+        character: Int!
+    ): Markdown
 }
 
 # A highlighted file.
