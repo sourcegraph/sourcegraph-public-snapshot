@@ -160,6 +160,22 @@ func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) error {
 	})
 
 	if err != nil {
+		if err == github.ErrPullRequestAlreadyExists {
+			// Duplicate PR, fetch the external ID
+			// TODO: Get owner and repo name
+			externalID, externalServiceType, err := s.fetchChangesetExternalID(ctx, "sd9", "cockroach", c.BaseRefName, c.HeadRefName)
+			if err != nil {
+				return errors.Wrap(err, "fetching external id")
+			}
+			if externalID == "" {
+				return fmt.Errorf("external id for campaign %d not found", c.Changeset.ID)
+			}
+			// TODO: We may need to pull in the entire PR so that we can set the
+			// Changeset.Metadata
+			c.ExternalID = externalID
+			c.ExternalServiceType = externalServiceType
+			return nil
+		}
 		return err
 	}
 
@@ -198,14 +214,9 @@ func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) erro
 	return nil
 }
 
-// IsDuplicatePullRequestError returns whether the error is caused by the pull request already existsing
-func (s GithubSource) IsDuplicatePullRequestError(err error) bool {
-	return err == github.ErrPullRequestAlreadyExists
-}
-
-// FetchChangesetExternalID fetches the external id for the changeset corresponding to the supplied params.
+// fetchChangesetExternalID fetches the external id for the changeset corresponding to the supplied params.
 // If not found, ("", "", nil) is returned
-func (s GithubSource) FetchChangesetExternalID(ctx context.Context, owner, name, baseRef, headRef string) (externalID string, externalServiceType string, err error) {
+func (s GithubSource) fetchChangesetExternalID(ctx context.Context, owner, name, baseRef, headRef string) (externalID string, externalServiceType string, err error) {
 	num, err := s.client.GetPullRequestNumber(ctx, owner, name, baseRef, headRef)
 	if err != nil {
 		return "", "", err

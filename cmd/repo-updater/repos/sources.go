@@ -90,10 +90,9 @@ type Source interface {
 // A ChangesetSource can load the latest state of a list of Changesets.
 type ChangesetSource interface {
 	LoadChangesets(context.Context, ...*Changeset) error
+	// CreateChangeset will create the Changeset on the source. If it already
+	// exists, *Changeset should be populated
 	CreateChangeset(context.Context, *Changeset) error
-	// NOTE: These two methods could be removed if CreateChangeset above was made idempotent
-	IsDuplicatePullRequestError(err error) bool
-	FetchChangesetExternalID(ctx context.Context, owner, name, baseRef, headRef string) (externalID string, externalServiceType string, err error)
 }
 
 // A SourceResult is sent by a Source over a channel for each repository it

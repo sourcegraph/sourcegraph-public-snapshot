@@ -173,12 +173,6 @@ func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Change
 	return nil
 }
 
-// IsDuplicatePullRequestError returns whether the error is caused by the pull request already existsing
-func (s BitbucketServerSource) IsDuplicatePullRequestError(err error) bool {
-	_, ok := err.(*bitbucketserver.ErrAlreadyExists)
-	return ok
-}
-
 // FetchChangesetExternalID fetches the external id for the changeset corresponding to the supplied params.
 // If not found, ("", "", nil) is returned
 func (s BitbucketServerSource) FetchChangesetExternalID(ctx context.Context, owner, name, baseRef, headRef string) (externalID string, externalServiceType string, err error) {

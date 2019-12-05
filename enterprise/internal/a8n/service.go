@@ -272,20 +272,7 @@ func (s *Service) runChangesetJob(
 
 	err = ccs.CreateChangeset(ctx, &cs)
 	if err != nil {
-		// In order to be idempotent, an existing pull request is not an error
-		if !ccs.IsDuplicatePullRequestError(err) {
-			return err
-		}
-		// Duplicate PR, fetch the external ID
-		externalID, externalServiceType, err := ccs.FetchChangesetExternalID(ctx, "sd9", "cockroach", baseRef, headRefName)
-		if err != nil {
-			return errors.Wrap(err, "fetching external id")
-		}
-		if externalID == "" {
-			return fmt.Errorf("external id for campaign %d not found", c.ID)
-		}
-		cs.ExternalID = externalID
-		cs.ExternalServiceType = externalServiceType
+		return errors.Wrap(err, "creating changeset")
 	}
 
 	tx, err := s.store.Transact(ctx)
