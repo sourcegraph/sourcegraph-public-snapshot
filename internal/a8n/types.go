@@ -36,6 +36,8 @@ type CampaignPlan struct {
 	// Arguments is a JSONC string
 	Arguments string
 
+	CanceledAt time.Time
+
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -119,6 +121,7 @@ func (s ChangesetState) Valid() bool {
 
 // BackgroundProcessStatus defines the status of a background process.
 type BackgroundProcessStatus struct {
+	Canceled      bool
 	Total         int32
 	Completed     int32
 	Pending       int32
@@ -130,6 +133,13 @@ func (b BackgroundProcessStatus) CompletedCount() int32         { return b.Compl
 func (b BackgroundProcessStatus) PendingCount() int32           { return b.Pending }
 func (b BackgroundProcessStatus) State() BackgroundProcessState { return b.ProcessState }
 func (b BackgroundProcessStatus) Errors() []string              { return b.ProcessErrors }
+func (b BackgroundProcessStatus) Finished() bool {
+	if b.ProcessState == BackgroundProcessStateCompleted ||
+		b.ProcessState == BackgroundProcessStateErrored {
+		return true
+	}
+	return false
+}
 
 // BackgroundProcessState defines the possible states of a background process.
 type BackgroundProcessState string
@@ -139,6 +149,7 @@ const (
 	BackgroundProcessStateProcessing BackgroundProcessState = "PROCESSING"
 	BackgroundProcessStateErrored    BackgroundProcessState = "ERRORED"
 	BackgroundProcessStateCompleted  BackgroundProcessState = "COMPLETED"
+	BackgroundProcessStateCanceled   BackgroundProcessState = "CANCELED"
 )
 
 // ChangesetReviewState defines the possible states of a Changeset's review.

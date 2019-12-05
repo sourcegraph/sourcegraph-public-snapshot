@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"strings"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -469,7 +470,7 @@ func (r *Resolver) PreviewCampaignPlan(ctx context.Context, args graphqlbackend.
 	return &campaignPlanResolver{store: r.store, campaignPlan: plan}, nil
 }
 
-func (r *Resolver) CancelCampaignPlan(ctx context.Context, args graphqlbackend.CancelCampaignPlanArgs) (*graphqlbackend.EmptyResponse, error) {
+func (r *Resolver) CancelCampaignPlan(ctx context.Context, args graphqlbackend.CancelCampaignPlanArgs) (res *graphqlbackend.EmptyResponse, err error) {
 	// 🚨 SECURITY: Only site admins may update campaigns for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -480,11 +481,34 @@ func (r *Resolver) CancelCampaignPlan(ctx context.Context, args graphqlbackend.C
 		return nil, err
 	}
 
-	_, err = r.store.GetCampaignPlan(ctx, ee.GetCampaignPlanOpts{ID: id})
+	tx, err := r.store.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO(a8n): Implement this. We need to cancel plan so that all jobs are stopped.
-	return &graphqlbackend.EmptyResponse{}, nil
+	defer tx.Done(&err)
+
+	plan, err := tx.GetCampaignPlan(ctx, ee.GetCampaignPlanOpts{ID: id})
+	if err != nil {
+		return nil, err
+	}
+
+	if !plan.CanceledAt.IsZero() {
+		return &graphqlbackend.EmptyResponse{}, nil
+	}
+
+	status, err := tx.GetCampaignPlanStatus(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if status.Finished() {
+		return &graphqlbackend.EmptyResponse{}, nil
+	}
+
+	plan.CanceledAt = time.Now().UTC()
+
+	err = tx.UpdateCampaignPlan(ctx, plan)
+
+	return &graphqlbackend.EmptyResponse{}, err
 }

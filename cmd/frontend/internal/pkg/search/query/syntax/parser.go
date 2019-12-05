@@ -55,7 +55,7 @@ func MaybeEscapeValue(value string) string {
 	// quote if value contains a space. scanValue also treats strings that
 	// start with " or ' specially, so they need to be quoted.
 	hasSpace := strings.IndexFunc(value, unicode.IsSpace) >= 0
-	hasQuotePrefix := len(value) > 0 && (value[0] == '"' || value[1] == '\'')
+	hasQuotePrefix := len(value) > 0 && (value[0] == '"' || value[0] == '\'')
 	if hasSpace || hasQuotePrefix {
 		return strconv.Quote(value)
 	}

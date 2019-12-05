@@ -174,7 +174,7 @@ func TestHighlightMultipleLines(t *testing.T) {
 					OffsetAndLengths: [][2]int{
 						{
 							0,
-							23,
+							22,
 						},
 					},
 					Preview: "this is a match across",
@@ -184,7 +184,7 @@ func TestHighlightMultipleLines(t *testing.T) {
 					OffsetAndLengths: [][2]int{
 						{
 							0,
-							6,
+							5,
 						},
 					},
 					Preview: "three",
@@ -194,7 +194,7 @@ func TestHighlightMultipleLines(t *testing.T) {
 					OffsetAndLengths: [][2]int{
 						{
 							0,
-							5,
+							4, // don't include trailing newline
 						},
 					},
 					Preview: "lines",
