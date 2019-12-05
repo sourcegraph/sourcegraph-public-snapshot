@@ -209,5 +209,5 @@ To manually test against a Kubernetes cluster, use https://k8s.sgdev.org.
 
 For testing with a single Docker image, run something like
 ```
-IMAGE=sourcegraph/server:3.10.1 ./dev/run-server-image.sh
+IMAGE=sourcegraph/server:3.10.2 ./dev/run-server-image.sh
 ```
