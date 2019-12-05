@@ -19,9 +19,6 @@ type lsifQueryResolver struct {
 
 var _ graphqlbackend.LSIFQueryResolver = &lsifQueryResolver{}
 
-//
-// LSIF Request Resolvers
-
 func (r *lsifQueryResolver) Definitions(ctx context.Context, args *graphqlbackend.LSIFQueryPositionArgs) (graphqlbackend.LocationConnectionResolver, error) {
 	opt := LocationsQueryOptions{
 		Operation: "definitions",

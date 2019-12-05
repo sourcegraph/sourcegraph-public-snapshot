@@ -17,9 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lsif"
 )
 
-//
-// Node Resolver
-
 type lsifDumpResolver struct {
 	repo     *types.Repo
 	lsifDump *lsif.LSIFDump
@@ -52,9 +49,6 @@ func (r *lsifDumpResolver) UploadedAt() graphqlbackend.DateTime {
 func (r *lsifDumpResolver) ProcessedAt() graphqlbackend.DateTime {
 	return graphqlbackend.DateTime{Time: r.lsifDump.ProcessedAt}
 }
-
-//
-// Connection Resolver
 
 type LSIFDumpsListOptions struct {
 	RepositoryID    graphql.ID
@@ -166,9 +160,6 @@ func (r *lsifDumpConnectionResolver) compute(ctx context.Context) ([]*lsif.LSIFD
 
 	return r.dumps, r.repo, r.totalCount, r.nextURL, r.err
 }
-
-//
-// ID Serialization
 
 type lsifDumpIDPayload struct {
 	RepoName string

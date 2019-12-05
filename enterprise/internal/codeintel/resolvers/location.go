@@ -15,9 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lsif"
 )
 
-//
-// Connection Resolver
-
 type LocationsQueryOptions struct {
 	Operation string
 	RepoName  string
@@ -92,9 +89,6 @@ func (r *locationConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil
 
 	return graphqlutil.HasNextPage(false), nil
 }
-
-//
-// Helpers
 
 func rangeToLocationResolver(ctx context.Context, location *lsif.LSIFLocation) (graphqlbackend.LocationResolver, error) {
 	repo, err := backend.Repos.GetByName(ctx, api.RepoName(location.Repository))
