@@ -32,6 +32,10 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## 3.10.2
 
+### Added
+
+- Site admins can now use the built-in Grafana Searcher dashboard to observe how many search requests are successful, or resulting in errors or timeouts. [#6756](https://github.com/sourcegraph/sourcegraph/issues/6756)
+
 ### Fixed
 
 - When searches timeout, a consistent UI with clear actions like a button to increase the timeout is now returned. [#6754](https://github.com/sourcegraph/sourcegraph/issues/6754)
