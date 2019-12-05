@@ -11,7 +11,8 @@ import { LinkOrButton } from '../components/LinkOrButton'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
-import { asError, ErrorLike, isErrorLike } from '../util/errors'
+import { asError, ErrorLike, isErrorLike, tryCatch } from '../util/errors'
+import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 
 export interface ActionItemAction {
     /**
@@ -31,6 +32,8 @@ export interface ActionItemComponentProps
     extends ExtensionsControllerProps<'executeCommand'>,
         PlatformContextProps<'forceUpdateTooltip'> {
     location: H.Location
+
+    iconClassName?: string
 }
 
 export interface ActionItemProps extends ActionItemAction, ActionItemComponentProps, TelemetryProps {
@@ -42,8 +45,6 @@ export interface ActionItemProps extends ActionItemAction, ActionItemComponentPr
      * Added _in addition_ to `className` if the action item is a toggle in the "pressed" state.
      */
     pressedClassName?: string
-
-    iconClassName?: string
 
     /** Called after executing the action (for both success and failure). */
     onDidExecute?: (actionID: string) => void
@@ -191,6 +192,10 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                 ? this.props.action.actionItem.pressed
                 : undefined
 
+        const to =
+            urlForClientCommandOpen(this.props.action, this.props.location) ||
+            (this.props.altAction && urlForClientCommandOpen(this.props.altAction, this.props.location))
+
         return (
             <LinkOrButton
                 data-tooltip={
@@ -212,13 +217,13 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                 pressed={pressed}
                 // If the command is 'open' or 'openXyz' (builtin commands), render it as a link. Otherwise render
                 // it as a button that executes the command.
-                to={
-                    urlForClientCommandOpen(this.props.action, this.props.location) ||
-                    (this.props.altAction && urlForClientCommandOpen(this.props.altAction, this.props.location))
-                }
+                to={to}
                 onSelect={this.runAction}
             >
-                {content}
+                {content}{' '}
+                {to && tryCatch(() => new URL(to, window.location.href).origin !== window.location.origin) && (
+                    <OpenInNewIcon className={this.props.iconClassName} />
+                )}
                 {showLoadingSpinner && (
                     <div className="action-item__loader">
                         <LoadingSpinner className={this.props.iconClassName} />
