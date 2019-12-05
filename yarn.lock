@@ -2830,10 +2830,10 @@
     "@types/history" "*"
     "@types/react" "*"
 
-"@types/react-circular-progressbar@1.0.1":
-  version "1.0.1"
-  resolved "https://registry.npmjs.org/@types/react-circular-progressbar/-/react-circular-progressbar-1.0.1.tgz#79ec9bc3a6f44e0f1f825963765dadca39839f51"
-  integrity sha512-Pjms8GK01hKXhY1ASoJmc/Sx559UhQgTlvbUri4OT32seMtSnwqgMSSxu4XS/B7cq1W8HPNBwrlr08gneEWOFw==
+"@types/react-circular-progressbar@1.0.2":
+  version "1.0.2"
+  resolved "https://registry.npmjs.org/@types/react-circular-progressbar/-/react-circular-progressbar-1.0.2.tgz#a23e2d0f4e14a89d75c7c2286f8e96702f9862f2"
+  integrity sha512-lFRfduBnlr7HhjI64fMI0Jm3uDYMbdYyTF3sCZ7aNLYmjPOM3L2+/BzKOfRzRITinOL1jA9lbenGASqowULgEw==
   dependencies:
     "@types/react" "*"
 
@@ -14816,12 +14816,10 @@ react-addons-create-fragment@^15.6.2:
     loose-envify "^1.3.1"
     object-assign "^4.1.0"
 
-react-circular-progressbar@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.npmjs.org/react-circular-progressbar/-/react-circular-progressbar-1.0.0.tgz#0d2a6c07c9f14fcafca4510f27829e4276dee3e0"
-  integrity sha512-6QOqwsYJCeFDPYTparTS3FdFGlSItafJWD8BloLG3k1sW8ZG7JGdHo7FQsqtGEIK0bldwTO9v+nD2nEYAU1OYg==
-  dependencies:
-    prop-types "^15.5.10"
+react-circular-progressbar@^1.2.1:
+  version "1.2.1"
+  resolved "https://registry.npmjs.org/react-circular-progressbar/-/react-circular-progressbar-1.2.1.tgz#76843292e310683c5981480069ed6b4bbf1d96f9"
+  integrity sha512-vfxCdyveCMbpKrfs+vdLqS2a4hv/h5DL1katSVVip9LVDRNtQtrNvxiMVZDPrkZPDQREBubyFZZ7basNhXWK+A==
 
 react-clientside-effect@^1.2.0:
   version "1.2.0"
