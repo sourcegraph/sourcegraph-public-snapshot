@@ -91,6 +91,7 @@ type Source interface {
 type ChangesetSource interface {
 	LoadChangesets(context.Context, ...*Changeset) error
 	CreateChangeset(context.Context, *Changeset) error
+	// NOTE: These two methods could be removed if CreateChangeset above was made idempotent
 	IsDuplicatePullRequestError(err error) bool
 	FetchChangesetExternalID(ctx context.Context, owner, name, baseRef, headRef string) (externalID string, externalServiceType string, err error)
 }

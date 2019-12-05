@@ -129,7 +129,12 @@ func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset
 
 	err := s.client.CreatePullRequest(ctx, pr)
 	if err != nil {
-		return err
+		if ae, ok := err.(*bitbucketserver.ErrAlreadyExists); ok && ae != nil {
+			log15.Info("Existing PR extracted", "ID", ae.Existing.ID)
+			pr = ae.Existing
+		} else {
+			return err
+		}
 	}
 
 	c.Changeset.Metadata = pr
@@ -170,7 +175,14 @@ func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Change
 
 // IsDuplicatePullRequestError returns whether the error is caused by the pull request already existsing
 func (s BitbucketServerSource) IsDuplicatePullRequestError(err error) bool {
-	return err == bitbucketserver.ErrAlreadyExists
+	_, ok := err.(*bitbucketserver.ErrAlreadyExists)
+	return ok
+}
+
+// FetchChangesetExternalID fetches the external id for the changeset corresponding to the supplied params.
+// If not found, ("", "", nil) is returned
+func (s BitbucketServerSource) FetchChangesetExternalID(ctx context.Context, owner, name, baseRef, headRef string) (externalID string, externalServiceType string, err error) {
+	return "", "", fmt.Errorf("Not implemented")
 }
 
 // ExternalServices returns a singleton slice containing the external service.
