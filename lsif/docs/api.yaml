@@ -73,6 +73,162 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnqueueResponse'
+  /definitions:
+    get:
+      description: Get definitions for the symbol at a source position.
+      tags:
+        - LSIF
+      parameters:
+        - name: repository
+          in: query
+          description: The url-encoded repository name.
+          required: true
+          example: github.com%2Fsourcegraph%2Flsif-go
+          schema:
+            type: string
+        - name: commit
+          in: query
+          description: The 40-character commit hash.
+          required: true
+          schema:
+            type: number
+        - name: path
+          in: query
+          description: The file path within the repository (relative to the repository root).
+          required: true
+          schema:
+            type: string
+        - name: line
+          in: query
+          description: The line index (zero-indexed).
+          required: true
+          schema:
+            type: number
+        - name: character
+          in: query
+          description: The character index (zero-indexed).
+          required: true
+          schema:
+            type: number
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Locations2'
+        '404':
+          description: Not found
+  /references:
+    get:
+      description: Get references for the symbol at a source position.
+      tags:
+        - LSIF
+      parameters:
+        - name: repository
+          in: query
+          description: The url-encoded repository name.
+          required: true
+          example: github.com%2Fsourcegraph%2Flsif-go
+          schema:
+            type: string
+        - name: commit
+          in: query
+          description: The 40-character commit hash.
+          required: true
+          schema:
+            type: number
+        - name: path
+          in: query
+          description: The file path within the repository (relative to the repository root).
+          required: true
+          schema:
+            type: string
+        - name: line
+          in: query
+          description: The line index (zero-indexed).
+          required: true
+          schema:
+            type: number
+        - name: character
+          in: query
+          description: The character index (zero-indexed).
+          required: true
+          schema:
+            type: number
+        - name: limit
+          in: query
+          description: The maximum number of remote dumps to search for remote references per page. This parameter is only read on references request.
+          required: false
+          schema:
+            type: number
+            default: 10
+        - name: cursor
+          in: query
+          description: The end cursor given in the response of a previous page.
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Locations2'
+          headers:
+            Link:
+              description: If there are more results, this header includes the URL of the next page with relation type *next*. See [RFC 5988](https://tools.ietf.org/html/rfc5988).
+              schema:
+                type: string
+        '404':
+          description: Not found
+  /hover:
+    get:
+      description: Get hover data for the symbol at a source position.
+      tags:
+        - LSIF
+      parameters:
+        - name: repository
+          in: query
+          description: The url-encoded repository name.
+          required: true
+          example: github.com%2Fsourcegraph%2Flsif-go
+          schema:
+            type: string
+        - name: commit
+          in: query
+          description: The 40-character commit hash.
+          required: true
+          schema:
+            type: number
+        - name: path
+          in: query
+          description: The file path within the repository (relative to the repository root).
+          required: true
+          schema:
+            type: string
+        - name: line
+          in: query
+          description: The line index (zero-indexed).
+          required: true
+          schema:
+            type: number
+        - name: character
+          in: query
+          description: The character index (zero-indexed).
+          required: true
+          schema:
+            type: number
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Hover2'
+        '404':
+          description: Not found
   /exists:
     get:
       description: Determine if LSIF data exists for a file within a particular commit. This endpoint will return true if there is a nearby commit (direct ancestor or descendant) with LSIF data for the same file if the exact commit does not have available LSIF data.
@@ -431,6 +587,27 @@ components:
         - uri
         - range
       additionalProperties: false
+    Location2:
+      type: object
+      description: A position in a file of a code base.
+      properties:
+        repository:
+          type: string
+          description: The repository in which the location occurs.
+        commit:
+          type: string
+          description: The commit in which the location occurs.
+        path:
+          type: string
+          description: The root-relative path to the file.
+        range:
+          $ref: '#/components/schemas/Range'
+      required:
+        - repository
+        - commit
+        - path
+        - range
+      additionalProperties: false
     LSPRequest:
       type: object
       description: A payload indicating the type of requested LSP data.
@@ -456,6 +633,21 @@ components:
       description: A list of definition or reference locations.
       items:
         $ref: '#/components/schemas/Location'
+    Locations2:
+      type: array
+      description: A list of definition or reference locations.
+      items:
+        $ref: '#/components/schemas/Location2'
+    Hover2:
+      type: object
+      description: The text associated with a position in a source file.
+      properties:
+        text:
+          type: string
+          description: The raw hover text.
+      required:
+        - text
+      additionalProperties: false
     Hover:
       type: object
       description: The text associated with a position in a source file.

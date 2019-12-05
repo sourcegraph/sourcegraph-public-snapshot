@@ -10,6 +10,7 @@ import { IMutation, IQuery, ExternalServiceKind } from '../graphql/schema'
 import { readEnvBoolean, retry } from './e2e-test-utils'
 import * as path from 'path'
 import { escapeRegExp } from 'lodash'
+import { readFile } from 'mz/fs'
 
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.
@@ -560,6 +561,12 @@ export async function createDriverForTest(options: DriverOptions): Promise<Drive
     }
     if (loadExtension) {
         const chromeExtensionPath = path.resolve(__dirname, '..', '..', '..', 'browser', 'build', 'chrome')
+        const manifest = JSON.parse(await readFile(path.resolve(chromeExtensionPath, 'manifest.json'), 'utf-8'))
+        if (!manifest.permissions.includes('<all_urls>')) {
+            throw new Error(
+                'Browser extension was not built with permissions for all URLs.\nThis is necessary because permissions cannot be granted by e2e tests.\nTo fix, run `EXTENSION_PERMISSIONS_ALL_URLS=true yarn run dev` inside the browser/ directory.'
+            )
+        }
         args.push(`--disable-extensions-except=${chromeExtensionPath}`, `--load-extension=${chromeExtensionPath}`)
     }
 

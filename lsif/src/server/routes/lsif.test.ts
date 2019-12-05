@@ -1,5 +1,5 @@
 import * as lsp from 'vscode-languageserver-protocol'
-import { internalLocationToLocation } from './backend'
+import { internalLocationToLocation } from './lsif'
 
 describe('internalLocationToLocation', () => {
     const dump = {

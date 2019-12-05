@@ -67,20 +67,23 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 
 	default:
-		// Otherwise, run the CI steps for the Sourcegraph web app. Specific steps may be modified
-		// or skipped for certain branches; these variations are defined in the functions
-		// parameterized by the config.
+		// Otherwise, run the CI steps for the Sourcegraph web app. Specific
+		// steps may be modified or skipped for certain branches; these
+		// variations are defined in the functions parameterized by the
+		// config.
+		//
+		// PERF: Try to order steps such that slower steps are first.
 		pipelineOperations = []func(*bk.Pipeline){
 			triggerE2E(c),
-			addCheck,
-			addLint,
+			addLint,    // ~5m
+			addWebApp,  // ~3m
+			addGoTests, // ~2m
+			addGoBuild, // ~2m
+			addCheck,   // ~2m
 			addBrowserExt,
-			addWebApp,
 			addLSIFServer,
 			addSharedTests,
 			addPostgresBackcompat,
-			addGoTests,
-			addGoBuild,
 			addDockerfileLint,
 			wait,
 			addCodeCov,

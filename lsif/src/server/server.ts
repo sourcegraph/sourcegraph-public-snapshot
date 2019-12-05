@@ -92,7 +92,7 @@ async function main(logger: Logger): Promise<void> {
             winstonInstance: logger,
             level: 'debug',
             ignoredRoutes: ['/ping', '/healthz', '/metrics'],
-            requestWhitelist: ['method', 'url', 'query'],
+            requestWhitelist: ['method', 'url'],
             msg: 'Handled request',
         })
     )

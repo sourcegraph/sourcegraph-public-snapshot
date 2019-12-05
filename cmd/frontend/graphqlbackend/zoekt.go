@@ -49,7 +49,7 @@ func zoektResultCountFactor(numRepos int, query *search.PatternInfo) int {
 
 func zoektSearchOpts(k int, query *search.PatternInfo) zoekt.SearchOptions {
 	searchOpts := zoekt.SearchOptions{
-		MaxWallTime:            1500 * time.Millisecond,
+		MaxWallTime:            3 * time.Second,
 		ShardMaxMatchCount:     100 * k,
 		TotalMaxMatchCount:     100 * k,
 		ShardMaxImportantMatch: 15 * k,
@@ -74,6 +74,13 @@ func zoektSearchOpts(k int, query *search.PatternInfo) zoekt.SearchOptions {
 	return searchOpts
 }
 
+var errNoResultsInTimeout = errors.New("no results found in specified timeout")
+
+// zoektSearchHEAD searches repositories using zoekt.
+//
+// Timeouts are reported through the context, and as a special case errNoResultsInTimeout
+// is returned if no results are found in the given timeout (instead of the more common
+// case of finding partial or full results in the given timeout).
 func zoektSearchHEAD(ctx context.Context, args *search.Args, repos []*search.RepositoryRevisions, isSymbol bool, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
 	if len(repos) == 0 {
 		return nil, false, nil, nil
@@ -143,9 +150,7 @@ func zoektSearchHEAD(ctx context.Context, args *search.Args, repos []*search.Rep
 		return nil, false, nil, err
 	}
 	if resp.FileCount == 0 && resp.MatchCount == 0 && since(t0) >= searchOpts.MaxWallTime {
-		timeoutToTry := longer(2, searchOpts.MaxWallTime)
-		err2 := errors.Errorf("no results found before timeout in index search (try timeout:%v)", timeoutToTry)
-		return nil, false, nil, err2
+		return nil, false, nil, errNoResultsInTimeout
 	}
 	limitHit = resp.FilesSkipped+resp.ShardsSkipped > 0
 	// Repositories that weren't fully evaluated because they hit the Zoekt or Sourcegraph file match limits.

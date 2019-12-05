@@ -136,6 +136,7 @@ github.com/cpuguy83/go-md2man v1.0.10/go.mod h1:SmD6nW6nTyfqj6ABTjUi3V3JVMnlJmwc
 github.com/creack/pty v1.1.7/go.mod h1:lj5s0c3V2DBrqTV7llrYr5NG6My20zk30Fl46Y7DoTY=
 github.com/crewjam/saml v0.3.0 h1:nsICCm1susKcMzqhZ+XwOvYUG55Omu1dHlyyknhgh1M=
 github.com/crewjam/saml v0.3.0/go.mod h1:pzACCdpqjQKTvpPZs5P3FzFNQ+RSOJX5StwHwh7ZUgw=
+github.com/crewjam/saml v0.3.1 h1:uMrXaMXg+PCjKpjAg4Apik+oxse5dQ7IsCWTS+YIz9M=
 github.com/crewjam/saml v0.3.1/go.mod h1:qPmsd10yrZF3HW7DT1cvX89M4UGUek2I+eCKYc8a07A=
 github.com/cznic/b v0.0.0-20180115125044-35e9bbe41f07/go.mod h1:URriBxXwVq5ijiJ12C7iIZqlA69nTlI+LgI6/pwftG8=
 github.com/cznic/fileutil v0.0.0-20180108211300-6a051e75936f/go.mod h1:8S58EK26zhXSxzv7NQFpnliaOQsmDUxvoQO3rt154Vg=
@@ -771,6 +772,8 @@ github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e/go.mod h1:HuIsMU8RRBOtsCgI77wP899iHVBQpCmg4ErYMZB+2IA=
 github.com/sourcegraph/zoekt v0.0.0-20191031085051-5bd7e84795f0 h1:KC0BfCqh/CGopE/Jk9BgrZ1DnqRv7hDhnLOnSliFpL4=
 github.com/sourcegraph/zoekt v0.0.0-20191031085051-5bd7e84795f0/go.mod h1:H8z9wvHGyu+MiKyVKkJza8B+SWZispxX23A692cJAno=
+github.com/sourcegraph/zoekt v0.0.0-20191204145050-b470e5f5cf39 h1:AS1W6pTjtrWna9A+iwgCreqQGBLGKaDr1yDimHa2kzc=
+github.com/sourcegraph/zoekt v0.0.0-20191204145050-b470e5f5cf39/go.mod h1:H8z9wvHGyu+MiKyVKkJza8B+SWZispxX23A692cJAno=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spf13/afero v1.1.2/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=
 github.com/spf13/afero v1.2.2 h1:5jhuqJyZCZf2JRofRvN/nIFgIWNzPa3/Vz8mYylgbWc=

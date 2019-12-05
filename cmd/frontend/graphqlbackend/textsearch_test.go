@@ -541,7 +541,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 				repos:           singleRepositoryRevisions,
 				useFullDeadline: false,
 				searcher:        &fakeSearcher{result: &zoekt.SearchResult{}},
-				since:           func(time.Time) time.Duration { return 2 * time.Second },
+				since:           func(time.Time) time.Duration { return 4 * time.Second },
 			},
 			wantFm:            nil,
 			wantLimitHit:      false,
