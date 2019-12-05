@@ -96,6 +96,7 @@ func handleConfigOverrides() error {
 			}
 			// Only overwrite the settings if the current settings differ or were created by a human
 			// user to prevent creating unnecessary rows in the DB.
+			globalSettings := string(globalSettingsBytes)
 			if currentSettings.AuthorUserID != nil || currentSettings.Contents != globalSettings {
 				var lastID *int32 = nil
 				if currentSettings != nil {
