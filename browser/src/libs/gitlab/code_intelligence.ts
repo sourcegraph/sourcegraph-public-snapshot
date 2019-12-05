@@ -152,6 +152,7 @@ export const gitlabCodeHost = subTypeOf<CodeHost>()({
         }
 
         // Stay on same page in MR if possible.
+        // TODO this needs to compare rev!
         const currentPage = getPageInfo()
         if (currentPage.rawRepoName === target.rawRepoName && context.part) {
             const codeViews = document.querySelectorAll<HTMLElement>(codeViewResolver.selector)

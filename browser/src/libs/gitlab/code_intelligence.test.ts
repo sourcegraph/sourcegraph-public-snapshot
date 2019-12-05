@@ -3,6 +3,7 @@ import {
     testToolbarMountGetter,
 } from '../code_intelligence/code_intelligence_test_utils'
 import { getToolbarMount, gitlabCodeHost } from './code_intelligence'
+import { readFile } from 'mz/fs'
 
 describe('gitlab/code_intelligence', () => {
     describe('gitlabCodeHost', () => {
@@ -16,11 +17,9 @@ describe('gitlab/code_intelligence', () => {
         const { urlToFile } = gitlabCodeHost
         const sourcegraphURL = 'https://sourcegraph.my.org'
 
-        beforeAll(() => {
-            jsdom.reconfigure({
-                url:
-                    'https://gitlab.com/sourcegraph/sourcegraph/blob/master/browser/src/libs/code_intelligence/code_intelligence.tsx',
-            })
+        beforeAll(async () => {
+            document.documentElement.innerHTML = await readFile(__dirname + '/__fixtures__/merge-request.html', 'utf-8')
+            jsdom.reconfigure({ url: 'https://gitlab.com/sourcegraph/jsonrpc2/merge_requests/1/diffs' })
         })
         it('returns an URL to the Sourcegraph instance if the location has a viewState', () => {
             expect(
@@ -82,6 +81,26 @@ describe('gitlab/code_intelligence', () => {
                 )
             ).toBe(
                 'https://gitlab.com/sourcegraph/sourcegraph/blob/master/browser/src/libs/code_intelligence/code_intelligence.tsx#L5'
+            )
+        })
+        it('returns an URL to the file on the same merge request if possible', () => {
+            expect(
+                urlToFile(
+                    sourcegraphURL,
+                    {
+                        repoName: 'sourcegraph/jsonrpc2',
+                        rawRepoName: 'gitlab.com/sourcegraph/jsonrpc2',
+                        rev: 'changes',
+                        filePath: 'call_opt.go',
+                        position: {
+                            line: 5,
+                            character: 12,
+                        },
+                    },
+                    { part: 'head' }
+                )
+            ).toBe(
+                'https://gitlab.com/sourcegraph/sourcegraph/blob/master/browser/src/libs/code_intelligence/code_intelligence.tsx#L5:12'
             )
         })
     })
