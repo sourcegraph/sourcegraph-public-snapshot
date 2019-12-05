@@ -442,7 +442,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                               </>,
                                                               window.context.likelyDockerOnMac
                                                                   ? 'Use Docker Machine instead of Docker for Mac for better performance on macOS.'
-                                                                  : 'Run Sourcegraph on a server with more CPU and memory, or faster disk IO.',
+                                                                  : 'Contact your Sourcegraph administrator if you are seeing timeouts regularly, as more CPU, memory, or disk resources may need to be provisioned.',
                                                           ]
                                                         : []
                                                 )}
