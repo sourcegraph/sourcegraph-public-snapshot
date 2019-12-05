@@ -1778,12 +1778,12 @@
   resolved "https://registry.npmjs.org/@sourcegraph/react-loading-spinner/-/react-loading-spinner-0.0.7.tgz#e1d0bb1c13e6e8051cf3e0471c6aee0ca24dec45"
   integrity sha512-F4GMp+8XhlRQzEngc+CwbalT8zy8vXMxMrUjhm2cslTjWgWuSft0vSNCmCJDVPshpG/B+Ehb/OzpLLAzsG2JKg==
 
-"@sourcegraph/stylelint-config@^1.1.5":
-  version "1.1.5"
-  resolved "https://registry.npmjs.org/@sourcegraph/stylelint-config/-/stylelint-config-1.1.5.tgz#0762d4170b996db1c417660c1ed76dbc9a3a2517"
-  integrity sha512-O/IIbWfIbPDoHnwW6K1DHfb3+r9FOrFoCw18ilEZXr08BQ7fPcRb0gsSJ+OqEbapsYpaj4W/+B4RieWzirbjWw==
+"@sourcegraph/stylelint-config@^1.1.6":
+  version "1.1.6"
+  resolved "https://registry.npmjs.org/@sourcegraph/stylelint-config/-/stylelint-config-1.1.6.tgz#500f8313351cab4357497a00d33c0c788f478e46"
+  integrity sha512-NxisrJPANSCchhXaw+H708w8f6+/TERaDv6KM9oR5GmYWfW82HWI9OL14F+Sq+Uuda816cYK8mBqocZlt4xYLg==
   dependencies:
-    stylelint-config-prettier "^7.0.0"
+    stylelint-config-prettier "^8.0.0"
     stylelint-config-standard "^19.0.0"
     stylelint-scss "^3.13.0"
 
@@ -17238,10 +17238,10 @@ stylehacks@^4.0.0:
     postcss "^7.0.0"
     postcss-selector-parser "^3.0.0"
 
-stylelint-config-prettier@^7.0.0:
-  version "7.0.0"
-  resolved "https://registry.npmjs.org/stylelint-config-prettier/-/stylelint-config-prettier-7.0.0.tgz#a34bd0686dc22f9394271a59b9d7a8a58ec92452"
-  integrity sha512-qF2HcWd4QJJozdqjq/IbnoANHwP7FVRG6dqxGBKWNI/L6bdWi8aXI0hRtkkar2QjrP5riGACE2uDxfcL4AZqRA==
+stylelint-config-prettier@^8.0.0:
+  version "8.0.0"
+  resolved "https://registry.npmjs.org/stylelint-config-prettier/-/stylelint-config-prettier-8.0.0.tgz#82b36b46fce60e92a1a32dd483ec4e3e857d3af3"
+  integrity sha512-C1FpThYJ7Y8omangeNngmp30PlO6uh3Au2b5w4Xw4xBTZy8aTx/R1AXcP9Ik0DJqINk7F7rwaKWqOLU/g7laGg==
 
 stylelint-config-recommended@^3.0.0:
   version "3.0.0"
