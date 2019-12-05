@@ -115,25 +115,21 @@ func addPostgresBackcompat(pipeline *bk.Pipeline) {
 // Adds the Go test step.
 func addGoTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go:",
-		bk.Cmd("./cmd/symbols/build.sh buildLibsqlite3Pcre"), // for symbols tests
-		bk.Cmd("./dev/comby-install-or-upgrade.sh"),          // for searcher and replacer tests
-		bk.Cmd("go test -timeout 4m -coverprofile=coverage.txt -covermode=atomic -race ./..."),
+		bk.Cmd("./dev/ci/go-test.sh"),
 		bk.ArtifactPaths("coverage.txt"))
 }
 
 // Builds the OSS and Enterprise Go commands.
 func addGoBuild(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go:",
-		bk.Cmd("go generate ./..."),
-		bk.Cmd("go install -tags dist ./cmd/... ./enterprise/cmd/..."),
+		bk.Cmd("./dev/ci/go-build.sh"),
 	)
 }
 
 // Lints the Dockerfiles.
 func addDockerfileLint(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":docker:",
-		bk.Cmd("curl -sL -o hadolint \"https://github.com/hadolint/hadolint/releases/download/v1.15.0/hadolint-$(uname -s)-$(uname -m)\" && chmod 700 hadolint"),
-		bk.Cmd("git ls-files | grep Dockerfile | xargs ./hadolint"))
+		bk.Cmd("./dev/ci/docker-lint.sh"))
 }
 
 // Code coverage.
