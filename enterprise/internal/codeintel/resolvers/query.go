@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strconv"
 
+	"github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/client"
 )
@@ -66,7 +67,7 @@ func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend
 	return resolver, nil
 }
 
-func (r *lsifQueryResolver) Hover(ctx context.Context, args *graphqlbackend.LSIFQueryPositionArgs) (graphqlbackend.MarkdownResolver, error) {
+func (r *lsifQueryResolver) Hover(ctx context.Context, args *graphqlbackend.LSIFQueryPositionArgs) (graphqlbackend.HoverResolver, error) {
 	path := fmt.Sprintf("/hover")
 	values := url.Values{}
 	values.Set("repository", r.RepoName)
@@ -76,12 +77,16 @@ func (r *lsifQueryResolver) Hover(ctx context.Context, args *graphqlbackend.LSIF
 	values.Set("character", strconv.FormatInt(int64(args.Character), 10))
 
 	payload := struct {
-		Text string `json:"text"`
+		Text  string    `json:"text"`
+		Range lsp.Range `json:"range"`
 	}{}
 
 	if err := client.DefaultClient.TraceRequestAndUnmarshalPayload(ctx, "GET", path, values, nil, &payload); err != nil {
 		return nil, err
 	}
 
-	return graphqlbackend.NewMarkdownResolver(payload.Text), nil
+	return &hoverResolver{
+		text:     payload.Text,
+		lspRange: payload.Range,
+	}, nil
 }

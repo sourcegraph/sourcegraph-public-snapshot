@@ -18,10 +18,10 @@ type LSIFDump struct {
 }
 
 type LSIFLocation struct {
-	Repository string     `json:"repository"`
-	Commit     string     `json:"commit"`
-	Path       string     `json:"path"`
-	Range      *lsp.Range `json:"range"`
+	Repository string    `json:"repository"`
+	Commit     string    `json:"commit"`
+	Path       string    `json:"path"`
+	Range      lsp.Range `json:"range"`
 }
 
 type LSIFJobStats struct {

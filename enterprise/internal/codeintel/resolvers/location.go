@@ -112,5 +112,5 @@ func rangeToLocationResolver(ctx context.Context, location *lsif.LSIFLocation) (
 		return nil, err
 	}
 
-	return graphqlbackend.NewLocationResolver(gitTreeResolver, location.Range), nil
+	return graphqlbackend.NewLocationResolver(gitTreeResolver, &location.Range), nil
 }

@@ -90,7 +90,7 @@ type LSIFJobConnectionResolver interface {
 type LSIFQueryResolver interface {
 	Definitions(ctx context.Context, args *LSIFQueryPositionArgs) (LocationConnectionResolver, error)
 	References(ctx context.Context, args *LSIFPagedQueryPositionArgs) (LocationConnectionResolver, error)
-	Hover(ctx context.Context, args *LSIFQueryPositionArgs) (MarkdownResolver, error)
+	Hover(ctx context.Context, args *LSIFQueryPositionArgs) (HoverResolver, error)
 }
 
 type LSIFQueryArgs struct {
@@ -115,7 +115,12 @@ type LocationConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
-var codeIntelOnlyInEnterprise = errors.New("lsif dumps and jobs are only available in enterprise")
+type HoverResolver interface {
+	Markdown() MarkdownResolver
+	Range() RangeResolver
+}
+
+var codeIntelOnlyInEnterprise = errors.New("lsif dumps, jobs, and queries are only available in enterprise")
 
 func (r *schemaResolver) LSIFJobs(ctx context.Context, args *LSIFJobsQueryArgs) (LSIFJobConnectionResolver, error) {
 	if EnterpriseResolvers.codeIntelResolver == nil {

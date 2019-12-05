@@ -2690,7 +2690,7 @@ type LSIFQueryResolver {
 
         # The character (not byte) of the start line on whichthe symbol occurs (zero-based, inclusive).
         character: Int!
-    ): Markdown
+    ): Hover
 }
 
 # A highlighted file.
@@ -4028,6 +4028,15 @@ type LocationConnection {
 
     # Pagination information.
     pageInfo: PageInfo!
+}
+
+# Hover range and markdown content.
+type Hover {
+    # A markdown string containing the contents of the hover.
+    markdown: Markdown!
+
+    # The range to highlight.
+    range: Range!
 }
 
 # A list of LSIF dumps.
