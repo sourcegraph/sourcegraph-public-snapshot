@@ -25,6 +25,7 @@ import { Logger } from 'winston'
 import { metricsMiddleware } from './middleware/metrics'
 import { waitForConfiguration } from '../shared/config/config'
 import { XrepoDatabase } from '../shared/xrepo/xrepo'
+import { startTasks } from './tasks/runner'
 
 /**
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
@@ -68,15 +69,8 @@ async function main(logger: Logger): Promise<void> {
     await ensureOnlyRepeatableJob(queue, 'clean-old-jobs', {}, settings.CLEAN_OLD_JOBS_INTERVAL * 1000)
     await ensureOnlyRepeatableJob(queue, 'clean-failed-jobs', {}, settings.CLEAN_FAILED_JOBS_INTERVAL * 1000)
 
-    // Update queue size metric on a timer
-    setInterval(() => {
-        queue
-            .getJobCountByTypes('waiting')
-            // The type of this method is wrong in the types package: it says that
-            // it returns a counts object, but it really returns a scalar count.
-            .then((count: unknown) => metrics.queueSizeGauge.set(count as number))
-            .catch(() => {})
-    }, 1000)
+    // Start background tasks
+    startTasks(connection, queue, logger)
 
     // Register the required commands on the queue's Redis client
     const scriptedClient = await defineRedisCommands(queue.client)
@@ -100,9 +94,9 @@ async function main(logger: Logger): Promise<void> {
 
     // Register endpoints
     app.use(createMetaRouter())
-    app.use(createLsifRouter(backend, queue, logger, tracer))
     app.use(createDumpRouter(backend))
-    app.use(createJobRouter(queue, scriptedClient, logger, tracer))
+    app.use(createJobRouter(queue, scriptedClient))
+    app.use(createLsifRouter(backend, queue, logger, tracer))
 
     // Error handler must be registered last
     app.use(errorHandler(logger))
