@@ -462,6 +462,17 @@ loop:
 	return sparkline, nil
 }
 
+var searchResponseCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "graphql",
+	Name:      "search_response",
+	Help:      "Number of searches that have ended in the given status (success, error, timeout, partial_timeout).",
+}, []string{"status"})
+
+func init() {
+	prometheus.MustRegister(searchResponseCounter)
+}
+
 func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
 	// If the request is a paginated one, we handle it separately. See
 	// paginatedResults for more details.
@@ -470,11 +481,22 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 	}
 
 	rr, err := r.resultsWithTimeoutSuggestion(ctx)
-	if err != nil {
-		return nil, err
-	}
 
-	return rr, nil
+	// Record what type of response we sent back via Prometheus.
+	var status string
+	switch {
+	case err == context.DeadlineExceeded || (err == nil && len(rr.searchResultsCommon.timedout) == len(rr.searchResultsCommon.repos)):
+		status = "timeout"
+	case err == nil && len(rr.searchResultsCommon.timedout) > 0:
+		status = "partial_timeout"
+	case err != nil:
+		status = "error"
+	case err == nil:
+		status = "success"
+	}
+	searchResponseCounter.WithLabelValues(status).Inc()
+
+	return rr, err
 }
 
 // resultsWithTimeoutSuggestion calls doResults, and in case of deadline
