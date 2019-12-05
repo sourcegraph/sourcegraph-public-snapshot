@@ -86,7 +86,6 @@ func (r *locationConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil
 	if r.nextURL != "" {
 		return graphqlutil.NextPageCursor(base64.StdEncoding.EncodeToString([]byte(r.nextURL))), nil
 	}
-
 	return graphqlutil.HasNextPage(false), nil
 }
 
