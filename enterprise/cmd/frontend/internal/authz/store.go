@@ -43,8 +43,13 @@ func (s *Store) LoadUserPermissions(ctx context.Context, p *UserPermissions) (er
 	ctx, save := s.observe(ctx, "LoadUserPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
-	_, p.IDs, p.UpdatedAt, err = s.load(ctx, loadUserPermissionsQuery(p))
-	return err
+	vals, err := s.load(ctx, loadUserPermissionsQuery(p))
+	if err != nil {
+		return err
+	}
+	p.IDs = vals.ids
+	p.UpdatedAt = vals.updatedAt
+	return nil
 }
 
 func loadUserPermissionsQuery(p *UserPermissions) *sqlf.Query {
@@ -73,8 +78,13 @@ func (s *Store) LoadRepoPermissions(ctx context.Context, p *RepoPermissions) (er
 	ctx, save := s.observe(ctx, "LoadRepoPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
-	_, p.UserIDs, p.UpdatedAt, err = s.load(ctx, loadRepoPermissionsQuery(p, false))
-	return err
+	vals, err := s.load(ctx, loadRepoPermissionsQuery(p, false))
+	if err != nil {
+		return err
+	}
+	p.UserIDs = vals.ids
+	p.UpdatedAt = vals.updatedAt
+	return nil
 }
 
 func loadRepoPermissionsQuery(p *RepoPermissions, forUpdate bool) *sqlf.Query {
@@ -138,13 +148,14 @@ func (s *Store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err
 	txs := NewStore(tx, s.clock)
 
 	// Retrieve currently stored user IDs of this repository.
-	_, oldIDs, _, err := txs.load(ctx, loadRepoPermissionsQuery(p, true))
+	vals, err := txs.load(ctx, loadRepoPermissionsQuery(p, true))
 	if err != nil && err != ErrNotFound {
 		return errors.Wrap(err, "load repo permissions")
 	}
 
-	if oldIDs == nil {
-		oldIDs = roaring.NewBitmap()
+	oldIDs := roaring.NewBitmap()
+	if vals != nil && vals.ids != nil {
+		oldIDs = vals.ids
 	}
 	if p.UserIDs == nil {
 		p.UserIDs = roaring.NewBitmap()
@@ -294,9 +305,14 @@ func (s *Store) LoadUserPendingPermissions(ctx context.Context, p *UserPendingPe
 	ctx, save := s.observe(ctx, "LoadUserPendingPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
-	q := loadUserPendingPermissionsQuery(p, false)
-	p.ID, p.IDs, p.UpdatedAt, err = s.load(ctx, q)
-	return err
+	vals, err := s.load(ctx, loadUserPendingPermissionsQuery(p, false))
+	if err != nil {
+		return err
+	}
+	p.ID = vals.id
+	p.IDs = vals.ids
+	p.UpdatedAt = vals.updatedAt
+	return nil
 }
 
 func loadUserPendingPermissionsQuery(p *UserPendingPermissions, forUpdate bool) *sqlf.Query {
@@ -391,12 +407,13 @@ func (s *Store) SetRepoPendingPermissions(ctx context.Context, bindIDs []string,
 	}
 
 	// Retrieve currently stored user IDs of this repository.
-	_, oldIDs, _, err := txs.load(ctx, loadRepoPendingPermissionsQuery(p, true))
+	vals, err := txs.load(ctx, loadRepoPendingPermissionsQuery(p, true))
 	if err != nil && err != ErrNotFound {
 		return errors.Wrap(err, "load repo pending permissions")
 	}
-	if oldIDs == nil {
-		oldIDs = roaring.NewBitmap()
+	oldIDs := roaring.NewBitmap()
+	if vals != nil && vals.ids != nil {
+		oldIDs = vals.ids
 	}
 
 	// Compute differences between the old and new sets.
@@ -742,14 +759,15 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 	// Make another Store with this underlying transaction.
 	txs := NewStore(tx, s.clock)
 
-	q := loadUserPendingPermissionsQuery(p, true)
-	p.ID, p.IDs, p.UpdatedAt, err = txs.load(ctx, q)
+	vals, err := txs.load(ctx, loadUserPendingPermissionsQuery(p, true))
 	if err != nil {
 		if err == ErrNotFound {
 			return nil
 		}
 		return errors.Wrap(err, "load user pending permissions")
 	}
+	p.ID = vals.id
+	p.IDs = vals.ids
 
 	up := &UserPermissions{
 		UserID:    userID,
@@ -759,6 +777,7 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 		Provider:  ProviderSourcegraph,
 		UpdatedAt: txs.clock(),
 	}
+	var q *sqlf.Query
 	if q, err = upsertUserPermissionsBatchQuery(up); err != nil {
 		return err
 	} else if err = txs.execute(ctx, q); err != nil {
@@ -971,8 +990,17 @@ func (s *Store) execute(ctx context.Context, q *sqlf.Query) (err error) {
 	return rows.Close()
 }
 
-// load runs the query and returns integer ID, unmarshalled IDs and last updated time.
-func (s *Store) load(ctx context.Context, q *sqlf.Query) (int32, *roaring.Bitmap, time.Time, error) {
+// loadValues contains return values of (*Store).load method.
+type loadValues struct {
+	id        int32           // An integer ID
+	ids       *roaring.Bitmap // Bitmap of unmarshalled IDs
+	updatedAt time.Time       // Last updated time of the row
+}
+
+// load is a generic method that scans three values from one database table row, these values must have
+// types and be scanned in the order of int32, []byte and time.Time. In addition, it unmarshalles the
+// []byte into a *roaring.Bitmap.
+func (s *Store) load(ctx context.Context, q *sqlf.Query) (*loadValues, error) {
 	var err error
 	ctx, save := s.observe(ctx, "load", "")
 	defer func() {
@@ -985,7 +1013,7 @@ func (s *Store) load(ctx context.Context, q *sqlf.Query) (int32, *roaring.Bitmap
 	var rows *sql.Rows
 	rows, err = s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
-		return -1, nil, time.Time{}, err
+		return nil, err
 	}
 
 	if !rows.Next() {
@@ -994,28 +1022,32 @@ func (s *Store) load(ctx context.Context, q *sqlf.Query) (int32, *roaring.Bitmap
 		if err == nil {
 			err = ErrNotFound
 		}
-		return -1, nil, time.Time{}, err
+		return nil, err
 	}
 
 	var id int32
 	var ids []byte
 	var updatedAt time.Time
 	if err = rows.Scan(&id, &ids, &updatedAt); err != nil {
-		return -1, nil, time.Time{}, err
+		return nil, err
 	}
 
 	if err = rows.Close(); err != nil {
-		return -1, nil, time.Time{}, err
+		return nil, err
 	}
 
-	bm := roaring.NewBitmap()
+	vals := &loadValues{
+		id:        id,
+		ids:       roaring.NewBitmap(),
+		updatedAt: updatedAt,
+	}
 	if len(ids) == 0 {
-		return id, bm, updatedAt, nil
-	} else if err = bm.UnmarshalBinary(ids); err != nil {
-		return -1, nil, time.Time{}, err
+		return vals, nil
+	} else if err = vals.ids.UnmarshalBinary(ids); err != nil {
+		return nil, err
 	}
 
-	return id, bm, updatedAt, nil
+	return vals, nil
 }
 
 // batchLoadIDs runs the query and returns unmarshalled IDs with their corresponding object ID value.
