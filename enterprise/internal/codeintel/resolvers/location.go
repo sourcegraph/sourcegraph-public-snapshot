@@ -102,10 +102,13 @@ func rangeToLocationResolver(ctx context.Context, location *lsif.LSIFLocation) (
 		return nil, err
 	}
 
-	gitTreeResolver, err := graphqlbackend.NewGitTreeEntryResolver(commitResolver, graphqlbackend.CreateFileInfo(location.Path, true)), nil
-	if err != nil {
-		return nil, err
-	}
+	gitTreeResolver, err := commitResolver.Tree(ctx, &struct {
+		Path      string
+		Recursive bool
+	}{
+		Path:      location.Path,
+		Recursive: true,
+	})
 
 	return graphqlbackend.NewLocationResolver(gitTreeResolver, location.Range), nil
 }
