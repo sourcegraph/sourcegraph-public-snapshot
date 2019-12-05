@@ -163,7 +163,7 @@ type errorHandler struct {
 }
 
 func (h *errorHandler) Handle(w http.ResponseWriter, r *http.Request, status int, err error) {
-	trace.SetRequestErrorCause(err)
+	trace.SetRequestErrorCause(r.Context(), err)
 
 	// Handle custom errors
 	if ee, ok := err.(*handlerutil.URLMovedError); ok {
