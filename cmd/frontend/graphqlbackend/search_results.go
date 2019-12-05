@@ -462,16 +462,12 @@ loop:
 	return sparkline, nil
 }
 
-var searchResponseCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+var searchResponseCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Namespace: "src",
 	Subsystem: "graphql",
 	Name:      "search_response",
 	Help:      "Number of searches that have ended in the given status (success, error, timeout, partial_timeout).",
 }, []string{"status"})
-
-func init() {
-	prometheus.MustRegister(searchResponseCounter)
-}
 
 func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
 	// If the request is a paginated one, we handle it separately. See
