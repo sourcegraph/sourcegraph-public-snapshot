@@ -196,7 +196,7 @@ func triggerE2E(c Config) func(*bk.Pipeline) {
 			bk.Trigger("sourcegraph-e2e"),
 			bk.Async(!hardFail),
 			bk.Build(bk.BuildOptions{
-				Message: fmt.Sprintf("Test"),
+				Message: os.Getenv("BUILDKITE_MESSAGE"),
 				Commit:  c.commit,
 				Branch:  c.branch,
 				Env: copyEnv(
