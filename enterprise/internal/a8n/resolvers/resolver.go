@@ -494,7 +494,16 @@ func (r *Resolver) CancelCampaignPlan(ctx context.Context, args graphqlbackend.C
 	}
 
 	if !plan.CanceledAt.IsZero() {
-		return nil, errors.New("execution has already been canceled")
+		return &graphqlbackend.EmptyResponse{}, nil
+	}
+
+	status, err := tx.GetCampaignPlanStatus(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if status.Finished() {
+		return &graphqlbackend.EmptyResponse{}, nil
 	}
 
 	plan.CanceledAt = time.Now().UTC()

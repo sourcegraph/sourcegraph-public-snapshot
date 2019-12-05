@@ -133,6 +133,13 @@ func (b BackgroundProcessStatus) CompletedCount() int32         { return b.Compl
 func (b BackgroundProcessStatus) PendingCount() int32           { return b.Pending }
 func (b BackgroundProcessStatus) State() BackgroundProcessState { return b.ProcessState }
 func (b BackgroundProcessStatus) Errors() []string              { return b.ProcessErrors }
+func (b BackgroundProcessStatus) Finished() bool {
+	if b.ProcessState == BackgroundProcessStateCompleted ||
+		b.ProcessState == BackgroundProcessStateErrored {
+		return true
+	}
+	return false
+}
 
 // BackgroundProcessState defines the possible states of a background process.
 type BackgroundProcessState string
