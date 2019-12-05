@@ -511,7 +511,7 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 		}
 		return rr, nil
 	}
-	return rr, nil
+	return rr, err
 }
 
 // longer returns a suggested longer time to wait if the given duration wasn't long enough.
