@@ -36,19 +36,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case c.patchNoTest:
 		// If this is a no-test branch, then run only the Docker build. No tests are run.
 		app := c.branch[27:]
-		if app == "server" {
-			pipelineOperations = append(pipelineOperations,
-				addServerDockerImageCandidate(c),
-				wait,
-			)
-		}
 		pipelineOperations = append(pipelineOperations, addDockerImage(c, app, false))
-		if app == "server" {
-			pipelineOperations = append(pipelineOperations,
-				wait,
-				addCleanUpServerDockerImageCandidate(c),
-			)
-		}
 
 	case c.isBextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
@@ -86,7 +74,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		//
 		// PERF: Try to order steps such that slower steps are first.
 		pipelineOperations = []func(*bk.Pipeline){
-			addServerDockerImageCandidate(c),
+			triggerE2E(c),
 			addLint,    // ~5m
 			addWebApp,  // ~3m
 			addGoTests, // ~2m
@@ -98,12 +86,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addPostgresBackcompat,
 			addDockerfileLint,
 			wait,
-			addE2E(c),
-			wait,
 			addCodeCov,
-			wait,
 			addDockerImages(c),
-			addCleanUpServerDockerImageCandidate(c),
 		}
 	}
 
