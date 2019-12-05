@@ -2637,36 +2637,31 @@ type GitBlob implements TreeEntry & File2 {
     # (experimental) The LSIF API may change substantially in the near future as we
     # continue to adjust it for our use cases. Changes will not be documented in the
     # CHANGELOG during this time.
+    # A wrapper around LSIF query methods. If no LSIF dump can be used to answer code
+    # intelligence queries for this path-at-revision, this resolves to null.
+    lsif: LSIFQueryResolver
+}
+
+# A wrapper object around LSIF query methods for a particular path-at-revision.
+type LSIFQueryResolver {
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
     # A list of definitions of the symbol under the given document position.
-    definitions(line: Int!, character: Int!): DefinitionsResult!
+    definitions(line: Int!, character: Int!): LocationConnection
 
     # (experimental) The LSIF API may change substantially in the near future as we
     # continue to adjust it for our use cases. Changes will not be documented in the
     # CHANGELOG during this time.
     # A list of references of the symbol under the given document position.
-    references(line: Int!, character: Int!, after: String, first: Int): ReferencesResult!
+    references(line: Int!, character: Int!, after: String, first: Int): LocationConnection
 
     # (experimental) The LSIF API may change substantially in the near future as we
     # continue to adjust it for our use cases. Changes will not be documented in the
     # CHANGELOG during this time.
     # The hover result of the symbol under the given document position.
-    hover(line: Int!, character: Int!): HoverResult!
+    hover(line: Int!, character: Int!): Markdown
 }
-
-# A marker that no LSIF data was available.
-type NoLSIFData {
-    # A placeholder field.
-    message: String!
-}
-
-# The result of a definitions query.
-union DefinitionsResult = LocationConnection | NoLSIFData
-
-# The result of a references query.
-union ReferencesResult = LocationConnection | NoLSIFData
-
-# The result of a hover query.
-union HoverResult = Markdown | NoLSIFData
 
 # A highlighted file.
 type HighlightedFile {

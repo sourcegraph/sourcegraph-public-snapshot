@@ -94,14 +94,6 @@ func (r *locationConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil
 	return graphqlutil.HasNextPage(false), nil
 }
 
-func (r *locationConnectionResolver) ToLocationConnection() (graphqlbackend.LocationConnectionResolver, bool) {
-	return r, true
-}
-
-func (r *locationConnectionResolver) ToNoLSIFData() (graphqlbackend.NoLSIFDataResolver, bool) {
-	return nil, false
-}
-
 //
 // Helpers
 

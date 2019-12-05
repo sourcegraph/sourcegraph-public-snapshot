@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/url"
-	"strconv"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
@@ -22,88 +21,6 @@ var _ graphqlbackend.CodeIntelResolver = &Resolver{}
 
 func NewResolver() graphqlbackend.CodeIntelResolver {
 	return &Resolver{}
-}
-
-//
-// LSIF Request Resolvers
-
-func (r *Resolver) Definitions(ctx context.Context, args *graphqlbackend.LSIFFilePositionArgs) (graphqlbackend.DefinitionsResultResolver, error) {
-	opt := LocationsQueryOptions{
-		Operation: "definitions",
-		RepoName:  args.RepoName,
-		Commit:    args.Commit,
-		Path:      args.Path,
-		Line:      args.Line,
-		Character: args.Character,
-	}
-
-	resolver, err := resolveLocationConnection(ctx, opt)
-	if err != nil {
-		if client.IsNotFound(err) {
-			return &noLSIFDataResolver{message: err.Error()}, nil
-		}
-
-		return nil, err
-	}
-
-	return resolver, nil
-}
-
-func (r *Resolver) References(ctx context.Context, args *graphqlbackend.LSIFPagedFilePositionArgs) (graphqlbackend.ReferencesResultResolver, error) {
-	opt := LocationsQueryOptions{
-		Operation: "references",
-		RepoName:  args.RepoName,
-		Commit:    args.Commit,
-		Path:      args.Path,
-		Line:      args.Line,
-		Character: args.Character,
-	}
-	if args.First != nil {
-		opt.Limit = args.First
-	}
-	if args.After != nil {
-		decoded, err := base64.StdEncoding.DecodeString(*args.After)
-		if err != nil {
-			return nil, err
-		}
-		nextURL := string(decoded)
-		opt.NextURL = &nextURL
-	}
-
-	resolver, err := resolveLocationConnection(ctx, opt)
-	if err != nil {
-		if client.IsNotFound(err) {
-			return &noLSIFDataResolver{message: err.Error()}, nil
-		}
-
-		return nil, err
-	}
-
-	return resolver, nil
-}
-
-func (r *Resolver) Hover(ctx context.Context, args *graphqlbackend.LSIFFilePositionArgs) (graphqlbackend.HoverResultResolver, error) {
-	path := fmt.Sprintf("/hover")
-	values := url.Values{}
-	values.Set("repository", args.RepoName)
-	values.Set("commit", string(args.Commit))
-	values.Set("path", args.Path)
-	values.Set("line", strconv.FormatInt(int64(args.Line), 10))
-	values.Set("character", strconv.FormatInt(int64(args.Character), 10))
-
-	payload := struct {
-		Text string `json:"text"`
-	}{}
-
-	if err := client.DefaultClient.TraceRequestAndUnmarshalPayload(ctx, "GET", path, values, nil, &payload); err != nil {
-		if client.IsNotFound(err) {
-			return &noLSIFDataResolver{message: err.Error()}, nil
-		}
-
-		return nil, err
-	}
-
-	return graphqlbackend.NewMarkdownResolver(payload.Text), nil
 }
 
 //
@@ -274,4 +191,15 @@ func (r *Resolver) LSIFJobStatsByID(ctx context.Context, id graphql.ID) (graphql
 	}
 
 	return &lsifJobStatsResolver{stats: stats}, nil
+}
+
+//
+// LSIF Query Resolvers
+
+func (r *Resolver) LSIF(args *graphqlbackend.LSIFQueryArgs) graphqlbackend.LSIFQueryResolver {
+	return &lsifQueryResolver{
+		RepoName: args.RepoName,
+		Commit:   args.Commit,
+		Path:     args.Path,
+	}
 }

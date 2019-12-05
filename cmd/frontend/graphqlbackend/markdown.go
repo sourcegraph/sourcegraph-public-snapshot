@@ -5,8 +5,6 @@ import "github.com/sourcegraph/sourcegraph/internal/markdown"
 type MarkdownResolver interface {
 	Text() string
 	HTML() string
-	ToMarkdown() (MarkdownResolver, bool)
-	ToNoLSIFData() (NoLSIFDataResolver, bool)
 }
 
 type markdownResolver struct {
@@ -27,12 +25,4 @@ func (m *markdownResolver) Text() string {
 
 func (m *markdownResolver) HTML() string {
 	return markdown.Render(m.text)
-}
-
-func (m *markdownResolver) ToMarkdown() (MarkdownResolver, bool) {
-	return m, true
-}
-
-func (m *markdownResolver) ToNoLSIFData() (NoLSIFDataResolver, bool) {
-	return nil, false
 }

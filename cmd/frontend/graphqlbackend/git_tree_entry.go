@@ -208,50 +208,16 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	return len(entries) == 1, nil
 }
 
-func (r *GitTreeEntryResolver) Definitions(ctx context.Context, args *LSIFFilePositionArgs) (DefinitionsResultResolver, error) {
+func (r *GitTreeEntryResolver) LSIF() (LSIFQueryResolver, error) {
 	if EnterpriseResolvers.codeIntelResolver == nil {
 		return nil, codeIntelOnlyInEnterprise
 	}
 
-	return EnterpriseResolvers.codeIntelResolver.Definitions(ctx, &LSIFFilePositionArgs{
-		RepoName:  r.Repository().Name(),
-		Commit:    r.Commit().OID(),
-		Path:      r.Path(),
-		Line:      args.Line,
-		Character: args.Character,
-	})
-}
-
-func (r *GitTreeEntryResolver) References(ctx context.Context, args *LSIFPagedFilePositionArgs) (ReferencesResultResolver, error) {
-	if EnterpriseResolvers.codeIntelResolver == nil {
-		return nil, codeIntelOnlyInEnterprise
-	}
-
-	return EnterpriseResolvers.codeIntelResolver.References(ctx, &LSIFPagedFilePositionArgs{
-		LSIFFilePositionArgs: LSIFFilePositionArgs{
-			RepoName:  r.Repository().Name(),
-			Commit:    r.Commit().OID(),
-			Path:      r.Path(),
-			Line:      args.Line,
-			Character: args.Character,
-		},
-		ConnectionArgs: args.ConnectionArgs,
-		After:          args.After,
-	})
-}
-
-func (r *GitTreeEntryResolver) Hover(ctx context.Context, args *LSIFFilePositionArgs) (HoverResultResolver, error) {
-	if EnterpriseResolvers.codeIntelResolver == nil {
-		return nil, codeIntelOnlyInEnterprise
-	}
-
-	return EnterpriseResolvers.codeIntelResolver.Hover(ctx, &LSIFFilePositionArgs{
-		RepoName:  r.Repository().Name(),
-		Commit:    r.Commit().OID(),
-		Path:      r.Path(),
-		Line:      args.Line,
-		Character: args.Character,
-	})
+	return EnterpriseResolvers.codeIntelResolver.LSIF(&LSIFQueryArgs{
+		RepoName: r.Repository().Name(),
+		Commit:   r.Commit().OID(),
+		Path:     r.Path(),
+	}), nil
 }
 
 type fileInfo struct {
