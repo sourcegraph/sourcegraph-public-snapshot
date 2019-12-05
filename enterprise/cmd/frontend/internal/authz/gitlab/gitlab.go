@@ -75,7 +75,7 @@ func newAuthzProvider(a *schema.GitLabAuthorization, instanceURL, token string, 
 			}
 		}
 		if !foundAuthProvider {
-			return nil, fmt.Errorf("Did not find authentication provider matching %q", instanceURL)
+			return nil, fmt.Errorf("Did not find authentication provider matching %q. Check the [management console](https://docs.sourcegraph.com/admin/management_console) to verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for %s.", instanceURL, instanceURL)
 		}
 
 		return NewOAuthProvider(OAuthAuthzProviderOp{
@@ -110,7 +110,7 @@ func newAuthzProvider(a *schema.GitLabAuthorization, instanceURL, token string, 
 				}), nil
 			}
 		}
-		return nil, fmt.Errorf("Did not find authentication provider matching type %s and configID %s", ext.AuthProviderType, ext.AuthProviderID)
+		return nil, fmt.Errorf("Did not find authentication provider matching type %s and configID %s. Check the [management console](https://docs.sourcegraph.com/admin/management_console) to verify that an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) matches the type and configID.", ext.AuthProviderType, ext.AuthProviderID)
 	default:
 		return nil, fmt.Errorf("No identityProvider was specified")
 	}
