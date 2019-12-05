@@ -90,7 +90,6 @@ func handleConfigOverrides() error {
 			if err != nil {
 				return errors.Wrap(err, "reading GLOBAL_SETTINGS_FILE")
 			}
-			globalSettings := string(globalSettingsBytes)
 			currentSettings, err := db.Settings.GetLatest(ctx, api.SettingsSubject{Site: true})
 			if err != nil {
 				return errors.Wrap(err, "could not fetch current settings")
