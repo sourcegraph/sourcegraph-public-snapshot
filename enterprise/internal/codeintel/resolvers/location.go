@@ -95,10 +95,7 @@ func rangeToLocationResolver(ctx context.Context, location *lsif.LSIFLocation) (
 		return nil, err
 	}
 
-	repoResolver, err := graphqlbackend.RepositoryByIDInt32(ctx, repo.ID)
-	if err != nil {
-		return nil, err
-	}
+	repoResolver := graphqlbackend.NewRepositoryResolver(repo)
 
 	commitResolver, err := repoResolver.Commit(ctx, &graphqlbackend.RepositoryCommitArgs{Rev: location.Commit})
 	if err != nil {
