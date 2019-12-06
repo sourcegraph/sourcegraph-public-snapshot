@@ -346,29 +346,33 @@ export class QueryInput extends React.Component<Props, State> {
                     return (
                         <div className="query-input2">
                             <div ref={this.containerElement}>
-                                <input
-                                    onFocus={this.onInputFocus}
-                                    onBlur={this.onInputBlur}
-                                    className="form-control query-input2__input rounded-left e2e-query-input"
-                                    value={this.props.value.query}
-                                    autoFocus={this.props.autoFocus === true}
-                                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                                        downshiftChange(event)
-                                        this.onInputChange(event)
-                                    }}
-                                    onKeyDown={event => {
-                                        this.onInputKeyDown(event)
-                                        onKeyDown(event)
-                                    }}
-                                    spellCheck={false}
-                                    autoCapitalize="off"
-                                    placeholder={
-                                        this.props.placeholder === undefined ? 'Search code...' : this.props.placeholder
-                                    }
-                                    ref={this.inputElement}
-                                    name="query"
-                                    autoComplete="off"
-                                />
+                                <form onSubmit={this.onSubmit}>
+                                    <input
+                                        onFocus={this.onInputFocus}
+                                        onBlur={this.onInputBlur}
+                                        className="form-control query-input2__input rounded-left e2e-query-input"
+                                        value={this.props.value.query}
+                                        autoFocus={this.props.autoFocus === true}
+                                        onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                                            downshiftChange(event)
+                                            this.onInputChange(event)
+                                        }}
+                                        onKeyDown={event => {
+                                            this.onInputKeyDown(event)
+                                            onKeyDown(event)
+                                        }}
+                                        spellCheck={false}
+                                        autoCapitalize="off"
+                                        placeholder={
+                                            this.props.placeholder === undefined
+                                                ? 'Search code...'
+                                                : this.props.placeholder
+                                        }
+                                        ref={this.inputElement}
+                                        name="query"
+                                        autoComplete="off"
+                                    />
+                                </form>
                                 {showSuggestions && (
                                     <ul className="query-input2__suggestions e2e-query-suggestions" {...getMenuProps()}>
                                         {this.state.suggestions.values.map((suggestion, index) => {
@@ -434,6 +438,10 @@ export class QueryInput extends React.Component<Props, State> {
 
     private onInputFocus = (): void => {
         this.setState({ showSuggestions: true })
+    }
+
+    private onSubmit = (): void => {
+        this.setState({ showSuggestions: false })
     }
 
     /**
