@@ -332,7 +332,7 @@
   dependencies:
     defer-to-connect "^1.0.1"
 
-"@types/async-polling@^0.0.3":
+"@types/async-polling@0.0.3":
   version "0.0.3"
   resolved "https://registry.npmjs.org/@types/async-polling/-/async-polling-0.0.3.tgz#e7a7b1553f6d9a8e6dcb943ae9645d8fb18fbe61"
   integrity sha512-SxW+bavddNMXQfTlp3loXeh1BXc4WJ2CbhN/SIwx1jvJlPDFcifDQ1bJwOLcwlt/D+zjfsEWdxVy4UPPbnLR9A==

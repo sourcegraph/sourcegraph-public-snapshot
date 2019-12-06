@@ -5,7 +5,7 @@
   "license": "MIT",
   "version": "0.1.0",
   "dependencies": {
-    "@types/async-polling": "^0.0.3",
+    "@types/async-polling": "0.0.3",
     "async-middleware": "^1.2.1",
     "async-polling": "^0.2.1",
     "bloomfilter": "^0.0.18",
