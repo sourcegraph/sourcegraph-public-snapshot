@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -462,6 +463,10 @@ func searchCommitDiffsInRepos(ctx context.Context, args *search.Args) ([]SearchR
 		unflattened [][]*commitSearchResultResolver
 		common      = &searchResultsCommon{}
 	)
+	common.repos = make([]*types.Repo, len(args.Repos))
+	for i, repo := range args.Repos {
+		common.repos[i] = repo.Repo
+	}
 	for _, repoRev := range args.Repos {
 		wg.Add(1)
 		go func(repoRev *search.RepositoryRevisions) {
@@ -523,6 +528,10 @@ func searchCommitLogInRepos(ctx context.Context, args *search.Args) ([]SearchRes
 		unflattened [][]*commitSearchResultResolver
 		common      = &searchResultsCommon{}
 	)
+	common.repos = make([]*types.Repo, len(args.Repos))
+	for i, repo := range args.Repos {
+		common.repos[i] = repo.Repo
+	}
 	for _, repoRev := range args.Repos {
 		wg.Add(1)
 		go func(repoRev *search.RepositoryRevisions) {
