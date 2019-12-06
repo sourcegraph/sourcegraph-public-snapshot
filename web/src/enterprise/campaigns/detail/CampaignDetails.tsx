@@ -307,7 +307,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         }
     }
 
-    const OnRetry: React.MouseEventHandler = async event => {
+    const onRetry: React.MouseEventHandler = async event => {
         event.preventDefault()
         try {
             await retryCampaign(campaign!.id)
