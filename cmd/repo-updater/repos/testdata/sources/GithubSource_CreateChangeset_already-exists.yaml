@@ -52,7 +52,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Wed, 13 Nov 2019 13:38:13 GMT
+      - Fri, 06 Dec 2019 09:05:03 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -72,9 +72,63 @@ interactions:
       X-Github-Media-Type:
       - github.v4; format=json
       X-Github-Request-Id:
-      - D0E6:43EF3:3E95FB7:4B0465B:5DCC0744
+      - 1666:3D52E:9D46D15:BBA61EF:5DEA19BE
       X-Oauth-Scopes:
-      - public_repo
+      - repo
+      X-Xss-Protection:
+      - 1; mode=block
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: '{"query":"query {\nrepository(owner: \"sourcegraph\", name: \"automation-testing\")
+      {\npullRequests(baseRefName: \"master\", headRefName: \"always-open-pr\", first:
+      1, states: OPEN) { \nnodes{ number }\n}\n}\n}","variables":null}'
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/graphql
+    method: POST
+  response:
+    body: '{"data":{"repository":{"pullRequests":{"nodes":[{"number":1}]}}}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval,
+        X-GitHub-Media-Type
+      Cache-Control:
+      - no-cache
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 06 Dec 2019 09:05:04 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Status:
+      - 200 OK
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept-Encoding
+      X-Accepted-Oauth-Scopes:
+      - repo
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v4; format=json
+      X-Github-Request-Id:
+      - 1666:3D52E:9D46E3D:BBA631A:5DEA19BF
+      X-Oauth-Scopes:
+      - repo
       X-Xss-Protection:
       - 1; mode=block
     status: 200 OK
