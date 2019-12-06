@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // An Actor represents an object which can take actions on GitHub. Typically a User or Bot.
@@ -527,7 +528,7 @@ func (c *Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, base
 	q.WriteString(fmt.Sprintf("repository(owner: %q, name: %q) {\n",
 		owner, name))
 	q.WriteString(fmt.Sprintf("pullRequests(baseRefName: %q, headRefName: %q, first: 1, states: OPEN) { \n",
-		baseRef, headRef,
+		git.AbbreviateRef(baseRef), git.AbbreviateRef(headRef),
 	))
 	q.WriteString(fmt.Sprintf("nodes{ ... pr }\n"))
 	q.WriteString("}\n")
@@ -551,7 +552,7 @@ func (c *Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, base
 		return nil, err
 	}
 	if len(results.Repository.PullRequests.Nodes) == 0 {
-		return nil, nil
+		return nil, fmt.Errorf("expected 1 pr, got 0")
 	}
 	if len(results.Repository.PullRequests.Nodes) != 1 {
 		return nil, fmt.Errorf("expected 1 result, got %d", len(results.Repository.PullRequests.Nodes))
