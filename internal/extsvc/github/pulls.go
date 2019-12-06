@@ -394,6 +394,43 @@ func (c *Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestInp
 	return pr, nil
 }
 
+// ClosePullRequest closes the PullRequest on Github.
+func (c *Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error {
+	var q strings.Builder
+	q.WriteString(pullRequestFragments)
+	q.WriteString(`mutation	ClosePullRequest($input:ClosePullRequestInput!) {
+  closePullRequest(input:$input) {
+    pullRequest {
+      ... pr
+    }
+  }
+}`)
+
+	var result struct {
+		ClosePullRequest struct {
+			PullRequest struct {
+				PullRequest
+				Participants  struct{ Nodes []Actor }
+				TimelineItems struct{ Nodes []TimelineItem }
+			} `json:"pullRequest"`
+		} `json:"closePullRequest"`
+	}
+
+	input := map[string]interface{}{"input": struct {
+		ID string `json:"pullRequestId"`
+	}{ID: pr.ID}}
+	err := c.requestGraphQL(ctx, "", q.String(), input, &result)
+	if err != nil {
+		return err
+	}
+
+	*pr = result.ClosePullRequest.PullRequest.PullRequest
+	pr.TimelineItems = result.ClosePullRequest.PullRequest.TimelineItems.Nodes
+	pr.Participants = result.ClosePullRequest.PullRequest.Participants.Nodes
+
+	return nil
+}
+
 // LoadPullRequests loads a list of PullRequests from Github.
 func (c *Client) LoadPullRequests(ctx context.Context, prs ...*PullRequest) error {
 	const batchSize = 15
