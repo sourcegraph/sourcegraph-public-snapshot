@@ -208,6 +208,18 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	return len(entries) == 1, nil
 }
 
+func (r *GitTreeEntryResolver) LSIF() (LSIFQueryResolver, error) {
+	if EnterpriseResolvers.codeIntelResolver == nil {
+		return nil, codeIntelOnlyInEnterprise
+	}
+
+	return EnterpriseResolvers.codeIntelResolver.LSIF(&LSIFQueryArgs{
+		RepoName: r.Repository().Name(),
+		Commit:   r.Commit().OID(),
+		Path:     r.Path(),
+	}), nil
+}
+
 type fileInfo struct {
 	path  string
 	isDir bool
