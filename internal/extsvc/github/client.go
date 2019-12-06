@@ -251,6 +251,23 @@ func (c *Client) listRepositories(ctx context.Context, requestURI string) ([]*Re
 	return repos, nil
 }
 
+// ListInstallationRepositories lists repositories on which the authenticated
+// GitHub App has been installed.
+func (c *Client) ListInstallationRepositories(ctx context.Context) ([]*Repository, error) {
+	type response struct {
+		Repositories []restRepository `json:"repositories"`
+	}
+	var resp response
+	if err := c.requestGet(ctx, "", "installation/repositories", &resp); err != nil {
+		return nil, err
+	}
+	repos := make([]*Repository, 0, len(resp.Repositories))
+	for _, restRepo := range resp.Repositories {
+		repos = append(repos, convertRestRepo(restRepo))
+	}
+	return repos, nil
+}
+
 func (c *Client) requestGet(ctx context.Context, token, requestURI string, result interface{}) error {
 	req, err := http.NewRequest("GET", requestURI, nil)
 	if err != nil {
@@ -263,6 +280,10 @@ func (c *Client) requestGet(ctx context.Context, token, requestURI string, resul
 	// Enable the repository topics API. See
 	// https://developer.github.com/v3/repos/#list-all-topics-for-a-repository
 	req.Header.Add("Accept", "application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json")
+
+	// Enable the GitHub App API. See
+	// https://developer.github.com/v3/apps/installations/#list-repositories
+	req.Header.Add("Accept", "application/vnd.github.machine-man-preview+json")
 
 	return c.do(ctx, token, req, result)
 }
