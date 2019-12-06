@@ -76,6 +76,11 @@ interface Props extends PatternTypeProps {
      * At most one query input per page should have this behavior.
      */
     hasGlobalQueryBehavior?: boolean
+
+    /**
+     * Toggle if submit events should be emitted, and the `SubmitButton` rendered
+     */
+    withSubmit?: boolean
 }
 
 /**
@@ -102,6 +107,10 @@ const noSuggestions: State['suggestions'] = { values: [], cursorPosition: 0 }
 const typingDebounceTime = 300
 
 export class QueryInput extends React.Component<Props, State> {
+    static defaultProps = {
+        withSubmit: true,
+    }
+
     private componentUpdates = new Subject<Props>()
 
     /** Subscriptions to unsubscribe from on component unmount */
@@ -408,7 +417,7 @@ export class QueryInput extends React.Component<Props, State> {
                         )
                     }}
                 </Downshift>
-                <SearchButton />
+                {this.props.withSubmit && <SearchButton />}
             </Form>
         )
     }
@@ -443,8 +452,12 @@ export class QueryInput extends React.Component<Props, State> {
         this.setShowSuggestions(true)
     }
 
-    private onSubmit = (): void => {
+    private onSubmit: React.FormEventHandler = event => {
         this.setShowSuggestions(false)
+        if (!this.props.withSubmit) {
+            event.preventDefault()
+            event.stopPropagation()
+        }
     }
 
     /**
