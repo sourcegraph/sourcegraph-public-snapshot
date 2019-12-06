@@ -1046,7 +1046,7 @@ func (e *httpError) ExtractExistingPullRequest() (*PullRequest, error) {
 
 	err := json.Unmarshal(e.Body, &dest)
 	if err != nil {
-		return nil, errors.Wrap(err, "decoding error")
+		return nil, errors.Wrap(err, "unmarshalling error")
 	}
 
 	for _, e := range dest.Errors {
@@ -1055,5 +1055,5 @@ func (e *httpError) ExtractExistingPullRequest() (*PullRequest, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("no existing PR")
+	return nil, fmt.Errorf("existing PR not found")
 }
