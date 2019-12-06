@@ -173,12 +173,6 @@ func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Change
 	return nil
 }
 
-// FetchChangesetExternalID fetches the external id for the changeset corresponding to the supplied params.
-// If not found, ("", "", nil) is returned
-func (s BitbucketServerSource) FetchChangesetExternalID(ctx context.Context, owner, name, baseRef, headRef string) (externalID string, externalServiceType string, err error) {
-	return "", "", fmt.Errorf("Not implemented")
-}
-
 // ExternalServices returns a singleton slice containing the external service.
 func (s BitbucketServerSource) ExternalServices() ExternalServices {
 	return ExternalServices{s.svc}
