@@ -12,9 +12,9 @@ interactions:
     method: POST
   response:
     body: '{"errors":[{"context":null,"message":"Only one pull request may be open
-      for a given source and target branch","exceptionName":"com.atlassian.bitbucket.pull.DuplicatePullRequestException","existingPullRequest":{"id":3,"version":2,"title":"This
+      for a given source and target branch","exceptionName":"com.atlassian.bitbucket.pull.DuplicatePullRequestException","existingPullRequest":{"id":3,"version":3,"title":"This
       testing PR is always open","description":"Ignore this. This is a testing PR
-      that is always open.","state":"OPEN","open":true,"closed":false,"createdDate":1573644199945,"updatedDate":1573644199945,"fromRef":{"id":"refs/heads/always-open-pr-bbs","displayId":"always-open-pr-bbs","latestCommit":"b939ea0debe88e145c5409230b29e7dbbedcb9da","repository":{"slug":"automation-testing","id":10070,"name":"automation-testing","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/automation-testing.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/browse"}]}}},"toRef":{"id":"refs/heads/master","displayId":"master","latestCommit":"e0fc523591f7776902b54a9953b4d7d72bf84ac4","repository":{"slug":"automation-testing","id":10070,"name":"automation-testing","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/automation-testing.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/browse"}]}}},"locked":false,"author":{"user":{"name":"thorsten","emailAddress":"thorsten@sourcegraph.com","id":104,"displayName":"thorsten","active":true,"slug":"thorsten","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/thorsten"}]}},"role":"AUTHOR","approved":false,"status":"UNAPPROVED"},"reviewers":[],"participants":[],"links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/3"}]}}}]}'
+      that is always open.","state":"OPEN","open":true,"closed":false,"createdDate":1573644199945,"updatedDate":1573644199945,"fromRef":{"id":"refs/heads/always-open-pr-bbs","displayId":"always-open-pr-bbs","latestCommit":"b939ea0debe88e145c5409230b29e7dbbedcb9da","repository":{"slug":"automation-testing","id":10070,"name":"automation-testing","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/automation-testing.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/browse"}]}}},"toRef":{"id":"refs/heads/master","displayId":"master","latestCommit":"97f8a75319760990c187710c50a957358f663366","repository":{"slug":"automation-testing","id":10070,"name":"automation-testing","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/automation-testing.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/browse"}]}}},"locked":false,"author":{"user":{"name":"thorsten","emailAddress":"thorsten@sourcegraph.com","id":104,"displayName":"thorsten","active":true,"slug":"thorsten","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/thorsten"}]}},"role":"AUTHOR","approved":false,"status":"UNAPPROVED"},"reviewers":[],"participants":[],"links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/3"}]}}}]}'
     headers:
       Cache-Control:
       - private, no-cache
@@ -22,7 +22,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 28 Nov 2019 09:47:07 GMT
+      - Fri, 06 Dec 2019 11:02:53 GMT
       Pragma:
       - no-cache
       Server:
@@ -30,11 +30,11 @@ interactions:
       Vary:
       - X-AUSERNAME,Accept-Encoding
       X-Arequestid:
-      - '@1IK17DGx587x3129708x0'
+      - '@TPHI1Gx662x66197x0'
       X-Asen:
-      - SEN-L13789548
+      - SEN-11363689
       X-Asessionid:
-      - 1h8glpy
+      - 1uqjl11
       X-Auserid:
       - "1"
       X-Ausername:

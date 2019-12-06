@@ -517,6 +517,53 @@ func (c *Client) loadPullRequests(ctx context.Context, prs ...*PullRequest) erro
 	return nil
 }
 
+// GetOpenPullRequestByRefs fetches the the pull request associated with the supplied
+// refs. GitHub only allows one open PR by ref at a time.
+// If nothing is found (nil, nil) is returned
+func (c *Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, baseRef, headRef string) (*PullRequest, error) {
+	var q strings.Builder
+	q.WriteString(pullRequestFragments)
+	q.WriteString("query {\n")
+	q.WriteString(fmt.Sprintf("repository(owner: %q, name: %q) {\n",
+		owner, name))
+	q.WriteString(fmt.Sprintf("pullRequests(baseRefName: %q, headRefName: %q, first: 1, states: OPEN) { \n",
+		baseRef, headRef,
+	))
+	q.WriteString(fmt.Sprintf("nodes{ ... pr }\n"))
+	q.WriteString("}\n")
+	q.WriteString("}\n")
+	q.WriteString("}")
+
+	var results struct {
+		Repository struct {
+			PullRequests struct {
+				Nodes []*struct {
+					PullRequest
+					Participants  struct{ Nodes []Actor }
+					TimelineItems struct{ Nodes []TimelineItem }
+				}
+			}
+		}
+	}
+
+	err := c.requestGraphQL(ctx, "", q.String(), nil, &results)
+	if err != nil {
+		return nil, err
+	}
+	if len(results.Repository.PullRequests.Nodes) == 0 {
+		return nil, nil
+	}
+	if len(results.Repository.PullRequests.Nodes) != 1 {
+		return nil, fmt.Errorf("expected 1 result, got %d", len(results.Repository.PullRequests.Nodes))
+	}
+
+	pr := results.Repository.PullRequests.Nodes[0].PullRequest
+	pr.Participants = results.Repository.PullRequests.Nodes[0].Participants.Nodes
+	pr.TimelineItems = results.Repository.PullRequests.Nodes[0].TimelineItems.Nodes
+
+	return &pr, nil
+}
+
 const pullRequestFragments = `
 fragment actor on Actor { avatarUrl, login, url }
 fragment commit on Commit {

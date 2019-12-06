@@ -512,7 +512,7 @@ func TestClient_CreatePullRequest(t *testing.T) {
 				pr.FromRef.ID = "refs/heads/always-open-pr-bbs"
 				return &pr
 			},
-			err: ErrAlreadyExists.Error(),
+			err: ErrAlreadyExists{}.Error(),
 		},
 		{
 			name: "description includes GFM tasklist items",

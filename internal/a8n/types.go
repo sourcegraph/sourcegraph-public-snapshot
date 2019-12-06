@@ -201,6 +201,11 @@ func (c *ChangesetJob) Clone() *ChangesetJob {
 	return &cc
 }
 
+// SuccessfullyCompleted returns true for jobs that have already succesfully run
+func (c *ChangesetJob) SuccessfullyCompleted() bool {
+	return c.Error == "" && !c.FinishedAt.IsZero() && c.ChangesetID != 0
+}
+
 // A Changeset is a changeset on a code host belonging to a Repository and many
 // Campaigns.
 type Changeset struct {

@@ -360,7 +360,9 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 				Repo:      repo,
 				Changeset: &a8n.Changeset{},
 			},
-			err: bitbucketserver.ErrAlreadyExists.Error(),
+			// CreateChangeset is idempotent so if the PR already exists
+			// it is not an error
+			err: "",
 		},
 	}
 

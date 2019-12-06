@@ -67,7 +67,8 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 				Repo:      repo,
 				Changeset: &a8n.Changeset{},
 			},
-			err: github.ErrPullRequestAlreadyExists.Error(),
+			// If PR already exists we'll just return it, no error
+			err: "",
 		},
 	}
 
@@ -114,7 +115,10 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 				return
 			}
 
-			pr := tc.cs.Changeset.Metadata.(*github.PullRequest)
+			pr, ok := tc.cs.Changeset.Metadata.(*github.PullRequest)
+			if !ok {
+				t.Fatal("Metadata does not contain PR")
+			}
 			data, err := json.MarshalIndent(pr, " ", " ")
 			if err != nil {
 				t.Fatal(err)
