@@ -55,7 +55,7 @@ export function search(
                             results {
                                 __typename
                                 limitHit
-                                resultCount
+                                matchCount
                                 approximateResultCount
                                 missing {
                                     name
