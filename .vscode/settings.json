@@ -80,4 +80,5 @@
       "changeProcessCWD": true,
     },
   ],
+  "go.inferGopath": false,
 }
