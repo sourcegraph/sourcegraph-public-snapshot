@@ -36,19 +36,19 @@ Foreign-key constraints:
  created_at       | timestamp with time zone | not null default now()
  updated_at       | timestamp with time zone | not null default now()
  base_ref         | text                     | not null
+ description      | text                     | 
 Indexes:
     "campaign_jobs_pkey" PRIMARY KEY, btree (id)
     "campaign_jobs_campaign_plan_repo_rev_unique" UNIQUE CONSTRAINT, btree (campaign_plan_id, repo_id, rev) DEFERRABLE
-    "campaign_jobs_campaign_plan_id" btree (campaign_plan_id)
     "campaign_jobs_finished_at" btree (finished_at)
     "campaign_jobs_started_at" btree (started_at)
 Check constraints:
     "campaign_jobs_base_ref_check" CHECK (base_ref <> ''::text)
 Foreign-key constraints:
     "campaign_jobs_campaign_plan_id_fkey" FOREIGN KEY (campaign_plan_id) REFERENCES campaign_plans(id) ON DELETE CASCADE DEFERRABLE
-    "campaign_jobs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
+    "campaign_jobs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 Referenced by:
-    TABLE "changeset_jobs" CONSTRAINT "changeset_jobs_campaign_job_id_fkey" FOREIGN KEY (campaign_job_id) REFERENCES campaign_jobs(id) DEFERRABLE
+    TABLE "changeset_jobs" CONSTRAINT "changeset_jobs_campaign_job_id_fkey" FOREIGN KEY (campaign_job_id) REFERENCES campaign_jobs(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -61,6 +61,7 @@ Referenced by:
  created_at    | timestamp with time zone | not null default now()
  updated_at    | timestamp with time zone | not null default now()
  arguments     | text                     | not null
+ canceled_at   | timestamp with time zone | 
 Indexes:
     "campaign_plans_pkey" PRIMARY KEY, btree (id)
 Check constraints:
@@ -150,8 +151,8 @@ Indexes:
     "changeset_jobs_started_at" btree (started_at)
 Foreign-key constraints:
     "changeset_jobs_campaign_id_fkey" FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE DEFERRABLE
-    "changeset_jobs_campaign_job_id_fkey" FOREIGN KEY (campaign_job_id) REFERENCES campaign_jobs(id) DEFERRABLE
-    "changeset_jobs_changeset_id_fkey" FOREIGN KEY (changeset_id) REFERENCES changesets(id) DEFERRABLE
+    "changeset_jobs_campaign_job_id_fkey" FOREIGN KEY (campaign_job_id) REFERENCES campaign_jobs(id) ON DELETE CASCADE DEFERRABLE
+    "changeset_jobs_changeset_id_fkey" FOREIGN KEY (changeset_id) REFERENCES changesets(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -179,7 +180,7 @@ Foreign-key constraints:
     "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 Referenced by:
     TABLE "changeset_events" CONSTRAINT "changeset_events_changeset_id_fkey" FOREIGN KEY (changeset_id) REFERENCES changesets(id) ON DELETE CASCADE DEFERRABLE
-    TABLE "changeset_jobs" CONSTRAINT "changeset_jobs_changeset_id_fkey" FOREIGN KEY (changeset_id) REFERENCES changesets(id) DEFERRABLE
+    TABLE "changeset_jobs" CONSTRAINT "changeset_jobs_changeset_id_fkey" FOREIGN KEY (changeset_id) REFERENCES changesets(id) ON DELETE CASCADE DEFERRABLE
 Triggers:
     trig_delete_changeset_reference_on_campaigns AFTER DELETE ON changesets FOR EACH ROW EXECUTE PROCEDURE delete_changeset_reference_on_campaigns()
 
@@ -245,7 +246,6 @@ Foreign-key constraints:
  deleted_at | timestamp with time zone | 
 Indexes:
     "discussion_mail_reply_tokens_pkey" PRIMARY KEY, btree (token)
-    "discussion_mail_reply_tokens_token_idx" btree (token)
     "discussion_mail_reply_tokens_user_id_thread_id_idx" btree (user_id, thread_id)
 Foreign-key constraints:
     "discussion_mail_reply_tokens_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE CASCADE
@@ -268,7 +268,6 @@ Foreign-key constraints:
 Indexes:
     "discussion_threads_pkey" PRIMARY KEY, btree (id)
     "discussion_threads_author_user_id_idx" btree (author_user_id)
-    "discussion_threads_id_idx" btree (id)
 Foreign-key constraints:
     "discussion_threads_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     "discussion_threads_target_repo_id_fk" FOREIGN KEY (target_repo_id) REFERENCES discussion_threads_target_repo(id) ON DELETE CASCADE
@@ -445,22 +444,24 @@ Foreign-key constraints:
 
 # Table "public.lsif_uploads"
 ```
-         Column          |           Type           |                         Modifiers                         
--------------------------+--------------------------+-----------------------------------------------------------
- id                      | bigint                   | not null default nextval('lsif_uploads_id_seq'::regclass)
- repository              | text                     | not null
- commit                  | text                     | not null
- root                    | text                     | not null
- filename                | text                     | not null
- state                   | lsif_upload_state        | not null default 'queued'::lsif_upload_state
- failure_summary         | text                     | 
- failure_stacktrace      | text                     | 
- uploaded_at             | timestamp with time zone | not null default now()
- started_at              | timestamp with time zone | 
- completed_or_errored_at | timestamp with time zone | 
- tracing_context         | text                     | not null
+       Column       |           Type           |                         Modifiers                         
+--------------------+--------------------------+-----------------------------------------------------------
+ id                 | bigint                   | not null default nextval('lsif_uploads_id_seq'::regclass)
+ repository         | text                     | not null
+ commit             | text                     | not null
+ root               | text                     | not null
+ filename           | text                     | not null
+ state              | lsif_upload_state        | not null default 'queued'::lsif_upload_state
+ failure_summary    | text                     | 
+ failure_stacktrace | text                     | 
+ uploaded_at        | timestamp with time zone | not null default now()
+ started_at         | timestamp with time zone | 
+ finished_at        | timestamp with time zone | 
+ tracing_context    | text                     | not null
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
+    "lsif_uploads_state" btree (state)
+    "lsif_uploads_uploaded_at" btree (uploaded_at)
 
 ```
 
@@ -719,7 +720,7 @@ Check constraints:
     "repo_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
     "repo_sources_check" CHECK (jsonb_typeof(sources) = 'object'::text)
 Referenced by:
-    TABLE "campaign_jobs" CONSTRAINT "campaign_jobs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE
+    TABLE "campaign_jobs" CONSTRAINT "campaign_jobs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "changesets" CONSTRAINT "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "default_repos" CONSTRAINT "default_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id)
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE

@@ -1,4 +1,5 @@
 import * as util from '../integration-test-util'
+import { internalLocationToLocation } from '../../../server/routes/lsif'
 
 describe('Backend', () => {
     const ctx = new util.BackendTestContext()
@@ -20,7 +21,9 @@ describe('Backend', () => {
         }
 
         const definitions = await ctx.backend.definitions(repository, commit, 'src/a.ts', { line: 0, character: 17 })
-        expect(definitions).toEqual([util.createLocation('src/a.ts', 0, 16, 0, 19)])
+        expect(definitions?.map(l => internalLocationToLocation(repository, l))).toEqual([
+            util.createLocation('src/a.ts', 0, 16, 0, 19),
+        ])
     })
 
     it('should find all simple defs of `add` from b.ts', async () => {
@@ -29,7 +32,9 @@ describe('Backend', () => {
         }
 
         const definitions = await ctx.backend.definitions(repository, commit, 'src/b.ts', { line: 2, character: 1 })
-        expect(definitions).toEqual([util.createLocation('src/a.ts', 0, 16, 0, 19)])
+        expect(definitions?.map(l => internalLocationToLocation(repository, l))).toEqual([
+            util.createLocation('src/a.ts', 0, 16, 0, 19),
+        ])
     })
 
     it('should find all simple refs of `add` from a.ts', async () => {
@@ -38,9 +43,12 @@ describe('Backend', () => {
         }
 
         const { locations } = util.filterNodeModules(
-            (await ctx.backend.references(repository, commit, 'src/a.ts', { line: 0, character: 17 })) || {
-                locations: [],
-            }
+            util.mapInternalLocations(
+                repository,
+                (await ctx.backend.references(repository, commit, 'src/a.ts', { line: 0, character: 17 })) || {
+                    locations: [],
+                }
+            )
         )
 
         expect(locations).toContainEqual(util.createLocation('src/a.ts', 0, 16, 0, 19)) // def

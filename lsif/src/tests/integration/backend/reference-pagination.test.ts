@@ -27,16 +27,19 @@ describe('Backend', () => {
 
         const fetch = async (paginationContext?: ReferencePaginationContext) =>
             util.filterNodeModules(
-                (await backend.references(
+                util.mapInternalLocations(
                     'a',
-                    commit,
-                    'src/index.ts',
-                    {
-                        line: 0,
-                        character: 17,
-                    },
-                    paginationContext
-                )) || { locations: [] }
+                    (await backend.references(
+                        'a',
+                        commit,
+                        'src/index.ts',
+                        {
+                            line: 0,
+                            character: 17,
+                        },
+                        paginationContext
+                    )) || { locations: [] }
+                )
             )
 
         const { locations: locations0, cursor: cursor0 } = await fetch() // everything

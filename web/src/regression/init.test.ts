@@ -5,6 +5,7 @@ import { editCriticalSiteConfig } from './util/helpers'
 import { Key } from 'ts-key-enum'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
+import delay from 'delay'
 
 /**
  * @jest-environment node
@@ -74,7 +75,7 @@ describe('Initialize new instance', () => {
                 async () => {
                     await driver.page.reload()
                     await driver.findElementWithText('Configure external services', { wait: { timeout: 5 * 1000 } })
-                    await new Promise(resolve => setTimeout(resolve, 1000))
+                    await delay(1000)
                     expect(
                         await driver.page.evaluate(() =>
                             document.body.innerText.includes('Update critical configuration')

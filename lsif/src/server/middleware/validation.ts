@@ -35,6 +35,16 @@ export const validateOptionalBoolean = (key: string): ValidationChain =>
         .toBoolean()
 
 /**
+ * Create a query string validator for an integer value.
+ *
+ * @param key The query string key.
+ */
+export const validateInt = (key: string): ValidationChain =>
+    query(key)
+        .isInt()
+        .toInt()
+
+/**
  * Create a query string validator for a possibly empty integer value.
  *
  * @param key The query string key.

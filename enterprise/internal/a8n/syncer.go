@@ -84,12 +84,12 @@ func (s *ChangesetSyncer) SyncChangesets(ctx context.Context, cs ...*a8n.Changes
 		}
 	}
 
-	type batch struct {
+	type sourceChangeset struct {
 		repos.ChangesetSource
 		Changesets []*repos.Changeset
 	}
 
-	batches := make(map[int64]*batch, len(es))
+	bySource := make(map[int64]*sourceChangeset, len(es))
 	for _, e := range es {
 		src, err := repos.NewSource(e, s.HTTPFactory)
 		if err != nil {
@@ -101,28 +101,27 @@ func (s *ChangesetSyncer) SyncChangesets(ctx context.Context, cs ...*a8n.Changes
 			return errors.Errorf("unsupported repo type %q", e.Kind)
 		}
 
-		batches[e.ID] = &batch{ChangesetSource: css}
+		bySource[e.ID] = &sourceChangeset{ChangesetSource: css}
 	}
 
 	for _, c := range cs {
 		repoID := uint32(c.RepoID)
-		b := batches[byRepo[repoID]]
-		if b == nil {
+		s := bySource[byRepo[repoID]]
+		if s == nil {
 			continue
 		}
-		b.Changesets = append(b.Changesets, &repos.Changeset{
+		s.Changesets = append(s.Changesets, &repos.Changeset{
 			Changeset: c,
 			Repo:      repoSet[repoID],
 		})
 	}
 
 	var events []*a8n.ChangesetEvent
-	for _, b := range batches {
-		if err = b.LoadChangesets(ctx, b.Changesets...); err != nil {
+	for _, s := range bySource {
+		if err := s.LoadChangesets(ctx, s.Changesets...); err != nil {
 			return err
 		}
-
-		for _, c := range b.Changesets {
+		for _, c := range s.Changesets {
 			events = append(events, c.Events()...)
 		}
 	}
@@ -131,7 +130,6 @@ func (s *ChangesetSyncer) SyncChangesets(ctx context.Context, cs ...*a8n.Changes
 	if err != nil {
 		return err
 	}
-
 	defer tx.Done(&err)
 
 	if err = tx.UpdateChangesets(ctx, cs...); err != nil {

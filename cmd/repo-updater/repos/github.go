@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -155,17 +156,45 @@ func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) error {
 		RepositoryID: repo.ID,
 		Title:        c.Title,
 		Body:         c.Body,
-		HeadRefName:  c.HeadRefName,
-		BaseRefName:  c.BaseRefName,
+		HeadRefName:  git.AbbreviateRef(c.HeadRef),
+		BaseRefName:  git.AbbreviateRef(c.BaseRef),
 	})
 
 	if err != nil {
-		return err
+		if err != github.ErrPullRequestAlreadyExists {
+			return err
+		}
+		owner, name, err := github.SplitRepositoryNameWithOwner(repo.NameWithOwner)
+		if err != nil {
+			return errors.Wrap(err, "getting repo owner and name")
+		}
+		pr, err = s.client.GetOpenPullRequestByRefs(ctx, owner, name, c.BaseRef, c.HeadRef)
+		if err != nil {
+			return errors.Wrap(err, "fetching existing PR")
+		}
 	}
 
 	c.Changeset.Metadata = pr
 	c.Changeset.ExternalID = strconv.FormatInt(pr.Number, 10)
 	c.Changeset.ExternalServiceType = github.ServiceType
+
+	return nil
+}
+
+// CloseChangeset closes the given *Changeset on the code host and updates the
+// Metadata column in the *a8n.Changeset to the newly closed pull request.
+func (s GithubSource) CloseChangeset(ctx context.Context, c *Changeset) error {
+	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
+	if !ok {
+		return errors.New("Changeset is not a GitHub pull request")
+	}
+
+	err := s.client.ClosePullRequest(ctx, pr)
+	if err != nil {
+		return err
+	}
+
+	c.Changeset.Metadata = pr
 
 	return nil
 }
@@ -177,7 +206,7 @@ func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) erro
 		repo := cs[i].Repo.Metadata.(*github.Repository)
 		number, err := strconv.ParseInt(cs[i].ExternalID, 10, 64)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "parsing changeset external id")
 		}
 
 		prs[i] = &github.PullRequest{

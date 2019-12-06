@@ -16,6 +16,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
+// EnsureRefPrefix checks whether the ref is a full ref and contains the
+// "refs/heads" prefix (i.e. "refs/heads/master") or just an abbreviated ref
+// (i.e. "master") and adds the "refs/heads/" prefix if the latter is the case.
+func EnsureRefPrefix(ref string) string {
+	return "refs/heads/" + strings.TrimPrefix(ref, "refs/heads/")
+}
+
+// AbbreviateRef removes the "refs/heads/" prefix from a given ref. If the ref
+// doesn't have the prefix, it returns it unchanged.
+func AbbreviateRef(ref string) string {
+	return strings.TrimPrefix(ref, "refs/heads/")
+}
+
 // A Branch is a VCS branch.
 type Branch struct {
 	// Name is the name of this branch.

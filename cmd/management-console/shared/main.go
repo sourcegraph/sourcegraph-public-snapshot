@@ -185,7 +185,7 @@ func serveGet(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func httpError(w http.ResponseWriter, message string, code string) {
+func httpError(w http.ResponseWriter, message, code string) {
 	_ = json.NewEncoder(w).Encode(struct {
 		Error string `json:"error"`
 		Code  string `json:"code"`

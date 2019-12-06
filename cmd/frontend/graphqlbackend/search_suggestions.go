@@ -269,14 +269,14 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			}
 			var suggestions []*searchSuggestionResolver
 			if results != nil {
-				if len(results.results) > int(*args.First) {
-					results.results = results.results[:*args.First]
+				if len(results.SearchResults) > int(*args.First) {
+					results.SearchResults = results.SearchResults[:*args.First]
 				}
-				suggestions = make([]*searchSuggestionResolver, 0, len(results.results))
-				for i, res := range results.results {
+				suggestions = make([]*searchSuggestionResolver, 0, len(results.SearchResults))
+				for i, res := range results.SearchResults {
 					if fm, ok := res.ToFileMatch(); ok {
 						entryResolver := fm.File()
-						suggestions = append(suggestions, newSearchResultResolver(entryResolver, len(results.results)-i))
+						suggestions = append(suggestions, newSearchResultResolver(entryResolver, len(results.SearchResults)-i))
 					}
 				}
 			}

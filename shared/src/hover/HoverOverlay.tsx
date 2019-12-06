@@ -28,6 +28,8 @@ export interface HoverOverlayClassProps {
     className?: string
     closeButtonClassName?: string
 
+    iconClassName?: string
+
     actionItemClassName?: string
     actionItemPressedClassName?: string
 
@@ -243,6 +245,7 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                                         actionItemClassName,
                                         `e2e-tooltip-${sanitizeClass(action.action.title || 'untitled')}`
                                     )}
+                                    iconClassName={this.props.iconClassName}
                                     pressedClassName={actionItemPressedClassName}
                                     variant="actionItem"
                                     disabledDuringExecution={true}

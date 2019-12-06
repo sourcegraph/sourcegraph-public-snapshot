@@ -23,7 +23,7 @@ type test struct {
 	want *lsp.Location
 }
 
-func mkLocation(uri string, line int, character int) *lsp.Location {
+func mkLocation(uri string, line, character int) *lsp.Location {
 	return &lsp.Location{
 		URI: "https://github.com/gorilla/mux?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#/mux.go",
 		Range: lsp.Range{

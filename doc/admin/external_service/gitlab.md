@@ -49,3 +49,18 @@ To configure GitLab as an authentication provider (which will enable sign-in via
 ## Configuration
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/gitlab.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/external_service/gitlab) to see rendered content.</div>
+
+## Native integration
+
+To provide out-of-the-box code intelligence and navigation features to your users on GitLab, you will need to [configure your GitLab instance](https://docs.gitlab.com/ee/integration/sourcegraph.html).
+
+The Sourcegraph instance's site admin must [update the `corsOrigin` site config property](../config/site_config.md) to allow the GitLab instance to communicate with the Sourcegraph instance. For example:
+
+```json
+{
+  // ...
+  "corsOrigin":
+    "https://my-gitlab.example.com"
+  // ...
+}
+```

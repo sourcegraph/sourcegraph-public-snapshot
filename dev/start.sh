@@ -75,7 +75,9 @@ export WEBPACK_DEV_SERVER=1
 
 export CRITICAL_CONFIG_FILE=${CRITICAL_CONFIG_FILE:-./dev/critical-config.json}
 export SITE_CONFIG_FILE=${SITE_CONFIG_FILE:-./dev/site-config.json}
+export GLOBAL_SETTINGS_FILE=${GLOBAL_SETTINGS_FILE:-./dev/global-settings.json}
 export SITE_CONFIG_ALLOW_EDITS=true
+export GLOBAL_SETTINGS_ALLOW_EDITS=true
 
 # WebApp
 export NODE_ENV=development
@@ -96,14 +98,6 @@ if ! ./dev/go-install.sh; then
 	echo >&2 "WARNING: go-install.sh failed, some builds may have failed."
 	exit 1
 fi
-
-# Install or upgrade comby.
-# if ! ./dev/comby-install-or-upgrade.sh; then
-#     # Wait for everything to finish up to here.
-#     wait
-#     echo >&2 "WARNING: comby-install-or-upgrade.sh failed, some builds may have failed."
-#     exit 1
-# fi
 
 # Wait for yarn if it is still running
 if [[ -n "$yarn_pid" ]]; then
