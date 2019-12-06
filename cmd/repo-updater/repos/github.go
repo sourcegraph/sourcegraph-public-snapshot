@@ -171,6 +171,24 @@ func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) error {
 	return nil
 }
 
+// CloseChangeset closes the given *Changeset on the code host and updates the
+// Metadata column in the *a8n.Changeset to the newly closed pull request.
+func (s GithubSource) CloseChangeset(ctx context.Context, c *Changeset) error {
+	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
+	if !ok {
+		return errors.New("Changeset is not a GitHub pull request")
+	}
+
+	err := s.client.ClosePullRequest(ctx, pr)
+	if err != nil {
+		return err
+	}
+
+	c.Changeset.Metadata = pr
+
+	return nil
+}
+
 // LoadChangesets loads the latest state of the given Changesets from the codehost.
 func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) error {
 	prs := make([]*github.PullRequest, len(cs))
