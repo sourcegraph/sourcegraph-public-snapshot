@@ -1037,12 +1037,12 @@ func (e *httpError) DuplicatePullRequest() bool {
 const bitbucketDuplicatePRException = "com.atlassian.bitbucket.pull.DuplicatePullRequestException"
 
 func (e *httpError) ExtractExistingPullRequest() (*PullRequest, error) {
-	dest := struct {
+	var dest struct {
 		Errors []struct {
 			ExceptionName       string
 			ExistingPullRequest PullRequest
 		}
-	}{}
+	}
 
 	err := json.Unmarshal(e.Body, &dest)
 	if err != nil {
@@ -1055,5 +1055,5 @@ func (e *httpError) ExtractExistingPullRequest() (*PullRequest, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("existing PR not found")
+	return nil, errors.New("existing PR not found")
 }

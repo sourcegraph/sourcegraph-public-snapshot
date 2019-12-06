@@ -482,7 +482,7 @@ func (c *Client) loadPullRequests(ctx context.Context, prs ...*PullRequest) erro
 
 // GetOpenPullRequestByRefs fetches the the pull request associated with the supplied
 // refs. GitHub only allows one open PR by ref at a time.
-// If nothing is found (0, nil) is returned
+// If nothing is found (nil, nil) is returned
 func (c *Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, baseRef, headRef string) (*PullRequest, error) {
 	var q strings.Builder
 	q.WriteString(pullRequestFragments)
