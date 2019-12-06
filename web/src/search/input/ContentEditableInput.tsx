@@ -120,6 +120,11 @@ export class ContentEditableInput extends React.Component<Props> {
     private submitInputRef = React.createRef<HTMLInputElement>()
 
     /**
+     * Used to prevent persistent rendering of rich content which is pasted in more than once.
+     */
+    private lastInput: string | null = null
+
+    /**
      * Calculates cursor position to be returned for a `QueryState`.
      * contentEditable has its content in nodes, and each node can have its own
      * selection offset. To get the current cursor position as if it were in a single text
@@ -168,7 +173,11 @@ export class ContentEditableInput extends React.Component<Props> {
     }
 
     private onInput: React.ChangeEventHandler<HTMLDivElement> = event => {
-        if (this.props.onChange) {
+        if (event.target.textContent === this.lastInput && this.inputRef.current) {
+            this.inputRef.current.innerHTML = this.props.value.content
+            this.focus(this.props.value.cursor)
+        } else if (this.props.onChange) {
+            this.lastInput = event.target.textContent
             this.props.onChange(event, {
                 query: event.target.textContent ?? '',
                 cursorPosition: this.queryStringCursorPosition,
@@ -202,10 +211,11 @@ export class ContentEditableInput extends React.Component<Props> {
         // `requestAnimationFrame` to prevent 'unstable_flushDiscreteUpdates'
         // while trying to modify the DOM before React has finished updating.
         // See `this.inputRef` definition for why to modify DOM directly
+        const isDifferentContent = newProps.value.content !== this.props.value.content
         requestAnimationFrame(() => {
             // Only update if props are different, preventing, on re-rendering,
             // the selection being lost or the cursor to jump around
-            if (this.inputRef.current && !isEqual(newProps, this.props)) {
+            if (this.inputRef.current && isDifferentContent) {
                 this.inputRef.current.innerHTML = newProps.value.content
                 if (newProps.focus) {
                     this.focus(newProps.value.cursor)
