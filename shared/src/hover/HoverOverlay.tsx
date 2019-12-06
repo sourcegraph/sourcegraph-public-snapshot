@@ -28,6 +28,8 @@ export interface HoverOverlayClassProps {
     className?: string
     closeButtonClassName?: string
 
+    iconClassName?: string
+
     actionItemClassName?: string
     actionItemPressedClassName?: string
 

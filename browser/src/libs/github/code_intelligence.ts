@@ -270,6 +270,8 @@ const nativeTooltipResolver: ViewResolver<NativeTooltip> = {
     resolveView: element => ({ element }),
 }
 
+const iconClassName = 'action-item__icon--github v-align-text-bottom'
+
 export const githubCodeHost: CodeHost = {
     type: 'github',
     name: checkIsGitHubEnterprise() ? 'GitHub Enterprise' : 'GitHub',
@@ -288,7 +290,7 @@ export const githubCodeHost: CodeHost = {
     getViewContextOnSourcegraphMount: createOpenOnSourcegraphIfNotExists,
     viewOnSourcegraphButtonClassProps: {
         className: 'btn btn-sm tooltipped tooltipped-s',
-        iconClassName: 'action-item__icon--github v-align-text-bottom',
+        iconClassName,
     },
     check: checkIsGitHub,
     getCommandPaletteMount,
@@ -326,6 +328,7 @@ export const githubCodeHost: CodeHost = {
         closeButtonClassName: 'btn',
         infoAlertClassName: 'flash flash-full',
         errorAlertClassName: 'flash flash-full flash-error',
+        iconClassName,
     },
     setElementTooltip,
     linkPreviewContentClass: 'text-small text-gray p-1 mx-1 border rounded-1 bg-gray text-gray-dark',
