@@ -115,9 +115,6 @@ export class QueryInput extends React.Component<Props, State> {
     /** Only used for selection and focus management */
     private inputElement = React.createRef<HTMLInputElement>()
 
-    /** Used for scrolling suggestions into view while scrolling with keyboard */
-    private containerElement = React.createRef<Form & HTMLFormElement>()
-
     public state: State = {
         showSuggestions: false,
         loadingSuggestions: false,
@@ -349,7 +346,7 @@ export class QueryInput extends React.Component<Props, State> {
                     const { onChange: downshiftChange, onKeyDown } = getInputProps()
                     return (
                         <div className="query-input2">
-                            <Form onSubmit={this.onSubmit} ref={this.containerElement}>
+                            <Form onSubmit={this.onSubmit}>
                                 <input
                                     onFocus={this.onInputFocus}
                                     onBlur={this.onInputBlur}
