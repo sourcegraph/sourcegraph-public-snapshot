@@ -37,6 +37,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { once } from 'lodash'
 import { dedupeWhitespace } from '../../../../shared/src/util/strings'
 import { Form } from '../../components/Form'
+import { SearchButton } from './SearchButton'
 
 /**
  * The query input field is clobbered and updated to contain this subject's values, as
@@ -337,16 +338,16 @@ export class QueryInput extends React.Component<Props, State> {
             cursorPosition: this.state.suggestions.cursorPosition,
         })
         return (
-            <Downshift
-                scrollIntoView={this.downshiftScrollIntoView}
-                onSelect={this.onSuggestionSelect}
-                itemToString={this.downshiftItemToString}
-            >
-                {({ getInputProps, getItemProps, getMenuProps, highlightedIndex }) => {
-                    const { onChange: downshiftChange, onKeyDown } = getInputProps()
-                    return (
-                        <div className="query-input2">
-                            <Form onSubmit={this.onSubmit}>
+            <Form onSubmit={this.onSubmit} className="query-input2__form">
+                <Downshift
+                    scrollIntoView={this.downshiftScrollIntoView}
+                    onSelect={this.onSuggestionSelect}
+                    itemToString={this.downshiftItemToString}
+                >
+                    {({ getInputProps, getItemProps, getMenuProps, highlightedIndex }) => {
+                        const { onChange: downshiftChange, onKeyDown } = getInputProps()
+                        return (
+                            <div className="query-input2">
                                 <input
                                     onFocus={this.onInputFocus}
                                     onBlur={this.onInputBlur}
@@ -403,11 +404,12 @@ export class QueryInput extends React.Component<Props, State> {
                                     toggled={this.props.patternType === SearchPatternType.regexp}
                                     navbarSearchQuery={this.props.value.query}
                                 />
-                            </Form>
-                        </div>
-                    )
-                }}
-            </Downshift>
+                            </div>
+                        )
+                    }}
+                </Downshift>
+                <SearchButton />
+            </Form>
         )
     }
 
@@ -429,16 +431,20 @@ export class QueryInput extends React.Component<Props, State> {
         }
     }
 
+    private setShowSuggestions(showSuggestions: boolean): void {
+        this.setState({ showSuggestions }, () => !showSuggestions && this.suggestionsHidden.next())
+    }
+
     private onInputBlur = (): void => {
-        this.setState({ showSuggestions: false }, () => this.suggestionsHidden.next())
+        this.setShowSuggestions(false)
     }
 
     private onInputFocus = (): void => {
-        this.setState({ showSuggestions: true })
+        this.setShowSuggestions(true)
     }
 
     private onSubmit = (): void => {
-        this.setState({ showSuggestions: false })
+        this.setShowSuggestions(false)
     }
 
     /**

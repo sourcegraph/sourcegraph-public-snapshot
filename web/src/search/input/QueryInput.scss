@@ -7,6 +7,11 @@
     // The width of the toggle icons in the query input.
     $toggle-icon-width: 24px;
 
+    &__form {
+        display: flex;
+        flex: 1 1 auto;
+    }
+
     &__input {
         // Right side is flush with SearchButton.
         border-top-right-radius: 0;

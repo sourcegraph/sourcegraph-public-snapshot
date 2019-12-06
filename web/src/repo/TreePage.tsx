@@ -33,7 +33,6 @@ import { DiscussionsList } from '../discussions/DiscussionsList'
 import { searchQueryForRepoRev, PatternTypeProps } from '../search'
 import { submitSearch, QueryState } from '../search/helpers'
 import { QueryInput } from '../search/input/QueryInput'
-import { SearchButton } from '../search/input/SearchButton'
 import { eventLogger, EventLoggerProps } from '../tracking/eventLogger'
 import { basename } from '../util/path'
 import { fetchTree } from './backend'
@@ -297,7 +296,6 @@ export class TreePage extends React.PureComponent<Props, State> {
                                         autoFocus={true}
                                         placeholder=""
                                     />
-                                    <SearchButton />
                                 </Form>
                             </section>
                             <TreeEntriesSection
