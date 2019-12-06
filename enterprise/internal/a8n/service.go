@@ -99,7 +99,7 @@ func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign) error {
 }
 
 // RunChangesetJobs will run all the changeset jobs for the supplied campaign.
-// It is idempotent and jobs that have already completed will not be rerun
+// It is idempotent and jobs that have already completed will not be rerun.
 func (s *Service) RunChangesetJobs(ctx context.Context, c *a8n.Campaign) error {
 	var err error
 	tr, ctx := trace.New(ctx, "Service.RunChangesetJobs", fmt.Sprintf("Campaign: %q", c.Name))
