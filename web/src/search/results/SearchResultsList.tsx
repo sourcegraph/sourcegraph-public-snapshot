@@ -398,7 +398,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                         </button>
                                     )}
 
-                                    {/* Server-provided help message when there are no results*/}
+                                    {/* Server-provided help message */}
                                     {results.alert && (
                                         <div className="alert alert-info m-2">
                                             <h3>
