@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/db/confdb"
@@ -54,8 +53,7 @@ func handleConfigOverrides() error {
 	overrideCriticalConfig := os.Getenv("CRITICAL_CONFIG_FILE")
 	overrideSiteConfig := os.Getenv("SITE_CONFIG_FILE")
 	overrideExtSvcConfig := os.Getenv("EXTSVC_CONFIG_FILE")
-	overrideGlobalSettings := os.Getenv("GLOBAL_SETTINGS_FILE")
-	overrideAny := overrideCriticalConfig != "" || overrideSiteConfig != "" || overrideExtSvcConfig != "" || overrideGlobalSettings != ""
+	overrideAny := overrideCriticalConfig != "" || overrideSiteConfig != "" || overrideExtSvcConfig != ""
 	if overrideAny || conf.IsDev(conf.DeployType()) {
 		raw, err := (&configurationSource{}).Read(ctx)
 		if err != nil {
@@ -82,30 +80,6 @@ func handleConfigOverrides() error {
 			err := (&configurationSource{}).Write(ctx, raw)
 			if err != nil {
 				return errors.Wrap(err, "writing critical/site config overrides to database")
-			}
-		}
-
-		if overrideGlobalSettings != "" {
-			globalSettingsBytes, err := ioutil.ReadFile(overrideGlobalSettings)
-			if err != nil {
-				return errors.Wrap(err, "reading GLOBAL_SETTINGS_FILE")
-			}
-			currentSettings, err := db.Settings.GetLatest(ctx, api.SettingsSubject{Site: true})
-			if err != nil {
-				return errors.Wrap(err, "could not fetch current settings")
-			}
-			// Only overwrite the settings if the current settings differ or were created by a human
-			// user to prevent creating unnecessary rows in the DB.
-			globalSettings := string(globalSettingsBytes)
-			if currentSettings.AuthorUserID != nil || currentSettings.Contents != globalSettings {
-				var lastID *int32 = nil
-				if currentSettings != nil {
-					lastID = &currentSettings.ID
-				}
-				_, err = db.Settings.CreateIfUpToDate(ctx, api.SettingsSubject{Site: true}, lastID, nil, globalSettings)
-				if err != nil {
-					return errors.Wrap(err, "writing global setting override to database")
-				}
 			}
 		}
 

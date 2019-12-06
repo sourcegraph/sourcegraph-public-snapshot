@@ -46,18 +46,6 @@ SITE_CONFIG_FILE=site.json
 
 If you want to _allow_ edits to be made through the web UI (which will be overwritten with what is in the file on a subsequent restart), you may additionally set `SITE_CONFIG_ALLOW_EDITS=true`. Note that if you do enable this, it is your responsibility to ensure the configuration on your instance and in the file remain in sync.
 
-#### Global settings
-
-Set the environment variable below on all `frontend` containers (cluster deployment) or on the `server` container (single-container Docker deployment):
-
-```bash
-GLOBAL_SETTINGS_FILE=global-settings.json
-```
-
-`global-settings.json` contains the global settings, which you would otherwise edit through the in-app global settings editor.
-
-If you want to _allow_ edits to be made through the web UI (which will be overwritten with what is in the file on a subsequent restart), you may additionally set `GLOBAL_SETTINGS_ALLOW_EDITS=true`. Note that if you do enable this, it is your responsibility to ensure the global settings on your instance and in the file remain in sync.
-
 #### External service configuration
 
 Set the environment variable below on all `frontend` containers (cluster deployment) or on the `server` container (single-container Docker deployment):
