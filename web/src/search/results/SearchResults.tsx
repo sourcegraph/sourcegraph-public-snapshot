@@ -300,9 +300,9 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         const query = params.get('q') || ''
 
         if (/count:(\d+)/.test(query)) {
-            return Math.max(results.resultCount * 2, 1000)
+            return Math.max(results.matchCount * 2, 1000)
         }
-        return Math.max(results.resultCount * 2 || 0, 1000)
+        return Math.max(results.matchCount * 2 || 0, 1000)
     }
 
     private onExpandAllResultsToggle = (): void => {
