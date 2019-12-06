@@ -108,9 +108,10 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
             }
             descriptionParts.push(basename(item.repository.name))
             if (item.isDirectory) {
+                console.log('YES ', item)
                 return {
                     type: SuggestionTypes.dir,
-                    value: formatRegExp(item.path),
+                    value: '^' + escapeRegExp(item.path),
                     description: descriptionParts.join(' — '),
                     url: `${item.url}?suggestion`,
                     label: 'go to dir',
