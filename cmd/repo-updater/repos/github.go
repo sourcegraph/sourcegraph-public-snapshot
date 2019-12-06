@@ -161,9 +161,11 @@ func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) error {
 
 	if err != nil {
 		if err == github.ErrPullRequestAlreadyExists {
-			// Duplicate PR, fetch the external ID
-			// TODO: Get owner and repo name
-			externalID, externalServiceType, err := s.fetchChangesetExternalID(ctx, "sd9", "cockroach", c.BaseRefName, c.HeadRefName)
+			owner, name, err := github.SplitRepositoryNameWithOwner(repo.NameWithOwner)
+			if err != nil {
+				return errors.Wrap(err, "getting repo owner and name")
+			}
+			externalID, externalServiceType, err := s.fetchChangesetExternalID(ctx, owner, name, c.BaseRefName, c.HeadRefName)
 			if err != nil {
 				return errors.Wrap(err, "fetching external id")
 			}
@@ -171,7 +173,7 @@ func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) error {
 				return fmt.Errorf("external id for campaign %d not found", c.Changeset.ID)
 			}
 			// TODO: We may need to pull in the entire PR so that we can set the
-			// Changeset.Metadata
+			// Changeset.Metadata correctly
 			c.ExternalID = externalID
 			c.ExternalServiceType = externalServiceType
 			return nil
