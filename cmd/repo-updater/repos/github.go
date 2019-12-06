@@ -168,7 +168,7 @@ func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) error {
 		if err != nil {
 			return errors.Wrap(err, "getting repo owner and name")
 		}
-		pr, err = s.client.GetOpenPullRequestByRefs(ctx, owner, name, c.BaseRefName, c.HeadRefName)
+		pr, err = s.client.GetOpenPullRequestByRefs(ctx, owner, name, c.BaseRef, c.HeadRef)
 		if err != nil {
 			return errors.Wrap(err, "fetching existing PR")
 		}
