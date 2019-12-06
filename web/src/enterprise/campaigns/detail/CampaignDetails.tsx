@@ -60,6 +60,18 @@ const jsonSchemaByType: { [K in CampaignType]: any } = {
     credentials: credentialsJsonSchema,
 }
 
+const defaultInputByType: { [K in CampaignType]: any } = {
+    comby: `{
+    "scopeQuery": "repo:github.com/foo/bar",
+    "matchTemplate": "",
+    "rewriteTemplate": ""
+}`,
+    credentials: `{
+    "scopeQuery": "repo:github.com/foo/bar",
+    "matchers": [{ "type": "npm" }]
+}`,
+}
+
 /**
  * The area for a single campaign.
  */
@@ -241,7 +253,12 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     }
 
     const onChangeType = (event: React.ChangeEvent<HTMLSelectElement>): void => {
-        setType((event.target.value as CampaignType) || undefined)
+        const newType = (event.target.value as CampaignType) || undefined
+        const parsedContent = parseJSONC(campaignPlanArguments)
+        if ((newType && !parsedContent) || (type && isEqual(parsedContent, parseJSONC(defaultInputByType[type])))) {
+            setCampaignPlanArguments(defaultInputByType[newType])
+        }
+        setType(newType)
         setCampaign(undefined)
     }
 

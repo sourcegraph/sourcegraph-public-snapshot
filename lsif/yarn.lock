@@ -441,10 +441,10 @@
     "@types/tough-cookie" "*"
     form-data "^2.5.0"
 
-"@types/ioredis@*", "@types/ioredis@4.0.20":
-  version "4.0.20"
-  resolved "https://registry.npmjs.org/@types/ioredis/-/ioredis-4.0.20.tgz#83cf22342cf04359678e797f61495fcf72fa33f5"
-  integrity sha512-8Z5k3yc7PWOpckWDgGKUQ7ebQT2daI1ga8j+gRbvPKh7XndOUkqhY1dFUG4dIaUzlvVNejLC9Ab7v9BC25gRiA==
+"@types/ioredis@*", "@types/ioredis@4.14.0":
+  version "4.14.0"
+  resolved "https://registry.npmjs.org/@types/ioredis/-/ioredis-4.14.0.tgz#3e55c058c6ef93cbe4999e2b419b38f7e5493514"
+  integrity sha512-IgDaR4NdlXKKXUZp6jwXXi4XqxTaHO0rg+Jmb8IW3sWDjRPyD9k0tYBrV96KZzCxAjSoOiccS82KBf31oCksTA==
   dependencies:
     "@types/node" "*"
 
@@ -1856,10 +1856,10 @@ express-opentracing@^0.1.1:
   dependencies:
     opentracing "^0.14.0"
 
-express-validator@^6.2.0:
-  version "6.2.0"
-  resolved "https://registry.npmjs.org/express-validator/-/express-validator-6.2.0.tgz#294409468ee78e90e908c6a77ea3629bae41fd85"
-  integrity sha512-892cPistoSPzMuoG2p1W+2ZxBi0bAvPaaYgXK1E1C8/QncLo2d1HbiDDWkXUtTthjGEzEmwiELLJHu1Ez2hOEg==
+express-validator@^6.3.0:
+  version "6.3.0"
+  resolved "https://registry.npmjs.org/express-validator/-/express-validator-6.3.0.tgz#db40dca4228c8cd6524b929ead1876520aee3dee"
+  integrity sha512-qzKJaUg6BrcRBeZH+QNq2G8/QrLOuaozWKFeeod1oVcMcdauDiTxgbvQeWkhCSlS9V37mx/CVaXKvpRBjR0IeQ==
   dependencies:
     lodash "^4.17.15"
     validator "^11.1.0"

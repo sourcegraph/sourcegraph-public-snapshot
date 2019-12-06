@@ -246,8 +246,8 @@ func (r *changesetResolver) Diff(ctx context.Context) (*graphqlbackend.Repositor
 		return nil, err
 	}
 	if base == "" {
-		// Fallback to the ref name if we can't get the OID
-		base, err = r.Changeset.BaseRefName()
+		// Fallback to the ref if we can't get the OID
+		base, err = r.Changeset.BaseRef()
 		if err != nil {
 			return nil, err
 		}
@@ -258,8 +258,8 @@ func (r *changesetResolver) Diff(ctx context.Context) (*graphqlbackend.Repositor
 		return nil, err
 	}
 	if head == "" {
-		// Fallback to the ref name if we can't get the OID
-		head, err = r.Changeset.HeadRefName()
+		// Fallback to the ref if we can't get the OID
+		head, err = r.Changeset.HeadRef()
 		if err != nil {
 			return nil, err
 		}
@@ -272,12 +272,12 @@ func (r *changesetResolver) Diff(ctx context.Context) (*graphqlbackend.Repositor
 }
 
 func (r *changesetResolver) Head(ctx context.Context) (*graphqlbackend.GitRefResolver, error) {
-	name, err := r.Changeset.HeadRefName()
+	name, err := r.Changeset.HeadRef()
 	if err != nil {
 		return nil, err
 	}
 	if name == "" {
-		return nil, errors.New("changeset head ref name could not be determined")
+		return nil, errors.New("changeset head ref could not be determined")
 	}
 
 	oid, err := r.Changeset.HeadRefOid()
@@ -289,12 +289,12 @@ func (r *changesetResolver) Head(ctx context.Context) (*graphqlbackend.GitRefRes
 }
 
 func (r *changesetResolver) Base(ctx context.Context) (*graphqlbackend.GitRefResolver, error) {
-	name, err := r.Changeset.BaseRefName()
+	name, err := r.Changeset.BaseRef()
 	if err != nil {
 		return nil, err
 	}
 	if name == "" {
-		return nil, errors.New("changeset base ref name could not be determined")
+		return nil, errors.New("changeset base ref could not be determined")
 	}
 
 	oid, err := r.Changeset.BaseRefOid()

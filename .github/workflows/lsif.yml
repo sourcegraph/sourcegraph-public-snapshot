@@ -6,11 +6,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - name: Generate LSIF Data
+      - name: Generate LSIF data
         uses: sourcegraph/lsif-go-action@master
         with:
+          project_root: cmd/
+          file: cmd/dump.lsif
           verbose: "true"
       - name: Upload LSIF data
         uses: sourcegraph/lsif-upload-action@master
+        continue-on-error: true
         with:
-          public_repo_github_token: ${{ secrets.PUBLIC_REPO_GITHUB_TOKEN }}
+          file: cmd/dump.lsif
+          github_token: ${{ secrets.PUBLIC_REPO_GITHUB_TOKEN }}

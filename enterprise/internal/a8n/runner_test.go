@@ -127,7 +127,7 @@ func TestRunner(t *testing.T) {
 			name:         "multi search results and successfull execution",
 			search:       yieldRepos(rs...),
 			commitID:     yieldDefaultBranches(defaultBranches),
-			campaignType: &testCampaignType{diff: testDiff},
+			campaignType: &testCampaignType{diff: testDiff, description: testDescription},
 			wantPlan: func() *a8n.CampaignPlan {
 				p := testPlan.Clone()
 				p.CreatedAt = now
@@ -140,6 +140,7 @@ func TestRunner(t *testing.T) {
 						CampaignPlanID: plan.ID,
 						RepoID:         int32(rs[0].ID),
 						Diff:           testDiff,
+						Description:    testDescription,
 						Rev:            api.CommitID(branches[0].target),
 						BaseRef:        branches[0].ref,
 						CreatedAt:      now,
@@ -151,6 +152,7 @@ func TestRunner(t *testing.T) {
 						CampaignPlanID: plan.ID,
 						RepoID:         int32(rs[1].ID),
 						Diff:           testDiff,
+						Description:    testDescription,
 						Rev:            api.CommitID(branches[1].target),
 						BaseRef:        branches[1].ref,
 						CreatedAt:      now,
@@ -162,6 +164,7 @@ func TestRunner(t *testing.T) {
 						CampaignPlanID: plan.ID,
 						RepoID:         int32(rs[2].ID),
 						Diff:           testDiff,
+						Description:    testDescription,
 						Rev:            api.CommitID(branches[2].target),
 						BaseRef:        branches[2].ref,
 						CreatedAt:      now,
@@ -176,7 +179,7 @@ func TestRunner(t *testing.T) {
 			name:         "multi search results but getting a commit ID fails",
 			search:       yieldRepos(rs...),
 			commitID:     errorOnCall(yieldDefaultBranches(defaultBranches), 2, errors.New("no commit ID found")),
-			campaignType: &testCampaignType{diff: testDiff},
+			campaignType: &testCampaignType{diff: testDiff, description: testDescription},
 			runErr:       "no commit ID found",
 			wantPlan:     nil,
 			wantJobs:     wantNoJobs,
@@ -185,7 +188,7 @@ func TestRunner(t *testing.T) {
 			name:         "two search results but one repo has no default branch",
 			search:       yieldRepos(rs[0], rs[1]),
 			commitID:     errorOnCall(yieldDefaultBranches(defaultBranches), 1, ErrNoDefaultBranch),
-			campaignType: &testCampaignType{diff: testDiff},
+			campaignType: &testCampaignType{diff: testDiff, description: testDescription},
 			wantPlan: func() *a8n.CampaignPlan {
 				p := testPlan.Clone()
 				p.CreatedAt = now
@@ -198,6 +201,7 @@ func TestRunner(t *testing.T) {
 						CampaignPlanID: plan.ID,
 						RepoID:         int32(rs[0].ID),
 						Diff:           testDiff,
+						Description:    testDescription,
 						Rev:            api.CommitID(branches[0].target),
 						BaseRef:        branches[0].ref,
 						CreatedAt:      now,
@@ -297,16 +301,17 @@ func TestRunner(t *testing.T) {
 }
 
 type testCampaignType struct {
-	diff    string
-	diffErr string
+	diff        string
+	description string
+	diffErr     string
 }
 
 func (t *testCampaignType) searchQuery() string { return "" }
-func (t *testCampaignType) generateDiff(ctx context.Context, repo api.RepoName, commit api.CommitID) (string, error) {
+func (t *testCampaignType) generateDiff(ctx context.Context, repo api.RepoName, commit api.CommitID) (string, string, error) {
 	if t.diffErr != "" {
-		return "", errors.New(t.diffErr)
+		return "", "", errors.New(t.diffErr)
 	}
-	return t.diff, nil
+	return t.diff, t.description, nil
 }
 
 const testDiff = `diff --git a/README.md b/README.md
@@ -318,6 +323,13 @@ index 851b23a..140f333 100644
  
 +Let's add a line here.
  This file is hostEd at sourcegraph.com and is a test file.
+`
+
+const testDescription = `Added three important lines:
+
+- Line 1
+- Line 2
+- Line 3
 `
 
 func waitRunner(t *testing.T, r *Runner) {

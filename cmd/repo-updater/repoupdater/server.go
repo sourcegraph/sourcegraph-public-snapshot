@@ -306,6 +306,12 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 
 	errch := make(chan error, 1)
 	go func() {
+		if req.ExternalService.DeletedAt != nil {
+			// We don't need to check deleted services.
+			errch <- nil
+			return
+		}
+
 		src, err := repos.NewSource(&repos.ExternalService{
 			ID:          req.ExternalService.ID,
 			Kind:        req.ExternalService.Kind,

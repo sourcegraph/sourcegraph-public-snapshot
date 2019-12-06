@@ -54,7 +54,7 @@ export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = siteAdmi
                 items: [
                     ...group.items,
                     {
-                        label: 'LSIF Jobs',
+                        label: 'LSIF jobs',
                         to: '/site-admin/lsif-jobs',
                     },
                 ],

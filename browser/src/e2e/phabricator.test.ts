@@ -9,6 +9,7 @@ import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { PhabricatorMapping } from '../browser/types'
 import { isEqual } from 'lodash'
 import { getConfig } from '../../../shared/src/e2e/config'
+import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 
 // By default, these tests run against a local Phabricator instance and a local Sourcegraph instance.
 // To run them against phabricator.sgdev.org and umami.sgdev.org, set the below env vars in addition to SOURCEGRAPH_BASE_URL.
@@ -45,11 +46,13 @@ async function phabricatorLogin({ page }: Driver): Promise<void> {
  * Waits for the jrpc repository to finish cloning.
  */
 async function waitUntilRepositoryCloned(driver: Driver): Promise<void> {
-    await driver.page.goto(PHABRICATOR_BASE_URL + '/source/jrpc/manage/status/')
-    await driver.page.waitForFunction(() => {
-        ;[...document.querySelectorAll('.phui-status-item-target')].some(
-            element => element.textContent!.trim() === 'Fully Imported'
-        )
+    await retry(async () => {
+        await driver.page.goto(PHABRICATOR_BASE_URL + '/source/jrpc/manage/status/')
+        expect(
+            await driver.page.evaluate(() =>
+                [...document.querySelectorAll('.phui-status-item-target')].map(element => element.textContent!.trim())
+            )
+        ).toContain('Fully Imported')
     })
 }
 
