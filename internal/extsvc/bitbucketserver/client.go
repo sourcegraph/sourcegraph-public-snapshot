@@ -463,6 +463,28 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 	return nil
 }
 
+// DeclinePullRequest declines and closes the given PullRequest, returning an error in case of failure.
+func (c *Client) DeclinePullRequest(ctx context.Context, pr *PullRequest) error {
+	if pr.ToRef.Repository.Slug == "" {
+		return errors.New("repository slug empty")
+	}
+
+	if pr.ToRef.Repository.Project.Key == "" {
+		return errors.New("project key empty")
+	}
+
+	path := fmt.Sprintf(
+		"rest/api/1.0/projects/%s/repos/%s/pull-requests/%d/decline",
+		pr.ToRef.Repository.Project.Key,
+		pr.ToRef.Repository.Slug,
+		pr.ID,
+	)
+
+	qry := url.Values{"version": {strconv.Itoa(pr.Version)}}
+
+	return c.send(ctx, "POST", path, qry, nil, pr)
+}
+
 // LoadPullRequestActivities loads the given PullRequest's timeline of activities,
 // returning an error in case of failure.
 func (c *Client) LoadPullRequestActivities(ctx context.Context, pr *PullRequest) (err error) {
