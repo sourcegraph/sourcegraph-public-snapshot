@@ -23,9 +23,6 @@ func NewResolver() graphqlbackend.CodeIntelResolver {
 	return &Resolver{}
 }
 
-//
-// Dump Node Resolvers
-
 func (r *Resolver) LSIFDumpByID(ctx context.Context, id graphql.ID) (graphqlbackend.LSIFDumpResolver, error) {
 	repoName, dumpID, err := unmarshalLSIFDumpGQLID(id)
 	if err != nil {
@@ -65,16 +62,14 @@ func (r *Resolver) DeleteLSIFDump(ctx context.Context, id graphql.ID) (*graphqlb
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
+// LSIFDumps resolves LSIF dumps for a given repository.
 //
-// Dump Connection Resolvers
-
 // This method implements cursor-based forward pagination. The `after` parameter
 // should be an `endCursor` value from a previous request. This value is the rel="next"
 // URL in the Link header of the LSIF server response. This URL includes all of the
 // query variables required to fetch the subsequent page of results. This state is not
 // dependent on the limit, so we can overwrite this value if the user has changed its
 // value since making the last request.
-
 func (r *Resolver) LSIFDumps(ctx context.Context, args *graphqlbackend.LSIFRepositoryDumpsQueryArgs) (graphqlbackend.LSIFDumpConnectionResolver, error) {
 	opt := LSIFDumpsListOptions{
 		RepositoryID:    args.RepositoryID,
@@ -99,9 +94,6 @@ func (r *Resolver) LSIFDumps(ctx context.Context, args *graphqlbackend.LSIFRepos
 
 	return &lsifDumpConnectionResolver{opt: opt}, nil
 }
-
-//
-// Job Node Resolvers
 
 func (r *Resolver) LSIFJobByID(ctx context.Context, id graphql.ID) (graphqlbackend.LSIFJobResolver, error) {
 	jobID, err := unmarshalLSIFJobGQLID(id)
@@ -137,16 +129,14 @@ func (r *Resolver) DeleteLSIFJob(ctx context.Context, id graphql.ID) (*graphqlba
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
+// LSIFJobs resolves the LSIF jobs in a given state.
 //
-// Job Connection Resolvers
-
 // This method implements cursor-based forward pagination. The `after` parameter
 // should be an `endCursor` value from a previous request. This value is the rel="next"
 // URL in the Link header of the LSIF server response. This URL includes all of the
 // query variables required to fetch the subsequent page of results. This state is not
 // dependent on the limit, so we can overwrite this value if the user has changed its
 // value since making the last request.
-
 func (r *Resolver) LSIFJobs(ctx context.Context, args *graphqlbackend.LSIFJobsQueryArgs) (graphqlbackend.LSIFJobConnectionResolver, error) {
 	opt := LSIFJobsListOptions{
 		State: args.State,
@@ -166,9 +156,6 @@ func (r *Resolver) LSIFJobs(ctx context.Context, args *graphqlbackend.LSIFJobsQu
 
 	return &lsifJobConnectionResolver{opt: opt}, nil
 }
-
-//
-// Job Stats Resolvers
 
 const lsifJobStatsGQLID = "lsifJobStats"
 
@@ -191,4 +178,12 @@ func (r *Resolver) LSIFJobStatsByID(ctx context.Context, id graphql.ID) (graphql
 	}
 
 	return &lsifJobStatsResolver{stats: stats}, nil
+}
+
+func (r *Resolver) LSIF(args *graphqlbackend.LSIFQueryArgs) graphqlbackend.LSIFQueryResolver {
+	return &lsifQueryResolver{
+		RepoName: args.RepoName,
+		Commit:   args.Commit,
+		Path:     args.Path,
+	}
 }
