@@ -728,7 +728,7 @@ export class Backend {
         path: string,
         position: lsp.Position,
         ctx: TracingContext = {}
-s ): Promise<{ text: string; range: lsp.Range } | null | undefined> {
+    ): Promise<{ text: string; range: lsp.Range } | null | undefined> {
         const closestDatabaseAndDump = await this.loadClosestDatabase(repository, commit, path, ctx)
         if (!closestDatabaseAndDump) {
             if (ctx.logger) {
