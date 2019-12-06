@@ -36,6 +36,7 @@ import { isDefined } from '../../../../shared/src/util/types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { once } from 'lodash'
 import { dedupeWhitespace } from '../../../../shared/src/util/strings'
+import { Form } from '../../components/Form'
 
 /**
  * The query input field is clobbered and updated to contain this subject's values, as
@@ -323,6 +324,9 @@ export class QueryInput extends React.Component<Props, State> {
         if (this.props.value.cursorPosition && prevProps.value.cursorPosition !== this.props.value.cursorPosition) {
             this.focusInputAndPositionCursor(this.props.value.cursorPosition)
         }
+        if (this.props.value.query !== prevProps.value.query) {
+            this.setState({ showSuggestions: true })
+        }
         this.componentUpdates.next(this.props)
     }
 
@@ -346,7 +350,7 @@ export class QueryInput extends React.Component<Props, State> {
                     return (
                         <div className="query-input2">
                             <div ref={this.containerElement}>
-                                <form onSubmit={this.onSubmit}>
+                                <Form onSubmit={this.onSubmit}>
                                     <input
                                         onFocus={this.onInputFocus}
                                         onBlur={this.onInputBlur}
@@ -372,7 +376,7 @@ export class QueryInput extends React.Component<Props, State> {
                                         name="query"
                                         autoComplete="off"
                                     />
-                                </form>
+                                </Form>
                                 {showSuggestions && (
                                     <ul className="query-input2__suggestions e2e-query-suggestions" {...getMenuProps()}>
                                         {this.state.suggestions.values.map((suggestion, index) => {
