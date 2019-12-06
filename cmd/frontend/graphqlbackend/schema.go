@@ -2652,7 +2652,7 @@ type LSIFQueryResolver {
         # The line on which the symbol occurs (zero-based, inclusive).
         line: Int!
 
-        # The character (not byte) of the start line on whichthe symbol occurs (zero-based, inclusive).
+        # The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
         character: Int!
     ): LocationConnection
 
@@ -2664,7 +2664,7 @@ type LSIFQueryResolver {
         # The line on which the symbol occurs (zero-based, inclusive).
         line: Int!
 
-        # The character (not byte) of the start line on whichthe symbol occurs (zero-based, inclusive).
+        # The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
         character: Int!
 
         # When specified, indicates that this request should be paginated and
@@ -2688,7 +2688,7 @@ type LSIFQueryResolver {
         # The line on which the symbol occurs (zero-based, inclusive).
         line: Int!
 
-        # The character (not byte) of the start line on whichthe symbol occurs (zero-based, inclusive).
+        # The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
         character: Int!
     ): Hover
 }
