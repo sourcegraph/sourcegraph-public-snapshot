@@ -106,7 +106,7 @@ const config = {
         test: /\.[jt]sx?$/,
         include: path.join(__dirname, 'src'),
         use: [
-          'thread-loader',
+          ...(mode === 'production' ? ['thread-loader'] : []),
           {
             loader: 'babel-loader',
             options: {
@@ -129,7 +129,7 @@ const config = {
         test: /\.[jt]sx?$/,
         exclude: path.join(__dirname, 'src'),
         use: [
-          'thread-loader',
+          ...(mode === 'production' ? ['thread-loader'] : []),
           {
             loader: 'babel-loader',
             options: {
