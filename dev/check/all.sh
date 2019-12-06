@@ -8,6 +8,7 @@ parallel_run() {
     trap "rm -rf $log_file" EXIT
 
     parallel --jobs 4 --keep-order --line-buffer --tag --joblog $log_file "$@"
+    echo "--- done"
     cat $log_file
 }
 
@@ -36,5 +37,3 @@ parallel_run {} ::: "${CHECKS[@]}"
 # downtime, not from broken URLs.
 #
 # ./broken-urls.bash
-
-echo "--- done"
