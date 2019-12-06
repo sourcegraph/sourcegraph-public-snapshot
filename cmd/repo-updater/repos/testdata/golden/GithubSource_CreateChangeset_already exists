@@ -1,0 +1,69 @@
+{
+  "ID": "MDExOlB1bGxSZXF1ZXN0MzM5NzUyNDQy",
+  "Title": "This is a test PR that is always open (keep it open!)",
+  "Body": "Feel free to ignore this. This is a test PR that is always open.",
+  "State": "OPEN",
+  "URL": "https://github.com/sourcegraph/automation-testing/pull/1",
+  "HeadRefOid": "37406e7dfa4466b80d1da183d6477aac16b1e58c",
+  "BaseRefOid": "c75943274b322ffef2230df8f8049de84ddf12c1",
+  "HeadRefName": "always-open-pr",
+  "BaseRefName": "master",
+  "Number": 1,
+  "Author": {
+   "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+   "Login": "mrnugget",
+   "URL": "https://github.com/mrnugget"
+  },
+  "Participants": [
+   {
+    "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+    "Login": "mrnugget",
+    "URL": "https://github.com/mrnugget"
+   },
+   {
+    "AvatarURL": "https://avatars0.githubusercontent.com/u/19534377?v=4",
+    "Login": "eseliger",
+    "URL": "https://github.com/eseliger"
+   }
+  ],
+  "TimelineItems": [
+   {
+    "Type": "ClosedEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars0.githubusercontent.com/u/19534377?v=4",
+      "Login": "eseliger",
+      "URL": "https://github.com/eseliger"
+     },
+     "CreatedAt": "2019-12-04T23:28:16Z",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/1#event-2855920542"
+    }
+   },
+   {
+    "Type": "ReopenedEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+      "Login": "mrnugget",
+      "URL": "https://github.com/mrnugget"
+     },
+     "CreatedAt": "2019-12-05T07:09:21Z"
+    }
+   },
+   {
+    "Type": "RenamedTitleEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+      "Login": "mrnugget",
+      "URL": "https://github.com/mrnugget"
+     },
+     "PreviousTitle": "This is a test PR that is always open",
+     "CurrentTitle": "This is a test PR that is always open (keep it open!)",
+     "CreatedAt": "2019-12-05T07:09:31Z"
+    }
+   }
+  ],
+  "CreatedAt": "2019-11-12T06:40:21Z",
+  "UpdatedAt": "2019-12-05T07:09:31Z"
+ }

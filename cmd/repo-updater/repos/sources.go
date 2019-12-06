@@ -91,7 +91,7 @@ type Source interface {
 type ChangesetSource interface {
 	LoadChangesets(context.Context, ...*Changeset) error
 	// CreateChangeset will create the Changeset on the source. If it already
-	// exists, *Changeset should be populated
+	// exists, *Changeset will be populated
 	CreateChangeset(context.Context, *Changeset) error
 }
 

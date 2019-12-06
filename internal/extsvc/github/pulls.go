@@ -480,20 +480,19 @@ func (c *Client) loadPullRequests(ctx context.Context, prs ...*PullRequest) erro
 	return nil
 }
 
-// GetPullRequestNumber fetches the number of the pull request associated with the supplied
-// params.
+// GetOpenPullRequestByRefs fetches the the pull request associated with the supplied
+// refs. GitHub only allows one open PR by ref at a time.
 // If nothing is found (0, nil) is returned
-func (c *Client) GetPullRequestNumber(ctx context.Context, owner, name, baseRef, headRef string) (int, error) {
-	// NOTE: GitHub allows multiple PRs with the same baseRef and headRef combination but only 1 can be open
-	// at a time
+func (c *Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, baseRef, headRef string) (*PullRequest, error) {
 	var q strings.Builder
+	q.WriteString(pullRequestFragments)
 	q.WriteString("query {\n")
 	q.WriteString(fmt.Sprintf("repository(owner: %q, name: %q) {\n",
 		owner, name))
 	q.WriteString(fmt.Sprintf("pullRequests(baseRefName: %q, headRefName: %q, first: 1, states: OPEN) { \n",
 		baseRef, headRef,
 	))
-	q.WriteString(fmt.Sprintf("nodes{ number }\n"))
+	q.WriteString(fmt.Sprintf("nodes{ ... pr }\n"))
 	q.WriteString("}\n")
 	q.WriteString("}\n")
 	q.WriteString("}")
@@ -501,8 +500,10 @@ func (c *Client) GetPullRequestNumber(ctx context.Context, owner, name, baseRef,
 	var results struct {
 		Repository struct {
 			PullRequests struct {
-				Nodes []struct {
-					Number int
+				Nodes []*struct {
+					PullRequest
+					Participants  struct{ Nodes []Actor }
+					TimelineItems struct{ Nodes []TimelineItem }
 				}
 			}
 		}
@@ -510,15 +511,20 @@ func (c *Client) GetPullRequestNumber(ctx context.Context, owner, name, baseRef,
 
 	err := c.requestGraphQL(ctx, "", q.String(), nil, &results)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	if len(results.Repository.PullRequests.Nodes) == 0 {
-		return 0, nil
+		return nil, nil
 	}
 	if len(results.Repository.PullRequests.Nodes) != 1 {
-		return 0, fmt.Errorf("expected 1 result, got %d", len(results.Repository.PullRequests.Nodes))
+		return nil, fmt.Errorf("expected 1 result, got %d", len(results.Repository.PullRequests.Nodes))
 	}
-	return results.Repository.PullRequests.Nodes[0].Number, nil
+
+	pr := results.Repository.PullRequests.Nodes[0].PullRequest
+	pr.Participants = results.Repository.PullRequests.Nodes[0].Participants.Nodes
+	pr.TimelineItems = results.Repository.PullRequests.Nodes[0].TimelineItems.Nodes
+
+	return &pr, nil
 }
 
 const pullRequestFragments = `

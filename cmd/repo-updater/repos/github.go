@@ -165,20 +165,13 @@ func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) error {
 			if err != nil {
 				return errors.Wrap(err, "getting repo owner and name")
 			}
-			externalID, externalServiceType, err := s.fetchChangesetExternalID(ctx, owner, name, c.BaseRefName, c.HeadRefName)
+			pr, err = s.client.GetOpenPullRequestByRefs(ctx, owner, name, c.BaseRefName, c.HeadRefName)
 			if err != nil {
-				return errors.Wrap(err, "fetching external id")
+				return errors.Wrap(err, "fetching existing PR")
 			}
-			if externalID == "" {
-				return fmt.Errorf("external id for campaign %d not found", c.Changeset.ID)
-			}
-			// TODO: We may need to pull in the entire PR so that we can set the
-			// Changeset.Metadata correctly
-			c.ExternalID = externalID
-			c.ExternalServiceType = externalServiceType
-			return nil
+		} else {
+			return err
 		}
-		return err
 	}
 
 	c.Changeset.Metadata = pr
@@ -214,19 +207,6 @@ func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) erro
 	}
 
 	return nil
-}
-
-// fetchChangesetExternalID fetches the external id for the changeset corresponding to the supplied params.
-// If not found, ("", "", nil) is returned
-func (s GithubSource) fetchChangesetExternalID(ctx context.Context, owner, name, baseRef, headRef string) (externalID string, externalServiceType string, err error) {
-	num, err := s.client.GetPullRequestNumber(ctx, owner, name, baseRef, headRef)
-	if err != nil {
-		return "", "", err
-	}
-	if num == 0 {
-		return "", "", nil
-	}
-	return strconv.Itoa(num), github.ServiceType, nil
 }
 
 // GetRepo returns the Github repository with the given name and owner
