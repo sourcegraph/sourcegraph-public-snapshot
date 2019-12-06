@@ -399,65 +399,63 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                     )}
 
                                     {/* Server-provided help message when there are no results*/}
-                                    {results.matchCount === 0 &&
-                                        (results.alert ? (
-                                            <div className="alert alert-info m-2">
-                                                <h3>
-                                                    <AlertCircleIcon className="icon-inline" /> {results.alert.title}
-                                                </h3>
-                                                <p>{results.alert.description}</p>
-                                                {results.alert.proposedQueries && (
-                                                    <>
-                                                        <h4>Did you mean:</h4>
-                                                        <ul className="list-unstyled">
-                                                            {results.alert.proposedQueries.map(proposedQuery => (
-                                                                <li key={proposedQuery.query}>
-                                                                    <Link
-                                                                        className="btn btn-secondary btn-sm"
-                                                                        to={
-                                                                            '/search?' +
-                                                                            buildSearchURLQuery(
-                                                                                proposedQuery.query,
-                                                                                this.props.patternType
-                                                                            )
-                                                                        }
-                                                                    >
-                                                                        {proposedQuery.query ||
-                                                                            proposedQuery.description}
-                                                                    </Link>
-                                                                    {proposedQuery.query &&
-                                                                        proposedQuery.description &&
-                                                                        ` — ${proposedQuery.description}`}
-                                                                </li>
-                                                            ))}
-                                                        </ul>
-                                                    </>
-                                                )}{' '}
-                                                {results.timedout.length === results.repositoriesCount &&
-                                                    /* All repositories timed out. */
-                                                    this.renderRecommendations(
-                                                        window.context.deployType !== 'cluster'
-                                                            ? [
-                                                                  <>
-                                                                      Upgrade to Sourcegraph Enterprise for a highly
-                                                                      scalable Kubernetes cluster deployment option.
-                                                                  </>,
-                                                                  window.context.likelyDockerOnMac
-                                                                      ? 'Use Docker Machine instead of Docker for Mac for better performance on macOS.'
-                                                                      : 'Contact your Sourcegraph administrator if you are seeing timeouts regularly, as more CPU, memory, or disk resources may need to be provisioned.',
-                                                              ]
-                                                            : []
-                                                    )}
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <div className="alert alert-info d-flex m-2">
-                                                    <h3 className="m-0">
-                                                        <SearchIcon className="icon-inline" /> No results
-                                                    </h3>
-                                                </div>
-                                            </>
-                                        ))}
+                                    {results.alert && (
+                                        <div className="alert alert-info m-2">
+                                            <h3>
+                                                <AlertCircleIcon className="icon-inline" /> {results.alert.title}
+                                            </h3>
+                                            <p>{results.alert.description}</p>
+                                            {results.alert.proposedQueries && (
+                                                <>
+                                                    <h4>Did you mean:</h4>
+                                                    <ul className="list-unstyled">
+                                                        {results.alert.proposedQueries.map(proposedQuery => (
+                                                            <li key={proposedQuery.query}>
+                                                                <Link
+                                                                    className="btn btn-secondary btn-sm"
+                                                                    to={
+                                                                        '/search?' +
+                                                                        buildSearchURLQuery(
+                                                                            proposedQuery.query,
+                                                                            this.props.patternType
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    {proposedQuery.query || proposedQuery.description}
+                                                                </Link>
+                                                                {proposedQuery.query &&
+                                                                    proposedQuery.description &&
+                                                                    ` — ${proposedQuery.description}`}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </>
+                                            )}{' '}
+                                            {results.timedout.length === results.repositoriesCount &&
+                                                /* All repositories timed out. */
+                                                this.renderRecommendations(
+                                                    window.context.deployType !== 'cluster'
+                                                        ? [
+                                                              <>
+                                                                  Upgrade to Sourcegraph Enterprise for a highly
+                                                                  scalable Kubernetes cluster deployment option.
+                                                              </>,
+                                                              window.context.likelyDockerOnMac
+                                                                  ? 'Use Docker Machine instead of Docker for Mac for better performance on macOS.'
+                                                                  : 'Contact your Sourcegraph administrator if you are seeing timeouts regularly, as more CPU, memory, or disk resources may need to be provisioned.',
+                                                          ]
+                                                        : []
+                                                )}
+                                        </div>
+                                    )}
+
+                                    {results.matchCount === 0 && (
+                                        <div className="alert alert-info d-flex m-2">
+                                            <h3 className="m-0">
+                                                <SearchIcon className="icon-inline" /> No results
+                                            </h3>
+                                        </div>
+                                    )}
                                 </>
                             )
                         })()
