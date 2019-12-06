@@ -160,17 +160,16 @@ func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) error {
 	})
 
 	if err != nil {
-		if err == github.ErrPullRequestAlreadyExists {
-			owner, name, err := github.SplitRepositoryNameWithOwner(repo.NameWithOwner)
-			if err != nil {
-				return errors.Wrap(err, "getting repo owner and name")
-			}
-			pr, err = s.client.GetOpenPullRequestByRefs(ctx, owner, name, c.BaseRefName, c.HeadRefName)
-			if err != nil {
-				return errors.Wrap(err, "fetching existing PR")
-			}
-		} else {
+		if err != github.ErrPullRequestAlreadyExists {
 			return err
+		}
+		owner, name, err := github.SplitRepositoryNameWithOwner(repo.NameWithOwner)
+		if err != nil {
+			return errors.Wrap(err, "getting repo owner and name")
+		}
+		pr, err = s.client.GetOpenPullRequestByRefs(ctx, owner, name, c.BaseRefName, c.HeadRefName)
+		if err != nil {
+			return errors.Wrap(err, "fetching existing PR")
 		}
 	}
 
