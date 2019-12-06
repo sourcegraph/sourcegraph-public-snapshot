@@ -3,6 +3,100 @@ import { EncodedBloomFilter } from '../xrepo/bloom-filter'
 import { MAX_POSTGRES_BATCH_SIZE } from '../constants'
 
 /**
+ * The possible states of an LsifUpload entity.
+ */
+export type LsifUploadState = 'queued' | 'completed' | 'errored' | 'processing'
+
+/**
+ * An entity within the cross-repo database. This entity carries the data necessary
+ * to convert an LSIF upload out-of-band, and hold metadata about the conversion
+ * process once it completes (or fails). These entities are not meant to exist
+ * indefinitely and are removed from the table based on their age.
+ */
+@Entity({ name: 'lsif_uploads' })
+export class LsifUpload {
+    /**
+     * The number of model instances that can be inserted at once.
+     */
+    public static BatchSize = MAX_POSTGRES_BATCH_SIZE
+
+    /**
+     * A unique ID required by typeorm entities.
+     */
+    @PrimaryGeneratedColumn('increment', { type: 'int' })
+    public id!: number
+
+    /**
+     *  The name of the source repository.
+     */
+    @Column('text')
+    public repository!: string
+
+    /**
+     *  The source commit.
+     */
+    @Column('text')
+    public commit!: string
+
+    /**
+     *  The path at which this LSIF dump is mounted.
+     */
+    @Column('text')
+    public root!: string
+
+    /**
+     * The temporary file the upload data is stored. As the file is deleted after
+     * it has been converted, this value is only meaningful while the upload has
+     * state `queued` or `processing`.
+     */
+    @Column('text')
+    public filename!: string
+
+    /**
+     * The conversion state of the upload. May be `queued`, `processing`, `completed`,
+     * or `errored`.
+     */
+    @Column('text')
+    public state!: LsifUploadState
+
+    /**
+     * The error message that occurred during processing (if any).
+     */
+    @Column('text', { name: 'failure_summary', nullable: true })
+    public failureSummary!: string
+
+    /**
+     * The stacktrace of the error that occurred during processing (if any).
+     */
+    @Column('text', { name: 'failure_stacktrace', nullable: true })
+    public failureStacktrace!: string
+
+    /**
+     * The time the dump was uploaded.
+     */
+    @Column('timestamp with time zone', { name: 'uploaded_at' })
+    public uploadedAt!: Date
+
+    /**
+     * The time the upload started its conversion.
+     */
+    @Column('timestamp with time zone', { name: 'started_at', nullable: true })
+    public startedAt!: Date
+
+    /**
+     * The time the conversion completed or errored.
+     */
+    @Column('timestamp with time zone', { name: 'finished_at', nullable: true })
+    public finishedAt!: Date
+
+    /**
+     * The opentracing headers from the upload request.
+     */
+    @Column('text', { name: 'tracing_context' })
+    public tracingContext!: string
+}
+
+/**
  * An entity within the cross-repo database. This tracks commit parentage and branch
  * heads for all known repositories.
  */
@@ -182,4 +276,4 @@ export class ReferenceModel extends Package {
 /**
  * The entities composing the cross-repository database models.
  */
-export const entities = [Commit, LsifDump, PackageModel, ReferenceModel]
+export const entities = [LsifUpload, Commit, LsifDump, PackageModel, ReferenceModel]
