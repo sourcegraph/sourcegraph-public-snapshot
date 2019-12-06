@@ -4,7 +4,7 @@ import { isEqual, range } from 'lodash'
 
 /**
  * Below, 'contentEditable' refers to a `<div contentEditable>`,
- * one of which is rendered in `ContentEditableQuery`
+ * one of which is rendered in `ContentEditableInput`
  */
 
 /**
@@ -30,17 +30,17 @@ const setCursor = (inputDiv: HTMLDivElement, cursor: ContentEditableState['curso
 /**
  * Callback to run on input to the contentEditable
  */
-export type ContentEditableQueryHandler = (event: React.ChangeEvent<HTMLDivElement>, queryState: QueryState) => void
+export type ContentEditableInputHandler = (event: React.ChangeEvent<HTMLDivElement>, queryState: QueryState) => void
 
 /**
- * Content values for `ContentEditableQuery` component.
- * See `ContentEditableQuery->Props['value']`
+ * Content values for `ContentEditableInput` component.
+ * See `ContentEditableInput->Props['value']`
  */
 export class ContentEditableState {
     /**
-     * Query (HTML string) to be rendered inside the contentEditable
+     * Content (HTML string) to be rendered inside the contentEditable
      */
-    public query: string
+    public content: string
     /**
      * Position of the cursor in the contentEditable
      */
@@ -55,7 +55,7 @@ export class ContentEditableState {
         index: number
     }
     constructor(state?: Partial<ContentEditableState>) {
-        this.query = state?.query ?? ''
+        this.content = state?.content ?? ''
         this.cursor = {
             nodeIndex: state?.cursor?.nodeIndex ?? 0,
             index: state?.cursor?.index ?? 0,
@@ -67,24 +67,23 @@ interface Props {
     /**
      * A reference to the component instance (not the contentEditable directly)
      */
-    ref?: React.RefObject<ContentEditableQuery>
+    ref?: React.RefObject<ContentEditableInput>
     /**
      * Value to be used in the HTML content of the contentEditable.
-     * `state.query` can be a HTML string, it will be set as `innerHTML`
      */
     value: ContentEditableState
     /**
-     * Placeholder text to display when `state.query` is empty
+     * Placeholder content to display when contentEditable is empty
      */
-    placeholder?: string
+    placeholder?: ContentEditableState['content']
     /**
      * `className` of the container element which wraps the contentEditable
      */
     className?: string
     /**
-     * See `ContentEditableQueryHandler`
+     * See `ContentEditableInputHandler`
      */
-    onChange?: ContentEditableQueryHandler
+    onChange?: ContentEditableInputHandler
     /**
      * contentEditable props
      */
@@ -108,7 +107,7 @@ interface Props {
  * Managed contentEditable with controllable query, and cursor position.
  * Compared to `<input>`, a contentEditable allows rendering styled content
  */
-export class ContentEditableQuery extends React.Component<Props> {
+export class ContentEditableInput extends React.Component<Props> {
     /**
      * contentEditable ref used for updating its value without component re-rendering.
      * Re-rendering causes the cursor to skip back to the beginning.
@@ -127,7 +126,7 @@ export class ContentEditableQuery extends React.Component<Props> {
      * string, it has to be summed with the content length of any previous sibling node.
      *
      * @example
-     *   If contentEditable has the HTML content ('|' is the cursor): "text <mark>filter</mark>:value|"
+     *   If contentEditable has the HTML content ('|' is the cursor): "text <>filter</>:value|"
      *   then it has 3 child nodes, and the cursor, with offset 6, will be on the third node
      */
     private get queryStringCursorPosition(): number {
@@ -207,7 +206,7 @@ export class ContentEditableQuery extends React.Component<Props> {
             // Only update if props are different, preventing, on re-rendering,
             // the selection being lost or the cursor to jump around
             if (this.inputRef.current && !isEqual(newProps, this.props)) {
-                this.inputRef.current.innerHTML = newProps.value.query
+                this.inputRef.current.innerHTML = newProps.value.content
                 if (newProps.focus) {
                     this.focus(newProps.value.cursor)
                 }
@@ -226,18 +225,18 @@ export class ContentEditableQuery extends React.Component<Props> {
         const { value: state, className = '' } = this.props
         const { className: inputClassName = '', ...inputProps } = this.props.inputProps ?? {}
         return (
-            <div className={'content-editable-query ' + className}>
+            <div className={'content-editable-input ' + className}>
                 {/* Used to emit submit events up the DOM tree (mostly for <Form>) */}
-                <input type="submit" className="content-editable-query__submit-input" ref={this.submitInputRef} />
+                <input type="submit" className="content-editable-input__submit-input" ref={this.submitInputRef} />
                 <div
                     {...inputProps}
                     aria-label="search-input"
                     ref={this.inputRef}
-                    className={'content-editable-query__input ' + inputClassName}
+                    className={'content-editable-input__input ' + inputClassName}
                     onInput={this.onInput}
                     onKeyDown={this.onKeyDown}
                     data-placeholder={this.props.placeholder}
-                    dangerouslySetInnerHTML={{ __html: state.query }}
+                    dangerouslySetInnerHTML={{ __html: state.content }}
                     contentEditable={true}
                 />
             </div>

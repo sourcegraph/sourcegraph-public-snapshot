@@ -12,7 +12,7 @@ import {
     isolatedFuzzySearchFilters,
     filterAliases,
 } from './input/Suggestion'
-import { ContentEditableState } from './input/ContentEditableQuery'
+import { ContentEditableState } from './input/ContentEditableInput'
 
 /**
  * @param activation If set, records the DidSearch activation event for the new user activation
@@ -400,7 +400,7 @@ export const highlightInvalidFilters = ({ cursorPosition, query }: QueryState): 
     // If no filter keyword is found, return given query and cursor position
     if (keywordMatches.length === 0) {
         return new ContentEditableState({
-            query,
+            content: query,
             cursor: { nodeIndex: 0, index: cursorPosition },
         })
     }
@@ -411,8 +411,8 @@ export const highlightInvalidFilters = ({ cursorPosition, query }: QueryState): 
     // `<div contentEditable>` need to know in which node the cursor will be positioned
     let totalNodes = 0
 
-    // Query and cursor to be returned
-    let newQuery = query
+    // Content and cursor to be returned
+    let content = query
     let cursor = { nodeIndex: -1, index: 0 }
 
     // eslint-disable-next-line ban/ban
@@ -426,14 +426,14 @@ export const highlightInvalidFilters = ({ cursorPosition, query }: QueryState): 
         // As invalid keyword tags are added, the `newQuery` length increases compared to
         // the `query` length. For the next highlight to be inserted at the correct
         // index it needs to be shifted forward using the additional length
-        const queryLengthDifference = newQuery.length - query.length
+        const queryLengthDifference = content.length - query.length
         const keywordIndex = keywordMatch.index + queryLengthDifference
 
-        const queryBeforeKeyword = newQuery.substring(0, keywordIndex)
-        const queryAfterKeyword = newQuery.substring(keywordIndex + matchedKeyword.length)
+        const queryBeforeKeyword = content.substring(0, keywordIndex)
+        const queryAfterKeyword = content.substring(keywordIndex + matchedKeyword.length)
         const highlightedKeyword = toInvalidFilterHtml(matchedKeyword)
 
-        newQuery = queryBeforeKeyword + highlightedKeyword + queryAfterKeyword
+        content = queryBeforeKeyword + highlightedKeyword + queryAfterKeyword
 
         // 2. Calculate new cursor position. See `ContentEditableState['cursor']`
 
@@ -489,5 +489,5 @@ export const highlightInvalidFilters = ({ cursorPosition, query }: QueryState): 
         totalNodes += keywordMatch.index === 0 ? 1 : 2
     })
 
-    return new ContentEditableState({ query: newQuery, cursor })
+    return new ContentEditableState({ content, cursor })
 }

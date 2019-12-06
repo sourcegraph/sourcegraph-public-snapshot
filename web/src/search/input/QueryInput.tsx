@@ -37,7 +37,7 @@ import { isDefined } from '../../../../shared/src/util/types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { once } from 'lodash'
 import { dedupeWhitespace } from '../../../../shared/src/util/strings'
-import { ContentEditableQuery, ContentEditableQueryHandler } from './ContentEditableQuery'
+import { ContentEditableInput, ContentEditableInputHandler } from './ContentEditableInput'
 
 /**
  * The query input field is clobbered and updated to contain this subject's values, as
@@ -114,7 +114,7 @@ export class QueryInput extends React.Component<Props, State> {
     private suggestionsHidden = new Subject<void>()
 
     /** Only used for selection and focus management */
-    private inputElement = React.createRef<ContentEditableQuery>()
+    private inputElement = React.createRef<ContentEditableInput>()
 
     /** Used for scrolling suggestions into view while scrolling with keyboard */
     private containerElement = React.createRef<HTMLDivElement>()
@@ -349,7 +349,7 @@ export class QueryInput extends React.Component<Props, State> {
                     return (
                         <div className="query-input2">
                             <div ref={this.containerElement}>
-                                <ContentEditableQuery
+                                <ContentEditableInput
                                     autoFocus={this.props.autoFocus}
                                     shouldSubmit={shouldSubmit}
                                     focus={this.state.showSuggestions}
@@ -500,7 +500,7 @@ export class QueryInput extends React.Component<Props, State> {
         eventLogger.log('SearchInitiated')
     })
 
-    private onInputChange: ContentEditableQueryHandler = (_, queryState) => {
+    private onInputChange: ContentEditableInputHandler = (_, queryState) => {
         this.logFirstInput()
         this.inputValues.next({
             ...queryState,

@@ -9,11 +9,12 @@ import {
     filterAliasForSearch,
     highlightInvalidFilters,
     toInvalidFilterHtml,
+    QueryState,
 } from './helpers'
 import { SearchType } from './results/SearchResults'
 import { searchFilterSuggestions } from './searchFilterSuggestions'
 import { filterAliases, isolatedFuzzySearchFilters } from './input/Suggestion'
-import { ContentEditableState } from './input/ContentEditableQuery'
+import { ContentEditableState } from './input/ContentEditableInput'
 
 describe('search/helpers', () => {
     describe('queryIndexOfScope()', () => {
@@ -256,13 +257,13 @@ describe('search/helpers', () => {
             const cursorPosition = 2
             expect(highlightInvalidFilters({ query, cursorPosition })).toStrictEqual(
                 new ContentEditableState({
-                    query,
+                    content: query,
                     cursor: { nodeIndex: 0, index: cursorPosition },
                 })
             )
         })
         describe('calculates new cursor position after matching an invalid filter keyword', () => {
-            type HighlightInvalidFiltersMock = ContentEditableState & { cursorPosition: number }
+            type HighlightInvalidFiltersMock = QueryState & { cursor: ContentEditableState['cursor'] }
 
             const queries = {
                 invalidAtMiddle: {
@@ -341,7 +342,7 @@ describe('search/helpers', () => {
             })
         })
         it('only highlights invalid filter keywords', () => {
-            const { query } = highlightInvalidFilters({
+            const { content: query } = highlightInvalidFilters({
                 query: `${invalidKeyword}:value repo:git Props ${invalidKeyword2}:value count:1`,
                 cursorPosition: 0,
             })
