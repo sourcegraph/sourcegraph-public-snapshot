@@ -282,11 +282,10 @@ func (s *Service) runChangesetJob(
 	defer tx.Done(&err)
 
 	if err = tx.CreateChangesets(ctx, cs.Changeset); err != nil {
-		if _, ok := err.(AlreadyExistError); ok {
-			// Safe to return here as this indicates the transaction has run before
-			return nil
+		if _, ok := err.(AlreadyExistError); !ok {
+			return err
 		}
-		return err
+		// Changeset already exists so continue
 	}
 
 	c.ChangesetIDs = append(c.ChangesetIDs, cs.Changeset.ID)
