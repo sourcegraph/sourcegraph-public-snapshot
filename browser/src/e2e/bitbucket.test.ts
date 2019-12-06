@@ -58,7 +58,7 @@ async function importBitbucketRepo(driver: Driver): Promise<void> {
         const browsePage = '/projects/SOURCEGRAPH/repos/jsonrpc2/browse'
         await driver.page.goto(BITBUCKET_BASE_URL + browsePage)
         // Retry until not redirected to the "import in progress" page anymore
-        expect(new URL(driver.page.url()).pathname).toBe(new URL(BITBUCKET_BASE_URL).pathname + browsePage)
+        expect(new URL(driver.page.url()).pathname).toBe(new URL(browsePage, BITBUCKET_BASE_URL).pathname)
         // Ensure this is not a 404 page
         expect(await driver.page.$('.filebrowser-content')).toBeTruthy()
     })
@@ -116,7 +116,7 @@ async function init(driver: Driver): Promise<void> {
     await importBitbucketRepo(driver)
     await driver.ensureHasExternalService({
         kind: ExternalServiceKind.BITBUCKETSERVER,
-        displayName: 'Bitbucket',
+        displayName: `Bitbucket ${BITBUCKET_BASE_URL}`,
         config: JSON.stringify({
             url: BITBUCKET_BASE_URL,
             username: BITBUCKET_USERNAME,

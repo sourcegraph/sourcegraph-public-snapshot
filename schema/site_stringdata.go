@@ -77,9 +77,9 @@ const SiteSchemaJSON = `{
       "hide": true
     },
     "corsOrigin": {
-      "description": "Only required when using the Phabricator integration or Bitbucket Server plugin. This value is the space-separated list of allowed origins for cross-origin HTTP requests to Sourcegraph. Usually it contains the base URL for your Phabricator or Bitbucket Server instance.\n\nPreviously, this value was also used for the GitHub, GitLab, etc., integrations using the browser extension. It is no longer necessary for those. You may remove this setting if you are not using the Phabricator integration or Bitbucket Server plugin. eg \"https://my-phabricator.example.com https://my-bitbucket.example.com\"",
+      "description": "Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.",
       "type": "string",
-      "examples": ["https://my-phabricator.example.com https://my-bitbucket.example.com"],
+      "examples": ["https://my-phabricator.example.com https://my-bitbucket.example.com https://my-gitlab.example.com"],
       "pattern": "^((https?:\\/\\/[\\w-\\.]+)( https?:\\/\\/[\\w-\\.]+)*)|\\*$",
       "group": "Security"
     },

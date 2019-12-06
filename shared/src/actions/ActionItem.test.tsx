@@ -203,12 +203,30 @@ describe('ActionItem', () => {
     })
 
     test('render as link for "open" command', () => {
+        jsdom.reconfigure({ url: 'https://example.com/foo' })
         setLinkComponent((props: any) => <a {...props} />)
         afterAll(() => setLinkComponent(null as any)) // reset global env for other tests
 
         const component = renderer.create(
             <ActionItem
-                action={{ id: 'c', command: 'open', commandArguments: ['https://example.com'], title: 't' }}
+                action={{ id: 'c', command: 'open', commandArguments: ['https://example.com/bar'], title: 't' }}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
+                location={history.location}
+                extensionsController={NOOP_EXTENSIONS_CONTROLLER}
+                platformContext={NOOP_PLATFORM_CONTEXT}
+            />
+        )
+        expect(component.toJSON()).toMatchSnapshot()
+    })
+
+    test('render as link with icon for "open" command with different origin', () => {
+        jsdom.reconfigure({ url: 'https://example.com/foo' })
+        setLinkComponent((props: any) => <a {...props} />)
+        afterAll(() => setLinkComponent(null as any)) // reset global env for other tests
+
+        const component = renderer.create(
+            <ActionItem
+                action={{ id: 'c', command: 'open', commandArguments: ['https://other.com/foo'], title: 't' }}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 location={history.location}
                 extensionsController={NOOP_EXTENSIONS_CONTROLLER}

@@ -1156,14 +1156,16 @@ var createCampaignPlanQueryFmtstr = `
 INSERT INTO campaign_plans (
   campaign_type,
   arguments,
+  canceled_at,
   created_at,
   updated_at
 )
-VALUES (%s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s)
 RETURNING
   id,
   campaign_type,
   arguments,
+  canceled_at,
   created_at,
   updated_at
 `
@@ -1186,6 +1188,7 @@ func (s *Store) createCampaignPlanQuery(c *a8n.CampaignPlan) (*sqlf.Query, error
 		createCampaignPlanQueryFmtstr,
 		c.CampaignType,
 		arguments,
+		nullTimeColumn(c.CanceledAt),
 		c.CreatedAt,
 		c.UpdatedAt,
 	), nil
@@ -1210,13 +1213,15 @@ UPDATE campaign_plans
 SET (
   campaign_type,
   arguments,
+  canceled_at,
   updated_at
-) = (%s, %s, %s)
+) = (%s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   id,
   campaign_type,
   arguments,
+  canceled_at,
   created_at,
   updated_at
 `
@@ -1233,6 +1238,7 @@ func (s *Store) updateCampaignPlanQuery(c *a8n.CampaignPlan) (*sqlf.Query, error
 		updateCampaignPlanQueryFmtstr,
 		c.CampaignType,
 		arguments,
+		nullTimeColumn(c.CanceledAt),
 		c.UpdatedAt,
 		c.ID,
 	), nil
@@ -1342,6 +1348,7 @@ SELECT
   id,
   campaign_type,
   arguments,
+  canceled_at,
   created_at,
   updated_at
 FROM campaign_plans
@@ -1366,20 +1373,32 @@ func getCampaignPlanQuery(opts *GetCampaignPlanOpts) *sqlf.Query {
 func (s *Store) GetCampaignPlanStatus(ctx context.Context, id int64) (*a8n.BackgroundProcessStatus, error) {
 	return s.queryBackgroundProcessStatus(ctx, sqlf.Sprintf(
 		getCampaignPlanStatusQueryFmtstr,
-		sqlf.Sprintf("campaign_plan_id = %s", id),
+		id,
 	))
 }
 
 var getCampaignPlanStatusQueryFmtstr = `
 -- source: internal/a8n/store.go:GetCampaignPlanStatus
+WITH jobs AS (
+  SELECT
+    campaign_plan_id,
+    COUNT(*) AS total,
+    COUNT(*) FILTER (WHERE finished_at IS NULL) AS pending,
+    COUNT(*) FILTER (WHERE finished_at IS NOT NULL AND (diff != '' OR error != '')) AS completed,
+    array_agg(error) FILTER (WHERE error != '') AS errors
+  FROM campaign_jobs
+  GROUP BY campaign_plan_id
+)
 SELECT
-  COUNT(*) AS total,
-  COUNT(*) FILTER (WHERE finished_at IS NULL) AS pending,
-  COUNT(*) FILTER (WHERE finished_at IS NOT NULL AND (diff != '' OR error != '')) AS completed,
-  array_agg(error) FILTER (WHERE error != '') AS errors
-FROM campaign_jobs
-WHERE %s
-LIMIT 1
+  canceled_at IS NOT NULL as canceled,
+  jobs.total,
+  jobs.pending,
+  jobs.completed,
+  jobs.errors
+FROM campaign_plans
+JOIN jobs ON jobs.campaign_plan_id = campaign_plans.id
+WHERE id = %s
+LIMIT 1;
 `
 
 // GetCampaignStatus gets the a8n.BackgroundProcessStatus for a Campaign
@@ -1401,6 +1420,8 @@ func (s *Store) queryBackgroundProcessStatus(ctx context.Context, q *sqlf.Query)
 
 	status.ProcessState = a8n.BackgroundProcessStateCompleted
 	switch {
+	case status.Canceled:
+		status.ProcessState = a8n.BackgroundProcessStateCanceled
 	case status.Pending > 0:
 		status.ProcessState = a8n.BackgroundProcessStateProcessing
 	case status.Completed == status.Total && len(status.ProcessErrors) == 0:
@@ -1414,6 +1435,8 @@ func (s *Store) queryBackgroundProcessStatus(ctx context.Context, q *sqlf.Query)
 var getCampaignStatusQueryFmtstr = `
 -- source: internal/a8n/store.go:GetCampaignStatus
 SELECT
+  -- canceled is here so that this can be used with scanBackgroundProcessStatus
+  false AS canceled,
   COUNT(*) AS total,
   COUNT(*) FILTER (WHERE finished_at IS NULL) AS pending,
   COUNT(*) FILTER (WHERE finished_at IS NOT NULL) AS completed,
@@ -1458,6 +1481,7 @@ SELECT
   id,
   campaign_type,
   arguments,
+  canceled_at,
   created_at,
   updated_at
 FROM campaign_plans
@@ -2237,6 +2261,7 @@ func scanCampaignPlan(c *a8n.CampaignPlan, s scanner) error {
 		&c.ID,
 		&c.CampaignType,
 		&c.Arguments,
+		&dbutil.NullTime{Time: &c.CanceledAt},
 		&c.CreatedAt,
 		&c.UpdatedAt,
 	)
@@ -2275,6 +2300,7 @@ func scanChangesetJob(c *a8n.ChangesetJob, s scanner) error {
 
 func scanBackgroundProcessStatus(b *a8n.BackgroundProcessStatus, s scanner) error {
 	return s.Scan(
+		&b.Canceled,
 		&b.Total,
 		&b.Pending,
 		&b.Completed,

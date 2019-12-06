@@ -1,23 +1,29 @@
-<script type="text/javascript">
-    // Create extension host worker
-    let assetsUrl = new URL('/.assets/extension/', window.location.origin).href
-    try {
-        assetsUrl = window.parent.SOURCEGRAPH_ASSETS_URL
-    } catch (e) {
-        // Catch SecurityErrors caused by accessing cross-origin iframes
-        // when the assets are not self-hosted by a code host.
-    }
-    const hostWorker = new Worker(new URL('scripts/extensionHostWorker.bundle.js', assetsUrl).href)
-    // Forward extension host worker init message,
-    // making sur to transfer the endpoint MessagePort objects.
-    window.addEventListener('message', ({ data }) => {
-        const { type, payload } = data
-        switch (type) {
-            case 'workerInit':
-                hostWorker.postMessage(payload, Object.values(payload.endpoints))
-                break
-            default:
-                console.error('Unknown message type', type)
-        }
-    })
-</script>
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <script type="text/javascript">
+            // Create extension host worker
+            let assetsUrl = new URL('/.assets/extension/', window.location.origin).href
+            try {
+                assetsUrl = window.parent.SOURCEGRAPH_ASSETS_URL
+            } catch (e) {
+                // Catch SecurityErrors caused by accessing cross-origin iframes
+                // when the assets are not self-hosted by a code host.
+            }
+            const hostWorker = new Worker(new URL('scripts/extensionHostWorker.bundle.js', assetsUrl).href)
+            // Forward extension host worker init message,
+            // making sur to transfer the endpoint MessagePort objects.
+            window.addEventListener('message', ({ data }) => {
+                const { type, payload } = data
+                switch (type) {
+                    case 'workerInit':
+                        hostWorker.postMessage(payload, Object.values(payload.endpoints))
+                        break
+                    default:
+                        console.error('Unknown message type', type)
+                }
+            })
+        </script>
+    </head>
+</html>

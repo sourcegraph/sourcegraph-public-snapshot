@@ -23,6 +23,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"gopkg.in/inconshreveable/log15.v2"
 
@@ -65,6 +66,10 @@ func (c *searchResultsCommon) LimitHit() bool {
 
 func (c *searchResultsCommon) Repositories() []*RepositoryResolver {
 	return RepositoryResolvers(c.repos)
+}
+
+func (c *searchResultsCommon) RepositoriesCount() int32 {
+	return int32(len(c.repos))
 }
 
 func (c *searchResultsCommon) RepositoriesSearched() []*RepositoryResolver {
@@ -458,6 +463,13 @@ loop:
 	return sparkline, nil
 }
 
+var searchResponseCounter = promauto.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "src",
+	Subsystem: "graphql",
+	Name:      "search_response",
+	Help:      "Number of searches that have ended in the given status (success, error, timeout, partial_timeout).",
+}, []string{"status"})
+
 func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
 	// If the request is a paginated one, we handle it separately. See
 	// paginatedResults for more details.
@@ -466,11 +478,24 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 	}
 
 	rr, err := r.resultsWithTimeoutSuggestion(ctx)
-	if err != nil {
-		return nil, err
-	}
 
-	return rr, nil
+	// Record what type of response we sent back via Prometheus.
+	var status string
+	switch {
+	case err == context.DeadlineExceeded || (err == nil && len(rr.searchResultsCommon.timedout) == len(rr.searchResultsCommon.repos)):
+		status = "timeout"
+	case err == nil && len(rr.searchResultsCommon.timedout) > 0:
+		status = "partial_timeout"
+	case err != nil:
+		status = "error"
+	case err == nil:
+		status = "success"
+	default:
+		status = "unknown"
+	}
+	searchResponseCounter.WithLabelValues(status).Inc()
+
+	return rr, err
 }
 
 // resultsWithTimeoutSuggestion calls doResults, and in case of deadline
@@ -479,27 +504,35 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*SearchResultsResolver, error) {
 	start := time.Now()
 	rr, err := r.doResults(ctx, "")
-	if err != nil {
-		if err == context.DeadlineExceeded {
-			dt := time.Since(start)
-			dt2 := longer(2, dt)
-			rr = &SearchResultsResolver{
-				alert: &searchAlert{
-					title:       "Timeout",
-					description: fmt.Sprintf("Deadline exceeded after about %s.", roundStr(dt.String())),
-					proposedQueries: []*searchQueryDescription{
-						{
-							description: "query with longer timeout",
-							query:       fmt.Sprintf("timeout:%v %s", dt2, omitQueryFields(r, query.FieldTimeout)),
-						},
+
+	// If we encountered a context timeout, it indicates one of the many result
+	// type searchers (file, diff, symbol, etc) completely timed out and could not
+	// produce even partial results. Other searcher types may have produced results.
+	//
+	// In this case, or if we got a partial timeout where ALL repositories timed out,
+	// we do not return partial results and instead display a timeout alert.
+	shouldShowAlert := err == context.DeadlineExceeded
+	if err == nil && len(rr.searchResultsCommon.timedout) == len(rr.searchResultsCommon.repos) {
+		shouldShowAlert = true
+	}
+	if shouldShowAlert {
+		dt := time.Since(start)
+		dt2 := longer(2, dt)
+		rr = &SearchResultsResolver{
+			alert: &searchAlert{
+				title:       "Timed out while searching",
+				description: fmt.Sprintf("We weren't able to find any results in %s.", roundStr(dt.String())),
+				proposedQueries: []*searchQueryDescription{
+					{
+						description: "query with longer timeout",
+						query:       fmt.Sprintf("timeout:%v %s", dt2, omitQueryFields(r, query.FieldTimeout)),
 					},
 				},
-			}
-			return rr, nil
+			},
 		}
-		return nil, err
+		return rr, nil
 	}
-	return rr, nil
+	return rr, err
 }
 
 // longer returns a suggested longer time to wait if the given duration wasn't long enough.
@@ -833,6 +866,12 @@ func alertOnSearchLimit(resultTypes []string, args *search.Args) ([]string, *sea
 	return resultTypes, alert
 }
 
+// doResults is one of the highest level search functions that handles finding results.
+//
+// If forceOnlyResultType is specified, only results of the given type are returned,
+// regardless of what `type:` is specified in the query string.
+//
+// Partial results AND an error may be returned.
 func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType string) (res *SearchResultsResolver, err error) {
 	tr, ctx := trace.New(ctx, "graphql.SearchResults", r.rawQuery())
 	defer func() {
@@ -996,7 +1035,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 				fileResults, fileCommon, err := searchFilesInRepos(ctx, &args)
 				// Timeouts are reported through searchResultsCommon so don't report an error for them
-				if err != nil && !(err == context.DeadlineExceeded || err == context.Canceled) {
+				if err != nil && !isContextError(ctx, err) {
 					multiErrMu.Lock()
 					multiErr = multierror.Append(multiErr, errors.Wrap(err, "text search failed"))
 					multiErrMu.Unlock()

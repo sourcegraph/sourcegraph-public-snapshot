@@ -33,7 +33,7 @@ var maxWorkers = env.Get("A8N_MAX_WORKERS", "8", "maximum number of repositories
 // ErrTooManyResults is returned by the Runner's Run method when the
 // CampaignType's searchQuery produced more than maxRepositories number of
 // repositories.
-var ErrTooManyResults = errors.New("search yielded too many results")
+var ErrTooManyResults = errors.New("search yielded too many results. You can narrow down results using `scopeQuery`")
 
 // A Runner executes a CampaignPlan by creating and running CampaignJobs
 // according to the CampaignPlan's Arguments and CampaignType.
@@ -208,6 +208,17 @@ func (r *Runner) runJob(pctx context.Context, job *a8n.CampaignJob) {
 			log15.Error("UpdateCampaignJob failed", "err", err)
 		}
 	}()
+
+	// Check whether CampaignPlan has been canceled.
+	p, err := r.store.GetCampaignPlan(ctx, GetCampaignPlanOpts{ID: job.CampaignPlanID})
+	if err != nil {
+		job.Error = err.Error()
+		return
+	}
+	if !p.CanceledAt.IsZero() {
+		job.Error = "Campaign execution canceled."
+		return
+	}
 
 	job.StartedAt = r.clock()
 

@@ -120,12 +120,38 @@ func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset
 
 	err := s.client.CreatePullRequest(ctx, pr)
 	if err != nil {
-		return err
+		if ae, ok := err.(*bitbucketserver.ErrAlreadyExists); ok && ae != nil {
+			if ae.Existing == nil {
+				return fmt.Errorf("existing PR is nil")
+			}
+			log15.Info("Existing PR extracted", "ID", ae.Existing.ID)
+			pr = ae.Existing
+		} else {
+			return err
+		}
 	}
 
 	c.Changeset.Metadata = pr
 	c.Changeset.ExternalID = strconv.FormatInt(int64(pr.ID), 10)
 	c.Changeset.ExternalServiceType = bitbucketserver.ServiceType
+
+	return nil
+}
+
+// CloseChangeset closes the given *Changeset on the code host and updates the
+// Metadata column in the *a8n.Changeset to the newly closed pull request.
+func (s BitbucketServerSource) CloseChangeset(ctx context.Context, c *Changeset) error {
+	pr, ok := c.Changeset.Metadata.(*bitbucketserver.PullRequest)
+	if !ok {
+		return errors.New("Changeset is not a Bitbucket Server pull request")
+	}
+
+	err := s.client.DeclinePullRequest(ctx, pr)
+	if err != nil {
+		return err
+	}
+
+	c.Changeset.Metadata = pr
 
 	return nil
 }

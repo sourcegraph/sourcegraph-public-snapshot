@@ -3,7 +3,9 @@ package resolvers
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"strings"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -278,22 +280,36 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 }
 
 func (r *Resolver) RetryCampaign(ctx context.Context, args *graphqlbackend.RetryCampaignArgs) (graphqlbackend.CampaignResolver, error) {
+	var err error
+	tr, ctx := trace.New(ctx, "Resolver.RetryCampaign", fmt.Sprintf("Campaign: %q", args.Campaign))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	// 🚨 SECURITY: Only site admins may update campaigns for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "checking if user is admin")
 	}
 
 	campaignID, err := unmarshalCampaignID(args.Campaign)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "unmarshaling campaign id")
 	}
 
 	campaign, err := r.store.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "getting campaign")
 	}
 
-	// TODO(a8n): Implement the retrying of turning "diffs" into changesets
+	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
+	go func() {
+		ctx := trace.ContextWithTrace(context.Background(), tr)
+		err := svc.RunChangesetJobs(ctx, campaign)
+		if err != nil {
+			log15.Error("RunChangesetJobs", "err", err)
+		}
+	}()
 
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
@@ -469,7 +485,7 @@ func (r *Resolver) PreviewCampaignPlan(ctx context.Context, args graphqlbackend.
 	return &campaignPlanResolver{store: r.store, campaignPlan: plan}, nil
 }
 
-func (r *Resolver) CancelCampaignPlan(ctx context.Context, args graphqlbackend.CancelCampaignPlanArgs) (*graphqlbackend.EmptyResponse, error) {
+func (r *Resolver) CancelCampaignPlan(ctx context.Context, args graphqlbackend.CancelCampaignPlanArgs) (res *graphqlbackend.EmptyResponse, err error) {
 	// 🚨 SECURITY: Only site admins may update campaigns for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -480,11 +496,34 @@ func (r *Resolver) CancelCampaignPlan(ctx context.Context, args graphqlbackend.C
 		return nil, err
 	}
 
-	_, err = r.store.GetCampaignPlan(ctx, ee.GetCampaignPlanOpts{ID: id})
+	tx, err := r.store.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO(a8n): Implement this. We need to cancel plan so that all jobs are stopped.
-	return &graphqlbackend.EmptyResponse{}, nil
+	defer tx.Done(&err)
+
+	plan, err := tx.GetCampaignPlan(ctx, ee.GetCampaignPlanOpts{ID: id})
+	if err != nil {
+		return nil, err
+	}
+
+	if !plan.CanceledAt.IsZero() {
+		return &graphqlbackend.EmptyResponse{}, nil
+	}
+
+	status, err := tx.GetCampaignPlanStatus(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if status.Finished() {
+		return &graphqlbackend.EmptyResponse{}, nil
+	}
+
+	plan.CanceledAt = time.Now().UTC()
+
+	err = tx.UpdateCampaignPlan(ctx, plan)
+
+	return &graphqlbackend.EmptyResponse{}, err
 }

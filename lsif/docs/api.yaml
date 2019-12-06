@@ -409,44 +409,6 @@ paths:
           description: No content
         '404':
           description: Not found
-  /jobs:
-    post:
-      description: Immediately queue a job.
-      tags:
-        - Jobs
-      requestBody:
-        description: The job description.
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/JobDescription'
-      parameters:
-        - name: blocking
-          in: query
-          description: If true, block the request until the job has completed.
-          required: false
-          schema:
-            type: boolean
-        - name: maxWait
-          in: query
-          description: The maximum time (in seconds) that request will block. The job will continue asynchronously if this much time has elapesed.
-          required: false
-          schema:
-            type: number
-      responses:
-        '200':
-          description: Processed (synchronously)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnqueueResponse'
-        '202':
-          description: Accepted
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EnqueueResponse'
   /jobs/stats:
     get:
       description: Get the current counts of jobs by their state.
@@ -748,19 +710,6 @@ components:
         - queued
         - scheduled
       additionalProperties: false
-    JobDescription:
-      type: object
-      description: A payload indicating a job to enqueue.
-      properties:
-        name:
-          type: string
-          description: The job type.
-          enum:
-            - clean-old-jobs
-            - clean-failed-jobs
-      required:
-        - name
-      additionalProperties: false
     EnqueueResponse:
       type: object
       description: A payload indicating the enqueued job.
@@ -798,8 +747,6 @@ components:
           description: The type of job.
           enum:
             - convert
-            - clean-old-jobs
-            - clean-failed-jobs
         arguments:
           type: object
           description: The arguments passed to the job.

@@ -32,20 +32,20 @@ func highlightMultipleLines(r *comby.Match) (matches []protocol.LineMatch) {
 	}
 
 	contentLines := strings.Split(r.Matched, "\n")
-	for i, lines := range contentLines {
+	for i, line := range contentLines {
 		var columnStart, columnEnd int
 		if i == 0 {
 			// First line.
 			columnStart = r.Range.Start.Column - 1
-			columnEnd = len(lines) + 1
+			columnEnd = len(line)
 		} else if i == (lineSpan - 1) {
 			// Last line.
 			columnStart = 0
-			columnEnd = r.Range.End.Column
+			columnEnd = r.Range.End.Column - 1 // don't include trailing newline
 		} else {
 			// In between line.
 			columnStart = 0
-			columnEnd = len(lines) + 1
+			columnEnd = len(line)
 		}
 
 		matches = append(matches, protocol.LineMatch{
@@ -56,7 +56,7 @@ func highlightMultipleLines(r *comby.Match) (matches []protocol.LineMatch) {
 					columnEnd,
 				},
 			},
-			Preview: lines,
+			Preview: line,
 		})
 	}
 	return matches

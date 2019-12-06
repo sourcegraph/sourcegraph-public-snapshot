@@ -84,7 +84,7 @@ func TestSearchResults(t *testing.T) {
 		db.Mocks.Repos.MockGet(t, 1)
 
 		mockSearchFilesInRepos = func(args *search.Args) ([]*FileMatchResolver, *searchResultsCommon, error) {
-			return nil, &searchResultsCommon{}, nil
+			return nil, &searchResultsCommon{repos: []*types.Repo{{ID: 1, Name: "repo"}}}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
@@ -149,7 +149,8 @@ func TestSearchResults(t *testing.T) {
 					JLineMatches: []*lineMatch{{JLineNumber: 123}},
 					Repo:         &types.Repo{ID: 1},
 				},
-			}, &searchResultsCommon{}, nil
+			}, &searchResultsCommon{repos: []*types.Repo{{ID: 1}}}, nil
+
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 
@@ -220,7 +221,7 @@ func TestSearchResults(t *testing.T) {
 					JLineMatches: []*lineMatch{{JLineNumber: 123}},
 					Repo:         &types.Repo{ID: 1},
 				},
-			}, &searchResultsCommon{}, nil
+			}, &searchResultsCommon{repos: []*types.Repo{{ID: 1}}}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
 

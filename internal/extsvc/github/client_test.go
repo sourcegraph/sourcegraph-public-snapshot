@@ -244,6 +244,61 @@ func TestClient_CreatePullRequest(t *testing.T) {
 	}
 }
 
+func TestClient_ClosePullRequest(t *testing.T) {
+	cli, save := newClient(t, "ClosePullRequest")
+	defer save()
+
+	// Repository used: sourcegraph/automation-testing
+	// The requests here cannot be easily rerun with `-update` since you can
+	// only close a pull request once.
+	// In order to update specific tests, comment out the other ones and then
+	// run with -update.
+	for i, tc := range []struct {
+		name string
+		ctx  context.Context
+		pr   *PullRequest
+		err  string
+	}{
+		{
+			name: "success",
+			// github.com/sourcegraph/automation-testing/pull/44
+			pr: &PullRequest{ID: "MDExOlB1bGxSZXF1ZXN0MzQxMDU5OTY5"},
+		},
+		{
+			name: "already closed",
+			// github.com/sourcegraph/automation-testing/pull/29
+			pr: &PullRequest{ID: "MDExOlB1bGxSZXF1ZXN0MzQxMDU5OTY5"},
+			// Doesn't return an error
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.ctx == nil {
+				tc.ctx = context.Background()
+			}
+
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			err := cli.ClosePullRequest(tc.ctx, tc.pr)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if err != nil {
+				return
+			}
+
+			assertGolden(t,
+				"testdata/golden/ClosePullRequest-"+strconv.Itoa(i),
+				update("ClosePullRequest"),
+				tc.pr,
+			)
+		})
+	}
+}
+
 func assertGolden(t testing.TB, path string, update bool, want interface{}) {
 	t.Helper()
 
