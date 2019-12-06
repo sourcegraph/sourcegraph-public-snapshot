@@ -137,9 +137,9 @@ func (s *Service) runChangesetJob(
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	tr.LogFields(log.Bool("completed", job.Completed()), log.Int64("job_id", job.ID), log.Int64("campaign_id", c.ID))
+	tr.LogFields(log.Bool("completed", job.SuccessfullyCompleted()), log.Int64("job_id", job.ID), log.Int64("campaign_id", c.ID))
 
-	if job.Completed() {
+	if job.SuccessfullyCompleted() {
 		log15.Info("ChangesetJob already completed", "id", job.ID)
 		return nil
 	}
