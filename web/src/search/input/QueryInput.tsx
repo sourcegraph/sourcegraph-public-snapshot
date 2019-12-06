@@ -246,7 +246,10 @@ export class QueryInput extends React.Component<Props, State> {
                 )
                 .subscribe(
                     state => {
-                        this.setState(state)
+                        this.setState({
+                            ...state,
+                            showSuggestions: true,
+                        })
                     },
                     err => {
                         console.error(err)
@@ -323,9 +326,6 @@ export class QueryInput extends React.Component<Props, State> {
     public componentDidUpdate(prevProps: Props): void {
         if (this.props.value.cursorPosition && prevProps.value.cursorPosition !== this.props.value.cursorPosition) {
             this.focusInputAndPositionCursor(this.props.value.cursorPosition)
-        }
-        if (this.props.value.query !== prevProps.value.query) {
-            this.setState({ showSuggestions: true })
         }
         this.componentUpdates.next(this.props)
     }
