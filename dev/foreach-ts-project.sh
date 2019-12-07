@@ -32,6 +32,21 @@ run_command() {
 }
 export -f run_command
 
-echo "--- 🚨 Buildkite's timing information is misleading! Only consider the job timing that's printed after 'done'"
+if [[ "${CI:-"false"}" == "true" ]]; then
+    echo "--- 🚨 Buildkite's timing information is misleading! Only consider the job timing that's printed after 'done'"
 
-parallel_run run_command {} ::: "${DIRS[@]}"
+    parallel_run() {
+        log_file=$(mktemp)
+        trap "rm -rf $log_file" EXIT
+
+        parallel --jobs 4 --keep-order --line-buffer --joblog $log_file "$@"
+        echo "--- done - displaying job log:"
+        cat $log_file
+    }
+
+    parallel_run run_command {} ::: "${DIRS[@]}"
+else
+    for dir in "${DIRS[@]}"; do
+        run_command $dir
+    done
+fi
