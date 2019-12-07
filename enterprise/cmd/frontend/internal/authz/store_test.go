@@ -928,7 +928,8 @@ func testStoreGrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 				2: {1, 2},
 			},
 			expectUserPendingPerms: map[string][]uint32{
-				"bob": {2},
+				"alice": {},
+				"bob":   {2},
 			},
 			expectRepoPendingPerms: map[int32][]string{
 				1: {},
