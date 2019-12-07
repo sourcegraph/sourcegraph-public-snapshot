@@ -2655,7 +2655,8 @@ type GitBlob implements TreeEntry & File2 {
     lsif: LSIFQueryResolver
 }
 
-# A wrapper object around LSIF query methods for a particular path-at-revision.
+# A wrapper object around LSIF query methods for a particular path-at-revision. When this node is
+# null, no LSIF data is available for containing git blob.
 type LSIFQueryResolver {
     # (experimental) The LSIF API may change substantially in the near future as we
     # continue to adjust it for our use cases. Changes will not be documented in the
