@@ -710,11 +710,8 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 	ctx, save := s.observe(ctx, "GrantPendingPermissions", "")
 	defer func() { save(&err, append(p.TracingFields(), otlog.Object("userID", userID))...) }()
 
-	// NOTE: Read whatever is in the "user_pending_permissions" table at the moment, we don't want to:
-	// 1. acquire a row-level lock because if we do, we will have the reverse order of acquiring
-	// locks to SetRepoPendingPermissions (i.e. user -> repo vs. repo -> user) that could easily cause
-	// deadlocks.
-	// 2. load within a transaction because once transaction begins, later query won't be able to see
+	// NOTE: Read whatever is in the "user_pending_permissions" table at the moment, we don't want to
+	// load within a transaction because once transaction begins, later query won't be able to see
 	// changes (i.e. "object_ids") of the same row in the "user_pending_permissions" table, which we
 	// will use to compute diff with "object_ids" read at this time. We could simply delete the row
 	// but it would result in inconsistent data between "user_pending_permissions" and
@@ -722,7 +719,7 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 	//
 	// In terms of leftover permissions (i.e. user is created but still have pending permissions
 	// with asscoiated "bind_id"), it is unavoidable even if we acquire a row-level lock here.
-	vals, err := s.load(ctx, loadUserPendingPermissionsQuery(p, ""))
+	vals, err := s.load(ctx, loadUserPendingPermissionsQuery(p, "FOR SHARE"))
 	if err != nil {
 		// Skip the whole grant process if the user has no pending permissions.
 		if err == ErrNotFound {
