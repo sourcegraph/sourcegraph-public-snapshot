@@ -5278,10 +5278,10 @@ typeorm@^0.2.21:
     yargonaut "^1.1.2"
     yargs "^13.2.1"
 
-typescript-json-schema@^0.40.0:
-  version "0.40.0"
-  resolved "https://registry.npmjs.org/typescript-json-schema/-/typescript-json-schema-0.40.0.tgz#4815092e5acf1662a94aa140924809ff5922da7c"
-  integrity sha512-C8D3Ca6+1x3caWOR+u45Shn3KqkRZi5M3+E8ePpEmYMqOh3xhhLdq+39pqT0Bf8+fCgAmpTFSJMT6Xwqbm0Tkw==
+typescript-json-schema@^0.41.0:
+  version "0.41.0"
+  resolved "https://registry.npmjs.org/typescript-json-schema/-/typescript-json-schema-0.41.0.tgz#8dbe1798023ae50e803b3f9d53a6d10aaf5a9d74"
+  integrity sha512-ThW7KtuMUR+kZ9Id0G+hJ0YLp3DWPjL6NkrOqAyaKttO3839wF4jiYKm7mZcpUe1BcHs12pfbEo40+qYQtm4yA==
   dependencies:
     "@types/json-schema" "^7.0.3"
     glob "~7.1.4"
