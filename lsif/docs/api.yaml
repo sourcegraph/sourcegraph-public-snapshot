@@ -746,7 +746,7 @@ components:
             $ref: '#/components/schemas/Dump'
         totalCount:
           type: number
-          descrpition: The total number of dumps in this set of results.
+          description: The total number of dumps in this set of results.
       required:
         - dumps
         - totalCount
