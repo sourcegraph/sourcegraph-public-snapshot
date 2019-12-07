@@ -107,7 +107,7 @@ const noSuggestions: State['suggestions'] = { values: [], cursorPosition: 0 }
 const typingDebounceTime = 300
 
 export class QueryInput extends React.Component<Props, State> {
-    static defaultProps = {
+    public static defaultProps = {
         withSubmit: true,
     }
 
