@@ -107,7 +107,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     }, [campaignID, triggerError])
 
     const campaignUpdates = useMemo(() => new Subject<void>(), [])
-    const nextCampaignUpdate = useCallback(campaignUpdates.next.bind(campaignUpdates), [campaignUpdates])
 
     const changesetUpdates = useMemo(() => new Subject<void>(), [])
     const nextChangesetUpdate = useCallback(changesetUpdates.next.bind(changesetUpdates), [changesetUpdates])
@@ -311,7 +310,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         event.preventDefault()
         try {
             await retryCampaign(campaign!.id)
-            nextCampaignUpdate()
+            campaignUpdates.next()
         } catch (err) {
             setAlertError(asError(err))
         }
@@ -548,7 +547,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         <ErrorAlert error={error} className="mt-3" key={i} />
                     ))}
                     {status.state === 'ERRORED' && campaign?.__typename === 'Campaign' && (
-                        <button type="button" className="btn btn-primary mb-2" onClick={OnRetry}>
+                        <button type="button" className="btn btn-primary mb-2" onClick={onRetry}>
                             Retry failed jobs
                         </button>
                     )}
