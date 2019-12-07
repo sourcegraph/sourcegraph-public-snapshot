@@ -772,10 +772,10 @@ components:
           description: Whether or not this dump can provide global reference code intelligence.
         uploadedAt:
           type: string
-          description: An ISO 8601-formatted time that the dump was uploaded.
+          description: An ISO 8601-formatted date and time that the dump was uploaded.
         processedAt:
           type: string
-          description: An ISO 8601-formatted time that the dump became available for use.
+          description: An ISO 8601-formatted date and time that the dump became available for use.
       required:
         - id
         - repository
@@ -883,14 +883,14 @@ components:
           additionalProperties: false
         queuedAt:
           type: string
-          description: An ISO 8601-formatted time that the job was queued.
+          description: An ISO 8601-formatted date and time that the job was queued.
         startedAt:
           type: string
-          description: An ISO 8601-formatted time that the job was processed.
+          description: An ISO 8601-formatted date and time that the job was processed.
           nullable: true
         completedOrErroredAt:
           type: string
-          description: An ISO 8601-formatted time that the job was completed.
+          description: An ISO 8601-formatted date and time that the job was completed.
           nullable: true
       required:
         - id
@@ -976,14 +976,14 @@ components:
           description: The stacktrace of the upload error.
         uploadedAt:
           type: string
-          description: An ISO 8601-formatted time that the dump was uploaded.
+          description: An ISO 8601-formatted date and time that the dump was uploaded.
         startedAt:
           type: string
-          description: An ISO 8601-formatted time that the conversion started.
+          description: An ISO 8601-formatted date and time that the conversion started.
           nullable: true
         completedOrErroredAt:
           type: string
-          description: An ISO 8601-formatted time that the conversion completed or errored.
+          description: An ISO 8601-formatted date and time that the conversion completed or errored.
           nullable: true
       required:
         - id
