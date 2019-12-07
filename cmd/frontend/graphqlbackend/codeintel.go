@@ -20,6 +20,7 @@ type CodeIntelResolver interface {
 	LSIFJobStatsByID(ctx context.Context, id graphql.ID) (LSIFJobStatsResolver, error)
 	DeleteLSIFDump(ctx context.Context, id graphql.ID) (*EmptyResponse, error)
 	DeleteLSIFJob(ctx context.Context, id graphql.ID) (*EmptyResponse, error)
+	LSIF(args *LSIFQueryArgs) LSIFQueryResolver
 }
 
 type LSIFDumpsQueryArgs struct {
@@ -43,7 +44,7 @@ type LSIFJobsQueryArgs struct {
 
 type LSIFDumpResolver interface {
 	ID() graphql.ID
-	ProjectRoot() (*GitTreeEntryResolver, error)
+	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
 	IsLatestForRepo() bool
 	UploadedAt() DateTime
 	ProcessedAt() DateTime
@@ -86,7 +87,40 @@ type LSIFJobConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
-var codeIntelOnlyInEnterprise = errors.New("lsif dumps and jobs are only available in enterprise")
+type LSIFQueryResolver interface {
+	Definitions(ctx context.Context, args *LSIFQueryPositionArgs) (LocationConnectionResolver, error)
+	References(ctx context.Context, args *LSIFPagedQueryPositionArgs) (LocationConnectionResolver, error)
+	Hover(ctx context.Context, args *LSIFQueryPositionArgs) (HoverResolver, error)
+}
+
+type LSIFQueryArgs struct {
+	RepoName string
+	Commit   GitObjectID
+	Path     string
+}
+
+type LSIFQueryPositionArgs struct {
+	Line      int32
+	Character int32
+}
+
+type LSIFPagedQueryPositionArgs struct {
+	LSIFQueryPositionArgs
+	graphqlutil.ConnectionArgs
+	After *string
+}
+
+type LocationConnectionResolver interface {
+	Nodes(ctx context.Context) ([]LocationResolver, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type HoverResolver interface {
+	Markdown() MarkdownResolver
+	Range() RangeResolver
+}
+
+var codeIntelOnlyInEnterprise = errors.New("lsif dumps, jobs, and queries are only available in enterprise")
 
 func (r *schemaResolver) LSIFJobs(ctx context.Context, args *LSIFJobsQueryArgs) (LSIFJobConnectionResolver, error) {
 	if EnterpriseResolvers.codeIntelResolver == nil {

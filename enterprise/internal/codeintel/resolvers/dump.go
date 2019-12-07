@@ -17,9 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lsif"
 )
 
-//
-// Node Resolver
-
 type lsifDumpResolver struct {
 	repo     *types.Repo
 	lsifDump *lsif.LSIFDump
@@ -31,9 +28,9 @@ func (r *lsifDumpResolver) ID() graphql.ID {
 	return marshalLSIFDumpGQLID(r.lsifDump.Repository, r.lsifDump.ID)
 }
 
-func (r *lsifDumpResolver) ProjectRoot() (*graphqlbackend.GitTreeEntryResolver, error) {
+func (r *lsifDumpResolver) ProjectRoot(ctx context.Context) (*graphqlbackend.GitTreeEntryResolver, error) {
 	repo := graphqlbackend.NewRepositoryResolver(r.repo)
-	commitResolver, err := repo.Commit(context.Background(), &graphqlbackend.RepositoryCommitArgs{Rev: r.lsifDump.Commit})
+	commitResolver, err := repo.Commit(ctx, &graphqlbackend.RepositoryCommitArgs{Rev: r.lsifDump.Commit})
 	if err != nil {
 		return nil, err
 	}
@@ -52,9 +49,6 @@ func (r *lsifDumpResolver) UploadedAt() graphqlbackend.DateTime {
 func (r *lsifDumpResolver) ProcessedAt() graphqlbackend.DateTime {
 	return graphqlbackend.DateTime{Time: r.lsifDump.ProcessedAt}
 }
-
-//
-// Connection Resolver
 
 type LSIFDumpsListOptions struct {
 	RepositoryID    graphql.ID
@@ -166,9 +160,6 @@ func (r *lsifDumpConnectionResolver) compute(ctx context.Context) ([]*lsif.LSIFD
 
 	return r.dumps, r.repo, r.totalCount, r.nextURL, r.err
 }
-
-//
-// ID Serialization
 
 type lsifDumpIDPayload struct {
 	RepoName string
