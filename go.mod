@@ -22,10 +22,10 @@ require (
 	github.com/coreos/go-oidc v2.1.0+incompatible
 	github.com/coreos/go-semver v0.3.0
 	github.com/cosiner/argv v0.0.1 // indirect
-	github.com/crewjam/saml v0.3.0
+	github.com/crewjam/saml v0.3.1
 	github.com/davecgh/go-spew v1.1.1
 	github.com/daviddengcn/go-colortext v0.0.0-20180409174941-186a3d44e920
-	github.com/dghubble/gologin v2.1.0+incompatible
+	github.com/dghubble/gologin v2.2.0+incompatible
 	github.com/dhui/dktest v0.3.1 // indirect
 	github.com/dnaeon/go-vcr v1.0.1
 	github.com/docker/distribution v2.7.1+incompatible // indirect
@@ -45,7 +45,7 @@ require (
 	github.com/fatih/color v1.7.0
 	github.com/felixfbecker/stringscore v0.0.0-20170928081130-e71a9f1b0749
 	github.com/felixge/httpsnoop v1.0.1
-	github.com/gchaincl/sqlhooks v1.2.0
+	github.com/gchaincl/sqlhooks v1.3.0
 	github.com/getsentry/raven-go v0.2.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/gin-contrib/sse v0.1.0 // indirect
@@ -89,6 +89,7 @@ require (
 	github.com/hashicorp/go-multierror v1.0.0
 	github.com/hashicorp/go-retryablehttp v0.6.3 // indirect
 	github.com/honeycombio/libhoney-go v1.12.2
+	github.com/inconshreveable/log15 v0.0.0-20180818164646-67afb5ed74ec
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/joho/godotenv v1.3.0
 	github.com/json-iterator/go v1.1.8 // indirect
@@ -97,7 +98,7 @@ require (
 	github.com/karlseguin/expect v1.0.1 // indirect
 	github.com/karlseguin/typed v1.1.7 // indirect
 	github.com/karrick/godirwalk v1.13.0
-	github.com/karrick/tparse v2.4.2+incompatible
+	github.com/karrick/tparse/v2 v2.7.1
 	github.com/keegancsmith/sqlf v1.1.0
 	github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513
 	github.com/kevinburke/go-bindata v3.16.0+incompatible
@@ -155,10 +156,10 @@ require (
 	github.com/spf13/viper v1.5.0 // indirect
 	github.com/sqs/httpgzip v0.0.0-20180622165210-91da61ed4dff
 	github.com/src-d/enry/v2 v2.1.0
-	github.com/stripe/stripe-go v67.5.0+incompatible
+	github.com/stripe/stripe-go v67.9.0+incompatible
 	github.com/temoto/robotstxt v1.1.1
 	github.com/tomnomnom/linkheader v0.0.0-20180905144013-02ca5825eb80
-	github.com/uber/gonduit v0.5.0
+	github.com/uber/gonduit v0.6.1
 	github.com/uber/jaeger-client-go v2.20.1+incompatible
 	github.com/uber/jaeger-lib v2.2.0+incompatible
 	github.com/ugorji/go v1.1.7 // indirect
@@ -173,13 +174,13 @@ require (
 	go.uber.org/atomic v1.5.1 // indirect
 	go.uber.org/automaxprocs v1.2.0
 	golang.org/x/arch v0.0.0-20191101135251-a0d8588395bd // indirect
-	golang.org/x/crypto v0.0.0-20191119213627-4f8c1d86b1ba
-	golang.org/x/net v0.0.0-20191119073136-fc4aabc6c914
-	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
+	golang.org/x/crypto v0.0.0-20191128160524-b544559bb6d1
+	golang.org/x/net v0.0.0-20191126235420-ef20fe5d7933
+	golang.org/x/oauth2 v0.0.0-20191122200657-5d9234df094c
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
-	golang.org/x/sys v0.0.0-20191120155948-bd437916bb0e
+	golang.org/x/sys v0.0.0-20191128015809-6d18c012aee9
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
-	golang.org/x/tools v0.0.0-20191122080028-f774e2e2e5be
+	golang.org/x/tools v0.0.0-20191130070609-6e064ea0cf2d
 	golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898 // indirect
 	google.golang.org/appengine v1.6.5 // indirect
 	google.golang.org/genproto v0.0.0-20191115221424-83cc0476cb11 // indirect
@@ -196,7 +197,7 @@ require (
 )
 
 replace (
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20191031085051-5bd7e84795f0
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20191204145050-b470e5f5cf39
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.0.0-20190712190530-f05918046bab
 	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0
@@ -206,4 +207,4 @@ replace github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.
 
 replace github.com/dghubble/gologin => github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8
 
-replace github.com/golang/lint => golang.org/x/lint v0.0.0-20190409202823-959b441ac422
+replace github.com/golang/lint => golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f

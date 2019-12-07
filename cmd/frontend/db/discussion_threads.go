@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/felixfbecker/stringscore"
-	"github.com/karrick/tparse"
+	tparse "github.com/karrick/tparse/v2"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"

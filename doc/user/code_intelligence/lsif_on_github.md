@@ -28,7 +28,7 @@ jobs:
         uses: sourcegraph/lsif-go-action@master
         with:
           verbose: "true"
-      - name: Upload LSIF data
+      - name: Upload LSIF Data
         uses: sourcegraph/lsif-upload-action@master
         with:
           public_repo_github_token: ${{ secrets.PUBLIC_REPO_GITHUB_TOKEN }}

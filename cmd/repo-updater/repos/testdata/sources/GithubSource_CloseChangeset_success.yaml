@@ -1,0 +1,81 @@
+---
+version: 1
+interactions:
+- request:
+    body: '{"query":"\nfragment actor on Actor { avatarUrl, login, url }\nfragment
+      commit on Commit {\n\toid, message, messageHeadline, committedDate, pushedDate,
+      url\n\tcommitter {\n\tavatarUrl, email, name\n\tuser { ...actor }\n\t}\n}\nfragment
+      review on PullRequestReview {\n\tdatabaseId\n\tauthor { ...actor }\n\tauthorAssociation\n\tbody\n\tstate\n\turl\n\tcreatedAt\n\tupdatedAt\n\tcommit
+      { ...commit }\n\tincludesCreatedEdit\n}\nfragment pr on PullRequest {\n\tid,
+      title, body, state, url, number, createdAt, updatedAt\n\theadRefOid, baseRefOid,
+      headRefName, baseRefName\n\tauthor { ...actor }\n\tparticipants(first: 100)
+      { nodes { ...actor } }\n\ttimelineItems(\n\tfirst: 250\n\titemTypes: [\n\t\tASSIGNED_EVENT\n\t\tCLOSED_EVENT\n\t\tISSUE_COMMENT\n\t\tRENAMED_TITLE_EVENT\n\t\tMERGED_EVENT\n\t\tPULL_REQUEST_REVIEW\n\t\tPULL_REQUEST_REVIEW_THREAD\n\t\tREOPENED_EVENT\n\t\tREVIEW_DISMISSED_EVENT\n\t\tREVIEW_REQUEST_REMOVED_EVENT\n\t\tREVIEW_REQUESTED_EVENT\n\t\tUNASSIGNED_EVENT\n\t]\n\t)
+      {\n\tnodes {\n\t\t__typename\n\t\t... on AssignedEvent {\n\t\tactor { ...actor
+      }\n\t\tassignee { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t... on ClosedEvent {\n\t\tactor
+      { ...actor }\n\t\tcreatedAt\n\t\turl\n\t\t}\n\t\t... on IssueComment {\n\t\tdatabaseId\n\t\tauthor
+      { ...actor }\n\t\tauthorAssociation\n\t\tbody\n\t\tcreatedAt\n\t\teditor { ...actor
+      }\n\t\turl\n\t\tupdatedAt\n\t\tincludesCreatedEdit\n\t\tpublishedAt\n\t\t}\n\t\t...
+      on RenamedTitleEvent {\n\t\tactor { ...actor }\n\t\tpreviousTitle\n\t\tcurrentTitle\n\t\tcreatedAt\n\t\t}\n\t\t...
+      on MergedEvent {\n\t\tactor { ...actor }\n\t\tmergeRefName\n\t\turl\n\t\tcommit
+      { ...commit }\n\t\tcreatedAt\n\t\t}\n\t\t... on PullRequestReview {\n\t\t...review\n\t\t}\n\t\t...
+      on PullRequestReviewThread {\n\t\tcomments(last: 100) {\n\t\t\tnodes {\n\t\t\tdatabaseId\n\t\t\tauthor
+      { ...actor }\n\t\t\tauthorAssociation\n\t\t\teditor { ...actor }\n\t\t\tcommit
+      { ...commit }\n\t\t\tbody\n\t\t\tstate\n\t\t\turl\n\t\t\tcreatedAt\n\t\t\tupdatedAt\n\t\t\tincludesCreatedEdit\n\t\t\t}\n\t\t}\n\t\t}\n\t\t...
+      on ReopenedEvent {\n\t\tactor { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t... on
+      ReviewDismissedEvent {\n\t\tactor { ...actor }\n\t\treview { ...review }\n\t\tdismissalMessage\n\t\tcreatedAt\n\t\t}\n\t\t...
+      on ReviewRequestRemovedEvent {\n\t\tactor { ...actor }\n\t\trequestedReviewer
+      { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t... on ReviewRequestedEvent {\n\t\tactor
+      { ...actor }\n\t\trequestedReviewer { ...actor }\n\t\tcreatedAt\n\t\t}\n\t\t...
+      on UnassignedEvent {\n\t\tactor { ...actor }\n\t\tassignee { ...actor }\n\t\tcreatedAt\n\t\t}\n\t}\n\t}\n}\nmutation\tClosePullRequest($input:ClosePullRequestInput!)
+      {\n  closePullRequest(input:$input) {\n    pullRequest {\n      ... pr\n    }\n  }\n}","variables":{"input":{"pullRequestId":"MDExOlB1bGxSZXF1ZXN0MzQ5NTIzMzE0"}}}'
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/graphql
+    method: POST
+  response:
+    body: '{"data":{"closePullRequest":{"pullRequest":{"id":"MDExOlB1bGxSZXF1ZXN0MzQ5NTIzMzE0","title":"this
+      will be closed","body":"","state":"CLOSED","url":"https://github.com/sourcegraph/automation-testing/pull/44","number":44,"createdAt":"2019-12-05T16:15:20Z","updatedAt":"2019-12-06T13:27:44Z","headRefOid":"aea278c24726ee43fb7754a5259a4e1453bb7f47","baseRefOid":"97f8a75319760990c187710c50a957358f663366","headRefName":"sourcegraph/campaign-38","baseRefName":"master","author":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"participants":{"nodes":[{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"}]},"timelineItems":{"nodes":[{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"createdAt":"2019-12-06T13:27:11Z","url":"https://github.com/sourcegraph/automation-testing/pull/44#event-2861364892"},{"__typename":"ReopenedEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"createdAt":"2019-12-06T13:27:39Z"},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"createdAt":"2019-12-06T13:27:44Z","url":"https://github.com/sourcegraph/automation-testing/pull/44#event-2861366616"}]}}}}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval,
+        X-GitHub-Media-Type
+      Cache-Control:
+      - no-cache
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 06 Dec 2019 13:27:45 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Status:
+      - 200 OK
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept-Encoding
+      X-Accepted-Oauth-Scopes:
+      - repo
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v4; format=json
+      X-Github-Request-Id:
+      - F27F:3D52E:A0B4DF1:BFCCC8B:5DEA5750
+      X-Oauth-Scopes:
+      - public_repo
+      X-Xss-Protection:
+      - 1; mode=block
+    status: 200 OK
+    code: 200
+    duration: ""

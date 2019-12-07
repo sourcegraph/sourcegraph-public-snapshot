@@ -1,0 +1,40 @@
+{
+  "ID": "MDExOlB1bGxSZXF1ZXN0MzQxMDU5OTY5",
+  "Title": "comby test",
+  "Body": "",
+  "State": "CLOSED",
+  "URL": "https://github.com/sourcegraph/automation-testing/pull/29",
+  "HeadRefOid": "fe4605a6811c0d62a78ec150332bbdbe34ddd6cc",
+  "BaseRefOid": "c75943274b322ffef2230df8f8049de84ddf12c1",
+  "HeadRefName": "sourcegraph/campaign-17",
+  "BaseRefName": "master",
+  "Number": 29,
+  "Author": {
+   "AvatarURL": "https://avatars0.githubusercontent.com/u/19534377?v=4",
+   "Login": "eseliger",
+   "URL": "https://github.com/eseliger"
+  },
+  "Participants": [
+   {
+    "AvatarURL": "https://avatars0.githubusercontent.com/u/19534377?v=4",
+    "Login": "eseliger",
+    "URL": "https://github.com/eseliger"
+   }
+  ],
+  "TimelineItems": [
+   {
+    "Type": "ClosedEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars0.githubusercontent.com/u/19534377?v=4",
+      "Login": "eseliger",
+      "URL": "https://github.com/eseliger"
+     },
+     "CreatedAt": "2019-12-04T23:28:01Z",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/29#event-2855919824"
+    }
+   }
+  ],
+  "CreatedAt": "2019-11-14T16:18:25Z",
+  "UpdatedAt": "2019-12-04T23:28:00Z"
+ }

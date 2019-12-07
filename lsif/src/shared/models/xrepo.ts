@@ -86,8 +86,8 @@ export class LsifUpload {
     /**
      * The time the conversion completed or errored.
      */
-    @Column('timestamp with time zone', { name: 'completed_or_errored_at', nullable: true })
-    public completedOrErroredAt!: Date
+    @Column('timestamp with time zone', { name: 'finished_at', nullable: true })
+    public finishedAt!: Date
 
     /**
      * The opentracing headers from the upload request.

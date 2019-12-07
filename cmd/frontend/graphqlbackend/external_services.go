@@ -144,9 +144,11 @@ func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if err = syncExternalService(ctx, externalService); err != nil {
-		return nil, errors.Wrap(err, "warning: external service deleted, but sync request failed")
-	}
+	// The user doesn't care if triggering syncing failed when deleting a
+	// service, so kick off in the background.
+	go func() {
+		_ = syncExternalService(context.Background(), externalService)
+	}()
 
 	return &EmptyResponse{}, nil
 }

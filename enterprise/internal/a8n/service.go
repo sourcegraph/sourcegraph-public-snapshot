@@ -3,17 +3,22 @@ package a8n
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"strconv"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // NewService returns a Service.
@@ -49,12 +54,17 @@ type Service struct {
 // CreateCampaign creates the Campaign. When a CampaignPlanID is set, it also
 // creates one ChangesetJob for each CampaignJob belonging to the respective
 // CampaignPlan, together with the Campaign in a transaction.
-func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign) (err error) {
+func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign) error {
+	var err error
+	tr, ctx := trace.New(ctx, "Service.CreateCampaign", fmt.Sprintf("Name: %q", c.Name))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
 		return err
 	}
-
 	defer tx.Done(&err)
 
 	if err := tx.CreateCampaign(ctx, c); err != nil {
@@ -76,7 +86,6 @@ func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign) (err erro
 	}
 
 	for _, job := range jobs {
-
 		changesetJob := &a8n.ChangesetJob{
 			CampaignID:    c.ID,
 			CampaignJobID: job.ID,
@@ -90,7 +99,15 @@ func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign) (err erro
 	return nil
 }
 
+// RunChangesetJobs will run all the changeset jobs for the supplied campaign.
+// It is idempotent and jobs that have already completed will not be rerun.
 func (s *Service) RunChangesetJobs(ctx context.Context, c *a8n.Campaign) error {
+	var err error
+	tr, ctx := trace.New(ctx, "Service.RunChangesetJobs", fmt.Sprintf("Campaign: %q", c.Name))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 	jobs, _, err := s.store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
 		CampaignID: c.ID,
 		Limit:      10000,
@@ -116,8 +133,18 @@ func (s *Service) runChangesetJob(
 	c *a8n.Campaign,
 	job *a8n.ChangesetJob,
 ) (err error) {
-	// TODO(a8n):
-	//   - Ensure all of these calls are idempotent so they can be safely retried.
+	tr, ctx := trace.New(ctx, "service.runChangeSetJob", fmt.Sprintf("job_id: %d", job.ID))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	tr.LogFields(log.Bool("completed", job.SuccessfullyCompleted()), log.Int64("job_id", job.ID), log.Int64("campaign_id", c.ID))
+
+	if job.SuccessfullyCompleted() {
+		log15.Info("ChangesetJob already completed", "id", job.ID)
+		return nil
+	}
+
 	defer func() {
 		if err != nil {
 			job.Error = err.Error()
@@ -150,6 +177,7 @@ func (s *Service) runChangesetJob(
 	}
 	repo := rs[0]
 
+	// TODO: This should be globally unique
 	headRefName := "sourcegraph/campaign-" + strconv.FormatInt(c.ID, 10)
 
 	_, err = s.git.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
@@ -168,7 +196,9 @@ func (s *Service) runChangesetJob(
 		// We use unified diffs, not git diffs, which means they're missing the
 		// `a/` and `/b` filename prefixes. `-p0` tells `git apply` to not
 		// expect and strip prefixes.
-		GitApplyArgs: []string{"-p0"},
+		// Since we also produce diffs manually, we might not have context lines,
+		// so we need to disable that check with `--unidiff-zero`.
+		GitApplyArgs: []string{"-p0", "--unidiff-zero"},
 		Push:         true,
 	})
 
@@ -219,17 +249,22 @@ func (s *Service) runChangesetJob(
 		return err
 	}
 
-	baseRef := "master"
+	baseRef := "refs/heads/master"
 	if campaignJob.BaseRef != "" {
 		baseRef = campaignJob.BaseRef
 	}
 
+	body := c.Description
+	if campaignJob.Description != "" {
+		body += "\n\n---\n\n" + campaignJob.Description
+	}
+
 	cs := repos.Changeset{
-		Title:       c.Name,
-		Body:        c.Description,
-		BaseRefName: baseRef,
-		HeadRefName: headRefName,
-		Repo:        repo,
+		Title:   c.Name,
+		Body:    body,
+		BaseRef: baseRef,
+		HeadRef: git.EnsureRefPrefix(headRefName),
+		Repo:    repo,
 		Changeset: &a8n.Changeset{
 			RepoID:      int32(repo.ID),
 			CampaignIDs: []int64{job.CampaignID},
@@ -241,19 +276,22 @@ func (s *Service) runChangesetJob(
 		return errors.Errorf("creating changesets on code host of repo %q is not implemented", repo.Name)
 	}
 
-	if err = ccs.CreateChangeset(ctx, &cs); err != nil {
-		return err
+	err = ccs.CreateChangeset(ctx, &cs)
+	if err != nil {
+		return errors.Wrap(err, "creating changeset")
 	}
 
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
 		return err
 	}
-
 	defer tx.Done(&err)
 
 	if err = tx.CreateChangesets(ctx, cs.Changeset); err != nil {
-		return err
+		if _, ok := err.(AlreadyExistError); !ok {
+			return err
+		}
+		// Changeset already exists so continue
 	}
 
 	c.ChangesetIDs = append(c.ChangesetIDs, cs.Changeset.ID)

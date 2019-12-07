@@ -10,11 +10,13 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -31,7 +33,7 @@ var maxWorkers = env.Get("A8N_MAX_WORKERS", "8", "maximum number of repositories
 // ErrTooManyResults is returned by the Runner's Run method when the
 // CampaignType's searchQuery produced more than maxRepositories number of
 // repositories.
-var ErrTooManyResults = errors.New("search yielded too many results")
+var ErrTooManyResults = errors.New("search yielded too many results. You can narrow down results using `scopeQuery`")
 
 // A Runner executes a CampaignPlan by creating and running CampaignJobs
 // according to the CampaignPlan's Arguments and CampaignType.
@@ -120,7 +122,13 @@ const jobTimeout = 2 * time.Minute
 // CampaignType set on CampaignPlan.
 // This is a non-blocking method that will possibly return before all
 // CampaignJobs are finished.
-func (r *Runner) Run(ctx context.Context, plan *a8n.CampaignPlan) error {
+func (r *Runner) Run(ctx context.Context, plan *a8n.CampaignPlan) (err error) {
+	tr, ctx := trace.New(ctx, "Runner.Run", fmt.Sprintf("plan_id %d", plan.ID))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	tr.LogFields(log.Bool("started", r.started))
 	if r.started {
 		return errors.New("already started")
 	}
@@ -135,7 +143,8 @@ func (r *Runner) Run(ctx context.Context, plan *a8n.CampaignPlan) error {
 		return err
 	}
 	if len(rs) > int(max) {
-		return ErrTooManyResults
+		err = ErrTooManyResults
+		return err
 	}
 
 	jobs, err := r.createPlanAndJobs(ctx, plan, rs)
@@ -147,6 +156,7 @@ func (r *Runner) Run(ctx context.Context, plan *a8n.CampaignPlan) error {
 	if err != nil {
 		return err
 	}
+	tr.LogFields(log.Int64("num_workers", numWorkers), log.Int("num_jobs", len(jobs)))
 
 	queue := make(chan *a8n.CampaignJob)
 	worker := func(queue chan *a8n.CampaignJob) {
@@ -173,7 +183,13 @@ func (r *Runner) Run(ctx context.Context, plan *a8n.CampaignPlan) error {
 }
 
 func (r *Runner) runJob(pctx context.Context, job *a8n.CampaignJob) {
-	ctx, cancel := context.WithTimeout(pctx, jobTimeout)
+	var err error
+	tr, ctx := trace.New(pctx, "Runner.runJob", fmt.Sprintf("job_id %d", job.ID))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	ctx, cancel := context.WithTimeout(ctx, jobTimeout)
 	defer cancel()
 
 	defer func() {
@@ -193,6 +209,17 @@ func (r *Runner) runJob(pctx context.Context, job *a8n.CampaignJob) {
 		}
 	}()
 
+	// Check whether CampaignPlan has been canceled.
+	p, err := r.store.GetCampaignPlan(ctx, GetCampaignPlanOpts{ID: job.CampaignPlanID})
+	if err != nil {
+		job.Error = err.Error()
+		return
+	}
+	if !p.CanceledAt.IsZero() {
+		job.Error = "Campaign execution canceled."
+		return
+	}
+
 	job.StartedAt = r.clock()
 
 	// We load the repository here again so that we decouple the
@@ -209,12 +236,13 @@ func (r *Runner) runJob(pctx context.Context, job *a8n.CampaignJob) {
 		return
 	}
 
-	diff, err := r.ct.generateDiff(ctx, api.RepoName(rs[0].Name), api.CommitID(job.Rev))
+	diff, desc, err := r.ct.generateDiff(ctx, api.RepoName(rs[0].Name), api.CommitID(job.Rev))
 	if err != nil {
 		job.Error = err.Error()
 	}
 
 	job.Diff = diff
+	job.Description = desc
 }
 
 func (r *Runner) createPlanAndJobs(

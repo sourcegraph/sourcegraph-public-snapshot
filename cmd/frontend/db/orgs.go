@@ -86,8 +86,7 @@ func (o *orgs) Count(ctx context.Context, opt OrgsListOptions) (int, error) {
 		return Mocks.Orgs.Count(ctx, opt)
 	}
 
-	conds := o.listSQL(opt)
-	q := sqlf.Sprintf("SELECT COUNT(*) FROM orgs WHERE %s", sqlf.Join(conds, "AND"))
+	q := sqlf.Sprintf("SELECT COUNT(*) FROM orgs WHERE %s", o.listSQL(opt))
 
 	var count int
 	if err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
@@ -112,20 +111,17 @@ func (o *orgs) List(ctx context.Context, opt *OrgsListOptions) ([]*types.Org, er
 	if opt == nil {
 		opt = &OrgsListOptions{}
 	}
-	conds := o.listSQL(*opt)
-
-	q := sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL())
+	q := sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", o.listSQL(*opt), opt.LimitOffset.SQL())
 	return o.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
 
-func (*orgs) listSQL(opt OrgsListOptions) (conds []*sqlf.Query) {
-	conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
-	conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
+func (*orgs) listSQL(opt OrgsListOptions) *sqlf.Query {
+	conds := []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
 	if opt.Query != "" {
 		query := "%" + opt.Query + "%"
 		conds = append(conds, sqlf.Sprintf("name ILIKE %s OR display_name ILIKE %s", query, query))
 	}
-	return conds
+	return sqlf.Sprintf("(%s)", sqlf.Join(conds, ") AND ("))
 }
 
 func (*orgs) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.Org, error) {

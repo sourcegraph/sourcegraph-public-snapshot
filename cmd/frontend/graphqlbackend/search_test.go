@@ -9,6 +9,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -229,11 +230,11 @@ func testStringResult(result *searchSuggestionResolver) string {
 	var name string
 	switch r := result.result.(type) {
 	case *RepositoryResolver:
-		name = "repo:" + string(r.repo.Name)
+		name = "repo:" + syntax.MaybeEscapeValue(string(r.repo.Name))
 	case *GitTreeEntryResolver:
-		name = "file:" + r.Path()
+		name = "file:" + syntax.MaybeEscapeValue(r.Path())
 	case *languageResolver:
-		name = "lang:" + r.name
+		name = "lang:" + syntax.MaybeEscapeValue(r.name)
 	default:
 		panic("never here")
 	}

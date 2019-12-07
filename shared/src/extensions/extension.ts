@@ -90,7 +90,7 @@ export function extensionIDsFromSettings(settings: SettingsCascadeOrError): stri
     if (isErrorLike(settings.final)) {
         throw asError(settings.final)
     }
-    if (!settings.final || !settings.final.extensions) {
+    if (!settings.final?.extensions) {
         return []
     }
     return Object.keys(settings.final.extensions)

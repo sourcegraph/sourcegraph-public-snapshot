@@ -37,16 +37,30 @@ func TestRepository(t *testing.T) {
 	})
 }
 
-func TestNodeResolverTo(t *testing.T) {
+func TestResolverTo(t *testing.T) {
 	// This test exists purely to remove some non determinism in our tests
 	// run. The To* resolvers are stored in a map in our graphql
 	// implementation => the order we call them is non deterministic =>
 	// codecov coverage reports are noisy.
-	r := &NodeResolver{}
-	typ := reflect.TypeOf(r)
-	for i := 0; i < typ.NumMethod(); i++ {
-		if name := typ.Method(i).Name; strings.HasPrefix(name, "To") {
-			reflect.ValueOf(r).MethodByName(name).Call(nil)
+	resolvers := []interface{}{
+		&FileMatchResolver{},
+		&GitTreeEntryResolver{},
+		&NamespaceResolver{},
+		&NodeResolver{},
+		&RepositoryResolver{},
+		&codemodResultResolver{},
+		&commitSearchResultResolver{},
+		&gitRevSpec{},
+		&searchSuggestionResolver{},
+		&settingsSubject{},
+		&statusMessageResolver{},
+	}
+	for _, r := range resolvers {
+		typ := reflect.TypeOf(r)
+		for i := 0; i < typ.NumMethod(); i++ {
+			if name := typ.Method(i).Name; strings.HasPrefix(name, "To") {
+				reflect.ValueOf(r).MethodByName(name).Call(nil)
+			}
 		}
 	}
 }

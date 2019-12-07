@@ -188,6 +188,8 @@ export const checkIsBitbucket = (): boolean =>
     !!document.querySelector('.bitbucket-header-logo') ||
     !!document.querySelector('.aui-header-logo.aui-header-logo-bitbucket')
 
+const iconClassName = 'aui-icon'
+
 export const bitbucketServerCodeHost: CodeHost = {
     type: 'bitbucket-server',
     name: 'Bitbucket Server',
@@ -224,12 +226,13 @@ export const bitbucketServerCodeHost: CodeHost = {
         closeButtonClassName: 'aui-button',
         infoAlertClassName: 'aui-message',
         errorAlertClassName: 'aui-message aui-message-error',
+        iconClassName,
     },
     getViewContextOnSourcegraphMount,
     getContext,
     viewOnSourcegraphButtonClassProps: {
         className: 'aui-button',
-        iconClassName: 'aui-icon',
+        iconClassName,
     },
     codeViewsRequireTokenization: false,
 }
