@@ -46,7 +46,7 @@ export const SiteAdminLsifJobPage: FunctionComponent<Props> = ({
 
     return (
         <div className="site-admin-lsif-job-page w-100">
-            <PageTitle title="LSIF Jobs - Admin" />
+            <PageTitle title="LSIF jobs - Admin" />
             {!jobOrError ? (
                 <LoadingSpinner className="icon-inline" />
             ) : isErrorLike(jobOrError) ? (

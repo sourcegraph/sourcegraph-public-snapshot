@@ -29,7 +29,10 @@ describe('Backend', () => {
 
         for (const position of positions) {
             const { locations } = util.filterNodeModules(
-                (await ctx.backend.references(repository, commit, 'src/index.ts', position)) || { locations: [] }
+                util.mapInternalLocations(
+                    repository,
+                    (await ctx.backend.references(repository, commit, 'src/index.ts', position)) || { locations: [] }
+                )
             )
 
             expect(locations).toContainEqual(util.createLocation('src/index.ts', 1, 4, 1, 7)) // abstract def in I

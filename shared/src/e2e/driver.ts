@@ -10,6 +10,7 @@ import { IMutation, IQuery, ExternalServiceKind } from '../graphql/schema'
 import { readEnvBoolean, retry } from './e2e-test-utils'
 import * as path from 'path'
 import { escapeRegExp } from 'lodash'
+import { readFile } from 'mz/fs'
 
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.
@@ -374,7 +375,7 @@ export class Driver {
         return response
     }
 
-    public async ensureHasCORSOrigin({ corsOriginURL }: { corsOriginURL: string }): Promise<void> {
+    public async setConfig(path: jsonc.JSONPath, f: (oldValue: jsonc.Node | undefined) => any): Promise<void> {
         const currentConfigResponse = await this.makeGraphQLRequest<IQuery>({
             request: gql`
                 query Site {
@@ -392,10 +393,7 @@ export class Driver {
         })
         const { site } = dataOrThrowErrors(currentConfigResponse)
         const currentConfig = site.configuration.effectiveContents
-        const newConfig = modifyJSONC(currentConfig, ['corsOrigin'], oldCorsOrigin => {
-            const urls = oldCorsOrigin ? oldCorsOrigin.value.split(' ') : []
-            return (urls.includes(corsOriginURL) ? urls : [...urls, corsOriginURL]).join(' ')
-        })
+        const newConfig = modifyJSONC(currentConfig, path, f)
         const updateConfigResponse = await this.makeGraphQLRequest<IMutation>({
             request: gql`
                 mutation UpdateSiteConfiguration($lastID: Int!, $input: String!) {
@@ -405,6 +403,13 @@ export class Driver {
             variables: { lastID: site.configuration.id, input: newConfig },
         })
         dataOrThrowErrors(updateConfigResponse)
+    }
+
+    public async ensureHasCORSOrigin({ corsOriginURL }: { corsOriginURL: string }): Promise<void> {
+        await this.setConfig(['corsOrigin'], oldCorsOrigin => {
+            const urls = oldCorsOrigin ? oldCorsOrigin.value.split(' ') : []
+            return (urls.includes(corsOriginURL) ? urls : [...urls, corsOriginURL]).join(' ')
+        })
     }
 
     public async resetUserSettings(): Promise<void> {
@@ -556,6 +561,12 @@ export async function createDriverForTest(options: DriverOptions): Promise<Drive
     }
     if (loadExtension) {
         const chromeExtensionPath = path.resolve(__dirname, '..', '..', '..', 'browser', 'build', 'chrome')
+        const manifest = JSON.parse(await readFile(path.resolve(chromeExtensionPath, 'manifest.json'), 'utf-8'))
+        if (!manifest.permissions.includes('<all_urls>')) {
+            throw new Error(
+                'Browser extension was not built with permissions for all URLs.\nThis is necessary because permissions cannot be granted by e2e tests.\nTo fix, run `EXTENSION_PERMISSIONS_ALL_URLS=true yarn run dev` inside the browser/ directory.'
+            )
+        }
         args.push(`--disable-extensions-except=${chromeExtensionPath}`, `--load-extension=${chromeExtensionPath}`)
     }
 

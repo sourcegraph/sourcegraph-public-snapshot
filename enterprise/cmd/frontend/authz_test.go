@@ -134,7 +134,7 @@ func Test_providersFromConfig(t *testing.T) {
 				},
 			},
 			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"Did not find authentication provider matching \"https://gitlab.mine\""},
+			expSeriousProblems:           []string{"Did not find authentication provider matching \"https://gitlab.mine\". Check the [management console](https://docs.sourcegraph.com/admin/management_console) to verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for https://gitlab.mine."},
 		},
 		{
 			description: "1 GitLab connection with authz enabled, no GitLab auth provider",
@@ -156,7 +156,7 @@ func Test_providersFromConfig(t *testing.T) {
 				},
 			},
 			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"Did not find authentication provider matching \"https://gitlab.mine\""},
+			expSeriousProblems:           []string{"Did not find authentication provider matching \"https://gitlab.mine\". Check the [management console](https://docs.sourcegraph.com/admin/management_console) to verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for https://gitlab.mine."},
 		},
 		{
 			description: "Two GitLab connections with authz enabled, two matching GitLab auth providers",

@@ -37,8 +37,23 @@ func addCheck(pipeline *bk.Pipeline) {
 
 // Adds the lint test step.
 func addLint(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":lipstick: :lint-roller: :eslint: :stylelint: :typescript: :graphql:",
-		bk.Cmd("dev/ci/yarn-run.sh prettier-check build-ts all:eslint all:tslint all:stylelint graphql-lint"))
+	// If we run all lints together it is our slow step (5m). So we split it
+	// into two and try balance the runtime. yarn is a fixed cost so we always
+	// pay it on a step. Aim for around 3m.
+	//
+	// Random sample of timings:
+	//
+	// - yarn 41s
+	// - eslint 137s
+	// - build-ts 60s
+	// - tslint 45s
+	// - prettier 29s
+	// - stylelint 7s
+	// - graphql-lint 1s
+	pipeline.AddStep(":eslint:",
+		bk.Cmd("dev/ci/yarn-run.sh build-ts all:eslint")) // eslint depends on build-ts
+	pipeline.AddStep(":lipstick: :lint-roller: :stylelint: :graphql:",
+		bk.Cmd("dev/ci/yarn-run.sh prettier-check all:tslint all:stylelint graphql-lint"))
 }
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
@@ -100,50 +115,21 @@ func addPostgresBackcompat(pipeline *bk.Pipeline) {
 // Adds the Go test step.
 func addGoTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go:",
-		bk.Cmd("./cmd/symbols/build.sh buildLibsqlite3Pcre"), // for symbols tests
-		bk.Cmd("./dev/comby-install-or-upgrade.sh"),          // for searcher and replacer tests
-		bk.Cmd("go test -timeout 4m -coverprofile=coverage.txt -covermode=atomic -race ./..."),
+		bk.Cmd("./dev/ci/go-test.sh"),
 		bk.ArtifactPaths("coverage.txt"))
 }
 
 // Builds the OSS and Enterprise Go commands.
 func addGoBuild(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go:",
-		bk.Cmd("go generate ./..."),
-		bk.Cmd("go install -tags dist ./cmd/... ./enterprise/cmd/..."),
+		bk.Cmd("./dev/ci/go-build.sh"),
 	)
 }
 
 // Lints the Dockerfiles.
 func addDockerfileLint(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":docker:",
-		bk.Cmd("curl -sL -o hadolint \"https://github.com/hadolint/hadolint/releases/download/v1.15.0/hadolint-$(uname -s)-$(uname -m)\" && chmod 700 hadolint"),
-		bk.Cmd("git ls-files | grep Dockerfile | xargs ./hadolint"))
-}
-
-// End-to-end tests.
-func addE2E(c Config) func(*bk.Pipeline) {
-	return func(pipeline *bk.Pipeline) {
-		opts := []bk.StepOpt{
-			// Avoid crashing the sourcegraph/server containers. See
-			// https://github.com/sourcegraph/sourcegraph/issues/2657
-			bk.ConcurrencyGroup("e2e"),
-			bk.Concurrency(1),
-
-			bk.Env("IMAGE", "sourcegraph/server:"+c.version+"_candidate"),
-			bk.Env("VERSION", c.version),
-			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
-			bk.Cmd("./dev/ci/e2e.sh"),
-			bk.ArtifactPaths("./puppeteer/*.png;./web/e2e.mp4;./web/ffmpeg.log"),
-		}
-		requireE2E := c.branch == "master" || c.isRenovateBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
-		if requireE2E {
-			opts = append(opts, bk.AutomaticRetry(2))
-		} else {
-			opts = append(opts, bk.SoftFail(true))
-		}
-		pipeline.AddStep(":chromium:", opts...)
-	}
+		bk.Cmd("./dev/ci/docker-lint.sh"))
 }
 
 // Code coverage.
@@ -201,27 +187,34 @@ func wait(pipeline *bk.Pipeline) {
 	pipeline.AddWait()
 }
 
-// Build Sourcegraph Server Docker image candidate
-func addServerDockerImageCandidate(c Config) func(*bk.Pipeline) {
+func triggerE2E(c Config) func(*bk.Pipeline) {
+	// hardFail if we publish docker images
+	hardFail := c.branch == "master" || c.isRenovateBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
+
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":docker:",
-			bk.Cmd("pushd enterprise"),
-			bk.Cmd("./cmd/server/pre-build.sh"),
-			bk.Env("IMAGE", "sourcegraph/server:"+c.version+"_candidate"),
-			bk.Env("VERSION", c.version),
-			bk.Env("DOCKER_BUILDKIT", "1"),
-			bk.Cmd("./cmd/server/build.sh"),
-			bk.Cmd("popd"))
+		pipeline.AddTrigger(":chromium:",
+			bk.Trigger("sourcegraph-e2e"),
+			bk.Async(!hardFail),
+			bk.Build(bk.BuildOptions{
+				Message: os.Getenv("BUILDKITE_MESSAGE"),
+				Commit:  c.commit,
+				Branch:  c.branch,
+				Env: copyEnv(
+					"BUILDKITE_PULL_REQUEST",
+					"BUILDKITE_PULL_REQUEST_BASE_BRANCH",
+					"BUILDKITE_PULL_REQUEST_REPO"),
+			}))
 	}
 }
 
-// Clean up Sourcegraph Server Docker image candidate
-func addCleanUpServerDockerImageCandidate(c Config) func(*bk.Pipeline) {
-	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":sparkles:",
-			bk.SoftFail(true),
-			bk.Cmd("docker image rm -f sourcegraph/server:"+c.version+"_candidate"))
+func copyEnv(keys ...string) map[string]string {
+	m := map[string]string{}
+	for _, k := range keys {
+		if v, ok := os.LookupEnv(k); ok {
+			m[k] = v
+		}
 	}
+	return m
 }
 
 // Build all relevant Docker images for Sourcegraph, given the current CI case (e.g., "tagged
@@ -252,9 +245,7 @@ func addDockerImages(c Config) func(*bk.Pipeline) {
 	}
 }
 
-// Build Docker image for the service defined by `app`. The Sourcegraph Server Docker image is
-// special-cased, because it is built in another step as a candidate image, so we just need to tag
-// the candidate instead of rebuilding the image.
+// Build Docker image for the service defined by `app`.
 func addDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		cmds := []bk.StepOpt{
@@ -286,9 +277,6 @@ func addDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 		getBuildScript := func() string {
 			buildScriptByApp := map[string]string{
 				"symbols": "env BUILD_TYPE=dist ./cmd/symbols/build.sh buildSymbolsDockerImage",
-
-				// The server image was built prior to e2e tests in a previous step.
-				"server": fmt.Sprintf("docker tag %s:%s_candidate %s:%s", baseImage, c.version, baseImage, c.version),
 			}
 			if buildScript, ok := buildScriptByApp[app]; ok {
 				return buildScript

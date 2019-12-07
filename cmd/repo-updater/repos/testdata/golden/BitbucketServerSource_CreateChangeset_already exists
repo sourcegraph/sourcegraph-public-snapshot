@@ -1,0 +1,53 @@
+{
+  "id": 3,
+  "version": 3,
+  "title": "This testing PR is always open",
+  "description": "Ignore this. This is a testing PR that is always open.",
+  "state": "OPEN",
+  "open": true,
+  "closed": false,
+  "createdDate": 1573644199945,
+  "updatedDate": 1573644199945,
+  "fromRef": {
+   "id": "refs/heads/always-open-pr-bbs",
+   "repository": {
+    "slug": "automation-testing",
+    "project": {
+     "key": "SOUR"
+    }
+   }
+  },
+  "toRef": {
+   "id": "refs/heads/master",
+   "repository": {
+    "slug": "automation-testing",
+    "project": {
+     "key": "SOUR"
+    }
+   }
+  },
+  "locked": false,
+  "author": {
+   "user": {
+    "name": "thorsten",
+    "emailAddress": "thorsten@sourcegraph.com",
+    "id": 104,
+    "displayName": "thorsten",
+    "active": true,
+    "slug": "thorsten",
+    "type": "NORMAL"
+   },
+   "role": "AUTHOR",
+   "approved": false,
+   "status": "UNAPPROVED"
+  },
+  "reviewers": [],
+  "participants": [],
+  "links": {
+   "self": [
+    {
+     "href": "https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/3"
+    }
+   ]
+  }
+ }

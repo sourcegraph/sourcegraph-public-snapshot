@@ -1,20 +1,25 @@
 {
-  "ID": "MDExOlB1bGxSZXF1ZXN0MzQwNDY3NDcx",
+  "ID": "MDExOlB1bGxSZXF1ZXN0MzQ5ODM2MjIw",
   "Title": "This is a test PR",
   "Body": "This is the description of the test PR",
   "State": "OPEN",
-  "URL": "https://github.com/sourcegraph/automation-testing/pull/14",
+  "URL": "https://github.com/sourcegraph/automation-testing/pull/45",
   "HeadRefOid": "05e562cc5d8ab50b5fcab8dfd5dfa5db13a48e80",
-  "BaseRefOid": "c75943274b322ffef2230df8f8049de84ddf12c1",
+  "BaseRefOid": "97f8a75319760990c187710c50a957358f663366",
   "HeadRefName": "test-pr-6",
   "BaseRefName": "master",
-  "Number": 14,
+  "Number": 45,
   "Author": {
-   "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
-   "Login": "mrnugget",
-   "URL": "https://github.com/mrnugget"
+   "AvatarURL": "https://avatars3.githubusercontent.com/u/25610?v=4",
+   "Login": "ryanslade",
+   "URL": "https://github.com/ryanslade"
   },
   "Participants": [
+   {
+    "AvatarURL": "https://avatars3.githubusercontent.com/u/25610?v=4",
+    "Login": "ryanslade",
+    "URL": "https://github.com/ryanslade"
+   },
    {
     "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
     "Login": "mrnugget",
@@ -22,6 +27,6 @@
    }
   ],
   "TimelineItems": [],
-  "CreatedAt": "2019-11-13T13:38:11Z",
-  "UpdatedAt": "2019-11-13T13:38:11Z"
+  "CreatedAt": "2019-12-06T09:05:01Z",
+  "UpdatedAt": "2019-12-06T09:05:01Z"
  }

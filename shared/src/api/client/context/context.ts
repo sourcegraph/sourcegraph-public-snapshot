@@ -50,7 +50,7 @@ export function getComputedContextProperty(
         return !!component
     }
     if (key.startsWith('resource.')) {
-        if (!component || component.type !== 'CodeEditor') {
+        if (component?.type !== 'CodeEditor') {
             return null
         }
         // TODO(sqs): Define these precisely. If the resource is in a repository, what is the "path"? Is it the
@@ -73,7 +73,7 @@ export function getComputedContextProperty(
         }
     }
     if (key.startsWith('component.')) {
-        if (!component || component.type !== 'CodeEditor') {
+        if (component?.type !== 'CodeEditor') {
             return null
         }
         const prop = key.slice('component.'.length)
@@ -99,7 +99,7 @@ export function getComputedContextProperty(
         }
     }
     if (key.startsWith('panel.activeView.')) {
-        if (!component || component.type !== 'panelView') {
+        if (component?.type !== 'panelView') {
             return null
         }
         const prop = key.slice('panel.activeView.'.length)

@@ -191,7 +191,7 @@ main.go:7:}
 	defer ts.Close()
 
 	for i, test := range cases {
-		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			test.arg.PatternMatchesContent = true
 			req := protocol.Request{
 				Repo:         "foo",

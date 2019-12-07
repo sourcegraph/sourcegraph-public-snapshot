@@ -2,7 +2,7 @@ package eventlogger
 
 import (
 	"encoding/json"
-	"fmt"
+	"strconv"
 	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -28,7 +28,7 @@ var defaultLogger = new()
 // to wait for the frontend to start.
 //
 // Note: This does not block since it creates a new goroutine.
-func LogEvent(userID int32, userEmail string, eventLabel string, eventProperties json.RawMessage) {
+func LogEvent(userID int32, userEmail, eventLabel string, eventProperties json.RawMessage) {
 	go func() {
 		err := defaultLogger.logEvent(userID, userEmail, eventLabel, eventProperties)
 		if err != nil {
@@ -81,7 +81,7 @@ func (logger *eventLogger) newPayload(userEmail string, event *Event) *Payload {
 		BatchInfo: &BatchInfo{
 			BatchID:     uuid.New().String(),
 			TotalEvents: 1,
-			ServerTime:  fmt.Sprintf("%d", time.Now().UTC().Unix()*1000),
+			ServerTime:  strconv.FormatInt(int64(time.Now().UTC().Unix()*1000), 10),
 		},
 		UserInfo: userInfo,
 	}

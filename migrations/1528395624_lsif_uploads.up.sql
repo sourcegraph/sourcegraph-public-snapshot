@@ -20,8 +20,11 @@ CREATE TABLE lsif_uploads (
     failure_stacktrace TEXT,
     uploaded_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     started_at TIMESTAMP WITH TIME ZONE,
-    completed_or_errored_at TIMESTAMP WITH TIME ZONE,
+    finished_at TIMESTAMP WITH TIME ZONE,
     tracing_context TEXT NOT NULL
 );
+
+CREATE INDEX IF NOT EXISTS lsif_uploads_state ON lsif_uploads(state);
+CREATE INDEX IF NOT EXISTS lsif_uploads_uploaded_at ON lsif_uploads(uploaded_at);
 
 COMMIT;

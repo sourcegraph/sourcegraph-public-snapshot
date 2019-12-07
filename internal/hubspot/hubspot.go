@@ -23,7 +23,7 @@ type Client struct {
 }
 
 // New returns a new HubSpot client using the given Portal ID.
-func New(portalID string, hapiKey string) *Client {
+func New(portalID, hapiKey string) *Client {
 	return &Client{
 		portalID: portalID,
 		hapiKey:  hapiKey,

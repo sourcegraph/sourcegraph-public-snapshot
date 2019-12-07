@@ -147,11 +147,18 @@ func (s *HorizontalSearcher) searchers() (map[string]zoekt.Searcher, error) {
 	}
 
 	// Slow-path, need to remove/connect.
+	return s.syncSearchers()
+}
+
+// syncSearchers syncs the set of clients with the set of endpoints. It is the
+// slow-path of "searchers" since it obtains an write lock on the state before
+// proceeding.
+func (s *HorizontalSearcher) syncSearchers() (map[string]zoekt.Searcher, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	// Double check someone didn't beat us to the update
-	eps, err = s.Map.Endpoints()
+	eps, err := s.Map.Endpoints()
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +174,7 @@ func (s *HorizontalSearcher) searchers() (map[string]zoekt.Searcher, error) {
 	}
 
 	// Use new map to avoid read conflicts
-	clients = make(map[string]zoekt.Searcher, len(eps))
+	clients := make(map[string]zoekt.Searcher, len(eps))
 	for addr := range eps {
 		// Try re-use
 		client, ok := s.clients[addr]

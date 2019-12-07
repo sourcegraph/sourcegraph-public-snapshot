@@ -71,7 +71,7 @@ Tips:
   the Sourcegraph repository directory
 - Jest runs all tests even if an error occurs in initialization, so when an error occurs, you often
   have to scroll up--the first error is often the real one.
-- When debugging test failures, you can insert the line `await new Promise(resolve => setTimeout(resolve, 10 * 60 * 1000))` to pause execution. Also read the [Puppeteer debugging
+- When debugging test failures, you can insert the line `await new Promise(() => {})` to halt execution. Also read the [Puppeteer debugging
   docs](https://github.com/GoogleChrome/puppeteer#debugging-tips)
 - The `SLOWMO` environment variable will slow down Puppeteer execution by the specified number of
   milliseconds. `HEADLESS` will cause Puppeteer to run in headless mode (no visible browser window).

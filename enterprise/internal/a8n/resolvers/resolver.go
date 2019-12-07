@@ -3,10 +3,13 @@ package resolvers
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"strings"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -19,7 +22,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // Resolver is the GraphQL resolver of all things A8N.
@@ -158,6 +162,12 @@ func (r *Resolver) AddChangesetsToCampaign(ctx context.Context, args *graphqlbac
 }
 
 func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.CreateCampaignArgs) (graphqlbackend.CampaignResolver, error) {
+	var err error
+	tr, ctx := trace.New(ctx, "Resolver.CreateCampaign", args.Input.Name)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 	user, err := db.Users.GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "%v", backend.ErrNotAuthenticated)
@@ -202,7 +212,8 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 	}
 
 	go func() {
-		err := svc.RunChangesetJobs(context.Background(), campaign)
+		ctx := trace.ContextWithTrace(context.Background(), tr)
+		err := svc.RunChangesetJobs(ctx, campaign)
 		if err != nil {
 			log15.Error("RunChangesetJobs", "err", err)
 		}
@@ -269,22 +280,36 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 }
 
 func (r *Resolver) RetryCampaign(ctx context.Context, args *graphqlbackend.RetryCampaignArgs) (graphqlbackend.CampaignResolver, error) {
+	var err error
+	tr, ctx := trace.New(ctx, "Resolver.RetryCampaign", fmt.Sprintf("Campaign: %q", args.Campaign))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	// 🚨 SECURITY: Only site admins may update campaigns for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "checking if user is admin")
 	}
 
 	campaignID, err := unmarshalCampaignID(args.Campaign)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "unmarshaling campaign id")
 	}
 
 	campaign, err := r.store.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "getting campaign")
 	}
 
-	// TODO(a8n): Implement the retrying of turning "diffs" into changesets
+	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
+	go func() {
+		ctx := trace.ContextWithTrace(context.Background(), tr)
+		err := svc.RunChangesetJobs(ctx, campaign)
+		if err != nil {
+			log15.Error("RunChangesetJobs", "err", err)
+		}
+	}()
 
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
@@ -412,6 +437,13 @@ func (r *Resolver) Changesets(ctx context.Context, args *graphqlutil.ConnectionA
 }
 
 func (r *Resolver) PreviewCampaignPlan(ctx context.Context, args graphqlbackend.PreviewCampaignPlanArgs) (graphqlbackend.CampaignPlanResolver, error) {
+	var err error
+	tr, ctx := trace.New(ctx, "Resolver.PreviewCampaignPlan", args.Specification.Type)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	// 🚨 SECURITY: Only site admins may update campaigns for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -422,15 +454,14 @@ func (r *Resolver) PreviewCampaignPlan(ctx context.Context, args graphqlbackend.
 	if typeName == "" {
 		return nil, errors.New("cannot create CampaignPlan without Type")
 	}
-
 	campaignType, err := ee.NewCampaignType(typeName, specArgs, r.httpFactory)
 	if err != nil {
 		return nil, err
 	}
-
 	plan := &a8n.CampaignPlan{CampaignType: typeName, Arguments: specArgs}
-
 	runner := ee.NewRunner(r.store, campaignType, graphqlbackend.SearchRepos, nil)
+
+	tr.LogFields(log.Int64("plan_id", plan.ID), log.Bool("Wait", args.Wait))
 
 	if args.Wait {
 		err := runner.Run(ctx, plan)
@@ -442,8 +473,10 @@ func (r *Resolver) PreviewCampaignPlan(ctx context.Context, args graphqlbackend.
 			return nil, err
 		}
 	} else {
-		backgroundCtx := actor.WithActor(context.Background(), actor.FromContext(ctx))
-		err := runner.Run(backgroundCtx, plan)
+		act := actor.FromContext(ctx)
+		ctx := trace.ContextWithTrace(context.Background(), tr)
+		ctx = actor.WithActor(ctx, act)
+		err := runner.Run(ctx, plan)
 		if err != nil {
 			return nil, err
 		}
@@ -452,7 +485,7 @@ func (r *Resolver) PreviewCampaignPlan(ctx context.Context, args graphqlbackend.
 	return &campaignPlanResolver{store: r.store, campaignPlan: plan}, nil
 }
 
-func (r *Resolver) CancelCampaignPlan(ctx context.Context, args graphqlbackend.CancelCampaignPlanArgs) (*graphqlbackend.EmptyResponse, error) {
+func (r *Resolver) CancelCampaignPlan(ctx context.Context, args graphqlbackend.CancelCampaignPlanArgs) (res *graphqlbackend.EmptyResponse, err error) {
 	// 🚨 SECURITY: Only site admins may update campaigns for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -463,11 +496,34 @@ func (r *Resolver) CancelCampaignPlan(ctx context.Context, args graphqlbackend.C
 		return nil, err
 	}
 
-	_, err = r.store.GetCampaignPlan(ctx, ee.GetCampaignPlanOpts{ID: id})
+	tx, err := r.store.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO(a8n): Implement this. We need to cancel plan so that all jobs are stopped.
-	return &graphqlbackend.EmptyResponse{}, nil
+	defer tx.Done(&err)
+
+	plan, err := tx.GetCampaignPlan(ctx, ee.GetCampaignPlanOpts{ID: id})
+	if err != nil {
+		return nil, err
+	}
+
+	if !plan.CanceledAt.IsZero() {
+		return &graphqlbackend.EmptyResponse{}, nil
+	}
+
+	status, err := tx.GetCampaignPlanStatus(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if status.Finished() {
+		return &graphqlbackend.EmptyResponse{}, nil
+	}
+
+	plan.CanceledAt = time.Now().UTC()
+
+	err = tx.UpdateCampaignPlan(ctx, plan)
+
+	return &graphqlbackend.EmptyResponse{}, err
 }

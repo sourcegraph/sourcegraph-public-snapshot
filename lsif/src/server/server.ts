@@ -28,6 +28,7 @@ import { startTasks } from './tasks/runner'
 import { UploadsManager } from '../shared/uploads/uploads'
 import { waitForConfiguration } from '../shared/config/config'
 import { XrepoDatabase } from '../shared/xrepo/xrepo'
+import { startTasks } from './tasks/runner'
 
 /**
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
@@ -89,7 +90,7 @@ async function main(logger: Logger): Promise<void> {
             winstonInstance: logger,
             level: 'debug',
             ignoredRoutes: ['/ping', '/healthz', '/metrics'],
-            requestWhitelist: ['method', 'url', 'query'],
+            requestWhitelist: ['method', 'url'],
             msg: 'Handled request',
         })
     )

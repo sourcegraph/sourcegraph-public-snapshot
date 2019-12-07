@@ -90,8 +90,7 @@ func (s *surveyResponses) Last30DaysNetPromoterScore(ctx context.Context) (int, 
 		return 0, err
 	}
 
-	var promoters int
-	var detractors int
+	var promoters, detractors int
 	err = dbconn.Global.QueryRowContext(ctx, promotersQ.Query(sqlf.PostgresBindVar), promotersQ.Args()...).Scan(&promoters)
 	if err != nil {
 		return 0, err
