@@ -888,7 +888,7 @@ components:
           type: string
           description: An ISO 8601-formatted date and time that the job was processed.
           nullable: true
-        finishedAt:
+        completedOrErroredAt:
           type: string
           description: An ISO 8601-formatted date and time that the job was completed.
           nullable: true
@@ -902,7 +902,7 @@ components:
         - stacktrace
         - timestamp
         - processedOn
-        - finishedOn
+        - completedOrErroredAt
       additionalProperties: false
     UploadStats:
       type: object
