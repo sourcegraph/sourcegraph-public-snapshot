@@ -38,4 +38,4 @@ Once that workflow is committed to your repository, you will start to see LSIF w
 
 ![img/workflow.png](img/workflow.png)
 
-After the workflow succeeds, you should see LSIF-powered code intelligence on your repository on Sourcegraph.com or on GitHub with the [Sourcegraph browser extension](../../integration/browser_extension.md)
+After the workflow succeeds, you should see LSIF-powered code intelligence on your repository on Sourcegraph.com or on GitHub with the [Sourcegraph browser extension](../../integration/browser_extension.md).
