@@ -1440,6 +1440,7 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector('.e2e-preview-success')
             // ensure diff tab is open
             await driver.page.click('.e2e-campaign-diff-tab')
+            await driver.page.waitForSelector('.file-diff-node')
             // check there were exactly as expected diffs generated
             const generatedDiffCount = await driver.page.evaluate(
                 () => document.querySelectorAll('.file-diff-node').length
