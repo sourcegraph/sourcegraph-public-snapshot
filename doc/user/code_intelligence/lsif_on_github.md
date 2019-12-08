@@ -24,11 +24,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - name: Generate LSIF Data
+      - name: Generate LSIF data
         uses: sourcegraph/lsif-go-action@master
         with:
           verbose: "true"
-      - name: Upload LSIF Data
+      - name: Upload LSIF data
         uses: sourcegraph/lsif-upload-action@master
         with:
           public_repo_github_token: ${{ secrets.PUBLIC_REPO_GITHUB_TOKEN }}
@@ -38,4 +38,4 @@ Once that workflow is committed to your repository, you will start to see LSIF w
 
 ![img/workflow.png](img/workflow.png)
 
-After the workflow succeeds, you should see LSIF-powered code intelligence on your repository on Sourcegraph.com or on GitHub with the [Sourcegraph browser extension](../../integration/browser_extension.md)
+After the workflow succeeds, you should see LSIF-powered code intelligence on your repository on Sourcegraph.com or on GitHub with the [Sourcegraph browser extension](../../integration/browser_extension.md).
