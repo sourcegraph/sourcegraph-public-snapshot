@@ -17,26 +17,22 @@
 // * pull requests                                                        //
 ///////////////////////////////////////////////////////////////////////////
 
-Sourcegraph gives GitHub IDE-like powers when you're viewing code, PRs, or diffs:
+The Sourcegraph extension adds code intelligence and code navigation to GitHub and other code hosts:
 
-1) jump to definition
-2) hover over to see documentation and type info
+* Hovers with documentation and type information
+* Go to definition
+* Find references
 
-Code on GitHub.com becomes fully interactive, so you don't have to context-switch back and forth between multiple browser tabs, your terminal, and your code editor. Sourcegraph integrates seamlessly into the GitHub workflow and UI.
+It works for 20+ languages on public and private code on most code hosts (see below).
 
-After you install it, view some code on GitHub and mouse over some identifiers:
+After you install it, try it out on any of these public repositories:
 
-* Go: https://github.com/gorilla/mux/blob/master/mux.go
-* TypeScript: https://github.com/angular/angular/blob/master/modules/%40angular/benchpress/src/reporter/console_reporter.ts
+* Go: https://github.com/gorilla/mux/blob/9e1f59/mux.go or https://github.com/dgrijalva/jwt-go/pull/152/files#diff-f615844d3497ff38db57e459d6ef657bL48
+* Java: https://github.com/google/guava/blob/581ba1/guava/src/com/google/common/collect/ImmutableList.java
+* TypeScript: https://github.com/angular/angular/blob/a2878b/packages/benchpress/src/reporter/console_reporter.ts or https://github.com/sindresorhus/got/pull/917/files#diff-02301bc46e8b878f10e9a8339efb7de7R176
+* C#: https://github.com/paiden/Nett/pull/76/files#diff-e969e1315b2cb01bab80b2860be0d87eR52
+* Python: https://github.com/ageitgey/face_recognition/blob/b8fed6/examples/facerec_on_raspberry_pi.py
 
-If the extension isn't working on a specific repository, email support@sourcegraph.com or Tweet to @srcgraph. (Please don't post a review to report issues; we can fix them much faster if you contact us directly.)
+Usage with private code on GitHub.com, GitHub Enterprise, GitLab, Bitbucket Server, or Phabricator: https://docs.sourcegraph.com/integration/browser_extension
 
-Here's what people are saying about Sourcegraph:
-
-- "It's already my favorite online doc tool. give it a try" - @edapx
-- "Sourcegraph has been quickly moving up in priority in my Chrome bookmarks. You need to check out this tool." - @goinggodotnet
-- "Loving Sourcegraph.com to find documentation and real code examples" - @IndianGuru
-- "Being able to search actual open source code is amazing. Very very fast as well! Sourcegraph is blowing my mind right now." - @joshtaylor
-- "Sourcegraph is amazing" - Jakub W.
-- "Sourcegraph is an essential tool for every Gopher." - @nimolix
-- "Impressive #golang code navigation by Sourcegraph!" - @francesc
+This extension is open source: https://github.com/sourcegraph/sourcegraph/tree/master/client/browser
