@@ -24,11 +24,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - name: Generate LSIF Data
+      - name: Generate LSIF data
         uses: sourcegraph/lsif-go-action@master
         with:
           verbose: "true"
-      - name: Upload LSIF Data
+      - name: Upload LSIF data
         uses: sourcegraph/lsif-upload-action@master
         with:
           public_repo_github_token: ${{ secrets.PUBLIC_REPO_GITHUB_TOKEN }}
