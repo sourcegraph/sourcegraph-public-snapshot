@@ -122,7 +122,7 @@ export class ContentEditableInput extends React.Component<Props> {
     /**
      * Used to prevent persistent rendering of rich content which is pasted in more than once.
      */
-    private lastInput: string | null = null
+    private lastInput = ''
 
     /**
      * Calculates cursor position to be returned for a `QueryState`.
@@ -177,7 +177,7 @@ export class ContentEditableInput extends React.Component<Props> {
             this.inputRef.current.innerHTML = this.props.value.content
             this.focus(this.props.value.cursor)
         } else if (this.props.onChange) {
-            this.lastInput = event.target.textContent
+            this.lastInput = event.target.textContent ?? ''
             this.props.onChange(event, {
                 query: event.target.textContent ?? '',
                 cursorPosition: this.queryStringCursorPosition,
@@ -207,21 +207,29 @@ export class ContentEditableInput extends React.Component<Props> {
         }
     }
 
-    public shouldComponentUpdate(newProps: Props): false {
+    /**
+     * Render content passed through props into the contentEditable
+     */
+    private renderContent({ focus, value }: Props): void {
         // `requestAnimationFrame` to prevent 'unstable_flushDiscreteUpdates'
         // while trying to modify the DOM before React has finished updating.
         // See `this.inputRef` definition for why to modify DOM directly
-        const isDifferentContent = newProps.value.content !== this.props.value.content
         requestAnimationFrame(() => {
-            // Only update if props are different, preventing, on re-rendering,
-            // the selection being lost or the cursor to jump around
-            if (this.inputRef.current && isDifferentContent) {
-                this.inputRef.current.innerHTML = newProps.value.content
-                if (newProps.focus) {
-                    this.focus(newProps.value.cursor)
+            if (this.inputRef.current) {
+                this.inputRef.current.innerHTML = value.content
+                if (focus) {
+                    this.focus(value.cursor)
                 }
             }
         })
+    }
+
+    public shouldComponentUpdate(newProps: Props): false {
+        // Only update if props are different, preventing, on re-rendering,
+        // the selection being lost or the cursor to jump around
+        if (newProps.value.content !== this.props.value.content) {
+            this.renderContent(newProps)
+        }
         return false
     }
 
@@ -229,10 +237,13 @@ export class ContentEditableInput extends React.Component<Props> {
         if (this.props.autoFocus) {
             this.focus(this.props.value.cursor)
         }
+        // Rendering through `innerHTML` instead of the prop `dangerouslySetInnerHTML` prevents
+        // the contentEditable from emitting an extra `input` event and rendering stale prop values
+        this.renderContent(this.props)
     }
 
     public render(): JSX.Element {
-        const { value: state, className = '' } = this.props
+        const { className = '' } = this.props
         const { className: inputClassName = '', ...inputProps } = this.props.inputProps ?? {}
         return (
             <div className={'content-editable-input ' + className}>
@@ -246,7 +257,6 @@ export class ContentEditableInput extends React.Component<Props> {
                     onInput={this.onInput}
                     onKeyDown={this.onKeyDown}
                     data-placeholder={this.props.placeholder}
-                    dangerouslySetInnerHTML={{ __html: state.content }}
                     contentEditable={true}
                 />
             </div>
