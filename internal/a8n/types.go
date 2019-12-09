@@ -88,6 +88,7 @@ type Campaign struct {
 	UpdatedAt       time.Time
 	ChangesetIDs    []int64
 	CampaignPlanID  int64
+	ClosedAt        time.Time
 }
 
 // Clone returns a clone of a Campaign.

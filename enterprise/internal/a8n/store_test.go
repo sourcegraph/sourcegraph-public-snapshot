@@ -40,6 +40,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 						AuthorID:       23,
 						ChangesetIDs:   []int64{int64(i) + 1},
 						CampaignPlanID: 42,
+						ClosedAt:       now,
 					}
 
 					if i%2 == 0 {
@@ -168,6 +169,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					c.Name += "-updated"
 					c.Description += "-updated"
 					c.AuthorID++
+					c.ClosedAt = c.ClosedAt.Add(5 * time.Second)
 
 					if c.NamespaceUserID != 0 {
 						c.NamespaceUserID++

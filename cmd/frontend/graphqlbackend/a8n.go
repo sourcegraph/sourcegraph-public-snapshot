@@ -173,6 +173,7 @@ type CampaignResolver interface {
 	RepositoryDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (RepositoryComparisonConnectionResolver, error)
 	Plan(ctx context.Context) (CampaignPlanResolver, error)
 	ChangesetCreationStatus(context.Context) (BackgroundProcessStatus, error)
+	ClosedAt() *DateTime
 }
 
 type CampaignsConnectionResolver interface {
