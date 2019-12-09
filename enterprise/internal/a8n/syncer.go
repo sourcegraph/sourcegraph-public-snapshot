@@ -34,6 +34,11 @@ func (s *ChangesetSyncer) Sync(ctx context.Context) error {
 	return nil
 }
 
+type SourceChangeset struct {
+	repos.ChangesetSource
+	Changesets []*repos.Changeset
+}
+
 // SyncChangesets refreshes the metadata of the given changesets and
 // updates them in the database
 func (s *ChangesetSyncer) SyncChangesets(ctx context.Context, cs ...*a8n.Changeset) (err error) {
@@ -41,83 +46,19 @@ func (s *ChangesetSyncer) SyncChangesets(ctx context.Context, cs ...*a8n.Changes
 		return nil
 	}
 
-	var repoIDs []uint32
-	repoSet := map[uint32]*repos.Repo{}
-
-	for _, c := range cs {
-		id := uint32(c.RepoID)
-		if _, ok := repoSet[id]; !ok {
-			repoSet[id] = nil
-			repoIDs = append(repoIDs, id)
-		}
-	}
-
-	rs, err := s.ReposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: repoIDs})
+	withSources, err := s.LoadSources(ctx, cs...)
 	if err != nil {
 		return err
 	}
 
-	for _, r := range rs {
-		repoSet[r.ID] = r
-	}
+	return s.SyncChangesetsWithSources(ctx, cs, withSources)
+}
 
-	for _, c := range cs {
-		repo := repoSet[uint32(c.RepoID)]
-		if repo == nil {
-			log15.Warn("changeset not synced, repo not in database", "changeset_id", c.ID, "repo_id", c.RepoID)
-		}
-	}
-
-	es, err := s.ReposStore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{RepoIDs: repoIDs})
-	if err != nil {
-		return err
-	}
-
-	byRepo := make(map[uint32]int64, len(rs))
-	for _, r := range rs {
-		eids := r.ExternalServiceIDs()
-		for _, id := range eids {
-			if _, ok := byRepo[r.ID]; !ok {
-				byRepo[r.ID] = id
-				break
-			}
-		}
-	}
-
-	type sourceChangeset struct {
-		repos.ChangesetSource
-		Changesets []*repos.Changeset
-	}
-
-	bySource := make(map[int64]*sourceChangeset, len(es))
-	for _, e := range es {
-		src, err := repos.NewSource(e, s.HTTPFactory)
-		if err != nil {
-			return err
-		}
-
-		css, ok := src.(repos.ChangesetSource)
-		if !ok {
-			return errors.Errorf("unsupported repo type %q", e.Kind)
-		}
-
-		bySource[e.ID] = &sourceChangeset{ChangesetSource: css}
-	}
-
-	for _, c := range cs {
-		repoID := uint32(c.RepoID)
-		s := bySource[byRepo[repoID]]
-		if s == nil {
-			continue
-		}
-		s.Changesets = append(s.Changesets, &repos.Changeset{
-			Changeset: c,
-			Repo:      repoSet[repoID],
-		})
-	}
-
+// SyncChangesetsWithSources refreshes the metadata of the given changesets
+// with the given ChangesetSources updates them in the database.
+func (s *ChangesetSyncer) SyncChangesetsWithSources(ctx context.Context, cs []*a8n.Changeset, withSources []*SourceChangeset) (err error) {
 	var events []*a8n.ChangesetEvent
-	for _, s := range bySource {
+	for _, s := range withSources {
 		if err := s.LoadChangesets(ctx, s.Changesets...); err != nil {
 			return err
 		}
@@ -137,6 +78,85 @@ func (s *ChangesetSyncer) SyncChangesets(ctx context.Context, cs ...*a8n.Changes
 	}
 
 	return tx.UpsertChangesetEvents(ctx, events...)
+}
+
+func (s *ChangesetSyncer) LoadSources(ctx context.Context, cs ...*a8n.Changeset) ([]*SourceChangeset, error) {
+	var repoIDs []uint32
+	repoSet := map[uint32]*repos.Repo{}
+
+	for _, c := range cs {
+		id := uint32(c.RepoID)
+		if _, ok := repoSet[id]; !ok {
+			repoSet[id] = nil
+			repoIDs = append(repoIDs, id)
+		}
+	}
+
+	rs, err := s.ReposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: repoIDs})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, r := range rs {
+		repoSet[r.ID] = r
+	}
+
+	for _, c := range cs {
+		repo := repoSet[uint32(c.RepoID)]
+		if repo == nil {
+			log15.Warn("changeset not synced, repo not in database", "changeset_id", c.ID, "repo_id", c.RepoID)
+		}
+	}
+
+	es, err := s.ReposStore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{RepoIDs: repoIDs})
+	if err != nil {
+		return nil, err
+	}
+
+	byRepo := make(map[uint32]int64, len(rs))
+	for _, r := range rs {
+		eids := r.ExternalServiceIDs()
+		for _, id := range eids {
+			if _, ok := byRepo[r.ID]; !ok {
+				byRepo[r.ID] = id
+				break
+			}
+		}
+	}
+
+	bySource := make(map[int64]*SourceChangeset, len(es))
+	for _, e := range es {
+		src, err := repos.NewSource(e, s.HTTPFactory)
+		if err != nil {
+			return nil, err
+		}
+
+		css, ok := src.(repos.ChangesetSource)
+		if !ok {
+			return nil, errors.Errorf("unsupported repo type %q", e.Kind)
+		}
+
+		bySource[e.ID] = &SourceChangeset{ChangesetSource: css}
+	}
+
+	for _, c := range cs {
+		repoID := uint32(c.RepoID)
+		s := bySource[byRepo[repoID]]
+		if s == nil {
+			continue
+		}
+		s.Changesets = append(s.Changesets, &repos.Changeset{
+			Changeset: c,
+			Repo:      repoSet[repoID],
+		})
+	}
+
+	res := make([]*SourceChangeset, 0, len(bySource))
+	for _, s := range bySource {
+		res = append(res, s)
+	}
+
+	return res, nil
 }
 
 func (s *ChangesetSyncer) listAllChangesets(ctx context.Context) (all []*a8n.Changeset, err error) {

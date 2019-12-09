@@ -330,7 +330,7 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64) (campaign *a8n.Ca
 	return campaign, nil
 }
 
-func (s *Service) CloseOpenCampaignChangesets(ctx context.Context, c *a8n.Campaign) error {
+func (s *Service) CloseOpenCampaignChangesets(ctx context.Context, c *a8n.Campaign) (err error) {
 	cs, _, err := s.store.ListChangesets(ctx, ListChangesetsOpts{
 		CampaignID: c.ID,
 		Limit:      10000,
@@ -353,83 +353,18 @@ func (s *Service) CloseOpenCampaignChangesets(ctx context.Context, c *a8n.Campai
 	}
 
 	reposStore := repos.NewDBStore(s.store.DB(), sql.TxOptions{})
-
-	var repoIDs []uint32
-	repoSet := map[uint32]*repos.Repo{}
-
-	for _, c := range cs {
-		id := uint32(c.RepoID)
-		if _, ok := repoSet[id]; !ok {
-			repoSet[id] = nil
-			repoIDs = append(repoIDs, id)
-		}
+	syncer := ChangesetSyncer{
+		ReposStore:  reposStore,
+		Store:       s.store,
+		HTTPFactory: s.cf,
 	}
 
-	rs, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: repoIDs})
+	withSources, err := syncer.LoadSources(ctx, cs...)
 	if err != nil {
 		return err
 	}
 
-	for _, r := range rs {
-		repoSet[r.ID] = r
-	}
-
-	for _, c := range cs {
-		repo := repoSet[uint32(c.RepoID)]
-		if repo == nil {
-			log15.Warn("changeset not closed, repo not in database", "changeset_id", c.ID, "repo_id", c.RepoID)
-		}
-	}
-
-	es, err := reposStore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{RepoIDs: repoIDs})
-	if err != nil {
-		return err
-	}
-
-	byRepo := make(map[uint32]int64, len(rs))
-	for _, r := range rs {
-		eids := r.ExternalServiceIDs()
-		for _, id := range eids {
-			if _, ok := byRepo[r.ID]; !ok {
-				byRepo[r.ID] = id
-				break
-			}
-		}
-	}
-
-	type sourceChangeset struct {
-		repos.ChangesetSource
-		Changesets []*repos.Changeset
-	}
-
-	bySource := make(map[int64]*sourceChangeset, len(es))
-	for _, e := range es {
-		src, err := repos.NewSource(e, s.cf)
-		if err != nil {
-			return err
-		}
-
-		css, ok := src.(repos.ChangesetSource)
-		if !ok {
-			return errors.Errorf("unsupported repo type %q", e.Kind)
-		}
-
-		bySource[e.ID] = &sourceChangeset{ChangesetSource: css}
-	}
-
-	for _, c := range cs {
-		repoID := uint32(c.RepoID)
-		s := bySource[byRepo[repoID]]
-		if s == nil {
-			continue
-		}
-		s.Changesets = append(s.Changesets, &repos.Changeset{
-			Changeset: c,
-			Repo:      repoSet[repoID],
-		})
-	}
-
-	for _, s := range bySource {
+	for _, s := range withSources {
 		for _, c := range s.Changesets {
 			if err := s.CloseChangeset(ctx, c); err != nil {
 				return err
@@ -437,7 +372,7 @@ func (s *Service) CloseOpenCampaignChangesets(ctx context.Context, c *a8n.Campai
 		}
 	}
 
-	return s.store.UpdateChangesets(ctx, cs...)
+	return syncer.SyncChangesetsWithSources(ctx, cs, withSources)
 }
 
 func selectChangesets(cs []*a8n.Changeset, predicate func(*a8n.Changeset) bool) []*a8n.Changeset {
