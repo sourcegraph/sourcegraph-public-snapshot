@@ -327,17 +327,10 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64) (campaign *a8n.Ca
 		return nil, err
 	}
 
-	go func() {
-		err := s.closeCampaignChangesets(context.Background(), campaign)
-		if err != nil {
-			log15.Error("CloseCampaignChangesets", "err", err)
-		}
-	}()
-
 	return campaign, nil
 }
 
-func (s *Service) closeCampaignChangesets(ctx context.Context, c *a8n.Campaign) error {
+func (s *Service) CloseOpenCampaignChangesets(ctx context.Context, c *a8n.Campaign) error {
 	cs, _, err := s.store.ListChangesets(ctx, ListChangesetsOpts{
 		CampaignID: c.ID,
 		Limit:      10000,
@@ -346,8 +339,15 @@ func (s *Service) closeCampaignChangesets(ctx context.Context, c *a8n.Campaign) 
 		return err
 	}
 
-	// TODO: The code until the end of the method is 99% the same code as in
-	// (&Syncer).SyncChangesets
+	cs = selectChangesets(cs, func(c *a8n.Changeset) bool {
+		s, err := c.State()
+		if err != nil {
+			log15.Warn("could not determine changeset state", "err", err)
+			return false
+		}
+		return s == a8n.ChangesetStateOpen
+	})
+
 	if len(cs) == 0 {
 		return nil
 	}
@@ -438,4 +438,16 @@ func (s *Service) closeCampaignChangesets(ctx context.Context, c *a8n.Campaign) 
 	}
 
 	return s.store.UpdateChangesets(ctx, cs...)
+}
+
+func selectChangesets(cs []*a8n.Changeset, predicate func(*a8n.Changeset) bool) []*a8n.Changeset {
+	i := 0
+	for _, c := range cs {
+		if predicate(c) {
+			cs[i] = c
+			i++
+		}
+	}
+
+	return cs[:i]
 }

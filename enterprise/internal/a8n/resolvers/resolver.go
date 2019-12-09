@@ -546,10 +546,21 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 	}
 
 	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
+
+	// Set ClosedAt only if it's not been closed before
 	campaign, err := svc.CloseCampaign(ctx, campaignID)
 	if err != nil {
 		return nil, errors.Wrap(err, "closing campaign")
 	}
+
+	go func() {
+		// Close only the changesets that are open
+		ctx := trace.ContextWithTrace(context.Background(), tr)
+		err := svc.CloseOpenCampaignChangesets(ctx, campaign)
+		if err != nil {
+			log15.Error("CloseCampaignChangesets", "err", err)
+		}
+	}()
 
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
