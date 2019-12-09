@@ -58,7 +58,8 @@ set -e
 echo "Waiting for $URL... done"
 
 echo "--- yarn"
-yarn
+# mutex is necessary since CI runs various yarn installs in parallel
+yarn --mutex network
 
 echo "--- yarn run test-e2e"
 pushd web
