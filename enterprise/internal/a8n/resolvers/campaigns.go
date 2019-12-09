@@ -118,6 +118,13 @@ func (r *campaignResolver) UpdatedAt() graphqlbackend.DateTime {
 	return graphqlbackend.DateTime{Time: r.Campaign.UpdatedAt}
 }
 
+func (r *campaignResolver) ClosedAt() *graphqlbackend.DateTime {
+	if r.Campaign.ClosedAt.IsZero() {
+		return nil
+	}
+	return &graphqlbackend.DateTime{Time: r.Campaign.ClosedAt}
+}
+
 func (r *campaignResolver) Changesets(ctx context.Context, args struct {
 	graphqlutil.ConnectionArgs
 }) graphqlbackend.ExternalChangesetsConnectionResolver {

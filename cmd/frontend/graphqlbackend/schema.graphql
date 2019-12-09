@@ -69,6 +69,8 @@ type Mutation {
     retryCampaign(campaign: ID!): Campaign!
     # Deletes a campaign.
     deleteCampaign(campaign: ID!): EmptyResponse
+    # Closes a campaign.
+    closeCampaign(campaign: ID!): Campaign!
 
     # Updates the user profile information for the user with the given ID.
     #
@@ -568,6 +570,9 @@ type Campaign implements Node {
         # Defaults to now.
         to: DateTime
     ): [ChangesetCounts!]!
+
+    # The date and time when the campaign was closed.
+    closedAt: DateTime
 }
 
 # The counts of changesets in certain states at a specific point in time.

@@ -527,3 +527,45 @@ func (r *Resolver) CancelCampaignPlan(ctx context.Context, args graphqlbackend.C
 
 	return &graphqlbackend.EmptyResponse{}, err
 }
+
+func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.CloseCampaignArgs) (_ graphqlbackend.CampaignResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.CloseCampaign", fmt.Sprintf("Campaign: %q", args.Campaign))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// 🚨 SECURITY: Only site admins may update campaigns for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, errors.Wrap(err, "checking if user is admin")
+	}
+
+	campaignID, err := unmarshalCampaignID(args.Campaign)
+	if err != nil {
+		return nil, errors.Wrap(err, "unmarshaling campaign id")
+	}
+
+	tx, err := r.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	defer tx.Done(&err)
+
+	campaign, err := tx.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
+	if err != nil {
+		return nil, errors.Wrap(err, "getting campaign")
+	}
+
+	if !campaign.ClosedAt.IsZero() {
+		return &campaignResolver{store: r.store, Campaign: campaign}, nil
+	}
+
+	campaign.ClosedAt = time.Now().UTC()
+
+	if err = tx.UpdateCampaign(ctx, campaign); err != nil {
+		return nil, err
+	}
+
+	return &campaignResolver{store: r.store, Campaign: campaign}, nil
+}
