@@ -3,9 +3,10 @@
 set -e
 
 echo "--- yarn"
-yarn --frozen-lockfile --network-timeout 60000
-yarn --cwd lsif --frozen-lockfile --network-timeout 60000
-yarn --cwd dev/release --frozen-lockfile --network-timeout 60000
+# mutex is necessary since CI runs various yarn installs in parallel
+yarn --mutex network --frozen-lockfile --network-timeout 60000
+yarn --mutex network --cwd lsif --frozen-lockfile --network-timeout 60000
+yarn --mutex network --cwd dev/release --frozen-lockfile --network-timeout 60000
 
 for cmd in "$@"
 do

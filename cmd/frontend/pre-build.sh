@@ -4,7 +4,8 @@ cd $(dirname "${BASH_SOURCE[0]}")/../..
 
 # Build the webapp typescript code.
 echo "--- yarn"
-[[ -z "${CI}" ]] && yarn || yarn --frozen-lockfile --network-timeout 60000
+# mutex is necessary since CI runs various yarn installs in parallel
+[[ -z "${CI}" ]] && yarn --mutex network || yarn --mutex network --frozen-lockfile --network-timeout 60000
 
 pushd web
 echo "--- yarn run build"
