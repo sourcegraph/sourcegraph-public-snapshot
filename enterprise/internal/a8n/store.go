@@ -1374,30 +1374,20 @@ func (s *Store) GetCampaignPlanStatus(ctx context.Context, id int64) (*a8n.Backg
 	return s.queryBackgroundProcessStatus(ctx, sqlf.Sprintf(
 		getCampaignPlanStatusQueryFmtstr,
 		id,
+		sqlf.Sprintf("campaign_plan_id = %s", id),
 	))
 }
 
 var getCampaignPlanStatusQueryFmtstr = `
 -- source: internal/a8n/store.go:GetCampaignPlanStatus
-WITH jobs AS (
-  SELECT
-    campaign_plan_id,
-    COUNT(*) AS total,
-    COUNT(*) FILTER (WHERE finished_at IS NULL) AS pending,
-    COUNT(*) FILTER (WHERE finished_at IS NOT NULL AND (diff != '' OR error != '')) AS completed,
-    array_agg(error) FILTER (WHERE error != '') AS errors
-  FROM campaign_jobs
-  GROUP BY campaign_plan_id
-)
 SELECT
-  canceled_at IS NOT NULL as canceled,
-  jobs.total,
-  jobs.pending,
-  jobs.completed,
-  jobs.errors
-FROM campaign_plans
-JOIN jobs ON jobs.campaign_plan_id = campaign_plans.id
-WHERE id = %s
+  (SELECT canceled_at IS NOT NULL FROM campaign_plans WHERE id = %s) AS canceled,
+  COUNT(*) AS total,
+  COUNT(*) FILTER (WHERE finished_at IS NULL) AS pending,
+  COUNT(*) FILTER (WHERE finished_at IS NOT NULL AND (diff != '' OR error != '')) AS completed,
+  array_agg(error) FILTER (WHERE error != '') AS errors
+FROM campaign_jobs
+WHERE %s
 LIMIT 1;
 `
 
