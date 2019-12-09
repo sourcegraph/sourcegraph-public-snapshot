@@ -545,26 +545,10 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 		return nil, errors.Wrap(err, "unmarshaling campaign id")
 	}
 
-	tx, err := r.store.Transact(ctx)
+	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
+	campaign, err := svc.CloseCampaign(ctx, campaignID)
 	if err != nil {
-		return nil, err
-	}
-
-	defer tx.Done(&err)
-
-	campaign, err := tx.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
-	if err != nil {
-		return nil, errors.Wrap(err, "getting campaign")
-	}
-
-	if !campaign.ClosedAt.IsZero() {
-		return &campaignResolver{store: r.store, Campaign: campaign}, nil
-	}
-
-	campaign.ClosedAt = time.Now().UTC()
-
-	if err = tx.UpdateCampaign(ctx, campaign); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "closing campaign")
 	}
 
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil

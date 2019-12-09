@@ -302,3 +302,30 @@ func (s *Service) runChangesetJob(
 	job.ChangesetID = cs.Changeset.ID
 	return tx.UpdateChangesetJob(ctx, job)
 }
+
+// CloseCampaign closes the Campaign with the given ID if it has not been closed yet.
+func (s *Service) CloseCampaign(ctx context.Context, id int64) (campaign *a8n.Campaign, err error) {
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	defer tx.Done(&err)
+
+	campaign, err = tx.GetCampaign(ctx, GetCampaignOpts{ID: id})
+	if err != nil {
+		return nil, errors.Wrap(err, "getting campaign")
+	}
+
+	if !campaign.ClosedAt.IsZero() {
+		return campaign, nil
+	}
+
+	campaign.ClosedAt = time.Now().UTC()
+
+	if err = tx.UpdateCampaign(ctx, campaign); err != nil {
+		return nil, err
+	}
+
+	return campaign, nil
+}
