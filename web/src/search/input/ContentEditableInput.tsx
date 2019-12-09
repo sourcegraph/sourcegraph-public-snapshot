@@ -1,6 +1,6 @@
 import React from 'react'
 import { QueryState } from '../helpers'
-import { isEqual, range } from 'lodash'
+import { range } from 'lodash'
 
 /**
  * Below, 'contentEditable' refers to a `<div contentEditable>`,
