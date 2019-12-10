@@ -364,12 +364,17 @@ func (s *Service) CloseOpenCampaignChangesets(ctx context.Context, c *a8n.Campai
 		return err
 	}
 
+	var errs *multierror.Error
 	for _, s := range bySource {
 		for _, c := range s.Changesets {
 			if err := s.CloseChangeset(ctx, c); err != nil {
-				return err
+				errs = multierror.Append(errs, err)
 			}
 		}
+	}
+
+	if len(errs.Errors) != 0 {
+		return errs
 	}
 
 	return syncer.SyncChangesetsWithSources(ctx, bySource)
