@@ -198,7 +198,7 @@ main.go:7:}
 				URL:          "u",
 				Commit:       "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 				PatternInfo:  test.arg,
-				FetchTimeout: "500ms",
+				FetchTimeout: "2000ms",
 			}
 			m, err := doSearch(ts.URL, &req)
 			if err != nil {
