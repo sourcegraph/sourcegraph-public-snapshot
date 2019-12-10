@@ -1729,10 +1729,85 @@ func testStore(db *sql.DB) func(*testing.T) {
 			})
 
 			t.Run("List", func(t *testing.T) {
-				for i := 1; i <= len(changesetJobs); i++ {
-					opts := ListChangesetJobsOpts{CampaignID: int64(i)}
+				t.Run("WithCampaignID", func(t *testing.T) {
+					for i := 1; i <= len(changesetJobs); i++ {
+						opts := ListChangesetJobsOpts{CampaignID: int64(i)}
 
-					ts, next, err := s.ListChangesetJobs(ctx, opts)
+						ts, next, err := s.ListChangesetJobs(ctx, opts)
+						if err != nil {
+							t.Fatal(err)
+						}
+
+						if have, want := next, int64(0); have != want {
+							t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+						}
+
+						have, want := ts, changesetJobs[i-1:i]
+						if len(have) != len(want) {
+							t.Fatalf("listed %d changesetJobs, want: %d", len(have), len(want))
+						}
+
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatalf("opts: %+v, diff: %s", opts, diff)
+						}
+					}
+				})
+
+				t.Run("WithPositiveLimit", func(t *testing.T) {
+					for i := 1; i <= len(changesetJobs); i++ {
+						cs, next, err := s.ListChangesetJobs(ctx, ListChangesetJobsOpts{Limit: i})
+						if err != nil {
+							t.Fatal(err)
+						}
+
+						{
+							have, want := next, int64(0)
+							if i < len(changesetJobs) {
+								want = changesetJobs[i].ID
+							}
+
+							if have != want {
+								t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
+							}
+						}
+
+						{
+							have, want := cs, changesetJobs[:i]
+							if len(have) != len(want) {
+								t.Fatalf("listed %d changesetJobs, want: %d", len(have), len(want))
+							}
+
+							if diff := cmp.Diff(have, want); diff != "" {
+								t.Fatal(diff)
+							}
+						}
+					}
+				})
+
+				t.Run("WithNegativeLimitToListAll", func(t *testing.T) {
+					cs, next, err := s.ListChangesetJobs(ctx, ListChangesetJobsOpts{Limit: -1})
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if have, want := next, int64(0); have != want {
+						t.Fatalf("have next %v, want %v", have, want)
+					}
+
+					have, want := cs, changesetJobs
+					if len(have) != len(want) {
+						t.Fatalf("listed %d campaignJobs, want: %d", len(have), len(want))
+					}
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
+					}
+				})
+
+				t.Run("EmptyResultListingAll", func(t *testing.T) {
+					opts := ListChangesetJobsOpts{CampaignID: 99999, Limit: -1}
+
+					cs, next, err := s.ListChangesetJobs(ctx, opts)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -1741,46 +1816,12 @@ func testStore(db *sql.DB) func(*testing.T) {
 						t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
 					}
 
-					have, want := ts, changesetJobs[i-1:i]
-					if len(have) != len(want) {
-						t.Fatalf("listed %d changesetJobs, want: %d", len(have), len(want))
+					if len(cs) != 0 {
+						t.Fatalf("listed %d jobs, want: %d", len(cs), 0)
 					}
+				})
 
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatalf("opts: %+v, diff: %s", opts, diff)
-					}
-				}
-
-				for i := 1; i <= len(changesetJobs); i++ {
-					cs, next, err := s.ListChangesetJobs(ctx, ListChangesetJobsOpts{Limit: i})
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					{
-						have, want := next, int64(0)
-						if i < len(changesetJobs) {
-							want = changesetJobs[i].ID
-						}
-
-						if have != want {
-							t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
-						}
-					}
-
-					{
-						have, want := cs, changesetJobs[:i]
-						if len(have) != len(want) {
-							t.Fatalf("listed %d changesetJobs, want: %d", len(have), len(want))
-						}
-
-						if diff := cmp.Diff(have, want); diff != "" {
-							t.Fatal(diff)
-						}
-					}
-				}
-
-				{
+				t.Run("WithCursor", func(t *testing.T) {
 					var cursor int64
 					for i := 1; i <= len(changesetJobs); i++ {
 						opts := ListChangesetJobsOpts{Cursor: cursor, Limit: 1}
@@ -1796,7 +1837,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 						cursor = next
 					}
-				}
+				})
 			})
 
 			t.Run("Update", func(t *testing.T) {
