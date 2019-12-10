@@ -4,56 +4,20 @@ import * as path from 'path'
 import * as settings from './settings'
 import promClient from 'prom-client'
 import { addTags, createTracer, logAndTraceCall, TracingContext } from '../shared/tracing'
-import { createConvertJobProcessor } from './processors/convert'
 import { createLogger } from '../shared/logging'
 import { createPostgresConnection } from '../shared/database/postgres'
-import { createQueue } from '../shared/queue/queue'
 import { ensureDirectory } from '../shared/paths'
-import { followsFrom, FORMAT_TEXT_MAP, Span, Tracer } from 'opentracing'
-import { instrumentWithLabels } from '../shared/metrics'
-import { Job } from 'bull'
+import { Span, FORMAT_TEXT_MAP, followsFrom } from 'opentracing'
+import { instrument } from '../shared/metrics'
 import { Logger } from 'winston'
 import { startMetricsServer } from './server'
 import { waitForConfiguration } from '../shared/config/config'
 import { XrepoDatabase } from '../shared/xrepo/xrepo'
-
-/**
- * Wrap a job processor with instrumentation.
- *
- * @param type The job name.
- * @param jobProcessor The job processor.
- * @param logger The logger instance.
- * @param tracer The tracer instance.
- */
-const wrapJobProcessor = <T>(
-    type: string,
-    jobProcessor: (job: Job, args: T, ctx: TracingContext) => Promise<void>,
-    logger: Logger,
-    tracer: Tracer | undefined
-): ((job: Job) => Promise<void>) => async (job: Job) => {
-    logger.debug(`Accepted ${type} job`, { jobId: job.id })
-
-    // Destructure arguments and injected tracing context
-    const { args, tracing }: { args: T; tracing: object } = job.data
-
-    let span: Span | undefined
-    if (tracer) {
-        // Extract tracing context from job payload
-        const publisher = tracer.extract(FORMAT_TEXT_MAP, tracing)
-        span = tracer.startSpan(type, publisher ? { references: [followsFrom(publisher)] } : {})
-    }
-
-    // Tag tracing context with jobId and arguments
-    const ctx = addTags({ logger, span }, { jobId: job.id, ...args })
-
-    await instrumentWithLabels(
-        metrics.jobDurationHistogram,
-        metrics.jobDurationErrorsCounter,
-        { class: type },
-        (): Promise<void> =>
-            logAndTraceCall(ctx, `Running ${type} job`, (ctx: TracingContext) => jobProcessor(job, args, ctx))
-    )
-}
+import { UploadsManager } from '../shared/uploads/uploads'
+import * as xrepoModels from '../shared/models/xrepo'
+import { convertUpload } from './processors/convert'
+import { pick } from 'lodash'
+import AsyncPolling from 'async-polling'
 
 /**
  * Runs the worker which accepts LSIF conversion jobs from the work queue.
@@ -76,25 +40,49 @@ async function main(logger: Logger): Promise<void> {
     await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.TEMP_DIR))
     await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR))
 
-    // Create cross-repo database
+    // Create database connection and entity wrapper classes
     const connection = await createPostgresConnection(fetchConfiguration(), logger)
     const xrepoDatabase = new XrepoDatabase(connection, settings.STORAGE_ROOT)
+    const uploadsManager = new UploadsManager(connection)
 
     // Start metrics server
     startMetricsServer(logger)
 
-    // Create queue to poll for jobs
-    const queue = createQueue(settings.REDIS_ENDPOINT, logger)
+    const convert = async (upload: xrepoModels.LsifUpload): Promise<void> => {
+        logger.debug('Selected upload to convert', { uploadId: upload.id })
 
-    const convertJobProcessor = wrapJobProcessor(
-        'convert',
-        createConvertJobProcessor(connection, xrepoDatabase, fetchConfiguration),
-        logger,
-        tracer
-    )
+        let span: Span | undefined
+        if (tracer) {
+            // Extract tracing context from upload
+            const publisher = tracer.extract(FORMAT_TEXT_MAP, JSON.parse(upload.tracingContext))
+            span = tracer.startSpan(
+                'Upload selected by worker',
+                publisher ? { references: [followsFrom(publisher)] } : {}
+            )
+        }
 
-    // Start processing work
-    queue.process('convert', convertJobProcessor).catch(() => {})
+        // Tag tracing context with uploadId and arguments
+        const ctx = addTags({ logger, span }, { uploadId: upload.id, ...pick(upload, 'repository', 'commit', 'root') })
+
+        await instrument(
+            metrics.jobDurationHistogram,
+            metrics.jobDurationErrorsCounter,
+            (): Promise<void> =>
+                logAndTraceCall(ctx, 'Converting upload', (ctx: TracingContext) =>
+                    convertUpload(connection, xrepoDatabase, fetchConfiguration, upload, ctx)
+                )
+        )
+    }
+
+    logger.debug('Worker polling database for unconverted uploads')
+
+    AsyncPolling(async end => {
+        while (await uploadsManager.dequeueAndConvert(convert, logger)) {
+            // Immediately poll again if we converted an upload
+        }
+
+        end()
+    }, settings.WORKER_POLLING_INTERVAL * 1000).run()
 }
 
 // Initialize logger

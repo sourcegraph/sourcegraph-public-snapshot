@@ -3,10 +3,13 @@ import pRetry from 'p-retry'
 import { Brackets, Connection, EntityManager } from 'typeorm'
 import { FORMAT_TEXT_MAP, Span, Tracer } from 'opentracing'
 import { instrumentQuery, withInstrumentedTransaction } from '../database/postgres'
+import { PlainObjectToDatabaseEntityTransformer } from 'typeorm/query-builder/transformer/PlainObjectToDatabaseEntityTransformer'
+import { Logger } from 'winston'
 
 /**
  * A wrapper around the database tables that control uploads. This class has
- * behaviors to enqueue uploads.
+ * behaviors to enqueue uploads and dequeue them for the worker to convert
+ * in a transactional manner.
  */
 export class UploadsManager {
     /**
@@ -192,5 +195,77 @@ export class UploadsManager {
                       maxTimeout: 1000,
                   }
         )
+    }
+
+    /**
+     * Lock and convert a queued upload. If the conversion function throws an error, then
+     * the error summary and stack trace will be written to the upload record.
+     *
+     * @param convert The function to call with the locked upload.
+     * @param logger The logger instance.
+     */
+    public async dequeueAndConvert(
+        convert: (upload: xrepoModels.LsifUpload) => Promise<void>,
+        logger: Logger
+    ): Promise<boolean> {
+        // First, we select the next oldest upload with a state of `queued` and set
+        // its state to `processing`. We do this outside of a transaction so that this
+        // state transition is visible to the API. We skip any locked rows as they are
+        // being handled by another worker process.
+        const lockResult: [{ id: number }[]] = await this.connection.query(`
+            UPDATE lsif_uploads u SET state = 'processing', started_at = now() WHERE id = (
+                SELECT id FROM lsif_uploads
+                WHERE state = 'queued'
+                ORDER BY uploaded_at
+                FOR UPDATE SKIP LOCKED LIMIT 1
+            )
+            RETURNING u.id
+        `)
+        if (lockResult[0].length === 0) {
+            return false
+        }
+        const uploadId = lockResult[0][0].id
+
+        return withInstrumentedTransaction(this.connection, async entityManager => {
+            const results: object[] = await entityManager.query(
+                'SELECT * FROM lsif_uploads WHERE id = $1 FOR UPDATE LIMIT 1',
+                [uploadId]
+            )
+            if (results.length === 0) {
+                // Record was deleted in race, retry
+                return this.dequeueAndConvert(convert, logger)
+            }
+
+            // Transform locked result into upload entity
+            const repo = entityManager.getRepository(xrepoModels.LsifUpload)
+            const meta = repo.manager.connection.getMetadata(xrepoModels.LsifUpload)
+            const transformer = new PlainObjectToDatabaseEntityTransformer(repo.manager)
+            const upload = (await transformer.transform(results[0], meta)) as xrepoModels.LsifUpload
+
+            let state = 'completed'
+            let failureSummary: string | null = null
+            let failureStacktrace: string | null = null
+
+            try {
+                await convert(upload)
+            } catch (error) {
+                state = 'errored'
+                failureSummary = error?.message
+                failureStacktrace = error?.stack
+
+                logger.error('Failed to convert upload', { error })
+            }
+
+            await entityManager.query(
+                `
+                    UPDATE lsif_uploads
+                    SET completed_or_errored_at = now(), state = $2, failure_summary = $3, failure_stacktrace = $4
+                    WHERE id = $1
+                `,
+                [uploadId, state, failureSummary, failureStacktrace]
+            )
+
+            return true
+        })
     }
 }

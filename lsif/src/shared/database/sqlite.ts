@@ -18,7 +18,7 @@ export function createSqliteConnection(
         database,
         entities,
         synchronize: true,
-        logging: ['error', 'warn'],
+        logging: ['warn', 'error'],
         maxQueryExecutionTime: 1000,
     })
 }

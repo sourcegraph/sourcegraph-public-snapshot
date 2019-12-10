@@ -114,7 +114,7 @@ export function connectPostgres(
         type: 'postgres',
         name: `xrepo${suffix}`,
         entities: xrepoModels.entities,
-        logging: ['error', 'warn'],
+        logging: ['warn', 'error'],
         maxQueryExecutionTime: 1000,
         ...connectionOptions,
     })
