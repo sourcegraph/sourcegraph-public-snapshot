@@ -448,7 +448,7 @@ export class QueryInput extends React.Component<Props, State> {
         this.setShowSuggestions(true)
     }
 
-    private onSubmit: React.FormEventHandler = event => {
+    private onSubmit: React.FormEventHandler = () => {
         this.setShowSuggestions(false)
     }
 
