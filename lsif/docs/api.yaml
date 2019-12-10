@@ -73,6 +73,70 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnqueueResponse'
+  /exists:
+    get:
+      description: Determine if LSIF data exists for a file within a particular commit. This endpoint will return the LSIF dump for which definitions, references, and hover queries will use.
+      tags:
+        - LSIF
+      parameters:
+        - name: repository
+          in: query
+          description: The repository name.
+          required: true
+          schema:
+            type: string
+        - name: commit
+          in: query
+          description: The 40-character commit hash.
+          required: true
+          schema:
+            type: string
+        - name: path
+          in: query
+          description: The file path within the repository (relative to the repository root).
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Dump'
+                  - type: null
+    post:
+      description: Determine if LSIF data exists for a file within a particular commit. This endpoint will return true if there is a nearby commit (direct ancestor or descendant) with LSIF data for the same file if the exact commit does not have available LSIF data.
+      tags:
+        - LSIF
+      parameters:
+        - name: repository
+          in: query
+          description: The repository name.
+          required: true
+          schema:
+            type: string
+        - name: commit
+          in: query
+          description: The 40-character commit hash.
+          required: true
+          schema:
+            type: string
+        - name: file
+          in: query
+          description: The file path within the repository (relative to the repository root).
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: boolean
+
   /definitions:
     get:
       description: Get definitions for the symbol at a source position.
@@ -108,6 +172,12 @@ paths:
           in: query
           description: The character index (zero-indexed).
           required: true
+          schema:
+            type: number
+        - name: dumpId
+          in: query
+          description: The identifier of the dump to load. If not supplied, the dump nearest to the given commit will be loaded.
+          required: false
           schema:
             type: number
       responses:
@@ -154,6 +224,12 @@ paths:
           in: query
           description: The character index (zero-indexed).
           required: true
+          schema:
+            type: number
+        - name: dumpId
+          in: query
+          description: The identifier of the dump to load. If not supplied, the dump nearest to the given commit will be loaded.
+          required: false
           schema:
             type: number
         - name: limit
@@ -220,6 +296,12 @@ paths:
           required: true
           schema:
             type: number
+        - name: dumpId
+          in: query
+          description: The identifier of the dump to load. If not supplied, the dump nearest to the given commit will be loaded.
+          required: false
+          schema:
+            type: number
       responses:
         '200':
           description: OK
@@ -229,37 +311,6 @@ paths:
                 $ref: '#/components/schemas/Hover2'
         '404':
           description: Not found
-  /exists:
-    get:
-      description: Determine if LSIF data exists for a file within a particular commit. This endpoint will return true if there is a nearby commit (direct ancestor or descendant) with LSIF data for the same file if the exact commit does not have available LSIF data.
-      tags:
-        - LSIF
-      parameters:
-        - name: repository
-          in: query
-          description: The repository name.
-          required: true
-          schema:
-            type: string
-        - name: commit
-          in: query
-          description: The 40-character commit hash.
-          required: true
-          schema:
-            type: string
-        - name: file
-          in: query
-          description: The file path within the repository (relative to the repository root).
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: boolean
   /request:
     post:
       description: Answer a definitions, references, or hover LSP request. This endpoint will use a nearby commit (direct ancestor or descendant) with LSIF data for the same file if the exact commit does not have available LSIF data.

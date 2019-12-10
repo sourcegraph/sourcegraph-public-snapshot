@@ -22,6 +22,7 @@ type LocationsQueryOptions struct {
 	Path      string
 	Line      int32
 	Character int32
+	DumpID    int64
 	Limit     *int32
 	NextURL   *string
 }

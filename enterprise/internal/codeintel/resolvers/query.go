@@ -8,26 +8,43 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/go-lsp"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/client"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/lsif"
 )
 
 type lsifQueryResolver struct {
-	RepoName string
-	Commit   graphqlbackend.GitObjectID
-	Path     string
+	repoName string
+	commit   graphqlbackend.GitObjectID
+	path     string
+	dump     *lsif.LSIFDump
 }
 
 var _ graphqlbackend.LSIFQueryResolver = &lsifQueryResolver{}
 
+func (r *lsifQueryResolver) Commit(ctx context.Context) (*graphqlbackend.GitCommitResolver, error) {
+	repo, err := backend.Repos.GetByName(ctx, api.RepoName(r.repoName))
+	if err != nil {
+		return nil, err
+	}
+
+	return graphqlbackend.NewRepositoryResolver(repo).Commit(
+		ctx,
+		&graphqlbackend.RepositoryCommitArgs{Rev: string(r.dump.Commit)},
+	)
+}
+
 func (r *lsifQueryResolver) Definitions(ctx context.Context, args *graphqlbackend.LSIFQueryPositionArgs) (graphqlbackend.LocationConnectionResolver, error) {
 	opt := LocationsQueryOptions{
 		Operation: "definitions",
-		RepoName:  r.RepoName,
-		Commit:    r.Commit,
-		Path:      r.Path,
+		RepoName:  r.repoName,
+		Commit:    r.commit,
+		Path:      r.path,
 		Line:      args.Line,
 		Character: args.Character,
+		DumpID:    r.dump.ID,
 	}
 
 	resolver, err := resolveLocationConnection(ctx, opt)
@@ -41,11 +58,12 @@ func (r *lsifQueryResolver) Definitions(ctx context.Context, args *graphqlbacken
 func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend.LSIFPagedQueryPositionArgs) (graphqlbackend.LocationConnectionResolver, error) {
 	opt := LocationsQueryOptions{
 		Operation: "references",
-		RepoName:  r.RepoName,
-		Commit:    r.Commit,
-		Path:      r.Path,
+		RepoName:  r.repoName,
+		Commit:    r.commit,
+		Path:      r.path,
 		Line:      args.Line,
 		Character: args.Character,
+		DumpID:    r.dump.ID,
 	}
 	if args.First != nil {
 		opt.Limit = args.First
@@ -70,11 +88,12 @@ func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend
 func (r *lsifQueryResolver) Hover(ctx context.Context, args *graphqlbackend.LSIFQueryPositionArgs) (graphqlbackend.HoverResolver, error) {
 	path := fmt.Sprintf("/hover")
 	values := url.Values{}
-	values.Set("repository", r.RepoName)
-	values.Set("commit", string(r.Commit))
-	values.Set("path", r.Path)
+	values.Set("repository", r.repoName)
+	values.Set("commit", string(r.commit))
+	values.Set("path", r.path)
 	values.Set("line", strconv.FormatInt(int64(args.Line), 10))
 	values.Set("character", strconv.FormatInt(int64(args.Character), 10))
+	values.Set("dumpId", strconv.FormatInt(r.dump.ID, 10))
 
 	payload := struct {
 		Text  string    `json:"text"`

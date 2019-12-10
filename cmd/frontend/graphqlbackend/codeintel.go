@@ -20,7 +20,7 @@ type CodeIntelResolver interface {
 	LSIFJobStatsByID(ctx context.Context, id graphql.ID) (LSIFJobStatsResolver, error)
 	DeleteLSIFDump(ctx context.Context, id graphql.ID) (*EmptyResponse, error)
 	DeleteLSIFJob(ctx context.Context, id graphql.ID) (*EmptyResponse, error)
-	LSIF(args *LSIFQueryArgs) LSIFQueryResolver
+	LSIF(ctx context.Context, args *LSIFQueryArgs) (LSIFQueryResolver, error)
 }
 
 type LSIFDumpsQueryArgs struct {
@@ -88,6 +88,7 @@ type LSIFJobConnectionResolver interface {
 }
 
 type LSIFQueryResolver interface {
+	Commit(ctx context.Context) (*GitCommitResolver, error)
 	Definitions(ctx context.Context, args *LSIFQueryPositionArgs) (LocationConnectionResolver, error)
 	References(ctx context.Context, args *LSIFPagedQueryPositionArgs) (LocationConnectionResolver, error)
 	Hover(ctx context.Context, args *LSIFQueryPositionArgs) (HoverResolver, error)
@@ -97,6 +98,7 @@ type LSIFQueryArgs struct {
 	RepoName string
 	Commit   GitObjectID
 	Path     string
+	DumpID   int64
 }
 
 type LSIFQueryPositionArgs struct {
