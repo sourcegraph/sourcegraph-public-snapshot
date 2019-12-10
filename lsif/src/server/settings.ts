@@ -47,6 +47,11 @@ export const UPDATE_QUEUE_SIZE_GAUGE_INTERVAL = readEnvInt('UPDATE_QUEUE_SIZE_GA
 export const DEFAULT_JOB_PAGE_SIZE = readEnvInt('DEFAULT_JOB_PAGE_SIZE', 50)
 
 /**
+ * The default page size for the upload endpoints.
+ */
+export const DEFAULT_UPLOAD_PAGE_SIZE = readEnvInt('DEFAULT_UPLOAD_PAGE_SIZE', 50)
+
+/**
  * The maximum number of jobs to search in one call to the search-jobs.lua script.
  */
 export const MAX_JOB_SEARCH = readEnvInt('MAX_JOB_SEARCH', 10000)

@@ -29,12 +29,11 @@ export function createDumpRouter(backend: Backend): express.Router {
         ]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
-                const { repository } = req.params
                 const { query, visibleAtTip }: DumpsQueryArgs = req.query
                 const { limit, offset } = extractLimitOffset(req.query, settings.DEFAULT_DUMP_PAGE_SIZE)
 
                 const { dumps, totalCount } = await backend.dumps(
-                    decodeURIComponent(repository),
+                    decodeURIComponent(req.params.repository),
                     query,
                     visibleAtTip,
                     limit,
@@ -51,32 +50,32 @@ export function createDumpRouter(backend: Backend): express.Router {
     )
 
     router.get(
-        '/dumps/:repository/:id',
+        '/dumps/:repository/:id([0-9]+)',
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
-                const { repository, id } = req.params
-                const dump = await backend.dump(parseInt(id, 10))
-                if (dump?.repository !== decodeURIComponent(repository)) {
-                    throw Object.assign(new Error('LSIF dump not found'), { status: 404 })
+                const dump = await backend.dump(parseInt(req.params.id, 10))
+                if (dump?.repository === decodeURIComponent(req.params.repository)) {
+                    res.json(dump)
+                    return
                 }
 
-                res.json(dump)
+                throw Object.assign(new Error('LSIF dump not found'), { status: 404 })
             }
         )
     )
 
     router.delete(
-        '/dumps/:repository/:id',
+        '/dumps/:repository/:id([0-9]+)',
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
-                const { repository, id } = req.params
-                const dump = await backend.dump(parseInt(id, 10))
-                if (dump?.repository !== decodeURIComponent(repository)) {
-                    throw Object.assign(new Error('LSIF dump not found'), { status: 404 })
+                const dump = await backend.dump(parseInt(req.params.id, 10))
+                if (dump?.repository === decodeURIComponent(req.params.repository)) {
+                    await backend.deleteDump(dump)
+                    res.status(204).send()
+                    return
                 }
 
-                await backend.deleteDump(dump)
-                res.status(204).send()
+                throw Object.assign(new Error('LSIF dump not found'), { status: 404 })
             }
         )
     )
