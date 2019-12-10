@@ -370,11 +370,12 @@ export const formatQueryForFuzzySearch = (queryState: QueryState): string => {
 
 /**
  * Matches filter keywords in query.
- * See `highlightInvalidFilters()`.
+ * Details: https://regexr.com/4qgpg.
+ * Used in `highlightInvalidFilters()`
  *
- * @example 'query archived:true' -> 'archived'
+ * @example 'query archived:true "repo:"' -> 'archived'
  */
-const filterKeywordRegex = /[^\s+]?\S+(?=:)/g
+const filterKeywordRegex = /[^\s:]+(?=:)(?=([^"\\]*(\\.|"([^"\\]*\\.)*[^"\\]*"))*[^"]*$)(?=([^'\\]*(\\.|'([^'\\]*\\.)*[^'\\]*'))*[^']*$)/g
 
 /**
  * See `highlightInvalidFilters()`

@@ -350,5 +350,13 @@ describe('search/helpers', () => {
             const invalid2Html = toInvalidFilterHtml(invalidKeyword2)
             expect(query).toBe(`${invalidHtml}:value repo:git Props ${invalid2Html}:value count:1`)
         })
+        it('does not highlight keywords in quotes', () => {
+            const { content: query } = highlightInvalidFilters({
+                query: `${invalidKeyword}:value "${invalidKeyword}:value" '${invalidKeyword}:value'`,
+                cursorPosition: 0,
+            })
+            const invalidHtml = toInvalidFilterHtml(invalidKeyword)
+            expect(query).toBe(`${invalidHtml}:value "${invalidKeyword}:value" '${invalidKeyword}:value'`)
+        })
     })
 })
