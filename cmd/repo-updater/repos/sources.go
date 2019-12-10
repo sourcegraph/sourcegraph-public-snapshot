@@ -94,7 +94,7 @@ type ChangesetSource interface {
 	// exists, *Changeset will be populated.
 	CreateChangeset(context.Context, *Changeset) error
 	// CloseChangeset will close the Changeset on the source, where "close"
-	// means the appropriate final state on the codehost (i.e. "declined" on
+	// means the appropriate final state on the codehost (e.g. "declined" on
 	// Bitbucket Server).
 	CloseChangeset(context.Context, *Changeset) error
 }
