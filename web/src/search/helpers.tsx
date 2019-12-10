@@ -409,7 +409,7 @@ export const highlightInvalidFilters = ({ cursorPosition, query }: QueryState): 
     // If at least one filter keyword is found, check if it's valid
 
     // Used to correctly position cursor, see step 2. in `keywordMatches.forEach` loop below.
-    // `<div contentEditable>` need to know in which node the cursor will be positioned
+    // `<div contentEditable>` need to know in which HTML node the cursor will be positioned
     let totalNodes = 0
 
     // Content and cursor to be returned
