@@ -13,7 +13,7 @@
         </button>
         <details-menu aria-label="Sourcegraph version" class="dropdown-menu m-0 p-0" aria-labelledby="Version Dropdown">
 
-            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.9.4"}} {{$previousReleaseVersion := "3.9"}} {{$currentReleaseRevspec := "v3.10.2"}} {{$currentReleaseVersion := "3.10"}} {{$nextReleaseVersion := "master"}}
+            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.9.4"}} {{$previousReleaseVersion := "3.9"}} {{$currentReleaseRevspec := "v3.10.3"}} {{$currentReleaseVersion := "3.10"}} {{$nextReleaseVersion := "master"}}
             <a rel="nofollow" class="dropdown-item {{if eq .ContentVersion " "}}active{{end}}" href="/{{.ContentPagePath}}">master</a>
             <a rel="nofollow" class=" dropdown-item {{if eq $currentReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$currentReleaseVersion}}/{{.ContentPagePath}}">{{$currentReleaseVersion}}<span class="current-branch ml-1">current</span></a>
             <a rel="nofollow" class=" dropdown-item {{if eq $previousReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$previousReleaseVersion}}/{{.ContentPagePath}}">{{$previousReleaseVersion}}</a>
