@@ -53,7 +53,7 @@ Possible errors include:
 
 ### Proving ownership of a GitHub repository
 
-If you're uploading to Sourcegraph.com or another Sourcegraph instance with [`lsifEnforceAuth`](https://docs.sourcegraph.com/admin/config/site_config#lsifEnforceAuth) enabled, you must prove that you own the GitHub repository in order to upload LSIF data for it. To do so, authenticate your upload by passing a GitHub access token with [`public_repo` scope](https://developer.github.com/apps/building-oauth-apps/understanding-scopes-for-oauth-apps/#available-scopes) as `-github-token=abc...`. You can create' one at https://github.com/settings/tokens.
+If you're uploading to Sourcegraph.com or another Sourcegraph instance with [`lsifEnforceAuth`](https://docs.sourcegraph.com/admin/config/site_config#lsifEnforceAuth) enabled, you must prove that you own the GitHub repository in order to upload LSIF data for it. To do so, authenticate your upload by passing a GitHub App installation access token or a GitHub access token with [`public_repo` scope](https://developer.github.com/apps/building-oauth-apps/understanding-scopes-for-oauth-apps/#available-scopes) as `-github-token=abc...`. You can create one at https://github.com/settings/tokens.
 
 ## 4. Test out code intelligence
 

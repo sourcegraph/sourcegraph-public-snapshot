@@ -302,3 +302,98 @@ func (s *Service) runChangesetJob(
 	job.ChangesetID = cs.Changeset.ID
 	return tx.UpdateChangesetJob(ctx, job)
 }
+
+// CloseCampaign closes the Campaign with the given ID if it has not been closed yet.
+func (s *Service) CloseCampaign(ctx context.Context, id int64) (campaign *a8n.Campaign, err error) {
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	defer tx.Done(&err)
+
+	campaign, err = tx.GetCampaign(ctx, GetCampaignOpts{ID: id})
+	if err != nil {
+		return nil, errors.Wrap(err, "getting campaign")
+	}
+
+	if !campaign.ClosedAt.IsZero() {
+		return campaign, nil
+	}
+
+	campaign.ClosedAt = time.Now().UTC()
+
+	if err = tx.UpdateCampaign(ctx, campaign); err != nil {
+		return nil, err
+	}
+
+	return campaign, nil
+}
+
+func (s *Service) CloseOpenCampaignChangesets(ctx context.Context, c *a8n.Campaign) (err error) {
+	cs, _, err := s.store.ListChangesets(ctx, ListChangesetsOpts{
+		CampaignID: c.ID,
+		Limit:      10000,
+	})
+	if err != nil {
+		return err
+	}
+
+	cs = selectChangesets(cs, func(c *a8n.Changeset) bool {
+		s, err := c.State()
+		if err != nil {
+			log15.Warn("could not determine changeset state", "err", err)
+			return false
+		}
+		return s == a8n.ChangesetStateOpen
+	})
+
+	if len(cs) == 0 {
+		return nil
+	}
+
+	reposStore := repos.NewDBStore(s.store.DB(), sql.TxOptions{})
+	syncer := ChangesetSyncer{
+		ReposStore:  reposStore,
+		Store:       s.store,
+		HTTPFactory: s.cf,
+	}
+
+	bySource, err := syncer.GroupChangesetsBySource(ctx, cs...)
+	if err != nil {
+		return err
+	}
+
+	var errs *multierror.Error
+	for _, s := range bySource {
+		for _, c := range s.Changesets {
+			if err := s.CloseChangeset(ctx, c); err != nil {
+				errs = multierror.Append(errs, err)
+			}
+		}
+	}
+
+	if len(errs.Errors) != 0 {
+		return errs
+	}
+
+	// Here we need to sync the just-closed changesets (even though
+	// CloseChangesets updates the given Changesets too), because closing a
+	// Changeset often produces a ChangesetEvent on the codehost and if we were
+	// to close the Changesets and not update the events (which is what
+	// SyncChangesetsWithSources does) our burndown chart will be outdated
+	// until the next run of a8n.Syncer.
+	return syncer.SyncChangesetsWithSources(ctx, bySource)
+}
+
+func selectChangesets(cs []*a8n.Changeset, predicate func(*a8n.Changeset) bool) []*a8n.Changeset {
+	i := 0
+	for _, c := range cs {
+		if predicate(c) {
+			cs[i] = c
+			i++
+		}
+	}
+
+	return cs[:i]
+}

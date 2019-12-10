@@ -431,7 +431,8 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                     </ul>
                                                 </>
                                             )}{' '}
-                                            {results.timedout.length === results.repositoriesCount &&
+                                            {results.timedout.length > 0 &&
+                                                results.timedout.length === results.repositoriesCount &&
                                                 /* All repositories timed out. */
                                                 this.renderRecommendations(
                                                     window.context.deployType !== 'cluster'

@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1575513569461,
+  "iteration": 1575600595769,
   "links": [],
   "panels": [
     {
@@ -58,7 +58,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "src_graphql_search_response",
+          "expr": "sum by (status)(src_graphql_search_response)",
           "legendFormat": "{{status}}",
           "refId": "A"
         }
@@ -964,5 +964,5 @@
   "timezone": "utc",
   "title": "Searcher",
   "uid": "0ZBSEmRWk",
-  "version": 1
+  "version": 4
 }

@@ -219,12 +219,12 @@ export function createLsifRouter(
                 const { repository, commit, path, line, character }: FilePositionArgs = req.query
                 const ctx = createTracingContext(req, { repository, commit, path })
 
-                const text = await backend.hover(repository, commit, path, { line, character }, ctx)
-                if (text === undefined) {
+                const result = await backend.hover(repository, commit, path, { line, character }, ctx)
+                if (result === undefined) {
                     throw Object.assign(new Error('LSIF dump not found'), { status: 404 })
                 }
 
-                res.json({ text })
+                res.json(result)
             }
         )
     )
@@ -309,7 +309,7 @@ export function createLsifRouter(
                             return
                         }
 
-                        res.json(result && { contents: result })
+                        res.json(result && { contents: result.text })
                         break
                     }
 

@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "name": "Sourcegraph",
   "manifest_version": 2,
-  "description": "Code intelligence for your code host and code reviews: hovers, documentation, definitions, and references in files, PRs, and diffs",
+  "description": "Adds code intelligence to GitHub: hovers, definitions, references. Supports 20+ languages and other popular code hosts, too.",
   "browser_action": {
     "default_title": "Sourcegraph",
     "default_icon": {

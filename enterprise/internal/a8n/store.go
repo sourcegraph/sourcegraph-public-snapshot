@@ -828,9 +828,10 @@ INSERT INTO campaigns (
   created_at,
   updated_at,
   changeset_ids,
-  campaign_plan_id
+  campaign_plan_id,
+  closed_at
 )
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING
   id,
   name,
@@ -841,7 +842,8 @@ RETURNING
   created_at,
   updated_at,
   changeset_ids,
-  campaign_plan_id
+  campaign_plan_id,
+  closed_at
 `
 
 func (s *Store) createCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
@@ -869,6 +871,7 @@ func (s *Store) createCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
 		c.UpdatedAt,
 		changesetIDs,
 		nullInt64Column(c.CampaignPlanID),
+		nullTimeColumn(c.ClosedAt),
 	), nil
 }
 
@@ -924,8 +927,9 @@ SET (
   namespace_org_id,
   updated_at,
   changeset_ids,
-  campaign_plan_id
-) = (%s, %s, %s, %s, %s, %s, %s, %s)
+  campaign_plan_id,
+  closed_at
+) = (%s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   id,
@@ -937,7 +941,8 @@ RETURNING
   created_at,
   updated_at,
   changeset_ids,
-  campaign_plan_id
+  campaign_plan_id,
+  closed_at
 `
 
 func (s *Store) updateCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
@@ -958,6 +963,7 @@ func (s *Store) updateCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
 		c.UpdatedAt,
 		changesetIDs,
 		nullInt64Column(c.CampaignPlanID),
+		nullTimeColumn(c.ClosedAt),
 		c.ID,
 	), nil
 }
@@ -1049,7 +1055,8 @@ SELECT
   created_at,
   updated_at,
   changeset_ids,
-  campaign_plan_id
+  campaign_plan_id,
+  closed_at
 FROM campaigns
 WHERE %s
 LIMIT 1
@@ -1110,7 +1117,8 @@ SELECT
   created_at,
   updated_at,
   changeset_ids,
-  campaign_plan_id
+  campaign_plan_id,
+  closed_at
 FROM campaigns
 WHERE %s
 ORDER BY id ASC
@@ -1374,30 +1382,20 @@ func (s *Store) GetCampaignPlanStatus(ctx context.Context, id int64) (*a8n.Backg
 	return s.queryBackgroundProcessStatus(ctx, sqlf.Sprintf(
 		getCampaignPlanStatusQueryFmtstr,
 		id,
+		sqlf.Sprintf("campaign_plan_id = %s", id),
 	))
 }
 
 var getCampaignPlanStatusQueryFmtstr = `
 -- source: internal/a8n/store.go:GetCampaignPlanStatus
-WITH jobs AS (
-  SELECT
-    campaign_plan_id,
-    COUNT(*) AS total,
-    COUNT(*) FILTER (WHERE finished_at IS NULL) AS pending,
-    COUNT(*) FILTER (WHERE finished_at IS NOT NULL AND (diff != '' OR error != '')) AS completed,
-    array_agg(error) FILTER (WHERE error != '') AS errors
-  FROM campaign_jobs
-  GROUP BY campaign_plan_id
-)
 SELECT
-  canceled_at IS NOT NULL as canceled,
-  jobs.total,
-  jobs.pending,
-  jobs.completed,
-  jobs.errors
-FROM campaign_plans
-JOIN jobs ON jobs.campaign_plan_id = campaign_plans.id
-WHERE id = %s
+  (SELECT canceled_at IS NOT NULL FROM campaign_plans WHERE id = %s) AS canceled,
+  COUNT(*) AS total,
+  COUNT(*) FILTER (WHERE finished_at IS NULL) AS pending,
+  COUNT(*) FILTER (WHERE finished_at IS NOT NULL AND (diff != '' OR error != '')) AS completed,
+  array_agg(error) FILTER (WHERE error != '') AS errors
+FROM campaign_jobs
+WHERE %s
 LIMIT 1;
 `
 
@@ -2253,6 +2251,7 @@ func scanCampaign(c *a8n.Campaign, s scanner) error {
 		&c.UpdatedAt,
 		&dbutil.JSONInt64Set{Set: &c.ChangesetIDs},
 		&dbutil.NullInt64{N: &c.CampaignPlanID},
+		&dbutil.NullTime{Time: &c.ClosedAt},
 	)
 }
 
