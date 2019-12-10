@@ -36,22 +36,21 @@ If NGINX is your preferred reverse proxy, we suggest using [the official NGINX d
 
 **1.** Copy your SSL certificate and key to `~/.sourcegraph/config` (where the `nginx.conf` file is).
 
-**2.** Edit `nginx.conf`, replacing `listen 7080;` with `listen 7080 ssl;`, then add the following two lines below the `listen 7080 ssl;` statement.
-
-```nginx
-ssl_certificate         sourcegraph.crt;
-ssl_certificate_key     sourcegraph.key;
-```
-
-The `nginx.conf` should now look like this (names of cert and key can be anything):
+**2.** Edit `nginx.conf` so that port `7080` redirects to `7443` and `7443` is served with SSL. It should look like this:
 
 ```nginx
 ...
 http {
     ...
     server {
+        listen 7080;
+        return 301 https://$host:7433$request_uri;
+    }
+
+    server {
        ...
-        listen 7080 ssl;
+        listen 7443 ssl;
+        server_name sourcegraph.example.com;
         ssl_certificate         sourcegraph.crt;
         ssl_certificate_key     sourcegraph.key;
         ...
@@ -67,7 +66,19 @@ There are a few options:
 For instances that don't yet have certificate from a [globally trusted Certificate Authority (CA) provider](https://en.wikipedia.org/wiki/Certificate_authority#Providers).
 
 **[2. Generate a browser trusted certificate using Let's Encrypt (Certbot)](https://certbot.eff.org/)**<br />
-NGINX supported certificate management tool for programmatically obtaining a globally browser-trusted certificate.
+
+1. On the Certbot homepage, select "Nginx" and the operating system of the machine hosting Sourcegraph.
+1. Follow the instructions to install and run Certbot.
+  1. If there is currently a process (e.g., Sourcegraph via Docker) listening on port 80, you'll
+     need to stop it before running Certbot. E.g.,
+
+     ```
+     docker rm -f $(docker ps | grep sourcegraph/server | awk '{ print $1 }')
+     ```
+  1. When you get to the step describing how to run Certbot, use the "certonly" command.
+  1. When Certbot runs successfully, it will emit the key file `privkey.pem` and cert file
+     `fullchain.pem`. These should be renamed to `sourcegraph.crt` and `sourcegraph.key` if you are
+     using the `nginx.conf` template mentioned in this doc.
 
 **3. Proxy as a service**<br />
 Services such as [Cloudflare](https://www.cloudflare.com/ssl/) can handle the SSL connection from the browser/client, proxying requests to your Sourcegraph instance.
