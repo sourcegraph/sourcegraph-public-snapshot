@@ -359,12 +359,12 @@ func (s *Service) CloseOpenCampaignChangesets(ctx context.Context, c *a8n.Campai
 		HTTPFactory: s.cf,
 	}
 
-	withSources, err := syncer.LoadSources(ctx, cs...)
+	bySource, err := syncer.GroupChangesetsBySource(ctx, cs...)
 	if err != nil {
 		return err
 	}
 
-	for _, s := range withSources {
+	for _, s := range bySource {
 		for _, c := range s.Changesets {
 			if err := s.CloseChangeset(ctx, c); err != nil {
 				return err
@@ -372,7 +372,7 @@ func (s *Service) CloseOpenCampaignChangesets(ctx context.Context, c *a8n.Campai
 		}
 	}
 
-	return syncer.SyncChangesetsWithSources(ctx, cs, withSources)
+	return syncer.SyncChangesetsWithSources(ctx, bySource)
 }
 
 func selectChangesets(cs []*a8n.Changeset, predicate func(*a8n.Changeset) bool) []*a8n.Changeset {

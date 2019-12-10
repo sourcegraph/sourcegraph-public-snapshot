@@ -34,7 +34,7 @@ func (s *ChangesetSyncer) Sync(ctx context.Context) error {
 	return nil
 }
 
-type SourceChangeset struct {
+type SourceChangesets struct {
 	repos.ChangesetSource
 	Changesets []*repos.Changeset
 }
@@ -46,24 +46,29 @@ func (s *ChangesetSyncer) SyncChangesets(ctx context.Context, cs ...*a8n.Changes
 		return nil
 	}
 
-	withSources, err := s.LoadSources(ctx, cs...)
+	bySource, err := s.GroupChangesetsBySource(ctx, cs...)
 	if err != nil {
 		return err
 	}
 
-	return s.SyncChangesetsWithSources(ctx, cs, withSources)
+	return s.SyncChangesetsWithSources(ctx, bySource)
 }
 
 // SyncChangesetsWithSources refreshes the metadata of the given changesets
 // with the given ChangesetSources updates them in the database.
-func (s *ChangesetSyncer) SyncChangesetsWithSources(ctx context.Context, cs []*a8n.Changeset, withSources []*SourceChangeset) (err error) {
-	var events []*a8n.ChangesetEvent
-	for _, s := range withSources {
+func (s *ChangesetSyncer) SyncChangesetsWithSources(ctx context.Context, bySource []*SourceChangesets) (err error) {
+	var (
+		events []*a8n.ChangesetEvent
+		cs     []*a8n.Changeset
+	)
+
+	for _, s := range bySource {
 		if err := s.LoadChangesets(ctx, s.Changesets...); err != nil {
 			return err
 		}
 		for _, c := range s.Changesets {
 			events = append(events, c.Events()...)
+			cs = append(cs, c.Changeset)
 		}
 	}
 
@@ -80,7 +85,7 @@ func (s *ChangesetSyncer) SyncChangesetsWithSources(ctx context.Context, cs []*a
 	return tx.UpsertChangesetEvents(ctx, events...)
 }
 
-func (s *ChangesetSyncer) LoadSources(ctx context.Context, cs ...*a8n.Changeset) ([]*SourceChangeset, error) {
+func (s *ChangesetSyncer) GroupChangesetsBySource(ctx context.Context, cs ...*a8n.Changeset) ([]*SourceChangesets, error) {
 	var repoIDs []uint32
 	repoSet := map[uint32]*repos.Repo{}
 
@@ -124,7 +129,7 @@ func (s *ChangesetSyncer) LoadSources(ctx context.Context, cs ...*a8n.Changeset)
 		}
 	}
 
-	bySource := make(map[int64]*SourceChangeset, len(es))
+	bySource := make(map[int64]*SourceChangesets, len(es))
 	for _, e := range es {
 		src, err := repos.NewSource(e, s.HTTPFactory)
 		if err != nil {
@@ -136,7 +141,7 @@ func (s *ChangesetSyncer) LoadSources(ctx context.Context, cs ...*a8n.Changeset)
 			return nil, errors.Errorf("unsupported repo type %q", e.Kind)
 		}
 
-		bySource[e.ID] = &SourceChangeset{ChangesetSource: css}
+		bySource[e.ID] = &SourceChangesets{ChangesetSource: css}
 	}
 
 	for _, c := range cs {
@@ -151,7 +156,7 @@ func (s *ChangesetSyncer) LoadSources(ctx context.Context, cs ...*a8n.Changeset)
 		})
 	}
 
-	res := make([]*SourceChangeset, 0, len(bySource))
+	res := make([]*SourceChangesets, 0, len(bySource))
 	for _, s := range bySource {
 		res = append(res, s)
 	}
