@@ -78,9 +78,9 @@ interface Props extends PatternTypeProps {
     hasGlobalQueryBehavior?: boolean
 
     /**
-     * Toggle if submit events should be emitted, and the `SubmitButton` rendered
+     * Toggle if the `SubmitButton` should not be rendered
      */
-    withSubmit: boolean
+    noSubmitButton?: true
 }
 
 /**
@@ -107,10 +107,6 @@ const noSuggestions: State['suggestions'] = { values: [], cursorPosition: 0 }
 const typingDebounceTime = 300
 
 export class QueryInput extends React.Component<Props, State> {
-    public static defaultProps = {
-        withSubmit: true,
-    }
-
     private componentUpdates = new Subject<Props>()
 
     /** Subscriptions to unsubscribe from on component unmount */
@@ -417,7 +413,7 @@ export class QueryInput extends React.Component<Props, State> {
                         )
                     }}
                 </Downshift>
-                {this.props.withSubmit && <SearchButton />}
+                {!this.props.noSubmitButton && <SearchButton />}
             </Form>
         )
     }
@@ -454,10 +450,6 @@ export class QueryInput extends React.Component<Props, State> {
 
     private onSubmit: React.FormEventHandler = event => {
         this.setShowSuggestions(false)
-        if (!this.props.withSubmit) {
-            event.preventDefault()
-            event.stopPropagation()
-        }
     }
 
     /**
