@@ -2344,14 +2344,16 @@ type GitCommitConnection {
     pageInfo: PageInfo!
 }
 
-# Statistics about a specific language
+# Statistics about a language's usage.
 type LanguageStatistics {
-    # The name of the programming language
-    Name: String!
-    # The total bytes of the language
-    TotalBytes: Float!
-    # The total lines of the language
-    TotalLines: Int!
+    # The name of the language.
+    name: String!
+
+    # The total bytes in the language.
+    totalBytes: Float!
+
+    # The total number of lines in the language.
+    totalLines: Int!
 }
 
 # A Git commit.
