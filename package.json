@@ -12,7 +12,7 @@
   },
   "scripts": {
     "prettier": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --write --list-different --config prettier.config.js",
-    "prettier-check": "npm run prettier -- --write=false",
+    "prettier-check": "yarn -s run prettier --write=false",
     "all:eslint": "dev/foreach-ts-project.sh yarn -s run eslint",
     "all:tslint": "dev/foreach-ts-project.sh yarn -s run tslint",
     "all:stylelint": "yarn --cwd web run stylelint && yarn --cwd shared run stylelint && yarn --cwd browser run stylelint",
