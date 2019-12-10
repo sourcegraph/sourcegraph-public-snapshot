@@ -75,7 +75,7 @@ type Mutation {
         campaign: ID!
         # Whether to close the changesets associated with this campaign on their
         # respective codehosts, where "close" means the appropriate final state
-        # on the codehost (i.e. "declined" on Bitbucket Server).
+        # on the codehost (e.g. "declined" on Bitbucket Server).
         closeChangesets: Boolean = false
     ): Campaign!
 
