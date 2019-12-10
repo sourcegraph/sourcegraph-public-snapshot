@@ -1100,10 +1100,85 @@ func testStore(db *sql.DB) func(*testing.T) {
 			})
 
 			t.Run("List", func(t *testing.T) {
-				for i := 1; i <= len(campaignJobs); i++ {
-					opts := ListCampaignJobsOpts{CampaignPlanID: int64(i)}
+				t.Run("WithCampaignPlanID", func(t *testing.T) {
+					for i := 1; i <= len(campaignJobs); i++ {
+						opts := ListCampaignJobsOpts{CampaignPlanID: int64(i)}
 
-					ts, next, err := s.ListCampaignJobs(ctx, opts)
+						ts, next, err := s.ListCampaignJobs(ctx, opts)
+						if err != nil {
+							t.Fatal(err)
+						}
+
+						if have, want := next, int64(0); have != want {
+							t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+						}
+
+						have, want := ts, campaignJobs[i-1:i]
+						if len(have) != len(want) {
+							t.Fatalf("listed %d campaignJobs, want: %d", len(have), len(want))
+						}
+
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatalf("opts: %+v, diff: %s", opts, diff)
+						}
+					}
+				})
+
+				t.Run("WithPositiveLimit", func(t *testing.T) {
+					for i := 1; i <= len(campaignJobs); i++ {
+						cs, next, err := s.ListCampaignJobs(ctx, ListCampaignJobsOpts{Limit: i})
+						if err != nil {
+							t.Fatal(err)
+						}
+
+						{
+							have, want := next, int64(0)
+							if i < len(campaignJobs) {
+								want = campaignJobs[i].ID
+							}
+
+							if have != want {
+								t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
+							}
+						}
+
+						{
+							have, want := cs, campaignJobs[:i]
+							if len(have) != len(want) {
+								t.Fatalf("listed %d campaignJobs, want: %d", len(have), len(want))
+							}
+
+							if diff := cmp.Diff(have, want); diff != "" {
+								t.Fatal(diff)
+							}
+						}
+					}
+				})
+
+				t.Run("WithNegativeLimitToListAll", func(t *testing.T) {
+					cs, next, err := s.ListCampaignJobs(ctx, ListCampaignJobsOpts{Limit: -1})
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if have, want := next, int64(0); have != want {
+						t.Fatalf("have next %v, want %v", have, want)
+					}
+
+					have, want := cs, campaignJobs
+					if len(have) != len(want) {
+						t.Fatalf("listed %d campaignJobs, want: %d", len(have), len(want))
+					}
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
+					}
+				})
+
+				t.Run("EmptyResultListingAll", func(t *testing.T) {
+					opts := ListCampaignJobsOpts{CampaignPlanID: 99999, Limit: -1}
+
+					js, next, err := s.ListCampaignJobs(ctx, opts)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -1112,65 +1187,33 @@ func testStore(db *sql.DB) func(*testing.T) {
 						t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
 					}
 
-					have, want := ts, campaignJobs[i-1:i]
-					if len(have) != len(want) {
-						t.Fatalf("listed %d campaignJobs, want: %d", len(have), len(want))
+					if len(js) != 0 {
+						t.Fatalf("listed %d jobs, want: %d", len(js), 0)
 					}
+				})
 
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatalf("opts: %+v, diff: %s", opts, diff)
-					}
-				}
-
-				for i := 1; i <= len(campaignJobs); i++ {
-					cs, next, err := s.ListCampaignJobs(ctx, ListCampaignJobsOpts{Limit: i})
-					if err != nil {
-						t.Fatal(err)
-					}
-
+				t.Run("WithCursor", func(t *testing.T) {
 					{
-						have, want := next, int64(0)
-						if i < len(campaignJobs) {
-							want = campaignJobs[i].ID
-						}
+						var cursor int64
+						for i := 1; i <= len(campaignJobs); i++ {
+							opts := ListCampaignJobsOpts{Cursor: cursor, Limit: 1}
+							have, next, err := s.ListCampaignJobs(ctx, opts)
+							if err != nil {
+								t.Fatal(err)
+							}
 
-						if have != want {
-							t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
-						}
-					}
+							want := campaignJobs[i-1 : i]
+							if diff := cmp.Diff(have, want); diff != "" {
+								t.Fatalf("opts: %+v, diff: %s", opts, diff)
+							}
 
-					{
-						have, want := cs, campaignJobs[:i]
-						if len(have) != len(want) {
-							t.Fatalf("listed %d campaignJobs, want: %d", len(have), len(want))
-						}
-
-						if diff := cmp.Diff(have, want); diff != "" {
-							t.Fatal(diff)
+							cursor = next
 						}
 					}
-				}
-
-				{
-					var cursor int64
-					for i := 1; i <= len(campaignJobs); i++ {
-						opts := ListCampaignJobsOpts{Cursor: cursor, Limit: 1}
-						have, next, err := s.ListCampaignJobs(ctx, opts)
-						if err != nil {
-							t.Fatal(err)
-						}
-
-						want := campaignJobs[i-1 : i]
-						if diff := cmp.Diff(have, want); diff != "" {
-							t.Fatalf("opts: %+v, diff: %s", opts, diff)
-						}
-
-						cursor = next
-					}
-				}
+				})
 			})
 
-			t.Run("Listing and Couting OnlyFinished", func(t *testing.T) {
+			t.Run("Listing and Counting OnlyFinished", func(t *testing.T) {
 				listOpts := ListCampaignJobsOpts{OnlyFinished: true}
 				countOpts := CountCampaignJobsOpts{OnlyFinished: true}
 
