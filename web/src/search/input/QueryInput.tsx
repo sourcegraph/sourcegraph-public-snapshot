@@ -80,7 +80,7 @@ interface Props extends PatternTypeProps {
     /**
      * Toggle if submit events should be emitted, and the `SubmitButton` rendered
      */
-    withSubmit?: boolean
+    withSubmit: boolean
 }
 
 /**
