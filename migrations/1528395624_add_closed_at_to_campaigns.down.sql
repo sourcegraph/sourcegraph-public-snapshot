@@ -1,5 +1,5 @@
 BEGIN;
 
-ALTER TABLE campaigns DROP COLUMN closed_at;
+ALTER TABLE campaigns DROP COLUMN IF EXISTS closed_at;
 
 COMMIT;
