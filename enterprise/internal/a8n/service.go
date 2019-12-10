@@ -377,6 +377,12 @@ func (s *Service) CloseOpenCampaignChangesets(ctx context.Context, c *a8n.Campai
 		return errs
 	}
 
+	// Here we need to sync the just-closed changesets (even though
+	// CloseChangesets updates the given Changesets too), because closing a
+	// Changeset often produces a ChangesetEvent on the codehost and if we were
+	// to close the Changesets and not update the events (which is what
+	// SyncChangesetsWithSources does) our burndown chart will be outdated
+	// until the next run of a8n.Syncer.
 	return syncer.SyncChangesetsWithSources(ctx, bySource)
 }
 

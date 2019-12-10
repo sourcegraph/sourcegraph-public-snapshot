@@ -34,6 +34,8 @@ func (s *ChangesetSyncer) Sync(ctx context.Context) error {
 	return nil
 }
 
+// A SourceChangesets groups *repos.Changesets together with the
+// repos.ChangesetSource that can be used to modify the changesets.
 type SourceChangesets struct {
 	repos.ChangesetSource
 	Changesets []*repos.Changeset
@@ -85,6 +87,9 @@ func (s *ChangesetSyncer) SyncChangesetsWithSources(ctx context.Context, bySourc
 	return tx.UpsertChangesetEvents(ctx, events...)
 }
 
+// GroupChangesetsBySource returns a slice of SourceChangesets in which the
+// given *a8n.Changesets are grouped together as repos.Changesets with the
+// repos.Source that can modify them.
 func (s *ChangesetSyncer) GroupChangesetsBySource(ctx context.Context, cs ...*a8n.Changeset) ([]*SourceChangesets, error) {
 	var repoIDs []uint32
 	repoSet := map[uint32]*repos.Repo{}
