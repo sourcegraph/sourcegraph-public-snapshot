@@ -10,17 +10,15 @@ import { addTags, logAndTraceCall, TracingContext } from '../../shared/tracing'
 import { Backend, ReferencePaginationCursor } from '../backend/backend'
 import { checkSchema, ParamSchema } from 'express-validator'
 import { encodeCursor } from '../pagination/cursor'
-import { enqueue } from '../../shared/queue/queue'
 import { Logger } from 'winston'
 import { lsp } from 'lsif-protocol'
 import { nextLink } from '../pagination/link'
 import { pipeline as _pipeline } from 'stream'
 import { promisify } from 'util'
-import { Queue } from 'bull'
 import { Span, Tracer } from 'opentracing'
-import { waitForJob } from '../jobs/blocking'
 import { wrap } from 'async-middleware'
 import { extractLimitOffset } from '../pagination/limit-offset'
+import { UploadsManager } from '../../shared/uploads/uploads'
 import { InternalLocation } from '../backend/database'
 
 const pipeline = promisify(_pipeline)
@@ -29,13 +27,13 @@ const pipeline = promisify(_pipeline)
  * Create a router containing the LSIF upload and query endpoints.
  *
  * @param backend The backend instance.
- * @param queue The queue containing LSIF jobs.
+ * @param uploadsManager The uploads manager instance.
  * @param logger The logger instance.
  * @param tracer The tracer instance.
  */
 export function createLsifRouter(
     backend: Backend,
-    queue: Queue,
+    uploadsManager: UploadsManager,
     logger: Logger,
     tracer: Tracer | undefined
 ): express.Router {
@@ -95,21 +93,23 @@ export function createLsifRouter(
                 const output = fs.createWriteStream(filename)
                 await logAndTraceCall(ctx, 'Uploading dump', () => pipeline(req, output))
 
-                // Enqueue convert job
-                logger.debug('Enqueueing convert job', { repository, commit, root })
-                const args = { repository, commit, root, filename }
-                const job = await enqueue(queue, 'convert', args, {}, tracer, ctx.span)
+                // Add upload record
+                const upload = await uploadsManager.enqueue({ repository, commit, root, filename }, tracer, ctx.span)
 
-                if (blocking && (await waitForJob(job, maxWait))) {
-                    // Job succeeded while blocked, send success
-                    res.status(200).send({ id: job.id })
-                    return
+                if (blocking) {
+                    logger.debug('Blocking on upload conversion', { repository, commit, root })
+
+                    if (await uploadsManager.waitForUploadToConvert(upload.id, maxWait)) {
+                        // Upload converted successfully while blocked, send success
+                        res.status(200).send({ id: upload.id })
+                        return
+                    }
                 }
 
-                // Job will complete asynchronously, send an accepted response with
-                // the job id so that the client can continue to track the progress
+                // Upload conversion will complete asynchronously, send an accepted response
+                // with the upload id so that the client can continue to track the progress
                 // asynchronously.
-                res.status(202).send({ id: job.id })
+                res.status(202).send({ id: upload.id })
             }
         )
     )
