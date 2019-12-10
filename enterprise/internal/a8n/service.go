@@ -110,7 +110,7 @@ func (s *Service) RunChangesetJobs(ctx context.Context, c *a8n.Campaign) error {
 	}()
 	jobs, _, err := s.store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
 		CampaignID: c.ID,
-		Limit:      10000,
+		Limit:      -1,
 	})
 	if err != nil {
 		return err
