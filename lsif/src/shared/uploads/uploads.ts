@@ -145,12 +145,14 @@ export class UploadsManager {
             tracer.inject(span, FORMAT_TEXT_MAP, tracing)
         }
 
-        const upload = new xrepoModels.LsifUpload()
-        upload.repository = repository
-        upload.commit = commit
-        upload.root = root
-        upload.filename = filename
-        upload.tracingContext = JSON.stringify(tracing)
+        const upload = new xrepoModels.LsifUpload({
+            repository,
+            commit,
+            root,
+            filename,
+            tracingContext: JSON.stringify(tracing),
+        })
+
         await instrumentQuery(() => this.connection.createEntityManager().save(upload))
 
         return upload

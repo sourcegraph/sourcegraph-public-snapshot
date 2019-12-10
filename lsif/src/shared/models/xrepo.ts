@@ -15,6 +15,26 @@ export type LsifUploadState = 'queued' | 'completed' | 'errored' | 'processing'
  */
 @Entity({ name: 'lsif_uploads' })
 export class LsifUpload {
+    constructor({
+        repository,
+        commit,
+        root,
+        filename,
+        tracingContext,
+    }: {
+        repository: string
+        commit: string
+        root: string
+        filename: string
+        tracingContext: string
+    }) {
+        this.repository = repository
+        this.commit = commit
+        this.root = root
+        this.filename = filename
+        this.tracingContext = tracingContext
+    }
+
     /**
      * The number of model instances that can be inserted at once.
      */
