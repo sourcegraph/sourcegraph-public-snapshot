@@ -77,7 +77,7 @@ func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign) error {
 
 	jobs, _, err := tx.ListCampaignJobs(ctx, ListCampaignJobsOpts{
 		CampaignPlanID: c.CampaignPlanID,
-		Limit:          10000,
+		Limit:          -1,
 		OnlyFinished:   true,
 		OnlyWithDiff:   true,
 	})
