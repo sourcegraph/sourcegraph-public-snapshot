@@ -869,14 +869,13 @@ func alertOnSearchLimit(resultTypes []string, args *search.Args) ([]string, *sea
 // alertOnError filters certain errors from multiErr and converts them into an
 // alert. We support surfacing only one alert at a time, so the last converted error
 // will be surfaced in the alert.
-func alertOnError(multiErr *multierror.Error, alert *searchAlert) (*multierror.Error, *searchAlert) {
-	var newMultiErr *multierror.Error
+func alertOnError(multiErr *multierror.Error) (newMultiErr *multierror.Error, alert *searchAlert) {
 	if multiErr != nil {
 		for _, err := range multiErr.Errors {
 			if strings.Contains(err.Error(), "Assert_failure zip") {
 				alert = &searchAlert{
-					title:       fmt.Sprintf("Repository too large for structural search"),
-					description: fmt.Sprintf("One repository is too large to perform structural search. This is a temporary restriction that will be removed in the future. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/7133"),
+					title:       "Repository too large for structural search",
+					description: "One repository is too large to perform structural search. This is a temporary restriction that will be removed in the future. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/7133",
 				}
 			} else {
 				newMultiErr = multierror.Append(newMultiErr, err)
@@ -1172,8 +1171,10 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 
 	tr.LazyPrintf("results=%d limitHit=%v cloning=%d missing=%d timedout=%d", len(results), common.limitHit, len(common.cloning), len(common.missing), len(common.timedout))
 
-	// Convert some errors to alerts. It is OK if the alert is overwritten by subsequent code (overwriting alert means the new alert takes higher precedence).
-	multiErr, alert = alertOnError(multiErr, alert)
+	multiErr, newAlert := alertOnError(multiErr)
+	if newAlert != nil {
+		alert = newAlert // takes higher precedence
+	}
 
 	if len(missingRepoRevs) > 0 {
 		alert = r.alertForMissingRepoRevs(missingRepoRevs)
