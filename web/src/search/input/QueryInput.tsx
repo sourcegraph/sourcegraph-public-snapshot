@@ -36,8 +36,6 @@ import { isDefined } from '../../../../shared/src/util/types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { once } from 'lodash'
 import { dedupeWhitespace } from '../../../../shared/src/util/strings'
-import { Form } from '../../components/Form'
-import { SearchButton } from './SearchButton'
 
 /**
  * The query input field is clobbered and updated to contain this subject's values, as
@@ -76,11 +74,6 @@ interface Props extends PatternTypeProps {
      * At most one query input per page should have this behavior.
      */
     hasGlobalQueryBehavior?: boolean
-
-    /**
-     * Toggle if the `SubmitButton` should not be rendered
-     */
-    noSubmitButton?: true
 }
 
 /**
@@ -120,6 +113,9 @@ export class QueryInput extends React.Component<Props, State> {
 
     /** Only used for selection and focus management */
     private inputElement = React.createRef<HTMLInputElement>()
+
+    /** Used for scrolling suggestions into view while scrolling with keyboard */
+    private containerElement = React.createRef<HTMLDivElement>()
 
     public state: State = {
         showSuggestions: false,
@@ -343,16 +339,16 @@ export class QueryInput extends React.Component<Props, State> {
             cursorPosition: this.state.suggestions.cursorPosition,
         })
         return (
-            <Form onSubmit={this.onSubmit} className="query-input2__form">
-                <Downshift
-                    scrollIntoView={this.downshiftScrollIntoView}
-                    onSelect={this.onSuggestionSelect}
-                    itemToString={this.downshiftItemToString}
-                >
-                    {({ getInputProps, getItemProps, getMenuProps, highlightedIndex }) => {
-                        const { onChange: downshiftChange, onKeyDown } = getInputProps()
-                        return (
-                            <div className="query-input2">
+            <Downshift
+                scrollIntoView={this.downshiftScrollIntoView}
+                onSelect={this.onSuggestionSelect}
+                itemToString={this.downshiftItemToString}
+            >
+                {({ getInputProps, getItemProps, getMenuProps, highlightedIndex }) => {
+                    const { onChange: downshiftChange, onKeyDown } = getInputProps()
+                    return (
+                        <div className="query-input2">
+                            <div ref={this.containerElement}>
                                 <input
                                     onFocus={this.onInputFocus}
                                     onBlur={this.onInputBlur}
@@ -410,11 +406,10 @@ export class QueryInput extends React.Component<Props, State> {
                                     navbarSearchQuery={this.props.value.query}
                                 />
                             </div>
-                        )
-                    }}
-                </Downshift>
-                {!this.props.noSubmitButton && <SearchButton />}
-            </Form>
+                        </div>
+                    )
+                }}
+            </Downshift>
         )
     }
 
@@ -422,6 +417,10 @@ export class QueryInput extends React.Component<Props, State> {
 
     private downshiftScrollIntoView = (node: HTMLElement, menuNode: HTMLElement): void => {
         scrollIntoView(menuNode, node)
+    }
+
+    private setShowSuggestions = (showSuggestions: boolean): void => {
+        this.setState({ showSuggestions }, () => !showSuggestions && this.suggestionsHidden.next())
     }
 
     private onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
@@ -434,10 +433,9 @@ export class QueryInput extends React.Component<Props, State> {
                 },
             })
         }
-    }
-
-    private setShowSuggestions(showSuggestions: boolean): void {
-        this.setState({ showSuggestions }, () => !showSuggestions && this.suggestionsHidden.next())
+        if (event.key === 'Enter') {
+            this.setShowSuggestions(false)
+        }
     }
 
     private onInputBlur = (): void => {
@@ -446,10 +444,6 @@ export class QueryInput extends React.Component<Props, State> {
 
     private onInputFocus = (): void => {
         this.setShowSuggestions(true)
-    }
-
-    private onSubmit: React.FormEventHandler = () => {
-        this.setShowSuggestions(false)
     }
 
     /**

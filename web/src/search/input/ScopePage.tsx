@@ -17,6 +17,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { fetchReposByQuery } from '../backend'
 import { submitSearch, QueryState } from '../helpers'
 import { QueryInput, queryUpdates } from './QueryInput'
+import { SearchButton } from './SearchButton'
 import { PatternTypeProps } from '..'
 import { ErrorAlert } from '../../components/alerts'
 
@@ -167,6 +168,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                                 history={this.props.history}
                                 placeholder="Search in this scope..."
                             />
+                            <SearchButton />
                         </Form>
                     </section>
                     <PageTitle title={this.state.name} />

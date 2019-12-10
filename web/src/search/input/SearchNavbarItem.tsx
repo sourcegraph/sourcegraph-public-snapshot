@@ -4,6 +4,7 @@ import { ActivationProps } from '../../../../shared/src/components/activation/Ac
 import { Form } from '../../components/Form'
 import { submitSearch, QueryState } from '../helpers'
 import { QueryInput } from './QueryInput'
+import { SearchButton } from './SearchButton'
 import { PatternTypeProps } from '..'
 
 interface Props extends ActivationProps, PatternTypeProps {
@@ -50,6 +51,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = ({
                 patternType={patternType}
                 togglePatternType={togglePatternType}
             />
+            <SearchButton />
         </Form>
     )
 }

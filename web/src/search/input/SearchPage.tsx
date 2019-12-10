@@ -15,6 +15,7 @@ import { submitSearch, QueryState } from '../helpers'
 import { QuickLinks } from '../QuickLinks'
 import { QueryBuilder } from './QueryBuilder'
 import { QueryInput } from './QueryInput'
+import { SearchButton } from './SearchButton'
 import { ISearchScope, SearchFilterChips } from './SearchFilterChips'
 import { ThemePreferenceProps } from '../theme'
 
@@ -84,6 +85,7 @@ export class SearchPage extends React.Component<Props, State> {
                             patternType={this.props.patternType}
                             togglePatternType={this.props.togglePatternType}
                         />
+                        <SearchButton />
                     </div>
                     {hasScopes ? (
                         <>
