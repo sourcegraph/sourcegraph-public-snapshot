@@ -57,7 +57,8 @@ type RetryCampaignArgs struct {
 }
 
 type CloseCampaignArgs struct {
-	Campaign graphql.ID
+	Campaign        graphql.ID
+	CloseChangesets bool
 }
 
 type CreateChangesetsArgs struct {

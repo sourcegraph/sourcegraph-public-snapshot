@@ -68,7 +68,16 @@ type Mutation {
     # Deletes a campaign.
     deleteCampaign(campaign: ID!): EmptyResponse
     # Closes a campaign.
-    closeCampaign(campaign: ID!): Campaign!
+    # Closing a campaign sets the Campaign's ClosedAt timestamp to the current
+    # time and, if closeChangesets = true, closes associated changesets on the
+    # codehosts.
+    closeCampaign(
+      campaign: ID!
+      # Whether to close the changesets associated with this campaign on their
+      # respective codehosts, where "close" means the appropriate final state
+      # on the codehost (i.e. "declined" on Bitbucket Server).
+      closeChangesets: Boolean = false
+    ): Campaign!
 
     # Updates the user profile information for the user with the given ID.
     #
