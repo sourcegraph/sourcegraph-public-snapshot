@@ -30,13 +30,19 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
+## 3.10.4
+
+### Fixed
+
+- An issue where diff/commit searches that would run over more than 50 repositories would incorrectly display a timeout error instead of the correct error suggesting users scope their query to less repositories. [#7090](https://github.com/sourcegraph/sourcegraph/issues/7090)
+
 ## 3.10.3
 
 ### Fixed
 
-- Fixed a critical regression in 3.10.2 which caused diff, commit, and repository searches to timeout. [#7103](https://github.com/sourcegraph/sourcegraph/pull/7103)
-- Fixed a critical regression in 3.10.2 which caused "No results" to appear frequently on pages with search results. [#7095](https://github.com/sourcegraph/sourcegraph/pull/7095)
-- Fixed an issue where the built-in Grafana Searcher dashboard would show duplicate success/error metrics. [#7078](https://github.com/sourcegraph/sourcegraph/pull/7078)
+- A critical regression in 3.10.2 which caused diff, commit, and repository searches to timeout. [#7090](https://github.com/sourcegraph/sourcegraph/issues/7090)
+- A critical regression in 3.10.2 which caused "No results" to appear frequently on pages with search results. [#7095](https://github.com/sourcegraph/sourcegraph/pull/7095)
+- An issue where the built-in Grafana Searcher dashboard would show duplicate success/error metrics. [#7078](https://github.com/sourcegraph/sourcegraph/pull/7078)
 
 ## 3.10.2
 
