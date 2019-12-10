@@ -17,6 +17,7 @@ import (
 	"github.com/neelance/parallel"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 var (
@@ -51,23 +52,27 @@ func (h HandlerWithErrorReturn) ServeHTTP(w http.ResponseWriter, r *http.Request
 	defer func() {
 		if e := recover(); e != nil {
 			log15.Error("panic in HandlerWithErrorReturn.Handler", "error", e)
+
+			if err, ok := e.(error); ok {
+				trace.SetRequestErrorCause(r.Context(), err)
+			}
+
 			stack := make([]byte, 1024*1024)
 			n := runtime.Stack(stack, false)
 			stack = stack[:n]
-			io.WriteString(os.Stderr, "\nstack trace:\n")
-			os.Stderr.Write(stack)
+			_, _ = io.WriteString(os.Stderr, "\nstack trace:\n")
+			_, _ = os.Stderr.Write(stack)
 
 			err := fmt.Errorf("panic: %v\n\nstack trace:\n%s", e, stack)
 			status := http.StatusInternalServerError
-			reportError(r, status, err, true)
 			h.Error(w, r, status, err) // No need to handle a possible panic in h.Error because it's required not to panic.
 		}
 	}()
 
 	err := collapseMultipleErrors(h.Handler(w, r))
 	if err != nil {
+		trace.SetRequestErrorCause(r.Context(), err)
 		status := httpErrCode(r, err)
-		reportError(r, status, err, false)
 		h.Error(w, r, status, err)
 	}
 }

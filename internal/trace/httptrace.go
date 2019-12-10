@@ -13,7 +13,8 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/felixge/httpsnoop"
-	raven "github.com/getsentry/raven-go"
+	"github.com/getsentry/sentry-go"
+	sentryhttp "github.com/getsentry/sentry-go/http"
 	"github.com/gorilla/mux"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -49,34 +50,47 @@ var requestHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 }, metricLabels)
 
 func init() {
-	if err := raven.SetDSN(os.Getenv("SENTRY_DSN_BACKEND")); err != nil {
-		log15.Error("sentry.dsn", "error", err)
-	}
-
-	raven.SetRelease(version.Version())
-	raven.SetTagsContext(map[string]string{
-		"service": filepath.Base(os.Args[0]),
-	})
-
 	prometheus.MustRegister(requestDuration)
 	prometheus.MustRegister(requestHeartbeat)
 
-	go func() {
-		conf.Watch(func() {
-			if conf.Get().Critical.Log == nil {
-				return
-			}
+	initSentry()
+}
 
-			if conf.Get().Critical.Log.Sentry == nil {
-				return
-			}
+func initSentry() {
+	// Include service name as a tag in every event
+	service := filepath.Base(os.Args[0])
+	sentry.AddGlobalEventProcessor(func(event *sentry.Event, hint *sentry.EventHint) *sentry.Event {
+		if event.Tags == nil {
+			event.Tags = map[string]string{}
+		}
+		event.Tags["service"] = service
+		return event
+	})
 
-			// An empty dsn value is ignored: not an error.
-			if err := raven.SetDSN(conf.Get().Critical.Log.Sentry.Dsn); err != nil {
-				log15.Error("sentry.dsn", "error", err)
-			}
-		})
-	}()
+	opts := sentry.ClientOptions{
+		Dsn:     "does not match empty or DSN to ensure we sentry.Init once",
+		Release: version.Version(),
+	}
+
+	go conf.Watch(func() {
+		dsn := ""
+		c := conf.Get()
+		if c.Critical.Log != nil && c.Critical.Log.Sentry != nil {
+			dsn = c.Critical.Log.Sentry.Dsn
+		}
+		if dsn == "" {
+			dsn = os.Getenv("SENTRY_DSN_BACKEND")
+		}
+
+		if dsn == opts.Dsn {
+			return
+		}
+
+		opts.Dsn = dsn
+		if err := sentry.Init(opts); err != nil {
+			log15.Error("sentry.init", "error", err)
+		}
+	})
 }
 
 // Middleware captures and exports metrics to Prometheus, etc.
@@ -84,7 +98,7 @@ func init() {
 // 🚨 SECURITY: This handler is served to all clients, even on private servers to clients who have
 // not authenticated. It must not reveal any sensitive information.
 func Middleware(next http.Handler) http.Handler {
-	return raven.Recoverer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+	h := func(rw http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		wireContext, err := opentracing.GlobalTracer().Extract(
@@ -165,20 +179,27 @@ func Middleware(next http.Handler) http.Handler {
 			if requestErrorCause == nil {
 				requestErrorCause = &httpErr{status: m.Code, method: r.Method, path: r.URL.Path}
 			}
-			raven.CaptureError(requestErrorCause, map[string]string{
-				"code":          strconv.Itoa(m.Code),
-				"method":        r.Method,
-				"url":           r.URL.String(),
-				"routename":     routeName,
-				"userAgent":     r.UserAgent(),
-				"user":          fmt.Sprintf("%d", userID),
-				"xForwardedFor": r.Header.Get("X-Forwarded-For"),
-				"written":       fmt.Sprintf("%d", m.Written),
-				"duration":      m.Duration.String(),
-				"graphql_error": strconv.FormatBool(gqlErr),
+			sentry.ConfigureScope(func(scope *sentry.Scope) {
+				scope.SetUser(sentry.User{
+					ID: strconv.Itoa(int(userID)),
+				})
+				scope.SetExtras(map[string]interface{}{
+					"written":  m.Written,
+					"duration": m.Duration.String(),
+				})
+				scope.SetTags(map[string]string{
+					"code":          strconv.Itoa(m.Code),
+					"routename":     routeName,
+					"userAgent":     r.UserAgent(),
+					"xForwardedFor": r.Header.Get("X-Forwarded-For"),
+					"graphql_error": strconv.FormatBool(gqlErr),
+				})
+				sentry.CaptureException(requestErrorCause)
 			})
 		}
-	}))
+	}
+
+	return sentryhttp.New(sentryhttp.Options{}).HandleFunc(h)
 }
 
 func TraceRoute(next http.Handler) http.Handler {
