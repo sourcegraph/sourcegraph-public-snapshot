@@ -62,15 +62,12 @@ http {
 
 There are a few options:
 
-**[1. Generate a self-signed certificate](ssl_https_self_signed_cert_nginx.md)**<br />
-For instances that don't yet have certificate from a [globally trusted Certificate Authority (CA) provider](https://en.wikipedia.org/wiki/Certificate_authority#Providers).
-
-**[2. Generate a browser trusted certificate using Let's Encrypt (Certbot)](https://certbot.eff.org/)**<br />
+**[1. Generate a browser-trusted certificate using Let's Encrypt (Certbot)](https://certbot.eff.org/)**<br />
 
 1. On the Certbot homepage, select "Nginx" and the operating system of the machine hosting Sourcegraph.
 1. Follow the instructions to install and run Certbot.
-  1. If there is currently a process (e.g., Sourcegraph via Docker) listening on port 80, you'll
-     need to stop it before running Certbot. E.g.,
+  1. If there is currently a process (e.g., Sourcegraph) listening on port 80, you'll
+     need to stop it before running Certbot:
 
      ```
      docker rm -f $(docker ps | grep sourcegraph/server | awk '{ print $1 }')
@@ -80,8 +77,17 @@ For instances that don't yet have certificate from a [globally trusted Certifica
      `fullchain.pem`. These should be renamed to `sourcegraph.crt` and `sourcegraph.key` if you are
      using the `nginx.conf` template mentioned in this doc.
 
-**3. Proxy as a service**<br />
-Services such as [Cloudflare](https://www.cloudflare.com/ssl/) can handle the SSL connection from the browser/client, proxying requests to your Sourcegraph instance.
+**[2. Generate a self-signed certificate](ssl_https_self_signed_cert_nginx.md)**<br />
+
+For instances that don't yet have a certificate from a [globally trusted Certificate Authority (CA) provider](https://en.wikipedia.org/wiki/Certificate_authority#Providers).
+
+**3. Use your CDN's HTTPS proxy feature**<br />
+
+Some CDNs such as
+[Cloudflare](https://support.cloudflare.com/hc/en-us/articles/200170416-End-to-end-HTTPS-with-Cloudflare-Part-3-SSL-options)
+can handle the HTTPS connection from the user's browser while allowing the underlying service to
+continue serving HTTP (or HTTPS with a self-signed certificate). View your CDN's documentation for
+more details.
 
 ## Redirect to external HTTPS URL
 
