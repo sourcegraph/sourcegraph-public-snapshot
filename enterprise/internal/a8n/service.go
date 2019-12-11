@@ -304,7 +304,14 @@ func (s *Service) runChangesetJob(
 }
 
 // CloseCampaign closes the Campaign with the given ID if it has not been closed yet.
-func (s *Service) CloseCampaign(ctx context.Context, id int64) (campaign *a8n.Campaign, err error) {
+func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets bool) (campaign *a8n.Campaign, err error) {
+	traceTitle := fmt.Sprintf("campaign: %d, closeChangesets: %t", id, closeChangesets)
+	tr, ctx := trace.New(ctx, "service.CloseCampaign", traceTitle)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
 		return nil, err
@@ -325,6 +332,27 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64) (campaign *a8n.Ca
 
 	if err = tx.UpdateCampaign(ctx, campaign); err != nil {
 		return nil, err
+	}
+
+	if closeChangesets {
+		go func() {
+			ctx := trace.ContextWithTrace(context.Background(), tr)
+
+			cs, _, err := s.store.ListChangesets(ctx, ListChangesetsOpts{
+				CampaignID: campaign.ID,
+				Limit:      -1,
+			})
+			if err != nil {
+				log15.Error("ListChangesets", "err", err)
+				return
+			}
+
+			// Close only the changesets that are open
+			err = s.CloseOpenChangesets(ctx, cs)
+			if err != nil {
+				log15.Error("CloseCampaignChangesets", "err", err)
+			}
+		}()
 	}
 
 	return campaign, nil
