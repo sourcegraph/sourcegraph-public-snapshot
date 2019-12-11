@@ -145,19 +145,9 @@ func (s *Service) runChangesetJob(
 		return nil
 	}
 
-	// set finishedAt to null, this marks it as pending again
-	job.FinishedAt = time.Time{}
-
-	if e := s.store.UpdateChangesetJob(ctx, job); e != nil {
-		return e
-	}
-
 	defer func() {
 		if err != nil {
 			job.Error = err.Error()
-		} else {
-			// Remove pre-existing error on successful completion
-			job.Error = ""
 		}
 		job.FinishedAt = s.clock()
 

@@ -302,6 +302,11 @@ func (r *Resolver) RetryCampaign(ctx context.Context, args *graphqlbackend.Retry
 		return nil, errors.Wrap(err, "getting campaign")
 	}
 
+	err = r.store.ResetFailedChangesetJobs(ctx, campaign.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "resetting failed changeset jobs")
+	}
+
 	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
 	go func() {
 		ctx := trace.ContextWithTrace(context.Background(), tr)
