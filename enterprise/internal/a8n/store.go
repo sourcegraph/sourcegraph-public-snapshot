@@ -2135,6 +2135,26 @@ func listChangesetJobsQuery(opts *ListChangesetJobsOpts) *sqlf.Query {
 	)
 }
 
+// ResetFailedChangesetJobs resets the Error, StartedAt and FinishedAt fields
+// of the ChangesetJobs belonging to the Campaign with the given ID.
+func (s *Store) ResetFailedChangesetJobs(ctx context.Context, campaignID int64) (err error) {
+	q := sqlf.Sprintf(resetFailedChangesetJobsQueryFmtstr, campaignID)
+
+	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
+		return 0, 1, nil
+	})
+}
+
+var resetFailedChangesetJobsQueryFmtstr = `
+-- source: internal/a8n/store.go:ResetFailedChangesetJobs
+UPDATE changeset_jobs
+SET
+  error = '',
+  started_at = NULL,
+  finished_at = NULL
+WHERE campaign_id = %s
+`
+
 func (s *Store) exec(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
 	_, _, err := s.query(ctx, q, sc)
 	return err

@@ -1959,6 +1959,64 @@ func testStore(db *sql.DB) func(*testing.T) {
 					}
 				}
 			})
+
+			t.Run("ResetFailedChangesetJobs", func(t *testing.T) {
+				campaignID := 9999
+				jobs := []*a8n.ChangesetJob{
+					{StartedAt: now},
+					// completed, no errors
+					{StartedAt: now, FinishedAt: now, ChangesetID: 23},
+					// not completed, error
+					{StartedAt: now, Error: "error1"},
+					// completed, error
+					{StartedAt: now, FinishedAt: now, Error: "error1"},
+					// completed, another error
+					{StartedAt: now, FinishedAt: now, Error: "error2"},
+				}
+
+				mustReset := make(map[int64]bool)
+				for i, j := range jobs {
+					j.CampaignID = int64(campaignID)
+					j.CampaignJobID = int64(i)
+
+					err := s.CreateChangesetJob(ctx, j)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if j.Error != "" && !j.StartedAt.IsZero() && !j.FinishedAt.IsZero() {
+						mustReset[j.ID] = true
+					}
+				}
+
+				err := s.ResetFailedChangesetJobs(ctx, int64(campaignID))
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				have, _, err := s.ListChangesetJobs(ctx, ListChangesetJobsOpts{CampaignID: int64(campaignID)})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if len(have) != len(jobs) {
+					t.Fatalf("wrong number of jobs returned. have=%d, want=%d", len(have), len(jobs))
+				}
+
+				for _, job := range have {
+					if _, ok := mustReset[job.ID]; ok {
+						if job.Error != "" {
+							t.Errorf("job should be reset but has error: %+v", job.Error)
+						}
+						if !job.FinishedAt.IsZero() {
+							t.Errorf("job should be reset but has FinishedAt: %+v", job.FinishedAt)
+						}
+						if !job.StartedAt.IsZero() {
+							t.Errorf("job should be reset but has StartedAt: %+v", job.StartedAt)
+						}
+					}
+				}
+			})
 		})
 	}
 }
