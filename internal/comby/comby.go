@@ -65,6 +65,9 @@ func PipeTo(ctx context.Context, args Args, w io.Writer) (err error) {
 		return errors.New("comby is not installed")
 	}
 
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	rawArgs := rawArgs(args)
 	log15.Info("running comby", "args", strings.Join(rawArgs, " "))
 
