@@ -408,7 +408,7 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*a8n.Changeset) 
 		return err
 	}
 
-	var errs *multierror.Error
+	errs := &multierror.Error{}
 	for _, s := range bySource {
 		for _, c := range s.Changesets {
 			if err := s.CloseChangeset(ctx, c); err != nil {
