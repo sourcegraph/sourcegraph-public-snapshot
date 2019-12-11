@@ -48,12 +48,18 @@ http {
     }
 
     server {
-       ...
+        # Do not remove. The contents of sourcegraph_server.conf can change
+        # between versions and may include improvements to the configuration.
+        include nginx/sourcegraph_server.conf;
+
         listen 7443 ssl;
-        server_name sourcegraph.example.com;
+        server_name sourcegraph.example.com;  # change to your URL
         ssl_certificate         sourcegraph.crt;
         ssl_certificate_key     sourcegraph.key;
-        ...
+
+        location / {
+            ...
+        }
     }
 }
 ```
@@ -70,12 +76,22 @@ There are a few options:
      need to stop it before running Certbot:
 
      ```
-     docker rm -f $(docker ps | grep sourcegraph/server | awk '{ print $1 }')
+     docker stop $(docker ps | grep sourcegraph/server | awk '{ print $1 }')
      ```
-  1. When you get to the step describing how to run Certbot, use the "certonly" command.
+  1. When you get to the step describing how to run Certbot, use the "certonly" command: `sudo certbot certonly --nginx`.
   1. When Certbot runs successfully, it will emit the key file `privkey.pem` and cert file
      `fullchain.pem`. These should be renamed to `sourcegraph.crt` and `sourcegraph.key` if you are
      using the `nginx.conf` template mentioned in this doc.
+  1. Kill the NGINX server that Certbot started: `killall nginx`. Restart Sourcegraph:
+
+     ```
+     docker start $(docker ps -a | grep sourcegraph/server | awk '{ print $1 }')
+     ```
+  1. Now visit your Sourcegraph instance at `https://${YOUR_URL}`. If there are issues, debug by examining the Docker logs:
+
+     ```
+     docker logs $(docker ps | grep sourcegraph/server | awk '{ print $1 }')
+     ```
 
 **[2. Generate a self-signed certificate](ssl_https_self_signed_cert_nginx.md)**<br />
 

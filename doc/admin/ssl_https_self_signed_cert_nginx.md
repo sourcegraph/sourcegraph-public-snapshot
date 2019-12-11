@@ -58,12 +58,18 @@ http {
     }
 
     server {
-       ...
+        # Do not remove. The contents of sourcegraph_server.conf can change
+        # between versions and may include improvements to the configuration.
+        include nginx/sourcegraph_server.conf;
+
         listen 7443 ssl;
-        server_name sourcegraph.example.com;
+        server_name sourcegraph.example.com;  # change to your URL
         ssl_certificate         sourcegraph.crt;
         ssl_certificate_key     sourcegraph.key;
-        ...
+
+        location / {
+            ...
+        }
     }
 }
 ```
