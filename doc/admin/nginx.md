@@ -80,8 +80,8 @@ There are a few options:
      ```
   1. When you get to the step describing how to run Certbot, use the "certonly" command: `sudo certbot certonly --nginx`.
   1. When Certbot runs successfully, it will emit the key file `privkey.pem` and cert file
-     `fullchain.pem`. These should be renamed to `sourcegraph.crt` and `sourcegraph.key` if you are
-     using the `nginx.conf` template mentioned in this doc.
+     `fullchain.pem`. These should be renamed to `sourcegraph.key` and `sourcegraph.crt`,
+     respectively, if you are using the `nginx.conf` template mentioned in this doc.
   1. Kill the NGINX server that Certbot started: `killall nginx`. Restart Sourcegraph:
 
      ```
