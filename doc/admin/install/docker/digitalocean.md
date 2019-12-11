@@ -30,7 +30,7 @@ After initial setup, we recommend you do the following:
   should secure port `2633`, because this serves the Sourcegraph management console. We recommend
   you use [SSH port forwarding](https://help.ubuntu.com/community/SSH/OpenSSH/PortForwarding) to
   access the management console after restricting it.
-* Set up [TLS/SSL](../../nginx#nginx-ssl-https-configuration) in the NGINX configuration.
+* Set up [TLS/SSL](../../nginx.md#nginx-ssl-https-configuration) in the NGINX configuration.
 
 ---
 
