@@ -3,6 +3,7 @@ package comby
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -58,7 +59,7 @@ func rawArgs(args Args) (rawArgs []string) {
 	return rawArgs
 }
 
-func PipeTo(args Args, w io.Writer) (err error) {
+func PipeTo(ctx context.Context, args Args, w io.Writer) (err error) {
 	if !exists() {
 		log15.Error("comby is not installed (it could not be found on the PATH)")
 		return errors.New("comby is not installed")
@@ -67,7 +68,7 @@ func PipeTo(args Args, w io.Writer) (err error) {
 	rawArgs := rawArgs(args)
 	log15.Info("running comby", "args", strings.Join(rawArgs, " "))
 
-	cmd := exec.Command(combyPath, rawArgs...)
+	cmd := exec.CommandContext(ctx, combyPath, rawArgs...)
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -106,13 +107,13 @@ func PipeTo(args Args, w io.Writer) (err error) {
 }
 
 // Matches returns all matches in all files for which comby finds matches.
-func Matches(args Args) (matches []FileMatch, err error) {
+func Matches(ctx context.Context, args Args) (matches []FileMatch, err error) {
 	b := new(bytes.Buffer)
 	w := bufio.NewWriter(b)
 
 	args.MatchOnly = true
 
-	err = PipeTo(args, w)
+	err = PipeTo(ctx, args, w)
 	if err != nil {
 		return nil, err
 	}

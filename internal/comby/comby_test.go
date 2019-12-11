@@ -3,6 +3,7 @@ package comby
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"os"
 	"testing"
 
@@ -14,6 +15,9 @@ func TestMatchesUnmarshalling(t *testing.T) {
 	if os.Getenv("CI") == "" && !exists() {
 		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
 	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	files := map[string]string{
 		"main.go": `package main
@@ -48,7 +52,7 @@ func main() {
 	}
 
 	for _, test := range cases {
-		m, _ := Matches(test.args)
+		m, _ := Matches(ctx, test.args)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -65,6 +69,9 @@ func TestMatchesInZip(t *testing.T) {
 	if os.Getenv("CI") == "" && !exists() {
 		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
 	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	files := map[string]string{
 
@@ -106,7 +113,7 @@ func main() {
 	for _, test := range cases {
 		b := new(bytes.Buffer)
 		w := bufio.NewWriter(b)
-		err := PipeTo(test.args, w)
+		err := PipeTo(ctx, test.args, w)
 		if err != nil {
 			t.Fatal(err)
 		}
