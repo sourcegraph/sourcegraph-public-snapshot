@@ -277,46 +277,9 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 		return nil, err
 	}
 
-	// If we don't have to close the changesets, we can simply delete the
-	// Campaign and return. The triggers in the database will remove the
-	// campaign's ID from the changesets' CampaignIDs.
-	if args.CloseChangesets {
-		err := r.store.DeleteCampaign(ctx, campaignID)
-		return &graphqlbackend.EmptyResponse{}, err
-	}
-
-	// First load the Changesets with the given campaignID, before deleting
-	// the campaign would remove the association.
-	cs, _, err := r.store.ListChangesets(ctx, ee.ListChangesetsOpts{
-		CampaignID: campaignID,
-		Limit:      -1,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	// Remove the association manually, since we'll update the Changesets in
-	// the database, after closing them and we can't update them with an
-	// invalid CampaignID.
-	for _, c := range cs {
-		c.RemoveCampaignID(campaignID)
-	}
-
-	err = r.store.DeleteCampaign(ctx, campaignID)
-	if err != nil {
-		return nil, err
-	}
-
 	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
-	go func() {
-		ctx := trace.ContextWithTrace(context.Background(), tr)
-		err := svc.CloseOpenChangesets(ctx, cs)
-		if err != nil {
-			log15.Error("CloseCampaignChangesets", "err", err)
-		}
-	}()
-
-	return &graphqlbackend.EmptyResponse{}, nil
+	err = svc.DeleteCampaign(ctx, campaignID, args.CloseChangesets)
+	return &graphqlbackend.EmptyResponse{}, err
 }
 
 func (r *Resolver) RetryCampaign(ctx context.Context, args *graphqlbackend.RetryCampaignArgs) (graphqlbackend.CampaignResolver, error) {

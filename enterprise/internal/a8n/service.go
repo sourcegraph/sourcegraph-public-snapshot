@@ -330,6 +330,58 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64) (campaign *a8n.Ca
 	return campaign, nil
 }
 
+// DeleteCampaign deletes the Campaign with the given ID if it hasn't been
+// deleted yet. If closeChangesets is true, the changesets associated with the
+// Campaign will be closed on the codehosts.
+func (s *Service) DeleteCampaign(ctx context.Context, id int64, closeChangesets bool) (err error) {
+	traceTitle := fmt.Sprintf("campaign: %d, closeChangesets: %t", id, closeChangesets)
+	tr, ctx := trace.New(ctx, "service.runChangeSetJob", traceTitle)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// If we don't have to close the changesets, we can simply delete the
+	// Campaign and return. The triggers in the database will remove the
+	// campaign's ID from the changesets' CampaignIDs.
+	if !closeChangesets {
+		return s.store.DeleteCampaign(ctx, id)
+	}
+
+	// First load the Changesets with the given campaignID, before deleting
+	// the campaign would remove the association.
+	cs, _, err := s.store.ListChangesets(ctx, ListChangesetsOpts{
+		CampaignID: id,
+		Limit:      10000,
+	})
+	if err != nil {
+		return err
+	}
+
+	// Remove the association manually, since we'll update the Changesets in
+	// the database, after closing them and we can't update them with an
+	// invalid CampaignID.
+	for _, c := range cs {
+		c.RemoveCampaignID(id)
+	}
+
+	err = s.store.DeleteCampaign(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		ctx := trace.ContextWithTrace(context.Background(), tr)
+		err := s.CloseOpenChangesets(ctx, cs)
+		if err != nil {
+			log15.Error("CloseCampaignChangesets", "err", err)
+		}
+	}()
+
+	return nil
+}
+
+// CloseOpenChangesets closes the given Changesets on their respective codehosts and syncs them.
 func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*a8n.Changeset) (err error) {
 	cs = selectChangesets(cs, func(c *a8n.Changeset) bool {
 		s, err := c.State()
