@@ -32,7 +32,7 @@ import (
 
 // defaultFetchTimeout determines how long we wait for the replacer service to fetch
 // zip archives
-const defaultFetchTimeout = 10 * time.Second
+const defaultFetchTimeout = 30 * time.Second
 
 var schemas = map[string]string{
 	"comby":       schema.CombyCampaignTypeSchemaJSON,
