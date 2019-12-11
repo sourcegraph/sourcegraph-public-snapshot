@@ -198,7 +198,7 @@ func (s *Service) replace(ctx context.Context, p *protocol.Request, w http.Respo
 
 	zipPath, zf, err := store.GetZipFileWithRetry(getZf)
 	if err != nil {
-		return false, err
+		return false, errors.Wrap(err, "failed to get archive")
 	}
 	defer zf.Close()
 
@@ -222,24 +222,24 @@ func (s *Service) replace(ctx context.Context, p *protocol.Request, w http.Respo
 	cmd, err := t.command(ctx, &p.RewriteSpecification, zipPath)
 	if err != nil {
 		log15.Info("Invalid command: " + err.Error())
-		return
+		return false, errors.Wrap(err, "invalid command")
 	}
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		log15.Info("Could not connect to command stdout: " + err.Error())
-		return
+		return false, errors.Wrap(err, "failed to connect to command stdout")
 	}
 
 	if err := cmd.Start(); err != nil {
 		log15.Info("Error starting command: " + err.Error())
-		return false, errors.New(err.Error())
+		return false, errors.Wrap(err, "failed to start command")
 	}
 
 	_, err = io.Copy(w, stdout)
 	if err != nil {
 		log15.Info("Error copying external command output to HTTP writer: " + err.Error())
-		return
+		return false, errors.Wrap(err, "failed while copying command output to HTTP")
 	}
 
 	if err := cmd.Wait(); err != nil {
