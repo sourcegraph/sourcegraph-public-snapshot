@@ -114,12 +114,36 @@ export function createLsifRouter(
         )
     )
 
+    interface ExistsQueryArgs {
+        repository: string
+        commit: string
+        path: string
+    }
+
+    router.get(
+        '/exists',
+        validation.validationMiddleware([
+            validation.validateNonEmptyString('repository'),
+            validation.validateNonEmptyString('commit').matches(commitPattern),
+            validation.validateNonEmptyString('path'),
+        ]),
+        wrap(
+            async (req: express.Request, res: express.Response): Promise<void> => {
+                const { repository, commit, path }: ExistsQueryArgs = req.query
+                const ctx = createTracingContext(req, { repository, commit })
+                const dump = await backend.exists(repository, commit, path, undefined, ctx)
+                res.json({ dump })
+            }
+        )
+    )
+
     interface FilePositionArgs {
         repository: string
         commit: string
         path: string
         line: number
         character: number
+        dumpId?: number
     }
 
     router.get(
@@ -130,13 +154,14 @@ export function createLsifRouter(
             validation.validateNonEmptyString('path'),
             validation.validateInt('line'),
             validation.validateInt('character'),
+            validation.validateOptionalInt('dumpId'),
         ]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
-                const { repository, commit, path, line, character }: FilePositionArgs = req.query
+                const { repository, commit, path, line, character, dumpId }: FilePositionArgs = req.query
                 const ctx = createTracingContext(req, { repository, commit, path })
 
-                const locations = await backend.definitions(repository, commit, path, { line, character }, ctx)
+                const locations = await backend.definitions(repository, commit, path, { line, character }, dumpId, ctx)
                 if (locations === undefined) {
                     throw Object.assign(new Error('LSIF dump not found'), { status: 404 })
                 }
@@ -166,12 +191,13 @@ export function createLsifRouter(
             validation.validateNonEmptyString('path'),
             validation.validateInt('line'),
             validation.validateInt('character'),
+            validation.validateOptionalInt('dumpId'),
             validation.validateLimit,
             validation.validateCursor<ReferencePaginationCursor>(),
         ]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
-                const { repository, commit, path, line, character, cursor }: ReferencesQueryArgs = req.query
+                const { repository, commit, path, line, character, dumpId, cursor }: ReferencesQueryArgs = req.query
                 const { limit } = extractLimitOffset(req.query, settings.DEFAULT_REFERENCES_NUM_REMOTE_DUMPS)
                 const ctx = createTracingContext(req, { repository, commit, path })
 
@@ -181,6 +207,7 @@ export function createLsifRouter(
                     path,
                     { line, character },
                     { limit, cursor },
+                    dumpId,
                     ctx
                 )
                 if (result === undefined) {
@@ -213,13 +240,14 @@ export function createLsifRouter(
             validation.validateNonEmptyString('path'),
             validation.validateInt('line'),
             validation.validateInt('character'),
+            validation.validateOptionalInt('dumpId'),
         ]),
         wrap(
             async (req: express.Request, res: express.Response): Promise<void> => {
-                const { repository, commit, path, line, character }: FilePositionArgs = req.query
+                const { repository, commit, path, line, character, dumpId }: FilePositionArgs = req.query
                 const ctx = createTracingContext(req, { repository, commit, path })
 
-                const result = await backend.hover(repository, commit, path, { line, character }, ctx)
+                const result = await backend.hover(repository, commit, path, { line, character }, dumpId, ctx)
                 if (result === undefined) {
                     throw Object.assign(new Error('LSIF dump not found'), { status: 404 })
                 }
@@ -249,7 +277,8 @@ export function createLsifRouter(
             async (req: express.Request, res: express.Response): Promise<void> => {
                 const { repository, commit, file }: ExistsQueryArgs = req.query
                 const ctx = createTracingContext(req, { repository, commit })
-                res.json(await backend.exists(repository, commit, file, ctx))
+                const dump = await backend.exists(repository, commit, file, undefined, ctx)
+                res.json(dump !== undefined)
             }
         )
     )
@@ -292,7 +321,7 @@ export function createLsifRouter(
 
                 switch (method) {
                     case 'definitions': {
-                        const result = await backend.definitions(repository, commit, filePath, position, ctx)
+                        const result = await backend.definitions(repository, commit, filePath, position, undefined, ctx)
                         if (result === undefined) {
                             res.status(404).send()
                             return
@@ -303,7 +332,7 @@ export function createLsifRouter(
                     }
 
                     case 'hover': {
-                        const result = await backend.hover(repository, commit, filePath, position, ctx)
+                        const result = await backend.hover(repository, commit, filePath, position, undefined, ctx)
                         if (result === undefined) {
                             res.status(404).send()
                             return
@@ -320,6 +349,7 @@ export function createLsifRouter(
                             filePath,
                             position,
                             { limit, cursor },
+                            undefined,
                             ctx
                         )
 
