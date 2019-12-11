@@ -51,6 +51,7 @@ export interface SearchResultsProps
     ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
     deployType: DeployType
+    interactiveSearchMode: boolean
 }
 
 interface SearchResultsState {
@@ -103,7 +104,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                 .pipe(
                     startWith(this.props),
                     map(props => [
-                        parseSearchURLQuery(props.location.search),
+                        parseSearchURLQuery(props.location.search, props.interactiveSearchMode),
                         parseSearchURLPatternType(props.location.search),
                     ]),
                     // Search when a new search query was specified in the URL
@@ -203,7 +204,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     }
 
     public render(): JSX.Element | null {
-        const query = parseSearchURLQuery(this.props.location.search)
+        const query = parseSearchURLQuery(this.props.location.search, this.props.interactiveSearchMode)
         const filters = this.getFilters()
         const extensionFilters = this.state.contributions && this.state.contributions.searchFilters
 
@@ -213,16 +214,18 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         return (
             <div className="e2e-search-results search-results d-flex flex-column w-100">
                 <PageTitle key="page-title" title={query} />
-                <SearchResultsFilterBars
-                    navbarSearchQuery={this.props.navbarSearchQueryState.query}
-                    results={this.state.resultsOrError}
-                    filters={filters}
-                    extensionFilters={extensionFilters}
-                    quickLinks={quickLinks}
-                    onFilterClick={this.onDynamicFilterClicked}
-                    onShowMoreResultsClick={this.showMoreResults}
-                    calculateShowMoreResultsCount={this.calculateCount}
-                />
+                {!this.props.interactiveSearchMode && (
+                    <SearchResultsFilterBars
+                        navbarSearchQuery={this.props.navbarSearchQueryState.query}
+                        results={this.state.resultsOrError}
+                        filters={filters}
+                        extensionFilters={extensionFilters}
+                        quickLinks={quickLinks}
+                        onFilterClick={this.onDynamicFilterClicked}
+                        onShowMoreResultsClick={this.showMoreResults}
+                        calculateShowMoreResultsCount={this.calculateCount}
+                    />
+                )}
                 <SearchResultTypeTabs {...this.props} query={this.props.navbarSearchQueryState.query} />
                 <SearchResultsList
                     {...this.props}

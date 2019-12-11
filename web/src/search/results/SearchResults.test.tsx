@@ -41,6 +41,7 @@ describe('SearchResults', () => {
         deployType: 'dev',
         patternType: SearchPatternType.regexp,
         togglePatternType: sinon.spy(),
+        interactiveSearchMode: false,
     }
 
     it('calls the search request once', () => {

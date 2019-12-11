@@ -1,0 +1,15 @@
+@import './FilterInput';
+@import './SelectedFiltersRow';
+@import './AddFilterRow';
+
+.interactive-mode-input {
+    width: 100%;
+
+    &__top-nav {
+        flex: 0 0 auto;
+        max-height: 80%;
+        display: flex;
+        align-items: flex-start;
+        width: 100%;
+    }
+}

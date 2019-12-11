@@ -398,6 +398,8 @@ type ExperimentalFeatures struct {
 	Discussions string `json:"discussions,omitempty"`
 	// EventLogging description: Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.
 	EventLogging string `json:"eventLogging,omitempty"`
+	// InteractiveSearchMode description: Enables the interactive search mode.
+	InteractiveSearchMode string `json:"interactiveSearchMode,omitempty"`
 }
 
 // Extensions description: Configures Sourcegraph extensions.

@@ -57,7 +57,7 @@ export const routes: readonly LayoutRouteProps[] = [
     {
         path: '/search',
         render: (props: any) =>
-            parseSearchURLQuery(props.location.search) ? (
+            parseSearchURLQuery(props.location.search, props.interactiveSearchMode) ? (
                 <SearchResults {...props} deployType={window.context.deployType} />
             ) : (
                 <SearchPage {...props} />

@@ -6,24 +6,7 @@ import FilterIcon from 'mdi-react/FilterIcon'
 import FileIcon from 'mdi-react/FileIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { SymbolIcon } from '../../../../shared/src/symbols/SymbolIcon'
-
-export enum SuggestionTypes {
-    filters = 'filters',
-    repo = 'repo',
-    repogroup = 'repogroup',
-    repohasfile = 'repohasfile',
-    repohascommitafter = 'repohascommitafter',
-    file = 'file',
-    type = 'type',
-    case = 'case',
-    lang = 'lang',
-    fork = 'fork',
-    archived = 'archived',
-    count = 'count',
-    timeout = 'timeout',
-    dir = 'dir',
-    symbol = 'symbol',
-}
+import { SuggestionTypes } from '../../../../shared/src/search/suggestions/util'
 
 export const filterAliases: Record<string, FiltersSuggestionTypes | undefined> = {
     r: SuggestionTypes.repo,
@@ -164,7 +147,7 @@ export const SuggestionItem: React.FunctionComponent<SuggestionProps> = ({
     defaultLabel,
     ...props
 }) => (
-    <li className={'suggestion' + (isSelected ? ' suggestion--selected' : '')} {...props}>
+    <li className={`suggestion ${isSelected ? ' suggestion--selected' : ''} e2e-suggestion-item`} {...props}>
         <SuggestionIcon className="icon-inline suggestion__icon" suggestion={suggestion} />
         <div className="suggestion__title">{suggestion.value}</div>
         <div className="suggestion__description">{suggestion.description}</div>

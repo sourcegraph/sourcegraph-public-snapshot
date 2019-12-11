@@ -17,6 +17,7 @@ import { ThemeProps } from '../../../shared/src/theme'
 import { ThemePreferenceProps } from '../search/theme'
 import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
 import { QueryState } from '../search/helpers'
+import InteractiveModeInput from '../search/input/interactive/InteractiveModeInput'
 
 interface Props
     extends SettingsCascadeProps,
@@ -41,6 +42,10 @@ interface Props
      * homepage.
      */
     lowProfile: boolean
+
+    showInteractiveSearchMode: boolean
+    interactiveSearchMode: boolean
+    toggleSearchMode: (e: React.MouseEvent<HTMLAnchorElement>) => void
 }
 
 interface State {
@@ -57,10 +62,14 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
 
         /**
          * Reads initial state from the props (i.e. URL parameters).
+         *
+         * We pass false to the interactiveMode paramter of parseSearchURLQuery
+         * because we only want to update the navbarQuery with the match query
+         * (i.e. the `q=` paramater) in both omni and interactive modes.
          */
-        const query = parseSearchURLQuery(props.location.search || '')
-        if (query) {
-            props.onNavbarQueryChange({ query, cursorPosition: query.length })
+        const navbarQuery = parseSearchURLQuery(props.location.search || '', false)
+        if (navbarQuery) {
+            props.onNavbarQueryChange({ query: navbarQuery, cursorPosition: navbarQuery.length })
         } else {
             // If we have no component state, then we may have gotten unmounted during a route change.
             const query = props.location.state ? props.location.state.query : ''
@@ -77,9 +86,9 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
 
     public componentDidUpdate(prevProps: Props): void {
         if (prevProps.location.search !== this.props.location.search) {
-            const query = parseSearchURLQuery(this.props.location.search || '')
-            if (query) {
-                this.props.onNavbarQueryChange({ query, cursorPosition: query.length })
+            const navbarQuery = parseSearchURLQuery(this.props.location.search || '', false)
+            if (navbarQuery) {
+                this.props.onNavbarQueryChange({ query: navbarQuery, cursorPosition: navbarQuery.length })
             }
         }
     }
@@ -111,28 +120,51 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
         return (
             <div className={`global-navbar ${this.props.lowProfile ? '' : 'global-navbar--bg border-bottom'} py-1`}>
                 {this.props.lowProfile ? (
-                    <div className="flex-1" />
+                    <>
+                        <div className="flex-1" />
+                        {!this.state.authRequired && (
+                            <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />
+                        )}
+                    </>
                 ) : (
                     <>
-                        {this.state.authRequired ? (
-                            <div className={logoLinkClassName}>{logo}</div>
+                        {this.props.interactiveSearchMode ? (
+                            !this.state.authRequired && (
+                                <>
+                                    <InteractiveModeInput
+                                        {...this.props}
+                                        authRequired={this.state.authRequired}
+                                        navbarSearchState={this.props.navbarSearchQueryState}
+                                        onNavbarQueryChange={this.props.onNavbarQueryChange}
+                                        showDotComMarketing={showDotComMarketing}
+                                    />
+                                </>
+                            )
                         ) : (
-                            <Link to="/search" className={logoLinkClassName}>
-                                {logo}
-                            </Link>
-                        )}
-                        {!this.state.authRequired && (
-                            <div className="global-navbar__search-box-container d-none d-sm-flex">
-                                <SearchNavbarItem
-                                    {...this.props}
-                                    navbarSearchState={this.props.navbarSearchQueryState}
-                                    onChange={this.props.onNavbarQueryChange}
-                                />
-                            </div>
+                            <>
+                                {this.state.authRequired ? (
+                                    <div className={logoLinkClassName}>{logo}</div>
+                                ) : (
+                                    <Link to="/search" className={logoLinkClassName}>
+                                        {logo}
+                                    </Link>
+                                )}
+                                {!this.state.authRequired && (
+                                    <div className="global-navbar__search-box-container d-none d-sm-flex">
+                                        <SearchNavbarItem
+                                            {...this.props}
+                                            navbarSearchState={this.props.navbarSearchQueryState}
+                                            onChange={this.props.onNavbarQueryChange}
+                                        />
+                                    </div>
+                                )}
+                                {!this.state.authRequired && (
+                                    <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />
+                                )}
+                            </>
                         )}
                     </>
                 )}
-                {!this.state.authRequired && <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />}
             </div>
         )
     }

@@ -1,6 +1,8 @@
 import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
 import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
 import { SearchPatternType } from '../graphql/schema'
+import { FiltersToTypeAndValue } from '../search/interactive/util'
+import { SuggestionTypeKeys } from '../search/suggestions/util'
 
 export interface RepoSpec {
     /**
@@ -552,6 +554,46 @@ export function buildSearchURLQuery(query: string, patternType: SearchPatternTyp
         searchParams.set('patternType', patternTypeInQuery.toLowerCase())
     } else {
         searchParams.set('q', query)
+        searchParams.set('patternType', patternType)
+    }
+
+    return searchParams
+        .toString()
+        .replace(/%2F/g, '/')
+        .replace(/%3A/g, ':')
+}
+
+/**
+ * Builds a URL query for a given interactive mode query (without leading `?`)
+ *
+ * @param navbarQuery the search query in the main search input
+ * @param filtersInQuery the map representing the filters added to the query
+ * @param patternType the pattern type this query should be interpreted in.
+ * Having a `patternType:` filter in the query overrides this argument.
+ */
+export function interactiveBuildSearchURLQuery(
+    navbarQuery: string,
+    filtersInQuery: FiltersToTypeAndValue,
+    patternType: SearchPatternType
+): string {
+    const searchParams = new URLSearchParams()
+
+    for (const searchType of SuggestionTypeKeys) {
+        for (const objectKey of Object.keys(filtersInQuery)) {
+            if (objectKey.startsWith(searchType) && filtersInQuery[objectKey] !== null) {
+                searchParams.append(searchType, filtersInQuery[objectKey].value)
+            }
+        }
+    }
+
+    const patternTypeInQuery = parsePatternTypeFromQuery(navbarQuery)
+    if (patternTypeInQuery) {
+        const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal)\b/i
+        const newQuery = navbarQuery.replace(patternTypeRegexp, '')
+        searchParams.set('q', newQuery)
+        searchParams.set('patternType', patternTypeInQuery.toLowerCase())
+    } else {
+        searchParams.set('q', navbarQuery)
         searchParams.set('patternType', patternType)
     }
 

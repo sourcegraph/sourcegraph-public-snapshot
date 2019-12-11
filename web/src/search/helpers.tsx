@@ -1,17 +1,13 @@
 import * as H from 'history'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { buildSearchURLQuery } from '../../../shared/src/util/url'
+import { buildSearchURLQuery, interactiveBuildSearchURLQuery } from '../../../shared/src/util/url'
 import { eventLogger } from '../tracking/eventLogger'
 import { SearchType } from './results/SearchResults'
 import { SearchFilterSuggestions } from './searchFilterSuggestions'
-import {
-    Suggestion,
-    SuggestionTypes,
-    FiltersSuggestionTypes,
-    isolatedFuzzySearchFilters,
-    filterAliases,
-} from './input/Suggestion'
+import { Suggestion, FiltersSuggestionTypes, isolatedFuzzySearchFilters, filterAliases } from './input/Suggestion'
+import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/util'
+import { SuggestionTypes } from '../../../shared/src/search/suggestions/util'
 
 /**
  * @param activation If set, records the DidSearch activation event for the new user activation
@@ -19,21 +15,26 @@ import {
  */
 export function submitSearch(
     history: H.History,
-    query: string,
+    navbarQuery: string,
     source: 'home' | 'nav' | 'repo' | 'tree' | 'filter' | 'type',
     patternType: GQL.SearchPatternType,
-    activation?: ActivationProps['activation']
+    activation?: ActivationProps['activation'],
+    filtersQuery?: FiltersToTypeAndValue
 ): void {
+    const searchQueryParam = filtersQuery
+        ? interactiveBuildSearchURLQuery(navbarQuery, filtersQuery, patternType)
+        : buildSearchURLQuery(navbarQuery, patternType)
+
     // Go to search results page
-    const path = '/search?' + buildSearchURLQuery(query, patternType)
+    const path = '/search?' + searchQueryParam
     eventLogger.log('SearchSubmitted', {
         code_search: {
-            pattern: query,
-            query,
+            pattern: navbarQuery,
+            query: navbarQuery,
             source,
         },
     })
-    history.push(path, { ...history.location.state, query })
+    history.push(path, { ...history.location.state, query: navbarQuery })
     if (activation) {
         activation.update({ DidSearch: true })
     }
@@ -365,4 +366,25 @@ export const formatQueryForFuzzySearch = (queryState: QueryState): string => {
     const { firstPart, lastPart } = splitStringAtPosition(queryState.query, queryState.cursorPosition)
 
     return firstPart.substring(0, filterIndex) + formattedFilterAndValue + lastPart
+}
+
+// This is a modified version of formatQueryForFuzzySearch, which accounts for interactive search
+// mode, where we may not have a cursor position. Instead, we'd rely on the interactive mode data strcture to
+// tell us what the resolved filter and value is.
+//
+// If the resolved filter is an isolated one, we will ignore the rest of the query.
+export const interactiveFormatQueryForFuzzySearch = (
+    fullQuery: string,
+    filterType?: SuggestionTypes,
+    value: string = ''
+): string => {
+    if (filterType) {
+        const formattedFilterAndValue = filterType + ':' + value
+
+        if (isolatedFuzzySearchFilters.includes(filterType)) {
+            return formattedFilterAndValue
+        }
+    }
+
+    return fullQuery
 }

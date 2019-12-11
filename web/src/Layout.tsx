@@ -103,11 +103,16 @@ export interface LayoutProps
     ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
     showCampaigns: boolean
+    showInteractiveSearchMode: boolean
+    interactiveSearchMode: boolean
+    toggleSearchMode: (e: React.MouseEvent<HTMLAnchorElement>) => void
     children?: never
 }
 
 export const Layout: React.FunctionComponent<LayoutProps> = props => {
-    const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
+    const isSearchHomepage =
+        props.location.pathname === '/search' &&
+        !parseSearchURLQuery(props.location.search, props.interactiveSearchMode)
 
     const needsSiteInit = window.context.showOnboarding
     const isSiteInit = props.location.pathname === '/site-admin/init'

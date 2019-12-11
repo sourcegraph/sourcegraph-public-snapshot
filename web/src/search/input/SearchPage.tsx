@@ -9,7 +9,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { Notices } from '../../global/Notices'
 import { QuickLink, Settings } from '../../schema/settings.schema'
 import { ThemeProps } from '../../../../shared/src/theme'
-import { eventLogger } from '../../tracking/eventLogger'
+import { eventLogger, EventLoggerProps } from '../../tracking/eventLogger'
 import { limitString } from '../../util'
 import { submitSearch, QueryState } from '../helpers'
 import { QuickLinks } from '../QuickLinks'
@@ -18,12 +18,33 @@ import { QueryInput } from './QueryInput'
 import { SearchButton } from './SearchButton'
 import { ISearchScope, SearchFilterChips } from './SearchFilterChips'
 import { ThemePreferenceProps } from '../theme'
+import InteractiveModeInput from './interactive/InteractiveModeInput'
+import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
+import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
+import { PlatformContextProps } from '../../../../shared/src/platform/context'
 
-interface Props extends SettingsCascadeProps, ThemeProps, ThemePreferenceProps, ActivationProps, PatternTypeProps {
+interface Props
+    extends SettingsCascadeProps,
+        ThemeProps,
+        ThemePreferenceProps,
+        ActivationProps,
+        PatternTypeProps,
+        KeyboardShortcutsProps,
+        EventLoggerProps,
+        ExtensionsControllerProps<'executeCommand' | 'services'>,
+        PlatformContextProps<'forceUpdateTooltip'> {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
+    showInteractiveSearchMode: boolean
+    interactiveSearchMode: boolean
+    toggleSearchMode: (e: React.MouseEvent<HTMLAnchorElement>) => void
+
+    // For NavLinks
+    authRequired?: boolean
+    showDotComMarketing: boolean
+    showCampaigns: boolean
 }
 
 interface State {
@@ -39,7 +60,7 @@ interface State {
 export class SearchPage extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
-        const queryFromUrl = parseSearchURLQuery(props.location.search) || ''
+        const queryFromUrl = parseSearchURLQuery(props.location.search, props.interactiveSearchMode) || ''
         this.state = {
             userQueryState: {
                 query: queryFromUrl,
@@ -74,62 +95,85 @@ export class SearchPage extends React.Component<Props, State> {
             <div className="search-page">
                 <PageTitle title={this.getPageTitle()} />
                 <img className="search-page__logo" src={logoUrl} />
-                <Form className="search search-page__container" onSubmit={this.onSubmit}>
-                    <div className="search-page__input-container">
-                        <QueryInput
+                {this.props.interactiveSearchMode ? (
+                    <div className="search search-page__container">
+                        <InteractiveModeInput
                             {...this.props}
-                            value={this.state.userQueryState}
-                            onChange={this.onUserQueryChange}
-                            autoFocus="cursor-at-end"
-                            hasGlobalQueryBehavior={true}
-                            patternType={this.props.patternType}
-                            togglePatternType={this.props.togglePatternType}
+                            navbarSearchState={this.state.userQueryState}
+                            onNavbarQueryChange={this.onUserQueryChange}
+                            toggleSearchMode={this.props.toggleSearchMode}
                         />
-                        <SearchButton />
+                        {this.props.showInteractiveSearchMode && (
+                            <a href="" onClick={this.props.toggleSearchMode} className="e2e-omni-mode-toggle">
+                                Omni mode
+                            </a>
+                        )}
                     </div>
-                    {hasScopes ? (
-                        <>
-                            <div className="search-page__input-sub-container">
-                                <SearchFilterChips
-                                    location={this.props.location}
-                                    history={this.props.history}
-                                    query={this.state.userQueryState.query}
-                                    authenticatedUser={this.props.authenticatedUser}
-                                    settingsCascade={this.props.settingsCascade}
-                                    isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                ) : (
+                    <div className="search-page__container">
+                        <Form className="search " onSubmit={this.onSubmit}>
+                            <div className="search-page__input-container">
+                                <QueryInput
+                                    {...this.props}
+                                    value={this.state.userQueryState}
+                                    onChange={this.onUserQueryChange}
+                                    autoFocus="cursor-at-end"
+                                    hasGlobalQueryBehavior={true}
                                     patternType={this.props.patternType}
+                                    togglePatternType={this.props.togglePatternType}
                                 />
+                                <SearchButton />
                             </div>
-                            <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />
-                            <QueryBuilder
-                                onFieldsQueryChange={this.onBuilderQueryChange}
-                                isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                patternType={this.props.patternType}
-                            />
-                        </>
-                    ) : (
-                        <>
-                            <QueryBuilder
-                                onFieldsQueryChange={this.onBuilderQueryChange}
-                                isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                patternType={this.props.patternType}
-                            />
-                            <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />
-                            <div className="search-page__input-sub-container">
-                                <SearchFilterChips
-                                    location={this.props.location}
-                                    history={this.props.history}
-                                    query={this.state.userQueryState.query}
-                                    authenticatedUser={this.props.authenticatedUser}
-                                    settingsCascade={this.props.settingsCascade}
-                                    isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                                    patternType={this.props.patternType}
-                                />
-                            </div>
-                        </>
-                    )}
-                    <Notices className="my-3" location="home" settingsCascade={this.props.settingsCascade} />
-                </Form>
+                            {hasScopes ? (
+                                <>
+                                    <div className="search-page__input-sub-container">
+                                        <SearchFilterChips
+                                            location={this.props.location}
+                                            history={this.props.history}
+                                            query={this.state.userQueryState.query}
+                                            authenticatedUser={this.props.authenticatedUser}
+                                            settingsCascade={this.props.settingsCascade}
+                                            isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                                            patternType={this.props.patternType}
+                                        />
+                                    </div>
+                                    <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />
+                                    <QueryBuilder
+                                        onFieldsQueryChange={this.onBuilderQueryChange}
+                                        isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                                        patternType={this.props.patternType}
+                                    />
+                                </>
+                            ) : (
+                                <>
+                                    <QueryBuilder
+                                        onFieldsQueryChange={this.onBuilderQueryChange}
+                                        isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                                        patternType={this.props.patternType}
+                                    />
+                                    <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />
+                                    <div className="search-page__input-sub-container">
+                                        <SearchFilterChips
+                                            location={this.props.location}
+                                            history={this.props.history}
+                                            query={this.state.userQueryState.query}
+                                            authenticatedUser={this.props.authenticatedUser}
+                                            settingsCascade={this.props.settingsCascade}
+                                            isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                                            patternType={this.props.patternType}
+                                        />
+                                    </div>
+                                </>
+                            )}
+                            <Notices className="my-3" location="home" settingsCascade={this.props.settingsCascade} />
+                        </Form>
+                        {this.props.showInteractiveSearchMode && (
+                            <a href="" onClick={this.props.toggleSearchMode} className="e2e-interactive-mode-toggle">
+                                Interactive mode
+                            </a>
+                        )}
+                    </div>
+                )}
             </div>
         )
     }
@@ -149,7 +193,7 @@ export class SearchPage extends React.Component<Props, State> {
     }
 
     private getPageTitle(): string | undefined {
-        const query = parseSearchURLQuery(this.props.location.search)
+        const query = parseSearchURLQuery(this.props.location.search, this.props.interactiveSearchMode)
         if (query) {
             return `${limitString(this.state.userQueryState.query, 25, true)}`
         }

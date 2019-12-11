@@ -71,6 +71,12 @@ const SiteSchemaJSON = `{
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
+        },
+        "interactiveSearchMode": {
+          "description": "Enables the interactive search mode.",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
         }
       },
       "group": "Experimental",

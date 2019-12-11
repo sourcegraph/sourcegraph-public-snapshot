@@ -51,6 +51,7 @@ describe('NavLinks', () => {
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     const USER = { username: 'u' } as GQL.IUser
     const history = H.createMemoryHistory({ keyLength: 0 })
+    const NOOP_TOGGLE_MODE = (): void => {}
     const commonProps = {
         extensionsController: NOOP_EXTENSIONS_CONTROLLER,
         platformContext: NOOP_PLATFORM_CONTEXT,
@@ -63,6 +64,9 @@ describe('NavLinks', () => {
         history,
         isSourcegraphDotCom: false,
         showCampaigns: true,
+        showInteractiveSearchMode: false,
+        interactiveSearchMode: false,
+        toggleSearchMode: NOOP_TOGGLE_MODE,
     }
 
     // The 3 main props that affect the desired contents of NavLinks are whether the user is signed
