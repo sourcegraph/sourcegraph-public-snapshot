@@ -137,7 +137,14 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             )}
             {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}
             {!isSiteInit && <LiteralSearchToast isSourcegraphDotCom={props.isSourcegraphDotCom} />}
-            {!isSiteInit && <GlobalNavbar {...props} lowProfile={isSearchHomepage} />}
+            {!isSiteInit && (
+                <GlobalNavbar
+                    {...props}
+                    lowProfile={isSearchHomepage}
+                    hideGlobalSearchInput={false}
+                    hideNavLinks={false}
+                />
+            )}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
             <ErrorBoundary location={props.location}>
                 <Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>
