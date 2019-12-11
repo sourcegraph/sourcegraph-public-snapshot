@@ -150,7 +150,7 @@ func (s *repos) ListDefault(ctx context.Context) (repos []*types.Repo, err error
 	return db.DefaultRepos.List(ctx)
 }
 
-func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *inventory.Inventory, err error) {
+func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID, forceEnhancedLanguageDetection bool) (res *inventory.Inventory, err error) {
 	if Mocks.Repos.GetInventory != nil {
 		return Mocks.Repos.GetInventory(ctx, repo, commitID)
 	}
@@ -167,7 +167,7 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 		return nil, err
 	}
 
-	invCtx, err := InventoryContext(*cachedRepo, commitID)
+	invCtx, err := InventoryContext(*cachedRepo, commitID, forceEnhancedLanguageDetection)
 	if err != nil {
 		return nil, err
 	}

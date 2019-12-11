@@ -172,7 +172,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			return nil, err
 		}
 
-		inventory, err := backend.Repos.GetInventory(ctx, repo, commitID)
+		inventory, err := backend.Repos.GetInventory(ctx, repo, commitID, false)
 		if err != nil {
 			return nil, err
 		}

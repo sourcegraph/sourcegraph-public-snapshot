@@ -1,0 +1,7 @@
+.search-stats-page {
+    // We need to target tr:first-child, which can't be done easily using only BEM, so:
+    // stylelint-disable-next-line selector-max-compound-selectors
+    &__table > thead > tr:first-child > th {
+        border-top: 0;
+    }
+}

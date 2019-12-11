@@ -185,7 +185,7 @@ func TestReposGetInventory(t *testing.T) {
 			useEnhancedLanguageDetection = test.useEnhancedLanguageDetection
 			defer func() { useEnhancedLanguageDetection = orig }() // reset
 
-			inv, err := s.GetInventory(ctx, &types.Repo{Name: wantRepo}, wantCommitID)
+			inv, err := s.GetInventory(ctx, &types.Repo{Name: wantRepo}, wantCommitID, false)
 			if err != nil {
 				t.Fatal(err)
 			}

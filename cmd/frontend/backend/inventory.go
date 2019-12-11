@@ -26,13 +26,17 @@ var inventoryCache = rcache.New(fmt.Sprintf("inv:v2:enhanced_%v", useEnhancedLan
 
 // InventoryContext returns the inventory context for computing the inventory for the repository at
 // the given commit.
-func InventoryContext(repo gitserver.Repo, commitID api.CommitID) (inventory.Context, error) {
+func InventoryContext(repo gitserver.Repo, commitID api.CommitID, forceEnhancedLanguageDetection bool) (inventory.Context, error) {
 	if !git.IsAbsoluteRevision(string(commitID)) {
 		return inventory.Context{}, errors.Errorf("refusing to compute inventory for non-absolute commit ID %q", commitID)
 	}
 
 	cacheKey := func(e os.FileInfo) string {
-		return e.Sys().(git.ObjectInfo).OID().String()
+		info, ok := e.Sys().(git.ObjectInfo)
+		if !ok {
+			return "" // not cacheable
+		}
+		return info.OID().String()
 	}
 	invCtx := inventory.Context{
 		ReadTree: func(ctx context.Context, path string) ([]os.FileInfo, error) {
@@ -44,7 +48,11 @@ func InventoryContext(repo gitserver.Repo, commitID api.CommitID) (inventory.Con
 			return git.NewFileReader(ctx, repo, commitID, path)
 		},
 		CacheGet: func(e os.FileInfo) (inventory.Inventory, bool) {
-			if b, ok := inventoryCache.Get(cacheKey(e)); ok {
+			cacheKey := cacheKey(e)
+			if cacheKey == "" {
+				return inventory.Inventory{}, false // not cacheable
+			}
+			if b, ok := inventoryCache.Get(cacheKey); ok {
 				var inv inventory.Inventory
 				if err := json.Unmarshal(b, &inv); err != nil {
 					log15.Warn("Failed to unmarshal cached JSON inventory.", "repo", repo.Name, "commitID", commitID, "path", e.Name(), "err", err)
@@ -55,16 +63,20 @@ func InventoryContext(repo gitserver.Repo, commitID api.CommitID) (inventory.Con
 			return inventory.Inventory{}, false
 		},
 		CacheSet: func(e os.FileInfo, inv inventory.Inventory) {
+			cacheKey := cacheKey(e)
+			if cacheKey == "" {
+				return // not cacheable
+			}
 			b, err := json.Marshal(&inv)
 			if err != nil {
 				log15.Warn("Failed to marshal JSON inventory for cache.", "repo", repo.Name, "commitID", commitID, "path", e.Name(), "err", err)
 				return
 			}
-			inventoryCache.Set(cacheKey(e), b)
+			inventoryCache.Set(cacheKey, b)
 		},
 	}
 
-	if !useEnhancedLanguageDetection {
+	if !useEnhancedLanguageDetection && !forceEnhancedLanguageDetection {
 		// If USE_ENHANCED_LANGUAGE_DETECTION is disabled, do not read file contents to determine
 		// the language. This means we won't calculate the number of lines per language.
 		invCtx.NewFileReader = func(ctx context.Context, path string) (io.ReadCloser, error) {

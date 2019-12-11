@@ -1370,6 +1370,43 @@ describe('e2e test suite', () => {
         })
     })
 
+    describe('Search statistics', () => {
+        test('button on search results page', async () => {
+            await driver.page.goto(`${sourcegraphBaseUrl}/search?q=abc`)
+            await driver.page.waitForSelector('a[href="/stats?q=abc"]')
+        })
+
+        test('page', async () => {
+            await driver.page.goto(`${sourcegraphBaseUrl}/stats?q=ab`)
+
+            // Ensure the global navbar hides the search input (to avoid confusion with the one on
+            // the stats page).
+            await driver.page.waitForSelector('.global-navbar a.nav-link[href="/search"]')
+            assert.strictEqual(
+                await driver.page.evaluate(() => document.querySelectorAll('.e2e-query-input').length),
+                0
+            )
+
+            const queryInputValue = () =>
+                driver.page.evaluate(() => {
+                    const input = document.querySelector<HTMLInputElement>('.e2e-stats-query')
+                    return input ? input.value : null
+                })
+
+            // Check for a Go result (the sample repositories have Go files).
+            await driver.page.waitForSelector('a[href*="ab+lang:go"]')
+            assert.strictEqual(await queryInputValue(), 'ab')
+            await percySnapshot(driver.page, 'Search stats')
+
+            // Update the query and rerun the computation.
+            await driver.page.type('.e2e-stats-query', 'c')
+            assert.strictEqual(await queryInputValue(), 'abc')
+            await driver.page.click('.e2e-stats-query-update')
+            await driver.page.waitForSelector('a[href*="abc+lang:go"]')
+            assert.ok(driver.page.url().endsWith('/stats?q=abc'))
+        })
+    })
+
     describe('Campaigns', () => {
         let previousExperimentalFeatures: any
         beforeAll(async () => {

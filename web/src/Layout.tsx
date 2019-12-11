@@ -116,6 +116,8 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const needsSiteInit = window.context.showOnboarding
     const isSiteInit = props.location.pathname === '/site-admin/init'
 
+    const hideGlobalSearchInput: GlobalNavbar['props']['hideGlobalSearchInput'] = props.location.pathname === '/stats'
+
     useScrollToLocationHash(props.location)
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
@@ -141,7 +143,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 <GlobalNavbar
                     {...props}
                     lowProfile={isSearchHomepage}
-                    hideGlobalSearchInput={false}
+                    hideGlobalSearchInput={hideGlobalSearchInput}
                     hideNavLinks={false}
                 />
             )}
