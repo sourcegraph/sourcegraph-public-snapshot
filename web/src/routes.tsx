@@ -168,6 +168,21 @@ export const routes: readonly LayoutRouteProps[] = [
         render: lazyComponent(() => import('./marketing/HelpPage'), 'HelpPage'),
     },
     {
+        path: '/documentation',
+        render: () => {
+            // Force a hard reload so that we delegate to the HTTP handler for /documentation, which handles
+            // redirecting /documentation to https://docs.sourcegraph.com. That logic is not duplicated in
+            // the web app because that would add complexity with no user benefit.
+            //
+            // TODO(sqs): This currently has a bug in dev mode where you can't go back to the app
+            // after following the redirect. This will be fixed when we run docsite on
+            // http://localhost:5080 in Procfile because then the redirect will be cross-domain and
+            // won't reuse the same history stack.
+            window.location.reload()
+            return null
+        },
+    },
+    {
         path: '/snippets',
         render: lazyComponent(() => import('./snippets/SnippetsPage'), 'SnippetsPage'),
     },

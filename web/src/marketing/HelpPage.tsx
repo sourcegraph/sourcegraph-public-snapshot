@@ -1,40 +1,77 @@
 import * as React from 'react'
-import { RouteComponentProps } from 'react-router'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { ThemeProps } from '../../../shared/src/theme'
 import HelpCircleIcon from 'mdi-react/HelpCircleIcon'
+import { Link } from '../../../shared/src/components/Link'
 
-interface SurveyPageProps extends RouteComponentProps<{ score?: string }>, ThemeProps {
+interface Props extends ThemeProps {
     authenticatedUser: GQL.IUser | null
+    showDotComMarketing: boolean
 }
 
-export class HelpPage extends React.Component<SurveyPageProps> {
+export class HelpPage extends React.Component<Props> {
     public componentDidMount(): void {
         eventLogger.logViewEvent('Help')
     }
 
     public render(): JSX.Element | null {
         return (
-            <div className="survey-page">
+            <div className="help-page">
                 <PageTitle title="Help" />
                 <HeroPage
                     icon={HelpCircleIcon}
-                    title="Need Help?"
+                    title="Looking for answers?"
                     body={
-                        <div>
+                        <div className="help-content">
                             <div>
-                                <p>Reach out to support if you have a question.</p>
+                                We have many different resources available to help answer any questions you may have:
+                            </div>
+                            {!this.props.showDotComMarketing && (
+                                <div>
+                                    <h3>Email support</h3>
+                                    Have a question about your custom setup? Need help scaling your instance? File a
+                                    support ticket by emailing us at{' '}
+                                    <Link to="mailto:support@sourcegraph.com">support@sourcegraph.com</Link>
+                                </div>
+                            )}
+                            <div>
+                                <h3>File a GitHub issue</h3>
+                                We are an{' '}
+                                <a href="https://about.sourcegraph.com/company/open_source_open_company">
+                                    open company
+                                </a>
+                                , so our{' '}
+                                <a href="https://github.com/sourcegraph/sourcegraph/issues">issue tracker on GitHub</a>{' '}
+                                is available to the public. Look to see if there is already an issue filed, or feel free
+                                to{' '}
+                                <a href="https://github.com/sourcegraph/sourcegraph/issues/new/choose">file an issue</a>{' '}
+                                with feature requests, bug reports, or product enhancements!
                             </div>
                             <div>
+                                <h3>Search our documentation</h3>
+                                Our <Link to="/documentation">documentation</Link> has information that can help you
+                                with any questions you have about using the product, setup, and configuration. If you
+                                notice that something is missing in our docs please let us know or even submit a pull
+                                request with an update!
+                            </div>
+                            <div>
+                                <h3>Submit product feedback</h3>
                                 <p>
-                                    Take a look at our <a href="/documentation">documentation</a>.
+                                    We love hearing from our users! Send us your product feedback, ideas, and feature
+                                    requests. This form is especially useful for anyone wishing to stay anonymous to the
+                                    public with any requests.
                                 </p>
-                            </div>
-                            <div>
-                                <p>Send us your product feedback, ideas, and feature requests.</p>
+                                <Link
+                                    to={`https://share.hsforms.com/1kZm78wx9QiGpjRRrHEcapA1n7ku?site_id=${window.context.siteID}&email=${this.props.authenticatedUser.email}`}
+                                    className="btn btn-secondary"
+                                    // eslint-disable-next-line react/jsx-no-target-blank
+                                    target="_blank"
+                                >
+                                    Share feedback
+                                </Link>
                             </div>
                         </div>
                     }
