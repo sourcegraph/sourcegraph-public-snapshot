@@ -350,6 +350,7 @@ func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
 		"URL":             []string{string(p.URL)},
 		"Commit":          []string{string(p.Commit)},
 		"Pattern":         []string{p.Pattern},
+		"FetchTimeout":    []string{p.FetchTimeout},
 		"IncludePatterns": p.IncludePatterns,
 		"ExcludePattern":  []string{p.ExcludePattern},
 	}
