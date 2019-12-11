@@ -180,13 +180,13 @@ func (r *NodeResolver) ToLSIFDump() (LSIFDumpResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToLSIFJobStats() (LSIFJobStatsResolver, bool) {
-	n, ok := r.Node.(LSIFJobStatsResolver)
+func (r *NodeResolver) ToLSIFUploadStats() (LSIFUploadStatsResolver, bool) {
+	n, ok := r.Node.(LSIFUploadStatsResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToLSIFJob() (LSIFJobResolver, bool) {
-	n, ok := r.Node.(LSIFJobResolver)
+func (r *NodeResolver) ToLSIFUpload() (LSIFUploadResolver, bool) {
+	n, ok := r.Node.(LSIFUploadResolver)
 	return n, ok
 }
 
@@ -275,16 +275,16 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 			return nil, codeIntelOnlyInEnterprise
 		}
 		return EnterpriseResolvers.codeIntelResolver.LSIFDumpByID(ctx, id)
-	case "LSIFJobStats":
+	case "LSIFUploadStats":
 		if EnterpriseResolvers.codeIntelResolver == nil {
 			return nil, codeIntelOnlyInEnterprise
 		}
-		return EnterpriseResolvers.codeIntelResolver.LSIFJobStatsByID(ctx, id)
-	case "LSIFJob":
+		return EnterpriseResolvers.codeIntelResolver.LSIFUploadStatsByID(ctx, id)
+	case "LSIFUpload":
 		if EnterpriseResolvers.codeIntelResolver == nil {
 			return nil, codeIntelOnlyInEnterprise
 		}
-		return EnterpriseResolvers.codeIntelResolver.LSIFJobByID(ctx, id)
+		return EnterpriseResolvers.codeIntelResolver.LSIFUploadByID(ctx, id)
 	default:
 		return nil, errors.New("invalid id")
 	}
