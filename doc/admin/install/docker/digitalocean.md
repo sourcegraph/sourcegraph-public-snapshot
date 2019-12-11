@@ -6,28 +6,31 @@ If you're just starting out, we recommend [installing Sourcegraph locally](index
 
 ---
 
-## Use the "Create Droplets" wizard
+## Run Sourcegraph on a Digital Ocean Droplet
 
-[Open your DigitalOcean dashboard](https://cloud.digitalocean.com/droplets/new) to create a new droplet
+1. [Create a new Digital Ocean Droplet](https://cloud.digitalocean.com/droplets/new). Set the
+   operating system to be Ubuntu 18.04. For droplet size, we recommend at least 4GB RAM and 2 CPU,
+   but you may need more depending on team size and number of repositories. We recommend you set up
+   SSH access (Authentication > SSH keys) for convenient access to the droplet.
+1. SSH into the droplet, and install Docker: `snap install docker`
+1. Run the Sourcegraph Docker image as a daemon:
 
-- **Choose an image -** Select the **One-click apps** tab and then choose Docker
-- **Choose a size -** We recommend at least 4GB RAM and 2 CPU, more depending on team size and number of repositories/languages enabled.
-- **Select additional options -** Check "User data" and paste in the following:
+   ```
+   docker run -d --publish 80:7080 --publish 443:7443 --publish 2633:2633 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.10.4
+   ```
+1. Navigate to the droplet's IP address to finish initializing Sourcegraph. If you have configured a
+   DNS entry for the IP, configure `externalURL` to reflect that.
 
-  ```
-  #cloud-config
-  repo_update: true
-  repo_upgrade: all
+### After initialization
 
-  runcmd:
-  - mkdir -p /root/.sourcegraph/config
-  - mkdir -p /root/.sourcegraph/data
-  - [ sh, -c, 'docker run -d --publish 80:7080 --publish 443:7443 --publish 2633:2633 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.10.4' ]
-  ```
+After initial setup, we recommend you do the following:
 
-- Launch your instance, then navigate to its IP address.
-
-- If you have configured a DNS entry for the IP, configure `externalURL` to reflect that. (Note: `externalURL` was called `appURL` in Sourcegraph 2.13 and earlier.)
+* Restrict the accessibility of ports other than `80` and `443` via [Cloud
+  Firewalls](https://www.digitalocean.com/docs/networking/firewalls/quickstart/). In particular, you
+  should secure port `2633`, because this serves the Sourcegraph management console. We recommend
+  you use [SSH port forwarding](https://help.ubuntu.com/community/SSH/OpenSSH/PortForwarding) to
+  access the management console after restricting it.
+* Set up [TLS/SSL](../../nginx.md#nginx-ssl-https-configuration) in the NGINX configuration.
 
 ---
 

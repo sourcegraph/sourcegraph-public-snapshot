@@ -44,29 +44,32 @@ Run `sudo ls -la ~/.sourcegraph/config` and you should see the CA and SSL certif
 
 ## 3. Adding SSL support to NGINX
 
-Change the [default `~/.sourcegraph/config/nginx.conf`](https://github.com/sourcegraph/sourcegraph/blob/master/cmd/server/shared/assets/nginx.conf) by:
-
-**1.** Replacing `listen 7080;` with `listen 7080 ssl;`.
-
-**2.** Adding the following two lines below the `listen 7080 ssl;` statement.
-
-```nginx
-ssl_certificate         sourcegraph.crt;
-ssl_certificate_key     sourcegraph.key;
-```
-
-The `nginx.conf` should now look like:
+Edit the [default
+`~/.sourcegraph/config/nginx.conf`](https://github.com/sourcegraph/sourcegraph/blob/master/cmd/server/shared/assets/nginx.conf),
+so that port `7080` redirects to `7443` and `7443` is served with SSL. It should look like this:
 
 ```nginx
 ...
 http {
     ...
     server {
-       ...
-        listen 7080 ssl;
+        listen 7080;
+        return 301 https://$host:7433$request_uri;
+    }
+
+    server {
+        # Do not remove. The contents of sourcegraph_server.conf can change
+        # between versions and may include improvements to the configuration.
+        include nginx/sourcegraph_server.conf;
+
+        listen 7443 ssl;
+        server_name sourcegraph.example.com;  # change to your URL
         ssl_certificate         sourcegraph.crt;
         ssl_certificate_key     sourcegraph.key;
-        ...
+
+        location / {
+            ...
+        }
     }
 }
 ```
@@ -75,14 +78,15 @@ http {
 
 > NOTE: If the Sourcegraph container is still running, stop it before reading on.
 
-Now that NGINX is listening on port 443, we need the Sourcegraph container to listen on port 443 by adding `--publish 443:7080` to the `docker run` command:
+Now that NGINX is listening on port 7443, we need to configure the Sourcegraph container to forward
+443 to 7443 by adding `--publish 443:7443` to the `docker run` command:
 
 ```bash
 docker container run \
   --rm  \
   --publish 7080:7080 \
   --publish 2633:2633 \
-  --publish 443:7080 \
+  --publish 443:7443 \
   \
   --volume ~/.sourcegraph/config:/etc/sourcegraph  \
   --volume ~/.sourcegraph/data:/var/opt/sourcegraph  \

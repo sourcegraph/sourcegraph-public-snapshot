@@ -36,25 +36,30 @@ If NGINX is your preferred reverse proxy, we suggest using [the official NGINX d
 
 **1.** Copy your SSL certificate and key to `~/.sourcegraph/config` (where the `nginx.conf` file is).
 
-**2.** Edit `nginx.conf`, replacing `listen 7080;` with `listen 7080 ssl;`, then add the following two lines below the `listen 7080 ssl;` statement.
-
-```nginx
-ssl_certificate         sourcegraph.crt;
-ssl_certificate_key     sourcegraph.key;
-```
-
-The `nginx.conf` should now look like this (names of cert and key can be anything):
+**2.** Edit `nginx.conf` so that port `7080` redirects to `7443` and `7443` is served with SSL. It should look like this:
 
 ```nginx
 ...
 http {
     ...
     server {
-       ...
-        listen 7080 ssl;
+        listen 7080;
+        return 301 https://$host:7433$request_uri;
+    }
+
+    server {
+        # Do not remove. The contents of sourcegraph_server.conf can change
+        # between versions and may include improvements to the configuration.
+        include nginx/sourcegraph_server.conf;
+
+        listen 7443 ssl;
+        server_name sourcegraph.example.com;  # change to your URL
         ssl_certificate         sourcegraph.crt;
         ssl_certificate_key     sourcegraph.key;
-        ...
+
+        location / {
+            ...
+        }
     }
 }
 ```
@@ -63,14 +68,42 @@ http {
 
 There are a few options:
 
-**[1. Generate a self-signed certificate](ssl_https_self_signed_cert_nginx.md)**<br />
-For instances that don't yet have certificate from a [globally trusted Certificate Authority (CA) provider](https://en.wikipedia.org/wiki/Certificate_authority#Providers).
+**[1. Generate a browser-trusted certificate using Let's Encrypt (Certbot)](https://certbot.eff.org/)**<br />
 
-**[2. Generate a browser trusted certificate using Let's Encrypt (Certbot)](https://certbot.eff.org/)**<br />
-NGINX supported certificate management tool for programmatically obtaining a globally browser-trusted certificate.
+1. On the Certbot homepage, select "Nginx" and the operating system of the machine hosting Sourcegraph.
+1. Follow the instructions to install and run Certbot.
+  1. If there is currently a process (e.g., Sourcegraph) listening on port 80, you'll
+     need to stop it before running Certbot:
 
-**3. Proxy as a service**<br />
-Services such as [Cloudflare](https://www.cloudflare.com/ssl/) can handle the SSL connection from the browser/client, proxying requests to your Sourcegraph instance.
+     ```
+     docker stop $(docker ps | grep sourcegraph/server | awk '{ print $1 }')
+     ```
+  1. When you get to the step describing how to run Certbot, use the "certonly" command: `sudo certbot certonly --nginx`.
+  1. When Certbot runs successfully, it will emit the key file `privkey.pem` and cert file
+     `fullchain.pem`. These should be renamed to `sourcegraph.key` and `sourcegraph.crt`,
+     respectively, if you are using the `nginx.conf` template mentioned in this doc.
+  1. Kill the NGINX server that Certbot started: `killall nginx`. Restart Sourcegraph:
+
+     ```
+     docker start $(docker ps -a | grep sourcegraph/server | awk '{ print $1 }')
+     ```
+  1. Now visit your Sourcegraph instance at `https://${YOUR_URL}`. If there are issues, debug by examining the Docker logs:
+
+     ```
+     docker logs $(docker ps | grep sourcegraph/server | awk '{ print $1 }')
+     ```
+
+**[2. Generate a self-signed certificate](ssl_https_self_signed_cert_nginx.md)**<br />
+
+For instances that don't yet have a certificate from a [globally trusted Certificate Authority (CA) provider](https://en.wikipedia.org/wiki/Certificate_authority#Providers).
+
+**3. Use your CDN's HTTPS proxy feature**<br />
+
+Some CDNs such as
+[Cloudflare](https://support.cloudflare.com/hc/en-us/articles/200170416-End-to-end-HTTPS-with-Cloudflare-Part-3-SSL-options)
+can handle the HTTPS connection from the user's browser while allowing the underlying service to
+continue serving HTTP (or HTTPS with a self-signed certificate). View your CDN's documentation for
+more details.
 
 ## Redirect to external HTTPS URL
 
