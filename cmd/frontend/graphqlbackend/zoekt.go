@@ -15,6 +15,7 @@ import (
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -76,14 +77,50 @@ func zoektSearchOpts(k int, query *search.PatternInfo) zoekt.SearchOptions {
 
 var errNoResultsInTimeout = errors.New("no results found in specified timeout")
 
+type ZoektContentSearchResult struct {
+	Matches     []FileMatch
+	LimitHit    bool
+	DeadlineHit bool
+}
+
+type ZoektRepoSearchResult struct {
+	Uri              string
+	Repo             *types.Repo
+	CommitId         api.CommitID
+	InputRev         *string
+	TextSearchResult *TextSearchResult
+	// For Zoekt, the LimitHit actually applies to both repo and files, and
+	// means something different from what searcher.go describes. How did
+	// this even happen.
+	LimitHit bool
+}
+
+type ZoektSearchResult interface {
+	Value()
+}
+
+type GQLMatches []*FileMatchResolver
+
+type ZoektPartial struct {
+	// change Matches to be repos
+	Matches               GQLMatches
+	ReposNotFullySearched map[string]struct{}
+}
+
+func (f ZoektFull) Value()     {}
+func (l ZoektLimitHit) Value() {}
+
+type ZoektFull GQLMatches
+type ZoektLimitHit ZoektPartial
+
 // zoektSearchHEAD searches repositories using zoekt.
 //
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearchHEAD(ctx context.Context, args *search.Args, repos []*search.RepositoryRevisions, isSymbol bool, since func(t time.Time) time.Duration) (fm []*FileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
+func zoektSearchHEAD(ctx context.Context, args *search.Args, repos []*search.RepositoryRevisions, isSymbol bool, since func(t time.Time) time.Duration) (zoektSearchResult *interface{}, err error) {
 	if len(repos) == 0 {
-		return nil, false, nil, nil
+		return nil, nil
 	}
 
 	// Tell zoekt which repos to search
@@ -96,15 +133,24 @@ func zoektSearchHEAD(ctx context.Context, args *search.Args, repos []*search.Rep
 
 	queryExceptRepos, err := queryToZoektQuery(args.Pattern, isSymbol)
 	if err != nil {
-		return nil, false, nil, err
+		return nil, err
 	}
 	finalQuery := zoektquery.NewAnd(repoSet, queryExceptRepos)
 
 	tr, ctx := trace.New(ctx, "zoekt.Search", fmt.Sprintf("%d %+v", len(repoSet.Set), finalQuery.String()))
 	defer func() {
 		tr.SetError(err)
-		if len(fm) > 0 {
-			tr.LazyPrintf("%d file matches", len(fm))
+		var matches Matches
+		switch m := (*zoektSearchResult).(type) {
+		case ZoektFull:
+			matches = GQLMatches(m)
+		case ZoektLimitHit:
+			matches = GQLMatches(m.Matches)
+		default:
+			panic("unreachable")
+		}
+		if len(matches) > 0 {
+			tr.LazyPrintf("%d file matches", len(matches))
 		}
 		tr.Finish()
 	}()
@@ -139,7 +185,7 @@ func zoektSearchHEAD(ctx context.Context, args *search.Args, repos []*search.Rep
 	// on the values passed in to the flag.
 	newRepoSet, err := createNewRepoSetWithRepoHasFileInputs(ctx, args.Pattern, args.Zoekt.Client, *repoSet)
 	if err != nil {
-		return nil, false, nil, err
+		return nil, err
 	}
 	finalQuery = zoektquery.NewAnd(newRepoSet, queryExceptRepos)
 	tr.LazyPrintf("after repohasfile filters: nRepos=%d query=%v", len(newRepoSet.Set), finalQuery)
@@ -147,10 +193,10 @@ func zoektSearchHEAD(ctx context.Context, args *search.Args, repos []*search.Rep
 	t0 := time.Now()
 	resp, err := args.Zoekt.Client.Search(ctx, finalQuery, &searchOpts)
 	if err != nil {
-		return nil, false, nil, err
+		return nil, err
 	}
 	if resp.FileCount == 0 && resp.MatchCount == 0 && since(t0) >= searchOpts.MaxWallTime {
-		return nil, false, nil, errNoResultsInTimeout
+		return nil, errNoResultsInTimeout
 	}
 	limitHit = resp.FilesSkipped+resp.ShardsSkipped > 0
 	// Repositories that weren't fully evaluated because they hit the Zoekt or Sourcegraph file match limits.
@@ -258,7 +304,18 @@ func zoektSearchHEAD(ctx context.Context, args *search.Args, repos []*search.Rep
 		}
 	}
 
-	return matches, limitHit, reposLimitHit, nil
+	var result interface{}
+	if limitHit {
+		partial = ZoektPartial{
+			Matches:               matches,
+			ReposNotFullySearched: reposLimitHit,
+		}
+		result = ZoektLimitHit(ZoektPartial)
+	} else {
+		result = ZoektFull(matches)
+	}
+
+	return &result, nil
 }
 
 // Returns a new repoSet which accounts for the `repohasfile` and `-repohasfile` flags that may have been passed in the query.
