@@ -50,7 +50,7 @@ type ExternalTool struct {
 }
 
 // Configure the command line options and return the command to execute using an external tool
-func (t *ExternalTool) command(spec *protocol.RewriteSpecification, zipPath string) (cmd *exec.Cmd, err error) {
+func (t *ExternalTool) command(ctx context.Context, spec *protocol.RewriteSpecification, zipPath string) (cmd *exec.Cmd, err error) {
 	switch t.Name {
 	case "comby":
 		_, err = exec.LookPath("comby")
@@ -72,7 +72,7 @@ func (t *ExternalTool) command(spec *protocol.RewriteSpecification, zipPath stri
 		}
 
 		log15.Info(fmt.Sprintf("running command: comby %q", strings.Join(args[:], " ")))
-		return exec.Command(t.BinaryPath, args...), nil
+		return exec.CommandContext(ctx, t.BinaryPath, args...), nil
 
 	default:
 		return nil, errors.Errorf("Unknown external replace tool %q.", t.Name)
@@ -219,7 +219,7 @@ func (s *Service) replace(ctx context.Context, p *protocol.Request, w http.Respo
 		BinaryPath: "comby",
 	}
 
-	cmd, err := t.command(&p.RewriteSpecification, zipPath)
+	cmd, err := t.command(ctx, &p.RewriteSpecification, zipPath)
 	if err != nil {
 		log15.Info("Invalid command: " + err.Error())
 		return
