@@ -1993,9 +1993,14 @@ func testStore(db *sql.DB) func(*testing.T) {
 				}
 
 				have, _, err := s.ListChangesetJobs(ctx, ListChangesetJobsOpts{CampaignID: int64(campaignID)})
+				if err != nil {
+					t.Fatal(err)
+				}
+
 				if len(have) != len(jobs) {
 					t.Fatalf("wrong number of jobs returned. have=%d, want=%d", len(have), len(jobs))
 				}
+
 				for _, job := range have {
 					if _, ok := mustReset[job.ID]; ok {
 						if job.Error != "" {
