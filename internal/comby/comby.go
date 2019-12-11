@@ -86,16 +86,24 @@ func PipeTo(ctx context.Context, args Args, w io.Writer) (err error) {
 		return errors.Wrap(err, "failed to start comby command")
 	}
 
+	// Read stderr in goroutine so we don't potentially block reading stdout
+	stderrMsgC := make(chan []byte, 1)
+	go func() {
+		msg, _ := ioutil.ReadAll(stderr)
+		stderrMsgC <- msg
+		close(stderrMsgC)
+	}()
+
 	_, err = io.Copy(w, stdout)
 	if err != nil {
 		log15.Error("failed to copy comby output to writer", "error", err.Error())
 		return errors.Wrap(err, "failed to copy comby output to writer")
 	}
 
-	stderrMsg, _ := ioutil.ReadAll(stderr)
+	stderrMsg := <-stderrMsgC
 
 	if err := cmd.Wait(); err != nil {
-		if stderrMsg != nil {
+		if len(stderrMsg) > 0 {
 			log15.Error("failed to execute comby command", "error", string(stderrMsg))
 			return errors.Errorf("comby error: %s", stderrMsg)
 		}
