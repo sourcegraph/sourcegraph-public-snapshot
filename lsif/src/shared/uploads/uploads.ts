@@ -258,7 +258,7 @@ export class UploadsManager {
             await entityManager.query(
                 `
                     UPDATE lsif_uploads
-                    SET completed_or_errored_at = now(), state = $2, failure_summary = $3, failure_stacktrace = $4
+                    SET finished_at = now(), state = $2, failure_summary = $3, failure_stacktrace = $4
                     WHERE id = $1
                 `,
                 [uploadId, state, failureSummary, failureStacktrace]
