@@ -95,7 +95,7 @@ export class SiteAdminLsifUploadsPage extends React.Component<Props, State> {
                 // so that the stats don't disappear during navigation, which
                 // causes some weird jitter.
                 .pipe(switchMap(() => fetchLsifUploadStatistics().pipe(catchError(err => [asError(err)]))))
-                .subscribe(stats => this.setState({ statsOrError: stats }))
+                .subscribe(statsOrError => this.setState({ statsOrError }))
         )
         this.updates.next()
     }
