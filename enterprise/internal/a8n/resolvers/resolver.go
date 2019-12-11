@@ -260,7 +260,13 @@ func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.Upda
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
 
-func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.DeleteCampaignArgs) (*graphqlbackend.EmptyResponse, error) {
+func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.DeleteCampaignArgs) (_ *graphqlbackend.EmptyResponse, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.DeleteCampaign", fmt.Sprintf("Campaign: %q", args.Campaign))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	// 🚨 SECURITY: Only site admins may update campaigns for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -271,10 +277,44 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 		return nil, err
 	}
 
+	// If we don't have to close the changesets, we can simply delete the
+	// Campaign and return. The triggers in the database will remove the
+	// campaign's ID from the changesets' CampaignIDs.
+	if args.CloseChangesets {
+		err := r.store.DeleteCampaign(ctx, campaignID)
+		return &graphqlbackend.EmptyResponse{}, err
+	}
+
+	// First load the Changesets with the given campaignID, before deleting
+	// the campaign would remove the association.
+	cs, _, err := r.store.ListChangesets(ctx, ee.ListChangesetsOpts{
+		CampaignID: campaignID,
+		Limit:      -1,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Remove the association manually, since we'll update the Changesets in
+	// the database, after closing them and we can't update them with an
+	// invalid CampaignID.
+	for _, c := range cs {
+		c.RemoveCampaignID(campaignID)
+	}
+
 	err = r.store.DeleteCampaign(ctx, campaignID)
 	if err != nil {
 		return nil, err
 	}
+
+	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
+	go func() {
+		ctx := trace.ContextWithTrace(context.Background(), tr)
+		err := svc.CloseOpenChangesets(ctx, cs)
+		if err != nil {
+			log15.Error("CloseCampaignChangesets", "err", err)
+		}
+	}()
 
 	return &graphqlbackend.EmptyResponse{}, nil
 }
@@ -560,9 +600,19 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 
 	if args.CloseChangesets {
 		go func() {
-			// Close only the changesets that are open
 			ctx := trace.ContextWithTrace(context.Background(), tr)
-			err := svc.CloseOpenCampaignChangesets(ctx, campaign)
+
+			cs, _, err := r.store.ListChangesets(ctx, ee.ListChangesetsOpts{
+				CampaignID: campaign.ID,
+				Limit:      -1,
+			})
+			if err != nil {
+				log15.Error("ListChangesets", "err", err)
+				return
+			}
+
+			// Close only the changesets that are open
+			err = svc.CloseOpenChangesets(ctx, cs)
 			if err != nil {
 				log15.Error("CloseCampaignChangesets", "err", err)
 			}

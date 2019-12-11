@@ -330,15 +330,7 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64) (campaign *a8n.Ca
 	return campaign, nil
 }
 
-func (s *Service) CloseOpenCampaignChangesets(ctx context.Context, c *a8n.Campaign) (err error) {
-	cs, _, err := s.store.ListChangesets(ctx, ListChangesetsOpts{
-		CampaignID: c.ID,
-		Limit:      10000,
-	})
-	if err != nil {
-		return err
-	}
-
+func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*a8n.Changeset) (err error) {
 	cs = selectChangesets(cs, func(c *a8n.Changeset) bool {
 		s, err := c.State()
 		if err != nil {
