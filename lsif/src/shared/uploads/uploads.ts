@@ -118,6 +118,50 @@ export class UploadsManager {
     }
 
     /**
+     * Remove all uploads that are older than `maxAge` seconds. Returns the count of deleted uploads.
+     *
+     * @param maxAge The maximum age for an upload.
+     */
+    public async clean(maxAge: number): Promise<number> {
+        return (
+            (
+                await instrumentQuery(() =>
+                    this.connection
+                        .getRepository(xrepoModels.LsifUpload)
+                        .createQueryBuilder()
+                        .delete()
+                        .where("uploaded_at < now() - (:maxAge * interval '1 second')", { maxAge })
+                        .execute()
+                )
+            ).affected || 0
+        )
+    }
+
+    /**
+     * Move all processing uploads started more than `maxAge` seconds ago that are not currently
+     * locked back to the `queued` state.
+     *
+     * @param maxAge The maximum age for an unlocked upload in the `processing` state.
+     */
+    public async resetStalled(maxAge: number): Promise<number[]> {
+        const results: [{ id: number }[]] = await instrumentQuery(() =>
+            this.connection.query(
+                `
+                    UPDATE lsif_uploads u SET state = 'queued', started_at = null WHERE id = ANY(
+                        SELECT id FROM lsif_uploads
+                        WHERE state = 'processing' AND started_at < now() - ($1 * interval '1 second')
+                        FOR UPDATE SKIP LOCKED
+                    )
+                    RETURNING u.id
+                `,
+                [maxAge]
+            )
+        )
+
+        return results[0].map(r => r.id)
+    }
+
+    /**
      * Create a new uploaded with a state of `queued`.
      *
      * @param args The upload payload.
@@ -154,7 +198,6 @@ export class UploadsManager {
         upload.root = root
         upload.filename = filename
         upload.tracingContext = JSON.stringify(tracing)
-
         await instrumentQuery(() => this.connection.createEntityManager().save(upload))
 
         return upload

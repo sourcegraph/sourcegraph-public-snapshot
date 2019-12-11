@@ -14,7 +14,7 @@ import { createLogger } from '../shared/logging'
 import { createLsifRouter } from './routes/lsif'
 import { createMetaRouter } from './routes/meta'
 import { createPostgresConnection } from '../shared/database/postgres'
-import { createQueue, ensureOnlyRepeatableJob } from '../shared/queue/queue'
+import { createQueue } from '../shared/queue/queue'
 import { createTracer } from '../shared/tracing'
 import { createUploadRouter } from './routes/uploads'
 import { dbFilename, dbFilenameOld, ensureDirectory } from '../shared/paths'
@@ -68,12 +68,8 @@ async function main(logger: Logger): Promise<void> {
     // Create queue to publish convert
     const queue = createQueue(settings.REDIS_ENDPOINT, logger)
 
-    // Schedule jobs on timers
-    await ensureOnlyRepeatableJob(queue, 'clean-old-jobs', {}, settings.CLEAN_OLD_JOBS_INTERVAL * 1000)
-    await ensureOnlyRepeatableJob(queue, 'clean-failed-jobs', {}, settings.CLEAN_FAILED_JOBS_INTERVAL * 1000)
-
     // Start background tasks
-    startTasks(connection, queue, logger)
+    startTasks(connection, uploadsManager, logger)
 
     // Register the required commands on the queue's Redis client
     const scriptedClient = await defineRedisCommands(queue.client)
