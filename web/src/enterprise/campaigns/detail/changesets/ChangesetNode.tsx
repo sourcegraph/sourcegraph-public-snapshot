@@ -63,7 +63,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                             />
                         </div>
                         {node.__typename === 'ExternalChangeset' && (
-                            <div className="flex-shrink-0 flex-grow-0 ml-1 mr-2">
+                            <div className="flex-shrink-0 flex-grow-0 ml-1 mr-3">
                                 <ReviewStateIcon
                                     className={`text-${changesetReviewStateColors[node.reviewState]}`}
                                     data-tooltip={changesetStageLabels[node.reviewState]}
