@@ -213,7 +213,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 
 	zipPath, zf, err := store.GetZipFileWithRetry(getZf)
 	if err != nil {
-		return nil, false, false, err
+		return nil, false, false, errors.Wrap(err, "failed to get archive")
 	}
 	defer zf.Close()
 

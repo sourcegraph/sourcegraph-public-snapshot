@@ -88,6 +88,7 @@ type Campaign struct {
 	UpdatedAt       time.Time
 	ChangesetIDs    []int64
 	CampaignPlanID  int64
+	ClosedAt        time.Time
 }
 
 // Clone returns a clone of a Campaign.
@@ -270,7 +271,11 @@ func (t *Changeset) State() (s ChangesetState, err error) {
 	case *github.PullRequest:
 		s = ChangesetState(m.State)
 	case *bitbucketserver.PullRequest:
-		s = ChangesetState(m.State)
+		if m.State == "DECLINED" {
+			s = ChangesetStateClosed
+		} else {
+			s = ChangesetState(m.State)
+		}
 	default:
 		return "", errors.New("unknown changeset type")
 	}

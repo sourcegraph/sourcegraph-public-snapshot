@@ -56,6 +56,11 @@ type RetryCampaignArgs struct {
 	Campaign graphql.ID
 }
 
+type CloseCampaignArgs struct {
+	Campaign        graphql.ID
+	CloseChangesets bool
+}
+
 type CreateChangesetsArgs struct {
 	Input []struct {
 		Repository graphql.ID
@@ -70,6 +75,7 @@ type A8NResolver interface {
 	Campaigns(ctx context.Context, args *graphqlutil.ConnectionArgs) (CampaignsConnectionResolver, error)
 	DeleteCampaign(ctx context.Context, args *DeleteCampaignArgs) (*EmptyResponse, error)
 	RetryCampaign(ctx context.Context, args *RetryCampaignArgs) (CampaignResolver, error)
+	CloseCampaign(ctx context.Context, args *CloseCampaignArgs) (CampaignResolver, error)
 
 	CreateChangesets(ctx context.Context, args *CreateChangesetsArgs) ([]ExternalChangesetResolver, error)
 	ChangesetByID(ctx context.Context, id graphql.ID) (ExternalChangesetResolver, error)
@@ -133,6 +139,13 @@ func (r *schemaResolver) RetryCampaign(ctx context.Context, args *RetryCampaignA
 	return EnterpriseResolvers.a8nResolver.RetryCampaign(ctx, args)
 }
 
+func (r *schemaResolver) CloseCampaign(ctx context.Context, args *CloseCampaignArgs) (CampaignResolver, error) {
+	if EnterpriseResolvers.a8nResolver == nil {
+		return nil, a8nOnlyInEnterprise
+	}
+	return EnterpriseResolvers.a8nResolver.CloseCampaign(ctx, args)
+}
+
 func (r *schemaResolver) Campaigns(ctx context.Context, args *graphqlutil.ConnectionArgs) (CampaignsConnectionResolver, error) {
 	if EnterpriseResolvers.a8nResolver == nil {
 		return nil, a8nOnlyInEnterprise
@@ -173,6 +186,7 @@ type CampaignResolver interface {
 	RepositoryDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (RepositoryComparisonConnectionResolver, error)
 	Plan(ctx context.Context) (CampaignPlanResolver, error)
 	ChangesetCreationStatus(context.Context) (BackgroundProcessStatus, error)
+	ClosedAt() *DateTime
 }
 
 type CampaignsConnectionResolver interface {

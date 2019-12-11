@@ -89,7 +89,7 @@ func structuralSearch(ctx context.Context, zipPath, pattern string, includePatte
 		NumWorkers:    numWorkers,
 	}
 
-	combyMatches, err := comby.Matches(args)
+	combyMatches, err := comby.Matches(ctx, args)
 	if err != nil {
 		return nil, false, err
 	}

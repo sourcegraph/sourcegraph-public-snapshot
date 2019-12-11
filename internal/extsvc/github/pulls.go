@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // An Actor represents an object which can take actions on GitHub. Typically a User or Bot.
@@ -519,7 +520,7 @@ func (c *Client) loadPullRequests(ctx context.Context, prs ...*PullRequest) erro
 
 // GetOpenPullRequestByRefs fetches the the pull request associated with the supplied
 // refs. GitHub only allows one open PR by ref at a time.
-// If nothing is found (nil, nil) is returned
+// If nothing is found an error is returned.
 func (c *Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, baseRef, headRef string) (*PullRequest, error) {
 	var q strings.Builder
 	q.WriteString(pullRequestFragments)
@@ -527,7 +528,7 @@ func (c *Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, base
 	q.WriteString(fmt.Sprintf("repository(owner: %q, name: %q) {\n",
 		owner, name))
 	q.WriteString(fmt.Sprintf("pullRequests(baseRefName: %q, headRefName: %q, first: 1, states: OPEN) { \n",
-		baseRef, headRef,
+		git.AbbreviateRef(baseRef), git.AbbreviateRef(headRef),
 	))
 	q.WriteString(fmt.Sprintf("nodes{ ... pr }\n"))
 	q.WriteString("}\n")
@@ -550,11 +551,8 @@ func (c *Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, base
 	if err != nil {
 		return nil, err
 	}
-	if len(results.Repository.PullRequests.Nodes) == 0 {
-		return nil, nil
-	}
 	if len(results.Repository.PullRequests.Nodes) != 1 {
-		return nil, fmt.Errorf("expected 1 result, got %d", len(results.Repository.PullRequests.Nodes))
+		return nil, fmt.Errorf("expected 1 pull request, got %d instead", len(results.Repository.PullRequests.Nodes))
 	}
 
 	pr := results.Repository.PullRequests.Nodes[0].PullRequest

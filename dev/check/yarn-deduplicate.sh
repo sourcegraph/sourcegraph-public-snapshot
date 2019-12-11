@@ -5,7 +5,8 @@ echo "--- check yarn.lock for duplicates"
 
 # Prevent duplicates in yarn.lock/node_modules that lead to errors and bloated bundle sizes
 
-yarn --frozen-lockfile --ignore-scripts
+# mutex is necessary since CI runs various yarn installs in parallel
+yarn --mutex network --frozen-lockfile --ignore-scripts
 
 echo "Checking for duplicate dependencies in yarn.lock"
 yarn run -s yarn-deduplicate --fail --list --strategy fewer ./yarn.lock || {
