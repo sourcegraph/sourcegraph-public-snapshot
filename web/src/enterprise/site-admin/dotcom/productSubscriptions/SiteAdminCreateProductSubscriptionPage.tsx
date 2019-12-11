@@ -1,16 +1,19 @@
 import * as H from 'history'
 import AddIcon from 'mdi-react/AddIcon'
-import * as React from 'react'
-import { RouteComponentProps } from 'react-router'
+import React, { useCallback } from 'react'
+import { Redirect, RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
-import { Observable } from 'rxjs'
-import { map, tap } from 'rxjs/operators'
+import { concat, Observable } from 'rxjs'
+import { catchError, concatMap, map, tap } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
+import { asError } from '../../../../../../shared/src/util/errors'
 import { mutateGraphQL, queryGraphQL } from '../../../../backend/graphql'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
+import { Form } from '../../../../components/Form'
 import { PageTitle } from '../../../../components/PageTitle'
 import { eventLogger } from '../../../../tracking/eventLogger'
+import { useEventObservable } from '../../../../util/useObservable'
 
 interface UserCreateSubscriptionNodeProps {
     /**
@@ -24,37 +27,88 @@ interface UserCreateSubscriptionNodeProps {
     history: H.History
 }
 
-class UserCreateSubscriptionNode extends React.PureComponent<UserCreateSubscriptionNodeProps> {
-    private createProductSubscription = (): Observable<
-        Pick<GQL.IProductSubscription, 'id' | 'name' | 'url' | 'urlForSiteAdmin'>
-    > =>
-        createProductSubscription({ accountID: this.props.node.id }).pipe(
-            tap(({ url, urlForSiteAdmin }) => this.props.history.push(urlForSiteAdmin || url))
+const createProductSubscription = (
+    args: GQL.ICreateProductSubscriptionOnDotcomMutationArguments
+): Observable<Pick<GQL.IProductSubscription, 'urlForSiteAdmin'>> => {
+    return mutateGraphQL(
+        gql`
+            mutation CreateProductSubscription($accountID: ID!) {
+                dotcom {
+                    createProductSubscription(accountID: $accountID) {
+                        urlForSiteAdmin
+                    }
+                }
+            }
+        `,
+        args
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.dotcom.createProductSubscription)
+    )
+}
+const UserCreateSubscriptionNode: React.FunctionComponent<UserCreateSubscriptionNodeProps> = (
+    props: UserCreateSubscriptionNodeProps
+) => {
+    const [onSubmit, createdSubscription] = useEventObservable(
+        useCallback(
+            (
+                submits: Observable<React.FormEvent<HTMLFormElement>>
+            ): Observable<Pick<GQL.IProductSubscription, 'urlForSiteAdmin'> | 'saving' | Error> =>
+                submits.pipe(
+                    tap(event => event.preventDefault()),
+                    tap(() => eventLogger.log('NewProductSubscriptionCreated')),
+                    map(() => ({ accountID: props.node.id })),
+                    concatMap(input =>
+                        concat(
+                            ['saving' as const],
+                            createProductSubscription(input).pipe(catchError(err => [asError(err)]))
+                        )
+                    )
+                ),
+            [props.node.id]
         )
+    )
 
-    public render(): JSX.Element | null {
-        return (
+    return (
+        <>
+            {createdSubscription &&
+                createdSubscription !== 'saving' &&
+                !(createdSubscription instanceof Error) &&
+                createdSubscription.urlForSiteAdmin && <Redirect to={createdSubscription.urlForSiteAdmin} />}
             <li className="list-group-item py-2">
                 <div className="d-flex align-items-center justify-content-between">
                     <div>
-                        <Link to={`/users/${this.props.node.username}`}>{this.props.node.username}</Link>{' '}
+                        <Link to={`/users/${props.node.username}`}>{props.node.username}</Link>{' '}
                         <span className="text-muted">
-                            ({this.props.node.emails.filter(email => email.isPrimary).map(email => email.email)})
+                            ({props.node.emails.filter(email => email.isPrimary).map(email => email.email)})
                         </span>
                     </div>
                     <div>
-                        <button
-                            type="button"
-                            className="btn btn-sm btn-secondary"
-                            onClick={this.createProductSubscription}
-                        >
-                            <AddIcon className="icon-inline" /> Create new subscription
-                        </button>
+                        <Form onSubmit={onSubmit}>
+                            <button
+                                type="submit"
+                                className="btn btn-sm btn-secondary"
+                                disabled={createdSubscription === 'saving'}
+                            >
+                                <AddIcon className="icon-inline" /> Create new subscription
+                            </button>
+                        </Form>
                     </div>
                 </div>
+                {createdSubscription instanceof Error && (
+                    <div className="alert alert-danger">{createdSubscription.message}</div>
+                )}
+                {createdSubscription &&
+                    createdSubscription !== 'saving' &&
+                    !(createdSubscription instanceof Error) &&
+                    !createdSubscription.urlForSiteAdmin && (
+                        <div className="alert alert-danger">
+                            No subscription URL available (only accessible to site admins)
+                        </div>
+                    )}
             </li>
-        )
-    }
+        </>
+    )
 }
 
 class FilteredUserConnection extends FilteredConnection<GQL.IUser, Pick<UserCreateSubscriptionNodeProps, 'history'>> {}
@@ -117,27 +171,5 @@ function queryAccounts(args: { first?: number; query?: string }): Observable<GQL
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.users)
-    )
-}
-
-function createProductSubscription(
-    args: GQL.ICreateProductSubscriptionOnDotcomMutationArguments
-): Observable<Pick<GQL.IProductSubscription, 'id' | 'name' | 'url' | 'urlForSiteAdmin'>> {
-    return mutateGraphQL(
-        gql`
-            mutation CreateProductSubscription($accountID: ID!) {
-                dotcom {
-                    createProductSubscription(accountID: $accountID) {
-                        id
-                        name
-                        urlForSiteAdmin
-                    }
-                }
-            }
-        `,
-        args
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.dotcom.createProductSubscription)
     )
 }
