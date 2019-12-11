@@ -29,8 +29,8 @@ interface UserCreateSubscriptionNodeProps {
 
 const createProductSubscription = (
     args: GQL.ICreateProductSubscriptionOnDotcomMutationArguments
-): Observable<Pick<GQL.IProductSubscription, 'urlForSiteAdmin'>> => {
-    return mutateGraphQL(
+): Observable<Pick<GQL.IProductSubscription, 'urlForSiteAdmin'>> =>
+    mutateGraphQL(
         gql`
             mutation CreateProductSubscription($accountID: ID!) {
                 dotcom {
@@ -45,7 +45,7 @@ const createProductSubscription = (
         map(dataOrThrowErrors),
         map(data => data.dotcom.createProductSubscription)
     )
-}
+
 const UserCreateSubscriptionNode: React.FunctionComponent<UserCreateSubscriptionNodeProps> = (
     props: UserCreateSubscriptionNodeProps
 ) => {
