@@ -335,7 +335,7 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64) (campaign *a8n.Ca
 // Campaign will be closed on the codehosts.
 func (s *Service) DeleteCampaign(ctx context.Context, id int64, closeChangesets bool) (err error) {
 	traceTitle := fmt.Sprintf("campaign: %d, closeChangesets: %t", id, closeChangesets)
-	tr, ctx := trace.New(ctx, "service.runChangeSetJob", traceTitle)
+	tr, ctx := trace.New(ctx, "service.DeleteCampaign", traceTitle)
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -352,7 +352,7 @@ func (s *Service) DeleteCampaign(ctx context.Context, id int64, closeChangesets 
 	// the campaign would remove the association.
 	cs, _, err := s.store.ListChangesets(ctx, ListChangesetsOpts{
 		CampaignID: id,
-		Limit:      10000,
+		Limit:      -1,
 	})
 	if err != nil {
 		return err
