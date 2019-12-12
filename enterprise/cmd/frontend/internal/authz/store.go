@@ -685,16 +685,17 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 	ctx, save := s.observe(ctx, "GrantPendingPermissions", "")
 	defer func() { save(&err, append(p.TracingFields(), otlog.Object("userID", userID))...) }()
 
-	// NOTE: Read whatever is in the "user_pending_permissions" table at the moment, we don't want to
-	// load within a transaction because once transaction begins, later query won't be able to see
-	// changes (i.e. "object_ids") of the same row in the "user_pending_permissions" table, which we
-	// will use to compute diff with "object_ids" read at this time. We could simply delete the row
-	// but it would result in inconsistent data between "user_pending_permissions" and
-	// "repo_pending_permissions" tables.
-	//
-	// In terms of leftover permissions (i.e. user is created but still have pending permissions
-	// with asscoiated "bind_id"), it is unavoidable even if we acquire a row-level lock here.
-	vals, err := s.load(ctx, loadUserPendingPermissionsQuery(p, "FOR SHARE"))
+	// Open a transaction for update consistency.
+	var tx *sqlTx
+	if tx, err = s.tx(ctx); err != nil {
+		return err
+	}
+	defer tx.commitOrRollback(&err)
+
+	// Make another Store with this underlying transaction.
+	txs := NewStore(tx, s.clock)
+
+	vals, err := txs.load(ctx, loadUserPendingPermissionsQuery(p, "FOR UPDATE"))
 	if err != nil {
 		// Skip the whole grant process if the user has no pending permissions.
 		if err == ErrNotFound {
@@ -707,26 +708,13 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 
 	// NOTE: We currently only have "repos" type, so avoid unnecessary type checking for now.
 	ids := p.IDs.ToArray()
-
-	// In case a row exists in "user_pending_permissions" table but has no element in its "object_ids"
-	// bitmap, this could happen when multiple calls of this method made for the same user.
 	if len(ids) == 0 {
 		return nil
 	}
 
-	// Open a transaction for update consistency.
-	var tx *sqlTx
-	if tx, err = s.tx(ctx); err != nil {
-		return err
-	}
-	defer tx.commitOrRollback(&err)
-
-	// Make another Store with this underlying transaction.
-	txs := NewStore(tx, s.clock)
-
 	// Batch query all repository permissions object IDs in one go.
 	// NOTE: It is critical to always acquire row-level locks in the same order as SetRepoPermissions
-	// and SetRepoPendingPermissions (i.e. repo -> user) to prevent deadlocks.
+	// (i.e. repo -> user) to prevent deadlocks.
 	q := loadRepoPermissionsBatchQuery(ids, p.Perm, ProviderSourcegraph, "FOR UPDATE")
 	loadedIDs, err := txs.batchLoadIDs(ctx, q)
 	if err != nil {
@@ -772,49 +760,11 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 		return errors.Wrap(err, "execute insert user permissions query")
 	}
 
-	// Clean up "repo_pending_permissions" table.
-	q = loadRepoPendingPermissionsBatchQuery(ids, p.Perm, "FOR UPDATE")
-	loadedIDs, err = txs.batchLoadIDs(ctx, q)
-	if err != nil {
-		return errors.Wrap(err, "batch load repo pending permissions")
-	}
-
-	updatedPerms = make([]*RepoPermissions, 0, len(ids))
-	for i := range ids {
-		repoID := int32(ids[i])
-		oldIDs := loadedIDs[repoID]
-		if oldIDs == nil {
-			oldIDs = roaring.NewBitmap()
-		}
-
-		oldIDs.Remove(uint32(p.ID))
-		updatedPerms = append(updatedPerms, &RepoPermissions{
-			RepoID:    repoID,
-			Perm:      p.Perm,
-			UserIDs:   oldIDs,
-			UpdatedAt: updatedAt,
-		})
-	}
-
-	if q, err = upsertRepoPendingPermissionsBatchQuery(updatedPerms...); err != nil {
-		return err
-	} else if err = txs.execute(ctx, q); err != nil {
-		return errors.Wrap(err, "execute upsert repo pending permissions batch query")
-	}
-
-	vals, err = s.load(ctx, loadUserPendingPermissionsQuery(p, "FOR UPDATE"))
-	if err != nil {
-		// Every error needs to report because otherwise the code won't go this far.
-		return errors.Wrap(err, "load user pending permissions")
-	}
-
-	// Save possible new changes made by other transactions to maintain data consistency.
-	p.IDs = roaring.AndNot(vals.ids, p.IDs)
-	p.UpdatedAt = updatedAt
-	if q, err = upsertUserPendingPermissionsBatchQuery(p); err != nil {
-		return err
-	} else if err = txs.execute(ctx, q); err != nil {
-		return errors.Wrap(err, "execute upsert user permissions batch query")
+	// NOTE: Practically, we don't need to clean up "repo_pending_permissions" table because the value of "id" column
+	// that is associated with this user will be invalidated automatically by deleting this row. Thus, we are able to
+	// avoid database deadlocks with other methods (e.g. SetRepoPermissions, SetRepoPendingPermissions).
+	if err = txs.execute(ctx, deleteUserPendingPermissionsQuery(p)); err != nil {
+		return errors.Wrap(err, "execute delete user pending permissions query")
 	}
 
 	return nil
@@ -913,23 +863,20 @@ DO UPDATE SET
 	), nil
 }
 
-func loadRepoPendingPermissionsBatchQuery(repoIDs []uint32, perm authz.Perms, lock string) *sqlf.Query {
+func deleteUserPendingPermissionsQuery(p *UserPendingPermissions) *sqlf.Query {
 	const format = `
--- source: enterprise/cmd/frontend/internal/authz/store.go:loadRepoPendingPermissionsBatchQuery
-SELECT repo_id, user_ids
-FROM repo_pending_permissions
-WHERE repo_id IN (%s)
+-- source: enterprise/cmd/frontend/internal/authz/store.go:deleteUserPendingPermissionsQuery
+DELETE FROM user_pending_permissions
+WHERE bind_id = %s
 AND permission = %s
+AND object_type = %s
 `
 
-	items := make([]*sqlf.Query, len(repoIDs))
-	for i := range repoIDs {
-		items[i] = sqlf.Sprintf("%d", repoIDs[i])
-	}
 	return sqlf.Sprintf(
-		format+lock,
-		sqlf.Join(items, ","),
-		perm.String(),
+		format,
+		p.BindID,
+		p.Perm.String(),
+		p.Type,
 	)
 }
 
