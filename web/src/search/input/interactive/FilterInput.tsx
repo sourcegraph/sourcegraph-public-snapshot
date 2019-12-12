@@ -2,8 +2,18 @@ import * as React from 'react'
 import { Form } from '../../../components/Form'
 import CloseIcon from 'mdi-react/CloseIcon'
 import { Subscription, Subject } from 'rxjs'
-import { distinctUntilChanged, switchMap, map, filter, toArray, catchError, debounceTime } from 'rxjs/operators'
-import { createSuggestion, Suggestion, SuggestionItem } from '../Suggestion'
+import {
+    distinctUntilChanged,
+    switchMap,
+    map,
+    filter,
+    toArray,
+    catchError,
+    debounceTime,
+    takeUntil,
+    repeat,
+} from 'rxjs/operators'
+import { createSuggestion, Suggestion, SuggestionItem, FiltersSuggestionTypes } from '../Suggestion'
 import { fetchSuggestions } from '../../backend'
 import { ComponentSuggestions, noSuggestions, typingDebounceTime, focusQueryInput } from '../QueryInput'
 import { isDefined } from '../../../../../shared/src/util/types'
@@ -14,6 +24,7 @@ import { dedupeWhitespace } from '../../../../../shared/src/util/strings'
 import { FiltersToTypeAndValue } from '../../../../../shared/src/search/interactive/util'
 import { SuggestionTypes } from '../../../../../shared/src/search/suggestions/util'
 import { startCase } from 'lodash'
+import { searchFilterSuggestions } from '../../searchFilterSuggestions'
 
 interface Props {
     /**
@@ -68,6 +79,7 @@ interface State {
      */
     inputFocused: boolean
     suggestions: ComponentSuggestions
+    showSuggestions: boolean
 }
 
 /**
@@ -80,6 +92,8 @@ export default class FilterInput extends React.Component<Props, State> {
     private inputValues = new Subject<string>()
     private componentUpdates = new Subject<Props>()
     private inputEl = React.createRef<HTMLInputElement>()
+    /** Emits when the suggestions are hidden */
+    private suggestionsHidden = new Subject<void>()
 
     constructor(props: Props) {
         super(props)
@@ -87,6 +101,7 @@ export default class FilterInput extends React.Component<Props, State> {
         this.state = {
             inputFocused: document.activeElement === this.inputEl.current,
             suggestions: noSuggestions,
+            showSuggestions: false,
         }
 
         this.subscriptions.add(this.inputValues.subscribe(query => this.props.onFilterEdited(this.props.mapKey, query)))
@@ -122,9 +137,11 @@ export default class FilterInput extends React.Component<Props, State> {
                                 return [{ suggestions: noSuggestions }]
                             })
                         )
-                    })
+                    }),
+                    takeUntil(this.suggestionsHidden),
+                    repeat()
                 )
-                .subscribe(state => this.setState(state))
+                .subscribe(state => this.setState({ ...state, showSuggestions: true }))
         )
     }
 
@@ -170,7 +187,7 @@ export default class FilterInput extends React.Component<Props, State> {
             this.inputValues.next(suggestion.value)
         }
 
-        this.setState({ suggestions: noSuggestions })
+        this.setState({ suggestions: noSuggestions, showSuggestions: false }, () => this.suggestionsHidden.next())
     }
 
     private downshiftItemToString = (suggestion?: Suggestion): string => (suggestion ? suggestion.value : '')
@@ -182,8 +199,20 @@ export default class FilterInput extends React.Component<Props, State> {
         this.setState({ inputFocused: false, suggestions: noSuggestions })
     }
 
+    private onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
+        // Ctrl+Space to show all available filter type suggestions
+        if (event.ctrlKey && event.key === ' ') {
+            this.setState({
+                suggestions: {
+                    cursorPosition: event.currentTarget.selectionStart ?? 0,
+                    values: searchFilterSuggestions[this.props.filterType as FiltersSuggestionTypes].values,
+                },
+            })
+        }
+    }
+
     public render(): JSX.Element | null {
-        const showSuggestions = this.state.suggestions.values.length > 0
+        const showSuggestions = this.state.showSuggestions && this.state.suggestions.values.length > 0
 
         return (
             <div
@@ -206,7 +235,10 @@ export default class FilterInput extends React.Component<Props, State> {
                                                     value={this.props.value}
                                                     onChange={this.onInputUpdate}
                                                     placeholder={`${startCase(this.props.filterType)} filter`}
-                                                    onKeyDown={onKeyDown}
+                                                    onKeyDown={event => {
+                                                        this.onInputKeyDown(event)
+                                                        onKeyDown(event)
+                                                    }}
                                                     autoFocus={true}
                                                     onFocus={this.onInputFocus}
                                                     onBlur={this.onInputBlur}

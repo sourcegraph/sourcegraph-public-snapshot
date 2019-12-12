@@ -46,13 +46,13 @@ export const SelectedFiltersRow: React.FunctionComponent<Props> = ({
     toggleFilterEditable,
     isHomepage,
 }) => {
-    const fieldValueKeys = Array.from(Object.keys(filtersInQuery))
+    const filterKeys = Array.from(Object.keys(filtersInQuery))
     return (
         <>
-            {fieldValueKeys.length > 0 && (
+            {filterKeys.length > 0 && (
                 <div className={`selected-filters-row ${isHomepage ? 'selected-filters-row--homepage' : ''}`}>
                     {filtersInQuery &&
-                        fieldValueKeys.map(field => (
+                        filterKeys.map(field => (
                             /** Replace this with new input component, which can be an input when editable, and button when non-editable */
                             <FilterInput
                                 key={field}
