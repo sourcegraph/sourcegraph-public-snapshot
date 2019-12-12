@@ -253,7 +253,7 @@ SELECT
   COUNT(*) FILTER (WHERE finished_at IS NOT NULL AND (diff != '' OR error != '')) AS completed,
   array_agg(error) FILTER (WHERE error != '') AS errors
 FROM campaign_jobs
-WHERE campaign_plan_id = $2
+WHERE campaign_plan_id = $1
 LIMIT 1;
 
 -- name: GetCampaignStatus :one

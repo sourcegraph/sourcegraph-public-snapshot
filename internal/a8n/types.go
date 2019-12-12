@@ -130,6 +130,22 @@ type BackgroundProcessStatus struct {
 	ProcessErrors []string
 }
 
+// CalcState sets the ProcessState according to the counts.
+func (b *BackgroundProcessStatus) CalcState() {
+	switch {
+	case b.Canceled:
+		b.ProcessState = BackgroundProcessStateCanceled
+	case b.Pending > 0:
+		b.ProcessState = BackgroundProcessStateProcessing
+	case b.Completed == b.Total && len(b.ProcessErrors) == 0:
+		b.ProcessState = BackgroundProcessStateCompleted
+	case b.Completed == b.Total && len(b.ProcessErrors) != 0:
+		b.ProcessState = BackgroundProcessStateErrored
+	default:
+		b.ProcessState = BackgroundProcessStateCompleted
+	}
+}
+
 func (b BackgroundProcessStatus) CompletedCount() int32         { return b.Completed }
 func (b BackgroundProcessStatus) PendingCount() int32           { return b.Pending }
 func (b BackgroundProcessStatus) State() BackgroundProcessState { return b.ProcessState }

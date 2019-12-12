@@ -1325,70 +1325,55 @@ func getCampaignPlanQuery(opts *GetCampaignPlanOpts) *sqlf.Query {
 
 // GetCampaignPlanStatus gets the a8n.BackgroundProcessStatus for a CampaignPlan
 func (s *Store) GetCampaignPlanStatus(ctx context.Context, id int64) (*a8n.BackgroundProcessStatus, error) {
-	return s.queryBackgroundProcessStatus(ctx, sqlf.Sprintf(
-		getCampaignPlanStatusQueryFmtstr,
-		id,
-		sqlf.Sprintf("campaign_plan_id = %s", id),
-	))
-}
-
-var getCampaignPlanStatusQueryFmtstr = `
--- source: internal/a8n/store.go:GetCampaignPlanStatus
-SELECT
-  (SELECT canceled_at IS NOT NULL FROM campaign_plans WHERE id = %s) AS canceled,
-  COUNT(*) AS total,
-  COUNT(*) FILTER (WHERE finished_at IS NULL) AS pending,
-  COUNT(*) FILTER (WHERE finished_at IS NOT NULL AND (diff != '' OR error != '')) AS completed,
-  array_agg(error) FILTER (WHERE error != '') AS errors
-FROM campaign_jobs
-WHERE %s
-LIMIT 1;
-`
-
-// GetCampaignStatus gets the a8n.BackgroundProcessStatus for a Campaign
-func (s *Store) GetCampaignStatus(ctx context.Context, id int64) (*a8n.BackgroundProcessStatus, error) {
-	return s.queryBackgroundProcessStatus(ctx, sqlf.Sprintf(
-		getCampaignStatusQueryFmtstr,
-		sqlf.Sprintf("campaign_id = %s", id),
-	))
-}
-
-func (s *Store) queryBackgroundProcessStatus(ctx context.Context, q *sqlf.Query) (*a8n.BackgroundProcessStatus, error) {
-	var status a8n.BackgroundProcessStatus
-	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		return 0, 0, scanBackgroundProcessStatus(&status, sc)
-	})
+	row, err := s.q.GetCampaignPlanStatus(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	status.ProcessState = a8n.BackgroundProcessStateCompleted
-	switch {
-	case status.Canceled:
-		status.ProcessState = a8n.BackgroundProcessStateCanceled
-	case status.Pending > 0:
-		status.ProcessState = a8n.BackgroundProcessStateProcessing
-	case status.Completed == status.Total && len(status.ProcessErrors) == 0:
-		status.ProcessState = a8n.BackgroundProcessStateCompleted
-	case status.Completed == status.Total && len(status.ProcessErrors) != 0:
-		status.ProcessState = a8n.BackgroundProcessStateErrored
+	rawErrors := pq.StringArray{}
+	err = (&rawErrors).Scan(row.Errors)
+	if err != nil {
+		return nil, err
 	}
-	return &status, nil
+
+	status := &a8n.BackgroundProcessStatus{
+		ProcessErrors: []string(rawErrors),
+		Canceled:      row.Canceled.(bool),
+		Total:         int32(row.Total),
+		Pending:       int32(row.Pending),
+		Completed:     int32(row.Completed),
+		ProcessState:  a8n.BackgroundProcessStateCompleted,
+	}
+	status.CalcState()
+
+	return status, nil
 }
 
-var getCampaignStatusQueryFmtstr = `
--- source: internal/a8n/store.go:GetCampaignStatus
-SELECT
-  -- canceled is here so that this can be used with scanBackgroundProcessStatus
-  false AS canceled,
-  COUNT(*) AS total,
-  COUNT(*) FILTER (WHERE finished_at IS NULL) AS pending,
-  COUNT(*) FILTER (WHERE finished_at IS NOT NULL) AS completed,
-  array_agg(error) FILTER (WHERE error != '') AS errors
-FROM changeset_jobs
-WHERE %s
-LIMIT 1
-`
+// GetCampaignStatus gets the a8n.BackgroundProcessStatus for a Campaign
+func (s *Store) GetCampaignStatus(ctx context.Context, id int64) (*a8n.BackgroundProcessStatus, error) {
+	row, err := s.q.GetCampaignStatus(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	rawErrors := pq.StringArray{}
+	err = (&rawErrors).Scan(row.Errors)
+	if err != nil {
+		return nil, err
+	}
+
+	status := &a8n.BackgroundProcessStatus{
+		ProcessErrors: []string(rawErrors),
+		Canceled:      row.Canceled,
+		Total:         int32(row.Total),
+		Pending:       int32(row.Pending),
+		Completed:     int32(row.Completed),
+		ProcessState:  a8n.BackgroundProcessStateCompleted,
+	}
+	status.CalcState()
+
+	return status, nil
+}
 
 // ListCampaignPlansOpts captures the query options needed for
 // listing code mods.
@@ -2202,16 +2187,6 @@ func scanChangesetJob(c *a8n.ChangesetJob, s scanner) error {
 		&dbutil.NullTime{Time: &c.FinishedAt},
 		&c.CreatedAt,
 		&c.UpdatedAt,
-	)
-}
-
-func scanBackgroundProcessStatus(b *a8n.BackgroundProcessStatus, s scanner) error {
-	return s.Scan(
-		&b.Canceled,
-		&b.Total,
-		&b.Pending,
-		&b.Completed,
-		pq.Array(&b.ProcessErrors),
 	)
 }
 
