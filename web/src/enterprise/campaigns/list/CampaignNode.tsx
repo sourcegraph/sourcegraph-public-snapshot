@@ -17,7 +17,7 @@ export const CampaignNode: React.FunctionComponent<Props> = ({ node }) => (
         <div className="d-flex">
             <CampaignsIcon className="icon-inline mr-2 flex-shrink-0" />
             <div className="campaign-node__content">
-                <h3 className="mb-0">
+                <h3 className="m-0">
                     <Link to={`/campaigns/${node.id}`} className="d-flex align-items-center text-decoration-none">
                         {node.name}
                     </Link>

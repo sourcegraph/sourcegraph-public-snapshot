@@ -180,10 +180,29 @@ func (r *Resolver) LSIFJobStatsByID(ctx context.Context, id graphql.ID) (graphql
 	return &lsifJobStatsResolver{stats: stats}, nil
 }
 
-func (r *Resolver) LSIF(args *graphqlbackend.LSIFQueryArgs) graphqlbackend.LSIFQueryResolver {
-	return &lsifQueryResolver{
-		RepoName: args.RepoName,
-		Commit:   args.Commit,
-		Path:     args.Path,
+func (r *Resolver) LSIF(ctx context.Context, args *graphqlbackend.LSIFQueryArgs) (graphqlbackend.LSIFQueryResolver, error) {
+	query := url.Values{}
+	query.Set("repository", args.RepoName)
+	query.Set("commit", string(args.Commit))
+	query.Set("path", args.Path)
+
+	resp, err := client.DefaultClient.BuildAndTraceRequest(ctx, "GET", "/exists", query, nil)
+	if err != nil {
+		return nil, err
 	}
+
+	payload := struct {
+		Dump *lsif.LSIFDump `json:"dump"`
+	}{}
+
+	if err := client.UnmarshalPayload(resp, &payload); err != nil {
+		return nil, err
+	}
+
+	return &lsifQueryResolver{
+		repoName: args.RepoName,
+		commit:   args.Commit,
+		path:     args.Path,
+		dump:     payload.Dump,
+	}, nil
 }

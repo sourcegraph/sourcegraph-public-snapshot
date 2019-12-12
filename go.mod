@@ -11,6 +11,7 @@ require (
 	github.com/Microsoft/go-winio v0.4.14 // indirect
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/RoaringBitmap/roaring v0.4.21
+	github.com/avelino/slugify v0.0.0-20180501145920-855f152bd774
 	github.com/aws/aws-sdk-go-v2 v0.17.0
 	github.com/beevik/etree v1.1.0
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
@@ -126,6 +127,7 @@ require (
 	github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35 // indirect
 	github.com/prometheus/client_golang v1.2.1
 	github.com/prometheus/procfs v0.0.7 // indirect
+	github.com/rainycape/unidecode v0.0.0-20150907023854-cb7f23ec59be
 	github.com/russellhaering/gosaml2 v0.3.2-0.20190403162508-649841e7f48a
 	github.com/russellhaering/goxmldsig v0.0.0-20180430223755-7acd5e4a6ef7
 	github.com/russross/blackfriday v2.0.0+incompatible // indirect

@@ -22,7 +22,7 @@ exports[`CampaignNode renders a campaign node 1`] = `
       className="campaign-node__content"
     >
       <h3
-        className="mb-0"
+        className="m-0"
       >
         <a
           className="d-flex align-items-center text-decoration-none"

@@ -20,6 +20,7 @@ import {
     previewCampaignPlan,
     fetchCampaignPlanById,
     CampaignType,
+    retryCampaign,
 } from './backend'
 import { useError, useObservable } from '../../../util/useObservable'
 import { asError } from '../../../../../shared/src/util/errors'
@@ -105,6 +106,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         return () => subscription.unsubscribe()
     }, [campaignID, triggerError])
 
+    const campaignUpdates = useMemo(() => new Subject<void>(), [])
+
     const changesetUpdates = useMemo(() => new Subject<void>(), [])
     const nextChangesetUpdate = useCallback(changesetUpdates.next.bind(changesetUpdates), [changesetUpdates])
 
@@ -114,7 +117,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         if (!campaignID) {
             return
         }
-        const subscription = merge(of(undefined), changesetUpdates)
+        const subscription = merge(of(undefined), campaignUpdates)
             .pipe(
                 switchMap(
                     () =>
@@ -148,11 +151,12 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     setCampaign(fetchedCampaign)
                     setType(fetchedCampaign?.plan?.type as CampaignType | undefined)
                     setCampaignPlanArguments(fetchedCampaign?.plan ? fetchedCampaign.plan.arguments : null)
+                    nextChangesetUpdate()
                 },
                 error: triggerError,
             })
         return () => subscription.unsubscribe()
-    }, [campaignID, triggerError, changesetUpdates])
+    }, [campaignID, triggerError, nextChangesetUpdate, campaignUpdates])
 
     const queryChangesetsConnection = useCallback(
         (args: FilteredConnectionQueryArgs) => queryChangesets(campaignID!, args),
@@ -298,6 +302,16 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             history.push('/campaigns')
         } catch (err) {
             setMode('viewing')
+            setAlertError(asError(err))
+        }
+    }
+
+    const onRetry: React.MouseEventHandler = async event => {
+        event.preventDefault()
+        try {
+            await retryCampaign(campaign!.id)
+            campaignUpdates.next()
+        } catch (err) {
             setAlertError(asError(err))
         }
     }
@@ -532,6 +546,11 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     {status.errors.map((error, i) => (
                         <ErrorAlert error={error} className="mt-3" key={i} />
                     ))}
+                    {status.state === 'ERRORED' && campaign?.__typename === 'Campaign' && (
+                        <button type="button" className="btn btn-primary mb-2" onClick={onRetry}>
+                            Retry failed jobs
+                        </button>
+                    )}
                 </>
             )}
 
@@ -556,7 +575,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             {
                                 id: 'diff',
                                 label: (
-                                    <span>
+                                    <span className="e2e-campaign-diff-tab">
                                         Diff <span className="text-success">+{totalAdditions}</span>{' '}
                                         <span className="text-danger">-{totalDeletions}</span>
                                     </span>
@@ -565,7 +584,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             {
                                 id: 'changesets',
                                 label: (
-                                    <span>
+                                    <span className="e2e-campaign-changesets-tab">
                                         Changesets{' '}
                                         {campaign && (
                                             <span className="badge badge-secondary badge-pill">

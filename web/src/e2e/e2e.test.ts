@@ -1397,11 +1397,13 @@ describe('e2e test suite', () => {
         async function createCampaignPreview({
             specification,
             diffCount,
+            changesetCount,
             snapshotName,
             campaignType,
         }: {
             specification: string
             diffCount: number
+            changesetCount: number
             snapshotName: string
             campaignType: string
         }): Promise<void> {
@@ -1436,12 +1438,24 @@ describe('e2e test suite', () => {
             expect(errorCount).toEqual(0)
             // check if the completion marker is rendered
             await driver.page.waitForSelector('.e2e-preview-success')
+            // ensure diff tab is open
+            await driver.page.click('.e2e-campaign-diff-tab')
+            await driver.page.waitForSelector('.file-diff-node')
             // check there were exactly as expected diffs generated
             const generatedDiffCount = await driver.page.evaluate(
                 () => document.querySelectorAll('.file-diff-node').length
             )
             expect(generatedDiffCount).toEqual(diffCount)
-            await percySnapshot(driver.page, snapshotName)
+            await percySnapshot(driver.page, snapshotName + ' diffs tab')
+            // ensure changesets tab is open
+            await driver.page.click('.e2e-campaign-changesets-tab')
+            await driver.page.waitForSelector('.e2e-changeset-node')
+            // check there were exactly as expected diffs generated
+            const generatedChangesetCount = await driver.page.evaluate(
+                () => document.querySelectorAll('.e2e-changeset-node').length
+            )
+            expect(generatedChangesetCount).toEqual(changesetCount)
+            await percySnapshot(driver.page, snapshotName + ' changesets tab')
         }
         test('Create campaign preview for comby campaign type', async () => {
             await createCampaignPreview({
@@ -1451,6 +1465,7 @@ describe('e2e test suite', () => {
                     scopeQuery: 'repo:github.com/sourcegraph-testing/automation-e2e-test',
                 }),
                 diffCount: 3,
+                changesetCount: 1,
                 snapshotName: 'Campaign preview page for comby',
                 campaignType: 'comby',
             })
@@ -1462,6 +1477,7 @@ describe('e2e test suite', () => {
                     scopeQuery: 'repo:github.com/sourcegraph-testing/automation-e2e-test',
                 }),
                 diffCount: 1,
+                changesetCount: 1,
                 snapshotName: 'Campaign preview page for credentials',
                 campaignType: 'credentials',
             })

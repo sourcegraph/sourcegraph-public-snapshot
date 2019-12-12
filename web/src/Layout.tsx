@@ -41,6 +41,7 @@ import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { parseBrowserRepoURL } from './util/url'
 import LiteralSearchToast from './marketing/LiteralSearchToast'
+import { SurveyToast } from './marketing/SurveyToast'
 import { ThemeProps } from '../../shared/src/theme'
 import { ThemePreferenceProps } from './search/theme'
 import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_SHOW_HELP } from './keyboardShortcuts/keyboardShortcuts'
@@ -130,6 +131,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             {!needsSiteInit && !isSiteInit && !!props.authenticatedUser && (
                 <IntegrationsToast history={props.history} />
             )}
+            {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}
             {!isSiteInit && <LiteralSearchToast isSourcegraphDotCom={props.isSourcegraphDotCom} />}
             {!isSiteInit && <GlobalNavbar {...props} lowProfile={isSearchHomepage} />}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
