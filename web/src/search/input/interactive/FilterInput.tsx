@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Form } from '../../../components/Form'
 import CloseIcon from 'mdi-react/CloseIcon'
-import { concat, Subscription, Subject } from 'rxjs'
+import { Subscription, Subject } from 'rxjs'
 import {
     distinctUntilChanged,
     switchMap,
