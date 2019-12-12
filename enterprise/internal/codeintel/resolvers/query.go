@@ -3,7 +3,6 @@ package resolvers
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
 	"net/url"
 	"strconv"
 
