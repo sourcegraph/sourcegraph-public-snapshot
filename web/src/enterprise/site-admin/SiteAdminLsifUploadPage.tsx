@@ -31,7 +31,6 @@ export const SiteAdminLsifUploadPage: FunctionComponent<Props> = ({
         useMemo(() => fetchLsifUpload({ id }).pipe(catchError((error): [ErrorLike] => [asError(error)])), [id])
     )
 
-    console.log(uploadOrError)
     return (
         <div className="site-admin-lsif-upload-page w-100">
             <PageTitle title="LSIF uploads - Admin" />
