@@ -5,11 +5,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os/exec"
 	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/pkg/errors"
 
@@ -71,47 +73,74 @@ func PipeTo(ctx context.Context, args Args, w io.Writer) (err error) {
 	rawArgs := rawArgs(args)
 	log15.Info("running comby", "args", strings.Join(rawArgs, " "))
 
-	cmd := exec.CommandContext(ctx, combyPath, rawArgs...)
+	cmd := exec.Command(combyPath, rawArgs...)
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		log15.Error("could not connect to comby command stdout", "error", err.Error())
-		return errors.Wrap(err, "failed to connect to comby command stdout")
-	}
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		log15.Error("could not connect to comby command stderr", "error", err.Error())
-		return errors.Wrap(err, "failed to connect to comby command stderr")
-	}
-
-	if err := cmd.Start(); err != nil {
-		log15.Error("failed to start comby command", "error", err.Error())
-		return errors.Wrap(err, "failed to start comby command")
-	}
-
-	// Read stderr in goroutine so we don't potentially block reading stdout
-	stderrMsgC := make(chan []byte, 1)
+	errMsgC := make(chan string, 1)
+	successC := make(chan struct{}, 1)
+	// run the command in a goroutine so that we can monitor ctx signals
 	go func() {
-		msg, _ := ioutil.ReadAll(stderr)
-		stderrMsgC <- msg
-		close(stderrMsgC)
+		stdout, err := cmd.StdoutPipe()
+		if err != nil {
+			log15.Error("could not connect to comby command stdout", "error", err.Error())
+			errMsgC <- "failed to connect to comby command stdout"
+		}
+
+		stderr, err := cmd.StderrPipe()
+		if err != nil {
+			log15.Error("could not connect to comby command stderr", "error", err.Error())
+			errMsgC <- "failed to connect to comby command stderr"
+		}
+
+		if err := cmd.Start(); err != nil {
+			log15.Error("failed to start comby command", "error", err.Error())
+			errMsgC <- "failed to start comby command"
+		}
+
+		// Read stderr in goroutine so we don't potentially block reading stdout
+		stderrMsgC := make(chan []byte, 1)
+		go func() {
+			msg, _ := ioutil.ReadAll(stderr)
+			stderrMsgC <- msg
+			close(stderrMsgC)
+		}()
+
+		_, err = io.Copy(w, stdout)
+		if err != nil {
+			log15.Error("failed to copy comby output to writer", "error", err.Error())
+			errMsgC <- "failed to copy comby output to writer"
+			close(errMsgC)
+			return
+
+		}
+
+		stderrMsg := <-stderrMsgC
+
+		if err := cmd.Wait(); err != nil {
+			if len(stderrMsg) > 0 {
+				log15.Error("failed to execute comby command", "error", string(stderrMsg))
+				errMsgC <- fmt.Sprintf("comby error: %s", stderrMsg)
+				close(errMsgC)
+				return
+			}
+			log15.Error("failed to wait for executing comby command", "error", string(err.(*exec.ExitError).Stderr))
+			errMsgC <- "failed to wait for executing comby command"
+			close(errMsgC)
+			return
+		}
+		successC <- struct{}{}
+		close(errMsgC)
+		close(successC)
 	}()
 
-	_, err = io.Copy(w, stdout)
-	if err != nil {
-		log15.Error("failed to copy comby output to writer", "error", err.Error())
-		return errors.Wrap(err, "failed to copy comby output to writer")
-	}
-
-	stderrMsg := <-stderrMsgC
-
-	if err := cmd.Wait(); err != nil {
-		if len(stderrMsg) > 0 {
-			log15.Error("failed to execute comby command", "error", string(stderrMsg))
-			return errors.Errorf("comby error: %s", stderrMsg)
-		}
-		log15.Error("failed to wait for executing comby command", "error", string(err.(*exec.ExitError).Stderr))
-		return errors.Wrap(err, "failed to wait for executing comby command")
+	select {
+	case errMsg := <-errMsgC:
+		return errors.Wrap(err, errMsg)
+	case <-ctx.Done():
+		log15.Error("comby context deadline reached")
+		syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+	case <-successC:
+		return nil
 	}
 
 	return nil
