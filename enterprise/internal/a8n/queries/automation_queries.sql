@@ -1,9 +1,9 @@
 -- automation_query.sql
 
--- name: CountChangesets :one
+-- name: CountChangesetsByCampaignID :one
 SELECT COUNT(id)
 FROM changesets
-WHERE campaign_ids ? $1;
+WHERE campaign_ids ? $1::text;
 
 -- name: GetChangeset :one
 SELECT
@@ -19,51 +19,20 @@ FROM changesets
 WHERE id = $1
 LIMIT 1;
 
--- name: ListChangesets :many
-SELECT
-  id,
-  repo_id,
-  created_at,
-  updated_at,
-  metadata,
-  campaign_ids,
-  external_id,
-  external_service_type
-FROM changesets
-WHERE campaign_ids ? $1
+-- name: ListChangesetsByCampaignID :many
+SELECT * FROM changesets
+WHERE id >= $1 AND campaign_ids ? $3::text
 ORDER BY id ASC
 LIMIT $2;
 
 -- name: GetChangesetEvent :one
-SELECT
-    id,
-    changeset_id,
-    kind,
-    key,
-    created_at,
-    updated_at,
-    metadata
-FROM changeset_events
-WHERE id = $1
-LIMIT 1;
+SELECT * FROM changeset_events WHERE id = $1 LIMIT 1;
 
 -- name: ListChangesetEvents :many
-SELECT
-    id,
-    changeset_id,
-    kind,
-    key,
-    created_at,
-    updated_at,
-    metadata
-FROM changeset_events
-WHERE id = $1
-ORDER BY id ASC;
+SELECT * FROM changeset_events WHERE id = $1 ORDER BY id ASC;
 
 -- name: CountChangesetEvents :one
-SELECT COUNT(*)
-FROM changeset_events
-WHERE changeset_id = $1;
+SELECT COUNT(*) FROM changeset_events WHERE changeset_id = $1;
 
 -- name: CreateCampaign :one
 INSERT INTO campaigns (
@@ -79,18 +48,7 @@ INSERT INTO campaigns (
   closed_at
 )
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-RETURNING
-  id,
-  name,
-  description,
-  author_id,
-  namespace_user_id,
-  namespace_org_id,
-  created_at,
-  updated_at,
-  changeset_ids,
-  campaign_plan_id,
-  closed_at;
+RETURNING *;
 
 -- name: UpdateCampaign :one
 UPDATE campaigns
@@ -128,37 +86,11 @@ FROM campaigns
 WHERE changeset_ids ? $1;
 
 -- name: GetCampaign :one
-SELECT
-  id,
-  name,
-  description,
-  author_id,
-  namespace_user_id,
-  namespace_org_id,
-  created_at,
-  updated_at,
-  changeset_ids,
-  campaign_plan_id,
-  closed_at
-FROM campaigns
-WHERE id = $1
-LIMIT 1;
+SELECT * FROM campaigns WHERE id = $1 LIMIT 1;
 
 -- name: ListCampaigns :many
-SELECT
-  id,
-  name,
-  description,
-  author_id,
-  namespace_user_id,
-  namespace_org_id,
-  created_at,
-  updated_at,
-  changeset_ids,
-  campaign_plan_id,
-  closed_at
-FROM campaigns
-WHERE changeset_ids ? $1
+SELECT * FROM campaigns
+WHERE changeset_ids ? $1::text
 ORDER BY id ASC
 LIMIT $2;
 
@@ -229,21 +161,10 @@ NOT EXISTS (
 
 
 -- name: CountCampaignPlans :one
-SELECT COUNT(id)
-FROM campaign_plans;
-
+SELECT COUNT(id) FROM campaign_plans;
 
 -- name: GetCampaignPlan :one
-SELECT
-  id,
-  campaign_type,
-  arguments,
-  canceled_at,
-  created_at,
-  updated_at
-FROM campaign_plans
-WHERE id = $1
-LIMIT 1;
+SELECT * FROM campaign_plans WHERE id = $1 LIMIT 1;
 
 -- name: GetCampaignPlanStatus :one
 SELECT
@@ -269,14 +190,7 @@ WHERE campaign_id = $1
 LIMIT 1;
 
 -- name: ListCampaignPlans :many
-SELECT
-  id,
-  campaign_type,
-  arguments,
-  canceled_at,
-  created_at,
-  updated_at
-FROM campaign_plans
+SELECT * FROM campaign_plans
 WHERE id >= $1
 ORDER BY id ASC
 LIMIT $2;
@@ -296,19 +210,7 @@ INSERT INTO campaign_jobs (
   updated_at
 )
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-RETURNING
-  id,
-  campaign_plan_id,
-  repo_id,
-  rev,
-  base_ref,
-  diff,
-  description,
-  error,
-  started_at,
-  finished_at,
-  created_at,
-  updated_at;
+RETURNING *;
 
 -- name: UpdateCampaignJob :many
 UPDATE campaign_jobs

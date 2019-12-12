@@ -26,8 +26,7 @@ func (q *Queries) CountCampaignJobs(ctx context.Context, campaignPlanID int64) (
 }
 
 const countCampaignPlans = `-- name: CountCampaignPlans :one
-SELECT COUNT(id)
-FROM campaign_plans
+SELECT COUNT(id) FROM campaign_plans
 `
 
 func (q *Queries) CountCampaignPlans(ctx context.Context) (int64, error) {
@@ -51,9 +50,7 @@ func (q *Queries) CountCampaigns(ctx context.Context, changesetIds json.RawMessa
 }
 
 const countChangesetEvents = `-- name: CountChangesetEvents :one
-SELECT COUNT(*)
-FROM changeset_events
-WHERE changeset_id = $1
+SELECT COUNT(*) FROM changeset_events WHERE changeset_id = $1
 `
 
 func (q *Queries) CountChangesetEvents(ctx context.Context, changesetID int64) (int64, error) {
@@ -88,16 +85,16 @@ func (q *Queries) CountChangesetJobsWithCampaignID(ctx context.Context, campaign
 	return count, err
 }
 
-const countChangesets = `-- name: CountChangesets :one
+const countChangesetsByCampaignID = `-- name: CountChangesetsByCampaignID :one
 
 SELECT COUNT(id)
 FROM changesets
-WHERE campaign_ids ? $1
+WHERE campaign_ids ? $1::text
 `
 
 // automation_query.sql
-func (q *Queries) CountChangesets(ctx context.Context, campaignIds json.RawMessage) (int64, error) {
-	row := q.db.QueryRowContext(ctx, countChangesets, campaignIds)
+func (q *Queries) CountChangesetsByCampaignID(ctx context.Context, dollar_1 string) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countChangesetsByCampaignID, dollar_1)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -117,18 +114,7 @@ INSERT INTO campaigns (
   closed_at
 )
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-RETURNING
-  id,
-  name,
-  description,
-  author_id,
-  namespace_user_id,
-  namespace_org_id,
-  created_at,
-  updated_at,
-  changeset_ids,
-  campaign_plan_id,
-  closed_at
+RETURNING id, name, description, author_id, namespace_user_id, namespace_org_id, created_at, updated_at, changeset_ids, campaign_plan_id, closed_at
 `
 
 type CreateCampaignParams struct {
@@ -189,19 +175,7 @@ INSERT INTO campaign_jobs (
   updated_at
 )
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-RETURNING
-  id,
-  campaign_plan_id,
-  repo_id,
-  rev,
-  base_ref,
-  diff,
-  description,
-  error,
-  started_at,
-  finished_at,
-  created_at,
-  updated_at
+RETURNING id, campaign_plan_id, repo_id, rev, diff, error, started_at, finished_at, created_at, updated_at, base_ref, description
 `
 
 type CreateCampaignJobParams struct {
@@ -218,22 +192,7 @@ type CreateCampaignJobParams struct {
 	UpdatedAt      time.Time
 }
 
-type CreateCampaignJobRow struct {
-	ID             int64
-	CampaignPlanID int64
-	RepoID         int64
-	Rev            string
-	BaseRef        string
-	Diff           string
-	Description    sql.NullString
-	Error          string
-	StartedAt      pq.NullTime
-	FinishedAt     pq.NullTime
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
-}
-
-func (q *Queries) CreateCampaignJob(ctx context.Context, arg CreateCampaignJobParams) (CreateCampaignJobRow, error) {
+func (q *Queries) CreateCampaignJob(ctx context.Context, arg CreateCampaignJobParams) (CampaignJob, error) {
 	row := q.db.QueryRowContext(ctx, createCampaignJob,
 		arg.CampaignPlanID,
 		arg.RepoID,
@@ -247,20 +206,20 @@ func (q *Queries) CreateCampaignJob(ctx context.Context, arg CreateCampaignJobPa
 		arg.CreatedAt,
 		arg.UpdatedAt,
 	)
-	var i CreateCampaignJobRow
+	var i CampaignJob
 	err := row.Scan(
 		&i.ID,
 		&i.CampaignPlanID,
 		&i.RepoID,
 		&i.Rev,
-		&i.BaseRef,
 		&i.Diff,
-		&i.Description,
 		&i.Error,
 		&i.StartedAt,
 		&i.FinishedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.BaseRef,
+		&i.Description,
 	)
 	return i, err
 }
@@ -462,21 +421,7 @@ func (q *Queries) DeleteExpiredCampaignPlans(ctx context.Context, finishedAt pq.
 }
 
 const getCampaign = `-- name: GetCampaign :one
-SELECT
-  id,
-  name,
-  description,
-  author_id,
-  namespace_user_id,
-  namespace_org_id,
-  created_at,
-  updated_at,
-  changeset_ids,
-  campaign_plan_id,
-  closed_at
-FROM campaigns
-WHERE id = $1
-LIMIT 1
+SELECT id, name, description, author_id, namespace_user_id, namespace_org_id, created_at, updated_at, changeset_ids, campaign_plan_id, closed_at FROM campaigns WHERE id = $1 LIMIT 1
 `
 
 func (q *Queries) GetCampaign(ctx context.Context, id int64) (Campaign, error) {
@@ -553,37 +498,19 @@ func (q *Queries) GetCampaignJob(ctx context.Context, id int64) (GetCampaignJobR
 }
 
 const getCampaignPlan = `-- name: GetCampaignPlan :one
-SELECT
-  id,
-  campaign_type,
-  arguments,
-  canceled_at,
-  created_at,
-  updated_at
-FROM campaign_plans
-WHERE id = $1
-LIMIT 1
+SELECT id, campaign_type, created_at, updated_at, arguments, canceled_at FROM campaign_plans WHERE id = $1 LIMIT 1
 `
 
-type GetCampaignPlanRow struct {
-	ID           int64
-	CampaignType string
-	Arguments    string
-	CanceledAt   pq.NullTime
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-}
-
-func (q *Queries) GetCampaignPlan(ctx context.Context, id int64) (GetCampaignPlanRow, error) {
+func (q *Queries) GetCampaignPlan(ctx context.Context, id int64) (CampaignPlan, error) {
 	row := q.db.QueryRowContext(ctx, getCampaignPlan, id)
-	var i GetCampaignPlanRow
+	var i CampaignPlan
 	err := row.Scan(
 		&i.ID,
 		&i.CampaignType,
-		&i.Arguments,
-		&i.CanceledAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Arguments,
+		&i.CanceledAt,
 	)
 	return i, err
 }
@@ -698,40 +625,20 @@ func (q *Queries) GetChangeset(ctx context.Context, id int64) (GetChangesetRow, 
 }
 
 const getChangesetEvent = `-- name: GetChangesetEvent :one
-SELECT
-    id,
-    changeset_id,
-    kind,
-    key,
-    created_at,
-    updated_at,
-    metadata
-FROM changeset_events
-WHERE id = $1
-LIMIT 1
+SELECT id, changeset_id, kind, key, created_at, metadata, updated_at FROM changeset_events WHERE id = $1 LIMIT 1
 `
 
-type GetChangesetEventRow struct {
-	ID          int64
-	ChangesetID int64
-	Kind        string
-	Key         string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	Metadata    json.RawMessage
-}
-
-func (q *Queries) GetChangesetEvent(ctx context.Context, id int64) (GetChangesetEventRow, error) {
+func (q *Queries) GetChangesetEvent(ctx context.Context, id int64) (ChangesetEvent, error) {
 	row := q.db.QueryRowContext(ctx, getChangesetEvent, id)
-	var i GetChangesetEventRow
+	var i ChangesetEvent
 	err := row.Scan(
 		&i.ID,
 		&i.ChangesetID,
 		&i.Kind,
 		&i.Key,
 		&i.CreatedAt,
-		&i.UpdatedAt,
 		&i.Metadata,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
@@ -870,14 +777,7 @@ func (q *Queries) ListCampaignJobs(ctx context.Context, campaignPlanID int64) ([
 }
 
 const listCampaignPlans = `-- name: ListCampaignPlans :many
-SELECT
-  id,
-  campaign_type,
-  arguments,
-  canceled_at,
-  created_at,
-  updated_at
-FROM campaign_plans
+SELECT id, campaign_type, created_at, updated_at, arguments, canceled_at FROM campaign_plans
 WHERE id >= $1
 ORDER BY id ASC
 LIMIT $2
@@ -888,31 +788,22 @@ type ListCampaignPlansParams struct {
 	Limit int32
 }
 
-type ListCampaignPlansRow struct {
-	ID           int64
-	CampaignType string
-	Arguments    string
-	CanceledAt   pq.NullTime
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-}
-
-func (q *Queries) ListCampaignPlans(ctx context.Context, arg ListCampaignPlansParams) ([]ListCampaignPlansRow, error) {
+func (q *Queries) ListCampaignPlans(ctx context.Context, arg ListCampaignPlansParams) ([]CampaignPlan, error) {
 	rows, err := q.db.QueryContext(ctx, listCampaignPlans, arg.ID, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListCampaignPlansRow
+	var items []CampaignPlan
 	for rows.Next() {
-		var i ListCampaignPlansRow
+		var i CampaignPlan
 		if err := rows.Scan(
 			&i.ID,
 			&i.CampaignType,
-			&i.Arguments,
-			&i.CanceledAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Arguments,
+			&i.CanceledAt,
 		); err != nil {
 			return nil, err
 		}
@@ -928,31 +819,19 @@ func (q *Queries) ListCampaignPlans(ctx context.Context, arg ListCampaignPlansPa
 }
 
 const listCampaigns = `-- name: ListCampaigns :many
-SELECT
-  id,
-  name,
-  description,
-  author_id,
-  namespace_user_id,
-  namespace_org_id,
-  created_at,
-  updated_at,
-  changeset_ids,
-  campaign_plan_id,
-  closed_at
-FROM campaigns
-WHERE changeset_ids ? $1
+SELECT id, name, description, author_id, namespace_user_id, namespace_org_id, created_at, updated_at, changeset_ids, campaign_plan_id, closed_at FROM campaigns
+WHERE changeset_ids ? $1::text
 ORDER BY id ASC
 LIMIT $2
 `
 
 type ListCampaignsParams struct {
-	ChangesetIDs json.RawMessage
-	Limit        int32
+	Column1 string
+	Limit   int32
 }
 
 func (q *Queries) ListCampaigns(ctx context.Context, arg ListCampaignsParams) ([]Campaign, error) {
-	rows, err := q.db.QueryContext(ctx, listCampaigns, arg.ChangesetIDs, arg.Limit)
+	rows, err := q.db.QueryContext(ctx, listCampaigns, arg.Column1, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -987,46 +866,26 @@ func (q *Queries) ListCampaigns(ctx context.Context, arg ListCampaignsParams) ([
 }
 
 const listChangesetEvents = `-- name: ListChangesetEvents :many
-SELECT
-    id,
-    changeset_id,
-    kind,
-    key,
-    created_at,
-    updated_at,
-    metadata
-FROM changeset_events
-WHERE id = $1
-ORDER BY id ASC
+SELECT id, changeset_id, kind, key, created_at, metadata, updated_at FROM changeset_events WHERE id = $1 ORDER BY id ASC
 `
 
-type ListChangesetEventsRow struct {
-	ID          int64
-	ChangesetID int64
-	Kind        string
-	Key         string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	Metadata    json.RawMessage
-}
-
-func (q *Queries) ListChangesetEvents(ctx context.Context, id int64) ([]ListChangesetEventsRow, error) {
+func (q *Queries) ListChangesetEvents(ctx context.Context, id int64) ([]ChangesetEvent, error) {
 	rows, err := q.db.QueryContext(ctx, listChangesetEvents, id)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListChangesetEventsRow
+	var items []ChangesetEvent
 	for rows.Next() {
-		var i ListChangesetEventsRow
+		var i ChangesetEvent
 		if err := rows.Scan(
 			&i.ID,
 			&i.ChangesetID,
 			&i.Kind,
 			&i.Key,
 			&i.CreatedAt,
-			&i.UpdatedAt,
 			&i.Metadata,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -1102,54 +961,35 @@ func (q *Queries) ListChangesetJobs(ctx context.Context, campaignID int64) ([]Li
 	return items, nil
 }
 
-const listChangesets = `-- name: ListChangesets :many
-SELECT
-  id,
-  repo_id,
-  created_at,
-  updated_at,
-  metadata,
-  campaign_ids,
-  external_id,
-  external_service_type
-FROM changesets
-WHERE campaign_ids ? $1
+const listChangesetsByCampaignID = `-- name: ListChangesetsByCampaignID :many
+SELECT id, campaign_ids, repo_id, created_at, updated_at, metadata, external_id, external_service_type FROM changesets
+WHERE id >= $1 AND campaign_ids ? $3::text
 ORDER BY id ASC
 LIMIT $2
 `
 
-type ListChangesetsParams struct {
-	CampaignIDs json.RawMessage
-	Limit       int32
+type ListChangesetsByCampaignIDParams struct {
+	ID      int64
+	Limit   int32
+	Column3 string
 }
 
-type ListChangesetsRow struct {
-	ID                  int64
-	RepoID              int32
-	CreatedAt           time.Time
-	UpdatedAt           time.Time
-	Metadata            json.RawMessage
-	CampaignIDs         json.RawMessage
-	ExternalID          string
-	ExternalServiceType string
-}
-
-func (q *Queries) ListChangesets(ctx context.Context, arg ListChangesetsParams) ([]ListChangesetsRow, error) {
-	rows, err := q.db.QueryContext(ctx, listChangesets, arg.CampaignIDs, arg.Limit)
+func (q *Queries) ListChangesetsByCampaignID(ctx context.Context, arg ListChangesetsByCampaignIDParams) ([]Changeset, error) {
+	rows, err := q.db.QueryContext(ctx, listChangesetsByCampaignID, arg.ID, arg.Limit, arg.Column3)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListChangesetsRow
+	var items []Changeset
 	for rows.Next() {
-		var i ListChangesetsRow
+		var i Changeset
 		if err := rows.Scan(
 			&i.ID,
+			&i.CampaignIDs,
 			&i.RepoID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Metadata,
-			&i.CampaignIDs,
 			&i.ExternalID,
 			&i.ExternalServiceType,
 		); err != nil {
