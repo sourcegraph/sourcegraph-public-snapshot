@@ -17,9 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lsif"
 )
 
-//
-// Node Resolver
-
 type lsifJobResolver struct {
 	lsifJob *lsif.LSIFJob
 }
@@ -35,7 +32,7 @@ func (r *lsifJobResolver) Type() string {
 }
 
 func (r *lsifJobResolver) Arguments() graphqlbackend.JSONValue {
-	return graphqlbackend.JSONValue{Value: r.lsifJob.Argumentss}
+	return graphqlbackend.JSONValue{Value: r.lsifJob.Arguments}
 }
 
 func (r *lsifJobResolver) State() string {
@@ -75,9 +72,6 @@ func (r *lsifFailureReasonResolver) Summary() string {
 func (r *lsifFailureReasonResolver) Stacktraces() []string {
 	return r.lsifJobFailure.Stacktraces
 }
-
-//
-// Connection Resolver
 
 type LSIFJobsListOptions struct {
 	State   string
@@ -182,9 +176,6 @@ func (r *lsifJobConnectionResolver) compute(ctx context.Context) ([]*lsif.LSIFJo
 	return r.jobs, r.totalCount, r.nextURL, r.err
 }
 
-//
-// Stats Resolver
-
 type lsifJobStatsResolver struct {
 	stats *lsif.LSIFJobStats
 }
@@ -200,9 +191,6 @@ func (r *lsifJobStatsResolver) ErroredCount() int32    { return r.stats.ErroredC
 func (r *lsifJobStatsResolver) CompletedCount() int32  { return r.stats.CompletedCount }
 func (r *lsifJobStatsResolver) QueuedCount() int32     { return r.stats.QueuedCount }
 func (r *lsifJobStatsResolver) ScheduledCount() int32  { return r.stats.ScheduledCount }
-
-//
-// ID Serialization
 
 func marshalLSIFJobGQLID(lsifJobID string) graphql.ID {
 	return relay.MarshalID("LSIFJob", lsifJobID)

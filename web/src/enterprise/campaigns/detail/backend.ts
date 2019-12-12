@@ -193,6 +193,20 @@ export async function cancelCampaignPlan(plan: ID): Promise<void> {
     dataOrThrowErrors(result)
 }
 
+export async function retryCampaign(campaignID: ID): Promise<void> {
+    const result = await mutateGraphQL(
+        gql`
+            mutation RetryCampaign($campaign: ID!) {
+                retryCampaign(campaign: $campaign) {
+                    id
+                }
+            }
+        `,
+        { campaign: campaignID }
+    ).toPromise()
+    dataOrThrowErrors(result)
+}
+
 export async function deleteCampaign(campaign: ID): Promise<void> {
     const result = await mutateGraphQL(
         gql`

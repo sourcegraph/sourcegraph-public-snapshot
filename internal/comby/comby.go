@@ -3,14 +3,15 @@ package comby
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os/exec"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
 
 	"gopkg.in/inconshreveable/log15.v2"
 )
@@ -58,61 +59,72 @@ func rawArgs(args Args) (rawArgs []string) {
 	return rawArgs
 }
 
-func PipeTo(args Args, w io.Writer) (err error) {
+func PipeTo(ctx context.Context, args Args, w io.Writer) (err error) {
 	if !exists() {
 		log15.Error("comby is not installed (it could not be found on the PATH)")
 		return errors.New("comby is not installed")
 	}
 
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	rawArgs := rawArgs(args)
 	log15.Info("running comby", "args", strings.Join(rawArgs, " "))
 
-	cmd := exec.Command(combyPath, rawArgs...)
+	cmd := exec.CommandContext(ctx, combyPath, rawArgs...)
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		log15.Error("could not connect to comby command stdout", "error", err.Error())
-		return err
+		return errors.Wrap(err, "failed to connect to comby command stdout")
 	}
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
 		log15.Error("could not connect to comby command stderr", "error", err.Error())
-		return err
+		return errors.Wrap(err, "failed to connect to comby command stderr")
 	}
 
 	if err := cmd.Start(); err != nil {
 		log15.Error("failed to start comby command", "error", err.Error())
-		return errors.New(err.Error())
+		return errors.Wrap(err, "failed to start comby command")
 	}
+
+	// Read stderr in goroutine so we don't potentially block reading stdout
+	stderrMsgC := make(chan []byte, 1)
+	go func() {
+		msg, _ := ioutil.ReadAll(stderr)
+		stderrMsgC <- msg
+		close(stderrMsgC)
+	}()
 
 	_, err = io.Copy(w, stdout)
 	if err != nil {
 		log15.Error("failed to copy comby output to writer", "error", err.Error())
-		return err
+		return errors.Wrap(err, "failed to copy comby output to writer")
 	}
 
-	stderrMsg, _ := ioutil.ReadAll(stderr)
+	stderrMsg := <-stderrMsgC
 
 	if err := cmd.Wait(); err != nil {
-		if stderrMsg != nil {
+		if len(stderrMsg) > 0 {
 			log15.Error("failed to execute comby command", "error", string(stderrMsg))
-			return fmt.Errorf("comby error: %s", string(stderrMsg))
+			return errors.Errorf("comby error: %s", stderrMsg)
 		}
 		log15.Error("failed to wait for executing comby command", "error", string(err.(*exec.ExitError).Stderr))
-		return err
+		return errors.Wrap(err, "failed to wait for executing comby command")
 	}
 
 	return nil
 }
 
 // Matches returns all matches in all files for which comby finds matches.
-func Matches(args Args) (matches []FileMatch, err error) {
+func Matches(ctx context.Context, args Args) (matches []FileMatch, err error) {
 	b := new(bytes.Buffer)
 	w := bufio.NewWriter(b)
 
 	args.MatchOnly = true
 
-	err = PipeTo(args, w)
+	err = PipeTo(ctx, args, w)
 	if err != nil {
 		return nil, err
 	}

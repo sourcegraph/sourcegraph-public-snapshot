@@ -245,7 +245,10 @@ export class QueryInput extends React.Component<Props, State> {
                 )
                 .subscribe(
                     state => {
-                        this.setState(state)
+                        this.setState({
+                            ...state,
+                            showSuggestions: true,
+                        })
                     },
                     err => {
                         console.error(err)
@@ -416,6 +419,10 @@ export class QueryInput extends React.Component<Props, State> {
         scrollIntoView(menuNode, node)
     }
 
+    private setShowSuggestions = (showSuggestions: boolean): void => {
+        this.setState({ showSuggestions }, () => !showSuggestions && this.suggestionsHidden.next())
+    }
+
     private onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
         // Ctrl+Space to show all available filter type suggestions
         if (event.ctrlKey && event.key === ' ') {
@@ -426,14 +433,17 @@ export class QueryInput extends React.Component<Props, State> {
                 },
             })
         }
+        if (event.key === 'Enter') {
+            this.setShowSuggestions(false)
+        }
     }
 
     private onInputBlur = (): void => {
-        this.setState({ showSuggestions: false }, () => this.suggestionsHidden.next())
+        this.setShowSuggestions(false)
     }
 
     private onInputFocus = (): void => {
-        this.setState({ showSuggestions: true })
+        this.setShowSuggestions(true)
     }
 
     /**

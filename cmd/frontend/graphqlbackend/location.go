@@ -8,9 +8,25 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 )
 
+type LocationResolver interface {
+	Resource() *GitTreeEntryResolver
+	Range() *rangeResolver
+	URL(ctx context.Context) (string, error)
+	CanonicalURL() (string, error)
+}
+
 type locationResolver struct {
 	resource *GitTreeEntryResolver
 	lspRange *lsp.Range
+}
+
+var _ LocationResolver = &locationResolver{}
+
+func NewLocationResolver(resource *GitTreeEntryResolver, lspRange *lsp.Range) LocationResolver {
+	return &locationResolver{
+		resource: resource,
+		lspRange: lspRange,
+	}
 }
 
 func (r *locationResolver) Resource() *GitTreeEntryResolver { return r.resource }
@@ -46,20 +62,43 @@ func (r *locationResolver) urlPath(prefix string) string {
 	return url
 }
 
+type RangeResolver interface {
+	Start() PositionResolver
+	End() PositionResolver
+}
+
 type rangeResolver struct{ lspRange lsp.Range }
 
-func (r *rangeResolver) Start() *positionResolver { return &positionResolver{r.lspRange.Start} }
-func (r *rangeResolver) End() *positionResolver   { return &positionResolver{r.lspRange.End} }
+var _ RangeResolver = &rangeResolver{}
+
+func NewRangeResolver(lspRange lsp.Range) RangeResolver {
+	return &rangeResolver{
+		lspRange: lspRange,
+	}
+}
+
+func (r *rangeResolver) Start() PositionResolver { return r.start() }
+func (r *rangeResolver) End() PositionResolver   { return r.end() }
+
+func (r *rangeResolver) start() *positionResolver { return &positionResolver{r.lspRange.Start} }
+func (r *rangeResolver) end() *positionResolver   { return &positionResolver{r.lspRange.End} }
 
 func (r *rangeResolver) urlFragment() string {
 	if r.lspRange.Start == r.lspRange.End {
-		return r.Start().urlFragment(false)
+		return r.start().urlFragment(false)
 	}
 	hasCharacter := r.lspRange.Start.Character != 0 || r.lspRange.End.Character != 0
-	return r.Start().urlFragment(hasCharacter) + "-" + r.End().urlFragment(hasCharacter)
+	return r.start().urlFragment(hasCharacter) + "-" + r.end().urlFragment(hasCharacter)
+}
+
+type PositionResolver interface {
+	Line() int32
+	Character() int32
 }
 
 type positionResolver struct{ pos lsp.Position }
+
+var _ PositionResolver = &positionResolver{}
 
 func (r *positionResolver) Line() int32      { return int32(r.pos.Line) }
 func (r *positionResolver) Character() int32 { return int32(r.pos.Character) }

@@ -399,7 +399,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                     )}
 
                                     {/* Server-provided help message */}
-                                    {results.alert ? (
+                                    {results.alert && (
                                         <div className="alert alert-info m-2">
                                             <h3>
                                                 <AlertCircleIcon className="icon-inline" /> {results.alert.title}
@@ -431,7 +431,8 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                     </ul>
                                                 </>
                                             )}{' '}
-                                            {results.timedout.length === results.repositoriesCount &&
+                                            {results.timedout.length > 0 &&
+                                                results.timedout.length === results.repositoriesCount &&
                                                 /* All repositories timed out. */
                                                 this.renderRecommendations(
                                                     window.context.deployType !== 'cluster'
@@ -447,14 +448,14 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                         : []
                                                 )}
                                         </div>
-                                    ) : (
-                                        <>
-                                            <div className="alert alert-info d-flex m-2">
-                                                <h3 className="m-0">
-                                                    <SearchIcon className="icon-inline" /> No results
-                                                </h3>
-                                            </div>
-                                        </>
+                                    )}
+
+                                    {results.matchCount === 0 && !results.alert && (
+                                        <div className="alert alert-info d-flex m-2">
+                                            <h3 className="m-0">
+                                                <SearchIcon className="icon-inline" /> No results
+                                            </h3>
+                                        </div>
                                     )}
                                 </>
                             )

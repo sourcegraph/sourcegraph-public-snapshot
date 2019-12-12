@@ -34,6 +34,13 @@ func (s *ChangesetSyncer) Sync(ctx context.Context) error {
 	return nil
 }
 
+// A SourceChangesets groups *repos.Changesets together with the
+// repos.ChangesetSource that can be used to modify the changesets.
+type SourceChangesets struct {
+	repos.ChangesetSource
+	Changesets []*repos.Changeset
+}
+
 // SyncChangesets refreshes the metadata of the given changesets and
 // updates them in the database
 func (s *ChangesetSyncer) SyncChangesets(ctx context.Context, cs ...*a8n.Changeset) (err error) {
@@ -41,6 +48,49 @@ func (s *ChangesetSyncer) SyncChangesets(ctx context.Context, cs ...*a8n.Changes
 		return nil
 	}
 
+	bySource, err := s.GroupChangesetsBySource(ctx, cs...)
+	if err != nil {
+		return err
+	}
+
+	return s.SyncChangesetsWithSources(ctx, bySource)
+}
+
+// SyncChangesetsWithSources refreshes the metadata of the given changesets
+// with the given ChangesetSources updates them in the database.
+func (s *ChangesetSyncer) SyncChangesetsWithSources(ctx context.Context, bySource []*SourceChangesets) (err error) {
+	var (
+		events []*a8n.ChangesetEvent
+		cs     []*a8n.Changeset
+	)
+
+	for _, s := range bySource {
+		if err := s.LoadChangesets(ctx, s.Changesets...); err != nil {
+			return err
+		}
+		for _, c := range s.Changesets {
+			events = append(events, c.Events()...)
+			cs = append(cs, c.Changeset)
+		}
+	}
+
+	tx, err := s.Store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Done(&err)
+
+	if err = tx.UpdateChangesets(ctx, cs...); err != nil {
+		return err
+	}
+
+	return tx.UpsertChangesetEvents(ctx, events...)
+}
+
+// GroupChangesetsBySource returns a slice of SourceChangesets in which the
+// given *a8n.Changesets are grouped together as repos.Changesets with the
+// repos.Source that can modify them.
+func (s *ChangesetSyncer) GroupChangesetsBySource(ctx context.Context, cs ...*a8n.Changeset) ([]*SourceChangesets, error) {
 	var repoIDs []uint32
 	repoSet := map[uint32]*repos.Repo{}
 
@@ -54,7 +104,7 @@ func (s *ChangesetSyncer) SyncChangesets(ctx context.Context, cs ...*a8n.Changes
 
 	rs, err := s.ReposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: repoIDs})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	for _, r := range rs {
@@ -70,7 +120,7 @@ func (s *ChangesetSyncer) SyncChangesets(ctx context.Context, cs ...*a8n.Changes
 
 	es, err := s.ReposStore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{RepoIDs: repoIDs})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	byRepo := make(map[uint32]int64, len(rs))
@@ -84,24 +134,19 @@ func (s *ChangesetSyncer) SyncChangesets(ctx context.Context, cs ...*a8n.Changes
 		}
 	}
 
-	type sourceChangeset struct {
-		repos.ChangesetSource
-		Changesets []*repos.Changeset
-	}
-
-	bySource := make(map[int64]*sourceChangeset, len(es))
+	bySource := make(map[int64]*SourceChangesets, len(es))
 	for _, e := range es {
 		src, err := repos.NewSource(e, s.HTTPFactory)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		css, ok := src.(repos.ChangesetSource)
 		if !ok {
-			return errors.Errorf("unsupported repo type %q", e.Kind)
+			return nil, errors.Errorf("unsupported repo type %q", e.Kind)
 		}
 
-		bySource[e.ID] = &sourceChangeset{ChangesetSource: css}
+		bySource[e.ID] = &SourceChangesets{ChangesetSource: css}
 	}
 
 	for _, c := range cs {
@@ -116,27 +161,12 @@ func (s *ChangesetSyncer) SyncChangesets(ctx context.Context, cs ...*a8n.Changes
 		})
 	}
 
-	var events []*a8n.ChangesetEvent
+	res := make([]*SourceChangesets, 0, len(bySource))
 	for _, s := range bySource {
-		if err := s.LoadChangesets(ctx, s.Changesets...); err != nil {
-			return err
-		}
-		for _, c := range s.Changesets {
-			events = append(events, c.Events()...)
-		}
+		res = append(res, s)
 	}
 
-	tx, err := s.Store.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer tx.Done(&err)
-
-	if err = tx.UpdateChangesets(ctx, cs...); err != nil {
-		return err
-	}
-
-	return tx.UpsertChangesetEvents(ctx, events...)
+	return res, nil
 }
 
 func (s *ChangesetSyncer) listAllChangesets(ctx context.Context) (all []*a8n.Changeset, err error) {

@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
 var mockSearchRepositories func(args *search.Args) ([]SearchResultResolver, *searchResultsCommon, error)
@@ -51,8 +52,10 @@ func searchRepositories(ctx context.Context, args *search.Args, limit int32) (re
 
 	// Filter args.Repos by matching their names against the query pattern.
 	common = &searchResultsCommon{}
+	common.repos = make([]*types.Repo, len(args.Repos))
 	var repos []*search.RepositoryRevisions
-	for _, r := range args.Repos {
+	for i, r := range args.Repos {
+		common.repos[i] = r.Repo
 		if pattern.MatchString(string(r.Repo.Name)) {
 			repos = append(repos, r)
 		}

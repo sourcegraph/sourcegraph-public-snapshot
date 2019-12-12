@@ -93,6 +93,10 @@ type ChangesetSource interface {
 	// CreateChangeset will create the Changeset on the source. If it already
 	// exists, *Changeset will be populated.
 	CreateChangeset(context.Context, *Changeset) error
+	// CloseChangeset will close the Changeset on the source, where "close"
+	// means the appropriate final state on the codehost (e.g. "declined" on
+	// Bitbucket Server).
+	CloseChangeset(context.Context, *Changeset) error
 }
 
 // A SourceResult is sent by a Source over a channel for each repository it
