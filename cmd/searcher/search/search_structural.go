@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -78,8 +79,34 @@ func ToFileMatch(combyMatches []comby.FileMatch) (matches []protocol.FileMatch) 
 	return matches
 }
 
+var languageExtensions = lazyregexp.New(`\.\w+`)
+
+// inferExtension converts includePatterns like "\.c$|\.cats$|\.h$|\.idc$" to
+// simply []string{".c",".cats",".h",".idc"} so that comby can infer the correct language
+// matcher. The "\.c$" or "\.go$" format arises when we specify, for example,
+// "lang:c" or "lang:go".
+func inferExtensions(includePatterns []string) (new []string) {
+	for _, s := range includePatterns {
+		// Heuristically check that the pattern is not a filename by
+		// checking whether it's terminated by $."
+		if strings.HasSuffix(s, "$") {
+			for _, extPat := range strings.Split(s, "|") {
+				m := languageExtensions.FindString(extPat)
+				if m != "" {
+					new = append(new, m)
+				}
+			}
+		} else {
+			new = append(new, s)
+		}
+	}
+	return new
+}
+
 func structuralSearch(ctx context.Context, zipPath, pattern string, includePatterns []string, repo api.RepoName) (matches []protocol.FileMatch, limitHit bool, err error) {
 	log15.Info("structural search", "repo", string(repo))
+
+	includePatterns = inferExtensions(includePatterns)
 
 	args := comby.Args{
 		Input:         comby.ZipPath(zipPath),

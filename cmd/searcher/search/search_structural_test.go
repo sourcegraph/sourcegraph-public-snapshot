@@ -213,3 +213,25 @@ func TestHighlightMultipleLines(t *testing.T) {
 		})
 	}
 }
+
+func TestInferExtensions(t *testing.T) {
+	cases := []struct {
+		Name    string
+		Pattern []string
+		Want    []string
+	}{
+		{
+			Name:    "C language extensions",
+			Pattern: []string{`\.c$|\.cats$|\.h$|\.idc$`},
+			Want:    []string{".c", ".cats", ".h", ".idc"},
+		},
+	}
+	for _, tt := range cases {
+		t.Run(tt.Name, func(t *testing.T) {
+			got := inferExtensions(tt.Pattern)
+			if !reflect.DeepEqual(got, tt.Want) {
+				t.Errorf("got: %s, want: %s", got, tt.Want)
+			}
+		})
+	}
+}
