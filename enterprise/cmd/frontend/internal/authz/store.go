@@ -43,7 +43,7 @@ func (s *Store) LoadUserPermissions(ctx context.Context, p *UserPermissions) (er
 	ctx, save := s.observe(ctx, "LoadUserPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
-	vals, err := s.load(ctx, loadUserPermissionsQuery(p, "FOR SHARE"))
+	vals, err := s.load(ctx, loadUserPermissionsQuery(p, ""))
 	if err != nil {
 		return err
 	}
@@ -78,7 +78,7 @@ func (s *Store) LoadRepoPermissions(ctx context.Context, p *RepoPermissions) (er
 	ctx, save := s.observe(ctx, "LoadRepoPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
-	vals, err := s.load(ctx, loadRepoPermissionsQuery(p, "FOR SHARE"))
+	vals, err := s.load(ctx, loadRepoPermissionsQuery(p, ""))
 	if err != nil {
 		return err
 	}
@@ -295,7 +295,7 @@ func (s *Store) LoadUserPendingPermissions(ctx context.Context, p *UserPendingPe
 	ctx, save := s.observe(ctx, "LoadUserPendingPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
-	vals, err := s.load(ctx, loadUserPendingPermissionsQuery(p, "FOR SHARE"))
+	vals, err := s.load(ctx, loadUserPendingPermissionsQuery(p, ""))
 	if err != nil {
 		return err
 	}
