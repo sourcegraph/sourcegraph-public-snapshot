@@ -1980,31 +1980,11 @@ type CountChangesetJobsOpts struct {
 
 // CountChangesetJobs returns the number of code mods in the database.
 func (s *Store) CountChangesetJobs(ctx context.Context, opts CountChangesetJobsOpts) (count int64, _ error) {
-	q := countChangesetJobsQuery(&opts)
-	return count, s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		err = sc.Scan(&count)
-		return 0, count, err
-	})
-}
-
-var countChangesetJobsQueryFmtstr = `
--- source: internal/a8n/store.go:CountChangesetJobs
-SELECT COUNT(id)
-FROM changeset_jobs
-WHERE %s
-`
-
-func countChangesetJobsQuery(opts *CountChangesetJobsOpts) *sqlf.Query {
-	var preds []*sqlf.Query
 	if opts.CampaignID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaign_id = %s", opts.CampaignID))
+		return s.q.CountChangesetJobsWithCampaignID(ctx, opts.CampaignID)
 	}
 
-	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("TRUE"))
-	}
-
-	return sqlf.Sprintf(countChangesetJobsQueryFmtstr, sqlf.Join(preds, "\n AND "))
+	return s.q.CountChangesetJobs(ctx)
 }
 
 // GetChangesetJobOpts captures the query options needed for getting a ChangesetJob
@@ -2016,59 +1996,51 @@ type GetChangesetJobOpts struct {
 
 // GetChangesetJob gets a code mod matching the given options.
 func (s *Store) GetChangesetJob(ctx context.Context, opts GetChangesetJobOpts) (*a8n.ChangesetJob, error) {
-	q := getChangesetJobQuery(&opts)
+	var (
+		j   queries.ChangesetJob
+		err error
+	)
 
-	var c a8n.ChangesetJob
-	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		return 0, 0, scanChangesetJob(&c, sc)
-	})
+	switch {
+	case opts.CampaignJobID != 0:
+		j, err = s.q.GetChangesetJobByCampaignJobID(ctx, opts.CampaignJobID)
+	case opts.ChangesetID != 0:
+		j, err = s.q.GetChangesetJobByChangesetID(ctx, sql.NullInt64{Int64: opts.ChangesetID, Valid: true})
+	default:
+		j, err = s.q.GetChangesetJobByID(ctx, opts.ID)
+	}
+
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrNoResults
+		}
 		return nil, err
 	}
 
-	if c.ID == 0 {
-		return nil, ErrNoResults
+	c := &a8n.ChangesetJob{
+		ID:            j.ID,
+		CampaignID:    j.CampaignID,
+		CampaignJobID: j.CampaignJobID,
+		CreatedAt:     j.CreatedAt,
+		UpdatedAt:     j.UpdatedAt,
 	}
 
-	return &c, nil
-}
-
-var getChangesetJobsQueryFmtstr = `
--- source: internal/a8n/store.go:GetChangesetJob
-SELECT
-  id,
-  campaign_id,
-  campaign_job_id,
-  changeset_id,
-  error,
-  started_at,
-  finished_at,
-  created_at,
-  updated_at
-FROM changeset_jobs
-WHERE %s
-LIMIT 1
-`
-
-func getChangesetJobQuery(opts *GetChangesetJobOpts) *sqlf.Query {
-	var preds []*sqlf.Query
-	if opts.ID != 0 {
-		preds = append(preds, sqlf.Sprintf("id = %s", opts.ID))
+	if j.Error.Valid {
+		c.Error = j.Error.String
 	}
 
-	if opts.CampaignJobID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaign_job_id = %s", opts.CampaignJobID))
+	if j.ChangesetID.Valid {
+		c.ChangesetID = j.ChangesetID.Int64
+	}
+	if j.StartedAt.Valid {
+		c.StartedAt = j.StartedAt.Time
 	}
 
-	if opts.ChangesetID != 0 {
-		preds = append(preds, sqlf.Sprintf("changeset_id = %s", opts.ChangesetID))
+	if j.FinishedAt.Valid {
+		c.FinishedAt = j.FinishedAt.Time
 	}
 
-	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("TRUE"))
-	}
-
-	return sqlf.Sprintf(getChangesetJobsQueryFmtstr, sqlf.Join(preds, "\n AND "))
+	return c, nil
 }
 
 // ListChangesetJobsOpts captures the query options needed for
