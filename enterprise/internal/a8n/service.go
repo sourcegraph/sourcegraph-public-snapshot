@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -177,8 +176,7 @@ func (s *Service) runChangesetJob(
 	}
 	repo := rs[0]
 
-	// TODO: This should be globally unique
-	headRefName := "sourcegraph/campaign-" + strconv.FormatInt(c.ID, 10)
+	headRefName := fmt.Sprintf("sourcegraph/%s-%d", git.HumanReadableBranchName(c.Name), c.CreatedAt.Unix())
 
 	_, err = s.git.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
 		Repo:       api.RepoName(repo.Name),

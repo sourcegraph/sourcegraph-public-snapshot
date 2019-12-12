@@ -12,6 +12,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
+func TestHumanReadableBranchName(t *testing.T) {
+	text := "Change coördination mechanism"
+	have := git.HumanReadableBranchName(text)
+	want := "change-coordination-mechanism"
+
+	if have != want {
+		t.Fatalf("HumanReadableBranchName(%q): have %q, want %q", text, have, want)
+	}
+}
+
 func TestRepository_ListBranches(t *testing.T) {
 	t.Parallel()
 
