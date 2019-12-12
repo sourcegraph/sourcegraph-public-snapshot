@@ -260,7 +260,13 @@ func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.Upda
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
 
-func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.DeleteCampaignArgs) (*graphqlbackend.EmptyResponse, error) {
+func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.DeleteCampaignArgs) (_ *graphqlbackend.EmptyResponse, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.DeleteCampaign", fmt.Sprintf("Campaign: %q", args.Campaign))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	// 🚨 SECURITY: Only site admins may update campaigns for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -271,12 +277,9 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 		return nil, err
 	}
 
-	err = r.store.DeleteCampaign(ctx, campaignID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &graphqlbackend.EmptyResponse{}, nil
+	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
+	err = svc.DeleteCampaign(ctx, campaignID, args.CloseChangesets)
+	return &graphqlbackend.EmptyResponse{}, err
 }
 
 func (r *Resolver) RetryCampaign(ctx context.Context, args *graphqlbackend.RetryCampaignArgs) (graphqlbackend.CampaignResolver, error) {
@@ -552,21 +555,9 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 
 	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
 
-	// Set ClosedAt only if it's not been closed before
-	campaign, err := svc.CloseCampaign(ctx, campaignID)
+	campaign, err := svc.CloseCampaign(ctx, campaignID, args.CloseChangesets)
 	if err != nil {
 		return nil, errors.Wrap(err, "closing campaign")
-	}
-
-	if args.CloseChangesets {
-		go func() {
-			// Close only the changesets that are open
-			ctx := trace.ContextWithTrace(context.Background(), tr)
-			err := svc.CloseOpenCampaignChangesets(ctx, campaign)
-			if err != nil {
-				log15.Error("CloseCampaignChangesets", "err", err)
-			}
-		}()
 	}
 
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil

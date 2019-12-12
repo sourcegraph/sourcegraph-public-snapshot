@@ -66,7 +66,13 @@ type Mutation {
     # Retrying will clear the errors list of a campaign and change its state back to CREATING_CHANGESETS.
     retryCampaign(campaign: ID!): Campaign!
     # Deletes a campaign.
-    deleteCampaign(campaign: ID!): EmptyResponse
+    deleteCampaign(
+        campaign: ID!
+        # Whether to close the changesets associated with this campaign on their
+        # respective codehosts, where "close" means the appropriate final state
+        # on the codehost (e.g. "declined" on Bitbucket Server).
+        closeChangesets: Boolean = false
+    ): EmptyResponse
     # Closes a campaign.
     # Closing a campaign sets the Campaign's ClosedAt timestamp to the current
     # time and, if closeChangesets = true, closes associated changesets on the
