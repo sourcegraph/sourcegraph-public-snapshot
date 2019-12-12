@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -393,9 +394,27 @@ func testStoreSetRepoPermissions(db *sql.DB) func(*testing.T) {
 				defer cleanup(t, s)
 
 				for _, p := range test.updates {
-					if err := s.SetRepoPermissions(context.Background(), p); err != nil {
-						t.Fatal(err)
+					const numOps = 30
+					var wg sync.WaitGroup
+					wg.Add(numOps)
+					for i := 0; i < numOps; i++ {
+						go func() {
+							defer wg.Done()
+							tmp := &RepoPermissions{
+								RepoID:    p.RepoID,
+								Perm:      p.Perm,
+								Provider:  p.Provider,
+								UpdatedAt: p.UpdatedAt,
+							}
+							if p.UserIDs != nil {
+								tmp.UserIDs = p.UserIDs.Clone()
+							}
+							if err := s.SetRepoPermissions(context.Background(), tmp); err != nil {
+								t.Fatal(err)
+							}
+						}()
 					}
+					wg.Wait()
 				}
 
 				err := checkRegularTable(s, `SELECT user_id, object_ids FROM user_permissions`, test.expectUserPerms)
@@ -759,9 +778,27 @@ func testStoreSetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 				ctx := context.Background()
 
 				for _, update := range test.updates {
-					if err := s.SetRepoPendingPermissions(ctx, update.bindIDs, update.perm); err != nil {
-						t.Fatal(err)
+					const numOps = 30
+					var wg sync.WaitGroup
+					wg.Add(numOps)
+					for i := 0; i < numOps; i++ {
+						go func() {
+							defer wg.Done()
+							tmp := &RepoPermissions{
+								RepoID:    update.perm.RepoID,
+								Perm:      update.perm.Perm,
+								Provider:  update.perm.Provider,
+								UpdatedAt: update.perm.UpdatedAt,
+							}
+							if update.perm.UserIDs != nil {
+								tmp.UserIDs = update.perm.UserIDs.Clone()
+							}
+							if err := s.SetRepoPendingPermissions(ctx, update.bindIDs, tmp); err != nil {
+								t.Fatal(err)
+							}
+						}()
 					}
+					wg.Wait()
 				}
 
 				// Query and check rows in "user_pending_permissions" table.
@@ -986,5 +1023,57 @@ func testStoreGrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+func testStoreDatabaseDeadlocks(db *sql.DB) func(t *testing.T) {
+	return func(t *testing.T) {
+		s := NewStore(db, time.Now)
+		defer cleanup(t, s)
+
+		ctx := context.Background()
+
+		const numOps = 50
+		var wg sync.WaitGroup
+		wg.Add(3)
+		go func() {
+			defer wg.Done()
+			for i := 0; i < numOps; i++ {
+				if err := s.SetRepoPermissions(ctx, &RepoPermissions{
+					RepoID:   1,
+					Perm:     authz.Read,
+					UserIDs:  bitmap(1),
+					Provider: ProviderSourcegraph,
+				}); err != nil {
+					t.Fatal(err)
+				}
+			}
+		}()
+		go func() {
+			defer wg.Done()
+			for i := 0; i < numOps; i++ {
+				if err := s.SetRepoPendingPermissions(ctx, []string{"alice"}, &RepoPermissions{
+					RepoID:   1,
+					Perm:     authz.Read,
+					Provider: ProviderSourcegraph,
+				}); err != nil {
+					t.Fatal(err)
+				}
+			}
+		}()
+		go func() {
+			defer wg.Done()
+			for i := 0; i < numOps; i++ {
+				if err := s.GrantPendingPermissions(ctx, 1, &UserPendingPermissions{
+					BindID: "alice",
+					Perm:   authz.Read,
+					Type:   PermRepos,
+				}); err != nil {
+					t.Fatal(err)
+				}
+			}
+		}()
+
+		wg.Wait()
 	}
 }

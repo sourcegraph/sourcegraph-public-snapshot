@@ -730,6 +730,15 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 	p.ID = vals.id
 	p.IDs = vals.ids
 
+	// NOTE: We currently only have "repos" type, so avoid unnecessary type checking for now.
+	ids := p.IDs.ToArray()
+
+	// In case a row exists in "user_pending_permissions" table but has no element in its "object_ids"
+	// bitmap, this could happen when multiple calls of this method made for the same user.
+	if len(ids) == 0 {
+		return nil
+	}
+
 	// Open a transaction for update consistency.
 	var tx *sqlTx
 	if tx, err = s.tx(ctx); err != nil {
@@ -739,9 +748,6 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 
 	// Make another Store with this underlying transaction.
 	txs := NewStore(tx, s.clock)
-
-	// NOTE: We currently only have "repos" type, so avoid unnecessary type checking for now.
-	ids := p.IDs.ToArray()
 
 	// Batch query all repository permissions object IDs in one go.
 	// NOTE: It is critical to always acquire row-level locks in the same order as SetRepoPermissions
