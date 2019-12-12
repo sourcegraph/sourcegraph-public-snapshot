@@ -2,9 +2,9 @@ import AddIcon from 'mdi-react/AddIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import * as React from 'react'
-import { RouteComponentProps } from 'react-router'
+import { RouteComponentProps, Redirect } from 'react-router'
 import { Link } from 'react-router-dom'
-import { Observable, Subject } from 'rxjs'
+import { Observable, Subject, Subscription } from 'rxjs'
 import { map, tap } from 'rxjs/operators'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
@@ -114,6 +114,10 @@ function deleteExternalService(externalService: GQL.ID): Observable<void> {
 
 interface Props extends RouteComponentProps<{}>, ActivationProps {}
 
+interface State {
+    noExternalServices?: boolean
+}
+
 class FilteredExternalServiceConnection extends FilteredConnection<
     GQL.IExternalService,
     Pick<ExternalServiceNodeProps, 'onDidUpdate'>
@@ -122,11 +126,26 @@ class FilteredExternalServiceConnection extends FilteredConnection<
 /**
  * A page displaying the external services on this site.
  */
-export class SiteAdminExternalServicesPage extends React.PureComponent<Props, {}> {
+export class SiteAdminExternalServicesPage extends React.PureComponent<Props, State> {
     private updates = new Subject<void>()
+    private subscriptions = new Subscription()
+
+    constructor(props: Props) {
+        super(props)
+        this.state = {}
+    }
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminExternalServices')
+        this.subscriptions.add(
+            this.queryExternalServices({ first: 1 })
+                .pipe(
+                    tap(externalServicesResult =>
+                        this.setState({ noExternalServices: externalServicesResult.totalCount === 0 })
+                    )
+                )
+                .subscribe()
+        )
     }
 
     private completeConnectedCodeHostActivation = (externalServices: GQL.IExternalServiceConnection): void => {
@@ -171,6 +190,9 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, {}
             onDidUpdate: this.onDidUpdateExternalServices,
         }
 
+        if (this.state.noExternalServices) {
+            return <Redirect to="/site-admin/external-services/new" />
+        }
         return (
             <div className="site-admin-external-services-page">
                 <PageTitle title="External services - Admin" />
