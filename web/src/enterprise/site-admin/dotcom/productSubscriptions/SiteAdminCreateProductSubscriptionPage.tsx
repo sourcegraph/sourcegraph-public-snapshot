@@ -1,13 +1,13 @@
 import * as H from 'history'
 import AddIcon from 'mdi-react/AddIcon'
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect } from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
-import { concat, Observable } from 'rxjs'
-import { catchError, concatMap, map, tap } from 'rxjs/operators'
+import { merge, of, Observable } from 'rxjs'
+import { catchError, concatMapTo, map, tap } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
-import { asError } from '../../../../../../shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '../../../../../../shared/src/util/errors'
 import { mutateGraphQL, queryGraphQL } from '../../../../backend/graphql'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { Form } from '../../../../components/Form'
@@ -53,15 +53,16 @@ const UserCreateSubscriptionNode: React.FunctionComponent<UserCreateSubscription
         useCallback(
             (
                 submits: Observable<React.FormEvent<HTMLFormElement>>
-            ): Observable<Pick<GQL.IProductSubscription, 'urlForSiteAdmin'> | 'saving' | Error> =>
+            ): Observable<Pick<GQL.IProductSubscription, 'urlForSiteAdmin'> | 'saving' | ErrorLike> =>
                 submits.pipe(
                     tap(event => event.preventDefault()),
                     tap(() => eventLogger.log('NewProductSubscriptionCreated')),
-                    map(() => ({ accountID: props.node.id })),
-                    concatMap(input =>
-                        concat(
-                            ['saving' as const],
-                            createProductSubscription(input).pipe(catchError(err => [asError(err)]))
+                    concatMapTo(
+                        merge(
+                            of('saving' as const),
+                            createProductSubscription({ accountID: props.node.id }).pipe(
+                                catchError(err => [asError(err)])
+                            )
                         )
                     )
                 ),
@@ -73,14 +74,14 @@ const UserCreateSubscriptionNode: React.FunctionComponent<UserCreateSubscription
         <>
             {createdSubscription &&
                 createdSubscription !== 'saving' &&
-                !(createdSubscription instanceof Error) &&
+                !isErrorLike(createdSubscription) &&
                 createdSubscription.urlForSiteAdmin && <Redirect to={createdSubscription.urlForSiteAdmin} />}
             <li className="list-group-item py-2">
                 <div className="d-flex align-items-center justify-content-between">
                     <div>
                         <Link to={`/users/${props.node.username}`}>{props.node.username}</Link>{' '}
                         <span className="text-muted">
-                            ({props.node.emails.filter(email => email.isPrimary).map(email => email.email)})
+                            ({props.node.emails.filter(({ isPrimary }) => isPrimary).map(({ email }) => email)})
                         </span>
                     </div>
                     <div>
@@ -95,12 +96,12 @@ const UserCreateSubscriptionNode: React.FunctionComponent<UserCreateSubscription
                         </Form>
                     </div>
                 </div>
-                {createdSubscription instanceof Error && (
+                {isErrorLike(createdSubscription) && (
                     <div className="alert alert-danger">{createdSubscription.message}</div>
                 )}
                 {createdSubscription &&
                     createdSubscription !== 'saving' &&
-                    !(createdSubscription instanceof Error) &&
+                    !isErrorLike(createdSubscription) &&
                     !createdSubscription.urlForSiteAdmin && (
                         <div className="alert alert-danger">
                             No subscription URL available (only accessible to site admins)
@@ -122,32 +123,25 @@ interface Props extends RouteComponentProps<{}> {
  *
  * For use on Sourcegraph.com by Sourcegraph teammates only.
  */
-export class SiteAdminCreateProductSubscriptionPage extends React.Component<Props> {
-    public componentDidMount(): void {
+export const SiteAdminCreateProductSubscriptionPage: React.FunctionComponent<Props> = props => {
+    useEffect(() => {
         eventLogger.logViewEvent('SiteAdminCreateProductSubscription')
-    }
-
-    public render(): JSX.Element | null {
-        const nodeProps: Pick<UserCreateSubscriptionNodeProps, 'history'> = {
-            history: this.props.history,
-        }
-        return (
-            <div className="site-admin-create-product-subscription-page">
-                <PageTitle title="Create product subscription" />
-                <h2>Create product subscription</h2>
-                <FilteredUserConnection
-                    className="list-group list-group-flush mt-3"
-                    noun="user"
-                    pluralNoun="users"
-                    queryConnection={queryAccounts}
-                    nodeComponent={UserCreateSubscriptionNode}
-                    nodeComponentProps={nodeProps}
-                    history={this.props.history}
-                    location={this.props.location}
-                />
-            </div>
-        )
-    }
+    })
+    return (
+        <div className="site-admin-create-product-subscription-page">
+            <PageTitle title="Create product subscription" />
+            <h2>Create product subscription</h2>
+            <FilteredUserConnection
+                {...props}
+                className="list-group list-group-flush mt-3"
+                noun="user"
+                pluralNoun="users"
+                queryConnection={queryAccounts}
+                nodeComponent={UserCreateSubscriptionNode}
+                nodeComponentProps={props}
+            />
+        </div>
+    )
 }
 
 function queryAccounts(args: { first?: number; query?: string }): Observable<GQL.IUserConnection> {
