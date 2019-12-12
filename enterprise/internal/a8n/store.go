@@ -972,19 +972,8 @@ func (s *Store) updateCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
 
 // DeleteCampaign deletes the Campaign with the given ID.
 func (s *Store) DeleteCampaign(ctx context.Context, id int64) error {
-	q := sqlf.Sprintf(deleteCampaignQueryFmtstr, id)
-
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return err
-	}
-	return rows.Close()
+	return s.q.DeleteCampaign(ctx, id)
 }
-
-var deleteCampaignQueryFmtstr = `
--- source: internal/a8n/store.go:DeleteCampaign
-DELETE FROM campaigns WHERE id = %s
-`
 
 // CountCampaignsOpts captures the query options needed for
 // counting campaigns.
@@ -1256,19 +1245,8 @@ func (s *Store) updateCampaignPlanQuery(c *a8n.CampaignPlan) (*sqlf.Query, error
 
 // DeleteCampaignPlan deletes the CampaignPlan with the given ID.
 func (s *Store) DeleteCampaignPlan(ctx context.Context, id int64) error {
-	q := sqlf.Sprintf(deleteCampaignPlanQueryFmtstr, id)
-
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return err
-	}
-	return rows.Close()
+	return s.q.DeleteCampaignPlan(ctx, id)
 }
-
-var deleteCampaignPlanQueryFmtstr = `
--- source: internal/a8n/store.go:DeleteCampaignPlan
-DELETE FROM campaign_plans WHERE id = %s
-`
 
 const CampaignPlanTTL = 1 * time.Hour
 
@@ -1276,42 +1254,8 @@ const CampaignPlanTTL = 1 * time.Hour
 // but have not been attached to a Campaign within CampaignPlanTTL.
 func (s *Store) DeleteExpiredCampaignPlans(ctx context.Context) error {
 	expirationTime := s.now().Add(-CampaignPlanTTL)
-	q := sqlf.Sprintf(deleteExpiredCampaignPlansQueryFmtstr, expirationTime)
-
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return err
-	}
-	return rows.Close()
+	return s.q.DeleteExpiredCampaignPlans(ctx, pq.NullTime{Time: expirationTime, Valid: true})
 }
-
-var deleteExpiredCampaignPlansQueryFmtstr = `
--- source: internal/a8n/store.go:DeleteExpiredCampaignPlans
-DELETE FROM
-  campaign_plans
-WHERE
-NOT EXISTS (
-  SELECT 1
-  FROM
-  campaigns
-  WHERE
-  campaigns.campaign_plan_id = campaign_plans.id
-)
-AND
-NOT EXISTS (
-  SELECT id
-  FROM
-  campaign_jobs
-  WHERE
-  campaign_jobs.campaign_plan_id = campaign_plans.id
-  AND
-  (
-    campaign_jobs.finished_at IS NULL
-    OR
-    campaign_jobs.finished_at > %s
-  )
-);
-`
 
 // CountCampaignPlans returns the number of code mods in the database.
 func (s *Store) CountCampaignPlans(ctx context.Context) (count int64, _ error) {
@@ -1641,19 +1585,8 @@ func (s *Store) updateCampaignJobQuery(c *a8n.CampaignJob) (*sqlf.Query, error) 
 
 // DeleteCampaignJob deletes the CampaignJob with the given ID.
 func (s *Store) DeleteCampaignJob(ctx context.Context, id int64) error {
-	q := sqlf.Sprintf(deleteCampaignJobQueryFmtstr, id)
-
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return err
-	}
-	return rows.Close()
+	return s.q.DeleteCampaignJob(ctx, id)
 }
-
-var deleteCampaignJobQueryFmtstr = `
--- source: internal/a8n/store.go:DeleteCampaignJob
-DELETE FROM campaign_jobs WHERE id = %s
-`
 
 // CountCampaignJobsOpts captures the query options needed for
 // counting code mods.
@@ -1958,19 +1891,8 @@ func (s *Store) updateChangesetJobQuery(c *a8n.ChangesetJob) (*sqlf.Query, error
 
 // DeleteChangesetJob deletes the ChangesetJob with the given ID.
 func (s *Store) DeleteChangesetJob(ctx context.Context, id int64) error {
-	q := sqlf.Sprintf(deleteChangesetJobQueryFmtstr, id)
-
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return err
-	}
-	return rows.Close()
+	return s.q.DeleteChangesetJob(ctx, id)
 }
-
-var deleteChangesetJobQueryFmtstr = `
--- source: internal/a8n/store.go:DeleteChangesetJob
-DELETE FROM changeset_jobs WHERE id = %s
-`
 
 // CountChangesetJobsOpts captures the query options needed for
 // counting code mods.
@@ -2118,22 +2040,8 @@ func listChangesetJobsQuery(opts *ListChangesetJobsOpts) *sqlf.Query {
 // ResetFailedChangesetJobs resets the Error, StartedAt and FinishedAt fields
 // of the ChangesetJobs belonging to the Campaign with the given ID.
 func (s *Store) ResetFailedChangesetJobs(ctx context.Context, campaignID int64) (err error) {
-	q := sqlf.Sprintf(resetFailedChangesetJobsQueryFmtstr, campaignID)
-
-	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
-		return 0, 1, nil
-	})
+	return s.q.ResetFailedChangesetJobs(ctx, campaignID)
 }
-
-var resetFailedChangesetJobsQueryFmtstr = `
--- source: internal/a8n/store.go:ResetFailedChangesetJobs
-UPDATE changeset_jobs
-SET
-  error = '',
-  started_at = NULL,
-  finished_at = NULL
-WHERE campaign_id = %s
-`
 
 func (s *Store) exec(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
 	_, _, err := s.query(ctx, q, sc)
