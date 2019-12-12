@@ -195,6 +195,12 @@ export default class FilterInput extends React.Component<Props, State> {
     private onInputFocus = (): void => this.setState({ inputFocused: true })
 
     private onInputBlur = (): void => {
+        if (this.props.value === '') {
+            // Don't allow empty filters
+            this.onClickDelete()
+            return
+        }
+
         this.props.toggleFilterEditable(this.props.mapKey)
         this.setState({ inputFocused: false, suggestions: noSuggestions })
     }
