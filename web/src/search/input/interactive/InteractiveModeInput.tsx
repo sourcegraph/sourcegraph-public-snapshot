@@ -159,7 +159,6 @@ export default class InteractiveModeInput extends React.Component<InteractiveMod
     public render(): JSX.Element | null {
         const isSearchHomepage =
             this.props.location.pathname === '/search' && !parseSearchURLQuery(this.props.location.search, true)
-        console.log('isSearchHomepage', isSearchHomepage)
 
         let logoSrc = '/.assets/img/sourcegraph-mark.svg'
         let logoLinkClassName = 'global-navbar__logo-link global-navbar__logo-animated'
@@ -223,6 +222,7 @@ export default class InteractiveModeInput extends React.Component<InteractiveMod
                     <SelectedFiltersRow
                         filtersInQuery={this.state.filtersInQuery}
                         navbarQuery={this.props.navbarSearchState}
+                        onSubmit={this.onSubmit}
                         onFilterEdited={this.onFilterEdited}
                         onFilterDeleted={this.onFilterDeleted}
                         toggleFilterEditable={this.toggleFilterEditable}

@@ -54,8 +54,18 @@ interface Props {
 
     /**
      * Whether or not this FilterInput is currently editable.
+     *
+     * This is passed as a prop rather than being a state field because
+     * this component is unaware whether to render as editable or uneditable
+     * on initial mount.
      */
     editable: boolean
+
+    /**
+     * Callback that handles a filter input being submitted. Triggers a search
+     * with the new query value.
+     */
+    onSubmit: (e: React.FormEvent<HTMLFormElement>) => void
 
     /**
      * Callback to handle the filter's value being updated.
@@ -158,17 +168,6 @@ export default class FilterInput extends React.Component<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-    private onInputUpdate: React.ChangeEventHandler<HTMLInputElement> = e => {
-        this.inputValues.next(e.target.value)
-    }
-
-    private onSubmitInput = (e: React.FormEvent<HTMLFormElement>): void => {
-        e.preventDefault()
-        e.stopPropagation()
-
-        focusQueryInput.next()
-    }
-
     private onClickSelected = (): void => {
         if (this.inputEl.current) {
             this.inputEl.current.focus()
@@ -180,6 +179,18 @@ export default class FilterInput extends React.Component<Props, State> {
         this.props.onFilterDeleted(this.props.mapKey)
     }
 
+    private onInputUpdate: React.ChangeEventHandler<HTMLInputElement> = e => {
+        this.inputValues.next(e.target.value)
+    }
+
+    private onSubmitInput = (e: React.FormEvent<HTMLFormElement>): void => {
+        e.preventDefault()
+        e.stopPropagation()
+
+        this.props.onSubmit(e)
+        focusQueryInput.next()
+    }
+
     private onSuggestionSelect = (suggestion: Suggestion | undefined): void => {
         // Insert value into filter input. For any suggestion selected, the whole value should be updated,
         // not just appended.
@@ -189,8 +200,6 @@ export default class FilterInput extends React.Component<Props, State> {
 
         this.setState({ suggestions: noSuggestions, showSuggestions: false }, () => this.suggestionsHidden.next())
     }
-
-    private downshiftItemToString = (suggestion?: Suggestion): string => (suggestion ? suggestion.value : '')
 
     private onInputFocus = (): void => this.setState({ inputFocused: true })
 
@@ -216,6 +225,8 @@ export default class FilterInput extends React.Component<Props, State> {
             })
         }
     }
+
+    private downshiftItemToString = (suggestion?: Suggestion): string => (suggestion ? suggestion.value : '')
 
     public render(): JSX.Element | null {
         const showSuggestions = this.state.showSuggestions && this.state.suggestions.values.length > 0

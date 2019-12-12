@@ -15,7 +15,11 @@ interface Props {
     navbarQuery: QueryState
 
     /**
-     * Callback to handle the filter's value being updated.
+     * Callback to trigger a search when a filter is submitted.
+     */
+    onSubmit: (e: React.FormEvent<HTMLFormElement>) => void
+    /**
+     * Callback to handle a filter's value being updated.
      */
     onFilterEdited: (filterKey: string, value: string) => void
 
@@ -41,6 +45,7 @@ interface Props {
 export const SelectedFiltersRow: React.FunctionComponent<Props> = ({
     filtersInQuery,
     navbarQuery,
+    onSubmit,
     onFilterEdited,
     onFilterDeleted,
     toggleFilterEditable,
@@ -62,6 +67,7 @@ export const SelectedFiltersRow: React.FunctionComponent<Props> = ({
                                 editable={filtersInQuery[field].editable}
                                 filtersInQuery={filtersInQuery}
                                 navbarQuery={navbarQuery}
+                                onSubmit={onSubmit}
                                 onFilterDeleted={onFilterDeleted}
                                 onFilterEdited={onFilterEdited}
                                 toggleFilterEditable={toggleFilterEditable}
