@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -1068,7 +1069,8 @@ func testStoreDatabaseDeadlocks(db *sql.DB) func(t *testing.T) {
 					BindID: "alice",
 					Perm:   authz.Read,
 					Type:   PermRepos,
-				}); err != nil {
+				}); err != nil &&
+					!strings.Contains(err.Error(), `pq: duplicate key value violates unique constraint "user_permissions_perm_object_provider_unique"`) {
 					t.Fatal(err)
 				}
 			}

@@ -791,10 +791,10 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 		Provider:  ProviderSourcegraph,
 		UpdatedAt: txs.clock(),
 	}
-	if q, err = upsertUserPermissionsBatchQuery(up); err != nil {
+	if q, err = insertUserPermissionsQuery(up); err != nil {
 		return err
 	} else if err = txs.execute(ctx, q); err != nil {
-		return errors.Wrap(err, "execute upsert user permissions batch query")
+		return errors.Wrap(err, "execute insert user permissions query")
 	}
 
 	// Clean up "repo_pending_permissions" table.
@@ -843,6 +843,36 @@ func (s *Store) GrantPendingPermissions(ctx context.Context, userID int32, p *Us
 	}
 
 	return nil
+}
+
+func insertUserPermissionsQuery(p *UserPermissions) (*sqlf.Query, error) {
+	const format = `
+-- source: enterprise/cmd/frontend/internal/authz/permissions.go:insertUserPermissionsQuery
+INSERT INTO user_permissions
+  (user_id, permission, object_type, object_ids, provider, updated_at)
+VALUES
+  (%s, %s, %s, %s, %s, %s)
+`
+
+	p.IDs.RunOptimize()
+	ids, err := p.IDs.ToBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	if p.UpdatedAt.IsZero() {
+		return nil, ErrUpdatedAtNotSet
+	}
+
+	return sqlf.Sprintf(
+		format,
+		p.UserID,
+		p.Perm.String(),
+		p.Type,
+		ids,
+		p.Provider,
+		p.UpdatedAt.UTC(),
+	), nil
 }
 
 func loadRepoPermissionsBatchQuery(repoIDs []uint32, perm authz.Perms, provider ProviderType, lock string) *sqlf.Query {
