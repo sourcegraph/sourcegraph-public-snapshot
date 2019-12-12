@@ -14,6 +14,7 @@ import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { getConfig } from '../../../shared/src/e2e/config'
 import * as assert from 'assert'
 import { asError } from '../../../shared/src/util/errors'
+import { formatRegExp } from '../search/input/Suggestion'
 
 const { gitHubToken, sourcegraphBaseUrl } = getConfig('gitHubToken', 'sourcegraphBaseUrl')
 
@@ -1588,14 +1589,14 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector('.e2e-suggestion-item')
             const textVal = await driver.page.evaluate(() => {
                 const firstSuggestion = document.querySelector('.e2e-suggestion-item')
-                return firstSuggestion?.textContent
+                return formatRegExp(firstSuggestion?.textContent || '')
             })
             await driver.page.keyboard.press('ArrowDown')
             await driver.page.keyboard.press('Enter')
             await driver.page.keyboard.press('Enter')
             expect(
                 await driver.page.evaluate(() => document.querySelector('.e2e-filter-input-repo-0')?.textContent)
-            ).toBe(`repo:${textVal}`)
+            ).toBe(`repo:${formatRegExp(textVal)}`)
             await driver.page.keyboard.press('Enter')
             await driver.assertWindowLocation('/search?repo=github.com/gorilla/mux&q=&patternType=literal')
         })

@@ -68,7 +68,7 @@ interface SuggestionIconProps {
 /**
  * @returns The given string with escaped special characters and wrapped with regex boundaries
  */
-const formatRegExp = (value: string): string => '^' + escapeRegExp(value) + '$'
+export const formatRegExp = (value: string): string => '^' + escapeRegExp(value) + '$'
 
 export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undefined {
     switch (item.__typename) {
