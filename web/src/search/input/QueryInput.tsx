@@ -478,13 +478,8 @@ export class QueryInput extends React.Component<Props, State> {
                 return { suggestions: noSuggestions }
             }
 
-            // Add "regex end of string boundary" to limit future suggestion results
-            const selectedSuggestion = !suggestion.fromFuzzySearch
-                ? suggestion
-                : { ...suggestion, value: suggestion.value + '$' }
-
             this.inputValues.next({
-                ...insertSuggestionInQuery(value.query, selectedSuggestion, suggestions.cursorPosition),
+                ...insertSuggestionInQuery(value.query, suggestion, suggestions.cursorPosition),
                 fromUserInput: true,
             })
 
