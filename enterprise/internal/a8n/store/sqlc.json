@@ -5,5 +5,9 @@
     "queries": "automation_queries.sql",
     "name": "store",
     "path": "."
-  }]
+  }],
+  "rename": {
+    "campaign_ids": "CampaignIDs",
+    "changeset_ids": "ChangesetIDs"
+  }
 } 
