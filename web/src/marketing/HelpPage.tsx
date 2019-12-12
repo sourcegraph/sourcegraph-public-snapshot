@@ -6,10 +6,10 @@ import { eventLogger } from '../tracking/eventLogger'
 import { ThemeProps } from '../../../shared/src/theme'
 import HelpCircleIcon from 'mdi-react/HelpCircleIcon'
 import { Link } from '../../../shared/src/components/Link'
+import { showDotComMarketing } from '../util/features'
 
 interface Props extends ThemeProps {
     authenticatedUser: GQL.IUser | null
-    showDotComMarketing: boolean
 }
 
 export class HelpPage extends React.Component<Props> {
@@ -18,6 +18,8 @@ export class HelpPage extends React.Component<Props> {
     }
 
     public render(): JSX.Element | null {
+        const emailQueryString = this.props.authenticatedUser ? `?email=${this.props.authenticatedUser.email}` : ''
+
         return (
             <div className="help-page">
                 <PageTitle title="Help" />
@@ -29,7 +31,7 @@ export class HelpPage extends React.Component<Props> {
                             <div>
                                 We have many different resources available to help answer any questions you may have:
                             </div>
-                            {!this.props.showDotComMarketing && (
+                            {!showDotComMarketing && (
                                 <div>
                                     <h3>Email support</h3>
                                     Have a question about your custom setup? Need help scaling your instance? File a
@@ -65,7 +67,7 @@ export class HelpPage extends React.Component<Props> {
                                     public with any requests.
                                 </p>
                                 <Link
-                                    to={`https://share.hsforms.com/1kZm78wx9QiGpjRRrHEcapA1n7ku?site_id=${window.context.siteID}&email=${this.props.authenticatedUser.email}`}
+                                    to={`https://share.hsforms.com/1kZm78wx9QiGpjRRrHEcapA1n7ku?site_id=${window.context.siteID}${emailQueryString}`}
                                     className="btn btn-secondary"
                                     // eslint-disable-next-line react/jsx-no-target-blank
                                     target="_blank"
