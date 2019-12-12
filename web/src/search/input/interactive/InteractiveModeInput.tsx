@@ -127,6 +127,16 @@ export default class InteractiveModeInput extends React.Component<InteractiveMod
         this.setState(state => {
             const newState = state.filtersInQuery
             delete newState[filterKey]
+
+            submitSearch(
+                this.props.history,
+                this.props.navbarSearchState.query,
+                'nav',
+                this.props.patternType,
+                undefined,
+                newState
+            )
+
             return { filtersInQuery: newState }
         })
     }
