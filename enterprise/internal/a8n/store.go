@@ -11,6 +11,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/a8n/queries"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -20,12 +21,13 @@ import (
 // Store exposes methods to read and write a8n domain models
 // from persistent storage.
 type Store struct {
-	db  dbutil.DB
+	db  queries.DBTX
 	now func() time.Time
+	q   *queries.Queries
 }
 
 // NewStore returns a new Store backed by the given db.
-func NewStore(db dbutil.DB) *Store {
+func NewStore(db queries.DBTX) *Store {
 	return NewStoreWithClock(db, func() time.Time {
 		return time.Now().UTC().Truncate(time.Microsecond)
 	})
@@ -33,8 +35,8 @@ func NewStore(db dbutil.DB) *Store {
 
 // NewStoreWithClock returns a new Store backed by the given db and
 // clock for timestamps.
-func NewStoreWithClock(db dbutil.DB, clock func() time.Time) *Store {
-	return &Store{db: db, now: clock}
+func NewStoreWithClock(db queries.DBTX, clock func() time.Time) *Store {
+	return &Store{db: db, now: clock, q: queries.New(db)}
 }
 
 // Transact returns a Store whose methods operate within the context of a transaction.
@@ -55,7 +57,7 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 		return nil, errors.Wrap(err, "store: BeginTx")
 	}
 
-	return &Store{db: tx, now: s.now}, nil
+	return &Store{db: tx, q: queries.New(tx), now: s.now}, nil
 }
 
 // Done terminates the underlying Tx in a Store either by committing or rolling
