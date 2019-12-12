@@ -437,24 +437,21 @@ DELETE FROM changeset_jobs WHERE id = $1;
 
 -- name: CountChangesetJobs :one
 SELECT COUNT(id)
+FROM changeset_jobs;
+
+-- name: CountChangesetJobsWithCampaignID :one
+SELECT COUNT(id)
 FROM changeset_jobs
 WHERE campaign_id = $1;
 
+-- name: GetChangesetJobByID :one
+SELECT * FROM changeset_jobs WHERE id = $1 LIMIT 1;
 
--- name: GetChangesetJob :one
-SELECT
-  id,
-  campaign_id,
-  campaign_job_id,
-  changeset_id,
-  error,
-  started_at,
-  finished_at,
-  created_at,
-  updated_at
-FROM changeset_jobs
-WHERE id = $1
-LIMIT 1;
+-- name: GetChangesetJobByCampaignJobID :one
+SELECT * FROM changeset_jobs WHERE campaign_job_id = $1 LIMIT 1;
+
+-- name: GetChangesetJobByChangesetID :one
+SELECT * FROM changeset_jobs WHERE changeset_id = $1 LIMIT 1;
 
 -- name: ListChangesetJobs :many
 SELECT

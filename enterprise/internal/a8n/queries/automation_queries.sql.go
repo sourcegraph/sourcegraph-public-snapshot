@@ -66,11 +66,23 @@ func (q *Queries) CountChangesetEvents(ctx context.Context, changesetID int64) (
 const countChangesetJobs = `-- name: CountChangesetJobs :one
 SELECT COUNT(id)
 FROM changeset_jobs
+`
+
+func (q *Queries) CountChangesetJobs(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countChangesetJobs)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countChangesetJobsWithCampaignID = `-- name: CountChangesetJobsWithCampaignID :one
+SELECT COUNT(id)
+FROM changeset_jobs
 WHERE campaign_id = $1
 `
 
-func (q *Queries) CountChangesetJobs(ctx context.Context, campaignID int64) (int64, error) {
-	row := q.db.QueryRowContext(ctx, countChangesetJobs, campaignID)
+func (q *Queries) CountChangesetJobsWithCampaignID(ctx context.Context, campaignID int64) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countChangesetJobsWithCampaignID, campaignID)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -729,47 +741,65 @@ func (q *Queries) GetChangesetEvent(ctx context.Context, id int64) (GetChangeset
 	return i, err
 }
 
-const getChangesetJob = `-- name: GetChangesetJob :one
-SELECT
-  id,
-  campaign_id,
-  campaign_job_id,
-  changeset_id,
-  error,
-  started_at,
-  finished_at,
-  created_at,
-  updated_at
-FROM changeset_jobs
-WHERE id = $1
-LIMIT 1
+const getChangesetJobByCampaignJobID = `-- name: GetChangesetJobByCampaignJobID :one
+SELECT id, campaign_id, campaign_job_id, changeset_id, error, created_at, updated_at, started_at, finished_at FROM changeset_jobs WHERE campaign_job_id = $1 LIMIT 1
 `
 
-type GetChangesetJobRow struct {
-	ID            int64
-	CampaignID    int64
-	CampaignJobID int64
-	ChangesetID   sql.NullInt64
-	Error         sql.NullString
-	StartedAt     pq.NullTime
-	FinishedAt    pq.NullTime
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
-}
-
-func (q *Queries) GetChangesetJob(ctx context.Context, id int64) (GetChangesetJobRow, error) {
-	row := q.db.QueryRowContext(ctx, getChangesetJob, id)
-	var i GetChangesetJobRow
+func (q *Queries) GetChangesetJobByCampaignJobID(ctx context.Context, campaignJobID int64) (ChangesetJob, error) {
+	row := q.db.QueryRowContext(ctx, getChangesetJobByCampaignJobID, campaignJobID)
+	var i ChangesetJob
 	err := row.Scan(
 		&i.ID,
 		&i.CampaignID,
 		&i.CampaignJobID,
 		&i.ChangesetID,
 		&i.Error,
-		&i.StartedAt,
-		&i.FinishedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.StartedAt,
+		&i.FinishedAt,
+	)
+	return i, err
+}
+
+const getChangesetJobByChangesetID = `-- name: GetChangesetJobByChangesetID :one
+SELECT id, campaign_id, campaign_job_id, changeset_id, error, created_at, updated_at, started_at, finished_at FROM changeset_jobs WHERE changeset_id = $1 LIMIT 1
+`
+
+func (q *Queries) GetChangesetJobByChangesetID(ctx context.Context, changesetID sql.NullInt64) (ChangesetJob, error) {
+	row := q.db.QueryRowContext(ctx, getChangesetJobByChangesetID, changesetID)
+	var i ChangesetJob
+	err := row.Scan(
+		&i.ID,
+		&i.CampaignID,
+		&i.CampaignJobID,
+		&i.ChangesetID,
+		&i.Error,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.StartedAt,
+		&i.FinishedAt,
+	)
+	return i, err
+}
+
+const getChangesetJobByID = `-- name: GetChangesetJobByID :one
+SELECT id, campaign_id, campaign_job_id, changeset_id, error, created_at, updated_at, started_at, finished_at FROM changeset_jobs WHERE id = $1 LIMIT 1
+`
+
+func (q *Queries) GetChangesetJobByID(ctx context.Context, id int64) (ChangesetJob, error) {
+	row := q.db.QueryRowContext(ctx, getChangesetJobByID, id)
+	var i ChangesetJob
+	err := row.Scan(
+		&i.ID,
+		&i.CampaignID,
+		&i.CampaignJobID,
+		&i.ChangesetID,
+		&i.Error,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.StartedAt,
+		&i.FinishedAt,
 	)
 	return i, err
 }
