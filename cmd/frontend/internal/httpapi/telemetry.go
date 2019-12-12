@@ -6,7 +6,7 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats2"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
 )
 
@@ -19,9 +19,9 @@ func init() {
 		if err != nil {
 			log15.Error("telemetryHandler: Decode", "error", err)
 		}
-		err = usagestats2.LogBackendEvent(tr.UserID, tr.EventName, tr.Argument)
+		err = usagestats.LogBackendEvent(tr.UserID, tr.EventName, tr.Argument)
 		if err != nil {
-			log15.Error("telemetryHandler: usagestats2.LogBackendEvent", "error", err)
+			log15.Error("telemetryHandler: usagestats.LogBackendEvent", "error", err)
 		}
 		w.WriteHeader(http.StatusNoContent)
 	})

@@ -1,6 +1,6 @@
-// Package usagestats2 provides an interface to update and access information about
+// Package usagestats provides an interface to update and access information about
 // individual and aggregate Sourcegraph users' activity levels.
-package usagestats2
+package usagestats
 
 import (
 	"context"
@@ -166,7 +166,6 @@ func activeUsers(ctx context.Context, periodType db.UniqueUserCountType, periods
 	if err != nil {
 		return nil, err
 	}
-
 	uniques, err := db.EventLogs.CountUniquesPerPeriod(ctx, periodType, startDate, periods, nil)
 	if err != nil {
 		return nil, err

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats2"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -17,7 +17,7 @@ func (r *UserResolver) UsageStatistics(ctx context.Context) (*userUsageStatistic
 		return nil, errors.New("usage statistics are not available on sourcegraph.com")
 	}
 
-	stats, err := usagestats2.GetByUserID(ctx, r.user.ID)
+	stats, err := usagestats.GetByUserID(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func (*schemaResolver) LogEvent(ctx context.Context, args *struct {
 		return nil, nil
 	}
 	actor := actor.FromContext(ctx)
-	return nil, usagestats2.LogEvent(ctx, usagestats2.Event{
+	return nil, usagestats.LogEvent(ctx, usagestats.Event{
 		EventName:    args.Event,
 		URL:          args.URL,
 		UserID:       actor.UID,

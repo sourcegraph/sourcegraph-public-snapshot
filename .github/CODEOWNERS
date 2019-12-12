@@ -127,7 +127,7 @@ tslint.config.js @felixfbecker
 /cmd/frontend/internal/app/pkg/updatecheck/ @dadlerj
 /web/src/tracking/ @dadlerj
 **/tracking @dadlerj
-/cmd/frontend/internal/pkg/usagestats @dadlerj
+/cmd/frontend/internal/usagestats @dadlerj
 /internal/eventlogger @dadlerj
 
 # Automation

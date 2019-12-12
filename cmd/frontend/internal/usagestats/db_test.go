@@ -1,4 +1,4 @@
-package usagestats2
+package usagestats
 
 import "github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 

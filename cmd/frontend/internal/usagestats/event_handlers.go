@@ -1,4 +1,4 @@
-package usagestats2
+package usagestats
 
 import (
 	"context"

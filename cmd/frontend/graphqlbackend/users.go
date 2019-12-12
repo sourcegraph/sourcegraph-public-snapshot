@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats2"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
@@ -58,11 +58,11 @@ func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, in
 		var err error
 		switch *r.activePeriod {
 		case "TODAY":
-			r.opt.UserIDs, err = usagestats2.ListRegisteredUsersToday(ctx)
+			r.opt.UserIDs, err = usagestats.ListRegisteredUsersToday(ctx)
 		case "THIS_WEEK":
-			r.opt.UserIDs, err = usagestats2.ListRegisteredUsersThisWeek(ctx)
+			r.opt.UserIDs, err = usagestats.ListRegisteredUsersThisWeek(ctx)
 		case "THIS_MONTH":
-			r.opt.UserIDs, err = usagestats2.ListRegisteredUsersThisMonth(ctx)
+			r.opt.UserIDs, err = usagestats.ListRegisteredUsersThisMonth(ctx)
 		default:
 			err = fmt.Errorf("unknown user active period %s", *r.activePeriod)
 		}

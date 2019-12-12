@@ -1,6 +1,8 @@
-package usagestats2
+package usagestats
 
 import (
+	"sync/atomic"
+
 	"github.com/gomodule/redigo/redis"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
@@ -13,32 +15,29 @@ const (
 
 var (
 	pool             = redispool.Store
-	searchOccurred   = false
-	findRefsOccurred = false
+	searchOccurred   int32
+	findRefsOccurred int32
 )
 
 // logSiteSearchOccurred records that a search has occurred on the Sourcegraph instance.
 func logSiteSearchOccurred() error {
-	if searchOccurred {
+	if !atomic.CompareAndSwapInt32(&searchOccurred, 0, 1) {
 		return nil
 	}
 	key := keyPrefix + fSearchOccurred
 	c := pool.Get()
 	defer c.Close()
-	searchOccurred = true
 	return c.Send("SET", key, "true")
 }
 
 // logSiteFindRefsOccurred records that a search has occurred on the Sourcegraph instance.
 func logSiteFindRefsOccurred() error {
-	if findRefsOccurred {
+	if !atomic.CompareAndSwapInt32(&findRefsOccurred, 0, 1) {
 		return nil
 	}
 	key := keyPrefix + fFindRefsOccurred
 	c := pool.Get()
 	defer c.Close()
-	findRefsOccurred = true
-
 	return c.Send("SET", key, "true")
 }
 
