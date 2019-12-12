@@ -47,12 +47,12 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 	}
 	format := func(r slicedSearchResults) string {
 		var b bytes.Buffer
-		fmt.Fprintf(&b, "results:\n")
+		fmt.Fprintln(&b, "results:")
 		for i, result := range r.results {
 			fm, _ := result.ToFileMatch()
 			fmt.Fprintf(&b, "	[%d] %s %s\n", i, fm.Repo.Name, fm.JPath)
 		}
-		fmt.Fprintf(&b, "common.repos:\n")
+		fmt.Fprintln(&b, "common.repos:")
 		for i, r := range r.common.repos {
 			fmt.Fprintf(&b, "	[%d] %s\n", i, r.Name)
 		}
