@@ -76,7 +76,8 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         render: lazyComponent(() => import('./SiteAdminLsifUploadsPage'), 'SiteAdminLsifUploadsPage'),
     },
     {
-        path: '/lsif-uploads/:id',
+        // Maintain backwards compatibility for outdated src-cli clients
+        path: '/lsif-(uploads|jobs)/:id',
         exact: true,
         render: lazyComponent(() => import('./SiteAdminLsifUploadPage'), 'SiteAdminLsifUploadPage'),
     },
