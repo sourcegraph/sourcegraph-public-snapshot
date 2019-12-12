@@ -20,7 +20,7 @@ type CodeIntelResolver interface {
 	LSIFUploadStatsByID(ctx context.Context, id graphql.ID) (LSIFUploadStatsResolver, error)
 	DeleteLSIFDump(ctx context.Context, id graphql.ID) (*EmptyResponse, error)
 	DeleteLSIFUpload(ctx context.Context, id graphql.ID) (*EmptyResponse, error)
-	LSIF(args *LSIFQueryArgs) LSIFQueryResolver
+	LSIF(ctx context.Context, args *LSIFQueryArgs) (LSIFQueryResolver, error)
 }
 
 type LSIFDumpsQueryArgs struct {
@@ -95,6 +95,7 @@ type LSIFQueryArgs struct {
 	RepoName string
 	Commit   GitObjectID
 	Path     string
+	DumpID   int64
 }
 
 type LSIFQueryPositionArgs struct {

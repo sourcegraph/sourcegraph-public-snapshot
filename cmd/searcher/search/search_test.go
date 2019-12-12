@@ -198,7 +198,7 @@ main.go:7:}
 				URL:          "u",
 				Commit:       "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 				PatternInfo:  test.arg,
-				FetchTimeout: "500ms",
+				FetchTimeout: "2000ms",
 			}
 			m, err := doSearch(ts.URL, &req)
 			if err != nil {
@@ -350,6 +350,7 @@ func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
 		"URL":             []string{string(p.URL)},
 		"Commit":          []string{string(p.Commit)},
 		"Pattern":         []string{p.Pattern},
+		"FetchTimeout":    []string{p.FetchTimeout},
 		"IncludePatterns": p.IncludePatterns,
 		"ExcludePattern":  []string{p.ExcludePattern},
 	}

@@ -62,10 +62,13 @@ export class SurveyToast extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
         this.state = {
-            visible: localStorage.getItem(HAS_DISMISSED_TOAST_KEY) !== 'true' && daysActiveCount === 3,
+            visible: localStorage.getItem(HAS_DISMISSED_TOAST_KEY) !== 'true' && daysActiveCount % 60 === 3,
         }
         if (this.state.visible) {
             eventLogger.log('SurveyReminderViewed', { marketing: { sessionCount: daysActiveCount } })
+        } else if (daysActiveCount % 60 === 0) {
+            // Reset toast dismissal 3 days before it will be shown
+            localStorage.setItem(HAS_DISMISSED_TOAST_KEY, 'false')
         }
     }
 

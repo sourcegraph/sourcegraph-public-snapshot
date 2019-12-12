@@ -64,7 +64,7 @@ func main() {
 			URL:                  "u",
 			Commit:               "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			RewriteSpecification: test.arg,
-			FetchTimeout:         "500ms",
+			FetchTimeout:         "2000ms",
 		}
 		got, err := doReplace(ts.URL, &req)
 		if err != nil {
@@ -123,6 +123,7 @@ func doReplace(u string, p *protocol.Request) (string, error) {
 		"Repo":            []string{string(p.Repo)},
 		"URL":             []string{string(p.URL)},
 		"Commit":          []string{string(p.Commit)},
+		"FetchTimeout":    []string{p.FetchTimeout},
 		"MatchTemplate":   []string{p.RewriteSpecification.MatchTemplate},
 		"RewriteTemplate": []string{p.RewriteSpecification.RewriteTemplate},
 		"FileExtension":   []string{p.RewriteSpecification.FileExtension},
