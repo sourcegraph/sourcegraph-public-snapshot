@@ -582,42 +582,47 @@ func (q *Queries) GetCampaignStatus(ctx context.Context, campaignID int64) (GetC
 	return i, err
 }
 
-const getChangeset = `-- name: GetChangeset :one
-SELECT
-  id,
-  repo_id,
-  created_at,
-  updated_at,
-  metadata,
-  campaign_ids,
-  external_id,
-  external_service_type
-FROM changesets
-WHERE id = $1
+const getChangesetByExternal = `-- name: GetChangesetByExternal :one
+SELECT id, campaign_ids, repo_id, created_at, updated_at, metadata, external_id, external_service_type FROM changesets
+WHERE external_id = $1 AND external_service_type = $2
 LIMIT 1
 `
 
-type GetChangesetRow struct {
-	ID                  int64
-	RepoID              int32
-	CreatedAt           time.Time
-	UpdatedAt           time.Time
-	Metadata            json.RawMessage
-	CampaignIDs         json.RawMessage
+type GetChangesetByExternalParams struct {
 	ExternalID          string
 	ExternalServiceType string
 }
 
-func (q *Queries) GetChangeset(ctx context.Context, id int64) (GetChangesetRow, error) {
-	row := q.db.QueryRowContext(ctx, getChangeset, id)
-	var i GetChangesetRow
+func (q *Queries) GetChangesetByExternal(ctx context.Context, arg GetChangesetByExternalParams) (Changeset, error) {
+	row := q.db.QueryRowContext(ctx, getChangesetByExternal, arg.ExternalID, arg.ExternalServiceType)
+	var i Changeset
 	err := row.Scan(
 		&i.ID,
+		&i.CampaignIDs,
 		&i.RepoID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Metadata,
+		&i.ExternalID,
+		&i.ExternalServiceType,
+	)
+	return i, err
+}
+
+const getChangesetByID = `-- name: GetChangesetByID :one
+SELECT id, campaign_ids, repo_id, created_at, updated_at, metadata, external_id, external_service_type FROM changesets WHERE id = $1 LIMIT 1
+`
+
+func (q *Queries) GetChangesetByID(ctx context.Context, id int64) (Changeset, error) {
+	row := q.db.QueryRowContext(ctx, getChangesetByID, id)
+	var i Changeset
+	err := row.Scan(
+		&i.ID,
 		&i.CampaignIDs,
+		&i.RepoID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Metadata,
 		&i.ExternalID,
 		&i.ExternalServiceType,
 	)

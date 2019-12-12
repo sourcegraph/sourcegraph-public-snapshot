@@ -5,18 +5,12 @@ SELECT COUNT(id)
 FROM changesets
 WHERE campaign_ids ? $1::text;
 
--- name: GetChangeset :one
-SELECT
-  id,
-  repo_id,
-  created_at,
-  updated_at,
-  metadata,
-  campaign_ids,
-  external_id,
-  external_service_type
-FROM changesets
-WHERE id = $1
+-- name: GetChangesetByID :one
+SELECT * FROM changesets WHERE id = $1 LIMIT 1;
+
+-- name: GetChangesetByExternal :one
+SELECT * FROM changesets
+WHERE external_id = $1 AND external_service_type = $2
 LIMIT 1;
 
 -- name: ListChangesetsByCampaignID :many
