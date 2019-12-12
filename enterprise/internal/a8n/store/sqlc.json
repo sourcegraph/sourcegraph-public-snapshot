@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "packages": [{
+    "schema": "automation_schema.sql",
+    "queries": "automation_queries.sql",
+    "name": "store",
+    "path": "."
+  }]
+} 
