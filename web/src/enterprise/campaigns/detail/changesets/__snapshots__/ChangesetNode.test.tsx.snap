@@ -2,7 +2,7 @@
 
 exports[`ChangesetNode renders a changesetplan 1`] = `
 <li
-  className="list-group-item"
+  className="list-group-item e2e-changeset-node"
 >
   <div
     className=""
@@ -119,7 +119,7 @@ exports[`ChangesetNode renders a changesetplan 1`] = `
 
 exports[`ChangesetNode renders an externalchangeset 1`] = `
 <li
-  className="list-group-item"
+  className="list-group-item e2e-changeset-node"
 >
   <div
     className=""
