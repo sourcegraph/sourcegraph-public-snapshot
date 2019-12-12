@@ -3,7 +3,6 @@ package resolvers
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
 	"net/url"
 	"strconv"
 
@@ -72,7 +71,7 @@ func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend
 }
 
 func (r *lsifQueryResolver) Hover(ctx context.Context, args *graphqlbackend.LSIFQueryPositionArgs) (graphqlbackend.HoverResolver, error) {
-	path := fmt.Sprintf("/hover")
+	path := "/hover"
 	values := url.Values{}
 	values.Set("repository", r.repoName)
 	values.Set("commit", string(r.commit))

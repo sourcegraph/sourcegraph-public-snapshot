@@ -227,6 +227,16 @@ func (t *Changeset) Clone() *Changeset {
 	return &tt
 }
 
+// RemoveCampaignID removes the given id from the Changesets CampaignIDs slice.
+// If the id is not in CampaignIDs calling this method doesn't have an effect.
+func (t *Changeset) RemoveCampaignID(id int64) {
+	for i := len(t.CampaignIDs) - 1; i >= 0; i-- {
+		if t.CampaignIDs[i] == id {
+			t.CampaignIDs = append(t.CampaignIDs[:i], t.CampaignIDs[i+1:]...)
+		}
+	}
+}
+
 // Title of the Changeset.
 func (t *Changeset) Title() (string, error) {
 	switch m := t.Metadata.(type) {
