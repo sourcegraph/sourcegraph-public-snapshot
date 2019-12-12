@@ -143,15 +143,18 @@ func (s *Store) SetRepoPermissions(ctx context.Context, p *RepoPermissions) (err
 	txs := NewStore(tx, s.clock)
 
 	// Retrieve currently stored user IDs of this repository.
+	var oldIDs *roaring.Bitmap
 	vals, err := txs.load(ctx, loadRepoPermissionsQuery(p, "FOR UPDATE"))
-	if err != nil && err != ErrNotFound {
-		return errors.Wrap(err, "load repo permissions")
-	}
-
-	oldIDs := roaring.NewBitmap()
-	if vals != nil && vals.ids != nil {
+	if err != nil {
+		if err == ErrNotFound {
+			oldIDs = roaring.NewBitmap()
+		} else {
+			return errors.Wrap(err, "load repo permissions")
+		}
+	} else {
 		oldIDs = vals.ids
 	}
+
 	if p.UserIDs == nil {
 		p.UserIDs = roaring.NewBitmap()
 	}
@@ -372,13 +375,9 @@ func (s *Store) SetRepoPendingPermissions(ctx context.Context, bindIDs []string,
 		q, err = insertUserPendingPermissionsBatchQuery(bindIDs, p)
 		if err != nil {
 			return err
-		} else if err = txs.execute(ctx, q); err != nil {
-			return errors.Wrap(err, "execute insert user pending permissions batch query")
 		}
 
-		// Load all user IDs by bindIDs from the "user_pending_permissions" table.
-		// NOTE: Row-level locking is not needed here because we only get values of "id" column which are immutable.
-		ids, err := txs.loadUserPendingPermissionsIDs(ctx, loadUserPendingPermissionsIDsQuery(bindIDs, p.Perm, PermRepos))
+		ids, err := txs.loadUserPendingPermissionsIDs(ctx, q)
 		if err != nil {
 			return errors.Wrap(err, "load user pending permissions IDs")
 		}
@@ -536,7 +535,9 @@ VALUES
   %s
 ON CONFLICT ON CONSTRAINT
   user_pending_permissions_perm_object_unique
-DO NOTHING
+DO UPDATE SET
+  updated_at = excluded.updated_at
+RETURNING id
 `
 
 	if p.UpdatedAt.IsZero() {
@@ -558,32 +559,6 @@ DO NOTHING
 		format,
 		sqlf.Join(items, ","),
 	), nil
-}
-
-func loadUserPendingPermissionsIDsQuery(
-	bindIDs []string,
-	perm authz.Perms,
-	typ PermType,
-) *sqlf.Query {
-	const format = `
--- source: enterprise/cmd/frontend/internal/authz/store.go:loadUserPendingPermissionsIDsQuery
-SELECT id
-FROM user_pending_permissions
-WHERE bind_id IN (%s)
-AND permission = %s
-AND object_type = %s
-`
-
-	items := make([]*sqlf.Query, len(bindIDs))
-	for i := range bindIDs {
-		items[i] = sqlf.Sprintf("%s", bindIDs[i])
-	}
-	return sqlf.Sprintf(
-		format,
-		sqlf.Join(items, ","),
-		perm.String(),
-		typ,
-	)
 }
 
 func loadRepoPendingPermissionsQuery(p *RepoPermissions, lock string) *sqlf.Query {
