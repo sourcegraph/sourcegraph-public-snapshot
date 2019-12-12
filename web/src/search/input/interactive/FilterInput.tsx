@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Form } from '../../../components/Form'
 import CloseIcon from 'mdi-react/CloseIcon'
-import { Subscription, Subject } from 'rxjs'
+import { concat, Subscription, Subject } from 'rxjs'
 import {
     distinctUntilChanged,
     switchMap,
@@ -12,6 +12,7 @@ import {
     debounceTime,
     takeUntil,
     repeat,
+    startWith,
 } from 'rxjs/operators'
 import { createSuggestion, Suggestion, SuggestionItem, FiltersSuggestionTypes } from '../Suggestion'
 import { fetchSuggestions } from '../../backend'
@@ -25,6 +26,7 @@ import { FiltersToTypeAndValue } from '../../../../../shared/src/search/interact
 import { SuggestionTypes } from '../../../../../shared/src/search/suggestions/util'
 import { startCase } from 'lodash'
 import { searchFilterSuggestions } from '../../searchFilterSuggestions'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
 interface Props {
     /**
@@ -83,13 +85,17 @@ interface Props {
     toggleFilterEditable: (filterKey: string) => void
 }
 
+const LOADING: 'loading' = 'loading'
+
 interface State {
     /**
      * Whether the input is currently focused. Used for styling.
      */
     inputFocused: boolean
-    suggestions: ComponentSuggestions
+    /** Only show suggestions if search input is focused */
     showSuggestions: boolean
+    /** The suggestions shown to the user */
+    suggestions: typeof LOADING | ComponentSuggestions
 }
 
 /**
@@ -140,8 +146,12 @@ export default class FilterInput extends React.Component<Props, State> {
                             filter(suggestion => suggestion.type === filterType),
                             toArray(),
                             map(suggestions => ({
-                                suggestions: { values: suggestions, cursorPosition: this.props.value.length },
+                                suggestions: {
+                                    values: suggestions,
+                                    cursorPosition: this.props.value.length,
+                                },
                             })),
+                            startWith({ suggestions: LOADING }),
                             catchError(error => {
                                 console.error(error)
                                 return [{ suggestions: noSuggestions }]
@@ -229,7 +239,10 @@ export default class FilterInput extends React.Component<Props, State> {
     private downshiftItemToString = (suggestion?: Suggestion): string => (suggestion ? suggestion.value : '')
 
     public render(): JSX.Element | null {
-        const showSuggestions = this.state.showSuggestions && this.state.suggestions.values.length > 0
+        const suggestionsAreLoading = this.state.suggestions === LOADING
+        const showSuggestions =
+            this.state.showSuggestions &&
+            ((this.state.suggestions !== LOADING && this.state.suggestions.values.length > 0) || suggestionsAreLoading)
 
         return (
             <div
@@ -265,23 +278,30 @@ export default class FilterInput extends React.Component<Props, State> {
                                                         className="filter-input__suggestions e2e-filter-input__suggestions"
                                                         {...getMenuProps()}
                                                     >
-                                                        {this.state.suggestions.values.map((suggestion, index) => {
-                                                            const isSelected = highlightedIndex === index
-                                                            const key = `${index}-${suggestion}`
-                                                            return (
-                                                                <SuggestionItem
-                                                                    key={key}
-                                                                    {...getItemProps({
-                                                                        key,
-                                                                        index,
-                                                                        item: suggestion,
-                                                                    })}
-                                                                    suggestion={suggestion}
-                                                                    isSelected={isSelected}
-                                                                    showUrlLabel={false}
-                                                                />
-                                                            )
-                                                        })}
+                                                        {this.state.suggestions === LOADING ? (
+                                                            <li className="suggestion suggestion--selected">
+                                                                <LoadingSpinner className="icon-inline" />
+                                                                <div className="suggestion__description">Loading</div>
+                                                            </li>
+                                                        ) : (
+                                                            this.state.suggestions.values.map((suggestion, index) => {
+                                                                const isSelected = highlightedIndex === index
+                                                                const key = `${index}-${suggestion}`
+                                                                return (
+                                                                    <SuggestionItem
+                                                                        key={key}
+                                                                        {...getItemProps({
+                                                                            key,
+                                                                            index,
+                                                                            item: suggestion,
+                                                                        })}
+                                                                        suggestion={suggestion}
+                                                                        isSelected={isSelected}
+                                                                        showUrlLabel={false}
+                                                                    />
+                                                                )
+                                                            })
+                                                        )}
                                                     </ul>
                                                 )}
                                             </div>
