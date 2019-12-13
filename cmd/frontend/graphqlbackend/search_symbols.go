@@ -54,13 +54,13 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*Fi
 		return mockSearchSymbols(ctx, args, limit)
 	}
 
-	tr, ctx := trace.New(ctx, "Search symbols", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.Pattern, len(args.Repos)))
+	tr, ctx := trace.New(ctx, "Search symbols", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.PatternInfo, len(args.Repos)))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	if args.Pattern.Pattern == "" {
+	if args.PatternInfo.Pattern == "" {
 		return nil, nil, nil
 	}
 
@@ -141,8 +141,8 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*Fi
 			unflattened = append(unflattened, matches)
 			flattenedSize += len(matches)
 
-			if flattenedSize > int(args.Pattern.FileMatchLimit) {
-				tr.LazyPrintf("cancel due to result size: %d > %d", flattenedSize, args.Pattern.FileMatchLimit)
+			if flattenedSize > int(args.PatternInfo.FileMatchLimit) {
+				tr.LazyPrintf("cancel due to result size: %d > %d", flattenedSize, args.PatternInfo.FileMatchLimit)
 				overLimitCanceled = true
 				common.limitHit = true
 				cancelAll()
@@ -187,7 +187,7 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*Fi
 		run.Acquire()
 		goroutine.Go(func() {
 			defer run.Release()
-			repoSymbols, repoErr := searchSymbolsInRepo(ctx, repoRevs, args.Pattern, args.Query, limit)
+			repoSymbols, repoErr := searchSymbolsInRepo(ctx, repoRevs, args.PatternInfo, args.Query, limit)
 			if repoErr != nil {
 				tr.LogFields(otlog.String("repo", string(repoRevs.Repo.Name)), otlog.String("repoErr", repoErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(repoErr)), otlog.Bool("temporary", errcode.IsTemporary(repoErr)))
 			}
@@ -209,7 +209,7 @@ func searchSymbols(ctx context.Context, args *search.Args, limit int) (res []*Fi
 		})
 	}
 	err = run.Wait()
-	flattened := flattenFileMatches(unflattened, int(args.Pattern.FileMatchLimit))
+	flattened := flattenFileMatches(unflattened, int(args.PatternInfo.FileMatchLimit))
 	res2 := limitSymbolResults(flattened, limit)
 	common.limitHit = symbolCount(res2) < symbolCount(res)
 	return res2, common, err

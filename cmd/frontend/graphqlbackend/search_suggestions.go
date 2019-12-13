@@ -208,7 +208,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		defer cancel()
 
 		fileMatches, _, err := searchSymbols(ctx, &search.Args{
-			Pattern:      p,
+			PatternInfo:  p,
 			Repos:        repoRevs,
 			Query:        r.query,
 			Zoekt:        r.zoekt,
