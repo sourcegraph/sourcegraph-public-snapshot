@@ -217,10 +217,10 @@ Examples:
 			return err
 		}
 
-		jobURL := string(base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf(`LSIFJob:"%s"`, payload.ID))))
+		jobURL := string(base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf(`LSIFUpload:"%s"`, payload.ID))))
 		fmt.Println("")
 		fmt.Printf("LSIF dump successfully uploaded. It will be converted asynchronously.\n")
-		fmt.Printf("To check the status, visit %s/site-admin/lsif-jobs/%s.\n", cfg.Endpoint, jobURL)
+		fmt.Printf("To check the status, visit %s/site-admin/lsif-uploads/%s.\n", cfg.Endpoint, jobURL)
 		return nil
 	}
 
