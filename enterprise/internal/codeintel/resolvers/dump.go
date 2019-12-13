@@ -3,8 +3,6 @@ package resolvers
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
-	"net/url"
 	"strconv"
 	"sync"
 
@@ -108,54 +106,24 @@ func (r *lsifDumpConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil
 
 func (r *lsifDumpConnectionResolver) compute(ctx context.Context) ([]*lsif.LSIFDump, *graphqlbackend.RepositoryResolver, int, string, error) {
 	r.once.Do(func() {
-		repo, err := graphqlbackend.RepositoryByID(ctx, r.opt.RepositoryID)
-		if err != nil {
-			r.err = err
+		r.repo, r.err = graphqlbackend.RepositoryByID(ctx, r.opt.RepositoryID)
+		if r.err != nil {
 			return
 		}
 
-		var path string
-		if r.opt.NextURL == nil {
-			// first page of results
-			path = fmt.Sprintf("/dumps/%s", url.PathEscape(repo.Name()))
-		} else {
-			// subsequent page of results
-			path = *r.opt.NextURL
-		}
-
-		query := url.Values{}
-		if r.opt.Query != nil {
-			query.Set("query", *r.opt.Query)
-		}
-		if r.opt.IsLatestForRepo != nil && *r.opt.IsLatestForRepo {
-			query.Set("visibleAtTip", "true")
-		}
-		if r.opt.Limit != nil {
-			query.Set("limit", strconv.FormatInt(int64(*r.opt.Limit), 10))
-		}
-
-		resp, err := client.DefaultClient.BuildAndTraceRequest(ctx, "GET", path, query, nil)
-		if err != nil {
-			r.err = err
-			return
-		}
-
-		payload := struct {
-			Dumps      []*lsif.LSIFDump `json:"dumps"`
-			TotalCount int              `json:"totalCount"`
+		r.dumps, r.nextURL, r.totalCount, r.err = client.DefaultClient.GetDumps(ctx, &struct {
+			RepoName        string
+			Query           *string
+			IsLatestForRepo *bool
+			Limit           *int32
+			Cursor          *string
 		}{
-			Dumps: []*lsif.LSIFDump{},
-		}
-
-		if err := client.UnmarshalPayload(resp, &payload); err != nil {
-			r.err = err
-			return
-		}
-
-		r.dumps = payload.Dumps
-		r.repo = repo
-		r.totalCount = payload.TotalCount
-		r.nextURL = client.ExtractNextURL(resp)
+			RepoName:        r.repo.Name(),
+			Query:           r.opt.Query,
+			IsLatestForRepo: r.opt.IsLatestForRepo,
+			Limit:           r.opt.Limit,
+			Cursor:          r.opt.NextURL,
+		})
 	})
 
 	return r.dumps, r.repo, r.totalCount, r.nextURL, r.err

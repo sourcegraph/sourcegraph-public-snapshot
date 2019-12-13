@@ -3,9 +3,6 @@ package resolvers
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
-	"net/url"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -150,44 +147,17 @@ func (r *lsifUploadConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 
 func (r *lsifUploadConnectionResolver) compute(ctx context.Context) ([]*lsif.LSIFUpload, *int, string, error) {
 	r.once.Do(func() {
-		var path string
-		if r.opt.NextURL == nil {
-			// first page of results
-			path = fmt.Sprintf("/uploads/%s", strings.ToLower(r.opt.State))
-		} else {
-			// subsequent page of results
-			path = *r.opt.NextURL
-		}
-
-		query := url.Values{}
-		if r.opt.Query != nil {
-			query.Set("query", *r.opt.Query)
-		}
-		if r.opt.Limit != nil {
-			query.Set("limit", strconv.FormatInt(int64(*r.opt.Limit), 10))
-		}
-
-		resp, err := client.DefaultClient.BuildAndTraceRequest(ctx, "GET", path, query, nil)
-		if err != nil {
-			r.err = err
-			return
-		}
-
-		payload := struct {
-			Uploads    []*lsif.LSIFUpload `json:"uploads"`
-			TotalCount *int               `json:"totalCount"`
+		r.uploads, r.nextURL, r.totalCount, r.err = client.DefaultClient.GetUploads(ctx, &struct {
+			State  string
+			Query  *string
+			Limit  *int32
+			Cursor *string
 		}{
-			Uploads: []*lsif.LSIFUpload{},
-		}
-
-		if err := client.UnmarshalPayload(resp, &payload); err != nil {
-			r.err = err
-			return
-		}
-
-		r.uploads = payload.Uploads
-		r.totalCount = payload.TotalCount
-		r.nextURL = client.ExtractNextURL(resp)
+			State:  r.opt.State,
+			Query:  r.opt.Query,
+			Limit:  r.opt.Limit,
+			Cursor: r.opt.NextURL,
+		})
 	})
 
 	return r.uploads, r.totalCount, r.nextURL, r.err
