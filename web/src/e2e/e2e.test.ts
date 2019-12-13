@@ -1485,7 +1485,7 @@ describe('e2e test suite', () => {
         })
     })
 
-    describe('Interactive search mode (feature flagged)', () => {
+    describe.only('Interactive search mode (feature flagged)', () => {
         let previousExperimentalFeatures: any
         beforeAll(async () => {
             await driver.setConfig(['experimentalFeatures'], prev => {
@@ -1493,15 +1493,13 @@ describe('e2e test suite', () => {
                 return { interactiveSearchMode: 'enabled' }
             })
 
-            // wait for configuration to be applied
+            // // wait for configuration to be applied
             await retry(async () => {
                 await driver.page.goto(sourcegraphBaseUrl + '/search')
                 await driver.page.reload()
                 try {
                     assert.notStrictEqual(
-                        await driver.page.evaluate(
-                            () => document.querySelectorAll('.e2e-interactive-mode-toggle').length
-                        ),
+                        await driver.page.evaluate(() => document.querySelectorAll('.e2e-search-mode-toggle').length),
                         0
                     )
                 } catch (error) {
@@ -1515,19 +1513,20 @@ describe('e2e test suite', () => {
             await driver.setConfig(['experimentalFeatures'], () => previousExperimentalFeatures)
         })
 
-        test('Interactive search mode toggle appears', async () => {
-            await driver.page.waitForSelector('.e2e-interactive-mode-toggle')
+        test('Interactive search mode component appears', async () => {
+            await driver.page.waitForSelector('.e2e-search-mode-toggle')
             expect(
                 await driver.page.evaluate(() => {
-                    const toggles = document.querySelectorAll('.e2e-interactive-mode-toggle')
+                    const toggles = document.querySelectorAll('.e2e-search-mode-toggle')
                     return toggles.length
                 })
-            ).toBe(2)
+            ).toBe(1)
         })
 
         test('Submit a search through interactive mode on the homepage', async () => {
-            await driver.page.waitForSelector('.e2e-interactive-mode-toggle', { visible: true })
-            await driver.page.click('.e2e-interactive-mode-toggle')
+            await driver.page.waitForSelector('.e2e-search-mode-toggle', { visible: true })
+            await driver.page.click('.e2e-search-mode-toggle')
+            await driver.page.click('.e2e-search-mode-toggle__interactive-mode')
 
             // Wait for the input component to appear
             await driver.page.waitForSelector('.e2e-interactive-mode-input', { visible: true })
@@ -1548,7 +1547,7 @@ describe('e2e test suite', () => {
             // Search for repo:gorilla in the repo filter chip input
             await driver.page.keyboard.type('gorilla')
             await driver.page.keyboard.press('Enter')
-            await driver.page.click('.search-button')
+            // await driver.page.click('.search-button')
             await driver.assertWindowLocation('/search?repo=gorilla&q=&patternType=literal')
 
             // Edit the filter
@@ -1559,7 +1558,7 @@ describe('e2e test suite', () => {
             // Press enter to lock in filter
             await driver.page.keyboard.press('Enter')
             // The main query input should be autofocused, so hit enter again to submit
-            await driver.page.keyboard.press('Enter')
+            // await driver.page.keyboard.press('Enter')
             await driver.assertWindowLocation('/search?repo=gorilla/mux&q=&patternType=literal')
 
             // Add a file filter
@@ -1568,7 +1567,7 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector('.e2e-filter-input__input-field-file-1', { visible: true })
             await driver.page.keyboard.type('README')
             await driver.page.keyboard.press('Enter')
-            await driver.page.keyboard.press('Enter')
+            // await driver.page.keyboard.press('Enter')
             await driver.assertWindowLocation('/search?repo=gorilla/mux&file=README&q=&patternType=literal')
 
             // Remove file filter
@@ -1587,18 +1586,18 @@ describe('e2e test suite', () => {
             await driver.page.keyboard.type('gorilla')
             await driver.page.waitForSelector('.e2e-filter-input__suggestions')
             await driver.page.waitForSelector('.e2e-suggestion-item')
-            const textVal = await driver.page.evaluate(() => {
-                const firstSuggestion = document.querySelector('.e2e-suggestion-item')
-                return formatRegExp(firstSuggestion?.textContent || '')
-            })
+            // const textVal = await driver.page.evaluate(() => {
+            //     const firstSuggestion = document.querySelector('.e2e-suggestion-item')
+            //     return formatRegExp(firstSuggestion?.textContent || '')
+            // })
             await driver.page.keyboard.press('ArrowDown')
             await driver.page.keyboard.press('Enter')
             await driver.page.keyboard.press('Enter')
             expect(
                 await driver.page.evaluate(() => document.querySelector('.e2e-filter-input-repo-0')?.textContent)
-            ).toBe(`repo:${formatRegExp(textVal)}`)
-            await driver.page.keyboard.press('Enter')
-            await driver.assertWindowLocation('/search?repo=github.com/gorilla/mux&q=&patternType=literal')
+            ).toBe(`repo:${formatRegExp('github.com/gorilla/mux')}`)
+            // await driver.page.keyboard.press('Enter')
+            await driver.assertWindowLocation('/search?repo=%5Egithub%5C.com/gorilla/mux%24&q=&patternType=literal')
         })
     })
 })
