@@ -215,17 +215,17 @@ func (l *eventLogs) countUniquesPerPeriodBySQL(ctx context.Context, interval, pe
 
 // CountUniquesAll provides a count of unique active users in a given time span.
 func (l *eventLogs) CountUniquesAll(ctx context.Context, startDate time.Time, endDate time.Time) (int, error) {
-	return l.countUniquesBySQL(ctx, sqlf.Sprintf("WHERE DATE(timestamp) >= %s AND DATE(timestamp) <= %s", startDate, endDate))
+	return l.countUniquesBySQL(ctx, sqlf.Sprintf("WHERE DATE_TRUNC('day', timestamp) >= %s AND DATE_TRUNC('day', timestamp) <= %s", startDate, endDate))
 }
 
 // CountUniquesByEventNamePrefix provides a count of unique active users in a given time span that logged an event with a given prefix.
 func (l *eventLogs) CountUniquesByEventNamePrefix(ctx context.Context, startDate time.Time, endDate time.Time, namePrefix string) (int, error) {
-	return l.countUniquesBySQL(ctx, sqlf.Sprintf("WHERE DATE(timestamp) >= %s AND DATE(timestamp) <= %s AND name LIKE %s ", startDate, endDate, namePrefix+"%"))
+	return l.countUniquesBySQL(ctx, sqlf.Sprintf("WHERE DATE_TRUNC('day', timestamp) >= %s AND DATE_TRUNC('day', timestamp) <= %s AND name LIKE %s ", startDate, endDate, namePrefix+"%"))
 }
 
 // CountUniquesByEventName provides a count of unique active users in a given time span that logged a given event.
 func (l *eventLogs) CountUniquesByEventName(ctx context.Context, startDate time.Time, endDate time.Time, name string) (int, error) {
-	return l.countUniquesBySQL(ctx, sqlf.Sprintf("WHERE DATE(timestamp) >= %s AND DATE(timestamp) <= %s AND name = %s", startDate, endDate, name))
+	return l.countUniquesBySQL(ctx, sqlf.Sprintf("WHERE DATE_TRUNC('day', timestamp) >= %s AND DATE_TRUNC('day', timestamp) <= %s AND name = %s", startDate, endDate, name))
 }
 
 // CountUniquesByEventNames provides a count of unique active users in a given time span that logged any event that matches a list of given event names
@@ -234,7 +234,7 @@ func (l *eventLogs) CountUniquesByEventNames(ctx context.Context, startDate time
 	for _, v := range names {
 		items = append(items, sqlf.Sprintf("%s", v))
 	}
-	return l.countUniquesBySQL(ctx, sqlf.Sprintf("WHERE DATE(timestamp) >= %s AND DATE(timestamp) <= %s AND name IN (%s)", startDate, endDate, sqlf.Join(items, ",")))
+	return l.countUniquesBySQL(ctx, sqlf.Sprintf("WHERE DATE_TRUNC('day', timestamp) >= %s AND DATE_TRUNC('day', timestamp) <= %s AND name IN (%s)", startDate, endDate, sqlf.Join(items, ",")))
 }
 
 func (*eventLogs) countUniquesBySQL(ctx context.Context, querySuffix *sqlf.Query) (int, error) {
@@ -246,7 +246,7 @@ func (*eventLogs) countUniquesBySQL(ctx context.Context, querySuffix *sqlf.Query
 }
 
 func (l *eventLogs) ListUniquesAll(ctx context.Context, startDate time.Time, endDate time.Time) ([]int32, error) {
-	rows, err := dbconn.Global.QueryContext(ctx, "SELECT user_id FROM event_logs WHERE user_id > 0 AND DATE(timestamp) >= $1 AND DATE(timestamp) <= $2 GROUP BY user_id", startDate, endDate)
+	rows, err := dbconn.Global.QueryContext(ctx, "SELECT user_id FROM event_logs WHERE user_id > 0 AND DATE_TRUNC('day', timestamp) >= $1 AND DATE_TRUNC('day', timestamp) <= $2 GROUP BY user_id", startDate, endDate)
 	if err != nil {
 		return nil, err
 	}
