@@ -1,13 +1,17 @@
 .selected-filters-row {
-    padding: 0.5rem;
     display: flex;
     flex: 0 0 auto;
-    padding-left: 1rem;
+    flex-wrap: wrap;
     align-items: center;
+    min-height: calc(
+        #{$input-height} + #{$input-padding-y} + (#{$filter-input-margin-y}* 2) + (#{$filter-input-padding}* 2)
+    );
+
+    padding-left: 1rem;
+
     color: #93a9c8;
     background: #151c28;
     border-bottom: 1px solid #2b3750;
-    flex-wrap: wrap;
 
     &--homepage {
         padding: 0.5rem 0;

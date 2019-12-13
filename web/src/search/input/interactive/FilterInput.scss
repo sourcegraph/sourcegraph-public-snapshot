@@ -1,8 +1,10 @@
+$filter-input-margin-y: 0.5rem;
+$filter-input-padding: 0.25rem;
+
 .filter-input {
-    margin-right: 0.5rem;
-    margin-bottom: 0.25rem;
+    margin: $filter-input-margin-y 0.25rem;
     border: 1px solid $color-border;
-    padding: 0.25rem;
+    padding: $filter-input-padding;
     border-radius: 2px;
     background-color: $color-bg-2;
 
