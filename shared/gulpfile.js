@@ -78,7 +78,10 @@ async function schema() {
   const schemaDir = path.join(__dirname, '..', 'schema')
   await Promise.all(
     ['json-schema-draft-07', 'settings', 'critical', 'site'].map(async file => {
-      let schema = await readFile(path.join(schemaDir, `${file}.schema.json`), 'utf8')
+      let schema = await readFile(
+        path.join(schemaDir, `${file == 'critical' ? 'critical/critical' : file}.schema.json`),
+        'utf8'
+      )
       // HACK: Rewrite absolute $refs to be relative. They need to be absolute for Monaco to resolve them
       // when the schema is in a oneOf (to be merged with extension schemas).
       schema = schema.replace(

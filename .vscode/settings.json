@@ -19,7 +19,7 @@
   "json.schemas": [
     {
       "fileMatch": ["dev/critical-config.json"],
-      "url": "/schema/critical.schema.json",
+      "url": "/schema/critical/critical.schema.json",
     },
     {
       "fileMatch": ["dev/site-config.json"],
