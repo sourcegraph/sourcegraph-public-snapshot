@@ -13,16 +13,16 @@ import (
 // can be mounted on any ServeMux, not just http.DefaultServeMux.
 func expvarHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	fmt.Fprintf(w, "{\n")
+	fmt.Fprintln(w, "{")
 	first := true
 	expvar.Do(func(kv expvar.KeyValue) {
 		if !first {
-			fmt.Fprintf(w, ",\n")
+			fmt.Fprintln(w, ",")
 		}
 		first = false
 		fmt.Fprintf(w, "%q: %s", kv.Key, kv.Value)
 	})
-	fmt.Fprintf(w, "\n}\n")
+	fmt.Fprintln(w, "\n}")
 }
 
 func gcHandler(w http.ResponseWriter, r *http.Request) {

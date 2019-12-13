@@ -2681,6 +2681,14 @@ type LSIFQueryResolver {
     # (experimental) The LSIF API may change substantially in the near future as we
     # continue to adjust it for our use cases. Changes will not be documented in the
     # CHANGELOG during this time.
+    # The commit that is being used to power code intelligence. This may be distinct from
+    # the commit of the git blob from which this query resolver came when there is no
+    # LSIF data available for that commit.
+    commit: GitCommit!
+
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
     # A list of definitions of the symbol under the given document position.
     definitions(
         # The line on which the symbol occurs (zero-based, inclusive).

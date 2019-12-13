@@ -79,8 +79,8 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 	}
 	if len(repoFilters) == 0 && len(repoGroupFilters) > 1 {
 		return &searchAlert{
-			title:       fmt.Sprintf("Repository groups have no repositories in common"),
-			description: fmt.Sprintf("No repository exists in all of the specified repository groups."),
+			title:       "Repository groups have no repositories in common",
+			description: "No repository exists in all of the specified repository groups.",
 		}, nil
 	}
 
