@@ -57,8 +57,8 @@ export async function uploadDumps(
         await clearDumps(gqlClient, `${repoBase}/${repository}`)
     }
 
-    // Upload each dump in parallel and get back the job status URLs
-    const jobUrls = await Promise.all(
+    // Upload each dump in parallel and get back the upload status URLs
+    const uploadUrls = await Promise.all(
         dumps.map(({ repository, commit, root }) =>
             uploadDump(config, {
                 repository: `${repoBase}/${repository}`,
@@ -69,13 +69,13 @@ export async function uploadDumps(
         )
     )
 
-    // Check the job status URLs to ensure that they succeed, then ensure
+    // Check the upload status URLs to ensure that they succeed, then ensure
     // that they are all listed as one of the "active" dumps for that repo
     for (const [i, { repository, ...rest }] of dumps.entries()) {
         await ensureDump(driver, config, {
             ...rest,
             repository: `${repoBase}/${repository}`,
-            jobUrl: jobUrls[i],
+            uploadUrl: uploadUrls[i],
         })
     }
 }
@@ -92,21 +92,21 @@ export async function uploadAndEnsureDump(
     // First, remove all existing dumps for the repository
     await clearDumps(gqlClient, `${repoBase}/${repository}`)
 
-    // Upload each dump in parallel and get back the job status URLs
-    const jobUrl = await uploadDump(config, {
+    // Upload each dump in parallel and get back the upload status URLs
+    const uploadUrl = await uploadDump(config, {
         repository: `${repoBase}/${repository}`,
         commit,
         root,
         filename: `lsif-data/${repository}@${commit.substring(0, 12)}.lsif`,
     })
 
-    // Check the job status URLs to ensure that they succeed, then ensure
+    // Check the upload status URLs to ensure that they succeed, then ensure
     // that they are all listed as one of the "active" dumps for that repo
     await ensureDump(driver, config, {
         repository: `${repoBase}/${repository}`,
         commit,
         root,
-        jobUrl,
+        uploadUrl,
     })
 
     return (): Promise<void> => clearDumps(gqlClient, `${repoBase}/${repository}`)
@@ -181,7 +181,7 @@ async function uploadDump(
         filename: string
     }
 ): Promise<string> {
-    let out!: Buffer
+    let out!: string
     try {
         // Untar the lsif data for this upload
         const tarCommand = ['tar', '-xzf', `${filename}.gz`, '-C', 'lsif-data'].join(' ')
@@ -209,9 +209,9 @@ async function uploadDump(
     }
 
     // Extract the status URL
-    const match = out.toString().match(/To check the status, visit (.+).\n$/)
+    const match = out.match(/To check the status, visit (.+).\n$/)
     if (!match) {
-        throw new Error(`Unexpected output from Sourcegraph cli: ${out.toString()}`)
+        throw new Error(`Unexpected output from Sourcegraph cli: ${out}`)
     }
 
     return match[1]
@@ -220,24 +220,24 @@ async function uploadDump(
 async function ensureDump(
     driver: Driver,
     config: Pick<Config, 'sourcegraphBaseUrl'>,
-    { repository, commit, root, jobUrl }: { repository: string; commit: string; root: string; jobUrl: string }
+    { repository, commit, root, uploadUrl }: { repository: string; commit: string; root: string; uploadUrl: string }
 ): Promise<void> {
-    const pendingJobStateMessages = ['Job is queued.', 'Job is currently being processed...']
+    const pendingUploadStateMessages = ['Upload is queued.', 'Upload is currently being processed...']
 
-    await driver.page.goto(jobUrl)
+    await driver.page.goto(uploadUrl)
     while (true) {
-        // Keep reloading job page until the job is terminal (not queued, not processed)
-        const text = await (await driver.page.waitForSelector('.e2e-job-state')).evaluate(elem => elem.textContent)
-        if (!pendingJobStateMessages.includes(text || '')) {
+        // Keep reloading upload page until the upload is terminal (not queued, not processed)
+        const text = await (await driver.page.waitForSelector('.e2e-upload-state')).evaluate(elem => elem.textContent)
+        if (!pendingUploadStateMessages.includes(text || '')) {
             break
         }
 
         await driver.page.reload()
     }
 
-    // Ensure job is successful
-    const text = await (await driver.page.waitForSelector('.e2e-job-state')).evaluate(elem => elem.textContent)
-    expect(text).toEqual('Job completed successfully.')
+    // Ensure upload is successful
+    const text = await (await driver.page.waitForSelector('.e2e-upload-state')).evaluate(elem => elem.textContent)
+    expect(text).toEqual('Upload completed successfully.')
 
     await driver.page.goto(`${config.sourcegraphBaseUrl}/${repository}/-/settings/code-intelligence`)
 

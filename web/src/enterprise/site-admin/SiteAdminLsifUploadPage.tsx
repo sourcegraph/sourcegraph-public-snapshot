@@ -54,20 +54,26 @@ export const SiteAdminLsifUploadPage: FunctionComponent<Props> = ({
 
                     {uploadOrError.state === GQL.LSIFUploadState.PROCESSING ? (
                         <div className="alert alert-primary mb-4 mt-3">
-                            <LoadingSpinner className="icon-inline" /> Upload is currently being processed...
+                            <LoadingSpinner className="icon-inline" />{' '}
+                            <span className="e2e-upload-state">Upload is currently being processed...</span>
                         </div>
                     ) : uploadOrError.state === GQL.LSIFUploadState.COMPLETED ? (
                         <div className="alert alert-success mb-4 mt-3">
-                            <CheckIcon className="icon-inline" /> Upload completed successfully.
+                            <CheckIcon className="icon-inline" />{' '}
+                            <span className="e2e-upload-state">Upload completed successfully.</span>
                         </div>
                     ) : uploadOrError.state === GQL.LSIFUploadState.ERRORED ? (
                         <div className="alert alert-danger mb-4 mt-3">
-                            <AlertCircleIcon className="icon-inline" /> Upload failed to complete:{' '}
-                            <code>{uploadOrError.failure && uploadOrError.failure.summary}</code>
+                            <AlertCircleIcon className="icon-inline" />{' '}
+                            <span className="e2e-upload-state">
+                                Upload failed to complete:
+                                <code>{uploadOrError.failure && uploadOrError.failure.summary}</code>
+                            </span>
                         </div>
                     ) : (
                         <div className="alert alert-primary mb-4 mt-3">
-                            <ClockOutlineIcon className="icon-inline" /> Upload is queued.
+                            <ClockOutlineIcon className="icon-inline" />{' '}
+                            <span className="e2e-upload-state">Upload is queued.</span>
                         </div>
                     )}
 
