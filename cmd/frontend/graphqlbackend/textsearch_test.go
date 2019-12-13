@@ -24,7 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
-func TestQueryToZoektQuery(t *testing.T) {
+func TestPatternInfoToZoektQuery(t *testing.T) {
 	cases := []struct {
 		Name    string
 		Pattern *search.PatternInfo
@@ -117,9 +117,9 @@ func TestQueryToZoektQuery(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to parse %q: %v", tt.Query, err)
 			}
-			got, err := queryToZoektQuery(tt.Pattern, false)
+			got, err := patternInfoToZoektQuery(tt.Pattern, false)
 			if err != nil {
-				t.Fatal("queryToZoektQuery failed:", err)
+				t.Fatal("patternInfoToZoektQuery failed:", err)
 			}
 			if !queryEqual(got, q) {
 				t.Fatalf("mismatched queries\ngot  %s\nwant %s", got.String(), q.String())
@@ -228,7 +228,7 @@ func queryEqual(a, b zoektquery.Q) bool {
 	return zoektquery.Map(a, sortChildren).String() == zoektquery.Map(b, sortChildren).String()
 }
 
-func TestQueryToZoektFileOnlyQueries(t *testing.T) {
+func TestPatternInfoToZoektFileOnlyQueries(t *testing.T) {
 	cases := []struct {
 		Name    string
 		Pattern *search.PatternInfo
@@ -308,9 +308,9 @@ func TestQueryToZoektFileOnlyQueries(t *testing.T) {
 				queries = append(queries, q)
 			}
 
-			got, err := queryToZoektFileOnlyQueries(tt.Pattern, tt.ListOfFilePaths)
+			got, err := patternInfoToZoektFileOnlyQueries(tt.Pattern, tt.ListOfFilePaths)
 			if err != nil {
-				t.Fatal("queryToZoektQuery failed:", err)
+				t.Fatal("patternInfoToZoektQuery failed:", err)
 			}
 			for i, gotQuery := range got {
 				if !queryEqual(gotQuery, queries[i]) {

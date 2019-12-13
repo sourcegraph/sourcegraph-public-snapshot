@@ -23,7 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-func zoektResultCountFactor(numRepos int, query *search.PatternInfo) int {
+func zoektResultCountFactor(numRepos int, patternInfo *search.PatternInfo) int {
 	// If we're only searching a small number of repositories, return more comprehensive results. This is
 	// arbitrary.
 	k := 1
@@ -41,13 +41,13 @@ func zoektResultCountFactor(numRepos int, query *search.PatternInfo) int {
 	case numRepos <= 5:
 		k = 100
 	}
-	if query.FileMatchLimit > defaultMaxSearchResults {
-		k = int(float64(k) * 3 * float64(query.FileMatchLimit) / float64(defaultMaxSearchResults))
+	if patternInfo.FileMatchLimit > defaultMaxSearchResults {
+		k = int(float64(k) * 3 * float64(patternInfo.FileMatchLimit) / float64(defaultMaxSearchResults))
 	}
 	return k
 }
 
-func zoektSearchOpts(k int, query *search.PatternInfo) zoekt.SearchOptions {
+func zoektSearchOpts(k int, patternInfo *search.PatternInfo) zoekt.SearchOptions {
 	searchOpts := zoekt.SearchOptions{
 		MaxWallTime:            3 * time.Second,
 		ShardMaxMatchCount:     100 * k,
@@ -60,15 +60,15 @@ func zoektSearchOpts(k int, query *search.PatternInfo) zoekt.SearchOptions {
 	// We want zoekt to return more than FileMatchLimit results since we use
 	// the extra results to populate reposLimitHit. Additionally the defaults
 	// are very low, so we always want to return at least 2000.
-	if query.FileMatchLimit > defaultMaxSearchResults {
-		searchOpts.MaxDocDisplayCount = 2 * int(query.FileMatchLimit)
+	if patternInfo.FileMatchLimit > defaultMaxSearchResults {
+		searchOpts.MaxDocDisplayCount = 2 * int(patternInfo.FileMatchLimit)
 	}
 	if searchOpts.MaxDocDisplayCount < 2000 {
 		searchOpts.MaxDocDisplayCount = 2000
 	}
 
-	if userProbablyWantsToWaitLonger := query.FileMatchLimit > defaultMaxSearchResults; userProbablyWantsToWaitLonger {
-		searchOpts.MaxWallTime *= time.Duration(3 * float64(query.FileMatchLimit) / float64(defaultMaxSearchResults))
+	if userProbablyWantsToWaitLonger := patternInfo.FileMatchLimit > defaultMaxSearchResults; userProbablyWantsToWaitLonger {
+		searchOpts.MaxWallTime *= time.Duration(3 * float64(patternInfo.FileMatchLimit) / float64(defaultMaxSearchResults))
 	}
 
 	return searchOpts
@@ -94,7 +94,7 @@ func zoektSearchHEAD(ctx context.Context, args *search.Args, repos []*search.Rep
 		repoMap[api.RepoName(strings.ToLower(string(repoRev.Repo.Name)))] = repoRev
 	}
 
-	queryExceptRepos, err := queryToZoektQuery(args.PatternInfo, isSymbol)
+	queryExceptRepos, err := patternInfoToZoektQuery(args.PatternInfo, isSymbol)
 	if err != nil {
 		return nil, false, nil, err
 	}
@@ -262,13 +262,13 @@ func zoektSearchHEAD(ctx context.Context, args *search.Args, repos []*search.Rep
 }
 
 // Returns a new repoSet which accounts for the `repohasfile` and `-repohasfile` flags that may have been passed in the query.
-func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.PatternInfo, searcher zoekt.Searcher, repoSet zoektquery.RepoSet) (*zoektquery.RepoSet, error) {
+func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, patternInfo *search.PatternInfo, searcher zoekt.Searcher, repoSet zoektquery.RepoSet) (*zoektquery.RepoSet, error) {
 	newRepoSet := repoSet.Set
-	flagIsInQuery := len(query.FilePatternsReposMustInclude) > 0
-	negatedFlagIsInQuery := len(query.FilePatternsReposMustExclude) > 0
+	flagIsInQuery := len(patternInfo.FilePatternsReposMustInclude) > 0
+	negatedFlagIsInQuery := len(patternInfo.FilePatternsReposMustExclude) > 0
 
 	// Construct queries which search for repos containing the files passed into `repohasfile`
-	filesToIncludeQueries, err := queryToZoektFileOnlyQueries(query, query.FilePatternsReposMustInclude)
+	filesToIncludeQueries, err := patternInfoToZoektFileOnlyQueries(patternInfo, patternInfo.FilePatternsReposMustInclude)
 	if err != nil {
 		return nil, err
 	}
@@ -316,7 +316,7 @@ func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.Pa
 	}
 
 	// Construct queries which search for repos containing the files passed into `-repohasfile`
-	filesToExcludeQueries, err := queryToZoektFileOnlyQueries(query, query.FilePatternsReposMustExclude)
+	filesToExcludeQueries, err := patternInfoToZoektFileOnlyQueries(patternInfo, patternInfo.FilePatternsReposMustExclude)
 	if err != nil {
 		return nil, err
 	}
@@ -479,26 +479,26 @@ func StructuralPatToQuery(pattern string) (zoektquery.Q, error) {
 	}, nil
 }
 
-func queryToZoektQuery(query *search.PatternInfo, isSymbol bool) (zoektquery.Q, error) {
+func patternInfoToZoektQuery(patternInfo *search.PatternInfo, isSymbol bool) (zoektquery.Q, error) {
 	var and []zoektquery.Q
 
 	var q zoektquery.Q
 	var err error
-	if query.IsRegExp {
-		fileNameOnly := query.PatternMatchesPath && !query.PatternMatchesContent
-		q, err = parseRe(query.Pattern, fileNameOnly, query.IsCaseSensitive)
+	if patternInfo.IsRegExp {
+		fileNameOnly := patternInfo.PatternMatchesPath && !patternInfo.PatternMatchesContent
+		q, err = parseRe(patternInfo.Pattern, fileNameOnly, patternInfo.IsCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
-	} else if query.IsStructuralPat {
-		q, err = StructuralPatToQuery(query.Pattern)
+	} else if patternInfo.IsStructuralPat {
+		q, err = StructuralPatToQuery(patternInfo.Pattern)
 		if err != nil {
 			return nil, err
 		}
 	} else {
 		q = &zoektquery.Substring{
-			Pattern:       query.Pattern,
-			CaseSensitive: query.IsCaseSensitive,
+			Pattern:       patternInfo.Pattern,
+			CaseSensitive: patternInfo.IsCaseSensitive,
 
 			FileName: true,
 			Content:  true,
@@ -516,18 +516,18 @@ func queryToZoektQuery(query *search.PatternInfo, isSymbol bool) (zoektquery.Q, 
 	// zoekt also uses regular expressions for file paths
 	// TODO PathPatternsAreCaseSensitive
 	// TODO whitespace in file path patterns?
-	if !query.PathPatternsAreRegExps {
+	if !patternInfo.PathPatternsAreRegExps {
 		return nil, errors.New("zoekt only supports regex path patterns")
 	}
-	for _, p := range query.IncludePatterns {
-		q, err := fileRe(p, query.IsCaseSensitive)
+	for _, p := range patternInfo.IncludePatterns {
+		q, err := fileRe(p, patternInfo.IsCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
 		and = append(and, q)
 	}
-	if query.ExcludePattern != "" {
-		q, err := fileRe(query.ExcludePattern, query.IsCaseSensitive)
+	if patternInfo.ExcludePattern != "" {
+		q, err := fileRe(patternInfo.ExcludePattern, patternInfo.IsCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
@@ -540,13 +540,13 @@ func queryToZoektQuery(query *search.PatternInfo, isSymbol bool) (zoektquery.Q, 
 // queryToZoektFileOnlyQueries constructs a list of Zoekt queries that search for a file pattern(s).
 // `listOfFilePaths` specifies which field on `query` should be the list of file patterns to look for.
 //  A separate zoekt query is created for each file path that should be searched.
-func queryToZoektFileOnlyQueries(query *search.PatternInfo, listOfFilePaths []string) ([]zoektquery.Q, error) {
+func patternInfoToZoektFileOnlyQueries(patternInfo *search.PatternInfo, listOfFilePaths []string) ([]zoektquery.Q, error) {
 	var zoektQueries []zoektquery.Q
-	if !query.PathPatternsAreRegExps {
+	if !patternInfo.PathPatternsAreRegExps {
 		return nil, errors.New("zoekt only supports regex path patterns")
 	}
 	for _, p := range listOfFilePaths {
-		q, err := fileRe(p, query.IsCaseSensitive)
+		q, err := fileRe(p, patternInfo.IsCaseSensitive)
 		if err != nil {
 			return nil, err
 		}
