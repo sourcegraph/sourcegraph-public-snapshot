@@ -9,10 +9,12 @@ import (
 )
 
 func (args Args) String() string {
-	var s []string
-	s = append(s, args.MatchTemplate, args.RewriteTemplate)
-	s = append(s, fmt.Sprintf("-f (%d file patterns)", len(args.FilePatterns)))
-	s = append(s, "-json-lines")
+	s := []string{
+		args.MatchTemplate,
+		args.RewriteTemplate,
+		fmt.Sprintf("-f (%d file patterns)", len(args.FilePatterns)),
+		"-json-lines",
+	}
 	if args.MatchOnly {
 		s = append(s, "-match-only")
 	} else {
