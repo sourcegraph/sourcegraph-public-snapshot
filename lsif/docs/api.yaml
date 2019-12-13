@@ -106,37 +106,6 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/Dump'
                   - type: null
-    post:
-      description: Determine if LSIF data exists for a file within a particular commit. This endpoint will return true if there is a nearby commit (direct ancestor or descendant) with LSIF data for the same file if the exact commit does not have available LSIF data.
-      tags:
-        - LSIF
-      parameters:
-        - name: repository
-          in: query
-          description: The repository name.
-          required: true
-          schema:
-            type: string
-        - name: commit
-          in: query
-          description: The 40-character commit hash.
-          required: true
-          schema:
-            type: string
-        - name: file
-          in: query
-          description: The file path within the repository (relative to the repository root).
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: boolean
-
   /definitions:
     get:
       description: Get definitions for the symbol at a source position.
@@ -186,7 +155,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Locations2'
+                $ref: '#/components/schemas/Locations'
         '404':
           description: Not found
   /references:
@@ -251,7 +220,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Locations2'
+                $ref: '#/components/schemas/Locations'
           headers:
             Link:
               description: If there are more results, this header includes the URL of the next page with relation type *next*. See [RFC 5988](https://tools.ietf.org/html/rfc5988).
@@ -308,56 +277,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Hover2'
+                $ref: '#/components/schemas/HoverResponse'
         '404':
           description: Not found
-  /request:
-    post:
-      description: Answer a definitions, references, or hover LSP request. This endpoint will use a nearby commit (direct ancestor or descendant) with LSIF data for the same file if the exact commit does not have available LSIF data.
-      tags:
-        - LSIF
-      parameters:
-        - name: repository
-          in: query
-          description: The repository name.
-          required: true
-          schema:
-            type: string
-        - name: commit
-          in: query
-          description: The 40-character commit hash.
-          required: true
-          schema:
-            type: string
-        - name: limit
-          in: query
-          description: The maximum number of remote dumps to search for remote references per page. This parameter is only read on references request.
-          required: false
-          schema:
-            type: number
-            default: 10
-        - name: cursor
-          in: query
-          description: The end cursor given in the response of a previous page.
-          required: false
-          schema:
-            type: string
-      requestBody:
-        description: The LSP request, including the type of data being requested and the source location.
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LSPRequest'
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                anyOf:
-                  - $ref: '#/components/schemas/Locations'
-                  - $ref: '#/components/schemas/Hover'
   /dumps/{repository}:
     get:
       description: Get the LSIF dumps uploaded for a repository ordered by their upload time (newest first).
@@ -558,146 +480,14 @@ paths:
           description: No Content
         '404':
           description: Not Found
-  /uploads/stats:
-    get:
-      description: Get the current counts of uploads by their state.
-      tags:
-        - Uploads
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UploadStats'
-  /uploads/{state}:
-    get:
-      description: Get LSIF uploads by state.
-      tags:
-        - Uploads
-      parameters:
-        - name: state
-          in: path
-          description: The target upload state.
-          required: true
-          schema:
-            type: string
-            enum:
-              - processing
-              - errored
-              - completed
-              - queued
-        - name: query
-          in: query
-          description: A search query applied over repository, commit, root, failure reason, and failure stacktrace properties.
-          required: false
-          schema:
-            type: string
-        - name: limit
-          in: query
-          description: The maximum number of uploads to return in one page.
-          required: false
-          schema:
-            type: number
-            default: 50
-        - name: offset
-          in: query
-          description: The number of uploads seen on previous pages.
-          required: false
-          schema:
-            type: number
-            default: 0
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Uploads'
-          headers:
-            Link:
-              description: If there are more results, this header includes the URL of the next page with relation type *next*. See [RFC 5988](https://tools.ietf.org/html/rfc5988).
-              schema:
-                type: string
-  /uploads/{id}:
-    get:
-      description: Get an LSIF upload by its identifier.
-      tags:
-        - Uploads
-      parameters:
-        - name: id
-          in: path
-          description: The upload identifier.
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Upload'
-        '404':
-          description: Not Found
-    delete:
-      description: Delete an LSIF upload by its identifier.
-      tags:
-        - Uploads
-      parameters:
-        - name: id
-          in: path
-          description: The upload identifier.
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: No Content
-        '404':
-          description: Not Found
 components:
   schemas:
-    Position:
-      type: object
-      description: A cursor position in a source file.
-      properties:
-        line:
-          type: number
-          description: The (zero-index) line index.
-        character:
-          type: number
-          description: The (zero-index) character index.
-      required:
-        - line
-        - character
-      additionalProperties: false
-    Range:
-      type: object
-      description: A closed range of positions in a source file.
-      properties:
-        start:
-          $ref: '#/components/schemas/Position'
-        end:
-          $ref: '#/components/schemas/Position'
-      required:
-        - start
-        - end
-      additionalProperties: false
+    Locations:
+      type: array
+      description: A list of definition or reference locations.
+      items:
+        $ref: '#/components/schemas/Location'
     Location:
-      type: object
-      description: A position in a file of a code base.
-      properties:
-        uri:
-          type: string
-          description: The root-relative path to the file.
-        range:
-          $ref: '#/components/schemas/Range'
-      required:
-        - uri
-        - range
-      additionalProperties: false
-    Location2:
       type: object
       description: A position in a file of a code base.
       properties:
@@ -718,70 +508,48 @@ components:
         - path
         - range
       additionalProperties: false
-    LSPRequest:
+    Range:
       type: object
-      description: A payload indicating the type of requested LSP data.
+      description: A closed range of positions in a source file.
       properties:
-        method:
-          type: string
-          description: The request type.
-          enum:
-            - definitions
-            - references
-            - hover
-        path:
-          type: string
-          description: The root-relative path to the file containing the hover position.
-        position:
+        start:
+          $ref: '#/components/schemas/Position'
+        end:
           $ref: '#/components/schemas/Position'
       required:
-        - path
-        - position
+        - start
+        - end
       additionalProperties: false
-    Locations:
-      type: array
-      description: A list of definition or reference locations.
-      items:
-        $ref: '#/components/schemas/Location'
-    Locations2:
-      type: array
-      description: A list of definition or reference locations.
-      items:
-        $ref: '#/components/schemas/Location2'
-    Hover2:
+    Position:
+      type: object
+      description: A cursor position in a source file.
+      properties:
+        line:
+          type: number
+          description: The (zero-index) line index.
+        character:
+          type: number
+          description: The (zero-index) character index.
+      required:
+        - line
+        - character
+      additionalProperties: false
+    HoverResponse:
+      oneOf:
+        - type: 'null'
+        - $ref: '#/components/schemas/Hover'
+    Hover:
       type: object
       description: The text associated with a position in a source file.
       properties:
         text:
           type: string
           description: The raw hover text.
-      required:
-        - text
-      additionalProperties: false
-    Hover:
-      type: object
-      description: The text associated with a position in a source file.
-      properties:
-        contents:
-          type: object
-          description: The hover text wrapper.
-          properties:
-            kind:
-              type: string
-              description: An indicator for the format of the value property. Currently only markdown is supported.
-              enum:
-                - markdown
-            value:
-              type: string
-              description: The raw markdown text.
-          required:
-            - kind
-            - value
-          additionalProperties: false
         range:
           $ref: '#/components/schemas/Range'
       required:
-        - contents
+        - text
+        - range
       additionalProperties: false
     Dumps:
       type: object
@@ -837,7 +605,7 @@ components:
       description: A payload indicating the enqueued upload.
       properties:
         id:
-          type: string
+          type: number
           description: The upload identifier.
       required:
         - id

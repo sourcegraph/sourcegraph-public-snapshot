@@ -12,26 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
-func enforceAuth(ctx context.Context, w http.ResponseWriter, r *http.Request, repoName string) bool {
-	validatorByCodeHost := map[string]func(context.Context, http.ResponseWriter, *http.Request, string) (int, error){
-		"github.com": enforceAuthGithub,
-	}
-
-	for codeHost, validator := range validatorByCodeHost {
-		if strings.HasPrefix(repoName, codeHost) {
-			if status, err := validator(ctx, w, r, repoName); err != nil {
-				http.Error(w, err.Error(), status)
-				return false
-			}
-
-			return true
-		}
-	}
-
-	http.Error(w, "verification not supported for code host - see https://github.com/sourcegraph/sourcegraph/issues/4967", http.StatusUnprocessableEntity)
-	return false
-}
-
 var githubURL = url.URL{Scheme: "https", Host: "api.github.com"}
 
 func enforceAuthGithub(ctx context.Context, w http.ResponseWriter, r *http.Request, repoName string) (int, error) {
