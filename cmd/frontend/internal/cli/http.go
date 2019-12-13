@@ -37,14 +37,14 @@ func newExternalHTTPHandler(schema *graphql.Schema, githubWebhook http.Handler, 
 	r := router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter())
 	apiHandler := internalhttpapi.NewHandler(r, schema, githubWebhook, lsifServerProxy)
 	apiHandler = authMiddlewares.API(apiHandler) // 🚨 SECURITY: auth middleware
-	if hooks.PostAuthMiddleware != nil {
-		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
-		apiHandler = hooks.PostAuthMiddleware(apiHandler)
-	}
 	// 🚨 SECURITY: The HTTP API should not accept cookies as authentication (except those with the
 	// X-Requested-With header). Doing so would open it up to CSRF attacks.
 	apiHandler = session.CookieMiddlewareWithCSRFSafety(apiHandler, corsAllowHeader, isTrustedOrigin) // API accepts cookies with special header
 	apiHandler = internalhttpapi.AccessTokenAuthMiddleware(apiHandler)                                // API accepts access tokens
+	if hooks.PostAuthMiddleware != nil {
+		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
+		apiHandler = hooks.PostAuthMiddleware(apiHandler)
+	}
 	apiHandler = gziphandler.GzipHandler(apiHandler)
 
 	// App handler (HTML pages).
@@ -52,13 +52,13 @@ func newExternalHTTPHandler(schema *graphql.Schema, githubWebhook http.Handler, 
 	appHandler = handlerutil.CSRFMiddleware(appHandler, func() bool {
 		return globals.ExternalURL().Scheme == "https"
 	}) // after appAuthMiddleware because SAML IdP posts data to us w/o a CSRF token
-	appHandler = authMiddlewares.App(appHandler) // 🚨 SECURITY: auth middleware
+	appHandler = authMiddlewares.App(appHandler)                       // 🚨 SECURITY: auth middleware
+	appHandler = session.CookieMiddleware(appHandler)                  // app accepts cookies
+	appHandler = internalhttpapi.AccessTokenAuthMiddleware(appHandler) // app accepts access tokens
 	if hooks.PostAuthMiddleware != nil {
 		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
 		appHandler = hooks.PostAuthMiddleware(appHandler)
 	}
-	appHandler = session.CookieMiddleware(appHandler)                  // app accepts cookies
-	appHandler = internalhttpapi.AccessTokenAuthMiddleware(appHandler) // app accepts access tokens
 
 	// Mount handlers and assets.
 	sm := http.NewServeMux()
