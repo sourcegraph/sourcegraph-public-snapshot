@@ -740,6 +740,11 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Pa
 		}
 	}
 
+	var combyRule []string
+	for _, v := range r.query.Values(query.FieldCombyRule) {
+		combyRule = append(combyRule, asString(v))
+	}
+
 	// Handle lang: and -lang: filters.
 	langIncludePatterns, langExcludePatterns, err := langIncludeExcludePatterns(r.query.StringValues(query.FieldLang))
 	if err != nil {
@@ -759,6 +764,7 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Pa
 		FilePatternsReposMustExclude: filePatternsReposMustExclude,
 		PathPatternsAreRegExps:       true,
 		PathPatternsAreCaseSensitive: r.query.IsCaseSensitive(),
+		CombyRule:                    strings.Join(combyRule, ""),
 	}
 	if len(excludePatterns) > 0 {
 		patternInfo.ExcludePattern = unionRegExps(excludePatterns)

@@ -15,6 +15,7 @@ type PatternInfo struct {
 	Pattern         string
 	IsRegExp        bool
 	IsStructuralPat bool
+	CombyRule       string
 	IsWordMatch     bool
 	IsCaseSensitive bool
 	FileMatchLimit  int32
