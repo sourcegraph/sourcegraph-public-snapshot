@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"net/url"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
@@ -12,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/client"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/lsif"
 )
 
 type Resolver struct{}
@@ -29,14 +27,18 @@ func (r *Resolver) LSIFDumpByID(ctx context.Context, id graphql.ID) (graphqlback
 		return nil, err
 	}
 
-	path := fmt.Sprintf("/dumps/%s/%d", url.PathEscape(repoName), dumpID)
-
-	var lsifDump *lsif.LSIFDump
-	if err := client.DefaultClient.TraceRequestAndUnmarshalPayload(ctx, "GET", path, nil, nil, &lsifDump); err != nil {
+	repo, err := backend.Repos.GetByName(ctx, api.RepoName(repoName))
+	if err != nil {
 		return nil, err
 	}
 
-	repo, err := backend.Repos.GetByName(ctx, api.RepoName(repoName))
+	lsifDump, err := client.DefaultClient.GetDump(ctx, &struct {
+		RepoName string
+		DumpID   int64
+	}{
+		RepoName: repoName,
+		DumpID:   dumpID,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -55,10 +57,17 @@ func (r *Resolver) DeleteLSIFDump(ctx context.Context, id graphql.ID) (*graphqlb
 		return nil, err
 	}
 
-	path := fmt.Sprintf("/dumps/%s/%d", url.PathEscape(repoName), dumpID)
-	if err := client.DefaultClient.TraceRequestAndUnmarshalPayload(ctx, "DELETE", path, nil, nil, nil); !client.IsNotFound(err) {
+	err = client.DefaultClient.DeleteDump(ctx, &struct {
+		RepoName string
+		DumpID   int64
+	}{
+		RepoName: repoName,
+		DumpID:   dumpID,
+	})
+	if err != nil {
 		return nil, err
 	}
+
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
@@ -101,10 +110,12 @@ func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (graphqlba
 		return nil, err
 	}
 
-	path := fmt.Sprintf("/uploads/%s", url.PathEscape(uploadID))
-
-	var lsifUpload *lsif.LSIFUpload
-	if err := client.DefaultClient.TraceRequestAndUnmarshalPayload(ctx, "GET", path, nil, nil, &lsifUpload); err != nil {
+	lsifUpload, err := client.DefaultClient.GetUpload(ctx, &struct {
+		UploadID string
+	}{
+		UploadID: uploadID,
+	})
+	if err != nil {
 		return nil, err
 	}
 
@@ -122,10 +133,15 @@ func (r *Resolver) DeleteLSIFUpload(ctx context.Context, id graphql.ID) (*graphq
 		return nil, err
 	}
 
-	path := fmt.Sprintf("/uploads/%s", url.PathEscape(uploadID))
-	if err := client.DefaultClient.TraceRequestAndUnmarshalPayload(ctx, "DELETE", path, nil, nil, nil); !client.IsNotFound(err) {
+	err = client.DefaultClient.DeleteUpload(ctx, &struct {
+		UploadID string
+	}{
+		UploadID: uploadID,
+	})
+	if err != nil {
 		return nil, err
 	}
+
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
@@ -172,8 +188,8 @@ func (r *Resolver) LSIFUploadStatsByID(ctx context.Context, id graphql.ID) (grap
 		return nil, fmt.Errorf("lsif upload stats not found: %q", lsifUploadStatsID)
 	}
 
-	var stats *lsif.LSIFUploadStats
-	if err := client.DefaultClient.TraceRequestAndUnmarshalPayload(ctx, "GET", "/uploads/stats", nil, nil, &stats); err != nil {
+	stats, err := client.DefaultClient.GetUploadStats(ctx)
+	if err != nil {
 		return nil, err
 	}
 
@@ -181,21 +197,17 @@ func (r *Resolver) LSIFUploadStatsByID(ctx context.Context, id graphql.ID) (grap
 }
 
 func (r *Resolver) LSIF(ctx context.Context, args *graphqlbackend.LSIFQueryArgs) (graphqlbackend.LSIFQueryResolver, error) {
-	query := url.Values{}
-	query.Set("repository", args.RepoName)
-	query.Set("commit", string(args.Commit))
-	query.Set("path", args.Path)
+	dump, err := client.DefaultClient.Exists(ctx, &struct {
+		RepoName string
+		Commit   string
+		Path     string
+	}{
+		RepoName: args.RepoName,
+		Commit:   string(args.Commit),
+		Path:     args.Path,
+	})
 
-	resp, err := client.DefaultClient.BuildAndTraceRequest(ctx, "GET", "/exists", query, nil)
 	if err != nil {
-		return nil, err
-	}
-
-	payload := struct {
-		Dump *lsif.LSIFDump `json:"dump"`
-	}{}
-
-	if err := client.UnmarshalPayload(resp, &payload); err != nil {
 		return nil, err
 	}
 
@@ -203,6 +215,6 @@ func (r *Resolver) LSIF(ctx context.Context, args *graphqlbackend.LSIFQueryArgs)
 		repoName: args.RepoName,
 		commit:   args.Commit,
 		path:     args.Path,
-		dump:     payload.Dump,
+		dump:     dump,
 	}, nil
 }

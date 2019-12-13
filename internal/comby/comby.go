@@ -74,7 +74,7 @@ func PipeTo(ctx context.Context, args Args, w io.Writer) (err error) {
 	defer cancel()
 
 	rawArgs := rawArgs(args)
-	log15.Info("running comby", "args", strings.Join(rawArgs, " "))
+	log15.Info("running comby", "args", args.String())
 
 	cmd := exec.CommandContext(ctx, combyPath, rawArgs...)
 
