@@ -10,7 +10,6 @@
     "async-polling": "^0.2.1",
     "bloomfilter": "^0.0.18",
     "body-parser": "^1.19.0",
-    "bull": "^3.12.1",
     "crc-32": "^1.2.0",
     "delay": "^4.3.0",
     "express": "^4.17.1",
@@ -29,7 +28,6 @@
     "on-finished": "^2.3.0",
     "opentracing": "^0.14.4",
     "p-retry": "^4.2.0",
-    "p-timeout": "^3.2.0",
     "pg": "^7.12.1",
     "prom-client": "^11.5.3",
     "relateurl": "^0.2.7",
@@ -45,8 +43,7 @@
   "devDependencies": {
     "@sourcegraph/tsconfig": "^4.0.0",
     "@types/bloomfilter": "0.0.0",
-    "@types/body-parser": "1.17.1",
-    "@types/bull": "3.10.6",
+    "@types/body-parser": "1.17.0",
     "@types/express": "4.17.2",
     "@types/express-winston": "3.0.4",
     "@types/got": "9.6.9",
@@ -58,7 +55,6 @@
     "@types/logform": "1.2.0",
     "@types/mz": "2.7.0",
     "@types/on-finished": "2.3.1",
-    "@types/p-timeout": "1.2.2",
     "@types/relateurl": "0.2.28",
     "@types/rmfr": "2.0.0",
     "@types/sinon": "7.5.1",
@@ -79,12 +75,10 @@
   },
   "scripts": {
     "build": "tsc -b .",
-    "postbuild": "yarn run copy-files",
-    "copy-files": "copyfiles -u 1 src/**/*.lua out",
     "test": "jest",
     "tslint": "../node_modules/.bin/tslint -p tsconfig.json",
     "eslint": "../node_modules/.bin/eslint 'src/**/*.ts?(x)'",
-    "run:server": "tsc-watch --onFirstSuccess \"yarn postbuild\" --onSuccess \"node -r source-map-support/register out/server/server.js\" --noClear",
-    "run:worker": "tsc-watch --onFirstSuccess \"yarn postbuild\" --onSuccess \"node -r source-map-support/register out/worker/worker.js\" --noClear"
+    "run:server": "tsc-watch --onSuccess \"node -r source-map-support/register out/server/server.js\" --noClear",
+    "run:worker": "tsc-watch --onSuccess \"node -r source-map-support/register out/worker/worker.js\" --noClear"
   }
 }
