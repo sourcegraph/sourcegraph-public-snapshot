@@ -448,7 +448,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*FileMatc
 		return mockSearchFilesInRepos(args)
 	}
 
-	tr, ctx := trace.New(ctx, "searchFilesInRepos", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.Pattern, len(args.Repos)))
+	tr, ctx := trace.New(ctx, "searchFilesInRepos", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.PatternInfo, len(args.Repos)))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -482,7 +482,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*FileMatc
 		common.repos[i] = repo.Repo
 	}
 
-	if args.Pattern.IsEmpty() {
+	if args.PatternInfo.IsEmpty() {
 		// Empty query isn't an error, but it has no results.
 		return nil, common, nil
 	}
@@ -540,8 +540,8 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*FileMatc
 			// Stop searching once we have found enough matches. This does
 			// lead to potentially unstable result ordering, but is worth
 			// it for the performance benefit.
-			if flattenedSize > int(args.Pattern.FileMatchLimit) {
-				tr.LazyPrintf("cancel due to result size: %d > %d", flattenedSize, args.Pattern.FileMatchLimit)
+			if flattenedSize > int(args.PatternInfo.FileMatchLimit) {
+				tr.LazyPrintf("cancel due to result size: %d > %d", flattenedSize, args.PatternInfo.FileMatchLimit)
 				overLimitCanceled = true
 				common.limitHit = true
 				cancel()
@@ -600,14 +600,14 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*FileMatc
 			}
 
 			args := *args
-			if args.Pattern.IsStructuralPat && searcherReposFilteredFiles != nil {
+			if args.PatternInfo.IsStructuralPat && searcherReposFilteredFiles != nil {
 				// Modify the search query to only run for the filtered files
 				if v, ok := searcherReposFilteredFiles[string(repoRev.Repo.Name)]; ok {
-					patternCopy := *args.Pattern
-					args.Pattern = &patternCopy
-					includePatternsCopy := make([]string, len(args.Pattern.IncludePatterns))
-					copy(includePatternsCopy, args.Pattern.IncludePatterns)
-					args.Pattern.IncludePatterns = append(includePatternsCopy, v...)
+					patternCopy := *args.PatternInfo
+					args.PatternInfo = &patternCopy
+					includePatternsCopy := make([]string, len(args.PatternInfo.IncludePatterns))
+					copy(includePatternsCopy, args.PatternInfo.IncludePatterns)
+					args.PatternInfo.IncludePatterns = append(includePatternsCopy, v...)
 				}
 			}
 
@@ -617,7 +617,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*FileMatc
 				defer done()
 
 				rev := repoRev.RevSpecs()[0] // TODO(sqs): search multiple revs
-				matches, repoLimitHit, err := searchFilesInRepo(ctx, args.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), rev, args.Pattern, fetchTimeout)
+				matches, repoLimitHit, err := searchFilesInRepo(ctx, args.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), rev, args.PatternInfo, fetchTimeout)
 				if err != nil {
 					tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.Error(err), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
 					log15.Warn("searchFilesInRepo failed", "error", err, "repo", repoRev.Repo.Name)
@@ -689,7 +689,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*FileMatc
 			cancel()
 		}
 
-		if args.Pattern.IsStructuralPat {
+		if args.PatternInfo.IsStructuralPat {
 			// A partition of {repo name => file list} that we will build from Zoekt matches
 			partition := make(map[string][]string)
 			var repos []*search.RepositoryRevisions
@@ -728,7 +728,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*FileMatc
 	}()
 
 	// This guard disables unindexed structural search for now.
-	if !args.Pattern.IsStructuralPat {
+	if !args.PatternInfo.IsStructuralPat {
 		if err := callSearcherOverRepos(searcherRepos, nil); err != nil {
 			mu.Lock()
 			searchErr = err
@@ -741,7 +741,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*FileMatc
 		return nil, common, searchErr
 	}
 
-	flattened := flattenFileMatches(unflattened, int(args.Pattern.FileMatchLimit))
+	flattened := flattenFileMatches(unflattened, int(args.PatternInfo.FileMatchLimit))
 	return flattened, common, nil
 }
 

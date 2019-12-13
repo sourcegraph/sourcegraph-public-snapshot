@@ -67,8 +67,8 @@ func (p *PatternInfo) Validate() error {
 // to search for, as well as the hydrated list of repository revisions to
 // search.
 type Args struct {
-	Pattern *PatternInfo
-	Repos   []*RepositoryRevisions
+	PatternInfo *PatternInfo
+	Repos       []*RepositoryRevisions
 
 	// Query is the parsed query from the user. You should be using Pattern
 	// instead, but Query is useful for checking extra fields that are set and

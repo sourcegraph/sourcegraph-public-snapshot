@@ -820,9 +820,9 @@ func (r *searchResolver) determineResultTypes(args search.Args, forceOnlyResultT
 	seenResultTypes = make(map[string]struct{}, len(resultTypes))
 	for _, resultType := range resultTypes {
 		if resultType == "file" {
-			args.Pattern.PatternMatchesContent = true
+			args.PatternInfo.PatternMatchesContent = true
 		} else if resultType == "path" {
-			args.Pattern.PatternMatchesPath = true
+			args.PatternInfo.PatternMatchesPath = true
 		}
 	}
 	return resultTypes, seenResultTypes
@@ -935,14 +935,14 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return nil, err
 	}
 	args := search.Args{
-		Pattern:         p,
+		PatternInfo:     p,
 		Repos:           repos,
 		Query:           r.query,
 		UseFullDeadline: r.searchTimeoutFieldSet(),
 		Zoekt:           r.zoekt,
 		SearcherURLs:    r.searcherURLs,
 	}
-	if err := args.Pattern.Validate(); err != nil {
+	if err := args.PatternInfo.Validate(); err != nil {
 		return nil, &badRequestError{err}
 	}
 

@@ -50,10 +50,10 @@ func TestSearchRepositories(t *testing.T) {
 			t.Fatal(err)
 		}
 		args := search.Args{
-			Pattern: &search.PatternInfo{Pattern: "", IsRegExp: true, FileMatchLimit: 1, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true},
-			Repos:   repositories,
-			Query:   q,
-			Zoekt:   zoekt,
+			PatternInfo: &search.PatternInfo{Pattern: "", IsRegExp: true, FileMatchLimit: 1, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true},
+			Repos:       repositories,
+			Query:       q,
+			Zoekt:       zoekt,
 		}
 		res, _, err := searchRepositories(context.Background(), &args, int32(100))
 		if err != nil {
@@ -71,10 +71,10 @@ func TestSearchRepositories(t *testing.T) {
 			t.Fatal(err)
 		}
 		args := search.Args{
-			Pattern: &search.PatternInfo{Pattern: "foo/one", IsRegExp: true, FileMatchLimit: 1, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true},
-			Repos:   repositories,
-			Query:   q,
-			Zoekt:   zoekt,
+			PatternInfo: &search.PatternInfo{Pattern: "foo/one", IsRegExp: true, FileMatchLimit: 1, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true},
+			Repos:       repositories,
+			Query:       q,
+			Zoekt:       zoekt,
 		}
 		res, _, err := searchRepositories(context.Background(), &args, int32(100))
 		if err != nil {
@@ -98,10 +98,10 @@ func TestSearchRepositories(t *testing.T) {
 			t.Fatal(err)
 		}
 		args := search.Args{
-			Pattern: &search.PatternInfo{Pattern: "foo", IsRegExp: true, FileMatchLimit: 1, FilePatternsReposMustInclude: []string{"f.go"}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true},
-			Repos:   repositories,
-			Query:   q,
-			Zoekt:   zoekt,
+			PatternInfo: &search.PatternInfo{Pattern: "foo", IsRegExp: true, FileMatchLimit: 1, FilePatternsReposMustInclude: []string{"f.go"}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true},
+			Repos:       repositories,
+			Query:       q,
+			Zoekt:       zoekt,
 		}
 		res, _, err := searchRepositories(context.Background(), &args, int32(100))
 		if err != nil {
@@ -216,8 +216,8 @@ func TestRepoShouldBeAdded(t *testing.T) {
 func repoShouldBeAdded(ctx context.Context, zoekt *searchbackend.Zoekt, repo *search.RepositoryRevisions, pattern *search.PatternInfo) (bool, error) {
 	repos := []*search.RepositoryRevisions{repo}
 	args := search.Args{
-		Pattern: pattern,
-		Zoekt:   zoekt,
+		PatternInfo: pattern,
+		Zoekt:       zoekt,
 	}
 	rsta, err := reposToAdd(ctx, &args, repos)
 	if err != nil {

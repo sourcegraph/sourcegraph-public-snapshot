@@ -145,14 +145,14 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 		return nil, err
 	}
 	args := search.Args{
-		Pattern:         p,
+		PatternInfo:     p,
 		Repos:           repos,
 		Query:           r.query,
 		UseFullDeadline: false,
 		Zoekt:           r.zoekt,
 		SearcherURLs:    r.searcherURLs,
 	}
-	if err := args.Pattern.Validate(); err != nil {
+	if err := args.PatternInfo.Validate(); err != nil {
 		return nil, &badRequestError{err}
 	}
 
