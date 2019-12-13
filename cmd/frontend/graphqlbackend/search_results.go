@@ -881,7 +881,12 @@ func alertOnError(multiErr *multierror.Error) (newMultiErr *multierror.Error, al
 			if strings.Contains(err.Error(), "Assert_failure zip") {
 				alert = &searchAlert{
 					title:       "Repository too large for structural search",
-					description: "One repository is too large to perform structural search. This is a temporary restriction that will be removed in the future. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/7133",
+					description: "One repository is too large to perform structural search. Use the `repo:` filter to run on a specific repository. This is a temporary restriction that will be removed in the future. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/7133",
+				}
+			} else if strings.Contains(err.Error(), "Worker_oomed") || strings.Contains(err.Error(), "Worker_exited_abnormally") {
+				alert = &searchAlert{
+					title:       "Structural search needs more memory",
+					description: "Running your structural search may require more memory. If you are running the query on many repositories, try reducing the number of repositories with the `repo:` filter.",
 				}
 			} else {
 				newMultiErr = multierror.Append(newMultiErr, err)

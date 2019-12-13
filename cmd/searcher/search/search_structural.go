@@ -81,6 +81,9 @@ func ToFileMatch(combyMatches []comby.FileMatch) (matches []protocol.FileMatch) 
 func structuralSearch(ctx context.Context, zipPath, pattern string, rule string, includePatterns []string, repo api.RepoName) (matches []protocol.FileMatch, limitHit bool, err error) {
 	log15.Info("structural search", "repo", string(repo))
 
+	// Cap the number of forked processes to limit the size of zip contents being mapped to memory. Resolving #7133 could help to lift this restriction.
+	numWorkers := 4
+
 	args := comby.Args{
 		Input:         comby.ZipPath(zipPath),
 		MatchTemplate: pattern,

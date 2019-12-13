@@ -1198,6 +1198,19 @@ func Test_ErrorToAlertConversion(t *testing.T) {
 			},
 			wantAlertTitle: "Repository too large for structural search",
 		},
+		{
+			name: "surface_friendly_alert_on_oom_err_message",
+			errors: []error{
+				errors.New("some error"),
+				errors.New("Worker_oomed"),
+				errors.New("some other error"),
+			},
+			wantErrors: []error{
+				errors.New("some error"),
+				errors.New("some other error"),
+			},
+			wantAlertTitle: "Structural search needs more memory",
+		},
 	}
 	for _, test := range cases {
 		multiErr := &multierror.Error{
