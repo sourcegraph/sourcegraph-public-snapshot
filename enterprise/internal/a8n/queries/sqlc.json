@@ -1,11 +1,13 @@
 {
   "version": "1",
-  "packages": [{
-    "schema": "automation_schema.sql",
-    "queries": "automation_queries.sql",
-    "name": "queries",
-    "path": "."
-  }],
+  "packages": [
+    {
+      "schema": "automation_schema.sql",
+      "queries": "automation_queries.sql",
+      "name": "queries",
+      "path": "."
+    }
+  ],
   "rename": {
     "campaign_ids": "CampaignIDs",
     "changeset_ids": "ChangesetIDs"
