@@ -285,13 +285,13 @@ func addDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 
 		getBuildSteps := func() []bk.StepOpt {
 			buildScriptByApp := map[string][]bk.StepOpt{
-				"symbols": []bk.StepOpt{
+				"symbols": {
 					bk.Env("BUILD_TYPE", "dist"),
 					bk.Cmd("./cmd/symbols/build.sh buildSymbolsDockerImage"),
 				},
 				// The server image was already built for the e2e tests. We can pull the e2e
 				// image instead of building it from scratch.
-				"server": []bk.StepOpt{
+				"server": {
 					bk.Cmd(fmt.Sprintf("docker pull %s:e2e_%s", gcrImage, c.commit)),
 					bk.Cmd(fmt.Sprintf("docker tag %s:e2e_%s %s:%s", gcrImage, c.commit, baseImage, c.version)),
 				},
