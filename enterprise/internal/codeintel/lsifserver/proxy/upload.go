@@ -36,9 +36,6 @@ func uploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *htt
 			return
 		}
 
-		var blocking *bool = nil // TODO
-		var maxWait *int32 = nil // TODO
-
 		jobID, queued, err := client.DefaultClient.Upload(ctx, &struct {
 			RepoName string
 			Commit   graphqlbackend.GitObjectID
@@ -50,8 +47,6 @@ func uploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *htt
 			RepoName: repoName,
 			Commit:   graphqlbackend.GitObjectID(commit),
 			Root:     root,
-			Blocking: blocking,
-			MaxWait:  maxWait,
 			Body:     r.Body,
 		})
 
