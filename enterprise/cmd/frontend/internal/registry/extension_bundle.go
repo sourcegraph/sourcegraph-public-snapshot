@@ -103,7 +103,7 @@ func handleRegistryExtensionBundle(w http.ResponseWriter, r *http.Request) {
 		// This implementation is not ideal because it means the JS bundle's contents depend on the
 		// external URL, which makes it technically not immutable. But given the blob URL constraint
 		// mentioned above, it's the best known solution.
-		if externalURL, _ := url.Parse(conf.Get().Critical.ExternalURL); externalURL != nil {
+		if externalURL, _ := url.Parse(conf.Get().ExternalURL); externalURL != nil {
 			sourceMapURL := externalURL.ResolveReference(&url.URL{Path: path.Join(path.Dir(r.URL.Path), fmt.Sprintf("%d.map", releaseID))}).String()
 			fmt.Fprintf(w, "\n//# sourceMappingURL=%s", sourceMapURL)
 		}

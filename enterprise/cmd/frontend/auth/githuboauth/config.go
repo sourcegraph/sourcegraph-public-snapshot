@@ -31,7 +31,7 @@ func init() {
 
 func parseConfig(cfg *conf.Unified) (ps map[schema.GitHubAuthProvider]providers.Provider, problems conf.Problems) {
 	ps = make(map[schema.GitHubAuthProvider]providers.Provider)
-	for _, pr := range cfg.Critical.AuthProviders {
+	for _, pr := range cfg.AuthProviders {
 		if pr.Github == nil {
 			continue
 		}

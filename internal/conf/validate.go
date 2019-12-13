@@ -180,12 +180,6 @@ func (ps Problems) ExternalService() (problems Problems) {
 // Validate validates the configuration against the JSON Schema and other
 // custom validation checks.
 func Validate(input conftypes.RawUnified) (problems Problems, err error) {
-	criticalProblems, err := doValidate(input.Critical, schema.CriticalSchemaJSON)
-	if err != nil {
-		return nil, err
-	}
-	problems = append(problems, NewCriticalProblems(criticalProblems...)...)
-
 	siteProblems, err := doValidate(input.Site, schema.SiteSchemaJSON)
 	if err != nil {
 		return nil, err
@@ -282,8 +276,6 @@ func (f jsonLoaderFactory) New(source string) gojsonschema.JSONLoader {
 		return gojsonschema.NewStringLoader(schema.SettingsSchemaJSON)
 	case "site.schema.json":
 		return gojsonschema.NewStringLoader(schema.SiteSchemaJSON)
-	case "critical.schema.json":
-		return gojsonschema.NewStringLoader(schema.CriticalSchemaJSON)
 	}
 	return nil
 }

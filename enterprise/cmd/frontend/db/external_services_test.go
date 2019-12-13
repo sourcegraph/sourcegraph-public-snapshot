@@ -1232,7 +1232,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		t.Run(tc.kind+"/"+tc.desc, func(t *testing.T) {
 			var have []string
 			if tc.ps == nil {
-				tc.ps = conf.Get().Critical.AuthProviders
+				tc.ps = conf.Get().AuthProviders
 			}
 
 			s := NewExternalServicesStore()

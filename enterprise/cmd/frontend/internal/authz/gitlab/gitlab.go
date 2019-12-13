@@ -21,7 +21,7 @@ func NewAuthzProviders(
 ) (ps []authz.Provider, problems []string, warnings []string) {
 	// Authorization (i.e., permissions) providers
 	for _, c := range conns {
-		p, err := newAuthzProvider(c.Authorization, c.Url, c.Token, cfg.Critical.AuthProviders)
+		p, err := newAuthzProvider(c.Authorization, c.Url, c.Token, cfg.AuthProviders)
 		if err != nil {
 			problems = append(problems, err.Error())
 		} else if p != nil {

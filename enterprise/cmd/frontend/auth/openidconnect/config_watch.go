@@ -11,7 +11,7 @@ import (
 
 func getProviders() []providers.Provider {
 	var cfgs []*schema.OpenIDConnectAuthProvider
-	for _, p := range conf.Get().Critical.AuthProviders {
+	for _, p := range conf.Get().AuthProviders {
 		if p.Openidconnect == nil {
 			continue
 		}

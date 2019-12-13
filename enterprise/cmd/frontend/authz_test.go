@@ -76,7 +76,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 		{
 			description: "1 GitLab connection with authz enabled, 1 GitLab matching auth provider",
 			cfg: conf.Unified{
-				Critical: schema.CriticalConfiguration{
+				SiteConfiguration: schema.SiteConfiguration{
 					AuthProviders: []schema.AuthProviders{{
 						Gitlab: &schema.GitLabAuthProvider{
 							ClientID:     "clientID",
@@ -111,7 +111,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 		{
 			description: "1 GitLab connection with authz enabled, 1 GitLab auth provider but doesn't match",
 			cfg: conf.Unified{
-				Critical: schema.CriticalConfiguration{
+				SiteConfiguration: schema.SiteConfiguration{
 					AuthProviders: []schema.AuthProviders{{
 						Gitlab: &schema.GitLabAuthProvider{
 							ClientID:     "clientID",
@@ -139,7 +139,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 		{
 			description: "1 GitLab connection with authz enabled, no GitLab auth provider",
 			cfg: conf.Unified{
-				Critical: schema.CriticalConfiguration{
+				SiteConfiguration: schema.SiteConfiguration{
 					AuthProviders: []schema.AuthProviders{{
 						Builtin: &schema.BuiltinAuthProvider{Type: "builtin"},
 					}},
@@ -161,7 +161,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 		{
 			description: "Two GitLab connections with authz enabled, two matching GitLab auth providers",
 			cfg: conf.Unified{
-				Critical: schema.CriticalConfiguration{
+				SiteConfiguration: schema.SiteConfiguration{
 					AuthProviders: []schema.AuthProviders{
 						{
 							Gitlab: &schema.GitLabAuthProvider{
@@ -218,7 +218,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 		{
 			description: "1 GitLab connection with authz disabled",
 			cfg: conf.Unified{
-				Critical: schema.CriticalConfiguration{
+				SiteConfiguration: schema.SiteConfiguration{
 					AuthProviders: []schema.AuthProviders{{
 						Gitlab: &schema.GitLabAuthProvider{
 							ClientID:     "clientID",
@@ -243,7 +243,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 		{
 			description: "TTL error",
 			cfg: conf.Unified{
-				Critical: schema.CriticalConfiguration{
+				SiteConfiguration: schema.SiteConfiguration{
 					AuthProviders: []schema.AuthProviders{{
 						Gitlab: &schema.GitLabAuthProvider{
 							ClientID:     "clientID",
@@ -271,7 +271,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 		{
 			description: "external auth provider",
 			cfg: conf.Unified{
-				Critical: schema.CriticalConfiguration{
+				SiteConfiguration: schema.SiteConfiguration{
 					AuthProviders: []schema.AuthProviders{{
 						Saml: &schema.SAMLAuthProvider{
 							ConfigID: "okta",
@@ -314,7 +314,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 		{
 			description: "exact username matching",
 			cfg: conf.Unified{
-				Critical: schema.CriticalConfiguration{
+				SiteConfiguration: schema.SiteConfiguration{
 					AuthProviders: []schema.AuthProviders{},
 				},
 			},

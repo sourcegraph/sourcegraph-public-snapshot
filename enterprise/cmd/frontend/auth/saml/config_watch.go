@@ -11,7 +11,7 @@ import (
 
 func getProviders() []providers.Provider {
 	var cfgs []*schema.SAMLAuthProvider
-	for _, p := range conf.Get().Critical.AuthProviders {
+	for _, p := range conf.Get().AuthProviders {
 		if p.Saml == nil {
 			continue
 		}

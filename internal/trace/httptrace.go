@@ -63,16 +63,16 @@ func init() {
 
 	go func() {
 		conf.Watch(func() {
-			if conf.Get().Critical.Log == nil {
+			if conf.Get().Log == nil {
 				return
 			}
 
-			if conf.Get().Critical.Log.Sentry == nil {
+			if conf.Get().Log.Sentry == nil {
 				return
 			}
 
 			// An empty dsn value is ignored: not an error.
-			if err := raven.SetDSN(conf.Get().Critical.Log.Sentry.Dsn); err != nil {
+			if err := raven.SetDSN(conf.Get().Log.Sentry.Dsn); err != nil {
 				log15.Error("sentry.dsn", "error", err)
 			}
 		})

@@ -13,7 +13,7 @@ func TestValidateCustom(t *testing.T) {
 		wantProblems conf.Problems
 	}{
 		"duplicates": {
-			input: conf.Unified{Critical: schema.CriticalConfiguration{
+			input: conf.Unified{SiteConfiguration: schema.SiteConfiguration{
 				ExternalURL: "x",
 				AuthProviders: []schema.AuthProviders{
 					{Saml: &schema.SAMLAuthProvider{Type: "saml", IdentityProviderMetadataURL: "x"}},
