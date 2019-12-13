@@ -50,12 +50,12 @@ require (
 	github.com/gchaincl/sqlhooks v1.3.0
 	github.com/getsentry/raven-go v0.2.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/gin-contrib/sse v0.1.0 // indirect
-	github.com/gin-gonic/gin v1.4.0 // indirect
+	github.com/gin-gonic/gin v1.5.0 // indirect
 	github.com/gitchander/permutation v0.0.0-20181107151852-9e56b92e9909
 	github.com/glycerine/go-unsnap-stream v0.0.0-20190901134440-81cf024a9e0a // indirect
 	github.com/go-critic/go-critic v0.4.0 // indirect
 	github.com/go-delve/delve v1.3.2
+	github.com/go-playground/universal-translator v0.17.0 // indirect
 	github.com/go-redsync/redsync v1.3.1
 	github.com/gobwas/glob v0.2.3
 	github.com/gogo/protobuf v1.3.1 // indirect
@@ -109,6 +109,7 @@ require (
 	github.com/kr/text v0.1.0
 	github.com/kylelemons/godebug v1.1.0
 	github.com/leanovate/gopter v0.2.4
+	github.com/leodido/go-urn v1.2.0 // indirect
 	github.com/lib/pq v1.2.0
 	github.com/lightstep/lightstep-tracer-go v0.18.1
 	github.com/mattn/go-isatty v0.0.11 // indirect
@@ -147,6 +148,7 @@ require (
 	github.com/shurcooL/octicon v0.0.0-20191102190552-cbb32d6a785c // indirect
 	github.com/shurcooL/vfsgen v0.0.0-20181202132449-6a9ea43bcacd
 	github.com/sloonz/go-qprintable v0.0.0-20160203160305-775b3a4592d5 // indirect
+	github.com/smartystreets/assertions v1.0.1 // indirect
 	github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d // indirect
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
 	github.com/sourcegraph/docsite v1.3.1-0.20191122075004-8df06ae22b02
@@ -168,7 +170,6 @@ require (
 	github.com/uber/gonduit v0.6.1
 	github.com/uber/jaeger-client-go v2.20.1+incompatible
 	github.com/uber/jaeger-lib v2.2.0+incompatible
-	github.com/ugorji/go v1.1.7 // indirect
 	github.com/uudashr/gocognit v1.0.0 // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
 	github.com/wsxiaoys/terminal v0.0.0-20160513160801-0940f3fc43a0 // indirect
@@ -189,11 +190,13 @@ require (
 	golang.org/x/sys v0.0.0-20191210023423-ac6580df4449
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
 	golang.org/x/tools v0.0.0-20191213032237-7093a17b0467
-	golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898 // indirect
+	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 // indirect
 	google.golang.org/appengine v1.6.5 // indirect
 	google.golang.org/genproto v0.0.0-20191206224255-0243a4be9c8f // indirect
 	google.golang.org/grpc v1.25.1 // indirect
 	gopkg.in/alexcesaro/statsd.v2 v2.0.0 // indirect
+	gopkg.in/go-playground/validator.v8 v8.18.2 // indirect
+	gopkg.in/go-playground/validator.v9 v9.30.2 // indirect
 	gopkg.in/inconshreveable/log15.v2 v2.0.0-20180818164646-67afb5ed74ec
 	gopkg.in/jpoehls/gophermail.v0 v0.0.0-20160410235621-62941eab772c
 	gopkg.in/karlseguin/expect.v1 v1.0.1 // indirect
