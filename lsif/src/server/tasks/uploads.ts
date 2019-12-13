@@ -13,7 +13,7 @@ import { UploadsManager } from '../../shared/uploads/uploads'
  * @param uploadsManager The uploads manager instance.
  */
 export const updateQueueSizeGauge = async (uploadsManager: UploadsManager): Promise<void> =>
-    metrics.queueSizeGauge.set(await uploadsManager.getCount('queued'))
+    metrics.unconvertedUploadSizeGauge.set(await uploadsManager.getCount('queued'))
 
 /**
  * Move all unlocked uploads that have been in `processing` state for longer than

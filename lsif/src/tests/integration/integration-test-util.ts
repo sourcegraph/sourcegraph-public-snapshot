@@ -7,7 +7,7 @@ import { Backend, ReferencePaginationCursor } from '../../server/backend/backend
 import { child_process } from 'mz'
 import { Connection } from 'typeorm'
 import { connectPostgres } from '../../shared/database/postgres'
-import { convertLsif } from '../../worker/importer/importer'
+import { convertLsif } from '../../worker/conversion/importer'
 import { dbFilename, ensureDirectory } from '../../shared/paths'
 import { lsp } from 'lsif-protocol'
 import { userInfo } from 'os'

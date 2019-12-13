@@ -213,7 +213,6 @@ digraph architecture {
     lsif_server -> {
         frontend
         postgres
-        redis_store
     } [
         fillcolor="9"
     ]
@@ -221,7 +220,6 @@ digraph architecture {
     lsif_worker -> {
         frontend
         postgres
-        redis_store
     } [
         fillcolor="9"
     ]
