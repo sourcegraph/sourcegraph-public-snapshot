@@ -8,6 +8,7 @@ env:
 
 steps:
 - command:
+  - yes | gcloud auth configure-docker
   - pushd enterprise
   - ./cmd/server/pre-build.sh
   - ./cmd/server/build.sh
@@ -22,6 +23,7 @@ steps:
 
 - artifact_paths: ./puppeteer/*.png;./web/e2e.mp4;./web/ffmpeg.log
   command:
+    - yes | gcloud auth configure-docker
     - ./dev/ci/e2e.sh
   concurrency: 1
   concurrency_group: e2e
