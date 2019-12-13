@@ -69,6 +69,9 @@ export function copyIntegrationAssets(): void {
     shelljs.cp('build/dist/js/extensionHostWorker.bundle.js', 'build/integration/scripts')
     shelljs.cp('build/dist/css/style.bundle.css', 'build/integration/css')
     shelljs.cp('src/phabricator/extensionHostFrame.html', 'build/integration')
+    // Copy to the ui/assets directory so that these files can be served by the webapp.
+    shelljs.mkdir('-p', '../ui/assets/extension')
+    shelljs.cp('-r', 'build/integration/*', '../ui/assets/extension')
 }
 
 const BROWSER_TITLES = {
