@@ -522,6 +522,7 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 			alert: &searchAlert{
 				title:       "Timed out while searching",
 				description: fmt.Sprintf("We weren't able to find any results in %s.", roundStr(dt.String())),
+				patternType: r.patternType,
 				proposedQueries: []*searchQueryDescription{
 					{
 						description: "query with longer timeout",
