@@ -41,7 +41,7 @@ func (*eventLogs) Insert(ctx context.Context, e *Event) error {
 		e.Source,
 		e.Argument,
 		version.Version(),
-		e.Timestamp,
+		e.Timestamp.UTC(),
 	)
 	if err != nil {
 		return errors.Wrap(err, "INSERT")
