@@ -16,7 +16,7 @@ export function createDumpRouter(backend: Backend): express.Router {
 
     interface DumpsQueryArgs {
         query: string
-        visibleAtTip: boolean
+        visibleAtTip?: boolean
     }
 
     router.get(
@@ -35,7 +35,7 @@ export function createDumpRouter(backend: Backend): express.Router {
                 const { dumps, totalCount } = await backend.dumps(
                     decodeURIComponent(req.params.repository),
                     query,
-                    visibleAtTip,
+                    !!visibleAtTip,
                     limit,
                     offset
                 )
