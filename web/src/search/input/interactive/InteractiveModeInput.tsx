@@ -22,6 +22,7 @@ import { FiltersToTypeAndValue } from '../../../../../shared/src/search/interact
 import { SuggestionTypes, SuggestionTypeKeys } from '../../../../../shared/src/search/suggestions/util'
 import { QueryInput } from '../QueryInput'
 import { parseSearchURLQuery, InteractiveSearchProps } from '../..'
+import { SearchModeToggle } from './SearchModeToggle'
 
 interface InteractiveModeProps
     extends SettingsCascadeProps,
@@ -170,8 +171,9 @@ export default class InteractiveModeInput extends React.Component<InteractiveMod
                                 {logo}
                             </Link>
                         ))}
-                    <div className="global-navbar__search-box-container d-none d-sm-flex">
-                        <Form onSubmit={this.onSubmit}>
+                    <div className="global-navbar__search-box-container d-none d-sm-flex flex-row">
+                        {!isSearchHomepage && <SearchModeToggle {...this.props} interactiveSearchMode={true} />}
+                        <Form onSubmit={this.onSubmit} className="flex-grow-1">
                             <div className="d-flex align-items-start">
                                 <QueryInput
                                     location={this.props.location}
@@ -184,18 +186,14 @@ export default class InteractiveModeInput extends React.Component<InteractiveMod
                                     autoFocus={true}
                                     filterQuery={this.props.filtersInQuery}
                                     withoutSuggestions={true}
+                                    withSearchModeToggle={true}
                                 />
                                 <SearchButton noHelp={true} />
                             </div>
                         </Form>
                     </div>
                     {!this.props.authRequired && !isSearchHomepage && (
-                        <NavLinks
-                            {...this.props}
-                            interactiveSearchMode={true}
-                            showInteractiveSearchMode={true}
-                            showDotComMarketing={showDotComMarketing}
-                        />
+                        <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />
                     )}
                 </div>
                 <div>

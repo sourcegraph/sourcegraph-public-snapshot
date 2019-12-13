@@ -92,6 +92,11 @@ interface Props extends PatternTypeProps {
      * Whether to display the query input without any suggestions.
      */
     withoutSuggestions?: boolean
+
+    /**
+     * Whether the search mode toggle is attached. Used for styling.
+     */
+    withSearchModeToggle?: boolean
 }
 
 /**
@@ -376,7 +381,11 @@ export class QueryInput extends React.Component<Props, State> {
                                 <input
                                     onFocus={this.onInputFocus}
                                     onBlur={this.onInputBlur}
-                                    className="form-control query-input2__input rounded-left e2e-query-input"
+                                    className={`form-control query-input2__input e2e-query-input ${
+                                        this.props.withSearchModeToggle
+                                            ? 'query-input2__input-with-mode-toggle'
+                                            : 'rounded-left'
+                                    }`}
                                     value={this.props.value.query}
                                     autoFocus={this.props.autoFocus === true}
                                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
