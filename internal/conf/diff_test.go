@@ -51,7 +51,7 @@ func TestDiff(t *testing.T) {
 				SiteConfiguration: schema.SiteConfiguration{GitCloneURLToRepositoryName: []*schema.CloneURLToRepositoryName{{From: "b"}}, ExternalURL: "a"},
 			},
 			after: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{GitCloneURLToRepositoryName: []*schema.CloneURLToRepositoryName{{From: "a"}}, ExternalURL: "a"},
+				SiteConfiguration: schema.SiteConfiguration{GitCloneURLToRepositoryName: []*schema.CloneURLToRepositoryName{{From: "a"}}, ExternalURL: "b"},
 			},
 			want: []string{"externalURL", "git.cloneURLToRepositoryName"},
 		},
