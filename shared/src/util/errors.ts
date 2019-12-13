@@ -34,3 +34,14 @@ export const createAggregateError = (errors: ErrorLike[] = []): Error =>
               name: 'AggregateError' as const,
               errors: errors.map(asError),
           })
+
+/**
+ * Run the passed function and return `undefined` if it throws an error.
+ */
+export function tryCatch<T>(fn: () => T): T | undefined {
+    try {
+        return fn()
+    } catch {
+        return undefined
+    }
+}

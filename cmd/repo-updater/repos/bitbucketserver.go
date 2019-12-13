@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -111,20 +112,46 @@ func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset
 
 	pr.ToRef.Repository.Slug = repo.Slug
 	pr.ToRef.Repository.Project.Key = repo.Project.Key
-	pr.ToRef.ID = fmt.Sprintf("refs/heads/%s", c.BaseRefName)
+	pr.ToRef.ID = git.EnsureRefPrefix(c.BaseRef)
 
 	pr.FromRef.Repository.Slug = repo.Slug
 	pr.FromRef.Repository.Project.Key = repo.Project.Key
-	pr.FromRef.ID = fmt.Sprintf("refs/heads/%s", c.HeadRefName)
+	pr.FromRef.ID = git.EnsureRefPrefix(c.HeadRef)
 
 	err := s.client.CreatePullRequest(ctx, pr)
 	if err != nil {
-		return err
+		if ae, ok := err.(*bitbucketserver.ErrAlreadyExists); ok && ae != nil {
+			if ae.Existing == nil {
+				return fmt.Errorf("existing PR is nil")
+			}
+			log15.Info("Existing PR extracted", "ID", ae.Existing.ID)
+			pr = ae.Existing
+		} else {
+			return err
+		}
 	}
 
 	c.Changeset.Metadata = pr
 	c.Changeset.ExternalID = strconv.FormatInt(int64(pr.ID), 10)
 	c.Changeset.ExternalServiceType = bitbucketserver.ServiceType
+
+	return nil
+}
+
+// CloseChangeset closes the given *Changeset on the code host and updates the
+// Metadata column in the *a8n.Changeset to the newly closed pull request.
+func (s BitbucketServerSource) CloseChangeset(ctx context.Context, c *Changeset) error {
+	pr, ok := c.Changeset.Metadata.(*bitbucketserver.PullRequest)
+	if !ok {
+		return errors.New("Changeset is not a Bitbucket Server pull request")
+	}
+
+	err := s.client.DeclinePullRequest(ctx, pr)
+	if err != nil {
+		return err
+	}
+
+	c.Changeset.Metadata = pr
 
 	return nil
 }

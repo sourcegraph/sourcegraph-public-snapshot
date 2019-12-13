@@ -68,7 +68,24 @@ type Mutation {
     # Retrying will clear the errors list of a campaign and change its state back to CREATING_CHANGESETS.
     retryCampaign(campaign: ID!): Campaign!
     # Deletes a campaign.
-    deleteCampaign(campaign: ID!): EmptyResponse
+    deleteCampaign(
+        campaign: ID!
+        # Whether to close the changesets associated with this campaign on their
+        # respective codehosts, where "close" means the appropriate final state
+        # on the codehost (e.g. "declined" on Bitbucket Server).
+        closeChangesets: Boolean = false
+    ): EmptyResponse
+    # Closes a campaign.
+    # Closing a campaign sets the Campaign's ClosedAt timestamp to the current
+    # time and, if closeChangesets = true, closes associated changesets on the
+    # codehosts.
+    closeCampaign(
+        campaign: ID!
+        # Whether to close the changesets associated with this campaign on their
+        # respective codehosts, where "close" means the appropriate final state
+        # on the codehost (e.g. "declined" on Bitbucket Server).
+        closeChangesets: Boolean = false
+    ): Campaign!
 
     # Updates the user profile information for the user with the given ID.
     #
@@ -403,11 +420,17 @@ type Mutation {
     # Deletes a saved search
     deleteSavedSearch(id: ID!): EmptyResponse
 
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
     # Deletes an LSIF dump.
     deleteLSIFDump(id: ID!): EmptyResponse
 
-    # Deletes an LSIF job.
-    deleteLSIFJob(id: ID!): EmptyResponse
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # Deletes an LSIF upload.
+    deleteLSIFUpload(id: ID!): EmptyResponse
 }
 
 # The specification of what changesets Sourcegraph will open when the campaign is created.
@@ -495,6 +518,8 @@ enum BackgroundProcessState {
     ERRORED
     # The background process completed processing all items successfully.
     COMPLETED
+    # The background process was canceled.
+    CANCELED
 }
 
 # Reusable type to report progress of a background process.
@@ -560,6 +585,9 @@ type Campaign implements Node {
         # Defaults to now.
         to: DateTime
     ): [ChangesetCounts!]!
+
+    # The date and time when the campaign was closed.
+    closedAt: DateTime
 }
 
 # The counts of changesets in certain states at a specific point in time.
@@ -1245,16 +1273,22 @@ type Query {
     # Look up a namespace by ID.
     namespace(id: ID!): Namespace
 
-    # Retrieve counts of jobs by state in the LSIF work queue.
-    lsifJobStats: LSIFJobStats!
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # Retrieve counts of uploads by state.
+    lsifUploadStats: LSIFUploadStats!
 
-    # Search for LSIF jobs by state and query term.
-    lsifJobs(
-        # The state of returned jobs.
-        state: LSIFJobState!
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # Search for LSIF uploaads by state and query term.
+    lsifUploads(
+        # The state of returned uploads.
+        state: LSIFUploadState!
 
-        # An (optional) search query that searches over the job name, failure
-        # properties (reason and stacktrace) and the job's arguments.
+        # An (optional) search query that searches over the repository, commit,
+        # root, and failure properties (reason and stacktrace).
         query: String
 
         # When specified, indicates that this request should be paginated and
@@ -1266,9 +1300,9 @@ type Query {
         # to fetch results starting at this cursor.
         #
         # A future request can be made for more results by passing in the
-        # 'LSIFJobConnection.pageInfo.endCursor' that is returned.
+        # 'LSIFUploadConnection.pageInfo.endCursor' that is returned.
         after: String
-    ): LSIFJobConnection!
+    ): LSIFUploadConnection!
 }
 
 # The version of the search syntax.
@@ -1390,6 +1424,10 @@ type SearchResults {
     sparkline: [Int!]!
     # Repositories that were eligible to be searched.
     repositories: [Repository!]!
+    # The number of repositories that were eligible to be searched (for clients
+    # that just wish to know how many without querying the, sometimes extremely
+    # large, list).
+    repositoriesCount: Int!
     # Repositories that were actually searched. Excludes repositories that would have been searched but were not
     # because a timeout or error occurred while performing the search, or because the result limit was already
     # reached.
@@ -1768,6 +1806,9 @@ type Repository implements Node & GenericSearchResultInterface {
     # The result previews of the result.
     matches: [SearchResultMatch!]!
 
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
     # The repository's LSIF dumps.
     lsifDumps(
         # An (optional) search query that searches over the commit and root properties.
@@ -2625,6 +2666,73 @@ type GitBlob implements TreeEntry & File2 {
         # Recurse into sub-trees of single-child directories
         recursiveSingleChild: Boolean = false
     ): Boolean!
+
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # A wrapper around LSIF query methods. If no LSIF dump can be used to answer code
+    # intelligence queries for this path-at-revision, this resolves to null.
+    lsif: LSIFQueryResolver
+}
+
+# A wrapper object around LSIF query methods for a particular path-at-revision. When this node is
+# null, no LSIF data is available for containing git blob.
+type LSIFQueryResolver {
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # The commit that is being used to power code intelligence. This may be distinct from
+    # the commit of the git blob from which this query resolver came when there is no
+    # LSIF data available for that commit.
+    commit: GitCommit!
+
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # A list of definitions of the symbol under the given document position.
+    definitions(
+        # The line on which the symbol occurs (zero-based, inclusive).
+        line: Int!
+
+        # The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
+        character: Int!
+    ): LocationConnection
+
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # A list of references of the symbol under the given document position.
+    references(
+        # The line on which the symbol occurs (zero-based, inclusive).
+        line: Int!
+
+        # The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
+        character: Int!
+
+        # When specified, indicates that this request should be paginated and
+        # to fetch results starting at this cursor.
+        #
+        # A future request can be made for more results by passing in the
+        # 'LocationConnection.pageInfo.endCursor' that is returned.
+        after: String
+
+        # When specified, indicates that this request should be paginated and
+        # the first N results (relative to the cursor) should be returned. i.e.
+        # how many results to return per page.
+        first: Int
+    ): LocationConnection
+
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # The hover result of the symbol under the given document position.
+    hover(
+        # The line on which the symbol occurs (zero-based, inclusive).
+        line: Int!
+
+        # The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
+        character: Int!
+    ): Hover
 }
 
 # A highlighted file.
@@ -3955,6 +4063,24 @@ type LSIFDump implements Node {
     processedAt: DateTime!
 }
 
+# A list of locations within a file.
+type LocationConnection {
+    # A list of locations within a file.
+    nodes: [Location!]!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# Hover range and markdown content.
+type Hover {
+    # A markdown string containing the contents of the hover.
+    markdown: Markdown!
+
+    # The range to highlight.
+    range: Range!
+}
+
 # A list of LSIF dumps.
 type LSIFDumpConnection {
     # A list of LSIF dumps.
@@ -3967,87 +4093,78 @@ type LSIFDumpConnection {
     pageInfo: PageInfo!
 }
 
-# The state an LSIF job can be in.
-enum LSIFJobState {
-    # The LSIF worker is processing this job.
+# The state an LSIF upload can be in.
+enum LSIFUploadState {
+    # The LSIF worker is processing this upload.
     PROCESSING
 
-    # The LSIF worker failed to process this job.
+    # The LSIF worker failed to process this upload.
     ERRORED
 
-    # The LSIF worker processed this job successfully.
+    # The LSIF worker processed this upload successfully.
     COMPLETED
 
-    # This job is queued to be processed later.
+    # This upload is queued to be processed later.
     QUEUED
-
-    # This job is scheduled to be queued at a specific time.
-    SCHEDULED
 }
 
-# Counts of LISF jobs by state.
-type LSIFJobStats implements Node {
+# Counts of LSIF uploads by state.
+type LSIFUploadStats implements Node {
     # An opaque GraphQL ID.
     id: ID!
 
-    # How many jobs are currently being processed.
+    # How many uploads are currently being processed.
     processingCount: Int!
 
-    # How many jobs have errored.
+    # How many uploads have errored.
     erroredCount: Int!
 
-    # How many jobs have completed.
+    # How many uploads have completed.
     completedCount: Int!
 
-    # How many jobs are queued.
+    # How many uploads are queued.
     queuedCount: Int!
-
-    # How many jobs are scheduled.
-    scheduledCount: Int!
 }
 
-# Metadata and status about an LSIF job.
-type LSIFJob implements Node {
+# Metadata and status about an LSIF upload.
+type LSIFUpload implements Node {
     # The ID.
     id: ID!
 
-    # The job type.
-    type: String!
+    # The project for which this upload provides code intelligence.
+    projectRoot: GitTree!
 
-    # The job's arguments.
-    arguments: JSONValue!
+    # The upload's current state.
+    state: LSIFUploadState!
 
-    # The job's current state.
-    state: LSIFJobState!
+    # Metadata about a upload's failure (not set if state is not ERRORED).
+    failure: LSIFUploadFailureReason
 
-    # Metadata about a job's failure (not set if state is not ERRORED).
-    failure: LSIFJobFailureReason
+    # The time the upload was uploaded.
+    uploadedAt: DateTime!
 
-    # The time the job was queued.
-    queuedAt: DateTime!
-
-    # The time the job was processed.
+    # The time the upload was processed.
     startedAt: DateTime
 
-    # The time the job compelted or errored.
-    completedOrErroredAt: DateTime
+    # The time the upload compelted or errored.
+    finishedAt: DateTime
 }
 
-# Metadata about a LSIF job failure.
-type LSIFJobFailureReason {
+# Metadata about a LSIF upload failure.
+type LSIFUploadFailureReason {
     # A summary of the failure.
     summary: String!
 
-    # The stacktrace from each failed attempt of the job.
-    stacktraces: [String!]!
+    # The stacktrace of the failure.
+    stacktrace: String!
 }
 
-# A list of LSIF jobs.
-type LSIFJobConnection {
-    # A list of LSIF jobs.
-    nodes: [LSIFJob!]!
+# A list of LSIF uploads.
+type LSIFUploadConnection {
+    # A list of LSIF uploads.
+    nodes: [LSIFUpload!]!
 
-    # The total number of jobs in this result set.
+    # The total number of uploads in this result set.
     totalCount: Int
 
     # Pagination information.

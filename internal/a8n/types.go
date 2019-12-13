@@ -36,6 +36,8 @@ type CampaignPlan struct {
 	// Arguments is a JSONC string
 	Arguments string
 
+	CanceledAt time.Time
+
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -56,7 +58,8 @@ type CampaignJob struct {
 	Rev     api.CommitID
 	BaseRef string
 
-	Diff string
+	Diff        string
+	Description string
 
 	StartedAt  time.Time
 	FinishedAt time.Time
@@ -85,6 +88,7 @@ type Campaign struct {
 	UpdatedAt       time.Time
 	ChangesetIDs    []int64
 	CampaignPlanID  int64
+	ClosedAt        time.Time
 }
 
 // Clone returns a clone of a Campaign.
@@ -118,6 +122,7 @@ func (s ChangesetState) Valid() bool {
 
 // BackgroundProcessStatus defines the status of a background process.
 type BackgroundProcessStatus struct {
+	Canceled      bool
 	Total         int32
 	Completed     int32
 	Pending       int32
@@ -129,6 +134,13 @@ func (b BackgroundProcessStatus) CompletedCount() int32         { return b.Compl
 func (b BackgroundProcessStatus) PendingCount() int32           { return b.Pending }
 func (b BackgroundProcessStatus) State() BackgroundProcessState { return b.ProcessState }
 func (b BackgroundProcessStatus) Errors() []string              { return b.ProcessErrors }
+func (b BackgroundProcessStatus) Finished() bool {
+	if b.ProcessState == BackgroundProcessStateCompleted ||
+		b.ProcessState == BackgroundProcessStateErrored {
+		return true
+	}
+	return false
+}
 
 // BackgroundProcessState defines the possible states of a background process.
 type BackgroundProcessState string
@@ -138,6 +150,7 @@ const (
 	BackgroundProcessStateProcessing BackgroundProcessState = "PROCESSING"
 	BackgroundProcessStateErrored    BackgroundProcessState = "ERRORED"
 	BackgroundProcessStateCompleted  BackgroundProcessState = "COMPLETED"
+	BackgroundProcessStateCanceled   BackgroundProcessState = "CANCELED"
 )
 
 // ChangesetReviewState defines the possible states of a Changeset's review.
@@ -189,6 +202,11 @@ func (c *ChangesetJob) Clone() *ChangesetJob {
 	return &cc
 }
 
+// SuccessfullyCompleted returns true for jobs that have already succesfully run
+func (c *ChangesetJob) SuccessfullyCompleted() bool {
+	return c.Error == "" && !c.FinishedAt.IsZero() && c.ChangesetID != 0
+}
+
 // A Changeset is a changeset on a code host belonging to a Repository and many
 // Campaigns.
 type Changeset struct {
@@ -207,6 +225,16 @@ func (t *Changeset) Clone() *Changeset {
 	tt := *t
 	tt.CampaignIDs = t.CampaignIDs[:len(t.CampaignIDs):len(t.CampaignIDs)]
 	return &tt
+}
+
+// RemoveCampaignID removes the given id from the Changesets CampaignIDs slice.
+// If the id is not in CampaignIDs calling this method doesn't have an effect.
+func (t *Changeset) RemoveCampaignID(id int64) {
+	for i := len(t.CampaignIDs) - 1; i >= 0; i-- {
+		if t.CampaignIDs[i] == id {
+			t.CampaignIDs = append(t.CampaignIDs[:i], t.CampaignIDs[i+1:]...)
+		}
+	}
 }
 
 // Title of the Changeset.
@@ -253,7 +281,11 @@ func (t *Changeset) State() (s ChangesetState, err error) {
 	case *github.PullRequest:
 		s = ChangesetState(m.State)
 	case *bitbucketserver.PullRequest:
-		s = ChangesetState(m.State)
+		if m.State == "DECLINED" {
+			s = ChangesetStateClosed
+		} else {
+			s = ChangesetState(m.State)
+		}
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -363,9 +395,9 @@ func (t *Changeset) HeadRefOid() (string, error) {
 	}
 }
 
-// HeadRefName returns the full ref name (e.g. `refs/heads/my-branch`) of the
+// HeadRef returns the full ref (e.g. `refs/heads/my-branch`) of the
 // HEAD reference associated with the Changeset on the codehost.
-func (t *Changeset) HeadRefName() (string, error) {
+func (t *Changeset) HeadRef() (string, error) {
 	switch m := t.Metadata.(type) {
 	case *github.PullRequest:
 		return "refs/heads/" + m.HeadRefName, nil
@@ -390,9 +422,9 @@ func (t *Changeset) BaseRefOid() (string, error) {
 	}
 }
 
-// BaseRefName returns the full ref name (e.g. `refs/heads/my-branch`) of the
-// base reference associated with the Changeset on the codehost.
-func (t *Changeset) BaseRefName() (string, error) {
+// BaseRef returns the full ref (e.g. `refs/heads/my-branch`) of the base ref
+// associated with the Changeset on the codehost.
+func (t *Changeset) BaseRef() (string, error) {
 	switch m := t.Metadata.(type) {
 	case *github.PullRequest:
 		return "refs/heads/" + m.BaseRefName, nil

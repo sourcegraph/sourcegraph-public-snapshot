@@ -1,0 +1,1 @@
+-- We dropped duplicate indexes in the up migration, so no need to add them back.

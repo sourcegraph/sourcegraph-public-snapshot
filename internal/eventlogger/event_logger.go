@@ -2,7 +2,7 @@ package eventlogger
 
 import (
 	"encoding/json"
-	"fmt"
+	"strconv"
 	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -81,7 +81,7 @@ func (logger *eventLogger) newPayload(userEmail string, event *Event) *Payload {
 		BatchInfo: &BatchInfo{
 			BatchID:     uuid.New().String(),
 			TotalEvents: 1,
-			ServerTime:  fmt.Sprintf("%d", time.Now().UTC().Unix()*1000),
+			ServerTime:  strconv.FormatInt(int64(time.Now().UTC().Unix()*1000), 10),
 		},
 		UserInfo: userInfo,
 	}

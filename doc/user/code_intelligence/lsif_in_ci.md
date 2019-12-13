@@ -4,7 +4,7 @@ After walking through the [LSIF quickstart guide](./lsif_quickstart.md), add a j
 
 ## Generating and uploading LSIF in CI
 
-### Setup your CI machines
+### Set up your CI machines
 
 Your CI machines will need two command-line tools installed. Depending on your build system setup, you can do this as part of the CI step, or you can add it directly to your CI machines for use by the build.
 

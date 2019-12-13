@@ -1,18 +1,17 @@
 import promClient from 'prom-client'
 
 //
-// Job Metrics
+// Upload Conversion Metrics
 
-export const jobDurationHistogram = new promClient.Histogram({
-    name: 'lsif_job_duration_seconds',
-    help: 'Total time spent on jobs.',
-    labelNames: ['class'],
+export const uploadConversionDurationHistogram = new promClient.Histogram({
+    name: 'lsif_upload_conversion_duration_seconds',
+    help: 'Total time spent on upload conversions.',
     buckets: [0.2, 0.5, 1, 2, 5, 10, 30],
 })
 
-export const jobDurationErrorsCounter = new promClient.Counter({
-    name: 'lsif_job_errors_total',
-    help: 'The number of errors that occurred while processing a job.',
+export const uploadConversionDurationErrorsCounter = new promClient.Counter({
+    name: 'lsif_upload_conversion_errors_total',
+    help: 'The number of errors that occurred while converting an LSIF upload.',
 })
 
 //

@@ -32,11 +32,11 @@ export const databaseQueryErrorsCounter = new promClient.Counter({
 })
 
 //
-// Job and Queue Metrics
+// Unconverted Upload Metrics
 
-export const queueSizeGauge = new promClient.Gauge({
-    name: 'lsif_queue_size',
-    help: 'The current number of items in the work-queue.',
+export const unconvertedUploadSizeGauge = new promClient.Gauge({
+    name: 'lsif_unconverted_upload_size',
+    help: 'The current number of uploads that have are pending conversion.',
 })
 
 //

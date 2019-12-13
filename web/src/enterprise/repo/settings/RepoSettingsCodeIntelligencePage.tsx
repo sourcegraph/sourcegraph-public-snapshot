@@ -1,7 +1,7 @@
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { fetchLsifDumps, fetchLsifJobs } from './backend'
+import { fetchLsifDumps, fetchLsifUploads } from './backend'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 import { Link } from '../../../../../shared/src/components/Link'
 import { PageTitle } from '../../../components/PageTitle'
@@ -30,37 +30,40 @@ const LsifDumpNode: FunctionComponent<{ node: GQL.ILSIFDump }> = ({ node }) => (
     </div>
 )
 
-const LsifJobNode: FunctionComponent<{ node: GQL.ILSIFJob }> = ({ node }) => {
-    const { commit, root }: { commit: string; root: string } = node.arguments
-
-    return (
-        <div className="w-100 list-group-item py-2 lsif-data__main">
-            <div className="lsif-data__meta">
-                <div className="lsif-data__meta-root">
-                    <Link to={`/site-admin/lsif-jobs/${node.id}`}>
-                        {node.state === GQL.LSIFJobState.PROCESSING ? (
-                            <span>Processing</span>
-                        ) : node.state === GQL.LSIFJobState.COMPLETED ? (
-                            <span className="text-success">Processed</span>
-                        ) : node.state === GQL.LSIFJobState.ERRORED ? (
-                            <span className="text-danger">Failed to process</span>
-                        ) : (
-                            <span>Waiting to process</span>
-                        )}
-                    </Link>{' '}
-                    <code>{commit.substring(0, 7)}</code>
+const LsifUploadNode: FunctionComponent<{ node: GQL.ILSIFUpload }> = ({ node }) => (
+    <div className="w-100 list-group-item py-2 lsif-data__main">
+        <div className="lsif-data__meta">
+            <div className="lsif-data__meta-root">
+                <code>{node.projectRoot.commit.abbreviatedOID}</code>
+                <span className="ml-2">
+                    <Link to={node.projectRoot.url}>
+                        <strong>{node.projectRoot.path || '/'}</strong>
+                    </Link>
+                </span>
+                <span className="ml-2">
+                    -
                     <span className="ml-2">
-                        <strong>{root || '/'}</strong>
+                        <Link to={`/site-admin/lsif-uploads/${node.id}`}>
+                            {node.state === GQL.LSIFUploadState.PROCESSING ? (
+                                <span>Processing</span>
+                            ) : node.state === GQL.LSIFUploadState.COMPLETED ? (
+                                <span className="text-success">Processed</span>
+                            ) : node.state === GQL.LSIFUploadState.ERRORED ? (
+                                <span className="text-danger">Failed to process</span>
+                            ) : (
+                                <span>Waiting to process</span>
+                            )}
+                        </Link>
                     </span>
-                </div>
+                </span>
             </div>
-
-            <small className="text-muted lsif-data__meta-timestamp">
-                <Timestamp noAbout={true} date={node.completedOrErroredAt || node.startedAt || node.queuedAt} />
-            </small>
         </div>
-    )
-}
+
+        <small className="text-muted lsif-data__meta-timestamp">
+            <Timestamp noAbout={true} date={node.finishedAt || node.startedAt || node.uploadedAt} />
+        </small>
+    </div>
+)
 
 interface Props extends RouteComponentProps<any> {
     repo: GQL.IRepository
@@ -82,20 +85,22 @@ export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ rep
         [repo.id]
     )
 
-    const fetchJobs = (name: string, state: GQL.LSIFJobState): Observable<GQL.ILSIFJobConnection> =>
-        fetchLsifJobs({
-            query: `convert ${name}`,
-            state,
-            first: 5,
-        })
+    const fetchUploads = (query: string, state: GQL.LSIFUploadState): Observable<GQL.ILSIFUploadConnection> =>
+        fetchLsifUploads({ query, state, first: 5 })
 
-    const activeLsifJobs = useObservable(useMemo(() => fetchJobs(repo.name, GQL.LSIFJobState.PROCESSING), [repo.name]))
-    const queuedLsifJobs = useObservable(useMemo(() => fetchJobs(repo.name, GQL.LSIFJobState.QUEUED), [repo.name]))
-    const failedLsifJobs = useObservable(useMemo(() => fetchJobs(repo.name, GQL.LSIFJobState.ERRORED), [repo.name]))
+    const activeLsifUploads = useObservable(
+        useMemo(() => fetchUploads(repo.name, GQL.LSIFUploadState.PROCESSING), [repo.name])
+    )
+    const queuedLsifUploads = useObservable(
+        useMemo(() => fetchUploads(repo.name, GQL.LSIFUploadState.QUEUED), [repo.name])
+    )
+    const failedLsifUploads = useObservable(
+        useMemo(() => fetchUploads(repo.name, GQL.LSIFUploadState.ERRORED), [repo.name])
+    )
 
-    const activeCount = activeLsifJobs?.nodes.length || 0
-    const queuedCount = queuedLsifJobs?.nodes.length || 0
-    const failedCount = failedLsifJobs?.nodes.length || 0
+    const activeCount = activeLsifUploads?.nodes.length || 0
+    const queuedCount = queuedLsifUploads?.nodes.length || 0
+    const failedCount = failedLsifUploads?.nodes.length || 0
 
     return (
         <div className="repo-settings-code-intelligence-page">
@@ -142,8 +147,8 @@ export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ rep
                     <div>
                         <h3>Pending and active LSIF uploads</h3>
 
-                        {activeLsifJobs === undefined ||
-                        queuedLsifJobs === undefined ||
+                        {activeLsifUploads === undefined ||
+                        queuedLsifUploads === undefined ||
                         activeCount + queuedCount === 0 ? (
                             <p>
                                 <small>No uploads are queued or currently being processed.</small>
@@ -153,23 +158,23 @@ export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ rep
                                 <p>These uploads have been accepted but have not yet been processed.</p>
 
                                 <div className="list-group list-group-flush mt-3">
-                                    {activeLsifJobs?.nodes.map(job => (
-                                        <LsifJobNode key={job.id} node={job} />
+                                    {activeLsifUploads?.nodes.map(upload => (
+                                        <LsifUploadNode key={upload.id} node={upload} />
                                     ))}
-                                    {queuedLsifJobs?.nodes.map(job => (
-                                        <LsifJobNode key={job.id} node={job} />
+                                    {queuedLsifUploads?.nodes.map(upload => (
+                                        <LsifUploadNode key={upload.id} node={upload} />
                                     ))}
                                 </div>
 
-                                {queuedLsifJobs?.pageInfo.hasNextPage && (
+                                {queuedLsifUploads?.pageInfo.hasNextPage && (
                                     <div className="mt-2">
                                         Showing five queued uploads.{' '}
                                         <Link
-                                            to={`http://localhost:3080/site-admin/lsif-jobs?filter=queued&query=convert+${encodeURIComponent(
+                                            to={`http://localhost:3080/site-admin/lsif-uploads?filter=queued&query=${encodeURIComponent(
                                                 repo.name
                                             )}`}
                                         >
-                                            See all queued jobs for this repository.
+                                            See all queued uploads for this repository.
                                         </Link>
                                     </div>
                                 )}
@@ -180,7 +185,7 @@ export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ rep
                     <div className="mt-4">
                         <h3>Recent failed LSIF uploads</h3>
 
-                        {failedLsifJobs === undefined || failedCount === 0 ? (
+                        {failedLsifUploads === undefined || failedCount === 0 ? (
                             <p>
                                 <small>No recent uploads have failed processing.</small>
                             </p>
@@ -189,20 +194,20 @@ export const RepoSettingsCodeIntelligencePage: FunctionComponent<Props> = ({ rep
                                 <p>These uploads have recently failed processing.</p>
 
                                 <div className="list-group list-group-flush mt-3">
-                                    {failedLsifJobs.nodes.map(job => (
-                                        <LsifJobNode key={job.id} node={job} />
+                                    {failedLsifUploads.nodes.map(upload => (
+                                        <LsifUploadNode key={upload.id} node={upload} />
                                     ))}
                                 </div>
 
-                                {failedLsifJobs?.pageInfo.hasNextPage && (
+                                {failedLsifUploads?.pageInfo.hasNextPage && (
                                     <div className="mt-2">
                                         Showing five recent failures.{' '}
                                         <Link
-                                            to={`http://localhost:3080/site-admin/lsif-jobs?filter=errored&query=convert+${encodeURIComponent(
+                                            to={`http://localhost:3080/site-admin/lsif-uploads?filter=errored&query=${encodeURIComponent(
                                                 repo.name
                                             )}`}
                                         >
-                                            See all failed jobs for this repository.
+                                            See all failed uploads for this repository.
                                         </Link>
                                     </div>
                                 )}

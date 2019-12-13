@@ -14,7 +14,7 @@ You can [contact Sourcegraph](https://about.sourcegraph.com/contact/sales) to pu
 
 [Sourcegraph's pricing](https://about.sourcegraph.com/pricing) is based on **monthly active users**. This count is maintained on your Sourcegraph instance, viewable and auditable on the **Site admin > Usage statistics** page, and is reported back in aggregate to Sourcegraph.com via [pings](https://docs.sourcegraph.com/admin/pings).
 
-A Sourcegraph active user is a user who visits or uses your Sourcegraph while signed in over the course of the month.
+A Sourcegraph active user is a person (associated with a single user account) who visits or uses your Sourcegraph while signed in over the course of the month.
 
 This includes:
 

@@ -7,7 +7,7 @@ import { Span, Tracer } from 'opentracing'
 
 /**
  * A bag of logging and tracing instances passed around a current
- * HTTP request or worker job.
+ * HTTP request or worker upload conversion.
  */
 export interface TracingContext {
     /**

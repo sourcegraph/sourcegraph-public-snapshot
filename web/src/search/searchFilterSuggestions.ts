@@ -116,7 +116,14 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
         ),
     },
     file: {
-        values: [],
+        values: [
+            { value: '(test|spec)', displayValue: 'Test files' },
+            { value: '.(txt|md)', displayValue: 'Text files' },
+        ].map(suggestion => ({
+            ...suggestion,
+            description: suggestion.value,
+            type: SuggestionTypes.file,
+        })),
     },
     lang: {
         values: Object.keys(languageIcons).map(value => ({ type: SuggestionTypes.lang, value })),

@@ -37,6 +37,7 @@ Sourcegraph has the following dependencies:
 - [nginx](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-open-source/) (v1.14 or higher)
 - [SQLite](https://www.sqlite.org/index.html) tools
 - [Golang Migrate](https://github.com/golang-migrate/migrate/) (v4.7.0 or higher)
+- [Comby](https://github.com/comby-tools/comby/) (v0.11.3 or higher)
 
 The following are two recommendations for installing these dependencies:
 
@@ -51,10 +52,10 @@ The following are two recommendations for installing these dependencies:
     brew cask install docker
     ```
 
-3.  Install Go, Node, PostgreSQL, Redis, Git, nginx, golang-migrate, and SQLite tools with the following command:
+3.  Install Go, Node, PostgreSQL, Redis, Git, nginx, golang-migrate, Comby, and SQLite tools with the following command:
 
     ```bash
-    brew install go node yarn redis postgresql git gnu-sed nginx golang-migrate sqlite pcre FiloSottile/musl-cross/musl-cross
+    brew install go node yarn redis postgresql git gnu-sed nginx golang-migrate comby sqlite pcre FiloSottile/musl-cross/musl-cross
     ```
 
 4.  Configure PostgreSQL and Redis to start automatically
@@ -110,6 +111,9 @@ The following are two recommendations for installing these dependencies:
 
     # install golang-migrate (you must move the extracted binary into your $PATH)
     curl -L https://github.com/golang-migrate/migrate/releases/download/v4.7.0/migrate.linux-amd64.tar.gz | tar xvz
+
+    # install comby (you must move the extracted binary into your $PATH)
+    curl -L https://github.com/comby-tools/comby/releases/download/0.11.3/comby-0.11.3-x86_64-linux.tar.gz | tar xvz
     ```
 
 4. Configure startup services

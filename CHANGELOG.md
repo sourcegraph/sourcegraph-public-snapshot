@@ -14,16 +14,49 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Language statistics by commit are available via the API. [#6737](https://github.com/sourcegraph/sourcegraph/pull/6737)
+- Global settings can be configured from a local file using the environment variable `GLOBAL_SETTINGS_FILE`.
 
 ### Changed
 
 - `repohascommitafter:` search filter uses a more efficient git command to determine inclusion. [#6739](https://github.com/sourcegraph/sourcegraph/pull/6739)
+- `NODE_NAME` can be specified instead of `HOSTNAME` for zoekt-indexserver. `HOSTNAME` was a confusing configuration to use in [Pure-Docker Sourcegraph deployments](https://github.com/sourcegraph/deploy-sourcegraph-docker). [#6846](https://github.com/sourcegraph/sourcegraph/issues/6846)
+- The feedback toast now requests feedback every 60 days of usage (was previously only once on the 3rd day of use). [#7165](https://github.com/sourcegraph/sourcegraph/pull/7165)
+- The lsif-server container now only has a dependency on Postgres, whereas before it also relied on Redis. [#6880](https://github.com/sourcegraph/sourcegraph/pull/6880)
 
 ### Fixed
 
 - Changes to external service configurations are reflected much faster. [#6058](https://github.com/sourcegraph/sourcegraph/issues/6058)
+- Deleting an external service will not show warnings for the non-existant service. [#5617](https://github.com/sourcegraph/sourcegraph/issues/5617)
+- Suggested search filter chips are quoted if necessary. [#6498](https://github.com/sourcegraph/sourcegraph/issues/6498)
+- Remove potential panic in gitserver if heavily loaded. [#6710](https://github.com/sourcegraph/sourcegraph/issues/6710)
 
 ### Removed
+
+## 3.10.4
+
+### Fixed
+
+- An issue where diff/commit searches that would run over more than 50 repositories would incorrectly display a timeout error instead of the correct error suggesting users scope their query to less repositories. [#7090](https://github.com/sourcegraph/sourcegraph/issues/7090)
+
+## 3.10.3
+
+### Fixed
+
+- A critical regression in 3.10.2 which caused diff, commit, and repository searches to timeout. [#7090](https://github.com/sourcegraph/sourcegraph/issues/7090)
+- A critical regression in 3.10.2 which caused "No results" to appear frequently on pages with search results. [#7095](https://github.com/sourcegraph/sourcegraph/pull/7095)
+- An issue where the built-in Grafana Searcher dashboard would show duplicate success/error metrics. [#7078](https://github.com/sourcegraph/sourcegraph/pull/7078)
+
+## 3.10.2
+
+### Added
+
+- Site admins can now use the built-in Grafana Searcher dashboard to observe how many search requests are successful, or resulting in errors or timeouts. [#6756](https://github.com/sourcegraph/sourcegraph/issues/6756)
+
+### Fixed
+
+- When searches timeout, a consistent UI with clear actions like a button to increase the timeout is now returned. [#6754](https://github.com/sourcegraph/sourcegraph/issues/6754)
+- To reduce the chance of search timeouts in some cases, the default indexed search timeout has been raised from 1.5s to 3s. [#6754](https://github.com/sourcegraph/sourcegraph/issues/6754)
+- We now correctly inform users of the limitations of diff/commit search. If a diff/commit search would run over more than 50 repositories, users will be shown an error suggesting they scope their search to less repositories using the `repo:` filter. Global diff/commit search support is being tracked in [#6826](https://github.com/sourcegraph/sourcegraph/issues/6826). [#5519](https://github.com/sourcegraph/sourcegraph/issues/5519)
 
 ## 3.10.1
 
@@ -35,7 +68,6 @@ All notable changes to Sourcegraph are documented in this file.
 
 - The experimental search pagination API no longer times out when large repositories are encountered. [#6384](https://github.com/sourcegraph/sourcegraph/issues/6384) [#6383](https://github.com/sourcegraph/sourcegraph/issues/6383)
 - In single-container deployments, the builtin `postgres_exporter` now correctly respects externally configured databases. This previously caused PostgreSQL metrics to not show up in Grafana when an external DB was in use. [#6735](https://github.com/sourcegraph/sourcegraph/issues/6735)
-- If a diff/commit search would run over more than 50 repositories, users will be shown an error suggesting they scope their search to less repositories using the `repo:` filter. Global diff/commit search support is being tracked in [#6826](https://github.com/sourcegraph/sourcegraph/issues/6826). [#5519](https://github.com/sourcegraph/sourcegraph/issues/5519)
 
 ## 3.10.0
 

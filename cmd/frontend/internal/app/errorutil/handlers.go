@@ -30,6 +30,8 @@ func Handler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
 				log15.Error("App HTTP handler error response", "method", req.Method, "request_uri", req.URL.RequestURI(), "status_code", status, "error", err, "trace", spanURL)
 			}
 
+			trace.SetRequestErrorCause(req.Context(), err)
+
 			w.Header().Set("cache-control", "no-cache")
 
 			var body string

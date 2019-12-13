@@ -1,0 +1,63 @@
+{
+  "ID": "MDExOlB1bGxSZXF1ZXN0MzQ5NTIzMzE0",
+  "Title": "this will be closed",
+  "Body": "",
+  "State": "CLOSED",
+  "URL": "https://github.com/sourcegraph/automation-testing/pull/44",
+  "HeadRefOid": "aea278c24726ee43fb7754a5259a4e1453bb7f47",
+  "BaseRefOid": "97f8a75319760990c187710c50a957358f663366",
+  "HeadRefName": "sourcegraph/campaign-38",
+  "BaseRefName": "master",
+  "Number": 44,
+  "Author": {
+   "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+   "Login": "mrnugget",
+   "URL": "https://github.com/mrnugget"
+  },
+  "Participants": [
+   {
+    "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+    "Login": "mrnugget",
+    "URL": "https://github.com/mrnugget"
+   }
+  ],
+  "TimelineItems": [
+   {
+    "Type": "ClosedEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+      "Login": "mrnugget",
+      "URL": "https://github.com/mrnugget"
+     },
+     "CreatedAt": "2019-12-06T13:27:11Z",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/44#event-2861364892"
+    }
+   },
+   {
+    "Type": "ReopenedEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+      "Login": "mrnugget",
+      "URL": "https://github.com/mrnugget"
+     },
+     "CreatedAt": "2019-12-06T13:27:39Z"
+    }
+   },
+   {
+    "Type": "ClosedEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+      "Login": "mrnugget",
+      "URL": "https://github.com/mrnugget"
+     },
+     "CreatedAt": "2019-12-06T13:27:44Z",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/44#event-2861366616"
+    }
+   }
+  ],
+  "CreatedAt": "2019-12-05T16:15:20Z",
+  "UpdatedAt": "2019-12-06T13:27:44Z"
+ }

@@ -41,6 +41,10 @@ func newExternalHTTPHandler(schema *graphql.Schema, githubWebhook http.Handler, 
 	// X-Requested-With header). Doing so would open it up to CSRF attacks.
 	apiHandler = session.CookieMiddlewareWithCSRFSafety(apiHandler, corsAllowHeader, isTrustedOrigin) // API accepts cookies with special header
 	apiHandler = internalhttpapi.AccessTokenAuthMiddleware(apiHandler)                                // API accepts access tokens
+	if hooks.PostAuthMiddleware != nil {
+		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
+		apiHandler = hooks.PostAuthMiddleware(apiHandler)
+	}
 	apiHandler = gziphandler.GzipHandler(apiHandler)
 
 	// App handler (HTML pages).
@@ -51,6 +55,10 @@ func newExternalHTTPHandler(schema *graphql.Schema, githubWebhook http.Handler, 
 	appHandler = authMiddlewares.App(appHandler)                       // 🚨 SECURITY: auth middleware
 	appHandler = session.CookieMiddleware(appHandler)                  // app accepts cookies
 	appHandler = internalhttpapi.AccessTokenAuthMiddleware(appHandler) // app accepts access tokens
+	if hooks.PostAuthMiddleware != nil {
+		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
+		appHandler = hooks.PostAuthMiddleware(appHandler)
+	}
 
 	// Mount handlers and assets.
 	sm := http.NewServeMux()
@@ -65,10 +73,6 @@ func newExternalHTTPHandler(schema *graphql.Schema, githubWebhook http.Handler, 
 	// 🚨 SECURITY: Auth middleware that must run before other auth middlewares.
 	h = internalauth.OverrideAuthMiddleware(h)
 	h = internalauth.ForbidAllRequestsMiddleware(h)
-	// 🚨 SECURITY: These all run before the auth handler, so the client is not yet authenticated.
-	if hooks.PreAuthMiddleware != nil {
-		h = hooks.PreAuthMiddleware(h)
-	}
 	h = tracepkg.Middleware(h)
 	h = middleware.SourcegraphComGoGetHandler(h)
 	h = middleware.BlackHole(h)

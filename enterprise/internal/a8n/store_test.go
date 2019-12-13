@@ -40,6 +40,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 						AuthorID:       23,
 						ChangesetIDs:   []int64{int64(i) + 1},
 						CampaignPlanID: 42,
+						ClosedAt:       now,
 					}
 
 					if i%2 == 0 {
@@ -168,6 +169,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					c.Name += "-updated"
 					c.Description += "-updated"
 					c.AuthorID++
+					c.ClosedAt = c.ClosedAt.Add(5 * time.Second)
 
 					if c.NamespaceUserID != 0 {
 						c.NamespaceUserID++
@@ -861,6 +863,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					c := &a8n.CampaignPlan{
 						CampaignType: "COMBY",
 						Arguments:    `{"scopeQuery": "file:README.md"}`,
+						CanceledAt:   now,
 					}
 
 					want := c.Clone()
@@ -971,6 +974,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 				for _, c := range campaignPlans {
 					c.CampaignType += "-updated"
 					c.Arguments = `{"updated": true}`
+					c.CanceledAt = now.Add(5 * time.Second)
 
 					now = now.Add(time.Second)
 					want := c
@@ -1047,6 +1051,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 						Rev:            api.CommitID("deadbeef"),
 						BaseRef:        "master",
 						Diff:           "+ foobar - barfoo",
+						Description:    "- Removed 3 instances of foobar\n",
 						Error:          "only set on error",
 					}
 
@@ -1095,10 +1100,85 @@ func testStore(db *sql.DB) func(*testing.T) {
 			})
 
 			t.Run("List", func(t *testing.T) {
-				for i := 1; i <= len(campaignJobs); i++ {
-					opts := ListCampaignJobsOpts{CampaignPlanID: int64(i)}
+				t.Run("WithCampaignPlanID", func(t *testing.T) {
+					for i := 1; i <= len(campaignJobs); i++ {
+						opts := ListCampaignJobsOpts{CampaignPlanID: int64(i)}
 
-					ts, next, err := s.ListCampaignJobs(ctx, opts)
+						ts, next, err := s.ListCampaignJobs(ctx, opts)
+						if err != nil {
+							t.Fatal(err)
+						}
+
+						if have, want := next, int64(0); have != want {
+							t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+						}
+
+						have, want := ts, campaignJobs[i-1:i]
+						if len(have) != len(want) {
+							t.Fatalf("listed %d campaignJobs, want: %d", len(have), len(want))
+						}
+
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatalf("opts: %+v, diff: %s", opts, diff)
+						}
+					}
+				})
+
+				t.Run("WithPositiveLimit", func(t *testing.T) {
+					for i := 1; i <= len(campaignJobs); i++ {
+						cs, next, err := s.ListCampaignJobs(ctx, ListCampaignJobsOpts{Limit: i})
+						if err != nil {
+							t.Fatal(err)
+						}
+
+						{
+							have, want := next, int64(0)
+							if i < len(campaignJobs) {
+								want = campaignJobs[i].ID
+							}
+
+							if have != want {
+								t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
+							}
+						}
+
+						{
+							have, want := cs, campaignJobs[:i]
+							if len(have) != len(want) {
+								t.Fatalf("listed %d campaignJobs, want: %d", len(have), len(want))
+							}
+
+							if diff := cmp.Diff(have, want); diff != "" {
+								t.Fatal(diff)
+							}
+						}
+					}
+				})
+
+				t.Run("WithNegativeLimitToListAll", func(t *testing.T) {
+					cs, next, err := s.ListCampaignJobs(ctx, ListCampaignJobsOpts{Limit: -1})
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if have, want := next, int64(0); have != want {
+						t.Fatalf("have next %v, want %v", have, want)
+					}
+
+					have, want := cs, campaignJobs
+					if len(have) != len(want) {
+						t.Fatalf("listed %d campaignJobs, want: %d", len(have), len(want))
+					}
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
+					}
+				})
+
+				t.Run("EmptyResultListingAll", func(t *testing.T) {
+					opts := ListCampaignJobsOpts{CampaignPlanID: 99999, Limit: -1}
+
+					js, next, err := s.ListCampaignJobs(ctx, opts)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -1107,65 +1187,33 @@ func testStore(db *sql.DB) func(*testing.T) {
 						t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
 					}
 
-					have, want := ts, campaignJobs[i-1:i]
-					if len(have) != len(want) {
-						t.Fatalf("listed %d campaignJobs, want: %d", len(have), len(want))
+					if len(js) != 0 {
+						t.Fatalf("listed %d jobs, want: %d", len(js), 0)
 					}
+				})
 
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatalf("opts: %+v, diff: %s", opts, diff)
-					}
-				}
-
-				for i := 1; i <= len(campaignJobs); i++ {
-					cs, next, err := s.ListCampaignJobs(ctx, ListCampaignJobsOpts{Limit: i})
-					if err != nil {
-						t.Fatal(err)
-					}
-
+				t.Run("WithCursor", func(t *testing.T) {
 					{
-						have, want := next, int64(0)
-						if i < len(campaignJobs) {
-							want = campaignJobs[i].ID
-						}
+						var cursor int64
+						for i := 1; i <= len(campaignJobs); i++ {
+							opts := ListCampaignJobsOpts{Cursor: cursor, Limit: 1}
+							have, next, err := s.ListCampaignJobs(ctx, opts)
+							if err != nil {
+								t.Fatal(err)
+							}
 
-						if have != want {
-							t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
-						}
-					}
+							want := campaignJobs[i-1 : i]
+							if diff := cmp.Diff(have, want); diff != "" {
+								t.Fatalf("opts: %+v, diff: %s", opts, diff)
+							}
 
-					{
-						have, want := cs, campaignJobs[:i]
-						if len(have) != len(want) {
-							t.Fatalf("listed %d campaignJobs, want: %d", len(have), len(want))
-						}
-
-						if diff := cmp.Diff(have, want); diff != "" {
-							t.Fatal(diff)
+							cursor = next
 						}
 					}
-				}
-
-				{
-					var cursor int64
-					for i := 1; i <= len(campaignJobs); i++ {
-						opts := ListCampaignJobsOpts{Cursor: cursor, Limit: 1}
-						have, next, err := s.ListCampaignJobs(ctx, opts)
-						if err != nil {
-							t.Fatal(err)
-						}
-
-						want := campaignJobs[i-1 : i]
-						if diff := cmp.Diff(have, want); diff != "" {
-							t.Fatalf("opts: %+v, diff: %s", opts, diff)
-						}
-
-						cursor = next
-					}
-				}
+				})
 			})
 
-			t.Run("Listing and Couting OnlyFinished", func(t *testing.T) {
+			t.Run("Listing and Counting OnlyFinished", func(t *testing.T) {
 				listOpts := ListCampaignJobsOpts{OnlyFinished: true}
 				countOpts := CountCampaignJobsOpts{OnlyFinished: true}
 
@@ -1281,6 +1329,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					c.StartedAt = now
 					c.FinishedAt = now
 					c.Diff += "-updated"
+					c.Description += "-updated"
 					c.Error += "-updated"
 
 					want := c
@@ -1348,8 +1397,9 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 		t.Run("CampaignPlan BackgroundProcessStatus", func(t *testing.T) {
 			tests := []struct {
-				jobs []*a8n.CampaignJob
-				want *a8n.BackgroundProcessStatus
+				planCanceledAt time.Time
+				jobs           []*a8n.CampaignJob
+				want           *a8n.BackgroundProcessStatus
 			}{
 				{
 					jobs: []*a8n.CampaignJob{}, // no jobs
@@ -1427,12 +1477,69 @@ func testStore(db *sql.DB) func(*testing.T) {
 						ProcessErrors: []string{"error1", "error2"},
 					},
 				},
+				{
+					planCanceledAt: now,
+					jobs: []*a8n.CampaignJob{
+						// not started (pending)
+						{},
+						// started (pending)
+						{StartedAt: now},
+					},
+					want: &a8n.BackgroundProcessStatus{
+						// Instead of "Processing" it's "Canceled"
+						ProcessState:  a8n.BackgroundProcessStateCanceled,
+						Canceled:      true,
+						Total:         2,
+						Completed:     0,
+						Pending:       2,
+						ProcessErrors: nil,
+					},
+				},
+				{
+					planCanceledAt: now,
+					jobs: []*a8n.CampaignJob{
+						// completed, error
+						{StartedAt: now, FinishedAt: now, Error: "error1"},
+					},
+					want: &a8n.BackgroundProcessStatus{
+						// Instead of "Errored" it's "Canceled"
+						ProcessState:  a8n.BackgroundProcessStateCanceled,
+						Canceled:      true,
+						Total:         1,
+						Completed:     1,
+						Pending:       0,
+						ProcessErrors: []string{"error1"},
+					},
+				},
+				{
+					planCanceledAt: now,
+					jobs: []*a8n.CampaignJob{
+						// completed, no errors
+						{StartedAt: now, FinishedAt: now, Diff: "+foobar\n-foobar"},
+					},
+					want: &a8n.BackgroundProcessStatus{
+						// Instead of "Completed" it's "Canceled"
+						ProcessState:  a8n.BackgroundProcessStateCanceled,
+						Canceled:      true,
+						Total:         1,
+						Completed:     1,
+						Pending:       0,
+						ProcessErrors: nil,
+					},
+				},
 			}
-			for num, tc := range tests {
-				campaignPlanID := int64(num + 1)
+			for _, tc := range tests {
+				plan := &a8n.CampaignPlan{
+					CampaignType: "comby",
+					CanceledAt:   tc.planCanceledAt,
+				}
+				err := s.CreateCampaignPlan(ctx, plan)
+				if err != nil {
+					t.Fatal(err)
+				}
 
 				for i, j := range tc.jobs {
-					j.CampaignPlanID = campaignPlanID
+					j.CampaignPlanID = plan.ID
 					j.RepoID = int32(i)
 					j.Rev = api.CommitID(fmt.Sprintf("deadbeef-%d", i))
 					j.BaseRef = "master"
@@ -1443,7 +1550,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					}
 				}
 
-				status, err := s.GetCampaignPlanStatus(ctx, campaignPlanID)
+				status, err := s.GetCampaignPlanStatus(ctx, plan.ID)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -1622,10 +1729,85 @@ func testStore(db *sql.DB) func(*testing.T) {
 			})
 
 			t.Run("List", func(t *testing.T) {
-				for i := 1; i <= len(changesetJobs); i++ {
-					opts := ListChangesetJobsOpts{CampaignID: int64(i)}
+				t.Run("WithCampaignID", func(t *testing.T) {
+					for i := 1; i <= len(changesetJobs); i++ {
+						opts := ListChangesetJobsOpts{CampaignID: int64(i)}
 
-					ts, next, err := s.ListChangesetJobs(ctx, opts)
+						ts, next, err := s.ListChangesetJobs(ctx, opts)
+						if err != nil {
+							t.Fatal(err)
+						}
+
+						if have, want := next, int64(0); have != want {
+							t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+						}
+
+						have, want := ts, changesetJobs[i-1:i]
+						if len(have) != len(want) {
+							t.Fatalf("listed %d changesetJobs, want: %d", len(have), len(want))
+						}
+
+						if diff := cmp.Diff(have, want); diff != "" {
+							t.Fatalf("opts: %+v, diff: %s", opts, diff)
+						}
+					}
+				})
+
+				t.Run("WithPositiveLimit", func(t *testing.T) {
+					for i := 1; i <= len(changesetJobs); i++ {
+						cs, next, err := s.ListChangesetJobs(ctx, ListChangesetJobsOpts{Limit: i})
+						if err != nil {
+							t.Fatal(err)
+						}
+
+						{
+							have, want := next, int64(0)
+							if i < len(changesetJobs) {
+								want = changesetJobs[i].ID
+							}
+
+							if have != want {
+								t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
+							}
+						}
+
+						{
+							have, want := cs, changesetJobs[:i]
+							if len(have) != len(want) {
+								t.Fatalf("listed %d changesetJobs, want: %d", len(have), len(want))
+							}
+
+							if diff := cmp.Diff(have, want); diff != "" {
+								t.Fatal(diff)
+							}
+						}
+					}
+				})
+
+				t.Run("WithNegativeLimitToListAll", func(t *testing.T) {
+					cs, next, err := s.ListChangesetJobs(ctx, ListChangesetJobsOpts{Limit: -1})
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if have, want := next, int64(0); have != want {
+						t.Fatalf("have next %v, want %v", have, want)
+					}
+
+					have, want := cs, changesetJobs
+					if len(have) != len(want) {
+						t.Fatalf("listed %d campaignJobs, want: %d", len(have), len(want))
+					}
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
+					}
+				})
+
+				t.Run("EmptyResultListingAll", func(t *testing.T) {
+					opts := ListChangesetJobsOpts{CampaignID: 99999, Limit: -1}
+
+					cs, next, err := s.ListChangesetJobs(ctx, opts)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -1634,46 +1816,12 @@ func testStore(db *sql.DB) func(*testing.T) {
 						t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
 					}
 
-					have, want := ts, changesetJobs[i-1:i]
-					if len(have) != len(want) {
-						t.Fatalf("listed %d changesetJobs, want: %d", len(have), len(want))
+					if len(cs) != 0 {
+						t.Fatalf("listed %d jobs, want: %d", len(cs), 0)
 					}
+				})
 
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatalf("opts: %+v, diff: %s", opts, diff)
-					}
-				}
-
-				for i := 1; i <= len(changesetJobs); i++ {
-					cs, next, err := s.ListChangesetJobs(ctx, ListChangesetJobsOpts{Limit: i})
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					{
-						have, want := next, int64(0)
-						if i < len(changesetJobs) {
-							want = changesetJobs[i].ID
-						}
-
-						if have != want {
-							t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
-						}
-					}
-
-					{
-						have, want := cs, changesetJobs[:i]
-						if len(have) != len(want) {
-							t.Fatalf("listed %d changesetJobs, want: %d", len(have), len(want))
-						}
-
-						if diff := cmp.Diff(have, want); diff != "" {
-							t.Fatal(diff)
-						}
-					}
-				}
-
-				{
+				t.Run("WithCursor", func(t *testing.T) {
 					var cursor int64
 					for i := 1; i <= len(changesetJobs); i++ {
 						opts := ListChangesetJobsOpts{Cursor: cursor, Limit: 1}
@@ -1689,7 +1837,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 						cursor = next
 					}
-				}
+				})
 			})
 
 			t.Run("Update", func(t *testing.T) {
@@ -1892,6 +2040,64 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 					if diff := cmp.Diff(status, tc.want); diff != "" {
 						t.Fatalf("wrong diff: %s", diff)
+					}
+				}
+			})
+
+			t.Run("ResetFailedChangesetJobs", func(t *testing.T) {
+				campaignID := 9999
+				jobs := []*a8n.ChangesetJob{
+					{StartedAt: now},
+					// completed, no errors
+					{StartedAt: now, FinishedAt: now, ChangesetID: 23},
+					// not completed, error
+					{StartedAt: now, Error: "error1"},
+					// completed, error
+					{StartedAt: now, FinishedAt: now, Error: "error1"},
+					// completed, another error
+					{StartedAt: now, FinishedAt: now, Error: "error2"},
+				}
+
+				mustReset := make(map[int64]bool)
+				for i, j := range jobs {
+					j.CampaignID = int64(campaignID)
+					j.CampaignJobID = int64(i)
+
+					err := s.CreateChangesetJob(ctx, j)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if j.Error != "" && !j.StartedAt.IsZero() && !j.FinishedAt.IsZero() {
+						mustReset[j.ID] = true
+					}
+				}
+
+				err := s.ResetFailedChangesetJobs(ctx, int64(campaignID))
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				have, _, err := s.ListChangesetJobs(ctx, ListChangesetJobsOpts{CampaignID: int64(campaignID)})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if len(have) != len(jobs) {
+					t.Fatalf("wrong number of jobs returned. have=%d, want=%d", len(have), len(jobs))
+				}
+
+				for _, job := range have {
+					if _, ok := mustReset[job.ID]; ok {
+						if job.Error != "" {
+							t.Errorf("job should be reset but has error: %+v", job.Error)
+						}
+						if !job.FinishedAt.IsZero() {
+							t.Errorf("job should be reset but has FinishedAt: %+v", job.FinishedAt)
+						}
+						if !job.StartedAt.IsZero() {
+							t.Errorf("job should be reset but has StartedAt: %+v", job.StartedAt)
+						}
 					}
 				}
 			})

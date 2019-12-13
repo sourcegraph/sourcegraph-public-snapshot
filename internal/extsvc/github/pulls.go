@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // An Actor represents an object which can take actions on GitHub. Typically a User or Bot.
@@ -394,6 +395,43 @@ func (c *Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestInp
 	return pr, nil
 }
 
+// ClosePullRequest closes the PullRequest on Github.
+func (c *Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error {
+	var q strings.Builder
+	q.WriteString(pullRequestFragments)
+	q.WriteString(`mutation	ClosePullRequest($input:ClosePullRequestInput!) {
+  closePullRequest(input:$input) {
+    pullRequest {
+      ... pr
+    }
+  }
+}`)
+
+	var result struct {
+		ClosePullRequest struct {
+			PullRequest struct {
+				PullRequest
+				Participants  struct{ Nodes []Actor }
+				TimelineItems struct{ Nodes []TimelineItem }
+			} `json:"pullRequest"`
+		} `json:"closePullRequest"`
+	}
+
+	input := map[string]interface{}{"input": struct {
+		ID string `json:"pullRequestId"`
+	}{ID: pr.ID}}
+	err := c.requestGraphQL(ctx, "", q.String(), input, &result)
+	if err != nil {
+		return err
+	}
+
+	*pr = result.ClosePullRequest.PullRequest.PullRequest
+	pr.TimelineItems = result.ClosePullRequest.PullRequest.TimelineItems.Nodes
+	pr.Participants = result.ClosePullRequest.PullRequest.Participants.Nodes
+
+	return nil
+}
+
 // LoadPullRequests loads a list of PullRequests from Github.
 func (c *Client) LoadPullRequests(ctx context.Context, prs ...*PullRequest) error {
 	const batchSize = 15
@@ -478,6 +516,50 @@ func (c *Client) loadPullRequests(ctx context.Context, prs ...*PullRequest) erro
 	}
 
 	return nil
+}
+
+// GetOpenPullRequestByRefs fetches the the pull request associated with the supplied
+// refs. GitHub only allows one open PR by ref at a time.
+// If nothing is found an error is returned.
+func (c *Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, baseRef, headRef string) (*PullRequest, error) {
+	var q strings.Builder
+	q.WriteString(pullRequestFragments)
+	q.WriteString("query {\n")
+	q.WriteString(fmt.Sprintf("repository(owner: %q, name: %q) {\n",
+		owner, name))
+	q.WriteString(fmt.Sprintf("pullRequests(baseRefName: %q, headRefName: %q, first: 1, states: OPEN) { \n",
+		git.AbbreviateRef(baseRef), git.AbbreviateRef(headRef),
+	))
+	q.WriteString(fmt.Sprintf("nodes{ ... pr }\n"))
+	q.WriteString("}\n")
+	q.WriteString("}\n")
+	q.WriteString("}")
+
+	var results struct {
+		Repository struct {
+			PullRequests struct {
+				Nodes []*struct {
+					PullRequest
+					Participants  struct{ Nodes []Actor }
+					TimelineItems struct{ Nodes []TimelineItem }
+				}
+			}
+		}
+	}
+
+	err := c.requestGraphQL(ctx, "", q.String(), nil, &results)
+	if err != nil {
+		return nil, err
+	}
+	if len(results.Repository.PullRequests.Nodes) != 1 {
+		return nil, fmt.Errorf("expected 1 pull request, got %d instead", len(results.Repository.PullRequests.Nodes))
+	}
+
+	pr := results.Repository.PullRequests.Nodes[0].PullRequest
+	pr.Participants = results.Repository.PullRequests.Nodes[0].Participants.Nodes
+	pr.TimelineItems = results.Repository.PullRequests.Nodes[0].TimelineItems.Nodes
+
+	return &pr, nil
 }
 
 const pullRequestFragments = `

@@ -19,6 +19,8 @@ import {
     queryChangesets,
     previewCampaignPlan,
     fetchCampaignPlanById,
+    CampaignType,
+    retryCampaign,
 } from './backend'
 import { useError, useObservable } from '../../../util/useObservable'
 import { asError } from '../../../../../shared/src/util/errors'
@@ -38,6 +40,9 @@ import { ThemeProps } from '../../../../../shared/src/theme'
 import { TabsWithLocalStorageViewStatePersistence } from '../../../../../shared/src/components/Tabs'
 import { isDefined } from '../../../../../shared/src/util/types'
 import { FileDiffTab } from './FileDiffTab'
+import combyJsonSchema from '../../../../../schema/campaign-types/comby.schema.json'
+import credentialsJsonSchema from '../../../../../schema/campaign-types/credentials.schema.json'
+import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 
 interface Props extends ThemeProps {
     /**
@@ -51,28 +56,21 @@ interface Props extends ThemeProps {
     isSourcegraphDotCom: boolean
 }
 
-const combyJsonSchema = {
-    $id: 'comby-spec.json#',
-    $schema: 'http://json-schema.org/draft-07/schema#',
-    description: 'Schema for comby options',
-    type: 'object',
-    properties: {
-        scopeQuery: {
-            type: 'string',
-            description:
-                'Define a scope to narrow down repositories affected by this change. Only GitHub and Bitbucket are supported.',
-        },
-        matchTemplate: {
-            type: 'string',
-            description: 'See https://comby.dev/#match-syntax for syntax',
-        },
-        rewriteTemplate: {
-            type: 'string',
-            description: 'See https://comby.dev/#match-syntax for syntax',
-        },
-    },
-    required: ['scopeQuery', 'matchTemplate', 'rewriteTemplate'],
-    additionalProperties: false,
+const jsonSchemaByType: { [K in CampaignType]: any } = {
+    comby: combyJsonSchema,
+    credentials: credentialsJsonSchema,
+}
+
+const defaultInputByType: { [K in CampaignType]: any } = {
+    comby: `{
+    "scopeQuery": "repo:github.com/foo/bar",
+    "matchTemplate": "",
+    "rewriteTemplate": ""
+}`,
+    credentials: `{
+    "scopeQuery": "repo:github.com/foo/bar",
+    "matchers": [{ "type": "npm" }]
+}`,
 }
 
 /**
@@ -89,7 +87,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     // State for the form in editing mode
     const [name, setName] = useState<string>('')
     const [description, setDescription] = useState<string>('')
-    const [type, setType] = useState<'manual' | 'comby'>('manual')
+    const [type, setType] = useState<CampaignType>()
     const [campaignPlanArguments, setCampaignPlanArguments] = useState<string>('')
     const [namespace, setNamespace] = useState<GQL.ID>()
 
@@ -108,6 +106,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         return () => subscription.unsubscribe()
     }, [campaignID, triggerError])
 
+    const campaignUpdates = useMemo(() => new Subject<void>(), [])
+
     const changesetUpdates = useMemo(() => new Subject<void>(), [])
     const nextChangesetUpdate = useCallback(changesetUpdates.next.bind(changesetUpdates), [changesetUpdates])
 
@@ -117,7 +117,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         if (!campaignID) {
             return
         }
-        const subscription = merge(of(undefined), changesetUpdates)
+        const subscription = merge(of(undefined), campaignUpdates)
             .pipe(
                 switchMap(
                     () =>
@@ -149,13 +149,14 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             .subscribe({
                 next: fetchedCampaign => {
                     setCampaign(fetchedCampaign)
-                    setType(fetchedCampaign?.plan ? (fetchedCampaign.plan.type as 'comby') : 'manual')
+                    setType(fetchedCampaign?.plan?.type as CampaignType | undefined)
                     setCampaignPlanArguments(fetchedCampaign?.plan ? fetchedCampaign.plan.arguments : null)
+                    nextChangesetUpdate()
                 },
                 error: triggerError,
             })
         return () => subscription.unsubscribe()
-    }, [campaignID, triggerError, changesetUpdates])
+    }, [campaignID, triggerError, nextChangesetUpdate, campaignUpdates])
 
     const queryChangesetsConnection = useCallback(
         (args: FilteredConnectionQueryArgs) => queryChangesets(campaignID!, args),
@@ -238,10 +239,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     name,
                     description,
                     namespace: getNamespace()!,
-                    plan:
-                        type === 'comby' && campaign && campaign.__typename === 'CampaignPlan'
-                            ? campaign.id
-                            : undefined,
+                    plan: campaign && campaign.__typename === 'CampaignPlan' ? campaign.id : undefined,
                 })
                 unblockHistoryRef.current()
                 history.push(`/campaigns/${createdCampaign.id}`)
@@ -258,6 +256,16 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         setCampaignPlanArguments(newText)
     }
 
+    const onChangeType = (event: React.ChangeEvent<HTMLSelectElement>): void => {
+        const newType = (event.target.value as CampaignType) || undefined
+        const parsedContent = parseJSONC(campaignPlanArguments)
+        if ((newType && !parsedContent) || (type && isEqual(parsedContent, parseJSONC(defaultInputByType[type])))) {
+            setCampaignPlanArguments(defaultInputByType[newType])
+        }
+        setType(newType)
+        setCampaign(undefined)
+    }
+
     const discardChangesMessage = 'Do you want to discard your changes?'
 
     const onEdit: React.MouseEventHandler = event => {
@@ -268,7 +276,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             setName(name)
             setDescription(description)
             setMode('editing')
-            setType(plan ? (plan.type as 'comby' | 'manual') : 'manual')
+            setType(plan?.type as CampaignType | undefined)
             setCampaignPlanArguments(plan ? plan.arguments : '')
         }
     }
@@ -294,6 +302,16 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             history.push('/campaigns')
         } catch (err) {
             setMode('viewing')
+            setAlertError(asError(err))
+        }
+    }
+
+    const onRetry: React.MouseEventHandler = async event => {
+        event.preventDefault()
+        try {
+            await retryCampaign(campaign!.id)
+            campaignUpdates.next()
+        } catch (err) {
             setAlertError(asError(err))
         }
     }
@@ -332,7 +350,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     return (
         <>
             <PageTitle title={campaign && campaign.__typename === 'Campaign' ? campaign.name : 'New Campaign'} />
-            <Form onSubmit={onSubmit} onReset={onCancel}>
+            <Form onSubmit={onSubmit} onReset={onCancel} className="e2e-campaign-form">
                 <h2 className="d-flex">
                     <CampaignsIcon className="icon-inline mr-2" />
                     <span>
@@ -361,7 +379,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     <span className="text-muted d-inline-block mx-2">/</span>
                     {mode === 'editing' || mode === 'saving' ? (
                         <input
-                            className="form-control w-auto d-inline-block"
+                            className="form-control w-auto d-inline-block e2e-campaign-title"
                             value={name}
                             onChange={event => setName(event.target.value)}
                             placeholder="Campaign title"
@@ -454,15 +472,15 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 )}
                 <h3 className="mt-3">Campaign type</h3>
                 <select
-                    className="form-control w-auto d-inline-block"
+                    className="form-control w-auto d-inline-block e2e-campaign-type"
                     placeholder="Select campaign type"
-                    onChange={event => setType(event.target.value as 'comby' | 'manual')}
+                    onChange={onChangeType}
                     disabled={!!(campaign && campaign.__typename === 'Campaign')}
                     value={type}
-                    required={true}
                 >
-                    <option value="manual">Manual</option>
+                    <option value="">Manual</option>
                     <option value="comby">Comby search and replace</option>
+                    <option value="credentials">NPM Credentials</option>
                 </select>
                 {type === 'comby' && (
                     <small className="ml-1">
@@ -472,20 +490,20 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     </small>
                 )}
                 <MonacoSettingsEditor
-                    className="my-3"
+                    className="my-3 e2e-campaign-arguments"
                     isLightTheme={isLightTheme}
                     value={campaignPlanArguments}
-                    jsonSchema={type === 'comby' ? combyJsonSchema : undefined}
+                    jsonSchema={type ? jsonSchemaByType[type] : undefined}
                     height={110}
                     onChange={onChangeArguments}
                     readOnly={!!(campaign && campaign.__typename === 'Campaign')}
                 ></MonacoSettingsEditor>
                 {(!campaign || (campaign && campaign.__typename === 'CampaignPlan')) && mode === 'editing' && (
                     <>
-                        {type === 'comby' && (
+                        {type !== undefined && (
                             <button
                                 type="button"
-                                className="btn btn-primary mr-1"
+                                className="btn btn-primary mr-1 e2e-preview-campaign"
                                 disabled={!previewRefreshNeeded}
                                 onClick={() => nextPreviewCampaignPlan({ type, arguments: campaignPlanArguments })}
                             >
@@ -496,7 +514,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         <button
                             type="submit"
                             className="btn btn-primary"
-                            disabled={(type === 'comby' && previewRefreshNeeded) || mode !== 'editing'}
+                            disabled={(type !== undefined && previewRefreshNeeded) || mode !== 'editing'}
                         >
                             Create
                         </button>
@@ -507,16 +525,32 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             {status && (
                 <>
                     {status.state === 'PROCESSING' && (
-                        <div className="d-flex mt-3">
+                        <div className="d-flex mt-3 e2e-preview-loading">
                             <LoadingSpinner className="icon-inline" />{' '}
                             <span data-tooltip="Computing changesets">
                                 {status.completedCount} / {status.pendingCount + status.completedCount}
                             </span>
                         </div>
                     )}
+                    {type && status.state !== 'PROCESSING' && (
+                        <div className="d-flex my-3">
+                            {status.state === 'COMPLETED' && (
+                                <CheckCircleIcon className="icon-inline text-success mr-1 e2e-preview-success" />
+                            )}
+                            {status.state === 'ERRORED' && <AlertCircleIcon className="icon-inline text-danger mr-1" />}{' '}
+                            {/* Status asserts on campaign being set, this will never be null */}
+                            {campaign!.__typename === 'Campaign' ? 'Creation' : 'Preview'}{' '}
+                            {status.state.toLocaleLowerCase()}
+                        </div>
+                    )}
                     {status.errors.map((error, i) => (
                         <ErrorAlert error={error} className="mt-3" key={i} />
                     ))}
+                    {status.state === 'ERRORED' && campaign?.__typename === 'Campaign' && (
+                        <button type="button" className="btn btn-primary mb-2" onClick={onRetry}>
+                            Retry failed jobs
+                        </button>
+                    )}
                 </>
             )}
 
@@ -541,7 +575,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             {
                                 id: 'diff',
                                 label: (
-                                    <span>
+                                    <span className="e2e-campaign-diff-tab">
                                         Diff <span className="text-success">+{totalAdditions}</span>{' '}
                                         <span className="text-danger">-{totalDeletions}</span>
                                     </span>
@@ -550,7 +584,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             {
                                 id: 'changesets',
                                 label: (
-                                    <span>
+                                    <span className="e2e-campaign-changesets-tab">
                                         Changesets{' '}
                                         {campaign && (
                                             <span className="badge badge-secondary badge-pill">
