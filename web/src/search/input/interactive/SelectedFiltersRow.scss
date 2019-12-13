@@ -4,7 +4,7 @@
     flex-wrap: wrap;
     align-items: center;
     min-height: calc(
-        #{$input-height} + #{$input-padding-y} + (#{$filter-input-margin-y}* 2) + (#{$filter-input-padding}* 2)
+        #{$input-height} + #{$input-padding-y} + (#{$filter-input-margin-y} * 2) + (#{$filter-input-padding} * 2)
     );
 
     padding-left: 1rem;
