@@ -537,7 +537,7 @@ func patternInfoToZoektQuery(patternInfo *search.PatternInfo, isSymbol bool) (zo
 	return zoektquery.Simplify(zoektquery.NewAnd(and...)), nil
 }
 
-// queryToZoektFileOnlyQueries constructs a list of Zoekt queries that search for a file pattern(s).
+// patternInfoToZoektFileOnlyQueries constructs a list of Zoekt queries that search for a file pattern(s).
 // `listOfFilePaths` specifies which field on `query` should be the list of file patterns to look for.
 //  A separate zoekt query is created for each file path that should be searched.
 func patternInfoToZoektFileOnlyQueries(patternInfo *search.PatternInfo, listOfFilePaths []string) ([]zoektquery.Q, error) {
