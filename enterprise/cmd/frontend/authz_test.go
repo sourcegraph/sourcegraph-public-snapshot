@@ -440,7 +440,11 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 		{
 			description: "Conflicted configuration between Sourcegraph and GitLab authz provider",
 			cfg: conf.Unified{
-				Critical: schema.CriticalConfiguration{
+				SiteConfiguration: schema.SiteConfiguration{
+					PermissionsUserMapping: &schema.PermissionsUserMapping{
+						Enabled: true,
+						BindID:  "email",
+					},
 					AuthProviders: []schema.AuthProviders{{
 						Gitlab: &schema.GitLabAuthProvider{
 							ClientID:     "clientID",
@@ -450,12 +454,6 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 							Url:          "https://gitlab.mine",
 						},
 					}},
-				},
-				SiteConfiguration: schema.SiteConfiguration{
-					PermissionsUserMapping: &schema.PermissionsUserMapping{
-						Enabled: true,
-						BindID:  "email",
-					},
 				},
 			},
 			gitlabConnections: []*schema.GitLabConnection{
