@@ -18,7 +18,7 @@ func TestDiff(t *testing.T) {
 			name:   "diff",
 			before: &Unified{SiteConfiguration: schema.SiteConfiguration{ExternalURL: "a"}},
 			after:  &Unified{SiteConfiguration: schema.SiteConfiguration{ExternalURL: "b"}},
-			want:   []string{"critical::externalURL"},
+			want:   []string{"externalURL"},
 		},
 		{
 			name:   "nodiff",
@@ -53,7 +53,7 @@ func TestDiff(t *testing.T) {
 			after: &Unified{
 				SiteConfiguration: schema.SiteConfiguration{GitCloneURLToRepositoryName: []*schema.CloneURLToRepositoryName{{From: "a"}}, ExternalURL: "a"},
 			},
-			want: []string{"critical::externalURL", "git.cloneURLToRepositoryName"},
+			want: []string{"externalURL", "git.cloneURLToRepositoryName"},
 		},
 		{
 			name: "experimental_features",
