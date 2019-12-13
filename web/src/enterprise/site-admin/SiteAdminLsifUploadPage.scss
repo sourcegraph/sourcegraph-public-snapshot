@@ -1,0 +1,7 @@
+.upload-arguments {
+    &__cell {
+        .upload-arguments__row:first-child > & {
+            border-top: none;
+        }
+    }
+}

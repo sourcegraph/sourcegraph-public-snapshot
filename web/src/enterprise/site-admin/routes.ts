@@ -71,13 +71,14 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         exact: true,
     },
     {
-        path: '/lsif-jobs',
+        path: '/lsif-uploads',
         exact: true,
-        render: lazyComponent(() => import('./SiteAdminLsifJobsPage'), 'SiteAdminLsifJobsPage'),
+        render: lazyComponent(() => import('./SiteAdminLsifUploadsPage'), 'SiteAdminLsifUploadsPage'),
     },
     {
-        path: '/lsif-jobs/:id',
+        // Maintain backwards compatibility for outdated src-cli clients
+        path: '/lsif-(uploads|jobs)/:id',
         exact: true,
-        render: lazyComponent(() => import('./SiteAdminLsifJobPage'), 'SiteAdminLsifJobPage'),
+        render: lazyComponent(() => import('./SiteAdminLsifUploadPage'), 'SiteAdminLsifUploadPage'),
     },
 ]

@@ -29,8 +29,8 @@ func (r *lsifDumpResolver) ID() graphql.ID {
 }
 
 func (r *lsifDumpResolver) ProjectRoot(ctx context.Context) (*graphqlbackend.GitTreeEntryResolver, error) {
-	repo := graphqlbackend.NewRepositoryResolver(r.repo)
-	commitResolver, err := repo.Commit(ctx, &graphqlbackend.RepositoryCommitArgs{Rev: r.lsifDump.Commit})
+	repoResolver := graphqlbackend.NewRepositoryResolver(r.repo)
+	commitResolver, err := repoResolver.Commit(ctx, &graphqlbackend.RepositoryCommitArgs{Rev: r.lsifDump.Commit})
 	if err != nil {
 		return nil, err
 	}

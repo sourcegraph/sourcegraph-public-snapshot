@@ -575,7 +575,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             {
                                 id: 'diff',
                                 label: (
-                                    <span>
+                                    <span className="e2e-campaign-diff-tab">
                                         Diff <span className="text-success">+{totalAdditions}</span>{' '}
                                         <span className="text-danger">-{totalDeletions}</span>
                                     </span>
@@ -584,7 +584,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             {
                                 id: 'changesets',
                                 label: (
-                                    <span>
+                                    <span className="e2e-campaign-changesets-tab">
                                         Changesets{' '}
                                         {campaign && (
                                             <span className="badge badge-secondary badge-pill">

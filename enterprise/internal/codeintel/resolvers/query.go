@@ -3,13 +3,14 @@ package resolvers
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
 	"net/url"
 	"strconv"
 
 	"github.com/sourcegraph/go-lsp"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/client"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/lsif"
 )
 
@@ -21,6 +22,18 @@ type lsifQueryResolver struct {
 }
 
 var _ graphqlbackend.LSIFQueryResolver = &lsifQueryResolver{}
+
+func (r *lsifQueryResolver) Commit(ctx context.Context) (*graphqlbackend.GitCommitResolver, error) {
+	repo, err := backend.Repos.GetByName(ctx, api.RepoName(r.repoName))
+	if err != nil {
+		return nil, err
+	}
+
+	return graphqlbackend.NewRepositoryResolver(repo).Commit(
+		ctx,
+		&graphqlbackend.RepositoryCommitArgs{Rev: string(r.dump.Commit)},
+	)
+}
 
 func (r *lsifQueryResolver) Definitions(ctx context.Context, args *graphqlbackend.LSIFQueryPositionArgs) (graphqlbackend.LocationConnectionResolver, error) {
 	opt := LocationsQueryOptions{
@@ -72,7 +85,7 @@ func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend
 }
 
 func (r *lsifQueryResolver) Hover(ctx context.Context, args *graphqlbackend.LSIFQueryPositionArgs) (graphqlbackend.HoverResolver, error) {
-	path := fmt.Sprintf("/hover")
+	path := "/hover"
 	values := url.Values{}
 	values.Set("repository", r.repoName)
 	values.Set("commit", string(r.commit))
