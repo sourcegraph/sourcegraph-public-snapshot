@@ -32,7 +32,7 @@ interface InteractiveModeProps
         ThemePreferenceProps,
         EventLoggerProps,
         ActivationProps,
-        Pick<InteractiveSearchProps, 'filtersInQuery' | 'onFiltersInQueryChange'> {
+        Pick<InteractiveSearchProps, 'filtersInQuery' | 'onFiltersInQueryChange' | 'toggleSearchMode'> {
     location: H.Location
     history: H.History
     navbarSearchState: QueryState
@@ -46,7 +46,6 @@ interface InteractiveModeProps
     showDotComMarketing: boolean
     showCampaigns: boolean
     isSourcegraphDotCom: boolean
-    toggleSearchMode: (e: React.MouseEvent<HTMLAnchorElement>) => void
 }
 
 export default class InteractiveModeInput extends React.Component<InteractiveModeProps> {
