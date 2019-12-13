@@ -47,7 +47,7 @@ func foo(real string) {}
 		Pattern:         pattern,
 		IncludePatterns: includePatterns,
 	}
-	m, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.IncludePatterns, "foo")
+	m, _, err := structuralSearch(context.Background(), zf, p.Pattern, "", p.IncludePatterns, "foo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,7 +104,7 @@ func TestIncludePatterns(t *testing.T) {
 		Pattern:         "",
 		IncludePatterns: includePatterns,
 	}
-	fileMatches, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.IncludePatterns, "foo")
+	fileMatches, _, err := structuralSearch(context.Background(), zf, p.Pattern, "", p.IncludePatterns, "foo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,6 +117,55 @@ func TestIncludePatterns(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("got file matches %v, want %v", got, want)
 	}
+}
+
+func TestRule(t *testing.T) {
+	// If we are not on CI skip the test.
+	if os.Getenv("CI") == "" {
+		t.Skip("Not on CI, skipping comby-dependent test")
+	}
+
+	input := map[string]string{
+		"file.go": "func foo(success) {} func bar(fail) {}",
+	}
+
+	zipData, err := testutil.CreateZip(input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	zf, cleanup, err := testutil.TempZipFileOnDisk(zipData)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup()
+
+	pattern := "func :[[fn]](:[args])"
+	rule := `where :[args] == "success"`
+	includePatterns := []string{".go"}
+
+	got, _, err := structuralSearch(context.Background(), zf, pattern, rule, includePatterns, "repo")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []protocol.FileMatch{
+		{
+			Path:     "file.go",
+			LimitHit: false,
+			LineMatches: []protocol.LineMatch{
+				{
+					LineNumber:       0,
+					OffsetAndLengths: [][2]int{{0, 17}},
+					Preview:          "func foo(success)",
+				},
+			},
+		},
+	}
+
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("got file matches %v, want %v", got, want)
+	}
+
 }
 
 func TestHighlightMultipleLines(t *testing.T) {
