@@ -13,9 +13,3 @@ yarn run -s yarn-deduplicate --fail --list --strategy fewer ./yarn.lock || {
     echo 'yarn.lock contains duplicate dependencies. Please run `yarn deduplicate` and commit the result.'
     exit 1
 }
-
-echo "Checking for duplicate dependencies in cmd/management-console/web/yarn.lock"
-yarn run -s yarn-deduplicate --fail --list --strategy fewer ./cmd/management-console/web/yarn.lock || {
-    echo 'cmd/management-console/web/yarn.lock contains duplicate dependencies. Please run `yarn deduplicate` and commit the result.'
-    exit 1
-}

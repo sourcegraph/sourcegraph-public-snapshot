@@ -13,7 +13,6 @@ var allDockerImages = []string{
 	"frontend",
 	"github-proxy",
 	"gitserver",
-	"management-console",
 	"query-runner",
 	"replacer",
 	"repo-updater",
