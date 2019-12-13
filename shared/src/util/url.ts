@@ -3,6 +3,7 @@ import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceServi
 import { SearchPatternType } from '../graphql/schema'
 import { FiltersToTypeAndValue } from '../search/interactive/util'
 import { SuggestionTypeKeys } from '../search/suggestions/util'
+import { isEmpty } from 'lodash'
 
 export interface RepoSpec {
     /**
@@ -543,9 +544,22 @@ export function withWorkspaceRootInputRevision(
  * @param query the search query
  * @param patternType the pattern type this query should be interpreted in.
  * Having a `patternType:` filter in the query overrides this argument.
+ * @param filtersInQuery filters in an interactive mode query. For callers of
+ * this function requiring correct behavior in interactive mode, this param
+ * must be passed.
+ *
  */
-export function buildSearchURLQuery(query: string, patternType: SearchPatternType): string {
-    const searchParams = new URLSearchParams()
+export function buildSearchURLQuery(
+    query: string,
+    patternType: SearchPatternType,
+    filtersInQuery?: FiltersToTypeAndValue
+): string {
+    let searchParams = new URLSearchParams()
+
+    if (filtersInQuery && !isEmpty(filtersInQuery)) {
+        searchParams = interactiveBuildSearchURLQuery(filtersInQuery)
+    }
+
     const patternTypeInQuery = parsePatternTypeFromQuery(query)
     if (patternTypeInQuery) {
         const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal)\b/i
@@ -564,18 +578,13 @@ export function buildSearchURLQuery(query: string, patternType: SearchPatternTyp
 }
 
 /**
- * Builds a URL query for a given interactive mode query (without leading `?`)
+ * Builds a URL query for a given interactive mode query (without leading `?`).
+ * Returns a URLSearchParams object containing the filters and values in the
+ * search query.
  *
- * @param navbarQuery the search query in the main search input
  * @param filtersInQuery the map representing the filters added to the query
- * @param patternType the pattern type this query should be interpreted in.
- * Having a `patternType:` filter in the query overrides this argument.
  */
-export function interactiveBuildSearchURLQuery(
-    navbarQuery: string,
-    filtersInQuery: FiltersToTypeAndValue,
-    patternType: SearchPatternType
-): string {
+export function interactiveBuildSearchURLQuery(filtersInQuery: FiltersToTypeAndValue): URLSearchParams {
     const searchParams = new URLSearchParams()
 
     for (const searchType of SuggestionTypeKeys) {
@@ -586,21 +595,7 @@ export function interactiveBuildSearchURLQuery(
         }
     }
 
-    const patternTypeInQuery = parsePatternTypeFromQuery(navbarQuery)
-    if (patternTypeInQuery) {
-        const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal)\b/i
-        const newQuery = navbarQuery.replace(patternTypeRegexp, '')
-        searchParams.set('q', newQuery)
-        searchParams.set('patternType', patternTypeInQuery.toLowerCase())
-    } else {
-        searchParams.set('q', navbarQuery)
-        searchParams.set('patternType', patternType)
-    }
-
     return searchParams
-        .toString()
-        .replace(/%2F/g, '/')
-        .replace(/%3A/g, ':')
 }
 
 function parsePatternTypeFromQuery(query: string): SearchPatternType | undefined {

@@ -31,7 +31,7 @@ import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevContainerRoute } from './repo/RepoRevContainer'
 import { LayoutRouteProps } from './routes'
-import { parseSearchURLQuery, PatternTypeProps } from './search'
+import { parseSearchURLQuery, PatternTypeProps, InteractiveSearchProps } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { EventLogger, EventLoggerProps } from './tracking/eventLogger'
@@ -59,7 +59,8 @@ export interface LayoutProps
         EventLoggerProps,
         ThemePreferenceProps,
         ActivationProps,
-        PatternTypeProps {
+        PatternTypeProps,
+        InteractiveSearchProps {
     exploreSections: readonly ExploreSectionDescriptor[]
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
@@ -101,11 +102,9 @@ export interface LayoutProps
         patternType: GQL.SearchPatternType,
         { extensionsController }: ExtensionsControllerProps<'services'>
     ) => Observable<GQL.ISearchResults | ErrorLike>
+
     isSourcegraphDotCom: boolean
     showCampaigns: boolean
-    showInteractiveSearchMode: boolean
-    interactiveSearchMode: boolean
-    toggleSearchMode: (e: React.MouseEvent<HTMLAnchorElement>) => void
     children?: never
 }
 

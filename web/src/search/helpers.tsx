@@ -1,7 +1,7 @@
 import * as H from 'history'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { buildSearchURLQuery, interactiveBuildSearchURLQuery } from '../../../shared/src/util/url'
+import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { eventLogger } from '../tracking/eventLogger'
 import { SearchType } from './results/SearchResults'
 import { SearchFilterSuggestions } from './searchFilterSuggestions'
@@ -21,9 +21,7 @@ export function submitSearch(
     activation?: ActivationProps['activation'],
     filtersQuery?: FiltersToTypeAndValue
 ): void {
-    const searchQueryParam = filtersQuery
-        ? interactiveBuildSearchURLQuery(navbarQuery, filtersQuery, patternType)
-        : buildSearchURLQuery(navbarQuery, patternType)
+    const searchQueryParam = buildSearchURLQuery(navbarQuery, patternType, filtersQuery)
 
     // Go to search results page
     const path = '/search?' + searchQueryParam

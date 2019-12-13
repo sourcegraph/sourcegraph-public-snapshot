@@ -29,6 +29,7 @@ import { SearchResultsFilterBars, SearchScopeWithOptionalName } from './SearchRe
 import { SearchResultsList } from './SearchResultsList'
 import { SearchResultTypeTabs } from './SearchResultTypeTabs'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
+import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,
@@ -51,6 +52,7 @@ export interface SearchResultsProps
     ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
     deployType: DeployType
+    filtersInQuery: FiltersToTypeAndValue
     interactiveSearchMode: boolean
 }
 
@@ -93,7 +95,12 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             // If the patternType query parameter does not exist in the URL or is invalid, redirect to a URL which
             // has patternType=regexp appended. This is to ensure old URLs before requiring patternType still work.
             const newLoc =
-                '/search?' + buildSearchURLQuery(this.props.navbarSearchQueryState.query, GQL.SearchPatternType.regexp)
+                '/search?' +
+                buildSearchURLQuery(
+                    this.props.navbarSearchQueryState.query,
+                    GQL.SearchPatternType.regexp,
+                    this.props.filtersInQuery
+                )
             window.location.replace(newLoc)
         }
 
@@ -226,7 +233,11 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                         calculateShowMoreResultsCount={this.calculateCount}
                     />
                 )}
-                <SearchResultTypeTabs {...this.props} query={this.props.navbarSearchQueryState.query} />
+                <SearchResultTypeTabs
+                    {...this.props}
+                    query={this.props.navbarSearchQueryState.query}
+                    filtersInQuery={this.props.filtersInQuery}
+                />
                 <SearchResultsList
                     {...this.props}
                     resultsOrError={this.state.resultsOrError}

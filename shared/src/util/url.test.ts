@@ -429,55 +429,41 @@ describe('lprToSelectionsZeroIndexed', () => {
 
 describe('interactiveBuildSearchURLQuery', () => {
     test('builds search URL query correctly with no filter inputs', () => {
-        expect(interactiveBuildSearchURLQuery('test', {}, SearchPatternType.literal)).toBe('q=test&patternType=literal')
+        expect(interactiveBuildSearchURLQuery({})).toBe(new URLSearchParams())
     })
 
     test('builds search URL query correctly with a repo filter input', () => {
         expect(
-            interactiveBuildSearchURLQuery(
-                'test',
-                { 'repo 1': { type: SuggestionTypes.repo, value: 'gorilla/mux', editable: false } },
-                SearchPatternType.literal
-            )
-        ).toBe('repo=gorilla/mux&q=test&patternType=literal')
+            interactiveBuildSearchURLQuery({
+                'repo 1': { type: SuggestionTypes.repo, value: 'gorilla/mux', editable: false },
+            })
+        ).toBe(new URLSearchParams('repo=gorilla/mux&q=test&patternType=literal'))
     })
 
     test('builds search URL query correctly with multiple repo filter inputs', () => {
         expect(
-            interactiveBuildSearchURLQuery(
-                'test',
-                {
-                    'repo 1': { type: SuggestionTypes.repo, value: 'gorilla/mux', editable: false },
-                    'repo 2': { type: SuggestionTypes.repo, value: 'gorilla/muxy', editable: false },
-                },
-                SearchPatternType.literal
-            )
-        ).toBe('repo=gorilla/mux&repo=gorilla/muxy&q=test&patternType=literal')
+            interactiveBuildSearchURLQuery({
+                'repo 1': { type: SuggestionTypes.repo, value: 'gorilla/mux', editable: false },
+                'repo 2': { type: SuggestionTypes.repo, value: 'gorilla/muxy', editable: false },
+            })
+        ).toBe(new URLSearchParams('repo=gorilla/mux&repo=gorilla/muxy&q=test&patternType=literal'))
     })
 
     test('builds search URL query correctly with repo and file filter inputs', () => {
         expect(
-            interactiveBuildSearchURLQuery(
-                'test',
-                {
-                    'repo 1': { type: SuggestionTypes.repo, value: 'gorilla/mux', editable: false },
-                    'file 2': { type: SuggestionTypes.file, value: 'test', editable: false },
-                },
-                SearchPatternType.literal
-            )
-        ).toBe('repo=gorilla/mux&file=test&q=test&patternType=literal')
+            interactiveBuildSearchURLQuery({
+                'repo 1': { type: SuggestionTypes.repo, value: 'gorilla/mux', editable: false },
+                'file 2': { type: SuggestionTypes.file, value: 'test', editable: false },
+            })
+        ).toBe(new URLSearchParams('repo=gorilla/mux&file=test&q=test&patternType=literal'))
     })
 
     test('builds search URL query correctly with repo and file filter inputs, and a repo filter in the navbar query', () => {
         expect(
-            interactiveBuildSearchURLQuery(
-                'test repo:test-repo',
-                {
-                    'repo 1': { type: SuggestionTypes.repo, value: 'gorilla/mux', editable: false },
-                    'file 2': { type: SuggestionTypes.file, value: 'test', editable: false },
-                },
-                SearchPatternType.literal
-            )
-        ).toBe('repo=gorilla/mux&file=test&q=test+repo:test-repo&patternType=literal')
+            interactiveBuildSearchURLQuery({
+                'repo 1': { type: SuggestionTypes.repo, value: 'gorilla/mux', editable: false },
+                'file 2': { type: SuggestionTypes.file, value: 'test', editable: false },
+            })
+        ).toBe(new URLSearchParams('repo=gorilla/mux&file=test&q=test+repo:test-repo&patternType=literal'))
     })
 })

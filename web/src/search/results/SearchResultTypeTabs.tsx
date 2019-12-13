@@ -2,11 +2,13 @@ import * as React from 'react'
 import * as H from 'history'
 import { SearchResultTabHeader } from './SearchResultTab'
 import { PatternTypeProps } from '..'
+import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
 
 interface Props extends Omit<PatternTypeProps, 'togglePatternType'> {
     location: H.Location
     history: H.History
     query: string
+    filtersInQuery: FiltersToTypeAndValue
 }
 
 export const SearchResultTypeTabs: React.FunctionComponent<Props> = props => (

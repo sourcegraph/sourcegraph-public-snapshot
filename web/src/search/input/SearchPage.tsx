@@ -1,6 +1,6 @@
 import * as H from 'history'
 import * as React from 'react'
-import { parseSearchURLQuery, PatternTypeProps } from '..'
+import { parseSearchURLQuery, PatternTypeProps, InteractiveSearchProps } from '..'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
@@ -22,6 +22,7 @@ import InteractiveModeInput from './interactive/InteractiveModeInput'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
+import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
 
 interface Props
     extends SettingsCascadeProps,
@@ -32,14 +33,12 @@ interface Props
         KeyboardShortcutsProps,
         EventLoggerProps,
         ExtensionsControllerProps<'executeCommand' | 'services'>,
-        PlatformContextProps<'forceUpdateTooltip'> {
+        PlatformContextProps<'forceUpdateTooltip'>,
+        InteractiveSearchProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
     isSourcegraphDotCom: boolean
-    showInteractiveSearchMode: boolean
-    interactiveSearchMode: boolean
-    toggleSearchMode: (e: React.MouseEvent<HTMLAnchorElement>) => void
 
     // For NavLinks
     authRequired?: boolean

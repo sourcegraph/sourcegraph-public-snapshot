@@ -8,7 +8,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { authRequired } from '../auth'
-import { parseSearchURLQuery, PatternTypeProps } from '../search'
+import { parseSearchURLQuery, PatternTypeProps, InteractiveSearchProps } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { showDotComMarketing } from '../util/features'
@@ -18,6 +18,7 @@ import { ThemePreferenceProps } from '../search/theme'
 import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
 import { QueryState } from '../search/helpers'
 import InteractiveModeInput from '../search/input/interactive/InteractiveModeInput'
+import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/util'
 
 interface Props
     extends SettingsCascadeProps,
@@ -28,7 +29,8 @@ interface Props
         ThemeProps,
         ThemePreferenceProps,
         ActivationProps,
-        PatternTypeProps {
+        PatternTypeProps,
+        InteractiveSearchProps {
     history: H.History
     location: H.Location<{ query: string }>
     authenticatedUser: GQL.IUser | null
@@ -43,6 +45,7 @@ interface Props
      */
     lowProfile: boolean
 
+    filtersInQuery: FiltersToTypeAndValue
     showInteractiveSearchMode: boolean
     interactiveSearchMode: boolean
     toggleSearchMode: (e: React.MouseEvent<HTMLAnchorElement>) => void

@@ -21,7 +21,7 @@ import { ActivationProps } from '../../../../../shared/src/components/activation
 import { FiltersToTypeAndValue } from '../../../../../shared/src/search/interactive/util'
 import { SuggestionTypes, SuggestionTypeKeys } from '../../../../../shared/src/search/suggestions/util'
 import { QueryInput } from '../QueryInput'
-import { parseSearchURLQuery } from '../..'
+import { parseSearchURLQuery, InteractiveSearchProps } from '../..'
 
 interface InteractiveModeProps
     extends SettingsCascadeProps,
@@ -31,7 +31,8 @@ interface InteractiveModeProps
         ThemeProps,
         ThemePreferenceProps,
         EventLoggerProps,
-        ActivationProps {
+        ActivationProps,
+        Pick<InteractiveSearchProps, 'filtersInQuery' | 'onFiltersInQueryChange'> {
     location: H.Location
     history: H.History
     navbarSearchState: QueryState
@@ -45,23 +46,10 @@ interface InteractiveModeProps
     showDotComMarketing: boolean
     showCampaigns: boolean
     isSourcegraphDotCom: boolean
-
     toggleSearchMode: (e: React.MouseEvent<HTMLAnchorElement>) => void
 }
 
-interface InteractiveInputState {
-    /**
-     * filtersInQuery is the source of truth for the filter values currently in the query.
-     *
-     * The data structure is a map, where the key is a uniquely assigned string in the form `repoType-numberOfFilterAdded`.
-     * The value is a data structure containing the fields {`type`, `value`, `editable`}.
-     * `type` is the field type of the filter (repo, file, etc.) `value` is the current value for that particular filter,
-     * and `editable` is whether the corresponding filter input is currently editable in the UI.
-     * */
-    filtersInQuery: FiltersToTypeAndValue
-}
-
-export default class InteractiveModeInput extends React.Component<InteractiveModeProps, InteractiveInputState> {
+export default class InteractiveModeInput extends React.Component<InteractiveModeProps> {
     private numFiltersAddedToQuery = 0
     private subscriptions = new Subscription()
     private componentUpdates = new Subject<InteractiveModeProps>()
@@ -69,9 +57,6 @@ export default class InteractiveModeInput extends React.Component<InteractiveMod
     constructor(props: InteractiveModeProps) {
         super(props)
 
-        this.state = {
-            filtersInQuery: {},
-        }
         this.subscriptions.add(
             this.componentUpdates.subscribe(props => {
                 const searchParams = new URLSearchParams(props.location.search)
@@ -83,7 +68,7 @@ export default class InteractiveModeInput extends React.Component<InteractiveMod
                     })
                 }
                 this.numFiltersAddedToQuery = Object.keys(filtersInQuery).length
-                this.setState({ filtersInQuery })
+                this.props.onFiltersInQueryChange(filtersInQuery)
             })
         )
     }
@@ -106,51 +91,46 @@ export default class InteractiveModeInput extends React.Component<InteractiveMod
     private addNewFilter = (filterType: SuggestionTypes): void => {
         const filterKey = `${filterType}-${this.numFiltersAddedToQuery}`
         this.numFiltersAddedToQuery++
-        this.setState(state => ({
-            filtersInQuery: { ...state.filtersInQuery, [filterKey]: { type: filterType, value: '', editable: true } },
-        }))
-    }
-
-    private onFilterEdited = (filterKey: string, value: string): void => {
-        this.setState(state => ({
-            filtersInQuery: {
-                ...state.filtersInQuery,
-                [filterKey]: {
-                    ...state.filtersInQuery[filterKey],
-                    value,
-                },
-            },
-        }))
-    }
-
-    private onFilterDeleted = (filterKey: string): void => {
-        this.setState(state => {
-            const newState = state.filtersInQuery
-            delete newState[filterKey]
-
-            submitSearch(
-                this.props.history,
-                this.props.navbarSearchState.query,
-                'nav',
-                this.props.patternType,
-                undefined,
-                newState
-            )
-
-            return { filtersInQuery: newState }
+        this.props.onFiltersInQueryChange({
+            ...this.props.filtersInQuery,
+            [filterKey]: { type: filterType, value: '', editable: true },
         })
     }
 
-    private toggleFilterEditable = (filterKey: string): void => {
-        this.setState(state => ({
-            filtersInQuery: {
-                ...state.filtersInQuery,
-                [filterKey]: {
-                    ...state.filtersInQuery[filterKey],
-                    editable: !state.filtersInQuery[filterKey].editable,
-                },
+    private onFilterEdited = (filterKey: string, value: string): void => {
+        this.props.onFiltersInQueryChange({
+            ...this.props.filtersInQuery,
+            [filterKey]: {
+                ...this.props.filtersInQuery[filterKey],
+                value,
             },
-        }))
+        })
+    }
+
+    private onFilterDeleted = (filterKey: string): void => {
+        const newFiltersInQuery = this.props.filtersInQuery
+        delete newFiltersInQuery[filterKey]
+
+        submitSearch(
+            this.props.history,
+            this.props.navbarSearchState.query,
+            'nav',
+            this.props.patternType,
+            undefined,
+            newFiltersInQuery
+        )
+
+        this.props.onFiltersInQueryChange(newFiltersInQuery)
+    }
+
+    private toggleFilterEditable = (filterKey: string): void => {
+        this.props.onFiltersInQueryChange({
+            ...this.props.filtersInQuery,
+            [filterKey]: {
+                ...this.props.filtersInQuery[filterKey],
+                editable: !this.props.filtersInQuery[filterKey].editable,
+            },
+        })
     }
 
     private onSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
@@ -162,7 +142,7 @@ export default class InteractiveModeInput extends React.Component<InteractiveMod
             'nav',
             this.props.patternType,
             undefined,
-            this.state.filtersInQuery
+            this.props.filtersInQuery
         )
     }
 
@@ -212,10 +192,10 @@ export default class InteractiveModeInput extends React.Component<InteractiveMod
                                     patternType={this.props.patternType}
                                     togglePatternType={this.props.togglePatternType}
                                     autoFocus={true}
-                                    filterQuery={this.state.filtersInQuery}
+                                    filterQuery={this.props.filtersInQuery}
                                     withoutSuggestions={true}
                                 />
-                                <SearchButton />
+                                <SearchButton noHelp={true} />
                             </div>
                         </Form>
                     </div>
@@ -230,7 +210,7 @@ export default class InteractiveModeInput extends React.Component<InteractiveMod
                 </div>
                 <div>
                     <SelectedFiltersRow
-                        filtersInQuery={this.state.filtersInQuery}
+                        filtersInQuery={this.props.filtersInQuery}
                         navbarQuery={this.props.navbarSearchState}
                         onSubmit={this.onSubmit}
                         onFilterEdited={this.onFilterEdited}

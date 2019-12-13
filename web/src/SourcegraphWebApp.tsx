@@ -54,6 +54,7 @@ import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { QueryState } from './search/helpers'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarItem } from './repo/settings/RepoSettingsSidebar'
+import { FiltersToTypeAndValue } from '../../shared/src/search/interactive/util'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     exploreSections: readonly ExploreSectionDescriptor[]
@@ -100,10 +101,22 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * The current search query in the navbar.
      */
     navbarSearchQueryState: QueryState
+
     /**
      * The current search pattern type.
      */
     searchPatternType: GQL.SearchPatternType
+
+    /**
+     * filtersInQuery is the source of truth for the filter values currently in the query.
+     *
+     * The data structure is a map, where the key is a uniquely assigned string in the form `repoType-numberOfFilterAdded`.
+     * The value is a data structure containing the fields {`type`, `value`, `editable`}.
+     * `type` is the field type of the filter (repo, file, etc.) `value` is the current value for that particular filter,
+     * and `editable` is whether the corresponding filter input is currently editable in the UI.
+     * */
+    filtersInQuery: FiltersToTypeAndValue
+
     /**
      * Whether interactive search mode is activated
      */
@@ -169,6 +182,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: SITE_SUBJECT_NO_ADMIN,
             searchPatternType: urlPatternType,
+            filtersInQuery: {},
             interactiveSearchMode:
                 showInteractiveSearchMode && currentSearchMode ? currentSearchMode === 'interactive' : false,
         }
@@ -334,6 +348,8 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     showInteractiveSearchMode={showInteractiveSearchMode}
                                     interactiveSearchMode={this.state.interactiveSearchMode}
                                     toggleSearchMode={this.toggleSearchMode}
+                                    filtersInQuery={this.state.filtersInQuery}
+                                    onFiltersInQueryChange={this.onFiltersInQueryChange}
                                 />
                             )}
                         />
@@ -352,6 +368,10 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
 
     private onNavbarQueryChange = (navbarSearchQueryState: QueryState): void => {
         this.setState({ navbarSearchQueryState })
+    }
+
+    private onFiltersInQueryChange = (filtersInQuery: FiltersToTypeAndValue): void => {
+        this.setState({ filtersInQuery })
     }
 
     private togglePatternType = (): void => {
