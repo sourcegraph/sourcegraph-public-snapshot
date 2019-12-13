@@ -12,15 +12,14 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/segmentio/fasthash/fnv1"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
-// A store of Permissions safe for concurrent use.
+// A store of UserPermissions safe for concurrent use.
 //
 // It leverages Postgres row locking for concurrency control of cache fill events,
 // so that many concurrent requests during an expiration don't overload the Bitbucket Server API.
@@ -34,7 +33,7 @@ type store struct {
 	hardTTL time.Duration
 	clock   func() time.Time
 	block   bool // Perform blocking updates if true.
-	updates chan *Permissions
+	updates chan *authz.UserPermissions
 }
 
 func newStore(db dbutil.DB, ttl, hardTTL time.Duration, clock func() time.Time) *store {
@@ -48,50 +47,6 @@ func newStore(db dbutil.DB, ttl, hardTTL time.Duration, clock func() time.Time) 
 		hardTTL: hardTTL,
 		clock:   clock,
 	}
-}
-
-// Permissions of a user to perform an action on the
-// given set of object IDs of the defined type.
-type Permissions struct {
-	UserID    int32
-	Perm      authz.Perms
-	Type      string
-	IDs       *roaring.Bitmap
-	UpdatedAt time.Time
-}
-
-// Expired returns true if these Permissions have elapsed the given ttl.
-func (p *Permissions) Expired(ttl time.Duration, now time.Time) bool {
-	return !now.Before(p.UpdatedAt.Add(ttl))
-}
-
-// Authorized returns the intersection of the given ids with
-// the authorized ids.
-func (p *Permissions) Authorized(repos []*types.Repo) []authz.RepoPerms {
-	perms := make([]authz.RepoPerms, 0, len(repos))
-	for _, r := range repos {
-		if r.ID != 0 && p.IDs != nil && p.IDs.Contains(uint32(r.ID)) {
-			perms = append(perms, authz.RepoPerms{Repo: r, Perms: p.Perm})
-		}
-	}
-	return perms
-}
-
-func (p *Permissions) tracingFields() []otlog.Field {
-	fs := []otlog.Field{
-		otlog.Int32("Permissions.UserID", p.UserID),
-		otlog.String("Permissions.Perm", string(p.Perm)),
-		otlog.String("Permissions.Type", p.Type),
-	}
-
-	if p.IDs != nil {
-		fs = append(fs,
-			otlog.Uint64("Permissions.IDs.Count", p.IDs.GetCardinality()),
-			otlog.String("Permissions.UpdatedAt", p.UpdatedAt.String()),
-		)
-	}
-
-	return fs
 }
 
 // DefaultHardTTL is the default hard TTL used in the permissions store, after which
@@ -115,7 +70,7 @@ type PermissionsUpdateFunc func(context.Context) (
 // returned.
 func (s *store) LoadPermissions(
 	ctx context.Context,
-	p *Permissions,
+	p *authz.UserPermissions,
 	update PermissionsUpdateFunc,
 ) (err error) {
 	if s == nil || p == nil {
@@ -123,7 +78,7 @@ func (s *store) LoadPermissions(
 	}
 
 	ctx, save := s.observe(ctx, "LoadPermissions", "")
-	defer func() { save(&err, p.tracingFields()...) }()
+	defer func() { save(&err, p.TracingFields()...) }()
 
 	now := s.clock()
 
@@ -139,22 +94,22 @@ func (s *store) LoadPermissions(
 	return s.UpdatePermissions(ctx, p, update)
 }
 
-// UpdatePermissions updates the given Permissions, calling the update function
+// UpdatePermissions updates the given UserPermissions, calling the update function
 // to fetch fresh data from the source of truth.
 func (s *store) UpdatePermissions(
 	ctx context.Context,
-	p *Permissions,
+	p *authz.UserPermissions,
 	update PermissionsUpdateFunc,
 ) (err error) {
 	ctx, save := s.observe(ctx, "UpdatePermissions", "")
-	defer func() { save(&err, p.tracingFields()...) }()
+	defer func() { save(&err, p.TracingFields()...) }()
 
 	now := s.clock()
 	expired := *p
 	expired.IDs = nil
 
 	if !s.block { // Non blocking code path
-		go func(expired *Permissions) {
+		go func(expired *authz.UserPermissions) {
 			err := s.update(ctx, expired, update)
 			if err != nil && err != errLockNotAvailable {
 				log15.Error("bitbucketserver.authz.store.UpdatePermissions", "error", err)
@@ -163,7 +118,7 @@ func (s *store) UpdatePermissions(
 
 		// No valid permissions available yet or hard TTL expired.
 		if p.UpdatedAt.IsZero() || p.Expired(s.hardTTL, now) {
-			return &StalePermissionsError{Permissions: p}
+			return &StalePermissionsError{UserPermissions: p}
 		}
 
 		return nil
@@ -174,7 +129,7 @@ func (s *store) UpdatePermissions(
 	case err == nil:
 	case err == errLockNotAvailable:
 		if p.Expired(s.hardTTL, now) {
-			return &StalePermissionsError{Permissions: p}
+			return &StalePermissionsError{UserPermissions: p}
 		}
 	default:
 		return err
@@ -189,7 +144,7 @@ func (s *store) UpdatePermissions(
 // been fetched yet). Callers should pass this error up to the user and show it
 // in the UI.
 type StalePermissionsError struct {
-	*Permissions
+	*authz.UserPermissions
 }
 
 // Error implements the error interface.
@@ -200,11 +155,11 @@ func (e StalePermissionsError) Error() string {
 var errLockNotAvailable = errors.New("lock not available")
 
 // lock uses Postgres advisory locks to acquire an exclusive lock over the
-// given Permissions. Concurrent processes that call this method while a lock is
+// given UserPermissions. Concurrent processes that call this method while a lock is
 // already held by another process will have errLockNotAvailable returned.
-func (s *store) lock(ctx context.Context, p *Permissions) (err error) {
+func (s *store) lock(ctx context.Context, p *authz.UserPermissions) (err error) {
 	ctx, save := s.observe(ctx, "lock", "")
-	defer func() { save(&err, p.tracingFields()...) }()
+	defer func() { save(&err, p.TracingFields()...) }()
 
 	if _, ok := s.db.(*sql.Tx); !ok {
 		return errors.Errorf("store.lock must be called inside a transaction")
@@ -240,7 +195,7 @@ func (s *store) lock(ctx context.Context, p *Permissions) (err error) {
 
 var lockNamespace = int32(fnv1.HashString32("perms"))
 
-func lockQuery(p *Permissions) *sqlf.Query {
+func lockQuery(p *authz.UserPermissions) *sqlf.Query {
 	// Postgres advisory lock ids are a global namespace within one database.
 	// It's very unlikely that another part of our application uses a lock
 	// namespace identicaly to this one. It's equally unlikely that there are
@@ -261,9 +216,9 @@ const lockQueryFmtStr = `
 SELECT pg_try_advisory_xact_lock(%s, %s)
 `
 
-func (s *store) load(ctx context.Context, p *Permissions) (err error) {
+func (s *store) load(ctx context.Context, p *authz.UserPermissions) (err error) {
 	ctx, save := s.observe(ctx, "load", "")
-	defer func() { save(&err, p.tracingFields()...) }()
+	defer func() { save(&err, p.TracingFields()...) }()
 
 	q := loadQuery(p)
 
@@ -358,12 +313,13 @@ func (s *store) loadRepoIDs(ctx context.Context, c *extsvc.CodeHost, externalIDs
 	return ids, nil
 }
 
-func loadQuery(p *Permissions) *sqlf.Query {
+func loadQuery(p *authz.UserPermissions) *sqlf.Query {
 	return sqlf.Sprintf(
 		loadQueryFmtStr,
 		p.UserID,
 		p.Perm.String(),
 		p.Type,
+		p.Provider,
 	)
 }
 
@@ -371,12 +327,15 @@ const loadQueryFmtStr = `
 -- source: enterprise/cmd/frontend/internal/authz/bitbucketserver/store.go:store.load
 SELECT object_ids, updated_at
 FROM user_permissions
-WHERE user_id = %s AND permission = %s AND object_type = %s
+WHERE user_id = %s
+AND permission = %s
+AND object_type = %s
+AND provider = %s
 `
 
-func (s *store) update(ctx context.Context, p *Permissions, update PermissionsUpdateFunc) (err error) {
+func (s *store) update(ctx context.Context, p *authz.UserPermissions, update PermissionsUpdateFunc) (err error) {
 	_, save := s.observe(ctx, "update", "")
-	defer func() { save(&err, p.tracingFields()...) }()
+	defer func() { save(&err, p.TracingFields()...) }()
 
 	// Set context to background without a request bound timeout,
 	// but let the above instrumentation use the original request's context.
@@ -424,7 +383,7 @@ func (s *store) update(ctx context.Context, p *Permissions, update PermissionsUp
 
 	now := s.clock()
 	if expired = p.Expired(s.ttl, now); !expired { // Valid!
-		return nil // Permissions were updated by another process.
+		return nil // UserPermissions were updated by another process.
 	}
 
 	// Slow cache update operation, talks to the code host.
@@ -459,9 +418,9 @@ func (s *store) tx(ctx context.Context) (*sql.Tx, error) {
 	}
 }
 
-func (s *store) upsert(ctx context.Context, p *Permissions) (err error) {
+func (s *store) upsert(ctx context.Context, p *authz.UserPermissions) (err error) {
 	ctx, save := s.observe(ctx, "upsert", "")
-	defer func() { save(&err, p.tracingFields()...) }()
+	defer func() { save(&err, p.TracingFields()...) }()
 
 	var q *sqlf.Query
 	if q, err = s.upsertQuery(p); err != nil {
@@ -477,7 +436,7 @@ func (s *store) upsert(ctx context.Context, p *Permissions) (err error) {
 	return rows.Close()
 }
 
-func (s *store) upsertQuery(p *Permissions) (*sqlf.Query, error) {
+func (s *store) upsertQuery(p *authz.UserPermissions) (*sqlf.Query, error) {
 	ids, err := p.IDs.ToBytes()
 	if err != nil {
 		return nil, err
@@ -493,6 +452,7 @@ func (s *store) upsertQuery(p *Permissions) (*sqlf.Query, error) {
 		p.Perm.String(),
 		p.Type,
 		ids,
+		p.Provider,
 		p.UpdatedAt.UTC(),
 	), nil
 }
@@ -500,11 +460,11 @@ func (s *store) upsertQuery(p *Permissions) (*sqlf.Query, error) {
 const upsertQueryFmtStr = `
 -- source: enterprise/cmd/frontend/internal/authz/bitbucketserver/store.go:store.upsert
 INSERT INTO user_permissions
-  (user_id, permission, object_type, object_ids, updated_at)
+  (user_id, permission, object_type, object_ids, provider, updated_at)
 VALUES
-  (%s, %s, %s, %s, %s)
+  (%s, %s, %s, %s, %s, %s)
 ON CONFLICT ON CONSTRAINT
-  user_permissions_perm_object_unique
+  user_permissions_perm_object_provider_unique
 DO UPDATE SET
   object_ids = excluded.object_ids,
   updated_at = excluded.updated_at

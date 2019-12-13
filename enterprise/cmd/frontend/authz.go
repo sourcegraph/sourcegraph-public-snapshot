@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
@@ -185,10 +186,24 @@ func authzProvidersFromConfig(
 		warnings = append(warnings, bbsWarnings...)
 	}
 
+	// 🚨 SECURITY: Warn the admin when both code host authz provider and the Sourcegraph authz provider are configured.
+	if cfg.SiteConfiguration.PermissionsUserMapping != nil &&
+		cfg.SiteConfiguration.PermissionsUserMapping.Enabled && len(providers) > 0 {
+		serviceTypes := make([]string, len(providers))
+		for i := range providers {
+			serviceTypes[i] = strconv.Quote(providers[i].ServiceType())
+		}
+		msg := fmt.Sprintf(
+			"The Sourcegraph permissions (`permissions.userMapping`) cannot be enabled when %s authorization providers are in use. Blocking access to all repositories until the conflict is resolved.",
+			strings.Join(serviceTypes, ", "))
+		seriousProblems = append(seriousProblems, msg)
+	}
+
 	return allowAccessByDefault, providers, seriousProblems, warnings
 }
 
 func init() {
+	// Report any authz provider problems in external configs.
 	conf.ContributeWarning(func(cfg conf.Unified) (problems conf.Problems) {
 		_, _, seriousProblems, warnings :=
 			authzProvidersFromConfig(context.Background(), &cfg, db.ExternalServices, dbconn.Global)
