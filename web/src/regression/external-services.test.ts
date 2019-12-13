@@ -14,7 +14,6 @@ import {
     getUser,
     ensureNoTestExternalServices,
     ensureTestExternalService,
-    getManagementConsoleState,
     waitForRepos,
     getExternalServices,
     updateExternalService,
@@ -259,11 +258,7 @@ describe('External services permissions', () => {
     let managementConsolePassword: string
     beforeAll(async () => {
         ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
-        const { plaintextPassword } = await getManagementConsoleState(gqlClient)
-        if (!plaintextPassword) {
-            throw new Error('empty management console password')
-        }
-        managementConsolePassword = plaintextPassword
+        managementConsolePassword = 'TODO'
     })
     afterAll(async () => {
         if (!config.noCleanup) {

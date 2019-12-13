@@ -394,30 +394,6 @@ export function currentProductVersion(gqlClient: GraphQLClient): Promise<string>
  * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
  * dependency-injected `requestGraphQL`.
  */
-export function getManagementConsoleState(gqlClient: GraphQLClient): Promise<GQL.IManagementConsoleState> {
-    return gqlClient
-        .queryGraphQL(
-            gql`
-                query ManagementConsoleState {
-                    site {
-                        managementConsoleState {
-                            plaintextPassword
-                        }
-                    }
-                }
-            `
-        )
-        .pipe(
-            map(dataOrThrowErrors),
-            map(({ site }) => site.managementConsoleState)
-        )
-        .toPromise()
-}
-
-/**
- * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
- * dependency-injected `requestGraphQL`.
- */
 export async function setUserEmailVerified(
     gqlClient: GraphQLClient,
     username: string,

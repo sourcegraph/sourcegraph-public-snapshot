@@ -15,7 +15,7 @@ import {
     loginToGitHub,
     loginToGitLab,
 } from './util/helpers'
-import { setUserSiteAdmin, getUser, getManagementConsoleState } from './util/api'
+import { setUserSiteAdmin, getUser } from './util/api'
 import {
     GitHubAuthProvider,
     GitLabAuthProvider,
@@ -105,11 +105,7 @@ describe('Auth regression test suite', () => {
         }
         await setUserSiteAdmin(gqlClient, user.id, true)
 
-        const { plaintextPassword } = await getManagementConsoleState(gqlClient)
-        if (!plaintextPassword) {
-            throw new Error('empty management console password')
-        }
-        managementConsolePassword = plaintextPassword
+        managementConsolePassword = 'TODO: FIXME'
     })
 
     afterAll(async () => {

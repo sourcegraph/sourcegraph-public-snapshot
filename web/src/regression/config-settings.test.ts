@@ -3,9 +3,7 @@ import { getConfig } from '../../../shared/src/e2e/config'
 import { editCriticalSiteConfig, getCriticalSiteConfig } from './util/helpers'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import * as jsonc from '@sqs/jsonc-parser'
-import { getManagementConsoleState } from './util/api'
 import { Driver } from '../../../shared/src/e2e/driver'
-import { GraphQLClient } from './util/GraphQLClient'
 import { TestResourceManager } from './util/TestResourceManager'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 import { CriticalConfiguration, BuiltinAuthProvider } from '../schema/critical.schema'
@@ -29,16 +27,11 @@ describe('Critical config test suite', () => {
         'logBrowserConsole'
     )
     let driver: Driver
-    let gqlClient: GraphQLClient
     let resourceManager: TestResourceManager
     let managementConsolePassword: string
     beforeAll(async () => {
-        ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
-        const { plaintextPassword } = await getManagementConsoleState(gqlClient)
-        if (!plaintextPassword) {
-            throw new Error('empty management console password')
-        }
-        managementConsolePassword = plaintextPassword
+        ;({ driver, resourceManager } = await getTestTools(config))
+        managementConsolePassword = 'TODO'
     })
     beforeEach(() => {
         resourceManager = new TestResourceManager()

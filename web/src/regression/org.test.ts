@@ -10,14 +10,7 @@ import {
     ensureNewOrganization,
     editCriticalSiteConfig,
 } from './util/helpers'
-import {
-    getUser,
-    setUserSiteAdmin,
-    fetchAllOrganizations,
-    deleteOrganization,
-    getViewerSettings,
-    getManagementConsoleState,
-} from './util/api'
+import { getUser, setUserSiteAdmin, fetchAllOrganizations, deleteOrganization, getViewerSettings } from './util/api'
 import { PlatformContext } from '../../../shared/src/platform/context'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { parseJSONCOrError } from '../../../shared/src/util/jsonc'
@@ -214,10 +207,7 @@ describe('Organizations regression test suite', () => {
                 const formattingOptions = { eol: '\n', insertSpaces: true, tabSize: 2 }
 
                 // Initial state: no auth.userOrgMap property
-                const { plaintextPassword: managementConsolePassword } = await getManagementConsoleState(gqlClient)
-                if (!managementConsolePassword) {
-                    throw new Error('empty management console password')
-                }
+                const managementConsolePassword = 'TODO'
                 resourceManager.add(
                     'Configuration',
                     'auth.userOrgMap',
