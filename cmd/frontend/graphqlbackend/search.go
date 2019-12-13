@@ -84,6 +84,11 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 		return &didYouMeanQuotedResolver{query: args.Query, err: err}, nil
 	}
 
+	v := conf.ExperimentalFeatures()
+	if searchType == SearchTypeStructural && v.StructuralSearch != "enabled" {
+		return nil, errors.New("Structural search is disabled in the site configuration.")
+	}
+
 	var queryString string
 	if searchType == SearchTypeLiteral {
 		queryString = query.ConvertToLiteral(args.Query)

@@ -71,6 +71,12 @@ const SiteSchemaJSON = `{
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
+        },
+        "structuralSearch": {
+          "description": "Enables structural search.",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "enabled"
         }
       },
       "group": "Experimental",
