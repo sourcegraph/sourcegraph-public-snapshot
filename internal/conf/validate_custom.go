@@ -22,9 +22,6 @@ var contributedValidators []Validator
 
 func validateCustomRaw(normalizedInput conftypes.RawUnified) (problems Problems, err error) {
 	var cfg Unified
-	if err := json.Unmarshal([]byte(normalizedInput.Critical), &cfg.Critical); err != nil {
-		return nil, err
-	}
 	if err := json.Unmarshal([]byte(normalizedInput.Site), &cfg.SiteConfiguration); err != nil {
 		return nil, err
 	}

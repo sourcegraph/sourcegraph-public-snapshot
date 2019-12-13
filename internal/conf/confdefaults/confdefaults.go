@@ -18,15 +18,15 @@ import "github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 // Note: This actually generally only applies to 'go test' because we always
 // override this configuration via *_CONFIG_FILE environment variables.
 var DevAndTesting = conftypes.RawUnified{
-	Critical: `{
+	Critical: `{}`,
+	Site: `{
 	"auth.providers": [
 		{
 			"type": "builtin",
 			"allowSignup": true
 		}
 	],
-}`,
-	Site: `{
+
 	"search.index.enabled": true,
 }`,
 }
@@ -34,7 +34,8 @@ var DevAndTesting = conftypes.RawUnified{
 // DockerContainer is the default configuration applied to Docker
 // single-container instances of Sourcegraph.
 var DockerContainer = conftypes.RawUnified{
-	Critical: `{
+	Critical: `{}`,
+	Site: `{
 	// The externally accessible URL for Sourcegraph (i.e., what you type into your browser)
 	// This is required to be configured for Sourcegraph to work correctly.
 	// "externalURL": "https://sourcegraph.example.com",
@@ -45,8 +46,7 @@ var DockerContainer = conftypes.RawUnified{
 			"allowSignup": true
 		}
 	]
-}`,
-	Site: `{
+
 	"disablePublicRepoRedirects": true,
 	"search.index.enabled": true,
 }`,
@@ -55,7 +55,8 @@ var DockerContainer = conftypes.RawUnified{
 // Cluster is the default configuration applied to Cluster instances of
 // Sourcegraph.
 var Cluster = conftypes.RawUnified{
-	Critical: `{
+	Critical: `{}`,
+	Site: `{	
 	// The externally accessible URL for Sourcegraph (i.e., what you type into your browser)
 	// This is required to be configured for Sourcegraph to work correctly.
 	// "externalURL": "https://sourcegraph.example.com",
@@ -73,8 +74,7 @@ var Cluster = conftypes.RawUnified{
 			"allowSignup": false
 		}
 	]
-}`,
-	Site: `{
+
 	"search.index.enabled": true,
 }`,
 }
