@@ -11,8 +11,9 @@ require (
 	github.com/Microsoft/go-winio v0.4.14 // indirect
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/RoaringBitmap/roaring v0.4.21
+	github.com/alecthomas/chroma v0.7.0 // indirect
 	github.com/avelino/slugify v0.0.0-20180501145920-855f152bd774
-	github.com/aws/aws-sdk-go-v2 v0.17.0
+	github.com/aws/aws-sdk-go-v2 v0.18.0
 	github.com/beevik/etree v1.1.0
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/bombsimon/wsl v1.2.8 // indirect
@@ -33,6 +34,7 @@ require (
 	github.com/docker/docker v0.7.3-0.20190817195342-4760db040282
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/emersion/go-imap v1.0.2
+	github.com/emersion/go-sasl v0.0.0-20191210011802-430746ea8b9b // indirect
 	github.com/ericchiang/k8s v1.2.0
 	github.com/etdub/goparsetime v0.0.0-20160315173935-ea17b0ac3318 // indirect
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
@@ -41,7 +43,7 @@ require (
 	github.com/facebookgo/muster v0.0.0-20150708232844-fd3d7953fd52 // indirect
 	github.com/facebookgo/stack v0.0.0-20160209184415-751773369052 // indirect
 	github.com/facebookgo/subset v0.0.0-20150612182917-8dac2c3c4870 // indirect
-	github.com/fatih/astrewrite v0.0.0-20190527122930-f5295d6854fb
+	github.com/fatih/astrewrite v0.0.0-20191207154002-9094e544fcef
 	github.com/fatih/color v1.7.0
 	github.com/felixfbecker/stringscore v0.0.0-20170928081130-e71a9f1b0749
 	github.com/felixge/httpsnoop v1.0.1
@@ -52,6 +54,7 @@ require (
 	github.com/gin-gonic/gin v1.4.0 // indirect
 	github.com/gitchander/permutation v0.0.0-20181107151852-9e56b92e9909
 	github.com/glycerine/go-unsnap-stream v0.0.0-20190901134440-81cf024a9e0a // indirect
+	github.com/go-critic/go-critic v0.4.0 // indirect
 	github.com/go-delve/delve v1.3.2
 	github.com/go-redsync/redsync v1.3.1
 	github.com/gobwas/glob v0.2.3
@@ -72,7 +75,7 @@ require (
 	github.com/google/go-github/v28 v28.1.1
 	github.com/google/go-querystring v1.0.0
 	github.com/google/uuid v1.1.1
-	github.com/google/zoekt v0.0.0-20191031082336-5851b63aed4d
+	github.com/google/zoekt v0.0.0-20191211192039-0b109d08df69
 	github.com/gopherjs/gopherjs v0.0.0-20191106031601-ce3c9ade29de // indirect
 	github.com/gorilla/context v1.1.1
 	github.com/gorilla/csrf v1.6.2
@@ -110,7 +113,7 @@ require (
 	github.com/lightstep/lightstep-tracer-go v0.18.1
 	github.com/mattn/go-isatty v0.0.11 // indirect
 	github.com/mattn/go-runewidth v0.0.7 // indirect
-	github.com/mattn/go-sqlite3 v1.13.0
+	github.com/mattn/go-sqlite3 v2.0.1+incompatible
 	github.com/mattn/goreman v0.3.5
 	github.com/mcuadros/go-version v0.0.0-20190830083331-035f6764e8d2
 	github.com/microcosm-cc/bluemonday v1.0.2
@@ -126,6 +129,7 @@ require (
 	github.com/pkg/profile v1.4.0 // indirect
 	github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35 // indirect
 	github.com/prometheus/client_golang v1.2.1
+	github.com/prometheus/client_model v0.0.0-20191202183732-d1d2010b5bee // indirect
 	github.com/prometheus/procfs v0.0.8 // indirect
 	github.com/rainycape/unidecode v0.0.0-20150907023854-cb7f23ec59be
 	github.com/russellhaering/gosaml2 v0.3.2-0.20190403162508-649841e7f48a
@@ -155,10 +159,10 @@ require (
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
-	github.com/spf13/viper v1.5.0 // indirect
+	github.com/spf13/viper v1.6.1 // indirect
 	github.com/sqs/httpgzip v0.0.0-20180622165210-91da61ed4dff
 	github.com/src-d/enry/v2 v2.1.0
-	github.com/stripe/stripe-go v67.9.0+incompatible
+	github.com/stripe/stripe-go v68.2.0+incompatible
 	github.com/temoto/robotstxt v1.1.1
 	github.com/tomnomnom/linkheader v0.0.0-20180905144013-02ca5825eb80
 	github.com/uber/gonduit v0.6.1
@@ -172,20 +176,22 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/xeonx/timeago v1.0.0-rc4
 	go.opencensus.io v0.22.2 // indirect
-	go.starlark.net v0.0.0-20191113183327-aaf7be003892 // indirect
+	go.starlark.net v0.0.0-20191202231402-1e82a9dd93ba // indirect
 	go.uber.org/atomic v1.5.1 // indirect
 	go.uber.org/automaxprocs v1.2.0
-	golang.org/x/arch v0.0.0-20191101135251-a0d8588395bd // indirect
-	golang.org/x/crypto v0.0.0-20191128160524-b544559bb6d1
-	golang.org/x/net v0.0.0-20191126235420-ef20fe5d7933
-	golang.org/x/oauth2 v0.0.0-20191122200657-5d9234df094c
+	golang.org/x/arch v0.0.0-20191126211547-368ea8f32fff // indirect
+	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413
+	golang.org/x/exp v0.0.0-20191129062945-2f5052295587 // indirect
+	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f // indirect
+	golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553
+	golang.org/x/oauth2 v0.0.0-20191202225959-858c2ad4c8b6
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
-	golang.org/x/sys v0.0.0-20191128015809-6d18c012aee9
+	golang.org/x/sys v0.0.0-20191210023423-ac6580df4449
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
-	golang.org/x/tools v0.0.0-20191130070609-6e064ea0cf2d
+	golang.org/x/tools v0.0.0-20191213032237-7093a17b0467
 	golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898 // indirect
 	google.golang.org/appengine v1.6.5 // indirect
-	google.golang.org/genproto v0.0.0-20191115221424-83cc0476cb11 // indirect
+	google.golang.org/genproto v0.0.0-20191206224255-0243a4be9c8f // indirect
 	google.golang.org/grpc v1.25.1 // indirect
 	gopkg.in/alexcesaro/statsd.v2 v2.0.0 // indirect
 	gopkg.in/inconshreveable/log15.v2 v2.0.0-20180818164646-67afb5ed74ec
