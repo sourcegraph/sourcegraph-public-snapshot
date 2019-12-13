@@ -3,14 +3,10 @@ package resolvers
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
-	"net/url"
-	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/client"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/lsif"
 )
@@ -33,42 +29,6 @@ type locationConnectionResolver struct {
 }
 
 var _ graphqlbackend.LocationConnectionResolver = &locationConnectionResolver{}
-
-func resolveLocationConnection(ctx context.Context, opt LocationsQueryOptions) (*locationConnectionResolver, error) {
-	var path string
-	if opt.NextURL == nil {
-		// first page of results
-		path = fmt.Sprintf("/%s", opt.Operation)
-	} else {
-		// subsequent page of results
-		path = *opt.NextURL
-	}
-
-	values := url.Values{}
-	values.Set("repository", opt.RepoName)
-	values.Set("commit", string(opt.Commit))
-	values.Set("path", opt.Path)
-	values.Set("line", strconv.FormatInt(int64(opt.Line), 10))
-	values.Set("character", strconv.FormatInt(int64(opt.Character), 10))
-	if opt.Limit != nil {
-		values.Set("limit", strconv.FormatInt(int64(*opt.Limit), 10))
-	}
-
-	resp, err := client.DefaultClient.BuildAndTraceRequest(ctx, "GET", path, values, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	payload := struct{ Locations []*lsif.LSIFLocation }{}
-	if err := client.UnmarshalPayload(resp, &payload); err != nil {
-		return nil, err
-	}
-
-	return &locationConnectionResolver{
-		locations: payload.Locations,
-		nextURL:   client.ExtractNextURL(resp),
-	}, nil
-}
 
 func (r *locationConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.LocationResolver, error) {
 	var l []graphqlbackend.LocationResolver
