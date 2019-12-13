@@ -5,8 +5,12 @@ import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive
  *
  * @param filtersInQuery the map representing the filters currently in an interactive mode query.
  */
-export const generateFiltersQuery = (filtersInQuery: FiltersToTypeAndValue): string => {
-    Object.keys(filtersInQuery)
+export function generateFiltersQuery(filtersInQuery: FiltersToTypeAndValue): string {
+    const fieldKeys = Object.keys(filtersInQuery)
+    const individualTokens: string[] = []
+    fieldKeys
         .filter(key => filtersInQuery[key].value.trim().length > 0)
-        .reduce((tokens, key) => tokens.concat(`${filtersInQuery[key].type}:${filtersInQuery[key].value}`))
+        .map(key => individualTokens.push(`${filtersInQuery[key].type}:${filtersInQuery[key].value}`))
+
+    return individualTokens.join(' ')
 }
