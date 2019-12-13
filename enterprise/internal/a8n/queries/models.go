@@ -16,12 +16,12 @@ type Campaign struct {
 	Name            string
 	Description     sql.NullString
 	AuthorID        int32
-	NamespaceUserID int32
-	NamespaceOrgID  int32
+	NamespaceUserID sql.NullInt64
+	NamespaceOrgID  sql.NullInt64
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
-	ChangesetIDs    json.RawMessage
-	CampaignPlanID  int32
+	ChangesetIDs    dbutil.JSONInt64SetClassic
+	CampaignPlanID  sql.NullInt64
 	ClosedAt        pq.NullTime
 }
 

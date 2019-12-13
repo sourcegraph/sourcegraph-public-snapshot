@@ -6,10 +6,10 @@ package queries
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"time"
 
 	"github.com/lib/pq"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
 const countCampaignJobs = `-- name: CountCampaignJobs :one
@@ -42,7 +42,7 @@ FROM campaigns
 WHERE changeset_ids ? $1
 `
 
-func (q *Queries) CountCampaigns(ctx context.Context, changesetIds json.RawMessage) (int64, error) {
+func (q *Queries) CountCampaigns(ctx context.Context, changesetIds dbutil.JSONInt64SetClassic) (int64, error) {
 	row := q.db.QueryRowContext(ctx, countCampaigns, changesetIds)
 	var count int64
 	err := row.Scan(&count)
@@ -121,12 +121,12 @@ type CreateCampaignParams struct {
 	Name            string
 	Description     sql.NullString
 	AuthorID        int32
-	NamespaceUserID int32
-	NamespaceOrgID  int32
+	NamespaceUserID sql.NullInt64
+	NamespaceOrgID  sql.NullInt64
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
-	ChangesetIDs    json.RawMessage
-	CampaignPlanID  int32
+	ChangesetIDs    dbutil.JSONInt64SetClassic
+	CampaignPlanID  sql.NullInt64
 	ClosedAt        pq.NullTime
 }
 
@@ -420,12 +420,12 @@ func (q *Queries) DeleteExpiredCampaignPlans(ctx context.Context, finishedAt pq.
 	return err
 }
 
-const getCampaign = `-- name: GetCampaign :one
+const getCampaignByID = `-- name: GetCampaignByID :one
 SELECT id, name, description, author_id, namespace_user_id, namespace_org_id, created_at, updated_at, changeset_ids, campaign_plan_id, closed_at FROM campaigns WHERE id = $1 LIMIT 1
 `
 
-func (q *Queries) GetCampaign(ctx context.Context, id int64) (Campaign, error) {
-	row := q.db.QueryRowContext(ctx, getCampaign, id)
+func (q *Queries) GetCampaignByID(ctx context.Context, id int64) (Campaign, error) {
+	row := q.db.QueryRowContext(ctx, getCampaignByID, id)
 	var i Campaign
 	err := row.Scan(
 		&i.ID,
@@ -1057,11 +1057,11 @@ type UpdateCampaignParams struct {
 	Name            string
 	Description     sql.NullString
 	AuthorID        int32
-	NamespaceUserID int32
-	NamespaceOrgID  int32
+	NamespaceUserID sql.NullInt64
+	NamespaceOrgID  sql.NullInt64
 	UpdatedAt       time.Time
-	ChangesetIDs    json.RawMessage
-	CampaignPlanID  int32
+	ChangesetIDs    dbutil.JSONInt64SetClassic
+	CampaignPlanID  sql.NullInt64
 	ClosedAt        pq.NullTime
 	ID              int64
 }

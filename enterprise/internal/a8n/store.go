@@ -1012,53 +1012,46 @@ type GetCampaignOpts struct {
 
 // GetCampaign gets a campaign matching the given options.
 func (s *Store) GetCampaign(ctx context.Context, opts GetCampaignOpts) (*a8n.Campaign, error) {
-	q := getCampaignQuery(&opts)
+	if opts.ID == 0 {
+		return nil, errors.New("no ID specified")
+	}
 
-	var c a8n.Campaign
-	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		return 0, 0, scanCampaign(&c, sc)
-	})
+	raw, err := s.q.GetCampaignByID(ctx, opts.ID)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrNoResults
+		}
 		return nil, err
 	}
 
-	if c.ID == 0 {
-		return nil, ErrNoResults
+	c := &a8n.Campaign{
+		ID:           raw.ID,
+		Name:         raw.Name,
+		AuthorID:     raw.AuthorID,
+		CreatedAt:    raw.CreatedAt,
+		UpdatedAt:    raw.UpdatedAt,
+		ChangesetIDs: raw.ChangesetIDs.Set,
 	}
 
-	return &c, nil
-}
-
-var getCampaignsQueryFmtstr = `
--- source: internal/a8n/store.go:GetCampaign
-SELECT
-  id,
-  name,
-  description,
-  author_id,
-  namespace_user_id,
-  namespace_org_id,
-  created_at,
-  updated_at,
-  changeset_ids,
-  campaign_plan_id,
-  closed_at
-FROM campaigns
-WHERE %s
-LIMIT 1
-`
-
-func getCampaignQuery(opts *GetCampaignOpts) *sqlf.Query {
-	var preds []*sqlf.Query
-	if opts.ID != 0 {
-		preds = append(preds, sqlf.Sprintf("id = %s", opts.ID))
+	if raw.NamespaceUserID.Valid {
+		c.NamespaceUserID = int32(raw.NamespaceUserID.Int64)
+	}
+	if raw.NamespaceOrgID.Valid {
+		c.NamespaceOrgID = int32(raw.NamespaceOrgID.Int64)
 	}
 
-	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("TRUE"))
+	if raw.CampaignPlanID.Valid {
+		c.CampaignPlanID = raw.CampaignPlanID.Int64
 	}
 
-	return sqlf.Sprintf(getCampaignsQueryFmtstr, sqlf.Join(preds, "\n AND "))
+	if raw.Description.Valid {
+		c.Description = raw.Description.String
+	}
+	if raw.ClosedAt.Valid {
+		c.ClosedAt = raw.ClosedAt.Time
+	}
+
+	return c, nil
 }
 
 // ListCampaignsOpts captures the query options needed for

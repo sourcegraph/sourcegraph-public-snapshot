@@ -79,7 +79,7 @@ SELECT COUNT(id)
 FROM campaigns
 WHERE changeset_ids ? $1;
 
--- name: GetCampaign :one
+-- name: GetCampaignByID :one
 SELECT * FROM campaigns WHERE id = $1 LIMIT 1;
 
 -- name: ListCampaigns :many

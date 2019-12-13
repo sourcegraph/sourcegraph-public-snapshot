@@ -16,6 +16,22 @@
     {
       "column": "changesets.campaign_ids",
       "go_type": "github.com/sourcegraph/sourcegraph/internal/db/dbutil.JSONInt64SetClassic"
+    },
+    {
+      "column": "campaigns.changeset_ids",
+      "go_type": "github.com/sourcegraph/sourcegraph/internal/db/dbutil.JSONInt64SetClassic"
+    },
+    {
+      "column": "campaigns.namespace_user_id",
+      "go_type": "database/sql.NullInt64"
+    },
+    {
+      "column": "campaigns.namespace_org_id",
+      "go_type": "database/sql.NullInt64"
+    },
+    {
+      "column": "campaigns.campaign_plan_id",
+      "go_type": "database/sql.NullInt64"
     }
   ]
 }
