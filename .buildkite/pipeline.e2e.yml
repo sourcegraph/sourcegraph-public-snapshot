@@ -11,8 +11,9 @@ steps:
   - ./cmd/server/pre-build.sh
   - ./cmd/server/build.sh
   - popd
+  - docker push $IMAGE
   env:
-    IMAGE: sourcegraph/server:e2e_$BUILDKITE_BUILD_NUMBER
+    IMAGE: us.gcr.io/sourcegraph-dev/server:e2e_$BUILDKITE_COMMIT
     VERSION: $BUILDKITE_BUILD_NUMBER
     PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
   label: ':docker:'
@@ -20,15 +21,17 @@ steps:
 - wait
 
 - artifact_paths: ./puppeteer/*.png;./web/e2e.mp4;./web/ffmpeg.log
-  command: ./dev/ci/e2e.sh
+  command:
+    - docker pull $IMAGE
+    - ./dev/ci/e2e.sh
   concurrency: 1
   concurrency_group: e2e
   env:
-    IMAGE: sourcegraph/server:e2e_$BUILDKITE_BUILD_NUMBER
+    IMAGE: us.gcr.io/sourcegraph-dev/server:e2e_$BUILDKITE_COMMIT
   label: ':chromium:'
 
 - wait
 
-- command: docker image rm -f sourcegraph/server:e2e_$BUILDKITE_BUILD_NUMBER
+- command: docker image rm -f us.gcr.io/sourcegraph-dev/server:e2e_$BUILDKITE_COMMIT
   label: ':sparkles:'
   soft_fail: true
