@@ -22,7 +22,8 @@ func (c *Client) Exists(ctx context.Context, args *struct {
 	query.Set("path", args.Path)
 
 	req := &lsifRequest{
-		path: "/exists",
+		path:  "/exists",
+		query: query,
 	}
 
 	payload := struct {
@@ -55,6 +56,7 @@ func (c *Client) Upload(ctx context.Context, args *struct {
 	req := &lsifRequest{
 		path:   "/upload",
 		method: "POST",
+		query:  query,
 	}
 
 	payload := struct {
