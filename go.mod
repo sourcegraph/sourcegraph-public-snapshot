@@ -19,7 +19,7 @@ require (
 	github.com/certifi/gocertifi v0.0.0-20191021191039-0944d244cd40 // indirect
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
-	github.com/containerd/containerd v1.3.1 // indirect
+	github.com/containerd/containerd v1.3.2 // indirect
 	github.com/coreos/go-oidc v2.1.0+incompatible
 	github.com/coreos/go-semver v0.3.0
 	github.com/cosiner/argv v0.0.1 // indirect
@@ -32,8 +32,7 @@ require (
 	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/docker/docker v0.7.3-0.20190817195342-4760db040282
 	github.com/docker/go-units v0.4.0 // indirect
-	github.com/emersion/go-imap v1.0.1
-	github.com/emersion/go-sasl v0.0.0-20190817083125-240c8404624e // indirect
+	github.com/emersion/go-imap v1.0.2
 	github.com/ericchiang/k8s v1.2.0
 	github.com/etdub/goparsetime v0.0.0-20160315173935-ea17b0ac3318 // indirect
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
@@ -88,7 +87,7 @@ require (
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/hashicorp/go-hclog v0.10.0 // indirect
 	github.com/hashicorp/go-multierror v1.0.0
-	github.com/hashicorp/go-retryablehttp v0.6.3 // indirect
+	github.com/hashicorp/go-retryablehttp v0.6.4 // indirect
 	github.com/honeycombio/libhoney-go v1.12.2
 	github.com/inconshreveable/log15 v0.0.0-20180818164646-67afb5ed74ec
 	github.com/jmoiron/sqlx v1.2.0
@@ -98,20 +97,21 @@ require (
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0
 	github.com/karlseguin/expect v1.0.1 // indirect
 	github.com/karlseguin/typed v1.1.7 // indirect
-	github.com/karrick/godirwalk v1.13.0
+	github.com/karrick/godirwalk v1.13.4
 	github.com/karrick/tparse/v2 v2.7.1
 	github.com/keegancsmith/sqlf v1.1.0
 	github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513
 	github.com/kevinburke/go-bindata v3.16.0+incompatible
-	github.com/klauspost/compress v1.9.2 // indirect
+	github.com/klauspost/compress v1.9.4 // indirect
 	github.com/kr/text v0.1.0
 	github.com/kylelemons/godebug v1.1.0
 	github.com/leanovate/gopter v0.2.4
 	github.com/lib/pq v1.2.0
 	github.com/lightstep/lightstep-tracer-go v0.18.1
-	github.com/mattn/go-runewidth v0.0.6 // indirect
+	github.com/mattn/go-isatty v0.0.11 // indirect
+	github.com/mattn/go-runewidth v0.0.7 // indirect
 	github.com/mattn/go-sqlite3 v1.13.0
-	github.com/mattn/goreman v0.3.4
+	github.com/mattn/goreman v0.3.5
 	github.com/mcuadros/go-version v0.0.0-20190830083331-035f6764e8d2
 	github.com/microcosm-cc/bluemonday v1.0.2
 	github.com/morikuni/aec v1.0.0 // indirect
@@ -126,7 +126,7 @@ require (
 	github.com/pkg/profile v1.4.0 // indirect
 	github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35 // indirect
 	github.com/prometheus/client_golang v1.2.1
-	github.com/prometheus/procfs v0.0.7 // indirect
+	github.com/prometheus/procfs v0.0.8 // indirect
 	github.com/rainycape/unidecode v0.0.0-20150907023854-cb7f23ec59be
 	github.com/russellhaering/gosaml2 v0.3.2-0.20190403162508-649841e7f48a
 	github.com/russellhaering/goxmldsig v0.0.0-20180430223755-7acd5e4a6ef7
