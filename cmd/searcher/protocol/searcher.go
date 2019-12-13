@@ -99,6 +99,9 @@ type PatternInfo struct {
 	// PatternMatchesPath is whether a file whose path matches Pattern (but whose contents don't) should be
 	// considered a match.
 	PatternMatchesPath bool
+
+	// CombyRule is a rule that constrains matching for structural search. It only applies when IsStructuralPat is true.
+	CombyRule string
 }
 
 func (p *PatternInfo) String() string {

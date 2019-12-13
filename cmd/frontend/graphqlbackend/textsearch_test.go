@@ -362,7 +362,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 		t.Fatal(err)
 	}
 	args := &search.Args{
-		Pattern: &search.PatternInfo{
+		PatternInfo: &search.PatternInfo{
 			FileMatchLimit: defaultMaxSearchResults,
 			Pattern:        "foo",
 		},
@@ -392,7 +392,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 	// If we specify a rev and it isn't found, we fail the whole search since
 	// that should be checked earlier.
 	args = &search.Args{
-		Pattern: &search.PatternInfo{
+		PatternInfo: &search.PatternInfo{
 			FileMatchLimit: defaultMaxSearchResults,
 			Pattern:        "foo",
 		},
@@ -582,7 +582,7 @@ func Test_zoektSearchHEAD(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			args := &search.Args{
-				Pattern:         tt.args.query,
+				PatternInfo:     tt.args.query,
 				UseFullDeadline: tt.args.useFullDeadline,
 				Zoekt:           &searchbackend.Zoekt{Client: tt.args.searcher},
 			}

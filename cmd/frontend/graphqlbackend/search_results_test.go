@@ -129,8 +129,8 @@ func TestSearchResults(t *testing.T) {
 		calledSearchSymbols := false
 		mockSearchSymbols = func(ctx context.Context, args *search.Args, limit int) (res []*FileMatchResolver, common *searchResultsCommon, err error) {
 			calledSearchSymbols = true
-			if want := `(foo\d).*?(bar\*)`; args.Pattern.Pattern != want {
-				t.Errorf("got %q, want %q", args.Pattern.Pattern, want)
+			if want := `(foo\d).*?(bar\*)`; args.PatternInfo.Pattern != want {
+				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
 			// TODO return mock results here and assert that they are output as results
 			return nil, nil, nil
@@ -140,8 +140,8 @@ func TestSearchResults(t *testing.T) {
 		calledSearchFilesInRepos := false
 		mockSearchFilesInRepos = func(args *search.Args) ([]*FileMatchResolver, *searchResultsCommon, error) {
 			calledSearchFilesInRepos = true
-			if want := `(foo\d).*?(bar\*)`; args.Pattern.Pattern != want {
-				t.Errorf("got %q, want %q", args.Pattern.Pattern, want)
+			if want := `(foo\d).*?(bar\*)`; args.PatternInfo.Pattern != want {
+				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
 			return []*FileMatchResolver{
 				{
@@ -201,8 +201,8 @@ func TestSearchResults(t *testing.T) {
 		calledSearchSymbols := false
 		mockSearchSymbols = func(ctx context.Context, args *search.Args, limit int) (res []*FileMatchResolver, common *searchResultsCommon, err error) {
 			calledSearchSymbols = true
-			if want := `"foo\\d \"bar*\""`; args.Pattern.Pattern != want {
-				t.Errorf("got %q, want %q", args.Pattern.Pattern, want)
+			if want := `"foo\\d \"bar*\""`; args.PatternInfo.Pattern != want {
+				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
 			// TODO return mock results here and assert that they are output as results
 			return nil, nil, nil
@@ -212,8 +212,8 @@ func TestSearchResults(t *testing.T) {
 		calledSearchFilesInRepos := false
 		mockSearchFilesInRepos = func(args *search.Args) ([]*FileMatchResolver, *searchResultsCommon, error) {
 			calledSearchFilesInRepos = true
-			if want := `foo\\d "bar\*"`; args.Pattern.Pattern != want {
-				t.Errorf("got %q, want %q", args.Pattern.Pattern, want)
+			if want := `foo\\d "bar\*"`; args.PatternInfo.Pattern != want {
+				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
 			}
 			return []*FileMatchResolver{
 				{
@@ -1197,6 +1197,19 @@ func Test_ErrorToAlertConversion(t *testing.T) {
 				errors.New("some other error"),
 			},
 			wantAlertTitle: "Repository too large for structural search",
+		},
+		{
+			name: "surface_friendly_alert_on_oom_err_message",
+			errors: []error{
+				errors.New("some error"),
+				errors.New("Worker_oomed"),
+				errors.New("some other error"),
+			},
+			wantErrors: []error{
+				errors.New("some error"),
+				errors.New("some other error"),
+			},
+			wantAlertTitle: "Structural search needs more memory",
 		},
 	}
 	for _, test := range cases {

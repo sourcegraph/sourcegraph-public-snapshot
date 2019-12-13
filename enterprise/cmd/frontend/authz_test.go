@@ -40,11 +40,11 @@ func (m gitlabAuthzProviderParams) ServiceID() string {
 }
 
 func (m gitlabAuthzProviderParams) ServiceType() string {
-	panic("should never be called")
+	return "gitlab"
 }
 func (m gitlabAuthzProviderParams) Validate() []string { return nil }
 
-func Test_providersFromConfig(t *testing.T) {
+func Test_authzProvidersFromConfig(t *testing.T) {
 	gitlab.NewOAuthProvider = func(op gitlab.OAuthAuthzProviderOp) authz.Provider {
 		op.MockCache = nil // ignore cache value
 		return gitlabAuthzProviderParams{OAuthOp: op}
@@ -434,6 +434,74 @@ func Test_providersFromConfig(t *testing.T) {
 					t.Fatalf("no Bitbucket Server authz provider returned")
 				}
 			},
+		},
+
+		// For Sourcegraph authz provider
+		{
+			description: "Conflicted configuration between Sourcegraph and GitLab authz provider",
+			cfg: conf.Unified{
+				Critical: schema.CriticalConfiguration{
+					AuthProviders: []schema.AuthProviders{{
+						Gitlab: &schema.GitLabAuthProvider{
+							ClientID:     "clientID",
+							ClientSecret: "clientSecret",
+							DisplayName:  "GitLab",
+							Type:         "gitlab",
+							Url:          "https://gitlab.mine",
+						},
+					}},
+				},
+				SiteConfiguration: schema.SiteConfiguration{
+					PermissionsUserMapping: &schema.PermissionsUserMapping{
+						Enabled: true,
+						BindID:  "email",
+					},
+				},
+			},
+			gitlabConnections: []*schema.GitLabConnection{
+				{
+					Authorization: &schema.GitLabAuthorization{
+						IdentityProvider: schema.IdentityProvider{Oauth: &schema.OAuthIdentity{Type: "oauth"}},
+						Ttl:              "48h",
+					},
+					Url:   "https://gitlab.mine",
+					Token: "asdf",
+				},
+			},
+			expAuthzAllowAccessByDefault: false,
+			expSeriousProblems:           []string{"The Sourcegraph permissions (`permissions.userMapping`) cannot be enabled when \"gitlab\" authorization providers are in use. Blocking access to all repositories until the conflict is resolved."},
+		},
+		{
+			description: "Conflicted configuration between Sourcegraph and Bitbucket Server authz provider",
+			cfg: conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					PermissionsUserMapping: &schema.PermissionsUserMapping{
+						Enabled: true,
+						BindID:  "email",
+					},
+				},
+			},
+			bitbucketServerConnections: []*schema.BitbucketServerConnection{
+				{
+					Authorization: &schema.BitbucketServerAuthorization{
+						IdentityProvider: schema.BitbucketServerIdentityProvider{
+							Username: &schema.BitbucketServerUsernameIdentity{
+								Type: "username",
+							},
+						},
+						Oauth: schema.BitbucketServerOAuth{
+							ConsumerKey: "sourcegraph",
+							SigningKey:  bogusKey,
+						},
+						Ttl: "15m",
+					},
+					Url:      "https://bitbucketserver.mycorp.org",
+					Username: "admin",
+					Token:    "secret-token",
+				},
+			},
+			expAuthzAllowAccessByDefault: false,
+			expSeriousProblems:           []string{"The Sourcegraph permissions (`permissions.userMapping`) cannot be enabled when \"bitbucketServer\" authorization providers are in use. Blocking access to all repositories until the conflict is resolved."},
 		},
 	}
 

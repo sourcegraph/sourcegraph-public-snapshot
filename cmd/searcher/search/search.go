@@ -227,7 +227,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 	archiveSize.Observe(float64(bytes))
 
 	if p.IsStructuralPat {
-		matches, limitHit, err = structuralSearch(ctx, zipPath, p.Pattern, p.IncludePatterns, p.Repo)
+		matches, limitHit, err = structuralSearch(ctx, zipPath, p.Pattern, p.CombyRule, p.IncludePatterns, p.Repo)
 	} else {
 		matches, limitHit, err = regexSearch(ctx, rg, zf, p.FileMatchLimit, p.PatternMatchesContent, p.PatternMatchesPath)
 	}

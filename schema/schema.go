@@ -710,6 +710,14 @@ type ParentSourcegraph struct {
 	Url string `json:"url,omitempty"`
 }
 
+// PermissionsUserMapping description: Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's `authorization` field is set).
+type PermissionsUserMapping struct {
+	// BindID description: The type of identifier to identify a user. The default is "email", which uses the email address to identify a user. Use "username" to identify a user by their username. Changing this setting will erase any permissions created for users that do not yet exist.
+	BindID string `json:"bindID,omitempty"`
+	// Enabled description: Whether permissions user mapping is enabled. There must be no `authorization` field in any external service configuration before enabling this.
+	Enabled bool `json:"enabled,omitempty"`
+}
+
 // Phabricator description: Phabricator instance that integrates with this Gitolite instance
 type Phabricator struct {
 	// CallsignCommand description:  Bash command that prints out the Phabricator callsign for a Gitolite repository. This will be run with environment variable $REPO set to the name of the repository and used to obtain the Phabricator metadata for a Gitolite repository. (Note: this requires `bash` to be installed.)
@@ -898,6 +906,8 @@ type SiteConfiguration struct {
 	MaxReposToSearch int `json:"maxReposToSearch,omitempty"`
 	// ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
 	ParentSourcegraph *ParentSourcegraph `json:"parentSourcegraph,omitempty"`
+	// PermissionsUserMapping description: Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's `authorization` field is set).
+	PermissionsUserMapping *PermissionsUserMapping `json:"permissions.userMapping,omitempty"`
 	// RepoListUpdateInterval description: Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.
 	RepoListUpdateInterval int `json:"repoListUpdateInterval,omitempty"`
 	// SearchIndexEnabled description: Whether indexed search is enabled. If unset Sourcegraph detects the environment to decide if indexed search is enabled. Indexed search is RAM heavy, and is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.

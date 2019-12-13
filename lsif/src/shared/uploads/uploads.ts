@@ -1,5 +1,5 @@
 import * as xrepoModels from '../models/xrepo'
-import pRetry from 'p-retry'
+import pRetry, { AbortError } from 'p-retry'
 import { Brackets, Connection, EntityManager } from 'typeorm'
 import { FORMAT_TEXT_MAP, Span, Tracer } from 'opentracing'
 import { instrumentQuery, withInstrumentedTransaction } from '../database/postgres'
@@ -212,23 +212,34 @@ export class UploadsManager {
      * @param uploadId The id of the upload to block on.
      * @param maxWait The maximum time (in seconds) to wait for the promise to resolve.
      */
-    public waitForUploadToConvert(uploadId: number, maxWait: number): Promise<boolean> {
-        const checkUploadState = async (): Promise<boolean> => {
+    public async waitForUploadToConvert(uploadId: number, maxWait: number | undefined): Promise<boolean> {
+        const UPLOADINPROGRESS = 'UploadInProgressError'
+        class UploadInProgressError extends Error {
+            public readonly name = UPLOADINPROGRESS
+            public readonly code = UPLOADINPROGRESS
+            constructor() {
+                super('upload in progress')
+            }
+        }
+
+        const checkUploadState = async (): Promise<void> => {
             const upload = await instrumentQuery(() =>
                 this.connection.getRepository(xrepoModels.LsifUpload).findOneOrFail({ id: uploadId })
             )
+
             if (upload.state === 'errored') {
                 const error = new Error(upload.failureSummary)
                 error.stack = upload.failureStacktrace
-                throw error
+                throw new AbortError(error)
             }
 
-            return upload.state === 'completed'
+            if (upload.state !== 'completed') {
+                throw new UploadInProgressError()
+            }
         }
 
-        return pRetry(
-            checkUploadState,
-            isNaN(maxWait)
+        const retryConfig =
+            maxWait === undefined
                 ? { forever: true }
                 : {
                       factor: 1,
@@ -236,7 +247,18 @@ export class UploadsManager {
                       minTimeout: 1000,
                       maxTimeout: 1000,
                   }
-        )
+
+        try {
+            await pRetry(checkUploadState, retryConfig)
+        } catch (error) {
+            if (error && error.code === UPLOADINPROGRESS) {
+                return false
+            }
+
+            throw error
+        }
+
+        return true
     }
 
     /**

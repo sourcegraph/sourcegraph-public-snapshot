@@ -20,6 +20,7 @@ import (
 type searchAlert struct {
 	title           string
 	description     string
+	patternType     SearchType
 	proposedQueries []*searchQueryDescription
 }
 
@@ -36,12 +37,21 @@ func (a searchAlert) ProposedQueries() *[]*searchQueryDescription {
 	if len(a.proposedQueries) == 0 {
 		return nil
 	}
-	// TODO: we need to append patternType:regexp to all proposed queries to avoid
-	// invalid suggestions. There are many where places we assume the original query is regexp,
-	// so more work is required to create a nice solution for this.
 	for _, proposedQuery := range a.proposedQueries {
 		if proposedQuery.description != "Remove quotes" {
-			proposedQuery.query = proposedQuery.query + " patternType:regexp"
+			switch a.patternType {
+			case SearchTypeRegex:
+				proposedQuery.query = proposedQuery.query + " patternType:regexp"
+			case SearchTypeLiteral:
+				proposedQuery.query = proposedQuery.query + " patternType:literal"
+			case SearchTypeStructural:
+				// Don't append patternType:structural, it is not erased from the query like
+				// patterntype:regexp and patterntype:literal.
+				// TODO(RVT): Making this consistent requires a change on the UI side.
+				proposedQuery.query = proposedQuery.query
+			default:
+				panic("unreachable")
+			}
 		}
 	}
 	return &a.proposedQueries
@@ -69,18 +79,21 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 		return &searchAlert{
 			title:       "Add repositories or connect repository hosts",
 			description: "There are no repositories to search. Add an external service connection to your code host.",
+			patternType: r.patternType,
 		}, nil
 	}
 	if len(repoFilters) == 0 && len(repoGroupFilters) == 1 {
 		return &searchAlert{
 			title:       fmt.Sprintf("Add repositories to repogroup:%s to see results", repoGroupFilters[0]),
 			description: fmt.Sprintf("The repository group %q is empty. See the documentation for configuration and troubleshooting.", repoGroupFilters[0]),
+			patternType: r.patternType,
 		}, nil
 	}
 	if len(repoFilters) == 0 && len(repoGroupFilters) > 1 {
 		return &searchAlert{
 			title:       "Repository groups have no repositories in common",
 			description: "No repository exists in all of the specified repository groups.",
+			patternType: r.patternType,
 		}, nil
 	}
 
@@ -89,6 +102,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 	withoutRepoFields := omitQueryFields(r, query.FieldRepo)
 
 	var a searchAlert
+	a.patternType = r.patternType
 	switch {
 	case len(repoGroupFilters) > 1:
 		// This is a rare case, so don't bother proposing queries.
@@ -225,7 +239,8 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 
 func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAlert, error) {
 	alert := &searchAlert{
-		title: "Too many matching repositories",
+		title:       "Too many matching repositories",
+		patternType: r.patternType,
 	}
 
 	if envvar.SourcegraphDotComMode() {
@@ -347,6 +362,7 @@ func (r *searchResolver) alertForMissingRepoRevs(missingRepoRevs []*search.Repos
 	return &searchAlert{
 		title:       "Some repositories could not be searched",
 		description: description,
+		patternType: r.patternType,
 	}
 }
 

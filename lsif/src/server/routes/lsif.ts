@@ -70,9 +70,9 @@ export function createLsifRouter(
     interface UploadQueryArgs {
         repository: string
         commit: string
-        root: string
-        blocking: boolean
-        maxWait: number
+        root?: string
+        blocking?: boolean
+        maxWait?: number
     }
 
     router.post(

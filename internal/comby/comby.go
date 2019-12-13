@@ -25,6 +25,11 @@ func exists() bool {
 
 func rawArgs(args Args) (rawArgs []string) {
 	rawArgs = append(rawArgs, args.MatchTemplate, args.RewriteTemplate)
+
+	if args.Rule != "" {
+		rawArgs = append(rawArgs, "-rule", args.Rule)
+	}
+
 	if len(args.FilePatterns) > 0 {
 		rawArgs = append(rawArgs, "-f", strings.Join(args.FilePatterns, ","))
 	}
