@@ -42,6 +42,10 @@ describe('SearchResults', () => {
         patternType: SearchPatternType.regexp,
         togglePatternType: sinon.spy(),
         interactiveSearchMode: false,
+        filtersInQuery: {},
+        toggleSearchMode: sinon.fake(),
+        onFiltersInQueryChange: sinon.fake(),
+        showInteractiveSearchMode: false,
     }
 
     it('calls the search request once', () => {
