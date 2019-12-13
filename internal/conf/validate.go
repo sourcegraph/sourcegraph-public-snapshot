@@ -61,14 +61,6 @@ type Problem struct {
 	description string
 }
 
-// NewCriticalProblem creates a new critical config problem with given message.
-func NewCriticalProblem(msg string) *Problem {
-	return &Problem{
-		kind:        problemCritical,
-		description: msg,
-	}
-}
-
 // NewSiteProblem creates a new site config problem with given message.
 func NewSiteProblem(msg string) *Problem {
 	return &Problem{
@@ -117,11 +109,6 @@ func newProblems(kind problemKind, messages ...string) Problems {
 		}
 	}
 	return problems
-}
-
-// NewCriticalProblems converts a list of messages into critical config problems.
-func NewCriticalProblems(messages ...string) Problems {
-	return newProblems(problemCritical, messages...)
 }
 
 // NewSiteProblems converts a list of messages into site config problems.

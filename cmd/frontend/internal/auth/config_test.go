@@ -14,11 +14,11 @@ func TestValidateCustom(t *testing.T) {
 	}{
 		"no auth.providers": {
 			input:        conf.Unified{SiteConfiguration: schema.SiteConfiguration{}},
-			wantProblems: conf.NewSiteProblem("no auth providers set"),
+			wantProblems: conf.NewSiteProblems("no auth providers set"),
 		},
 		"empty auth.providers": {
 			input:        conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthProviders: []schema.AuthProviders{}}},
-			wantProblems: conf.NewSiteProblem("no auth providers set"),
+			wantProblems: conf.NewSiteProblems("no auth providers set"),
 		},
 		"single auth provider": {
 			input: conf.Unified{SiteConfiguration: schema.SiteConfiguration{

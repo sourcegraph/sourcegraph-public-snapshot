@@ -27,7 +27,7 @@ func TestValidateCustom(t *testing.T) {
 					{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}},
 				},
 			}},
-			wantProblems: conf.NewCriticalProblems("at most 1"),
+			wantProblems: conf.NewSiteProblems("at most 1"),
 		},
 	}
 	for name, test := range tests {

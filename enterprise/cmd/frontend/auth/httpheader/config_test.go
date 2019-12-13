@@ -27,7 +27,7 @@ func TestValidateCustom(t *testing.T) {
 					{HttpHeader: &schema.HTTPHeaderAuthProvider{Type: "http-header"}},
 				},
 			}},
-			wantProblems: conf.NewCriticalProblems("at most 1"),
+			wantProblems: conf.NewSiteProblems("at most 1"),
 		},
 	}
 	for name, test := range tests {

@@ -37,7 +37,7 @@ func parseConfig(cfg *conf.Unified) (ps map[schema.GitHubAuthProvider]providers.
 		}
 
 		provider, providerProblems := parseProvider(pr.Github, pr)
-		problems = append(problems, conf.NewCriticalProblems(providerProblems...)...)
+		problems = append(problems, conf.NewSiteProblems(providerProblems...)...)
 		if provider != nil {
 			ps[*pr.Github] = provider
 		}

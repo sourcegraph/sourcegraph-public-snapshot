@@ -51,7 +51,7 @@ func parseConfig(cfg *conf.Unified) (ps map[schema.GitLabAuthProvider]providers.
 		callbackURL.Path = "/.auth/gitlab/callback"
 
 		provider, providerMessages := parseProvider(callbackURL.String(), pr.Gitlab, pr)
-		problems = append(problems, conf.NewCriticalProblems(providerMessages...)...)
+		problems = append(problems, conf.NewSiteProblems(providerMessages...)...)
 		if provider != nil {
 			ps[*pr.Gitlab] = provider
 		}

@@ -43,10 +43,10 @@ func validateCustom(cfg Unified) (problems Problems) {
 		hasSMTP := cfg.EmailSmtp != nil
 		hasSMTPAuth := cfg.EmailSmtp != nil && cfg.EmailSmtp.Authentication != "none"
 		if hasSMTP && cfg.EmailAddress == "" {
-			invalid(NewCriticalProblem(`should set email.address because email.smtp is set`))
+			invalid(NewSiteProblem(`should set email.address because email.smtp is set`))
 		}
 		if hasSMTPAuth && (cfg.EmailSmtp.Username == "" && cfg.EmailSmtp.Password == "") {
-			invalid(NewCriticalProblem(`must set email.smtp username and password for email.smtp authentication`))
+			invalid(NewSiteProblem(`must set email.smtp username and password for email.smtp authentication`))
 		}
 	}
 

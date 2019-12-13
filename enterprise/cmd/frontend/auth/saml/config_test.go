@@ -20,7 +20,7 @@ func TestValidateCustom(t *testing.T) {
 					{Saml: &schema.SAMLAuthProvider{Type: "saml", IdentityProviderMetadataURL: "x"}},
 				},
 			}},
-			wantProblems: conf.NewCriticalProblems("SAML auth provider at index 1 is duplicate of index 0"),
+			wantProblems: conf.NewSiteProblems("SAML auth provider at index 1 is duplicate of index 0"),
 		},
 	}
 	for name, test := range tests {
