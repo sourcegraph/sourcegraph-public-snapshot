@@ -52,29 +52,20 @@ interface InteractiveModeProps
 export default class InteractiveModeInput extends React.Component<InteractiveModeProps> {
     private numFiltersAddedToQuery = 0
     private subscriptions = new Subscription()
-    private componentUpdates = new Subject<InteractiveModeProps>()
 
     constructor(props: InteractiveModeProps) {
         super(props)
 
-        this.subscriptions.add(
-            this.componentUpdates.subscribe(props => {
-                const searchParams = new URLSearchParams(props.location.search)
-                const filtersInQuery: FiltersToTypeAndValue = {}
-                for (const t of SuggestionTypeKeys) {
-                    const itemsOfType = searchParams.getAll(t)
-                    itemsOfType.map((item, i) => {
-                        filtersInQuery[`${t}-${i}`] = { type: t, value: item, editable: false }
-                    })
-                }
-                this.numFiltersAddedToQuery = Object.keys(filtersInQuery).length
-                this.props.onFiltersInQueryChange(filtersInQuery)
+        const searchParams = new URLSearchParams(props.location.search)
+        const filtersInQuery: FiltersToTypeAndValue = {}
+        for (const t of SuggestionTypeKeys) {
+            const itemsOfType = searchParams.getAll(t)
+            itemsOfType.map((item, i) => {
+                filtersInQuery[`${t}-${i}`] = { type: t, value: item, editable: false }
             })
-        )
-    }
-
-    public componentDidMount(): void {
-        this.componentUpdates.next(this.props)
+        }
+        this.numFiltersAddedToQuery = Object.keys(filtersInQuery).length
+        this.props.onFiltersInQueryChange(filtersInQuery)
     }
 
     public componentWillUnmount(): void {

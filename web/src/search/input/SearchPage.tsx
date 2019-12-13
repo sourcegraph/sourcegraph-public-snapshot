@@ -22,7 +22,6 @@ import InteractiveModeInput from './interactive/InteractiveModeInput'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
-import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
 
 interface Props
     extends SettingsCascadeProps,
