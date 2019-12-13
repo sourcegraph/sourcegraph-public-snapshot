@@ -78,7 +78,7 @@ func initAuthz() {
 
 	// Enforce the use of a valid license key by preventing all HTTP requests if the license is invalid
 	// (due to a error in parsing or verification, or because the license has expired).
-	hooks.PreAuthMiddleware = func(next http.Handler) http.Handler {
+	hooks.PostAuthMiddleware = func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			info, err := licensing.GetConfiguredProductLicenseInfo()
 			if err != nil {
