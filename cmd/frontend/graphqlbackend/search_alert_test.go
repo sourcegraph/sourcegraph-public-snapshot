@@ -22,7 +22,7 @@ func TestSearchPatternForSuggestion(t *testing.T) {
 				description: "An alert for regex",
 				patternType: SearchTypeRegex,
 				proposedQueries: []*searchQueryDescription{
-					&searchQueryDescription{
+					{
 						description: "Some query description",
 						query:       "repo:github.com/sourcegraph/sourcegraph",
 					},
@@ -37,7 +37,7 @@ func TestSearchPatternForSuggestion(t *testing.T) {
 				description: "An alert for structural",
 				patternType: SearchTypeStructural,
 				proposedQueries: []*searchQueryDescription{
-					&searchQueryDescription{
+					{
 						description: "Some query description",
 						query:       "repo:github.com/sourcegraph/sourcegraph patterntype:structural",
 					},
