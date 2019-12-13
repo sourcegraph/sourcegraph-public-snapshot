@@ -11,5 +11,11 @@
   "rename": {
     "campaign_ids": "CampaignIDs",
     "changeset_ids": "ChangesetIDs"
-  }
+  },
+  "overrides": [
+    {
+      "column": "changesets.campaign_ids",
+      "go_type": "github.com/sourcegraph/sourcegraph/internal/db/dbutil.JSONInt64SetClassic"
+    }
+  ]
 }

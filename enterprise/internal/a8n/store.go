@@ -309,57 +309,52 @@ var ErrNoResults = errors.New("no results")
 
 // GetChangeset gets a changeset matching the given options.
 func (s *Store) GetChangeset(ctx context.Context, opts GetChangesetOpts) (*a8n.Changeset, error) {
-	q := getChangesetQuery(&opts)
+	var (
+		raw queries.Changeset
+		err error
+	)
 
-	var c a8n.Changeset
-	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		return 0, 0, scanChangeset(&c, sc)
-	})
+	switch {
+	case opts.ID != 0:
+		raw, err = s.q.GetChangesetByID(ctx, opts.ID)
+	case opts.ExternalID != "" && opts.ExternalServiceType != "":
+		raw, err = s.q.GetChangesetByExternal(ctx, queries.GetChangesetByExternalParams{
+			ExternalID:          opts.ExternalID,
+			ExternalServiceType: opts.ExternalServiceType,
+		})
+	}
+
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrNoResults
+		}
 		return nil, err
 	}
 
-	if c.ID == 0 {
-		return nil, ErrNoResults
+	c := &a8n.Changeset{
+		ID:                  raw.ID,
+		RepoID:              raw.RepoID,
+		CreatedAt:           raw.CreatedAt,
+		UpdatedAt:           raw.UpdatedAt,
+		ExternalID:          raw.ExternalID,
+		ExternalServiceType: raw.ExternalServiceType,
+		CampaignIDs:         raw.CampaignIDs.Set,
 	}
 
-	return &c, nil
-}
-
-var getChangesetsQueryFmtstr = `
--- source: internal/a8n/store.go:GetChangeset
-SELECT
-  id,
-  repo_id,
-  created_at,
-  updated_at,
-  metadata,
-  campaign_ids,
-  external_id,
-  external_service_type
-FROM changesets
-WHERE %s
-LIMIT 1
-`
-
-func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
-	var preds []*sqlf.Query
-	if opts.ID != 0 {
-		preds = append(preds, sqlf.Sprintf("id = %s", opts.ID))
+	switch c.ExternalServiceType {
+	case github.ServiceType:
+		c.Metadata = new(github.PullRequest)
+	case bitbucketserver.ServiceType:
+		c.Metadata = new(bitbucketserver.PullRequest)
+	default:
+		return nil, errors.New("unknown external service type")
 	}
 
-	if opts.ExternalID != "" && opts.ExternalServiceType != "" {
-		preds = append(preds,
-			sqlf.Sprintf("external_id = %s", opts.ExternalID),
-			sqlf.Sprintf("external_service_type = %s", opts.ExternalServiceType),
-		)
+	if err = json.Unmarshal(raw.Metadata, c.Metadata); err != nil {
+		return nil, errors.Wrapf(err, "failed to unmarshal %q metadata", c.ExternalServiceType)
 	}
 
-	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("TRUE"))
-	}
-
-	return sqlf.Sprintf(getChangesetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
+	return c, nil
 }
 
 // ListChangesetsOpts captures the query options needed for

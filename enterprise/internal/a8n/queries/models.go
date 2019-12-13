@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/lib/pq"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
 type Campaign struct {
@@ -50,7 +51,7 @@ type CampaignPlan struct {
 
 type Changeset struct {
 	ID                  int64
-	CampaignIDs         json.RawMessage
+	CampaignIDs         dbutil.JSONInt64SetClassic
 	RepoID              int32
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
