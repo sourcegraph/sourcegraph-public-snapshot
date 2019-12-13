@@ -5,51 +5,58 @@ import { queryGraphQL } from '../../backend/graphql'
 import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 
 /**
- * Fetch counts of LSIF jobs by state.
+ * Fetch counts of LSIF uploads by state.
  */
-export function fetchLsifJobStatistics(): Observable<GQL.ILSIFJobStats> {
+export function fetchLsifUploadStatistics(): Observable<GQL.ILSIFUploadStats> {
     return queryGraphQL(
         gql`
-            query LsifJobStats {
-                lsifJobStats {
+            query LsifUploadStats {
+                lsifUploadStats {
                     erroredCount
                     completedCount
                     processingCount
                     queuedCount
-                    scheduledCount
                 }
             }
         `
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.lsifJobStats)
+        map(data => data.lsifUploadStats)
     )
 }
 
 /**
- * Fetch LSIF jobs with the given state.
+ * Fetch LSIF uploads with the given state.
  */
-export function fetchLsifJobs({
+export function fetchLsifUploads({
     state,
     first,
     after,
     query,
-}: GQL.ILsifJobsOnQueryArguments): Observable<GQL.ILSIFJobConnection> {
+}: GQL.ILsifUploadsOnQueryArguments): Observable<GQL.ILSIFUploadConnection> {
     return queryGraphQL(
         gql`
-            query LsifJobs($state: LSIFJobState!, $first: Int, $after: String, $query: String) {
-                lsifJobs(state: $state, first: $first, after: $after, query: $query) {
+            query LsifUploads($state: LSIFUploadState!, $first: Int, $after: String, $query: String) {
+                lsifUploads(state: $state, first: $first, after: $after, query: $query) {
                     nodes {
                         id
-                        type
-                        arguments
+                        projectRoot {
+                            commit {
+                                abbreviatedOID
+                                repository {
+                                    name
+                                }
+                            }
+                            path
+                            url
+                        }
                         state
                         failure {
                             summary
                         }
-                        queuedAt
+                        uploadedAt
                         startedAt
-                        completedOrErroredAt
+                        finishedAt
                     }
 
                     totalCount
@@ -63,30 +70,41 @@ export function fetchLsifJobs({
         { state: state.toUpperCase(), first, after, query }
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.lsifJobs)
+        map(data => data.lsifUploads)
     )
 }
 
 /**
- * Fetch a single LSIF job by id.
+ * Fetch a single LSIF upload by id.
  */
-export function fetchLsifJob({ id }: { id: string }): Observable<GQL.ILSIFJob | null> {
+export function fetchLsifUpload({ id }: { id: string }): Observable<GQL.ILSIFUpload | null> {
     return queryGraphQL(
         gql`
-            query LsifJob($id: ID!) {
+            query LsifUpload($id: ID!) {
                 node(id: $id) {
                     __typename
-                    ... on LSIFJob {
+                    ... on LSIFUpload {
                         id
-                        type
-                        arguments
+                        projectRoot {
+                            commit {
+                                oid
+                                abbreviatedOID
+                                url
+                                repository {
+                                    name
+                                    url
+                                }
+                            }
+                            path
+                            url
+                        }
                         state
                         failure {
                             summary
                         }
-                        queuedAt
+                        uploadedAt
                         startedAt
-                        completedOrErroredAt
+                        finishedAt
                     }
                 }
             }
@@ -98,8 +116,8 @@ export function fetchLsifJob({ id }: { id: string }): Observable<GQL.ILSIFJob | 
             if (!node) {
                 return null
             }
-            if (node.__typename !== 'LSIFJob') {
-                throw new Error(`The given ID is a ${node.__typename}, not an LSIFJob`)
+            if (node.__typename !== 'LSIFUpload') {
+                throw new Error(`The given ID is a ${node.__typename}, not an LSIFUpload`)
             }
 
             return node

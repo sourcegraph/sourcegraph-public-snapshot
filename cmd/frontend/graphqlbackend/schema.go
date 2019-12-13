@@ -422,8 +422,8 @@ type Mutation {
     # (experimental) The LSIF API may change substantially in the near future as we
     # continue to adjust it for our use cases. Changes will not be documented in the
     # CHANGELOG during this time.
-    # Deletes an LSIF job.
-    deleteLSIFJob(id: ID!): EmptyResponse
+    # Deletes an LSIF upload.
+    deleteLSIFUpload(id: ID!): EmptyResponse
 }
 
 # The specification of what changesets Sourcegraph will open when the campaign is created.
@@ -1269,19 +1269,19 @@ type Query {
     # (experimental) The LSIF API may change substantially in the near future as we
     # continue to adjust it for our use cases. Changes will not be documented in the
     # CHANGELOG during this time.
-    # Retrieve counts of jobs by state in the LSIF work queue.
-    lsifJobStats: LSIFJobStats!
+    # Retrieve counts of uploads by state.
+    lsifUploadStats: LSIFUploadStats!
 
     # (experimental) The LSIF API may change substantially in the near future as we
     # continue to adjust it for our use cases. Changes will not be documented in the
     # CHANGELOG during this time.
-    # Search for LSIF jobs by state and query term.
-    lsifJobs(
-        # The state of returned jobs.
-        state: LSIFJobState!
+    # Search for LSIF uploaads by state and query term.
+    lsifUploads(
+        # The state of returned uploads.
+        state: LSIFUploadState!
 
-        # An (optional) search query that searches over the job name, failure
-        # properties (reason and stacktrace) and the job's arguments.
+        # An (optional) search query that searches over the repository, commit,
+        # root, and failure properties (reason and stacktrace).
         query: String
 
         # When specified, indicates that this request should be paginated and
@@ -1293,9 +1293,9 @@ type Query {
         # to fetch results starting at this cursor.
         #
         # A future request can be made for more results by passing in the
-        # 'LSIFJobConnection.pageInfo.endCursor' that is returned.
+        # 'LSIFUploadConnection.pageInfo.endCursor' that is returned.
         after: String
-    ): LSIFJobConnection!
+    ): LSIFUploadConnection!
 }
 
 # The version of the search syntax.
@@ -4086,87 +4086,78 @@ type LSIFDumpConnection {
     pageInfo: PageInfo!
 }
 
-# The state an LSIF job can be in.
-enum LSIFJobState {
-    # The LSIF worker is processing this job.
+# The state an LSIF upload can be in.
+enum LSIFUploadState {
+    # The LSIF worker is processing this upload.
     PROCESSING
 
-    # The LSIF worker failed to process this job.
+    # The LSIF worker failed to process this upload.
     ERRORED
 
-    # The LSIF worker processed this job successfully.
+    # The LSIF worker processed this upload successfully.
     COMPLETED
 
-    # This job is queued to be processed later.
+    # This upload is queued to be processed later.
     QUEUED
-
-    # This job is scheduled to be queued at a specific time.
-    SCHEDULED
 }
 
-# Counts of LSIF jobs by state.
-type LSIFJobStats implements Node {
+# Counts of LSIF uploads by state.
+type LSIFUploadStats implements Node {
     # An opaque GraphQL ID.
     id: ID!
 
-    # How many jobs are currently being processed.
+    # How many uploads are currently being processed.
     processingCount: Int!
 
-    # How many jobs have errored.
+    # How many uploads have errored.
     erroredCount: Int!
 
-    # How many jobs have completed.
+    # How many uploads have completed.
     completedCount: Int!
 
-    # How many jobs are queued.
+    # How many uploads are queued.
     queuedCount: Int!
-
-    # How many jobs are scheduled.
-    scheduledCount: Int!
 }
 
-# Metadata and status about an LSIF job.
-type LSIFJob implements Node {
+# Metadata and status about an LSIF upload.
+type LSIFUpload implements Node {
     # The ID.
     id: ID!
 
-    # The job type.
-    type: String!
+    # The project for which this upload provides code intelligence.
+    projectRoot: GitTree!
 
-    # The job's arguments.
-    arguments: JSONValue!
+    # The upload's current state.
+    state: LSIFUploadState!
 
-    # The job's current state.
-    state: LSIFJobState!
+    # Metadata about a upload's failure (not set if state is not ERRORED).
+    failure: LSIFUploadFailureReason
 
-    # Metadata about a job's failure (not set if state is not ERRORED).
-    failure: LSIFJobFailureReason
+    # The time the upload was uploaded.
+    uploadedAt: DateTime!
 
-    # The time the job was queued.
-    queuedAt: DateTime!
-
-    # The time the job was processed.
+    # The time the upload was processed.
     startedAt: DateTime
 
-    # The time the job compelted or errored.
-    completedOrErroredAt: DateTime
+    # The time the upload compelted or errored.
+    finishedAt: DateTime
 }
 
-# Metadata about a LSIF job failure.
-type LSIFJobFailureReason {
+# Metadata about a LSIF upload failure.
+type LSIFUploadFailureReason {
     # A summary of the failure.
     summary: String!
 
-    # The stacktrace from each failed attempt of the job.
-    stacktraces: [String!]!
+    # The stacktrace of the failure.
+    stacktrace: String!
 }
 
-# A list of LSIF jobs.
-type LSIFJobConnection {
-    # A list of LSIF jobs.
-    nodes: [LSIFJob!]!
+# A list of LSIF uploads.
+type LSIFUploadConnection {
+    # A list of LSIF uploads.
+    nodes: [LSIFUpload!]!
 
-    # The total number of jobs in this result set.
+    # The total number of uploads in this result set.
     totalCount: Int
 
     # Pagination information.
