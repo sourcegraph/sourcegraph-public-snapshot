@@ -16,7 +16,7 @@ import { TlsOptions } from 'tls'
  * version prior to making use of the DB (which the frontend may still be
  * migrating).
  */
-const MINIMUM_MIGRATION_VERSION = 1528395616
+const MINIMUM_MIGRATION_VERSION = 1528395625
 
 /**
  * How many times to try to check the current database migration version on startup.
@@ -114,7 +114,7 @@ export function connectPostgres(
         type: 'postgres',
         name: `xrepo${suffix}`,
         entities: xrepoModels.entities,
-        logging: ['error', 'warn'],
+        logging: ['warn', 'error'],
         maxQueryExecutionTime: 1000,
         ...connectionOptions,
     })

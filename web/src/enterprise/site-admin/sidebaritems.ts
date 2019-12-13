@@ -50,12 +50,12 @@ export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = siteAdmi
             ...enterpriseGroups,
             {
                 ...group,
-                // Add LSIF jobs page to end of primary group
+                // Add LSIF uploads page to end of primary group
                 items: [
                     ...group.items,
                     {
-                        label: 'LSIF jobs',
-                        to: '/site-admin/lsif-jobs',
+                        label: 'LSIF uploads',
+                        to: '/site-admin/lsif-uploads',
                     },
                 ],
             },
