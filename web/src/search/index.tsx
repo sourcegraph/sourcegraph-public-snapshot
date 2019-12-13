@@ -33,13 +33,11 @@ export function interactiveParseSearchURLQuery(query: string): string | undefine
     const searchParams = new URLSearchParams(query)
     const finalQueryParts = []
     for (const suggestionType of Object.keys(SuggestionTypes)) {
-        const filterParams = searchParams.getAll(suggestionType)
-        if (filterParams) {
-            for (const filterValue of filterParams) {
-                finalQueryParts.push(`${suggestionType}:${filterValue}`)
-            }
+        for (const filterValue of searchParams.getAll(suggestionType)) {
+            finalQueryParts.push(`${suggestionType}:${filterValue}`)
         }
     }
+
     const querySearchParams = searchParams.get('q')
 
     if (querySearchParams) {

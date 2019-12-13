@@ -379,16 +379,6 @@ export const formatQueryForFuzzySearch = (queryState: QueryState): string => {
  * */
 export const interactiveFormatQueryForFuzzySearch = (
     fullQuery: string,
-    filterType?: SuggestionTypes,
+    filterType: SuggestionTypes,
     value: string = ''
-): string => {
-    if (filterType) {
-        const formattedFilterAndValue = filterType + ':' + value
-
-        if (isolatedFuzzySearchFilters.includes(filterType)) {
-            return formattedFilterAndValue
-        }
-    }
-
-    return fullQuery
-}
+): string => (isolatedFuzzySearchFilters.includes(filterType) ? filterType + ':' + value : fullQuery)
