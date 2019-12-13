@@ -9,12 +9,39 @@ import (
 	"strings"
 	"time"
 
+	"github.com/avelino/slugify"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
+	"github.com/rainycape/unidecode"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
+
+// HumanReadableBranchName returns a human readable branch name from the
+// given text. It replaces unicode characters with their ASCII equivalent
+// or similar and connects each component with a dash.
+//
+// Example: "Change coördination mechanism" -> "change-coordination-mechanism"
+func HumanReadableBranchName(text string) string {
+	name := slugify.Slugify(unidecode.Unidecode(text))
+
+	const length = 60
+	if len(name) <= length {
+		return name
+	}
+
+	// Find the last word separator so we don't cut in the middle of a word.
+	// If the word separator is found in the very first part of the name we don't
+	// cut there because it'd leave out too much of it.
+	sep := strings.LastIndexByte(name[:length], '-')
+	if sep >= 0 && float32(sep)/float32(length) >= 0.2 {
+		return name[:sep]
+	}
+
+	return name[:length]
+}
 
 // EnsureRefPrefix checks whether the ref is a full ref and contains the
 // "refs/heads" prefix (i.e. "refs/heads/master") or just an abbreviated ref

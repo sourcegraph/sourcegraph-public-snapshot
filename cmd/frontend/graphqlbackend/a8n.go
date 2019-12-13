@@ -49,7 +49,8 @@ type CancelCampaignPlanArgs struct {
 }
 
 type DeleteCampaignArgs struct {
-	Campaign graphql.ID
+	Campaign        graphql.ID
+	CloseChangesets bool
 }
 
 type RetryCampaignArgs struct {

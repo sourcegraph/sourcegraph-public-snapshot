@@ -14,8 +14,9 @@ import { createLogger } from '../shared/logging'
 import { createLsifRouter } from './routes/lsif'
 import { createMetaRouter } from './routes/meta'
 import { createPostgresConnection } from '../shared/database/postgres'
-import { createQueue, ensureOnlyRepeatableJob } from '../shared/queue/queue'
+import { createQueue } from '../shared/queue/queue'
 import { createTracer } from '../shared/tracing'
+import { createUploadRouter } from './routes/uploads'
 import { dbFilename, dbFilenameOld, ensureDirectory } from '../shared/paths'
 import { default as tracingMiddleware } from 'express-opentracing'
 import { defineRedisCommands } from './redis/redis'
@@ -23,9 +24,10 @@ import { errorHandler } from './middleware/errors'
 import { logger as loggingMiddleware } from 'express-winston'
 import { Logger } from 'winston'
 import { metricsMiddleware } from './middleware/metrics'
+import { startTasks } from './tasks/runner'
+import { UploadsManager } from '../shared/uploads/uploads'
 import { waitForConfiguration } from '../shared/config/config'
 import { XrepoDatabase } from '../shared/xrepo/xrepo'
-import { startTasks } from './tasks/runner'
 
 /**
  * Runs the HTTP server which accepts LSIF dump uploads and responds to LSIF requests.
@@ -53,10 +55,11 @@ async function main(logger: Logger): Promise<void> {
     await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.TEMP_DIR))
     await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR))
 
-    // Create cross-repo database
+    // Create database connection and entity wrapper classes
     const connection = await createPostgresConnection(fetchConfiguration(), logger)
     const xrepoDatabase = new XrepoDatabase(connection, settings.STORAGE_ROOT)
     const backend = new Backend(settings.STORAGE_ROOT, xrepoDatabase, fetchConfiguration)
+    const uploadsManager = new UploadsManager(connection)
 
     // Temporary migrations
     await moveDatabaseFilesToSubdir() // TODO - remove after 3.12
@@ -65,12 +68,8 @@ async function main(logger: Logger): Promise<void> {
     // Create queue to publish convert
     const queue = createQueue(settings.REDIS_ENDPOINT, logger)
 
-    // Schedule jobs on timers
-    await ensureOnlyRepeatableJob(queue, 'clean-old-jobs', {}, settings.CLEAN_OLD_JOBS_INTERVAL * 1000)
-    await ensureOnlyRepeatableJob(queue, 'clean-failed-jobs', {}, settings.CLEAN_FAILED_JOBS_INTERVAL * 1000)
-
     // Start background tasks
-    startTasks(connection, queue, logger)
+    startTasks(connection, uploadsManager, logger)
 
     // Register the required commands on the queue's Redis client
     const scriptedClient = await defineRedisCommands(queue.client)
@@ -96,7 +95,8 @@ async function main(logger: Logger): Promise<void> {
     app.use(createMetaRouter())
     app.use(createDumpRouter(backend))
     app.use(createJobRouter(queue, scriptedClient))
-    app.use(createLsifRouter(backend, queue, logger, tracer))
+    app.use(createUploadRouter(uploadsManager))
+    app.use(createLsifRouter(backend, uploadsManager, logger, tracer))
 
     // Error handler must be registered last
     app.use(errorHandler(logger))

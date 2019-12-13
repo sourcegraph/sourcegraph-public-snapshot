@@ -68,7 +68,13 @@ type Mutation {
     # Retrying will clear the errors list of a campaign and change its state back to CREATING_CHANGESETS.
     retryCampaign(campaign: ID!): Campaign!
     # Deletes a campaign.
-    deleteCampaign(campaign: ID!): EmptyResponse
+    deleteCampaign(
+        campaign: ID!
+        # Whether to close the changesets associated with this campaign on their
+        # respective codehosts, where "close" means the appropriate final state
+        # on the codehost (e.g. "declined" on Bitbucket Server).
+        closeChangesets: Boolean = false
+    ): EmptyResponse
     # Closes a campaign.
     # Closing a campaign sets the Campaign's ClosedAt timestamp to the current
     # time and, if closeChangesets = true, closes associated changesets on the
@@ -2672,6 +2678,14 @@ type GitBlob implements TreeEntry & File2 {
 # A wrapper object around LSIF query methods for a particular path-at-revision. When this node is
 # null, no LSIF data is available for containing git blob.
 type LSIFQueryResolver {
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # The commit that is being used to power code intelligence. This may be distinct from
+    # the commit of the git blob from which this query resolver came when there is no
+    # LSIF data available for that commit.
+    commit: GitCommit!
+
     # (experimental) The LSIF API may change substantially in the near future as we
     # continue to adjust it for our use cases. Changes will not be documented in the
     # CHANGELOG during this time.

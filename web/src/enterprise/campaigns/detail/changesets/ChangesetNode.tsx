@@ -43,7 +43,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
             ? changesetReviewStateIcons[node.reviewState]
             : changesetReviewStateIcons[ChangesetReviewState.PENDING]
     return (
-        <li className="list-group-item">
+        <li className="list-group-item e2e-changeset-node">
             <Collapsible
                 titleClassName="campaign-node__content flex-fill"
                 title={

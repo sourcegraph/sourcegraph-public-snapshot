@@ -6,6 +6,7 @@ import FilterIcon from 'mdi-react/FilterIcon'
 import FileIcon from 'mdi-react/FileIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { SymbolIcon } from '../../../../shared/src/symbols/SymbolIcon'
+import { escapeRegExp } from 'lodash'
 
 export enum SuggestionTypes {
     filters = 'filters',
@@ -59,6 +60,11 @@ export interface Suggestion {
     type: SuggestionTypes
     /** The value to be suggested and that will be added to queries */
     value: string
+    /**
+     * Optional value to use when suggestion is displayed to the user.
+     * Useful for displaying a "human-readable" suggestion value
+     */
+    displayValue?: string
     /** Description that will be displayed together with suggestion value */
     description?: string
     /** Fuzzy-search suggestions may have a url for redirect when selected */
@@ -76,12 +82,20 @@ interface SuggestionIconProps {
     className?: string
 }
 
+/**
+ * @returns The given string with escaped special characters and wrapped with regex boundaries
+ */
+const formatRegExp = (value: string): string => '^' + escapeRegExp(value) + '$'
+
 export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undefined {
     switch (item.__typename) {
         case 'Repository': {
             return {
                 type: SuggestionTypes.repo,
-                value: item.name,
+                // Add "regex start and end boundaries" to
+                // correctly scope additional suggestions
+                value: formatRegExp(item.name),
+                displayValue: item.name,
                 url: `/${item.name}`,
                 label: 'go to repository',
             }
@@ -96,7 +110,7 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
             if (item.isDirectory) {
                 return {
                     type: SuggestionTypes.dir,
-                    value: item.name,
+                    value: '^' + escapeRegExp(item.path),
                     description: descriptionParts.join(' — '),
                     url: `${item.url}?suggestion`,
                     label: 'go to dir',
@@ -104,7 +118,8 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
             }
             return {
                 type: SuggestionTypes.file,
-                value: item.name,
+                value: formatRegExp(item.path),
+                displayValue: item.name,
                 description: descriptionParts.join(' — '),
                 url: `${item.url}?suggestion`,
                 label: 'go to file',
@@ -166,7 +181,7 @@ export const SuggestionItem: React.FunctionComponent<SuggestionProps> = ({
 }) => (
     <li className={'suggestion' + (isSelected ? ' suggestion--selected' : '')} {...props}>
         <SuggestionIcon className="icon-inline suggestion__icon" suggestion={suggestion} />
-        <div className="suggestion__title">{suggestion.value}</div>
+        <div className="suggestion__title">{suggestion.displayValue ?? suggestion.value}</div>
         <div className="suggestion__description">{suggestion.description}</div>
         {(showUrlLabel || defaultLabel) && (
             <div className="suggestion__action" hidden={!isSelected}>

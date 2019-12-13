@@ -16,6 +16,8 @@ tags:
     description: Dump operations
   - name: Jobs
     description: Job operations
+  - name: Uploads
+    description: Upload operations
 paths:
   /upload:
     post:
@@ -559,6 +561,104 @@ paths:
           description: No Content
         '404':
           description: Not Found
+  /uploads/stats:
+    get:
+      description: Get the current counts of uploads by their state.
+      tags:
+        - Uploads
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadStats'
+  /uploads/{state}:
+    get:
+      description: Get LSIF uploads by state.
+      tags:
+        - Uploads
+      parameters:
+        - name: state
+          in: path
+          description: The target upload state.
+          required: true
+          schema:
+            type: string
+            enum:
+              - processing
+              - errored
+              - completed
+              - queued
+        - name: query
+          in: query
+          description: A search query applied over repository, commit, root, failure reason, and failure stacktrace properties.
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: The maximum number of uploads to return in one page.
+          required: false
+          schema:
+            type: number
+            default: 50
+        - name: offset
+          in: query
+          description: The number of uploads seen on previous pages.
+          required: false
+          schema:
+            type: number
+            default: 0
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Uploads'
+          headers:
+            Link:
+              description: If there are more results, this header includes the URL of the next page with relation type *next*. See [RFC 5988](https://tools.ietf.org/html/rfc5988).
+              schema:
+                type: string
+  /uploads/{id}:
+    get:
+      description: Get an LSIF upload by its identifier.
+      tags:
+        - Uploads
+      parameters:
+        - name: id
+          in: path
+          description: The upload identifier.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Upload'
+        '404':
+          description: Not Found
+    delete:
+      description: Delete an LSIF upload by its identifier.
+      tags:
+        - Uploads
+      parameters:
+        - name: id
+          in: path
+          description: The upload identifier.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: No Content
+        '404':
+          description: Not Found
 components:
   schemas:
     Position:
@@ -697,7 +797,7 @@ components:
             $ref: '#/components/schemas/Dump'
         totalCount:
           type: number
-          descrpition: The total number of dumps in this set of results.
+          description: The total number of dumps in this set of results.
       required:
         - dumps
         - totalCount
@@ -723,10 +823,10 @@ components:
           description: Whether or not this dump can provide global reference code intelligence.
         uploadedAt:
           type: string
-          description: An ISO 8601-formatted time that the dump was uploaded.
+          description: An ISO 8601-formatted date and time that the dump was uploaded.
         processedAt:
           type: string
-          description: An ISO 8601-formatted time that the dump became available for use.
+          description: An ISO 8601-formatted date and time that the dump became available for use.
       required:
         - id
         - repository
@@ -834,14 +934,14 @@ components:
           additionalProperties: false
         queuedAt:
           type: string
-          description: An ISO 8601-formatted time that the job was queued.
+          description: An ISO 8601-formatted date and time that the job was queued.
         startedAt:
           type: string
-          description: An ISO 8601-formatted time that the job was processed.
+          description: An ISO 8601-formatted date and time that the job was processed.
           nullable: true
         completedOrErroredAt:
           type: string
-          description: An ISO 8601-formatted time that the job was completed.
+          description: An ISO 8601-formatted date and time that the job was completed.
           nullable: true
       required:
         - id
@@ -853,5 +953,193 @@ components:
         - stacktrace
         - timestamp
         - processedOn
-        - finishedOn
+        - completedOrErroredAt
+      additionalProperties: false
+    UploadStats:
+      type: object
+      description: An object containing the counts of uploads by state.
+      properties:
+        processingCount:
+          type: number
+          description: The number of uploads being processed.
+        erroredCount:
+          type: number
+          description: The number of errored uploads.
+        completedCount:
+          type: number
+          description: The number of completed uploads.
+        queuedCount:
+          type: number
+          description: The number of queued uploads.
+      required:
+        - processingCount
+        - erroredCount
+        - completedCount
+        - queuedCount
+      additionalProperties: false
+    Uploads:
+      type: object
+      description: A paginated wrapper for a list of uploads.
+      properties:
+        uploads:
+          type: array
+          description: A list of uploads with a particular state.
+          items:
+            $ref: '#/components/schemas/Upload'
+        totalCount:
+          type: number
+          description: The total number of uploads in this set of results.
+      required:
+        - uploads
+      additionalProperties: false
+    Upload:
+      type: object
+      description: An LSIF upload.
+      properties:
+        id:
+          type: string
+          description: A unique identifier.
+        repository:
+          type: string
+          description: The repository argument given on upload.
+        commit:
+          type: string
+          description: The commit argument given on upload.
+        root:
+          type: string
+          description: The root argument given on upload.
+        filename:
+          type: string
+          description: The filename where the upload was stored before conversion.
+        state:
+          type: string
+          description: The upload's current state.
+          enum:
+            - processing
+            - errored
+            - completed
+            - queued
+        failureSummary:
+          type: string
+          description: A brief description of why the upload conversion failed.
+        failureStacktrace:
+          type: string
+          description: The stacktrace of the upload error.
+        uploadedAt:
+          type: string
+          description: An ISO 8601-formatted date and time that the dump was uploaded.
+        startedAt:
+          type: string
+          description: An ISO 8601-formatted date and time that the conversion started.
+          nullable: true
+        finishedAt:
+          type: string
+          description: An ISO 8601-formatted date and time that the conversion completed or errored.
+          nullable: true
+      required:
+        - id
+        - repository
+        - commit
+        - root
+        - filename
+        - state
+        - failureSummary
+        - failureStacktrace
+        - uploadedAt
+        - startedAt
+        - finishedAt
+      additionalProperties: false
+    UploadStats:
+      type: object
+      description: An object containing the counts of uploads by state.
+      properties:
+        processingCount:
+          type: number
+          description: The number of uploads being processed.
+        erroredCount:
+          type: number
+          description: The number of errored uploads.
+        completedCount:
+          type: number
+          description: The number of completed uploads.
+        queuedCount:
+          type: number
+          description: The number of queued uploads.
+      required:
+        - processingCount
+        - erroredCount
+        - completedCount
+        - queuedCount
+      additionalProperties: false
+    Uploads:
+      type: object
+      description: A paginated wrapper for a list of uploads.
+      properties:
+        uploads:
+          type: array
+          description: A list of uploads with a particular state.
+          items:
+            $ref: '#/components/schemas/Upload'
+        totalCount:
+          type: number
+          description: The total number of uploads in this set of results.
+      required:
+        - uploads
+      additionalProperties: false
+    Upload:
+      type: object
+      description: An LSIF upload.
+      properties:
+        id:
+          type: string
+          description: A unique identifier.
+        repository:
+          type: string
+          description: The repository argument given on upload.
+        commit:
+          type: string
+          description: The commit argument given on upload.
+        root:
+          type: string
+          description: The root argument given on upload.
+        filename:
+          type: string
+          description: The filename where the upload was stored before conversion.
+        state:
+          type: string
+          description: The upload's current state.
+          enum:
+            - processing
+            - errored
+            - completed
+            - queued
+        failureSummary:
+          type: string
+          description: A brief description of why the upload conversion failed.
+        failureStacktrace:
+          type: string
+          description: The stacktrace of the upload error.
+        uploadedAt:
+          type: string
+          description: An ISO 8601-formatted time that the dump was uploaded.
+        startedAt:
+          type: string
+          description: An ISO 8601-formatted time that the conversion started.
+          nullable: true
+        completedOrErroredAt:
+          type: string
+          description: An ISO 8601-formatted time that the conversion completed or errored.
+          nullable: true
+      required:
+        - id
+        - repository
+        - commit
+        - root
+        - filename
+        - state
+        - failureSummary
+        - failureStacktrace
+        - uploadedAt
+        - startedAt
+        - completedOrErroredAt
       additionalProperties: false

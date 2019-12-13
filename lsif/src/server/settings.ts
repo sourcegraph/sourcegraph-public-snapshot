@@ -23,9 +23,9 @@ export const REDIS_ENDPOINT = process.env.REDIS_STORE_ENDPOINT || process.env.RE
 export const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 
 /**
- * The interval (in seconds) to invoke the cleanOldJobs task.
+ * The interval (in seconds) to invoke the cleanOldUploads task.
  */
-export const CLEAN_OLD_JOBS_INTERVAL = readEnvInt('CLEAN_OLD_JOBS_INTERVAL', 60 * 60 * 8)
+export const CLEAN_OLD_UPLOADS_INTERVAL = readEnvInt('CLEAN_OLD_UPLOADS_INTERVAL', 60 * 60 * 8)
 
 /**
  * The default number of remote dumps to open when performing a global find-reference operation.
@@ -33,18 +33,29 @@ export const CLEAN_OLD_JOBS_INTERVAL = readEnvInt('CLEAN_OLD_JOBS_INTERVAL', 60 
 export const DEFAULT_REFERENCES_NUM_REMOTE_DUMPS = readEnvInt('DEFAULT_REFERENCES_NUM_REMOTE_DUMPS', 10)
 
 /**
- * The interval (in seconds) to invoke the cleanFailedJobs task.
+ * The interval (in seconds) to invoke the cleanFailedUploads task.
  */
-export const CLEAN_FAILED_JOBS_INTERVAL = readEnvInt('CLEAN_FAILED_JOBS_INTERVAL', 60 * 60 * 8)
+export const CLEAN_FAILED_UPLOADS_INTERVAL = readEnvInt('CLEAN_FAILED_UPLOADS_INTERVAL', 60 * 60 * 8)
 
 /**
  * The interval (in seconds) to invoke the updateQueueSizeGaugeInterval task.
  */
 export const UPDATE_QUEUE_SIZE_GAUGE_INTERVAL = readEnvInt('UPDATE_QUEUE_SIZE_GAUGE_INTERVAL', 5)
+
+/**
+ * The interval (in seconds) to run the resetStalledUploads task.
+ */
+export const RESET_STALLED_UPLOADS_INTERVAL = readEnvInt('RESET_STALLED_UPLOADS_INTERVAL', 60)
+
 /**
  * The default page size for the job endpoints.
  */
 export const DEFAULT_JOB_PAGE_SIZE = readEnvInt('DEFAULT_JOB_PAGE_SIZE', 50)
+
+/**
+ * The default page size for the upload endpoints.
+ */
+export const DEFAULT_UPLOAD_PAGE_SIZE = readEnvInt('DEFAULT_UPLOAD_PAGE_SIZE', 50)
 
 /**
  * The maximum number of jobs to search in one call to the search-jobs.lua script.
@@ -74,11 +85,16 @@ export const DOCUMENT_CACHE_CAPACITY = readEnvInt('DOCUMENT_CACHE_CAPACITY', 102
 export const RESULT_CHUNK_CACHE_CAPACITY = readEnvInt('RESULT_CHUNK_CACHE_CAPACITY', 1024 * 1024 * 1024)
 
 /**
- * The maximum age (in seconds) that a job (completed or queued) will remain in redis.
+ * The maximum age (in seconds) that an upload (completed or queued) will remain in Postgres.
  */
-export const JOB_MAX_AGE = readEnvInt('JOB_MAX_AGE', 60 * 60 * 24 * 7)
+export const UPLOAD_MAX_AGE = readEnvInt('JOB_UPLOAD_AGE', 60 * 60 * 24 * 7)
 
 /**
- * The maximum age (in seconds) that the files for a failed job can remain on disk.
+ * The maximum age (in seconds) that the files for an unprocessed upload can remain on disk.
  */
-export const FAILED_JOB_MAX_AGE = readEnvInt('FAILED_JOB_MAX_AGE', 24 * 60 * 60)
+export const FAILED_UPLOAD_MAX_AGE = readEnvInt('FAILED_UPLOAD_MAX_AGE', 24 * 60 * 60)
+
+/**
+ * The maximum age (in seconds) that the an upload can be unlocked and in the `processing` state.
+ */
+export const STALLED_UPLOAD_MAX_AGE = readEnvInt('STALLED_UPLOAD_MAX_AGE', 5)
