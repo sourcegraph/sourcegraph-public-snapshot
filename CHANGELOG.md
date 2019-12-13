@@ -11,6 +11,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## 3.11.0 (unreleased)
 
+**Important:** If you use `SITE_CONFIG_FILE` or `CRITICAL_CONFIG_FILE`, please be sure to follow the steps in: [removal of the management console](TODO) after upgrading.
+
 ### Added
 
 - Language statistics by commit are available via the API. [#6737](https://github.com/sourcegraph/sourcegraph/pull/6737)
@@ -31,6 +33,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Remove potential panic in gitserver if heavily loaded. [#6710](https://github.com/sourcegraph/sourcegraph/issues/6710)
 
 ### Removed
+
+- The management console has been removed. All critical configuration previously stored in the management console will be automatically migrated to your site configuration. If you use `SITE_CONFIG_FILE` or `CRITICAL_CONFIG_FILE`, please be sure to follow the steps [in this documentation](TODO) after upgrading. For more information about this change, see: [removal of the management console](TODO).
 
 ## 3.10.4
 
