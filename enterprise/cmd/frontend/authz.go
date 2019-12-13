@@ -96,7 +96,7 @@ func initAuthz() {
 		if info != nil && info.IsExpiredWithGracePeriod() {
 			return []*graphqlbackend.Alert{{
 				TypeValue:    graphqlbackend.AlertTypeError,
-				MessageValue: "Sourcegraph license expired! All non-admin users are locked out of Sourcegraph! Update the license key in the management console (https://docs.sourcegraph.com/admin/management_console) or downgrade to only using Sourcegraph Core features.",
+				MessageValue: "Sourcegraph license expired! All non-admin users are locked out of Sourcegraph. Update the license key in the management console (https://docs.sourcegraph.com/admin/management_console) or downgrade to only using Sourcegraph Core features.",
 			}}
 		}
 		return nil
