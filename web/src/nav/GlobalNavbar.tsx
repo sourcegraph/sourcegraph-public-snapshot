@@ -134,15 +134,13 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                     <>
                         {this.props.interactiveSearchMode ? (
                             !this.state.authRequired && (
-                                <>
-                                    <InteractiveModeInput
-                                        {...this.props}
-                                        authRequired={this.state.authRequired}
-                                        navbarSearchState={this.props.navbarSearchQueryState}
-                                        onNavbarQueryChange={this.props.onNavbarQueryChange}
-                                        showDotComMarketing={showDotComMarketing}
-                                    />
-                                </>
+                                <InteractiveModeInput
+                                    {...this.props}
+                                    authRequired={this.state.authRequired}
+                                    navbarSearchState={this.props.navbarSearchQueryState}
+                                    onNavbarQueryChange={this.props.onNavbarQueryChange}
+                                    showDotComMarketing={showDotComMarketing}
+                                />
                             )
                         ) : (
                             <>
