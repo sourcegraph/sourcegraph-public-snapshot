@@ -238,11 +238,6 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                     View and edit the Sourcegraph site configuration. See{' '}
                     <Link to="/help/admin/config/site_config">documentation</Link> for more information.
                 </p>
-                <p>
-                    Authentication providers, the application URL, license key, and other critical configuration may be
-                    edited via the{' '}
-                    <a href="https://docs.sourcegraph.com/admin/management_console">management console</a>.
-                </p>
                 <div className="site-admin-configuration-page__alerts">{alerts}</div>
                 {this.state.loading && <LoadingSpinner className="icon-inline" />}
                 {this.state.site && this.state.site.configuration && (
