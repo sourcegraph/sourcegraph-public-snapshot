@@ -1484,9 +1484,13 @@ describe('e2e test suite', () => {
         })
     })
 
-    describe.only('Interactive search mode (feature flagged)', () => {
+    describe('Interactive search mode (feature flagged)', () => {
+        let previousExperimentalFeatures: any
         beforeAll(async () => {
-            await driver.setConfig(['experimentalFeatures'], prev => ({ interactiveSearchMode: 'enabled' }))
+            await driver.setConfig(['experimentalFeatures'], prev => {
+                previousExperimentalFeatures = prev?.value
+                return { interactiveSearchMode: 'enabled' }
+            })
 
             // wait for configuration to be applied
             await retry(
@@ -1500,6 +1504,10 @@ describe('e2e test suite', () => {
                 },
                 { minTimeout: 1000 }
             )
+        })
+
+        afterAll(async () => {
+            await driver.setConfig(['experimentalFeatures'], () => previousExperimentalFeatures)
         })
 
         test('Interactive search mode component appears', async () => {
@@ -1557,9 +1565,9 @@ describe('e2e test suite', () => {
             await driver.page.keyboard.press('Enter')
             await driver.assertWindowLocation('/search?repo=gorilla/mux&file=README&q=&patternType=literal')
 
-            // Remove file filter
-            await driver.page.waitForSelector('.e2e-filter-input__close-button-file-1', { visible: true })
-            await driver.page.click('.e2e-filter-input__close-button-file-1')
+            // Delete file filter
+            await driver.page.waitForSelector('.e2e-filter-input__delete-button-file-1', { visible: true })
+            await driver.page.click('.e2e-filter-input__delete-button-file-1')
             await driver.page.click('.search-button')
             await driver.assertWindowLocation('/search?repo=gorilla/mux&q=&patternType=literal')
 
@@ -1568,7 +1576,6 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector('.e2e-add-filter-button-repo', { visible: true })
             await driver.page.click('.e2e-add-filter-button-repo')
             await driver.page.waitForSelector('.e2e-filter-input-repo-0')
-            await driver.page.waitForSelector('.e2e-filter-input-repo-0')
             await driver.page.waitForSelector('.e2e-filter-input__input-field-repo-0')
             await driver.page.keyboard.type('gorilla')
             await driver.page.waitForSelector('.e2e-filter-input__suggestions')
@@ -1576,6 +1583,21 @@ describe('e2e test suite', () => {
             await driver.page.keyboard.press('ArrowDown')
             await driver.page.keyboard.press('Enter')
             await driver.page.keyboard.press('Enter')
+            await driver.assertWindowLocation('/search?repo=%5Egithub%5C.com/gorilla/mux%24&q=&patternType=literal')
+
+            // Test cancelling editing an input with escape key
+            await driver.page.click('.e2e-filter-input__button-text-repo-0')
+            await driver.page.waitForSelector('.e2e-filter-input__input-field-repo-0')
+            await driver.page.keyboard.type('/mux')
+            await driver.page.keyboard.press('Escape')
+            await driver.page.click('.e2e-search-button')
+            await driver.assertWindowLocation('/search?repo=%5Egithub%5C.com/gorilla/mux%24&q=&patternType=literal')
+
+            // Test cancelling editing an input by clicking outside close button
+            await driver.page.click('.e2e-filter-input__button-text-repo-0')
+            await driver.page.waitForSelector('.e2e-filter-input__input-field-repo-0')
+            await driver.page.keyboard.type('/mux')
+            await driver.page.click('.e2e-search-button')
             await driver.assertWindowLocation('/search?repo=%5Egithub%5C.com/gorilla/mux%24&q=&patternType=literal')
         })
     })

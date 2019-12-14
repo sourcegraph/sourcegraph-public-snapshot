@@ -118,10 +118,20 @@ export default class InteractiveModeInput extends React.Component<InteractiveMod
     }
 
     private onFilterDeleted = (filterKey: string): void => {
-        const newFiltersInQuery = this.props.filtersInQuery
+        const newFiltersInQuery = { ...this.props.filtersInQuery }
         delete newFiltersInQuery[filterKey]
 
         this.props.onFiltersInQueryChange(newFiltersInQuery)
+
+        // Submit a search with the new values
+        submitSearch(
+            this.props.history,
+            this.props.navbarSearchState.query,
+            'nav',
+            this.props.patternType,
+            undefined,
+            newFiltersInQuery
+        )
     }
 
     /**

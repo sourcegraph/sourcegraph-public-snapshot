@@ -372,7 +372,7 @@ export default class FilterInput extends React.Component<Props, State> {
                                             <button
                                                 type="button"
                                                 onClick={this.cancelEditInput}
-                                                className="btn btn-icon icon-inline"
+                                                className={`btn btn-icon icon-inline e2e-filter-input__cancel-button-${this.props.mapKey}`}
                                                 aria-label="Cancel"
                                                 data-tooltip="Cancel"
                                             >
@@ -388,7 +388,7 @@ export default class FilterInput extends React.Component<Props, State> {
                     <div className="filter-input--uneditable d-flex">
                         <button
                             type="button"
-                            className="filter-input__button-text btn text-nowrap"
+                            className={`filter-input__button-text btn text-nowrap e2e-filter-input__button-text-${this.props.mapKey}`}
                             onClick={this.onClickFilterChip}
                             data-tooltip="Edit filter"
                             aria-label="Edit filter"
@@ -399,7 +399,7 @@ export default class FilterInput extends React.Component<Props, State> {
                         <button
                             type="button"
                             onClick={this.onClickDelete}
-                            className={`btn btn-icon icon-inline e2e-filter-input__close-button-${this.props.mapKey}`}
+                            className={`btn btn-icon icon-inline e2e-filter-input__delete-button-${this.props.mapKey}`}
                             aria-label="Delete filter"
                             data-tooltip="Delete filter"
                         >

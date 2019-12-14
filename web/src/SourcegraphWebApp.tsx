@@ -371,7 +371,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
     }
 
     private onFiltersInQueryChange = (filtersInQuery: FiltersToTypeAndValue): void => {
-        console.log('!!!FILTERS IN QUERY IS CHANGING!!!!')
         this.setState({ filtersInQuery })
     }
 
