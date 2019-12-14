@@ -141,7 +141,7 @@ This is largely the same as step 5, except easier. For other developer machines 
 
 ## Next steps
 
-- [Configure Sourcegraph's `externalURL`](config/critical_config.md)
+- [Configure Sourcegraph's `externalURL`](config/site_config.md)
 - [Redirect to external HTTPS URL](nginx.md#redirect-to-external-https-url)
 - [NGINX HTTP Strict Transport Security](nginx.md#redirect-to-external-https-url)
 - [NGINX SSL Termination guide](https://docs.nginx.com/nginx/admin-guide/security-controls/terminating-ssl-http/)

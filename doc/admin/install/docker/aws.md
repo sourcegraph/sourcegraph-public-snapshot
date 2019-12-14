@@ -51,7 +51,7 @@ First, create a `cloud-init.txt` file with user data contents as shown above or 
 
 `aws ec2 run-instances --image-id ami-032509850cf9ee54e --count 1 --instance-type t2.medium --key-name id_rsa --security-groups default --user-data file://cloud-init.txt`
 
-Substitute the path to your `cloud-init.txt` file, the name of your key pair, and an appropriate security group. To start you probably want a security group which exposes port 80, 443, 2633 (for the management console), and 22 (for SSH) to the public internet.
+Substitute the path to your `cloud-init.txt` file, the name of your key pair, and an appropriate security group. To start you probably want a security group which exposes port 80, 443, and 22 (for SSH) to the public internet.
 
 ---
 

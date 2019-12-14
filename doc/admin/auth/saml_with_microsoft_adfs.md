@@ -8,13 +8,13 @@ This document applies to the following versions of [Microsoft Active Directory F
 
 These instructions guide you through configuring Sourcegraph as a relying party (RP) of ADFS, which enables users to authenticate to Sourcegraph using their Active Directory credentials.
 
-## 1. Add the SAML auth provider to Sourcegraph critical config
+## 1. Add the SAML auth provider to Sourcegraph site config
 
-1.  Set the `externalURL` in [critical config](../config/critical_config.md) to a URL that the ADFS server can reach.
+1.  Set the `externalURL` in [site config](../config/site_config.md) to a URL that the ADFS server can reach.
 1.  Add an entry to `auth.providers` that points to your ADFS server's SAML metadata URL (typically containing the path `/federationmetadata/2007-06/federationmetadata.xml`).
 1.  Confirm there are no error messages in the `sourcegraph/server` Docker container logs (or the `sourcegraph-frontend` pod logs, if Sourcegraph is deployed to a Kubernetes cluster). The most likely error message indicating a problem is `Error prefetching SAML service provider metadata.`.
 
-The example below demonstrates the properties that you must set. See the [SAML auth provider documentation](../config/critical_config.md#saml) the full set of properties that the SAML auth provider supports.
+The example below demonstrates the properties that you must set. See the [SAML auth provider documentation](../config/site_config.md#saml) the full set of properties that the SAML auth provider supports.
 
 ```json
 {

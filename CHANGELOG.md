@@ -11,7 +11,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## 3.11.0 (unreleased)
 
-**Important:** If you use `SITE_CONFIG_FILE` or `CRITICAL_CONFIG_FILE`, please be sure to follow the steps in: [removal of the management console](TODO) after upgrading.
+**Important:** If you use `SITE_CONFIG_FILE` or `CRITICAL_CONFIG_FILE`, please be sure to follow the steps in: [migration notes for Sourcegraph v3.11+](doc/admin/migration/3_11.md) after upgrading.
 
 ### Added
 
@@ -34,7 +34,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
-- The management console has been removed. All critical configuration previously stored in the management console will be automatically migrated to your site configuration. If you use `SITE_CONFIG_FILE` or `CRITICAL_CONFIG_FILE`, please be sure to follow the steps [in this documentation](TODO) after upgrading. For more information about this change, see: [removal of the management console](TODO).
+- The management console has been removed. All critical configuration previously stored in the management console will be automatically migrated to your site configuration. For more information about this change, or if you use `SITE_CONFIG_FILE` / `CRITICAL_CONFIG_FILE`, please see the [migration notes for Sourcegraph v3.11+](doc/admin/migration/3_11.md).
 
 ## 3.10.4
 

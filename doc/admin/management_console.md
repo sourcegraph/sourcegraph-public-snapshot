@@ -1,5 +1,7 @@
 # Management console
 
+> NOTE: In Sourcegraph v3.11 the management console and critical configuration were removed and all properties moved into the site configuration. See the [migration notes for Sourcegraph v3.11+](migration/3_11.md) for more information.
+
 The management console is a separate service used to edit Sourcegraph's [critical configuration](config/critical_config.md).
 
 Critical configuration includes things like authentication providers, the external URL, and the license key. This configuration is separate from the regular [site configuration](config/site_config.md), because an error here could make Sourcegraph inaccessible, except through the management console.
