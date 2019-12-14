@@ -18,7 +18,7 @@
   "links": [],
   "panels": [
     {
-      "content": "<div style=\"text-align: left;\">\n  <img src=\"https://storage.googleapis.com/sourcegraph-assets/sourcegraph-logo-light.png\" style=\"height:30px; margin:0.5rem\"></img>\n  <div style=\"margin-left: 1rem; margin-top: 0.5rem; font-size: 20px;\"><span style=\"color: #8e8e8e\">Overview:</span> High-level insight into the health of Sourcegraph.</span>\n</div>\n<div style=\"display: flex; padding-top: 1rem;\">\n  <div style=\"margin-left: 2rem; margin-right: 2rem;\">\n    <h4><span style=\"color: #8e8e8e\">Errors</span> by service</h4>\n    <p>\n      The number of definitive errors each service has encountered. If this number is ever above one, something is definitively wrong with Sourcegraph.<br/>\n      <span style=\"color: #8e8e8e\"><strong>Examples:</strong> Database inaccessible, out of disk space, out of memory.</span>\n    </p>\n  </div>\n  <div style=\"margin-left: 2rem; margin-right: 2rem;\">\n    <h4><span style=\"color: #8e8e8e\">Warnings</span> by service</h4>\n    <p>\n      The number of warnings each service has emitted. If this number is ever above one, something <em>may be</em> wrong with Sourcegraph.<br/>\n      <span style=\"color: #8e8e8e\"><strong>Examples:</strong> High latency, high search timeouts.</span>\n    </p>\n  </div>\n</div>",
+      "content": "<div style=\"text-align: left;\">\n  <img src=\"https://storage.googleapis.com/sourcegraph-assets/sourcegraph-logo-light.png\" style=\"height:30px; margin:0.5rem\"></img>\n  <div style=\"margin-left: 1rem; margin-top: 0.5rem; font-size: 20px;\"><span style=\"color: #8e8e8e\">Overview:</span> High-level insight into the health of Sourcegraph.</span>\n</div>\n<div style=\"display: flex; padding-top: 1rem;\">\n  <div style=\"margin-left: 2rem; margin-right: 2rem;\">\n    <h4><span style=\"color: #8e8e8e\">Critical alerts</span> by service</h4>\n    <p>\n      The number of definitive issues each service has encountered. If this number is ever above 1.0, something is definitively wrong with Sourcegraph and a site admin should investigate.\n      <span style=\"color: #8e8e8e\">Configure paging for this metric.</span>\n      <div style=\"color: #8e8e8e\"><strong>Examples:</strong> Database inaccessible, out of disk space, out of memory.</div>\n    </p>\n  </div>\n  <div style=\"margin-left: 2rem; margin-right: 2rem;\">\n    <h4><span style=\"color: #8e8e8e\">Warning alerts</span> by service</h4>\n    <p>\n      The number of warnings each service has fired. If this number is ever above 1.0, something <em>may be</em> wrong with Sourcegraph and a site admin should take a closer look when convenient.\n      <span style=\"color: #8e8e8e\">Configure email alerting for this metric.</span>\n      <div style=\"color: #8e8e8e\"><strong>Examples:</strong> High latency, high search timeouts.</div>\n    </p>\n  </div>\n</div>",
       "datasource": null,
       "gridPos": {
         "h": 6,
@@ -74,7 +74,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "error_alert_count",
+          "expr": "alert_count{level=\"critical\"}",
           "legendFormat": "{{container}}",
           "refId": "A"
         }
@@ -83,7 +83,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Error alerts by service",
+      "title": "Critical alerts by service",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -101,7 +101,7 @@
         {
           "decimals": 0,
           "format": "short",
-          "label": "Error alerts fired",
+          "label": "open alerts",
           "logBase": 1,
           "max": null,
           "min": "0",
@@ -161,7 +161,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "warning_alert_count",
+          "expr": "alert_count{level=\"warning\"}",
           "legendFormat": "{{container}}",
           "refId": "A"
         }
@@ -188,7 +188,7 @@
         {
           "decimals": 0,
           "format": "short",
-          "label": "Warning alerts fired",
+          "label": "open alerts",
           "logBase": 1,
           "max": null,
           "min": "0",
