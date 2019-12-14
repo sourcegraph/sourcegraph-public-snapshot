@@ -197,8 +197,11 @@ export default class FilterInput extends React.Component<Props, State> {
         e.preventDefault()
         e.stopPropagation()
 
-        // Update the top-level filtersInQueryMap with the new value for this filter.
-        this.props.onFilterEdited(this.props.mapKey, this.state.inputValue)
+        if (this.state.inputValue !== '') {
+            // Don't allow empty filters.
+            // Update the top-level filtersInQueryMap with the new value for this filter.
+            this.props.onFilterEdited(this.props.mapKey, this.state.inputValue)
+        }
     }
 
     private onSuggestionSelect = (suggestion: Suggestion | undefined): void => {
