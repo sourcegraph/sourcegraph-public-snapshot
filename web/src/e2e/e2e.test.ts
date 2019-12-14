@@ -1485,31 +1485,21 @@ describe('e2e test suite', () => {
     })
 
     describe.only('Interactive search mode (feature flagged)', () => {
-        let previousExperimentalFeatures: any
         beforeAll(async () => {
-            await driver.setConfig(['experimentalFeatures'], prev => {
-                previousExperimentalFeatures = prev?.value
-                return { interactiveSearchMode: 'enabled' }
-            })
+            await driver.setConfig(['experimentalFeatures'], prev => ({ interactiveSearchMode: 'enabled' }))
 
-            // // wait for configuration to be applied
-            await retry(async () => {
-                await driver.page.goto(sourcegraphBaseUrl + '/search')
-                await driver.page.reload()
-                try {
+            // wait for configuration to be applied
+            await retry(
+                async () => {
+                    await driver.page.goto(sourcegraphBaseUrl + '/search')
+                    await driver.page.waitForSelector('.e2e-search-mode-toggle')
                     assert.notStrictEqual(
                         await driver.page.evaluate(() => document.querySelectorAll('.e2e-search-mode-toggle').length),
                         0
                     )
-                } catch (error) {
-                    await new Promise(resolve => setTimeout(resolve, 1000))
-                    throw asError(error)
-                }
-            })
-        })
-
-        afterAll(async () => {
-            await driver.setConfig(['experimentalFeatures'], () => previousExperimentalFeatures)
+                },
+                { minTimeout: 1000 }
+            )
         })
 
         test('Interactive search mode component appears', async () => {
@@ -1522,7 +1512,7 @@ describe('e2e test suite', () => {
             ).toBe(1)
         })
 
-        test('Submit a search through interactive mode on the homepage', async () => {
+        test('Interactive search mode functionality', async () => {
             await driver.page.waitForSelector('.e2e-search-mode-toggle', { visible: true })
             await driver.page.click('.e2e-search-mode-toggle')
             await driver.page.click('.e2e-search-mode-toggle__interactive-mode')
