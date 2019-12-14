@@ -15,4 +15,13 @@
         width: 100%;
         padding-bottom: 0.25rem;
     }
+
+    &__search-box-container {
+        min-width: 12rem;
+        flex: 1 0 auto;
+        margin-right: 0.25rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
 }

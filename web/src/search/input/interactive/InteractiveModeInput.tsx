@@ -162,7 +162,7 @@ export default class InteractiveModeInput extends React.Component<InteractiveMod
 
         return (
             <div className="interactive-mode-input e2e-interactive-mode-input">
-                <div className="interactive-mode-input__top-nav">
+                <div className={!isSearchHomepage ? 'interactive-mode-input__top-nav' : ''}>
                     {!isSearchHomepage &&
                         (this.props.authRequired ? (
                             <div className={logoLinkClassName}>{logo}</div>
@@ -171,10 +171,14 @@ export default class InteractiveModeInput extends React.Component<InteractiveMod
                                 {logo}
                             </Link>
                         ))}
-                    <div className="global-navbar__search-box-container d-none d-sm-flex flex-row">
-                        {!isSearchHomepage && <SearchModeToggle {...this.props} interactiveSearchMode={true} />}
+                    <div
+                        className={`d-none d-sm-flex flex-row ${
+                            !isSearchHomepage ? 'interactive-mode-input__search-box-container' : ''
+                        }`}
+                    >
                         <Form onSubmit={this.onSubmit} className="flex-grow-1">
                             <div className="d-flex align-items-start">
+                                <SearchModeToggle {...this.props} interactiveSearchMode={true} />
                                 <QueryInput
                                     location={this.props.location}
                                     history={this.props.history}
