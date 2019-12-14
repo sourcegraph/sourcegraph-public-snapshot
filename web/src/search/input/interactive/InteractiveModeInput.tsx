@@ -73,7 +73,7 @@ export default class InteractiveModeInput extends React.Component<InteractiveMod
     }
 
     /**
-     * Adds a new filter to the filtersInQuery state field.
+     * Adds a new filter to the top-level filtersInQuery state field.
      * We use the filter name and the number of values added as the key.
      * Keys must begin with the filter name, as defined in `SuggestionTypes`.
      * We use this to identify filter values when building
@@ -88,20 +88,25 @@ export default class InteractiveModeInput extends React.Component<InteractiveMod
         })
     }
 
+    /**
+     * onFilterEdited updates the top-level filtersInQuery object with new values
+     * when new filter values are submitted by the user.
+     *
+     * Also conducts a new search with the updated query.
+     */
     private onFilterEdited = (filterKey: string, value: string): void => {
-        this.props.onFiltersInQueryChange({
+        const newFiltersInQuery = {
             ...this.props.filtersInQuery,
             [filterKey]: {
                 ...this.props.filtersInQuery[filterKey],
                 value,
+                editable: false,
             },
-        })
-    }
+        }
+        // Update the top-level filtersInQuery with the new values
+        this.props.onFiltersInQueryChange(newFiltersInQuery)
 
-    private onFilterDeleted = (filterKey: string): void => {
-        const newFiltersInQuery = this.props.filtersInQuery
-        delete newFiltersInQuery[filterKey]
-
+        // Submit a search with the new values
         submitSearch(
             this.props.history,
             this.props.navbarSearchState.query,
@@ -110,10 +115,20 @@ export default class InteractiveModeInput extends React.Component<InteractiveMod
             undefined,
             newFiltersInQuery
         )
+    }
+
+    private onFilterDeleted = (filterKey: string): void => {
+        const newFiltersInQuery = this.props.filtersInQuery
+        delete newFiltersInQuery[filterKey]
 
         this.props.onFiltersInQueryChange(newFiltersInQuery)
     }
 
+    /**
+     * toggleFilterEditable updates the top-level filtersInQuery object with
+     * the new `editable` state of a single filter when its edit state is
+     * being toggled.
+     */
     private toggleFilterEditable = (filterKey: string): void => {
         this.props.onFiltersInQueryChange({
             ...this.props.filtersInQuery,

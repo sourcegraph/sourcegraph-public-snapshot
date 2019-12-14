@@ -17,7 +17,7 @@ import {
 } from 'rxjs/operators'
 import { createSuggestion, Suggestion, SuggestionItem, FiltersSuggestionTypes } from '../Suggestion'
 import { fetchSuggestions } from '../../backend'
-import { ComponentSuggestions, noSuggestions, typingDebounceTime, focusQueryInput } from '../QueryInput'
+import { ComponentSuggestions, noSuggestions, typingDebounceTime } from '../QueryInput'
 import { isDefined } from '../../../../../shared/src/util/types'
 import Downshift from 'downshift'
 import { generateFiltersQuery } from '../helpers'
@@ -90,10 +90,6 @@ interface Props {
 const LOADING: 'loading' = 'loading'
 
 interface State {
-    /**
-     * Whether the input is currently focused. Used for styling.
-     */
-    inputFocused: boolean
     /** Only show suggestions if search input is focused */
     showSuggestions: boolean
     /** The suggestions shown to the user */
@@ -111,7 +107,6 @@ interface State {
 export default class FilterInput extends React.Component<Props, State> {
     private subscriptions = new Subscription()
     private inputValues = new Subject<string>()
-    private componentUpdates = new Subject<Props>()
     private inputEl = React.createRef<HTMLInputElement>()
     /** Emits when the suggestions are hidden */
     private suggestionsHidden = new Subject<void>()
@@ -120,14 +115,12 @@ export default class FilterInput extends React.Component<Props, State> {
         super(props)
 
         this.state = {
-            inputFocused: document.activeElement === this.inputEl.current,
             suggestions: noSuggestions,
             showSuggestions: false,
             inputValue: props.value || '',
         }
 
         this.subscriptions.add(this.inputValues.subscribe(query => this.setState({ inputValue: query })))
-        // this.subscriptions.add(this.inputValues.subscribe(query => this.props.onFilterEdited(this.props.mapKey, query)))
 
         this.subscriptions.add(
             this.inputValues
@@ -141,12 +134,12 @@ export default class FilterInput extends React.Component<Props, State> {
                             return [{ suggestions: noSuggestions }]
                         }
                         const filterType = props.filterType
-                        const newFiltersQuery = this.props.filtersInQuery
-                        if (newFiltersQuery[this.props.mapKey]) {
-                            newFiltersQuery[this.props.mapKey].value = inputValue
+                        const newFiltersQuery = { ...props.filtersInQuery }
+                        if (newFiltersQuery[props.mapKey]) {
+                            newFiltersQuery[props.mapKey].value = inputValue
                         } else {
-                            newFiltersQuery[this.props.mapKey] = {
-                                type: this.props.filterType,
+                            newFiltersQuery[props.mapKey] = {
+                                type: props.filterType,
                                 value: inputValue,
                                 editable: true,
                             }
@@ -192,22 +185,8 @@ export default class FilterInput extends React.Component<Props, State> {
         }
     }
 
-    public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
-    }
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
-    }
-
-    private onClickSelected = (): void => {
-        if (this.inputEl.current) {
-            this.inputEl.current.focus()
-        }
-        this.props.toggleFilterEditable(this.props.mapKey)
-    }
-
-    private onClickDelete = (): void => {
-        this.props.onFilterDeleted(this.props.mapKey)
     }
 
     private onInputUpdate: React.ChangeEventHandler<HTMLInputElement> = e => {
@@ -218,8 +197,8 @@ export default class FilterInput extends React.Component<Props, State> {
         e.preventDefault()
         e.stopPropagation()
 
-        this.props.onSubmit(e)
-        focusQueryInput.next()
+        // Update the top-level filtersInQueryMap with the new value for this filter.
+        this.props.onFilterEdited(this.props.mapKey, this.state.inputValue)
     }
 
     private onSuggestionSelect = (suggestion: Suggestion | undefined): void => {
@@ -232,14 +211,43 @@ export default class FilterInput extends React.Component<Props, State> {
         this.setState({ suggestions: noSuggestions, showSuggestions: false }, () => this.suggestionsHidden.next())
     }
 
-    private onInputFocus = (): void => this.setState({ inputFocused: true })
+    /**
+     * Handles clicking a filter chip in an uneditable state. Makes the filter editable
+     * and focuses the input field.
+     */
+    private onClickFilterChip = (): void => {
+        if (this.inputEl.current) {
+            this.inputEl.current.focus()
+        }
+        this.props.toggleFilterEditable(this.props.mapKey)
+    }
 
-    private onInputBlur = (e: React.FocusEvent<HTMLDivElement>): void => {
+    /** Handles clicking the delete button on an uneditable filter chip. */
+    private onClickDelete = (): void => {
+        this.props.onFilterDeleted(this.props.mapKey)
+    }
+
+    /**
+     * Handles the input field in the filter input becoming unfocused.
+     */
+    private onInputBlur: React.FocusEventHandler<HTMLDivElement> = e => {
         const focusIsNotChildElement = this.focusInCurrentTarget(e)
         if (focusIsNotChildElement) {
             return
         }
 
+        this.cancelEditInput()
+    }
+
+    /**
+     * Handles cancelling while editing a filter.
+     *
+     * If the filter had no value, and no new value was submitted, the filter is deleted.
+     * If the filter had an old value, and no new value was submitted, the inputValue is reverted
+     * to the initial value, and the filter becomes uneditable.
+     * Any suggestions get hidden.
+     */
+    private cancelEditInput = (): void => {
         if (this.props.value === '') {
             // Don't allow empty filters
             this.onClickDelete()
@@ -247,7 +255,9 @@ export default class FilterInput extends React.Component<Props, State> {
         }
 
         this.props.toggleFilterEditable(this.props.mapKey)
-        this.setState({ inputFocused: false, suggestions: noSuggestions })
+
+        // Revert to the last locked-in value for this filter, since the user didn't submit their new value.
+        this.setState({ suggestions: noSuggestions, inputValue: this.props.value })
     }
 
     /**
@@ -283,6 +293,11 @@ export default class FilterInput extends React.Component<Props, State> {
                 },
             })
         }
+
+        // Escape to cancel editing a filter
+        if (event.key === 'Escape' && this.props.editable) {
+            this.cancelEditInput()
+        }
     }
 
     private downshiftItemToString = (suggestion?: Suggestion): string => (suggestion ? suggestion.value : '')
@@ -295,7 +310,7 @@ export default class FilterInput extends React.Component<Props, State> {
 
         return (
             <div
-                className={`filter-input ${this.state.inputFocused ? 'filter-input--active' : ''} e2e-filter-input-${
+                className={`filter-input ${this.props.editable ? 'filter-input--active' : ''} e2e-filter-input-${
                     this.props.mapKey
                 }`}
                 onBlur={this.onInputBlur}
@@ -320,7 +335,6 @@ export default class FilterInput extends React.Component<Props, State> {
                                                         onKeyDown(event)
                                                     }}
                                                     autoFocus={true}
-                                                    onFocus={this.onInputFocus}
                                                 />
                                                 {showSuggestions && (
                                                     <ul
@@ -357,8 +371,10 @@ export default class FilterInput extends React.Component<Props, State> {
                                             <CheckButton />
                                             <button
                                                 type="button"
-                                                onClick={this.onClickDelete}
+                                                onClick={this.cancelEditInput}
                                                 className="btn btn-icon icon-inline"
+                                                aria-label="Cancel"
+                                                data-tooltip="Cancel"
                                             >
                                                 <CloseIcon />
                                             </button>
@@ -373,15 +389,19 @@ export default class FilterInput extends React.Component<Props, State> {
                         <button
                             type="button"
                             className="filter-input__button-text btn text-nowrap"
-                            onClick={this.onClickSelected}
+                            onClick={this.onClickFilterChip}
+                            data-tooltip="Edit filter"
+                            aria-label="Edit filter"
                             tabIndex={0}
                         >
-                            {this.props.filterType}:{this.props.value}
+                            {this.props.filterType}:{this.state.inputValue}
                         </button>
                         <button
                             type="button"
                             onClick={this.onClickDelete}
                             className={`btn btn-icon icon-inline e2e-filter-input__close-button-${this.props.mapKey}`}
+                            aria-label="Delete filter"
+                            data-tooltip="Delete filter"
                         >
                             <CloseIcon />
                         </button>

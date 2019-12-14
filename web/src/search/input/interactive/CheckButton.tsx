@@ -7,7 +7,12 @@ import React from 'react'
  */
 export const CheckButton: React.FunctionComponent = () => (
     <div className="search-button d-flex">
-        <button className="btn btn-primary search-button__btn" type="submit" aria-label="Search">
+        <button
+            className="btn btn-primary search-button__btn"
+            type="submit"
+            aria-label="Confirm filter"
+            data-tooltip="Confirm filter"
+        >
             <CheckIcon className="icon-inline" aria-hidden="true" />
         </button>
     </div>

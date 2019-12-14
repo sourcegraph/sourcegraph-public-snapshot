@@ -45,12 +45,6 @@ import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive
  */
 export const queryUpdates = new Subject<string>()
 
-/**
- * This is used to notify the QueryInput that the input element should be focused.
- * Allows other components to focus the input.
- */
-export const focusQueryInput = new Subject<void>()
-
 interface Props extends PatternTypeProps {
     location: H.Location
     history: H.History
@@ -332,8 +326,6 @@ export class QueryInput extends React.Component<Props, State> {
                         this.props.history.replace({ search: q.toString() })
                     })
             )
-
-            this.subscriptions.add(focusQueryInput.subscribe(() => this.focusInputAndPositionCursorAtEnd()))
         }
     }
 
