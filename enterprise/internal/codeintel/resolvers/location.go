@@ -86,7 +86,7 @@ type resolversByPathMap map[string]*graphqlbackend.GitTreeEntryResolver
 // empty structs in the path set are replaced by git tree resolvers. This ensures that each repository,
 // commit, and path are each resolved only once.
 //
-// This method resolves repositories. See `resolveGitCommitsForRepository` and `resolveGitTreeForPath`
+// This method resolves repositories. See `resolveGitCommitsForRepositories` and `resolveGitTreeForPaths`
 // (which are called from here) for the resolution of commits and git trees, respectively.
 func resolveGitTrees(ctx context.Context, pathsByCommitByRepository pathsByCommitByRepositoryMap) (resolversByPathByCommitByRepostioryMap, error) {
 	resolversByRepositories := resolversByPathByCommitByRepostioryMap{}
@@ -98,7 +98,7 @@ func resolveGitTrees(ctx context.Context, pathsByCommitByRepository pathsByCommi
 		}
 		repositoryResolver := graphqlbackend.NewRepositoryResolver(repo)
 
-		resolvers, err := resolveGitCommitsForRepository(ctx, repositoryResolver, commits)
+		resolvers, err := resolveGitCommitsForRepositories(ctx, repositoryResolver, commits)
 		if err != nil {
 			return nil, err
 		}
@@ -108,7 +108,7 @@ func resolveGitTrees(ctx context.Context, pathsByCommitByRepository pathsByCommi
 	return resolversByRepositories, nil
 }
 
-func resolveGitCommitsForRepository(ctx context.Context, repositoryResolver *graphqlbackend.RepositoryResolver, pathsByCommit pathsByCommitMap) (resolversByPathByCommitMap, error) {
+func resolveGitCommitsForRepositories(ctx context.Context, repositoryResolver *graphqlbackend.RepositoryResolver, pathsByCommit pathsByCommitMap) (resolversByPathByCommitMap, error) {
 	resolversByCommit := resolversByPathByCommitMap{}
 
 	for commit, paths := range pathsByCommit {
@@ -117,7 +117,7 @@ func resolveGitCommitsForRepository(ctx context.Context, repositoryResolver *gra
 			return nil, err
 		}
 
-		resolvers, err := resolveGitTreeForPath(ctx, commitResolver, paths)
+		resolvers, err := resolveGitTreeForPaths(ctx, commitResolver, paths)
 		if err != nil {
 			return nil, err
 		}
@@ -127,7 +127,7 @@ func resolveGitCommitsForRepository(ctx context.Context, repositoryResolver *gra
 	return resolversByCommit, nil
 }
 
-func resolveGitTreeForPath(ctx context.Context, commitResolver *graphqlbackend.GitCommitResolver, paths pathsSet) (resolversByPathMap, error) {
+func resolveGitTreeForPaths(ctx context.Context, commitResolver *graphqlbackend.GitCommitResolver, paths pathsSet) (resolversByPathMap, error) {
 	resolversByPath := resolversByPathMap{}
 
 	for path := range paths {
