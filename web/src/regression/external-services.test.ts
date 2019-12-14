@@ -8,7 +8,7 @@ import { GraphQLClient, createGraphQLClient } from './util/GraphQLClient'
 import { Driver } from '../../../shared/src/e2e/driver'
 import { getConfig } from '../../../shared/src/e2e/config'
 import { getTestTools } from './util/init'
-import { ensureLoggedInOrCreateTestUser, editCriticalSiteConfig, login, loginToGitHub } from './util/helpers'
+import { ensureLoggedInOrCreateTestUser, login, loginToGitHub, editSiteConfig } from './util/helpers'
 import {
     setUserSiteAdmin,
     getUser,
@@ -255,10 +255,8 @@ describe('External services permissions', () => {
     let driver: Driver
     let gqlClient: GraphQLClient
     let resourceManager: TestResourceManager
-    let managementConsolePassword: string
     beforeAll(async () => {
         ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
-        managementConsolePassword = 'TODO'
     })
     afterAll(async () => {
         if (!config.noCleanup) {
@@ -304,7 +302,7 @@ describe('External services permissions', () => {
             resourceManager.add(
                 'Authentication provider',
                 authProvider.displayName,
-                await editCriticalSiteConfig(config.managementConsoleUrl, managementConsolePassword, contents =>
+                await editSiteConfig(gqlClient, contents =>
                     jsoncEdit.setProperty(contents, ['auth.providers', -1], authProvider, formattingOptions)
                 )
             )

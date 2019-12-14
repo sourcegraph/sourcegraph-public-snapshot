@@ -826,3 +826,57 @@ export function search(
         )
         .toPromise()
 }
+
+/**
+ * Fetches the site and its configuration.
+ *
+ * @returns Observable that emits the site
+ */
+export function fetchSiteConfiguration({
+    requestGraphQL,
+}: Pick<PlatformContext, 'requestGraphQL'>): Observable<GQL.ISite> {
+    return requestGraphQL<GQL.IQuery>({
+        request: gql`
+            query Site {
+                site {
+                    id
+                    configuration {
+                        id
+                        effectiveContents
+                        validationMessages
+                    }
+                }
+            }
+        `,
+        variables: {},
+        mightContainPrivateInfo: true,
+    }).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.site)
+    )
+}
+
+/**
+ * Updates the site's configuration.
+ *
+ * @returns An observable indicating whether or not a service restart is
+ * required for the update to be applied.
+ */
+export function updateSiteConfiguration(
+    { requestGraphQL }: Pick<PlatformContext, 'requestGraphQL'>,
+    lastID: number,
+    input: string
+): Observable<boolean> {
+    return requestGraphQL<GQL.IMutation>({
+        request: gql`
+            mutation UpdateSiteConfiguration($lastID: Int!, $input: String!) {
+                updateSiteConfiguration(lastID: $lastID, input: $input)
+            }
+        `,
+        variables: { lastID, input },
+        mightContainPrivateInfo: true,
+    }).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.updateSiteConfiguration)
+    )
+}

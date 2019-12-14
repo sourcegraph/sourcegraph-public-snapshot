@@ -9,11 +9,11 @@ import { getConfig } from '../../../shared/src/e2e/config'
 import { getTestTools } from './util/init'
 import {
     ensureLoggedInOrCreateTestUser,
-    createAuthProviderGUI,
     login,
     loginToOkta,
     loginToGitHub,
     loginToGitLab,
+    createAuthProvider,
 } from './util/helpers'
 import { setUserSiteAdmin, getUser } from './util/api'
 import {
@@ -27,11 +27,10 @@ const oktaUserAmy = 'beyang+sg-e2e-regression-test-amy@sourcegraph.com'
 
 async function testLogin(
     driver: Driver,
+    gqlClient: GraphQLClient,
     resourceManager: TestResourceManager,
     {
         sourcegraphBaseUrl,
-        managementConsoleUrl,
-        managementConsolePassword,
         authProvider,
         loginToAuthProvider,
     }: {
@@ -48,7 +47,7 @@ async function testLogin(
     resourceManager.add(
         'Authentication provider',
         authProvider.displayName,
-        await createAuthProviderGUI(driver, managementConsoleUrl, managementConsolePassword, authProvider)
+        await createAuthProvider(gqlClient, authProvider)
     )
     await login(driver, { sourcegraphBaseUrl, authProviderDisplayName: authProvider.displayName }, loginToAuthProvider)
 
@@ -120,7 +119,7 @@ describe('Auth regression test suite', () => {
     test(
         'Sign in via GitHub',
         async () => {
-            await testLogin(driver, resourceManager, {
+            await testLogin(driver, gqlClient, resourceManager, {
                 ...config,
                 managementConsolePassword,
                 authProvider: {
@@ -140,7 +139,7 @@ describe('Auth regression test suite', () => {
     test(
         'Sign in with GitLab',
         async () => {
-            await testLogin(driver, resourceManager, {
+            await testLogin(driver, gqlClient, resourceManager, {
                 ...config,
                 managementConsolePassword,
                 authProvider: {
@@ -159,7 +158,7 @@ describe('Auth regression test suite', () => {
     test(
         'Sign in with Okta SAML',
         async () => {
-            await testLogin(driver, resourceManager, {
+            await testLogin(driver, gqlClient, resourceManager, {
                 ...config,
                 managementConsolePassword,
                 authProvider: {
@@ -176,7 +175,7 @@ describe('Auth regression test suite', () => {
     test(
         'Sign in with Okta OpenID Connect',
         async () => {
-            await testLogin(driver, resourceManager, {
+            await testLogin(driver, gqlClient, resourceManager, {
                 ...config,
                 managementConsolePassword,
                 authProvider: {

@@ -4,12 +4,7 @@ import { getTestTools } from './util/init'
 import { Driver } from '../../../shared/src/e2e/driver'
 import { GraphQLClient, createGraphQLClient } from './util/GraphQLClient'
 import { TestResourceManager } from './util/TestResourceManager'
-import {
-    ensureLoggedInOrCreateTestUser,
-    ensureNewUser,
-    ensureNewOrganization,
-    editCriticalSiteConfig,
-} from './util/helpers'
+import { ensureLoggedInOrCreateTestUser, ensureNewUser, ensureNewOrganization, editSiteConfig } from './util/helpers'
 import { getUser, setUserSiteAdmin, fetchAllOrganizations, deleteOrganization, getViewerSettings } from './util/api'
 import { PlatformContext } from '../../../shared/src/platform/context'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -207,16 +202,15 @@ describe('Organizations regression test suite', () => {
                 const formattingOptions = { eol: '\n', insertSpaces: true, tabSize: 2 }
 
                 // Initial state: no auth.userOrgMap property
-                const managementConsolePassword = 'TODO'
                 resourceManager.add(
                     'Configuration',
                     'auth.userOrgMap',
-                    await editCriticalSiteConfig(config.managementConsoleUrl, managementConsolePassword, contents =>
+                    await editSiteConfig(gqlClient, contents =>
                         jsoncEdit.removeProperty(contents, ['auth.userOrgMap'], formattingOptions)
                     )
                 )
 
-                // Retry, because the critical configuration update endpoint is eventually consistent
+                // Retry, because the configuration update endpoint is eventually consistent
                 let lastCreatedOrg: GQL.IOrg
                 await retry(
                     async () => {
@@ -250,7 +244,7 @@ describe('Organizations regression test suite', () => {
                 )
 
                 // Set auth.userOrgMap
-                await editCriticalSiteConfig(config.managementConsoleUrl, managementConsolePassword, contents =>
+                await editSiteConfig(gqlClient, contents =>
                     jsoncEdit.setProperty(contents, ['auth.userOrgMap'], { '*': [testOrg.name] }, formattingOptions)
                 )
 
