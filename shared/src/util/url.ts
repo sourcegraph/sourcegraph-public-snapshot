@@ -589,7 +589,7 @@ export function interactiveBuildSearchURLQuery(filtersInQuery: FiltersToTypeAndV
 
     for (const searchType of SuggestionTypeKeys) {
         for (const filterKey of Object.keys(filtersInQuery)) {
-            if (filterKey.startsWith(searchType) && filtersInQuery[filterKey] !== null) {
+            if (filtersInQuery[filterKey].type === searchType) {
                 searchParams.append(searchType, filtersInQuery[filterKey].value)
             }
         }
