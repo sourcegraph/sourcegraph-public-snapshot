@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Form } from '../../../components/Form'
 import CloseIcon from 'mdi-react/CloseIcon'
-import { Subscription, Subject } from 'rxjs'
+import { Subscription, Subject, merge, of } from 'rxjs'
 import {
     distinctUntilChanged,
     switchMap,
@@ -13,6 +13,8 @@ import {
     takeUntil,
     repeat,
     startWith,
+    share,
+    delay,
 } from 'rxjs/operators'
 import { createSuggestion, Suggestion, SuggestionItem, FiltersSuggestionTypes } from '../Suggestion'
 import { fetchSuggestions } from '../../backend'
@@ -140,7 +142,7 @@ export default class FilterInput extends React.Component<Props, State> {
                         })}`
 
                         fullQuery = interactiveFormatQueryForFuzzySearch(fullQuery, filterType, props.value)
-                        return fetchSuggestions(fullQuery).pipe(
+                        const suggestions = fetchSuggestions(fullQuery).pipe(
                             map(createSuggestion),
                             filter(isDefined),
                             map((suggestion): Suggestion => ({ ...suggestion, fromFuzzySearch: true })),
@@ -152,11 +154,16 @@ export default class FilterInput extends React.Component<Props, State> {
                                     cursorPosition: this.props.value.length,
                                 },
                             })),
-                            startWith({ suggestions: LOADING }),
                             catchError(error => {
                                 console.error(error)
                                 return [{ suggestions: noSuggestions }]
-                            })
+                            }),
+                            share()
+                        )
+
+                        return merge(
+                            of({ suggestions: LOADING }).pipe(delay(1000), takeUntil(suggestions)),
+                            suggestions
                         )
                     }),
                     takeUntil(this.suggestionsHidden),
