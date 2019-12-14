@@ -15,9 +15,200 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 17,
   "links": [],
-  "panels": [],
+  "panels": [
+    {
+      "content": "<div style=\"text-align: left;\">\n  <img src=\"https://storage.googleapis.com/sourcegraph-assets/sourcegraph-logo-light.png\" style=\"height:30px; margin:0.5rem\"></img>\n  <div style=\"margin-left: 1rem; margin-top: 0.5rem; font-size: 20px;\"><span style=\"color: #8e8e8e\">Overview:</span> High-level insight into the health of Sourcegraph.</span>\n</div>\n<div style=\"display: flex; padding-top: 1rem;\">\n  <div style=\"margin-left: 2rem; margin-right: 2rem;\">\n    <h4><span style=\"color: #8e8e8e\">Errors</span> by service</h4>\n    <p>\n      The number of definitive errors each service has encountered. If this number is ever above one, something is definitively wrong with Sourcegraph.<br/>\n      <span style=\"color: #8e8e8e\"><strong>Examples:</strong> Database inaccessible, out of disk space, out of memory.</span>\n    </p>\n  </div>\n  <div style=\"margin-left: 2rem; margin-right: 2rem;\">\n    <h4><span style=\"color: #8e8e8e\">Warnings</span> by service</h4>\n    <p>\n      The number of warnings each service has emitted. If this number is ever above one, something <em>may be</em> wrong with Sourcegraph.<br/>\n      <span style=\"color: #8e8e8e\"><strong>Examples:</strong> High latency, high search timeouts.</span>\n    </p>\n  </div>\n</div>",
+      "datasource": null,
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 9,
+      "mode": "html",
+      "options": {},
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "",
+      "type": "text"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 6
+      },
+      "id": 5,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "error_count",
+          "legendFormat": "{{container}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Error alerts by service",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": 0,
+          "format": "short",
+          "label": "Error alerts fired",
+          "logBase": 1,
+          "max": null,
+          "min": "0",
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 12
+      },
+      "id": 4,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "dataLinks": []
+      },
+      "percentage": false,
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "warning_count",
+          "legendFormat": "{{container}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Warning alerts by service",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "decimals": 0,
+          "format": "short",
+          "label": "Warning alerts fired",
+          "logBase": 1,
+          "max": null,
+          "min": "0",
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    }
+  ],
   "schemaVersion": 20,
   "style": "dark",
   "tags": [],
