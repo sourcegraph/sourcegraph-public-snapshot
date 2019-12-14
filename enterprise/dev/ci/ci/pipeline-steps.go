@@ -311,8 +311,8 @@ func addCanidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 		)
 
 		cmds = append(cmds,
-			bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:%s_candidate", baseImage, c.version, gcrImage, c.commit)),
-			bk.Cmd(fmt.Sprintf("docker push %s:%s_candidate", gcrImage, c.commit)),
+			bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:candidate_%s", baseImage, c.version, gcrImage, c.commit)),
+			bk.Cmd(fmt.Sprintf("docker push %s:candidate_%s", gcrImage, c.commit)),
 		)
 
 		pipeline.AddStep(":docker: :construction:", cmds...)
@@ -332,7 +332,7 @@ func addFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline)
 
 		gcrImage := fmt.Sprintf("us.gcr.io/sourcegraph-dev/%s", strings.TrimPrefix(baseImage, "sourcegraph/"))
 
-		candidateImage := fmt.Sprintf("%s:%s_candidate", gcrImage, c.commit)
+		candidateImage := fmt.Sprintf("%s:candidate_%s", gcrImage, c.commit)
 		cmds = append(cmds,
 			bk.Cmd(fmt.Sprintf("docker pull %s", candidateImage)),
 			bk.Cmd(fmt.Sprintf("docker tag %s %s:%s", candidateImage, baseImage, c.version)),
