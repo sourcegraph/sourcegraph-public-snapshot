@@ -1,11 +1,11 @@
 groups:
   - name: gitserver
     rules:
-      - record: error_count
+      - record: error_alert_count
         labels:
           container: gitserver
         expr: 0
-      - record: warning_count
+      - record: warning_alert_count
         labels:
           container: gitserver
         expr: 0

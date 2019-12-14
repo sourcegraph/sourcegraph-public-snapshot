@@ -74,7 +74,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "error_count",
+          "expr": "error_alert_count",
           "legendFormat": "{{container}}",
           "refId": "A"
         }
@@ -161,7 +161,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "warning_count",
+          "expr": "warning_alert_count",
           "legendFormat": "{{container}}",
           "refId": "A"
         }
