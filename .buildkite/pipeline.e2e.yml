@@ -4,7 +4,7 @@ env:
   ENTERPRISE: "1"
   FORCE_COLOR: "1"
   GO111MODULE: "on"
-  IMAGE: us.gcr.io/sourcegraph-dev/server:e2e_$BUILDKITE_COMMIT
+  IMAGE: us.gcr.io/sourcegraph-dev/server:"$BUILDKITE_COMMIT"_candidate
 
 steps:
 - command:

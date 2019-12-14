@@ -218,7 +218,14 @@ func copyEnv(keys ...string) map[string]string {
 
 // Build all relevant Docker images for Sourcegraph, given the current CI case (e.g., "tagged
 // release", "release branch", "master branch", etc.)
-func addDockerImages(c Config) func(*bk.Pipeline) {
+func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
+	addDockerImage := func(c Config, app string, insiders bool) func(*bk.Pipeline) {
+		if !final {
+			return addCanidateDockerImage(c, app)
+		}
+		return addFinalDockerImage(c, app, insiders)
+	}
+
 	return func(pipeline *bk.Pipeline) {
 		switch {
 		case c.taggedRelease:
@@ -244,13 +251,19 @@ func addDockerImages(c Config) func(*bk.Pipeline) {
 	}
 }
 
-// Build Docker image for the service defined by `app`.
-func addDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
+// Build a candidate docker image that will re-tagged with the final
+// tags once the e2e tests pass.
+func addCanidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
+		if app == "server" {
+			// The candiate server image is built by the e2e pipeline.
+			return
+		}
+
 		baseImage := "sourcegraph/" + app
 
 		cmds := []bk.StepOpt{
-			bk.Cmd(fmt.Sprintf(`echo "Building %s..."`, app)),
+			bk.Cmd(fmt.Sprintf(`echo "Building candidte %s image..."`, app)),
 			bk.Env("DOCKER_BUILDKIT", "1"),
 			bk.Env("IMAGE", baseImage+":"+c.version),
 			bk.Env("VERSION", c.version),
@@ -271,13 +284,9 @@ func addDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 			return "enterprise/cmd/" + app
 		}()
 
-		if app != "server" {
-			// The server image was already built for the e2e tests - it doesn't need to be built again.
-
-			preBuildScript := cmdDir + "/pre-build.sh"
-			if _, err := os.Stat(preBuildScript); err == nil {
-				cmds = append(cmds, bk.Cmd(preBuildScript))
-			}
+		preBuildScript := cmdDir + "/pre-build.sh"
+		if _, err := os.Stat(preBuildScript); err == nil {
+			cmds = append(cmds, bk.Cmd(preBuildScript))
 		}
 
 		gcrImage := fmt.Sprintf("us.gcr.io/sourcegraph-dev/%s", strings.TrimPrefix(baseImage, "sourcegraph/"))
@@ -288,12 +297,6 @@ func addDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 					bk.Env("BUILD_TYPE", "dist"),
 					bk.Cmd("./cmd/symbols/build.sh buildSymbolsDockerImage"),
 				},
-				// The server image was already built for the e2e tests. We can pull the e2e
-				// image instead of building it from scratch.
-				"server": {
-					bk.Cmd(fmt.Sprintf("docker pull %s:e2e_%s", gcrImage, c.commit)),
-					bk.Cmd(fmt.Sprintf("docker tag %s:e2e_%s %s:%s", gcrImage, c.commit, baseImage, c.version)),
-				},
 			}
 			if buildScript, ok := buildScriptByApp[app]; ok {
 				return buildScript
@@ -303,7 +306,37 @@ func addDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 			}
 		}
 
-		cmds = append(cmds, getBuildSteps()...)
+		cmds = append(cmds,
+			getBuildSteps()...,
+		)
+
+		cmds = append(cmds,
+			bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:%s_candidate", baseImage, c.version, gcrImage, c.commit)),
+			bk.Cmd(fmt.Sprintf("docker push %s:%s_candidate", gcrImage, c.commit)),
+		)
+
+		pipeline.AddStep(":docker: :construction:", cmds...)
+	}
+}
+
+// Tag and push final Docker image for the service defined by `app`
+// after the e2e tests pass.
+func addFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
+	return func(pipeline *bk.Pipeline) {
+		baseImage := "sourcegraph/" + app
+
+		cmds := []bk.StepOpt{
+			bk.Cmd(fmt.Sprintf(`echo "Tagging final %s image..."`, app)),
+			bk.Cmd("yes | gcloud auth configure-docker"),
+		}
+
+		gcrImage := fmt.Sprintf("us.gcr.io/sourcegraph-dev/%s", strings.TrimPrefix(baseImage, "sourcegraph/"))
+
+		candidateImage := fmt.Sprintf("%s:%s_candidate", gcrImage, c.commit)
+		cmds = append(cmds,
+			bk.Cmd(fmt.Sprintf("docker pull %s", candidateImage)),
+			bk.Cmd(fmt.Sprintf("docker tag %s %s:%s", candidateImage, baseImage, c.version)),
+		)
 
 		dockerHubImage := fmt.Sprintf("index.docker.io/%s", baseImage)
 		for _, image := range []string{dockerHubImage, gcrImage} {
@@ -329,6 +362,6 @@ func addDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 			}
 		}
 
-		pipeline.AddStep(":docker:", cmds...)
+		pipeline.AddStep(":docker: :white_check_mark:", cmds...)
 	}
 }
