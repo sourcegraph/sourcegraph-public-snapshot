@@ -3,7 +3,7 @@ apiVersion: 1
 providers:
   - name: 'sourcegraph'
     orgId: 1
-    folder: 'Sourcegraph'
+    folder: ''
     type: file
     options:
       path: /sg_config_grafana/provisioning/dashboards/sourcegraph
