@@ -1,11 +1,13 @@
 groups:
-  - name: query_runner
+  - name: query-runner
     rules:
-      - record: error_alert_count
+      - record: alert_count
         labels:
           container: query-runner
+          level: critical
         expr: 0
-      - record: warning_alert_count
+      - record: alert_count
         labels:
           container: query-runner
+          level: warning
         expr: 0

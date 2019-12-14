@@ -1,11 +1,13 @@
 groups:
-  - name: zoekt_webserver
+  - name: zoekt-webserver
     rules:
-      - record: error_alert_count
+      - record: alert_count
         labels:
           container: zoekt-webserver
+          level: critical
         expr: 0
-      - record: warning_alert_count
+      - record: alert_count
         labels:
           container: zoekt-webserver
+          level: warning
         expr: 0

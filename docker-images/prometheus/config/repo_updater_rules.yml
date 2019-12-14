@@ -1,11 +1,13 @@
 groups:
-  - name: repo_updater
+  - name: repo-updater
     rules:
-      - record: error_alert_count
+      - record: alert_count
         labels:
           container: repo-updater
+          level: critical
         expr: 0
-      - record: warning_alert_count
+      - record: alert_count
         labels:
           container: repo-updater
+          level: warning
         expr: 0

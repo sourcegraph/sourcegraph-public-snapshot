@@ -1,11 +1,13 @@
 groups:
-  - name: symbols
+  - name: searcher
     rules:
-      - record: error_alert_count
+      - record: alert_count
         labels:
-          container: symbols
+          container: searcher
+          level: critical
         expr: 0
-      - record: warning_alert_count
+      - record: alert_count
         labels:
-          container: symbols
+          container: searcher
+          level: warning
         expr: 0
