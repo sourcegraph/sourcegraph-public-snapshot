@@ -31,15 +31,19 @@ type locationConnectionResolver struct {
 var _ graphqlbackend.LocationConnectionResolver = &locationConnectionResolver{}
 
 func (r *locationConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.LocationResolver, error) {
+	gitTreeResolvers, err := resolveGitTrees(ctx, partitionPathsByCommitByRepository(r.locations))
+	if err != nil {
+		return nil, err
+	}
+
 	var l []graphqlbackend.LocationResolver
 	for _, location := range r.locations {
-		resolver, err := rangeToLocationResolver(ctx, location)
-		if err != nil {
-			return nil, err
-		}
-
-		l = append(l, resolver)
+		l = append(l, graphqlbackend.NewLocationResolver(
+			gitTreeResolvers[location.Repository][location.Commit][location.Path],
+			&location.Range,
+		))
 	}
+
 	return l, nil
 }
 
@@ -50,28 +54,89 @@ func (r *locationConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil
 	return graphqlutil.HasNextPage(false), nil
 }
 
-func rangeToLocationResolver(ctx context.Context, location *lsif.LSIFLocation) (graphqlbackend.LocationResolver, error) {
-	repo, err := backend.Repos.GetByName(ctx, api.RepoName(location.Repository))
-	if err != nil {
-		return nil, err
+type pathsByCommitByRepositoryMap map[string]pathsByCommitMap
+type pathsByCommitMap map[string]pathsSet
+type pathsSet map[string]struct{}
+
+// partitionPathsByCommitByRepository partitions locations as returned by a definitions or references
+// query from the LSIF server into a nested map of the form `{repository} -> {commit} -> {set of paths}`.
+// The set of paths are encoded as a map from the path name to an empty struct.
+func partitionPathsByCommitByRepository(locations []*lsif.LSIFLocation) pathsByCommitByRepositoryMap {
+	pathsByCommitByRepository := pathsByCommitByRepositoryMap{}
+	for _, location := range locations {
+		if _, ok := pathsByCommitByRepository[location.Repository]; !ok {
+			pathsByCommitByRepository[location.Repository] = pathsByCommitMap{}
+		}
+
+		if _, ok := pathsByCommitByRepository[location.Repository][location.Commit]; !ok {
+			pathsByCommitByRepository[location.Repository][location.Commit] = pathsSet{}
+		}
+
+		pathsByCommitByRepository[location.Repository][location.Commit][location.Path] = struct{}{}
 	}
 
-	commitResolver, err := graphqlbackend.NewRepositoryResolver(repo).Commit(
-		ctx,
-		&graphqlbackend.RepositoryCommitArgs{Rev: location.Commit},
-	)
-	if err != nil {
-		return nil, err
+	return pathsByCommitByRepository
+}
+
+type resolversByPathByCommitByRepostioryMap map[string]resolversByPathByCommitMap
+type resolversByPathByCommitMap map[string]resolversByPathMap
+type resolversByPathMap map[string]*graphqlbackend.GitTreeEntryResolver
+
+// resolveGitTrees takes the map produced by `resolveGitTrees` and returns a symmetric map, where the
+// empty structs in the path set are replaced by git tree resolvers. This ensures that each repository,
+// commit, and path are each resolved only once.
+//
+// This method resolves repositories. See `resolveGitCommitsForRepositories` and `resolveGitTreeForPaths`
+// (which are called from here) for the resolution of commits and git trees, respectively.
+func resolveGitTrees(ctx context.Context, pathsByCommitByRepository pathsByCommitByRepositoryMap) (resolversByPathByCommitByRepostioryMap, error) {
+	resolversByRepositories := resolversByPathByCommitByRepostioryMap{}
+
+	for repoName, commits := range pathsByCommitByRepository {
+		repo, err := backend.Repos.GetByName(ctx, api.RepoName(repoName))
+		if err != nil {
+			return nil, err
+		}
+		repositoryResolver := graphqlbackend.NewRepositoryResolver(repo)
+
+		resolvers, err := resolveGitCommitsForRepositories(ctx, repositoryResolver, commits)
+		if err != nil {
+			return nil, err
+		}
+		resolversByRepositories[repoName] = resolvers
 	}
 
-	gitTreeResolver, err := commitResolver.Blob(ctx, &struct {
-		Path string
-	}{
-		Path: location.Path,
-	})
-	if err != nil {
-		return nil, err
+	return resolversByRepositories, nil
+}
+
+func resolveGitCommitsForRepositories(ctx context.Context, repositoryResolver *graphqlbackend.RepositoryResolver, pathsByCommit pathsByCommitMap) (resolversByPathByCommitMap, error) {
+	resolversByCommit := resolversByPathByCommitMap{}
+
+	for commit, paths := range pathsByCommit {
+		commitResolver, err := repositoryResolver.Commit(ctx, &graphqlbackend.RepositoryCommitArgs{Rev: commit})
+		if err != nil {
+			return nil, err
+		}
+
+		resolvers, err := resolveGitTreeForPaths(ctx, commitResolver, paths)
+		if err != nil {
+			return nil, err
+		}
+		resolversByCommit[commit] = resolvers
 	}
 
-	return graphqlbackend.NewLocationResolver(gitTreeResolver, &location.Range), nil
+	return resolversByCommit, nil
+}
+
+func resolveGitTreeForPaths(ctx context.Context, commitResolver *graphqlbackend.GitCommitResolver, paths pathsSet) (resolversByPathMap, error) {
+	resolversByPath := resolversByPathMap{}
+
+	for path := range paths {
+		gitTreeResolver, err := commitResolver.Blob(ctx, &struct{ Path string }{Path: path})
+		if err != nil {
+			return nil, err
+		}
+		resolversByPath[path] = gitTreeResolver
+	}
+
+	return resolversByPath, nil
 }
