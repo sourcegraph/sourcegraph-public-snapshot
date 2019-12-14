@@ -188,7 +188,7 @@ func wait(pipeline *bk.Pipeline) {
 
 func triggerE2E(c Config) func(*bk.Pipeline) {
 	// hardFail if we publish docker images
-	hardFail := c.branch == "master" || c.isRenovateBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
+	hardFail := c.branch == "master" || strings.HasPrefix(c.branch, "master-dry-run/") || c.isRenovateBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddTrigger(":chromium:",
