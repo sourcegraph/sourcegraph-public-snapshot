@@ -1,0 +1,11 @@
+groups:
+  - name: repo_updater
+    rules:
+      - record: error_count
+        labels:
+          container: repo-updater
+        expr: 0
+      - record: warning_count
+        labels:
+          container: repo-updater
+        expr: 0

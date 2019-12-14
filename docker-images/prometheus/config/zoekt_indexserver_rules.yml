@@ -1,0 +1,11 @@
+groups:
+  - name: zoekt_indexserver
+    rules:
+      - record: error_count
+        labels:
+          container: zoekt-indexserver
+        expr: 0
+      - record: warning_count
+        labels:
+          container: zoekt-indexserver
+        expr: 0

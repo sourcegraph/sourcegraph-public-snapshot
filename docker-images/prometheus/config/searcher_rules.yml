@@ -1,0 +1,11 @@
+groups:
+  - name: searcher
+    rules:
+      - record: error_count
+        labels:
+          container: searcher
+        expr: 0
+      - record: warning_count
+        labels:
+          container: searcher
+        expr: 0

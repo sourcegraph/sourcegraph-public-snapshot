@@ -1,0 +1,11 @@
+groups:
+  - name: symbols
+    rules:
+      - record: error_count
+        labels:
+          container: symbols
+        expr: 0
+      - record: warning_count
+        labels:
+          container: symbols
+        expr: 0

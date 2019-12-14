@@ -1,0 +1,11 @@
+groups:
+  - name: frontend
+    rules:
+      - record: error_count
+        labels:
+          container: frontend
+        expr: 0
+      - record: warning_count
+        labels:
+          container: frontend
+        expr: 0

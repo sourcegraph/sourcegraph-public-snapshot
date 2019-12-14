@@ -1,0 +1,11 @@
+groups:
+  - name: replacer
+    rules:
+      - record: error_count
+        labels:
+          container: replacer
+        expr: 0
+      - record: warning_count
+        labels:
+          container: replacer
+        expr: 0

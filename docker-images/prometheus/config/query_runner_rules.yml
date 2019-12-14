@@ -1,0 +1,11 @@
+groups:
+  - name: query_runner
+    rules:
+      - record: error_count
+        labels:
+          container: query-runner
+        expr: 0
+      - record: warning_count
+        labels:
+          container: query-runner
+        expr: 0
