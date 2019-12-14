@@ -8,13 +8,12 @@ import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 import { createDriverForTest, Driver, percySnapshot } from '../../../shared/src/e2e/driver'
 import got from 'got'
 import { gql } from '../../../shared/src/graphql/graphql'
-import { random } from 'lodash'
+import { random, escapeRegExp } from 'lodash'
 import MockDate from 'mockdate'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { getConfig } from '../../../shared/src/e2e/config'
 import * as assert from 'assert'
 import { asError } from '../../../shared/src/util/errors'
-import { formatRegExp } from '../search/input/Suggestion'
 
 const { gitHubToken, sourcegraphBaseUrl } = getConfig('gitHubToken', 'sourcegraphBaseUrl')
 
@@ -1547,7 +1546,6 @@ describe('e2e test suite', () => {
             // Search for repo:gorilla in the repo filter chip input
             await driver.page.keyboard.type('gorilla')
             await driver.page.keyboard.press('Enter')
-            // await driver.page.click('.search-button')
             await driver.assertWindowLocation('/search?repo=gorilla&q=&patternType=literal')
 
             // Edit the filter
@@ -1558,7 +1556,6 @@ describe('e2e test suite', () => {
             // Press enter to lock in filter
             await driver.page.keyboard.press('Enter')
             // The main query input should be autofocused, so hit enter again to submit
-            // await driver.page.keyboard.press('Enter')
             await driver.assertWindowLocation('/search?repo=gorilla/mux&q=&patternType=literal')
 
             // Add a file filter
@@ -1567,7 +1564,7 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector('.e2e-filter-input__input-field-file-1', { visible: true })
             await driver.page.keyboard.type('README')
             await driver.page.keyboard.press('Enter')
-            // await driver.page.keyboard.press('Enter')
+            await driver.page.keyboard.press('Enter')
             await driver.assertWindowLocation('/search?repo=gorilla/mux&file=README&q=&patternType=literal')
 
             // Remove file filter
@@ -1586,17 +1583,9 @@ describe('e2e test suite', () => {
             await driver.page.keyboard.type('gorilla')
             await driver.page.waitForSelector('.e2e-filter-input__suggestions')
             await driver.page.waitForSelector('.e2e-suggestion-item')
-            // const textVal = await driver.page.evaluate(() => {
-            //     const firstSuggestion = document.querySelector('.e2e-suggestion-item')
-            //     return formatRegExp(firstSuggestion?.textContent || '')
-            // })
             await driver.page.keyboard.press('ArrowDown')
             await driver.page.keyboard.press('Enter')
             await driver.page.keyboard.press('Enter')
-            expect(
-                await driver.page.evaluate(() => document.querySelector('.e2e-filter-input-repo-0')?.textContent)
-            ).toBe(`repo:${formatRegExp('github.com/gorilla/mux')}`)
-            // await driver.page.keyboard.press('Enter')
             await driver.assertWindowLocation('/search?repo=%5Egithub%5C.com/gorilla/mux%24&q=&patternType=literal')
         })
     })
