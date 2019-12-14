@@ -237,10 +237,7 @@ func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
 			addDockerImage(c, "server", false)(pipeline)
 			pipeline.AddWait()
 		case strings.HasPrefix(c.branch, "master-dry-run/"): // replicates `master` build but does not deploy
-			for _, dockerImage := range allDockerImages {
-				addDockerImage(c, dockerImage, false)(pipeline)
-			}
-			pipeline.AddWait()
+			fallthrough
 		case c.branch == "master":
 			for _, dockerImage := range allDockerImages {
 				addDockerImage(c, dockerImage, true)(pipeline)
