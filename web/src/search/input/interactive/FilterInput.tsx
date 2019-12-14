@@ -98,6 +98,9 @@ interface State {
     showSuggestions: boolean
     /** The suggestions shown to the user */
     suggestions: typeof LOADING | ComponentSuggestions
+
+    /** The value being typed in the filter's input*/
+    inputValue: string
 }
 
 /**
@@ -120,27 +123,38 @@ export default class FilterInput extends React.Component<Props, State> {
             inputFocused: document.activeElement === this.inputEl.current,
             suggestions: noSuggestions,
             showSuggestions: false,
+            inputValue: props.value || '',
         }
 
-        this.subscriptions.add(this.inputValues.subscribe(query => this.props.onFilterEdited(this.props.mapKey, query)))
+        this.subscriptions.add(this.inputValues.subscribe(query => this.setState({ inputValue: query })))
+        // this.subscriptions.add(this.inputValues.subscribe(query => this.props.onFilterEdited(this.props.mapKey, query)))
 
         this.subscriptions.add(
-            this.componentUpdates
+            this.inputValues
                 .pipe(
                     debounceTime(typingDebounceTime),
                     distinctUntilChanged(
-                        (previous, current) => dedupeWhitespace(previous.value) === dedupeWhitespace(current.value)
+                        (previous, current) => dedupeWhitespace(previous) === dedupeWhitespace(current)
                     ),
-                    switchMap(props => {
-                        if (props.value.length === 0) {
+                    switchMap(inputValue => {
+                        if (inputValue.length === 0) {
                             return [{ suggestions: noSuggestions }]
                         }
                         const filterType = props.filterType
-                        let fullQuery = `${props.navbarQuery.query} ${generateFiltersQuery({
-                            ...props.filtersInQuery,
-                        })}`
+                        const newFiltersQuery = this.props.filtersInQuery
+                        if (newFiltersQuery[this.props.mapKey]) {
+                            newFiltersQuery[this.props.mapKey].value = inputValue
+                        } else {
+                            newFiltersQuery[this.props.mapKey] = {
+                                type: this.props.filterType,
+                                value: inputValue,
+                                editable: true,
+                            }
+                        }
 
-                        fullQuery = interactiveFormatQueryForFuzzySearch(fullQuery, filterType, props.value)
+                        let fullQuery = `${props.navbarQuery.query} ${generateFiltersQuery(newFiltersQuery)}`
+
+                        fullQuery = interactiveFormatQueryForFuzzySearch(fullQuery, filterType, inputValue)
                         const suggestions = fetchSuggestions(fullQuery).pipe(
                             map(createSuggestion),
                             filter(isDefined),
@@ -150,7 +164,7 @@ export default class FilterInput extends React.Component<Props, State> {
                             map(suggestions => ({
                                 suggestions: {
                                     values: suggestions,
-                                    cursorPosition: this.props.value.length,
+                                    cursorPosition: fullQuery.length,
                                 },
                             })),
                             catchError(error => {
@@ -298,7 +312,7 @@ export default class FilterInput extends React.Component<Props, State> {
                                                 <input
                                                     ref={this.inputEl}
                                                     className={`form-control filter-input__input-field e2e-filter-input__input-field-${this.props.mapKey}`}
-                                                    value={this.props.value}
+                                                    value={this.state.inputValue}
                                                     onChange={this.onInputUpdate}
                                                     placeholder={`${startCase(this.props.filterType)} filter`}
                                                     onKeyDown={event => {
