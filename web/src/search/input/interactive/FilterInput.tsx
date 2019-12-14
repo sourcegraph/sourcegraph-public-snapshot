@@ -27,6 +27,7 @@ import { SuggestionTypes } from '../../../../../shared/src/search/suggestions/ut
 import { startCase } from 'lodash'
 import { searchFilterSuggestions } from '../../searchFilterSuggestions'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { CheckButton } from './CheckButton'
 
 interface Props {
     /**
@@ -213,7 +214,12 @@ export default class FilterInput extends React.Component<Props, State> {
 
     private onInputFocus = (): void => this.setState({ inputFocused: true })
 
-    private onInputBlur = (): void => {
+    private onInputBlur = (e: React.FocusEvent<HTMLDivElement>): void => {
+        const focusIsNotChildElement = this.focusInCurrentTarget(e)
+        if (focusIsNotChildElement) {
+            return
+        }
+
         if (this.props.value === '') {
             // Don't allow empty filters
             this.onClickDelete()
@@ -222,6 +228,29 @@ export default class FilterInput extends React.Component<Props, State> {
 
         this.props.toggleFilterEditable(this.props.mapKey)
         this.setState({ inputFocused: false, suggestions: noSuggestions })
+    }
+
+    /**
+     * Checks that the newly focused element is not a child of the previously focused element.
+     * Prevents onBlur from firing if we are clicking inside the filter input chip.
+     * https://stackoverflow.com/a/38019906
+     */
+    private focusInCurrentTarget = (e: React.FocusEvent<HTMLDivElement>): boolean => {
+        const { relatedTarget, currentTarget } = e
+        if (relatedTarget === null) {
+            return false
+        }
+
+        let node = (relatedTarget as HTMLElement).parentNode
+
+        while (node !== null) {
+            if (node === currentTarget) {
+                return true
+            }
+            node = node.parentNode
+        }
+
+        return false
     }
 
     private onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
@@ -249,6 +278,7 @@ export default class FilterInput extends React.Component<Props, State> {
                 className={`filter-input ${this.state.inputFocused ? 'filter-input--active' : ''} e2e-filter-input-${
                     this.props.mapKey
                 }`}
+                onBlur={this.onInputBlur}
             >
                 {this.props.editable ? (
                     <Form onSubmit={this.onSubmitInput}>
@@ -271,7 +301,6 @@ export default class FilterInput extends React.Component<Props, State> {
                                                     }}
                                                     autoFocus={true}
                                                     onFocus={this.onInputFocus}
-                                                    onBlur={this.onInputBlur}
                                                 />
                                                 {showSuggestions && (
                                                     <ul
@@ -305,6 +334,7 @@ export default class FilterInput extends React.Component<Props, State> {
                                                     </ul>
                                                 )}
                                             </div>
+                                            <CheckButton />
                                             <button
                                                 type="button"
                                                 onClick={this.onClickDelete}

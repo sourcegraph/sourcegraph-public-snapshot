@@ -1,0 +1,7 @@
+.check-button {
+    &__btn {
+        // Left side is flush with input field.
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+}

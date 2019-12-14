@@ -27,6 +27,7 @@ $filter-input-padding: 0.25rem;
         display: block;
         position: relative;
         width: 100%;
+        flex: 1 1 auto;
     }
 
     &__input-field {
