@@ -50,7 +50,7 @@ export const SearchStatsPage: React.FunctionComponent<Props> = ({ location, hist
         if (stats === LOADING || isErrorLike(stats)) {
             return stats
         }
-        return stats.languages.slice(0, COLORS.length).map(({ name, totalLines: lines }, i) => ({
+        return stats.languages.map(({ name, totalLines: lines }, i) => ({
             name,
             lines,
             color: COLORS[i % COLORS.length],
