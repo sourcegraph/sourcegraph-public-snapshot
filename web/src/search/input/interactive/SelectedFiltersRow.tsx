@@ -51,7 +51,7 @@ export const SelectedFiltersRow: React.FunctionComponent<Props> = ({
     toggleFilterEditable,
     isHomepage,
 }) => {
-    const filterKeys = Array.from(Object.keys(filtersInQuery))
+    const filterKeys = Object.keys(filtersInQuery)
     return (
         <>
             {filterKeys.length > 0 && (
