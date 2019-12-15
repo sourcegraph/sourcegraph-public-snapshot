@@ -100,6 +100,9 @@ type PatternInfo struct {
 	// considered a match.
 	PatternMatchesPath bool
 
+	// Language is the language passed via the lang filter (e.g., "lang:c")
+	Language string
+
 	// CombyRule is a rule that constrains matching for structural search. It only applies when IsStructuralPat is true.
 	CombyRule string
 }

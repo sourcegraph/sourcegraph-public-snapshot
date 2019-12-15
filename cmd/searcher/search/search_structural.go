@@ -78,14 +78,96 @@ func ToFileMatch(combyMatches []comby.FileMatch) (matches []protocol.FileMatch) 
 	return matches
 }
 
-func structuralSearch(ctx context.Context, zipPath, pattern string, rule string, includePatterns []string, repo api.RepoName) (matches []protocol.FileMatch, limitHit bool, err error) {
+func lookupMatcher(language string) string {
+	switch strings.ToLower(language) {
+	case "assembly, asm":
+		return ".s"
+	case "bash":
+		return ".sh"
+	case "c":
+		return ".c"
+	case "c#,csharp":
+		return ".cs"
+	case "css":
+		return ".css"
+	case "dart":
+		return ".dart"
+	case "clojure":
+		return ".clj"
+	case "elm":
+		return ".elm"
+	case "erlang":
+		return ".erl"
+	case "elixir":
+		return ".ex"
+	case "fortran":
+		return ".f"
+	case "f#, fsharp":
+		return ".fsx"
+	case "go":
+		return ".go"
+	case "html":
+		return ".html"
+	case "haskell":
+		return ".hs"
+	case "java":
+		return ".java"
+	case "javascript":
+		return ".js"
+	case "json":
+		return ".json"
+	case "julia":
+		return ".jl"
+	case "kotlin":
+		return ".kt"
+	case "laTeX":
+		return ".tex"
+	case "lisp":
+		return ".lisp"
+	case "nim":
+		return ".nim"
+	case "ocaml":
+		return ".ml"
+	case "pascal":
+		return ".pas"
+	case "php":
+		return ".php"
+	case "python":
+		return ".py"
+	case "reason":
+		return ".re"
+	case "ruby":
+		return ".rb"
+	case "rust":
+		return ".rs"
+	case "scala":
+		return ".scala"
+	case "sql":
+		return ".sql"
+	case "swift":
+		return ".swift"
+	case " text":
+		return ".txt"
+	case "typescript", "ts":
+		return ".ts"
+	case "xml":
+		return ".xml"
+	}
+	return ""
+}
+
+func structuralSearch(ctx context.Context, zipPath, pattern, rule, language string, includePatterns []string, repo api.RepoName) (matches []protocol.FileMatch, limitHit bool, err error) {
 	log15.Info("structural search", "repo", string(repo))
 
 	// Cap the number of forked processes to limit the size of zip contents being mapped to memory. Resolving #7133 could help to lift this restriction.
 	numWorkers := 4
 
+	matcher := lookupMatcher(language)
+	log15.Info("structural search", "language", language, "matcher", matcher)
+
 	args := comby.Args{
 		Input:         comby.ZipPath(zipPath),
+		Matcher:       matcher,
 		MatchTemplate: pattern,
 		MatchOnly:     true,
 		FilePatterns:  includePatterns,
