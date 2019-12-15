@@ -4,7 +4,6 @@ import * as React from 'react'
 import { cleanup, fireEvent, getByTestId, getByText, render } from '@testing-library/react'
 import sinon from 'sinon'
 import { FileMatchChildren } from './FileMatchChildren'
-import { setLinkComponent } from './Link'
 import { RepoFileLink } from './RepoFileLink'
 import { ResultContainer } from './ResultContainer'
 import {
@@ -14,11 +13,7 @@ import {
 } from '../util/searchTestHelpers'
 
 describe('ResultContainer', () => {
-    setLinkComponent((props: any) => <a {...props} />)
-    afterAll(() => {
-        setLinkComponent(() => null as any)
-        cleanup()
-    })
+    afterAll(cleanup)
 
     const history = H.createBrowserHistory()
     history.replace({ pathname: '/search' })

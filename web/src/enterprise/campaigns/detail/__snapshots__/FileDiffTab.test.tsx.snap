@@ -17,7 +17,7 @@ exports[`FileDiffTab renders the form 1`] = `
      
     <a
       className=""
-      to="github.com/sourcegraph/sourcegraph"
+      href="github.com/sourcegraph/sourcegraph"
     >
       sourcegraph/sourcegraph
     </a>

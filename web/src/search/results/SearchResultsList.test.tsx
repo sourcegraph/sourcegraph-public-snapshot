@@ -5,7 +5,6 @@ import { BrowserRouter } from 'react-router-dom'
 import { cleanup, getAllByTestId, getByTestId, queryByTestId, render } from '@testing-library/react'
 import _VisibilitySensor from 'react-visibility-sensor'
 import sinon from 'sinon'
-import { setLinkComponent } from '../../../../shared/src/components/Link'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
 import {
@@ -43,8 +42,6 @@ jest.mock('react-visibility-sensor', (): typeof _VisibilitySensor => ({ children
 ))
 
 describe('SearchResultsList', () => {
-    setLinkComponent((props: any) => <a {...props} />)
-
     /**
      * Simulates "scrolling" to the end of the search results,
      * by triggering all the visibility changed callbacks with
@@ -80,10 +77,7 @@ describe('SearchResultsList', () => {
         VISIBILITY_CHANGED_CALLBACKS = []
     })
 
-    afterAll(() => {
-        setLinkComponent(null as any)
-        cleanup()
-    })
+    afterAll(cleanup)
 
     const history = createBrowserHistory()
     history.replace({ search: 'q=r:golang/oauth2+test+f:travis' })

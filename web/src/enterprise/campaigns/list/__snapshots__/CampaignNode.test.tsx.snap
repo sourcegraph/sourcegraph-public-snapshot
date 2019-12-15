@@ -26,7 +26,7 @@ exports[`CampaignNode renders a campaign node 1`] = `
       >
         <a
           className="d-flex align-items-center text-decoration-none"
-          to="/campaigns/123"
+          href="/campaigns/123"
         >
           Upgrade lodash to v4
         </a>
