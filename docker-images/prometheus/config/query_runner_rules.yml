@@ -3,11 +3,11 @@ groups:
     rules:
       - record: alert_count
         labels:
-          container: query-runner
+          service_name: query-runner
           level: critical
         expr: 0
       - record: alert_count
         labels:
-          container: query-runner
+          service_name: query-runner
           level: warning
         expr: 0

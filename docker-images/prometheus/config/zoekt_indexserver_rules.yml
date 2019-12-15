@@ -3,11 +3,11 @@ groups:
     rules:
       - record: alert_count
         labels:
-          container: zoekt-indexserver
+          service_name: zoekt-indexserver
           level: critical
         expr: 0
       - record: alert_count
         labels:
-          container: zoekt-indexserver
+          service_name: zoekt-indexserver
           level: warning
         expr: 0

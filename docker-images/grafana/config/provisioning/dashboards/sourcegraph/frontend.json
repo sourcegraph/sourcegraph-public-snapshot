@@ -118,7 +118,7 @@
       ],
       "targets": [
         {
-          "expr": "label_replace(sum(alert_count{container=\"frontend\",name!=\"\",level=~\"$alert_level\"}) by (level,description), \"_01_level\", \"$1\", \"level\", \"(.*)\")",
+          "expr": "label_replace(sum(alert_count{service_name=\"frontend\",name!=\"\",level=~\"$alert_level\"}) by (level,description), \"_01_level\", \"$1\", \"level\", \"(.*)\")",
           "format": "table",
           "instant": true,
           "legendFormat": "",
@@ -171,7 +171,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (container,level,name)(alert_count{container=\"frontend\",name!=\"\",level=~\"$alert_level\"} >= 1)",
+          "expr": "sum by (service_name,level,name)(alert_count{service_name=\"frontend\",name!=\"\",level=~\"$alert_level\"} >= 1)",
           "legendFormat": "{{level}}: {{name}}",
           "refId": "A"
         }

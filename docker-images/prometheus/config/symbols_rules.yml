@@ -3,11 +3,11 @@ groups:
     rules:
       - record: alert_count
         labels:
-          container: symbols
+          service_name: symbols
           level: critical
         expr: 0
       - record: alert_count
         labels:
-          container: symbols
+          service_name: symbols
           level: warning
         expr: 0

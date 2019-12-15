@@ -3,11 +3,11 @@ groups:
     rules:
       - record: alert_count
         labels:
-          container: searcher
+          service_name: searcher
           level: critical
         expr: 0
       - record: alert_count
         labels:
-          container: searcher
+          service_name: searcher
           level: warning
         expr: 0

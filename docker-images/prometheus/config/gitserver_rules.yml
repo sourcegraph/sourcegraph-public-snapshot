@@ -14,7 +14,7 @@ groups:
       # case and 0.0 (not alerting) otherwise.
       - record: alert_count
         labels:
-          container: gitserver
+          service_name: gitserver
           level: warning
           name: low_disk_space
           description: 'less than 20% free disk space remaining'
@@ -24,7 +24,7 @@ groups:
           ), 0), 1)
       - record: alert_count
         labels:
-          container: gitserver
+          service_name: gitserver
           level: critical
           name: low_disk_space
           description: 'less than 5% free disk space remaining'

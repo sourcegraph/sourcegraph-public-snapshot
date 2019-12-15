@@ -3,11 +3,11 @@ groups:
     rules:
       - record: alert_count
         labels:
-          container: lsif-server
+          service_name: lsif-server
           level: critical
         expr: 0
       - record: alert_count
         labels:
-          container: lsif-server
+          service_name: lsif-server
           level: warning
         expr: 0

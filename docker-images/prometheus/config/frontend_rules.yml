@@ -3,11 +3,11 @@ groups:
     rules:
       - record: alert_count
         labels:
-          container: frontend
+          service_name: frontend
           level: critical
         expr: 0
       - record: alert_count
         labels:
-          container: frontend
+          service_name: frontend
           level: warning
         expr: 0
