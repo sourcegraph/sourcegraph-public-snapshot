@@ -104,7 +104,7 @@ interface State {
  * If it's in an editable state, it consists of a text input field, with suggestions, and a close button. Otherwise, it's a simple
  * button with a close button.
  */
-export default class FilterInput extends React.Component<Props, State> {
+export class FilterInput extends React.Component<Props, State> {
     private subscriptions = new Subscription()
     private inputValues = new Subject<string>()
     private inputEl = React.createRef<HTMLInputElement>()
