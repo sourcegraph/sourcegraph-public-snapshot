@@ -106,11 +106,11 @@ export const SearchStatsPage: React.FunctionComponent<Props> = ({ location, hist
                                 <table className="search-stats-page__table table mb-0 border-top-0">
                                     <thead>
                                         <tr className="small">
-                                            <th>
+                                            <th className="border-top-0">
                                                 <span className="sr-only">Language</span>
                                             </th>
-                                            <th>Lines</th>
-                                            <th>
+                                            <th className="border-top-0">Lines</th>
+                                            <th className="border-top-0">
                                                 <span className="sr-only">Percent</span>
                                             </th>
                                         </tr>
