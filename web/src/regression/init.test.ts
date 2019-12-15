@@ -13,7 +13,6 @@ describe('Initialize new instance', () => {
     const config = getConfig(
         'init',
         'sourcegraphBaseUrl',
-        'managementConsoleUrl',
         'sudoUsername',
         'testUserPassword',
         'noCleanup',
@@ -48,17 +47,6 @@ describe('Initialize new instance', () => {
             await driver.page.keyboard.press(Key.Enter)
             await driver.waitUntilURL(`${config.sourcegraphBaseUrl}/site-admin`)
             await driver.page.waitForSelector('input[type="password"]', { timeout: 5 * 1000 })
-
-            const managementConsolePassword = await driver.page.evaluate(() => {
-                const mgtPasswordEl = document.querySelector('input[type="password"]')
-                if (!mgtPasswordEl) {
-                    return null
-                }
-                return mgtPasswordEl.getAttribute('value')
-            })
-            if (!managementConsolePassword) {
-                throw new Error('Could not obtain management console password')
-            }
 
             await retry(
                 async () => {

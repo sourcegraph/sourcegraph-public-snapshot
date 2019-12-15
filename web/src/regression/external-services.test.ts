@@ -249,8 +249,7 @@ describe('External services permissions', () => {
         'gitHubUserAmyPassword',
         'gitHubUserBobToken',
         'gitHubClientID',
-        'gitHubClientSecret',
-        'managementConsoleUrl'
+        'gitHubClientSecret'
     )
     let driver: Driver
     let gqlClient: GraphQLClient

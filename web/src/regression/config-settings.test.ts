@@ -25,7 +25,6 @@ describe('Site config test suite', () => {
         'keepBrowser',
         'noCleanup',
         'sourcegraphBaseUrl',
-        'managementConsoleUrl',
         'testUserPassword',
         'logBrowserConsole'
     )

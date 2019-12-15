@@ -168,8 +168,7 @@ describe('Organizations regression test suite', () => {
             'noCleanup',
             'sourcegraphBaseUrl',
             'testUserPassword',
-            'logBrowserConsole',
-            'managementConsoleUrl'
+            'logBrowserConsole'
         )
         afterAll(async () => {
             if (!config.noCleanup) {
