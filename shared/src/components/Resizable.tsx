@@ -2,7 +2,7 @@ import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators'
 
-interface Props<C extends React.ReactElement<any> = React.ReactElement<any>> {
+interface Props<C extends React.ReactElement = React.ReactElement> {
     className?: string
 
     /**
@@ -38,7 +38,7 @@ interface State {
 /**
  * Wraps an item in a flexbox and makes it resizable.
  */
-export class Resizable<C extends React.ReactElement<any>> extends React.PureComponent<Props<C>, State> {
+export class Resizable<C extends React.ReactElement> extends React.PureComponent<Props<C>, State> {
     private static STORAGE_KEY_PREFIX = 'Resizable:'
 
     private sizeUpdates = new Subject<number>()

@@ -47,7 +47,7 @@ interface PanelItem extends Tab<string> {
     priority: number
 
     /** The content element to display when the tab is active. */
-    element: React.ReactElement<any>
+    element: JSX.Element
 
     /**
      * Whether this panel contains a list of locations (from a location provider). This value is

@@ -82,7 +82,7 @@ export interface RepoHeaderContribution {
      * The element to display in the RepoHeader. The element *must* have a React key that is a string and is unique
      * among all RepoHeaderContributions. If not, an exception will be thrown.
      */
-    element: React.ReactElement<any>
+    element: React.ReactElement
 }
 
 /** React props for components that store or display RepoHeaderContributions. */
