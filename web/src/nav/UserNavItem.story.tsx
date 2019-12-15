@@ -4,10 +4,10 @@ import * as H from 'history'
 import React, { useCallback } from 'react'
 import { MemoryRouter } from 'react-router'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { ThemePreference } from '../theme'
 import { UserNavItem } from './UserNavItem'
 
 import './UserNavItem.scss'
-import { ThemePreference } from '../search/theme'
 
 const onThemePreferenceChange = action('onThemePreferenceChange')
 

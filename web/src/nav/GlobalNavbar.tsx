@@ -14,7 +14,7 @@ import { EventLoggerProps } from '../tracking/eventLogger'
 import { showDotComMarketing } from '../util/features'
 import { NavLinks } from './NavLinks'
 import { ThemeProps } from '../../../shared/src/theme'
-import { ThemePreferenceProps } from '../search/theme'
+import { ThemePreferenceProps } from '../theme'
 import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
 import { QueryState } from '../search/helpers'
 
