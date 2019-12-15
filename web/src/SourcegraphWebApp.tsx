@@ -75,7 +75,7 @@ export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
-    routes: readonly LayoutRouteProps[]
+    routes: readonly LayoutRouteProps<any>[]
     showCampaigns: boolean
 }
 

@@ -50,7 +50,7 @@ import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarItem } from './repo/settings/RepoSettingsSidebar'
 
 export interface LayoutProps
-    extends RouteComponentProps<any>,
+    extends RouteComponentProps<{}>,
         SettingsCascadeProps,
         PlatformContextProps,
         ExtensionsControllerProps,
@@ -79,7 +79,7 @@ export interface LayoutProps
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
-    routes: readonly LayoutRouteProps[]
+    routes: readonly LayoutRouteProps<any>[]
 
     authenticatedUser: GQL.IUser | null
 

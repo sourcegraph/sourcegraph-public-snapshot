@@ -9,19 +9,21 @@ const SearchResults = lazyComponent(() => import('./search/results/SearchResults
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
 
-export interface LayoutRouteComponentProps extends RouteComponentProps<any>, LayoutProps {}
+export interface LayoutRouteComponentProps<Params extends { [K in keyof Params]?: string }>
+    extends RouteComponentProps<Params>,
+        Omit<LayoutProps, 'match'> {}
 
-export interface LayoutRouteProps {
+export interface LayoutRouteProps<Params extends { [K in keyof Params]?: string }> {
     path: string
     exact?: boolean
-    render: (props: LayoutRouteComponentProps) => React.ReactNode
+    render: (props: LayoutRouteComponentProps<Params>) => React.ReactNode
 
     /**
      * A condition function that needs to return true if the route should be rendered
      *
      * @default () => true
      */
-    condition?: (props: LayoutRouteComponentProps) => boolean
+    condition?: (props: LayoutRouteComponentProps<Params>) => boolean
 
     /**
      * Whether or not to force the width of the page to be narrow.
@@ -32,7 +34,7 @@ export interface LayoutRouteProps {
 /**
  * Holds properties for repository+ routes.
  */
-export const repoRevRoute: LayoutRouteProps = {
+export const repoRevRoute: LayoutRouteProps<{ repoRevAndRest: string }> = {
     path: '/:repoRevAndRest+',
     render: lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer'),
 }
@@ -43,7 +45,7 @@ export const repoRevRoute: LayoutRouteProps = {
  *
  * See https://reacttraining.com/react-router/web/example/sidebar
  */
-export const routes: readonly LayoutRouteProps[] = [
+export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/',
         render: (props: any) =>
@@ -56,7 +58,7 @@ export const routes: readonly LayoutRouteProps[] = [
     },
     {
         path: '/search',
-        render: (props: any) =>
+        render: props =>
             parseSearchURLQuery(props.location.search) ? (
                 <SearchResults {...props} deployType={window.context.deployType} />
             ) : (
