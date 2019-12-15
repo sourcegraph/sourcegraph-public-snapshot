@@ -153,10 +153,12 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                 )}
                                 {!this.state.authRequired && (
                                     <div className="global-navbar__search-box-container d-none d-sm-flex flex-row">
-                                        <SearchModeToggle
-                                            {...this.props}
-                                            interactiveSearchMode={this.props.interactiveSearchMode}
-                                        />
+                                        {this.props.showInteractiveSearchMode && (
+                                            <SearchModeToggle
+                                                {...this.props}
+                                                interactiveSearchMode={this.props.interactiveSearchMode}
+                                            />
+                                        )}
                                         <SearchNavbarItem
                                             {...this.props}
                                             navbarSearchState={this.props.navbarSearchQueryState}
