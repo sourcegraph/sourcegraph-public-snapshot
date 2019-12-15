@@ -158,8 +158,15 @@ func (s *repos) ListDefault(ctx context.Context) (repos []*types.Repo, err error
 }
 
 // Feature flag for enhanced (but much slower) language detection that uses file contents, not just
-// filenames.
-var useEnhancedLanguageDetection, _ = strconv.ParseBool(os.Getenv("USE_ENHANCED_LANGUAGE_DETECTION"))
+// filenames. Enabled by default.
+var useEnhancedLanguageDetection = func() bool {
+	v := os.Getenv("USE_ENHANCED_LANGUAGE_DETECTION")
+	if v == "" {
+		return true
+	}
+	b, _ := strconv.ParseBool(v)
+	return b
+}()
 
 var inventoryCache = rcache.New(fmt.Sprintf("inv:v2:enhanced_%v", useEnhancedLanguageDetection))
 

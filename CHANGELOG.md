@@ -23,6 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The feedback toast now requests feedback every 60 days of usage (was previously only once on the 3rd day of use). [#7165](https://github.com/sourcegraph/sourcegraph/pull/7165)
 - The lsif-server container now only has a dependency on Postgres, whereas before it also relied on Redis. [#6880](https://github.com/sourcegraph/sourcegraph/pull/6880)
 - Renamed the GraphQL API `LanguageStatistics` fields to `name`, `totalBytes`, and `totalLines` (previously the field names started with an uppercase letter, which was inconsistent).
+- Detecting a file's language uses a more accurate but slower algorithm. To revert to the old (faster and less accurate) algorithm, set the `USE_ENHANCED_LANGUAGE_DETECTION` env var to the string `false` (on the `sourcegraph/server` container, or if using the cluster deployment, on the `sourcegraph-frontend` pod).
 
 ### Fixed
 
