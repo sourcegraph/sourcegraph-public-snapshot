@@ -156,14 +156,19 @@ func lookupMatcher(language string) string {
 	return ""
 }
 
-func structuralSearch(ctx context.Context, zipPath, pattern, rule, language string, includePatterns []string, repo api.RepoName) (matches []protocol.FileMatch, limitHit bool, err error) {
+func structuralSearch(ctx context.Context, zipPath, pattern, rule string, languages, includePatterns []string, repo api.RepoName) (matches []protocol.FileMatch, limitHit bool, err error) {
 	log15.Info("structural search", "repo", string(repo))
 
 	// Cap the number of forked processes to limit the size of zip contents being mapped to memory. Resolving #7133 could help to lift this restriction.
 	numWorkers := 4
 
-	matcher := lookupMatcher(language)
-	log15.Info("structural search", "language", language, "matcher", matcher)
+	var matcher string
+	if languages != nil {
+		// Pick the first language, there is no support for applying
+		// multiple language matchers in a single search query.
+		matcher = lookupMatcher(languages[0])
+		log15.Info("structural search", "language", languages[0], "matcher", matcher)
+	}
 
 	args := comby.Args{
 		Input:         comby.ZipPath(zipPath),

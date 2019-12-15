@@ -32,19 +32,19 @@ func foo(go string) {}
 	}
 
 	cases := []struct {
-		Name     string
-		Language string
-		Want     []string
+		Name      string
+		Languages []string
+		Want      []string
 	}{
 		{
-			Name:     "Language test for Go",
-			Language: "go",
-			Want:     []string{"foo(go string)"},
+			Name:      "Language test for Go",
+			Languages: []string{"go"},
+			Want:      []string{"foo(go string)"},
 		},
 		{
-			Name:     "Language test for plaintext",
-			Language: "text",
-			Want:     []string{"foo(plain string)", "foo(go string)"},
+			Name:      "Language test for plaintext",
+			Languages: []string{"text"},
+			Want:      []string{"foo(plain string)", "foo(go string)"},
 		},
 	}
 
@@ -60,8 +60,8 @@ func foo(go string) {}
 
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
-			p.Language = tt.Language
-			matches, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.CombyRule, p.Language, p.IncludePatterns, "repo_foo")
+			p.Languages = tt.Languages
+			matches, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.CombyRule, p.Languages, p.IncludePatterns, "repo_foo")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -116,7 +116,7 @@ func foo(real string) {}
 		Pattern:         pattern,
 		IncludePatterns: includePatterns,
 	}
-	m, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.CombyRule, p.Language, p.IncludePatterns, "foo")
+	m, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.CombyRule, p.Languages, p.IncludePatterns, "foo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -173,7 +173,7 @@ func TestIncludePatterns(t *testing.T) {
 		Pattern:         "",
 		IncludePatterns: includePatterns,
 	}
-	fileMatches, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.CombyRule, p.Language, p.IncludePatterns, "foo")
+	fileMatches, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.CombyRule, p.Languages, p.IncludePatterns, "foo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -214,7 +214,7 @@ func TestRule(t *testing.T) {
 		CombyRule:       `where :[args] == "success"`,
 	}
 
-	got, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.CombyRule, p.Language, p.IncludePatterns, "repo")
+	got, _, err := structuralSearch(context.Background(), zf, p.Pattern, p.CombyRule, p.Languages, p.IncludePatterns, "repo")
 	if err != nil {
 		t.Fatal(err)
 	}

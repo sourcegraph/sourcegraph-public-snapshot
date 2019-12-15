@@ -194,7 +194,7 @@ func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.
 		"ExcludePattern":  []string{p.ExcludePattern},
 		"IncludePatterns": p.IncludePatterns,
 		"FetchTimeout":    []string{fetchTimeout.String()},
-		"Language":        []string{p.Language},
+		"Language":        p.Languages,
 		"CombyRule":       []string{p.CombyRule},
 	}
 	if deadline, ok := ctx.Deadline(); ok {

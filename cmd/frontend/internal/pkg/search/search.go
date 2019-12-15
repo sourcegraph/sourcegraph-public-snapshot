@@ -34,7 +34,7 @@ type PatternInfo struct {
 	PatternMatchesContent bool
 	PatternMatchesPath    bool
 
-	Language string
+	Languages []string
 }
 
 func (p *PatternInfo) IsEmpty() bool {
