@@ -1,13 +1,34 @@
 groups:
   - name: gitserver
     rules:
-      - record: alert_count
-        labels:
-          container: gitserver
-          level: critical
-        expr: 0
+      # Gitserver rules
+      - record: gitserver_disk_free_percent
+        expr: sum(src_gitserver_disk_space_available) / sum(src_gitserver_disk_space_total)
+      - record: gitserver_disk_used_percent
+        expr: 1 - gitserver_disk_free_percent
+
+      # Disk space alert
+      #
+      # Example: gitserver_disk_used_percent is 0.8, indicating 80% of the disk is used.
+      # We add 0.2 such that the resulting number would floor to 1.0 (alerting) in this
+      # case and 0.0 (not alerting) otherwise.
       - record: alert_count
         labels:
           container: gitserver
           level: warning
-        expr: 0
+          name: low_disk_space
+          description: 'less than 20% free disk space remaining'
+        expr: >-
+          clamp_max(clamp_min(floor(
+              gitserver_disk_used_percent + 0.2
+          ), 0), 1)
+      - record: alert_count
+        labels:
+          container: gitserver
+          level: critical
+          name: low_disk_space
+          description: 'less than 5% free disk space remaining'
+        expr: >-
+          clamp_max(clamp_min(floor(
+              gitserver_disk_used_percent + 0.05
+          ), 0), 1)
