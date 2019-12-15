@@ -10,7 +10,7 @@ import { ConnectionErrors } from './ServerURLForm'
 export interface OptionsContainerProps {
     sourcegraphURL: string
     isActivated: boolean
-    ensureValidSite: (url: string) => Observable<any>
+    ensureValidSite: () => Observable<void>
     fetchCurrentTabStatus: () => Promise<OptionsMenuProps['currentTabStatus']>
     hasPermissions: (url: string) => Promise<boolean>
     requestPermissions: (url: string) => void
@@ -68,7 +68,7 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
             }),
             switchMap(url => {
                 this.setState({ status: 'connecting', connectionError: undefined })
-                return this.props.ensureValidSite(url).pipe(
+                return this.props.ensureValidSite().pipe(
                     map(() => url),
                     catchError(err => of(err))
                 )

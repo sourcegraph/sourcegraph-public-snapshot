@@ -21,7 +21,7 @@ describe('OptionsContainer', () => {
         hasPermissions: () => Promise.resolve(true),
         requestPermissions: noop,
         fetchCurrentTabStatus: () => Promise.resolve(undefined),
-        ensureValidSite: (url: string) => new Observable<void>(),
+        ensureValidSite: () => new Observable<void>(),
         toggleExtensionDisabled: (isActivated: boolean) => Promise.resolve(undefined),
         toggleFeatureFlag: noop,
         featureFlags: [],

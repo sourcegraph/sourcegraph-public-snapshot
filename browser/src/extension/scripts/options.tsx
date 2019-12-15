@@ -16,6 +16,7 @@ import { fetchSite } from '../../shared/backend/server'
 import { featureFlags } from '../../shared/util/featureFlags'
 import { assertEnv } from '../envAssertion'
 import { observeSourcegraphURL } from '../../shared/util/context'
+import { mapTo } from 'rxjs/operators'
 
 assertEnv('OPTIONS')
 
@@ -63,8 +64,6 @@ function requestGraphQL<T extends GQL.IQuery | GQL.IMutation>(options: {
 }): Observable<GraphQLResult<T>> {
     return from(background.requestGraphQL<T>(options))
 }
-
-const ensureValidSite = (): Observable<GQL.ISite> => fetchSite(requestGraphQL)
 
 class Options extends React.Component<{}, State> {
     public state: State = {
@@ -120,7 +119,7 @@ class Options extends React.Component<{}, State> {
             sourcegraphURL: this.state.sourcegraphURL,
             isActivated: this.state.isActivated,
 
-            ensureValidSite,
+            ensureValidSite: () => fetchSite(requestGraphQL).pipe(mapTo(undefined)),
             fetchCurrentTabStatus,
             hasPermissions: url =>
                 browser.permissions.contains({
