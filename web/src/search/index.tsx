@@ -17,7 +17,7 @@ export function parseSearchURLQuery(query: string): string | undefined {
 export function parseSearchURLPatternType(query: string): SearchPatternType | undefined {
     const searchParams = new URLSearchParams(query)
     const patternType = searchParams.get('patternType')
-    if (patternType !== SearchPatternType.literal && patternType !== SearchPatternType.regexp) {
+    if (patternType !== SearchPatternType.literal && patternType !== SearchPatternType.regexp && patternType !== SearchPatternType.structural) {
         return undefined
     }
     return patternType
