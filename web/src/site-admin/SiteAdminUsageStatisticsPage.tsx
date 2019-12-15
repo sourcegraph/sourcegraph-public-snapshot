@@ -185,7 +185,7 @@ export const USER_ACTIVITY_FILTERS: FilteredConnectionFilter[] = [
     },
 ]
 
-interface SiteAdminUsageStatisticsPageProps extends RouteComponentProps<any> {
+interface SiteAdminUsageStatisticsPageProps extends RouteComponentProps<{}> {
     isLightTheme: boolean
 }
 

@@ -50,7 +50,7 @@ import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarItem } from './repo/settings/RepoSettingsSidebar'
 
 export interface LayoutProps
-    extends RouteComponentProps<any>,
+    extends RouteComponentProps<{}>,
         SettingsCascadeProps,
         PlatformContextProps,
         ExtensionsControllerProps,

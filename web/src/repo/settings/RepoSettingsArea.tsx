@@ -29,7 +29,7 @@ export interface RepoSettingsAreaRouteContext {
 
 export interface RepoSettingsAreaRoute extends RouteDescriptor<RepoSettingsAreaRouteContext> {}
 
-interface Props extends RouteComponentProps<any>, RepoHeaderContributionsLifecycleProps {
+interface Props extends RouteComponentProps<{}>, RepoHeaderContributionsLifecycleProps {
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarItems: RepoSettingsSideBarItems
     repo: GQL.IRepository

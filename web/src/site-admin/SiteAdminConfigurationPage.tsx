@@ -14,7 +14,7 @@ import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
 import { SiteAdminManagementConsolePassword } from './SiteAdminManagementConsolePassword'
 import { ErrorAlert } from '../components/alerts'
 
-interface Props extends RouteComponentProps<any> {
+interface Props extends RouteComponentProps<{}> {
     isLightTheme: boolean
 }
 

@@ -225,7 +225,7 @@ class CheckMirrorRepositoryConnectionActionContainer extends React.PureComponent
     private checkMirrorRepositoryConnection = (): void => this.checkRequests.next()
 }
 
-interface Props extends RouteComponentProps<any> {
+interface Props extends RouteComponentProps<{}> {
     repo: GQL.IRepository
     onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
 }

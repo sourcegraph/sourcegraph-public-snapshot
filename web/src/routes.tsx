@@ -9,7 +9,7 @@ const SearchResults = lazyComponent(() => import('./search/results/SearchResults
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
 
-export interface LayoutRouteComponentProps extends RouteComponentProps<any>, LayoutProps {}
+export interface LayoutRouteComponentProps extends RouteComponentProps<{}>, LayoutProps {}
 
 export interface LayoutRouteProps {
     path: string

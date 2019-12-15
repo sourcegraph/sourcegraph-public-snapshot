@@ -21,7 +21,7 @@ const NotFoundPage: React.FunctionComponent = () => (
 )
 
 interface Props
-    extends RouteComponentProps<any>,
+    extends RouteComponentProps<{}>,
         ExtensionsControllerProps,
         PlatformContextProps,
         SettingsCascadeProps,
