@@ -21,7 +21,7 @@ import { ComponentSuggestions, noSuggestions, typingDebounceTime } from '../Quer
 import { isDefined } from '../../../../../shared/src/util/types'
 import Downshift from 'downshift'
 import { generateFiltersQuery } from '../helpers'
-import { QueryState, interactiveFormatQueryForFuzzySearch } from '../../helpers'
+import { QueryState, formatInteractiveQueryForFuzzySearch } from '../../helpers'
 import { dedupeWhitespace } from '../../../../../shared/src/util/strings'
 import { FiltersToTypeAndValue } from '../../../../../shared/src/search/interactive/util'
 import { SuggestionTypes } from '../../../../../shared/src/search/suggestions/util'
@@ -147,7 +147,7 @@ export class FilterInput extends React.Component<Props, State> {
 
                         let fullQuery = `${props.navbarQuery.query} ${generateFiltersQuery(newFiltersQuery)}`
 
-                        fullQuery = interactiveFormatQueryForFuzzySearch(fullQuery, filterType, inputValue)
+                        fullQuery = formatInteractiveQueryForFuzzySearch(fullQuery, filterType, inputValue)
                         const suggestions = fetchSuggestions(fullQuery).pipe(
                             map(createSuggestion),
                             filter(isDefined),
