@@ -19,7 +19,7 @@ import { ThemePreferenceProps } from '../../theme'
 import { EventLoggerProps } from '../../../tracking/eventLogger'
 import { ActivationProps } from '../../../../../shared/src/components/activation/Activation'
 import { FiltersToTypeAndValue } from '../../../../../shared/src/search/interactive/util'
-import { SuggestionTypes, SuggestionTypeKeys } from '../../../../../shared/src/search/suggestions/util'
+import { SuggestionTypes, suggestionTypeKeys } from '../../../../../shared/src/search/suggestions/util'
 import { QueryInput } from '../QueryInput'
 import { parseSearchURLQuery, InteractiveSearchProps } from '../..'
 import { SearchModeToggle } from './SearchModeToggle'
@@ -58,7 +58,7 @@ export default class InteractiveModeInput extends React.Component<InteractiveMod
 
         const searchParams = new URLSearchParams(props.location.search)
         const filtersInQuery: FiltersToTypeAndValue = {}
-        for (const t of SuggestionTypeKeys) {
+        for (const t of suggestionTypeKeys) {
             const itemsOfType = searchParams.getAll(t)
             itemsOfType.map((item, i) => {
                 filtersInQuery[`${t}-${i}`] = { type: t, value: item, editable: false }

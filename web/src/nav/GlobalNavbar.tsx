@@ -49,7 +49,7 @@ interface Props
     filtersInQuery: FiltersToTypeAndValue
     showInteractiveSearchMode: boolean
     interactiveSearchMode: boolean
-    toggleSearchMode: (e: React.MouseEvent<HTMLAnchorElement>) => void
+    toggleSearchMode: (event: React.MouseEvent<HTMLAnchorElement>) => void
 }
 
 interface State {

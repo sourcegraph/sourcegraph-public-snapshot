@@ -375,7 +375,7 @@ export class QueryInput extends React.Component<Props, State> {
                                     onBlur={this.onInputBlur}
                                     className={`form-control query-input2__input e2e-query-input ${
                                         this.props.withSearchModeToggle
-                                            ? 'query-input2__input-with-mode-toggle'
+                                            ? 'query-input2__input-with-mode--toggle'
                                             : 'rounded-left'
                                     }`}
                                     value={this.props.value.query}

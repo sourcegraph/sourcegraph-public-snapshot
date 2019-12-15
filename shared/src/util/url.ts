@@ -2,7 +2,7 @@ import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
 import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
 import { SearchPatternType } from '../graphql/schema'
 import { FiltersToTypeAndValue } from '../search/interactive/util'
-import { SuggestionTypeKeys } from '../search/suggestions/util'
+import { suggestionTypeKeys } from '../search/suggestions/util'
 import { isEmpty } from 'lodash'
 
 export interface RepoSpec {
@@ -587,7 +587,7 @@ export function buildSearchURLQuery(
 export function interactiveBuildSearchURLQuery(filtersInQuery: FiltersToTypeAndValue): URLSearchParams {
     const searchParams = new URLSearchParams()
 
-    for (const searchType of SuggestionTypeKeys) {
+    for (const searchType of suggestionTypeKeys) {
         for (const filterKey of Object.keys(filtersInQuery)) {
             if (filtersInQuery[filterKey].type === searchType) {
                 searchParams.append(searchType, filtersInQuery[filterKey].value)

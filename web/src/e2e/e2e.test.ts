@@ -1499,7 +1499,8 @@ describe('e2e test suite', () => {
                     await driver.page.waitForSelector('.e2e-search-mode-toggle')
                     assert.notStrictEqual(
                         await driver.page.evaluate(() => document.querySelectorAll('.e2e-search-mode-toggle').length),
-                        0
+                        0,
+                        'Expected search mode toggle to appear, but was not able to find it on the page.'
                     )
                 },
                 { minTimeout: 1000 }

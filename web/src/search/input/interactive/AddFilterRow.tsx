@@ -29,12 +29,12 @@ export const AddFilterRow: React.FunctionComponent<RowProps> = ({ isHomepage, on
     </div>
 )
 
-interface ButtonProps {
+interface AddFilterButtonProps {
     type: SuggestionTypes
     onAddNewFilter: (filter: SuggestionTypes) => void
 }
 
-class AddFilterButton extends React.Component<ButtonProps> {
+class AddFilterButton extends React.Component<AddFilterButtonProps> {
     private onAddNewFilter = (): void => {
         this.props.onAddNewFilter(this.props.type)
     }

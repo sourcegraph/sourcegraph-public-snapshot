@@ -16,4 +16,4 @@ export enum SuggestionTypes {
     symbol = 'symbol',
 }
 
-export const SuggestionTypeKeys: SuggestionTypes[] = Object.keys(SuggestionTypes) as SuggestionTypes[]
+export const suggestionTypeKeys: SuggestionTypes[] = Object.keys(SuggestionTypes) as SuggestionTypes[]

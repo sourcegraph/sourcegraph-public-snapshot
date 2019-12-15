@@ -5,7 +5,7 @@ import ViewQuiltIcon from 'mdi-react/ViewQuiltIcon'
 
 interface Props {
     interactiveSearchMode: boolean
-    toggleSearchMode: (e: React.MouseEvent<HTMLAnchorElement>) => void
+    toggleSearchMode: (event: React.MouseEvent<HTMLAnchorElement>) => void
 }
 
 interface State {
@@ -21,7 +21,6 @@ export class SearchModeToggle extends React.Component<Props, State> {
         }
     }
     private toggleOpen = (): void => {
-        console.log('on click')
         this.setState(state => ({
             isOpen: !state.isOpen,
         }))

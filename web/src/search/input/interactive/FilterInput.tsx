@@ -239,18 +239,18 @@ export class FilterInput extends React.Component<Props, State> {
             return
         }
 
-        this.cancelEditInput()
+        this.handleDiscard()
     }
 
     /**
-     * Handles cancelling while editing a filter.
+     * Handles discarding while editing a filter.
      *
      * If the filter had no value, and no new value was submitted, the filter is deleted.
      * If the filter had an old value, and no new value was submitted, the inputValue is reverted
      * to the initial value, and the filter becomes uneditable.
      * Any suggestions get hidden.
      */
-    private cancelEditInput = (): void => {
+    private handleDiscard = (): void => {
         if (this.props.value === '') {
             // Don't allow empty filters
             this.onClickDelete()
@@ -266,7 +266,6 @@ export class FilterInput extends React.Component<Props, State> {
     /**
      * Checks that the newly focused element is not a child of the previously focused element.
      * Prevents onBlur from firing if we are clicking inside the filter input chip.
-     * https://stackoverflow.com/a/38019906
      */
     private focusInCurrentTarget = (e: React.FocusEvent<HTMLDivElement>): boolean => {
         const { relatedTarget, currentTarget } = e
@@ -274,16 +273,8 @@ export class FilterInput extends React.Component<Props, State> {
             return false
         }
 
-        let node = (relatedTarget as HTMLElement).parentNode
-
-        while (node !== null) {
-            if (node === currentTarget) {
-                return true
-            }
-            node = node.parentNode
-        }
-
-        return false
+        const node = (relatedTarget as HTMLElement).parentNode
+        return currentTarget.contains(node)
     }
 
     private onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
@@ -299,7 +290,7 @@ export class FilterInput extends React.Component<Props, State> {
 
         // Escape to cancel editing a filter
         if (event.key === 'Escape' && this.props.editable) {
-            this.cancelEditInput()
+            this.handleDiscard()
         }
     }
 
@@ -374,7 +365,7 @@ export class FilterInput extends React.Component<Props, State> {
                                             <CheckButton />
                                             <button
                                                 type="button"
-                                                onClick={this.cancelEditInput}
+                                                onClick={this.handleDiscard}
                                                 className={`btn btn-icon icon-inline e2e-filter-input__cancel-button-${this.props.mapKey}`}
                                                 aria-label="Cancel"
                                                 data-tooltip="Cancel"

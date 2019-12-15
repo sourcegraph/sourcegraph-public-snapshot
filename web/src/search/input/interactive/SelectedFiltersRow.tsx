@@ -1,5 +1,5 @@
 import * as React from 'react'
-import FilterInput from './FilterInput'
+import { FilterInput } from './FilterInput'
 import { QueryState } from '../../helpers'
 import { FiltersToTypeAndValue } from '../../../../../shared/src/search/interactive/util'
 

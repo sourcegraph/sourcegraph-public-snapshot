@@ -92,5 +92,5 @@ export interface InteractiveSearchProps {
     onFiltersInQueryChange: (filtersInQuery: FiltersToTypeAndValue) => void
     showInteractiveSearchMode: boolean
     interactiveSearchMode: boolean
-    toggleSearchMode: (e: React.MouseEvent<HTMLAnchorElement>) => void
+    toggleSearchMode: (event: React.MouseEvent<HTMLAnchorElement>) => void
 }
