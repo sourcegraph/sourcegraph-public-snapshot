@@ -15,9 +15,9 @@ const config: webpack.Configuration = {
     entry: {
         background: buildEntry(extEntry, backgroundEntry, '../../src/extension/scripts/background.ts'),
         options: buildEntry(extEntry, optionsEntry, '../../src/extension/scripts/options.tsx'),
-        inject: buildEntry(extEntry, contentEntry, '../../src/extension/scripts/inject.tsx'),
-        phabricator: buildEntry(pageEntry, '../../src/libs/phabricator/extension.tsx'),
-        integration: buildEntry(pageEntry, '../../src/integration/integration.tsx'),
+        inject: buildEntry(extEntry, contentEntry, '../../src/extension/scripts/inject.ts'),
+        phabricator: buildEntry(pageEntry, '../../src/libs/phabricator/extension.ts'),
+        integration: buildEntry(pageEntry, '../../src/integration/integration.ts'),
 
         style: path.join(__dirname, '../../src/app.scss'),
         'options-style': path.join(__dirname, '../../src/options.scss'),

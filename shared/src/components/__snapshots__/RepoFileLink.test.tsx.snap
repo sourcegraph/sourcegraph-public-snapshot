@@ -3,14 +3,14 @@
 exports[`RepoFileLink renders 1`] = `
 Array [
   <a
-    to="https://example.com"
+    href="https://example.com"
   >
     my/repo
   </a>,
   " ›",
   " ",
   <a
-    to="https://example.com/file"
+    href="https://example.com/file"
   >
     my/
     <strong>

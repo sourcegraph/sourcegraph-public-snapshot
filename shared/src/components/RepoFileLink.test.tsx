@@ -1,12 +1,8 @@
 import React from 'react'
 import renderer from 'react-test-renderer'
-import { setLinkComponent } from './Link'
 import { RepoFileLink } from './RepoFileLink'
 
 describe('RepoFileLink', () => {
-    setLinkComponent((props: any) => <a {...props} />)
-    afterAll(() => setLinkComponent(null as any)) // reset global env for other tests
-
     test('renders', () => {
         const component = renderer.create(
             <RepoFileLink

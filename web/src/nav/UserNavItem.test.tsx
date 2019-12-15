@@ -2,15 +2,11 @@ import * as H from 'history'
 import React from 'react'
 import { MemoryRouter } from 'react-router'
 import renderer from 'react-test-renderer'
-import { setLinkComponent } from '../../../shared/src/components/Link'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { ThemePreference } from '../theme'
 import { UserNavItem } from './UserNavItem'
 
 describe('UserNavItem', () => {
-    setLinkComponent((props: any) => <a {...props} />)
-    afterAll(() => setLinkComponent(null as any)) // reset global env for other tests
-
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     const ORG_CONNECTION = {
         __typename: 'OrgConnection',

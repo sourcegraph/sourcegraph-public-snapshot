@@ -1,19 +1,13 @@
 import '../../../shared/src/polyfills'
 
-import * as H from 'history'
-import React from 'react'
-import { setLinkComponent } from '../../../shared/src/components/Link'
+import { setLinkComponent, AnchorLink } from '../../../shared/src/components/Link'
 import { injectCodeIntelligence } from '../libs/code_intelligence/inject'
 import { EXTENSION_MARKER_ID, injectExtensionMarker, NATIVE_INTEGRATION_ACTIVATED } from '../libs/sourcegraph/inject'
 import { getAssetsURL } from '../shared/util/context'
 
 const IS_EXTENSION = false
 
-setLinkComponent(({ to, children, ...props }) => (
-    <a href={to && typeof to !== 'string' ? H.createPath(to) : to} {...props}>
-        {children}
-    </a>
-))
+setLinkComponent(AnchorLink)
 
 async function init(): Promise<void> {
     console.log('Sourcegraph native integration is running')

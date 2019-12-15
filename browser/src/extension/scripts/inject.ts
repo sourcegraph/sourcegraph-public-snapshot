@@ -1,10 +1,8 @@
 import '../polyfills'
 
-import * as H from 'history'
-import React from 'react'
 import { fromEvent, Subscription } from 'rxjs'
 import { first } from 'rxjs/operators'
-import { setLinkComponent } from '../../../../shared/src/components/Link'
+import { setLinkComponent, AnchorLink } from '../../../../shared/src/components/Link'
 import { storage } from '../../browser/storage'
 import { determineCodeHost } from '../../libs/code_intelligence'
 import { injectCodeIntelligence } from '../../libs/code_intelligence/inject'
@@ -28,11 +26,7 @@ assertEnv('CONTENT')
 const codeHost = determineCodeHost()
 initSentry('content', codeHost?.type)
 
-setLinkComponent(({ to, children, ...props }) => (
-    <a href={to && typeof to !== 'string' ? H.createPath(to) : to} {...props}>
-        {children}
-    </a>
-))
+setLinkComponent(AnchorLink)
 
 const IS_EXTENSION = true
 

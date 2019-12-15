@@ -36,6 +36,7 @@ const config = {
     // Neither NodeJS nor JSDOM have fetch + AbortController yet
     require.resolve('abort-controller/polyfill'),
     path.join(__dirname, 'shared/dev/fetch'),
+    path.join(__dirname, 'shared/dev/setLinkComponentForTest.ts'),
   ],
 }
 
