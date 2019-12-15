@@ -377,7 +377,7 @@ export const formatQueryForFuzzySearch = (queryState: QueryState): string => {
  * the resolved filter and value. Otherwise, we return the entire query.
  *
  * */
-export const interactiveFormatQueryForFuzzySearch = (
+export const formatInteractiveQueryForFuzzySearch = (
     fullQuery: string,
     filterType: SuggestionTypes,
     value: string = ''
