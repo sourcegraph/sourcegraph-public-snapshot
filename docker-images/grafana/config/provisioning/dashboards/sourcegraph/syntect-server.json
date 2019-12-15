@@ -19,7 +19,7 @@
   "links": [],
   "panels": [
     {
-      "content": "<div style=\"text-align: left;\">\n  <img src=\"https://storage.googleapis.com/sourcegraph-assets/sourcegraph-logo-light.png\" style=\"height:30px; margin:0.5rem\"></img>\n  <div style=\"margin-left: 1rem; margin-top: 0.5rem; font-size: 20px;\"><span style=\"color: #8e8e8e\">Syntect Server:</span> Stores, manages, and operates Git repositories. <a style=\"font-size: 15px\" target=\"_blank\" href=\"https://docs.sourcegraph.com/dev/architecture\">(⧉ architecture diagram)</a></span>\n</div>",
+      "content": "<div style=\"text-align: left;\">\n  <img src=\"https://storage.googleapis.com/sourcegraph-assets/sourcegraph-logo-light.png\" style=\"height:30px; margin:0.5rem\"></img>\n  <div style=\"margin-left: 1rem; margin-top: 0.5rem; font-size: 20px;\"><span style=\"color: #8e8e8e\">Syntect Server:</span> Handles syntax highlighting for code files. <a style=\"font-size: 15px\" target=\"_blank\" href=\"https://docs.sourcegraph.com/dev/architecture\">(⧉ architecture diagram)</a></span>\n</div>",
       "datasource": null,
       "gridPos": {
         "h": 3,
