@@ -1,0 +1,13 @@
+groups:
+  - name: syntect-server
+    rules:
+      - record: alert_count
+        labels:
+          service_name: syntect-server
+          level: critical
+        expr: 0
+      - record: alert_count
+        labels:
+          service_name: syntect-server
+          level: warning
+        expr: 0
