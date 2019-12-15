@@ -79,7 +79,7 @@ export interface LayoutProps
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
-    routes: readonly LayoutRouteProps[]
+    routes: readonly LayoutRouteProps<any>[]
 
     authenticatedUser: GQL.IUser | null
 
