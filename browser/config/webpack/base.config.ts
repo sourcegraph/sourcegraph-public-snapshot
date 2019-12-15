@@ -13,7 +13,7 @@ const extEntry = '../../src/config/extension.entry.js'
 
 const config: webpack.Configuration = {
     entry: {
-        background: buildEntry(extEntry, backgroundEntry, '../../src/extension/scripts/background.tsx'),
+        background: buildEntry(extEntry, backgroundEntry, '../../src/extension/scripts/background.ts'),
         options: buildEntry(extEntry, optionsEntry, '../../src/extension/scripts/options.tsx'),
         inject: buildEntry(extEntry, contentEntry, '../../src/extension/scripts/inject.tsx'),
         phabricator: buildEntry(pageEntry, '../../src/libs/phabricator/extension.tsx'),
