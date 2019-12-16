@@ -252,7 +252,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                 const splitSearchModes =
                     settingsCascade.final &&
                     !isErrorLike(settingsCascade.final) &&
-                    settingsCascade.final.experimentalFeatures?.splitSearchModes === 'enabled'
+                    settingsCascade.final.experimentalUIFeatures?.splitSearchModes === 'enabled'
 
                 if (splitSearchModes) {
                     this.setState({ splitSearchModes })

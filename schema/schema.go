@@ -392,12 +392,6 @@ type ExcludedGitoliteRepo struct {
 
 // ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type ExperimentalFeatures struct {
-	// SplitSearchModes description: Enables toggling between the current omni search mode, and experimental interactive search mode.
-	SplitSearchModes string `json:"splitSearchModes,omitempty"`
-}
-
-// ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
-type ExperimentalFeatures struct {
 	// Automation description: Enables the experimental code automation features.
 	Automation string `json:"automation,omitempty"`
 	// Discussions description: Enables the code discussions experiment.
@@ -408,6 +402,12 @@ type ExperimentalFeatures struct {
 	SplitSearchModes string `json:"splitSearchModes,omitempty"`
 	// StructuralSearch description: Enables structural search.
 	StructuralSearch string `json:"structuralSearch,omitempty"`
+}
+
+// ExperimentalUIFeatures description: Experimental features to enable or disable, which are toggleable at all settings levels. Features that are now enabled by default are marked as deprecated.
+type ExperimentalUIFeatures struct {
+	// SplitSearchModes description: Enables toggling between the current omni search mode, and experimental interactive search mode.
+	SplitSearchModes string `json:"splitSearchModes,omitempty"`
 }
 
 // Extensions description: Configures Sourcegraph extensions.
@@ -840,8 +840,8 @@ type Settings struct {
 	AlertsShowPatchUpdates bool `json:"alerts.showPatchUpdates,omitempty"`
 	// CodeHostUseNativeTooltips description: Whether to use the code host's native hover tooltips when they exist (GitHub's jump-to-definition tooltips, for example).
 	CodeHostUseNativeTooltips bool `json:"codeHost.useNativeTooltips,omitempty"`
-	// ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
-	ExperimentalFeatures *ExperimentalFeatures `json:"experimentalFeatures,omitempty"`
+	// ExperimentalUIFeatures description: Experimental features to enable or disable, which are toggleable at all settings levels. Features that are now enabled by default are marked as deprecated.
+	ExperimentalUIFeatures *ExperimentalUIFeatures `json:"experimentalUIFeatures,omitempty"`
 	// Extensions description: The Sourcegraph extensions to use. Enable an extension by adding a property `"my/extension": true` (where `my/extension` is the extension ID). Override a previously enabled extension and disable it by setting its value to `false`.
 	Extensions map[string]bool `json:"extensions,omitempty"`
 	// Motd description: DEPRECATED: Use `notices` instead.
