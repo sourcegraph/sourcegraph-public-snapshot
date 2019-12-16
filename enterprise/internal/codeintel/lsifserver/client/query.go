@@ -57,6 +57,7 @@ func (c *Client) Upload(ctx context.Context, args *struct {
 		path:   "/upload",
 		method: "POST",
 		query:  query,
+		body:   args.Body,
 	}
 
 	payload := struct {
