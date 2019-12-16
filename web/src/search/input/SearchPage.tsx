@@ -107,7 +107,7 @@ export class SearchPage extends React.Component<Props, State> {
                             <>
                                 <Form className="search flex-grow-1" onSubmit={this.onSubmit}>
                                     <div className="search-page__input-container">
-                                        {this.props.showInteractiveSearchMode && (
+                                        {this.props.splitSearchModes && (
                                             <SearchModeToggle
                                                 {...this.props}
                                                 interactiveSearchMode={this.props.interactiveSearchMode}
@@ -121,7 +121,7 @@ export class SearchPage extends React.Component<Props, State> {
                                             hasGlobalQueryBehavior={true}
                                             patternType={this.props.patternType}
                                             togglePatternType={this.props.togglePatternType}
-                                            withSearchModeToggle={this.props.showInteractiveSearchMode}
+                                            withSearchModeToggle={this.props.splitSearchModes}
                                         />
                                         <SearchButton />
                                     </div>

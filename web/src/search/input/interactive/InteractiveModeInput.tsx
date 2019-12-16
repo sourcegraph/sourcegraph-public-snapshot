@@ -6,7 +6,6 @@ import { Form } from '../../../components/Form'
 import { AddFilterRow } from './AddFilterRow'
 import { SelectedFiltersRow } from './SelectedFiltersRow'
 import { SearchButton } from '../SearchButton'
-import { Subscription } from 'rxjs'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { Link } from '../../../../../shared/src/components/Link'
 import { NavLinks } from '../../../nav/NavLinks'
@@ -51,7 +50,6 @@ interface InteractiveModeProps
 
 export default class InteractiveModeInput extends React.Component<InteractiveModeProps> {
     private numFiltersAddedToQuery = 0
-    private subscriptions = new Subscription()
 
     constructor(props: InteractiveModeProps) {
         super(props)
@@ -66,10 +64,6 @@ export default class InteractiveModeInput extends React.Component<InteractiveMod
         }
         this.numFiltersAddedToQuery = Object.keys(filtersInQuery).length
         this.props.onFiltersInQueryChange(filtersInQuery)
-    }
-
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
     }
 
     /**

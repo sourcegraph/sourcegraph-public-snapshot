@@ -126,7 +126,7 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
 const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
 const SEARCH_MODE_KEY = 'sg-search-mode'
 
-const showInteractiveSearchMode = window.context.experimentalFeatures.interactiveSearchMode === 'enabled'
+const splitSearchModes = window.context.experimentalFeatures.splitSearchModes === 'enabled'
 
 /** Reads the stored theme preference from localStorage */
 const readStoredThemePreference = (): ThemePreference => {
@@ -183,8 +183,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             viewerSubject: SITE_SUBJECT_NO_ADMIN,
             searchPatternType: urlPatternType,
             filtersInQuery: {},
-            interactiveSearchMode:
-                showInteractiveSearchMode && currentSearchMode ? currentSearchMode === 'interactive' : false,
+            interactiveSearchMode: splitSearchModes && currentSearchMode ? currentSearchMode === 'interactive' : false,
         }
     }
 
@@ -345,7 +344,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                                     patternType={this.state.searchPatternType}
                                     togglePatternType={this.togglePatternType}
-                                    showInteractiveSearchMode={showInteractiveSearchMode}
+                                    splitSearchModes={splitSearchModes}
                                     interactiveSearchMode={this.state.interactiveSearchMode}
                                     toggleSearchMode={this.toggleSearchMode}
                                     filtersInQuery={this.state.filtersInQuery}

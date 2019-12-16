@@ -124,7 +124,7 @@ describe('SearchResultsList', () => {
         filtersInQuery: {},
         toggleSearchMode: sinon.fake(),
         onFiltersInQueryChange: sinon.fake(),
-        showInteractiveSearchMode: false,
+        splitSearchModes: false,
     }
 
     it('displays loading text when results is undefined', () => {

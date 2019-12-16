@@ -47,7 +47,7 @@ interface Props
     lowProfile: boolean
 
     filtersInQuery: FiltersToTypeAndValue
-    showInteractiveSearchMode: boolean
+    splitSearchModes: boolean
     interactiveSearchMode: boolean
     toggleSearchMode: (event: React.MouseEvent<HTMLAnchorElement>) => void
 }
@@ -153,7 +153,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                 )}
                                 {!this.state.authRequired && (
                                     <div className="global-navbar__search-box-container d-none d-sm-flex flex-row">
-                                        {this.props.showInteractiveSearchMode && (
+                                        {this.props.splitSearchModes && (
                                             <SearchModeToggle
                                                 {...this.props}
                                                 interactiveSearchMode={this.props.interactiveSearchMode}

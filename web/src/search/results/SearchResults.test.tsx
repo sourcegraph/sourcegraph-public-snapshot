@@ -45,7 +45,7 @@ describe('SearchResults', () => {
         filtersInQuery: {},
         toggleSearchMode: sinon.fake(),
         onFiltersInQueryChange: sinon.fake(),
-        showInteractiveSearchMode: false,
+        splitSearchModes: false,
     }
 
     it('calls the search request once', () => {

@@ -90,7 +90,7 @@ export interface PatternTypeProps {
 export interface InteractiveSearchProps {
     filtersInQuery: FiltersToTypeAndValue
     onFiltersInQueryChange: (filtersInQuery: FiltersToTypeAndValue) => void
-    showInteractiveSearchMode: boolean
+    splitSearchModes: boolean
     interactiveSearchMode: boolean
     toggleSearchMode: (event: React.MouseEvent<HTMLAnchorElement>) => void
 }

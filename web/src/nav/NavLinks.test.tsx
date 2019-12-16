@@ -64,7 +64,7 @@ describe('NavLinks', () => {
         history,
         isSourcegraphDotCom: false,
         showCampaigns: true,
-        showInteractiveSearchMode: false,
+        splitSearchModes: false,
         interactiveSearchMode: false,
         toggleSearchMode: NOOP_TOGGLE_MODE,
     }
