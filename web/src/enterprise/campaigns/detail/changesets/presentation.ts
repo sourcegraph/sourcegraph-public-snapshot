@@ -7,6 +7,7 @@ import AccountQuestionIcon from 'mdi-react/AccountQuestionIcon'
 export const changesetStatusColorClasses: Record<ChangesetState, string> = {
     [ChangesetState.OPEN]: 'success',
     [ChangesetState.CLOSED]: 'danger',
+    [ChangesetState.DELETED]: 'danger',
     [ChangesetState.MERGED]: 'merged',
 }
 
@@ -26,6 +27,7 @@ export const changesetStageLabels: Record<ChangesetReviewState | ChangesetState,
     [ChangesetState.OPEN]: 'open',
     [ChangesetState.CLOSED]: 'closed',
     [ChangesetState.MERGED]: 'merged',
+    [ChangesetState.DELETED]: 'deleted',
     [ChangesetReviewState.APPROVED]: 'approved',
     [ChangesetReviewState.CHANGES_REQUESTED]: 'changes requested',
     [ChangesetReviewState.PENDING]: 'pending review',
