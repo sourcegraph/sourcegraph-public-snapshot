@@ -400,6 +400,8 @@ type ExperimentalFeatures struct {
 	EventLogging string `json:"eventLogging,omitempty"`
 	// SplitSearchModes description: Enables toggling between the current omni search mode, and experimental interactive search mode.
 	SplitSearchModes string `json:"splitSearchModes,omitempty"`
+	// StructuralSearch description: Enables structural search.
+	StructuralSearch string `json:"structuralSearch,omitempty"`
 }
 
 // Extensions description: Configures Sourcegraph extensions.

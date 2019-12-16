@@ -500,12 +500,14 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 			IsRegExp:               true,
 			PathPatternsAreRegExps: true,
 			IncludePatterns:        []string{`\.graphql$|\.gql$|\.graphqls$`},
+			Languages:              []string{"graphql"},
 		},
 		"p lang:graphql file:f": {
 			Pattern:                "p",
 			IsRegExp:               true,
 			PathPatternsAreRegExps: true,
 			IncludePatterns:        []string{"f", `\.graphql$|\.gql$|\.graphqls$`},
+			Languages:              []string{"graphql"},
 		},
 		"p -lang:graphql file:f": {
 			Pattern:                "p",

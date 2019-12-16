@@ -9,7 +9,17 @@
 
 All notable changes to Sourcegraph are documented in this file.
 
-## 3.11.0 (unreleased)
+## 3.12.0 (unreleased)
+
+### Added
+
+### Changed
+
+### Fixed
+
+### Removed
+
+## 3.11.0
 
 ### Added
 
@@ -28,7 +38,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Changes to external service configurations are reflected much faster. [#6058](https://github.com/sourcegraph/sourcegraph/issues/6058)
-- Deleting an external service will not show warnings for the non-existant service. [#5617](https://github.com/sourcegraph/sourcegraph/issues/5617)
+- Deleting an external service will not show warnings for the non-existent service. [#5617](https://github.com/sourcegraph/sourcegraph/issues/5617)
 - Suggested search filter chips are quoted if necessary. [#6498](https://github.com/sourcegraph/sourcegraph/issues/6498)
 - Remove potential panic in gitserver if heavily loaded. [#6710](https://github.com/sourcegraph/sourcegraph/issues/6710)
 

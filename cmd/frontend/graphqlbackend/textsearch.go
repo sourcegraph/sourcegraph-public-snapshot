@@ -194,6 +194,7 @@ func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.
 		"ExcludePattern":  []string{p.ExcludePattern},
 		"IncludePatterns": p.IncludePatterns,
 		"FetchTimeout":    []string{fetchTimeout.String()},
+		"Languages":       p.Languages,
 		"CombyRule":       []string{p.CombyRule},
 	}
 	if deadline, ok := ctx.Deadline(); ok {
@@ -605,8 +606,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*FileMatc
 				if v, ok := searcherReposFilteredFiles[string(repoRev.Repo.Name)]; ok {
 					patternCopy := *args.PatternInfo
 					args.PatternInfo = &patternCopy
-					includePatternsCopy := make([]string, len(args.PatternInfo.IncludePatterns))
-					copy(includePatternsCopy, args.PatternInfo.IncludePatterns)
+					includePatternsCopy := []string{}
 					args.PatternInfo.IncludePatterns = append(includePatternsCopy, v...)
 				}
 			}

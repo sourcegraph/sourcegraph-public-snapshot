@@ -78,14 +78,105 @@ func ToFileMatch(combyMatches []comby.FileMatch) (matches []protocol.FileMatch) 
 	return matches
 }
 
-func structuralSearch(ctx context.Context, zipPath, pattern string, rule string, includePatterns []string, repo api.RepoName) (matches []protocol.FileMatch, limitHit bool, err error) {
+// lookupMatcher looks up a key for specifying -matcher in comby. Comby accepts
+// a representative file extension to set a language, so this lookup does not
+// need to consider all possible file extensions for a language. There is a generic
+// fallback language, so this lookup does not need to be exhaustive either.
+func lookupMatcher(language string) string {
+	switch strings.ToLower(language) {
+	case "assembly", "asm":
+		return ".s"
+	case "bash":
+		return ".sh"
+	case "c":
+		return ".c"
+	case "c#, csharp":
+		return ".cs"
+	case "css":
+		return ".css"
+	case "dart":
+		return ".dart"
+	case "clojure":
+		return ".clj"
+	case "elm":
+		return ".elm"
+	case "erlang":
+		return ".erl"
+	case "elixir":
+		return ".ex"
+	case "fortran":
+		return ".f"
+	case "f#", "fsharp":
+		return ".fsx"
+	case "go":
+		return ".go"
+	case "html":
+		return ".html"
+	case "haskell":
+		return ".hs"
+	case "java":
+		return ".java"
+	case "javascript":
+		return ".js"
+	case "json":
+		return ".json"
+	case "julia":
+		return ".jl"
+	case "kotlin":
+		return ".kt"
+	case "laTeX":
+		return ".tex"
+	case "lisp":
+		return ".lisp"
+	case "nim":
+		return ".nim"
+	case "ocaml":
+		return ".ml"
+	case "pascal":
+		return ".pas"
+	case "php":
+		return ".php"
+	case "python":
+		return ".py"
+	case "reason":
+		return ".re"
+	case "ruby":
+		return ".rb"
+	case "rust":
+		return ".rs"
+	case "scala":
+		return ".scala"
+	case "sql":
+		return ".sql"
+	case "swift":
+		return ".swift"
+	case "text":
+		return ".txt"
+	case "typescript", "ts":
+		return ".ts"
+	case "xml":
+		return ".xml"
+	}
+	return ""
+}
+
+func structuralSearch(ctx context.Context, zipPath, pattern, rule string, languages, includePatterns []string, repo api.RepoName) (matches []protocol.FileMatch, limitHit bool, err error) {
 	log15.Info("structural search", "repo", string(repo))
 
 	// Cap the number of forked processes to limit the size of zip contents being mapped to memory. Resolving #7133 could help to lift this restriction.
 	numWorkers := 4
 
+	var matcher string
+	if len(languages) > 0 {
+		// Pick the first language, there is no support for applying
+		// multiple language matchers in a single search query.
+		matcher = lookupMatcher(languages[0])
+		log15.Debug("structural search", "language", languages[0], "matcher", matcher)
+	}
+
 	args := comby.Args{
 		Input:         comby.ZipPath(zipPath),
+		Matcher:       matcher,
 		MatchTemplate: pattern,
 		MatchOnly:     true,
 		FilePatterns:  includePatterns,
