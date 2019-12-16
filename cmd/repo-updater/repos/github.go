@@ -200,13 +200,15 @@ func (s GithubSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 }
 
 // LoadChangesets loads the latest state of the given Changesets from the codehost.
-func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) error {
+func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) ([]*Changeset, error) {
+	var notFound []*Changeset
+
 	prs := make([]*github.PullRequest, len(cs))
 	for i := range cs {
 		repo := cs[i].Repo.Metadata.(*github.Repository)
 		number, err := strconv.ParseInt(cs[i].ExternalID, 10, 64)
 		if err != nil {
-			return errors.Wrap(err, "parsing changeset external id")
+			return notFound, errors.Wrap(err, "parsing changeset external id")
 		}
 
 		prs[i] = &github.PullRequest{
@@ -217,14 +219,14 @@ func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) erro
 
 	err := s.client.LoadPullRequests(ctx, prs...)
 	if err != nil {
-		return err
+		return notFound, err
 	}
 
 	for i := range cs {
 		cs[i].Changeset.Metadata = prs[i]
 	}
 
-	return nil
+	return notFound, nil
 }
 
 // GetRepo returns the Github repository with the given name and owner

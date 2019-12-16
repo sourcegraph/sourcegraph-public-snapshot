@@ -89,7 +89,10 @@ type Source interface {
 
 // A ChangesetSource can load the latest state of a list of Changesets.
 type ChangesetSource interface {
-	LoadChangesets(context.Context, ...*Changeset) error
+	// LoadChangesets loads the given Changesets from the sources and updates
+	// them. If a Changeset could not be found on the source, it's included in
+	// the returned slice.
+	LoadChangesets(context.Context, ...*Changeset) ([]*Changeset, error)
 	// CreateChangeset will create the Changeset on the source. If it already
 	// exists, *Changeset will be populated.
 	CreateChangeset(context.Context, *Changeset) error

@@ -8,9 +8,11 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -215,25 +217,26 @@ func TestBitbucketServerSource_LoadChangesets(t *testing.T) {
 		},
 	}
 
+	changesets := []*Changeset{
+		{Repo: repo, Changeset: &a8n.Changeset{ExternalID: "2"}},
+		{Repo: repo, Changeset: &a8n.Changeset{ExternalID: "4"}},
+		{Repo: repo, Changeset: &a8n.Changeset{ExternalID: "999"}},
+	}
+
 	testCases := []struct {
-		name string
-		cs   []*Changeset
-		err  string
+		name     string
+		cs       []*Changeset
+		notFound []*Changeset
+		err      string
 	}{
 		{
 			name: "found",
-			cs: []*Changeset{
-				{Repo: repo, Changeset: &a8n.Changeset{ExternalID: "2"}},
-				{Repo: repo, Changeset: &a8n.Changeset{ExternalID: "4"}},
-			},
+			cs:   []*Changeset{changesets[0], changesets[1]},
 		},
 		{
-			name: "subset-not-found",
-			cs: []*Changeset{
-				{Repo: repo, Changeset: &a8n.Changeset{ExternalID: "2"}},
-				{Repo: repo, Changeset: &a8n.Changeset{ExternalID: "999"}},
-			},
-			err: "Bitbucket API HTTP error: code=404 url=\"${INSTANCEURL}/rest/api/1.0/projects/SOUR/repos/vegeta/pull-requests/999\" body=\"{\\\"errors\\\":[{\\\"context\\\":null,\\\"message\\\":\\\"Pull request 999 does not exist in SOUR/vegeta.\\\",\\\"exceptionName\\\":\\\"com.atlassian.bitbucket.pull.NoSuchPullRequestException\\\"}]}\"",
+			name:     "subset-not-found",
+			cs:       []*Changeset{changesets[0], changesets[2]},
+			notFound: []*Changeset{changesets[2]},
 		},
 	}
 
@@ -268,13 +271,17 @@ func TestBitbucketServerSource_LoadChangesets(t *testing.T) {
 
 			tc.err = strings.ReplaceAll(tc.err, "${INSTANCEURL}", instanceURL)
 
-			err = bbsSrc.LoadChangesets(ctx, tc.cs...)
+			notFound, err := bbsSrc.LoadChangesets(ctx, tc.cs...)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
 
 			if err != nil {
 				return
+			}
+
+			if have, want := notFound, tc.notFound; !reflect.DeepEqual(have, want) {
+				t.Fatalf("notFound:\n%s", cmp.Diff(have, want))
 			}
 
 			meta := make([]*bitbucketserver.PullRequest, 0, len(tc.cs))

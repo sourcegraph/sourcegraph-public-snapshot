@@ -292,7 +292,7 @@ func TestGithubSource_LoadChangesets(t *testing.T) {
 				tc.err = "<nil>"
 			}
 
-			err = githubSrc.LoadChangesets(ctx, tc.cs...)
+			_, err = githubSrc.LoadChangesets(ctx, tc.cs...)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
