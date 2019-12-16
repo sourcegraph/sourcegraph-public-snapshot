@@ -18,7 +18,7 @@ import { InternalLocation } from '../../server/backend/database'
 /**
  * The maximum test/setup timeout when a Postgres database needs to be created/migrated.
  */
-export const DB_INTEGRATION_TEST_TIMEOUT = 10000
+export const DB_INTEGRATION_TEST_TIMEOUT = 15000
 
 /**
  * Create a temporary directory with a subdirectory for dbs.
