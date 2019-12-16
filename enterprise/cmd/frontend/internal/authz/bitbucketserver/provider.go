@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -135,6 +136,13 @@ func (p *Provider) UpdatePermissions(ctx context.Context, u *types.User) error {
 // all the repos the user with the given userName is authorized to
 // see.
 func (p *Provider) update(userName string) PermissionsUpdateFunc {
+	if conf.BitbucketServerFastPerm() {
+		return func(ctx context.Context) ([]uint32, *extsvc.CodeHost, error) {
+			ids, err := p.repoIDs(ctx, userName)
+			return ids, p.codeHost, err
+		}
+	}
+
 	return func(ctx context.Context) ([]uint32, *extsvc.CodeHost, error) {
 		visible, err := p.repos(ctx, userName)
 		if err != nil && err != errNoResults {
@@ -222,6 +230,14 @@ func (p *Provider) repos(ctx context.Context, username string) (all []*bitbucket
 	}
 
 	return all, err
+}
+
+func (p *Provider) repoIDs(ctx context.Context, username string) (ids []uint32, err error) {
+	c, err := p.client.Sudo(username)
+	if err != nil {
+		return nil, err
+	}
+	return c.RepoIDs(ctx, "read")
 }
 
 func (p *Provider) user(ctx context.Context, username string, fs ...bitbucketserver.UserFilter) (*bitbucketserver.User, error) {
