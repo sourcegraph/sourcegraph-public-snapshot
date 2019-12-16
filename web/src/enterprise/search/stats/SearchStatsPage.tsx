@@ -1,29 +1,59 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { PieChart, Pie, Tooltip, ResponsiveContainer, PieLabelRenderProps, Cell } from 'recharts'
+import * as GQL from '../../../../../shared/src/graphql/schema'
+import { PieChart, Pie, Tooltip, ResponsiveContainer, PieLabelRenderProps, Cell, TooltipFormatter } from 'recharts'
 import ChartLineIcon from 'mdi-react/ChartLineIcon'
 import React, { useCallback, useState, useMemo } from 'react'
-import { RouteComponentProps } from 'react-router'
+import H from 'history'
 import { Link } from 'react-router-dom'
-import { isErrorLike, ErrorLike } from '../../../../../shared/src/util/errors'
-import { numberWithCommas } from '../../../../../shared/src/util/strings'
+import { numberWithCommas, pluralize } from '../../../../../shared/src/util/strings'
 import { buildSearchURLQuery } from '../../../../../shared/src/util/url'
 import { Form } from '../../../components/Form'
-import { useSearchResultsStats } from './useSearchResultsStats'
-import { SearchHelpDropdownButton } from '../../../search/input/SearchHelpDropdownButton'
-import { SearchPatternType } from '../../../../../shared/src/graphql/schema'
+import { useObservable } from '../../../util/useObservable'
+import { querySearchResultsStats } from './backend'
 
-interface Props extends RouteComponentProps<{}> {}
+const OTHER_LANGUAGE = 'Other'
+const UNKNOWN_LANGUAGE = 'Unknown'
 
-const LOADING = 'loading' as const
+/**
+ * Return a copy of the stats with all languages that make up less than `minFraction` of the total
+ * grouped together as "" (which is displayed as "Other").
+ */
+export const summarizeSearchResultsStatsLanguages = (
+    languages: GQL.ISearchResultsStats['languages'],
+    minFraction: number
+): GQL.ISearchResultsStats['languages'] => {
+    const totalLines = languages.reduce((sum, l) => sum + l.totalLines, 0)
+    const minLines = minFraction * totalLines
+    const languagesAboveMin = languages.filter(l => l.totalLines >= minLines)
+    const otherLines = totalLines - languagesAboveMin.reduce((sum, l) => sum + l.totalLines, 0)
+    return [
+        ...languagesAboveMin,
+        { __typename: 'LanguageStatistics', name: OTHER_LANGUAGE, totalBytes: 0, totalLines: otherLines },
+    ]
+}
 
+/** Nice-looking colors for the pie chart that have good contrast in both light and dark themes. */
 const COLORS = ['#278389', '#f16321', '#753fff', '#0091ea', '#00c853', '#ffab00', '#ff3d00', '#ff7700']
 
-const labelRenderer = (props: PieLabelRenderProps): string => props.name || 'Other'
+const OTHER_COLOR = '#999999'
+const UNKNOWN_COLOR = '#777777'
+
+interface Props {
+    location: H.Location
+    history: H.History
+
+    /** Mockable in tests. */
+    _querySearchResultsStats?: typeof querySearchResultsStats
+}
 
 /**
  * Shows statistics about the results for a search query.
  */
-export const SearchStatsPage: React.FunctionComponent<Props> = ({ location, history }) => {
+export const SearchStatsPage: React.FunctionComponent<Props> = ({
+    location,
+    history,
+    _querySearchResultsStats = querySearchResultsStats,
+}) => {
     const query = new URLSearchParams(location.search).get('q') || ''
     const [uncommittedQuery, setUncommittedQuery] = useState(query)
     const onUncommittedQueryChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(e => {
@@ -38,29 +68,42 @@ export const SearchStatsPage: React.FunctionComponent<Props> = ({ location, hist
     )
 
     // TODO(sqs): reuse the user's current patternType
-    const stats = useSearchResultsStats(query + ' count:99999999') // add large count: to ensure we get all results
-    const data:
-        | typeof LOADING
-        | ErrorLike
-        | {
-              name: string
-              lines: number
-              color: string
-          }[] = useMemo(() => {
-        if (stats === LOADING || isErrorLike(stats)) {
-            return stats
-        }
-        return stats.languages.map(({ name, totalLines: lines }, i) => ({
-            name,
-            lines,
-            color: COLORS[i % COLORS.length],
-        }))
-    }, [stats])
-    const totalLines = data !== LOADING && !isErrorLike(data) ? data.reduce((sum, { lines }) => sum + lines, 0) : 0
+    const stats = useObservable(
+        useMemo(
+            () => _querySearchResultsStats(query + ' count:99999999'), // add large count: to ensure we get all results
+            [query, _querySearchResultsStats]
+        )
+    )
+    const chartData = stats
+        ? summarizeSearchResultsStatsLanguages(stats.languages, 0.02).map((l, i) => ({
+              ...l,
+              name: l.name || UNKNOWN_LANGUAGE,
+              color: COLORS[i % COLORS.length],
+          }))
+        : undefined
+    const totalLines = stats ? stats.languages.reduce((sum, l) => sum + l.totalLines, 0) : undefined
 
     const urlToSearchWithExtraQuery = useCallback(
-        (extraQuery: string) => `/search?${buildSearchURLQuery(`${query} ${extraQuery}`, SearchPatternType.literal)}`,
+        (extraQuery: string) =>
+            `/search?${buildSearchURLQuery(`${query} ${extraQuery}`, GQL.SearchPatternType.literal)}`,
         [query]
+    )
+
+    const percent = useCallback(
+        (lines: number) =>
+            totalLines !== undefined && totalLines !== 0 ? `${Math.round((100 * lines) / totalLines)}%` : '',
+        [totalLines]
+    )
+    const labelRenderer = useCallback(
+        (props: PieLabelRenderProps): string =>
+            `${props.name || UNKNOWN_LANGUAGE} ${
+                props.percent !== undefined ? `(${Math.round(100 * props.percent)}%)` : ''
+            }`,
+        []
+    )
+    const tooltipFormatter = useCallback<TooltipFormatter>(
+        value => (typeof value === 'number' ? `${numberWithCommas(value)} ${pluralize('line', value)}` : ''),
+        []
     )
 
     return (
@@ -74,7 +117,7 @@ export const SearchStatsPage: React.FunctionComponent<Props> = ({ location, hist
                 <div className="form-group d-flex align-items-stretch">
                     <input
                         id="stats-page__query"
-                        className="form-control mr-2 flex-1 e2e-stats-query"
+                        className="form-control flex-1 e2e-stats-query"
                         type="search"
                         placeholder="Enter a Sourcegraph search query"
                         value={uncommittedQuery}
@@ -85,22 +128,19 @@ export const SearchStatsPage: React.FunctionComponent<Props> = ({ location, hist
                         autoComplete="off"
                     />
                     {uncommittedQuery !== query && (
-                        <button type="submit" className="btn btn-primary e2e-stats-query-update">
+                        <button type="submit" className="btn btn-primary ml-2 e2e-stats-query-update">
                             Update
                         </button>
                     )}
-                    <SearchHelpDropdownButton />
                 </div>
             </Form>
             <hr className="my-3" />
-            {data === LOADING ? (
+            {stats === undefined || totalLines === undefined || chartData === undefined ? (
                 <LoadingSpinner className="icon-inline" />
-            ) : isErrorLike(data) ? (
-                <div className="alert alert-danger">{data.message}</div>
             ) : (
-                <div className="card">
+                <div className="card mb-3">
                     <h4 className="card-header">Languages</h4>
-                    {data.length > 0 ? (
+                    {stats.languages.length > 0 ? (
                         <div className="d-flex">
                             <div className="flex-0 border-right">
                                 <table className="search-stats-page__table table mb-0 border-top-0">
@@ -116,7 +156,7 @@ export const SearchStatsPage: React.FunctionComponent<Props> = ({ location, hist
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {data.map(({ name, lines }, i) => (
+                                        {stats.languages.map(({ name, totalLines: lines }, i) => (
                                             <tr key={name || i}>
                                                 <td>
                                                     {name ? (
@@ -126,26 +166,38 @@ export const SearchStatsPage: React.FunctionComponent<Props> = ({ location, hist
                                                             {name}
                                                         </Link>
                                                     ) : (
-                                                        'Other'
+                                                        UNKNOWN_LANGUAGE
                                                     )}
                                                 </td>
                                                 <td>{numberWithCommas(lines)}</td>
-                                                <td>
-                                                    {totalLines !== 0 ? Math.round((100 * lines) / totalLines) : 0}%
-                                                </td>
+                                                <td>{percent(lines)}</td>
                                             </tr>
                                         ))}
                                     </tbody>
                                 </table>
                             </div>
-                            <ResponsiveContainer className="flex-1" minHeight={600}>
+                            <ResponsiveContainer className="flex-1 mx-3" minHeight={600} aspect={1}>
                                 <PieChart>
-                                    <Pie dataKey="lines" isAnimationActive={false} data={data} label={labelRenderer}>
-                                        {data.map((entry, i) => (
-                                            <Cell key={entry.name} fill={COLORS[i % COLORS.length]} />
+                                    <Pie
+                                        dataKey="totalLines"
+                                        isAnimationActive={false}
+                                        data={chartData}
+                                        label={labelRenderer}
+                                    >
+                                        {chartData.map((entry, i) => (
+                                            <Cell
+                                                key={entry.name}
+                                                fill={
+                                                    entry.name === UNKNOWN_LANGUAGE
+                                                        ? UNKNOWN_COLOR
+                                                        : entry.name === OTHER_LANGUAGE
+                                                        ? OTHER_COLOR
+                                                        : COLORS[i % COLORS.length]
+                                                }
+                                            />
                                         ))}
                                     </Pie>
-                                    <Tooltip animationDuration={0} />
+                                    <Tooltip animationDuration={0} formatter={tooltipFormatter} />
                                 </PieChart>
                             </ResponsiveContainer>
                         </div>
