@@ -36,7 +36,7 @@ Global find-references is a resource-intensive operation that's sensitive to the
 
 The following table gives a rough estimate for the space and time requirements for indexing and conversion. These repositories are a representative sample of public Go repositories available on GitHub. The clone size is the total size of source files (without history) of the clone at the given commit. The index size gives the size of the uncompressed LSIF output of the indexer, and the conversion size gives the total amount of disk space occupied after uploading the dump to a Sourcegraph instance.
 
-| Repository | Clone size | Index time | Index size | Conversion time | Conversion size |
+| Repository | Working tree size | Index time | Index size | Processing time | Post-processing size |
 | ---------------------------------------------------------------------------------------------------- | ----------------- | ------ | ---- | ------- | ------ |
 | [bigcache](https://github.com/allegro/bigcache/tree/b7689f7c33374d4c67c011eaa0a5b345ddb1a99c)        | 216K   (32 files) |  1.18s | 3.5M |   0.45s | 0.564M |
 | [sqlc](https://github.com/kyleconroy/sqlc/tree/16cc4e9c378341b5496af784b25422d1ed4c7fd9)             | 396K   (24 files) |  1.53s | 7.2M |   1.62s | 1.6M   |
