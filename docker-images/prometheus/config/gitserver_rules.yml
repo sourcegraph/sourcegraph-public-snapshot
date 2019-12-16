@@ -3,7 +3,7 @@ groups:
     rules:
       # Gitserver rules
       - record: gitserver_disk_free_percent
-        expr: sum(src_gitserver_disk_space_available) / sum(src_gitserver_disk_space_total)
+        expr: src_gitserver_disk_space_available / src_gitserver_disk_space_total
       - record: gitserver_disk_used_percent
         expr: 1 - gitserver_disk_free_percent
 
