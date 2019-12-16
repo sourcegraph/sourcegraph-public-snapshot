@@ -15,8 +15,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
-
-	"github.com/sourcegraph/sourcegraph/cmd/server/internal/goreman"
+	"github.com/sourcegraph/sourcegraph/internal/goreman"
 )
 
 // FrontendInternalHost is the value of SRC_FRONTEND_INTERNAL.
