@@ -1489,7 +1489,7 @@ describe('e2e test suite', () => {
         beforeAll(async () => {
             await driver.setConfig(['experimentalFeatures'], prev => {
                 previousExperimentalFeatures = prev?.value
-                return { interactiveSearchMode: 'enabled' }
+                return { splitSearchModes: 'enabled' }
             })
 
             // wait for configuration to be applied
