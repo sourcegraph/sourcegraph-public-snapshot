@@ -69,6 +69,7 @@ export interface CodeView {
 
     /**
      * Returns the scrollBoundaries of the code view, used by codeintellify.
+     * This is called once per code view, when calling Hoverifier.hoverify().
      */
     getScrollBoundaries?: (codeViewElement: HTMLElement) => HTMLElement[]
 }
