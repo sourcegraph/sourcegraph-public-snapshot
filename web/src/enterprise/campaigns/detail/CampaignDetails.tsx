@@ -72,7 +72,7 @@ const defaultInputByType: { [K in CampaignType]: any } = {
 }`,
 }
 
-const typeLabels: { [K in CampaignType | '']: string } = {
+const typeLabels: Record<CampaignType | '', string> = {
     '': 'Manual',
     comby: 'Comby search and replace',
     credentials: 'Find leaked credentials',
@@ -93,7 +93,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     const [name, setName] = useState<string>('')
     const [description, setDescription] = useState<string>('')
     const [type, setType] = useState<CampaignType>()
-    const [campaignPlanArguments, setCampaignPlanArguments] = useState<string | undefined>()
+    const [campaignPlanArguments, setCampaignPlanArguments] = useState<string>()
     const [namespace, setNamespace] = useState<GQL.ID>()
 
     const [namespaces, setNamespaces] = useState<GQL.Namespace[]>()
