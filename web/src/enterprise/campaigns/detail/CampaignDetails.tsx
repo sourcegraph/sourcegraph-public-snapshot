@@ -43,6 +43,7 @@ import { FileDiffTab } from './FileDiffTab'
 import combyJsonSchema from '../../../../../schema/campaign-types/comby.schema.json'
 import credentialsJsonSchema from '../../../../../schema/campaign-types/credentials.schema.json'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
+import { GenericCampaignForm } from './forms'
 
 interface Props extends ThemeProps {
     /**
@@ -470,25 +471,32 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         </small>
                     </p>
                 )}
-                <h3 className="mt-3">Campaign type</h3>
-                <select
-                    className="form-control w-auto d-inline-block e2e-campaign-type"
-                    placeholder="Select campaign type"
-                    onChange={onChangeType}
-                    disabled={!!(campaign && campaign.__typename === 'Campaign')}
-                    value={type}
-                >
-                    <option value="">Manual</option>
-                    <option value="comby">Comby search and replace</option>
-                    <option value="credentials">NPM Credentials</option>
-                </select>
-                {type === 'comby' && (
-                    <small className="ml-1">
-                        <a rel="noopener noreferrer" target="_blank" href="https://comby.dev/#match-syntax">
-                            Learn about comby syntax
-                        </a>
-                    </small>
+                <h3 className="mt-3">Specification</h3>
+                <div className="form-group row">
+                    <label className="col-sm-2 col-form-label">Type</label>
+                    <div className="col-sm-10">
+                        <select
+                            className="form-control w-auto d-inline-block e2e-campaign-type"
+                            placeholder="Select campaign type"
+                            onChange={onChangeType}
+                            disabled={!!(campaign && campaign.__typename === 'Campaign')}
+                            value={type}
+                        >
+                            <option value="">Manual</option>
+                            <option value="comby">Comby search and replace</option>
+                            <option value="credentials">NPM Credentials</option>
+                        </select>
+                    </div>
+                </div>
+                {type && (
+                    <GenericCampaignForm
+                        type={type}
+                        parsed={parseJSONC(campaignPlanArguments)}
+                        campaignArguments={campaignPlanArguments}
+                        onChange={onChangeArguments}
+                    />
                 )}
+                <h4>JSON Editor</h4>
                 <MonacoSettingsEditor
                     className="my-3 e2e-campaign-arguments"
                     isLightTheme={isLightTheme}
@@ -497,7 +505,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     height={110}
                     onChange={onChangeArguments}
                     readOnly={!!(campaign && campaign.__typename === 'Campaign')}
-                ></MonacoSettingsEditor>
+                />
                 {(!campaign || (campaign && campaign.__typename === 'CampaignPlan')) && mode === 'editing' && (
                     <>
                         {type !== undefined && (
