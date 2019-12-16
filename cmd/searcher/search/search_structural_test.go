@@ -37,6 +37,11 @@ func foo(go string) {}
 		Want      []string
 	}{
 		{
+			Name:      "Language test for no language",
+			Languages: []string{},
+			Want:      []string{"foo(plain string)", "foo(go string)"},
+		},
+		{
 			Name:      "Language test for Go",
 			Languages: []string{"go"},
 			Want:      []string{"foo(go string)"},
