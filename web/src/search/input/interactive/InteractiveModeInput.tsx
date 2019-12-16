@@ -14,7 +14,7 @@ import { SettingsCascadeProps } from '../../../../../shared/src/settings/setting
 import { KeyboardShortcutsProps } from '../../../keyboardShortcuts/keyboardShortcuts'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
-import { ThemePreferenceProps } from '../../theme'
+import { ThemePreferenceProps } from '../../../theme'
 import { EventLoggerProps } from '../../../tracking/eventLogger'
 import { ActivationProps } from '../../../../../shared/src/components/activation/Activation'
 import { FiltersToTypeAndValue } from '../../../../../shared/src/search/interactive/util'
@@ -43,7 +43,6 @@ interface InteractiveModeProps
     // For NavLinks
     authRequired?: boolean
     authenticatedUser: GQL.IUser | null
-    showDotComMarketing: boolean
     showCampaigns: boolean
     isSourcegraphDotCom: boolean
 }

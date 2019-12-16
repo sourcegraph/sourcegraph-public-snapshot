@@ -2,11 +2,60 @@ package graphqlbackend
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
 )
+
+func TestSearchPatternForSuggestion(t *testing.T) {
+	cases := []struct {
+		Name  string
+		Alert searchAlert
+		Want  string
+	}{
+		{
+			Name: "with_regex_suggestion",
+			Alert: searchAlert{
+				title:       "An alert for regex",
+				description: "An alert for regex",
+				patternType: SearchTypeRegex,
+				proposedQueries: []*searchQueryDescription{
+					{
+						description: "Some query description",
+						query:       "repo:github.com/sourcegraph/sourcegraph",
+					},
+				},
+			},
+			Want: "repo:github.com/sourcegraph/sourcegraph patternType:regexp",
+		},
+		{
+			Name: "with_structural_suggestion",
+			Alert: searchAlert{
+				title:       "An alert for structural",
+				description: "An alert for structural",
+				patternType: SearchTypeStructural,
+				proposedQueries: []*searchQueryDescription{
+					{
+						description: "Some query description",
+						query:       "repo:github.com/sourcegraph/sourcegraph patterntype:structural",
+					},
+				},
+			},
+			Want: "repo:github.com/sourcegraph/sourcegraph patterntype:structural",
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.Name, func(t *testing.T) {
+			got := tt.Alert.ProposedQueries()
+			if !reflect.DeepEqual((*got)[0].query, tt.Want) {
+				t.Errorf("got: %s, want: %s", (*got)[0].query, tt.Want)
+			}
+		})
+	}
+}
 
 func TestAddQueryRegexpField(t *testing.T) {
 	tests := []struct {

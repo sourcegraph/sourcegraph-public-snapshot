@@ -45,7 +45,7 @@ func searchRepositories(ctx context.Context, args *search.Args, limit int32) (re
 		}
 	}
 
-	pattern, err := regexp.Compile(args.Pattern.Pattern)
+	pattern, err := regexp.Compile(args.PatternInfo.Pattern)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -62,7 +62,7 @@ func searchRepositories(ctx context.Context, args *search.Args, limit int32) (re
 	}
 
 	// Filter the repos if there is a repohasfile: or -repohasfile field.
-	if len(args.Pattern.FilePatternsReposMustExclude) > 0 || len(args.Pattern.FilePatternsReposMustInclude) > 0 {
+	if len(args.PatternInfo.FilePatternsReposMustExclude) > 0 || len(args.PatternInfo.FilePatternsReposMustInclude) > 0 {
 		repos, err = reposToAdd(ctx, args, repos)
 		if err != nil {
 			return nil, nil, err
@@ -86,8 +86,8 @@ func searchRepositories(ctx context.Context, args *search.Args, limit int32) (re
 // of repostiories specified in the query's `repohasfile` and `-repohasfile` fields if they exist.
 func reposToAdd(ctx context.Context, args *search.Args, repos []*search.RepositoryRevisions) ([]*search.RepositoryRevisions, error) {
 	matchingIDs := make(map[api.RepoID]bool)
-	if len(args.Pattern.FilePatternsReposMustInclude) > 0 {
-		for _, pattern := range args.Pattern.FilePatternsReposMustInclude {
+	if len(args.PatternInfo.FilePatternsReposMustInclude) > 0 {
+		for _, pattern := range args.PatternInfo.FilePatternsReposMustInclude {
 			// The high FileMatchLimit here is to make sure we get all the repo matches we can. Setting it to
 			// len(repos) could mean we miss some repos since there could be for example len(repos) file matches in
 			// the first repo and some more in other repos.
@@ -97,7 +97,7 @@ func reposToAdd(ctx context.Context, args *search.Args, repos []*search.Reposito
 				return nil, err
 			}
 			newArgs := *args
-			newArgs.Pattern = &p
+			newArgs.PatternInfo = &p
 			newArgs.Repos = repos
 			newArgs.Query = q
 			newArgs.UseFullDeadline = true
@@ -116,15 +116,15 @@ func reposToAdd(ctx context.Context, args *search.Args, repos []*search.Reposito
 		}
 	}
 
-	if len(args.Pattern.FilePatternsReposMustExclude) > 0 {
-		for _, pattern := range args.Pattern.FilePatternsReposMustExclude {
+	if len(args.PatternInfo.FilePatternsReposMustExclude) > 0 {
+		for _, pattern := range args.PatternInfo.FilePatternsReposMustExclude {
 			p := search.PatternInfo{IsRegExp: true, FileMatchLimit: math.MaxInt32, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
 			q, err := query.ParseAndCheck("file:" + pattern)
 			if err != nil {
 				return nil, err
 			}
 			newArgs := *args
-			newArgs.Pattern = &p
+			newArgs.PatternInfo = &p
 			newArgs.Repos = repos
 			newArgs.Query = q
 			newArgs.UseFullDeadline = true

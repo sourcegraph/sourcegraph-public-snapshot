@@ -109,7 +109,7 @@ class OrgNode extends React.PureComponent<OrgNodeProps, OrgNodeState> {
     }
 }
 
-interface Props extends RouteComponentProps<any> {}
+interface Props extends RouteComponentProps<{}> {}
 
 interface State {
     orgs?: GQL.IOrg[]

@@ -248,9 +248,14 @@ func addDockerImages(c Config) func(*bk.Pipeline) {
 // Build Docker image for the service defined by `app`.
 func addDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
+		baseImage := "sourcegraph/" + app
+
 		cmds := []bk.StepOpt{
 			bk.Cmd(fmt.Sprintf(`echo "Building %s..."`, app)),
 			bk.Env("DOCKER_BUILDKIT", "1"),
+			bk.Env("IMAGE", baseImage+":"+c.version),
+			bk.Env("VERSION", c.version),
+			bk.Cmd("yes | gcloud auth configure-docker"),
 		}
 
 		cmdDir := func() string {
@@ -267,34 +272,41 @@ func addDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 			return "enterprise/cmd/" + app
 		}()
 
-		preBuildScript := cmdDir + "/pre-build.sh"
-		if _, err := os.Stat(preBuildScript); err == nil {
-			cmds = append(cmds, bk.Cmd(preBuildScript))
+		if app != "server" {
+			// The server image was already built for the e2e tests - it doesn't need to be built again.
+
+			preBuildScript := cmdDir + "/pre-build.sh"
+			if _, err := os.Stat(preBuildScript); err == nil {
+				cmds = append(cmds, bk.Cmd(preBuildScript))
+			}
 		}
 
-		baseImage := "sourcegraph/" + app
+		gcrImage := fmt.Sprintf("us.gcr.io/sourcegraph-dev/%s", strings.TrimPrefix(baseImage, "sourcegraph/"))
 
-		getBuildScript := func() string {
-			buildScriptByApp := map[string]string{
-				"symbols": "env BUILD_TYPE=dist ./cmd/symbols/build.sh buildSymbolsDockerImage",
+		getBuildSteps := func() []bk.StepOpt {
+			buildScriptByApp := map[string][]bk.StepOpt{
+				"symbols": {
+					bk.Env("BUILD_TYPE", "dist"),
+					bk.Cmd("./cmd/symbols/build.sh buildSymbolsDockerImage"),
+				},
+				// The server image was already built for the e2e tests. We can pull the e2e
+				// image instead of building it from scratch.
+				"server": {
+					bk.Cmd(fmt.Sprintf("docker pull %s:e2e_%s", gcrImage, c.commit)),
+					bk.Cmd(fmt.Sprintf("docker tag %s:e2e_%s %s:%s", gcrImage, c.commit, baseImage, c.version)),
+				},
 			}
 			if buildScript, ok := buildScriptByApp[app]; ok {
 				return buildScript
 			}
-			return cmdDir + "/build.sh"
+			return []bk.StepOpt{
+				bk.Cmd(cmdDir + "/build.sh"),
+			}
 		}
 
-		cmds = append(cmds,
-			bk.Env("IMAGE", baseImage+":"+c.version),
-			bk.Env("VERSION", c.version),
-			bk.Cmd(getBuildScript()),
-		)
-
-		cmds = append(cmds, bk.Cmd("yes | gcloud auth configure-docker"))
+		cmds = append(cmds, getBuildSteps()...)
 
 		dockerHubImage := fmt.Sprintf("index.docker.io/%s", baseImage)
-		gcrImage := fmt.Sprintf("us.gcr.io/sourcegraph-dev/%s", strings.TrimPrefix(baseImage, "sourcegraph/"))
-
 		for _, image := range []string{dockerHubImage, gcrImage} {
 			if app != "server" || c.taggedRelease || c.patch || c.patchNoTest {
 				cmds = append(cmds,

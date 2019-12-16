@@ -1,14 +1,10 @@
 import React from 'react'
 import renderer from 'react-test-renderer'
 import { of, queueScheduler, Observable } from 'rxjs'
-import { setLinkComponent } from '../../../shared/src/components/Link'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 
 describe('StatusMessagesNavItem', () => {
-    setLinkComponent(props => <a {...props} />)
-    afterAll(() => setLinkComponent(() => null)) // reset global env for other tests
-
     test('no messages', () => {
         const fetchMessages = (): Observable<GQL.StatusMessage[]> => of([])
         expect(

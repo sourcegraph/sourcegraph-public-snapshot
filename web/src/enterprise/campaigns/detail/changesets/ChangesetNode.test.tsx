@@ -8,15 +8,10 @@ import {
     ChangesetState,
     IExternalChangeset,
 } from '../../../../../../shared/src/graphql/schema'
-import { setLinkComponent } from '../../../../../../shared/src/components/Link'
 
 describe('ChangesetNode', () => {
     const history = H.createMemoryHistory({ keyLength: 0 })
     const location = H.createLocation('/campaigns')
-    beforeEach(() => {
-        setLinkComponent((props: any) => <a {...props} />)
-        afterAll(() => setLinkComponent(null as any)) // reset global env for other tests
-    })
     test('renders a changesetplan', () => {
         expect(
             renderer

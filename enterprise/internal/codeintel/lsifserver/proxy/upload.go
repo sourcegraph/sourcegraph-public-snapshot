@@ -2,12 +2,14 @@ package proxy
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httputil"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/client"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -20,6 +22,7 @@ func uploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *htt
 		q := r.URL.Query()
 		repoName := q.Get("repository")
 		commit := q.Get("commit")
+		root := q.Get("root")
 		ctx := r.Context()
 
 		if !ensureRepoAndCommitExist(ctx, w, repoName, commit) {
@@ -33,20 +36,38 @@ func uploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *htt
 			return
 		}
 
-		resp, err := client.DefaultClient.BuildAndTraceRequest(
-			ctx,
-			"POST",
-			"/upload",
-			r.URL.Query(),
-			r.Body,
-		)
+		jobID, queued, err := client.DefaultClient.Upload(ctx, &struct {
+			RepoName string
+			Commit   graphqlbackend.GitObjectID
+			Root     string
+			Blocking *bool
+			MaxWait  *int32
+			Body     io.ReadCloser
+		}{
+			RepoName: repoName,
+			Commit:   graphqlbackend.GitObjectID(commit),
+			Root:     root,
+			Body:     r.Body,
+		})
+
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		w.WriteHeader(resp.StatusCode)
-		_, _ = io.Copy(w, resp.Body)
+		payload, err := json.Marshal(map[string]string{"id": jobID})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if queued {
+			w.WriteHeader(http.StatusAccepted)
+		} else {
+			w.WriteHeader(http.StatusOK)
+		}
+
+		_, _ = w.Write(payload)
 	}
 }
 

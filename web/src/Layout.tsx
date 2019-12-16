@@ -43,14 +43,14 @@ import { parseBrowserRepoURL } from './util/url'
 import LiteralSearchToast from './marketing/LiteralSearchToast'
 import { SurveyToast } from './marketing/SurveyToast'
 import { ThemeProps } from '../../shared/src/theme'
-import { ThemePreferenceProps } from './search/theme'
+import { ThemePreferenceProps } from './theme'
 import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_SHOW_HELP } from './keyboardShortcuts/keyboardShortcuts'
 import { QueryState } from './search/helpers'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarItem } from './repo/settings/RepoSettingsSidebar'
 
 export interface LayoutProps
-    extends RouteComponentProps<any>,
+    extends RouteComponentProps<{}>,
         SettingsCascadeProps,
         PlatformContextProps,
         ExtensionsControllerProps,
@@ -80,7 +80,7 @@ export interface LayoutProps
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
-    routes: readonly LayoutRouteProps[]
+    routes: readonly LayoutRouteProps<any>[]
 
     authenticatedUser: GQL.IUser | null
 

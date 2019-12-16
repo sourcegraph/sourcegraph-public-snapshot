@@ -2,16 +2,9 @@ import { action } from '@storybook/addon-actions'
 import { storiesOf } from '@storybook/react'
 import * as H from 'history'
 import React from 'react'
-import { setLinkComponent } from '../components/Link'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import { ActionItem, ActionItemComponentProps } from './ActionItem'
 import './ActionItem.scss'
-
-setLinkComponent(({ to, children, ...props }) => (
-    <a href={to && typeof to !== 'string' ? H.createPath(to) : to} {...props}>
-        {children}
-    </a>
-))
 
 const EXTENSIONS_CONTROLLER: ActionItemComponentProps['extensionsController'] = {
     executeCommand: () => new Promise(resolve => setTimeout(resolve, 750)),

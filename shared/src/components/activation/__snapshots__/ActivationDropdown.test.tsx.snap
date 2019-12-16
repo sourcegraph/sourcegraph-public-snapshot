@@ -136,7 +136,7 @@ exports[`ActivationDropdown render 0/2 completed 1`] = `
         onClick={[Function]}
       >
         <a
-          to="/some/url"
+          href="/some/url"
         >
           <div
             className="d-flex justify-content-between"
@@ -301,7 +301,7 @@ exports[`ActivationDropdown render 1/2 completed 1`] = `
         onClick={[Function]}
       >
         <a
-          to="/some/url"
+          href="/some/url"
         >
           <div
             className="d-flex justify-content-between"

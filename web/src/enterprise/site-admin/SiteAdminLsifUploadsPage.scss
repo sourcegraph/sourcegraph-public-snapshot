@@ -1,4 +1,4 @@
-.lsif-job {
+.lsif-upload {
     &__row {
         width: 100%;
     }
@@ -30,7 +30,7 @@
     }
 }
 
-.lsif-jobs-internal-toggle {
+.lsif-uploads-internal-toggle {
     // Take the remaining space in the radio button row
     flex: 1 1 auto;
     display: flex;

@@ -10,6 +10,7 @@ import { Notices } from '../../global/Notices'
 import { QuickLink, Settings } from '../../schema/settings.schema'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { eventLogger, EventLoggerProps } from '../../tracking/eventLogger'
+import { ThemePreferenceProps } from '../../theme'
 import { limitString } from '../../util'
 import { submitSearch, QueryState } from '../helpers'
 import { QuickLinks } from '../QuickLinks'
@@ -17,7 +18,6 @@ import { QueryBuilder } from './QueryBuilder'
 import { QueryInput } from './QueryInput'
 import { SearchButton } from './SearchButton'
 import { ISearchScope, SearchFilterChips } from './SearchFilterChips'
-import { ThemePreferenceProps } from '../theme'
 import InteractiveModeInput from './interactive/InteractiveModeInput'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
@@ -42,7 +42,6 @@ interface Props
 
     // For NavLinks
     authRequired?: boolean
-    showDotComMarketing: boolean
     showCampaigns: boolean
 }
 

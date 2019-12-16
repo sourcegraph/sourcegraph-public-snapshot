@@ -522,6 +522,7 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 			alert: &searchAlert{
 				title:       "Timed out while searching",
 				description: fmt.Sprintf("We weren't able to find any results in %s.", roundStr(dt.String())),
+				patternType: r.patternType,
 				proposedQueries: []*searchQueryDescription{
 					{
 						description: "query with longer timeout",
@@ -740,6 +741,11 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Pa
 		}
 	}
 
+	var combyRule []string
+	for _, v := range r.query.Values(query.FieldCombyRule) {
+		combyRule = append(combyRule, asString(v))
+	}
+
 	// Handle lang: and -lang: filters.
 	langIncludePatterns, langExcludePatterns, err := langIncludeExcludePatterns(r.query.StringValues(query.FieldLang))
 	if err != nil {
@@ -759,6 +765,7 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Pa
 		FilePatternsReposMustExclude: filePatternsReposMustExclude,
 		PathPatternsAreRegExps:       true,
 		PathPatternsAreCaseSensitive: r.query.IsCaseSensitive(),
+		CombyRule:                    strings.Join(combyRule, ""),
 	}
 	if len(excludePatterns) > 0 {
 		patternInfo.ExcludePattern = unionRegExps(excludePatterns)
@@ -814,9 +821,9 @@ func (r *searchResolver) determineResultTypes(args search.Args, forceOnlyResultT
 	seenResultTypes = make(map[string]struct{}, len(resultTypes))
 	for _, resultType := range resultTypes {
 		if resultType == "file" {
-			args.Pattern.PatternMatchesContent = true
+			args.PatternInfo.PatternMatchesContent = true
 		} else if resultType == "path" {
-			args.Pattern.PatternMatchesPath = true
+			args.PatternInfo.PatternMatchesPath = true
 		}
 	}
 	return resultTypes, seenResultTypes
@@ -875,7 +882,12 @@ func alertOnError(multiErr *multierror.Error) (newMultiErr *multierror.Error, al
 			if strings.Contains(err.Error(), "Assert_failure zip") {
 				alert = &searchAlert{
 					title:       "Repository too large for structural search",
-					description: "One repository is too large to perform structural search. This is a temporary restriction that will be removed in the future. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/7133",
+					description: "One repository is too large to perform structural search. Use the `repo:` filter to run on a specific repository. This is a temporary restriction that will be removed in the future. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/7133",
+				}
+			} else if strings.Contains(err.Error(), "Worker_oomed") || strings.Contains(err.Error(), "Worker_exited_abnormally") {
+				alert = &searchAlert{
+					title:       "Structural search needs more memory",
+					description: "Running your structural search may require more memory. If you are running the query on many repositories, try reducing the number of repositories with the `repo:` filter.",
 				}
 			} else {
 				newMultiErr = multierror.Append(newMultiErr, err)
@@ -924,14 +936,14 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return nil, err
 	}
 	args := search.Args{
-		Pattern:         p,
+		PatternInfo:     p,
 		Repos:           repos,
 		Query:           r.query,
 		UseFullDeadline: r.searchTimeoutFieldSet(),
 		Zoekt:           r.zoekt,
 		SearcherURLs:    r.searcherURLs,
 	}
-	if err := args.Pattern.Validate(); err != nil {
+	if err := args.PatternInfo.Validate(); err != nil {
 		return nil, &badRequestError{err}
 	}
 

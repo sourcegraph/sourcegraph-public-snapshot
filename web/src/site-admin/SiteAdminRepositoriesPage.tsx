@@ -79,7 +79,7 @@ class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Repository
     }
 }
 
-interface Props extends RouteComponentProps<any>, ActivationProps {}
+interface Props extends RouteComponentProps<{}>, ActivationProps {}
 
 class FilteredRepositoryConnection extends FilteredConnection<
     GQL.IRepository,

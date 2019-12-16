@@ -1,20 +1,20 @@
 import * as settings from '../settings'
 import AsyncPolling from 'async-polling'
-import { cleanFailedJobs, cleanOldJobs, updateQueueSizeGauge } from './jobs'
+import { updateQueueSizeGauge, resetStalledUploads, cleanOldUploads, cleanFailedUploads } from './uploads'
 import { Connection } from 'typeorm'
 import { logAndTraceCall, TracingContext } from '../../shared/tracing'
 import { Logger } from 'winston'
-import { Queue } from 'bull'
 import { tryWithLock } from '../../shared/locks/locks'
+import { UploadsManager } from '../../shared/uploads/uploads'
 
 /**
  * Begin running cleanup tasks on a schedule in the background.
  *
  * @param connection The Postgres connection.
- * @param queue The queue instance.
+ * @param uploadsManager The uploads manager instance.
  * @param logger The logger instance.
  */
-export function startTasks(connection: Connection, queue: Queue, logger: Logger): void {
+export function startTasks(connection: Connection, uploadsManager: UploadsManager, logger: Logger): void {
     /**
      * Start invoking the given task on an interval.
      *
@@ -39,13 +39,20 @@ export function startTasks(connection: Connection, queue: Queue, logger: Logger)
     const wrapTask = (name: string, task: (ctx: TracingContext) => Promise<void>): (() => Promise<void>) => () =>
         tryWithLock(connection, name, () => logAndTraceCall({ logger }, name, task))
 
-    // Wrap tasks
-    const updateQueueSizeGaugeTask = (): Promise<void> => updateQueueSizeGauge(queue)
-    const cleanOldUploadsTask = wrapTask('Cleaning old uploads', ctx => cleanOldJobs(queue, ctx))
-    const cleanFailedUploadsTask = wrapTask('Cleaning failed uploads', ctx => cleanFailedJobs(ctx))
+    runTask(
+        wrapTask('Resetting stalled uploads', ctx => resetStalledUploads(uploadsManager, ctx)),
+        settings.RESET_STALLED_UPLOADS_INTERVAL
+    )
 
-    // Start tasks on intervals
-    runTask(updateQueueSizeGaugeTask, settings.UPDATE_QUEUE_SIZE_GAUGE_INTERVAL)
-    runTask(cleanOldUploadsTask, settings.CLEAN_OLD_JOBS_INTERVAL)
-    runTask(cleanFailedUploadsTask, settings.CLEAN_FAILED_JOBS_INTERVAL)
+    runTask(
+        wrapTask('Cleaning old uploads', ctx => cleanOldUploads(uploadsManager, ctx)),
+        settings.CLEAN_OLD_UPLOADS_INTERVAL
+    )
+
+    runTask(
+        wrapTask('Cleaning failed uploads', ctx => cleanFailedUploads(ctx)),
+        settings.CLEAN_FAILED_UPLOADS_INTERVAL
+    )
+
+    runTask((): Promise<void> => updateQueueSizeGauge(uploadsManager), settings.UPDATE_QUEUE_SIZE_GAUGE_INTERVAL)
 }

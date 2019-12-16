@@ -443,6 +443,29 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.lsif_uploads"
+```
+       Column       |           Type           |                         Modifiers                         
+--------------------+--------------------------+-----------------------------------------------------------
+ id                 | bigint                   | not null default nextval('lsif_uploads_id_seq'::regclass)
+ repository         | text                     | not null
+ commit             | text                     | not null
+ root               | text                     | not null
+ filename           | text                     | not null
+ state              | lsif_upload_state        | not null default 'queued'::lsif_upload_state
+ failure_summary    | text                     | 
+ failure_stacktrace | text                     | 
+ uploaded_at        | timestamp with time zone | not null default now()
+ started_at         | timestamp with time zone | 
+ finished_at        | timestamp with time zone | 
+ tracing_context    | text                     | not null
+Indexes:
+    "lsif_uploads_pkey" PRIMARY KEY, btree (id)
+    "lsif_uploads_state" btree (state)
+    "lsif_uploads_uploaded_at" btree (uploaded_at)
+
+```
+
 # Table "public.names"
 ```
  Column  |  Type   | Modifiers 
@@ -705,6 +728,33 @@ Referenced by:
 
 ```
 
+# Table "public.repo_pending_permissions"
+```
+   Column   |           Type           | Modifiers 
+------------+--------------------------+-----------
+ repo_id    | integer                  | not null
+ permission | text                     | not null
+ user_ids   | bytea                    | not null
+ updated_at | timestamp with time zone | not null
+Indexes:
+    "repo_pending_permissions_perm_unique" UNIQUE CONSTRAINT, btree (repo_id, permission)
+
+```
+
+# Table "public.repo_permissions"
+```
+   Column   |           Type           | Modifiers 
+------------+--------------------------+-----------
+ repo_id    | integer                  | not null
+ permission | text                     | not null
+ user_ids   | bytea                    | not null
+ provider   | text                     | not null
+ updated_at | timestamp with time zone | not null
+Indexes:
+    "repo_permissions_perm_provider_unique" UNIQUE CONSTRAINT, btree (repo_id, permission, provider)
+
+```
+
 # Table "public.saved_queries"
 ```
       Column      |           Type           | Modifiers 
@@ -844,6 +894,21 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.user_pending_permissions"
+```
+   Column    |           Type           |                               Modifiers                               
+-------------+--------------------------+-----------------------------------------------------------------------
+ id          | integer                  | not null default nextval('user_pending_permissions_id_seq'::regclass)
+ bind_id     | text                     | not null
+ permission  | text                     | not null
+ object_type | text                     | not null
+ object_ids  | bytea                    | not null
+ updated_at  | timestamp with time zone | not null
+Indexes:
+    "user_pending_permissions_perm_object_unique" UNIQUE CONSTRAINT, btree (bind_id, permission, object_type)
+
+```
+
 # Table "public.user_permissions"
 ```
    Column    |           Type           | Modifiers 
@@ -853,8 +918,9 @@ Foreign-key constraints:
  object_type | text                     | not null
  object_ids  | bytea                    | not null
  updated_at  | timestamp with time zone | not null
+ provider    | text                     | not null
 Indexes:
-    "user_permissions_perm_object_unique" UNIQUE CONSTRAINT, btree (user_id, permission, object_type)
+    "user_permissions_perm_object_provider_unique" UNIQUE CONSTRAINT, btree (user_id, permission, object_type, provider)
 
 ```
 

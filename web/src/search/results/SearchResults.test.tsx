@@ -4,7 +4,6 @@ import { BrowserRouter } from 'react-router-dom'
 import { cleanup, getAllByTestId, getByTestId, render, waitForElement } from '@testing-library/react'
 import { noop } from 'rxjs'
 import sinon from 'sinon'
-import { setLinkComponent } from '../../../../shared/src/components/Link'
 import {
     extensionsController,
     HIGHLIGHTED_FILE_LINES_REQUEST,
@@ -15,12 +14,7 @@ import { SearchResults, SearchResultsProps } from './SearchResults'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 
 describe('SearchResults', () => {
-    setLinkComponent((props: any) => <a {...props} />)
-
-    afterAll(() => {
-        setLinkComponent(null as any)
-        cleanup()
-    })
+    afterAll(cleanup)
 
     const history = createBrowserHistory()
     history.replace({ search: 'q=r:golang/oauth2+test+f:travis&patternType=regexp' })

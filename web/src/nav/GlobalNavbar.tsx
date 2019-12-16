@@ -14,7 +14,7 @@ import { EventLoggerProps } from '../tracking/eventLogger'
 import { showDotComMarketing } from '../util/features'
 import { NavLinks } from './NavLinks'
 import { ThemeProps } from '../../../shared/src/theme'
-import { ThemePreferenceProps } from '../search/theme'
+import { ThemePreferenceProps } from '../theme'
 import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
 import { QueryState } from '../search/helpers'
 import InteractiveModeInput from '../search/input/interactive/InteractiveModeInput'
@@ -133,7 +133,6 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                     authRequired={this.state.authRequired}
                                     navbarSearchState={this.props.navbarSearchQueryState}
                                     onNavbarQueryChange={this.props.onNavbarQueryChange}
-                                    showDotComMarketing={showDotComMarketing}
                                 />
                             )
                         ) : (

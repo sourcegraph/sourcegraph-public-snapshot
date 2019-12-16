@@ -2,13 +2,12 @@ import * as H from 'history'
 import { flatten, noop } from 'lodash'
 import React from 'react'
 import { createRenderer } from 'react-test-renderer/shallow'
-import { setLinkComponent } from '../../../shared/src/components/Link'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
+import { ThemePreference } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { NavLinks } from './NavLinks'
-import { ThemePreference } from '../search/theme'
 import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
 
 // Renders a human-readable list of the NavLinks' contents so that humans can more easily diff
@@ -40,8 +39,6 @@ const renderShallow = (element: React.ReactElement<NavLinks['props']>): any => {
 }
 
 describe('NavLinks', () => {
-    setLinkComponent((props: any) => <a {...props} />)
-    afterAll(() => setLinkComponent(null as any)) // reset global env for other tests
     const NOOP_EXTENSIONS_CONTROLLER: ExtensionsControllerProps<
         'executeCommand' | 'services'
     >['extensionsController'] = { executeCommand: () => Promise.resolve(), services: {} as any }

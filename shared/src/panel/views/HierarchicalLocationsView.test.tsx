@@ -13,15 +13,11 @@ import * as sinon from 'sinon'
 import { createContextService } from '../../api/client/context/contextService'
 import { parseTemplate } from '../../api/client/context/expr/evaluator'
 import { ContributionsEntry, ContributionUnsubscribable } from '../../api/client/services/contribution'
-import { setLinkComponent } from '../../components/Link'
 import { Controller } from '../../extensions/controller'
 import { SettingsCascadeOrError } from '../../settings/settings'
 import { HierarchicalLocationsView, HierarchicalLocationsViewProps } from './HierarchicalLocationsView'
 
 describe('<HierarchicalLocationsView />', () => {
-    beforeAll(() => {
-        setLinkComponent((props: any) => <a {...props} />)
-    })
     const getProps = () => {
         const services = {
             context: createContextService({ clientApplication: 'other' }),
@@ -205,9 +201,5 @@ describe('<HierarchicalLocationsView />', () => {
             locations: of(locations),
         }
         expect(renderer.create(<HierarchicalLocationsView {...props} />).toJSON()).toMatchSnapshot()
-    })
-
-    afterAll(() => {
-        setLinkComponent(null as any)
     })
 })

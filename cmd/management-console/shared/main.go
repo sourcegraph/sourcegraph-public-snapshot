@@ -11,10 +11,12 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -66,7 +68,7 @@ func configureTLS() error {
 	if customTLS || !generate {
 		return nil // cert files exist
 	}
-	log.Println("Generating and using self-signed TLS cert/key")
+	log15.Debug("Generating and using self-signed TLS cert/key")
 
 	if err := os.MkdirAll(filepath.Dir(tlsCert), 0700); err != nil {
 		return err
@@ -138,7 +140,7 @@ func Main() {
 		host = "127.0.0.1"
 	}
 	addr := net.JoinHostPort(host, port)
-	log15.Info("management-console: listening", "addr", addr)
+	log15.Debug("management-console: listening", "addr", addr)
 
 	s := &http.Server{
 		Addr:           addr,
@@ -148,6 +150,9 @@ func Main() {
 	}
 
 	unsafeNoHTTPS, _ := strconv.ParseBool(unsafeNoHTTPS)
+
+	fmt.Printf("Management console is ready at: %s\n", addrToURL(addr, !unsafeNoHTTPS))
+
 	if unsafeNoHTTPS {
 		s.Handler = unprotectedRoutes
 		log.Fatalf("Fatal error serving: %s", s.ListenAndServe())
@@ -158,6 +163,25 @@ func Main() {
 	}
 	s.Handler = HSTSMiddleware(unprotectedRoutes)
 	log.Fatalf("Fatal error serving: %s", s.ListenAndServeTLS(tlsCert, tlsKey))
+}
+
+// addrToURL returns the HTTP(S) URL to access the server listening on the given address.
+func addrToURL(addr string, https bool) *url.URL {
+	var hostPort string
+	if strings.HasPrefix(addr, ":") {
+		hostPort = "127.0.0.1" + addr
+	} else {
+		hostPort = addr
+	}
+
+	var scheme string
+	if https {
+		scheme = "https"
+	} else {
+		scheme = "http"
+	}
+
+	return &url.URL{Scheme: scheme, Host: hostPort}
 }
 
 type jsonConfiguration struct {
