@@ -3,7 +3,7 @@ import { isEqual } from 'lodash'
 import * as React from 'react'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
-import { parseSearchURLQuery, parseSearchURLPatternType, PatternTypeProps } from '..'
+import { parseSearchURLQuery, parseSearchURLPatternType, PatternTypeProps, InteractiveSearchProps } from '..'
 import { Contributions, Evaluated } from '../../../../shared/src/api/protocol'
 import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
@@ -29,6 +29,7 @@ import { SearchResultsFilterBars, SearchScopeWithOptionalName } from './SearchRe
 import { SearchResultsList } from './SearchResultsList'
 import { SearchResultTypeTabs } from './SearchResultTypeTabs'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
+import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,
@@ -36,7 +37,8 @@ export interface SearchResultsProps
         SettingsCascadeProps,
         TelemetryProps,
         ThemeProps,
-        PatternTypeProps {
+        PatternTypeProps,
+        InteractiveSearchProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
@@ -51,6 +53,8 @@ export interface SearchResultsProps
     ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
     deployType: DeployType
+    filtersInQuery: FiltersToTypeAndValue
+    interactiveSearchMode: boolean
 }
 
 interface SearchResultsState {
@@ -92,7 +96,12 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             // If the patternType query parameter does not exist in the URL or is invalid, redirect to a URL which
             // has patternType=regexp appended. This is to ensure old URLs before requiring patternType still work.
             const newLoc =
-                '/search?' + buildSearchURLQuery(this.props.navbarSearchQueryState.query, GQL.SearchPatternType.regexp)
+                '/search?' +
+                buildSearchURLQuery(
+                    this.props.navbarSearchQueryState.query,
+                    GQL.SearchPatternType.regexp,
+                    this.props.filtersInQuery
+                )
             window.location.replace(newLoc)
         }
 
@@ -103,7 +112,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                 .pipe(
                     startWith(this.props),
                     map(props => [
-                        parseSearchURLQuery(props.location.search),
+                        parseSearchURLQuery(props.location.search, props.interactiveSearchMode),
                         parseSearchURLPatternType(props.location.search),
                     ]),
                     // Search when a new search query was specified in the URL
@@ -203,7 +212,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     }
 
     public render(): JSX.Element | null {
-        const query = parseSearchURLQuery(this.props.location.search)
+        const query = parseSearchURLQuery(this.props.location.search, this.props.interactiveSearchMode)
         const filters = this.getFilters()
         const extensionFilters = this.state.contributions && this.state.contributions.searchFilters
 
@@ -213,17 +222,23 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         return (
             <div className="e2e-search-results search-results d-flex flex-column w-100">
                 <PageTitle key="page-title" title={query} />
-                <SearchResultsFilterBars
-                    navbarSearchQuery={this.props.navbarSearchQueryState.query}
-                    results={this.state.resultsOrError}
-                    filters={filters}
-                    extensionFilters={extensionFilters}
-                    quickLinks={quickLinks}
-                    onFilterClick={this.onDynamicFilterClicked}
-                    onShowMoreResultsClick={this.showMoreResults}
-                    calculateShowMoreResultsCount={this.calculateCount}
+                {!this.props.interactiveSearchMode && (
+                    <SearchResultsFilterBars
+                        navbarSearchQuery={this.props.navbarSearchQueryState.query}
+                        results={this.state.resultsOrError}
+                        filters={filters}
+                        extensionFilters={extensionFilters}
+                        quickLinks={quickLinks}
+                        onFilterClick={this.onDynamicFilterClicked}
+                        onShowMoreResultsClick={this.showMoreResults}
+                        calculateShowMoreResultsCount={this.calculateCount}
+                    />
+                )}
+                <SearchResultTypeTabs
+                    {...this.props}
+                    query={this.props.navbarSearchQueryState.query}
+                    filtersInQuery={this.props.filtersInQuery}
                 />
-                <SearchResultTypeTabs {...this.props} query={this.props.navbarSearchQueryState.query} />
                 <SearchResultsList
                     {...this.props}
                     resultsOrError={this.state.resultsOrError}

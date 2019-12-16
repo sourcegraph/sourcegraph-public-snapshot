@@ -71,6 +71,12 @@ const SiteSchemaJSON = `{
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
+        },
+        "splitSearchModes": {
+          "description": "Enables toggling between the current omni search mode, and experimental interactive search mode.",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
         }
       },
       "group": "Experimental",

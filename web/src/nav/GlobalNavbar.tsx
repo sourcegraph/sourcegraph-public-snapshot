@@ -8,7 +8,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { authRequired } from '../auth'
-import { parseSearchURLQuery, PatternTypeProps } from '../search'
+import { parseSearchURLQuery, PatternTypeProps, InteractiveSearchProps } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { showDotComMarketing } from '../util/features'
@@ -17,6 +17,9 @@ import { ThemeProps } from '../../../shared/src/theme'
 import { ThemePreferenceProps } from '../theme'
 import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
 import { QueryState } from '../search/helpers'
+import InteractiveModeInput from '../search/input/interactive/InteractiveModeInput'
+import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/util'
+import { SearchModeToggle } from '../search/input/interactive/SearchModeToggle'
 
 interface Props
     extends SettingsCascadeProps,
@@ -27,7 +30,8 @@ interface Props
         ThemeProps,
         ThemePreferenceProps,
         ActivationProps,
-        PatternTypeProps {
+        PatternTypeProps,
+        InteractiveSearchProps {
     history: H.History
     location: H.Location<{ query: string }>
     authenticatedUser: GQL.IUser | null
@@ -41,6 +45,11 @@ interface Props
      * homepage.
      */
     lowProfile: boolean
+
+    filtersInQuery: FiltersToTypeAndValue
+    splitSearchModes: boolean
+    interactiveSearchMode: boolean
+    toggleSearchMode: (event: React.MouseEvent<HTMLAnchorElement>) => void
 }
 
 interface State {
@@ -55,12 +64,10 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
     constructor(props: Props) {
         super(props)
 
-        /**
-         * Reads initial state from the props (i.e. URL parameters).
-         */
-        const query = parseSearchURLQuery(props.location.search || '')
-        if (query) {
-            props.onNavbarQueryChange({ query, cursorPosition: query.length })
+        // Reads initial state from the props (i.e. URL parameters).
+        const navbarQuery = parseSearchURLQuery(props.location.search || '', this.props.interactiveSearchMode, true)
+        if (navbarQuery) {
+            props.onNavbarQueryChange({ query: navbarQuery, cursorPosition: navbarQuery.length })
         } else {
             // If we have no component state, then we may have gotten unmounted during a route change.
             const query = props.location.state ? props.location.state.query : ''
@@ -77,9 +84,9 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
 
     public componentDidUpdate(prevProps: Props): void {
         if (prevProps.location.search !== this.props.location.search) {
-            const query = parseSearchURLQuery(this.props.location.search || '')
-            if (query) {
-                this.props.onNavbarQueryChange({ query, cursorPosition: query.length })
+            const navbarQuery = parseSearchURLQuery(this.props.location.search || '', false)
+            if (navbarQuery) {
+                this.props.onNavbarQueryChange({ query: navbarQuery, cursorPosition: navbarQuery.length })
             }
         }
     }
@@ -111,28 +118,54 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
         return (
             <div className={`global-navbar ${this.props.lowProfile ? '' : 'global-navbar--bg border-bottom'} py-1`}>
                 {this.props.lowProfile ? (
-                    <div className="flex-1" />
+                    <>
+                        <div className="flex-1" />
+                        {!this.state.authRequired && (
+                            <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />
+                        )}
+                    </>
                 ) : (
                     <>
-                        {this.state.authRequired ? (
-                            <div className={logoLinkClassName}>{logo}</div>
-                        ) : (
-                            <Link to="/search" className={logoLinkClassName}>
-                                {logo}
-                            </Link>
-                        )}
-                        {!this.state.authRequired && (
-                            <div className="global-navbar__search-box-container d-none d-sm-flex">
-                                <SearchNavbarItem
+                        {this.props.interactiveSearchMode ? (
+                            !this.state.authRequired && (
+                                <InteractiveModeInput
                                     {...this.props}
+                                    authRequired={this.state.authRequired}
                                     navbarSearchState={this.props.navbarSearchQueryState}
-                                    onChange={this.props.onNavbarQueryChange}
+                                    onNavbarQueryChange={this.props.onNavbarQueryChange}
                                 />
-                            </div>
+                            )
+                        ) : (
+                            <>
+                                {this.state.authRequired ? (
+                                    <div className={logoLinkClassName}>{logo}</div>
+                                ) : (
+                                    <Link to="/search" className={logoLinkClassName}>
+                                        {logo}
+                                    </Link>
+                                )}
+                                {!this.state.authRequired && (
+                                    <div className="global-navbar__search-box-container d-none d-sm-flex flex-row">
+                                        {this.props.splitSearchModes && (
+                                            <SearchModeToggle
+                                                {...this.props}
+                                                interactiveSearchMode={this.props.interactiveSearchMode}
+                                            />
+                                        )}
+                                        <SearchNavbarItem
+                                            {...this.props}
+                                            navbarSearchState={this.props.navbarSearchQueryState}
+                                            onChange={this.props.onNavbarQueryChange}
+                                        />
+                                    </div>
+                                )}
+                                {!this.state.authRequired && (
+                                    <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />
+                                )}
+                            </>
                         )}
                     </>
                 )}
-                {!this.state.authRequired && <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />}
             </div>
         )
     }

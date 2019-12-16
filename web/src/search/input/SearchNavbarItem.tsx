@@ -40,7 +40,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = ({
     )
 
     return (
-        <Form className="search search--navbar-item d-flex align-items-start" onSubmit={onSubmit}>
+        <Form className="search search--navbar-item d-flex align-items-start flex-grow-1" onSubmit={onSubmit}>
             <QueryInput
                 value={navbarSearchState}
                 onChange={onChange}

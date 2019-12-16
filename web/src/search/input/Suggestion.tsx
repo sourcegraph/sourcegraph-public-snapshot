@@ -6,25 +6,8 @@ import FilterIcon from 'mdi-react/FilterIcon'
 import FileIcon from 'mdi-react/FileIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { SymbolIcon } from '../../../../shared/src/symbols/SymbolIcon'
+import { SuggestionTypes } from '../../../../shared/src/search/suggestions/util'
 import { escapeRegExp } from 'lodash'
-
-export enum SuggestionTypes {
-    filters = 'filters',
-    repo = 'repo',
-    repogroup = 'repogroup',
-    repohasfile = 'repohasfile',
-    repohascommitafter = 'repohascommitafter',
-    file = 'file',
-    type = 'type',
-    case = 'case',
-    lang = 'lang',
-    fork = 'fork',
-    archived = 'archived',
-    count = 'count',
-    timeout = 'timeout',
-    dir = 'dir',
-    symbol = 'symbol',
-}
 
 export const filterAliases: Record<string, FiltersSuggestionTypes | undefined> = {
     r: SuggestionTypes.repo,
@@ -85,7 +68,7 @@ interface SuggestionIconProps {
 /**
  * @returns The given string with escaped special characters and wrapped with regex boundaries
  */
-const formatRegExp = (value: string): string => '^' + escapeRegExp(value) + '$'
+export const formatRegExp = (value: string): string => '^' + escapeRegExp(value) + '$'
 
 export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undefined {
     switch (item.__typename) {
@@ -179,7 +162,7 @@ export const SuggestionItem: React.FunctionComponent<SuggestionProps> = ({
     defaultLabel,
     ...props
 }) => (
-    <li className={'suggestion' + (isSelected ? ' suggestion--selected' : '')} {...props}>
+    <li className={`suggestion ${isSelected ? ' suggestion--selected' : ''} e2e-suggestion-item`} {...props}>
         <SuggestionIcon className="icon-inline suggestion__icon" suggestion={suggestion} />
         <div className="suggestion__title">{suggestion.displayValue ?? suggestion.value}</div>
         <div className="suggestion__description">{suggestion.description}</div>

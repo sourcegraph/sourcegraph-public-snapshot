@@ -17,7 +17,7 @@ import {
 } from 'rxjs/operators'
 import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
-import { Suggestion, SuggestionItem, SuggestionTypes, createSuggestion, fuzzySearchFilters } from './Suggestion'
+import { Suggestion, SuggestionItem, createSuggestion, fuzzySearchFilters } from './Suggestion'
 import RegexpToggle from './RegexpToggle'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 import { PatternTypeProps } from '..'
@@ -36,6 +36,8 @@ import { isDefined } from '../../../../shared/src/util/types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { once } from 'lodash'
 import { dedupeWhitespace } from '../../../../shared/src/util/strings'
+import { SuggestionTypes } from '../../../../shared/src/search/suggestions/util'
+import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
 
 /**
  * The query input field is clobbered and updated to contain this subject's values, as
@@ -74,13 +76,28 @@ interface Props extends PatternTypeProps {
      * At most one query input per page should have this behavior.
      */
     hasGlobalQueryBehavior?: boolean
+
+    /**
+     * The filters in the query when in interactive search mode.
+     */
+    filterQuery?: FiltersToTypeAndValue
+
+    /**
+     * Whether to display the query input without any suggestions.
+     */
+    withoutSuggestions?: boolean
+
+    /**
+     * Whether the search mode toggle is attached. Used for styling.
+     */
+    withSearchModeToggle?: boolean
 }
 
 /**
  * The search suggestions and cursor position of where the last character was inserted.
  * Cursor position is used to correctly insert the suggestion when it's selected.
  */
-interface ComponentSuggestions {
+export interface ComponentSuggestions {
     values: Suggestion[]
     cursorPosition: number
 }
@@ -94,10 +111,10 @@ interface State {
     suggestions: ComponentSuggestions
 }
 
-const noSuggestions: State['suggestions'] = { values: [], cursorPosition: 0 }
+export const noSuggestions: State['suggestions'] = { values: [], cursorPosition: 0 }
 
 // Used for fetching suggestions and updating query history (undo/redo)
-const typingDebounceTime = 300
+export const typingDebounceTime = 300
 
 export class QueryInput extends React.Component<Props, State> {
     private componentUpdates = new Subject<Props>()
@@ -133,128 +150,130 @@ export class QueryInput extends React.Component<Props, State> {
         // (will be used in next PR to push to queryHistory (undo/redo))
         this.subscriptions.add(this.inputValues.subscribe(queryState => this.props.onChange(queryState)))
 
-        // Trigger suggestions.
-        // This is set on componentDidUpdate so the data flow can be easier to manage, making it
-        // only depend on props.value updates, and not both from props.value and this.inputValues
-        this.subscriptions.add(
-            this.componentUpdates
-                .pipe(
-                    debounceTime(typingDebounceTime),
-                    // Only show suggestions for when the user has typed (explicitly changed the query).
-                    // Also: Prevents suggestions from showing on page load because of componentUpdates.
-                    filter(props => !!props.value.fromUserInput),
-                    distinctUntilChanged(
-                        (previous, current) =>
-                            dedupeWhitespace(previous.value.query) === dedupeWhitespace(current.value.query)
-                    ),
-                    switchMap(({ value: queryState }) => {
-                        if (queryState.query.length === 0) {
-                            return [{ suggestions: noSuggestions }]
-                        }
+        if (!this.props.withoutSuggestions) {
+            // Trigger suggestions.
+            // This is set on componentDidUpdate so the data flow can be easier to manage, making it
+            // only depend on props.value updates, and not both from props.value and this.inputValues
+            this.subscriptions.add(
+                this.componentUpdates
+                    .pipe(
+                        debounceTime(typingDebounceTime),
+                        // Only show suggestions for when the user has typed (explicitly changed the query).
+                        // Also: Prevents suggestions from showing on page load because of componentUpdates.
+                        filter(props => !!props.value.fromUserInput),
+                        distinctUntilChanged(
+                            (previous, current) =>
+                                dedupeWhitespace(previous.value.query) === dedupeWhitespace(current.value.query)
+                        ),
+                        switchMap(({ value: queryState }) => {
+                            if (queryState.query.length === 0) {
+                                return [{ suggestions: noSuggestions }]
+                            }
 
-                        // A filter value (in "archive:yes", "archive" is the filter and "yes" is the value)
-                        // can either be from `searchFilterSuggestions` or from the fuzzy-search.
+                            // A filter value (in "archive:yes", "archive" is the filter and "yes" is the value)
+                            // can either be from `searchFilterSuggestions` or from the fuzzy-search.
 
-                        // First get static suggestions
-                        const staticSuggestions = {
-                            cursorPosition: queryState.cursorPosition,
-                            values: filterStaticSuggestions(queryState, searchFilterSuggestions),
-                        }
+                            // First get static suggestions
+                            const staticSuggestions = {
+                                cursorPosition: queryState.cursorPosition,
+                                values: filterStaticSuggestions(queryState, searchFilterSuggestions),
+                            }
 
-                        // Used to know if a filter value, and not just a separate word, is being typed
-                        const filterAndValueBeforeCursor = validFilterAndValueBeforeCursor(queryState)
+                            // Used to know if a filter value, and not just a separate word, is being typed
+                            const filterAndValueBeforeCursor = validFilterAndValueBeforeCursor(queryState)
 
-                        // If a filter value is being typed but selected filter does not use
-                        // fuzzy-search suggestions, then return only static suggestions
-                        if (
-                            filterAndValueBeforeCursor &&
-                            !fuzzySearchFilters.includes(filterAndValueBeforeCursor.resolvedFilterType)
-                        ) {
-                            return [{ suggestions: staticSuggestions }]
-                        }
-
-                        // Because of API limitations, we need to modify the query before the request,
-                        // see definition of `formatQueryForFuzzySearch`
-                        const queryForFuzzySearch = formatQueryForFuzzySearch(queryState)
-                        const fullQuery = this.props.prependQueryForSuggestions
-                            ? this.props.prependQueryForSuggestions + ' ' + queryForFuzzySearch
-                            : queryForFuzzySearch
-
-                        const fuzzySearchSuggestions = fetchSuggestions(fullQuery).pipe(
-                            map(createSuggestion),
-                            filter(isDefined),
-                            map((suggestion): Suggestion => ({ ...suggestion, fromFuzzySearch: true })),
-                            filter(suggestion => {
-                                // Only show fuzzy-suggestions that are relevant to the typed filter
-                                if (filterAndValueBeforeCursor?.resolvedFilterType) {
-                                    switch (filterAndValueBeforeCursor.resolvedFilterType) {
-                                        case SuggestionTypes.repohasfile:
-                                            return suggestion.type === SuggestionTypes.file
-                                        default:
-                                            return suggestion.type === filterAndValueBeforeCursor.resolvedFilterType
-                                    }
-                                }
-                                return true
-                            }),
-                            toArray(),
-                            map(suggestions => ({
-                                suggestions: {
-                                    cursorPosition: queryState.cursorPosition,
-                                    values: staticSuggestions.values.concat(suggestions),
-                                },
-                            })),
-                            catchError(error => {
-                                console.error(error)
-                                // If fuzzy-search is not capable of returning suggestions for the query
-                                // or there is an internal error, then at least return the static suggestions
+                            // If a filter value is being typed but selected filter does not use
+                            // fuzzy-search suggestions, then return only static suggestions
+                            if (
+                                filterAndValueBeforeCursor &&
+                                !fuzzySearchFilters.includes(filterAndValueBeforeCursor.resolvedFilterType)
+                            ) {
                                 return [{ suggestions: staticSuggestions }]
-                            }),
-                            map(state => ({
+                            }
+
+                            // Because of API limitations, we need to modify the query before the request,
+                            // see definition of `formatQueryForFuzzySearch`
+                            const queryForFuzzySearch = formatQueryForFuzzySearch(queryState)
+                            const fullQuery = this.props.prependQueryForSuggestions
+                                ? this.props.prependQueryForSuggestions + ' ' + queryForFuzzySearch
+                                : queryForFuzzySearch
+
+                            const fuzzySearchSuggestions = fetchSuggestions(fullQuery).pipe(
+                                map(createSuggestion),
+                                filter(isDefined),
+                                map((suggestion): Suggestion => ({ ...suggestion, fromFuzzySearch: true })),
+                                filter(suggestion => {
+                                    // Only show fuzzy-suggestions that are relevant to the typed filter
+                                    if (filterAndValueBeforeCursor?.resolvedFilterType) {
+                                        switch (filterAndValueBeforeCursor.resolvedFilterType) {
+                                            case SuggestionTypes.repohasfile:
+                                                return suggestion.type === SuggestionTypes.file
+                                            default:
+                                                return suggestion.type === filterAndValueBeforeCursor.resolvedFilterType
+                                        }
+                                    }
+                                    return true
+                                }),
+                                toArray(),
+                                map(suggestions => ({
+                                    suggestions: {
+                                        cursorPosition: queryState.cursorPosition,
+                                        values: staticSuggestions.values.concat(suggestions),
+                                    },
+                                })),
+                                catchError(error => {
+                                    console.error(error)
+                                    // If fuzzy-search is not capable of returning suggestions for the query
+                                    // or there is an internal error, then at least return the static suggestions
+                                    return [{ suggestions: staticSuggestions }]
+                                }),
+                                map(state => ({
+                                    ...state,
+                                    loadingSuggestions: false,
+                                })),
+                                share()
+                            )
+
+                            // Prevent jitter when no static suggestions are found but fuzzy-suggestions are.
+                            // Jitter being the suggestions list going blank unnecessarily during update.
+                            // (This is a fix for 3.10 release, and will be improved on next PR)
+                            const currentSuggestions = {
+                                ...staticSuggestions,
+                                values: staticSuggestions.values.concat(
+                                    this.state.suggestions.values.filter(({ fromFuzzySearch }) => fromFuzzySearch)
+                                ),
+                            }
+
+                            return merge(
+                                // Render static suggestions first
+                                [{ suggestions: currentSuggestions }],
+                                // Prevent loading indicator jitter, only showing it after 1s delay
+                                of({ suggestions: staticSuggestions, loadingSuggestions: true }).pipe(
+                                    delay(1000),
+                                    takeUntil(fuzzySearchSuggestions)
+                                ),
+                                // Fetch and format fuzzy-search suggestions
+                                fuzzySearchSuggestions
+                            )
+                        }),
+                        // Abort suggestion display on route change or suggestion hiding
+                        takeUntil(this.suggestionsHidden),
+                        // But resubscribe afterwards
+                        repeat()
+                    )
+                    .subscribe(
+                        state => {
+                            this.setState({
                                 ...state,
-                                loadingSuggestions: false,
-                            })),
-                            share()
-                        )
-
-                        // Prevent jitter when no static suggestions are found but fuzzy-suggestions are.
-                        // Jitter being the suggestions list going blank unnecessarily during update.
-                        // (This is a fix for 3.10 release, and will be improved on next PR)
-                        const currentSuggestions = {
-                            ...staticSuggestions,
-                            values: staticSuggestions.values.concat(
-                                this.state.suggestions.values.filter(({ fromFuzzySearch }) => fromFuzzySearch)
-                            ),
+                                showSuggestions: true,
+                            })
+                        },
+                        err => {
+                            console.error(err)
                         }
-
-                        return merge(
-                            // Render static suggestions first
-                            [{ suggestions: currentSuggestions }],
-                            // Prevent loading indicator jitter, only showing it after 1s delay
-                            of({ suggestions: staticSuggestions, loadingSuggestions: true }).pipe(
-                                delay(1000),
-                                takeUntil(fuzzySearchSuggestions)
-                            ),
-                            // Fetch and format fuzzy-search suggestions
-                            fuzzySearchSuggestions
-                        )
-                    }),
-                    // Abort suggestion display on route change or suggestion hiding
-                    takeUntil(this.suggestionsHidden),
-                    // But resubscribe afterwards
-                    repeat()
-                )
-                .subscribe(
-                    state => {
-                        this.setState({
-                            ...state,
-                            showSuggestions: true,
-                        })
-                    },
-                    err => {
-                        console.error(err)
-                    }
-                )
-        )
+                    )
+            )
+        }
 
         if (this.props.hasGlobalQueryBehavior) {
             // Quick-Open hotkeys
@@ -331,7 +350,9 @@ export class QueryInput extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         const showSuggestions =
-            this.state.showSuggestions && (this.state.suggestions.values.length > 0 || this.state.loadingSuggestions)
+            !this.props.withoutSuggestions &&
+            this.state.showSuggestions &&
+            (this.state.suggestions.values.length > 0 || this.state.loadingSuggestions)
         // If last typed word is not a filter type,
         // suggestions should show url label and redirect on select.
         const showUrlLabel = isFuzzyWordSearch({
@@ -352,7 +373,11 @@ export class QueryInput extends React.Component<Props, State> {
                                 <input
                                     onFocus={this.onInputFocus}
                                     onBlur={this.onInputBlur}
-                                    className="form-control query-input2__input rounded-left e2e-query-input"
+                                    className={`form-control query-input2__input e2e-query-input ${
+                                        this.props.withSearchModeToggle
+                                            ? 'query-input2__input-with-mode--toggle'
+                                            : 'rounded-left'
+                                    }`}
                                     value={this.props.value.query}
                                     autoFocus={this.props.autoFocus === true}
                                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
@@ -404,6 +429,7 @@ export class QueryInput extends React.Component<Props, State> {
                                     {...this.props}
                                     toggled={this.props.patternType === SearchPatternType.regexp}
                                     navbarSearchQuery={this.props.value.query}
+                                    filtersInQuery={this.props.filterQuery}
                                 />
                             </div>
                         </div>
