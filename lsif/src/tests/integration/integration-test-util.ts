@@ -16,6 +16,11 @@ import { internalLocationToLocation } from '../../server/routes/lsif'
 import { InternalLocation } from '../../server/backend/database'
 
 /**
+ * The maximum test/setup timeout when a Postgres database needs to be created/migrated.
+ */
+export const DB_INTEGRATION_TEST_TIMEOUT = 10000
+
+/**
  * Create a temporary directory with a subdirectory for dbs.
  */
 export async function createStorageRoot(): Promise<string> {

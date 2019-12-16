@@ -76,7 +76,7 @@ describe('Backend', () => {
                 ])
             )
         )
-    })
+    }, util.DB_INTEGRATION_TEST_TIMEOUT)
 
     afterAll(async () => {
         await ctx.teardown()
