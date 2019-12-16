@@ -40,9 +40,9 @@ exports[`ChangesetNode renders a changesetplan 1`] = `
             >
               <a
                 className="text-muted"
+                href="github.com/sourcegraph/sourcegraph"
                 rel="noopener noreferrer"
                 target="_blank"
-                to="github.com/sourcegraph/sourcegraph"
               >
                 sourcegraph
               </a>
@@ -181,9 +181,9 @@ exports[`ChangesetNode renders an externalchangeset 1`] = `
             >
               <a
                 className="text-muted"
+                href="github.com/sourcegraph/sourcegraph"
                 rel="noopener noreferrer"
                 target="_blank"
-                to="github.com/sourcegraph/sourcegraph"
               >
                 sourcegraph
               </a>
@@ -194,9 +194,9 @@ exports[`ChangesetNode renders an externalchangeset 1`] = `
                
               <a
                 className=""
+                href="https://github.com/sourcegraph/sourcegraph/pull/111111"
                 rel="noopener noreferrer"
                 target="_blank"
-                to="https://github.com/sourcegraph/sourcegraph/pull/111111"
               >
                 Remove lodash
               </a>

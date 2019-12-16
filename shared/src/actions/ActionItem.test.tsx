@@ -2,7 +2,6 @@ import * as H from 'history'
 import React from 'react'
 import renderer from 'react-test-renderer'
 import { createBarrier } from '../api/integration-test/testHelpers'
-import { setLinkComponent } from '../components/Link'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import { ActionItem } from './ActionItem'
 
@@ -204,8 +203,6 @@ describe('ActionItem', () => {
 
     test('render as link for "open" command', () => {
         jsdom.reconfigure({ url: 'https://example.com/foo' })
-        setLinkComponent((props: any) => <a {...props} />)
-        afterAll(() => setLinkComponent(null as any)) // reset global env for other tests
 
         const component = renderer.create(
             <ActionItem
@@ -221,8 +218,6 @@ describe('ActionItem', () => {
 
     test('render as link with icon for "open" command with different origin', () => {
         jsdom.reconfigure({ url: 'https://example.com/foo' })
-        setLinkComponent((props: any) => <a {...props} />)
-        afterAll(() => setLinkComponent(null as any)) // reset global env for other tests
 
         const component = renderer.create(
             <ActionItem

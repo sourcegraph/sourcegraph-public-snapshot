@@ -10,7 +10,7 @@ import { HoverMerged } from '../api/client/types/hover'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import { HoverOverlay, HoverOverlayProps } from './HoverOverlay'
 
-const renderShallow = (element: React.ReactElement<HoverOverlayProps<string>>): React.ReactElement<any> => {
+const renderShallow = (element: React.ReactElement<HoverOverlayProps<string>>): React.ReactElement => {
     const renderer = createRenderer()
     renderer.render(element)
     return renderer.getRenderOutput()

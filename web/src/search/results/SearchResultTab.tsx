@@ -6,11 +6,13 @@ import { toggleSearchType } from '../helpers'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { constant } from 'lodash'
 import { PatternTypeProps } from '..'
+import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
 
 interface Props extends Omit<PatternTypeProps, 'togglePatternType'> {
     location: H.Location
     type: SearchType
     query: string
+    filtersInQuery: FiltersToTypeAndValue
 }
 
 const typeToProse: Record<Exclude<SearchType, null>, string> = {
@@ -21,9 +23,15 @@ const typeToProse: Record<Exclude<SearchType, null>, string> = {
     path: 'Files',
 }
 
-export const SearchResultTabHeader: React.FunctionComponent<Props> = ({ location, type, query, patternType }) => {
+export const SearchResultTabHeader: React.FunctionComponent<Props> = ({
+    location,
+    type,
+    query,
+    filtersInQuery,
+    patternType,
+}) => {
     const q = toggleSearchType(query, type)
-    const builtURLQuery = buildSearchURLQuery(q, patternType)
+    const builtURLQuery = buildSearchURLQuery(q, patternType, filtersInQuery)
 
     const isActiveFunc = constant(location.search === `?${builtURLQuery}`)
     return (

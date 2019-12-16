@@ -1,8 +1,6 @@
 import '../../../../shared/src/polyfills'
 
-import * as H from 'history'
-import React from 'react'
-import { setLinkComponent } from '../../../../shared/src/components/Link'
+import { setLinkComponent, AnchorLink } from '../../../../shared/src/components/Link'
 import { injectCodeIntelligence } from '../code_intelligence/inject'
 import { injectExtensionMarker } from '../sourcegraph/inject'
 import { getPhabricatorCSS, getSourcegraphURLFromConduit } from './backend'
@@ -14,11 +12,7 @@ window.SOURCEGRAPH_PHABRICATOR_EXTENSION = true
 
 const IS_EXTENSION = false
 
-setLinkComponent(({ to, children, ...props }) => (
-    <a href={to && typeof to !== 'string' ? H.createPath(to) : to} {...props}>
-        {children}
-    </a>
-))
+setLinkComponent(AnchorLink)
 
 async function init(): Promise<void> {
     /**

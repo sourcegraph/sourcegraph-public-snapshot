@@ -176,8 +176,8 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
         className="status-messages-nav-item__entry-link"
       >
         <a
+          href="/site-admin/external-services"
           onClick={[Function]}
-          to="/site-admin/external-services"
         >
           Configure external services
         </a>
@@ -304,8 +304,8 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admi
         className="status-messages-nav-item__entry-link"
       >
         <a
+          href="/site-admin/external-services/abcd"
           onClick={[Function]}
-          to="/site-admin/external-services/abcd"
         >
           Edit "GitHub.com"
         </a>
@@ -432,8 +432,8 @@ exports[`StatusMessagesNavItem one SyncError message as site admin 1`] = `
         className="status-messages-nav-item__entry-link"
       >
         <a
+          href="/site-admin/external-services"
           onClick={[Function]}
-          to="/site-admin/external-services"
         >
           Configure external services
         </a>

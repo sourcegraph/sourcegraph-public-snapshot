@@ -112,7 +112,7 @@ const TextSearchIndexedRef: React.FunctionComponent<{
     )
 }
 
-interface Props extends RouteComponentProps<any> {
+interface Props extends RouteComponentProps<{}> {
     repo: GQL.IRepository
 }
 

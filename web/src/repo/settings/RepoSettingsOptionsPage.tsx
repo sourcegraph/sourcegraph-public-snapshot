@@ -12,7 +12,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { fetchRepository } from './backend'
 import { ErrorAlert } from '../../components/alerts'
 
-interface Props extends RouteComponentProps<any> {
+interface Props extends RouteComponentProps<{}> {
     repo: GQL.IRepository
     onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
 }

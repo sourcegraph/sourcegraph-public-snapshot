@@ -1,6 +1,9 @@
 import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
 import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
 import { SearchPatternType } from '../graphql/schema'
+import { FiltersToTypeAndValue } from '../search/interactive/util'
+import { suggestionTypeKeys } from '../search/suggestions/util'
+import { isEmpty } from 'lodash'
 
 export interface RepoSpec {
     /**
@@ -541,9 +544,22 @@ export function withWorkspaceRootInputRevision(
  * @param query the search query
  * @param patternType the pattern type this query should be interpreted in.
  * Having a `patternType:` filter in the query overrides this argument.
+ * @param filtersInQuery filters in an interactive mode query. For callers of
+ * this function requiring correct behavior in interactive mode, this param
+ * must be passed.
+ *
  */
-export function buildSearchURLQuery(query: string, patternType: SearchPatternType): string {
-    const searchParams = new URLSearchParams()
+export function buildSearchURLQuery(
+    query: string,
+    patternType: SearchPatternType,
+    filtersInQuery?: FiltersToTypeAndValue
+): string {
+    let searchParams = new URLSearchParams()
+
+    if (filtersInQuery && !isEmpty(filtersInQuery)) {
+        searchParams = interactiveBuildSearchURLQuery(filtersInQuery)
+    }
+
     const patternTypeInQuery = parsePatternTypeFromQuery(query)
     if (patternTypeInQuery) {
         const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal)\b/i
@@ -559,6 +575,27 @@ export function buildSearchURLQuery(query: string, patternType: SearchPatternTyp
         .toString()
         .replace(/%2F/g, '/')
         .replace(/%3A/g, ':')
+}
+
+/**
+ * Builds a URL query for a given interactive mode query (without leading `?`).
+ * Returns a URLSearchParams object containing the filters and values in the
+ * search query.
+ *
+ * @param filtersInQuery the map representing the filters added to the query
+ */
+export function interactiveBuildSearchURLQuery(filtersInQuery: FiltersToTypeAndValue): URLSearchParams {
+    const searchParams = new URLSearchParams()
+
+    for (const searchType of suggestionTypeKeys) {
+        for (const [, filterValue] of Object.entries(filtersInQuery)) {
+            if (filterValue.type === searchType) {
+                searchParams.append(searchType, filterValue.value)
+            }
+        }
+    }
+
+    return searchParams
 }
 
 function parsePatternTypeFromQuery(query: string): SearchPatternType | undefined {

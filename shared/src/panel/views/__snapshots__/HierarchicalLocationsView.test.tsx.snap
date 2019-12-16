@@ -39,14 +39,14 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                 onClick={[Function]}
               >
                 <a
-                  to="/github.com/foo/bar"
+                  href="/github.com/foo/bar"
                 >
                   foo/bar
                 </a>
                  ›
                  
                 <a
-                  to="/github.com/foo/bar/-/blob/undefined"
+                  href="/github.com/foo/bar/-/blob/undefined"
                 >
                   <strong>
                     
@@ -75,8 +75,8 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
           >
             <a
               className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
+              href="/github.com/foo/bar/-/blob/undefined#L2:1"
               onClick={[Function]}
-              to="/github.com/foo/bar/-/blob/undefined#L2:1"
             >
               <VisibilitySensor
                 offset={
@@ -236,14 +236,14 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                 onClick={[Function]}
               >
                 <a
-                  to="/github.com/foo/bar"
+                  href="/github.com/foo/bar"
                 >
                   foo/bar
                 </a>
                  ›
                  
                 <a
-                  to="/github.com/foo/bar/-/blob/file1.txt"
+                  href="/github.com/foo/bar/-/blob/file1.txt"
                 >
                   <strong>
                     file1.txt
@@ -272,8 +272,8 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
           >
             <a
               className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
+              href="/github.com/foo/bar/-/blob/file1.txt#L2:1"
               onClick={[Function]}
-              to="/github.com/foo/bar/-/blob/file1.txt#L2:1"
             >
               <VisibilitySensor
                 offset={
@@ -389,14 +389,14 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                 onClick={[Function]}
               >
                 <a
-                  to="/github.com/foo/bar"
+                  href="/github.com/foo/bar"
                 >
                   foo/bar
                 </a>
                  ›
                  
                 <a
-                  to="/github.com/foo/bar/-/blob/undefined"
+                  href="/github.com/foo/bar/-/blob/undefined"
                 >
                   <strong>
                     
@@ -425,8 +425,8 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
           >
             <a
               className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
+              href="/github.com/foo/bar/-/blob/undefined#L2:1"
               onClick={[Function]}
-              to="/github.com/foo/bar/-/blob/undefined#L2:1"
             >
               <VisibilitySensor
                 offset={
