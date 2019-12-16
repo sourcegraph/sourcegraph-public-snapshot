@@ -864,7 +864,6 @@ declare module 'sourcegraph' {
          * value changes (and synchronously immediately). Call {@link get} in the callback to obtain the new
          * configuration values.
          *
-         * @template C The configuration schema.
          * @returns An unsubscribable to stop calling the callback for configuration changes.
          */
         export const subscribe: Subscribable<void>['subscribe']
