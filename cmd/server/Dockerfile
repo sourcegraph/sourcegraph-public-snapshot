@@ -55,7 +55,7 @@ COPY --from=comby/comby:0.12.1@sha256:cf2c1da47c513e664b28390ababc1e55f4e7c255fb
 COPY --from=sourcegraph/syntect_server:2b5a3fb@sha256:ef5529cafdc68d5a21edea472ee8ad966878b173044aa5c3db93bc3d84765b1f /syntect_server /usr/local/bin/
 COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/lsif-server:ci /lsif /lsif
+COPY --from=sourcegraph/lsif-server-builder:ci /lsif /lsif
 
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/prometheus:10.0.5@sha256:456714324cfde9d52a9f9e06ac34b6a4ee47d4440065d434c3350e67d3a07d99 /bin/prometheus /usr/local/bin
