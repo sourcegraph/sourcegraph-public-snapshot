@@ -116,43 +116,6 @@ export class Backend {
     ) {}
 
     /**
-     * Get the set of dumps for a repository.
-     *
-     * @param repository The repository.
-     * @param query A search query.
-     * @param visibleAtTip If true, only return dumps visible at tip.
-     * @param limit The maximum number of dumps to return.
-     * @param offset The number of dumps to skip.
-     */
-    public dumps(
-        repository: string,
-        query: string,
-        visibleAtTip: boolean,
-        limit: number,
-        offset: number
-    ): Promise<{ dumps: xrepoModels.LsifDump[]; totalCount: number }> {
-        return this.xrepoDatabase.getDumps(repository, query, visibleAtTip, limit, offset)
-    }
-
-    /**
-     * Get a dump by identifier.
-     *
-     * @param id The dump identifier.
-     */
-    public dump(id: xrepoModels.DumpId): Promise<xrepoModels.LsifDump | undefined> {
-        return this.xrepoDatabase.getDumpById(id)
-    }
-
-    /**
-     * Delete a dump.
-     *
-     * @param dump The dump.
-     */
-    public deleteDump(dump: xrepoModels.LsifDump): Promise<void> {
-        return this.xrepoDatabase.deleteDump(dump)
-    }
-
-    /**
      * Determine if data exists for a particular document in this database.
      *
      * @param repository The repository name.
