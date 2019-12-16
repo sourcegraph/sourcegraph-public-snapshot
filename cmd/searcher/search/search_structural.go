@@ -78,15 +78,19 @@ func ToFileMatch(combyMatches []comby.FileMatch) (matches []protocol.FileMatch) 
 	return matches
 }
 
+// lookupMatcher looks up a key for specifying -matcher in comby. Comby accepts
+// a representative file extension to set a language, so this lookup does not
+// need to consider all possible file extensions for a language. There is a generic
+// fallback language, so this lookup does not need to be exhaustive either.
 func lookupMatcher(language string) string {
 	switch strings.ToLower(language) {
-	case "assembly, asm":
+	case "assembly", "asm":
 		return ".s"
 	case "bash":
 		return ".sh"
 	case "c":
 		return ".c"
-	case "c#,csharp":
+	case "c#, csharp":
 		return ".cs"
 	case "css":
 		return ".css"
@@ -102,7 +106,7 @@ func lookupMatcher(language string) string {
 		return ".ex"
 	case "fortran":
 		return ".f"
-	case "f#, fsharp":
+	case "f#", "fsharp":
 		return ".fsx"
 	case "go":
 		return ".go"
@@ -146,7 +150,7 @@ func lookupMatcher(language string) string {
 		return ".sql"
 	case "swift":
 		return ".swift"
-	case " text":
+	case "text":
 		return ".txt"
 	case "typescript", "ts":
 		return ".ts"
@@ -163,11 +167,11 @@ func structuralSearch(ctx context.Context, zipPath, pattern, rule string, langua
 	numWorkers := 4
 
 	var matcher string
-	if languages != nil {
+	if len(languages) > 0 {
 		// Pick the first language, there is no support for applying
 		// multiple language matchers in a single search query.
 		matcher = lookupMatcher(languages[0])
-		log15.Info("structural search", "language", languages[0], "matcher", matcher)
+		log15.Debug("structural search", "language", languages[0], "matcher", matcher)
 	}
 
 	args := comby.Args{

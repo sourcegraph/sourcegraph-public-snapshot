@@ -71,9 +71,6 @@ func foo(go string) {}
 					got = append(got, m.Preview)
 				}
 			}
-			if err != nil {
-				t.Fatal(err)
-			}
 
 			if !reflect.DeepEqual(got, tt.Want) {
 				t.Fatalf("got file matches %v, want %v", got, tt.Want)
