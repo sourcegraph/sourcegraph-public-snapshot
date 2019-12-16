@@ -64,14 +64,8 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
     constructor(props: Props) {
         super(props)
 
-        /**
-         * Reads initial state from the props (i.e. URL parameters).
-         *
-         * We pass false to the interactiveMode paramter of parseSearchURLQuery
-         * because we only want to update the navbarQuery with the match query
-         * (i.e. the `q=` paramater) in both omni and interactive modes.
-         */
-        const navbarQuery = parseSearchURLQuery(props.location.search || '', false)
+        // Reads initial state from the props (i.e. URL parameters).
+        const navbarQuery = parseSearchURLQuery(props.location.search || '', this.props.interactiveSearchMode, true)
         if (navbarQuery) {
             props.onNavbarQueryChange({ query: navbarQuery, cursorPosition: navbarQuery.length })
         } else {

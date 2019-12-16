@@ -8,18 +8,23 @@ import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/ut
  * returns undefined. When parsing for interactive mode, each filter's individual query parameter
  * will be parsed and detected.
  *
- * @param query: the URL query parameters
- * @param interactiveMode: whether to parse the search URL query in interactive mode, reading query params such as `repo=` and `file=`.
- * If false, it will read only the match query (the value passed to the `q=` query parameter).
+ * @param query the URL query parameters
+ * @param interactiveMode whether to parse the search URL query in interactive mode, reading query params such as `repo=` and `file=`.
+ * @param navbarQueryOnly whether to only parse the query for the main query input, i.e. only the value passed to the `q=`
+ * URL query parameter, as this represents the query that appears in the main query input in both modes.
  *
  */
-export function parseSearchURLQuery(query: string, interactiveMode: boolean): string | undefined {
-    if (interactiveMode) {
-        return interactiveParseSearchURLQuery(query)
+export function parseSearchURLQuery(
+    query: string,
+    interactiveMode: boolean,
+    navbarQueryOnly?: boolean
+): string | undefined {
+    if (!interactiveMode || navbarQueryOnly) {
+        const searchParams = new URLSearchParams(query)
+        return searchParams.get('q') || undefined
     }
 
-    const searchParams = new URLSearchParams(query)
-    return searchParams.get('q') || undefined
+    return interactiveParseSearchURLQuery(query)
 }
 
 /**
