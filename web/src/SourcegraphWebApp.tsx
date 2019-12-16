@@ -121,12 +121,15 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * Whether interactive search mode is activated
      */
     interactiveSearchMode: boolean
+
+    /**
+     * Whether to display the option to toggle between interactive and omni search modes.
+     */
+    splitSearchModes: boolean
 }
 
 const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
 const SEARCH_MODE_KEY = 'sg-search-mode'
-
-const splitSearchModes = window.context.experimentalFeatures.splitSearchModes === 'enabled'
 
 /** Reads the stored theme preference from localStorage */
 const readStoredThemePreference = (): ThemePreference => {
@@ -183,7 +186,8 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             viewerSubject: SITE_SUBJECT_NO_ADMIN,
             searchPatternType: urlPatternType,
             filtersInQuery: {},
-            interactiveSearchMode: splitSearchModes && currentSearchMode ? currentSearchMode === 'interactive' : false,
+            splitSearchModes: false,
+            interactiveSearchMode: currentSearchMode ? currentSearchMode === 'interactive' : false,
         }
     }
 
@@ -242,6 +246,20 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                 }
             })
         )
+
+        this.subscriptions.add(
+            from(this.platformContext.settings).subscribe(settingsCascade => {
+                const splitSearchModes =
+                    settingsCascade.final &&
+                    !isErrorLike(settingsCascade.final) &&
+                    settingsCascade.final.experimentalFeatures?.splitSearchModes === 'enabled'
+
+                if (splitSearchModes) {
+                    this.setState({ splitSearchModes })
+                }
+            })
+        )
+
         // React to OS theme change
         this.subscriptions.add(
             fromEventPattern<MediaQueryListEvent>(
@@ -344,7 +362,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                                     patternType={this.state.searchPatternType}
                                     togglePatternType={this.togglePatternType}
-                                    splitSearchModes={splitSearchModes}
+                                    splitSearchModes={this.state.splitSearchModes}
                                     interactiveSearchMode={this.state.interactiveSearchMode}
                                     toggleSearchMode={this.toggleSearchMode}
                                     filtersInQuery={this.state.filtersInQuery}

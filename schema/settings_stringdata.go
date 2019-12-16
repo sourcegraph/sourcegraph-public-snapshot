@@ -11,6 +11,20 @@ const SettingsSchemaJSON = `{
   "allowComments": true,
   "type": "object",
   "properties": {
+    "experimentalFeatures": {
+      "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "splitSearchModes": {
+          "description": "Enables toggling between the current omni search mode, and experimental interactive search mode.",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        }
+      },
+      "group": "Experimental"
+    },
     "search.savedQueries": {
       "description": "DEPRECATED: Saved search queries",
       "type": "array",
