@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -159,14 +160,7 @@ func (s *repos) ListDefault(ctx context.Context) (repos []*types.Repo, err error
 
 // Feature flag for enhanced (but much slower) language detection that uses file contents, not just
 // filenames. Enabled by default.
-var useEnhancedLanguageDetection = func() bool {
-	v := os.Getenv("USE_ENHANCED_LANGUAGE_DETECTION")
-	if v == "" {
-		return true
-	}
-	b, _ := strconv.ParseBool(v)
-	return b
-}()
+var useEnhancedLanguageDetection, _ = strconv.ParseBool(env.Get("USE_ENHANCED_LANGUAGE_DETECTION", "true", "Enable more accurate but slower language detection that uses file contents"))
 
 var inventoryCache = rcache.New(fmt.Sprintf("inv:v2:enhanced_%v", useEnhancedLanguageDetection))
 
