@@ -1484,7 +1484,7 @@ describe('e2e test suite', () => {
         })
     })
 
-    describe.only('Interactive search mode (feature flagged)', () => {
+    describe('Interactive search mode (feature flagged)', () => {
         let previousExperimentalFeatures: any
         beforeAll(async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/users/test/settings')
