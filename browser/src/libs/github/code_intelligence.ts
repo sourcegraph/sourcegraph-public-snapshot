@@ -72,7 +72,7 @@ const diffCodeView: Omit<CodeView, 'element'> = {
     getScrollBoundaries: codeView => {
         const fileHeader = codeView.querySelector<HTMLElement>('.file-header')
         if (!fileHeader) {
-            throw new Error('Could not find .file-header helement in GitHub PR code view')
+            throw new Error('Could not find .file-header element in GitHub PR code view')
         }
         return [fileHeader]
     },
