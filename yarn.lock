@@ -1713,9 +1713,9 @@
     "@babel/traverse" "^7.4.4"
 
 "@sourcegraph/codeintellify@^6.2.2":
-  version "6.2.2"
-  resolved "https://registry.npmjs.org/@sourcegraph/codeintellify/-/codeintellify-6.2.2.tgz#872e6eac678206cfe9d9c0c096cd04fb62e011fb"
-  integrity sha512-O8wc2TqZlhUykP6r9amrBtHP3BIuqzqf/fTbuK/EBdWnXlSra5uBmuxm6FPBM4koCKZ6s2wCOcTEVdi0DY8sDA==
+  version "6.3.0"
+  resolved "https://registry.npmjs.org/@sourcegraph/codeintellify/-/codeintellify-6.3.0.tgz#a4bf3df77f7ef6ee07c09bc8bcbc4be59b89d882"
+  integrity sha512-TtfhJj7HgmP+4wCcOLfxFRTnPj+Xq2aS73Fgd73I959j7by+LWjlZf4IOmrWhlKPMq4+ibtrpgP5SKOp5bhsew==
   dependencies:
     "@sourcegraph/event-positions" "^1.0.2"
     "@sourcegraph/extension-api-types" "^2.0.0"
@@ -1766,7 +1766,8 @@
   integrity sha512-Te7F1RQJLBH4C8wQ2xz0nPC2vpe13F80V+Yv+c3GySOoh4DcLNN4P5u51Kh4aZPqeS5DJ7CKvHyX2SM/1EBXNg==
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "2.0.0"
+  version "0.0.0"
+  uid ""
 
 "@sourcegraph/prettierrc@^3.0.1":
   version "3.0.1"
@@ -16754,7 +16755,8 @@ source-map@^0.7.3:
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "23.0.1"
+  version "0.0.0"
+  uid ""
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"

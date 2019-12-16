@@ -65,11 +65,20 @@ const singleFileCodeView: Omit<CodeView, 'element'> = {
     observeSelections: observeSelectionsFromHash,
 }
 
+const getFileTitle = (codeView: HTMLElement): HTMLElement[] => {
+    const fileTitle = codeView.querySelector<HTMLElement>('.js-file-title')
+    if (!fileTitle) {
+        throw new Error('Could not find .file-title element')
+    }
+    return [fileTitle]
+}
+
 const mergeRequestCodeView: Omit<CodeView, 'element'> = {
     dom: diffDOMFunctions,
     getToolbarMount,
     resolveFileInfo: resolveDiffFileInfo,
     toolbarButtonProps,
+    getScrollBoundaries: getFileTitle,
 }
 
 const commitCodeView: Omit<CodeView, 'element'> = {
@@ -77,6 +86,7 @@ const commitCodeView: Omit<CodeView, 'element'> = {
     getToolbarMount,
     resolveFileInfo: resolveCommitFileInfo,
     toolbarButtonProps,
+    getScrollBoundaries: getFileTitle,
 }
 
 const resolveView: ViewResolver<CodeView>['resolveView'] = (element: HTMLElement): CodeView | null => {
