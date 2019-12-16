@@ -47,9 +47,12 @@ interface InteractiveModeProps
     isSourcegraphDotCom: boolean
 }
 
-export default class InteractiveModeInput extends React.Component<InteractiveModeProps> {
-    private numFiltersAddedToQuery = 0
+interface InteractiveModeState {
+    /** Count of the total number of filters ever added in this component.*/
+    numFiltersAdded: number
+}
 
+export default class InteractiveModeInput extends React.Component<InteractiveModeProps, InteractiveModeState> {
     constructor(props: InteractiveModeProps) {
         super(props)
 
@@ -61,7 +64,11 @@ export default class InteractiveModeInput extends React.Component<InteractiveMod
                 filtersInQuery[`${t}-${i}`] = { type: t, value: item, editable: false }
             })
         }
-        this.numFiltersAddedToQuery = Object.keys(filtersInQuery).length
+
+        this.state = {
+            numFiltersAdded: Object.keys(filtersInQuery).length,
+        }
+
         this.props.onFiltersInQueryChange(filtersInQuery)
     }
 
@@ -73,8 +80,8 @@ export default class InteractiveModeInput extends React.Component<InteractiveMod
      * the search URL in {@link interactiveBuildSearchURLQuery}.
      */
     private addNewFilter = (filterType: SuggestionTypes): void => {
-        const filterKey = `${filterType}-${this.numFiltersAddedToQuery}`
-        this.numFiltersAddedToQuery++
+        const filterKey = `${filterType}-${this.state.numFiltersAdded}`
+        this.setState(state => ({ numFiltersAdded: state.numFiltersAdded + 1 }))
         this.props.onFiltersInQueryChange({
             ...this.props.filtersInQuery,
             [filterKey]: { type: filterType, value: '', editable: true },
