@@ -603,10 +603,10 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*FileMatc
 			args := *args
 			if args.PatternInfo.IsStructuralPat && searcherReposFilteredFiles != nil {
 				// Modify the search query to only run for the filtered files
-				var includePatternsCopy []string
 				if v, ok := searcherReposFilteredFiles[string(repoRev.Repo.Name)]; ok {
 					patternCopy := *args.PatternInfo
 					args.PatternInfo = &patternCopy
+					includePatternsCopy := []string{}
 					args.PatternInfo.IncludePatterns = append(includePatternsCopy, v...)
 				}
 			}

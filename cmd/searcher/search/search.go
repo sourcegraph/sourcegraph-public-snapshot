@@ -142,7 +142,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 	span.SetTag("pattern", p.Pattern)
 	span.SetTag("isRegExp", strconv.FormatBool(p.IsRegExp))
 	span.SetTag("isStructuralPat", strconv.FormatBool(p.IsStructuralPat))
-	span.SetTag("language", p.Languages)
+	span.SetTag("languages", p.Languages)
 	span.SetTag("isWordMatch", strconv.FormatBool(p.IsWordMatch))
 	span.SetTag("isCaseSensitive", strconv.FormatBool(p.IsCaseSensitive))
 	span.SetTag("pathPatternsAreRegExps", strconv.FormatBool(p.PathPatternsAreRegExps))
@@ -184,7 +184,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 		span.SetTag("deadlineHit", deadlineHit)
 		span.Finish()
 		if s.Log != nil {
-			s.Log.Debug("search request", "repo", p.Repo, "commit", p.Commit, "pattern", p.Pattern, "isRegExp", p.IsRegExp, "isStructuralPat", p.IsStructuralPat, "language", p.Languages, "isWordMatch", p.IsWordMatch, "isCaseSensitive", p.IsCaseSensitive, "patternMatchesContent", p.PatternMatchesContent, "patternMatchesPath", p.PatternMatchesPath, "matches", len(matches), "code", code, "duration", time.Since(start), "err", err)
+			s.Log.Debug("search request", "repo", p.Repo, "commit", p.Commit, "pattern", p.Pattern, "isRegExp", p.IsRegExp, "isStructuralPat", p.IsStructuralPat, "languages", p.Languages, "isWordMatch", p.IsWordMatch, "isCaseSensitive", p.IsCaseSensitive, "patternMatchesContent", p.PatternMatchesContent, "patternMatchesPath", p.PatternMatchesPath, "matches", len(matches), "code", code, "duration", time.Since(start), "err", err)
 		}
 	}(time.Now())
 
