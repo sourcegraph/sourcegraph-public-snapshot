@@ -4,13 +4,13 @@ import { dataOrThrowErrors, gql } from '../../../../../shared/src/graphql/graphq
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { queryGraphQL } from '../../../backend/graphql'
 
-export const querySearchResultsStats = (query: string): Observable<GQL.ISearchResultsStats> =>
+export const querySearchResultsStats = (query: string): Observable<GQL.ISearchResultsStats & { limitHit: boolean }> =>
     queryGraphQL(
         gql`
             query SearchResultsStats($query: String!) {
                 search(query: $query) {
                     results {
-                        elapsedMilliseconds
+                        limitHit
                     }
                     stats {
                         languages {
@@ -28,6 +28,6 @@ export const querySearchResultsStats = (query: string): Observable<GQL.ISearchRe
             if (!data.search) {
                 throw new Error('no search results')
             }
-            return data.search.stats
+            return { ...data.search.stats, limitHit: data.search.results.limitHit }
         })
     )
