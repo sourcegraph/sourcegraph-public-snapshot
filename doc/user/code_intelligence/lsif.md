@@ -38,7 +38,7 @@ The following table gives a rough estimate for the space and time requirements f
 
 | Repository | Working tree size | Index time | Index size | Processing time | Post-processing size |
 | ---------------------------------------------------------------------------------------------------- | ----------------- | ------ | ---- | ------- | ------ |
-| [bigcache](https://github.com/allegro/bigcache/tree/b7689f7c33374d4c67c011eaa0a5b345ddb1a99c)        | 216K   (32 files) |  1.18s | 3.5M |   0.45s | 0.564M |
+| [bigcache](https://github.com/allegro/bigcache/tree/b7689f7c33374d4c67c011eaa0a5b345ddb1a99c)        | 216KB   (32 files) |  1.18s | 3.5MB |   0.45s | 0.564MB |
 | [sqlc](https://github.com/kyleconroy/sqlc/tree/16cc4e9c378341b5496af784b25422d1ed4c7fd9)             | 396K   (24 files) |  1.53s | 7.2M |   1.62s | 1.6M   |
 | [nebula](https://github.com/slackhq/nebula/tree/a680ac29f5b7ce13d4007d090776e983cd3c1e76)            | 700K   (71 files) |  2.48s | 16M  |   1.63s | 2.9M   |
 | [cayley](https://github.com/cayleygraph/cayley/tree/4d89b8a1806203c5c09e16bfc405bc3d64d74236)        | 5.6M  (226 files) |  5.58s | 51M  |   4.68s | 11M    |
