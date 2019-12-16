@@ -266,6 +266,14 @@ func EventLoggingEnabled() bool {
 	return val == "enabled"
 }
 
+func StructuralSearchEnabled() bool {
+	val := Get().ExperimentalFeatures.StructuralSearch
+	if val == "" {
+		return true
+	}
+	return val == "enabled"
+}
+
 func ExperimentalFeatures() schema.ExperimentalFeatures {
 	val := Get().ExperimentalFeatures
 	if val == nil {
