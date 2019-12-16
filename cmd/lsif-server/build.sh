@@ -10,17 +10,17 @@ cleanup() {
 }
 trap cleanup EXIT
 
-echo "--- build lsif-server"
-IMAGE=sourcegraph/lsif-server-builder:ci ./lsif/build.sh
-
-export bindir="$OUTPUT/usr/local/bin"
-mkdir -p "$bindir"
-
 # Environment for building linux binaries
 export GO111MODULE=on
 export GOARCH=amd64
 export GOOS=linux
 export CGO_ENABLED=0
+
+export bindir="$OUTPUT/usr/local/bin"
+mkdir -p "$bindir"
+
+echo "--- build lsif-server"
+IMAGE=sourcegraph/lsif-server-builder:ci ./lsif/build.sh
 
 echo "--- go build"
 go build \
