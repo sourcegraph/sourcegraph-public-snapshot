@@ -65,10 +65,20 @@ func (s *ChangesetSyncer) SyncChangesetsWithSources(ctx context.Context, bySourc
 	)
 
 	for _, s := range bySource {
-		if err := s.LoadChangesets(ctx, s.Changesets...); err != nil {
+		notFound, err := s.LoadChangesets(ctx, s.Changesets...)
+		if err != nil {
 			return err
 		}
+
+		notFoundById := make(map[int64]*repos.Changeset)
+		for _, c := range notFound {
+			notFoundById[c.Changeset.ID] = c
+		}
+
 		for _, c := range s.Changesets {
+			if _, ok := notFoundById[c.Changeset.ID]; ok {
+				c.Changeset.SetDeleted()
+			}
 			events = append(events, c.Events()...)
 			cs = append(cs, c.Changeset)
 		}

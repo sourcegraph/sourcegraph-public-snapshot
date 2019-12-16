@@ -9,6 +9,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/hashicorp/go-multierror"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -416,6 +417,21 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 	}
 	if err = syncer.SyncChangesets(ctx, cs...); err != nil {
 		return nil, err
+	}
+
+	errs := new(multierror.Error)
+	for _, c := range cs {
+		s, err := c.State()
+		if err != nil {
+			return nil, err
+		}
+		if s == a8n.ChangesetStateDeleted {
+			errs = multierror.Append(errs, errors.Errorf("Changeset with external ID %q not found", c.ExternalID))
+		}
+	}
+
+	if len(errs.Errors) > 0 {
+		return nil, errs.ErrorOrNil()
 	}
 
 	csr := make([]graphqlbackend.ExternalChangesetResolver, len(cs))
