@@ -867,7 +867,7 @@ declare module 'sourcegraph' {
          * @template C The configuration schema.
          * @returns An unsubscribable to stop calling the callback for configuration changes.
          */
-        export function subscribe(next: () => void): Unsubscribable
+        export const subscribe: Subscribable<void>['subscribe']
     }
 
     /**
