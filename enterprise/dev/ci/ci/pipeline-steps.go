@@ -263,7 +263,7 @@ func addCanidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 		baseImage := "sourcegraph/" + app
 
 		cmds := []bk.StepOpt{
-			bk.Cmd(fmt.Sprintf(`echo "Building candidte %s image..."`, app)),
+			bk.Cmd(fmt.Sprintf(`echo "Building candidate %s image..."`, app)),
 			bk.Env("DOCKER_BUILDKIT", "1"),
 			bk.Env("IMAGE", baseImage+":"+c.version),
 			bk.Env("VERSION", c.version),
