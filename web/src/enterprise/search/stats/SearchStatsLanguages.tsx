@@ -109,25 +109,32 @@ export const SearchStatsLanguages: React.FunctionComponent<Props> = ({ query, st
                             </tbody>
                         </table>
                     </div>
-                    <ResponsiveContainer className="flex-1 mx-3" minHeight={600} aspect={1}>
-                        <PieChart>
-                            <Pie dataKey="totalLines" isAnimationActive={false} data={chartData} label={labelRenderer}>
-                                {chartData.map((entry, i) => (
-                                    <Cell
-                                        key={entry.name}
-                                        fill={
-                                            entry.name === UNKNOWN_LANGUAGE
-                                                ? UNKNOWN_COLOR
-                                                : entry.name === OTHER_LANGUAGE
-                                                ? OTHER_COLOR
-                                                : COLORS[i % COLORS.length]
-                                        }
-                                    />
-                                ))}
-                            </Pie>
-                            <Tooltip animationDuration={0} formatter={tooltipFormatter} />
-                        </PieChart>
-                    </ResponsiveContainer>
+                    <div className="flex-1 mx-4">
+                        <ResponsiveContainer>
+                            <PieChart margin={{ left: 60, right: 60 }}>
+                                <Pie
+                                    dataKey="totalLines"
+                                    isAnimationActive={false}
+                                    data={chartData}
+                                    label={labelRenderer}
+                                >
+                                    {chartData.map((entry, i) => (
+                                        <Cell
+                                            key={entry.name}
+                                            fill={
+                                                entry.name === UNKNOWN_LANGUAGE
+                                                    ? UNKNOWN_COLOR
+                                                    : entry.name === OTHER_LANGUAGE
+                                                    ? OTHER_COLOR
+                                                    : COLORS[i % COLORS.length]
+                                            }
+                                        />
+                                    ))}
+                                </Pie>
+                                <Tooltip animationDuration={0} formatter={tooltipFormatter} />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
                 </div>
             ) : (
                 <div className="card-body text-muted">No language statistics available.</div>

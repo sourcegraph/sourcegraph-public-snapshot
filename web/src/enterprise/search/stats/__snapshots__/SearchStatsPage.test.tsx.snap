@@ -237,28 +237,32 @@ exports[`SearchStatsPage renders 1`] = `
         </table>
       </div>
       <div
-        className="recharts-responsive-container flex-1 mx-3"
-        style={
-          Object {
-            "height": "100%",
-            "maxHeight": undefined,
-            "minHeight": 600,
-            "minWidth": undefined,
-            "width": "100%",
-          }
-        }
+        className="flex-1 mx-4"
       >
         <div
+          className="recharts-responsive-container"
           style={
             Object {
-              "display": "none",
-              "height": 0,
-              "position": "absolute",
-              "visibility": "hidden",
-              "width": 0,
+              "height": "100%",
+              "maxHeight": undefined,
+              "minHeight": undefined,
+              "minWidth": undefined,
+              "width": "100%",
             }
           }
-        />
+        >
+          <div
+            style={
+              Object {
+                "display": "none",
+                "height": 0,
+                "position": "absolute",
+                "visibility": "hidden",
+                "width": 0,
+              }
+            }
+          />
+        </div>
       </div>
     </div>
   </div>
