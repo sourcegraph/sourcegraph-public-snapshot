@@ -1,57 +1,54 @@
 # Install Sourcegraph with Docker on AWS
 
-This tutorial shows you how to deploy Sourcegraph to a single node running on AWS.
+This tutorial shows you how to deploy Sourcegraph to a single EC2 instance on AWS.
 
-If you're just starting out, we recommend [installing Sourcegraph locally](index.md). It takes only a few minutes and lets you try out all of the features. If you need scalability and high-availability beyond what a single-server deployment can offer, use the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph).
+* If you're just starting out, we recommend [running Sourcegraph locally](index.md). It takes only a few minutes and lets you try out all of the features.
+* If you need scalability and high-availability beyond what a single-server deployment can offer, use the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph), instead.
 
 ---
 
 ## Deploy to EC2
 
-> NOTE: While these instructions recommend opening up port `443`, additional work is required to [configure NGINX to support SSL](../../../admin/nginx.md#nginx-ssl-https-configuration).
-
-### Option A: use the AWS wizard
-
 - Click **Launch Instance** from your [EC2 dashboard](https://console.aws.amazon.com/ec2/v2/home).
-- Select the Amazon Linux 2 AMI (`ami-032509850cf9ee54e` at this time of writing).
-- Select an appropriate instance size (we recommend t2.medium/large, depending on team size and number of repositories/languages enabled), then **Next: Configure Instance Details**
+- Select the Amazon Linux 2 AMI (HVM), SSD Volume Type.
+- Select an appropriate instance size (we recommend `t2.medium` or `t2.large`, depending on team size and number of repositories/languages enabled), then **Next: Configure Instance Details**
+- Ensure the **Auto-assign Public IP** option is "Enable". This ensures your instance is accessible to the Internet.
 - Add the following user data (as text) in the **Advanced Details** section:
 
-  ```yaml
-  #cloud-config
-  repo_update: true
-  repo_upgrade: all
+   ```yaml
+   #cloud-config
+   repo_update: true
+   repo_upgrade: all
 
-  runcmd:
-  # Create the directory structure for Sourcegraph data
-  - mkdir -p /home/ec2-user/.sourcegraph/config
-  - mkdir -p /home/ec2-user/.sourcegraph/data
+   runcmd:
+   # Create the directory structure for Sourcegraph data
+   - mkdir -p /home/ec2-user/.sourcegraph/config
+   - mkdir -p /home/ec2-user/.sourcegraph/data
 
-  # Install, configure, and enable Docker
-  - yum update -y
-  - amazon-linux-extras install docker
-  - systemctl enable --now --no-block docker
-  - sed -i -e 's/1024/10240/g' /etc/sysconfig/docker
-  - sed -i -e 's/4096/40960/g' /etc/sysconfig/docker
-  - usermod -a -G docker ec2-user
+   # Install, configure, and enable Docker
+   - yum update -y
+   - amazon-linux-extras install docker
+   - systemctl enable --now --no-block docker
+   - sed -i -e 's/1024/10240/g' /etc/sysconfig/docker
+   - sed -i -e 's/4096/40960/g' /etc/sysconfig/docker
+   - usermod -a -G docker ec2-user
 
-  # Install and run Sourcegraph. Restart the container upon subsequent reboots
-  - [ sh, -c, 'docker run -d --publish 80:7080 --publish 443:7080 --publish 2633:2633 --restart unless-stopped --volume /home/ec2-user/.sourcegraph/config:/etc/sourcegraph --volume /home/ec2-user/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.10.4' ]
-  ```
+   # Install and run Sourcegraph. Restart the container upon subsequent reboots
+   - [ sh, -c, 'docker run -d --publish 80:7080 --publish 443:7080 --publish 2633:2633 --publish 127.0.0.1:3370:3370 --restart unless-stopped --volume /home/ec2-user/.sourcegraph/config:/etc/sourcegraph --volume /home/ec2-user/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.10.4' ]
+   ```
 
-- Select **Next: ...** until you get to the **Configure Security Group** page, then add the default **HTTP** rule (port range "80", source "0.0.0.0/0, ::/0")
-- Launch your instance, then navigate to the its public URL.
-- If you have configured a DNS entry for the IP, configure `externalURL` to reflect that. (Note: `externalURL` was called `appURL` in Sourcegraph 2.13 and earlier.)
+- Select **Next: ...** until you get to the **Configure Security Group** page. Then add the following rules:
+  - Default **HTTP** rule: port range `80`, source `0.0.0.0/0, ::/0`
+  - Default **HTTPS** rule: port range `443`, source `0.0.0.0/0, ::/0`<br>(NOTE: additional work will be required later on to [configure NGINX to support SSL](../../../admin/nginx.md#nginx-ssl-https-configuration))
+- Launch your instance, then navigate to its public IP in your browser. (This can be found by navigating to the instance page on EC2 and looking in the "Description" panel for the "IPv4 Public IP" value.) You may have to wait a minute or two for the instance to finish initializing before Sourcegraph becomes accessible. You can monitor the status by SSHing into the EC2 instance and viewing the logs:
 
-### Option B: use the CLI
+     ```
+     docker logs $(docker ps | grep sourcegraph/server | awk '{ print $1 }')
+     ```
+- If you have configured a domain name to point to the IP, configure `externalURL` to reflect that.
 
-Use the [`aws` CLI](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-welcome.html) to boot an EC2 instance running Sourcegraph.
 
-First, create a `cloud-init.txt` file with user data contents as shown above or below. Then run:
-
-`aws ec2 run-instances --image-id ami-032509850cf9ee54e --count 1 --instance-type t2.medium --key-name id_rsa --security-groups default --user-data file://cloud-init.txt`
-
-Substitute the path to your `cloud-init.txt` file, the name of your key pair, and an appropriate security group. To start you probably want a security group which exposes port 80, 443, 2633 (for the management console), and 22 (for SSH) to the public internet.
+  <!-- - mention you might have to wait a bit for the Docker container to fully spin up (include instructions for checking logs for health) -->
 
 ---
 
