@@ -85,7 +85,6 @@ Now that NGINX is listening on port 7443, we need to configure the Sourcegraph c
 docker container run \
   --rm  \
   --publish 7080:7080 \
-  --publish 2633:2633 \
   --publish 443:7443 \
   \
   --volume ~/.sourcegraph/config:/etc/sourcegraph  \
