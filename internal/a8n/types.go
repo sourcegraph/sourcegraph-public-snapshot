@@ -103,9 +103,10 @@ type ChangesetState string
 
 // ChangesetState constants.
 const (
-	ChangesetStateOpen   ChangesetState = "OPEN"
-	ChangesetStateClosed ChangesetState = "CLOSED"
-	ChangesetStateMerged ChangesetState = "MERGED"
+	ChangesetStateOpen    ChangesetState = "OPEN"
+	ChangesetStateClosed  ChangesetState = "CLOSED"
+	ChangesetStateMerged  ChangesetState = "MERGED"
+	ChangesetStateDeleted ChangesetState = "DELETED"
 )
 
 // Valid returns true if the given Changeset is valid.
@@ -113,7 +114,8 @@ func (s ChangesetState) Valid() bool {
 	switch s {
 	case ChangesetStateOpen,
 		ChangesetStateClosed,
-		ChangesetStateMerged:
+		ChangesetStateMerged,
+		ChangesetStateDeleted:
 		return true
 	default:
 		return false
@@ -273,6 +275,20 @@ func (t *Changeset) Body() (string, error) {
 	default:
 		return "", errors.New("unknown changeset type")
 	}
+}
+
+// SetDeleted sets the internal state of a Changeset so that its State is
+// ChangesetStateDeleted.
+func (t *Changeset) SetDeleted() error {
+	switch m := t.Metadata.(type) {
+	case *github.PullRequest:
+		m.State = "DELETED"
+	case *bitbucketserver.PullRequest:
+		m.State = "DELETED"
+	default:
+		return errors.New("unknown changeset type")
+	}
+	return nil
 }
 
 // State of a Changeset.
