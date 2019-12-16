@@ -17,7 +17,7 @@ describe('XrepoDatabase', () => {
         ;({ connection, cleanup } = await util.createCleanPostgresDatabase())
         storageRoot = await util.createStorageRoot()
         xrepoDatabase = new XrepoDatabase(connection, storageRoot)
-    }, util.DB_INTEGRATION_TEST_TIMEOUT)
+    })
 
     afterAll(async () => {
         await rmfr(storageRoot)

@@ -12,7 +12,7 @@ describe('Backend', () => {
                 ctx.convertTestData(r, commit, '', `xrepo/data/${r}.lsif.gz`)
             )
         )
-    }, util.DB_INTEGRATION_TEST_TIMEOUT)
+    })
 
     afterAll(async () => {
         await ctx.teardown()

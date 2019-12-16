@@ -8,7 +8,7 @@ describe('Backend', () => {
     beforeAll(async () => {
         await ctx.init()
         await ctx.convertTestData(repository, commit, '', 'linked-reference-results/data/main.lsif.gz')
-    }, util.DB_INTEGRATION_TEST_TIMEOUT)
+    })
 
     afterAll(async () => {
         await ctx.teardown()

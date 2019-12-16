@@ -30,7 +30,6 @@ export const convertUpload = async (
         filename,
         uploadedAt,
     }: { repository: string; commit: string; root: string; filename: string; uploadedAt: Date },
-
     ctx: TracingContext
 ): Promise<void> => {
     const { logger = createSilentLogger(), span } = addTags(ctx, { repository, commit, root })
