@@ -51,7 +51,7 @@ const CombyForm: React.FunctionComponent<CampaignFormProps> = ({ campaignArgumen
                     />
                     <small className="text-muted">
                         <a rel="noopener noreferrer" target="_blank" href="https://comby.dev/#match-syntax">
-                            Learn about comby syntax
+                            Learn about Comby's match syntax
                         </a>
                     </small>
                 </div>
@@ -106,7 +106,6 @@ const CredentialsForm: React.FunctionComponent<CampaignFormProps> = ({ campaignA
         return null
     }
     if (parsed.matchers.length > 1) {
-        console.log(parsed)
         return <ErrorAlert error="Invalid JSON: more than one matcher. Please use JSON editor to fix." />
     }
     return (
@@ -157,7 +156,6 @@ export const GenericCampaignForm: React.FunctionComponent<CampaignFormProps & { 
     type,
     ...props
 }) => {
-    console.log(props.parsed)
     const Component = components[type]
     if (!props.campaignArguments) {
         props.onChange('{}')

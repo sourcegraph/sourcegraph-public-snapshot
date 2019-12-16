@@ -484,7 +484,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         >
                             <option value="">Manual</option>
                             <option value="comby">Comby search and replace</option>
-                            <option value="credentials">NPM Credentials</option>
+                            <option value="credentials">Remove NPM credentials</option>
                         </select>
                     </div>
                 </div>
