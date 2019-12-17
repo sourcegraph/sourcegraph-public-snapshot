@@ -8,8 +8,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-// file computes the inventory of a single file. If file is not a regular file, it panics. It caches
-// the result.
+// file computes the inventory of a single file. It caches the result.
+//
+// If file is a tree (or anything other than a regular file), it panics. Callers must use
+// (*Context).Tree instead, which is much more efficient for computing tree inventories because it
+// caches at the tree level.
 func (c *Context) file(ctx context.Context, file os.FileInfo, buf []byte) (inv Inventory, err error) {
 	// Get and set from the cache.
 	if c.CacheGet != nil {
@@ -26,8 +29,6 @@ func (c *Context) file(ctx context.Context, file os.FileInfo, buf []byte) (inv I
 	}
 
 	if !file.Mode().IsRegular() {
-		// Call (*Context).Tree instead, which is much more efficient for computing tree
-		// inventories because it caches at the tree level.
 		panic(fmt.Sprintf("refusing to compute single-file inventory for non-regular file %s", file.Name()))
 	}
 
