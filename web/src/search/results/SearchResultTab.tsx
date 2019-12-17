@@ -7,7 +7,7 @@ import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { constant } from 'lodash'
 import { PatternTypeProps } from '..'
 
-interface Props extends Omit<PatternTypeProps, 'togglePatternType'> {
+interface Props extends Omit<PatternTypeProps, 'setPatternType'> {
     location: H.Location
     type: SearchType
     query: string

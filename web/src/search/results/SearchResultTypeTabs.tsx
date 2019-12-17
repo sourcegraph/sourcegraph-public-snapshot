@@ -3,7 +3,7 @@ import * as H from 'history'
 import { SearchResultTabHeader } from './SearchResultTab'
 import { PatternTypeProps } from '..'
 
-interface Props extends Omit<PatternTypeProps, 'togglePatternType'> {
+interface Props extends Omit<PatternTypeProps, 'setPatternType'> {
     location: H.Location
     history: H.History
     query: string

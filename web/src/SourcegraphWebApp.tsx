@@ -311,7 +311,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     telemetryService={eventLogger}
                                     isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                                     patternType={this.state.searchPatternType}
-                                    togglePatternType={this.togglePatternType}
+                                    setPatternType={this.setPatternType}
                                 />
                             )}
                         />
@@ -332,24 +332,11 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         this.setState({ navbarSearchQueryState })
     }
 
-    private selectPattern = (currentPatternType : GQL.SearchPatternType): GQL.SearchPatternType => {
-        if (currentPatternType === GQL.SearchPatternType.regexp) {
-                 return GQL.SearchPatternType.literal
-        } else if (currentPatternType === GQL.SearchPatternType.literal) {
-                return GQL.SearchPatternType.regexp
-        } else {
-                // Do not toggle on structural search pattern
-                return GQL.SearchPatternType.structural
-        }
-    }
-
-    private togglePatternType = (): void => {
-        const currentPatternType = this.state.searchPatternType
+    private setPatternType = (patternType: GQL.SearchPatternType): void => {
         this.setState({
-            searchPatternType:
-               this.selectPattern(currentPatternType)
-    })
-}
+            searchPatternType: patternType,
+        })
+    }
 }
 
 export const SourcegraphWebApp = hot(ColdSourcegraphWebApp)

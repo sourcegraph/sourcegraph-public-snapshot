@@ -40,7 +40,7 @@ describe('SearchResults', () => {
         telemetryService: { log: noop, logViewEvent: noop },
         deployType: 'dev',
         patternType: SearchPatternType.regexp,
-        togglePatternType: sinon.spy(),
+        setPatternType: sinon.spy(),
     }
 
     it('calls the search request once', () => {

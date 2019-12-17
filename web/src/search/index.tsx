@@ -17,7 +17,11 @@ export function parseSearchURLQuery(query: string): string | undefined {
 export function parseSearchURLPatternType(query: string): SearchPatternType | undefined {
     const searchParams = new URLSearchParams(query)
     const patternType = searchParams.get('patternType')
-    if (patternType !== SearchPatternType.literal && patternType !== SearchPatternType.regexp && patternType !== SearchPatternType.structural) {
+    if (
+        patternType !== SearchPatternType.literal &&
+        patternType !== SearchPatternType.regexp &&
+        patternType !== SearchPatternType.structural
+    ) {
         return undefined
     }
     return patternType
@@ -43,5 +47,5 @@ export function quoteIfNeeded(s: string): string {
 
 export interface PatternTypeProps {
     patternType: SearchPatternType
-    togglePatternType: () => void
+    setPatternType: (patternType: SearchPatternType) => void
 }
