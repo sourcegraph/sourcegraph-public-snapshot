@@ -76,9 +76,11 @@ func (s *ChangesetSyncer) SyncChangesetsWithSources(ctx context.Context, bySourc
 		}
 
 		for _, c := range s.Changesets {
-			if _, ok := notFoundById[c.Changeset.ID]; ok && !c.Changeset.IsDeleted() {
+			_, notFound := notFoundById[c.Changeset.ID]
+			if notFound && !c.Changeset.IsDeleted() {
 				c.Changeset.SetDeleted()
 			}
+
 			events = append(events, c.Events()...)
 			cs = append(cs, c.Changeset)
 		}
