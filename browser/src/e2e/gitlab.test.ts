@@ -5,7 +5,7 @@
 import * as path from 'path'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e/screenshotReporter'
 import { createDriverForTest, Driver } from '../../../shared/src/e2e/driver'
-import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
+import { CodeHostKind } from '../../../shared/src/graphql/schema'
 import { testSingleFilePage } from './shared'
 import { getConfig } from '../../../shared/src/e2e/config'
 
@@ -30,8 +30,8 @@ jest.setTimeout(1000 * 60 * 1000)
 async function init(driver: Driver): Promise<void> {
     await driver.ensureLoggedIn({ username: 'test', password: 'test', email: 'test@test.com' })
     await driver.setExtensionSourcegraphUrl()
-    await driver.ensureHasExternalService({
-        kind: ExternalServiceKind.GITLAB,
+    await driver.ensureHasCodeHost({
+        kind: CodeHostKind.GITLAB,
         displayName: 'Gitlab',
         config: JSON.stringify({
             url: GITLAB_BASE_URL,

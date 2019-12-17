@@ -4,10 +4,10 @@ import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { ExternalServiceCard } from '../../components/ExternalServiceCard'
+import { CodeHostCard } from '../../components/CodeHostCard'
 import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
-import { getExternalService } from '../../site-admin/externalServices'
+import { getCodeHost } from '../../site-admin/externalServices'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchRepository } from './backend'
 import { ErrorAlert } from '../../components/alerts'
@@ -70,8 +70,8 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                     <div className="mb-4">
                         {services.map(service => (
                             <div className="mb-3" key={service.id}>
-                                <ExternalServiceCard
-                                    {...getExternalService(service.kind)}
+                                <CodeHostCard
+                                    {...getCodeHost(service.kind)}
                                     kind={service.kind}
                                     title={service.displayName}
                                     shortDescription="Update this external service configuration to manage repository mirroring."

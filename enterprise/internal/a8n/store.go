@@ -224,7 +224,7 @@ func batchChangesetsQuery(fmtstr string, cs []*a8n.Changeset) (*sqlf.Query, erro
 		Metadata            json.RawMessage `json:"metadata"`
 		CampaignIDs         json.RawMessage `json:"campaign_ids"`
 		ExternalID          string          `json:"external_id"`
-		ExternalServiceType string          `json:"external_service_type"`
+		CodeHostType string          `json:"external_service_type"`
 	}
 
 	records := make([]record, 0, len(cs))
@@ -248,7 +248,7 @@ func batchChangesetsQuery(fmtstr string, cs []*a8n.Changeset) (*sqlf.Query, erro
 			Metadata:            metadata,
 			CampaignIDs:         campaignIDs,
 			ExternalID:          c.ExternalID,
-			ExternalServiceType: c.ExternalServiceType,
+			CodeHostType: c.CodeHostType,
 		})
 	}
 
@@ -299,7 +299,7 @@ func countChangesetsQuery(opts *CountChangesetsOpts) *sqlf.Query {
 type GetChangesetOpts struct {
 	ID                  int64
 	ExternalID          string
-	ExternalServiceType string
+	CodeHostType string
 }
 
 // ErrNoResults is returned by Store method calls that found no results.
@@ -346,10 +346,10 @@ func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("id = %s", opts.ID))
 	}
 
-	if opts.ExternalID != "" && opts.ExternalServiceType != "" {
+	if opts.ExternalID != "" && opts.CodeHostType != "" {
 		preds = append(preds,
 			sqlf.Sprintf("external_id = %s", opts.ExternalID),
-			sqlf.Sprintf("external_service_type = %s", opts.ExternalServiceType),
+			sqlf.Sprintf("external_service_type = %s", opts.CodeHostType),
 		)
 	}
 
@@ -2215,13 +2215,13 @@ func scanChangeset(t *a8n.Changeset, s scanner) error {
 		&metadata,
 		&dbutil.JSONInt64Set{Set: &t.CampaignIDs},
 		&t.ExternalID,
-		&t.ExternalServiceType,
+		&t.CodeHostType,
 	)
 	if err != nil {
 		return err
 	}
 
-	switch t.ExternalServiceType {
+	switch t.CodeHostType {
 	case github.ServiceType:
 		t.Metadata = new(github.PullRequest)
 	case bitbucketserver.ServiceType:
@@ -2231,7 +2231,7 @@ func scanChangeset(t *a8n.Changeset, s scanner) error {
 	}
 
 	if err = json.Unmarshal(metadata, t.Metadata); err != nil {
-		return errors.Wrapf(err, "scanChangeset: failed to unmarshal %q metadata", t.ExternalServiceType)
+		return errors.Wrapf(err, "scanChangeset: failed to unmarshal %q metadata", t.CodeHostType)
 	}
 
 	return nil

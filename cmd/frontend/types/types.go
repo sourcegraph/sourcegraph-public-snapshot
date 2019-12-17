@@ -52,8 +52,8 @@ func (rs Repos) Len() int           { return len(rs) }
 func (rs Repos) Less(i, j int) bool { return rs[i].ID < rs[j].ID }
 func (rs Repos) Swap(i, j int)      { rs[i], rs[j] = rs[j], rs[i] }
 
-// ExternalService is a connection to an external service.
-type ExternalService struct {
+// CodeHost is a connection to an external service.
+type CodeHost struct {
 	ID          int64
 	Kind        string
 	DisplayName string

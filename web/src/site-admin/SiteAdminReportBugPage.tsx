@@ -8,12 +8,12 @@ import bitbucketServerSchemaJSON from '../../../schema/bitbucket_server.schema.j
 import githubSchemaJSON from '../../../schema/github.schema.json'
 import gitlabSchemaJSON from '../../../schema/gitlab.schema.json'
 import gitoliteSchemaJSON from '../../../schema/gitolite.schema.json'
-import otherExternalServiceSchemaJSON from '../../../schema/other_external_service.schema.json'
+import otherCodeHostSchemaJSON from '../../../schema/other_external_service.schema.json'
 import phabricatorSchemaJSON from '../../../schema/phabricator.schema.json'
 import settingsSchemaJSON from '../../../schema/settings.schema.json'
 import siteSchemaJSON from '../../../schema/site.schema.json'
 import { PageTitle } from '../components/PageTitle'
-import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
+import { CodeHostKind } from '../../../shared/src/graphql/schema'
 import { useObservable } from '../util/useObservable'
 import { mapValues, values } from 'lodash'
 
@@ -26,14 +26,14 @@ interface JSONSchema {
     definitions?: Record<string, { type: string }>
 }
 
-const externalServices: Record<ExternalServiceKind, JSONSchema> = {
+const externalServices: Record<CodeHostKind, JSONSchema> = {
     AWSCODECOMMIT: awsCodeCommitJSON,
     BITBUCKETCLOUD: bitbucketCloudSchemaJSON,
     BITBUCKETSERVER: bitbucketServerSchemaJSON,
     GITHUB: githubSchemaJSON,
     GITLAB: gitlabSchemaJSON,
     GITOLITE: gitoliteSchemaJSON,
-    OTHER: otherExternalServiceSchemaJSON,
+    OTHER: otherCodeHostSchemaJSON,
     PHABRICATOR: phabricatorSchemaJSON,
 }
 

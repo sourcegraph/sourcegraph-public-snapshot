@@ -9,9 +9,9 @@ import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors
 import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
-import { ExternalServiceCard } from '../components/ExternalServiceCard'
-import { getExternalService } from './externalServices'
-import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
+import { CodeHostCard } from '../components/CodeHostCard'
+import { getCodeHost } from './externalServices'
+import { SiteAdminCodeHostForm } from './SiteAdminCodeHostForm'
 import { ErrorAlert } from '../components/alerts'
 
 interface Props extends RouteComponentProps<{ id: GQL.ID }> {
@@ -21,7 +21,7 @@ interface Props extends RouteComponentProps<{ id: GQL.ID }> {
 const LOADING: 'loading' = 'loading'
 
 interface State {
-    externalServiceOrError: typeof LOADING | GQL.IExternalService | ErrorLike
+    externalServiceOrError: typeof LOADING | GQL.ICodeHost | ErrorLike
 
     /**
      * The result of updating the external service: null when complete or not started yet,
@@ -32,18 +32,18 @@ interface State {
     warning?: string
 }
 
-export class SiteAdminExternalServicePage extends React.Component<Props, State> {
+export class SiteAdminCodeHostPage extends React.Component<Props, State> {
     public state: State = {
         externalServiceOrError: LOADING,
         updatedOrError: null,
     }
 
     private componentUpdates = new Subject<Props>()
-    private submits = new Subject<GQL.IUpdateExternalServiceInput>()
+    private submits = new Subject<GQL.IUpdateCodeHostInput>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('SiteAdminExternalService')
+        eventLogger.logViewEvent('SiteAdminCodeHost')
 
         this.subscriptions.add(
             this.componentUpdates
@@ -51,7 +51,7 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                     map(props => props.match.params.id),
                     distinctUntilChanged(),
                     switchMap(id =>
-                        fetchExternalService(id).pipe(
+                        fetchCodeHost(id).pipe(
                             startWith(LOADING),
                             catchError(err => [asError(err)])
                         )
@@ -67,7 +67,7 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                     switchMap(input =>
                         concat(
                             [{ updatedOrError: LOADING, warning: null }],
-                            updateExternalService(input).pipe(
+                            updateCodeHost(input).pipe(
                                 mergeMap(({ warning }) =>
                                     warning
                                         ? of({ warning, updatedOrError: null })
@@ -109,7 +109,7 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                 this.state.externalServiceOrError) ||
             undefined
 
-        const externalServiceCategory = externalService && getExternalService(externalService.kind)
+        const externalServiceCategory = externalService && getCodeHost(externalService.kind)
 
         return (
             <div className="site-admin-configuration-page mt-3">
@@ -125,14 +125,14 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                 )}
                 {externalService && (
                     <div className="mb-3">
-                        <ExternalServiceCard
-                            {...getExternalService(externalService.kind)}
+                        <CodeHostCard
+                            {...getCodeHost(externalService.kind)}
                             kind={externalService.kind}
                         />
                     </div>
                 )}
                 {externalService && externalServiceCategory && (
-                    <SiteAdminExternalServiceForm
+                    <SiteAdminCodeHostForm
                         input={externalService}
                         editorActions={externalServiceCategory.editorActions}
                         jsonSchema={externalServiceCategory.jsonSchema}
@@ -153,9 +153,9 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
         )
     }
 
-    private onChange = (input: GQL.IAddExternalServiceInput): void => {
+    private onChange = (input: GQL.IAddCodeHostInput): void => {
         this.setState(state => {
-            if (isExternalService(state.externalServiceOrError)) {
+            if (isCodeHost(state.externalServiceOrError)) {
                 return { ...state, externalServiceOrError: { ...state.externalServiceOrError, ...input } }
             }
             return state
@@ -166,25 +166,25 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
         if (event) {
             event.preventDefault()
         }
-        if (isExternalService(this.state.externalServiceOrError)) {
+        if (isCodeHost(this.state.externalServiceOrError)) {
             this.submits.next(this.state.externalServiceOrError)
         }
     }
 }
 
-function isExternalService(
-    externalServiceOrError: typeof LOADING | GQL.IExternalService | ErrorLike
-): externalServiceOrError is GQL.IExternalService {
+function isCodeHost(
+    externalServiceOrError: typeof LOADING | GQL.ICodeHost | ErrorLike
+): externalServiceOrError is GQL.ICodeHost {
     return externalServiceOrError !== LOADING && !isErrorLike(externalServiceOrError)
 }
 
-function updateExternalService(
-    input: GQL.IUpdateExternalServiceInput
-): Observable<Pick<GQL.IExternalService, 'warning'>> {
+function updateCodeHost(
+    input: GQL.IUpdateCodeHostInput
+): Observable<Pick<GQL.ICodeHost, 'warning'>> {
     return mutateGraphQL(
         gql`
-            mutation UpdateExternalService($input: UpdateExternalServiceInput!) {
-                updateExternalService(input: $input) {
+            mutation UpdateCodeHost($input: UpdateCodeHostInput!) {
+                updateCodeHost(input: $input) {
                     warning
                 }
             }
@@ -192,16 +192,16 @@ function updateExternalService(
         { input }
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.updateExternalService)
+        map(data => data.updateCodeHost)
     )
 }
 
-function fetchExternalService(id: GQL.ID): Observable<GQL.IExternalService> {
+function fetchCodeHost(id: GQL.ID): Observable<GQL.ICodeHost> {
     return queryGraphQL(
         gql`
-            query ExternalService($id: ID!) {
+            query CodeHost($id: ID!) {
                 node(id: $id) {
-                    ... on ExternalService {
+                    ... on CodeHost {
                         id
                         kind
                         displayName
@@ -213,6 +213,6 @@ function fetchExternalService(id: GQL.ID): Observable<GQL.IExternalService> {
         { id }
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.node as GQL.IExternalService)
+        map(data => data.node as GQL.ICodeHost)
     )
 }

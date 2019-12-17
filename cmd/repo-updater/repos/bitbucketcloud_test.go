@@ -86,7 +86,7 @@ func TestBitbucketCloudSource_ListRepos(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &CodeHost{
 				Kind:   "BITBUCKETCLOUD",
 				Config: marshalJSON(t, tc.conf),
 			}
@@ -139,7 +139,7 @@ func TestBitbucketCloudSource_MakeRepo(t *testing.T) {
 		},
 	}
 
-	svc := ExternalService{ID: 1, Kind: "BITBUCKETCLOUD"}
+	svc := CodeHost{ID: 1, Kind: "BITBUCKETCLOUD"}
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -232,7 +232,7 @@ func TestBitbucketCloudSource_Exclude(t *testing.T) {
 		},
 	}
 
-	svc := ExternalService{ID: 1, Kind: "BITBUCKETCLOUD"}
+	svc := CodeHost{ID: 1, Kind: "BITBUCKETCLOUD"}
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {

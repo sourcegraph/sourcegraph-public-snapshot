@@ -122,7 +122,7 @@ func init() {
 			})
 		}
 
-		externalServiceProblems := problems.ExternalService()
+		externalServiceProblems := problems.CodeHost()
 		if len(externalServiceProblems) > 0 {
 			alerts = append(alerts, &Alert{
 				TypeValue: AlertTypeWarning,

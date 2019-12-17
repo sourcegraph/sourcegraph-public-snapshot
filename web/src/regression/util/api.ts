@@ -159,10 +159,10 @@ export function waitForRepo(
           )
 }
 
-export async function ensureNoTestExternalServices(
+export async function ensureNoTestCodeHosts(
     gqlClient: GraphQLClient,
     options: {
-        kind: GQL.ExternalServiceKind
+        kind: GQL.CodeHostKind
         uniqueDisplayName: string
         deleteIfExist?: boolean
     }
@@ -173,7 +173,7 @@ export async function ensureNoTestExternalServices(
         )
     }
 
-    const externalServices = await getExternalServices(gqlClient, options)
+    const externalServices = await getCodeHosts(gqlClient, options)
     if (externalServices.length === 0) {
         return
     }
@@ -185,8 +185,8 @@ export async function ensureNoTestExternalServices(
         await gqlClient
             .mutateGraphQL(
                 gql`
-                    mutation DeleteExternalService($externalService: ID!) {
-                        deleteExternalService(externalService: $externalService) {
+                    mutation DeleteCodeHost($externalService: ID!) {
+                        deleteCodeHost(externalService: $externalService) {
                             alwaysNil
                         }
                     }
@@ -201,17 +201,17 @@ export async function ensureNoTestExternalServices(
  * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
  * dependency-injected `requestGraphQL`.
  */
-export function getExternalServices(
+export function getCodeHosts(
     gqlClient: GraphQLClient,
     options: {
-        kind?: GQL.ExternalServiceKind
+        kind?: GQL.CodeHostKind
         uniqueDisplayName?: string
     } = {}
-): Promise<GQL.IExternalService[]> {
+): Promise<GQL.ICodeHost[]> {
     return gqlClient
         .queryGraphQL(
             gql`
-                query ExternalServices($first: Int) {
+                query CodeHosts($first: Int) {
                     externalServices(first: $first) {
                         nodes {
                             id
@@ -240,15 +240,15 @@ export function getExternalServices(
         .toPromise()
 }
 
-export async function updateExternalService(
+export async function updateCodeHost(
     gqlClient: GraphQLClient,
-    input: GQL.IUpdateExternalServiceInput
+    input: GQL.IUpdateCodeHostInput
 ): Promise<void> {
     await gqlClient
         .mutateGraphQL(
             gql`
-                mutation UpdateExternalService($input: UpdateExternalServiceInput!) {
-                    updateExternalService(input: $input) {
+                mutation UpdateCodeHost($input: UpdateCodeHostInput!) {
+                    updateCodeHost(input: $input) {
                         warning
                     }
                 }
@@ -257,19 +257,19 @@ export async function updateExternalService(
         )
         .pipe(
             map(dataOrThrowErrors),
-            tap(({ updateExternalService: { warning } }) => {
+            tap(({ updateCodeHost: { warning } }) => {
                 if (warning) {
-                    console.warn('updateExternalService warning:', warning)
+                    console.warn('updateCodeHost warning:', warning)
                 }
             })
         )
         .toPromise()
 }
 
-export async function ensureTestExternalService(
+export async function ensureTestCodeHost(
     gqlClient: GraphQLClient,
     externalServiceOptions: {
-        kind: GQL.ExternalServiceKind
+        kind: GQL.CodeHostKind
         uniqueDisplayName: string
         config: Record<string, any>
         waitForRepos?: string[]
@@ -285,20 +285,20 @@ export async function ensureTestExternalService(
     }
 
     const destroy = (): Promise<void> =>
-        ensureNoTestExternalServices(gqlClient, { ...externalServiceOptions, deleteIfExist: true })
+        ensureNoTestCodeHosts(gqlClient, { ...externalServiceOptions, deleteIfExist: true })
 
-    const externalServices = await getExternalServices(gqlClient, externalServiceOptions)
+    const externalServices = await getCodeHosts(gqlClient, externalServiceOptions)
     if (externalServices.length > 0) {
         return destroy
     }
 
     // Add a new external service if one doesn't already exist.
-    const input: GQL.IAddExternalServiceInput = {
+    const input: GQL.IAddCodeHostInput = {
         kind: externalServiceOptions.kind,
         displayName: externalServiceOptions.uniqueDisplayName,
         config: JSON.stringify(externalServiceOptions.config),
     }
-    await addExternalService(input, gqlClient).toPromise()
+    await addCodeHost(input, gqlClient).toPromise()
 
     if (externalServiceOptions.waitForRepos && externalServiceOptions.waitForRepos.length > 0) {
         await waitForRepos(gqlClient, externalServiceOptions.waitForRepos, waitForReposOptions)
@@ -670,17 +670,17 @@ export async function getUser(
  * TODO(beyang): remove this after the corresponding API in the main code has been updated to use a
  * dependency-injected `requestGraphQL`.
  */
-export function addExternalService(
-    input: GQL.IAddExternalServiceInput,
+export function addCodeHost(
+    input: GQL.IAddCodeHostInput,
     {
         eventLogger = { log: () => undefined },
         requestGraphQL,
     }: Pick<PlatformContext, 'requestGraphQL'> & { eventLogger: EventLogger }
-): Observable<GQL.IExternalService> {
+): Observable<GQL.ICodeHost> {
     return requestGraphQL<GQL.IMutation>({
         request: gql`
-            mutation addExternalService($input: AddExternalServiceInput!) {
-                addExternalService(input: $input) {
+            mutation addCodeHost($input: AddCodeHostInput!) {
+                addCodeHost(input: $input) {
                     id
                     kind
                     displayName
@@ -692,16 +692,16 @@ export function addExternalService(
         mightContainPrivateInfo: true,
     }).pipe(
         map(({ data, errors }) => {
-            if (!data?.addExternalService || (errors && errors.length > 0)) {
-                eventLogger.log('AddExternalServiceFailed')
+            if (!data?.addCodeHost || (errors && errors.length > 0)) {
+                eventLogger.log('AddCodeHostFailed')
                 throw createAggregateError(errors)
             }
-            eventLogger.log('AddExternalServiceSucceeded', {
+            eventLogger.log('AddCodeHostSucceeded', {
                 externalService: {
-                    kind: data.addExternalService.kind,
+                    kind: data.addCodeHost.kind,
                 },
             })
-            return data.addExternalService
+            return data.addCodeHost
         })
     )
 }

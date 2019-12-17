@@ -106,7 +106,7 @@ func (p *phabricator) GetByName(ctx context.Context, name api.RepoName) (*types.
 		return Mocks.Phabricator.GetByName(name)
 	}
 
-	connections, err := ExternalServices.ListPhabricatorConnections(ctx)
+	connections, err := CodeHosts.ListPhabricatorConnections(ctx)
 	if err != nil {
 		return nil, err
 	}

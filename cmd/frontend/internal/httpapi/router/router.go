@@ -45,8 +45,8 @@ const (
 	ReposUpdateMetadata    = "internal.repos.update-metadata"
 	Configuration          = "internal.configuration"
 	SearchConfiguration    = "internal.search-configuration"
-	ExternalServiceConfigs = "internal.external-services.configs"
-	ExternalServicesList   = "internal.external-services.list"
+	CodeHostConfigs = "internal.external-services.configs"
+	CodeHostsList   = "internal.external-services.list"
 )
 
 // New creates a new API router with route URL pattern definitions but
@@ -101,8 +101,8 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/git/{RepoName:.*}/resolve-revision/{Spec}").Methods("GET").Name(GitResolveRevision)
 	base.Path("/git/{RepoName:.*}/tar/{Commit}").Methods("GET").Name(GitTar)
 	base.Path("/phabricator/repo-create").Methods("POST").Name(PhabricatorRepoCreate)
-	base.Path("/external-services/configs").Methods("POST").Name(ExternalServiceConfigs)
-	base.Path("/external-services/list").Methods("POST").Name(ExternalServicesList)
+	base.Path("/external-services/configs").Methods("POST").Name(CodeHostConfigs)
+	base.Path("/external-services/list").Methods("POST").Name(CodeHostsList)
 	base.Path("/repos/create-if-not-exists").Methods("POST").Name(ReposCreateIfNotExists)
 	base.Path("/repos/inventory-uncached").Methods("POST").Name(ReposInventoryUncached)
 	base.Path("/repos/inventory").Methods("POST").Name(ReposInventory)

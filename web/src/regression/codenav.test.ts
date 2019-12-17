@@ -10,7 +10,7 @@ import { GraphQLClient } from './util/GraphQLClient'
 import { ensureLoggedInOrCreateTestUser } from './util/helpers'
 import { ScreenshotVerifier } from './util/ScreenshotVerifier'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { ensureTestExternalService, setUserSiteAdmin, getUser } from './util/api'
+import { ensureTestCodeHost, setUserSiteAdmin, getUser } from './util/api'
 import { testCodeNavigation, disableLSIF } from './util/codenav'
 
 describe('Code navigation regression test suite', () => {
@@ -28,8 +28,8 @@ describe('Code navigation regression test suite', () => {
         'keepBrowser',
         'logStatusMessages'
     )
-    const testExternalServiceInfo = {
-        kind: GQL.ExternalServiceKind.GITHUB,
+    const testCodeHostInfo = {
+        kind: GQL.CodeHostKind.GITHUB,
         uniqueDisplayName: '[TEST] GitHub (codenav.test.ts)',
     }
     const testRepoSlugs = [
@@ -56,11 +56,11 @@ describe('Code navigation regression test suite', () => {
             )
             resourceManager.add(
                 'External service',
-                testExternalServiceInfo.uniqueDisplayName,
-                await ensureTestExternalService(
+                testCodeHostInfo.uniqueDisplayName,
+                await ensureTestCodeHost(
                     gqlClient,
                     {
-                        ...testExternalServiceInfo,
+                        ...testCodeHostInfo,
                         config: {
                             url: 'https://github.com',
                             token: config.gitHubToken,

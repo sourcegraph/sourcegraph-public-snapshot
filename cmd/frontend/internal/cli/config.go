@@ -128,9 +128,9 @@ func handleConfigOverrides() error {
 				log15.Warn("EXTSVC_CONFIG_FILE contains zero external service configurations")
 			}
 
-			existing, err := db.ExternalServices.List(ctx, db.ExternalServicesListOptions{})
+			existing, err := db.CodeHosts.List(ctx, db.CodeHostsListOptions{})
 			if err != nil {
-				return errors.Wrap(err, "ExternalServices.List")
+				return errors.Wrap(err, "CodeHosts.List")
 			}
 
 			// Perform delta update for external services. We don't want to
@@ -141,9 +141,9 @@ func handleConfigOverrides() error {
 			//
 			// Start out by assuming we will remove all and re-add all.
 			var (
-				toAdd    = make(map[*types.ExternalService]bool)
-				toRemove = make(map[*types.ExternalService]bool)
-				toUpdate = make(map[int64]*types.ExternalService)
+				toAdd    = make(map[*types.CodeHost]bool)
+				toRemove = make(map[*types.CodeHost]bool)
+				toUpdate = make(map[int64]*types.CodeHost)
 			)
 			for _, existing := range existing {
 				toRemove[existing] = true
@@ -154,7 +154,7 @@ func handleConfigOverrides() error {
 					if err != nil {
 						return errors.Wrap(err, fmt.Sprintf("marshaling extsvc config ([%v][%v])", key, i))
 					}
-					toAdd[&types.ExternalService{
+					toAdd[&types.CodeHost{
 						Kind:        key,
 						DisplayName: fmt.Sprintf("%s #%d", key, i+1),
 						Config:      string(marshaledCfg),
@@ -163,10 +163,10 @@ func handleConfigOverrides() error {
 			}
 			// Now eliminate operations from toAdd/toRemove where the config
 			// file and DB describe an equivalent external service.
-			isEquiv := func(a, b *types.ExternalService) bool {
+			isEquiv := func(a, b *types.CodeHost) bool {
 				return a.Kind == b.Kind && a.DisplayName == b.DisplayName && a.Config == b.Config
 			}
-			shouldUpdate := func(a, b *types.ExternalService) bool {
+			shouldUpdate := func(a, b *types.CodeHost) bool {
 				return a.Kind == b.Kind && a.DisplayName == b.DisplayName && a.Config != b.Config
 			}
 			for a := range toAdd {
@@ -185,15 +185,15 @@ func handleConfigOverrides() error {
 			// Apply the delta update.
 			for extSvc := range toRemove {
 				log15.Debug("Deleting external service", "id", extSvc.ID, "displayName", extSvc.DisplayName)
-				err := db.ExternalServices.Delete(ctx, extSvc.ID)
+				err := db.CodeHosts.Delete(ctx, extSvc.ID)
 				if err != nil {
-					return errors.Wrap(err, "ExternalServices.Delete")
+					return errors.Wrap(err, "CodeHosts.Delete")
 				}
 			}
 			for extSvc := range toAdd {
 				log15.Debug("Adding external service", "displayName", extSvc.DisplayName)
-				if err := db.ExternalServices.Create(ctx, confGet, extSvc); err != nil {
-					return errors.Wrap(err, "ExternalServices.Create")
+				if err := db.CodeHosts.Create(ctx, confGet, extSvc); err != nil {
+					return errors.Wrap(err, "CodeHosts.Create")
 				}
 			}
 
@@ -201,9 +201,9 @@ func handleConfigOverrides() error {
 			for id, extSvc := range toUpdate {
 				log15.Debug("Updating external service", "id", id, "displayName", extSvc.DisplayName)
 
-				update := &db.ExternalServiceUpdate{DisplayName: &extSvc.DisplayName, Config: &extSvc.Config}
-				if err := db.ExternalServices.Update(ctx, ps, id, update); err != nil {
-					return errors.Wrap(err, "ExternalServices.Update")
+				update := &db.CodeHostUpdate{DisplayName: &extSvc.DisplayName, Config: &extSvc.Config}
+				if err := db.CodeHosts.Update(ctx, ps, id, update); err != nil {
+					return errors.Wrap(err, "CodeHosts.Update")
 				}
 			}
 		}

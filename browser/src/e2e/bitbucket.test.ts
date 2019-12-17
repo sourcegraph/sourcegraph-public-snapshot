@@ -6,7 +6,7 @@ import * as path from 'path'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e/screenshotReporter'
 import { createDriverForTest, Driver } from '../../../shared/src/e2e/driver'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
-import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
+import { CodeHostKind } from '../../../shared/src/graphql/schema'
 import { testSingleFilePage } from './shared'
 import { getConfig } from '../../../shared/src/e2e/config'
 
@@ -114,8 +114,8 @@ async function init(driver: Driver): Promise<void> {
         await driver.setExtensionSourcegraphUrl()
     }
     await importBitbucketRepo(driver)
-    await driver.ensureHasExternalService({
-        kind: ExternalServiceKind.BITBUCKETSERVER,
+    await driver.ensureHasCodeHost({
+        kind: CodeHostKind.BITBUCKETSERVER,
         displayName: `Bitbucket ${BITBUCKET_BASE_URL}`,
         config: JSON.stringify({
             url: BITBUCKET_BASE_URL,

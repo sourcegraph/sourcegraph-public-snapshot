@@ -309,7 +309,7 @@ export function fetchSite(): Observable<GQL.ISite> {
 /**
  * Placeholder for the type of the external service config (to avoid explicit 'any' type)
  */
-interface ExternalServiceConfig {}
+interface CodeHostConfig {}
 
 type SettingsSubject = Pick<GQL.SettingsSubject, 'settingsURL' | '__typename'> & {
     contents: Settings
@@ -320,7 +320,7 @@ type SettingsSubject = Pick<GQL.SettingsSubject, 'settingsURL' | '__typename'> &
  */
 export interface AllConfig {
     site: GQL.ISiteConfiguration
-    externalServices: Partial<Record<GQL.ExternalServiceKind, ExternalServiceConfig>>
+    externalServices: Partial<Record<GQL.CodeHostKind, CodeHostConfig>>
     settings: {
         subjects: SettingsSubject[]
         final: Settings | null
@@ -382,12 +382,12 @@ export function fetchAllConfigAndSettings(): Observable<AllConfig> {
         map(dataOrThrowErrors),
         map(data => {
             const externalServices: Partial<Record<
-                GQL.ExternalServiceKind,
-                ExternalServiceConfig[]
+                GQL.CodeHostKind,
+                CodeHostConfig[]
             >> = data.externalServices.nodes
                 .filter(svc => svc.config)
-                .map((svc): [GQL.ExternalServiceKind, ExternalServiceConfig] => [svc.kind, parseJSONC(svc.config)])
-                .reduce<Partial<{ [k in GQL.ExternalServiceKind]: ExternalServiceConfig[] }>>(
+                .map((svc): [GQL.CodeHostKind, CodeHostConfig] => [svc.kind, parseJSONC(svc.config)])
+                .reduce<Partial<{ [k in GQL.CodeHostKind]: CodeHostConfig[] }>>(
                     (externalServicesByKind, [kind, config]) => {
                         let services = externalServicesByKind[kind]
                         if (!services) {

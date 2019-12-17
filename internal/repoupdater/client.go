@@ -177,9 +177,9 @@ func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo gitserver.Repo) (*p
 	return &res, nil
 }
 
-// SyncExternalService requests the given external service to be synced.
-func (c *Client) SyncExternalService(ctx context.Context, svc api.ExternalService) (*protocol.ExternalServiceSyncResult, error) {
-	req := &protocol.ExternalServiceSyncRequest{ExternalService: svc}
+// SyncCodeHost requests the given external service to be synced.
+func (c *Client) SyncCodeHost(ctx context.Context, svc api.CodeHost) (*protocol.CodeHostSyncResult, error) {
+	req := &protocol.CodeHostSyncRequest{CodeHost: svc}
 	resp, err := c.httpPost(ctx, "sync-external-service", req)
 	if err != nil {
 		return nil, err
@@ -191,14 +191,14 @@ func (c *Client) SyncExternalService(ctx context.Context, svc api.ExternalServic
 		return nil, errors.Wrap(err, "failed to read response body")
 	}
 
-	var result protocol.ExternalServiceSyncResult
+	var result protocol.CodeHostSyncResult
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		// TODO(tsenart): Use response type for unmarshalling errors too.
 		// This needs to be done after rolling out the response type in prod.
 		return nil, errors.New(string(bs))
 	} else if len(bs) == 0 {
 		// TODO(keegancsmith): Remove once repo-updater update is rolled out.
-		result.ExternalService = svc
+		result.CodeHost = svc
 		return &result, nil
 	} else if err = json.Unmarshal(bs, &result); err != nil {
 		return nil, err
@@ -210,10 +210,10 @@ func (c *Client) SyncExternalService(ctx context.Context, svc api.ExternalServic
 	return &result, nil
 }
 
-// RepoExternalServices requests the external services associated with a
+// RepoCodeHosts requests the external services associated with a
 // repository with the given id.
-func (c *Client) RepoExternalServices(ctx context.Context, id uint32) ([]api.ExternalService, error) {
-	req := protocol.RepoExternalServicesRequest{ID: id}
+func (c *Client) RepoCodeHosts(ctx context.Context, id uint32) ([]api.CodeHost, error) {
+	req := protocol.RepoCodeHostsRequest{ID: id}
 	resp, err := c.httpPost(ctx, "repo-external-services", &req)
 	if err != nil {
 		return nil, err
@@ -225,14 +225,14 @@ func (c *Client) RepoExternalServices(ctx context.Context, id uint32) ([]api.Ext
 		return nil, errors.Wrap(err, "failed to read response body")
 	}
 
-	var res protocol.RepoExternalServicesResponse
+	var res protocol.RepoCodeHostsResponse
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		return nil, errors.New(string(bs))
 	} else if err = json.Unmarshal(bs, &res); err != nil {
 		return nil, err
 	}
 
-	return res.ExternalServices, nil
+	return res.CodeHosts, nil
 }
 
 // ExcludeRepo adds the repository with the given id to all of the

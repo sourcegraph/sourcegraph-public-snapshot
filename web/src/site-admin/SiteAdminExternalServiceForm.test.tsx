@@ -6,10 +6,10 @@ import * as H from 'history'
 import React from 'react'
 import renderer from 'react-test-renderer'
 import { noop } from 'rxjs'
-import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
-import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
+import { CodeHostKind } from '../../../shared/src/graphql/schema'
+import { SiteAdminCodeHostForm } from './SiteAdminCodeHostForm'
 
-describe('<SiteAdminExternalServiceForm />', () => {
+describe('<SiteAdminCodeHostForm />', () => {
     const baseProps = {
         history: H.createMemoryHistory(),
         isLightTheme: true,
@@ -21,10 +21,10 @@ describe('<SiteAdminExternalServiceForm />', () => {
 
     test('create GitHub', () => {
         const component = renderer.create(
-            <SiteAdminExternalServiceForm
+            <SiteAdminCodeHostForm
                 {...baseProps}
                 input={{
-                    kind: ExternalServiceKind.GITHUB,
+                    kind: CodeHostKind.GITHUB,
                     displayName: 'GitHub',
                     config: '{}',
                 }}
@@ -36,10 +36,10 @@ describe('<SiteAdminExternalServiceForm />', () => {
     })
     test('edit GitHub', () => {
         const component = renderer.create(
-            <SiteAdminExternalServiceForm
+            <SiteAdminCodeHostForm
                 {...baseProps}
                 input={{
-                    kind: ExternalServiceKind.GITHUB,
+                    kind: CodeHostKind.GITHUB,
                     displayName: 'GitHub',
                     config: '{}',
                 }}
@@ -51,10 +51,10 @@ describe('<SiteAdminExternalServiceForm />', () => {
     })
     test('edit GitHub, loading', () => {
         const component = renderer.create(
-            <SiteAdminExternalServiceForm
+            <SiteAdminCodeHostForm
                 {...baseProps}
                 input={{
-                    kind: ExternalServiceKind.GITHUB,
+                    kind: CodeHostKind.GITHUB,
                     displayName: 'GitHub',
                     config: '{}',
                 }}

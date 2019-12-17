@@ -4,9 +4,9 @@ import { eventLogger } from '../tracking/eventLogger'
 import { lazyComponent } from '../util/lazyComponent'
 import { SiteAdminAreaRoute } from './SiteAdminArea'
 
-const SiteAdminAddExternalServicesPage = lazyComponent(
-    () => import('./SiteAdminAddExternalServicesPage'),
-    'SiteAdminAddExternalServicesPage'
+const SiteAdminAddCodeHostsPage = lazyComponent(
+    () => import('./SiteAdminAddCodeHostsPage'),
+    'SiteAdminAddCodeHostsPage'
 )
 
 export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
@@ -28,7 +28,7 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/external-services',
-        render: lazyComponent(() => import('./SiteAdminExternalServicesPage'), 'SiteAdminExternalServicesPage'),
+        render: lazyComponent(() => import('./SiteAdminCodeHostsPage'), 'SiteAdminCodeHostsPage'),
         exact: true,
     },
     {
@@ -38,12 +38,12 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/external-services/new',
-        render: props => <SiteAdminAddExternalServicesPage {...props} eventLogger={eventLogger} />,
+        render: props => <SiteAdminAddCodeHostsPage {...props} eventLogger={eventLogger} />,
         exact: true,
     },
     {
         path: '/external-services/:id',
-        render: lazyComponent(() => import('./SiteAdminExternalServicePage'), 'SiteAdminExternalServicePage'),
+        render: lazyComponent(() => import('./SiteAdminCodeHostPage'), 'SiteAdminCodeHostPage'),
         exact: true,
     },
     {

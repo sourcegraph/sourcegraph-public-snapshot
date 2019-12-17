@@ -46,11 +46,11 @@ type PhabricatorRepoCreateRequest struct {
 	URL      string `json:"url"`
 }
 
-type ExternalServiceConfigsRequest struct {
+type CodeHostConfigsRequest struct {
 	Kind string `json:"kind"`
 }
 
-type ExternalServicesListRequest struct {
+type CodeHostsListRequest struct {
 	// NOTE(tsenart): We must keep this field in addition to the
 	// Kinds field until after we roll-out this change, for backwards compatibility.
 	Kind  string   `json:"kind"`

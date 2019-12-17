@@ -187,7 +187,7 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
 </div>
 `;
 
-exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site admin 1`] = `
+exports[`StatusMessagesNavItem one CodeHostSyncError message as non-site admin 1`] = `
 <div
   className="nav-link py-0 px-0 status-messages-nav-item__nav-link btn-group"
   onKeyDown={[Function]}
@@ -246,7 +246,7 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site 
 </div>
 `;
 
-exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admin 1`] = `
+exports[`StatusMessagesNavItem one CodeHostSyncError message as site admin 1`] = `
 <div
   className="nav-link py-0 px-0 status-messages-nav-item__nav-link btn-group"
   onKeyDown={[Function]}

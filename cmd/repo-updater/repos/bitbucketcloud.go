@@ -22,7 +22,7 @@ import (
 // A BitbucketCloudSource yields repositories from a single BitbucketCloud connection configured
 // in Sourcegraph via the external services configuration.
 type BitbucketCloudSource struct {
-	svc             *ExternalService
+	svc             *CodeHost
 	config          *schema.BitbucketCloudConnection
 	exclude         map[string]bool
 	excludePatterns []*regexp.Regexp
@@ -30,7 +30,7 @@ type BitbucketCloudSource struct {
 }
 
 // NewBitbucketCloudSource returns a new BitbucketCloudSource from the given external service.
-func NewBitbucketCloudSource(svc *ExternalService, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
+func NewBitbucketCloudSource(svc *CodeHost, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
 	var c schema.BitbucketCloudConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -38,7 +38,7 @@ func NewBitbucketCloudSource(svc *ExternalService, cf *httpcli.Factory) (*Bitbuc
 	return newBitbucketCloudSource(svc, &c, cf)
 }
 
-func newBitbucketCloudSource(svc *ExternalService, c *schema.BitbucketCloudConnection, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
+func newBitbucketCloudSource(svc *CodeHost, c *schema.BitbucketCloudConnection, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
 	if cf == nil {
 		cf = httpcli.NewHTTPClientFactory()
 	}
@@ -87,9 +87,9 @@ func (s BitbucketCloudSource) ListRepos(ctx context.Context, results chan Source
 	s.listAllRepos(ctx, results)
 }
 
-// ExternalServices returns a singleton slice containing the external service.
-func (s BitbucketCloudSource) ExternalServices() ExternalServices {
-	return ExternalServices{s.svc}
+// CodeHosts returns a singleton slice containing the external service.
+func (s BitbucketCloudSource) CodeHosts() CodeHosts {
+	return CodeHosts{s.svc}
 }
 
 func (s BitbucketCloudSource) makeRepo(r *bitbucketcloud.Repo) *Repo {

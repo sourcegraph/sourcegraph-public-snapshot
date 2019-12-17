@@ -27,7 +27,7 @@ func TestSearch(t *testing.T) {
 		searchVersion                string
 		reposListMock                func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error)
 		repoRevsMock                 func(spec string, opt *git.ResolveRevisionOptions) (api.CommitID, error)
-		externalServicesListMock     func(opt db.ExternalServicesListOptions) ([]*types.ExternalService, error)
+		externalServicesListMock     func(opt db.CodeHostsListOptions) ([]*types.CodeHost, error)
 		phabricatorGetRepoByNameMock func(repo api.RepoName) (*types.PhabricatorRepo, error)
 		wantResults                  Results
 	}{
@@ -40,7 +40,7 @@ func TestSearch(t *testing.T) {
 			repoRevsMock: func(spec string, opt *git.ResolveRevisionOptions) (api.CommitID, error) {
 				return api.CommitID(""), nil
 			},
-			externalServicesListMock: func(opt db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+			externalServicesListMock: func(opt db.CodeHostsListOptions) ([]*types.CodeHost, error) {
 				return nil, nil
 			},
 			phabricatorGetRepoByNameMock: func(repo api.RepoName) (*types.PhabricatorRepo, error) {
@@ -63,7 +63,7 @@ func TestSearch(t *testing.T) {
 			repoRevsMock: func(spec string, opt *git.ResolveRevisionOptions) (api.CommitID, error) {
 				return api.CommitID(""), nil
 			},
-			externalServicesListMock: func(opt db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+			externalServicesListMock: func(opt db.CodeHostsListOptions) ([]*types.CodeHost, error) {
 				return nil, nil
 			},
 			phabricatorGetRepoByNameMock: func(repo api.RepoName) (*types.PhabricatorRepo, error) {
@@ -87,7 +87,7 @@ func TestSearch(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			db.Mocks.ExternalServices.List = tc.externalServicesListMock
+			db.Mocks.CodeHosts.List = tc.externalServicesListMock
 			db.Mocks.Phabricator.GetByName = tc.phabricatorGetRepoByNameMock
 			git.Mocks.ResolveRevision = tc.repoRevsMock
 			result := schema.Exec(context.Background(), testSearchGQLQuery, "", vars)

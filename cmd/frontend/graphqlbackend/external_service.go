@@ -12,11 +12,11 @@ import (
 )
 
 type externalServiceResolver struct {
-	externalService *types.ExternalService
+	externalService *types.CodeHost
 	warning         string
 }
 
-const externalServiceIDKind = "ExternalService"
+const externalServiceIDKind = "CodeHost"
 
 func externalServiceByID(ctx context.Context, id graphql.ID) (*externalServiceResolver, error) {
 	// 🚨 SECURITY: Only site admins are allowed to read external services.
@@ -24,12 +24,12 @@ func externalServiceByID(ctx context.Context, id graphql.ID) (*externalServiceRe
 		return nil, err
 	}
 
-	externalServiceID, err := unmarshalExternalServiceID(id)
+	externalServiceID, err := unmarshalCodeHostID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	externalService, err := db.ExternalServices.GetByID(ctx, externalServiceID)
+	externalService, err := db.CodeHosts.GetByID(ctx, externalServiceID)
 	if err != nil {
 		return nil, err
 	}
@@ -37,11 +37,11 @@ func externalServiceByID(ctx context.Context, id graphql.ID) (*externalServiceRe
 	return &externalServiceResolver{externalService: externalService}, nil
 }
 
-func marshalExternalServiceID(id int64) graphql.ID {
+func marshalCodeHostID(id int64) graphql.ID {
 	return relay.MarshalID(externalServiceIDKind, id)
 }
 
-func unmarshalExternalServiceID(id graphql.ID) (externalServiceID int64, err error) {
+func unmarshalCodeHostID(id graphql.ID) (externalServiceID int64, err error) {
 	if kind := relay.UnmarshalKind(id); kind != externalServiceIDKind {
 		err = fmt.Errorf("expected graphql ID to have kind %q; got %q", externalServiceIDKind, kind)
 		return
@@ -51,7 +51,7 @@ func unmarshalExternalServiceID(id graphql.ID) (externalServiceID int64, err err
 }
 
 func (r *externalServiceResolver) ID() graphql.ID {
-	return marshalExternalServiceID(r.externalService.ID)
+	return marshalCodeHostID(r.externalService.ID)
 }
 
 func (r *externalServiceResolver) Kind() string {

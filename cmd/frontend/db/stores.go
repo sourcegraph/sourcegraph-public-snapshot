@@ -2,7 +2,7 @@ package db
 
 var (
 	AccessTokens              = &accessTokens{}
-	ExternalServices          = &ExternalServicesStore{}
+	CodeHosts          = &CodeHostsStore{}
 	DefaultRepos              = &defaultRepos{}
 	DiscussionThreads         = &discussionThreads{}
 	DiscussionComments        = &discussionComments{}

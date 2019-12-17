@@ -123,7 +123,7 @@ func (r *NodeResolver) ToExternalAccount() (*externalAccountResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToExternalService() (*externalServiceResolver, bool) {
+func (r *NodeResolver) ToCodeHost() (*externalServiceResolver, bool) {
 	n, ok := r.Node.(*externalServiceResolver)
 	return n, ok
 }

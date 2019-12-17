@@ -2,11 +2,11 @@
 
 package schema
 
-// OtherExternalServiceSchemaJSON is the content of the file "other_external_service.schema.json".
-const OtherExternalServiceSchemaJSON = `{
+// OtherCodeHostSchemaJSON is the content of the file "other_external_service.schema.json".
+const OtherCodeHostSchemaJSON = `{
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "other_external_service.schema.json#",
-  "title": "OtherExternalServiceConnection",
+  "title": "OtherCodeHostConnection",
   "description": "Configuration for a Connection to Git repositories for which an external service integration isn't yet available.",
   "allowComments": true,
   "type": "object",

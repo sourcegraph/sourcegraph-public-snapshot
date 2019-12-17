@@ -132,7 +132,7 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 	// It is also unclear to me if deterministic order is important here (it seems like it might be),
 	// so if this is parallalized in the future, consider whether order is important.
 
-	githubs, err := db.ExternalServices.ListGitHubConnections(ctx)
+	githubs, err := db.CodeHosts.ListGitHubConnections(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -140,7 +140,7 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 		repoSources = append(repoSources, reposource.GitHub{GitHubConnection: c})
 	}
 
-	gitlabs, err := db.ExternalServices.ListGitLabConnections(ctx)
+	gitlabs, err := db.CodeHosts.ListGitLabConnections(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -148,7 +148,7 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 		repoSources = append(repoSources, reposource.GitLab{GitLabConnection: c})
 	}
 
-	bitbuckets, err := db.ExternalServices.ListBitbucketServerConnections(ctx)
+	bitbuckets, err := db.CodeHosts.ListBitbucketServerConnections(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -156,7 +156,7 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 		repoSources = append(repoSources, reposource.BitbucketServer{BitbucketServerConnection: c})
 	}
 
-	awscodecommits, err := db.ExternalServices.ListAWSCodeCommitConnections(ctx)
+	awscodecommits, err := db.CodeHosts.ListAWSCodeCommitConnections(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -164,7 +164,7 @@ func reposourceCloneURLToRepoName(ctx context.Context, cloneURL string) (repoNam
 		repoSources = append(repoSources, reposource.AWS{AWSCodeCommitConnection: c})
 	}
 
-	gitolites, err := db.ExternalServices.ListGitoliteConnections(ctx)
+	gitolites, err := db.CodeHosts.ListGitoliteConnections(ctx)
 	if err != nil {
 		return "", err
 	}

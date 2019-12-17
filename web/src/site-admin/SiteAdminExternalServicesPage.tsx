@@ -17,18 +17,18 @@ import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { ErrorAlert } from '../components/alerts'
 
-interface ExternalServiceNodeProps {
-    node: GQL.IExternalService
+interface CodeHostNodeProps {
+    node: GQL.ICodeHost
     onDidUpdate: () => void
 }
 
-interface ExternalServiceNodeState {
+interface CodeHostNodeState {
     loading: boolean
     errorDescription?: string
 }
 
-class ExternalServiceNode extends React.PureComponent<ExternalServiceNodeProps, ExternalServiceNodeState> {
-    public state: ExternalServiceNodeState = {
+class CodeHostNode extends React.PureComponent<CodeHostNodeProps, CodeHostNodeState> {
+    public state: CodeHostNodeState = {
         loading: false,
     }
 
@@ -51,7 +51,7 @@ class ExternalServiceNode extends React.PureComponent<ExternalServiceNodeProps, 
                         <button
                             type="button"
                             className="btn btn-sm btn-danger e2e-delete-external-service-button"
-                            onClick={this.deleteExternalService}
+                            onClick={this.deleteCodeHost}
                             disabled={this.state.loading}
                             data-tooltip="Delete external service"
                         >
@@ -64,7 +64,7 @@ class ExternalServiceNode extends React.PureComponent<ExternalServiceNodeProps, 
         )
     }
 
-    private deleteExternalService = (): void => {
+    private deleteCodeHost = (): void => {
         if (!window.confirm(`Delete the external service ${this.props.node.displayName}?`)) {
             return
         }
@@ -74,7 +74,7 @@ class ExternalServiceNode extends React.PureComponent<ExternalServiceNodeProps, 
             loading: true,
         })
 
-        deleteExternalService(this.props.node.id)
+        deleteCodeHost(this.props.node.id)
             .toPromise()
             .then(
                 () => {
@@ -92,11 +92,11 @@ class ExternalServiceNode extends React.PureComponent<ExternalServiceNodeProps, 
     }
 }
 
-function deleteExternalService(externalService: GQL.ID): Observable<void> {
+function deleteCodeHost(externalService: GQL.ID): Observable<void> {
     return mutateGraphQL(
         gql`
-            mutation DeleteExternalService($externalService: ID!) {
-                deleteExternalService(externalService: $externalService) {
+            mutation DeleteCodeHost($externalService: ID!) {
+                deleteCodeHost(externalService: $externalService) {
                     alwaysNil
                 }
             }
@@ -105,8 +105,8 @@ function deleteExternalService(externalService: GQL.ID): Observable<void> {
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {
-            if (!data.deleteExternalService) {
-                throw createInvalidGraphQLMutationResponseError('DeleteExternalService')
+            if (!data.deleteCodeHost) {
+                throw createInvalidGraphQLMutationResponseError('DeleteCodeHost')
             }
         })
     )
@@ -115,18 +115,18 @@ function deleteExternalService(externalService: GQL.ID): Observable<void> {
 interface Props extends RouteComponentProps<{}>, ActivationProps {}
 
 interface State {
-    noExternalServices?: boolean
+    noCodeHosts?: boolean
 }
 
-class FilteredExternalServiceConnection extends FilteredConnection<
-    GQL.IExternalService,
-    Pick<ExternalServiceNodeProps, 'onDidUpdate'>
+class FilteredCodeHostConnection extends FilteredConnection<
+    GQL.ICodeHost,
+    Pick<CodeHostNodeProps, 'onDidUpdate'>
 > {}
 
 /**
  * A page displaying the external services on this site.
  */
-export class SiteAdminExternalServicesPage extends React.PureComponent<Props, State> {
+export class SiteAdminCodeHostsPage extends React.PureComponent<Props, State> {
     private updates = new Subject<void>()
     private subscriptions = new Subscription()
 
@@ -136,28 +136,28 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, St
     }
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('SiteAdminExternalServices')
+        eventLogger.logViewEvent('SiteAdminCodeHosts')
         this.subscriptions.add(
-            this.queryExternalServices({ first: 1 })
+            this.queryCodeHosts({ first: 1 })
                 .pipe(
                     tap(externalServicesResult =>
-                        this.setState({ noExternalServices: externalServicesResult.totalCount === 0 })
+                        this.setState({ noCodeHosts: externalServicesResult.totalCount === 0 })
                     )
                 )
                 .subscribe()
         )
     }
 
-    private completeConnectedCodeHostActivation = (externalServices: GQL.IExternalServiceConnection): void => {
+    private completeConnectedCodeHostActivation = (externalServices: GQL.ICodeHostConnection): void => {
         if (this.props.activation && externalServices.totalCount > 0) {
             this.props.activation.update({ ConnectedCodeHost: true })
         }
     }
 
-    private queryExternalServices = (args: FilteredConnectionQueryArgs): Observable<GQL.IExternalServiceConnection> =>
+    private queryCodeHosts = (args: FilteredConnectionQueryArgs): Observable<GQL.ICodeHostConnection> =>
         queryGraphQL(
             gql`
-                query ExternalServices($first: Int) {
+                query CodeHosts($first: Int) {
                     externalServices(first: $first) {
                         nodes {
                             id
@@ -186,11 +186,11 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, St
         )
 
     public render(): JSX.Element | null {
-        const nodeProps: Pick<ExternalServiceNodeProps, 'onDidUpdate'> = {
-            onDidUpdate: this.onDidUpdateExternalServices,
+        const nodeProps: Pick<CodeHostNodeProps, 'onDidUpdate'> = {
+            onDidUpdate: this.onDidUpdateCodeHosts,
         }
 
-        if (this.state.noExternalServices) {
+        if (this.state.noCodeHosts) {
             return <Redirect to="/site-admin/external-services/new" />
         }
         return (
@@ -208,12 +208,12 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, St
                 <p className="mt-2">
                     Manage connections to external services, such as code hosts (to sync repositories).
                 </p>
-                <FilteredExternalServiceConnection
+                <FilteredCodeHostConnection
                     className="list-group list-group-flush mt-3"
                     noun="external service"
                     pluralNoun="external services"
-                    queryConnection={this.queryExternalServices}
-                    nodeComponent={ExternalServiceNode}
+                    queryConnection={this.queryCodeHosts}
+                    nodeComponent={CodeHostNode}
                     nodeComponentProps={nodeProps}
                     hideSearch={true}
                     noSummaryIfAllNodesVisible={true}
@@ -225,5 +225,5 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, St
         )
     }
 
-    private onDidUpdateExternalServices = (): void => this.updates.next()
+    private onDidUpdateCodeHosts = (): void => this.updates.next()
 }

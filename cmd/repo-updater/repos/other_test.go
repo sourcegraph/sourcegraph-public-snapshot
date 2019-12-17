@@ -116,7 +116,7 @@ func TestSrcExpose(t *testing.T) {
 		}},
 	}}
 
-	source, err := NewOtherSource(&ExternalService{
+	source, err := NewOtherSource(&CodeHost{
 		ID:     1,
 		Kind:   "OTHER",
 		Config: fmt.Sprintf(`{"url": %q}`, s.URL),

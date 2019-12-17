@@ -49,9 +49,9 @@ func TestIntegration(t *testing.T) {
 		test func(*testing.T)
 	}{
 		{"DBStore/Transact", testDBStoreTransact(dbstore)},
-		{"DBStore/ListExternalServices", testStoreListExternalServices(store)},
-		{"DBStore/ListExternalServices/ByRepo", testStoreListExternalServicesByRepos(store)},
-		{"DBStore/UpsertExternalServices", testStoreUpsertExternalServices(store)},
+		{"DBStore/ListCodeHosts", testStoreListCodeHosts(store)},
+		{"DBStore/ListCodeHosts/ByRepo", testStoreListCodeHostsByRepos(store)},
+		{"DBStore/UpsertCodeHosts", testStoreUpsertCodeHosts(store)},
 		{"DBStore/UpsertRepos", testStoreUpsertRepos(store)},
 		{"DBStore/ListRepos", testStoreListRepos(store)},
 		{"DBStore/ListRepos/Pagination", testStoreListReposPagination(store)},

@@ -9,12 +9,12 @@ import { getTestTools } from './util/init'
 import { getConfig } from '../../../shared/src/e2e/config'
 import { ensureLoggedInOrCreateTestUser } from './util/helpers'
 import {
-    ensureTestExternalService,
+    ensureTestCodeHost,
     waitForRepos,
     setUserSiteAdmin,
     getUser,
-    ensureNoTestExternalServices,
-    getExternalServices,
+    ensureNoTestCodeHosts,
+    getCodeHosts,
 } from './util/api'
 import { Key } from 'ts-key-enum'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
@@ -63,8 +63,8 @@ describe('Onboarding', () => {
         'logStatusMessages',
         'keepBrowser'
     )
-    const testExternalServiceConfig = {
-        kind: GQL.ExternalServiceKind.GITHUB,
+    const testCodeHostConfig = {
+        kind: GQL.CodeHostKind.GITHUB,
         uniqueDisplayName: '[TEST] GitHub (onboarding.test.ts)',
         config: {
             url: 'https://github.com',
@@ -118,11 +118,11 @@ describe('Onboarding', () => {
         'Site-admin onboarding',
         async () => {
             // TODO: need to destroy?
-            await ensureNoTestExternalServices(gqlClient, {
-                ...testExternalServiceConfig,
+            await ensureNoTestCodeHosts(gqlClient, {
+                ...testCodeHostConfig,
                 deleteIfExist: true,
             })
-            if ((await getExternalServices(gqlClient)).length > 0) {
+            if ((await getCodeHosts(gqlClient)).length > 0) {
                 throw new Error(
                     'other external services exist and this test should be run on an instance with no user-created external services'
                 )
@@ -150,10 +150,10 @@ describe('Onboarding', () => {
             })
             await driver.waitUntilURL(driver.sourcegraphBaseUrl + '/site-admin/external-services')
             // Verify confetti plays
-            await driver.ensureHasExternalService({
-                kind: testExternalServiceConfig.kind,
-                displayName: testExternalServiceConfig.uniqueDisplayName,
-                config: JSON.stringify(testExternalServiceConfig.config),
+            await driver.ensureHasCodeHost({
+                kind: testCodeHostConfig.kind,
+                displayName: testCodeHostConfig.uniqueDisplayName,
+                config: JSON.stringify(testCodeHostConfig.config),
             })
             await delay(500) // wait for confetti to play a bit
             await screenshots.verifyScreenshot({
@@ -167,8 +167,8 @@ describe('Onboarding', () => {
     test(
         'Non-admin user onboarding',
         async () => {
-            await ensureTestExternalService(gqlClient, testExternalServiceConfig, config)
-            const repoSlugs = testExternalServiceConfig.config.repos
+            await ensureTestCodeHost(gqlClient, testCodeHostConfig, config)
+            const repoSlugs = testCodeHostConfig.config.repos
             await waitForRepos(gqlClient, ['github.com/' + repoSlugs[repoSlugs.length - 1]], config)
 
             const testUser = await getUser(gqlClient, testUsername)

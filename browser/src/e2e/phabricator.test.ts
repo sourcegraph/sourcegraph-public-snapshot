@@ -5,7 +5,7 @@
 import * as path from 'path'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e/screenshotReporter'
 import { createDriverForTest, Driver } from '../../../shared/src/e2e/driver'
-import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
+import { CodeHostKind } from '../../../shared/src/graphql/schema'
 import { PhabricatorMapping } from '../browser/types'
 import { isEqual } from 'lodash'
 import { getConfig } from '../../../shared/src/e2e/config'
@@ -141,8 +141,8 @@ async function configureSourcegraphIntegration(driver: Driver): Promise<void> {
 async function init(driver: Driver): Promise<void> {
     await driver.ensureLoggedIn({ username: 'test', password: 'test', email: 'test@test.com' })
     // TODO test with a Gitolite external service
-    await driver.ensureHasExternalService({
-        kind: ExternalServiceKind.GITHUB,
+    await driver.ensureHasCodeHost({
+        kind: CodeHostKind.GITHUB,
         displayName: 'GitHub (phabricator)',
         config: JSON.stringify({
             url: 'https://github.com',

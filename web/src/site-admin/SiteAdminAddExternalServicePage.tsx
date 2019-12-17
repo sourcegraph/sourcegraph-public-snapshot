@@ -11,17 +11,17 @@ import { mutateGraphQL } from '../backend/graphql'
 import { PageTitle } from '../components/PageTitle'
 import { refreshSiteFlags } from '../site/backend'
 import { ThemeProps } from '../../../shared/src/theme'
-import { ExternalServiceCard } from '../components/ExternalServiceCard'
-import { ExternalServiceVariant, getExternalService } from './externalServices'
-import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
+import { CodeHostCard } from '../components/CodeHostCard'
+import { CodeHostVariant, getCodeHost } from './externalServices'
+import { SiteAdminCodeHostForm } from './SiteAdminCodeHostForm'
 
 interface Props extends ThemeProps {
     history: H.History
-    kind: GQL.ExternalServiceKind
-    variant?: ExternalServiceVariant
+    kind: GQL.CodeHostKind
+    variant?: CodeHostVariant
     eventLogger: {
-        logViewEvent: (event: 'AddExternalService') => void
-        log: (event: 'AddExternalServiceFailed' | 'AddExternalServiceSucceeded', eventProperties?: any) => void
+        logViewEvent: (event: 'AddCodeHost') => void
+        log: (event: 'AddCodeHostFailed' | 'AddCodeHostSucceeded', eventProperties?: any) => void
     }
 }
 
@@ -42,16 +42,16 @@ interface State {
     /**
      * Holds the externalService if creation was successful but produced a warning
      */
-    externalService?: GQL.IExternalService
+    externalService?: GQL.ICodeHost
 }
 
 /**
  * Page for adding a single external service
  */
-export class SiteAdminAddExternalServicePage extends React.Component<Props, State> {
+export class SiteAdminAddCodeHostPage extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
-        const serviceKindMetadata = getExternalService(this.props.kind, this.props.variant)
+        const serviceKindMetadata = getCodeHost(this.props.kind, this.props.variant)
         this.state = {
             loading: false,
             displayName: serviceKindMetadata.defaultDisplayName,
@@ -59,17 +59,17 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
         }
     }
 
-    private submits = new Subject<GQL.IAddExternalServiceInput>()
+    private submits = new Subject<GQL.IAddCodeHostInput>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        this.props.eventLogger.logViewEvent('AddExternalService')
+        this.props.eventLogger.logViewEvent('AddCodeHost')
         this.subscriptions.add(
             this.submits
                 .pipe(
                     tap(() => this.setState({ loading: true })),
                     switchMap(input =>
-                        addExternalService(input, this.props.eventLogger).pipe(
+                        addCodeHost(input, this.props.eventLogger).pipe(
                             catchError(error => {
                                 console.error(error)
                                 this.setState({ error, loading: false })
@@ -98,38 +98,38 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
     }
 
     public render(): JSX.Element | null {
-        const kindMetadata = getExternalService(this.props.kind, this.props.variant)
-        const createdExternalService = this.state.externalService
+        const kindMetadata = getCodeHost(this.props.kind, this.props.variant)
+        const createdCodeHost = this.state.externalService
         return (
             <div className="add-external-service-page mt-3">
                 <PageTitle title="Add external service" />
                 <h1>Add external service</h1>
-                {createdExternalService?.warning ? (
+                {createdCodeHost?.warning ? (
                     <div>
                         <div className="mb-3">
-                            <ExternalServiceCard
+                            <CodeHostCard
                                 {...kindMetadata}
                                 kind={this.props.kind}
-                                title={createdExternalService.displayName}
+                                title={createdCodeHost.displayName}
                                 shortDescription="Update this external service configuration to manage repository mirroring."
-                                to={`/site-admin/external-services/${createdExternalService.id}`}
+                                to={`/site-admin/external-services/${createdCodeHost.id}`}
                             />
                         </div>
                         <div className="alert alert-warning">
                             <h4>Warning</h4>
-                            <Markdown dangerousInnerHTML={renderMarkdown(createdExternalService.warning)} />
+                            <Markdown dangerousInnerHTML={renderMarkdown(createdCodeHost.warning)} />
                         </div>
                     </div>
                 ) : (
                     <div>
                         <div className="mb-3">
-                            <ExternalServiceCard {...kindMetadata} kind={this.props.kind} />
+                            <CodeHostCard {...kindMetadata} kind={this.props.kind} />
                         </div>
                         <div className="mb-4">{kindMetadata.longDescription}</div>
-                        <SiteAdminExternalServiceForm
+                        <SiteAdminCodeHostForm
                             {...this.props}
                             error={this.state.error}
-                            input={this.getExternalServiceInput()}
+                            input={this.getCodeHostInput()}
                             editorActions={kindMetadata.editorActions}
                             jsonSchema={kindMetadata.jsonSchema}
                             mode="create"
@@ -143,7 +143,7 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
         )
     }
 
-    private getExternalServiceInput(): GQL.IAddExternalServiceInput {
+    private getCodeHostInput(): GQL.IAddCodeHostInput {
         return {
             displayName: this.state.displayName,
             config: this.state.config,
@@ -151,7 +151,7 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
         }
     }
 
-    private onChange = (input: GQL.IAddExternalServiceInput): void => {
+    private onChange = (input: GQL.IAddCodeHostInput): void => {
         this.setState({
             displayName: input.displayName,
             config: input.config,
@@ -162,18 +162,18 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
         if (event) {
             event.preventDefault()
         }
-        this.submits.next(this.getExternalServiceInput())
+        this.submits.next(this.getCodeHostInput())
     }
 }
 
-function addExternalService(
-    input: GQL.IAddExternalServiceInput,
+function addCodeHost(
+    input: GQL.IAddCodeHostInput,
     eventLogger: Pick<Props['eventLogger'], 'log'>
-): Observable<GQL.IExternalService> {
+): Observable<GQL.ICodeHost> {
     return mutateGraphQL(
         gql`
-            mutation addExternalService($input: AddExternalServiceInput!) {
-                addExternalService(input: $input) {
+            mutation addCodeHost($input: AddCodeHostInput!) {
+                addCodeHost(input: $input) {
                     id
                     kind
                     displayName
@@ -184,16 +184,16 @@ function addExternalService(
         { input }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.addExternalService || (errors && errors.length > 0)) {
-                eventLogger.log('AddExternalServiceFailed')
+            if (!data || !data.addCodeHost || (errors && errors.length > 0)) {
+                eventLogger.log('AddCodeHostFailed')
                 throw createAggregateError(errors)
             }
-            eventLogger.log('AddExternalServiceSucceeded', {
+            eventLogger.log('AddCodeHostSucceeded', {
                 externalService: {
-                    kind: data.addExternalService.kind,
+                    kind: data.addCodeHost.kind,
                 },
             })
-            return data.addExternalService
+            return data.addCodeHost
         })
     )
 }

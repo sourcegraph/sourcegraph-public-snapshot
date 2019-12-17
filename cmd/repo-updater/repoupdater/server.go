@@ -54,16 +54,16 @@ func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/repo-update-scheduler-info", s.handleRepoUpdateSchedulerInfo)
 	mux.HandleFunc("/repo-lookup", s.handleRepoLookup)
-	mux.HandleFunc("/repo-external-services", s.handleRepoExternalServices)
+	mux.HandleFunc("/repo-external-services", s.handleRepoCodeHosts)
 	mux.HandleFunc("/enqueue-repo-update", s.handleEnqueueRepoUpdate)
 	mux.HandleFunc("/exclude-repo", s.handleExcludeRepo)
-	mux.HandleFunc("/sync-external-service", s.handleExternalServiceSync)
+	mux.HandleFunc("/sync-external-service", s.handleCodeHostSync)
 	mux.HandleFunc("/status-messages", s.handleStatusMessages)
 	return mux
 }
 
-func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Request) {
-	var req protocol.RepoExternalServicesRequest
+func (s *Server) handleRepoCodeHosts(w http.ResponseWriter, r *http.Request) {
+	var req protocol.RepoCodeHostsRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		respond(w, http.StatusInternalServerError, err)
@@ -83,25 +83,25 @@ func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	var resp protocol.RepoExternalServicesResponse
+	var resp protocol.RepoCodeHostsResponse
 
-	svcIDs := rs[0].ExternalServiceIDs()
+	svcIDs := rs[0].CodeHostIDs()
 	if len(svcIDs) == 0 {
 		respond(w, http.StatusOK, resp)
 		return
 	}
 
-	args := repos.StoreListExternalServicesArgs{
+	args := repos.StoreListCodeHostsArgs{
 		IDs: svcIDs,
 	}
 
-	es, err := s.Store.ListExternalServices(r.Context(), args)
+	es, err := s.Store.ListCodeHosts(r.Context(), args)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	resp.ExternalServices = newExternalServices(es...)
+	resp.CodeHosts = newCodeHosts(es...)
 
 	respond(w, http.StatusOK, resp)
 }
@@ -128,11 +128,11 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	args := repos.StoreListExternalServicesArgs{
+	args := repos.StoreListCodeHostsArgs{
 		Kinds: repos.Repos(rs).Kinds(),
 	}
 
-	es, err := s.Store.ListExternalServices(r.Context(), args)
+	es, err := s.Store.ListCodeHosts(r.Context(), args)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
@@ -145,13 +145,13 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = s.Store.UpsertExternalServices(r.Context(), es...)
+	err = s.Store.UpsertCodeHosts(r.Context(), es...)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	resp.ExternalServices = newExternalServices(es...)
+	resp.CodeHosts = newCodeHosts(es...)
 
 	respond(w, http.StatusOK, resp)
 }
@@ -181,11 +181,11 @@ func respond(w http.ResponseWriter, code int, v interface{}) {
 	}
 }
 
-func newExternalServices(es ...*repos.ExternalService) []api.ExternalService {
-	svcs := make([]api.ExternalService, 0, len(es))
+func newCodeHosts(es ...*repos.CodeHost) []api.CodeHost {
+	svcs := make([]api.CodeHost, 0, len(es))
 
 	for _, e := range es {
-		svc := api.ExternalService{
+		svc := api.CodeHost{
 			ID:          e.ID,
 			Kind:        e.Kind,
 			DisplayName: e.DisplayName,
@@ -292,11 +292,11 @@ func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdate
 	}, http.StatusOK, nil
 }
 
-func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleCodeHostSync(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 
-	var req protocol.ExternalServiceSyncRequest
+	var req protocol.CodeHostSyncRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -306,17 +306,17 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 
 	errch := make(chan error, 1)
 	go func() {
-		if req.ExternalService.DeletedAt != nil {
+		if req.CodeHost.DeletedAt != nil {
 			// We don't need to check deleted services.
 			errch <- nil
 			return
 		}
 
-		src, err := repos.NewSource(&repos.ExternalService{
-			ID:          req.ExternalService.ID,
-			Kind:        req.ExternalService.Kind,
-			DisplayName: req.ExternalService.DisplayName,
-			Config:      req.ExternalService.Config,
+		src, err := repos.NewSource(&repos.CodeHost{
+			ID:          req.CodeHost.ID,
+			Kind:        req.CodeHost.Kind,
+			DisplayName: req.CodeHost.DisplayName,
+			Config:      req.CodeHost.Config,
 		}, httpcli.NewHTTPClientFactory())
 		if err != nil {
 			errch <- err
@@ -356,25 +356,25 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	case err := <-errch:
 		switch {
 		case err == nil:
-			log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
-			respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{
-				ExternalService: req.ExternalService,
+			log15.Info("server.external-service-sync", "synced", req.CodeHost.Kind)
+			respond(w, http.StatusOK, &protocol.CodeHostSyncResult{
+				CodeHost: req.CodeHost,
 			})
 		case err == github.ErrIncompleteResults:
-			log15.Info("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
-			syncResult := &protocol.ExternalServiceSyncResult{
-				ExternalService: req.ExternalService,
+			log15.Info("server.external-service-sync", "kind", req.CodeHost.Kind, "error", err)
+			syncResult := &protocol.CodeHostSyncResult{
+				CodeHost: req.CodeHost,
 				Error:           err.Error(),
 			}
 			respond(w, http.StatusOK, syncResult)
 		default:
-			log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
+			log15.Error("server.external-service-sync", "kind", req.CodeHost.Kind, "error", err)
 			respond(w, http.StatusInternalServerError, err)
 		}
 
 	case <-time.After(10 * time.Second):
-		respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{
-			ExternalService: req.ExternalService,
+		respond(w, http.StatusOK, &protocol.CodeHostSyncResult{
+			CodeHost: req.CodeHost,
 			Error:           "warning: took longer than 10s to verify config against code host. Please monitor repo-updater logs.",
 		})
 
@@ -506,9 +506,9 @@ func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
 			for _, e := range multiErr.Errors {
 				if sourceErr, ok := e.(*repos.SourceError); ok {
 					resp.Messages = append(resp.Messages, protocol.StatusMessage{
-						ExternalServiceSyncError: &protocol.ExternalServiceSyncError{
+						CodeHostSyncError: &protocol.CodeHostSyncError{
 							Message:           sourceErr.Err.Error(),
-							ExternalServiceId: sourceErr.ExtSvc.ID,
+							CodeHostId: sourceErr.ExtSvc.ID,
 						},
 					})
 				} else {

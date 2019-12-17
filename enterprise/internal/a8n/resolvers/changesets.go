@@ -181,7 +181,7 @@ func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
 	if err != nil {
 		return nil, err
 	}
-	return externallink.NewResolver(url, r.Changeset.ExternalServiceType), nil
+	return externallink.NewResolver(url, r.Changeset.CodeHostType), nil
 }
 
 func (r *changesetResolver) ReviewState(ctx context.Context) (a8n.ChangesetReviewState, error) {

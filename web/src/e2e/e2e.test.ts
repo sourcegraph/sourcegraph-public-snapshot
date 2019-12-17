@@ -10,7 +10,7 @@ import got from 'got'
 import { gql } from '../../../shared/src/graphql/graphql'
 import { random } from 'lodash'
 import MockDate from 'mockdate'
-import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
+import { CodeHostKind } from '../../../shared/src/graphql/schema'
 import { getConfig } from '../../../shared/src/e2e/config'
 import * as assert from 'assert'
 import { asError } from '../../../shared/src/util/errors'
@@ -52,8 +52,8 @@ describe('e2e test suite', () => {
         ]
         await driver.ensureLoggedIn({ username: 'test', password: 'test', email: 'test@test.com' })
         await driver.resetUserSettings()
-        await driver.ensureHasExternalService({
-            kind: ExternalServiceKind.GITHUB,
+        await driver.ensureHasCodeHost({
+            kind: CodeHostKind.GITHUB,
             displayName: 'e2e-test-github',
             config: JSON.stringify({
                 url: 'https://github.com',
@@ -224,8 +224,8 @@ describe('e2e test suite', () => {
     describe('External services', () => {
         test('External service add, edit, delete', async () => {
             const displayName = 'e2e-github-test-2'
-            await driver.ensureHasExternalService({
-                kind: ExternalServiceKind.GITHUB,
+            await driver.ensureHasCodeHost({
+                kind: CodeHostKind.GITHUB,
                 displayName,
                 config:
                     '{"url": "https://github.myenterprise.com", "token": "initial-token", "repositoryQuery": ["none"]}',
@@ -276,7 +276,7 @@ describe('e2e test suite', () => {
             const pathPatternSlug = `foobar/github.com/${repo}`
 
             const config = {
-                kind: ExternalServiceKind.GITHUB,
+                kind: CodeHostKind.GITHUB,
                 displayName: 'e2e-test-github-repoPathPattern',
                 config: JSON.stringify({
                     url: 'https://github.com',
@@ -287,7 +287,7 @@ describe('e2e test suite', () => {
                 // Make sure repository is named according to path pattern
                 ensureRepos: [pathPatternSlug],
             }
-            await driver.ensureHasExternalService(config)
+            await driver.ensureHasCodeHost(config)
 
             // Make sure repository slug without path pattern redirects to path pattern
             await driver.page.goto(sourcegraphBaseUrl + '/' + slug)
@@ -305,8 +305,8 @@ describe('e2e test suite', () => {
                 : test.skip.bind(test)
 
         testIfAwsCredentialsSet('AWS CodeCommit', async () => {
-            await driver.ensureHasExternalService({
-                kind: ExternalServiceKind.AWSCODECOMMIT,
+            await driver.ensureHasCodeHost({
+                kind: CodeHostKind.AWSCODECOMMIT,
                 displayName: 'e2e-aws-code-commit',
                 config: JSON.stringify({
                     region: 'us-west-1',
@@ -338,8 +338,8 @@ describe('e2e test suite', () => {
         const testIfBBSCredentialsSet = bbsURL && bbsToken && bbsUsername ? test : test.skip.bind(test)
 
         testIfBBSCredentialsSet('Bitbucket Server', async () => {
-            await driver.ensureHasExternalService({
-                kind: ExternalServiceKind.BITBUCKETSERVER,
+            await driver.ensureHasCodeHost({
+                kind: CodeHostKind.BITBUCKETSERVER,
                 displayName: 'e2e-bitbucket-server',
                 config: JSON.stringify({
                     url: bbsURL,

@@ -4,7 +4,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import * as GQL from '../../../shared/src/graphql/schema'
 
-interface ExternalServiceCardProps {
+interface CodeHostCardProps {
     /**
      * Title to show in the external service "button"
      */
@@ -20,13 +20,13 @@ interface ExternalServiceCardProps {
      */
     shortDescription: string
 
-    kind: GQL.ExternalServiceKind
+    kind: GQL.CodeHostKind
 
     to?: H.LocationDescriptor
     className?: string
 }
 
-export const ExternalServiceCard: React.FunctionComponent<ExternalServiceCardProps> = ({
+export const CodeHostCard: React.FunctionComponent<CodeHostCardProps> = ({
     title,
     icon: Icon,
     shortDescription,

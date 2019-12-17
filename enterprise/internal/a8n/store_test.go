@@ -308,7 +308,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 						Metadata:            githubPR,
 						CampaignIDs:         []int64{int64(i) + 1},
 						ExternalID:          fmt.Sprintf("foobar-%d", i),
-						ExternalServiceType: "github",
+						CodeHostType: "github",
 					}
 
 					changesets = append(changesets, th)
@@ -349,7 +349,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					clones[i] = &a8n.Changeset{
 						RepoID:              c.RepoID,
 						ExternalID:          c.ExternalID,
-						ExternalServiceType: c.ExternalServiceType,
+						CodeHostType: c.CodeHostType,
 					}
 				}
 
@@ -517,7 +517,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					want := changesets[0]
 					opts := GetChangesetOpts{
 						ExternalID:          want.ExternalID,
-						ExternalServiceType: want.ExternalServiceType,
+						CodeHostType: want.CodeHostType,
 					}
 
 					have, err := s.GetChangeset(ctx, opts)
@@ -549,7 +549,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 				now = now.Add(time.Second)
 				for _, c := range changesets {
 					c.Metadata = &bitbucketserver.PullRequest{ID: 1234}
-					c.ExternalServiceType = bitbucketserver.ServiceType
+					c.CodeHostType = bitbucketserver.ServiceType
 
 					if c.RepoID != 0 {
 						c.RepoID++

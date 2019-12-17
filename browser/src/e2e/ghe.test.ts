@@ -1,7 +1,7 @@
 import * as path from 'path'
 import { saveScreenshotsUponFailuresAndClosePage } from '../../../shared/src/e2e/screenshotReporter'
 import { createDriverForTest, Driver } from '../../../shared/src/e2e/driver'
-import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
+import { CodeHostKind } from '../../../shared/src/graphql/schema'
 import { testSingleFilePage } from './shared'
 import { getConfig } from '../../../shared/src/e2e/config'
 
@@ -49,8 +49,8 @@ async function init(driver: Driver): Promise<void> {
     await driver.ensureLoggedIn({ username: 'test', password: 'test', email: 'test@test.com' })
     await gheLogin(driver)
     await driver.setExtensionSourcegraphUrl()
-    await driver.ensureHasExternalService({
-        kind: ExternalServiceKind.GITHUB,
+    await driver.ensureHasCodeHost({
+        kind: CodeHostKind.GITHUB,
         displayName: 'GitHub Enterprise (e2e)',
         config: JSON.stringify({
             url: GHE_BASE_URL,

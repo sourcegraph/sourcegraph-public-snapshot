@@ -18,7 +18,7 @@ import (
 // A PhabricatorSource yields repositories from a single Phabricator connection configured
 // in Sourcegraph via the external services configuration.
 type PhabricatorSource struct {
-	svc  *ExternalService
+	svc  *CodeHost
 	conn *schema.PhabricatorConnection
 	cf   *httpcli.Factory
 
@@ -27,7 +27,7 @@ type PhabricatorSource struct {
 }
 
 // NewPhabricatorSource returns a new PhabricatorSource from the given external service.
-func NewPhabricatorSource(svc *ExternalService, cf *httpcli.Factory) (*PhabricatorSource, error) {
+func NewPhabricatorSource(svc *CodeHost, cf *httpcli.Factory) (*PhabricatorSource, error) {
 	var c schema.PhabricatorConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
@@ -72,9 +72,9 @@ func (s *PhabricatorSource) ListRepos(ctx context.Context, results chan SourceRe
 	}
 }
 
-// ExternalServices returns a singleton slice containing the external service.
-func (s *PhabricatorSource) ExternalServices() ExternalServices {
-	return ExternalServices{s.svc}
+// CodeHosts returns a singleton slice containing the external service.
+func (s *PhabricatorSource) CodeHosts() CodeHosts {
+	return CodeHosts{s.svc}
 }
 
 func (s *PhabricatorSource) makeRepo(repo *phabricator.Repo) (*Repo, error) {
@@ -184,7 +184,7 @@ func RunPhabricatorRepositorySyncWorker(ctx context.Context, s Store) {
 	cf := httpcli.NewHTTPClientFactory()
 
 	for {
-		phabs, err := s.ListExternalServices(ctx, StoreListExternalServicesArgs{
+		phabs, err := s.ListCodeHosts(ctx, StoreListCodeHostsArgs{
 			Kinds: []string{"PHABRICATOR"},
 		})
 		if err != nil {

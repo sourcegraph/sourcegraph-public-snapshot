@@ -23,7 +23,7 @@ import (
 // A BitbucketServerSource yields repositories from a single BitbucketServer connection configured
 // in Sourcegraph via the external services configuration.
 type BitbucketServerSource struct {
-	svc             *ExternalService
+	svc             *CodeHost
 	config          *schema.BitbucketServerConnection
 	exclude         map[string]bool
 	excludePatterns []*regexp.Regexp
@@ -31,7 +31,7 @@ type BitbucketServerSource struct {
 }
 
 // NewBitbucketServerSource returns a new BitbucketServerSource from the given external service.
-func NewBitbucketServerSource(svc *ExternalService, cf *httpcli.Factory) (*BitbucketServerSource, error) {
+func NewBitbucketServerSource(svc *CodeHost, cf *httpcli.Factory) (*BitbucketServerSource, error) {
 	var c schema.BitbucketServerConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -39,7 +39,7 @@ func NewBitbucketServerSource(svc *ExternalService, cf *httpcli.Factory) (*Bitbu
 	return newBitbucketServerSource(svc, &c, cf)
 }
 
-func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerConnection, cf *httpcli.Factory) (*BitbucketServerSource, error) {
+func newBitbucketServerSource(svc *CodeHost, c *schema.BitbucketServerConnection, cf *httpcli.Factory) (*BitbucketServerSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -133,7 +133,7 @@ func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset
 
 	c.Changeset.Metadata = pr
 	c.Changeset.ExternalID = strconv.FormatInt(int64(pr.ID), 10)
-	c.Changeset.ExternalServiceType = bitbucketserver.ServiceType
+	c.Changeset.CodeHostType = bitbucketserver.ServiceType
 
 	return nil
 }
@@ -185,9 +185,9 @@ func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Change
 	return nil
 }
 
-// ExternalServices returns a singleton slice containing the external service.
-func (s BitbucketServerSource) ExternalServices() ExternalServices {
-	return ExternalServices{s.svc}
+// CodeHosts returns a singleton slice containing the external service.
+func (s BitbucketServerSource) CodeHosts() CodeHosts {
+	return CodeHosts{s.svc}
 }
 
 func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo) *Repo {

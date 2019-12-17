@@ -635,8 +635,8 @@ type OpenIDConnectAuthProvider struct {
 	Type               string `json:"type"`
 }
 
-// OtherExternalServiceConnection description: Configuration for a Connection to Git repositories for which an external service integration isn't yet available.
-type OtherExternalServiceConnection struct {
+// OtherCodeHostConnection description: Configuration for a Connection to Git repositories for which an external service integration isn't yet available.
+type OtherCodeHostConnection struct {
 	Repos []string `json:"repos"`
 	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for the repositories. In the pattern, the variable "{base}" is replaced with the Git clone base URL host and path, and "{repo}" is replaced with the repository path taken from the `repos` field.
 	//

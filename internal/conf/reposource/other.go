@@ -19,7 +19,7 @@ func (e urlMismatchErr) Error() string {
 }
 
 type Other struct {
-	*schema.OtherExternalServiceConnection
+	*schema.OtherCodeHostConnection
 }
 
 var _ RepoSource = Other{}

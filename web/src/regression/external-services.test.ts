@@ -12,11 +12,11 @@ import { ensureLoggedInOrCreateTestUser, login, loginToGitHub, editSiteConfig } 
 import {
     setUserSiteAdmin,
     getUser,
-    ensureNoTestExternalServices,
-    ensureTestExternalService,
+    ensureNoTestCodeHosts,
+    ensureTestCodeHost,
     waitForRepos,
-    getExternalServices,
-    updateExternalService,
+    getCodeHosts,
+    updateCodeHost,
 } from './util/api'
 import * as GQL from '../../../shared/src/graphql/schema'
 
@@ -68,8 +68,8 @@ describe('External services GUI', () => {
 
     test('External services: GitHub.com GUI and repositoryPathPattern', async () => {
         const externalServiceName = '[TEST] Regression test: GitHub.com'
-        await ensureNoTestExternalServices(gqlClient, {
-            kind: GQL.ExternalServiceKind.GITHUB,
+        await ensureNoTestCodeHosts(gqlClient, {
+            kind: GQL.CodeHostKind.GITHUB,
             uniqueDisplayName: externalServiceName,
             deleteIfExist: true,
         })
@@ -113,8 +113,8 @@ describe('External services GUI', () => {
                     })
                 ).click()
                 return () =>
-                    ensureNoTestExternalServices(gqlClient, {
-                        kind: GQL.ExternalServiceKind.GITHUB,
+                    ensureNoTestCodeHosts(gqlClient, {
+                        kind: GQL.CodeHostKind.GITHUB,
                         uniqueDisplayName: externalServiceName,
                         deleteIfExist: true,
                     })
@@ -167,7 +167,7 @@ describe('External services API', () => {
         'External services: GitLab',
         async () => {
             const externalService = {
-                kind: GQL.ExternalServiceKind.GITLAB,
+                kind: GQL.CodeHostKind.GITLAB,
                 uniqueDisplayName: '[TEST] Regression test: GitLab.com',
                 config: {
                     url: 'https://gitlab.com',
@@ -181,12 +181,12 @@ describe('External services API', () => {
                 },
             }
             const repos = ['gitlab.com/ase/ase']
-            await ensureNoTestExternalServices(gqlClient, { ...externalService, deleteIfExist: true })
+            await ensureNoTestCodeHosts(gqlClient, { ...externalService, deleteIfExist: true })
             await waitForRepos(gqlClient, repos, { ...config, shouldNotExist: true })
             resourceManager.add(
                 'External service',
                 externalService.uniqueDisplayName,
-                await ensureTestExternalService(gqlClient, { ...externalService, waitForRepos: repos }, config)
+                await ensureTestCodeHost(gqlClient, { ...externalService, waitForRepos: repos }, config)
             )
         },
         5 * 1000
@@ -197,7 +197,7 @@ describe('External services API', () => {
         async () => {
             const uniqueDisplayName = '[TEST] Regression test: Bitbucket Cloud (bitbucket.org)'
             const externalServiceInput = {
-                kind: GQL.ExternalServiceKind.BITBUCKETCLOUD,
+                kind: GQL.CodeHostKind.BITBUCKETCLOUD,
                 uniqueDisplayName,
                 config: {
                     url: 'https://bitbucket.org',
@@ -211,16 +211,16 @@ describe('External services API', () => {
                 'sg-e2e-regression-test-bob/codeintellify',
                 'sg-e2e-regression-test-bob/mux',
             ]
-            await ensureNoTestExternalServices(gqlClient, { ...externalServiceInput, deleteIfExist: true })
+            await ensureNoTestCodeHosts(gqlClient, { ...externalServiceInput, deleteIfExist: true })
             await waitForRepos(gqlClient, repos, { ...config, shouldNotExist: true })
             resourceManager.add(
                 'External service',
                 uniqueDisplayName,
-                await ensureTestExternalService(gqlClient, { ...externalServiceInput, waitForRepos: repos }, config)
+                await ensureTestCodeHost(gqlClient, { ...externalServiceInput, waitForRepos: repos }, config)
             )
             // Update eternal service with an "exclude" property
-            const { id } = (await getExternalServices(gqlClient, { uniqueDisplayName }))[0]
-            await updateExternalService(gqlClient, {
+            const { id } = (await getCodeHosts(gqlClient, { uniqueDisplayName }))[0]
+            await updateCodeHost(gqlClient, {
                 id,
                 config: JSON.stringify({
                     ...externalServiceInput.config,
@@ -270,7 +270,7 @@ describe('External services permissions', () => {
         'External services permissions: GitHub',
         async () => {
             const externalService = {
-                kind: GQL.ExternalServiceKind.GITHUB,
+                kind: GQL.CodeHostKind.GITHUB,
                 uniqueDisplayName: '[TEST] Regression test: GitHub.com permissions',
                 config: {
                     url: 'https://github.com',
@@ -283,11 +283,11 @@ describe('External services permissions', () => {
                 'github.com/sg-e2e-regression-test-bob/about',
                 'github.com/sg-e2e-regression-test-bob/shared-with-amy',
             ]
-            await ensureNoTestExternalServices(gqlClient, { ...externalService, deleteIfExist: true })
+            await ensureNoTestCodeHosts(gqlClient, { ...externalService, deleteIfExist: true })
             resourceManager.add(
                 'External service',
                 externalService.uniqueDisplayName,
-                await ensureTestExternalService(gqlClient, { ...externalService, waitForRepos: repos }, config)
+                await ensureTestCodeHost(gqlClient, { ...externalService, waitForRepos: repos }, config)
             )
 
             const authProvider = {

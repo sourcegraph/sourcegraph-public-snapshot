@@ -9,8 +9,8 @@ import { getConfig } from '../../../shared/src/e2e/config'
 import { getTestTools } from './util/init'
 import { ensureLoggedInOrCreateTestUser, clickAndWaitForNavigation } from './util/helpers'
 import { editUserSettings } from './util/settings'
-import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
-import { ensureTestExternalService } from './util/api'
+import { CodeHostKind } from '../../../shared/src/graphql/schema'
+import { ensureTestCodeHost } from './util/api'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 
 /**
@@ -50,7 +50,7 @@ describe('Sourcegraph extensions regression test suite', () => {
         'gitHubToken'
     )
     const externalService = {
-        kind: ExternalServiceKind.GITHUB,
+        kind: CodeHostKind.GITHUB,
         uniqueDisplayName: '[TEST] Github (extensions.test.ts)',
     }
     const repos = ['theupdateframework/notary', 'GetStream/Winds', 'codecov/sourcegraph-codecov']
@@ -72,7 +72,7 @@ describe('Sourcegraph extensions regression test suite', () => {
         resourceManager.add(
             'External service',
             externalService.uniqueDisplayName,
-            await ensureTestExternalService(graphQLClient, {
+            await ensureTestCodeHost(graphQLClient, {
                 ...externalService,
                 config: {
                     url: 'https://github.com',

@@ -57,7 +57,7 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 
 		secret := "secret"
 		repoStore := repos.NewDBStore(db, sql.TxOptions{})
-		githubExtSvc := &repos.ExternalService{
+		githubExtSvc := &repos.CodeHost{
 			Kind:        "GITHUB",
 			DisplayName: "GitHub",
 			Config: marshalJSON(t, &schema.GitHubConnection{
@@ -68,7 +68,7 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 			}),
 		}
 
-		err = repoStore.UpsertExternalServices(ctx, githubExtSvc)
+		err = repoStore.UpsertCodeHosts(ctx, githubExtSvc)
 		if err != nil {
 			t.Fatal(t)
 		}
@@ -106,7 +106,7 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 			{
 				RepoID:              int32(githubRepo.ID),
 				ExternalID:          "16",
-				ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
+				CodeHostType: githubRepo.ExternalRepo.ServiceType,
 				CampaignIDs:         []int64{campaign.ID},
 			},
 		}

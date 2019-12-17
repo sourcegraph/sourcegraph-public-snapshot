@@ -3,49 +3,49 @@ import React from 'react'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PageTitle } from '../components/PageTitle'
 import { ThemeProps } from '../../../shared/src/theme'
-import { ExternalServiceCard } from '../components/ExternalServiceCard'
+import { CodeHostCard } from '../components/CodeHostCard'
 import {
-    AddExternalServiceMetadata,
+    AddCodeHostMetadata,
     ALL_EXTERNAL_SERVICE_ADD_VARIANTS,
-    ExternalServiceVariant,
-    getExternalService,
-    isExternalServiceVariant,
+    CodeHostVariant,
+    getCodeHost,
+    isCodeHostVariant,
 } from './externalServices'
-import { SiteAdminAddExternalServicePage } from './SiteAdminAddExternalServicePage'
+import { SiteAdminAddCodeHostPage } from './SiteAdminAddCodeHostPage'
 
 interface Props extends ThemeProps {
     history: H.History
     eventLogger: {
-        logViewEvent: (event: 'AddExternalService') => void
-        log: (event: 'AddExternalServiceFailed' | 'AddExternalServiceSucceeded', eventProperties?: any) => void
+        logViewEvent: (event: 'AddCodeHost') => void
+        log: (event: 'AddCodeHostFailed' | 'AddCodeHostSucceeded', eventProperties?: any) => void
     }
 }
 
 /**
  * Page for choosing a service kind and variant to add, among the available options.
  */
-export class SiteAdminAddExternalServicesPage extends React.Component<Props> {
+export class SiteAdminAddCodeHostsPage extends React.Component<Props> {
     /**
      * Gets the external service kind and add-service kind from the URL paramsters
      */
-    private getExternalServiceKind(): {
-        kind: GQL.ExternalServiceKind | null
-        variant: ExternalServiceVariant | undefined
+    private getCodeHostKind(): {
+        kind: GQL.CodeHostKind | null
+        variant: CodeHostVariant | undefined
     } {
         const params = new URLSearchParams(this.props.history.location.search)
         let kind = params.get('kind') || undefined
         if (kind) {
             kind = kind.toUpperCase()
         }
-        const isKnownKind = (kind: string): kind is GQL.ExternalServiceKind =>
-            !!getExternalService(kind as GQL.ExternalServiceKind)
+        const isKnownKind = (kind: string): kind is GQL.CodeHostKind =>
+            !!getCodeHost(kind as GQL.CodeHostKind)
 
         const q = params.get('variant')
-        const variant = q && isExternalServiceVariant(q) ? q : undefined
+        const variant = q && isCodeHostVariant(q) ? q : undefined
         return { kind: kind && isKnownKind(kind) ? kind : null, variant }
     }
 
-    private static getAddURL(serviceToAdd: AddExternalServiceMetadata): string {
+    private static getAddURL(serviceToAdd: AddCodeHostMetadata): string {
         const params = new URLSearchParams()
         params.append('kind', serviceToAdd.kind.toLowerCase())
         if (serviceToAdd.variant) {
@@ -55,9 +55,9 @@ export class SiteAdminAddExternalServicesPage extends React.Component<Props> {
     }
 
     public render(): JSX.Element | null {
-        const { kind, variant } = this.getExternalServiceKind()
+        const { kind, variant } = this.getCodeHostKind()
         if (kind) {
-            return <SiteAdminAddExternalServicePage {...this.props} kind={kind} variant={variant} />
+            return <SiteAdminAddCodeHostPage {...this.props} kind={kind} variant={variant} />
         }
         return (
             <div className="add-external-services-page mt-3">
@@ -66,7 +66,7 @@ export class SiteAdminAddExternalServicesPage extends React.Component<Props> {
                 <p>Choose an external service to add to Sourcegraph.</p>
                 {ALL_EXTERNAL_SERVICE_ADD_VARIANTS.map((service, i) => (
                     <div className="add-external-services-page__card" key={i}>
-                        <ExternalServiceCard to={SiteAdminAddExternalServicesPage.getAddURL(service)} {...service} />
+                        <CodeHostCard to={SiteAdminAddCodeHostsPage.getAddURL(service)} {...service} />
                     </div>
                 ))}
             </div>

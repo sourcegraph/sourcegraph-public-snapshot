@@ -132,7 +132,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 }
 
 func TestServer_SetRepoEnabled(t *testing.T) {
-	githubService := &repos.ExternalService{
+	githubService := &repos.CodeHost{
 		ID:          1,
 		Kind:        "GITHUB",
 		DisplayName: "github.com - test",
@@ -160,7 +160,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 		},
 	}).With(repos.Opt.RepoSources(githubService.URN()))
 
-	gitlabService := &repos.ExternalService{
+	gitlabService := &repos.CodeHost{
 		ID:          1,
 		Kind:        "GITLAB",
 		DisplayName: "gitlab.com - test",
@@ -190,7 +190,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 		},
 	}).With(repos.Opt.RepoSources(gitlabService.URN()))
 
-	bitbucketServerService := &repos.ExternalService{
+	bitbucketServerService := &repos.CodeHost{
 		ID:          1,
 		Kind:        "BITBUCKETSERVER",
 		DisplayName: "Bitbucket Server - Test",
@@ -224,7 +224,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 
 	type testCase struct {
 		name  string
-		svcs  repos.ExternalServices // stored services
+		svcs  repos.CodeHosts // stored services
 		repos repos.Repos            // stored repos
 		kind  string
 		res   *protocol.ExcludeRepoResponse
@@ -234,16 +234,16 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 	var testCases []testCase
 
 	for _, k := range []struct {
-		svc  *repos.ExternalService
+		svc  *repos.CodeHost
 		repo *repos.Repo
 	}{
 		{githubService, githubRepo},
 		{bitbucketServerService, bitbucketServerRepo},
 		{gitlabService, gitlabRepo},
 	} {
-		svcs := repos.ExternalServices{
+		svcs := repos.CodeHosts{
 			k.svc,
-			k.svc.With(func(e *repos.ExternalService) {
+			k.svc.With(func(e *repos.CodeHost) {
 				e.ID++
 				e.DisplayName += " - Duplicate"
 			}),
@@ -255,7 +255,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 			repos: repos.Repos{k.repo}.With(repos.Opt.RepoSources()),
 			kind:  k.svc.Kind,
 			res: &protocol.ExcludeRepoResponse{
-				ExternalServices: apiExternalServices(svcs.With(func(e *repos.ExternalService) {
+				CodeHosts: apiCodeHosts(svcs.With(func(e *repos.CodeHost) {
 					if err := e.Exclude(k.repo); err != nil {
 						panic(err)
 					}
@@ -271,7 +271,7 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 
 			store := new(repos.FakeStore)
 			storedSvcs := tc.svcs.Clone()
-			err := store.UpsertExternalServices(ctx, storedSvcs...)
+			err := store.UpsertCodeHosts(ctx, storedSvcs...)
 			if err != nil {
 				t.Fatalf("failed to prepare store: %v", err)
 			}
@@ -309,23 +309,23 @@ func TestServer_SetRepoEnabled(t *testing.T) {
 				t.Errorf("response:\n%s", cmp.Diff(have, want))
 			}
 
-			if res == nil || len(res.ExternalServices) == 0 {
+			if res == nil || len(res.CodeHosts) == 0 {
 				return
 			}
 
-			ids := make([]int64, 0, len(res.ExternalServices))
-			for _, s := range res.ExternalServices {
+			ids := make([]int64, 0, len(res.CodeHosts))
+			for _, s := range res.CodeHosts {
 				ids = append(ids, s.ID)
 			}
 
-			svcs, err := store.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
+			svcs, err := store.ListCodeHosts(ctx, repos.StoreListCodeHostsArgs{
 				IDs: ids,
 			})
 			if err != nil {
 				t.Fatalf("failed to read from store: %v", err)
 			}
 
-			have, want := apiExternalServices(svcs...), res.ExternalServices
+			have, want := apiCodeHosts(svcs...), res.CodeHosts
 			if !reflect.DeepEqual(have, want) {
 				t.Errorf("stored external services:\n%s", cmp.Diff(have, want))
 			}
@@ -452,8 +452,8 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 	}
 }
 
-func TestServer_RepoExternalServices(t *testing.T) {
-	service1 := &repos.ExternalService{
+func TestServer_RepoCodeHosts(t *testing.T) {
+	service1 := &repos.CodeHost{
 		ID:          1,
 		Kind:        "GITHUB",
 		DisplayName: "github.com - test",
@@ -464,7 +464,7 @@ func TestServer_RepoExternalServices(t *testing.T) {
 			"token": "secret"
 		}`),
 	}
-	service2 := &repos.ExternalService{
+	service2 := &repos.CodeHost{
 		ID:          2,
 		Kind:        "GITHUB",
 		DisplayName: "github.com - test2",
@@ -500,13 +500,13 @@ func TestServer_RepoExternalServices(t *testing.T) {
 	// set for test cases.
 	ctx := context.Background()
 	store := new(repos.FakeStore)
-	must(store.UpsertExternalServices(ctx, service1, service2))
+	must(store.UpsertCodeHosts(ctx, service1, service2))
 	must(store.UpsertRepos(ctx, repoNoSources, repoSources))
 
 	testCases := []struct {
 		name   string
 		repoID uint32
-		svcs   []api.ExternalService
+		svcs   []api.CodeHost
 		err    string
 	}{{
 		name:   "repo no sources",
@@ -516,7 +516,7 @@ func TestServer_RepoExternalServices(t *testing.T) {
 	}, {
 		name:   "repo sources",
 		repoID: repoSources.ID,
-		svcs:   apiExternalServices(service1, service2),
+		svcs:   apiCodeHosts(service1, service2),
 		err:    "<nil>",
 	}, {
 		name:   "repo not in store",
@@ -532,7 +532,7 @@ func TestServer_RepoExternalServices(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			res, err := cli.RepoExternalServices(ctx, tc.repoID)
+			res, err := cli.RepoCodeHosts(ctx, tc.repoID)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("have err: %q, want: %q", have, want)
 			}
@@ -545,7 +545,7 @@ func TestServer_RepoExternalServices(t *testing.T) {
 }
 
 func TestServer_StatusMessages(t *testing.T) {
-	githubService := &repos.ExternalService{
+	githubService := &repos.CodeHost{
 		ID:          1,
 		Kind:        "GITHUB",
 		DisplayName: "github.com - test",
@@ -640,9 +640,9 @@ func TestServer_StatusMessages(t *testing.T) {
 			res: &protocol.StatusMessagesResponse{
 				Messages: []protocol.StatusMessage{
 					{
-						ExternalServiceSyncError: &protocol.ExternalServiceSyncError{
+						CodeHostSyncError: &protocol.CodeHostSyncError{
 							Message:           "github is down",
-							ExternalServiceId: githubService.ID,
+							CodeHostId: githubService.ID,
 						},
 					},
 				},
@@ -675,7 +675,7 @@ func TestServer_StatusMessages(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = store.UpsertExternalServices(ctx, githubService)
+			err = store.UpsertCodeHosts(ctx, githubService)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -720,14 +720,14 @@ func TestServer_StatusMessages(t *testing.T) {
 	}
 }
 
-func apiExternalServices(es ...*repos.ExternalService) []api.ExternalService {
+func apiCodeHosts(es ...*repos.CodeHost) []api.CodeHost {
 	if len(es) == 0 {
 		return nil
 	}
 
-	svcs := make([]api.ExternalService, 0, len(es))
+	svcs := make([]api.CodeHost, 0, len(es))
 	for _, e := range es {
-		svc := api.ExternalService{
+		svc := api.CodeHost{
 			ID:          e.ID,
 			Kind:        e.Kind,
 			DisplayName: e.DisplayName,

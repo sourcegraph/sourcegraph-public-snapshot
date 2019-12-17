@@ -7,7 +7,7 @@ import { getConfig } from '../../../shared/src/e2e/config'
 import { getTestTools } from './util/init'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { GraphQLClient } from './util/GraphQLClient'
-import { ensureTestExternalService, search } from './util/api'
+import { ensureTestCodeHost, search } from './util/api'
 import { ensureLoggedInOrCreateTestUser, editGlobalSettings } from './util/helpers'
 import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { TestResourceManager } from './util/TestResourceManager'
@@ -57,8 +57,8 @@ describe('Search regression test suite', () => {
      * Test data
      */
     const testUsername = 'test-search'
-    const testExternalServiceInfo = {
-        kind: GQL.ExternalServiceKind.GITHUB,
+    const testCodeHostInfo = {
+        kind: GQL.CodeHostKind.GITHUB,
         uniqueDisplayName: '[TEST] GitHub (search.test.ts)',
     }
     const testRepoSlugs = [
@@ -164,11 +164,11 @@ describe('Search regression test suite', () => {
                 )
                 resourceManager.add(
                     'External service',
-                    testExternalServiceInfo.uniqueDisplayName,
-                    await ensureTestExternalService(
+                    testCodeHostInfo.uniqueDisplayName,
+                    await ensureTestCodeHost(
                         gqlClient,
                         {
-                            ...testExternalServiceInfo,
+                            ...testCodeHostInfo,
                             config: {
                                 url: 'https://github.com',
                                 token: config.gitHubToken,

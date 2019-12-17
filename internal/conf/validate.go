@@ -52,7 +52,7 @@ type problemKind string
 const (
 	problemCritical        problemKind = "CriticalConfig"
 	problemSite            problemKind = "SiteConfig"
-	problemExternalService problemKind = "ExternalService"
+	problemCodeHost problemKind = "CodeHost"
 )
 
 // Problem contains kind and description of a specific configuration problem.
@@ -69,10 +69,10 @@ func NewSiteProblem(msg string) *Problem {
 	}
 }
 
-// NewExternalServiceProblem creates a new external service config problem with given message.
-func NewExternalServiceProblem(msg string) *Problem {
+// NewCodeHostProblem creates a new external service config problem with given message.
+func NewCodeHostProblem(msg string) *Problem {
 	return &Problem{
-		kind:        problemExternalService,
+		kind:        problemCodeHost,
 		description: msg,
 	}
 }
@@ -87,9 +87,9 @@ func (p Problem) IsSite() bool {
 	return p.kind == problemSite
 }
 
-// IsExternalService returns true if the problem is about external service config.
-func (p Problem) IsExternalService() bool {
-	return p.kind == problemExternalService
+// IsCodeHost returns true if the problem is about external service config.
+func (p Problem) IsCodeHost() bool {
+	return p.kind == problemCodeHost
 }
 
 func (p Problem) String() string {
@@ -116,9 +116,9 @@ func NewSiteProblems(messages ...string) Problems {
 	return newProblems(problemSite, messages...)
 }
 
-// NewExternalServiceProblems converts a list of messages into external service config problems.
-func NewExternalServiceProblems(messages ...string) Problems {
-	return newProblems(problemExternalService, messages...)
+// NewCodeHostProblems converts a list of messages into external service config problems.
+func NewCodeHostProblems(messages ...string) Problems {
+	return newProblems(problemCodeHost, messages...)
 }
 
 // Messages returns the list of problems in strings.
@@ -154,10 +154,10 @@ func (ps Problems) Site() (problems Problems) {
 	return problems
 }
 
-// ExternalService returns all external service config problems in the list.
-func (ps Problems) ExternalService() (problems Problems) {
+// CodeHost returns all external service config problems in the list.
+func (ps Problems) CodeHost() (problems Problems) {
 	for i := range ps {
-		if ps[i].IsExternalService() {
+		if ps[i].IsCodeHost() {
 			problems = append(problems, ps[i])
 		}
 	}

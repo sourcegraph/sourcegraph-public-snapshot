@@ -26,7 +26,7 @@ func TestStatusMessages(t *testing.T) {
 					message
 				}
 
-				... on ExternalServiceSyncError {
+				... on CodeHostSyncError {
 					message
 					externalService {
 						id
@@ -94,10 +94,10 @@ func TestStatusMessages(t *testing.T) {
 		}
 		defer func() { db.Mocks.Users.GetByCurrentAuthUser = nil }()
 
-		db.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
-			return &types.ExternalService{ID: 1, DisplayName: "GitHub.com testing"}, nil
+		db.Mocks.CodeHosts.GetByID = func(id int64) (*types.CodeHost, error) {
+			return &types.CodeHost{ID: 1, DisplayName: "GitHub.com testing"}, nil
 		}
-		defer func() { db.Mocks.ExternalServices.GetByID = nil }()
+		defer func() { db.Mocks.CodeHosts.GetByID = nil }()
 
 		repoupdater.MockStatusMessages = func(_ context.Context) (*protocol.StatusMessagesResponse, error) {
 			res := &protocol.StatusMessagesResponse{Messages: []protocol.StatusMessage{
@@ -107,9 +107,9 @@ func TestStatusMessages(t *testing.T) {
 					},
 				},
 				{
-					ExternalServiceSyncError: &protocol.ExternalServiceSyncError{
+					CodeHostSyncError: &protocol.CodeHostSyncError{
 						Message:           "Authentication failed. Please check credentials.",
-						ExternalServiceId: 1,
+						CodeHostId: 1,
 					},
 				},
 				{
@@ -134,7 +134,7 @@ func TestStatusMessages(t *testing.T) {
 								"message": "Currently cloning 5 repositories in parallel..."
 							},
 							{
-								"__typename": "ExternalServiceSyncError",
+								"__typename": "CodeHostSyncError",
 								"externalService": {
 									"displayName": "GitHub.com testing",
 									"id": "RXh0ZXJuYWxTZXJ2aWNlOjE="

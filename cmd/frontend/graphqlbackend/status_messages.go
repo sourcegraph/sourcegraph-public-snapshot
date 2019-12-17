@@ -38,8 +38,8 @@ func (r *statusMessageResolver) ToCloningProgress() (*statusMessageResolver, boo
 	return r, r.message.Cloning != nil
 }
 
-func (r *statusMessageResolver) ToExternalServiceSyncError() (*statusMessageResolver, bool) {
-	return r, r.message.ExternalServiceSyncError != nil
+func (r *statusMessageResolver) ToCodeHostSyncError() (*statusMessageResolver, bool) {
+	return r, r.message.CodeHostSyncError != nil
 }
 
 func (r *statusMessageResolver) ToSyncError() (*statusMessageResolver, bool) {
@@ -50,8 +50,8 @@ func (r *statusMessageResolver) Message() (string, error) {
 	if r.message.Cloning != nil {
 		return r.message.Cloning.Message, nil
 	}
-	if r.message.ExternalServiceSyncError != nil {
-		return r.message.ExternalServiceSyncError.Message, nil
+	if r.message.CodeHostSyncError != nil {
+		return r.message.CodeHostSyncError.Message, nil
 	}
 	if r.message.SyncError != nil {
 		return r.message.SyncError.Message, nil
@@ -59,9 +59,9 @@ func (r *statusMessageResolver) Message() (string, error) {
 	return "", errors.New("status message is of unknown type")
 }
 
-func (r *statusMessageResolver) ExternalService(ctx context.Context) (*externalServiceResolver, error) {
-	id := r.message.ExternalServiceSyncError.ExternalServiceId
-	externalService, err := db.ExternalServices.GetByID(ctx, id)
+func (r *statusMessageResolver) CodeHost(ctx context.Context) (*externalServiceResolver, error) {
+	id := r.message.CodeHostSyncError.CodeHostId
+	externalService, err := db.CodeHosts.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}

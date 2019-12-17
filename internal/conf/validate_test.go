@@ -80,7 +80,7 @@ func TestProblems(t *testing.T) {
 		"siteProblem2",
 		"siteProblem3",
 	)
-	externalServiceProblems := NewExternalServiceProblems(
+	externalServiceProblems := NewCodeHostProblems(
 		"externalServiceProblem1",
 		"externalServiceProblem2",
 		"externalServiceProblem3",
@@ -112,7 +112,7 @@ func TestProblems(t *testing.T) {
 
 	{
 		want := strings.Join(externalServiceProblems.Messages(), "\n")
-		got := strings.Join(problems.ExternalService().Messages(), "\n")
+		got := strings.Join(problems.CodeHost().Messages(), "\n")
 		if want != got {
 			t.Errorf("got %q, want %q", got, want)
 		}

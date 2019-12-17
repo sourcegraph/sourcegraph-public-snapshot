@@ -28,7 +28,7 @@ export function fetchAllStatusMessages(): Observable<GQL.StatusMessage[]> {
                         message
                     }
 
-                    ... on ExternalServiceSyncError {
+                    ... on CodeHostSyncError {
                         message
                         externalService {
                             id
@@ -145,7 +145,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                         entryType="progress"
                     />
                 )
-            case 'ExternalServiceSyncError':
+            case 'CodeHostSyncError':
                 return (
                     <StatusMessagesNavItemEntry
                         key={message.message}
@@ -178,7 +178,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         if (isErrorLike(this.state.messagesOrError)) {
             return <CloudAlertIcon className="icon-inline" />
         }
-        if (this.state.messagesOrError.some(({ __typename }) => __typename === 'ExternalServiceSyncError')) {
+        if (this.state.messagesOrError.some(({ __typename }) => __typename === 'CodeHostSyncError')) {
             return (
                 <CloudAlertIcon
                     className="icon-inline"

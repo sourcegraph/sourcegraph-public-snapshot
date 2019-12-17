@@ -297,11 +297,11 @@ func (s *Service) runChangesetJob(
 		return err
 	}
 
-	var externalService *repos.ExternalService
+	var externalService *repos.CodeHost
 	{
-		args := repos.StoreListExternalServicesArgs{IDs: repo.ExternalServiceIDs()}
+		args := repos.StoreListCodeHostsArgs{IDs: repo.CodeHostIDs()}
 
-		es, err := reposStore.ListExternalServices(ctx, args)
+		es, err := reposStore.ListCodeHosts(ctx, args)
 		if err != nil {
 			return err
 		}

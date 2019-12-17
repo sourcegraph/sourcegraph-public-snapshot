@@ -80,8 +80,8 @@ func Main(newPreSync repos.NewPreSync, dbInitHook func(db *sql.DB)) {
 			m.Done,
 			m.ListRepos,
 			m.UpsertRepos,
-			m.ListExternalServices,
-			m.UpsertExternalServices,
+			m.ListCodeHosts,
+			m.UpsertCodeHosts,
 			m.ListAllRepoNames,
 		} {
 			om.MustRegister(prometheus.DefaultRegisterer)
@@ -125,7 +125,7 @@ func Main(newPreSync repos.NewPreSync, dbInitHook func(db *sql.DB)) {
 	if envvar.SourcegraphDotComMode() {
 		server.SourcegraphDotComMode = true
 
-		es, err := store.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
+		es, err := store.ListCodeHosts(ctx, repos.StoreListCodeHostsArgs{
 			Kinds: []string{"GITHUB", "GITLAB"},
 		})
 

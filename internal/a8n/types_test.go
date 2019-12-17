@@ -38,7 +38,7 @@ func TestChangesetMetadata(t *testing.T) {
 		Metadata:            githubPR,
 		CampaignIDs:         []int64{},
 		ExternalID:          "12345",
-		ExternalServiceType: "github",
+		CodeHostType: "github",
 	}
 
 	title, err := changeset.Title()

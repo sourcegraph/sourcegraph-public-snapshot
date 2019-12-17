@@ -148,7 +148,7 @@ func authProviderTypes() []string {
 }
 
 func externalServiceKinds(ctx context.Context) ([]string, error) {
-	services, err := db.ExternalServices.List(ctx, db.ExternalServicesListOptions{})
+	services, err := db.CodeHosts.List(ctx, db.CodeHostsListOptions{})
 	if err != nil {
 		return nil, err
 	}

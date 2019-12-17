@@ -26,8 +26,8 @@ func TestSyncer_Sync(t *testing.T) {
 
 	testSyncerSync(new(repos.FakeStore))(t)
 
-	github := repos.ExternalService{ID: 1, Kind: "github"}
-	gitlab := repos.ExternalService{ID: 2, Kind: "gitlab"}
+	github := repos.CodeHost{ID: 1, Kind: "github"}
+	gitlab := repos.CodeHost{ID: 2, Kind: "gitlab"}
 
 	for _, tc := range []struct {
 		name    string
@@ -88,7 +88,7 @@ func TestSyncer_Sync(t *testing.T) {
 }
 
 func testSyncerSync(s repos.Store) func(*testing.T) {
-	githubService := &repos.ExternalService{
+	githubService := &repos.CodeHost{
 		ID:   1,
 		Kind: "GITHUB",
 	}
@@ -106,7 +106,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		repos.Opt.RepoSources(githubService.URN()),
 	)
 
-	gitlabService := &repos.ExternalService{
+	gitlabService := &repos.CodeHost{
 		ID:   10,
 		Kind: "GITLAB",
 	}
@@ -124,7 +124,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		repos.Opt.RepoSources(gitlabService.URN()),
 	)
 
-	bitbucketServerService := &repos.ExternalService{
+	bitbucketServerService := &repos.CodeHost{
 		ID:   20,
 		Kind: "BITBUCKETSERVER",
 	}
@@ -142,7 +142,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		repos.Opt.RepoSources(bitbucketServerService.URN()),
 	)
 
-	awsCodeCommitService := &repos.ExternalService{
+	awsCodeCommitService := &repos.CodeHost{
 		ID:   30,
 		Kind: "AWSCODECOMMIT",
 	}
@@ -160,7 +160,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		repos.Opt.RepoSources(awsCodeCommitService.URN()),
 	)
 
-	otherService := &repos.ExternalService{
+	otherService := &repos.CodeHost{
 		ID:   40,
 		Kind: "OTHER",
 	}
@@ -177,7 +177,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		repos.Opt.RepoSources(otherService.URN()),
 	)
 
-	gitoliteService := &repos.ExternalService{
+	gitoliteService := &repos.CodeHost{
 		ID:   50,
 		Kind: "GITOLITE",
 	}
@@ -195,7 +195,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		repos.Opt.RepoSources(gitoliteService.URN()),
 	)
 
-	bitbucketCloudService := &repos.ExternalService{
+	bitbucketCloudService := &repos.CodeHost{
 		ID:   60,
 		Kind: "BITBUCKETCLOUD",
 	}
@@ -229,7 +229,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 	var testCases []testCase
 	for _, tc := range []struct {
 		repo *repos.Repo
-		svc  *repos.ExternalService
+		svc  *repos.CodeHost
 	}{
 		{repo: githubRepo, svc: githubService},
 		{repo: gitlabRepo, svc: gitlabService},
@@ -239,7 +239,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 		{repo: gitoliteRepo, svc: gitoliteService},
 		{repo: bitbucketCloudRepo, svc: bitbucketCloudService},
 	} {
-		svcdup := tc.svc.With(repos.Opt.ExternalServiceID(tc.svc.ID + 1))
+		svcdup := tc.svc.With(repos.Opt.CodeHostID(tc.svc.ID + 1))
 		testCases = append(testCases,
 			testCase{
 				name: "new repo",

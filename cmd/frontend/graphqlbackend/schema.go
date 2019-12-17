@@ -109,11 +109,11 @@ type Mutation {
     # Deletes an organization. Only site admins may perform this mutation.
     deleteOrganization(organization: ID!): EmptyResponse
     # Adds a external service. Only site admins may perform this mutation.
-    addExternalService(input: AddExternalServiceInput!): ExternalService!
+    addCodeHost(input: AddCodeHostInput!): CodeHost!
     # Updates a external service. Only site admins may perform this mutation.
-    updateExternalService(input: UpdateExternalServiceInput!): ExternalService!
+    updateCodeHost(input: UpdateCodeHostInput!): CodeHost!
     # Delete an external service. Only site admins may perform this mutation.
-    deleteExternalService(externalService: ID!): EmptyResponse!
+    deleteCodeHost(externalService: ID!): EmptyResponse!
     # DEPRECATED: All repositories are accessible or deleted. To prevent a
     # repository from being accessed on Sourcegraph add it to the external
     # service exclude configuration. This mutation will be removed in 3.6.
@@ -764,9 +764,9 @@ type ChangesetEventConnection {
 }
 
 # A new external service.
-input AddExternalServiceInput {
+input AddCodeHostInput {
     # The kind of the external service.
-    kind: ExternalServiceKind!
+    kind: CodeHostKind!
     # The display name of the external service.
     displayName: String!
     # The JSON configuration of the external service.
@@ -774,7 +774,7 @@ input AddExternalServiceInput {
 }
 
 # Fields to update for an existing external service.
-input UpdateExternalServiceInput {
+input UpdateCodeHostInput {
     # The id of the external service to update.
     id: ID!
     # The updated display name, if provided.
@@ -1109,7 +1109,7 @@ type Query {
     externalServices(
         # Returns the first n external services from the list.
         first: Int
-    ): ExternalServiceConnection!
+    ): CodeHostConnection!
     # List all repositories.
     repositories(
         # Returns the first n repositories from the list.
@@ -1625,9 +1625,9 @@ type Highlight {
 }
 
 # A list of external services.
-type ExternalServiceConnection {
+type CodeHostConnection {
     # A list of external services.
-    nodes: [ExternalService!]!
+    nodes: [CodeHost!]!
 
     # The total number of external services in the connection.
     totalCount: Int!
@@ -1637,7 +1637,7 @@ type ExternalServiceConnection {
 }
 
 # A specific kind of external service.
-enum ExternalServiceKind {
+enum CodeHostKind {
     AWSCODECOMMIT
     BITBUCKETCLOUD
     BITBUCKETSERVER
@@ -1649,11 +1649,11 @@ enum ExternalServiceKind {
 }
 
 # A configured external service.
-type ExternalService implements Node {
+type CodeHost implements Node {
     # The external service's unique ID.
     id: ID!
     # The kind of external service.
-    kind: ExternalServiceKind!
+    kind: CodeHostKind!
     # The display name of the external service.
     displayName: String!
     # The JSON configuration of the external service.
@@ -1663,9 +1663,9 @@ type ExternalService implements Node {
     # When the external service was last updated.
     updatedAt: DateTime!
     # This is an optional field that's populated when we ran into errors on the
-    # backend side when trying to create/update an ExternalService, but the
+    # backend side when trying to create/update an CodeHost, but the
     # create/update still succeeded.
-    # It is a field on ExternalService instead of a separate thing in order to
+    # It is a field on CodeHost instead of a separate thing in order to
     # not break the API and stay backwards compatible.
     warning: String
 }
@@ -1739,7 +1739,7 @@ type Repository implements Node & GenericSearchResultInterface {
     externalServices(
         # Returns the first n external services from the list.
         first: Int
-    ): ExternalServiceConnection!
+    ): CodeHostConnection!
     # Whether the repository is currently being cloned.
     cloneInProgress: Boolean! @deprecated(reason: "use Repository.mirrorInfo.cloneInProgress instead")
     # Information about the text search index for this repository, or null if text search indexing
@@ -4542,11 +4542,11 @@ type CloningProgress {
 
 # FOR INTERNAL USE ONLY: A status message produced when repositories could not
 # be synced from an external service
-type ExternalServiceSyncError {
+type CodeHostSyncError {
     # The message of this status message
     message: String!
     # The external service that failed to sync
-    externalService: ExternalService!
+    externalService: CodeHost!
 }
 
 # FOR INTERNAL USE ONLY: A status message produced when repositories could not
@@ -4557,7 +4557,7 @@ type SyncError {
 }
 
 # FOR INTERNAL USE ONLY: A status message
-union StatusMessage = CloningProgress | ExternalServiceSyncError | SyncError
+union StatusMessage = CloningProgress | CodeHostSyncError | SyncError
 
 # An RFC 3339-encoded UTC date string, such as 1973-11-29T21:33:09Z. This value can be parsed into a
 # JavaScript Date using Date.parse. To produce this value from a JavaScript Date instance, use

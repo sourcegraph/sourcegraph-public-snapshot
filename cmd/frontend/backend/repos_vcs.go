@@ -96,7 +96,7 @@ func quickGitserverRepo(ctx context.Context, repo api.RepoName, serviceType stri
 // hasGitHubDotComToken reports whether there are any personal access tokens configured for
 // github.com.
 func hasGitHubDotComToken(ctx context.Context) (bool, error) {
-	conns, err := db.ExternalServices.ListGitHubConnections(ctx)
+	conns, err := db.CodeHosts.ListGitHubConnections(ctx)
 	if err != nil {
 		return false, err
 	}
@@ -116,7 +116,7 @@ func hasGitHubDotComToken(ctx context.Context) (bool, error) {
 // hasGitLabDotComToken reports whether there are any personal access tokens configured for
 // github.com.
 func hasGitLabDotComToken(ctx context.Context) (bool, error) {
-	conns, err := db.ExternalServices.ListGitLabConnections(ctx)
+	conns, err := db.CodeHosts.ListGitLabConnections(ctx)
 	if err != nil {
 		return false, err
 	}

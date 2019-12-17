@@ -129,8 +129,8 @@ type Settings struct {
 	CreatedAt    time.Time       // the date when this settings value was created
 }
 
-// ExternalService represents an complete external service record.
-type ExternalService struct {
+// CodeHost represents an complete external service record.
+type CodeHost struct {
 	ID          int64
 	Kind        string
 	DisplayName string

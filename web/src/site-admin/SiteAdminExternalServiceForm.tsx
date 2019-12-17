@@ -5,25 +5,25 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { ErrorLike } from '../../../shared/src/util/errors'
 import { Form } from '../components/Form'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
-import { ExternalServiceKindMetadata } from './externalServices'
+import { CodeHostKindMetadata } from './externalServices'
 import { ErrorAlert, ErrorMessage } from '../components/alerts'
 
-interface Props extends Pick<ExternalServiceKindMetadata, 'jsonSchema' | 'editorActions'> {
+interface Props extends Pick<CodeHostKindMetadata, 'jsonSchema' | 'editorActions'> {
     history: H.History
-    input: GQL.IAddExternalServiceInput
+    input: GQL.IAddCodeHostInput
     isLightTheme: boolean
     error?: ErrorLike
     warning?: string
     mode: 'edit' | 'create'
     loading: boolean
     onSubmit: (event?: React.FormEvent<HTMLFormElement>) => void
-    onChange: (change: GQL.IAddExternalServiceInput) => void
+    onChange: (change: GQL.IAddCodeHostInput) => void
 }
 
 /**
  * Form for submitting a new or updated external service.
  */
-export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
+export class SiteAdminCodeHostForm extends React.Component<Props, {}> {
     public render(): JSX.Element | null {
         return (
             <Form className="external-service-form" onSubmit={this.props.onSubmit}>
