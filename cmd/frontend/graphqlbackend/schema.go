@@ -52,6 +52,15 @@ type Mutation {
         # the query will return anyway, so the caller must check the result's CampaignPlan.status.
         wait: Boolean = false
     ): CampaignPlan!
+    # Create a campaign plan from patches (in unified diff format) that are computed by the caller.
+    #
+    # To create the campaign, call createCampaign with the returned CampaignPlan.id in the
+    # CreateCampaignInput.plan field.
+    createCampaignPlanFromPatches(
+        # A list of patches (diffs) to apply to repositories (in new branches) when a campaign is
+        # created from this campaign plan.
+        patches: [CampaignPlanPatch!]!
+    ): CampaignPlan!
     # Cancel a campaign plan that is being generated.
     # Cancellation expresses a desinterest in the campaign plan and is best-effort.
     # It may not be relied upon.
@@ -434,6 +443,22 @@ input CampaignPlanSpecification {
     # Schema for comby:
     # { scopeQuery: string, matchTemplate: string, rewriteTemplate: string }
     arguments: JSONCString!
+}
+
+# A patch to apply to a repository (in a new branch) when a campaign is created from the parent
+# campaign plan.
+input CampaignPlanPatch {
+    # The repository that this patch is applied to.
+    repository: ID!
+
+    # The base revision in the repository that this patch is applied to.
+    baseRevision: String!
+
+    # The patch (in unified diff format) to apply.
+    #
+    # The filenames must not be prefixed (e.g., with 'a/' and 'b/'). Tip: use 'git diff --no-prefix'
+    # to omit the prefix.
+    patch: String!
 }
 
 # Input arguments for creating a campaign.
