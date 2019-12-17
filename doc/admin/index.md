@@ -12,7 +12,7 @@ Site administrators are the admins responsible for deploying, managing, and conf
 - [Configuration](config/index.md)
 - [Adding Git repositories](repo/add.md) (from a code host or clone URL)
 - [NGINX HTTP and HTTPS/SSL configuration](nginx.md)
-- [Management console](management_console.md)
+- [Management console (removed in v3.11)](management_console.md)
 - [Repository webhooks](repo/webhooks.md)
 - [User authentication](auth/index.md)
 - [Upgrading Sourcegraph](updates.md)

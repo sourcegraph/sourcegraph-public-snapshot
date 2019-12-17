@@ -397,7 +397,7 @@ describe('Search regression test suite', () => {
                     GQL.SearchPatternType.literal
                 )
                 expect(response.results.matchCount).toBe(0)
-                expect(response.results.alert && response.results.alert.title).toBe('Timeout')
+                expect(response.results.alert && response.results.alert.title).toBe('Timed out while searching')
             },
             2 * 1000
         )

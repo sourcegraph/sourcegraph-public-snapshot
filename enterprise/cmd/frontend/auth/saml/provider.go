@@ -163,7 +163,7 @@ func getServiceProvider(ctx context.Context, pc *schema.SAMLAuthProvider) (*saml
 	if pc.ServiceProviderIssuer == "" {
 		return nil, errors.New("invalid SAML Service Provider configuration: issuer is empty (and default issuer could not be derived from empty externalURL)")
 	}
-	externalURL, err := url.Parse(conf.Get().Critical.ExternalURL)
+	externalURL, err := url.Parse(conf.Get().ExternalURL)
 	if err != nil {
 		return nil, errors.WithMessage(err, "parsing external URL for SAML Service Provider")
 	}

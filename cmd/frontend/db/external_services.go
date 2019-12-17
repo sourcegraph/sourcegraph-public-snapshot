@@ -214,7 +214,7 @@ func (e *ExternalServicesStore) validateBitbucketServerConnection(c *schema.Bitb
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *ExternalServicesStore) Create(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error {
-	ps := confGet().Critical.AuthProviders
+	ps := confGet().AuthProviders
 	if err := c.ValidateConfig(externalService.Kind, externalService.Config, ps); err != nil {
 		return err
 	}

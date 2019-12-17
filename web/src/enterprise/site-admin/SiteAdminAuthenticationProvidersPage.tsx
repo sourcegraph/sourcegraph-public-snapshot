@@ -83,7 +83,7 @@ export class SiteAdminAuthenticationProvidersPage extends React.Component<Props>
                     Authentication providers allow users to sign into Sourcegraph. See{' '}
                     <a href="https://docs.sourcegraph.com/admin/auth">authentication documentation</a> about configuring
                     single-sign-on (SSO) via SAML and OpenID Connect. Configure authentication providers in the{' '}
-                    <a href="https://docs.sourcegraph.com/admin/management_console ">management console</a>.
+                    <a href="https://docs.sourcegraph.com/admin/config/site_config">site configuration</a>.
                 </p>
                 <FilteredAuthProviderConnection
                     className="list-group list-group-flush mt-3"

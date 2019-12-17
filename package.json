@@ -24,7 +24,7 @@
     "storybook": "start-storybook -p 9001 -c .storybook",
     "storybook:build": "build-storybook -c .storybook",
     "storybook:smoke-test": "yarn run storybook --smoke-test",
-    "deduplicate": "yarn-deduplicate -s fewer && yarn-deduplicate -s fewer ./cmd/management-console/web/yarn.lock"
+    "deduplicate": "yarn-deduplicate -s fewer"
   },
   "browserslist": [
     "last 1 version",

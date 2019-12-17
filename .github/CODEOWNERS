@@ -239,10 +239,6 @@ README.md @sqs
 /internal/store/ @keegancsmith
 /internal/metrics @keegancsmith @slimsag
 
-# Management console
-/cmd/management-console @slimsag
-/enterprise/cmd/management-console @slimsag
-
 # Code discussions
 **/*discussion* @slimsag
 /web/src/discussions @slimsag

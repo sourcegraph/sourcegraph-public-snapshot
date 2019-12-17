@@ -29,7 +29,7 @@ func init() {
 }
 
 func ssoSignOutHandler(w http.ResponseWriter, r *http.Request) (signOutURLs []app.SignOutURL) {
-	for _, p := range conf.Get().Critical.AuthProviders {
+	for _, p := range conf.Get().AuthProviders {
 		var e app.SignOutURL
 		var err error
 		switch {
