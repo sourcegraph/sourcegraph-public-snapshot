@@ -10,7 +10,7 @@ import DeleteIcon from 'mdi-react/DeleteIcon'
 export const changesetStatusColorClasses: Record<ChangesetState, string> = {
     [ChangesetState.OPEN]: 'success',
     [ChangesetState.CLOSED]: 'danger',
-    [ChangesetState.DELETED]: 'danger',
+    [ChangesetState.DELETED]: 'muted',
     [ChangesetState.MERGED]: 'merged',
 }
 
