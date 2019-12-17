@@ -87,6 +87,11 @@ func NewCampaignType(campaignTypeName, args string, cf *httpcli.Factory) (Campai
 
 		ct = c
 
+	case patchCampaignType:
+		// Prefer the more specific createCampaignPlanFromPatches GraphQL API for creating campaigns
+		// from patches computed by the caller, to avoid having multiple ways to do the same thing.
+		return nil, errors.New("use createCampaignPlanFromPatches for patch campaign types")
+
 	default:
 		return nil, fmt.Errorf("unknown campaign type: %s", campaignTypeName)
 	}
@@ -383,4 +388,12 @@ func tmpfileDiff(filename, a, b string) (string, error) {
 		}
 	}
 	return string(out), nil
+}
+
+const patchCampaignType = "patch"
+
+type CampaignPlanPatch struct {
+	Repo         api.RepoID
+	BaseRevision string
+	Patch        string
 }

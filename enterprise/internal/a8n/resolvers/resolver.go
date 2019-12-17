@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"io"
 	"strings"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -488,6 +490,54 @@ func (r *Resolver) PreviewCampaignPlan(ctx context.Context, args graphqlbackend.
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	return &campaignPlanResolver{store: r.store, campaignPlan: plan}, nil
+}
+
+func (r *Resolver) CreateCampaignPlanFromPatches(ctx context.Context, args graphqlbackend.CreateCampaignPlanFromPatchesArgs) (graphqlbackend.CampaignPlanResolver, error) {
+	var err error
+	tr, ctx := trace.New(ctx, "Resolver.CreateCampaignPlanFromPatches", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// 🚨 SECURITY: Only site admins may create campaign plans for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	patches := make([]ee.CampaignPlanPatch, len(args.Patches))
+	for i, patch := range args.Patches {
+		repo, err := graphqlbackend.UnmarshalRepositoryID(patch.Repository)
+		if err != nil {
+			return nil, err
+		}
+
+		// Ensure patch is a valid unified diff.
+		diffReader := diff.NewMultiFileDiffReader(strings.NewReader(patch.Patch))
+		for {
+			_, err := diffReader.ReadFile()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				return nil, errors.Wrapf(err, "patch for repository ID %q (base revision %q)", patch.Repository, patch.BaseRevision)
+			}
+		}
+
+		patches[i] = ee.CampaignPlanPatch{
+			Repo:         repo,
+			BaseRevision: patch.BaseRevision,
+			Patch:        patch.Patch,
+		}
+	}
+
+	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
+	plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches, nil)
+	if err != nil {
+		return nil, err
 	}
 
 	return &campaignPlanResolver{store: r.store, campaignPlan: plan}, nil

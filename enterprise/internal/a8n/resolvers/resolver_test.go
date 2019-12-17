@@ -17,7 +17,9 @@ import (
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/google/go-cmp/cmp"
 	graphql "github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/errors"
+	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+	"github.com/pkg/errors"
+	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -870,6 +872,144 @@ index 6f8b5d9..17400bc 100644
  never-touch-the-mouse.com
 `
 
+func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
+	ctx := backend.WithAuthzBypass(context.Background())
+
+	t.Run("invalid patch", func(t *testing.T) {
+		args := graphqlbackend.CreateCampaignPlanFromPatchesArgs{
+			Patches: []graphqlbackend.CampaignPlanPatch{
+				{
+					Repository:   graphqlbackend.MarshalRepositoryID(1),
+					BaseRevision: "b",
+					Patch:        "!!! this is not a valid unified diff !!!\n--- x\n+++ y\n@@ 1,1 2,2\na",
+				},
+			},
+		}
+
+		_, err := (&Resolver{}).CreateCampaignPlanFromPatches(ctx, args)
+		if err == nil {
+			t.Fatal("want error")
+		}
+		if _, ok := errors.Cause(err).(*diff.ParseError); !ok {
+			t.Fatalf("got error %q (%T), want a diff ParseError", err, errors.Cause(err))
+		}
+	})
+
+	t.Run("integration", func(t *testing.T) {
+		if testing.Short() {
+			t.Skip()
+		}
+
+		dbtesting.SetupGlobalTestDB(t)
+		rcache.SetupForTest(t)
+
+		now := time.Now().UTC().Truncate(time.Microsecond)
+		clock := func() time.Time {
+			return now.UTC().Truncate(time.Microsecond)
+		}
+
+		// For testing purposes they all share the same rev, across repos
+		testingRev := api.CommitID("24f7ca7c1190835519e261d7eefa09df55ceea4f")
+
+		backend.Mocks.Repos.ResolveRev = func(_ context.Context, _ *types.Repo, _ string) (api.CommitID, error) {
+			return testingRev, nil
+		}
+		defer func() { backend.Mocks.Repos.ResolveRev = nil }()
+
+		backend.Mocks.Repos.GetCommit = func(_ context.Context, _ *types.Repo, _ api.CommitID) (*git.Commit, error) {
+			return &git.Commit{ID: testingRev}, nil
+		}
+		defer func() { backend.Mocks.Repos.GetCommit = nil }()
+
+		reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+		repo := &repos.Repo{
+			Name:    fmt.Sprintf("github.com/sourcegraph/sourcegraph"),
+			Enabled: true,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "external-id",
+				ServiceType: "github",
+				ServiceID:   "https://github.com/",
+			},
+			Sources: map[string]*repos.SourceInfo{
+				"extsvc:github:4": {
+					ID:       "extsvc:github:4",
+					CloneURL: "https://secrettoken@github.com/sourcegraph/sourcegraph",
+				},
+			},
+		}
+		if err := reposStore.UpsertRepos(ctx, repo); err != nil {
+			t.Fatal(err)
+		}
+
+		store := ee.NewStoreWithClock(dbconn.Global, clock)
+
+		sr := &Resolver{store: store}
+		s, err := graphqlbackend.NewSchema(sr, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		type Status struct {
+			CompletedCount int
+			PendingCount   int
+			State          string
+			Errors         []string
+		}
+		var response struct {
+			CreateCampaignPlanFromPatches struct {
+				ID           graphql.ID
+				CampaignType string `json:"type"`
+				Arguments    string
+				Status       Status
+			}
+		}
+
+		const patch = `diff --git a b
+--- a
++++ b
+@@ -1,1 +1,2 @@
++x
+ y
+`
+		mustExec(ctx, t, s, nil, &response, fmt.Sprintf(`
+      mutation {
+        createCampaignPlanFromPatches(patches: [{repository: %q, baseRevision: "b", patch: %q}]) {
+          ... on CampaignPlan {
+            id
+            type
+            arguments
+            status {
+              completedCount
+              pendingCount
+              state
+              errors
+            }
+          }
+        }
+      }
+	`, graphqlbackend.MarshalRepositoryID(api.RepoID(repo.ID)), patch))
+
+		result := response.CreateCampaignPlanFromPatches
+		if have, want := result.CampaignType, "patch"; have != want {
+			t.Fatalf("have CampaignType %q, want %q", have, want)
+		}
+
+		if have, want := result.Arguments, ""; have != want {
+			t.Fatalf("have Arguments %q, want %q", have, want)
+		}
+
+		wantStatus := Status{
+			State:          "COMPLETED",
+			CompletedCount: 1,
+			Errors:         []string{},
+		}
+
+		if diff := cmp.Diff(result.Status, wantStatus); diff != "" {
+			t.Fatalf("wrong Status. diff=%s", diff)
+		}
+	})
+}
+
 func TestCampaignPlanResolver(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -1172,7 +1312,7 @@ func exec(
 	in map[string]interface{},
 	out interface{},
 	query string,
-) []*errors.QueryError {
+) []*gqlerrors.QueryError {
 	t.Helper()
 
 	query = strings.Replace(query, "\t", "  ", -1)

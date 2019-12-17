@@ -6,10 +6,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -57,6 +59,61 @@ func TestService(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	t.Run("CreateCampaignPlanFromPatches", func(t *testing.T) {
+		const commit = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+		repoResolveRevision := func(context.Context, *repos.Repo, string) (api.CommitID, error) {
+			return commit, nil
+		}
+
+		svc := NewServiceWithClock(store, nil, nil, clock)
+
+		const patch = `diff --git a b
+--- a
++++ b
+@@ -1,1 +1,2 @@
++x
+ y
+`
+		patches := []CampaignPlanPatch{
+			{Repo: api.RepoID(rs[0].ID), BaseRevision: "b0", Patch: patch},
+			{Repo: api.RepoID(rs[1].ID), BaseRevision: "b1", Patch: patch},
+		}
+
+		plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches, repoResolveRevision)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if _, err := store.GetCampaignPlan(ctx, GetCampaignPlanOpts{ID: plan.ID}); err != nil {
+			t.Fatal(err)
+		}
+
+		jobs, _, err := store.ListCampaignJobs(ctx, ListCampaignJobsOpts{CampaignPlanID: plan.ID})
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, job := range jobs {
+			job.ID = 0 // ignore database ID when checking for expected output
+		}
+		wantJobs := make([]*a8n.CampaignJob, len(patches))
+		for i, patch := range patches {
+			wantJobs[i] = &a8n.CampaignJob{
+				CampaignPlanID: plan.ID,
+				RepoID:         int32(patch.Repo),
+				BaseRef:        patch.BaseRevision,
+				Rev:            commit,
+				Diff:           patch.Patch,
+				StartedAt:      now,
+				FinishedAt:     now,
+				CreatedAt:      now,
+				UpdatedAt:      now,
+			}
+		}
+		if !cmp.Equal(jobs, wantJobs) {
+			t.Error("jobs != wantJobs", cmp.Diff(jobs, wantJobs))
+		}
+	})
 
 	t.Run("CreateCampaign", func(t *testing.T) {
 		testPlan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
