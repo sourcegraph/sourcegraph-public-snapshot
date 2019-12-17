@@ -1446,7 +1446,7 @@ type SearchResults {
     # Repositories or commits which we did not manage to search in time. Trying
     # again usually will work.
     #
-    # In paginated search requests, this field is usually not relevant.
+    # In paginated search requests, this field is not relevant.
     timedout: [Repository!]!
     # True if indexed search is enabled but was not available during this search.
     indexUnavailable: Boolean!
