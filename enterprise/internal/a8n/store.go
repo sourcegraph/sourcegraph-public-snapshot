@@ -2231,7 +2231,7 @@ func scanChangeset(t *a8n.Changeset, s scanner) error {
 		&dbutil.JSONInt64Set{Set: &t.CampaignIDs},
 		&t.ExternalID,
 		&t.ExternalServiceType,
-		&t.ExternalDeletedAt,
+		&dbutil.NullTime{Time: &t.ExternalDeletedAt},
 	)
 	if err != nil {
 		return err
