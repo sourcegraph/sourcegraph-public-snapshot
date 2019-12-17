@@ -34,17 +34,17 @@ type RepoQueueState struct {
 	Updating bool
 }
 
-// RepoExternalServicesRequest is a request for the external services
+// RepoCodeHostsRequest is a request for the external services
 // associated with a repository.
-type RepoExternalServicesRequest struct {
+type RepoCodeHostsRequest struct {
 	// ID of the repository being queried.
 	ID uint32
 }
 
-// RepoExternalServicesResponse is returned in response to an
-// RepoExternalServicesRequest.
-type RepoExternalServicesResponse struct {
-	ExternalServices []api.ExternalService
+// RepoCodeHostsResponse is returned in response to an
+// RepoCodeHostsRequest.
+type RepoCodeHostsResponse struct {
+	CodeHosts []api.CodeHost
 }
 
 // ExcludeRepoRequest is a request to exclude a single repo from
@@ -56,7 +56,7 @@ type ExcludeRepoRequest struct {
 
 // ExcludeRepoResponse is returned in response to an ExcludeRepoRequest.
 type ExcludeRepoResponse struct {
-	ExternalServices []api.ExternalService
+	CodeHosts []api.CodeHost
 }
 
 // RepoLookupArgs is a request for information about a repository on repoupdater.
@@ -159,28 +159,28 @@ type RepoUpdateResponse struct {
 	URL string `json:"url"`
 }
 
-// ExternalServiceSyncRequest is a request to sync a specific external service eagerly.
+// CodeHostSyncRequest is a request to sync a specific external service eagerly.
 //
 // The FrontendAPI is one of the issuers of this request. It does so when creating or
 // updating an external service so that admins don't have to wait until the next sync
 // run to see their repos being synced.
-type ExternalServiceSyncRequest struct {
-	ExternalService api.ExternalService
+type CodeHostSyncRequest struct {
+	CodeHost api.CodeHost
 }
 
-// ExternalServiceSyncResult is a result type of an external service's sync request.
-type ExternalServiceSyncResult struct {
-	ExternalService api.ExternalService
-	Error           string
+// CodeHostSyncResult is a result type of an external service's sync request.
+type CodeHostSyncResult struct {
+	CodeHost api.CodeHost
+	Error    string
 }
 
 type CloningProgress struct {
 	Message string
 }
 
-type ExternalServiceSyncError struct {
-	Message           string
-	ExternalServiceId int64
+type CodeHostSyncError struct {
+	Message    string
+	CodeHostId int64
 }
 
 type SyncError struct {
@@ -188,9 +188,9 @@ type SyncError struct {
 }
 
 type StatusMessage struct {
-	Cloning                  *CloningProgress          `json:"cloning"`
-	ExternalServiceSyncError *ExternalServiceSyncError `json:"external_service_sync_error"`
-	SyncError                *SyncError                `json:"sync_error"`
+	Cloning           *CloningProgress   `json:"cloning"`
+	CodeHostSyncError *CodeHostSyncError `json:"external_service_sync_error"`
+	SyncError         *SyncError         `json:"sync_error"`
 }
 
 type StatusMessagesResponse struct {

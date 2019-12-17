@@ -118,14 +118,14 @@ func (s *ChangesetSyncer) GroupChangesetsBySource(ctx context.Context, cs ...*a8
 		}
 	}
 
-	es, err := s.ReposStore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{RepoIDs: repoIDs})
+	es, err := s.ReposStore.ListCodeHosts(ctx, repos.StoreListCodeHostsArgs{RepoIDs: repoIDs})
 	if err != nil {
 		return nil, err
 	}
 
 	byRepo := make(map[uint32]int64, len(rs))
 	for _, r := range rs {
-		eids := r.ExternalServiceIDs()
+		eids := r.CodeHostIDs()
 		for _, id := range eids {
 			if _, ok := byRepo[r.ID]; !ok {
 				byRepo[r.ID] = id

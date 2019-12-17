@@ -35,8 +35,8 @@ type Changeset struct {
 	*Repo
 }
 
-// An ExternalService is defines a Source that yields Repos.
-type ExternalService struct {
+// An CodeHost is defines a Source that yields Repos.
+type CodeHost struct {
 	ID          int64
 	Kind        string
 	DisplayName string
@@ -48,16 +48,16 @@ type ExternalService struct {
 
 // URN returns a unique resource identifier of this external service,
 // used as the key in a repo's Sources map as well as the SourceInfo ID.
-func (e *ExternalService) URN() string {
+func (e *CodeHost) URN() string {
 	return "extsvc:" + strings.ToLower(e.Kind) + ":" + strconv.FormatInt(e.ID, 10)
 }
 
 // IsDeleted returns true if the external service is deleted.
-func (e *ExternalService) IsDeleted() bool { return !e.DeletedAt.IsZero() }
+func (e *CodeHost) IsDeleted() bool { return !e.DeletedAt.IsZero() }
 
-// Update updates ExternalService r with the fields from the given newer ExternalService n,
+// Update updates CodeHost r with the fields from the given newer CodeHost n,
 // returning true if modified.
-func (e *ExternalService) Update(n *ExternalService) (modified bool) {
+func (e *CodeHost) Update(n *CodeHost) (modified bool) {
 	if e.ID != n.ID {
 		return false
 	}
@@ -86,7 +86,7 @@ func (e *ExternalService) Update(n *ExternalService) (modified bool) {
 }
 
 // Configuration returns the external service config.
-func (e ExternalService) Configuration() (cfg interface{}, _ error) {
+func (e CodeHost) Configuration() (cfg interface{}, _ error) {
 	switch strings.ToLower(e.Kind) {
 	case "awscodecommit":
 		cfg = &schema.AWSCodeCommitConnection{}
@@ -101,7 +101,7 @@ func (e ExternalService) Configuration() (cfg interface{}, _ error) {
 	case "phabricator":
 		cfg = &schema.PhabricatorConnection{}
 	case "other":
-		cfg = &schema.OtherExternalServiceConnection{}
+		cfg = &schema.OtherCodeHostConnection{}
 	default:
 		return nil, fmt.Errorf("unknown external service kind %q", e.Kind)
 	}
@@ -110,7 +110,7 @@ func (e ExternalService) Configuration() (cfg interface{}, _ error) {
 
 // Exclude changes the configuration of an external service to exclude the given
 // repos from being synced.
-func (e *ExternalService) Exclude(rs ...*Repo) error {
+func (e *CodeHost) Exclude(rs ...*Repo) error {
 	switch strings.ToLower(e.Kind) {
 	case "github":
 		return e.excludeGithubRepos(rs...)
@@ -131,13 +131,13 @@ func (e *ExternalService) Exclude(rs ...*Repo) error {
 
 // excludeOtherRepos changes the configuration of an OTHER external service to exclude
 // the given repos.
-func (e *ExternalService) excludeOtherRepos(rs ...*Repo) error {
+func (e *CodeHost) excludeOtherRepos(rs ...*Repo) error {
 	if len(rs) == 0 {
 		return nil
 	}
 
 	return e.config("other", func(v interface{}) (string, interface{}, error) {
-		c := v.(*schema.OtherExternalServiceConnection)
+		c := v.(*schema.OtherCodeHostConnection)
 
 		var base *url.URL
 		if c.Url != "" {
@@ -194,7 +194,7 @@ func (e *ExternalService) excludeOtherRepos(rs ...*Repo) error {
 
 // excludeGitLabRepos changes the configuration of a GitLab external service to exclude the
 // given repos from being synced.
-func (e *ExternalService) excludeGitLabRepos(rs ...*Repo) error {
+func (e *CodeHost) excludeGitLabRepos(rs ...*Repo) error {
 	if len(rs) == 0 {
 		return nil
 	}
@@ -243,7 +243,7 @@ func (e *ExternalService) excludeGitLabRepos(rs ...*Repo) error {
 
 // excludeBitbucketServerRepos changes the configuration of a BitbucketServer external service to exclude the
 // given repos from being synced.
-func (e *ExternalService) excludeBitbucketServerRepos(rs ...*Repo) error {
+func (e *CodeHost) excludeBitbucketServerRepos(rs ...*Repo) error {
 	if len(rs) == 0 {
 		return nil
 	}
@@ -298,7 +298,7 @@ func (e *ExternalService) excludeBitbucketServerRepos(rs ...*Repo) error {
 
 // excludeGitoliteRepos changes the configuration of a Gitolite external service to exclude the
 // given repos from being synced.
-func (e *ExternalService) excludeGitoliteRepos(rs ...*Repo) error {
+func (e *CodeHost) excludeGitoliteRepos(rs ...*Repo) error {
 	if len(rs) == 0 {
 		return nil
 	}
@@ -326,7 +326,7 @@ func (e *ExternalService) excludeGitoliteRepos(rs ...*Repo) error {
 
 // excludeGithubRepos changes the configuration of a Github external service to exclude the
 // given repos from being synced.
-func (e *ExternalService) excludeGithubRepos(rs ...*Repo) error {
+func (e *CodeHost) excludeGithubRepos(rs ...*Repo) error {
 	if len(rs) == 0 {
 		return nil
 	}
@@ -375,7 +375,7 @@ func (e *ExternalService) excludeGithubRepos(rs ...*Repo) error {
 
 // excludeAWSCodeCommitRepos changes the configuration of a AWS CodeCommit
 // external service to exclude the given repos from being synced.
-func (e *ExternalService) excludeAWSCodeCommitRepos(rs ...*Repo) error {
+func (e *CodeHost) excludeAWSCodeCommitRepos(rs ...*Repo) error {
 	if len(rs) == 0 {
 		return nil
 	}
@@ -430,7 +430,7 @@ func nameWithOwner(name string) string {
 	return strings.ToLower(name)
 }
 
-func (e *ExternalService) config(kind string, opt func(c interface{}) (string, interface{}, error)) error {
+func (e *CodeHost) config(kind string, opt func(c interface{}) (string, interface{}, error)) error {
 	if strings.ToLower(e.Kind) != kind {
 		return fmt.Errorf("config: unexpected external service kind %q", e.Kind)
 	}
@@ -456,7 +456,7 @@ func (e *ExternalService) config(kind string, opt func(c interface{}) (string, i
 	return e.validateConfig()
 }
 
-func (e ExternalService) schema() string {
+func (e CodeHost) schema() string {
 	switch strings.ToLower(e.Kind) {
 	case "awscodecommit":
 		return schema.AWSCodeCommitSchemaJSON
@@ -471,7 +471,7 @@ func (e ExternalService) schema() string {
 	case "phabricator":
 		return schema.PhabricatorSchemaJSON
 	case "other":
-		return schema.OtherExternalServiceSchemaJSON
+		return schema.OtherCodeHostSchemaJSON
 	default:
 		return ""
 	}
@@ -479,7 +479,7 @@ func (e ExternalService) schema() string {
 
 // validateConfig validates the config of an external service
 // against its JSON schema.
-func (e ExternalService) validateConfig() error {
+func (e CodeHost) validateConfig() error {
 	sl := gojsonschema.NewSchemaLoader()
 	sc, err := sl.Compile(gojsonschema.NewStringLoader(e.schema()))
 	if err != nil {
@@ -505,13 +505,13 @@ func (e ExternalService) validateConfig() error {
 }
 
 // Clone returns a clone of the given external service.
-func (e *ExternalService) Clone() *ExternalService {
+func (e *CodeHost) Clone() *CodeHost {
 	clone := *e
 	return &clone
 }
 
-// Apply applies the given functional options to the ExternalService.
-func (e *ExternalService) Apply(opts ...func(*ExternalService)) {
+// Apply applies the given functional options to the CodeHost.
+func (e *CodeHost) Apply(opts ...func(*CodeHost)) {
 	if e == nil {
 		return
 	}
@@ -522,7 +522,7 @@ func (e *ExternalService) Apply(opts ...func(*ExternalService)) {
 }
 
 // With returns a clone of the given repo with the given functional options applied.
-func (e *ExternalService) With(opts ...func(*ExternalService)) *ExternalService {
+func (e *CodeHost) With(opts ...func(*CodeHost)) *CodeHost {
 	clone := e.Clone()
 	clone.Apply(opts...)
 	return clone
@@ -573,9 +573,9 @@ type SourceInfo struct {
 	CloneURL string
 }
 
-// ExternalServiceID returns the ID of the external service this
+// CodeHostID returns the ID of the external service this
 // SourceInfo refers to.
-func (i SourceInfo) ExternalServiceID() int64 {
+func (i SourceInfo) CodeHostID() int64 {
 	ps := strings.SplitN(i.ID, ":", 3)
 	if len(ps) != 3 {
 		return -1
@@ -600,12 +600,12 @@ func (r *Repo) CloneURLs() []string {
 	return urls
 }
 
-// ExternalServiceIDs returns the IDs of the external services this
+// CodeHostIDs returns the IDs of the external services this
 // repo belongs to.
-func (r *Repo) ExternalServiceIDs() []int64 {
+func (r *Repo) CodeHostIDs() []int64 {
 	ids := make([]int64, 0, len(r.Sources))
 	for _, src := range r.Sources {
-		ids = append(ids, src.ExternalServiceID())
+		ids = append(ids, src.CodeHostID())
 	}
 	return ids
 }
@@ -845,12 +845,12 @@ func (rs Repos) Filter(pred func(*Repo) bool) (fs Repos) {
 	return fs
 }
 
-// ExternalServices is an utility type with
-// convenience methods for operating on lists of ExternalServices.
-type ExternalServices []*ExternalService
+// CodeHosts is an utility type with
+// convenience methods for operating on lists of CodeHosts.
+type CodeHosts []*CodeHost
 
-// DisplayNames returns the list of display names from all ExternalServices.
-func (es ExternalServices) DisplayNames() []string {
+// DisplayNames returns the list of display names from all CodeHosts.
+func (es CodeHosts) DisplayNames() []string {
 	names := make([]string, len(es))
 	for i := range es {
 		names[i] = es[i].DisplayName
@@ -859,7 +859,7 @@ func (es ExternalServices) DisplayNames() []string {
 }
 
 // Kinds returns the unique set of Kinds in the given external services list.
-func (es ExternalServices) Kinds() (kinds []string) {
+func (es CodeHosts) Kinds() (kinds []string) {
 	set := make(map[string]bool, len(es))
 	for _, e := range es {
 		if !set[e.Kind] {
@@ -870,8 +870,8 @@ func (es ExternalServices) Kinds() (kinds []string) {
 	return kinds
 }
 
-// URNs returns the list of URNs from all ExternalServices.
-func (es ExternalServices) URNs() []string {
+// URNs returns the list of URNs from all CodeHosts.
+func (es CodeHosts) URNs() []string {
 	urns := make([]string, len(es))
 	for i := range es {
 		urns[i] = es[i].URN()
@@ -879,36 +879,36 @@ func (es ExternalServices) URNs() []string {
 	return urns
 }
 
-func (es ExternalServices) Len() int {
+func (es CodeHosts) Len() int {
 	return len(es)
 }
 
-func (es ExternalServices) Swap(i, j int) {
+func (es CodeHosts) Swap(i, j int) {
 	es[i], es[j] = es[j], es[i]
 }
 
-func (es ExternalServices) Less(i, j int) bool {
+func (es CodeHosts) Less(i, j int) bool {
 	return es[i].ID < es[j].ID
 }
 
 // Clone returns a clone of the given external services.
-func (es ExternalServices) Clone() ExternalServices {
-	o := make(ExternalServices, 0, len(es))
+func (es CodeHosts) Clone() CodeHosts {
+	o := make(CodeHosts, 0, len(es))
 	for _, r := range es {
 		o = append(o, r.Clone())
 	}
 	return o
 }
 
-// Apply applies the given functional options to the ExternalService.
-func (es ExternalServices) Apply(opts ...func(*ExternalService)) {
+// Apply applies the given functional options to the CodeHost.
+func (es CodeHosts) Apply(opts ...func(*CodeHost)) {
 	for _, r := range es {
 		r.Apply(opts...)
 	}
 }
 
 // With returns a clone of the given external services with the given functional options applied.
-func (es ExternalServices) With(opts ...func(*ExternalService)) ExternalServices {
+func (es CodeHosts) With(opts ...func(*CodeHost)) CodeHosts {
 	clone := es.Clone()
 	clone.Apply(opts...)
 	return clone

@@ -217,14 +217,14 @@ func (s *Store) createChangesetsQuery(cs []*a8n.Changeset) (*sqlf.Query, error) 
 
 func batchChangesetsQuery(fmtstr string, cs []*a8n.Changeset) (*sqlf.Query, error) {
 	type record struct {
-		ID                  int64           `json:"id"`
-		RepoID              int32           `json:"repo_id"`
-		CreatedAt           time.Time       `json:"created_at"`
-		UpdatedAt           time.Time       `json:"updated_at"`
-		Metadata            json.RawMessage `json:"metadata"`
-		CampaignIDs         json.RawMessage `json:"campaign_ids"`
-		ExternalID          string          `json:"external_id"`
-		ExternalServiceType string          `json:"external_service_type"`
+		ID           int64           `json:"id"`
+		RepoID       int32           `json:"repo_id"`
+		CreatedAt    time.Time       `json:"created_at"`
+		UpdatedAt    time.Time       `json:"updated_at"`
+		Metadata     json.RawMessage `json:"metadata"`
+		CampaignIDs  json.RawMessage `json:"campaign_ids"`
+		ExternalID   string          `json:"external_id"`
+		CodeHostType string          `json:"external_service_type"`
 	}
 
 	records := make([]record, 0, len(cs))
@@ -241,14 +241,14 @@ func batchChangesetsQuery(fmtstr string, cs []*a8n.Changeset) (*sqlf.Query, erro
 		}
 
 		records = append(records, record{
-			ID:                  c.ID,
-			RepoID:              c.RepoID,
-			CreatedAt:           c.CreatedAt,
-			UpdatedAt:           c.UpdatedAt,
-			Metadata:            metadata,
-			CampaignIDs:         campaignIDs,
-			ExternalID:          c.ExternalID,
-			ExternalServiceType: c.ExternalServiceType,
+			ID:           c.ID,
+			RepoID:       c.RepoID,
+			CreatedAt:    c.CreatedAt,
+			UpdatedAt:    c.UpdatedAt,
+			Metadata:     metadata,
+			CampaignIDs:  campaignIDs,
+			ExternalID:   c.ExternalID,
+			CodeHostType: c.CodeHostType,
 		})
 	}
 
@@ -297,9 +297,9 @@ func countChangesetsQuery(opts *CountChangesetsOpts) *sqlf.Query {
 
 // GetChangesetOpts captures the query options needed for getting a Changeset
 type GetChangesetOpts struct {
-	ID                  int64
-	ExternalID          string
-	ExternalServiceType string
+	ID           int64
+	ExternalID   string
+	CodeHostType string
 }
 
 // ErrNoResults is returned by Store method calls that found no results.
@@ -346,10 +346,10 @@ func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("id = %s", opts.ID))
 	}
 
-	if opts.ExternalID != "" && opts.ExternalServiceType != "" {
+	if opts.ExternalID != "" && opts.CodeHostType != "" {
 		preds = append(preds,
 			sqlf.Sprintf("external_id = %s", opts.ExternalID),
-			sqlf.Sprintf("external_service_type = %s", opts.ExternalServiceType),
+			sqlf.Sprintf("external_service_type = %s", opts.CodeHostType),
 		)
 	}
 
@@ -2215,13 +2215,13 @@ func scanChangeset(t *a8n.Changeset, s scanner) error {
 		&metadata,
 		&dbutil.JSONInt64Set{Set: &t.CampaignIDs},
 		&t.ExternalID,
-		&t.ExternalServiceType,
+		&t.CodeHostType,
 	)
 	if err != nil {
 		return err
 	}
 
-	switch t.ExternalServiceType {
+	switch t.CodeHostType {
 	case github.ServiceType:
 		t.Metadata = new(github.PullRequest)
 	case bitbucketserver.ServiceType:
@@ -2231,7 +2231,7 @@ func scanChangeset(t *a8n.Changeset, s scanner) error {
 	}
 
 	if err = json.Unmarshal(metadata, t.Metadata); err != nil {
-		return errors.Wrapf(err, "scanChangeset: failed to unmarshal %q metadata", t.ExternalServiceType)
+		return errors.Wrapf(err, "scanChangeset: failed to unmarshal %q metadata", t.CodeHostType)
 	}
 
 	return nil

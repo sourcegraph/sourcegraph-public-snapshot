@@ -297,11 +297,11 @@ func (s *Service) runChangesetJob(
 		return err
 	}
 
-	var externalService *repos.ExternalService
+	var codeHost *repos.CodeHost
 	{
-		args := repos.StoreListExternalServicesArgs{IDs: repo.ExternalServiceIDs()}
+		args := repos.StoreListCodeHostsArgs{IDs: repo.CodeHostIDs()}
 
-		es, err := reposStore.ListExternalServices(ctx, args)
+		es, err := reposStore.ListCodeHosts(ctx, args)
 		if err != nil {
 			return err
 		}
@@ -315,24 +315,24 @@ func (s *Service) runChangesetJob(
 			switch cfg := cfg.(type) {
 			case *schema.GitHubConnection:
 				if cfg.Token != "" {
-					externalService = e
+					codeHost = e
 				}
 			case *schema.BitbucketServerConnection:
 				if cfg.Token != "" {
-					externalService = e
+					codeHost = e
 				}
 			}
-			if externalService != nil {
+			if codeHost != nil {
 				break
 			}
 		}
 	}
 
-	if externalService == nil {
+	if codeHost == nil {
 		return errors.Errorf("no external services found for repo %q", repo.Name)
 	}
 
-	src, err := repos.NewSource(externalService, s.cf)
+	src, err := repos.NewSource(codeHost, s.cf)
 	if err != nil {
 		return err
 	}

@@ -88,7 +88,7 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &CodeHost{
 				Kind: "GITHUB",
 				Config: marshalJSON(t, &schema.GitHubConnection{
 					Url:   "https://github.com",
@@ -179,7 +179,7 @@ func TestGithubSource_CloseChangeset(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &CodeHost{
 				Kind: "GITHUB",
 				Config: marshalJSON(t, &schema.GitHubConnection{
 					Url:   "https://github.com",
@@ -274,7 +274,7 @@ func TestGithubSource_LoadChangesets(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &CodeHost{
 				Kind: "GITHUB",
 				Config: marshalJSON(t, &schema.GitHubConnection{
 					Url:   "https://github.com",
@@ -404,7 +404,7 @@ func TestGithubSource_GetRepo(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &CodeHost{
 				Kind: "GITHUB",
 				Config: marshalJSON(t, &schema.GitHubConnection{
 					Url: "https://github.com",
@@ -608,7 +608,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &CodeHost{
 				Kind:   "GITHUB",
 				Config: marshalJSON(t, tc.conf),
 			}

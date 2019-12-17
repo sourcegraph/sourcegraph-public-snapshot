@@ -404,7 +404,7 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 }
 
 func makePhabClientForOrigin(ctx context.Context, origin string) (*phabricator.Client, error) {
-	phabs, err := db.ExternalServices.ListPhabricatorConnections(ctx)
+	phabs, err := db.CodeHosts.ListPhabricatorConnections(ctx)
 	if err != nil {
 		return nil, err
 	}

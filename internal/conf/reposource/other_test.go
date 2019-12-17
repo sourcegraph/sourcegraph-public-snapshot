@@ -9,11 +9,11 @@ import (
 
 func TestOtherCloneURLToRepoName(t *testing.T) {
 	tests := []struct {
-		conn schema.OtherExternalServiceConnection
+		conn schema.OtherCodeHostConnection
 		urls []urlToRepoNameErr
 	}{
 		{
-			conn: schema.OtherExternalServiceConnection{
+			conn: schema.OtherCodeHostConnection{
 				Url:                   "https://github.com",
 				RepositoryPathPattern: "{base}/{repo}",
 				Repos:                 []string{"gorilla/mux"},
@@ -25,7 +25,7 @@ func TestOtherCloneURLToRepoName(t *testing.T) {
 			},
 		},
 		{
-			conn: schema.OtherExternalServiceConnection{
+			conn: schema.OtherCodeHostConnection{
 				Url:                   "https://github.com/?access_token=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 				RepositoryPathPattern: "{base}/{repo}",
 				Repos:                 []string{"gorilla/mux"},
@@ -36,7 +36,7 @@ func TestOtherCloneURLToRepoName(t *testing.T) {
 			},
 		},
 		{
-			conn: schema.OtherExternalServiceConnection{
+			conn: schema.OtherCodeHostConnection{
 				Url:                   "ssh://thaddeus@gerrit.com:12345",
 				RepositoryPathPattern: "{base}/{repo}",
 				Repos:                 []string{"repos/repo1"},
@@ -44,7 +44,7 @@ func TestOtherCloneURLToRepoName(t *testing.T) {
 			urls: []urlToRepoNameErr{{"ssh://thaddeus@gerrit.com:12345/repos/repo1", "gerrit.com-12345/repos/repo1", nil}},
 		},
 		{
-			conn: schema.OtherExternalServiceConnection{
+			conn: schema.OtherCodeHostConnection{
 				Url:                   "ssh://thaddeus@gerrit.com:12345",
 				RepositoryPathPattern: "prettyhost/{repo}",
 				Repos:                 []string{"repos/repo1"},
@@ -52,7 +52,7 @@ func TestOtherCloneURLToRepoName(t *testing.T) {
 			urls: []urlToRepoNameErr{{"ssh://thaddeus@gerrit.com:12345/repos/repo1", "prettyhost/repos/repo1", nil}},
 		},
 		{
-			conn: schema.OtherExternalServiceConnection{
+			conn: schema.OtherCodeHostConnection{
 				Url:                   "ssh://thaddeus@gerrit.com:12345/repos",
 				RepositoryPathPattern: "{repo}",
 				Repos:                 []string{"repo1"},

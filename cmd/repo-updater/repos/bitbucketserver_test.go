@@ -53,7 +53,7 @@ func TestBitbucketServerSource_MakeRepo(t *testing.T) {
 		},
 	}
 
-	svc := ExternalService{ID: 1, Kind: "BITBUCKETSERVER"}
+	svc := CodeHost{ID: 1, Kind: "BITBUCKETSERVER"}
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -147,7 +147,7 @@ func TestBitbucketServerSource_Exclude(t *testing.T) {
 		},
 	}
 
-	svc := ExternalService{ID: 1, Kind: "BITBUCKETSERVER"}
+	svc := CodeHost{ID: 1, Kind: "BITBUCKETSERVER"}
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -248,7 +248,7 @@ func TestBitbucketServerSource_LoadChangesets(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &CodeHost{
 				Kind: "BITBUCKETSERVER",
 				Config: marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   instanceURL,
@@ -377,7 +377,7 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &CodeHost{
 				Kind: "BITBUCKETSERVER",
 				Config: marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   instanceURL,
@@ -467,7 +467,7 @@ func TestBitbucketServerSource_CloseChangeset(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			svc := &ExternalService{
+			svc := &CodeHost{
 				Kind: "BITBUCKETSERVER",
 				Config: marshalJSON(t, &schema.BitbucketServerConnection{
 					Url:   instanceURL,

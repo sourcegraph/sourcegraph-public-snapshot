@@ -38,7 +38,7 @@ func defaultConfigForDeployment() conftypes.RawUnified {
 
 func AWSCodeCommitConfigs(ctx context.Context) ([]*schema.AWSCodeCommitConnection, error) {
 	var config []*schema.AWSCodeCommitConnection
-	if err := api.InternalClient.ExternalServiceConfigs(ctx, "AWSCODECOMMIT", &config); err != nil {
+	if err := api.InternalClient.CodeHostConfigs(ctx, "AWSCODECOMMIT", &config); err != nil {
 		return nil, err
 	}
 	return config, nil
@@ -46,7 +46,7 @@ func AWSCodeCommitConfigs(ctx context.Context) ([]*schema.AWSCodeCommitConnectio
 
 func BitbucketServerConfigs(ctx context.Context) ([]*schema.BitbucketServerConnection, error) {
 	var config []*schema.BitbucketServerConnection
-	if err := api.InternalClient.ExternalServiceConfigs(ctx, "BITBUCKETSERVER", &config); err != nil {
+	if err := api.InternalClient.CodeHostConfigs(ctx, "BITBUCKETSERVER", &config); err != nil {
 		return nil, err
 	}
 	return config, nil
@@ -54,7 +54,7 @@ func BitbucketServerConfigs(ctx context.Context) ([]*schema.BitbucketServerConne
 
 func GitHubConfigs(ctx context.Context) ([]*schema.GitHubConnection, error) {
 	var config []*schema.GitHubConnection
-	if err := api.InternalClient.ExternalServiceConfigs(ctx, "GITHUB", &config); err != nil {
+	if err := api.InternalClient.CodeHostConfigs(ctx, "GITHUB", &config); err != nil {
 		return nil, err
 	}
 	return config, nil
@@ -62,7 +62,7 @@ func GitHubConfigs(ctx context.Context) ([]*schema.GitHubConnection, error) {
 
 func GitLabConfigs(ctx context.Context) ([]*schema.GitLabConnection, error) {
 	var config []*schema.GitLabConnection
-	if err := api.InternalClient.ExternalServiceConfigs(ctx, "GITLAB", &config); err != nil {
+	if err := api.InternalClient.CodeHostConfigs(ctx, "GITLAB", &config); err != nil {
 		return nil, err
 	}
 	return config, nil
@@ -70,7 +70,7 @@ func GitLabConfigs(ctx context.Context) ([]*schema.GitLabConnection, error) {
 
 func GitoliteConfigs(ctx context.Context) ([]*schema.GitoliteConnection, error) {
 	var config []*schema.GitoliteConnection
-	if err := api.InternalClient.ExternalServiceConfigs(ctx, "GITOLITE", &config); err != nil {
+	if err := api.InternalClient.CodeHostConfigs(ctx, "GITOLITE", &config); err != nil {
 		return nil, err
 	}
 	return config, nil
@@ -78,7 +78,7 @@ func GitoliteConfigs(ctx context.Context) ([]*schema.GitoliteConnection, error) 
 
 func PhabricatorConfigs(ctx context.Context) ([]*schema.PhabricatorConnection, error) {
 	var config []*schema.PhabricatorConnection
-	if err := api.InternalClient.ExternalServiceConfigs(ctx, "PHABRICATOR", &config); err != nil {
+	if err := api.InternalClient.CodeHostConfigs(ctx, "PHABRICATOR", &config); err != nil {
 		return nil, err
 	}
 	return config, nil

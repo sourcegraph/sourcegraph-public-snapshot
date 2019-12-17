@@ -22,13 +22,13 @@ import (
 
 var extsvcConfigAllowEdits, _ = strconv.ParseBool(env.Get("EXTSVC_CONFIG_ALLOW_EDITS", "false", "When EXTSVC_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
 
-func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
+func (r *schemaResolver) AddCodeHost(ctx context.Context, args *struct {
 	Input *struct {
 		Kind        string
 		DisplayName string
 		Config      string
 	}
-}) (*externalServiceResolver, error) {
+}) (*codeHostResolver, error) {
 	// 🚨 SECURITY: Only site admins may add external services.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -37,32 +37,32 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 		return nil, errors.New("adding external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
 
-	externalService := &types.ExternalService{
+	codeHost := &types.CodeHost{
 		Kind:        args.Input.Kind,
 		DisplayName: args.Input.DisplayName,
 		Config:      args.Input.Config,
 	}
 
-	if err := db.ExternalServices.Create(ctx, conf.Get, externalService); err != nil {
+	if err := db.CodeHosts.Create(ctx, conf.Get, codeHost); err != nil {
 		return nil, err
 	}
 
-	res := &externalServiceResolver{externalService: externalService}
-	if err := syncExternalService(ctx, externalService); err != nil {
+	res := &codeHostResolver{codeHost: codeHost}
+	if err := syncCodeHost(ctx, codeHost); err != nil {
 		res.warning = fmt.Sprintf("External service created, but we encountered a problem while validating the external service: %s", err)
 	}
 
 	return res, nil
 }
 
-func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
+func (*schemaResolver) UpdateCodeHost(ctx context.Context, args *struct {
 	Input *struct {
 		ID          graphql.ID
 		DisplayName *string
 		Config      *string
 	}
-}) (*externalServiceResolver, error) {
-	externalServiceID, err := unmarshalExternalServiceID(args.Input.ID)
+}) (*codeHostResolver, error) {
+	codeHostID, err := unmarshalCodeHostID(args.Input.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -80,21 +80,21 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 	}
 
 	ps := conf.Get().AuthProviders
-	update := &db.ExternalServiceUpdate{
+	update := &db.CodeHostUpdate{
 		DisplayName: args.Input.DisplayName,
 		Config:      args.Input.Config,
 	}
-	if err := db.ExternalServices.Update(ctx, ps, externalServiceID, update); err != nil {
+	if err := db.CodeHosts.Update(ctx, ps, codeHostID, update); err != nil {
 		return nil, err
 	}
 
-	externalService, err := db.ExternalServices.GetByID(ctx, externalServiceID)
+	codeHost, err := db.CodeHosts.GetByID(ctx, codeHostID)
 	if err != nil {
 		return nil, err
 	}
 
-	res := &externalServiceResolver{externalService: externalService}
-	if err = syncExternalService(ctx, externalService); err != nil {
+	res := &codeHostResolver{codeHost: codeHost}
+	if err = syncCodeHost(ctx, codeHost); err != nil {
 		res.warning = fmt.Sprintf("External service updated, but we encountered a problem while validating the external service: %s", err)
 	}
 
@@ -102,8 +102,8 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 }
 
 // Eagerly trigger a repo-updater sync.
-func syncExternalService(ctx context.Context, svc *types.ExternalService) error {
-	_, err := repoupdater.DefaultClient.SyncExternalService(ctx, api.ExternalService{
+func syncCodeHost(ctx context.Context, svc *types.CodeHost) error {
+	_, err := repoupdater.DefaultClient.SyncCodeHost(ctx, api.CodeHost{
 		ID:          svc.ID,
 		Kind:        svc.Kind,
 		DisplayName: svc.DisplayName,
@@ -119,8 +119,8 @@ func syncExternalService(ctx context.Context, svc *types.ExternalService) error 
 	return nil
 }
 
-func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {
-	ExternalService graphql.ID
+func (*schemaResolver) DeleteCodeHost(ctx context.Context, args *struct {
+	CodeHost graphql.ID
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins can delete external services.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
@@ -130,103 +130,103 @@ func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {
 		return nil, errors.New("deleting external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
 
-	id, err := unmarshalExternalServiceID(args.ExternalService)
+	id, err := unmarshalCodeHostID(args.CodeHost)
 	if err != nil {
 		return nil, err
 	}
 
-	externalService, err := db.ExternalServices.GetByID(ctx, id)
+	codeHost, err := db.CodeHosts.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := db.ExternalServices.Delete(ctx, id); err != nil {
+	if err := db.CodeHosts.Delete(ctx, id); err != nil {
 		return nil, err
 	}
 
 	// The user doesn't care if triggering syncing failed when deleting a
 	// service, so kick off in the background.
 	go func() {
-		_ = syncExternalService(context.Background(), externalService)
+		_ = syncCodeHost(context.Background(), codeHost)
 	}()
 
 	return &EmptyResponse{}, nil
 }
 
-func (r *schemaResolver) ExternalServices(ctx context.Context, args *struct {
+func (r *schemaResolver) CodeHosts(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
-}) (*externalServiceConnectionResolver, error) {
+}) (*codeHostConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins may read external services (they have secrets).
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
-	var opt db.ExternalServicesListOptions
+	var opt db.CodeHostsListOptions
 	args.ConnectionArgs.Set(&opt.LimitOffset)
-	return &externalServiceConnectionResolver{opt: opt}, nil
+	return &codeHostConnectionResolver{opt: opt}, nil
 }
 
-type externalServiceConnectionResolver struct {
-	opt db.ExternalServicesListOptions
+type codeHostConnectionResolver struct {
+	opt db.CodeHostsListOptions
 
 	// cache results because they are used by multiple fields
 	once             sync.Once
-	externalServices []*types.ExternalService
+	codeHosts []*types.CodeHost
 	err              error
 }
 
-func (r *externalServiceConnectionResolver) compute(ctx context.Context) ([]*types.ExternalService, error) {
+func (r *codeHostConnectionResolver) compute(ctx context.Context) ([]*types.CodeHost, error) {
 	r.once.Do(func() {
-		r.externalServices, r.err = db.ExternalServices.List(ctx, r.opt)
+		r.codeHosts, r.err = db.CodeHosts.List(ctx, r.opt)
 	})
-	return r.externalServices, r.err
+	return r.codeHosts, r.err
 }
 
-func (r *externalServiceConnectionResolver) Nodes(ctx context.Context) ([]*externalServiceResolver, error) {
-	externalServices, err := r.compute(ctx)
+func (r *codeHostConnectionResolver) Nodes(ctx context.Context) ([]*codeHostResolver, error) {
+	codeHosts, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]*externalServiceResolver, 0, len(externalServices))
-	for _, externalService := range externalServices {
-		resolvers = append(resolvers, &externalServiceResolver{externalService: externalService})
+	resolvers := make([]*codeHostResolver, 0, len(codeHosts))
+	for _, codeHost := range codeHosts {
+		resolvers = append(resolvers, &codeHostResolver{codeHost: codeHost})
 	}
 	return resolvers, nil
 }
 
-func (r *externalServiceConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	count, err := db.ExternalServices.Count(ctx, r.opt)
+func (r *codeHostConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	count, err := db.CodeHosts.Count(ctx, r.opt)
 	return int32(count), err
 }
 
-func (r *externalServiceConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	externalServices, err := r.compute(ctx)
+func (r *codeHostConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	codeHosts, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && len(externalServices) >= r.opt.Limit), nil
+	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && len(codeHosts) >= r.opt.Limit), nil
 }
 
-type computedExternalServiceConnectionResolver struct {
+type computedCodeHostConnectionResolver struct {
 	args             graphqlutil.ConnectionArgs
-	externalServices []*types.ExternalService
+	codeHosts []*types.CodeHost
 }
 
-func (r *computedExternalServiceConnectionResolver) Nodes(ctx context.Context) []*externalServiceResolver {
-	svcs := r.externalServices
+func (r *computedCodeHostConnectionResolver) Nodes(ctx context.Context) []*codeHostResolver {
+	svcs := r.codeHosts
 	if r.args.First != nil && int(*r.args.First) < len(svcs) {
 		svcs = svcs[:*r.args.First]
 	}
-	resolvers := make([]*externalServiceResolver, 0, len(svcs))
+	resolvers := make([]*codeHostResolver, 0, len(svcs))
 	for _, svc := range svcs {
-		resolvers = append(resolvers, &externalServiceResolver{externalService: svc})
+		resolvers = append(resolvers, &codeHostResolver{codeHost: svc})
 	}
 	return resolvers
 }
 
-func (r *computedExternalServiceConnectionResolver) TotalCount(ctx context.Context) int32 {
-	return int32(len(r.externalServices))
+func (r *computedCodeHostConnectionResolver) TotalCount(ctx context.Context) int32 {
+	return int32(len(r.codeHosts))
 }
 
-func (r *computedExternalServiceConnectionResolver) PageInfo(ctx context.Context) *graphqlutil.PageInfo {
-	return graphqlutil.HasNextPage(r.args.First != nil && len(r.externalServices) >= int(*r.args.First))
+func (r *computedCodeHostConnectionResolver) PageInfo(ctx context.Context) *graphqlutil.PageInfo {
+	return graphqlutil.HasNextPage(r.args.First != nil && len(r.codeHosts) >= int(*r.args.First))
 }

@@ -17,7 +17,7 @@ import (
 
 func TestGitTree(t *testing.T) {
 	resetMocks()
-	db.Mocks.ExternalServices.List = func(opt db.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+	db.Mocks.CodeHosts.List = func(opt db.CodeHostsListOptions) ([]*types.CodeHost, error) {
 		return nil, nil
 	}
 	db.Mocks.Repos.MockGetByName(t, "github.com/gorilla/mux", 2)

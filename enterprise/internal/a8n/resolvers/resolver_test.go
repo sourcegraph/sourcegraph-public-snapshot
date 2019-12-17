@@ -263,7 +263,7 @@ func TestCampaigns(t *testing.T) {
 	}
 
 	store := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-	githubExtSvc := &repos.ExternalService{
+	githubExtSvc := &repos.CodeHost{
 		Kind:        "GITHUB",
 		DisplayName: "GitHub",
 		Config: marshalJSON(t, &schema.GitHubConnection{
@@ -280,7 +280,7 @@ func TestCampaigns(t *testing.T) {
 		bbsURL = "https://bitbucket.sgdev.org"
 	}
 
-	bbsExtSvc := &repos.ExternalService{
+	bbsExtSvc := &repos.CodeHost{
 		Kind:        "BITBUCKETSERVER",
 		DisplayName: "Bitbucket Server",
 		Config: marshalJSON(t, &schema.BitbucketServerConnection{
@@ -290,7 +290,7 @@ func TestCampaigns(t *testing.T) {
 		}),
 	}
 
-	err = store.UpsertExternalServices(ctx, githubExtSvc, bbsExtSvc)
+	err = store.UpsertCodeHosts(ctx, githubExtSvc, bbsExtSvc)
 	if err != nil {
 		t.Fatal(t)
 	}
@@ -730,7 +730,7 @@ func TestChangesetCountsOverTime(t *testing.T) {
 	}
 
 	repoStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-	githubExtSvc := &repos.ExternalService{
+	githubExtSvc := &repos.CodeHost{
 		Kind:        "GITHUB",
 		DisplayName: "GitHub",
 		Config: marshalJSON(t, &schema.GitHubConnection{
@@ -740,7 +740,7 @@ func TestChangesetCountsOverTime(t *testing.T) {
 		}),
 	}
 
-	err = repoStore.UpsertExternalServices(ctx, githubExtSvc)
+	err = repoStore.UpsertCodeHosts(ctx, githubExtSvc)
 	if err != nil {
 		t.Fatal(t)
 	}
@@ -776,16 +776,16 @@ func TestChangesetCountsOverTime(t *testing.T) {
 
 	changesets := []*a8n.Changeset{
 		{
-			RepoID:              int32(githubRepo.ID),
-			ExternalID:          "5834",
-			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
-			CampaignIDs:         []int64{campaign.ID},
+			RepoID:       int32(githubRepo.ID),
+			ExternalID:   "5834",
+			CodeHostType: githubRepo.ExternalRepo.ServiceType,
+			CampaignIDs:  []int64{campaign.ID},
 		},
 		{
-			RepoID:              int32(githubRepo.ID),
-			ExternalID:          "5849",
-			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
-			CampaignIDs:         []int64{campaign.ID},
+			RepoID:       int32(githubRepo.ID),
+			ExternalID:   "5849",
+			CodeHostType: githubRepo.ExternalRepo.ServiceType,
+			CampaignIDs:  []int64{campaign.ID},
 		},
 	}
 

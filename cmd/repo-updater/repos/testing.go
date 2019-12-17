@@ -17,7 +17,7 @@ import (
 // NewFakeSourcer returns a Sourcer which always returns the given error and sources,
 // ignoring the given external services.
 func NewFakeSourcer(err error, srcs ...Source) Sourcer {
-	return func(svcs ...*ExternalService) (Sources, error) {
+	return func(svcs ...*CodeHost) (Sources, error) {
 		var errs *multierror.Error
 
 		if err != nil {
@@ -35,14 +35,14 @@ func NewFakeSourcer(err error, srcs ...Source) Sourcer {
 
 // FakeSource is a fake implementation of Source to be used in tests.
 type FakeSource struct {
-	svc   *ExternalService
+	svc   *CodeHost
 	repos []*Repo
 	err   error
 }
 
 // NewFakeSource returns an instance of FakeSource with the given urn, error
 // and repos.
-func NewFakeSource(svc *ExternalService, err error, rs ...*Repo) *FakeSource {
+func NewFakeSource(svc *CodeHost, err error, rs ...*Repo) *FakeSource {
 	return &FakeSource{svc: svc, err: err, repos: rs}
 }
 
@@ -59,23 +59,23 @@ func (s FakeSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	}
 }
 
-// ExternalServices returns a singleton slice containing the external service.
-func (s FakeSource) ExternalServices() ExternalServices {
-	return ExternalServices{s.svc}
+// CodeHosts returns a singleton slice containing the external service.
+func (s FakeSource) CodeHosts() CodeHosts {
+	return CodeHosts{s.svc}
 }
 
 // FakeStore is a fake implementation of Store to be used in tests.
 type FakeStore struct {
-	ListExternalServicesError   error // error to be returned in ListExternalServices
-	UpsertExternalServicesError error // error to be returned in UpsertExternalServices
-	GetRepoByNameError          error // error to be returned in GetRepoByName
-	ListReposError              error // error to be returned in ListRepos
-	UpsertReposError            error // error to be returned in UpsertRepos
-	ListAllRepoNamesError       error // error to be returned in ListAllRepoNames
+	ListCodeHostsError    error // error to be returned in ListCodeHosts
+	UpsertCodeHostsError  error // error to be returned in UpsertCodeHosts
+	GetRepoByNameError    error // error to be returned in GetRepoByName
+	ListReposError        error // error to be returned in ListRepos
+	UpsertReposError      error // error to be returned in UpsertRepos
+	ListAllRepoNamesError error // error to be returned in ListAllRepoNames
 
 	svcIDSeq  int64
 	repoIDSeq uint32
-	svcByID   map[int64]*ExternalService
+	svcByID   map[int64]*CodeHost
 	repoByID  map[uint32]*Repo
 	parent    *FakeStore
 }
@@ -86,7 +86,7 @@ func (s *FakeStore) Transact(ctx context.Context) (TxStore, error) {
 		return nil, errors.New("already in transaction")
 	}
 
-	svcByID := make(map[int64]*ExternalService, len(s.svcByID))
+	svcByID := make(map[int64]*CodeHost, len(s.svcByID))
 	for id, svc := range s.svcByID {
 		svcByID[id] = svc.Clone()
 	}
@@ -98,12 +98,12 @@ func (s *FakeStore) Transact(ctx context.Context) (TxStore, error) {
 	}
 
 	return &FakeStore{
-		ListExternalServicesError:   s.ListExternalServicesError,
-		UpsertExternalServicesError: s.UpsertExternalServicesError,
-		GetRepoByNameError:          s.GetRepoByNameError,
-		ListReposError:              s.ListReposError,
-		UpsertReposError:            s.UpsertReposError,
-		ListAllRepoNamesError:       s.ListAllRepoNamesError,
+		ListCodeHostsError:    s.ListCodeHostsError,
+		UpsertCodeHostsError:  s.UpsertCodeHostsError,
+		GetRepoByNameError:    s.GetRepoByNameError,
+		ListReposError:        s.ListReposError,
+		UpsertReposError:      s.UpsertReposError,
+		ListAllRepoNamesError: s.ListAllRepoNamesError,
 
 		svcIDSeq:  s.svcIDSeq,
 		svcByID:   svcByID,
@@ -126,14 +126,14 @@ func (s *FakeStore) Done(e ...*error) {
 	*p = *s
 }
 
-// ListExternalServices lists all stored external services that match the given args.
-func (s FakeStore) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) ([]*ExternalService, error) {
-	if s.ListExternalServicesError != nil {
-		return nil, s.ListExternalServicesError
+// ListCodeHosts lists all stored external services that match the given args.
+func (s FakeStore) ListCodeHosts(ctx context.Context, args StoreListCodeHostsArgs) ([]*CodeHost, error) {
+	if s.ListCodeHostsError != nil {
+		return nil, s.ListCodeHostsError
 	}
 
 	if s.svcByID == nil {
-		s.svcByID = make(map[int64]*ExternalService)
+		s.svcByID = make(map[int64]*CodeHost)
 	}
 
 	kinds := make(map[string]bool, len(args.Kinds))
@@ -146,8 +146,8 @@ func (s FakeStore) ListExternalServices(ctx context.Context, args StoreListExter
 		ids[id] = true
 	}
 
-	set := make(map[*ExternalService]bool, len(s.svcByID))
-	svcs := make(ExternalServices, 0, len(s.svcByID))
+	set := make(map[*CodeHost]bool, len(s.svcByID))
+	svcs := make(CodeHosts, 0, len(s.svcByID))
 	for _, svc := range s.svcByID {
 		k := strings.ToLower(svc.Kind)
 
@@ -166,14 +166,14 @@ func (s FakeStore) ListExternalServices(ctx context.Context, args StoreListExter
 	return svcs, nil
 }
 
-// UpsertExternalServices updates or inserts the given ExternalServices.
-func (s *FakeStore) UpsertExternalServices(ctx context.Context, svcs ...*ExternalService) error {
-	if s.UpsertExternalServicesError != nil {
-		return s.UpsertExternalServicesError
+// UpsertCodeHosts updates or inserts the given CodeHosts.
+func (s *FakeStore) UpsertCodeHosts(ctx context.Context, svcs ...*CodeHost) error {
+	if s.UpsertCodeHostsError != nil {
+		return s.UpsertCodeHostsError
 	}
 
 	if s.svcByID == nil {
-		s.svcByID = make(map[int64]*ExternalService, len(svcs))
+		s.svcByID = make(map[int64]*CodeHost, len(svcs))
 	}
 
 	for _, svc := range svcs {
@@ -376,16 +376,16 @@ func (s *FakeStore) checkConstraints() error {
 // A ReposAssertion performs an assertion on the given Repos.
 type ReposAssertion func(testing.TB, Repos)
 
-// An ExternalServicesAssertion performs an assertion on the given
-// ExternalServices.
-type ExternalServicesAssertion func(testing.TB, ExternalServices)
+// An CodeHostsAssertion performs an assertion on the given
+// CodeHosts.
+type CodeHostsAssertion func(testing.TB, CodeHosts)
 
 // Assert contains assertion functions to be used in tests.
 var Assert = struct {
-	ReposEqual                func(...*Repo) ReposAssertion
-	ReposOrderedBy            func(func(a, b *Repo) bool) ReposAssertion
-	ExternalServicesEqual     func(...*ExternalService) ExternalServicesAssertion
-	ExternalServicesOrderedBy func(func(a, b *ExternalService) bool) ExternalServicesAssertion
+	ReposEqual         func(...*Repo) ReposAssertion
+	ReposOrderedBy     func(func(a, b *Repo) bool) ReposAssertion
+	CodeHostsEqual     func(...*CodeHost) CodeHostsAssertion
+	CodeHostsOrderedBy func(func(a, b *CodeHost) bool) CodeHostsAssertion
 }{
 	ReposEqual: func(rs ...*Repo) ReposAssertion {
 		want := append(Repos{}, rs...).With(Opt.RepoID(0))
@@ -410,19 +410,19 @@ var Assert = struct {
 			}
 		}
 	},
-	ExternalServicesEqual: func(es ...*ExternalService) ExternalServicesAssertion {
-		want := append(ExternalServices{}, es...).With(Opt.ExternalServiceID(0))
-		return func(t testing.TB, have ExternalServices) {
+	CodeHostsEqual: func(es ...*CodeHost) CodeHostsAssertion {
+		want := append(CodeHosts{}, es...).With(Opt.CodeHostID(0))
+		return func(t testing.TB, have CodeHosts) {
 			t.Helper()
 			// Exclude auto-generated IDs from equality tests
-			have = append(ExternalServices{}, have...).With(Opt.ExternalServiceID(0))
+			have = append(CodeHosts{}, have...).With(Opt.CodeHostID(0))
 			if !reflect.DeepEqual(have, want) {
 				t.Errorf("external services: %s", cmp.Diff(have, want))
 			}
 		}
 	},
-	ExternalServicesOrderedBy: func(ord func(a, b *ExternalService) bool) ExternalServicesAssertion {
-		return func(t testing.TB, have ExternalServices) {
+	CodeHostsOrderedBy: func(ord func(a, b *CodeHost) bool) CodeHostsAssertion {
+		return func(t testing.TB, have CodeHosts) {
 			t.Helper()
 			want := have.Clone()
 			sort.Slice(want, func(i, j int) bool {
@@ -441,32 +441,32 @@ var Assert = struct {
 
 // Opt contains functional options to be used in tests.
 var Opt = struct {
-	ExternalServiceID         func(int64) func(*ExternalService)
-	ExternalServiceModifiedAt func(time.Time) func(*ExternalService)
-	ExternalServiceDeletedAt  func(time.Time) func(*ExternalService)
-	RepoID                    func(uint32) func(*Repo)
-	RepoName                  func(string) func(*Repo)
-	RepoCreatedAt             func(time.Time) func(*Repo)
-	RepoModifiedAt            func(time.Time) func(*Repo)
-	RepoDeletedAt             func(time.Time) func(*Repo)
-	RepoEnabled               func(bool) func(*Repo)
-	RepoSources               func(...string) func(*Repo)
-	RepoMetadata              func(interface{}) func(*Repo)
-	RepoExternalID            func(string) func(*Repo)
+	CodeHostID         func(int64) func(*CodeHost)
+	CodeHostModifiedAt func(time.Time) func(*CodeHost)
+	CodeHostDeletedAt  func(time.Time) func(*CodeHost)
+	RepoID             func(uint32) func(*Repo)
+	RepoName           func(string) func(*Repo)
+	RepoCreatedAt      func(time.Time) func(*Repo)
+	RepoModifiedAt     func(time.Time) func(*Repo)
+	RepoDeletedAt      func(time.Time) func(*Repo)
+	RepoEnabled        func(bool) func(*Repo)
+	RepoSources        func(...string) func(*Repo)
+	RepoMetadata       func(interface{}) func(*Repo)
+	RepoExternalID     func(string) func(*Repo)
 }{
-	ExternalServiceID: func(n int64) func(*ExternalService) {
-		return func(e *ExternalService) {
+	CodeHostID: func(n int64) func(*CodeHost) {
+		return func(e *CodeHost) {
 			e.ID = n
 		}
 	},
-	ExternalServiceModifiedAt: func(ts time.Time) func(*ExternalService) {
-		return func(e *ExternalService) {
+	CodeHostModifiedAt: func(ts time.Time) func(*CodeHost) {
+		return func(e *CodeHost) {
 			e.UpdatedAt = ts
 			e.DeletedAt = time.Time{}
 		}
 	},
-	ExternalServiceDeletedAt: func(ts time.Time) func(*ExternalService) {
-		return func(e *ExternalService) {
+	CodeHostDeletedAt: func(ts time.Time) func(*CodeHost) {
+		return func(e *CodeHost) {
 			e.UpdatedAt = ts
 			e.DeletedAt = ts
 		}

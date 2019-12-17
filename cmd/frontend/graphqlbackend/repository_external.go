@@ -27,30 +27,30 @@ func (r *externalRepositoryResolver) ServiceID() string {
 	return r.repository.repo.ExternalRepo.ServiceID
 }
 
-func (r *RepositoryResolver) ExternalServices(ctx context.Context, args *struct {
+func (r *RepositoryResolver) CodeHosts(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
-}) (*computedExternalServiceConnectionResolver, error) {
+}) (*computedCodeHostConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins may read external services (they have secrets).
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
-	svcs, err := repoupdater.DefaultClient.RepoExternalServices(ctx, uint32(r.repo.ID))
+	svcs, err := repoupdater.DefaultClient.RepoCodeHosts(ctx, uint32(r.repo.ID))
 	if err != nil {
 		return nil, err
 	}
 
-	return &computedExternalServiceConnectionResolver{
+	return &computedCodeHostConnectionResolver{
 		args:             args.ConnectionArgs,
-		externalServices: newExternalServices(svcs...),
+		codeHosts: newCodeHosts(svcs...),
 	}, nil
 }
 
-func newExternalServices(es ...api.ExternalService) []*types.ExternalService {
-	svcs := make([]*types.ExternalService, 0, len(es))
+func newCodeHosts(es ...api.CodeHost) []*types.CodeHost {
+	svcs := make([]*types.CodeHost, 0, len(es))
 
 	for _, e := range es {
-		svc := &types.ExternalService{
+		svc := &types.CodeHost{
 			ID:          e.ID,
 			Kind:        e.Kind,
 			DisplayName: e.DisplayName,

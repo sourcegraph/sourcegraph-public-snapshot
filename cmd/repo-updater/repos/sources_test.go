@@ -32,7 +32,7 @@ import (
 func TestNewSourcer(t *testing.T) {
 	now := time.Now()
 
-	github := ExternalService{
+	github := CodeHost{
 		Kind:        "GITHUB",
 		DisplayName: "Github - Test",
 		Config:      `{"url": "https://github.com"}`,
@@ -40,7 +40,7 @@ func TestNewSourcer(t *testing.T) {
 		UpdatedAt:   now,
 	}
 
-	gitlab := ExternalService{
+	gitlab := CodeHost{
 		Kind:        "GITHUB",
 		DisplayName: "Github - Test",
 		Config:      `{"url": "https://github.com"}`,
@@ -49,7 +49,7 @@ func TestNewSourcer(t *testing.T) {
 		DeletedAt:   now,
 	}
 
-	sources := func(es ...*ExternalService) (srcs []Source) {
+	sources := func(es ...*CodeHost) (srcs []Source) {
 		t.Helper()
 
 		for _, e := range es {
@@ -65,13 +65,13 @@ func TestNewSourcer(t *testing.T) {
 
 	for _, tc := range []struct {
 		name string
-		svcs ExternalServices
+		svcs CodeHosts
 		srcs Sources
 		err  string
 	}{
 		{
 			name: "deleted external services are excluded",
-			svcs: ExternalServices{&github, &gitlab},
+			svcs: CodeHosts{&github, &gitlab},
 			srcs: sources(&github),
 			err:  "<nil>",
 		},
@@ -84,8 +84,8 @@ func TestNewSourcer(t *testing.T) {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
 
-			have := srcs.ExternalServices()
-			want := tc.srcs.ExternalServices()
+			have := srcs.CodeHosts()
+			want := tc.srcs.CodeHosts()
 
 			if !reflect.DeepEqual(have, want) {
 				t.Errorf("sources:\n%s", cmp.Diff(have, want))
@@ -113,14 +113,14 @@ func TestSources_ListRepos(t *testing.T) {
 	type testCase struct {
 		name   string
 		ctx    context.Context
-		svcs   ExternalServices
-		assert func(*ExternalService) ReposAssertion
+		svcs   CodeHosts
+		assert func(*CodeHost) ReposAssertion
 		err    string
 	}
 
 	var testCases []testCase
 	{
-		svcs := ExternalServices{
+		svcs := CodeHosts{
 			{
 				Kind: "GITHUB",
 				Config: marshalJSON(t, &schema.GitHubConnection{
@@ -180,7 +180,7 @@ func TestSources_ListRepos(t *testing.T) {
 			},
 			{
 				Kind: "OTHER",
-				Config: marshalJSON(t, &schema.OtherExternalServiceConnection{
+				Config: marshalJSON(t, &schema.OtherCodeHostConnection{
 					Url: "https://github.com",
 					Repos: []string{
 						"google/go-cmp",
@@ -192,7 +192,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "yielded repos are always enabled",
 			svcs: svcs,
-			assert: func(e *ExternalService) ReposAssertion {
+			assert: func(e *CodeHost) ReposAssertion {
 				return func(t testing.TB, rs Repos) {
 					t.Helper()
 
@@ -214,7 +214,7 @@ func TestSources_ListRepos(t *testing.T) {
 	}
 
 	{
-		svcs := ExternalServices{
+		svcs := CodeHosts{
 			{
 				Kind: "GITHUB",
 				Config: marshalJSON(t, &schema.GitHubConnection{
@@ -302,7 +302,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "excluded repos are never yielded",
 			svcs: svcs,
-			assert: func(s *ExternalService) ReposAssertion {
+			assert: func(s *CodeHost) ReposAssertion {
 				return func(t testing.TB, rs Repos) {
 					t.Helper()
 
@@ -380,7 +380,7 @@ func TestSources_ListRepos(t *testing.T) {
 	}
 
 	{
-		svcs := ExternalServices{
+		svcs := CodeHosts{
 			{
 				Kind: "GITHUB",
 				Config: marshalJSON(t, &schema.GitHubConnection{
@@ -421,7 +421,7 @@ func TestSources_ListRepos(t *testing.T) {
 			},
 			{
 				Kind: "OTHER",
-				Config: marshalJSON(t, &schema.OtherExternalServiceConnection{
+				Config: marshalJSON(t, &schema.OtherCodeHostConnection{
 					Url: "https://github.com",
 					Repos: []string{
 						"google/go-cmp",
@@ -445,7 +445,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "included repos that exist are yielded",
 			svcs: svcs,
-			assert: func(s *ExternalService) ReposAssertion {
+			assert: func(s *CodeHost) ReposAssertion {
 				return func(t testing.TB, rs Repos) {
 					t.Helper()
 
@@ -494,7 +494,7 @@ func TestSources_ListRepos(t *testing.T) {
 	}
 
 	{
-		svcs := ExternalServices{
+		svcs := CodeHosts{
 			{
 				Kind: "GITHUB",
 				Config: marshalJSON(t, &schema.GitHubConnection{
@@ -553,7 +553,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "repositoryPathPattern determines the repo name",
 			svcs: svcs,
-			assert: func(s *ExternalService) ReposAssertion {
+			assert: func(s *CodeHost) ReposAssertion {
 				return func(t testing.TB, rs Repos) {
 					t.Helper()
 
@@ -625,7 +625,7 @@ func TestSources_ListRepos(t *testing.T) {
 	}
 
 	{
-		svcs := ExternalServices{
+		svcs := CodeHosts{
 			{
 				Kind: "GITLAB",
 				Config: marshalJSON(t, &schema.GitLabConnection{
@@ -654,7 +654,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "nameTransformations updates the repo name",
 			svcs: svcs,
-			assert: func(s *ExternalService) ReposAssertion {
+			assert: func(s *CodeHost) ReposAssertion {
 				return func(t testing.TB, rs Repos) {
 					t.Helper()
 
@@ -680,7 +680,7 @@ func TestSources_ListRepos(t *testing.T) {
 	}
 
 	{
-		svcs := ExternalServices{
+		svcs := CodeHosts{
 			{
 				Kind: "AWSCODECOMMIT",
 				Config: marshalJSON(t, &schema.AWSCodeCommitConnection{
@@ -698,7 +698,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "yielded repos have authenticated CloneURLs",
 			svcs: svcs,
-			assert: func(s *ExternalService) ReposAssertion {
+			assert: func(s *CodeHost) ReposAssertion {
 				return func(t testing.TB, rs Repos) {
 					t.Helper()
 
@@ -728,7 +728,7 @@ func TestSources_ListRepos(t *testing.T) {
 	}
 
 	{
-		svcs := ExternalServices{
+		svcs := CodeHosts{
 			{
 				Kind: "PHABRICATOR",
 				Config: marshalJSON(t, &schema.PhabricatorConnection{
@@ -741,7 +741,7 @@ func TestSources_ListRepos(t *testing.T) {
 		testCases = append(testCases, testCase{
 			name: "phabricator",
 			svcs: svcs,
-			assert: func(*ExternalService) ReposAssertion {
+			assert: func(*CodeHost) ReposAssertion {
 				return func(t testing.TB, rs Repos) {
 					t.Helper()
 

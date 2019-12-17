@@ -80,20 +80,20 @@ func TestProblems(t *testing.T) {
 		"siteProblem2",
 		"siteProblem3",
 	)
-	externalServiceProblems := NewExternalServiceProblems(
-		"externalServiceProblem1",
-		"externalServiceProblem2",
-		"externalServiceProblem3",
+	codeHostProblems := NewCodeHostProblems(
+		"codeHostProblem1",
+		"codeHostProblem2",
+		"codeHostProblem3",
 	)
 
 	var problems Problems
 	problems = append(problems, siteProblems...)
-	problems = append(problems, externalServiceProblems...)
+	problems = append(problems, codeHostProblems...)
 
 	{
 		messages := make([]string, 0, len(problems))
 		messages = append(messages, siteProblems.Messages()...)
-		messages = append(messages, externalServiceProblems.Messages()...)
+		messages = append(messages, codeHostProblems.Messages()...)
 
 		want := strings.Join(messages, "\n")
 		got := strings.Join(problems.Messages(), "\n")
@@ -111,8 +111,8 @@ func TestProblems(t *testing.T) {
 	}
 
 	{
-		want := strings.Join(externalServiceProblems.Messages(), "\n")
-		got := strings.Join(problems.ExternalService().Messages(), "\n")
+		want := strings.Join(codeHostProblems.Messages(), "\n")
+		got := strings.Join(problems.CodeHost().Messages(), "\n")
 		if want != got {
 			t.Errorf("got %q, want %q", got, want)
 		}

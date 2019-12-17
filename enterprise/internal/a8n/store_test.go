@@ -302,13 +302,13 @@ func testStore(db *sql.DB) func(*testing.T) {
 			t.Run("Create", func(t *testing.T) {
 				for i := 0; i < cap(changesets); i++ {
 					th := &a8n.Changeset{
-						RepoID:              42,
-						CreatedAt:           now,
-						UpdatedAt:           now,
-						Metadata:            githubPR,
-						CampaignIDs:         []int64{int64(i) + 1},
-						ExternalID:          fmt.Sprintf("foobar-%d", i),
-						ExternalServiceType: "github",
+						RepoID:       42,
+						CreatedAt:    now,
+						UpdatedAt:    now,
+						Metadata:     githubPR,
+						CampaignIDs:  []int64{int64(i) + 1},
+						ExternalID:   fmt.Sprintf("foobar-%d", i),
+						CodeHostType: "github",
 					}
 
 					changesets = append(changesets, th)
@@ -347,9 +347,9 @@ func testStore(db *sql.DB) func(*testing.T) {
 				for i, c := range changesets {
 					// Set only the fields on which we have a unique constraint
 					clones[i] = &a8n.Changeset{
-						RepoID:              c.RepoID,
-						ExternalID:          c.ExternalID,
-						ExternalServiceType: c.ExternalServiceType,
+						RepoID:       c.RepoID,
+						ExternalID:   c.ExternalID,
+						CodeHostType: c.CodeHostType,
 					}
 				}
 
@@ -516,8 +516,8 @@ func testStore(db *sql.DB) func(*testing.T) {
 				t.Run("ByExternalID", func(t *testing.T) {
 					want := changesets[0]
 					opts := GetChangesetOpts{
-						ExternalID:          want.ExternalID,
-						ExternalServiceType: want.ExternalServiceType,
+						ExternalID:   want.ExternalID,
+						CodeHostType: want.CodeHostType,
 					}
 
 					have, err := s.GetChangeset(ctx, opts)
@@ -549,7 +549,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 				now = now.Add(time.Second)
 				for _, c := range changesets {
 					c.Metadata = &bitbucketserver.PullRequest{ID: 1234}
-					c.ExternalServiceType = bitbucketserver.ServiceType
+					c.CodeHostType = bitbucketserver.ServiceType
 
 					if c.RepoID != 0 {
 						c.RepoID++

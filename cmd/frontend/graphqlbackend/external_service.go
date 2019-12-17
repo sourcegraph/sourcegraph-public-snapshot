@@ -11,70 +11,70 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
-type externalServiceResolver struct {
-	externalService *types.ExternalService
+type codeHostResolver struct {
+	codeHost *types.CodeHost
 	warning         string
 }
 
-const externalServiceIDKind = "ExternalService"
+const codeHostIDKind = "CodeHost"
 
-func externalServiceByID(ctx context.Context, id graphql.ID) (*externalServiceResolver, error) {
+func codeHostByID(ctx context.Context, id graphql.ID) (*codeHostResolver, error) {
 	// 🚨 SECURITY: Only site admins are allowed to read external services.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
-	externalServiceID, err := unmarshalExternalServiceID(id)
+	codeHostID, err := unmarshalCodeHostID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	externalService, err := db.ExternalServices.GetByID(ctx, externalServiceID)
+	codeHost, err := db.CodeHosts.GetByID(ctx, codeHostID)
 	if err != nil {
 		return nil, err
 	}
 
-	return &externalServiceResolver{externalService: externalService}, nil
+	return &codeHostResolver{codeHost: codeHost}, nil
 }
 
-func marshalExternalServiceID(id int64) graphql.ID {
-	return relay.MarshalID(externalServiceIDKind, id)
+func marshalCodeHostID(id int64) graphql.ID {
+	return relay.MarshalID(codeHostIDKind, id)
 }
 
-func unmarshalExternalServiceID(id graphql.ID) (externalServiceID int64, err error) {
-	if kind := relay.UnmarshalKind(id); kind != externalServiceIDKind {
-		err = fmt.Errorf("expected graphql ID to have kind %q; got %q", externalServiceIDKind, kind)
+func unmarshalCodeHostID(id graphql.ID) (codeHostID int64, err error) {
+	if kind := relay.UnmarshalKind(id); kind != codeHostIDKind {
+		err = fmt.Errorf("expected graphql ID to have kind %q; got %q", codeHostIDKind, kind)
 		return
 	}
-	err = relay.UnmarshalSpec(id, &externalServiceID)
+	err = relay.UnmarshalSpec(id, &codeHostID)
 	return
 }
 
-func (r *externalServiceResolver) ID() graphql.ID {
-	return marshalExternalServiceID(r.externalService.ID)
+func (r *codeHostResolver) ID() graphql.ID {
+	return marshalCodeHostID(r.codeHost.ID)
 }
 
-func (r *externalServiceResolver) Kind() string {
-	return r.externalService.Kind
+func (r *codeHostResolver) Kind() string {
+	return r.codeHost.Kind
 }
 
-func (r *externalServiceResolver) DisplayName() string {
-	return r.externalService.DisplayName
+func (r *codeHostResolver) DisplayName() string {
+	return r.codeHost.DisplayName
 }
 
-func (r *externalServiceResolver) Config() JSONCString {
-	return JSONCString(r.externalService.Config)
+func (r *codeHostResolver) Config() JSONCString {
+	return JSONCString(r.codeHost.Config)
 }
 
-func (r *externalServiceResolver) CreatedAt() DateTime {
-	return DateTime{Time: r.externalService.CreatedAt}
+func (r *codeHostResolver) CreatedAt() DateTime {
+	return DateTime{Time: r.codeHost.CreatedAt}
 }
 
-func (r *externalServiceResolver) UpdatedAt() DateTime {
-	return DateTime{Time: r.externalService.UpdatedAt}
+func (r *codeHostResolver) UpdatedAt() DateTime {
+	return DateTime{Time: r.codeHost.UpdatedAt}
 }
 
-func (r *externalServiceResolver) Warning() *string {
+func (r *codeHostResolver) Warning() *string {
 	if r.warning == "" {
 		return nil
 	}

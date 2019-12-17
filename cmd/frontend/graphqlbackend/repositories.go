@@ -296,7 +296,7 @@ func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct 
 		}
 
 		// Have any external services been updated to exclude the given repo?
-		done = len(resp.ExternalServices) > 0
+		done = len(resp.CodeHosts) > 0
 	}
 
 	if !done {

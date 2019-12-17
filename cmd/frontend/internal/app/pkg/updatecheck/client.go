@@ -130,9 +130,9 @@ func updateURL(ctx context.Context) string {
 		logFunc("db.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
 	}
 	q.Set("initAdmin", initAdminEmail)
-	svcs, err := externalServiceKinds(ctx)
+	svcs, err := codeHostKinds(ctx)
 	if err != nil {
-		logFunc("externalServicesKinds failed", "error", err)
+		logFunc("codeHostsKinds failed", "error", err)
 	}
 	q.Set("extsvcs", strings.Join(svcs, ","))
 	return baseURL.ResolveReference(&url.URL{RawQuery: q.Encode()}).String()
@@ -147,8 +147,8 @@ func authProviderTypes() []string {
 	return types
 }
 
-func externalServiceKinds(ctx context.Context) ([]string, error) {
-	services, err := db.ExternalServices.List(ctx, db.ExternalServicesListOptions{})
+func codeHostKinds(ctx context.Context) ([]string, error) {
+	services, err := db.CodeHosts.List(ctx, db.CodeHostsListOptions{})
 	if err != nil {
 		return nil, err
 	}

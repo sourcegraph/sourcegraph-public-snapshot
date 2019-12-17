@@ -25,7 +25,7 @@ import (
 // A GithubSource yields repositories from a single Github connection configured
 // in Sourcegraph via the external services configuration.
 type GithubSource struct {
-	svc             *ExternalService
+	svc             *CodeHost
 	config          *schema.GitHubConnection
 	exclude         map[string]bool
 	excludePatterns []*regexp.Regexp
@@ -42,7 +42,7 @@ type GithubSource struct {
 }
 
 // NewGithubSource returns a new GithubSource from the given external service.
-func NewGithubSource(svc *ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
+func NewGithubSource(svc *CodeHost, cf *httpcli.Factory) (*GithubSource, error) {
 	var c schema.GitHubConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -50,7 +50,7 @@ func NewGithubSource(svc *ExternalService, cf *httpcli.Factory) (*GithubSource, 
 	return newGithubSource(svc, &c, cf)
 }
 
-func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpcli.Factory) (*GithubSource, error) {
+func newGithubSource(svc *CodeHost, c *schema.GitHubConnection, cf *httpcli.Factory) (*GithubSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -143,9 +143,9 @@ func (s GithubSource) ListRepos(ctx context.Context, results chan SourceResult) 
 	}
 }
 
-// ExternalServices returns a singleton slice containing the external service.
-func (s GithubSource) ExternalServices() ExternalServices {
-	return ExternalServices{s.svc}
+// CodeHosts returns a singleton slice containing the external service.
+func (s GithubSource) CodeHosts() CodeHosts {
+	return CodeHosts{s.svc}
 }
 
 // CreateChangeset creates the given *Changeset in the code host.
@@ -176,7 +176,7 @@ func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) error {
 
 	c.Changeset.Metadata = pr
 	c.Changeset.ExternalID = strconv.FormatInt(pr.Number, 10)
-	c.Changeset.ExternalServiceType = github.ServiceType
+	c.Changeset.CodeHostType = github.ServiceType
 
 	return nil
 }

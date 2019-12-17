@@ -47,7 +47,7 @@ func main() {
 		t := time.NewTicker(5 * time.Second)
 		for range t.C {
 			allowAccessByDefault, authzProviders, _, _ :=
-				authzProvidersFromConfig(ctx, conf.Get(), db.ExternalServices, dbconn.Global)
+				authzProvidersFromConfig(ctx, conf.Get(), db.CodeHosts, dbconn.Global)
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()

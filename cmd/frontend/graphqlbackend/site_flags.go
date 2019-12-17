@@ -25,14 +25,14 @@ func (r *siteResolver) NeedsRepositoryConfiguration(ctx context.Context) (bool, 
 }
 
 func needsRepositoryConfiguration(ctx context.Context) (bool, error) {
-	kinds := make([]string, 0, len(db.ExternalServiceKinds))
-	for kind, config := range db.ExternalServiceKinds {
+	kinds := make([]string, 0, len(db.CodeHostKinds))
+	for kind, config := range db.CodeHostKinds {
 		if config.CodeHost {
 			kinds = append(kinds, kind)
 		}
 	}
 
-	count, err := db.ExternalServices.Count(ctx, db.ExternalServicesListOptions{
+	count, err := db.CodeHosts.Count(ctx, db.CodeHostsListOptions{
 		Kinds: kinds,
 	})
 	if err != nil {

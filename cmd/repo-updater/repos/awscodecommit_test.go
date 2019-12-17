@@ -21,7 +21,7 @@ func TestAWSCodeCommitSource_Exclude(t *testing.T) {
 	}
 
 	fact := httpcli.NewFactory(httpcli.NewMiddleware())
-	svc := ExternalService{Kind: "AWSCODECOMMIT"}
+	svc := CodeHost{Kind: "AWSCODECOMMIT"}
 	conn, err := newAWSCodeCommitSource(&svc, config, fact)
 	if err != nil {
 		t.Fatal(err)

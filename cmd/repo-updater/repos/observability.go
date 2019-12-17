@@ -156,13 +156,13 @@ type ObservedStore struct {
 
 // StoreMetrics encapsulates the Prometheus metrics of a Store.
 type StoreMetrics struct {
-	Transact               *OperationMetrics
-	Done                   *OperationMetrics
-	UpsertRepos            *OperationMetrics
-	ListRepos              *OperationMetrics
-	UpsertExternalServices *OperationMetrics
-	ListExternalServices   *OperationMetrics
-	ListAllRepoNames       *OperationMetrics
+	Transact         *OperationMetrics
+	Done             *OperationMetrics
+	UpsertRepos      *OperationMetrics
+	ListRepos        *OperationMetrics
+	UpsertCodeHosts  *OperationMetrics
+	ListCodeHosts    *OperationMetrics
+	ListAllRepoNames *OperationMetrics
 }
 
 // NewStoreMetrics returns StoreMetrics that need to be registered
@@ -249,7 +249,7 @@ func NewStoreMetrics() StoreMetrics {
 				Help:      "Total number of errors when listing repos",
 			}, []string{}),
 		},
-		UpsertExternalServices: &OperationMetrics{
+		UpsertCodeHosts: &OperationMetrics{
 			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 				Namespace: "src",
 				Subsystem: "external_serviceupdater",
@@ -269,7 +269,7 @@ func NewStoreMetrics() StoreMetrics {
 				Help:      "Total number of errors when upserting external_services",
 			}, []string{}),
 		},
-		ListExternalServices: &OperationMetrics{
+		ListCodeHosts: &OperationMetrics{
 			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 				Namespace: "src",
 				Subsystem: "repoupdater",
@@ -371,9 +371,9 @@ func (o *ObservedStore) Done(errs ...*error) {
 	o.store.(TxStore).Done(errs...)
 }
 
-// ListExternalServices calls into the inner Store and registers the observed results.
-func (o *ObservedStore) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) (es []*ExternalService, err error) {
-	tr, ctx := o.trace(ctx, "Store.ListExternalServices")
+// ListCodeHosts calls into the inner Store and registers the observed results.
+func (o *ObservedStore) ListCodeHosts(ctx context.Context, args StoreListCodeHostsArgs) (es []*CodeHost, err error) {
+	tr, ctx := o.trace(ctx, "Store.ListCodeHosts")
 	tr.LogFields(
 		otlog.Object("args.ids", args.IDs),
 		otlog.Object("args.kinds", args.Kinds),
@@ -383,7 +383,7 @@ func (o *ObservedStore) ListExternalServices(ctx context.Context, args StoreList
 		secs := time.Since(began).Seconds()
 		count := float64(len(es))
 
-		o.metrics.ListExternalServices.Observe(secs, count, &err)
+		o.metrics.ListCodeHosts.Observe(secs, count, &err)
 		log(o.log, "store.list-external-services", &err,
 			"args", fmt.Sprintf("%+v", args),
 			"count", len(es),
@@ -391,40 +391,40 @@ func (o *ObservedStore) ListExternalServices(ctx context.Context, args StoreList
 
 		tr.LogFields(
 			otlog.Int("count", len(es)),
-			otlog.Object("names", ExternalServices(es).DisplayNames()),
-			otlog.Object("urns", ExternalServices(es).URNs()),
+			otlog.Object("names", CodeHosts(es).DisplayNames()),
+			otlog.Object("urns", CodeHosts(es).URNs()),
 		)
 		tr.SetError(err)
 		tr.Finish()
 	}(time.Now())
 
-	return o.store.ListExternalServices(ctx, args)
+	return o.store.ListCodeHosts(ctx, args)
 }
 
-// UpsertExternalServices calls into the inner Store and registers the observed results.
-func (o *ObservedStore) UpsertExternalServices(ctx context.Context, svcs ...*ExternalService) (err error) {
-	tr, ctx := o.trace(ctx, "Store.UpsertExternalServices")
+// UpsertCodeHosts calls into the inner Store and registers the observed results.
+func (o *ObservedStore) UpsertCodeHosts(ctx context.Context, svcs ...*CodeHost) (err error) {
+	tr, ctx := o.trace(ctx, "Store.UpsertCodeHosts")
 	tr.LogFields(
 		otlog.Int("count", len(svcs)),
-		otlog.Object("names", ExternalServices(svcs).DisplayNames()),
-		otlog.Object("urns", ExternalServices(svcs).URNs()),
+		otlog.Object("names", CodeHosts(svcs).DisplayNames()),
+		otlog.Object("urns", CodeHosts(svcs).URNs()),
 	)
 
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 		count := float64(len(svcs))
 
-		o.metrics.UpsertExternalServices.Observe(secs, count, &err)
+		o.metrics.UpsertCodeHosts.Observe(secs, count, &err)
 		log(o.log, "store.upsert-external-services", &err,
 			"count", len(svcs),
-			"names", ExternalServices(svcs).DisplayNames(),
+			"names", CodeHosts(svcs).DisplayNames(),
 		)
 
 		tr.SetError(err)
 		tr.Finish()
 	}(time.Now())
 
-	return o.store.UpsertExternalServices(ctx, svcs...)
+	return o.store.UpsertCodeHosts(ctx, svcs...)
 }
 
 // ListRepos calls into the inner Store and registers the observed results.

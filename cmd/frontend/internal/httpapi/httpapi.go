@@ -100,8 +100,8 @@ func NewInternalHandler(m *mux.Router, schema *graphql.Schema) http.Handler {
 		WriteErrBody: true,
 	})
 
-	m.Get(apirouter.ExternalServiceConfigs).Handler(trace.TraceRoute(handler(serveExternalServiceConfigs)))
-	m.Get(apirouter.ExternalServicesList).Handler(trace.TraceRoute(handler(serveExternalServicesList)))
+	m.Get(apirouter.CodeHostConfigs).Handler(trace.TraceRoute(handler(serveCodeHostConfigs)))
+	m.Get(apirouter.CodeHostsList).Handler(trace.TraceRoute(handler(serveCodeHostsList)))
 	m.Get(apirouter.PhabricatorRepoCreate).Handler(trace.TraceRoute(handler(servePhabricatorRepoCreate)))
 	m.Get(apirouter.ReposCreateIfNotExists).Handler(trace.TraceRoute(handler(serveReposCreateIfNotExists)))
 	m.Get(apirouter.ReposUpdateMetadata).Handler(trace.TraceRoute(handler(serveReposUpdateMetadata)))

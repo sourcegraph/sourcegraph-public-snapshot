@@ -400,7 +400,7 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 	}
 
 	for _, c := range cs {
-		c.ExternalServiceType = repoSet[uint32(c.RepoID)].ExternalRepo.ServiceType
+		c.CodeHostType = repoSet[uint32(c.RepoID)].ExternalRepo.ServiceType
 	}
 
 	err = tx.CreateChangesets(ctx, cs...)

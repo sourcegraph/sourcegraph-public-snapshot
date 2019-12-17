@@ -96,15 +96,15 @@ func servePhabricatorRepoCreate(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-// serveExternalServiceConfigs serves a JSON response that is an array of all
+// serveCodeHostConfigs serves a JSON response that is an array of all
 // external service configs that match the requested kind.
-func serveExternalServiceConfigs(w http.ResponseWriter, r *http.Request) error {
-	var req api.ExternalServiceConfigsRequest
+func serveCodeHostConfigs(w http.ResponseWriter, r *http.Request) error {
+	var req api.CodeHostConfigsRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		return err
 	}
-	services, err := db.ExternalServices.List(r.Context(), db.ExternalServicesListOptions{
+	services, err := db.CodeHosts.List(r.Context(), db.CodeHostsListOptions{
 		Kinds: []string{req.Kind},
 	})
 	if err != nil {
@@ -135,10 +135,10 @@ func serveExternalServiceConfigs(w http.ResponseWriter, r *http.Request) error {
 	return json.NewEncoder(w).Encode(configs)
 }
 
-// serveExternalServicesList serves a JSON response that is an array of all external services
+// serveCodeHostsList serves a JSON response that is an array of all external services
 // of the given kind
-func serveExternalServicesList(w http.ResponseWriter, r *http.Request) error {
-	var req api.ExternalServicesListRequest
+func serveCodeHostsList(w http.ResponseWriter, r *http.Request) error {
+	var req api.CodeHostsListRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		return err
@@ -148,7 +148,7 @@ func serveExternalServicesList(w http.ResponseWriter, r *http.Request) error {
 		req.Kinds = append(req.Kinds, req.Kind)
 	}
 
-	services, err := db.ExternalServices.List(r.Context(), db.ExternalServicesListOptions{
+	services, err := db.CodeHosts.List(r.Context(), db.CodeHostsListOptions{
 		Kinds: req.Kinds,
 	})
 	if err != nil {

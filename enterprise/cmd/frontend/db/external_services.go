@@ -8,10 +8,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// NewExternalServicesStore returns an OSS db.ExternalServicesStore set with
+// NewCodeHostsStore returns an OSS db.CodeHostsStore set with
 // enterprise validators.
-func NewExternalServicesStore() *db.ExternalServicesStore {
-	return &db.ExternalServicesStore{
+func NewCodeHostsStore() *db.CodeHostsStore {
+	return &db.CodeHostsStore{
 		GitHubValidators: []func(*schema.GitHubConnection) error{
 			github.ValidateAuthz,
 		},

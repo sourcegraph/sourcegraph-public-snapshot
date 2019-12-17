@@ -14,7 +14,7 @@ import (
 
 // This test lives in cmd/enterprise because it tests a proprietary
 // super-set of the validation performed by the OSS version.
-func TestExternalServices_ValidateConfig(t *testing.T) {
+func TestCodeHosts_ValidateConfig(t *testing.T) {
 	// Assertion helpers
 	equals := func(want ...string) func(testing.TB, []string) {
 		sort.Strings(want)
@@ -1235,7 +1235,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 				tc.ps = conf.Get().AuthProviders
 			}
 
-			s := NewExternalServicesStore()
+			s := NewCodeHostsStore()
 			err := s.ValidateConfig(tc.kind, tc.config, tc.ps)
 			switch e := err.(type) {
 			case nil:

@@ -299,22 +299,22 @@ func (c *internalClient) PhabricatorRepoCreate(ctx context.Context, repo RepoNam
 	}, nil)
 }
 
-var MockExternalServiceConfigs func(kind string, result interface{}) error
+var MockCodeHostConfigs func(kind string, result interface{}) error
 
-// ExternalServiceConfigs fetches external service configs of a single kind into the result parameter,
+// CodeHostConfigs fetches external service configs of a single kind into the result parameter,
 // which should be a slice of the expected config type.
-func (c *internalClient) ExternalServiceConfigs(ctx context.Context, kind string, result interface{}) error {
-	if MockExternalServiceConfigs != nil {
-		return MockExternalServiceConfigs(kind, result)
+func (c *internalClient) CodeHostConfigs(ctx context.Context, kind string, result interface{}) error {
+	if MockCodeHostConfigs != nil {
+		return MockCodeHostConfigs(kind, result)
 	}
-	return c.postInternal(ctx, "external-services/configs", ExternalServiceConfigsRequest{
+	return c.postInternal(ctx, "external-services/configs", CodeHostConfigsRequest{
 		Kind: kind,
 	}, &result)
 }
 
-// ExternalServicesList returns all external services of the given kind.
-func (c *internalClient) ExternalServicesList(ctx context.Context, opts ExternalServicesListRequest) ([]*ExternalService, error) {
-	var extsvcs []*ExternalService
+// CodeHostsList returns all external services of the given kind.
+func (c *internalClient) CodeHostsList(ctx context.Context, opts CodeHostsListRequest) ([]*CodeHost, error) {
+	var extsvcs []*CodeHost
 	return extsvcs, c.postInternal(ctx, "external-services/list", &opts, &extsvcs)
 }
 

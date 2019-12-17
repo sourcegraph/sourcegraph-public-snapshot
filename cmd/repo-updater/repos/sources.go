@@ -12,11 +12,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
-// A Sourcer converts the given ExternalServices to Sources
+// A Sourcer converts the given CodeHosts to Sources
 // whose yielded Repos should be synced.
-type Sourcer func(...*ExternalService) (Sources, error)
+type Sourcer func(...*CodeHost) (Sources, error)
 
-// NewSourcer returns a Sourcer that converts the given ExternalServices
+// NewSourcer returns a Sourcer that converts the given CodeHosts
 // into Sources that use the provided httpcli.Factory to create the
 // http.Clients needed to contact the respective upstream code host APIs.
 //
@@ -24,7 +24,7 @@ type Sourcer func(...*ExternalService) (Sources, error)
 //
 // The provided decorator functions will be applied to each Source.
 func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
-	return func(svcs ...*ExternalService) (Sources, error) {
+	return func(svcs ...*CodeHost) (Sources, error) {
 		srcs := make([]Source, 0, len(svcs))
 		var errs *multierror.Error
 
@@ -50,8 +50,8 @@ func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 	}
 }
 
-// NewSource returns a repository yielding Source from the given ExternalService configuration.
-func NewSource(svc *ExternalService, cf *httpcli.Factory) (Source, error) {
+// NewSource returns a repository yielding Source from the given CodeHost configuration.
+func NewSource(svc *CodeHost, cf *httpcli.Factory) (Source, error) {
 	switch strings.ToLower(svc.Kind) {
 	case "github":
 		return NewGithubSource(svc, cf)
@@ -83,8 +83,8 @@ type Source interface {
 	// ListRepos sends all the repos a source yields over the passed in channel
 	// as SourceResults
 	ListRepos(context.Context, chan SourceResult)
-	// ExternalServices returns the ExternalServices for the Source.
-	ExternalServices() ExternalServices
+	// CodeHosts returns the CodeHosts for the Source.
+	CodeHosts() CodeHosts
 }
 
 // A ChangesetSource can load the latest state of a list of Changesets.
@@ -112,7 +112,7 @@ type SourceResult struct {
 
 type SourceError struct {
 	Err    error
-	ExtSvc *ExternalService
+	ExtSvc *CodeHost
 }
 
 func (s *SourceError) Error() string {
@@ -167,11 +167,11 @@ func (srcs Sources) ListRepos(ctx context.Context, results chan SourceResult) {
 	wg.Wait()
 }
 
-// ExternalServices returns the ExternalServices from the given Sources.
-func (srcs Sources) ExternalServices() ExternalServices {
-	es := make(ExternalServices, 0, len(srcs))
+// CodeHosts returns the CodeHosts from the given Sources.
+func (srcs Sources) CodeHosts() CodeHosts {
+	es := make(CodeHosts, 0, len(srcs))
 	for _, src := range srcs {
-		es = append(es, src.ExternalServices()...)
+		es = append(es, src.CodeHosts()...)
 	}
 	return es
 }
@@ -191,7 +191,7 @@ func group(srcs []Source) map[string]Sources {
 			for kind, ss := range group(ms.Sources()) {
 				groups[kind] = append(groups[kind], ss...)
 			}
-		} else if es := src.ExternalServices(); len(es) > 1 {
+		} else if es := src.CodeHosts(); len(es) > 1 {
 			err := errors.Errorf("Source %#v has many external services and isn't a multiSource", src)
 			panic(err)
 		} else {
@@ -220,7 +220,7 @@ func listAll(ctx context.Context, src Source, observe ...func(*Repo)) ([]*Repo, 
 
 	for res := range results {
 		if res.Err != nil {
-			for _, extSvc := range res.Source.ExternalServices() {
+			for _, extSvc := range res.Source.CodeHosts() {
 				errs = multierror.Append(errs, &SourceError{Err: res.Err, ExtSvc: extSvc})
 			}
 			continue

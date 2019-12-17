@@ -21,7 +21,7 @@ import (
 // A GitoliteSource yields repositories from a single Gitolite connection configured
 // in Sourcegraph via the external services configuration.
 type GitoliteSource struct {
-	svc  *ExternalService
+	svc  *CodeHost
 	conn *schema.GitoliteConnection
 	// We ask gitserver to talk to gitolite because it holds the ssh keys
 	// required for authentication.
@@ -31,7 +31,7 @@ type GitoliteSource struct {
 }
 
 // NewGitoliteSource returns a new GitoliteSource from the given external service.
-func NewGitoliteSource(svc *ExternalService, cf *httpcli.Factory) (*GitoliteSource, error) {
+func NewGitoliteSource(svc *CodeHost, cf *httpcli.Factory) (*GitoliteSource, error) {
 	var c schema.GitoliteConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
@@ -87,9 +87,9 @@ func (s *GitoliteSource) ListRepos(ctx context.Context, results chan SourceResul
 	}
 }
 
-// ExternalServices returns a singleton slice containing the external service.
-func (s GitoliteSource) ExternalServices() ExternalServices {
-	return ExternalServices{s.svc}
+// CodeHosts returns a singleton slice containing the external service.
+func (s GitoliteSource) CodeHosts() CodeHosts {
+	return CodeHosts{s.svc}
 }
 
 func (s GitoliteSource) excludes(gr *gitolite.Repo, r *Repo) bool {
@@ -167,7 +167,7 @@ func (s *GitolitePhabricatorMetadataSyncer) Sync(ctx context.Context, repos []*R
 			continue
 		}
 
-		for _, id := range r.ExternalServiceIDs() {
+		for _, id := range r.CodeHostIDs() {
 			ids = append(ids, id)
 			grouped[id] = append(grouped[id], r)
 		}
@@ -178,7 +178,7 @@ func (s *GitolitePhabricatorMetadataSyncer) Sync(ctx context.Context, repos []*R
 		return nil
 	}
 
-	es, err := s.store.ListExternalServices(ctx, StoreListExternalServicesArgs{IDs: ids})
+	es, err := s.store.ListCodeHosts(ctx, StoreListCodeHostsArgs{IDs: ids})
 	if err != nil {
 		return errors.Wrap(err, "gitolite-phabricator-metadata-syncer.store.list-external-services")
 	}

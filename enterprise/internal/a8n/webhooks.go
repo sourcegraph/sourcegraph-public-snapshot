@@ -46,8 +46,8 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *httpError) {
-	args := repos.StoreListExternalServicesArgs{Kinds: []string{"GITHUB"}}
-	es, err := h.Repos.ListExternalServices(r.Context(), args)
+	args := repos.StoreListCodeHostsArgs{Kinds: []string{"GITHUB"}}
+	es, err := h.Repos.ListCodeHosts(r.Context(), args)
 	if err != nil {
 		return nil, &httpError{http.StatusInternalServerError, err}
 	}
@@ -146,8 +146,8 @@ func (h *GitHubWebhook) upsertChangesetEvent(
 	defer tx.Done(&err)
 
 	cs, err := tx.GetChangeset(ctx, GetChangesetOpts{
-		ExternalID:          strconv.FormatInt(pr, 10),
-		ExternalServiceType: github.ServiceType,
+		ExternalID:   strconv.FormatInt(pr, 10),
+		CodeHostType: github.ServiceType,
 	})
 	if err != nil {
 		if err == ErrNoResults {

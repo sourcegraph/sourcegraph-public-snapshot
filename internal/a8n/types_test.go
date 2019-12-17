@@ -32,13 +32,13 @@ func TestChangesetMetadata(t *testing.T) {
 	}
 
 	changeset := &Changeset{
-		RepoID:              42,
-		CreatedAt:           now,
-		UpdatedAt:           now,
-		Metadata:            githubPR,
-		CampaignIDs:         []int64{},
-		ExternalID:          "12345",
-		ExternalServiceType: "github",
+		RepoID:       42,
+		CreatedAt:    now,
+		UpdatedAt:    now,
+		Metadata:     githubPR,
+		CampaignIDs:  []int64{},
+		ExternalID:   "12345",
+		CodeHostType: "github",
 	}
 
 	title, err := changeset.Title()

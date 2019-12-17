@@ -25,7 +25,7 @@ import (
 )
 
 func initAuthz() {
-	db.ExternalServices = edb.NewExternalServicesStore()
+	db.CodeHosts = edb.NewCodeHostsStore()
 
 	// Warn about usage of auth providers that are not enabled by the license.
 	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
@@ -41,7 +41,7 @@ func initAuthz() {
 		var authzTypes []string
 		ctx := context.Background()
 
-		githubs, err := db.ExternalServices.ListGitHubConnections(ctx)
+		githubs, err := db.CodeHosts.ListGitHubConnections(ctx)
 		if err != nil {
 			return []*graphqlbackend.Alert{{
 				TypeValue:    graphqlbackend.AlertTypeError,
@@ -55,7 +55,7 @@ func initAuthz() {
 			}
 		}
 
-		gitlabs, err := db.ExternalServices.ListGitLabConnections(ctx)
+		gitlabs, err := db.CodeHosts.ListGitLabConnections(ctx)
 		if err != nil {
 			return []*graphqlbackend.Alert{{
 				TypeValue:    graphqlbackend.AlertTypeError,
@@ -130,7 +130,7 @@ func initAuthz() {
 	}
 }
 
-type ExternalServicesStore interface {
+type CodeHostsStore interface {
 	ListGitLabConnections(context.Context) ([]*schema.GitLabConnection, error)
 	ListGitHubConnections(context.Context) ([]*schema.GitHubConnection, error)
 	ListBitbucketServerConnections(context.Context) ([]*schema.BitbucketServerConnection, error)
@@ -143,7 +143,7 @@ type ExternalServicesStore interface {
 func authzProvidersFromConfig(
 	ctx context.Context,
 	cfg *conf.Unified,
-	s ExternalServicesStore,
+	s CodeHostsStore,
 	db *sql.DB, // Needed by Bitbucket Server authz provider
 ) (
 	allowAccessByDefault bool,
@@ -206,9 +206,9 @@ func init() {
 	// Report any authz provider problems in external configs.
 	conf.ContributeWarning(func(cfg conf.Unified) (problems conf.Problems) {
 		_, _, seriousProblems, warnings :=
-			authzProvidersFromConfig(context.Background(), &cfg, db.ExternalServices, dbconn.Global)
-		problems = append(problems, conf.NewExternalServiceProblems(seriousProblems...)...)
-		problems = append(problems, conf.NewExternalServiceProblems(warnings...)...)
+			authzProvidersFromConfig(context.Background(), &cfg, db.CodeHosts, dbconn.Global)
+		problems = append(problems, conf.NewCodeHostProblems(seriousProblems...)...)
+		problems = append(problems, conf.NewCodeHostProblems(warnings...)...)
 		return problems
 	})
 }

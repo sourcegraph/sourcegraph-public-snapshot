@@ -147,7 +147,7 @@ func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 	q := r.URL.Query()
 	clientSiteID := q.Get("site")
 	authProviders := q.Get("auth")
-	externalServices := q.Get("extsvcs")
+	codeHosts := q.Get("extsvcs")
 	builtinSignupAllowed := q.Get("signup")
 	hasExtURL := q.Get("hasExtURL")
 	uniqueUsers := q.Get("u")
@@ -200,7 +200,7 @@ func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 		activity,
 		initialAdminEmail,
 		authProviders,
-		externalServices,
+		codeHosts,
 		builtinSignupAllowed,
 		deployType,
 		totalUsers,

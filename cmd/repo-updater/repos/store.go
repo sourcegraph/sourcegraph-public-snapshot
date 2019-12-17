@@ -22,8 +22,8 @@ import (
 
 // A Store exposes methods to read and write repos and external services.
 type Store interface {
-	ListExternalServices(context.Context, StoreListExternalServicesArgs) ([]*ExternalService, error)
-	UpsertExternalServices(ctx context.Context, svcs ...*ExternalService) error
+	ListCodeHosts(context.Context, StoreListCodeHostsArgs) ([]*CodeHost, error)
+	UpsertCodeHosts(ctx context.Context, svcs ...*CodeHost) error
 
 	ListRepos(context.Context, StoreListReposArgs) ([]*Repo, error)
 	UpsertRepos(ctx context.Context, repos ...*Repo) error
@@ -51,11 +51,11 @@ type StoreListReposArgs struct {
 	UseOr bool
 }
 
-// StoreListExternalServicesArgs is a query arguments type used by
-// the ListExternalServices method of Store implementations.
+// StoreListCodeHostsArgs is a query arguments type used by
+// the ListCodeHosts method of Store implementations.
 //
 // Each defined argument must map to a disjunct (i.e. AND) filter predicate.
-type StoreListExternalServicesArgs struct {
+type StoreListCodeHostsArgs struct {
 	// IDs of external services to list. When zero-valued, this is omitted from the predicate set.
 	IDs []int64
 	// RepoIDs that the listed external services own.
@@ -138,12 +138,12 @@ func (s *DBStore) Done(errs ...*error) {
 	}
 }
 
-// ListExternalServices lists all stored external services matching the given args.
-func (s DBStore) ListExternalServices(ctx context.Context, args StoreListExternalServicesArgs) (svcs []*ExternalService, _ error) {
-	return svcs, s.paginate(ctx, 0, 500, listExternalServicesQuery(args),
+// ListCodeHosts lists all stored external services matching the given args.
+func (s DBStore) ListCodeHosts(ctx context.Context, args StoreListCodeHostsArgs) (svcs []*CodeHost, _ error) {
+	return svcs, s.paginate(ctx, 0, 500, listCodeHostsQuery(args),
 		func(sc scanner) (last, count int64, err error) {
-			var svc ExternalService
-			err = scanExternalService(&svc, sc)
+			var svc CodeHost
+			err = scanCodeHost(&svc, sc)
 			if err != nil {
 				return 0, 0, err
 			}
@@ -153,8 +153,8 @@ func (s DBStore) ListExternalServices(ctx context.Context, args StoreListExterna
 	)
 }
 
-const listExternalServicesQueryFmtstr = `
--- source: cmd/repo-updater/repos/store.go:DBStore.ListExternalServices
+const listCodeHostsQueryFmtstr = `
+-- source: cmd/repo-updater/repos/store.go:DBStore.ListCodeHosts
 SELECT
   id,
   kind,
@@ -169,13 +169,13 @@ AND %s
 ORDER BY id ASC LIMIT %s
 `
 
-const listRepoExternalServiceIDsSubquery = `
+const listRepoCodeHostIDsSubquery = `
 SELECT DISTINCT(split_part(jsonb_object_keys(sources), ':', 3)::bigint) repo_external_service_ids
 FROM repo
 WHERE id IN (%s)
 `
 
-func listExternalServicesQuery(args StoreListExternalServicesArgs) paginatedQuery {
+func listCodeHostsQuery(args StoreListCodeHostsArgs) paginatedQuery {
 	var preds []*sqlf.Query
 
 	if len(args.IDs) > 0 {
@@ -194,7 +194,7 @@ func listExternalServicesQuery(args StoreListExternalServicesArgs) paginatedQuer
 			}
 		}
 		preds = append(preds, sqlf.Sprintf(
-			"id IN ("+listRepoExternalServiceIDsSubquery+")",
+			"id IN ("+listRepoCodeHostIDsSubquery+")",
 			sqlf.Join(ids, ","),
 		))
 	}
@@ -218,7 +218,7 @@ func listExternalServicesQuery(args StoreListExternalServicesArgs) paginatedQuer
 
 	return func(cursor, limit int64) *sqlf.Query {
 		return sqlf.Sprintf(
-			listExternalServicesQueryFmtstr,
+			listCodeHostsQueryFmtstr,
 			cursor,
 			sqlf.Join(preds, "\n AND "),
 			limit,
@@ -226,13 +226,13 @@ func listExternalServicesQuery(args StoreListExternalServicesArgs) paginatedQuer
 	}
 }
 
-// UpsertExternalServices updates or inserts the given ExternalServices.
-func (s DBStore) UpsertExternalServices(ctx context.Context, svcs ...*ExternalService) error {
+// UpsertCodeHosts updates or inserts the given CodeHosts.
+func (s DBStore) UpsertCodeHosts(ctx context.Context, svcs ...*CodeHost) error {
 	if len(svcs) == 0 {
 		return nil
 	}
 
-	q := upsertExternalServicesQuery(svcs)
+	q := upsertCodeHostsQuery(svcs)
 	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return err
@@ -241,18 +241,18 @@ func (s DBStore) UpsertExternalServices(ctx context.Context, svcs ...*ExternalSe
 	i := -1
 	_, _, err = scanAll(rows, func(sc scanner) (last, count int64, err error) {
 		i++
-		err = scanExternalService(svcs[i], sc)
+		err = scanCodeHost(svcs[i], sc)
 		return int64(svcs[i].ID), 1, err
 	})
 
 	return err
 }
 
-func upsertExternalServicesQuery(svcs []*ExternalService) *sqlf.Query {
+func upsertCodeHostsQuery(svcs []*CodeHost) *sqlf.Query {
 	vals := make([]*sqlf.Query, 0, len(svcs))
 	for _, s := range svcs {
 		vals = append(vals, sqlf.Sprintf(
-			upsertExternalServicesQueryValueFmtstr,
+			upsertCodeHostsQueryValueFmtstr,
 			s.ID,
 			s.Kind,
 			s.DisplayName,
@@ -264,17 +264,17 @@ func upsertExternalServicesQuery(svcs []*ExternalService) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf(
-		upsertExternalServicesQueryFmtstr,
+		upsertCodeHostsQueryFmtstr,
 		sqlf.Join(vals, ",\n"),
 	)
 }
 
-const upsertExternalServicesQueryValueFmtstr = `
+const upsertCodeHostsQueryValueFmtstr = `
   (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s)
 `
 
-const upsertExternalServicesQueryFmtstr = `
--- source: cmd/repo-updater/repos/store.go:DBStore.UpsertExternalServices
+const upsertCodeHostsQueryFmtstr = `
+-- source: cmd/repo-updater/repos/store.go:DBStore.UpsertCodeHosts
 INSERT INTO external_services (
   id,
   kind,
@@ -533,22 +533,22 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 
 func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {
 	type record struct {
-		ID                  uint32          `json:"id"`
-		Name                string          `json:"name"`
-		URI                 *string         `json:"uri,omitempty"`
-		Description         string          `json:"description"`
-		Language            string          `json:"language"`
-		CreatedAt           time.Time       `json:"created_at"`
-		UpdatedAt           *time.Time      `json:"updated_at,omitempty"`
-		DeletedAt           *time.Time      `json:"deleted_at,omitempty"`
-		ExternalServiceType *string         `json:"external_service_type,omitempty"`
-		ExternalServiceID   *string         `json:"external_service_id,omitempty"`
-		ExternalID          *string         `json:"external_id,omitempty"`
-		Enabled             bool            `json:"enabled"`
-		Archived            bool            `json:"archived"`
-		Fork                bool            `json:"fork"`
-		Sources             json.RawMessage `json:"sources"`
-		Metadata            json.RawMessage `json:"metadata"`
+		ID           uint32          `json:"id"`
+		Name         string          `json:"name"`
+		URI          *string         `json:"uri,omitempty"`
+		Description  string          `json:"description"`
+		Language     string          `json:"language"`
+		CreatedAt    time.Time       `json:"created_at"`
+		UpdatedAt    *time.Time      `json:"updated_at,omitempty"`
+		DeletedAt    *time.Time      `json:"deleted_at,omitempty"`
+		CodeHostType *string         `json:"external_service_type,omitempty"`
+		CodeHostID   *string         `json:"external_service_id,omitempty"`
+		ExternalID   *string         `json:"external_id,omitempty"`
+		Enabled      bool            `json:"enabled"`
+		Archived     bool            `json:"archived"`
+		Fork         bool            `json:"fork"`
+		Sources      json.RawMessage `json:"sources"`
+		Metadata     json.RawMessage `json:"metadata"`
 	}
 
 	records := make([]record, 0, len(repos))
@@ -564,22 +564,22 @@ func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {
 		}
 
 		records = append(records, record{
-			ID:                  r.ID,
-			Name:                r.Name,
-			URI:                 nullStringColumn(r.URI),
-			Description:         r.Description,
-			Language:            r.Language,
-			CreatedAt:           r.CreatedAt.UTC(),
-			UpdatedAt:           nullTimeColumn(r.UpdatedAt.UTC()),
-			DeletedAt:           nullTimeColumn(r.DeletedAt.UTC()),
-			ExternalServiceType: nullStringColumn(r.ExternalRepo.ServiceType),
-			ExternalServiceID:   nullStringColumn(r.ExternalRepo.ServiceID),
-			ExternalID:          nullStringColumn(r.ExternalRepo.ID),
-			Enabled:             r.Enabled,
-			Archived:            r.Archived,
-			Fork:                r.Fork,
-			Sources:             sources,
-			Metadata:            metadata,
+			ID:           r.ID,
+			Name:         r.Name,
+			URI:          nullStringColumn(r.URI),
+			Description:  r.Description,
+			Language:     r.Language,
+			CreatedAt:    r.CreatedAt.UTC(),
+			UpdatedAt:    nullTimeColumn(r.UpdatedAt.UTC()),
+			DeletedAt:    nullTimeColumn(r.DeletedAt.UTC()),
+			CodeHostType: nullStringColumn(r.ExternalRepo.ServiceType),
+			CodeHostID:   nullStringColumn(r.ExternalRepo.ServiceID),
+			ExternalID:   nullStringColumn(r.ExternalRepo.ID),
+			Enabled:      r.Enabled,
+			Archived:     r.Archived,
+			Fork:         r.Fork,
+			Sources:      sources,
+			Metadata:     metadata,
 		})
 	}
 
@@ -801,7 +801,7 @@ func closeErr(c io.Closer, err *error) {
 	}
 }
 
-func scanExternalService(svc *ExternalService, s scanner) error {
+func scanCodeHost(svc *CodeHost, s scanner) error {
 	return s.Scan(
 		&svc.ID,
 		&svc.Kind,

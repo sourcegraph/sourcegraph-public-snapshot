@@ -10,11 +10,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
-// SupportedExternalServices are the external service types currently supported
+// SupportedCodeHosts are the external service types currently supported
 // by Automation features. Repos that are associated with external services
 // whose type is not in this list will simply be filtered out from the search
 // results.
-var SupportedExternalServices = map[string]struct{}{
+var SupportedCodeHosts = map[string]struct{}{
 	github.ServiceType:          {},
 	bitbucketserver.ServiceType: {},
 }
@@ -22,7 +22,7 @@ var SupportedExternalServices = map[string]struct{}{
 // IsRepoSupported returns whether the given ExternalRepoSpec is supported by
 // Automation features, based on the external service type.
 func IsRepoSupported(spec *api.ExternalRepoSpec) bool {
-	_, ok := SupportedExternalServices[spec.ServiceType]
+	_, ok := SupportedCodeHosts[spec.ServiceType]
 	return ok
 }
 
@@ -217,14 +217,14 @@ func (c *ChangesetJob) SuccessfullyCompleted() bool {
 // A Changeset is a changeset on a code host belonging to a Repository and many
 // Campaigns.
 type Changeset struct {
-	ID                  int64
-	RepoID              int32
-	CreatedAt           time.Time
-	UpdatedAt           time.Time
-	Metadata            interface{}
-	CampaignIDs         []int64
-	ExternalID          string
-	ExternalServiceType string
+	ID           int64
+	RepoID       int32
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	Metadata     interface{}
+	CampaignIDs  []int64
+	ExternalID   string
+	CodeHostType string
 }
 
 // Clone returns a clone of a Changeset.

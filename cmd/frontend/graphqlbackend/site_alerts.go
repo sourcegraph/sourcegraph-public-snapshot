@@ -122,12 +122,12 @@ func init() {
 			})
 		}
 
-		externalServiceProblems := problems.ExternalService()
-		if len(externalServiceProblems) > 0 {
+		codeHostProblems := problems.CodeHost()
+		if len(codeHostProblems) > 0 {
 			alerts = append(alerts, &Alert{
 				TypeValue: AlertTypeWarning,
 				MessageValue: `[**Update external service configuration**](/site-admin/external-services) to resolve problems:` +
-					"\n* " + strings.Join(externalServiceProblems.Messages(), "\n* "),
+					"\n* " + strings.Join(codeHostProblems.Messages(), "\n* "),
 			})
 		}
 		return alerts
