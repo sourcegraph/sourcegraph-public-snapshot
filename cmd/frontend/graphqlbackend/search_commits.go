@@ -237,18 +237,23 @@ func searchCommitsInRepo(ctx context.Context, op search.CommitParameters) (resul
 		return nil, false, false, err
 	}
 
-	rawResults, complete, err := git.RawLogDiffSearch(ctx, op.RepoRevs.GitserverRepo(), git.RawLogDiffSearchOptions{
-		Query: op.TextSearchOptions,
-		Paths: git.PathOptions{
-			IncludePatterns: op.Info.IncludePatterns,
-			ExcludePattern:  op.Info.ExcludePattern,
-			IsCaseSensitive: op.Info.PathPatternsAreCaseSensitive,
-			IsRegExp:        op.Info.PathPatternsAreRegExps,
+	diffParameters := search.DiffParameters{
+		Repo: op.RepoRevs.GitserverRepo(),
+		Options: git.RawLogDiffSearchOptions{
+			Query: op.TextSearchOptions,
+			Paths: git.PathOptions{
+				IncludePatterns: op.Info.IncludePatterns,
+				ExcludePattern:  op.Info.ExcludePattern,
+				IsCaseSensitive: op.Info.PathPatternsAreCaseSensitive,
+				IsRegExp:        op.Info.PathPatternsAreRegExps,
+			},
+			Diff:              op.Diff,
+			OnlyMatchingHunks: true,
+			Args:              args,
 		},
-		Diff:              op.Diff,
-		OnlyMatchingHunks: true,
-		Args:              args,
-	})
+	}
+
+	rawResults, complete, err := git.RawLogDiffSearch(ctx, diffParameters.Repo, diffParameters.Options)
 	if err != nil {
 		return nil, false, false, err
 	}
