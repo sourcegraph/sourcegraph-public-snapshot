@@ -289,7 +289,20 @@ func (t *Changeset) SetDeleted() error {
 	default:
 		return errors.New("unknown changeset type")
 	}
+
+	t.ExternalDeletedAt = time.Now().UTC().Truncate(time.Microsecond)
+
 	return nil
+}
+
+// IsDeleted returns true when the Changeset's ExternalDeletedAt is a non-zero
+// timestamp and its State is ChangesetStateDeleted
+func (t *Changeset) IsDeleted() bool {
+	s, err := t.State()
+	if err != nil {
+		return false
+	}
+	return s == ChangesetStateDeleted && !t.ExternalDeletedAt.IsZero()
 }
 
 // State of a Changeset.

@@ -21,9 +21,9 @@ type ChangesetSyncer struct {
 // Sync refreshes the metadata of all changesets and updates them in the
 // database
 func (s *ChangesetSyncer) Sync(ctx context.Context) error {
-	cs, err := s.listAllChangesets(ctx)
+	cs, err := s.listAllNonDeletedChangesets(ctx)
 	if err != nil {
-		log15.Error("ChangesetSyncer.listAllChangesets", "error", err)
+		log15.Error("ChangesetSyncer.listAllNonDeletedChangesets", "error", err)
 		return err
 	}
 
@@ -76,7 +76,7 @@ func (s *ChangesetSyncer) SyncChangesetsWithSources(ctx context.Context, bySourc
 		}
 
 		for _, c := range s.Changesets {
-			if _, ok := notFoundById[c.Changeset.ID]; ok {
+			if _, ok := notFoundById[c.Changeset.ID]; ok && !c.Changeset.IsDeleted() {
 				c.Changeset.SetDeleted()
 			}
 			events = append(events, c.Events()...)
@@ -179,9 +179,9 @@ func (s *ChangesetSyncer) GroupChangesetsBySource(ctx context.Context, cs ...*a8
 	return res, nil
 }
 
-func (s *ChangesetSyncer) listAllChangesets(ctx context.Context) (all []*a8n.Changeset, err error) {
+func (s *ChangesetSyncer) listAllNonDeletedChangesets(ctx context.Context) (all []*a8n.Changeset, err error) {
 	for cursor := int64(-1); cursor != 0; {
-		opts := ListChangesetsOpts{Cursor: cursor, Limit: 1000}
+		opts := ListChangesetsOpts{Cursor: cursor, Limit: 1000, WithoutDeleted: true}
 		cs, next, err := s.Store.ListChangesets(ctx, opts)
 		if err != nil {
 			return nil, err
