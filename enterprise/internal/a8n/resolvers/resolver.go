@@ -347,7 +347,7 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 	cs := make([]*a8n.Changeset, 0, len(args.Input))
 
 	for _, c := range args.Input {
-		repoID, err := unmarshalRepositoryID(c.Repository)
+		repoID, err := graphqlbackend.UnmarshalRepositoryID(c.Repository)
 		if err != nil {
 			return nil, err
 		}
@@ -393,7 +393,7 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 
 	for id, r := range repoSet {
 		if r == nil {
-			return nil, errors.Errorf("repo %v not found", marshalRepositoryID(api.RepoID(id)))
+			return nil, errors.Errorf("repo %v not found", graphqlbackend.MarshalRepositoryID(api.RepoID(id)))
 		}
 	}
 

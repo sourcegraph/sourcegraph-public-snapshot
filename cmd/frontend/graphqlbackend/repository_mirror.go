@@ -189,7 +189,7 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 	var repo *types.Repo
 	switch {
 	case args.Repository != nil:
-		repoID, err := unmarshalRepositoryID(*args.Repository)
+		repoID, err := UnmarshalRepositoryID(*args.Repository)
 		if err != nil {
 			return nil, err
 		}

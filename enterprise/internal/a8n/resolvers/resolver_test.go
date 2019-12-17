@@ -368,8 +368,8 @@ func TestCampaigns(t *testing.T) {
 		Changesets []Changeset
 	}
 
-	graphqlGithubRepoID := string(marshalRepositoryID(api.RepoID(githubRepo.ID)))
-	graphqlBBSRepoID := string(marshalRepositoryID(api.RepoID(bbsRepo.ID)))
+	graphqlGithubRepoID := string(graphqlbackend.MarshalRepositoryID(api.RepoID(githubRepo.ID)))
+	graphqlBBSRepoID := string(graphqlbackend.MarshalRepositoryID(api.RepoID(bbsRepo.ID)))
 
 	in := fmt.Sprintf(
 		`[{repository: %q, externalID: %q}, {repository: %q, externalID: %q}]`,

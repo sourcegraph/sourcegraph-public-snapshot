@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 type changesetEventsConnectionResolver struct {
@@ -80,12 +79,6 @@ func (r *changesetEventResolver) CreatedAt() graphqlbackend.DateTime {
 
 func (r *changesetEventResolver) Changeset(ctx context.Context) (graphqlbackend.ExternalChangesetResolver, error) {
 	return &changesetResolver{store: r.store, Changeset: r.changeset}, nil
-}
-
-func marshalRepositoryID(repo api.RepoID) graphql.ID { return relay.MarshalID("Repository", repo) }
-func unmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
-	err = relay.UnmarshalSpec(id, &repo)
-	return
 }
 
 type changesetCountsResolver struct {
