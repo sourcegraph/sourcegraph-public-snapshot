@@ -59,8 +59,8 @@ type Mutation {
     # To create the campaign, call createCampaign with the returned CampaignPlan.id in the
     # CreateCampaignInput.plan field.
     createCampaignPlanFromPatches(
-        # A list of patches (diffs) to apply to repositories (to create new branches) when a campaign is created
-        # from this campaign plan.
+        # A list of patches (diffs) to apply to repositories (in new branches) when a campaign is
+        # created from this campaign plan.
         patches: [CampaignPlanPatch!]!
     ): CampaignPlan!
     # Cancel a campaign plan that is being generated.
@@ -452,8 +452,8 @@ input CampaignPlanSpecification {
     arguments: JSONCString!
 }
 
-# A patch to apply to a repository branch (to create a new branch) when a campaign is created from
-# the parent campaign plan.
+# A patch to apply to a repository (in a new branch) when a campaign is created from the parent
+# campaign plan.
 input CampaignPlanPatch {
     # The repository that this patch is applied to.
     repository: ID!
