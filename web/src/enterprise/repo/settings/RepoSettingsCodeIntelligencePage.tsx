@@ -15,11 +15,15 @@ const LsifDumpNode: FunctionComponent<{ node: GQL.ILSIFDump }> = ({ node }) => (
     <div className="w-100 list-group-item py-2 lsif-data__main">
         <div className="lsif-data__meta">
             <div className="lsif-data__meta-root">
-                <code>{node.projectRoot.commit.abbreviatedOID}</code>
+                <code>{node.projectRoot?.commit.abbreviatedOID || node.inputCommit.substring(0, 7)}</code>
                 <span className="ml-2">
-                    <Link to={node.projectRoot.url}>
-                        <strong>{node.projectRoot.path || '/'}</strong>
-                    </Link>
+                    {node.projectRoot ? (
+                        <Link to={node.projectRoot.url}>
+                            <strong>{node.projectRoot.path || '/'}</strong>
+                        </Link>
+                    ) : (
+                        node.inputRoot || '/'
+                    )}
                 </span>
             </div>
         </div>
@@ -34,11 +38,15 @@ const LsifUploadNode: FunctionComponent<{ node: GQL.ILSIFUpload }> = ({ node }) 
     <div className="w-100 list-group-item py-2 lsif-data__main">
         <div className="lsif-data__meta">
             <div className="lsif-data__meta-root">
-                <code>{node.projectRoot.commit.abbreviatedOID}</code>
+                <code>{node.projectRoot?.commit.abbreviatedOID || node.inputCommit.substring(0, 7)}</code>
                 <span className="ml-2">
-                    <Link to={node.projectRoot.url}>
-                        <strong>{node.projectRoot.path || '/'}</strong>
-                    </Link>
+                    {node.projectRoot ? (
+                        <Link to={node.projectRoot.url}>
+                            <strong>{node.projectRoot.path || '/'}</strong>
+                        </Link>
+                    ) : (
+                        node.inputRoot || '/'
+                    )}
                 </span>
                 <span className="ml-2">
                     -

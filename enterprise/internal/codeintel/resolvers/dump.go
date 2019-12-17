@@ -33,7 +33,23 @@ func (r *lsifDumpResolver) ProjectRoot(ctx context.Context) (*graphqlbackend.Git
 		return nil, err
 	}
 
+	if commitResolver == nil {
+		return nil, nil
+	}
+
 	return graphqlbackend.NewGitTreeEntryResolver(commitResolver, graphqlbackend.CreateFileInfo(r.lsifDump.Root, true)), nil
+}
+
+func (r *lsifDumpResolver) InputRepoName() string {
+	return r.lsifDump.Repository
+}
+
+func (r *lsifDumpResolver) InputCommit() string {
+	return r.lsifDump.Commit
+}
+
+func (r *lsifDumpResolver) InputRoot() string {
+	return r.lsifDump.Root
 }
 
 func (r *lsifDumpResolver) IsLatestForRepo() bool {

@@ -45,6 +45,9 @@ type LSIFUploadsQueryArgs struct {
 type LSIFDumpResolver interface {
 	ID() graphql.ID
 	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
+	InputRepoName() string
+	InputCommit() string
+	InputRoot() string
 	IsLatestForRepo() bool
 	UploadedAt() DateTime
 	ProcessedAt() DateTime
@@ -67,6 +70,9 @@ type LSIFUploadStatsResolver interface {
 type LSIFUploadResolver interface {
 	ID() graphql.ID
 	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
+	InputRepoName() string
+	InputCommit() string
+	InputRoot() string
 	State() string
 	Failure() LSIFUploadFailureReasonResolver
 	UploadedAt() DateTime

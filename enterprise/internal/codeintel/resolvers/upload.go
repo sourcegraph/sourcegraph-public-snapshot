@@ -38,7 +38,23 @@ func (r *lsifUploadResolver) ProjectRoot(ctx context.Context) (*graphqlbackend.G
 		return nil, err
 	}
 
+	if commitResolver == nil {
+		return nil, nil
+	}
+
 	return graphqlbackend.NewGitTreeEntryResolver(commitResolver, graphqlbackend.CreateFileInfo(r.lsifUpload.Root, true)), nil
+}
+
+func (r *lsifUploadResolver) InputRepoName() string {
+	return r.lsifUpload.Repository
+}
+
+func (r *lsifUploadResolver) InputCommit() string {
+	return r.lsifUpload.Commit
+}
+
+func (r *lsifUploadResolver) InputRoot() string {
+	return r.lsifUpload.Root
 }
 
 func (r *lsifUploadResolver) State() string {
