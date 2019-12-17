@@ -15,7 +15,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Language statistics by commit are available via the API. [#6737](https://github.com/sourcegraph/sourcegraph/pull/6737)
 - Global settings can be configured from a local file using the environment variable `GLOBAL_SETTINGS_FILE`.
-- A new Automation campaign type allows searching for and removing leaked NPM credentials. [#6893](https://github.com/sourcegraph/sourcegraph/pull/6893)
+- A new Automation campaign type finds and removes leaked NPM credentials. [#6893](https://github.com/sourcegraph/sourcegraph/pull/6893)
 - Creation of Automation campaigns can now be retried in case it failed due to ephemeral errors (e.g. network problems when creating a pull request on GitHub). [#6718](https://github.com/sourcegraph/sourcegraph/issues/6718)
 
 ### Changed
