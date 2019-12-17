@@ -18,10 +18,8 @@ func main() {
 	// Shutdown if any process dies
 	procDiedAction := goreman.Shutdown
 	if ignore, _ := strconv.ParseBool(os.Getenv("IGNORE_PROCESS_DEATH")); ignore {
-		// IGNORE_PROCESS_DEATH is an escape hatch so that sourcegraph/lsif-server
-		// keeps running in the case of a subprocess dieing on startup. An example
-		// use case is connecting to postgres even though frontend is dieing due
-		// to a bad migration.
+		// IGNORE_PROCESS_DEATH is an escape hatch that matches the same behavior
+		// as in sourcegraph/server.
 		procDiedAction = goreman.Ignore
 	}
 
