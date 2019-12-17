@@ -42,7 +42,7 @@ type prometheusTracer struct {
 func (prometheusTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]interface{}, varTypes map[string]*introspection.Type) (context.Context, trace.TraceQueryFinishFunc) {
 	traceCtx, finish := trace.OpenTracingTracer{}.TraceQuery(ctx, queryString, operationName, variables, varTypes)
 
-	// Note: We don't care about the error here, we just extrat the username if
+	// Note: We don't care about the error here, we just extract the username if
 	// we get a non-nil user object.
 	currentUser, _ := CurrentUser(ctx)
 	var currentUserName string
