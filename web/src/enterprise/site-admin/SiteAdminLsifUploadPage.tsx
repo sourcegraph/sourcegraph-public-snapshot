@@ -46,12 +46,12 @@ export const SiteAdminLsifUploadPage: FunctionComponent<Props> = ({
                         <h2 className="mb-0">
                             Upload for{' '}
                             {uploadOrError.projectRoot
-                                ? description(
+                                ? lsifUploadDescription(
                                       uploadOrError.projectRoot.commit.repository.name,
                                       uploadOrError.projectRoot.commit.abbreviatedOID,
                                       uploadOrError.projectRoot.path
                                   )
-                                : description(
+                                : lsifUploadDescription(
                                       uploadOrError.inputRepoName,
                                       uploadOrError.inputCommit.substring(0, 7),
                                       uploadOrError.inputRoot
@@ -160,6 +160,6 @@ export const SiteAdminLsifUploadPage: FunctionComponent<Props> = ({
     )
 }
 
-function description(repoName: string, commit: string, root: string): string {
+export function lsifUploadDescription(repoName: string, commit: string, root: string): string {
     return `${repoName}@${commit}${root === '' ? '' : ` rooted at ${root}`}`
 }
