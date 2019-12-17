@@ -124,3 +124,6 @@ echo "squashed migrations written to ${VERSION}_squashed_migrations.{up,down}.sq
 
 # Regenerate bindata
 go generate
+
+# Update test with new lowest migration
+sed -i '' "s/const FirstMigration = [0-9]*/const FirstMigration = ${VERSION}/" ./migrations_test.go
