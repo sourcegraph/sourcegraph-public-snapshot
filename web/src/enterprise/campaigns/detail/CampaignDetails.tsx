@@ -73,6 +73,12 @@ const defaultInputByType: { [K in CampaignType]: any } = {
 }`,
 }
 
+const typeLabels: Record<CampaignType | '', string> = {
+    '': 'Manual',
+    comby: 'Comby search and replace',
+    credentials: 'Find leaked credentials',
+}
+
 /**
  * The area for a single campaign.
  */
@@ -88,7 +94,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     const [name, setName] = useState<string>('')
     const [description, setDescription] = useState<string>('')
     const [type, setType] = useState<CampaignType>()
-    const [campaignPlanArguments, setCampaignPlanArguments] = useState<string>('')
+    const [campaignPlanArguments, setCampaignPlanArguments] = useState<string>()
     const [namespace, setNamespace] = useState<GQL.ID>()
 
     const [namespaces, setNamespaces] = useState<GQL.Namespace[]>()
@@ -252,13 +258,16 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         }
     }
 
-    const onChangeArguments = (newText: string): void => {
+    const onChangeArguments = (newText: string | undefined): void => {
+        if (newText === undefined) {
+            return
+        }
         setCampaignPlanArguments(newText)
     }
 
     const onChangeType = (event: React.ChangeEvent<HTMLSelectElement>): void => {
         const newType = (event.target.value as CampaignType) || undefined
-        const parsedContent = parseJSONC(campaignPlanArguments)
+        const parsedContent = campaignPlanArguments && parseJSONC(campaignPlanArguments)
         if ((newType && !parsedContent) || (type && isEqual(parsedContent, parseJSONC(defaultInputByType[type])))) {
             setCampaignPlanArguments(defaultInputByType[newType])
         }
@@ -344,7 +353,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     // Tracks if a refresh of the campaignPlan is required before the campaign can be created
     const previewRefreshNeeded =
         !currentSpec ||
-        !isEqual(currentSpec, parseJSONC(campaignPlanArguments)) ||
+        (campaignPlanArguments && !isEqual(currentSpec, parseJSONC(campaignPlanArguments))) ||
         (status && status.state !== 'COMPLETED')
 
     return (
@@ -470,34 +479,57 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         </small>
                     </p>
                 )}
-                <h3 className="mt-3">Campaign type</h3>
-                <select
-                    className="form-control w-auto d-inline-block e2e-campaign-type"
-                    placeholder="Select campaign type"
-                    onChange={onChangeType}
-                    disabled={!!(campaign && campaign.__typename === 'Campaign')}
-                    value={type}
-                >
-                    <option value="">Manual</option>
-                    <option value="comby">Comby search and replace</option>
-                    <option value="credentials">NPM Credentials</option>
-                </select>
-                {type === 'comby' && (
-                    <small className="ml-1">
-                        <a rel="noopener noreferrer" target="_blank" href="https://comby.dev/#match-syntax">
-                            Learn about comby syntax
-                        </a>
-                    </small>
-                )}
-                <MonacoSettingsEditor
-                    className="my-3 e2e-campaign-arguments"
-                    isLightTheme={isLightTheme}
-                    value={campaignPlanArguments}
-                    jsonSchema={type ? jsonSchemaByType[type] : undefined}
-                    height={110}
-                    onChange={onChangeArguments}
-                    readOnly={!!(campaign && campaign.__typename === 'Campaign')}
-                ></MonacoSettingsEditor>
+                <div className="container-fluid my-3">
+                    <div className="row campaign-details__property-row">
+                        <h3 className="mr-3 mb-0 campaign-details__property-label">Type</h3>
+                        <div className="flex-grow-1 form-group mb-0">
+                            {!(campaign && campaign.__typename === 'Campaign') ? (
+                                <>
+                                    {' '}
+                                    <select
+                                        className="form-control w-auto d-inline-block e2e-campaign-type"
+                                        placeholder="Select campaign type"
+                                        onChange={onChangeType}
+                                        value={type}
+                                    >
+                                        {(Object.keys(typeLabels) as CampaignType[]).map((typeName, i) => (
+                                            <option value={typeName || ''} key={i}>
+                                                {typeLabels[typeName]}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {type === 'comby' && (
+                                        <small className="ml-1">
+                                            <a
+                                                rel="noopener noreferrer"
+                                                target="_blank"
+                                                href="https://comby.dev/#match-syntax"
+                                            >
+                                                Learn about comby syntax
+                                            </a>
+                                        </small>
+                                    )}
+                                </>
+                            ) : (
+                                <p className="mb-0">{typeLabels[type || '']}</p>
+                            )}
+                        </div>
+                    </div>
+                    {type && (
+                        <div className="row mt-3">
+                            <h3 className="mr-3 mb-0 flex-grow-0 campaign-details__property-label">Arguments</h3>
+                            <MonacoSettingsEditor
+                                className="flex-grow-1 e2e-campaign-arguments"
+                                isLightTheme={isLightTheme}
+                                value={campaignPlanArguments}
+                                jsonSchema={type ? jsonSchemaByType[type] : undefined}
+                                height={110}
+                                onChange={onChangeArguments}
+                                readOnly={!!(campaign && campaign.__typename === 'Campaign')}
+                            ></MonacoSettingsEditor>
+                        </div>
+                    )}
+                </div>
                 {(!campaign || (campaign && campaign.__typename === 'CampaignPlan')) && mode === 'editing' && (
                     <>
                         {type !== undefined && (

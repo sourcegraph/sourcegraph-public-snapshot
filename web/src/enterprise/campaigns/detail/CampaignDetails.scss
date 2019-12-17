@@ -1,0 +1,11 @@
+.campaign-details {
+    &__property-label {
+        // TODO: refactor to possibly css-grid
+        /* stylelint-disable */
+        width: 100px;
+        /* stylelint-enable */
+    }
+    &__property-row {
+        align-items: baseline;
+    }
+}
