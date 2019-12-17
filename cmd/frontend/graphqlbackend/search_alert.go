@@ -18,6 +18,7 @@ import (
 )
 
 type searchAlert struct {
+	prometheusType  string
 	title           string
 	description     string
 	patternType     SearchType
@@ -58,8 +59,9 @@ func (a searchAlert) ProposedQueries() *[]*searchQueryDescription {
 
 func (r *searchResolver) alertForQuotesInQueryInLiteralMode(ctx context.Context) (*searchAlert, error) {
 	return &searchAlert{
-		title:       "No results. Did you mean to use quotes?",
-		description: "Your search is interpreted literally and contains quotes. Did you mean to search for quotes?",
+		prometheusType: "no_results__suggest_quotes",
+		title:          "No results. Did you mean to use quotes?",
+		description:    "Your search is interpreted literally and contains quotes. Did you mean to search for quotes?",
 		proposedQueries: []*searchQueryDescription{{
 			description: "Remove quotes",
 			query:       syntax.ExprString(omitQuotes(r.query)),
@@ -76,23 +78,26 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 	// Handle repogroup-only scenarios.
 	if len(repoFilters) == 0 && len(repoGroupFilters) == 0 {
 		return &searchAlert{
-			title:       "Add repositories or connect repository hosts",
-			description: "There are no repositories to search. Add an external service connection to your code host.",
-			patternType: r.patternType,
+			prometheusType: "no_resolved_repos__no_repositories",
+			title:          "Add repositories or connect repository hosts",
+			description:    "There are no repositories to search. Add an external service connection to your code host.",
+			patternType:    r.patternType,
 		}, nil
 	}
 	if len(repoFilters) == 0 && len(repoGroupFilters) == 1 {
 		return &searchAlert{
-			title:       fmt.Sprintf("Add repositories to repogroup:%s to see results", repoGroupFilters[0]),
-			description: fmt.Sprintf("The repository group %q is empty. See the documentation for configuration and troubleshooting.", repoGroupFilters[0]),
-			patternType: r.patternType,
+			prometheusType: "no_resolved_repos__repogroup_empty",
+			title:          fmt.Sprintf("Add repositories to repogroup:%s to see results", repoGroupFilters[0]),
+			description:    fmt.Sprintf("The repository group %q is empty. See the documentation for configuration and troubleshooting.", repoGroupFilters[0]),
+			patternType:    r.patternType,
 		}, nil
 	}
 	if len(repoFilters) == 0 && len(repoGroupFilters) > 1 {
 		return &searchAlert{
-			title:       "Repository groups have no repositories in common",
-			description: "No repository exists in all of the specified repository groups.",
-			patternType: r.patternType,
+			prometheusType: "no_resolved_repos__repogroup_none_in_common",
+			title:          "Repository groups have no repositories in common",
+			description:    "No repository exists in all of the specified repository groups.",
+			patternType:    r.patternType,
 		}, nil
 	}
 
@@ -238,8 +243,9 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 
 func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAlert, error) {
 	alert := &searchAlert{
-		title:       "Too many matching repositories",
-		patternType: r.patternType,
+		prometheusType: "over_repo_limit",
+		title:          "Too many matching repositories",
+		patternType:    r.patternType,
 	}
 
 	if envvar.SourcegraphDotComMode() {
@@ -359,9 +365,10 @@ func (r *searchResolver) alertForMissingRepoRevs(missingRepoRevs []*search.Repos
 		description = fmt.Sprintf("%d repositories matched by your repo: filter could not be searched because the following revisions do not exist, or differ but were specified for the same repository: %s.", len(missingRepoRevs), strings.Join(repoRevs, ", "))
 	}
 	return &searchAlert{
-		title:       "Some repositories could not be searched",
-		description: description,
-		patternType: r.patternType,
+		prometheusType: "missing_repo_revs",
+		title:          "Some repositories could not be searched",
+		description:    description,
+		patternType:    r.patternType,
 	}
 }
 
