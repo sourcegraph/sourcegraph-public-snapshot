@@ -52,7 +52,7 @@ interface InteractiveModeState {
     numFiltersAdded: number
 }
 
-export default class InteractiveModeInput extends React.Component<InteractiveModeProps, InteractiveModeState> {
+export class InteractiveModeInput extends React.Component<InteractiveModeProps, InteractiveModeState> {
     constructor(props: InteractiveModeProps) {
         super(props)
 

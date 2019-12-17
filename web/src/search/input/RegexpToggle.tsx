@@ -16,7 +16,7 @@ interface RegexpToggleProps extends PatternTypeProps {
     hasGlobalQueryBehavior?: boolean
 }
 
-export default class RegexpToggle extends React.Component<RegexpToggleProps> {
+export class RegexpToggle extends React.Component<RegexpToggleProps> {
     private subscriptions = new Subscription()
     private toggleCheckbox = React.createRef<HTMLDivElement>()
 
