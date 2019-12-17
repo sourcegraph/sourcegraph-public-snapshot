@@ -1090,6 +1090,41 @@ func TestCalcCounts(t *testing.T) {
 				{Time: daysAgo(0), Total: 6, Merged: 6},
 			},
 		},
+		{
+			codehosts: "github and bitbucketserver",
+			name:      "multiple changesets open and deleted",
+			changesets: []*a8n.Changeset{
+				setExternalDeletedAt(ghChangeset(1, daysAgo(2)), daysAgo(1)),
+				setExternalDeletedAt(bbsChangeset(1, daysAgo(2)), daysAgo(1)),
+			},
+			start: daysAgo(2),
+			want: []*ChangesetCounts{
+				{Time: daysAgo(2), Total: 2, Open: 2, OpenPending: 2},
+				// We count deleted as closed
+				{Time: daysAgo(1), Total: 2, Closed: 2},
+				{Time: daysAgo(0), Total: 2, Closed: 2},
+			},
+		},
+		{
+			codehosts: "github and bitbucketserver",
+			name:      "multiple changesets open, closed and deleted",
+			changesets: []*a8n.Changeset{
+				setExternalDeletedAt(ghChangeset(1, daysAgo(3)), daysAgo(1)),
+				setExternalDeletedAt(bbsChangeset(2, daysAgo(3)), daysAgo(1)),
+			},
+			start: daysAgo(3),
+			events: []Event{
+				fakeEvent{t: daysAgo(2), kind: a8n.ChangesetEventKindGitHubClosed, id: 1},
+				fakeEvent{t: daysAgo(2), kind: a8n.ChangesetEventKindBitbucketServerDeclined, id: 2},
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(3), Total: 2, Open: 2, OpenPending: 2},
+				{Time: daysAgo(2), Total: 2, Closed: 2},
+				// We count deleted as closed, so they stay closed
+				{Time: daysAgo(1), Total: 2, Closed: 2},
+				{Time: daysAgo(0), Total: 2, Closed: 2},
+			},
+		},
 	}
 
 	for _, tc := range tests {
@@ -1132,6 +1167,12 @@ func bbsChangeset(id int64, t time.Time) *a8n.Changeset {
 		ID:       id,
 		Metadata: &bitbucketserver.PullRequest{CreatedDate: timeToUnixMilli(t)},
 	}
+}
+
+func setExternalDeletedAt(c *a8n.Changeset, t time.Time) *a8n.Changeset {
+	c.SetDeleted()
+	c.ExternalDeletedAt = t
+	return c
 }
 
 func timeToUnixMilli(t time.Time) int {
