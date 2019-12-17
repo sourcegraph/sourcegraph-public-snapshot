@@ -34,7 +34,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Suggested search filter chips are quoted if necessary. [#6498](https://github.com/sourcegraph/sourcegraph/issues/6498)
 - Remove potential panic in gitserver if heavily loaded. [#6710](https://github.com/sourcegraph/sourcegraph/issues/6710)
 - Multiple fixes to make the preview and creation of Automation campaigns more robust and a smoother user experience. [#6682](https://github.com/sourcegraph/sourcegraph/pull/6682) [#6625](https://github.com/sourcegraph/sourcegraph/issues/6625) [#6658](https://github.com/sourcegraph/sourcegraph/issues/6658) [#7088](https://github.com/sourcegraph/sourcegraph/issues/7088) [#6766](https://github.com/sourcegraph/sourcegraph/issues/6766) [#6717](https://github.com/sourcegraph/sourcegraph/issues/6717) [#6659](https://github.com/sourcegraph/sourcegraph/issues/6659)
-- Changing an external service configuration to remove a repository won't lead to problems with the syncing process anymore even if the repository was referenced in an Automation campaign. [#7015](https://github.com/sourcegraph/sourcegraph/pull/7015)
+- Repositories referenced in Automation campaigns that are removed in an external service configuration change won't lead to problems with the syncing process anymore. [#7015](https://github.com/sourcegraph/sourcegraph/pull/7015)
 
 ### Removed
 
