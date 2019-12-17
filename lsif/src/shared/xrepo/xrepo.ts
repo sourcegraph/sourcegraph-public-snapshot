@@ -124,33 +124,6 @@ export class XrepoDatabase {
     }
 
     /**
-     * Determine if we have any LSIf data for this repository.
-     *
-     * @param repository The repository name.
-     */
-    public isRepositoryTracked(repository: string): Promise<boolean> {
-        return instrumentQuery(
-            async () =>
-                (await this.connection.getRepository(xrepoModels.LsifDump).findOne({ where: { repository } })) !==
-                undefined
-        )
-    }
-
-    /**
-     * Determine if we have commit parent data for this commit.
-     *
-     * @param repository The repository name.
-     * @param commit The target commit.
-     */
-    public isCommitTracked(repository: string, commit: string): Promise<boolean> {
-        return instrumentQuery(
-            async () =>
-                (await this.connection.getRepository(xrepoModels.Commit).findOne({ where: { repository, commit } })) !==
-                undefined
-        )
-    }
-
-    /**
      * Determine the set of dumps which are 'visible' from the given commit and set the
      * `visible_at_tip` flags. Unset the flag for each invisible dump for this repository.
      * This will traverse all ancestor commits but not descendants, as the given commit
@@ -829,8 +802,17 @@ export class XrepoDatabase {
         /** The tracing context. */
         ctx?: TracingContext
     }): Promise<Map<string, Set<string>>> {
-        // No need to update if we already know about this commit or don't know about the repo
-        if ((await this.isCommitTracked(repository, commit)) || !(await this.isRepositoryTracked(repository))) {
+        const matchingRepos = await instrumentQuery(() =>
+            this.connection.getRepository(xrepoModels.LsifDump).count({ where: { repository } })
+        )
+        if (matchingRepos === 0) {
+            return new Map()
+        }
+
+        const matchingCommits = await instrumentQuery(() =>
+            this.connection.getRepository(xrepoModels.Commit).count({ where: { repository, commit } })
+        )
+        if (matchingCommits > 0) {
             return new Map()
         }
 
