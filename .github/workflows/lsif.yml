@@ -19,6 +19,40 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           file: cmd/dump.lsif
 
+  lsif-internal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Generate LSIF data
+        uses: sourcegraph/lsif-go-action@master
+        with:
+          project_root: internal/
+          file: internal/dump.lsif
+          verbose: "true"
+      - name: Upload LSIF data
+        uses: sourcegraph/lsif-upload-action@master
+        continue-on-error: true
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          file: internal/dump.lsif
+
+  lsif-enterprise:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Generate LSIF data
+        uses: sourcegraph/lsif-go-action@master
+        with:
+          project_root: enterprise/
+          file: enterprise/dump.lsif
+          verbose: "true"
+      - name: Upload LSIF data
+        uses: sourcegraph/lsif-upload-action@master
+        continue-on-error: true
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          file: enterprise/dump.lsif
+
   lsif-web:
     runs-on: ubuntu-latest
     steps:
@@ -28,7 +62,6 @@ jobs:
         with:
           project_root: web/
           file: web/dump.lsif
-          verbose: "true"
       - name: Upload LSIF data
         uses: sourcegraph/lsif-upload-action@master
         continue-on-error: true
@@ -45,7 +78,6 @@ jobs:
         with:
           project_root: shared/
           file: shared/dump.lsif
-          verbose: "true"
       - name: Upload LSIF data
         uses: sourcegraph/lsif-upload-action@master
         continue-on-error: true
@@ -62,7 +94,6 @@ jobs:
         with:
           project_root: lsif/
           file: lsif/dump.lsif
-          verbose: "true"
       - name: Upload LSIF data
         uses: sourcegraph/lsif-upload-action@master
         continue-on-error: true
