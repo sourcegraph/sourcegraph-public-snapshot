@@ -20,8 +20,9 @@ groups:
           description: 'gitserver: less than 20% free disk space remaining'
         expr: >-
           clamp_max(clamp_min(floor(
-              gitserver_disk_used_percent + 0.2
+          gitserver_disk_used_percent + 0.2
           ), 0), 1)
+
       - record: alert_count
         labels:
           service_name: gitserver
@@ -30,7 +31,7 @@ groups:
           description: 'gitserver: less than 5% free disk space remaining'
         expr: >-
           clamp_max(clamp_min(floor(
-              gitserver_disk_used_percent + 0.05
+          gitserver_disk_used_percent + 0.05
           ), 0), 1)
 
       # Warning if fetching configuration from frontend is failing.
@@ -42,7 +43,7 @@ groups:
           description: 'gitserver: 5+ non-200 responses from the frontend-internal API over 5m'
         expr: >-
           clamp_max(clamp_min(floor(
-              increase(src_frontend_internal_request_duration_seconds_count{job="gitserver",code!~"2.."}[5m]) / 5
+          increase(src_frontend_internal_request_duration_seconds_count{job="gitserver",code!~"2.."}[5m]) / 5
           ), 0), 1)
 
       # Clone queue should generally not exceed 25 repositories (except during onboarding,
@@ -55,7 +56,7 @@ groups:
           description: 'gitserver: more than 25+ repositories need cloning'
         expr: >-
           clamp_max(clamp_min(floor(
-              src_gitserver_clone_queue / 25
+          src_gitserver_clone_queue / 25
           ), 0), 1)
 
       # Similar to the clone queue, we warn on the lsremote queue.
@@ -67,7 +68,7 @@ groups:
           description: 'gitserver: more than 25+ repositories needing code-host existence check'
         expr: >-
           clamp_max(clamp_min(floor(
-              src_gitserver_lsremote_queue / 25
+          src_gitserver_lsremote_queue / 25
           ), 0), 1)
 
       # Echo duration should never exceed 2s.
@@ -79,5 +80,5 @@ groups:
           description: 'gitserver: echo command execution duration exceeding 2s'
         expr: >-
           clamp_max(clamp_min(floor(
-              src_gitserver_echo_duration_seconds / 2
+          src_gitserver_echo_duration_seconds / 2
           ), 0), 1)

@@ -10,8 +10,9 @@ groups:
           description: 'frontend: 5+ search error responses over 5m'
         expr: >-
           clamp_max(clamp_min(floor(
-              increase(src_graphql_search_response{status="error"}[5m]) / 5
+          increase(src_graphql_search_response{status="error"}[5m]) / 5
           ), 0), 1)
+
       - record: alert_count
         labels:
           service_name: frontend
@@ -20,17 +21,18 @@ groups:
           description: 'frontend: 5+ search full-timeout responses over 5m'
         expr: >-
           clamp_max(clamp_min(floor(
-              increase(src_graphql_search_response{status="timeout"}[5m]) / 5
+          increase(src_graphql_search_response{status="timeout"}[5m]) / 5
           ), 0), 1)
+
       - record: alert_count
         labels:
           service_name: frontend
           level: warning
-          name: search_timeout_response_high
+          name: search_partial_timeout_response_high
           description: 'frontend: 5+ search partial-timeout responses over 5m'
         expr: >-
           clamp_max(clamp_min(floor(
-              increase(src_graphql_search_response{status="partial_timeout"}[5m]) / 5
+          increase(src_graphql_search_response{status="partial_timeout"}[5m]) / 5
           ), 0), 1)
 
       # Warning if 25+ requests to our internal API are failing over 5m.
@@ -42,5 +44,5 @@ groups:
           description: 'frontend: 25+ non-200 responses from the frontend-internal API over 5m'
         expr: >-
           clamp_max(clamp_min(floor(
-              increase(src_frontend_internal_request_duration_seconds_count{code!~"2.."}[5m]) / 25
+          increase(src_frontend_internal_request_duration_seconds_count{code!~"2.."}[5m]) / 25
           ), 0), 1)
