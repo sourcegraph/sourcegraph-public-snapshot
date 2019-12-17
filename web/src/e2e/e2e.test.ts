@@ -1494,7 +1494,7 @@ describe('e2e test suite', () => {
                 selector: '.e2e-settings-file .monaco-editor',
                 newText: JSON.stringify({
                     experimentalFeatures: {
-                        splitSearchModes: 'enabled',
+                        splitSearchModes: true
                     },
                 }),
                 selectMethod: 'keyboard',
