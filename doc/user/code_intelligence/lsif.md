@@ -34,7 +34,7 @@ Global find-references is a resource-intensive operation that's sensitive to the
 
 **Do not upload more than 10-40 LSIF dumps to your Sourcegraph instance or you risk harming other parts of Sourcegraph. We are working to validate its performance at scale and eliminate this concern.**
 
-The following table gives a rough estimate for the space and time requirements for indexing and conversion. These repositories are a representative sample of public Go repositories available on GitHub. The clone size is the total size of source files (without history) of the clone at the given commit. The index size gives the size of the uncompressed LSIF output of the indexer, and the conversion size gives the total amount of disk space occupied after uploading the dump to a Sourcegraph instance.
+The following table gives a rough estimate for the space and time requirements for indexing and conversion. These repositories are a representative sample of public Go repositories available on GitHub. The working tree size is the size of the clone at the given commit (without git history), the number of files indexed, and the number of lines of Go code in the repository. The index size gives the size of the uncompressed LSIF output of the indexer. The conversion size gives the total amount of disk space occupied after uploading the dump to a Sourcegraph instance.
 
 | Repository | Working tree size | Index time | Index size | Processing time | Post-processing size |
 | ------------------------------------------------------------------- | ------------------------------- | ------ | ----- | ------- | ----- |
