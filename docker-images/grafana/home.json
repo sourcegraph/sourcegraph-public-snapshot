@@ -15,6 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
+  "id": 28,
   "links": [],
   "panels": [
     {
@@ -43,7 +44,7 @@
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 6,
+        "h": 5,
         "w": 24,
         "x": 0,
         "y": 6
@@ -74,7 +75,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "alert_count{level=\"critical\"}",
+          "expr": "sum by (service_name)(alert_count{level=\"critical\"})",
           "legendFormat": "{{service_name}}",
           "refId": "A"
         }
@@ -130,10 +131,10 @@
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 6,
+        "h": 5,
         "w": 24,
         "x": 0,
-        "y": 12
+        "y": 11
       },
       "id": 4,
       "legend": {
@@ -161,7 +162,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "alert_count{level=\"warning\"}",
+          "expr": "sum by (service_name)(alert_count{level=\"warning\"})",
           "legendFormat": "{{service_name}}",
           "refId": "A"
         }
@@ -207,6 +208,269 @@
         "align": false,
         "alignLevel": null
       }
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": false,
+      "colorValue": false,
+      "colors": ["#299c46", "rgba(237, 129, 40, 0.89)", "#d44a3a"],
+      "datasource": null,
+      "format": "none",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 5,
+        "x": 0,
+        "y": 16
+      },
+      "id": 13,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [
+        {
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "options": {},
+      "pluginVersion": "6.4.4",
+      "postfix": "",
+      "postfixFontSize": "50%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [
+        {
+          "from": "0",
+          "text": "{value} a",
+          "to": "10000"
+        }
+      ],
+      "sparkline": {
+        "fillColor": "rgba(31, 118, 189, 0.18)",
+        "full": false,
+        "lineColor": "rgb(31, 120, 193)",
+        "show": false,
+        "ymax": null,
+        "ymin": null
+      },
+      "tableColumn": "",
+      "targets": [
+        {
+          "expr": "count(sum(alert_count{name!=\"\"}) by (level,description))",
+          "instant": true,
+          "legendFormat": "",
+          "refId": "A"
+        },
+        {
+          "expr": "",
+          "refId": "B"
+        }
+      ],
+      "thresholds": "",
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Total alerts defined",
+      "type": "singlestat",
+      "valueFontSize": "80%",
+      "valueMaps": [
+        {
+          "op": "=",
+          "text": "N/A",
+          "value": "null"
+        }
+      ],
+      "valueName": "avg"
+    },
+    {
+      "cacheTimeout": null,
+      "columns": [],
+      "datasource": null,
+      "description": "",
+      "fontSize": "100%",
+      "gridPos": {
+        "h": 5,
+        "w": 19,
+        "x": 5,
+        "y": 16
+      },
+      "id": 11,
+      "links": [],
+      "options": {},
+      "pageSize": null,
+      "pluginVersion": "6.4.4",
+      "showHeader": true,
+      "sort": {
+        "col": 4,
+        "desc": false
+      },
+      "styles": [
+        {
+          "alias": "",
+          "colorMode": null,
+          "colors": ["rgba(245, 54, 54, 0.9)", "rgba(237, 129, 40, 0.89)", "rgba(50, 172, 45, 0.97)"],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 2,
+          "mappingType": 1,
+          "pattern": "Time",
+          "thresholds": [],
+          "type": "hidden",
+          "unit": "short"
+        },
+        {
+          "alias": "firing?",
+          "colorMode": "row",
+          "colors": ["rgba(50, 172, 45, 0.97)", "rgba(237, 129, 40, 0.89)", "rgba(245, 54, 54, 0.9)"],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 2,
+          "mappingType": 1,
+          "pattern": "Value",
+          "thresholds": ["0.99999", "1"],
+          "type": "string",
+          "unit": "short",
+          "valueMaps": [
+            {
+              "text": "false",
+              "value": "0"
+            },
+            {
+              "text": "true",
+              "value": "1"
+            }
+          ]
+        },
+        {
+          "alias": "",
+          "colorMode": null,
+          "colors": ["rgba(245, 54, 54, 0.9)", "rgba(237, 129, 40, 0.89)", "rgba(50, 172, 45, 0.97)"],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 2,
+          "mappingType": 1,
+          "pattern": "level",
+          "thresholds": [],
+          "type": "hidden",
+          "unit": "short"
+        },
+        {
+          "alias": "level",
+          "colorMode": null,
+          "colors": ["rgba(245, 54, 54, 0.9)", "rgba(237, 129, 40, 0.89)", "rgba(50, 172, 45, 0.97)"],
+          "dateFormat": "YYYY-MM-DD HH:mm:ss",
+          "decimals": 2,
+          "mappingType": 1,
+          "pattern": "_01_level",
+          "thresholds": [],
+          "type": "number",
+          "unit": "short"
+        }
+      ],
+      "targets": [
+        {
+          "expr": "label_replace(sum(alert_count{name!=\"\"}) by (level,description), \"_01_level\", \"$1\", \"level\", \"(.*)\")",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Alerts defined",
+      "transform": "table",
+      "type": "table"
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": false,
+      "colorValue": false,
+      "colors": ["#299c46", "rgba(237, 129, 40, 0.89)", "#d44a3a"],
+      "datasource": null,
+      "format": "none",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 5,
+        "x": 0,
+        "y": 19
+      },
+      "id": 15,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [
+        {
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "options": {},
+      "postfix": "",
+      "postfixFontSize": "50%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [
+        {
+          "from": "null",
+          "text": "N/A",
+          "to": "null"
+        }
+      ],
+      "sparkline": {
+        "fillColor": "rgba(31, 118, 189, 0.18)",
+        "full": false,
+        "lineColor": "rgb(31, 120, 193)",
+        "show": false,
+        "ymax": null,
+        "ymin": null
+      },
+      "tableColumn": "",
+      "targets": [
+        {
+          "expr": "count(sum(alert_count{name!=\"\"}) by (service_name))",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "thresholds": "",
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Services being monitored",
+      "type": "singlestat",
+      "valueFontSize": "80%",
+      "valueMaps": [
+        {
+          "op": "=",
+          "text": "N/A",
+          "value": "null"
+        }
+      ],
+      "valueName": "avg"
     }
   ],
   "schemaVersion": 20,
