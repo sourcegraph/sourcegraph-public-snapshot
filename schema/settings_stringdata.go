@@ -11,7 +11,8 @@ const SettingsSchemaJSON = `{
   "allowComments": true,
   "type": "object",
   "properties": {
-    "experimentalUIFeatures": {
+    "experimentalFeatures": {
+      "title": "SettingsExperimentalFeatures",
       "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
       "type": "object",
       "additionalProperties": false,

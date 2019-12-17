@@ -1493,7 +1493,7 @@ describe('e2e test suite', () => {
             await driver.replaceText({
                 selector: '.e2e-settings-file .monaco-editor',
                 newText: JSON.stringify({
-                    experimentalUIFeatures: {
+                    experimentalFeatures: {
                         splitSearchModes: 'enabled',
                     },
                 }),
