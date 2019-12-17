@@ -18,7 +18,7 @@ func ResetPasswordEnabled() bool {
 // site config; if there is more than 1, it returns multiple == true (which the caller should handle
 // by returning an error and refusing to proceed with auth).
 func getProviderConfig() (pc *schema.BuiltinAuthProvider, multiple bool) {
-	for _, p := range conf.Get().Critical.AuthProviders {
+	for _, p := range conf.Get().AuthProviders {
 		if p.Builtin != nil {
 			if pc != nil {
 				return pc, true // multiple builtin auth providers
@@ -49,13 +49,13 @@ func init() {
 
 func validateConfig(c conf.Unified) (problems conf.Problems) {
 	var builtinAuthProviders int
-	for _, p := range c.Critical.AuthProviders {
+	for _, p := range c.AuthProviders {
 		if p.Builtin != nil {
 			builtinAuthProviders++
 		}
 	}
 	if builtinAuthProviders >= 2 {
-		problems = append(problems, conf.NewCriticalProblem(`at most 1 builtin auth provider may be used`))
+		problems = append(problems, conf.NewSiteProblem(`at most 1 builtin auth provider may be used`))
 	}
 	return problems
 }

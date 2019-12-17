@@ -35,7 +35,7 @@ func Test_parseConfig(t *testing.T) {
 		},
 		{
 			name: "1 GitLab.com config",
-			args: args{cfg: &conf.Unified{Critical: schema.CriticalConfiguration{
+			args: args{cfg: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
 				ExternalURL: "https://sourcegraph.example.com",
 				AuthProviders: []schema.AuthProviders{{
 					Gitlab: &schema.GitLabAuthProvider{
@@ -68,7 +68,7 @@ func Test_parseConfig(t *testing.T) {
 		},
 		{
 			name: "2 GitLab configs",
-			args: args{cfg: &conf.Unified{Critical: schema.CriticalConfiguration{
+			args: args{cfg: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
 				ExternalURL: "https://sourcegraph.example.com",
 				AuthProviders: []schema.AuthProviders{{
 					Gitlab: &schema.GitLabAuthProvider{

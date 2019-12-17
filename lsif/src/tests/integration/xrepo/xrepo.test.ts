@@ -500,7 +500,7 @@ describe('XrepoDatabase', () => {
         expect(await getReferencedDumpIds()).toEqual([dumpa.id, dumpb.id, dumpf.id])
     })
 
-    it.skip('should re-query if bloom filter prunes too many results', async () => {
+    it('should re-query if bloom filter prunes too many results', async () => {
         if (!xrepoDatabase) {
             fail('failed beforeAll')
         }
@@ -555,7 +555,7 @@ describe('XrepoDatabase', () => {
         expect(references.map(reference => reference.dump_id).sort()).toEqual(dumps)
     })
 
-    it.skip('references only returned if dumps visible at tip', async () => {
+    it('references only returned if dumps visible at tip', async () => {
         if (!xrepoDatabase) {
             fail('failed beforeAll')
         }

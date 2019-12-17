@@ -116,48 +116,12 @@ export class Backend {
     ) {}
 
     /**
-     * Get the set of dumps for a repository.
-     *
-     * @param repository The repository.
-     * @param query A search query.
-     * @param visibleAtTip If true, only return dumps visible at tip.
-     * @param limit The maximum number of dumps to return.
-     * @param offset The number of dumps to skip.
-     */
-    public dumps(
-        repository: string,
-        query: string,
-        visibleAtTip: boolean,
-        limit: number,
-        offset: number
-    ): Promise<{ dumps: xrepoModels.LsifDump[]; totalCount: number }> {
-        return this.xrepoDatabase.getDumps(repository, query, visibleAtTip, limit, offset)
-    }
-
-    /**
-     * Get a dump by identifier.
-     *
-     * @param id The dump identifier.
-     */
-    public dump(id: xrepoModels.DumpId): Promise<xrepoModels.LsifDump | undefined> {
-        return this.xrepoDatabase.getDumpById(id)
-    }
-
-    /**
-     * Delete a dump.
-     *
-     * @param dump The dump.
-     */
-    public deleteDump(dump: xrepoModels.LsifDump): Promise<void> {
-        return this.xrepoDatabase.deleteDump(dump)
-    }
-
-    /**
      * Determine if data exists for a particular document in this database.
      *
      * @param repository The repository name.
      * @param commit The commit.
      * @param path The path of the document.
+     * @param dumpId The identifier of the dump to load. If not supplied, the closest dump will be used.
      * @param ctx The tracing context.
      */
     public async exists(
@@ -183,6 +147,7 @@ export class Backend {
      * @param commit The commit.
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
+     * @param dumpId The identifier of the dump to load. If not supplied, the closest dump will be used.
      * @param ctx The tracing context.
      */
     public async definitions(
@@ -199,6 +164,82 @@ export class Backend {
         }
 
         return result.locations
+    }
+
+    /**
+     * Return a list of locations which reference the definition at the given position. Returns
+     * undefined if no dump can be loaded to answer this query.
+     *
+     * @param repository The repository name.
+     * @param commit The commit.
+     * @param path The path of the document to which the position belongs.
+     * @param position The current hover position.
+     * @param paginationContext Context describing the current request for paginated results.
+     * @param dumpId The identifier of the dump to load. If not supplied, the closest dump will be used.
+     * @param ctx The tracing context.
+     */
+    public async references(
+        repository: string,
+        commit: string,
+        path: string,
+        position: lsp.Position,
+        paginationContext: ReferencePaginationContext = { limit: 10 },
+        dumpId?: number,
+        ctx: TracingContext = {}
+    ): Promise<{ locations: InternalLocation[]; cursor?: ReferencePaginationCursor } | undefined> {
+        return this.internalReferences(repository, commit, path, position, paginationContext, dumpId, ctx)
+    }
+
+    /**
+     * Return the hover content for the definition or reference at the given position. Returns
+     * undefined if no dump can be loaded to answer this query.
+     *
+     * @param repository The repository name.
+     * @param commit The commit.
+     * @param path The path of the document to which the position belongs.
+     * @param position The current hover position.
+     * @param dumpId The identifier of the dump to load. If not supplied, the closest dump will be used.
+     * @param ctx The tracing context.
+     */
+    public async hover(
+        repository: string,
+        commit: string,
+        path: string,
+        position: lsp.Position,
+        dumpId?: number,
+        ctx: TracingContext = {}
+    ): Promise<{ text: string; range: lsp.Range } | null | undefined> {
+        const closestDatabaseAndDump = await this.loadClosestDatabase(repository, commit, path, dumpId, ctx)
+        if (!closestDatabaseAndDump) {
+            if (ctx.logger) {
+                ctx.logger.warn('No database could be loaded', { repository, commit, path })
+            }
+
+            return undefined
+        }
+        const { database, dump, ctx: newCtx } = closestDatabaseAndDump
+
+        // Try to find hover in the same dump
+        const hover = await database.hover(pathToDatabase(dump.root, path), position, newCtx)
+        if (hover !== null) {
+            return hover
+        }
+
+        // If we don't have a local hover, lookup the definitions of the
+        // range and read the hover data from the remote database. This
+        // can happen when the indexer only gives a moniker but does not
+        // give hover data for externally defined symbols.
+
+        const result = await this.internalDefinitions(repository, commit, path, position, dumpId, ctx)
+        if (result === undefined || result.locations.length === 0) {
+            return null
+        }
+
+        return this.createDatabase(result.locations[0].dump).hover(
+            pathToDatabase(result.locations[0].dump.root, result.locations[0].path),
+            result.locations[0].range.start,
+            newCtx
+        )
     }
 
     private async internalDefinitions(
@@ -272,230 +313,6 @@ export class Backend {
             }
         }
         return { dump, locations: [] }
-    }
-
-    /**
-     * Retrieve the package information from associated with the given moniker.
-     *
-     * @param document The document containing an instance of the moniker.
-     * @param moniker The target moniker.
-     * @param ctx The tracing context.
-     */
-    private lookupPackageInformation(
-        document: dumpModels.DocumentData,
-        moniker: dumpModels.MonikerData,
-        ctx: TracingContext = {}
-    ): dumpModels.PackageInformationData | undefined {
-        if (!moniker.packageInformationId) {
-            return undefined
-        }
-
-        const packageInformation = document.packageInformation.get(moniker.packageInformationId)
-        if (!packageInformation) {
-            return undefined
-        }
-
-        logSpan(ctx, 'package_information', {
-            moniker,
-            packageInformation,
-        })
-
-        return packageInformation
-    }
-
-    /**
-     * Find the locations attached to the target moniker outside of the current database. If
-     * the moniker has attached package information, then the cross-repo database is queried
-     * for the target package. That database is opened, and its definitions table is queried
-     * for the target moniker.
-     *
-     * @param document The document containing the definition.
-     * @param moniker The target moniker.
-     * @param model The target model.
-     * @param ctx The tracing context.
-     */
-    private async lookupMoniker(
-        document: dumpModels.DocumentData,
-        moniker: dumpModels.MonikerData,
-        model: typeof dumpModels.DefinitionModel | typeof dumpModels.ReferenceModel,
-        ctx: TracingContext = {}
-    ): Promise<InternalLocation[]> {
-        const packageInformation = this.lookupPackageInformation(document, moniker, ctx)
-        if (!packageInformation) {
-            return []
-        }
-
-        const packageEntity = await this.xrepoDatabase.getPackage(
-            moniker.scheme,
-            packageInformation.name,
-            packageInformation.version
-        )
-        if (!packageEntity) {
-            return []
-        }
-
-        logSpan(ctx, 'package_entity', {
-            moniker,
-            packageInformation,
-            packageRepository: packageEntity.dump.repository,
-            packageCommit: packageEntity.dump.commit,
-        })
-
-        return (await this.createDatabase(packageEntity.dump).monikerResults(model, moniker, ctx)).map(loc =>
-            locationFromDatabase(packageEntity.dump.root, loc)
-        )
-    }
-
-    /**
-     * Find the references of the target moniker outside of the current repository. If the moniker
-     * has attached package information, then the cross-repo database is queried for the packages
-     * that require this particular moniker identifier. These dumps are opened, and their
-     * references tables are queried for the target moniker.
-     *
-     * @param dumpId The ID of the dump for which this database answers queries.
-     * @param repository The repository for which this database answers queries.
-     * @param moniker The target moniker.
-     * @param packageInformation The target package.
-     * @param limit The maximum number of remote dumps to search.
-     * @param offset The number of remote dumps to skip.
-     * @param ctx The tracing context.
-     */
-    private async remoteReferences(
-        dumpId: xrepoModels.DumpId,
-        repository: string,
-        moniker: Pick<dumpModels.MonikerData, 'scheme' | 'identifier'>,
-        packageInformation: Pick<dumpModels.PackageInformationData, 'name' | 'version'>,
-        limit: number,
-        offset: number,
-        ctx: TracingContext = {}
-    ): Promise<{ locations: InternalLocation[]; totalCount: number; newOffset: number }> {
-        const { references, totalCount, newOffset } = await this.xrepoDatabase.getReferences({
-            repository,
-            scheme: moniker.scheme,
-            identifier: moniker.identifier,
-            name: packageInformation.name,
-            version: packageInformation.version,
-            limit,
-            offset,
-        })
-
-        const dumps = references.map(r => r.dump)
-        const locations = await this.locationsFromRemoteReferences(dumpId, moniker, dumps, ctx)
-        return { locations, totalCount, newOffset }
-    }
-
-    /**
-     * Find the references of the target moniker outside of the current dump but within a dump of
-     * the same repository. If the moniker has attached package information, then the cross-repo
-     * database is queried for the packages that require this particular moniker identifier. These
-     * dumps are opened, and their references tables are queried for the target moniker.
-     *
-     * @param dumpId The ID of the dump for which this database answers queries.
-     * @param repository The repository for which this database answers queries.
-     * @param commit The commit of the references query.
-     * @param moniker The target moniker.
-     * @param packageInformation The target package.
-     * @param limit The maximum number of remote dumps to search.
-     * @param offset The number of remote dumps to skip.
-     * @param ctx The tracing context.
-     */
-    private async sameRepositoryRemoteReferences(
-        dumpId: xrepoModels.DumpId,
-        repository: string,
-        commit: string,
-        moniker: Pick<dumpModels.MonikerData, 'scheme' | 'identifier'>,
-        packageInformation: Pick<dumpModels.PackageInformationData, 'name' | 'version'>,
-        limit: number,
-        offset: number,
-        ctx: TracingContext = {}
-    ): Promise<{ locations: InternalLocation[]; totalCount: number; newOffset: number }> {
-        const { references, totalCount, newOffset } = await this.xrepoDatabase.getSameRepoRemoteReferences({
-            repository,
-            commit,
-            scheme: moniker.scheme,
-            identifier: moniker.identifier,
-            name: packageInformation.name,
-            version: packageInformation.version,
-            limit,
-            offset,
-        })
-
-        const dumps = references.map(r => r.dump)
-        const locations = await this.locationsFromRemoteReferences(dumpId, moniker, dumps, ctx)
-        return { locations, totalCount, newOffset }
-    }
-
-    /**
-     * Query the given dumps for references to the given moniker.
-     *
-     * @param dumpId The ID of the dump for which this database answers queries.
-     * @param moniker The target moniker.
-     * @param dumps The dumps to open.
-     * @param ctx The tracing context.
-     */
-    private async locationsFromRemoteReferences(
-        dumpId: xrepoModels.DumpId,
-        moniker: Pick<dumpModels.MonikerData, 'scheme' | 'identifier'>,
-        dumps: xrepoModels.LsifDump[],
-        ctx: TracingContext = {}
-    ): Promise<InternalLocation[]> {
-        logSpan(ctx, 'package_references', {
-            references: dumps.map(d => ({ repository: d.repository, commit: d.commit })),
-        })
-
-        let locations: InternalLocation[] = []
-        for (const dump of dumps) {
-            // Skip the remote reference that show up for ourselves - we've already gathered
-            // these in the previous step of the references query.
-            if (dump.id === dumpId) {
-                continue
-            }
-
-            const references = (
-                await this.createDatabase(dump).monikerResults(dumpModels.ReferenceModel, moniker, ctx)
-            ).map(loc => locationFromDatabase(dump.root, loc))
-            locations = locations.concat(references)
-        }
-
-        return locations
-    }
-
-    /**
-     * Create a database instance backed by the given dump.
-     *
-     * @param dump The dump.
-     */
-    private createDatabase(dump: xrepoModels.LsifDump): Database {
-        return new Database(
-            this.connectionCache,
-            this.documentCache,
-            this.resultChunkCache,
-            dump,
-            dbFilename(this.storageRoot, dump.id, dump.repository, dump.commit)
-        )
-    }
-
-    /**
-     * Return a list of locations which reference the definition at the given position. Returns
-     * undefined if no dump can be loaded to answer this query.
-     *
-     * @param repository The repository name.
-     * @param commit The commit.
-     * @param path The path of the document to which the position belongs.
-     * @param position The current hover position.
-     * @param paginationContext Context describing the current request for paginated results.
-     * @param ctx The tracing context.
-     */
-    public async references(
-        repository: string,
-        commit: string,
-        path: string,
-        position: lsp.Position,
-        paginationContext: ReferencePaginationContext = { limit: 10 },
-        dumpId?: number,
-        ctx: TracingContext = {}
-    ): Promise<{ locations: InternalLocation[]; cursor?: ReferencePaginationCursor } | undefined> {
-        return this.internalReferences(repository, commit, path, position, paginationContext, dumpId, ctx)
     }
 
     private async internalReferences(
@@ -626,6 +443,78 @@ export class Backend {
     }
 
     /**
+     * Retrieve the package information from associated with the given moniker.
+     *
+     * @param document The document containing an instance of the moniker.
+     * @param moniker The target moniker.
+     * @param ctx The tracing context.
+     */
+    private lookupPackageInformation(
+        document: dumpModels.DocumentData,
+        moniker: dumpModels.MonikerData,
+        ctx: TracingContext = {}
+    ): dumpModels.PackageInformationData | undefined {
+        if (!moniker.packageInformationId) {
+            return undefined
+        }
+
+        const packageInformation = document.packageInformation.get(moniker.packageInformationId)
+        if (!packageInformation) {
+            return undefined
+        }
+
+        logSpan(ctx, 'package_information', {
+            moniker,
+            packageInformation,
+        })
+
+        return packageInformation
+    }
+
+    /**
+     * Find the locations attached to the target moniker outside of the current database. If
+     * the moniker has attached package information, then the cross-repo database is queried
+     * for the target package. That database is opened, and its definitions table is queried
+     * for the target moniker.
+     *
+     * @param document The document containing the definition.
+     * @param moniker The target moniker.
+     * @param model The target model.
+     * @param ctx The tracing context.
+     */
+    private async lookupMoniker(
+        document: dumpModels.DocumentData,
+        moniker: dumpModels.MonikerData,
+        model: typeof dumpModels.DefinitionModel | typeof dumpModels.ReferenceModel,
+        ctx: TracingContext = {}
+    ): Promise<InternalLocation[]> {
+        const packageInformation = this.lookupPackageInformation(document, moniker, ctx)
+        if (!packageInformation) {
+            return []
+        }
+
+        const packageEntity = await this.xrepoDatabase.getPackage(
+            moniker.scheme,
+            packageInformation.name,
+            packageInformation.version
+        )
+        if (!packageEntity) {
+            return []
+        }
+
+        logSpan(ctx, 'package_entity', {
+            moniker,
+            packageInformation,
+            packageRepository: packageEntity.dump.repository,
+            packageCommit: packageEntity.dump.commit,
+        })
+
+        return (await this.createDatabase(packageEntity.dump).monikerResults(model, moniker, ctx)).map(loc =>
+            locationFromDatabase(packageEntity.dump.root, loc)
+        )
+    }
+
+    /**
      * Perform a remote reference lookup on the dumps of the same repository, then on dumps of
      * other repositories. The offset into the set of results (as well as the target set of dumps)
      * depends on the exact values of the pagination cursor. This method returns the new cursor.
@@ -723,54 +612,117 @@ export class Backend {
     }
 
     /**
-     * Return the hover content for the definition or reference at the given position. Returns
-     * undefined if no dump can be loaded to answer this query.
+     * Find the references of the target moniker outside of the current repository. If the moniker
+     * has attached package information, then the cross-repo database is queried for the packages
+     * that require this particular moniker identifier. These dumps are opened, and their
+     * references tables are queried for the target moniker.
      *
-     * @param repository The repository name.
-     * @param commit The commit.
-     * @param path The path of the document to which the position belongs.
-     * @param position The current hover position.
+     * @param dumpId The ID of the dump for which this database answers queries.
+     * @param repository The repository for which this database answers queries.
+     * @param moniker The target moniker.
+     * @param packageInformation The target package.
+     * @param limit The maximum number of remote dumps to search.
+     * @param offset The number of remote dumps to skip.
      * @param ctx The tracing context.
      */
-    public async hover(
+    private async remoteReferences(
+        dumpId: xrepoModels.DumpId,
+        repository: string,
+        moniker: Pick<dumpModels.MonikerData, 'scheme' | 'identifier'>,
+        packageInformation: Pick<dumpModels.PackageInformationData, 'name' | 'version'>,
+        limit: number,
+        offset: number,
+        ctx: TracingContext = {}
+    ): Promise<{ locations: InternalLocation[]; totalCount: number; newOffset: number }> {
+        const { references, totalCount, newOffset } = await this.xrepoDatabase.getReferences({
+            repository,
+            scheme: moniker.scheme,
+            identifier: moniker.identifier,
+            name: packageInformation.name,
+            version: packageInformation.version,
+            limit,
+            offset,
+        })
+
+        const dumps = references.map(r => r.dump)
+        const locations = await this.locationsFromRemoteReferences(dumpId, moniker, dumps, ctx)
+        return { locations, totalCount, newOffset }
+    }
+
+    /**
+     * Find the references of the target moniker outside of the current dump but within a dump of
+     * the same repository. If the moniker has attached package information, then the cross-repo
+     * database is queried for the packages that require this particular moniker identifier. These
+     * dumps are opened, and their references tables are queried for the target moniker.
+     *
+     * @param dumpId The ID of the dump for which this database answers queries.
+     * @param repository The repository for which this database answers queries.
+     * @param commit The commit of the references query.
+     * @param moniker The target moniker.
+     * @param packageInformation The target package.
+     * @param limit The maximum number of remote dumps to search.
+     * @param offset The number of remote dumps to skip.
+     * @param ctx The tracing context.
+     */
+    private async sameRepositoryRemoteReferences(
+        dumpId: xrepoModels.DumpId,
         repository: string,
         commit: string,
-        path: string,
-        position: lsp.Position,
-        dumpId?: number,
+        moniker: Pick<dumpModels.MonikerData, 'scheme' | 'identifier'>,
+        packageInformation: Pick<dumpModels.PackageInformationData, 'name' | 'version'>,
+        limit: number,
+        offset: number,
         ctx: TracingContext = {}
-    ): Promise<{ text: string; range: lsp.Range } | null | undefined> {
-        const closestDatabaseAndDump = await this.loadClosestDatabase(repository, commit, path, dumpId, ctx)
-        if (!closestDatabaseAndDump) {
-            if (ctx.logger) {
-                ctx.logger.warn('No database could be loaded', { repository, commit, path })
+    ): Promise<{ locations: InternalLocation[]; totalCount: number; newOffset: number }> {
+        const { references, totalCount, newOffset } = await this.xrepoDatabase.getSameRepoRemoteReferences({
+            repository,
+            commit,
+            scheme: moniker.scheme,
+            identifier: moniker.identifier,
+            name: packageInformation.name,
+            version: packageInformation.version,
+            limit,
+            offset,
+        })
+
+        const dumps = references.map(r => r.dump)
+        const locations = await this.locationsFromRemoteReferences(dumpId, moniker, dumps, ctx)
+        return { locations, totalCount, newOffset }
+    }
+
+    /**
+     * Query the given dumps for references to the given moniker.
+     *
+     * @param dumpId The ID of the dump for which this database answers queries.
+     * @param moniker The target moniker.
+     * @param dumps The dumps to open.
+     * @param ctx The tracing context.
+     */
+    private async locationsFromRemoteReferences(
+        dumpId: xrepoModels.DumpId,
+        moniker: Pick<dumpModels.MonikerData, 'scheme' | 'identifier'>,
+        dumps: xrepoModels.LsifDump[],
+        ctx: TracingContext = {}
+    ): Promise<InternalLocation[]> {
+        logSpan(ctx, 'package_references', {
+            references: dumps.map(d => ({ repository: d.repository, commit: d.commit })),
+        })
+
+        let locations: InternalLocation[] = []
+        for (const dump of dumps) {
+            // Skip the remote reference that show up for ourselves - we've already gathered
+            // these in the previous step of the references query.
+            if (dump.id === dumpId) {
+                continue
             }
 
-            return undefined
-        }
-        const { database, dump, ctx: newCtx } = closestDatabaseAndDump
-
-        // Try to find hover in the same dump
-        const hover = await database.hover(pathToDatabase(dump.root, path), position, newCtx)
-        if (hover !== null) {
-            return hover
+            const references = (
+                await this.createDatabase(dump).monikerResults(dumpModels.ReferenceModel, moniker, ctx)
+            ).map(loc => locationFromDatabase(dump.root, loc))
+            locations = locations.concat(references)
         }
 
-        // If we don't have a local hover, lookup the definitions of the
-        // range and read the hover data from the remote database. This
-        // can happen when the indexer only gives a moniker but does not
-        // give hover data for externally defined symbols.
-
-        const result = await this.internalDefinitions(repository, commit, path, position, dumpId, ctx)
-        if (result === undefined || result.locations.length === 0) {
-            return null
-        }
-
-        return this.createDatabase(result.locations[0].dump).hover(
-            pathToDatabase(result.locations[0].dump.root, result.locations[0].path),
-            result.locations[0].range.start,
-            newCtx
-        )
+        return locations
     }
 
     /**
@@ -784,6 +736,7 @@ export class Backend {
      * @param repository The repository name.
      * @param commit The target commit.
      * @param file One of the files in the dump.
+     * @param dumpId The identifier of the dump to load. If not supplied, the closest dump will be used.
      * @param ctx The tracing context.
      */
     private async loadClosestDatabase(
@@ -805,5 +758,20 @@ export class Backend {
         }
 
         return undefined
+    }
+
+    /**
+     * Create a database instance backed by the given dump.
+     *
+     * @param dump The dump.
+     */
+    private createDatabase(dump: xrepoModels.LsifDump): Database {
+        return new Database(
+            this.connectionCache,
+            this.documentCache,
+            this.resultChunkCache,
+            dump,
+            dbFilename(this.storageRoot, dump.id, dump.repository, dump.commit)
+        )
     }
 }

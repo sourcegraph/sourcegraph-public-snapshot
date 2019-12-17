@@ -17,4 +17,6 @@ Any user can [enable the LightStep extension for Sourcegraph](https://sourcegrap
 
 # Monitoring a self-hosted Sourcegraph instance
 
-In the management console for a self-hosted Sourcegraph instance, site admins can [configure LightStep tracing](../admin/config/critical_config.md) using the `lightstepAccessToken` and `lightstepProject` critical configuration properties.
+In the site configuration, site admins can [configure LightStep tracing](../admin/config/site_config.md) using the `lightstepAccessToken` and `lightstepProject` configuration properties.
+
+> NOTE: In Sourcegraph versions before v3.11, these options were located in the [critical configuration](../admin/config/critical_config.md).

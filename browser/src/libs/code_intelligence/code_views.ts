@@ -66,6 +66,12 @@ export interface CodeView {
      * Returns a stream of selections changes for a code view.
      */
     observeSelections?: (codeViewElement: HTMLElement) => Observable<Selection[]>
+
+    /**
+     * Returns the scrollBoundaries of the code view, used by codeintellify.
+     * This is called once per code view, when calling Hoverifier.hoverify().
+     */
+    getScrollBoundaries?: (codeViewElement: HTMLElement) => HTMLElement[]
 }
 
 /**

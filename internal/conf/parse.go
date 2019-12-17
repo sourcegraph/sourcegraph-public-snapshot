@@ -35,9 +35,6 @@ func ParseConfig(data conftypes.RawUnified) (*Unified, error) {
 	cfg := &Unified{
 		ServiceConnections: data.ServiceConnections,
 	}
-	if err := parseConfigData(data.Critical, &cfg.Critical); err != nil {
-		return nil, err
-	}
 	if err := parseConfigData(data.Site, &cfg.SiteConfiguration); err != nil {
 		return nil, err
 	}
@@ -56,15 +53,13 @@ var requireRestart = []string{
 	"searchScopes",
 	"extensions",
 	"disablePublicRepoRedirects",
-
-	// Options defined in critical.schema.json are prefixed with "critical::"
-	"critical::lightstepAccessToken",
-	"critical::lightstepProject",
-	"critical::auth.userOrgMap",
-	"critical::auth.providers",
-	"critical::externalURL",
-	"critical::update.channel",
-	"critical::useJaeger",
+	"lightstepAccessToken",
+	"lightstepProject",
+	"auth.userOrgMap",
+	"auth.providers",
+	"externalURL",
+	"update.channel",
+	"useJaeger",
 }
 
 // NeedRestartToApply determines if a restart is needed to apply the changes

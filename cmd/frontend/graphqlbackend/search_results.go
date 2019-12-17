@@ -754,6 +754,8 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Pa
 	includePatterns = append(includePatterns, langIncludePatterns...)
 	excludePatterns = append(excludePatterns, langExcludePatterns...)
 
+	languages, _ := r.query.StringValues(query.FieldLang)
+
 	patternInfo := &search.PatternInfo{
 		IsRegExp:                     isRegExp,
 		IsStructuralPat:              isStructuralPat,
@@ -764,6 +766,7 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Pa
 		FilePatternsReposMustInclude: filePatternsReposMustInclude,
 		FilePatternsReposMustExclude: filePatternsReposMustExclude,
 		PathPatternsAreRegExps:       true,
+		Languages:                    languages,
 		PathPatternsAreCaseSensitive: r.query.IsCaseSensitive(),
 		CombyRule:                    strings.Join(combyRule, ""),
 	}

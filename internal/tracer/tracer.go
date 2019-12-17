@@ -127,7 +127,7 @@ func Init(options ...Option) {
 		handler = log15.LvlFilterHandler(lvl, handler)
 	}
 	log15.Root().SetHandler(log15.LvlFilterHandler(lvl, handler))
-	if conf.Get().Critical.UseJaeger {
+	if conf.Get().UseJaeger {
 		log15.Info("Distributed tracing enabled", "tracer", "jaeger")
 		cfg, err := jaegercfg.FromEnv()
 		if err != nil {
@@ -154,7 +154,7 @@ func Init(options ...Option) {
 		return
 	}
 
-	lightstepAccessToken := conf.Get().Critical.LightstepAccessToken
+	lightstepAccessToken := conf.Get().LightstepAccessToken
 	if lightstepAccessToken != "" {
 		log15.Info("Distributed tracing enabled", "tracer", "Lightstep")
 		opentracing.InitGlobalTracer(lightstep.NewTracer(lightstep.Options{
@@ -185,7 +185,7 @@ func lightStepSpanURL(span opentracing.Span) string {
 	t := span.(interface {
 		Start() time.Time
 	}).Start().UnixNano() / 1000
-	return fmt.Sprintf("https://app.lightstep.com/%s/trace?span_guid=%x&at_micros=%d#span-%x", conf.Get().Critical.LightstepProject, spanCtx.SpanID, t, spanCtx.SpanID)
+	return fmt.Sprintf("https://app.lightstep.com/%s/trace?span_guid=%x&at_micros=%d#span-%x", conf.Get().LightstepProject, spanCtx.SpanID, t, spanCtx.SpanID)
 }
 
 func jaegerSpanURL(span opentracing.Span) string {

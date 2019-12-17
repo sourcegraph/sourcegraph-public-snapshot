@@ -1,10 +1,8 @@
 import { Driver } from '../../../shared/src/e2e/driver'
 import { createAndInitializeDriver } from './util/init'
 import { getConfig } from '../../../shared/src/e2e/config'
-import { editCriticalSiteConfig } from './util/helpers'
 import { Key } from 'ts-key-enum'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
-import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import delay from 'delay'
 
 /**
@@ -12,11 +10,9 @@ import delay from 'delay'
  */
 
 describe('Initialize new instance', () => {
-    const formattingOptions = { eol: '\n', insertSpaces: true, tabSize: 2 }
     const config = getConfig(
         'init',
         'sourcegraphBaseUrl',
-        'managementConsoleUrl',
         'sudoUsername',
         'testUserPassword',
         'noCleanup',
@@ -52,35 +48,11 @@ describe('Initialize new instance', () => {
             await driver.waitUntilURL(`${config.sourcegraphBaseUrl}/site-admin`)
             await driver.page.waitForSelector('input[type="password"]', { timeout: 5 * 1000 })
 
-            const managementConsolePassword = await driver.page.evaluate(() => {
-                const mgtPasswordEl = document.querySelector('input[type="password"]')
-                if (!mgtPasswordEl) {
-                    return null
-                }
-                return mgtPasswordEl.getAttribute('value')
-            })
-            if (!managementConsolePassword) {
-                throw new Error('Could not obtain management console password')
-            }
-
-            expect(
-                await driver.page.evaluate(() => document.body.innerText.includes('Update critical configuration'))
-            ).toBe(true)
-
-            await editCriticalSiteConfig(config.managementConsoleUrl, managementConsolePassword, contents =>
-                jsoncEdit.setProperty(contents, ['externalURL'], config.sourcegraphBaseUrl, formattingOptions)
-            )
-
             await retry(
                 async () => {
                     await driver.page.reload()
                     await driver.findElementWithText('Configure external services', { wait: { timeout: 5 * 1000 } })
                     await delay(1000)
-                    expect(
-                        await driver.page.evaluate(() =>
-                            document.body.innerText.includes('Update critical configuration')
-                        )
-                    ).toBe(false)
                 },
                 { retries: 10 }
             )

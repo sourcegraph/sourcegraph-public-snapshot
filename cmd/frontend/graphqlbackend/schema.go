@@ -384,9 +384,6 @@ type Mutation {
     requestTrial(email: String!): EmptyResponse
     # Manages the extension registry.
     extensionRegistry: ExtensionRegistryMutation!
-    # Clears the management console plaintext password forever. Only site
-    # admins can perform this action.
-    clearManagementConsolePlaintextPassword: EmptyResponse
     # Mutations that are only used on Sourcegraph.com.
     #
     # FOR INTERNAL USE ONLY.
@@ -3506,20 +3503,6 @@ type Site implements SettingsSubject {
         # Months of history.
         months: Int
     ): SiteUsageStatistics!
-    # Information about this site's management console.
-    #
-    # Only site admins may retrieve this information.
-    managementConsoleState: ManagementConsoleState!
-}
-
-# Information about this site's management console.
-#
-# Only site admins may retrieve this information.
-type ManagementConsoleState {
-    # The plaintext password of the management console, which is automatically
-    # generated. This can only be retrieved until the admin clears it, after
-    # which it is impossible to retrieve.
-    plaintextPassword: String
 }
 
 # The configuration for a site.

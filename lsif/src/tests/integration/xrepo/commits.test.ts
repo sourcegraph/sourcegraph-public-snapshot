@@ -1,4 +1,5 @@
 import * as util from '../integration-test-util'
+import * as xrepoModels from '../../../shared/models/xrepo'
 import nock from 'nock'
 import { XrepoDatabase } from '../../../shared/xrepo/xrepo'
 
@@ -28,15 +29,17 @@ describe('discoverAndUpdateCommit', () => {
             )
 
             // Ensure all commits are now tracked
-            expect(await xrepoDatabase.isCommitTracked('test-repo', ca)).toBeTruthy()
-            expect(await xrepoDatabase.isCommitTracked('test-repo', cb)).toBeTruthy()
-            expect(await xrepoDatabase.isCommitTracked('test-repo', cc)).toBeTruthy()
+            expect((await connection.getRepository(xrepoModels.Commit).find()).map(c => c.commit).sort()).toEqual([
+                ca,
+                cb,
+                cc,
+            ])
         } finally {
             await cleanup()
         }
     })
 
-    it.skip('should early-out if commit is tracked', async () => {
+    it('should early-out if commit is tracked', async () => {
         const ca = util.createCommit()
         const cb = util.createCommit()
 
@@ -94,7 +97,7 @@ describe('discoverAndUpdateCommit', () => {
 })
 
 describe('discoverAndUpdateTips', () => {
-    it.skip('should update tips', async () => {
+    it('should update tips', async () => {
         const ca = util.createCommit()
         const cb = util.createCommit()
         const cc = util.createCommit()

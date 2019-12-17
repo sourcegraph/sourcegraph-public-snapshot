@@ -16,50 +16,44 @@ func TestDiff(t *testing.T) {
 	}{
 		{
 			name:   "diff",
-			before: &Unified{Critical: schema.CriticalConfiguration{ExternalURL: "a"}},
-			after:  &Unified{Critical: schema.CriticalConfiguration{ExternalURL: "b"}},
-			want:   []string{"critical::externalURL"},
+			before: &Unified{SiteConfiguration: schema.SiteConfiguration{ExternalURL: "a"}},
+			after:  &Unified{SiteConfiguration: schema.SiteConfiguration{ExternalURL: "b"}},
+			want:   []string{"externalURL"},
 		},
 		{
 			name:   "nodiff",
-			before: &Unified{Critical: schema.CriticalConfiguration{ExternalURL: "a"}},
-			after:  &Unified{Critical: schema.CriticalConfiguration{ExternalURL: "a"}},
+			before: &Unified{SiteConfiguration: schema.SiteConfiguration{ExternalURL: "a"}},
+			after:  &Unified{SiteConfiguration: schema.SiteConfiguration{ExternalURL: "a"}},
 			want:   nil,
 		},
 		{
 			name: "slice_diff",
 			before: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{GitCloneURLToRepositoryName: []*schema.CloneURLToRepositoryName{{From: "a"}}},
-				Critical:          schema.CriticalConfiguration{ExternalURL: "a"},
+				SiteConfiguration: schema.SiteConfiguration{GitCloneURLToRepositoryName: []*schema.CloneURLToRepositoryName{{From: "a"}}, ExternalURL: "a"},
 			},
 			after: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{GitCloneURLToRepositoryName: []*schema.CloneURLToRepositoryName{{From: "b"}}},
-				Critical:          schema.CriticalConfiguration{ExternalURL: "a"},
+				SiteConfiguration: schema.SiteConfiguration{GitCloneURLToRepositoryName: []*schema.CloneURLToRepositoryName{{From: "b"}}, ExternalURL: "a"},
 			},
 			want: []string{"git.cloneURLToRepositoryName"},
 		},
 		{
 			name: "slice_nodiff",
 			before: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{GitCloneURLToRepositoryName: []*schema.CloneURLToRepositoryName{{From: "a"}}},
-				Critical:          schema.CriticalConfiguration{ExternalURL: "a"},
+				SiteConfiguration: schema.SiteConfiguration{GitCloneURLToRepositoryName: []*schema.CloneURLToRepositoryName{{From: "a"}}, ExternalURL: "a"},
 			},
 			after: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{GitCloneURLToRepositoryName: []*schema.CloneURLToRepositoryName{{From: "a"}}},
-				Critical:          schema.CriticalConfiguration{ExternalURL: "a"},
+				SiteConfiguration: schema.SiteConfiguration{GitCloneURLToRepositoryName: []*schema.CloneURLToRepositoryName{{From: "a"}}, ExternalURL: "a"},
 			},
 		},
 		{
 			name: "multi_diff",
 			before: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{GitCloneURLToRepositoryName: []*schema.CloneURLToRepositoryName{{From: "b"}}},
-				Critical:          schema.CriticalConfiguration{ExternalURL: "a"},
+				SiteConfiguration: schema.SiteConfiguration{GitCloneURLToRepositoryName: []*schema.CloneURLToRepositoryName{{From: "b"}}, ExternalURL: "a"},
 			},
 			after: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{GitCloneURLToRepositoryName: []*schema.CloneURLToRepositoryName{{From: "a"}}},
-				Critical:          schema.CriticalConfiguration{ExternalURL: "b"},
+				SiteConfiguration: schema.SiteConfiguration{GitCloneURLToRepositoryName: []*schema.CloneURLToRepositoryName{{From: "a"}}, ExternalURL: "b"},
 			},
-			want: []string{"critical::externalURL", "git.cloneURLToRepositoryName"},
+			want: []string{"externalURL", "git.cloneURLToRepositoryName"},
 		},
 		{
 			name: "experimental_features",

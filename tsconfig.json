@@ -6,7 +6,6 @@
     { "path": "browser" },
     { "path": "lsif" },
     { "path": "schema" },
-    { "path": "cmd/management-console/web" },
     { "path": "packages/sourcegraph-extension-api" },
     { "path": "packages/@sourcegraph/extension-api-types" },
     { "path": "dev/release" },
