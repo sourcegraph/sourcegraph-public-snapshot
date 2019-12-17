@@ -852,19 +852,18 @@ func TestChangesetCountsOverTime(t *testing.T) {
 	}
 }
 
-const testDiff = `diff --git a/README.md b/README.md
+const testDiff = `diff README.md README.md
 index 671e50a..851b23a 100644
---- a/README.md
-+++ b/README.md
-@@ -1,3 +1,3 @@
+--- README.md
++++ README.md
+@@ -1,2 +1,2 @@
  # README
- 
 -This file is hosted at example.com and is a test file.
 +This file is hosted at sourcegraph.com and is a test file.
-diff --git a/urls.txt b/urls.txt
+diff --git urls.txt urls.txt
 index 6f8b5d9..17400bc 100644
---- a/urls.txt
-+++ b/urls.txt
+--- urls.txt
++++ urls.txt
 @@ -1,3 +1,3 @@
  another-url.com
 -example.com
@@ -878,21 +877,21 @@ var wantFileDiffs = FileDiffs{
 	DiffStat: DiffStat{Changed: 2},
 	Nodes: []FileDiff{
 		{
-			OldPath: "a/README.md",
-			NewPath: "b/README.md",
+			OldPath: "README.md",
+			NewPath: "README.md",
 			OldFile: File{Name: "README.md"},
 			Hunks: []FileDiffHunk{
 				{
-					Body:     " # README\n \n-This file is hosted at example.com and is a test file.\n+This file is hosted at sourcegraph.com and is a test file.\n",
-					OldRange: DiffRange{StartLine: 1, Lines: 3},
-					NewRange: DiffRange{StartLine: 1, Lines: 3},
+					Body:     " # README\n-This file is hosted at example.com and is a test file.\n+This file is hosted at sourcegraph.com and is a test file.\n",
+					OldRange: DiffRange{StartLine: 1, Lines: 2},
+					NewRange: DiffRange{StartLine: 1, Lines: 2},
 				},
 			},
 			Stat: DiffStat{Changed: 1},
 		},
 		{
-			OldPath: "a/urls.txt",
-			NewPath: "b/urls.txt",
+			OldPath: "urls.txt",
+			NewPath: "urls.txt",
 			OldFile: File{Name: "urls.txt"},
 			Hunks: []FileDiffHunk{
 				{

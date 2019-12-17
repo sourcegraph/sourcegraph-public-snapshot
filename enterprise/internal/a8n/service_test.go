@@ -68,9 +68,9 @@ func TestService(t *testing.T) {
 
 		svc := NewServiceWithClock(store, nil, repoResolveRevision, nil, clock)
 
-		const patch = `diff --git a/f b/f
---- a/f
-+++ b/f
+		const patch = `diff f f
+--- f
++++ f
 @@ -1,1 +1,2 @@
 +x
  y
