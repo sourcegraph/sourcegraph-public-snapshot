@@ -772,6 +772,8 @@ type Settings struct {
 	AlertsShowPatchUpdates bool `json:"alerts.showPatchUpdates,omitempty"`
 	// CodeHostUseNativeTooltips description: Whether to use the code host's native hover tooltips when they exist (GitHub's jump-to-definition tooltips, for example).
 	CodeHostUseNativeTooltips bool `json:"codeHost.useNativeTooltips,omitempty"`
+	// ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
+	ExperimentalFeatures *SettingsExperimentalFeatures `json:"experimentalFeatures,omitempty"`
 	// Extensions description: The Sourcegraph extensions to use. Enable an extension by adding a property `"my/extension": true` (where `my/extension` is the extension ID). Override a previously enabled extension and disable it by setting its value to `false`.
 	Extensions map[string]bool `json:"extensions,omitempty"`
 	// Motd description: DEPRECATED: Use `notices` instead.
@@ -800,6 +802,12 @@ type Settings struct {
 	SearchSavedQueries []*SearchSavedQueries `json:"search.savedQueries,omitempty"`
 	// SearchScopes description: Predefined search scopes
 	SearchScopes []*SearchScope `json:"search.scopes,omitempty"`
+}
+
+// SettingsExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
+type SettingsExperimentalFeatures struct {
+	// SplitSearchModes description: Enables toggling between the current omni search mode, and experimental interactive search mode.
+	SplitSearchModes *bool `json:"splitSearchModes,omitempty"`
 }
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.

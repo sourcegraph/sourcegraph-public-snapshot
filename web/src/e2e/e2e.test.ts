@@ -1486,12 +1486,22 @@ describe('e2e test suite', () => {
 
     describe('Interactive search mode (feature flagged)', () => {
         let previousExperimentalFeatures: any
+
         beforeAll(async () => {
-            await driver.setConfig(['experimentalFeatures'], prev => {
-                previousExperimentalFeatures = prev?.value
-                return { splitSearchModes: 'enabled' }
+            await driver.page.goto(sourcegraphBaseUrl + '/site-admin/global-settings')
+            await driver.page.waitForSelector('.e2e-settings-file .monaco-editor')
+
+            await driver.replaceText({
+                selector: '.e2e-settings-file .monaco-editor',
+                newText: JSON.stringify({
+                    experimentalFeatures: {
+                        splitSearchModes: true,
+                    },
+                }),
+                selectMethod: 'keyboard',
             })
 
+            await driver.page.click('.e2e-settings-file .e2e-save-toolbar-save')
             // wait for configuration to be applied
             await retry(
                 async () => {
