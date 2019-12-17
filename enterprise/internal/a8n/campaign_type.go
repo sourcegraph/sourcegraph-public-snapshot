@@ -39,6 +39,8 @@ var schemas = map[string]string{
 	"credentials": schema.CredentialsCampaignTypeSchemaJSON,
 }
 
+const patchCampaignType = "patch"
+
 // NewCampaignType returns a new CampaignType for the given campaign type name
 // and arguments.
 func NewCampaignType(campaignTypeName, args string, cf *httpcli.Factory) (CampaignType, error) {
@@ -388,12 +390,4 @@ func tmpfileDiff(filename, a, b string) (string, error) {
 		}
 	}
 	return string(out), nil
-}
-
-const patchCampaignType = "patch"
-
-type CampaignPlanPatch struct {
-	Repo         api.RepoID
-	BaseRevision string
-	Patch        string
 }
