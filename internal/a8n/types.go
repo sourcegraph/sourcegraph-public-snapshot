@@ -110,9 +110,10 @@ type ChangesetState string
 
 // ChangesetState constants.
 const (
-	ChangesetStateOpen   ChangesetState = "OPEN"
-	ChangesetStateClosed ChangesetState = "CLOSED"
-	ChangesetStateMerged ChangesetState = "MERGED"
+	ChangesetStateOpen    ChangesetState = "OPEN"
+	ChangesetStateClosed  ChangesetState = "CLOSED"
+	ChangesetStateMerged  ChangesetState = "MERGED"
+	ChangesetStateDeleted ChangesetState = "DELETED"
 )
 
 // Valid returns true if the given Changeset is valid.
@@ -120,7 +121,8 @@ func (s ChangesetState) Valid() bool {
 	switch s {
 	case ChangesetStateOpen,
 		ChangesetStateClosed,
-		ChangesetStateMerged:
+		ChangesetStateMerged,
+		ChangesetStateDeleted:
 		return true
 	default:
 		return false
@@ -225,6 +227,7 @@ type Changeset struct {
 	CampaignIDs         []int64
 	ExternalID          string
 	ExternalServiceType string
+	ExternalDeletedAt   time.Time
 }
 
 // Clone returns a clone of a Changeset.
@@ -282,8 +285,24 @@ func (t *Changeset) Body() (string, error) {
 	}
 }
 
+// SetDeleted sets the internal state of a Changeset so that its State is
+// ChangesetStateDeleted.
+func (c *Changeset) SetDeleted() {
+	c.ExternalDeletedAt = time.Now().UTC().Truncate(time.Microsecond)
+}
+
+// IsDeleted returns true when the Changeset's ExternalDeletedAt is a non-zero
+// timestamp.
+func (c *Changeset) IsDeleted() bool {
+	return !c.ExternalDeletedAt.IsZero()
+}
+
 // State of a Changeset.
 func (t *Changeset) State() (s ChangesetState, err error) {
+	if !t.ExternalDeletedAt.IsZero() {
+		return ChangesetStateDeleted, nil
+	}
+
 	switch m := t.Metadata.(type) {
 	case *github.PullRequest:
 		s = ChangesetState(m.State)

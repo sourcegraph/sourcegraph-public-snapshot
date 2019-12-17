@@ -642,6 +642,7 @@ enum ChangesetState {
     OPEN
     CLOSED
     MERGED
+    DELETED
 }
 
 # The state of a Changeset Review

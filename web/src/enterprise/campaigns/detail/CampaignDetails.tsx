@@ -61,7 +61,7 @@ const jsonSchemaByType: { [K in CampaignType]: any } = {
     credentials: credentialsJsonSchema,
 }
 
-const defaultInputByType: { [K in CampaignType]: any } = {
+const defaultInputByType: { [K in CampaignType]: string } = {
     comby: `{
     "scopeQuery": "repo:github.com/foo/bar",
     "matchTemplate": "",
