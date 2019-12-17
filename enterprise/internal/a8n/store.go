@@ -370,10 +370,11 @@ func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 // ListChangesetsOpts captures the query options needed for
 // listing changesets.
 type ListChangesetsOpts struct {
-	Cursor     int64
-	Limit      int
-	CampaignID int64
-	IDs        []int64
+	Cursor         int64
+	Limit          int
+	CampaignID     int64
+	IDs            []int64
+	WithoutDeleted bool
 }
 
 // ListChangesets lists Changesets with the given filters.
@@ -440,6 +441,10 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 			}
 		}
 		preds = append(preds, sqlf.Sprintf("id IN (%s)", sqlf.Join(ids, ",")))
+	}
+
+	if opts.WithoutDeleted {
+		preds = append(preds, sqlf.Sprintf("external_deleted_at IS NULL"))
 	}
 
 	return sqlf.Sprintf(

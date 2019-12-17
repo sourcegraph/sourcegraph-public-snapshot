@@ -497,6 +497,17 @@ func testStore(db *sql.DB) func(*testing.T) {
 						cursor = next
 					}
 				}
+
+				{
+					have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{WithoutDeleted: true})
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if len(have) != 0 {
+						t.Fatalf("have %d changesets. want 0", len(have))
+					}
+				}
 			})
 
 			t.Run("Get", func(t *testing.T) {
