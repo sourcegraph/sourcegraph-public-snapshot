@@ -280,33 +280,22 @@ func (t *Changeset) Body() (string, error) {
 
 // SetDeleted sets the internal state of a Changeset so that its State is
 // ChangesetStateDeleted.
-func (t *Changeset) SetDeleted() error {
-	switch m := t.Metadata.(type) {
-	case *github.PullRequest:
-		m.State = "DELETED"
-	case *bitbucketserver.PullRequest:
-		m.State = "DELETED"
-	default:
-		return errors.New("unknown changeset type")
-	}
-
-	t.ExternalDeletedAt = time.Now().UTC().Truncate(time.Microsecond)
-
-	return nil
+func (c *Changeset) SetDeleted() {
+	c.ExternalDeletedAt = time.Now().UTC().Truncate(time.Microsecond)
 }
 
 // IsDeleted returns true when the Changeset's ExternalDeletedAt is a non-zero
-// timestamp and its State is ChangesetStateDeleted
-func (t *Changeset) IsDeleted() bool {
-	s, err := t.State()
-	if err != nil {
-		return false
-	}
-	return s == ChangesetStateDeleted && !t.ExternalDeletedAt.IsZero()
+// timestamp.
+func (c *Changeset) IsDeleted() bool {
+	return !c.ExternalDeletedAt.IsZero()
 }
 
 // State of a Changeset.
 func (t *Changeset) State() (s ChangesetState, err error) {
+	if !t.ExternalDeletedAt.IsZero() {
+		return ChangesetStateDeleted, nil
+	}
+
 	switch m := t.Metadata.(type) {
 	case *github.PullRequest:
 		s = ChangesetState(m.State)
