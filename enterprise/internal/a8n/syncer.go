@@ -65,12 +65,18 @@ func (s *ChangesetSyncer) SyncChangesetsWithSources(ctx context.Context, bySourc
 	)
 
 	for _, s := range bySource {
-		notFound, err := s.LoadChangesets(ctx, s.Changesets...)
+		var notFound []*repos.Changeset
+
+		err := s.LoadChangesets(ctx, s.Changesets...)
 		if err != nil {
-			return err
+			notFoundErr, ok := err.(repos.ChangesetsNotFoundError)
+			if !ok {
+				return err
+			}
+			notFound = notFoundErr.NotFound
 		}
 
-		notFoundById := make(map[int64]*repos.Changeset)
+		notFoundById := make(map[int64]*repos.Changeset, len(notFound))
 		for _, c := range notFound {
 			notFoundById[c.Changeset.ID] = c
 		}

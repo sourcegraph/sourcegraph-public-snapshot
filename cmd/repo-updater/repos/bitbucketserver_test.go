@@ -8,11 +8,9 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -224,19 +222,18 @@ func TestBitbucketServerSource_LoadChangesets(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name     string
-		cs       []*Changeset
-		notFound []*Changeset
-		err      string
+		name string
+		cs   []*Changeset
+		err  string
 	}{
 		{
 			name: "found",
 			cs:   []*Changeset{changesets[0], changesets[1]},
 		},
 		{
-			name:     "subset-not-found",
-			cs:       []*Changeset{changesets[0], changesets[2]},
-			notFound: []*Changeset{changesets[2]},
+			name: "subset-not-found",
+			cs:   []*Changeset{changesets[0], changesets[2]},
+			err:  `Changeset with external ID "999" not found`,
 		},
 	}
 
@@ -271,17 +268,13 @@ func TestBitbucketServerSource_LoadChangesets(t *testing.T) {
 
 			tc.err = strings.ReplaceAll(tc.err, "${INSTANCEURL}", instanceURL)
 
-			notFound, err := bbsSrc.LoadChangesets(ctx, tc.cs...)
+			err = bbsSrc.LoadChangesets(ctx, tc.cs...)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
 
 			if err != nil {
 				return
-			}
-
-			if have, want := notFound, tc.notFound; !reflect.DeepEqual(have, want) {
-				t.Fatalf("notFound:\n%s", cmp.Diff(have, want))
 			}
 
 			meta := make([]*bitbucketserver.PullRequest, 0, len(tc.cs))

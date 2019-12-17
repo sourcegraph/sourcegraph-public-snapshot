@@ -157,14 +157,14 @@ func (s BitbucketServerSource) CloseChangeset(ctx context.Context, c *Changeset)
 }
 
 // LoadChangesets loads the latest state of the given Changesets from the codehost.
-func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Changeset) ([]*Changeset, error) {
+func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Changeset) error {
 	var notFound []*Changeset
 
 	for i := range cs {
 		repo := cs[i].Repo.Metadata.(*bitbucketserver.Repo)
 		number, err := strconv.Atoi(cs[i].ExternalID)
 		if err != nil {
-			return notFound, err
+			return err
 		}
 
 		pr := &bitbucketserver.PullRequest{ID: number}
@@ -181,18 +181,22 @@ func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Change
 				continue
 			}
 
-			return notFound, err
+			return err
 		}
 
 		err = s.client.LoadPullRequestActivities(ctx, pr)
 		if err != nil {
-			return notFound, err
+			return err
 		}
 
 		cs[i].Changeset.Metadata = pr
 	}
 
-	return notFound, nil
+	if len(notFound) > 0 {
+		return ChangesetsNotFoundError{NotFound: notFound}
+	}
+
+	return nil
 }
 
 // ExternalServices returns a singleton slice containing the external service.
