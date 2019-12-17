@@ -376,18 +376,42 @@ func (p *repoPaginationPlan) execute(ctx context.Context, exec executor) (c *sea
 	nextCursor := &searchCursor{ResultOffset: sliced.resultOffset}
 
 	if len(sliced.results) > 0 {
+		// First, identify what repository corresponds to the last result.
 		lastRepoConsumedName, _ := sliced.results[len(sliced.results)-1].searchResultURIs()
-		for globalOffset, repo := range p.repositories {
+		var lastRepoConsumed *types.Repo
+		for _, repo := range p.repositories {
 			if string(repo.Repo.Name) == lastRepoConsumedName {
+				lastRepoConsumed = repo.Repo
+			}
+		}
+
+		// If any repositories were cloning or missing, then we need to skip
+		// over them. We aren't sure though what position those errored
+		// repositories have relative to lastRepoConsumed, though, so we figure
+		// that out now. For example, a cloning repository could be last or
+		// first in the results and we need to know the position for the cursor
+		// RepositoryOffset.
+		potentialLastRepos := []*types.Repo{lastRepoConsumed}
+		potentialLastRepos = append(potentialLastRepos, sliced.common.cloning...)
+		potentialLastRepos = append(potentialLastRepos, sliced.common.missing...)
+		sort.Slice(potentialLastRepos, func(i, j int) bool {
+			return repoIsLess(potentialLastRepos[i], potentialLastRepos[j])
+		})
+		lastRepoConsumed = potentialLastRepos[len(potentialLastRepos)-1]
+
+		// Find the last repo's global offset.
+		for globalOffset, repo := range p.repositories {
+			if repo.Repo.Name == lastRepoConsumed.Name {
 				nextCursor.RepositoryOffset = int32(globalOffset)
 			}
 		}
 	}
+
 	lastRepoConsumedPartially := sliced.resultOffset != 0
 	if !lastRepoConsumedPartially {
 		nextCursor.RepositoryOffset++
 	}
-	nextCursor.Finished = !sliced.limitHit || int(nextCursor.RepositoryOffset) == len(p.repositories) // Finished if we searched the last repository
+	nextCursor.Finished = len(sliced.results) == 0 || !sliced.limitHit && int(nextCursor.RepositoryOffset) == len(p.repositories) // Finished if we searched the last repository
 	return nextCursor, sliced.results, sliced.common, nil
 }
 
@@ -415,12 +439,21 @@ type slicedSearchResults struct {
 // returns an updated searchResultsCommon structure to reflect that, as well as
 // information about the slicing that was performed.
 func sliceSearchResults(results []SearchResultResolver, common *searchResultsCommon, offset, limit int) (final slicedSearchResults) {
+	firstRepo := ""
+	if len(results[:offset]) > 0 {
+		firstRepo, _ = results[offset].searchResultURIs()
+	}
 	// First we handle the case of having few enough results that we do not
 	// need to slice anything.
 	if len(results[offset:]) <= limit {
 		results = results[offset:]
 		final.results = results
-		final.common = common
+		if len(final.results) > 0 {
+			lastResultRepo, _ := final.results[len(final.results)-1].searchResultURIs()
+			final.common = sliceSearchResultsCommon(common, firstRepo, lastResultRepo)
+		} else {
+			final.common = sliceSearchResultsCommon(common, firstRepo, "")
+		}
 		return
 	}
 	final.limitHit = true
@@ -469,21 +502,9 @@ func sliceSearchResults(results []SearchResultResolver, common *searchResultsCom
 
 	// Construct the new searchResultsCommon structure for just the results
 	// we're returning.
-	final.results = make([]SearchResultResolver, 0, limit)
-	final.common = &searchResultsCommon{
-		limitHit:         false, // irrelevant in paginated search
-		indexUnavailable: common.indexUnavailable,
-		partial:          make(map[api.RepoName]struct{}),
-	}
-	copy := func(repo *types.Repo, targetList *[]*types.Repo, ifInsideList []*types.Repo) {
-		for _, r := range ifInsideList {
-			if repo == r {
-				*targetList = append(*targetList, repo)
-				return
-			}
-		}
-	}
 	seenRepos := map[string]struct{}{}
+	finalResults := make([]SearchResultResolver, 0, limit)
+	finalResultCount := int32(0)
 	for _, r := range results[:limit] {
 		repoName, _ := r.searchResultURIs()
 		if _, ok := seenRepos[repoName]; ok {
@@ -495,19 +516,51 @@ func sliceSearchResults(results []SearchResultResolver, common *searchResultsCom
 		results := resultsByRepo[repo]
 
 		// Include the results and copy over metadata from the common structure.
-		final.results = append(final.results, results...)
-		final.common.resultCount += int32(len(results))
-		copy(repo, &final.common.repos, common.repos)
-		copy(repo, &final.common.searched, common.searched)
-		copy(repo, &final.common.indexed, common.indexed)
-		copy(repo, &final.common.cloning, common.cloning)
-		copy(repo, &final.common.missing, common.missing)
-		copy(repo, &final.common.timedout, common.timedout)
-		if _, ok := common.partial[repo.Name]; ok {
-			final.common.partial[repo.Name] = struct{}{}
-		}
+		finalResults = append(finalResults, results...)
+		finalResultCount += int32(len(results))
 	}
+	final.common = sliceSearchResultsCommon(common, firstRepo, lastResultRepo)
+	final.common.resultCount = finalResultCount
+	final.results = finalResults
 	return
+}
+
+func sliceSearchResultsCommon(common *searchResultsCommon, firstResultRepo, lastResultRepo string) *searchResultsCommon {
+	if len(common.partial) > 0 {
+		panic("never here: partial results should never be present in paginated search")
+	}
+	final := &searchResultsCommon{
+		limitHit:         false, // irrelevant in paginated search
+		indexUnavailable: common.indexUnavailable,
+		partial:          make(map[api.RepoName]struct{}),
+		resultCount:      common.resultCount,
+	}
+
+	doAppend := func(dst, src []*types.Repo) []*types.Repo {
+		sort.Slice(src, func(i, j int) bool {
+			return repoIsLess(src[i], src[j])
+		})
+		for _, r := range src {
+			if lastResultRepo == "" || string(r.Name) > lastResultRepo {
+				continue
+			}
+			if firstResultRepo != "" && string(r.Name) < firstResultRepo {
+				continue
+			}
+			dst = append(dst, r)
+			if string(r.Name) == lastResultRepo {
+				break
+			}
+		}
+		return dst
+	}
+	final.repos = doAppend(final.repos, common.repos)
+	final.searched = doAppend(final.searched, common.searched)
+	final.indexed = doAppend(final.indexed, common.indexed)
+	final.cloning = doAppend(final.cloning, common.cloning)
+	final.missing = doAppend(final.missing, common.missing)
+	final.timedout = doAppend(final.timedout, common.timedout)
+	return final
 }
 
 // clamp clamps x into the range of [min, max].

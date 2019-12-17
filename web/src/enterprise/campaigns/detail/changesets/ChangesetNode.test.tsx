@@ -70,6 +70,7 @@ describe('ChangesetNode', () => {
                                             changed: 200,
                                             deleted: 100,
                                         },
+                                        nodes: [{ __typename: 'FileDiff' }],
                                     },
                                 },
                                 repository: {

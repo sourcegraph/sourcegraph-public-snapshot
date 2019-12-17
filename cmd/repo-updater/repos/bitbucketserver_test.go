@@ -215,6 +215,12 @@ func TestBitbucketServerSource_LoadChangesets(t *testing.T) {
 		},
 	}
 
+	changesets := []*Changeset{
+		{Repo: repo, Changeset: &a8n.Changeset{ExternalID: "2"}},
+		{Repo: repo, Changeset: &a8n.Changeset{ExternalID: "4"}},
+		{Repo: repo, Changeset: &a8n.Changeset{ExternalID: "999"}},
+	}
+
 	testCases := []struct {
 		name string
 		cs   []*Changeset
@@ -222,18 +228,12 @@ func TestBitbucketServerSource_LoadChangesets(t *testing.T) {
 	}{
 		{
 			name: "found",
-			cs: []*Changeset{
-				{Repo: repo, Changeset: &a8n.Changeset{ExternalID: "2"}},
-				{Repo: repo, Changeset: &a8n.Changeset{ExternalID: "4"}},
-			},
+			cs:   []*Changeset{changesets[0], changesets[1]},
 		},
 		{
 			name: "subset-not-found",
-			cs: []*Changeset{
-				{Repo: repo, Changeset: &a8n.Changeset{ExternalID: "2"}},
-				{Repo: repo, Changeset: &a8n.Changeset{ExternalID: "999"}},
-			},
-			err: "Bitbucket API HTTP error: code=404 url=\"${INSTANCEURL}/rest/api/1.0/projects/SOUR/repos/vegeta/pull-requests/999\" body=\"{\\\"errors\\\":[{\\\"context\\\":null,\\\"message\\\":\\\"Pull request 999 does not exist in SOUR/vegeta.\\\",\\\"exceptionName\\\":\\\"com.atlassian.bitbucket.pull.NoSuchPullRequestException\\\"}]}\"",
+			cs:   []*Changeset{changesets[0], changesets[2]},
+			err:  `Changeset with external ID "999" not found`,
 		},
 	}
 

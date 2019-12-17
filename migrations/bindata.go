@@ -90,6 +90,8 @@
 // 1528395625_lsif_uploads.up.sql (795B)
 // 1528395626_create_explicit_repo_permissions_tables.down.sql (550B)
 // 1528395626_create_explicit_repo_permissions_tables.up.sql (2.612kB)
+// 1528395627_add_external_deleted_at_to_changesets.down.sql (83B)
+// 1528395627_add_external_deleted_at_to_changesets.up.sql (84B)
 
 package migrations
 
@@ -1958,6 +1960,46 @@ func _1528395626_create_explicit_repo_permissions_tablesUpSql() (*asset, error) 
 	return a, nil
 }
 
+var __1528395627_add_external_deleted_at_to_changesetsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x04\xc0\x3d\x0e\x42\x21\x0c\x00\xe0\xbd\xa7\xe8\x3d\x98\xde\xc3\x6a\x9a\xf0\x63\xa0\x26\x6e\x84\x48\xa3\x03\x61\x90\x0e\x1e\xdf\xef\xa4\x1b\x27\x07\x70\x04\xa1\x82\x72\x9c\x81\xf0\xf5\xe9\xeb\xad\x5b\x6d\xe3\xa5\xe4\x3b\xfa\x1c\x1e\x31\x21\x5f\x91\x9e\x5c\xa5\xa2\xfe\x4c\xbf\xab\xcf\x36\x74\xaa\xe9\x68\xdd\x1c\x80\xcf\x31\xb2\x38\xf8\x07\x00\x00\xff\xff\x39\x95\x87\xb9\x53\x00\x00\x00")
+
+func _1528395627_add_external_deleted_at_to_changesetsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395627_add_external_deleted_at_to_changesetsDownSql,
+		"1528395627_add_external_deleted_at_to_changesets.down.sql",
+	)
+}
+
+func _1528395627_add_external_deleted_at_to_changesetsDownSql() (*asset, error) {
+	bytes, err := _1528395627_add_external_deleted_at_to_changesetsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395627_add_external_deleted_at_to_changesets.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x9e, 0x63, 0xe1, 0xfc, 0x62, 0x1e, 0xaa, 0x5b, 0xe4, 0x55, 0x64, 0x4e, 0x96, 0xa7, 0x85, 0xc8, 0x6b, 0x37, 0x8e, 0x2b, 0x6a, 0xda, 0x87, 0x2f, 0x39, 0x52, 0xb8, 0x38, 0xf4, 0xcc, 0x11, 0xa7}}
+	return a, nil
+}
+
+var __1528395627_add_external_deleted_at_to_changesetsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x04\xc0\x4d\x0a\x42\x21\x10\x07\xf0\xfd\x9c\x62\xee\xe1\xca\xf7\x94\x10\xfc\x80\xb0\xb5\x0c\xf9\xa7\x02\x95\xc8\x59\x44\xa7\xef\x77\xf8\x4b\xc8\x86\xc8\xc6\xea\xaf\x5c\xed\x11\x3d\xdf\x9f\xb2\x1e\xd8\xd0\xcd\xd6\x39\x3e\x4b\xbc\xa5\xcc\xf8\x2a\x3e\x4b\x46\xeb\x18\x50\xf4\x26\xca\xfa\x9a\xd8\x2a\xf3\xad\x3f\x43\x74\x96\x94\x42\x35\xf4\x0f\x00\x00\xff\xff\x05\xfb\xa4\x2b\x54\x00\x00\x00")
+
+func _1528395627_add_external_deleted_at_to_changesetsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395627_add_external_deleted_at_to_changesetsUpSql,
+		"1528395627_add_external_deleted_at_to_changesets.up.sql",
+	)
+}
+
+func _1528395627_add_external_deleted_at_to_changesetsUpSql() (*asset, error) {
+	bytes, err := _1528395627_add_external_deleted_at_to_changesetsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395627_add_external_deleted_at_to_changesets.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x53, 0xc1, 0x25, 0x3, 0xf0, 0x6c, 0x44, 0xf6, 0x8f, 0x9a, 0x2b, 0x35, 0xf9, 0x21, 0xe4, 0x35, 0xb2, 0xe8, 0x9d, 0x0, 0x75, 0x75, 0xa, 0x8, 0x7e, 0x3c, 0x89, 0x8b, 0x30, 0x99, 0xa4, 0xe8}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2139,6 +2181,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395625_lsif_uploads.up.sql":                                           _1528395625_lsif_uploadsUpSql,
 	"1528395626_create_explicit_repo_permissions_tables.down.sql":              _1528395626_create_explicit_repo_permissions_tablesDownSql,
 	"1528395626_create_explicit_repo_permissions_tables.up.sql":                _1528395626_create_explicit_repo_permissions_tablesUpSql,
+	"1528395627_add_external_deleted_at_to_changesets.down.sql":                _1528395627_add_external_deleted_at_to_changesetsDownSql,
+	"1528395627_add_external_deleted_at_to_changesets.up.sql":                  _1528395627_add_external_deleted_at_to_changesetsUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2272,6 +2316,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395625_lsif_uploads.up.sql":                                           {_1528395625_lsif_uploadsUpSql, map[string]*bintree{}},
 	"1528395626_create_explicit_repo_permissions_tables.down.sql":              {_1528395626_create_explicit_repo_permissions_tablesDownSql, map[string]*bintree{}},
 	"1528395626_create_explicit_repo_permissions_tables.up.sql":                {_1528395626_create_explicit_repo_permissions_tablesUpSql, map[string]*bintree{}},
+	"1528395627_add_external_deleted_at_to_changesets.down.sql":                {_1528395627_add_external_deleted_at_to_changesetsDownSql, map[string]*bintree{}},
+	"1528395627_add_external_deleted_at_to_changesets.up.sql":                  {_1528395627_add_external_deleted_at_to_changesetsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

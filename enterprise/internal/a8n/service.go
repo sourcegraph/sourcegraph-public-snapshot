@@ -9,6 +9,8 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -21,21 +23,27 @@ import (
 )
 
 // NewService returns a Service.
-func NewService(store *Store, git GitserverClient, cf *httpcli.Factory) *Service {
-	return NewServiceWithClock(store, git, cf, func() time.Time {
+func NewService(store *Store, git GitserverClient, repoResolveRevision repoResolveRevision, cf *httpcli.Factory) *Service {
+	return NewServiceWithClock(store, git, repoResolveRevision, cf, func() time.Time {
 		return time.Now().UTC().Truncate(time.Microsecond)
 	})
 }
 
 // NewServiceWithClock returns a Service the given clock used
 // to generate timestamps.
-func NewServiceWithClock(store *Store, git GitserverClient, cf *httpcli.Factory, clock func() time.Time) *Service {
-	return &Service{
-		store: store,
-		git:   git,
-		cf:    cf,
-		clock: clock,
+func NewServiceWithClock(store *Store, git GitserverClient, repoResolveRevision repoResolveRevision, cf *httpcli.Factory, clock func() time.Time) *Service {
+	svc := &Service{
+		store:               store,
+		git:                 git,
+		repoResolveRevision: repoResolveRevision,
+		cf:                  cf,
+		clock:               clock,
 	}
+	if svc.repoResolveRevision == nil {
+		svc.repoResolveRevision = defaultRepoResolveRevision
+	}
+
+	return svc
 }
 
 type GitserverClient interface {
@@ -43,11 +51,93 @@ type GitserverClient interface {
 }
 
 type Service struct {
-	store *Store
-	git   GitserverClient
-	cf    *httpcli.Factory
+	store               *Store
+	git                 GitserverClient
+	repoResolveRevision repoResolveRevision
+	cf                  *httpcli.Factory
 
 	clock func() time.Time
+}
+
+// repoResolveRevision resolves a Git revspec in a repository and returns the resolved commit ID.
+type repoResolveRevision func(context.Context, *repos.Repo, string) (api.CommitID, error)
+
+// defaultRepoResolveRevision is an implementation of repoResolveRevision that talks to gitserver to
+// resolve a Git revspec.
+var defaultRepoResolveRevision = func(ctx context.Context, repo *repos.Repo, revspec string) (api.CommitID, error) {
+	return backend.Repos.ResolveRev(ctx,
+		&types.Repo{Name: api.RepoName(repo.Name), ExternalRepo: repo.ExternalRepo},
+		revspec,
+	)
+}
+
+// CreateCampaignPlanFromPatches creates a CampaignPlan and its associated CampaignJobs from patches
+// computed by the caller. There is no diff execution or computation performed during creation of
+// the CampaignJobs in this case (unlike when using Runner to create a CampaignPlan from a
+// specification).
+//
+// If resolveRevision is nil, a default implementation is used.
+func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []a8n.CampaignPlanPatch) (*a8n.CampaignPlan, error) {
+	// Look up all repositories.
+	reposStore := repos.NewDBStore(s.store.DB(), sql.TxOptions{})
+	repoIDs := make([]uint32, len(patches))
+	for i, patch := range patches {
+		repoIDs[i] = uint32(patch.Repo)
+	}
+	allRepos, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: repoIDs})
+	if err != nil {
+		return nil, err
+	}
+	reposByID := make(map[uint32]*repos.Repo, len(patches))
+	for _, repo := range allRepos {
+		reposByID[repo.ID] = repo
+	}
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Done(&err)
+
+	plan := &a8n.CampaignPlan{
+		CampaignType: patchCampaignType,
+		Arguments:    "", // intentionally empty to avoid needless duplication with CampaignJob diffs
+	}
+
+	err = tx.CreateCampaignPlan(ctx, plan)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, patch := range patches {
+		repo := reposByID[uint32(patch.Repo)]
+		if repo == nil {
+			return nil, fmt.Errorf("repository ID %d not found", patch.Repo)
+		}
+		if !a8n.IsRepoSupported(&repo.ExternalRepo) {
+			continue
+		}
+
+		commit, err := s.repoResolveRevision(ctx, repo, patch.BaseRevision)
+		if err != nil {
+			return nil, errors.Wrapf(err, "repository %q", repo.Name)
+		}
+
+		job := &a8n.CampaignJob{
+			CampaignPlanID: plan.ID,
+			RepoID:         int32(patch.Repo),
+			BaseRef:        patch.BaseRevision,
+			Rev:            commit,
+			Diff:           patch.Patch,
+			StartedAt:      s.clock(),
+			FinishedAt:     s.clock(),
+		}
+		if err := tx.CreateCampaignJob(ctx, job); err != nil {
+			return nil, err
+		}
+	}
+
+	return plan, nil
 }
 
 // CreateCampaign creates the Campaign. When a CampaignPlanID is set, it also

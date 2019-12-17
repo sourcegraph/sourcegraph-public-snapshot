@@ -568,6 +568,9 @@ func (u *users) GetByCurrentAuthUser(ctx context.Context) (*types.User, error) {
 	if !actor.IsAuthenticated() {
 		return nil, ErrNoCurrentUser
 	}
+	if dbconn.Global == nil {
+		return nil, ErrNoCurrentUser
+	}
 
 	return u.getOneBySQL(ctx, "WHERE id=$1 AND deleted_at IS NULL LIMIT 1", actor.UID)
 }

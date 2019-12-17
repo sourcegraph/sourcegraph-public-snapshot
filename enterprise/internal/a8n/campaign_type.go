@@ -39,6 +39,8 @@ var schemas = map[string]string{
 	"credentials": schema.CredentialsCampaignTypeSchemaJSON,
 }
 
+const patchCampaignType = "patch"
+
 // NewCampaignType returns a new CampaignType for the given campaign type name
 // and arguments.
 func NewCampaignType(campaignTypeName, args string, cf *httpcli.Factory) (CampaignType, error) {
@@ -86,6 +88,11 @@ func NewCampaignType(campaignTypeName, args string, cf *httpcli.Factory) (Campai
 		}
 
 		ct = c
+
+	case patchCampaignType:
+		// Prefer the more specific createCampaignPlanFromPatches GraphQL API for creating campaigns
+		// from patches computed by the caller, to avoid having multiple ways to do the same thing.
+		return nil, errors.New("use createCampaignPlanFromPatches for patch campaign types")
 
 	default:
 		return nil, fmt.Errorf("unknown campaign type: %s", campaignTypeName)

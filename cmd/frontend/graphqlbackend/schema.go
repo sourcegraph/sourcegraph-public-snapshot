@@ -52,6 +52,15 @@ type Mutation {
         # the query will return anyway, so the caller must check the result's CampaignPlan.status.
         wait: Boolean = false
     ): CampaignPlan!
+    # Create a campaign plan from patches (in unified diff format) that are computed by the caller.
+    #
+    # To create the campaign, call createCampaign with the returned CampaignPlan.id in the
+    # CreateCampaignInput.plan field.
+    createCampaignPlanFromPatches(
+        # A list of patches (diffs) to apply to repositories (in new branches) when a campaign is
+        # created from this campaign plan.
+        patches: [CampaignPlanPatch!]!
+    ): CampaignPlan!
     # Cancel a campaign plan that is being generated.
     # Cancellation expresses a desinterest in the campaign plan and is best-effort.
     # It may not be relied upon.
@@ -436,6 +445,22 @@ input CampaignPlanSpecification {
     arguments: JSONCString!
 }
 
+# A patch to apply to a repository (in a new branch) when a campaign is created from the parent
+# campaign plan.
+input CampaignPlanPatch {
+    # The repository that this patch is applied to.
+    repository: ID!
+
+    # The base revision in the repository that this patch is applied to.
+    baseRevision: String!
+
+    # The patch (in unified diff format) to apply.
+    #
+    # The filenames must not be prefixed (e.g., with 'a/' and 'b/'). Tip: use 'git diff --no-prefix'
+    # to omit the prefix.
+    patch: String!
+}
+
 # Input arguments for creating a campaign.
 input CreateCampaignInput {
     # The ID of the namespace where this campaign is defined.
@@ -617,6 +642,7 @@ enum ChangesetState {
     OPEN
     CLOSED
     MERGED
+    DELETED
 }
 
 # The state of a Changeset Review
@@ -1421,15 +1447,32 @@ type SearchResults {
     # Repositories that were actually searched. Excludes repositories that would have been searched but were not
     # because a timeout or error occurred while performing the search, or because the result limit was already
     # reached.
+    #
+    # In paginated search requests, this represents the set of repositories searched for the
+    # individual paginated request / input cursor and not the global set of repositories that
+    # would be searched if further requests were made.
     repositoriesSearched: [Repository!]!
     # Indexed repositories searched. This is a subset of repositoriesSearched.
     indexedRepositoriesSearched: [Repository!]!
     # Repositories that are busy cloning onto gitserver.
+    #
+    # In paginated search requests, some repositories may be cloning. These are reported here
+    # and you may choose to retry the paginated request with the same cursor after they have
+    # cloned OR you may simply continue making further paginated requests and choose to skip
+    # the cloning repositories.
     cloning: [Repository!]!
     # Repositories or commits that do not exist.
+    #
+    # In paginated search requests, some repositories may be missing (e.g. if Sourcegraph is
+    # aware of them but is temporarily unable to serve them). These are reported here and you
+    # may choose to retry the paginated request with the same cursor and they may no longer be
+    # missing OR you may simply continue making further paginated requests and choose to skip
+    # the missing repositories.
     missing: [Repository!]!
     # Repositories or commits which we did not manage to search in time. Trying
     # again usually will work.
+    #
+    # In paginated search requests, this field is not relevant.
     timedout: [Repository!]!
     # True if indexed search is enabled but was not available during this search.
     indexUnavailable: Boolean!

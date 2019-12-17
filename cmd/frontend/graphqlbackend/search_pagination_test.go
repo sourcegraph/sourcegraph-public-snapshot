@@ -101,7 +101,7 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 				common: &searchResultsCommon{
 					resultCount: 0,
 					repos:       nil,
-					partial:     nil,
+					partial:     make(map[api.RepoName]struct{}),
 				},
 				resultOffset: 0,
 				limitHit:     false,
@@ -214,8 +214,8 @@ func TestSearchPagination_sliceSearchResults(t *testing.T) {
 				},
 				common: &searchResultsCommon{
 					resultCount: 3,
-					repos:       []*types.Repo{repo("org/repo1"), repo("org/repo2")},
-					partial:     nil,
+					repos:       []*types.Repo{repo("org/repo2")},
+					partial:     make(map[api.RepoName]struct{}),
 				},
 				resultOffset: 0,
 				limitHit:     false,
@@ -587,6 +587,177 @@ func TestSearchPagination_issue_6287(t *testing.T) {
 			}
 			if !cmp.Equal(test.wantResults, results) {
 				t.Error("wantResults != results", cmp.Diff(test.wantResults, results))
+			}
+			if !cmp.Equal(test.wantErr, err) {
+				t.Error("wantErr != err", cmp.Diff(test.wantErr, err))
+			}
+		})
+	}
+}
+
+// TestSearchPagination_cloning_missing is a joint test for both
+// repoPaginationPlan and sliceSearchResults's handling of cloning and missing
+// repositories.
+func TestSearchPagination_cloning_missing(t *testing.T) {
+	revs := func(rev ...string) (revs []search.RevisionSpecifier) {
+		for _, r := range rev {
+			revs = append(revs, search.RevisionSpecifier{RevSpec: r})
+		}
+		return revs
+	}
+	repo := func(name string) *types.Repo {
+		return &types.Repo{Name: api.RepoName(name)}
+	}
+	result := func(repo *types.Repo, path string) *FileMatchResolver {
+		return &FileMatchResolver{JPath: path, Repo: repo}
+	}
+	repoRevs := func(name string, rev ...string) *search.RepositoryRevisions {
+		return &search.RepositoryRevisions{
+			Repo: repo(name),
+			Revs: revs(rev...),
+		}
+	}
+	repoResults := map[string][]SearchResultResolver{
+		"a": {
+			result(repo("a"), "a.go"),
+		},
+		"c": {
+			result(repo("c"), "a.go"),
+		},
+		"f": {
+			result(repo("f"), "a.go"),
+		},
+	}
+	repoMissing := map[string]*types.Repo{
+		"b": repo("b"),
+		"e": repo("e"),
+	}
+	repoCloning := map[string]*types.Repo{
+		"d": repo("d"),
+	}
+	searchRepos := []*search.RepositoryRevisions{
+		repoRevs("a", "master"),
+		repoRevs("b", "master"),
+		repoRevs("c", "master"),
+		repoRevs("d", "master"),
+		repoRevs("e", "master"),
+		repoRevs("f", "master"),
+	}
+	executor := func(batch []*search.RepositoryRevisions) (results []SearchResultResolver, common *searchResultsCommon, err error) {
+		common = &searchResultsCommon{}
+		for _, repoRev := range batch {
+			if res, ok := repoResults[string(repoRev.Repo.Name)]; ok {
+				results = append(results, res...)
+				common.repos = append(common.repos, repoRev.Repo)
+			}
+			if missing, ok := repoMissing[string(repoRev.Repo.Name)]; ok {
+				common.missing = append(common.missing, missing)
+			}
+			if cloning, ok := repoCloning[string(repoRev.Repo.Name)]; ok {
+				common.cloning = append(common.cloning, cloning)
+			}
+		}
+		return
+	}
+	ctx := context.Background()
+
+	tests := []struct {
+		name        string
+		request     *searchPaginationInfo
+		searchRepos []*search.RepositoryRevisions
+		wantCursor  *searchCursor
+		wantResults []SearchResultResolver
+		wantCommon  *searchResultsCommon
+		wantErr     error
+	}{
+		{
+			name: "repo a",
+			request: &searchPaginationInfo{
+				cursor: &searchCursor{},
+				limit:  1,
+			},
+			wantCursor: &searchCursor{RepositoryOffset: 1, ResultOffset: 0},
+			wantResults: []SearchResultResolver{
+				result(repo("a"), "a.go"),
+			},
+			wantCommon: &searchResultsCommon{
+				partial:     map[api.RepoName]struct{}{},
+				repos:       []*types.Repo{repo("a")},
+				resultCount: 1,
+			},
+		},
+		{
+			name: "missing repo b, repo c",
+			request: &searchPaginationInfo{
+				cursor: &searchCursor{RepositoryOffset: 1, ResultOffset: 0},
+				limit:  1,
+			},
+			wantCursor: &searchCursor{RepositoryOffset: 3, ResultOffset: 0},
+			wantResults: []SearchResultResolver{
+				result(repo("c"), "a.go"),
+			},
+			wantCommon: &searchResultsCommon{
+				partial: map[api.RepoName]struct{}{},
+				repos:   []*types.Repo{repo("c")},
+				missing: []*types.Repo{repo("b")},
+			},
+		},
+		{
+			name: "repo a, missing repo b, repo c",
+			request: &searchPaginationInfo{
+				cursor: &searchCursor{},
+				limit:  2,
+			},
+			wantCursor: &searchCursor{RepositoryOffset: 3, ResultOffset: 0},
+			wantResults: []SearchResultResolver{
+				result(repo("a"), "a.go"),
+				result(repo("c"), "a.go"),
+			},
+			wantCommon: &searchResultsCommon{
+				partial: map[api.RepoName]struct{}{},
+				repos:   []*types.Repo{repo("a"), repo("c")},
+				missing: []*types.Repo{repo("b")},
+			},
+		},
+		{
+			name: "all",
+			request: &searchPaginationInfo{
+				cursor: &searchCursor{},
+				limit:  3,
+			},
+			wantCursor: &searchCursor{RepositoryOffset: 6, ResultOffset: 0, Finished: true},
+			wantResults: []SearchResultResolver{
+				result(repo("a"), "a.go"),
+				result(repo("c"), "a.go"),
+				result(repo("f"), "a.go"),
+			},
+			wantCommon: &searchResultsCommon{
+				partial: map[api.RepoName]struct{}{},
+				repos:   []*types.Repo{repo("a"), repo("c"), repo("f")},
+				cloning: []*types.Repo{repo("d")},
+				missing: []*types.Repo{repo("b"), repo("e")},
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			plan := &repoPaginationPlan{
+				pagination:          test.request,
+				repositories:        searchRepos,
+				searchBucketDivisor: 8,
+				searchBucketMin:     4,
+				searchBucketMax:     10,
+				mockNumTotalRepos:   func() int { return len(test.searchRepos) },
+			}
+			cursor, results, common, err := plan.execute(ctx, executor)
+			if !cmp.Equal(test.wantCursor, cursor) {
+				t.Error("wantCursor != cursor", cmp.Diff(test.wantCursor, cursor))
+			}
+			if !cmp.Equal(test.wantResults, results) {
+				t.Error("wantResults != results", cmp.Diff(test.wantResults, results))
+			}
+			if !cmp.Equal(test.wantCommon, common) {
+				t.Error("wantCommon != common", cmp.Diff(test.wantCommon, common))
 			}
 			if !cmp.Equal(test.wantErr, err) {
 				t.Error("wantErr != err", cmp.Diff(test.wantErr, err))
