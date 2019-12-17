@@ -14,6 +14,7 @@ import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { getConfig } from '../../../shared/src/e2e/config'
 import * as assert from 'assert'
 import { asError } from '../../../shared/src/util/errors'
+import { Settings } from '../schema/settings.schema'
 
 const { gitHubToken, sourcegraphBaseUrl } = getConfig('gitHubToken', 'sourcegraphBaseUrl')
 
@@ -1371,6 +1372,13 @@ describe('e2e test suite', () => {
     })
 
     describe('Search statistics', () => {
+        beforeEach(async () => {
+            await driver.setUserSettings<Settings>({ experimentalFeatures: { searchStats: true } })
+        })
+        afterEach(async () => {
+            await driver.resetUserSettings()
+        })
+
         test('button on search results page', async () => {
             await driver.page.goto(`${sourcegraphBaseUrl}/search?q=abc`)
             await driver.page.waitForSelector('a[href="/stats?q=abc"]')

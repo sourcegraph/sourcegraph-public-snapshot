@@ -29,7 +29,9 @@ export function registerSearchStatsContributions({
                     },
                 ],
                 menus: {
-                    [ContributableMenu.SearchResultsToolbar]: [{ action: ACTION_ID }],
+                    [ContributableMenu.SearchResultsToolbar]: [
+                        { action: ACTION_ID, when: 'get(config.experimentalFeatures, "searchStats")' },
+                    ],
                 },
             }),
         })

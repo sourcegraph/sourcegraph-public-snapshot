@@ -72,6 +72,8 @@ You can also type in the partial name of a repository or filename to quickly jum
 
 ### Statistics
 
+> NOTE: To enable this experimental feature, set `{"experimentalFeatures": {"searchStats": true} }` in user settings.
+
 On a search results page, press the **Stats** button to view a language breakdown of all results matching the query. Each matching file is analyzed to detect its language, and line count statistics are computed as follows:
 
 - Query matches entire repositories (e.g., using only `repo:`): all lines (in all files) in matching repositories are counted.
