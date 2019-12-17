@@ -80,6 +80,8 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 		}
 		return db.Repos.GetByName(ctx, name)
 	case shouldRedirect(name):
+		fmt.Println("shouldRedirect: redirecting " + name)
+		fmt.Println(err)
 		return nil, ErrRepoSeeOther{RedirectURL: (&url.URL{
 			Scheme:   "https",
 			Host:     "sourcegraph.com",

@@ -132,6 +132,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 				return nil, nil
 			}
 			if e, ok := err.(backend.ErrRepoSeeOther); ok {
+				log15.Info("ErrRepoSeeOther: redirecting to " + e.RedirectURL)
 				// Repo does not exist here, redirect to the recommended location.
 				u, err := url.Parse(e.RedirectURL)
 				if err != nil {
