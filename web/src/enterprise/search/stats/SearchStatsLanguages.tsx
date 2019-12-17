@@ -110,7 +110,7 @@ export const SearchStatsLanguages: React.FunctionComponent<Props> = ({ query, st
                         </table>
                     </div>
                     <div className="flex-1 mx-4">
-                        <ResponsiveContainer>
+                        <ResponsiveContainer height={600}>
                             <PieChart margin={{ left: 60, right: 60 }}>
                                 <Pie
                                     dataKey="totalLines"
