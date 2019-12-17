@@ -30,6 +30,7 @@ const (
 	routeNameKey key = iota
 	userKey
 	requestErrorCauseKey
+	graphQLRequestNameKey
 )
 
 var metricLabels = []string{"route", "method", "code", "repo"}
@@ -77,6 +78,22 @@ func init() {
 			}
 		})
 	}()
+}
+
+// GraphQLRequestName returns the GraphQL request name for a request context. For example,
+// a request to /.api/graphql?Foobar would have the name `Foobar`. If the request had no
+// name, or the context is not a GraphQL request, "unknown" is returned.
+func GraphQLRequestName(ctx context.Context) string {
+	v := ctx.Value(graphQLRequestNameKey)
+	if v == nil {
+		return "unknown"
+	}
+	return v.(string)
+}
+
+// WithGraphQLRequestName sets the GraphQL request name in the context.
+func WithGraphQLRequestName(ctx context.Context, name string) context.Context {
+	return context.WithValue(ctx, graphQLRequestNameKey, name)
 }
 
 // Middleware captures and exports metrics to Prometheus, etc.
