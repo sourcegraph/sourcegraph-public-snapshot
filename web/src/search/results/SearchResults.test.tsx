@@ -34,12 +34,12 @@ describe('SearchResults', () => {
         telemetryService: { log: noop, logViewEvent: noop },
         deployType: 'dev',
         patternType: SearchPatternType.regexp,
-        togglePatternType: sinon.spy(),
         interactiveSearchMode: false,
         filtersInQuery: {},
         toggleSearchMode: sinon.fake(),
         onFiltersInQueryChange: sinon.fake(),
         splitSearchModes: false,
+        setPatternType: sinon.spy(),
     }
 
     it('calls the search request once', () => {

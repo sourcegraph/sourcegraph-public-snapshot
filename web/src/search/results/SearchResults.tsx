@@ -161,7 +161,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                             },
                                         })
                                         if (patternType && patternType !== this.props.patternType) {
-                                            this.props.togglePatternType()
+                                            this.props.setPatternType(patternType)
                                         }
                                     },
                                     error => {

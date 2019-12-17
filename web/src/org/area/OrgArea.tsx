@@ -72,7 +72,7 @@ interface Props
         SettingsCascadeProps,
         ThemeProps,
         ExtensionsControllerProps,
-        Omit<PatternTypeProps, 'togglePatternType'> {
+        Omit<PatternTypeProps, 'setPatternType'> {
     orgAreaRoutes: readonly OrgAreaRoute[]
     orgAreaHeaderNavItems: readonly OrgAreaHeaderNavItem[]
 
@@ -98,7 +98,7 @@ export interface OrgAreaPageProps
         SettingsCascadeProps,
         ThemeProps,
         NamespaceProps,
-        Omit<PatternTypeProps, 'togglePatternType'> {
+        Omit<PatternTypeProps, 'setPatternType'> {
     /** The org that is the subject of the page. */
     org: GQL.IOrg
 
