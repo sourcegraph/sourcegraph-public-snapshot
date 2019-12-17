@@ -11,7 +11,7 @@ interface Props {
 export const SearchModeToggle: React.FunctionComponent<Props> = props => {
     const [isOpen, setIsOpen] = useState<boolean>(false)
     const toggleIsOpen = useCallback(() => setIsOpen(!isOpen), [isOpen, setIsOpen])
-    console.log(isOpen)
+
     return (
         <Dropdown isOpen={isOpen} toggle={toggleIsOpen} className="search-mode-toggle">
             <DropdownToggle
