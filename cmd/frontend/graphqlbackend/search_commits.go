@@ -95,12 +95,12 @@ func searchCommitDiffsInRepo(ctx context.Context, repoRevs *search.RepositoryRev
 		IsRegExp:        info.IsRegExp,
 		IsCaseSensitive: info.IsCaseSensitive,
 	}
-	return searchCommitsInRepo(ctx, commitSearchOp{
-		repoRevs:          repoRevs,
-		info:              info,
-		query:             query,
-		diff:              true,
-		textSearchOptions: textSearchOptions,
+	return searchCommitsInRepo(ctx, search.CommitParameters{
+		RepoRevs:          repoRevs,
+		Info:              info,
+		Query:             query,
+		Diff:              true,
+		TextSearchOptions: textSearchOptions,
 	})
 }
 
@@ -115,53 +115,44 @@ func searchCommitLogInRepo(ctx context.Context, repoRevs *search.RepositoryRevis
 	if info.Pattern != "" {
 		terms = append(terms, info.Pattern)
 	}
-	return searchCommitsInRepo(ctx, commitSearchOp{
-		repoRevs:           repoRevs,
-		info:               info,
-		query:              query,
-		diff:               false,
-		textSearchOptions:  git.TextSearchOptions{},
-		extraMessageValues: terms,
+	return searchCommitsInRepo(ctx, search.CommitParameters{
+		RepoRevs:           repoRevs,
+		Info:               info,
+		Query:              query,
+		Diff:               false,
+		TextSearchOptions:  git.TextSearchOptions{},
+		ExtraMessageValues: terms,
 	})
 }
 
-type commitSearchOp struct {
-	repoRevs           *search.RepositoryRevisions
-	info               *search.PatternInfo
-	query              *query.Query
-	diff               bool
-	textSearchOptions  git.TextSearchOptions
-	extraMessageValues []string
-}
-
-func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
-	tr, ctx := trace.New(ctx, "searchCommitsInRepo", fmt.Sprintf("repoRevs: %v, pattern %+v", op.repoRevs, op.info))
+func searchCommitsInRepo(ctx context.Context, op search.CommitParameters) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
+	tr, ctx := trace.New(ctx, "searchCommitsInRepo", fmt.Sprintf("repoRevs: %v, pattern %+v", op.RepoRevs, op.Info))
 	defer func() {
 		tr.LazyPrintf("%d results, limitHit=%v, timedOut=%v", len(results), limitHit, timedOut)
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	repo := op.repoRevs.Repo
-	maxResults := int(op.info.FileMatchLimit)
+	repo := op.RepoRevs.Repo
+	maxResults := int(op.Info.FileMatchLimit)
 
 	args := []string{
 		"--no-prefix",
 		"--max-count=" + strconv.Itoa(maxResults+1),
 	}
-	if op.diff {
+	if op.Diff {
 		args = append(args,
 			"--unified=0",
 		)
 	}
-	if op.info.IsRegExp {
+	if op.Info.IsRegExp {
 		args = append(args, "--extended-regexp")
 	}
-	if !op.query.IsCaseSensitive() {
+	if !op.Query.IsCaseSensitive() {
 		args = append(args, "--regexp-ignore-case")
 	}
 
-	for _, rev := range op.repoRevs.Revs {
+	for _, rev := range op.RepoRevs.Revs {
 		switch {
 		case rev.RevSpec != "":
 			if strings.HasPrefix(rev.RevSpec, "-") {
@@ -182,11 +173,11 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		}
 	}
 
-	beforeValues, _ := op.query.StringValues(query.FieldBefore)
+	beforeValues, _ := op.Query.StringValues(query.FieldBefore)
 	for _, s := range beforeValues {
 		args = append(args, "--until="+s)
 	}
-	afterValues, _ := op.query.StringValues(query.FieldAfter)
+	afterValues, _ := op.Query.StringValues(query.FieldAfter)
 	for _, s := range afterValues {
 		args = append(args, "--since="+s)
 	}
@@ -194,7 +185,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 	// Helper for adding git log flags --grep, --author, and --committer, which all behave similarly.
 	var hasSeenGrepLikeFields, hasSeenInvertedGrepLikeFields bool
 	addGrepLikeFlags := func(args *[]string, gitLogFlag string, field string, extraValues []string, expandUsernames bool) error {
-		values, minusValues := op.query.RegexpPatterns(field)
+		values, minusValues := op.Query.RegexpPatterns(field)
 		values = append(values, extraValues...)
 
 		if expandUsernames {
@@ -236,7 +227,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		}
 		return nil
 	}
-	if err := addGrepLikeFlags(&args, "--grep", query.FieldMessage, op.extraMessageValues, false); err != nil {
+	if err := addGrepLikeFlags(&args, "--grep", query.FieldMessage, op.ExtraMessageValues, false); err != nil {
 		return nil, false, false, err
 	}
 	if err := addGrepLikeFlags(&args, "--author", query.FieldAuthor, nil, true); err != nil {
@@ -246,15 +237,15 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		return nil, false, false, err
 	}
 
-	rawResults, complete, err := git.RawLogDiffSearch(ctx, op.repoRevs.GitserverRepo(), git.RawLogDiffSearchOptions{
-		Query: op.textSearchOptions,
+	rawResults, complete, err := git.RawLogDiffSearch(ctx, op.RepoRevs.GitserverRepo(), git.RawLogDiffSearchOptions{
+		Query: op.TextSearchOptions,
 		Paths: git.PathOptions{
-			IncludePatterns: op.info.IncludePatterns,
-			ExcludePattern:  op.info.ExcludePattern,
-			IsCaseSensitive: op.info.PathPatternsAreCaseSensitive,
-			IsRegExp:        op.info.PathPatternsAreRegExps,
+			IncludePatterns: op.Info.IncludePatterns,
+			ExcludePattern:  op.Info.ExcludePattern,
+			IsCaseSensitive: op.Info.PathPatternsAreCaseSensitive,
+			IsRegExp:        op.Info.PathPatternsAreRegExps,
 		},
-		Diff:              op.diff,
+		Diff:              op.Diff,
 		OnlyMatchingHunks: true,
 		Args:              args,
 	})
@@ -289,11 +280,11 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		var matchBody string
 		var matchHighlights []*highlightedRange
 		// TODO(sqs): properly combine message: and term values for type:commit searches
-		if !op.diff {
+		if !op.Diff {
 			var patString string
-			if len(op.extraMessageValues) > 0 {
-				patString = regexpPatternMatchingExprsInOrder(op.extraMessageValues)
-				if !op.query.IsCaseSensitive() {
+			if len(op.ExtraMessageValues) > 0 {
+				patString = regexpPatternMatchingExprsInOrder(op.ExtraMessageValues)
+				if !op.Query.IsCaseSensitive() {
 					patString = "(?i:" + patString + ")"
 				}
 				pat, err := regexp.Compile(patString)
@@ -307,7 +298,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 			matchBody = "```COMMIT_EDITMSG\n" + rawResult.Commit.Message + "\n```"
 		}
 
-		if rawResult.Diff != nil && op.diff {
+		if rawResult.Diff != nil && op.Diff {
 			results[i].diffPreview = &highlightedString{
 				value:      rawResult.Diff.Raw,
 				highlights: fromVCSHighlights(rawResult.DiffHighlights),
