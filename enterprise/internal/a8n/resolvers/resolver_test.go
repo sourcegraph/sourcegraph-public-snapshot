@@ -858,7 +858,7 @@ index 671e50a..851b23a 100644
 +++ b/README.md
 @@ -1,3 +1,3 @@
  # README
-
+ 
 -This file is hosted at example.com and is a test file.
 +This file is hosted at sourcegraph.com and is a test file.
 diff --git a/urls.txt b/urls.txt
@@ -871,6 +871,92 @@ index 6f8b5d9..17400bc 100644
 +sourcegraph.com
  never-touch-the-mouse.com
 `
+
+// wantFileDiffs is the parsed representation of testDiff.
+var wantFileDiffs = FileDiffs{
+	RawDiff:  testDiff,
+	DiffStat: DiffStat{Changed: 2},
+	Nodes: []FileDiff{
+		{
+			OldPath: "a/README.md",
+			NewPath: "b/README.md",
+			OldFile: File{Name: "README.md"},
+			Hunks: []FileDiffHunk{
+				{
+					Body:     " # README\n \n-This file is hosted at example.com and is a test file.\n+This file is hosted at sourcegraph.com and is a test file.\n",
+					OldRange: DiffRange{StartLine: 1, Lines: 3},
+					NewRange: DiffRange{StartLine: 1, Lines: 3},
+				},
+			},
+			Stat: DiffStat{Changed: 1},
+		},
+		{
+			OldPath: "a/urls.txt",
+			NewPath: "b/urls.txt",
+			OldFile: File{Name: "urls.txt"},
+			Hunks: []FileDiffHunk{
+				{
+					Body:     " another-url.com\n-example.com\n+sourcegraph.com\n never-touch-the-mouse.com\n",
+					OldRange: DiffRange{StartLine: 1, Lines: 3},
+					NewRange: DiffRange{StartLine: 1, Lines: 3},
+				},
+			},
+			Stat: DiffStat{Changed: 1},
+		},
+	},
+}
+
+type DiffRange struct{ StartLine, Lines int }
+
+type FileDiffHunk struct {
+	Body, Section      string
+	OldNoNewlineAt     bool
+	OldRange, NewRange DiffRange
+}
+
+type DiffStat struct{ Added, Deleted, Changed int }
+
+type File struct {
+	Name string
+	// Ignoring other fields of File2, since that would require gitserver
+}
+
+type FileDiff struct {
+	OldPath, NewPath string
+	Hunks            []FileDiffHunk
+	Stat             DiffStat
+	OldFile          File
+}
+
+type FileDiffs struct {
+	RawDiff  string
+	DiffStat DiffStat
+	Nodes    []FileDiff
+}
+
+type ChangesetPlan struct {
+	Repository struct{ Name, URL string }
+	Diff       struct {
+		FileDiffs FileDiffs
+	}
+}
+
+type Status struct {
+	CompletedCount int
+	PendingCount   int
+	State          string
+	Errors         []string
+}
+
+type CampaignPlan struct {
+	ID           string
+	CampaignType string `json:"type"`
+	Arguments    string
+	Status       Status
+	Changesets   struct {
+		Nodes []ChangesetPlan
+	}
+}
 
 func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
@@ -949,28 +1035,8 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		type Status struct {
-			CompletedCount int
-			PendingCount   int
-			State          string
-			Errors         []string
-		}
-		var response struct {
-			CreateCampaignPlanFromPatches struct {
-				ID           graphql.ID
-				CampaignType string `json:"type"`
-				Arguments    string
-				Status       Status
-			}
-		}
+		var response struct{ CreateCampaignPlanFromPatches CampaignPlan }
 
-		const patch = `diff --git a/f b/f
---- a/f
-+++ b/f
-@@ -1,1 +1,2 @@
-+x
- y
-`
 		mustExec(ctx, t, s, nil, &response, fmt.Sprintf(`
       mutation {
         createCampaignPlanFromPatches(patches: [{repository: %q, baseRevision: "master", patch: %q}]) {
@@ -984,10 +1050,50 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
               state
               errors
             }
+            changesets(first: %d) {
+              nodes {
+                repository {
+                  name
+                }
+				diff {
+                  fileDiffs {
+                    rawDiff
+                    diffStat {
+                      added
+                      deleted
+                      changed
+                    }
+                    nodes {
+                      oldPath
+                      newPath
+                      hunks {
+                        body
+                        section
+                        newRange { startLine, lines }
+                        oldRange { startLine, lines }
+                        oldNoNewlineAt
+                      }
+                      stat {
+                        added
+                        deleted
+                        changed
+                      }
+                      oldFile {
+                        name
+                        externalURLs {
+                          serviceType
+                          url
+                        }
+                      }
+                    }
+                  }
+                }
+			  }
+            }
           }
         }
       }
-	`, graphqlbackend.MarshalRepositoryID(api.RepoID(repo.ID)), patch))
+	`, graphqlbackend.MarshalRepositoryID(api.RepoID(repo.ID)), testDiff, 1))
 
 		result := response.CreateCampaignPlanFromPatches
 		if have, want := result.CampaignType, "patch"; have != want {
@@ -1006,6 +1112,16 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 
 		if diff := cmp.Diff(result.Status, wantStatus); diff != "" {
 			t.Fatalf("wrong Status. diff=%s", diff)
+		}
+
+		wantChangesets := []ChangesetPlan{
+			{
+				Repository: struct{ Name, URL string }{Name: repo.Name},
+				Diff:       struct{ FileDiffs FileDiffs }{FileDiffs: wantFileDiffs},
+			},
+		}
+		if !cmp.Equal(result.Changesets.Nodes, wantChangesets) {
+			t.Error("wrong changesets", cmp.Diff(result.Changesets.Nodes, wantChangesets))
 		}
 	})
 }
@@ -1093,58 +1209,6 @@ func TestCampaignPlanResolver(t *testing.T) {
 			t.Fatal(err)
 		}
 		jobs = append(jobs, job)
-	}
-
-	type DiffRange struct{ StartLine, Lines int }
-
-	type FileDiffHunk struct {
-		Body, Section      string
-		OldNoNewlineAt     bool
-		OldRange, NewRange DiffRange
-	}
-
-	type DiffStat struct{ Added, Deleted, Changed int }
-
-	type File struct {
-		Name string
-		// Ignoring other fields of File2, since that would require gitserver
-	}
-
-	type FileDiff struct {
-		OldPath, NewPath string
-		Hunks            []FileDiffHunk
-		Stat             DiffStat
-		OldFile          File
-	}
-
-	type FileDiffs struct {
-		RawDiff  string
-		DiffStat DiffStat
-		Nodes    []FileDiff
-	}
-
-	type ChangesetPlan struct {
-		Repository struct{ Name, URL string }
-		Diff       struct {
-			FileDiffs FileDiffs
-		}
-	}
-
-	type Status struct {
-		CompletedCount int
-		PendingCount   int
-		State          string
-		Errors         []string
-	}
-
-	type CampaignPlan struct {
-		ID           string
-		CampaignType string `json:"type"`
-		Arguments    string
-		Status       Status
-		Changesets   struct {
-			Nodes []ChangesetPlan
-		}
 	}
 
 	type Response struct {
@@ -1252,38 +1316,6 @@ func TestCampaignPlanResolver(t *testing.T) {
 			t.Fatalf("wrong DiffStat.Changed %d, want=%d", have, want)
 		}
 
-		wantFileDiffs := FileDiffs{
-			RawDiff:  testDiff,
-			DiffStat: DiffStat{Changed: 2},
-			Nodes: []FileDiff{
-				{
-					OldPath: "a/README.md",
-					NewPath: "b/README.md",
-					OldFile: File{Name: "README.md"},
-					Hunks: []FileDiffHunk{
-						{
-							Body:     " # README\n \n-This file is hosted at example.com and is a test file.\n+This file is hosted at sourcegraph.com and is a test file.\n",
-							OldRange: DiffRange{StartLine: 1, Lines: 3},
-							NewRange: DiffRange{StartLine: 1, Lines: 3},
-						},
-					},
-					Stat: DiffStat{Changed: 1},
-				},
-				{
-					OldPath: "a/urls.txt",
-					NewPath: "b/urls.txt",
-					OldFile: File{Name: "urls.txt"},
-					Hunks: []FileDiffHunk{
-						{
-							Body:     " another-url.com\n-example.com\n+sourcegraph.com\n never-touch-the-mouse.com\n",
-							OldRange: DiffRange{StartLine: 1, Lines: 3},
-							NewRange: DiffRange{StartLine: 1, Lines: 3},
-						},
-					},
-					Stat: DiffStat{Changed: 1},
-				},
-			},
-		}
 		haveFileDiffs := changesetPlan.Diff.FileDiffs
 		if !reflect.DeepEqual(haveFileDiffs, wantFileDiffs) {
 			t.Fatal(cmp.Diff(haveFileDiffs, wantFileDiffs))

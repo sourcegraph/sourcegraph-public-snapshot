@@ -75,7 +75,7 @@ func TestService(t *testing.T) {
 +x
  y
 `
-		patches := []CampaignPlanPatch{
+		patches := []a8n.CampaignPlanPatch{
 			{Repo: api.RepoID(rs[0].ID), BaseRevision: "b0", Patch: patch},
 			{Repo: api.RepoID(rs[1].ID), BaseRevision: "b1", Patch: patch},
 		}

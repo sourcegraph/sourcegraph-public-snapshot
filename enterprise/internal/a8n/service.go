@@ -70,7 +70,7 @@ var defaultRepoResolveRevision = func(ctx context.Context, repo *repos.Repo, rev
 // specification).
 //
 // If resolveRevision is nil, a default implementation is used.
-func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []CampaignPlanPatch, repoResolveRevision repoResolveRevision) (*a8n.CampaignPlan, error) {
+func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []a8n.CampaignPlanPatch, repoResolveRevision repoResolveRevision) (*a8n.CampaignPlan, error) {
 	if repoResolveRevision == nil {
 		repoResolveRevision = defaultRepoResolveRevision
 	}

@@ -508,7 +508,7 @@ func (r *Resolver) CreateCampaignPlanFromPatches(ctx context.Context, args graph
 		return nil, err
 	}
 
-	patches := make([]ee.CampaignPlanPatch, len(args.Patches))
+	patches := make([]a8n.CampaignPlanPatch, len(args.Patches))
 	for i, patch := range args.Patches {
 		repo, err := graphqlbackend.UnmarshalRepositoryID(patch.Repository)
 		if err != nil {
@@ -527,7 +527,7 @@ func (r *Resolver) CreateCampaignPlanFromPatches(ctx context.Context, args graph
 			}
 		}
 
-		patches[i] = ee.CampaignPlanPatch{
+		patches[i] = a8n.CampaignPlanPatch{
 			Repo:         repo,
 			BaseRevision: patch.BaseRevision,
 			Patch:        patch.Patch,
