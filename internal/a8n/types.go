@@ -26,6 +26,13 @@ func IsRepoSupported(spec *api.ExternalRepoSpec) bool {
 	return ok
 }
 
+// CampaignPlanPatch is a patch applied to a repository (to create a new branch).
+type CampaignPlanPatch struct {
+	Repo         api.RepoID
+	BaseRevision string
+	Patch        string
+}
+
 // A CampaignPlan represents the application of a CampaignType to the Arguments
 // over multiple repositories.
 type CampaignPlan struct {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"io"
 	"strings"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -206,7 +208,7 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		return nil, err
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
+	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
 	err = svc.CreateCampaign(ctx, campaign)
 	if err != nil {
 		return nil, err
@@ -278,7 +280,7 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 		return nil, err
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
+	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
 	err = svc.DeleteCampaign(ctx, campaignID, args.CloseChangesets)
 	return &graphqlbackend.EmptyResponse{}, err
 }
@@ -311,7 +313,7 @@ func (r *Resolver) RetryCampaign(ctx context.Context, args *graphqlbackend.Retry
 		return nil, errors.Wrap(err, "resetting failed changeset jobs")
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
+	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
 	go func() {
 		ctx := trace.ContextWithTrace(context.Background(), tr)
 		err := svc.RunChangesetJobs(ctx, campaign)
@@ -348,7 +350,7 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 	cs := make([]*a8n.Changeset, 0, len(args.Input))
 
 	for _, c := range args.Input {
-		repoID, err := unmarshalRepositoryID(c.Repository)
+		repoID, err := graphqlbackend.UnmarshalRepositoryID(c.Repository)
 		if err != nil {
 			return nil, err
 		}
@@ -394,7 +396,7 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 
 	for id, r := range repoSet {
 		if r == nil {
-			return nil, errors.Errorf("repo %v not found", marshalRepositoryID(api.RepoID(id)))
+			return nil, errors.Errorf("repo %v not found", graphqlbackend.MarshalRepositoryID(api.RepoID(id)))
 		}
 	}
 
@@ -509,6 +511,54 @@ func (r *Resolver) PreviewCampaignPlan(ctx context.Context, args graphqlbackend.
 	return &campaignPlanResolver{store: r.store, campaignPlan: plan}, nil
 }
 
+func (r *Resolver) CreateCampaignPlanFromPatches(ctx context.Context, args graphqlbackend.CreateCampaignPlanFromPatchesArgs) (graphqlbackend.CampaignPlanResolver, error) {
+	var err error
+	tr, ctx := trace.New(ctx, "Resolver.CreateCampaignPlanFromPatches", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// 🚨 SECURITY: Only site admins may create campaign plans for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	patches := make([]a8n.CampaignPlanPatch, len(args.Patches))
+	for i, patch := range args.Patches {
+		repo, err := graphqlbackend.UnmarshalRepositoryID(patch.Repository)
+		if err != nil {
+			return nil, err
+		}
+
+		// Ensure patch is a valid unified diff.
+		diffReader := diff.NewMultiFileDiffReader(strings.NewReader(patch.Patch))
+		for {
+			_, err := diffReader.ReadFile()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				return nil, errors.Wrapf(err, "patch for repository ID %q (base revision %q)", patch.Repository, patch.BaseRevision)
+			}
+		}
+
+		patches[i] = a8n.CampaignPlanPatch{
+			Repo:         repo,
+			BaseRevision: patch.BaseRevision,
+			Patch:        patch.Patch,
+		}
+	}
+
+	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
+	plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches)
+	if err != nil {
+		return nil, err
+	}
+
+	return &campaignPlanResolver{store: r.store, campaignPlan: plan}, nil
+}
+
 func (r *Resolver) CancelCampaignPlan(ctx context.Context, args graphqlbackend.CancelCampaignPlanArgs) (res *graphqlbackend.EmptyResponse, err error) {
 	// 🚨 SECURITY: Only site admins may update campaigns for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
@@ -569,7 +619,7 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 		return nil, errors.Wrap(err, "unmarshaling campaign id")
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
+	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
 
 	campaign, err := svc.CloseCampaign(ctx, campaignID, args.CloseChangesets)
 	if err != nil {

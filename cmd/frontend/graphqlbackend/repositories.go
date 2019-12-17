@@ -360,7 +360,7 @@ func (r *schemaResolver) DeleteRepository(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	id, err := unmarshalRepositoryID(args.Repository)
+	id, err := UnmarshalRepositoryID(args.Repository)
 	if err != nil {
 		return nil, err
 	}

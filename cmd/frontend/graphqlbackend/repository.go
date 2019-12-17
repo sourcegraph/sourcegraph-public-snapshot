@@ -60,12 +60,12 @@ func RepositoryByIDInt32(ctx context.Context, repoID api.RepoID) (*RepositoryRes
 }
 
 func (r *RepositoryResolver) ID() graphql.ID {
-	return marshalRepositoryID(r.repo.ID)
+	return MarshalRepositoryID(r.repo.ID)
 }
 
-func marshalRepositoryID(repo api.RepoID) graphql.ID { return relay.MarshalID("Repository", repo) }
+func MarshalRepositoryID(repo api.RepoID) graphql.ID { return relay.MarshalID("Repository", repo) }
 
-func unmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
+func UnmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
 	err = relay.UnmarshalSpec(id, &repo)
 	return
 }
