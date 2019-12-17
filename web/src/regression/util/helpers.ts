@@ -27,7 +27,7 @@ import {
     GitLabAuthProvider,
     OpenIDConnectAuthProvider,
     SAMLAuthProvider,
-} from '../../schema/critical.schema'
+} from '../../schema/site.schema'
 import { first } from 'lodash'
 import { overwriteSettings } from '../../../../shared/src/settings/edit'
 import { retry } from '../../../../shared/src/e2e/e2e-test-utils'

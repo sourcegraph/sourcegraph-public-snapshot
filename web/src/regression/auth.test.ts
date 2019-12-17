@@ -21,7 +21,7 @@ import {
     GitLabAuthProvider,
     SAMLAuthProvider,
     OpenIDConnectAuthProvider,
-} from '../schema/critical.schema'
+} from '../schema/site.schema'
 
 const oktaUserAmy = 'beyang+sg-e2e-regression-test-amy@sourcegraph.com'
 

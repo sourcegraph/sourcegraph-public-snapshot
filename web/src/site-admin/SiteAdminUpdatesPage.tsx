@@ -56,7 +56,7 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const autoUpdateCheckingEnabled = window.context.critical['update.channel'] === 'release'
+        const autoUpdateCheckingEnabled = window.context.site['update.channel'] === 'release'
         return (
             <div className="site-admin-updates-page">
                 <PageTitle title="Updates - Admin" />
