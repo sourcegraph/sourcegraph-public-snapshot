@@ -161,5 +161,5 @@ export const SiteAdminLsifUploadPage: FunctionComponent<Props> = ({
 }
 
 function description(repoName: string, commit: string, root: string): string {
-    return `${repoName}@${commit}${root === '' ? '' : `rooted at ${root}`}`
+    return `${repoName}@${commit}${root === '' ? '' : ` rooted at ${root}`}`
 }
