@@ -23,21 +23,27 @@ import (
 )
 
 // NewService returns a Service.
-func NewService(store *Store, git GitserverClient, cf *httpcli.Factory) *Service {
-	return NewServiceWithClock(store, git, cf, func() time.Time {
+func NewService(store *Store, git GitserverClient, repoResolveRevision repoResolveRevision, cf *httpcli.Factory) *Service {
+	return NewServiceWithClock(store, git, repoResolveRevision, cf, func() time.Time {
 		return time.Now().UTC().Truncate(time.Microsecond)
 	})
 }
 
 // NewServiceWithClock returns a Service the given clock used
 // to generate timestamps.
-func NewServiceWithClock(store *Store, git GitserverClient, cf *httpcli.Factory, clock func() time.Time) *Service {
-	return &Service{
-		store: store,
-		git:   git,
-		cf:    cf,
-		clock: clock,
+func NewServiceWithClock(store *Store, git GitserverClient, repoResolveRevision repoResolveRevision, cf *httpcli.Factory, clock func() time.Time) *Service {
+	svc := &Service{
+		store:               store,
+		git:                 git,
+		repoResolveRevision: repoResolveRevision,
+		cf:                  cf,
+		clock:               clock,
 	}
+	if svc.repoResolveRevision == nil {
+		svc.repoResolveRevision = defaultRepoResolveRevision
+	}
+
+	return svc
 }
 
 type GitserverClient interface {
@@ -45,9 +51,10 @@ type GitserverClient interface {
 }
 
 type Service struct {
-	store *Store
-	git   GitserverClient
-	cf    *httpcli.Factory
+	store               *Store
+	git                 GitserverClient
+	repoResolveRevision repoResolveRevision
+	cf                  *httpcli.Factory
 
 	clock func() time.Time
 }
@@ -70,11 +77,7 @@ var defaultRepoResolveRevision = func(ctx context.Context, repo *repos.Repo, rev
 // specification).
 //
 // If resolveRevision is nil, a default implementation is used.
-func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []a8n.CampaignPlanPatch, repoResolveRevision repoResolveRevision) (*a8n.CampaignPlan, error) {
-	if repoResolveRevision == nil {
-		repoResolveRevision = defaultRepoResolveRevision
-	}
-
+func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []a8n.CampaignPlanPatch) (*a8n.CampaignPlan, error) {
 	// Look up all repositories.
 	reposStore := repos.NewDBStore(s.store.DB(), sql.TxOptions{})
 	repoIDs := make([]uint32, len(patches))
@@ -115,7 +118,7 @@ func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []a
 			continue
 		}
 
-		commit, err := repoResolveRevision(ctx, repo, patch.BaseRevision)
+		commit, err := s.repoResolveRevision(ctx, repo, patch.BaseRevision)
 		if err != nil {
 			return nil, errors.Wrapf(err, "repository %q", repo.Name)
 		}

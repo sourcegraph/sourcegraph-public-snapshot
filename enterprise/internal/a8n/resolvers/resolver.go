@@ -207,7 +207,7 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		return nil, err
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
+	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
 	err = svc.CreateCampaign(ctx, campaign)
 	if err != nil {
 		return nil, err
@@ -279,7 +279,7 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 		return nil, err
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
+	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
 	err = svc.DeleteCampaign(ctx, campaignID, args.CloseChangesets)
 	return &graphqlbackend.EmptyResponse{}, err
 }
@@ -312,7 +312,7 @@ func (r *Resolver) RetryCampaign(ctx context.Context, args *graphqlbackend.Retry
 		return nil, errors.Wrap(err, "resetting failed changeset jobs")
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
+	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
 	go func() {
 		ctx := trace.ContextWithTrace(context.Background(), tr)
 		err := svc.RunChangesetJobs(ctx, campaign)
@@ -534,8 +534,8 @@ func (r *Resolver) CreateCampaignPlanFromPatches(ctx context.Context, args graph
 		}
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
-	plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches, nil)
+	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
+	plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches)
 	if err != nil {
 		return nil, err
 	}
@@ -603,7 +603,7 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 		return nil, errors.Wrap(err, "unmarshaling campaign id")
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
+	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
 
 	campaign, err := svc.CloseCampaign(ctx, campaignID, args.CloseChangesets)
 	if err != nil {

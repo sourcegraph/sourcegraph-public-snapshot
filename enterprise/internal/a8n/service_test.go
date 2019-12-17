@@ -66,7 +66,7 @@ func TestService(t *testing.T) {
 			return commit, nil
 		}
 
-		svc := NewServiceWithClock(store, nil, nil, clock)
+		svc := NewServiceWithClock(store, nil, repoResolveRevision, nil, clock)
 
 		const patch = `diff --git a/f b/f
 --- a/f
@@ -80,7 +80,7 @@ func TestService(t *testing.T) {
 			{Repo: api.RepoID(rs[1].ID), BaseRevision: "b1", Patch: patch},
 		}
 
-		plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches, repoResolveRevision)
+		plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -150,7 +150,7 @@ func TestService(t *testing.T) {
 		gitClient := &dummyGitserverClient{response: "testresponse", responseErr: nil}
 
 		cf := httpcli.NewHTTPClientFactory()
-		svc := NewServiceWithClock(store, gitClient, cf, clock)
+		svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
 		err = svc.CreateCampaign(ctx, campaign)
 		if err != nil {
 			t.Fatal(err)
