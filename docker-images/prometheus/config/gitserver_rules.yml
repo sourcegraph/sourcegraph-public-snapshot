@@ -6,6 +6,18 @@ groups:
         expr: src_gitserver_disk_space_available / src_gitserver_disk_space_total
       - record: gitserver_disk_used_percent
         expr: 1 - gitserver_disk_free_percent
+      - record: gitserver_error_percent
+        expr: >-
+          sum(rate(src_gitserver_request_duration_seconds_count{code!~"2.."}[5m])) /
+            sum(rate(src_gitserver_request_duration_seconds_count[5m])) OR on() vector(0)
+      - record: gitserver_to_frontend_internal_error_percent
+        expr: >-
+          sum(rate(src_frontend_internal_request_duration_seconds_count{app="gitserver",code!~"2.."}[5m])) /
+            sum(rate(src_frontend_internal_request_duration_seconds_count{app="gitserver"}[5m])) OR on() vector(0)
+      - record: gitserver_high_memory
+        expr: >-
+          avg(go_memstats_heap_alloc_bytes{app="gitserver"} /
+             go_memstats_heap_sys_bytes{app="gitserver"} > 0.8) OR on() vector(0)
 
       # Disk space alert
       #
@@ -31,4 +43,54 @@ groups:
         expr: >-
           clamp_max(clamp_min(floor(
               gitserver_disk_used_percent + 0.05
+          ), 0), 1)
+      - record: alert_count
+        labels:
+          service_name: gitserver
+          level: critical
+          name: high_gitserver_error_rate
+          description: 'gitserver client error rate higher than 50%'
+        expr: >-
+          clamp_max(clamp_min(floor(
+              gitserver_error_percent + 0.5
+          ), 0), 1)
+      - record: alert_count
+        labels:
+          service_name: gitserver
+          level: warning
+          name: high_gitserver_error_rate
+          description: 'gitserver client error rate higher than 20%'
+        expr: >-
+          clamp_max(clamp_min(floor(
+              gitserver_error_percent + 0.8
+          ), 0), 1)
+      - record: alert_count
+        labels:
+          service_name: gitserver
+          level: critical
+          name: gitserver_to_frontend_internal_error_percent
+          description: 'gitserver to frontend error rate higher than 50%'
+        expr: >-
+          clamp_max(clamp_min(floor(
+              gitserver_to_frontend_internal_error_percent + 0.5
+          ), 0), 1)
+      - record: alert_count
+        labels:
+          service_name: gitserver
+          level: warning
+          name: gitserver_to_frontend_internal_error_percent
+          description: 'gitserver to frontend error rate higher than 20%'
+        expr: >-
+          clamp_max(clamp_min(floor(
+              gitserver_to_frontend_internal_error_percent + 0.8
+          ), 0), 1)
+      - record: alert_count
+        labels:
+          service_name: gitserver
+          level: warning
+          name: gitserver_high_memory
+          description: 'gitserver high memory use'
+        expr: >-
+          clamp_max(clamp_min(floor(
+              gitserver_high_memory + 0.2
           ), 0), 1)

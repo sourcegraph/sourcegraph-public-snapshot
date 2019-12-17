@@ -1,13 +1,89 @@
 groups:
   - name: repo-updater
     rules:
+      - record: repoupdater_error_percent
+        expr: >-
+          sum(rate(src_repoupdater_http_handler_duration_seconds_count{code!~"2.."}[5m])) /
+            sum(rate(src_repoupdater_http_handler_duration_seconds_count[5m])) OR on() vector(0)
+      - record: repoupdater_syncer_error_percent
+        expr: >-
+           sum(rate(src_repoupdater_syncer_sync_errors_total[5m])) /
+              sum(rate(src_repoupdater_syncer_synced_repos_total[5m]))
+      - record: repoupdater_to_frontend_internal_error_percent
+        expr: >-
+          sum(rate(src_frontend_internal_request_duration_seconds_count{app="repo-updater",code!~"2.."}[5m])) /
+            sum(rate(src_frontend_internal_request_duration_seconds_count{app="repo-updater"}[5m])) OR on() vector(0)
+      - record: repoupdater_high_memory
+        expr: >-
+          avg(go_memstats_heap_alloc_bytes{app="repo-updater"} /
+             go_memstats_heap_sys_bytes{app="repo-updater"} > 0.8) OR on() vector(0)
       - record: alert_count
         labels:
           service_name: repo-updater
           level: critical
-        expr: 0
+          name: repoupdater_to_frontend_internal_error_percent
+          description: 'repo-updater to frontend error rate higher than 50%'
+        expr: >-
+          clamp_max(clamp_min(floor(
+              repoupdater_to_frontend_internal_error_percent + 0.5
+          ), 0), 1)
       - record: alert_count
         labels:
           service_name: repo-updater
           level: warning
-        expr: 0
+          name: repoupdater_to_frontend_internal_error_percent
+          description: 'repo-updater to frontend error rate higher than 20%'
+        expr: >-
+          clamp_max(clamp_min(floor(
+              repoupdater_to_frontend_internal_error_percent + 0.8
+          ), 0), 1)
+      - record: alert_count
+        labels:
+          service_name: repo-updater
+          level: warning
+          name: repoupdater_high_memory
+          description: 'repo-updater high memory use'
+        expr: >-
+          clamp_max(clamp_min(floor(
+              repoupdater_high_memory + 0.2
+          ), 0), 1)
+      - record: alert_count
+        labels:
+          service_name: repo-updater
+          level: critical
+          name: high_repoupdater_error_rate
+          description: 'repo-updater client error rate higher than 50%'
+        expr: >-
+          clamp_max(clamp_min(floor(
+              repoupdater_error_percent + 0.5
+          ), 0), 1)
+      - record: alert_count
+        labels:
+          service_name: repo-updater
+          level: warning
+          name: high_repoupdater_error_rate
+          description: 'repo-updater client error rate higher than 20%'
+        expr: >-
+          clamp_max(clamp_min(floor(
+              repoupdater_error_percent + 0.8
+          ), 0), 1)
+      - record: alert_count
+        labels:
+          service_name: repo-updater
+          level: critical
+          name: high_repoupdater_syncer_error_rate
+          description: 'repo-updater syncer error rate higher than 50%'
+        expr: >-
+          clamp_max(clamp_min(floor(
+              repoupdater_syncer_error_percent + 0.5
+          ), 0), 1)
+      - record: alert_count
+        labels:
+          service_name: repo-updater
+          level: warning
+          name: high_repoupdater_syncer_error_rate
+          description: 'repo-updater syncer error rate higher than 20%'
+        expr: >-
+          clamp_max(clamp_min(floor(
+              repoupdater_syncer_error_percent + 0.8
+          ), 0), 1)

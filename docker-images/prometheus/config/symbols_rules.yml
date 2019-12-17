@@ -1,13 +1,41 @@
 groups:
   - name: symbols
     rules:
+      - record: symbols_to_frontend_internal_error_percent
+        expr: >-
+          sum(rate(src_frontend_internal_request_duration_seconds_count{app="symbols",code!~"2.."}[5m])) /
+            sum(rate(src_frontend_internal_request_duration_seconds_count{app="symbols"}[5m])) OR on() vector(0)
+      - record: symbols_high_memory
+        expr: >-
+          avg(go_memstats_heap_alloc_bytes{app="symbols"} /
+             go_memstats_heap_sys_bytes{app="symbols"} > 0.8) OR on() vector(0)
       - record: alert_count
         labels:
           service_name: symbols
           level: critical
-        expr: 0
+          name: symbols_to_frontend_internal_error_percent
+          description: 'symbols to frontend error rate higher than 50%'
+        expr: >-
+          clamp_max(clamp_min(floor(
+              symbols_to_frontend_internal_error_percent + 0.5
+          ), 0), 1)
       - record: alert_count
         labels:
           service_name: symbols
           level: warning
-        expr: 0
+          name: symbols_to_frontend_internal_error_percent
+          description: 'symbols to frontend error rate higher than 20%'
+        expr: >-
+          clamp_max(clamp_min(floor(
+              symbols_to_frontend_internal_error_percent + 0.8
+          ), 0), 1)
+      - record: alert_count
+        labels:
+          service_name: symbols
+          level: warning
+          name: symbols_high_memory
+          description: 'symbols high memory use'
+        expr: >-
+          clamp_max(clamp_min(floor(
+              symbols_high_memory + 0.2
+          ), 0), 1)

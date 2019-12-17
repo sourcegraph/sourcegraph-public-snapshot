@@ -1,13 +1,90 @@
 groups:
   - name: frontend
     rules:
+      - record: frontend_search_error_percent
+        expr: >-
+          sum(rate(src_graphql_field_seconds_count{field="search", error="true"}[5m])) /
+            sum(rate(src_graphql_field_seconds_count{field="search"}[5m])) OR on() vector(0)
+      - record: frontend_to_gitserver_error_percent
+        expr: >-
+          sum(rate(src_gitserver_request_duration_seconds_count{app="sourcegraph-frontend", code!~"2.."}[5m])) /
+            sum(rate(src_gitserver_request_duration_seconds_count{app="sourcegraph-frontend"}[5m])) OR on() vector(0)
+      - record: to_frontend_internal_error_percent
+        expr: >-
+          sum(rate(src_frontend_internal_request_duration_seconds_count{app!="sourcegraph-frontend",code!~"2.."}[5m])) /
+            sum(rate(src_frontend_internal_request_duration_seconds_count{app!="sourcegraph-frontend"}[5m])) OR on() vector(0)
+      - record: frontend_high_memory
+        expr: >-
+          avg(go_memstats_heap_alloc_bytes{app="sourcegraph-frontend"} /
+             go_memstats_heap_sys_bytes{app="sourcegraph-frontend"} > 0.8) OR on() vector(0)
       - record: alert_count
         labels:
           service_name: frontend
           level: critical
-        expr: 0
+          name: high_search_error_rate
+          description: 'search error rate higher than 50%'
+        expr: >-
+          clamp_max(clamp_min(floor(
+              frontend_search_error_percent + 0.5
+          ), 0), 1)
       - record: alert_count
         labels:
           service_name: frontend
           level: warning
-        expr: 0
+          name: high_search_error_rate
+          description: 'search error rate higher than 20%'
+        expr: >-
+          clamp_max(clamp_min(floor(
+              frontend_search_error_percent + 0.8
+          ), 0), 1)
+      - record: alert_count
+        labels:
+          service_name: frontend
+          level: critical
+          name: high_gitserver_error_rate
+          description: 'gitserver client error rate higher than 50%'
+        expr: >-
+          clamp_max(clamp_min(floor(
+              frontend_to_gitserver_error_percent + 0.5
+          ), 0), 1)
+      - record: alert_count
+        labels:
+          service_name: frontend
+          level: warning
+          name: high_gitserver_error_rate
+          description: 'gitserver client error rate higher than 20%'
+        expr: >-
+          clamp_max(clamp_min(floor(
+              frontend_to_gitserver_error_percent + 0.8
+          ), 0), 1)
+      - record: alert_count
+        labels:
+          service_name: frontend
+          level: critical
+          name: to_frontend_internal_error_percent
+          description: 'frontend internal error rate higher than 50%'
+        expr: >-
+          clamp_max(clamp_min(floor(
+              to_frontend_internal_error_percent + 0.5
+          ), 0), 1)
+      - record: alert_count
+        labels:
+          service_name: frontend
+          level: warning
+          name: to_frontend_internal_error_percent
+          description: 'frontend internal error rate higher than 20%'
+        expr: >-
+          clamp_max(clamp_min(floor(
+              to_frontend_internal_error_percent + 0.8
+          ), 0), 1)
+      - record: alert_count
+        labels:
+          service_name: frontend
+          level: warning
+          name: frontend_high_memory
+          description: 'frontend high memory use'
+        expr: >-
+          clamp_max(clamp_min(floor(
+              frontend_high_memory + 0.2
+          ), 0), 1)
+
