@@ -374,6 +374,6 @@ export interface PackageInformationData {
 }
 
 /**
- * The entities composing the database models.
+ * The entities composing the SQLite database models.
  */
 export const entities = [DefinitionModel, DocumentModel, MetaModel, ReferenceModel, ResultChunkModel]
