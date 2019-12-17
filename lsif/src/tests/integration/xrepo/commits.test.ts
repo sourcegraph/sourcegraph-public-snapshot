@@ -36,7 +36,7 @@ describe('discoverAndUpdateCommit', () => {
         }
     })
 
-    it.skip('should early-out if commit is tracked', async () => {
+    it('should early-out if commit is tracked', async () => {
         const ca = util.createCommit()
         const cb = util.createCommit()
 
@@ -94,7 +94,7 @@ describe('discoverAndUpdateCommit', () => {
 })
 
 describe('discoverAndUpdateTips', () => {
-    it.skip('should update tips', async () => {
+    it('should update tips', async () => {
         const ca = util.createCommit()
         const cb = util.createCommit()
         const cc = util.createCommit()
