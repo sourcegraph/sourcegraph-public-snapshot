@@ -27,11 +27,11 @@ import {
     GitLabAuthProvider,
     OpenIDConnectAuthProvider,
     SAMLAuthProvider,
+    SiteConfiguration,
 } from '../../schema/site.schema'
 import { first } from 'lodash'
 import { overwriteSettings } from '../../../../shared/src/settings/edit'
 import { retry } from '../../../../shared/src/e2e/e2e-test-utils'
-import { SiteConfiguration } from '../../schema/site.schema'
 
 /**
  * Create the user with the specified password. Returns a destructor that destroys the test user. Assumes basic auth.
