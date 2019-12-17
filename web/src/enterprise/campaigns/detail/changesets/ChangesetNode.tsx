@@ -58,7 +58,11 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
             {node.__typename === 'ExternalChangeset' && (
                 <div className="flex-shrink-0 flex-grow-0 ml-1 mr-3">
                     <ReviewStateIcon
-                        className={`text-${changesetReviewStateColors[node.reviewState]}`}
+                        className={
+                            node.state === ChangesetState.DELETED
+                                ? 'text-muted'
+                                : `text-${changesetReviewStateColors[node.reviewState]}`
+                        }
                         data-tooltip={changesetStageLabels[node.reviewState]}
                     />
                 </div>
@@ -72,7 +76,12 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                     {node.__typename === 'ExternalChangeset' && (
                         <>
                             <LinkOrSpan
-                                to={node.externalURL && node.externalURL.url}
+                                /* Deleted changesets most likely don't exist on the codehost anymore and would return 404 pages */
+                                to={
+                                    node.externalURL && node.state !== ChangesetState.DELETED
+                                        ? node.externalURL.url
+                                        : undefined
+                                }
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
