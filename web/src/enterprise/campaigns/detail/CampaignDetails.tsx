@@ -610,8 +610,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                     queryConnection={queryChangesetsConnection}
                                     hideSearch={true}
                                     defaultFirst={15}
-                                    noun="Changeset"
-                                    pluralNoun="Changesets"
+                                    noun="changeset"
+                                    pluralNoun="changesets"
                                     history={history}
                                     location={location}
                                 />
