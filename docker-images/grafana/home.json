@@ -75,7 +75,7 @@
       "targets": [
         {
           "expr": "alert_count{level=\"critical\"}",
-          "legendFormat": "{{container}}",
+          "legendFormat": "{{service_name}}",
           "refId": "A"
         }
       ],
@@ -162,7 +162,7 @@
       "targets": [
         {
           "expr": "alert_count{level=\"warning\"}",
-          "legendFormat": "{{container}}",
+          "legendFormat": "{{service_name}}",
           "refId": "A"
         }
       ],
