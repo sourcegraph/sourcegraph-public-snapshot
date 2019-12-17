@@ -27,7 +27,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Language statistics by commit are available via the API. [#6737](https://github.com/sourcegraph/sourcegraph/pull/6737)
 - Global settings can be configured from a local file using the environment variable `GLOBAL_SETTINGS_FILE`.
-- Logging around GraphQL requests, and especially around unnamed GraphQL requests (ones without a `/.api/graphql?Name`) is now much more verbose, allowing for easier debugging of problematic queries and where they originate from. [#5706](https://github.com/sourcegraph/sourcegraph/issues/5706)
+- Logging for GraphQL API requests not issued by Sourcegraph is now much more verbose, allowing for easier debugging of problematic queries and where they originate from. [#5706](https://github.com/sourcegraph/sourcegraph/issues/5706)
 
 ### Changed
 
