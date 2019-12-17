@@ -964,9 +964,9 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 			}
 		}
 
-		const patch = `diff --git a b
---- a
-+++ b
+		const patch = `diff --git a/f b/f
+--- a/f
++++ b/f
 @@ -1,1 +1,2 @@
 +x
  y

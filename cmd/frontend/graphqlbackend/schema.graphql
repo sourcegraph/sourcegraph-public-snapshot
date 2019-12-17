@@ -461,8 +461,8 @@ input CampaignPlanPatch {
     # The base revision in the repository that this patch is applied to.
     baseRevision: String!
 
-    # The patch (in unified diff format) to apply. The filenames must not be prefixed (e.g., with
-    # 'a/' and 'b/').
+    # The patch (in unified diff format) to apply. The filenames must be prefixed (with 'a/' and
+    # 'b/' for the old and new filenames, respectively).
     patch: String!
 }
 
