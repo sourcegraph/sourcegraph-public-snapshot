@@ -207,6 +207,11 @@ export function getConfig<T extends keyof Config>(...required: T[]): Pick<Config
         if (envValue) {
             config[fieldName] = field.parser ? field.parser(envValue) : envValue
         }
+
+        // @TODO: @ggilmore remove kludge experiment once we figure out what's going on
+        if (fieldName === 'sourcegraphBaseUrl') {
+            config[fieldName] = 'http://localhost:7080'
+        }
     }
 
     // Check required fields for type safety
