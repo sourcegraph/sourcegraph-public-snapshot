@@ -37,14 +37,18 @@ Global find-references is a resource-intensive operation that's sensitive to the
 The following table gives a rough estimate for the space and time requirements for indexing and conversion. These repositories are a representative sample of public Go repositories available on GitHub. The clone size is the total size of source files (without history) of the clone at the given commit. The index size gives the size of the uncompressed LSIF output of the indexer, and the conversion size gives the total amount of disk space occupied after uploading the dump to a Sourcegraph instance.
 
 | Repository | Working tree size | Index time | Index size | Processing time | Post-processing size |
-| ---------------------------------------------------------------------------------------------------- | ----------------- | ------ | ---- | ------- | ------ |
-| [bigcache](https://github.com/allegro/bigcache/tree/b7689f7c33374d4c67c011eaa0a5b345ddb1a99c)        | 216KB   (32 files) |  1.18s | 3.5MB |   0.45s | 0.564MB |
-| [sqlc](https://github.com/kyleconroy/sqlc/tree/16cc4e9c378341b5496af784b25422d1ed4c7fd9)             | 396K   (24 files) |  1.53s | 7.2M |   1.62s | 1.6M   |
-| [nebula](https://github.com/slackhq/nebula/tree/a680ac29f5b7ce13d4007d090776e983cd3c1e76)            | 700K   (71 files) |  2.48s | 16M  |   1.63s | 2.9M   |
-| [cayley](https://github.com/cayleygraph/cayley/tree/4d89b8a1806203c5c09e16bfc405bc3d64d74236)        | 5.6M  (226 files) |  5.58s | 51M  |   4.68s | 11M    |
-| [go-ethereum](https://github.com/ethereum/go-ethereum/tree/275cd4988dbef4b81e856a6c6ae8cb12242e3976) | 27M   (945 files) | 20.53s | 255M |  77.40s | 50M    |
-| [kubernetes](https://github.com/kubernetes/kubernetes/tree/e680ad7156f263a6d8129cc0117fda58602e50ad) | 301M (4577 files) | 34.81m | 910M |  80.06s | 162M   |
-| [aws-sdk-go](https://github.com/aws/aws-sdk-go/tree/18a2d30ffcef68a1d1bed6a4a9cd6b34bfac049a)        | 119M (1759 files) |  8.20m | 1.3G | 155.82s | 358M   |
+| ------------------------------------------------------------------- | ----------------------------------- | ------ | ----- | ------- | ----- |
+| [bigcache](https://github.com/allegro/bigcache/tree/b7689f7)        | 216KB    (2585 LOC over   32 files) |  1.18s | 3.5MB |   0.45s | 0.6MB |
+| [sqlc](https://github.com/kyleconroy/sqlc/tree/16cc4e9)             | 396KB    (7041 LOC over   24 files) |  1.53s | 7.2MB |   1.62s | 1.6MB |
+| [nebula](https://github.com/slackhq/nebula/tree/a680ac2)            | 700KB   (10704 LOC over   71 files) |  2.48s |  16MB |   1.63s | 2.9MB |
+| [cayley](https://github.com/cayleygraph/cayley/tree/4d89b8a)        | 5.6MB   (36346 LOC over  226 files) |  5.58s |  51MB |   4.68s |  11MB |
+| [go-ethereum](https://github.com/ethereum/go-ethereum/tree/275cd49) |  27MB  (317664 LOC over  945 files) | 20.53s | 255MB |  77.40s |  50MB |
+| [aws-sdk-go](https://github.com/aws/aws-sdk-go/tree/18a2d30)        | 119MB (1067304 LOC over 1759 files) |  8.20m | 1.3GB | 155.82s | 358MB |
+| [kubernetes](https://github.com/kubernetes/kubernetes/tree/e680ad7) | 301MB (1549774 LOC over 4577 files) | 34.81m | 910MB |  80.06s | 162MB |
+
+
+
+
 
 
 ## Cross-repository code intelligence
