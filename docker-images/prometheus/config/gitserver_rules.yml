@@ -64,7 +64,7 @@ groups:
           service_name: gitserver
           level: warning
           name: large_lsremote_queue
-          description: 'gitserver: more than 25+ repositories need to be checked for existence on code host'
+          description: 'gitserver: more than 25+ repositories needing code-host existence check'
         expr: >-
           clamp_max(clamp_min(floor(
               src_gitserver_lsremote_queue / 25
@@ -74,7 +74,7 @@ groups:
       - record: alert_count
         labels:
           service_name: gitserver
-          level: warning
+          level: critical
           name: echo_duration_slow
           description: 'gitserver: echo command execution duration exceeding 2s'
         expr: >-
