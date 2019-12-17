@@ -148,7 +148,8 @@ WITH batch AS (
       metadata              jsonb,
       campaign_ids          jsonb,
       external_id           text,
-      external_service_type text
+      external_service_type text,
+      external_deleted_at   timestamptz
     )
   )
   WITH ORDINALITY
@@ -165,7 +166,8 @@ changed AS (
     metadata,
     campaign_ids,
     external_id,
-    external_service_type
+    external_service_type,
+	external_deleted_at
   )
   SELECT
     repo_id,
@@ -174,7 +176,8 @@ changed AS (
     metadata,
     campaign_ids,
     external_id,
-    external_service_type
+    external_service_type,
+	external_deleted_at
   FROM batch
   ON CONFLICT ON CONSTRAINT
     changesets_repo_external_id_unique
@@ -192,7 +195,8 @@ SELECT
   COALESCE(changed.metadata, existing.metadata) AS metadata,
   COALESCE(changed.campaign_ids, existing.campaign_ids) AS campaign_ids,
   COALESCE(changed.external_id, existing.external_id) AS external_id,
-  COALESCE(changed.external_service_type, existing.external_service_type) AS external_service_type
+  COALESCE(changed.external_service_type, existing.external_service_type) AS external_service_type,
+  COALESCE(changed.external_deleted_at, existing.external_deleted_at) AS external_deleted_at
 FROM changed
 RIGHT JOIN batch ON batch.repo_id = changed.repo_id
 AND batch.external_id = changed.external_id
@@ -225,6 +229,7 @@ func batchChangesetsQuery(fmtstr string, cs []*a8n.Changeset) (*sqlf.Query, erro
 		CampaignIDs         json.RawMessage `json:"campaign_ids"`
 		ExternalID          string          `json:"external_id"`
 		ExternalServiceType string          `json:"external_service_type"`
+		ExternalDeletedAt   time.Time       `json:"external_deleted_at"`
 	}
 
 	records := make([]record, 0, len(cs))
@@ -249,6 +254,7 @@ func batchChangesetsQuery(fmtstr string, cs []*a8n.Changeset) (*sqlf.Query, erro
 			CampaignIDs:         campaignIDs,
 			ExternalID:          c.ExternalID,
 			ExternalServiceType: c.ExternalServiceType,
+			ExternalDeletedAt:   c.ExternalDeletedAt,
 		})
 	}
 
@@ -334,7 +340,8 @@ SELECT
   metadata,
   campaign_ids,
   external_id,
-  external_service_type
+  external_service_type,
+  external_deleted_at
 FROM changesets
 WHERE %s
 LIMIT 1
@@ -401,7 +408,8 @@ SELECT
   metadata,
   campaign_ids,
   external_id,
-  external_service_type
+  external_service_type,
+  external_deleted_at
 FROM changesets
 WHERE %s
 ORDER BY id ASC
@@ -467,7 +475,8 @@ changed AS (
     metadata              = batch.metadata,
     campaign_ids          = batch.campaign_ids,
     external_id           = batch.external_id,
-    external_service_type = batch.external_service_type
+    external_service_type = batch.external_service_type,
+	external_deleted_at   = batch.external_deleted_at
   FROM batch
   WHERE changesets.id = batch.id
   RETURNING changesets.*
@@ -483,7 +492,8 @@ SELECT
   changed.metadata,
   changed.campaign_ids,
   changed.external_id,
-  changed.external_service_type
+  changed.external_service_type,
+  changed.external_deleted_at
 FROM changed
 LEFT JOIN batch ON batch.repo_id = changed.repo_id
 AND batch.external_id = changed.external_id
@@ -2216,6 +2226,7 @@ func scanChangeset(t *a8n.Changeset, s scanner) error {
 		&dbutil.JSONInt64Set{Set: &t.CampaignIDs},
 		&t.ExternalID,
 		&t.ExternalServiceType,
+		&t.ExternalDeletedAt,
 	)
 	if err != nil {
 		return err

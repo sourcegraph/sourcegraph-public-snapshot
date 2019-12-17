@@ -309,6 +309,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 						CampaignIDs:         []int64{int64(i) + 1},
 						ExternalID:          fmt.Sprintf("foobar-%d", i),
 						ExternalServiceType: "github",
+						ExternalDeletedAt:   now,
 					}
 
 					changesets = append(changesets, th)
@@ -550,6 +551,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 				for _, c := range changesets {
 					c.Metadata = &bitbucketserver.PullRequest{ID: 1234}
 					c.ExternalServiceType = bitbucketserver.ServiceType
+					c.ExternalDeletedAt = c.ExternalDeletedAt.Add(time.Second)
 
 					if c.RepoID != 0 {
 						c.RepoID++

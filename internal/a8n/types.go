@@ -220,6 +220,7 @@ type Changeset struct {
 	CampaignIDs         []int64
 	ExternalID          string
 	ExternalServiceType string
+	ExternalDeletedAt   time.Time
 }
 
 // Clone returns a clone of a Changeset.
