@@ -1484,11 +1484,8 @@ describe('e2e test suite', () => {
         })
     })
 
-    describe.only('Interactive search mode (feature flagged)', () => {
+    describe('Interactive search mode (feature flagged)', () => {
         let previousExperimentalFeatures: any
-        //  beforeEach(async () => {
-        //     await driver.setUserSettings<Settings>({ experimentalFeatures: { splitSearchModes: true } })
-        // })
 
         beforeAll(async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/site-admin/global-settings')
