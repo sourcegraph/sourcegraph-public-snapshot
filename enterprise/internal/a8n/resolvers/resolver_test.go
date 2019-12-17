@@ -858,7 +858,7 @@ index 671e50a..851b23a 100644
 +++ b/README.md
 @@ -1,3 +1,3 @@
  # README
- 
+
 -This file is hosted at example.com and is a test file.
 +This file is hosted at sourcegraph.com and is a test file.
 diff --git a/urls.txt b/urls.txt
@@ -880,7 +880,7 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 			Patches: []graphqlbackend.CampaignPlanPatch{
 				{
 					Repository:   graphqlbackend.MarshalRepositoryID(1),
-					BaseRevision: "b",
+					BaseRevision: "master",
 					Patch:        "!!! this is not a valid unified diff !!!\n--- x\n+++ y\n@@ 1,1 2,2\na",
 				},
 			},
@@ -973,7 +973,7 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 `
 		mustExec(ctx, t, s, nil, &response, fmt.Sprintf(`
       mutation {
-        createCampaignPlanFromPatches(patches: [{repository: %q, baseRevision: "b", patch: %q}]) {
+        createCampaignPlanFromPatches(patches: [{repository: %q, baseRevision: "master", patch: %q}]) {
           ... on CampaignPlan {
             id
             type
