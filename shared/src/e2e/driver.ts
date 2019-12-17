@@ -235,18 +235,17 @@ export class Driver {
         config: string
         ensureRepos?: string[]
     }): Promise<void> {
+        // Use the graphQL API to query external services on the instance.
         const { externalServices } = dataOrThrowErrors(
             await this.makeGraphQLRequest<IQuery>({
                 request: gql`
-                    query ExternalServices($first: Int) {
-                        externalServices(first: $first) {
+                    query ExternalServices {
+                        externalServices(first: 1) {
                             totalCount
                         }
                     }
                 `,
-                variables: {
-                    first: 1,
-                },
+                variables: {},
             })
         )
         // Delete exsting external services if there are any.
@@ -262,8 +261,8 @@ export class Driver {
             }
         }
 
+        // Navigate to the add external service page.
         await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services/new')
-
         await (
             await this.page.waitForSelector(`[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`, {
                 visible: true,
