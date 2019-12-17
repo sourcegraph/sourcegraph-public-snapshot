@@ -21,6 +21,8 @@ Site admins can [configure Sourcegraph to respect Bitbucket Server's repository 
 
 The [Sourcegraph browser extension](browser_extension.md) supports Bitbucket Server. When installed in your web browser, it adds hover tooltips, go-to-definition, find-references, and code search to files and pull requests viewed on Bitbucket Server.
 
+![Bitbucket Server code intelligence](https://storage.googleapis.com/sourcegraph-assets/bitbucket-code-intel-pr-short.gif)
+
 1.  Install the [Sourcegraph browser extension](browser_extension.md).
 1.  [Configure the browser extension](browser_extension.md#configuring-the-sourcegraph-instance-to-use) to use your Sourcegraph instance.
 1.  To allow the browser extension to work on your Bitbucket Server instance:
