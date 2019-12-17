@@ -26,7 +26,6 @@ There are four fields for configuring which repositories are mirrored:
 By default, all Sourcegraph users can view all repositories. To configure Sourcegraph to use
 Bitbucket Server's repository permissions, see [Repository permissions](../repo/permissions.md#bitbucket_server).
 
-
 ### Authentication for older Bitbucket Server versions
 
 Bitbucket Server versions older than v5.5 require specifying a less secure username and password combination, as those versions of Bitbucket Server do not support [personal access tokens](https://confluence.atlassian.com/bitbucketserver/personal-access-tokens-939515499.html).
@@ -41,19 +40,6 @@ Bitbucket Server external service connections support the following configuratio
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/bitbucket_server.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/external_service/bitbucket_server) to see rendered content.</div>
 
-## Native extension
+## Sourcegraph native code intelligence plugin
 
-For production usage, we recommend installing the Sourcegraph Bitbucket Server plugin for all users (so that each user doesn't need to install and configure the browser extension individually). This involves adding a new add-on to  your Bitbucket Server instance.
-
-See the [bitbucket-server-plugin](https://github.com/sourcegraph/bitbucket-server-plugin) repository for installation instructions and configuration settings.
-
-The Sourcegraph instance's site admin must [update the `corsOrigin` site config property](../config/site_config.md) to allow the Bitbucket Server plugin to communicate with the Sourcegraph instance. For example:
-
-```json
-{
-  // ...
-  "corsOrigin":
-    "https://my-bitbucket.example.com"
-  // ...
-}
-```
+Learn more about the [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#sourcegraph-native-code-intelligence-plugin) for enabling native code intelligence for every Bitbucket user when browsing code and reviewing pull requests.
