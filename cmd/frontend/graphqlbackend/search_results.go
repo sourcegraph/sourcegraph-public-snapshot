@@ -486,9 +486,9 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 		status = "timeout"
 	case err == nil && len(rr.searchResultsCommon.timedout) > 0:
 		status = "partial_timeout"
-	case err == nil && rr.alert != nil {
+	case err == nil && rr.alert != nil:
 		status = "alert"
-		alertType = rr.alert
+		alertType = rr.alert.prometheusType
 	case err != nil:
 		status = "error"
 	case err == nil:
@@ -524,9 +524,9 @@ func (r *searchResolver) resultsWithTimeoutSuggestion(ctx context.Context) (*Sea
 		rr = &SearchResultsResolver{
 			alert: &searchAlert{
 				prometheusType: "timed_out",
-				title:       "Timed out while searching",
-				description: fmt.Sprintf("We weren't able to find any results in %s.", roundStr(dt.String())),
-				patternType: r.patternType,
+				title:          "Timed out while searching",
+				description:    fmt.Sprintf("We weren't able to find any results in %s.", roundStr(dt.String())),
+				patternType:    r.patternType,
 				proposedQueries: []*searchQueryDescription{
 					{
 						description: "query with longer timeout",
@@ -872,8 +872,8 @@ func alertOnSearchLimit(resultTypes []string, args *search.Args) ([]string, *sea
 				resultTypes = []string{}
 				alert = &searchAlert{
 					prometheusType: "exceeded_diff_commit_search_limit",
-					title:       fmt.Sprintf("Too many matching repositories for %s search to handle", resultType),
-					description: fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(resultType), repoLimit),
+					title:          fmt.Sprintf("Too many matching repositories for %s search to handle", resultType),
+					description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(resultType), repoLimit),
 				}
 			}
 		}
@@ -890,14 +890,14 @@ func alertOnError(multiErr *multierror.Error) (newMultiErr *multierror.Error, al
 			if strings.Contains(err.Error(), "Assert_failure zip") {
 				alert = &searchAlert{
 					prometheusType: "structural_search_repo_too_large",
-					title:       "Repository too large for structural search",
-					description: "One repository is too large to perform structural search. Use the `repo:` filter to run on a specific repository. This is a temporary restriction that will be removed in the future. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/7133",
+					title:          "Repository too large for structural search",
+					description:    "One repository is too large to perform structural search. Use the `repo:` filter to run on a specific repository. This is a temporary restriction that will be removed in the future. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/7133",
 				}
 			} else if strings.Contains(err.Error(), "Worker_oomed") || strings.Contains(err.Error(), "Worker_exited_abnormally") {
 				alert = &searchAlert{
 					prometheusType: "structural_search_needs_more_memory",
-					title:       "Structural search needs more memory",
-					description: "Running your structural search may require more memory. If you are running the query on many repositories, try reducing the number of repositories with the `repo:` filter.",
+					title:          "Structural search needs more memory",
+					description:    "Running your structural search may require more memory. If you are running the query on many repositories, try reducing the number of repositories with the `repo:` filter.",
 				}
 			} else {
 				newMultiErr = multierror.Append(newMultiErr, err)
