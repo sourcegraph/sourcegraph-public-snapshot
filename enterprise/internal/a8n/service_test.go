@@ -58,61 +58,63 @@ func TestService(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	testPlan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
-	err = store.CreateCampaignPlan(ctx, testPlan)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	campaignJobs := make([]*a8n.CampaignJob, 0, len(rs))
-	for _, repo := range rs {
-		campaignJob := &a8n.CampaignJob{
-			CampaignPlanID: testPlan.ID,
-			RepoID:         int32(repo.ID),
-			Rev:            "deadbeef",
-			BaseRef:        "refs/heads/master",
-			Diff:           "cool diff",
-			StartedAt:      now,
-			FinishedAt:     now,
-		}
-		err := store.CreateCampaignJob(ctx, campaignJob)
+	t.Run("CreateCampaign", func(t *testing.T) {
+		testPlan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
+		err = store.CreateCampaignPlan(ctx, testPlan)
 		if err != nil {
 			t.Fatal(err)
 		}
-		campaignJobs = append(campaignJobs, campaignJob)
-	}
 
-	campaign := &a8n.Campaign{
-		Name:            "Testing Campaign",
-		Description:     "Testing Campaign",
-		AuthorID:        u.ID,
-		NamespaceUserID: u.ID,
-		CampaignPlanID:  testPlan.ID,
-	}
-	gitClient := &dummyGitserverClient{response: "testresponse", responseErr: nil}
+		campaignJobs := make([]*a8n.CampaignJob, 0, len(rs))
+		for _, repo := range rs {
+			campaignJob := &a8n.CampaignJob{
+				CampaignPlanID: testPlan.ID,
+				RepoID:         int32(repo.ID),
+				Rev:            "deadbeef",
+				BaseRef:        "refs/heads/master",
+				Diff:           "cool diff",
+				StartedAt:      now,
+				FinishedAt:     now,
+			}
+			err := store.CreateCampaignJob(ctx, campaignJob)
+			if err != nil {
+				t.Fatal(err)
+			}
+			campaignJobs = append(campaignJobs, campaignJob)
+		}
 
-	cf := httpcli.NewHTTPClientFactory()
-	svc := NewServiceWithClock(store, gitClient, cf, clock)
-	err = svc.CreateCampaign(ctx, campaign)
-	if err != nil {
-		t.Fatal(err)
-	}
+		campaign := &a8n.Campaign{
+			Name:            "Testing Campaign",
+			Description:     "Testing Campaign",
+			AuthorID:        u.ID,
+			NamespaceUserID: u.ID,
+			CampaignPlanID:  testPlan.ID,
+		}
+		gitClient := &dummyGitserverClient{response: "testresponse", responseErr: nil}
 
-	_, err = store.GetCampaign(ctx, GetCampaignOpts{ID: campaign.ID})
-	if err != nil {
-		t.Fatal(err)
-	}
+		cf := httpcli.NewHTTPClientFactory()
+		svc := NewServiceWithClock(store, gitClient, cf, clock)
+		err = svc.CreateCampaign(ctx, campaign)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	haveJobs, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
-		CampaignID: campaign.ID,
+		_, err = store.GetCampaign(ctx, GetCampaignOpts{ID: campaign.ID})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		haveJobs, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
+			CampaignID: campaign.ID,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(haveJobs) != len(campaignJobs) {
+			t.Errorf("wrong number of ChangesetJobs: %d. want=%d", len(haveJobs), len(campaignJobs))
+		}
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(haveJobs) != len(campaignJobs) {
-		t.Errorf("wrong number of ChangesetJobs: %d. want=%d", len(haveJobs), len(campaignJobs))
-	}
 }
 
 type dummyGitserverClient struct {
