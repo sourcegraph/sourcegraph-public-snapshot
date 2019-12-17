@@ -193,7 +193,7 @@ func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Change
 	}
 
 	if len(notFound) > 0 {
-		return ChangesetsNotFoundError{NotFound: notFound}
+		return ChangesetsNotFoundError{Changesets: notFound}
 	}
 
 	return nil

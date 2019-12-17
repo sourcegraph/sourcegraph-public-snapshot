@@ -105,17 +105,17 @@ type ChangesetSource interface {
 // ChangesetsNotFoundError is returned by LoadChangesets if any of the passed
 // Changesets could not be found on the codehost.
 type ChangesetsNotFoundError struct {
-	NotFound []*Changeset
+	Changesets []*Changeset
 }
 
 func (e ChangesetsNotFoundError) Error() string {
-	if len(e.NotFound) == 1 {
-		return fmt.Sprintf("Changeset with external ID %q not found", e.NotFound[0].Changeset.ExternalID)
+	if len(e.Changesets) == 1 {
+		return fmt.Sprintf("Changeset with external ID %q not found", e.Changesets[0].Changeset.ExternalID)
 	}
 
-	items := make([]string, len(e.NotFound))
-	for i := range e.NotFound {
-		items[i] = fmt.Sprintf("* %q", e.NotFound[i].Changeset.ExternalID)
+	items := make([]string, len(e.Changesets))
+	for i := range e.Changesets {
+		items[i] = fmt.Sprintf("* %q", e.Changesets[i].Changeset.ExternalID)
 	}
 
 	return fmt.Sprintf(

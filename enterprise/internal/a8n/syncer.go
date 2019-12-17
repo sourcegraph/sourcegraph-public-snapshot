@@ -73,7 +73,7 @@ func (s *ChangesetSyncer) SyncChangesetsWithSources(ctx context.Context, bySourc
 			if !ok {
 				return err
 			}
-			notFound = notFoundErr.NotFound
+			notFound = notFoundErr.Changesets
 		}
 
 		notFoundById := make(map[int64]*repos.Changeset, len(notFound))
