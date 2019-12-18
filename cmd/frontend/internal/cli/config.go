@@ -197,7 +197,7 @@ func handleConfigOverrides() error {
 				}
 			}
 
-			ps := confGet().Critical.AuthProviders
+			ps := confGet().AuthProviders
 			for id, extSvc := range toUpdate {
 				log15.Debug("Updating external service", "id", id, "displayName", extSvc.DisplayName)
 

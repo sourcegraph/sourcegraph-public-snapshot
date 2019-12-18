@@ -13,14 +13,14 @@ func TestValidateCustom(t *testing.T) {
 		wantProblems conf.Problems
 	}{
 		"duplicates": {
-			input: conf.Unified{Critical: schema.CriticalConfiguration{
+			input: conf.Unified{SiteConfiguration: schema.SiteConfiguration{
 				ExternalURL: "x",
 				AuthProviders: []schema.AuthProviders{
 					{Openidconnect: &schema.OpenIDConnectAuthProvider{Type: "openidconnect", Issuer: "x"}},
 					{Openidconnect: &schema.OpenIDConnectAuthProvider{Type: "openidconnect", Issuer: "x"}},
 				},
 			}},
-			wantProblems: conf.NewCriticalProblems("OpenID Connect auth provider at index 1 is duplicate of index 0"),
+			wantProblems: conf.NewSiteProblems("OpenID Connect auth provider at index 1 is duplicate of index 0"),
 		},
 	}
 	for name, test := range tests {

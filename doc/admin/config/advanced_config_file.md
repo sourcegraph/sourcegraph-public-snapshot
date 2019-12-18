@@ -20,6 +20,8 @@ Loading configuration in this manner has two important drawbacks:
 
 #### Critical configuration
 
+> NOTE: Since Sourcegraph v3.11, critical configuration has been removed. All critical configuration options are now in the site configuration. See the [migration notes for Sourcegraph v3.11+](../migration/3_11.md) for more information.
+
 Set the environment variable below on all `frontend` containers (cluster deployment) or on the `server` container (single-container Docker deployment):
 
 ```bash
@@ -108,8 +110,10 @@ When you upgrade Sourcegraph versions, you should do the following to ensure you
 1. Upgrade Sourcegraph to the new version
 2. Visit each configuration page in the web UI (management console, site configuration, each external service)
 3. Copy the (now migrated) configuration from those pages into your JSON files.
+
 It is important to follow the above steps after *every* Sourcegraph version update, because we only guarantee migrations remain valid across two minor versions. If you fail to apply a migration and later upgrade Sourcegraph twice more, you may effectively "skip" an important migration.
-We're planning to improve this by having Sourcegraph notify you as a site admin when you should do the above, since today it is not actually required in most upgrades. See https://github.com/sourcegraph/sourcegraph/issues/4650 for details.
+
+We're planning to improve this by having Sourcegraph notify you as a site admin when you should do the above, since today it is not actually required in most upgrades. See https://github.com/sourcegraph/sourcegraph/issues/4650 for details. In the meantime, we will do our best to communicate when this is needed to you through the changelog.
 
 ## Kubernetes ConfigMap
 

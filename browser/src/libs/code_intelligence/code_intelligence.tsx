@@ -784,6 +784,9 @@ export function handleCodeHost({
                             ),
                             resolveContext,
                             adjustPosition,
+                            scrollBoundaries: codeViewEvent.getScrollBoundaries
+                                ? codeViewEvent.getScrollBoundaries(codeViewEvent.element)
+                                : [],
                         })
                     }
                 })

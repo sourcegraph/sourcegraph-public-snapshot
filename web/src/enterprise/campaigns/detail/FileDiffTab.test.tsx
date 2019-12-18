@@ -3,13 +3,8 @@ import React from 'react'
 import renderer from 'react-test-renderer'
 import { FileDiffTab } from './FileDiffTab'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { setLinkComponent } from '../../../../../shared/src/components/Link'
 
 describe('FileDiffTab', () => {
-    beforeEach(() => {
-        setLinkComponent((props: any) => <a {...props} />)
-        afterAll(() => setLinkComponent(null as any)) // reset global env for other tests
-    })
     test('renders the form', () => {
         const history = H.createMemoryHistory({ keyLength: 0 })
         const location = H.createLocation('/campaigns/new')

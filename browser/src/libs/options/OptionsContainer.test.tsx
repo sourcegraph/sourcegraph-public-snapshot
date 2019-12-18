@@ -62,7 +62,7 @@ describe('OptionsContainer', () => {
     test('checks the connection status when it the url updates', () => {
         const scheduler = new TestScheduler((a, b) => expect(a).toEqual(b))
 
-        const buildRenderer = (): ((ui: React.ReactElement<any>) => void) => {
+        const buildRenderer = (): ((ui: React.ReactElement) => void) => {
             let rerender: RenderResult['rerender'] | undefined
 
             return ui => {

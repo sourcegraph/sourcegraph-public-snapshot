@@ -1052,32 +1052,32 @@ func TestCalcCounts(t *testing.T) {
 			name:      "multiple changesets on different code hosts in different review stages before merge",
 			changesets: []*a8n.Changeset{
 				ghChangeset(1, daysAgo(6)),
-				bbsChangeset(1, daysAgo(6)),
-				ghChangeset(2, daysAgo(6)),
 				bbsChangeset(2, daysAgo(6)),
 				ghChangeset(3, daysAgo(6)),
-				bbsChangeset(3, daysAgo(6)),
+				bbsChangeset(4, daysAgo(6)),
+				ghChangeset(5, daysAgo(6)),
+				bbsChangeset(6, daysAgo(6)),
 			},
 			start: daysAgo(7),
 			events: []Event{
 				// GitHub Events
 				ghReview(1, daysAgo(5), "user1", "APPROVED"),
 				fakeEvent{t: daysAgo(3), kind: a8n.ChangesetEventKindGitHubMerged, id: 1},
-				ghReview(2, daysAgo(4), "user1", "APPROVED"),
-				ghReview(2, daysAgo(3), "user2", "APPROVED"),
-				fakeEvent{t: daysAgo(2), kind: a8n.ChangesetEventKindGitHubMerged, id: 2},
-				ghReview(3, daysAgo(2), "user1", "CHANGES_REQUESTED"),
-				ghReview(3, daysAgo(1), "user2", "CHANGES_REQUESTED"),
-				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubMerged, id: 3},
+				ghReview(3, daysAgo(4), "user1", "APPROVED"),
+				ghReview(3, daysAgo(3), "user2", "APPROVED"),
+				fakeEvent{t: daysAgo(2), kind: a8n.ChangesetEventKindGitHubMerged, id: 3},
+				ghReview(5, daysAgo(2), "user1", "CHANGES_REQUESTED"),
+				ghReview(5, daysAgo(1), "user2", "CHANGES_REQUESTED"),
+				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindGitHubMerged, id: 5},
 				// Bitbucket Server Events
-				bbsActivity(1, daysAgo(5), "user1", a8n.ChangesetEventKindBitbucketServerApproved),
-				fakeEvent{t: daysAgo(3), kind: a8n.ChangesetEventKindBitbucketServerMerged, id: 1},
-				bbsActivity(2, daysAgo(4), "user1", a8n.ChangesetEventKindBitbucketServerApproved),
-				bbsActivity(2, daysAgo(3), "user2", a8n.ChangesetEventKindBitbucketServerApproved),
-				fakeEvent{t: daysAgo(2), kind: a8n.ChangesetEventKindBitbucketServerMerged, id: 2},
-				bbsActivity(3, daysAgo(2), "user1", a8n.ChangesetEventKindBitbucketServerReviewed),
-				bbsActivity(3, daysAgo(1), "user2", a8n.ChangesetEventKindBitbucketServerReviewed),
-				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindBitbucketServerMerged, id: 3},
+				bbsActivity(2, daysAgo(5), "user1", a8n.ChangesetEventKindBitbucketServerApproved),
+				fakeEvent{t: daysAgo(3), kind: a8n.ChangesetEventKindBitbucketServerMerged, id: 2},
+				bbsActivity(4, daysAgo(4), "user1", a8n.ChangesetEventKindBitbucketServerApproved),
+				bbsActivity(4, daysAgo(3), "user2", a8n.ChangesetEventKindBitbucketServerApproved),
+				fakeEvent{t: daysAgo(2), kind: a8n.ChangesetEventKindBitbucketServerMerged, id: 4},
+				bbsActivity(6, daysAgo(2), "user1", a8n.ChangesetEventKindBitbucketServerReviewed),
+				bbsActivity(6, daysAgo(1), "user2", a8n.ChangesetEventKindBitbucketServerReviewed),
+				fakeEvent{t: daysAgo(1), kind: a8n.ChangesetEventKindBitbucketServerMerged, id: 6},
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(7), Total: 0, Open: 0},
@@ -1088,6 +1088,41 @@ func TestCalcCounts(t *testing.T) {
 				{Time: daysAgo(2), Total: 6, Open: 2, OpenPending: 0, OpenChangesRequested: 2, Merged: 4},
 				{Time: daysAgo(1), Total: 6, Merged: 6},
 				{Time: daysAgo(0), Total: 6, Merged: 6},
+			},
+		},
+		{
+			codehosts: "github and bitbucketserver",
+			name:      "multiple changesets open and deleted",
+			changesets: []*a8n.Changeset{
+				setExternalDeletedAt(ghChangeset(1, daysAgo(2)), daysAgo(1)),
+				setExternalDeletedAt(bbsChangeset(1, daysAgo(2)), daysAgo(1)),
+			},
+			start: daysAgo(2),
+			want: []*ChangesetCounts{
+				{Time: daysAgo(2), Total: 2, Open: 2, OpenPending: 2},
+				// We count deleted as closed
+				{Time: daysAgo(1), Total: 2, Closed: 2},
+				{Time: daysAgo(0), Total: 2, Closed: 2},
+			},
+		},
+		{
+			codehosts: "github and bitbucketserver",
+			name:      "multiple changesets open, closed and deleted",
+			changesets: []*a8n.Changeset{
+				setExternalDeletedAt(ghChangeset(1, daysAgo(3)), daysAgo(1)),
+				setExternalDeletedAt(bbsChangeset(2, daysAgo(3)), daysAgo(1)),
+			},
+			start: daysAgo(3),
+			events: []Event{
+				fakeEvent{t: daysAgo(2), kind: a8n.ChangesetEventKindGitHubClosed, id: 1},
+				fakeEvent{t: daysAgo(2), kind: a8n.ChangesetEventKindBitbucketServerDeclined, id: 2},
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(3), Total: 2, Open: 2, OpenPending: 2},
+				{Time: daysAgo(2), Total: 2, Closed: 2},
+				// We count deleted as closed, so they stay closed
+				{Time: daysAgo(1), Total: 2, Closed: 2},
+				{Time: daysAgo(0), Total: 2, Closed: 2},
 			},
 		},
 	}
@@ -1132,6 +1167,12 @@ func bbsChangeset(id int64, t time.Time) *a8n.Changeset {
 		ID:       id,
 		Metadata: &bitbucketserver.PullRequest{CreatedDate: timeToUnixMilli(t)},
 	}
+}
+
+func setExternalDeletedAt(c *a8n.Changeset, t time.Time) *a8n.Changeset {
+	c.SetDeleted()
+	c.ExternalDeletedAt = t
+	return c
 }
 
 func timeToUnixMilli(t time.Time) int {

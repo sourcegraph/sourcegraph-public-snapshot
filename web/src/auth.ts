@@ -57,7 +57,7 @@ export function refreshAuthenticatedUser(): Observable<never> {
     )
 }
 
-const initialSiteConfigAuthPublic = window.context ? window.context.critical['auth.public'] : false // default to false in tests
+const initialSiteConfigAuthPublic = window.context ? window.context.site['auth.public'] : false // default to false in tests
 
 /**
  * Whether auth is required to perform any action.

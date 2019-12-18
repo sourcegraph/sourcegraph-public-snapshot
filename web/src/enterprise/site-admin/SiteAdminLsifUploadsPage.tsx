@@ -41,7 +41,7 @@ const LsifUploadNode: FunctionComponent<LsifUploadNodeProps> = ({ node }) => (
     </li>
 )
 
-interface Props extends RouteComponentProps<any> {}
+interface Props extends RouteComponentProps<{}> {}
 
 interface State {
     statsOrError: GQL.ILSIFUploadStats | ErrorLike | null

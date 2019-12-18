@@ -31,7 +31,7 @@ import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevContainerRoute } from './repo/RepoRevContainer'
 import { LayoutRouteProps } from './routes'
-import { parseSearchURLQuery, PatternTypeProps } from './search'
+import { parseSearchURLQuery, PatternTypeProps, InteractiveSearchProps } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { EventLogger, EventLoggerProps } from './tracking/eventLogger'
@@ -43,14 +43,14 @@ import { parseBrowserRepoURL } from './util/url'
 import LiteralSearchToast from './marketing/LiteralSearchToast'
 import { SurveyToast } from './marketing/SurveyToast'
 import { ThemeProps } from '../../shared/src/theme'
-import { ThemePreferenceProps } from './search/theme'
+import { ThemePreferenceProps } from './theme'
 import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_SHOW_HELP } from './keyboardShortcuts/keyboardShortcuts'
 import { QueryState } from './search/helpers'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarItem } from './repo/settings/RepoSettingsSidebar'
 
 export interface LayoutProps
-    extends RouteComponentProps<any>,
+    extends RouteComponentProps<{}>,
         SettingsCascadeProps,
         PlatformContextProps,
         ExtensionsControllerProps,
@@ -59,7 +59,8 @@ export interface LayoutProps
         EventLoggerProps,
         ThemePreferenceProps,
         ActivationProps,
-        PatternTypeProps {
+        PatternTypeProps,
+        InteractiveSearchProps {
     exploreSections: readonly ExploreSectionDescriptor[]
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
@@ -79,7 +80,7 @@ export interface LayoutProps
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
-    routes: readonly LayoutRouteProps[]
+    routes: readonly LayoutRouteProps<any>[]
 
     authenticatedUser: GQL.IUser | null
 
@@ -101,16 +102,21 @@ export interface LayoutProps
         patternType: GQL.SearchPatternType,
         { extensionsController }: ExtensionsControllerProps<'services'>
     ) => Observable<GQL.ISearchResults | ErrorLike>
+
     isSourcegraphDotCom: boolean
     showCampaigns: boolean
     children?: never
 }
 
 export const Layout: React.FunctionComponent<LayoutProps> = props => {
-    const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
+    const isSearchHomepage =
+        props.location.pathname === '/search' &&
+        !parseSearchURLQuery(props.location.search, props.interactiveSearchMode)
 
     const needsSiteInit = window.context.showOnboarding
     const isSiteInit = props.location.pathname === '/site-admin/init'
+
+    const hideGlobalSearchInput: GlobalNavbar['props']['hideGlobalSearchInput'] = props.location.pathname === '/stats'
 
     useScrollToLocationHash(props.location)
     // Remove trailing slash (which is never valid in any of our URLs).
@@ -133,7 +139,14 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             )}
             {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}
             {!isSiteInit && <LiteralSearchToast isSourcegraphDotCom={props.isSourcegraphDotCom} />}
-            {!isSiteInit && <GlobalNavbar {...props} lowProfile={isSearchHomepage} />}
+            {!isSiteInit && (
+                <GlobalNavbar
+                    {...props}
+                    lowProfile={isSearchHomepage}
+                    hideGlobalSearchInput={hideGlobalSearchInput}
+                    hideNavLinks={false}
+                />
+            )}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
             <ErrorBoundary location={props.location}>
                 <Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>

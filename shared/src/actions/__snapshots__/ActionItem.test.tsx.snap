@@ -90,10 +90,10 @@ exports[`ActionItem pressed toggle actionItem 1`] = `
 exports[`ActionItem render as link for "open" command 1`] = `
 <a
   className="action-item "
+  href="https://example.com/bar"
   onClick={[Function]}
   onKeyPress={[Function]}
   tabIndex={0}
-  to="https://example.com/bar"
 >
   
   t
@@ -104,10 +104,10 @@ exports[`ActionItem render as link for "open" command 1`] = `
 exports[`ActionItem render as link with icon for "open" command with different origin 1`] = `
 <a
   className="action-item "
+  href="https://other.com/foo"
   onClick={[Function]}
   onKeyPress={[Function]}
   tabIndex={0}
-  to="https://other.com/foo"
 >
   
   t

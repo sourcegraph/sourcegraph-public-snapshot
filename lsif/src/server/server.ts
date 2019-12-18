@@ -84,7 +84,7 @@ async function main(logger: Logger): Promise<void> {
 
     // Register endpoints
     app.use(createMetaRouter())
-    app.use(createDumpRouter(backend))
+    app.use(createDumpRouter(xrepoDatabase))
     app.use(createUploadRouter(uploadsManager))
     app.use(createLsifRouter(backend, uploadsManager, logger, tracer))
 

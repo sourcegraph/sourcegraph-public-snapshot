@@ -14,6 +14,8 @@ import {
     createOrganization,
     deleteOrganization,
     getViewerSettings,
+    fetchSiteConfiguration,
+    updateSiteConfiguration,
 } from './api'
 import { Config } from '../../../../shared/src/e2e/config'
 import { ResourceDestructor } from './TestResourceManager'
@@ -25,8 +27,8 @@ import {
     GitLabAuthProvider,
     OpenIDConnectAuthProvider,
     SAMLAuthProvider,
-} from '../../schema/critical.schema'
-import { fromFetch } from 'rxjs/fetch'
+    SiteConfiguration,
+} from '../../schema/site.schema'
 import { first } from 'lodash'
 import { overwriteSettings } from '../../../../shared/src/settings/edit'
 import { retry } from '../../../../shared/src/e2e/e2e-test-utils'
@@ -110,108 +112,30 @@ export async function clickAndWaitForNavigation(handle: puppeteer.ElementHandle,
     await Promise.all([handle.click(), page.waitForNavigation()])
 }
 
-/**
- * Navigate to the management console GUI and add the specified authentication provider. Returns a
- * function that restores the critical site config to its previous value (before adding the
- * authentication provider).
- */
-export async function createAuthProviderGUI(
-    driver: Driver,
-    managementConsoleUrl: string,
-    managementConsolePassword: string,
+export async function createAuthProvider(
+    gqlClient: GraphQLClient,
     authProvider: GitHubAuthProvider | GitLabAuthProvider | OpenIDConnectAuthProvider | SAMLAuthProvider
 ): Promise<ResourceDestructor> {
-    const authHeaders = {
-        Authorization: `Basic ${new Buffer(`:${managementConsolePassword}`).toString('base64')}`,
-    }
-
-    await driver.page.setExtraHTTPHeaders(authHeaders)
-    await driver.goToURLWithInvalidTLS(managementConsoleUrl)
-
-    const oldCriticalConfig = await driver.page.evaluate(async managementConsoleUrl => {
-        const res = await fetch(managementConsoleUrl + '/api/get', { method: 'GET' })
-        return (await res.json()).Contents
-    }, managementConsoleUrl)
-    const parsedOldConfig = jsonc.parse(oldCriticalConfig)
-    const authProviders = parsedOldConfig['auth.providers'] as any[]
+    const siteConfig = await fetchSiteConfiguration(gqlClient).toPromise()
+    const siteConfigParsed: SiteConfiguration = jsonc.parse(siteConfig.configuration.effectiveContents)
+    const authProviders = siteConfigParsed['auth.providers']
     if (
-        authProviders.filter(p => p.type === authProvider.type && p.displayName === authProvider.displayName).length > 0
+        authProviders &&
+        authProviders.filter(p => p.type === authProvider.type && (p as any).displayName === authProvider.displayName)
+            .length > 0
     ) {
-        return () => Promise.resolve()
+        return () => Promise.resolve() // provider already exists
     }
-
-    const newCriticalConfig = jsonc.applyEdits(
-        oldCriticalConfig,
-        jsoncEdit.setProperty(oldCriticalConfig, ['auth.providers', -1], authProvider, {
-            eol: '\n',
-            insertSpaces: true,
-            tabSize: 2,
-        })
-    )
-    await driver.replaceText({
-        selector: '.monaco-editor',
-        newText: newCriticalConfig,
-        selectMethod: 'keyboard',
-        enterTextMethod: 'paste',
-    })
-    await (await driver.findElementWithText('Save changes')).click()
-    await driver.findElementWithText('Saved!', { wait: { timeout: 1000 } })
-    await driver.page.setExtraHTTPHeaders({})
-
-    return async () => {
-        await driver.page.setExtraHTTPHeaders(authHeaders)
-        await driver.goToURLWithInvalidTLS(managementConsoleUrl)
-
-        await driver.replaceText({
-            selector: '.monaco-editor',
-            newText: oldCriticalConfig,
-            selectMethod: 'keyboard',
-            enterTextMethod: 'paste',
-        })
-
-        await (await driver.findElementWithText('Save changes')).click()
-        await driver.findElementWithText('Saved!', { wait: { timeout: 500 } })
-
-        await driver.page.setExtraHTTPHeaders({})
-    }
-}
-
-interface Configuration {
-    ID: number
-    Contents: string
-}
-
-/**
- * Obtain the critical site config from the API. As long as the management console uses a
- * self-signed TLS certificate, this requires NODE_TLS_REJECT_UNAUTHORIZED=0 in the process
- * environment. If invoked from jest, this must be set on the command line (it does not properly
- * take effect in code: https://github.com/facebook/jest/issues/8449).
- */
-export async function getCriticalSiteConfig(
-    managementConsoleUrl: string,
-    managementConsolePassword: string
-): Promise<Configuration> {
-    const results = await fromFetch(`${managementConsoleUrl}/api/get`, {
-        headers: {
-            Authorization: `Basic ${new Buffer(`:${managementConsolePassword}`).toString('base64')}`,
-        },
-    }).toPromise()
-    return results.json()
-}
-
-export async function setCriticalSiteConfig(
-    managementConsoleUrl: string,
-    managementConsolePassword: string,
-    configuration: { Contents: string; LastID: number }
-): Promise<Configuration> {
-    const results = await fromFetch(`${managementConsoleUrl}/api/update`, {
-        headers: {
-            Authorization: `Basic ${new Buffer(`:${managementConsolePassword}`).toString('base64')}`,
-        },
-        method: 'POST',
-        body: JSON.stringify(configuration),
-    }).toPromise()
-    return results.json()
+    const editFns = [
+        (contents: string) =>
+            jsoncEdit.setProperty(contents, ['auth.providers', -1], authProvider, {
+                eol: '\n',
+                insertSpaces: true,
+                tabSize: 2,
+            }),
+    ]
+    const { destroy } = await editSiteConfig(gqlClient, ...editFns)
+    return destroy
 }
 
 /**
@@ -298,27 +222,24 @@ export async function editGlobalSettings(
     }
 }
 
-export async function editCriticalSiteConfig(
-    managementConsoleUrl: string,
-    managementConsolePassword: string,
+export async function editSiteConfig(
+    gqlClient: GraphQLClient,
     ...edits: ((contents: string) => jsonc.Edit[])[]
-): Promise<{ destroy: ResourceDestructor; result: Configuration }> {
-    const origCriticalConfig = await getCriticalSiteConfig(managementConsoleUrl, managementConsolePassword)
-    let newContents = origCriticalConfig.Contents
+): Promise<{ destroy: ResourceDestructor; result: boolean }> {
+    const origConfig = await fetchSiteConfiguration(gqlClient).toPromise()
+    let newContents = origConfig.configuration.effectiveContents
     for (const editFn of edits) {
         newContents = jsonc.applyEdits(newContents, editFn(newContents))
     }
     return {
-        result: await setCriticalSiteConfig(managementConsoleUrl, managementConsolePassword, {
-            Contents: newContents,
-            LastID: origCriticalConfig.ID,
-        }),
+        result: await updateSiteConfiguration(gqlClient, origConfig.configuration.id, newContents).toPromise(),
         destroy: async () => {
-            const c = await getCriticalSiteConfig(managementConsoleUrl, managementConsolePassword)
-            await setCriticalSiteConfig(managementConsoleUrl, managementConsolePassword, {
-                LastID: c.ID,
-                Contents: origCriticalConfig.Contents,
-            })
+            const c = await fetchSiteConfiguration(gqlClient).toPromise()
+            await updateSiteConfiguration(
+                gqlClient,
+                c.configuration.id,
+                origConfig.configuration.effectiveContents
+            ).toPromise()
         },
     }
 }

@@ -58,7 +58,7 @@ func WriteSubscriptionErrorResponseForFeature(w http.ResponseWriter, featureName
 	WriteSubscriptionErrorResponse(
 		w, http.StatusForbidden,
 		fmt.Sprintf("License is not valid for %s", featureNameHumanReadable),
-		fmt.Sprintf("To use the %s feature, a site admin must upgrade the Sourcegraph license in the Sourcegraph management console (https://docs.sourcegraph.com/admin/management_console). (The site admin may also remove the site configuration that enables this feature to dismiss this message.)", featureNameHumanReadable),
+		fmt.Sprintf("To use the %s feature, a site admin must upgrade the Sourcegraph license in the Sourcegraph [**site configuration**](/site-admin/configuration). (The site admin may also remove the site configuration that enables this feature to dismiss this message.)", featureNameHumanReadable),
 	)
 }
 

@@ -69,6 +69,13 @@ const diffCodeView: Omit<CodeView, 'element'> = {
     getToolbarMount: createFileActionsToolbarMount,
     resolveFileInfo: resolveDiffFileInfo,
     toolbarButtonProps,
+    getScrollBoundaries: codeView => {
+        const fileHeader = codeView.querySelector<HTMLElement>('.file-header')
+        if (!fileHeader) {
+            throw new Error('Could not find .file-header element in GitHub PR code view')
+        }
+        return [fileHeader]
+    },
 }
 
 const diffConversationCodeView: Omit<CodeView, 'element'> = {

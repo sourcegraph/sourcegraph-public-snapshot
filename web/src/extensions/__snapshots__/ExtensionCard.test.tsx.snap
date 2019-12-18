@@ -29,7 +29,7 @@ exports[`ExtensionCard renders 1`] = `
             >
               <a
                 className="stretched-link"
-                to="extensions/x/y"
+                href="extensions/x/y"
               >
                 <span
                   className="text-muted"

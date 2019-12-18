@@ -24,7 +24,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = ({
     location,
     history,
     patternType,
-    togglePatternType,
+    setPatternType,
 }) => {
     // Only autofocus the query input on search result pages (otherwise we
     // capture down-arrow keypresses that the user probably intends to scroll down
@@ -40,7 +40,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = ({
     )
 
     return (
-        <Form className="search search--navbar-item d-flex align-items-start" onSubmit={onSubmit}>
+        <Form className="search search--navbar-item d-flex align-items-start flex-grow-1" onSubmit={onSubmit}>
             <QueryInput
                 value={navbarSearchState}
                 onChange={onChange}
@@ -49,7 +49,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = ({
                 location={location}
                 history={history}
                 patternType={patternType}
-                togglePatternType={togglePatternType}
+                setPatternType={setPatternType}
             />
             <SearchButton />
         </Form>

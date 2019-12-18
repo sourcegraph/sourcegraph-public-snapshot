@@ -5,15 +5,103 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"os"
+	"reflect"
 	"time"
 
 	multierror "github.com/hashicorp/go-multierror"
+	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/schema/critical"
 )
+
+// RunMigrations runs configuration DB table migrations.
+func RunMigrations(ctx context.Context) error {
+	// Migrate critical configuration into the site configuration (merge the two).
+	rawCritical, err := CriticalGetLatest(ctx)
+	if err != nil {
+		return err
+	}
+	rawSite, err := SiteGetLatest(ctx)
+	if err != nil {
+		return err
+	}
+	var critical critical.CriticalConfiguration
+	if err := jsonc.Unmarshal(rawCritical.Contents, &critical); err != nil {
+		return err
+	}
+	if critical.Migrated {
+		return nil
+	}
+	if os.Getenv("SITE_CONFIG_FILE") != "" || os.Getenv("CRITICAL_CONFIG_FILE") != "" {
+		fmt.Println("--------------------------------------------------------------------------------")
+		fmt.Println("- IMPORTANT: Migrating critical configuration into site configuration.         -")
+		fmt.Println("-                                                                              -")
+		fmt.Println("- Please copy the updated contents of your site configuration found in the     -")
+		fmt.Println("- Site Admin area into your SITE_CONFIG_FILE, otherwise your Sourcegraph       -")
+		fmt.Println("- instance may be misconfigured when you next upgrade!                         -")
+		fmt.Println("-                                                                              -")
+		fmt.Println("--------------------------------------------------------------------------------")
+	}
+	for _, edit := range []struct {
+		fieldName string
+		value     interface{}
+	}{
+		{"auth.enableUsernameChanges", critical.AuthEnableUsernameChanges},
+		{"auth.providers", critical.AuthProviders},
+		{"auth.sessionExpiry", critical.AuthSessionExpiry},
+		{"auth.userOrgMap", critical.AuthUserOrgMap},
+		{"externalURL", critical.ExternalURL},
+		{"htmlBodyBottom", critical.HtmlBodyBottom},
+		{"htmlBodyTop", critical.HtmlBodyTop},
+		{"htmlHeadBottom", critical.HtmlHeadBottom},
+		{"htmlHeadTop", critical.HtmlHeadTop},
+		{"licenseKey", critical.LicenseKey},
+		{"lightstepAccessToken", critical.LightstepAccessToken},
+		{"lightstepProject", critical.LightstepProject},
+		{"log", critical.Log},
+		{"update.channel", critical.UpdateChannel},
+		{"useJaeger", critical.UseJaeger},
+	} {
+		// All of these fields are omitempty, so if they are zero values do not write them.
+		if reflect.ValueOf(edit.value).IsZero() {
+			continue
+		}
+		rawSite.Contents, err = jsonc.Edit(rawSite.Contents, edit.value, edit.fieldName)
+		if err != nil {
+			return err
+		}
+	}
+	_, err = CriticalCreateIfUpToDate(ctx, &rawCritical.ID, `{"migrated": true}`)
+	if err != nil {
+		if err == ErrNewerEdit {
+			// Since all frontends are racing to this point, we rely on the fact that one
+			// of us will be the first to make this edit and that frontend owns performing
+			// the migration.
+			//
+			// In theory there is a small chance we could have a DB connection failure
+			// after doing this, or that in rare cases our process would die for some
+			// unrelated reason -- but in practice this should be very rare and a site
+			// admin would just need to copy/paste their critical configuration into their
+			// site configuration via the escape hatch file.
+			log15.Warn("migrating configuration: another frontend has already performed the migration, skipping")
+			return nil
+		}
+		log15.Warn("migrating configuration: failed to update critical configuration", "error", err)
+		return err
+	}
+	_, err = SiteCreateIfUpToDate(ctx, &rawSite.ID, rawSite.Contents)
+	if err != nil {
+		log15.Warn("migrating configuration: failed to update site configuration", "error", err)
+		return err
+	}
+	return err
+}
 
 // Config contains the contents of a critical/site config along with associated metadata.
 type Config struct {

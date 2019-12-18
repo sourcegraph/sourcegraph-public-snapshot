@@ -128,7 +128,7 @@ func Main() {
 		log.Fatal("Failed to setup nginx:", err)
 	}
 
-	postgresExporterLine := fmt.Sprintf(`postgres_exporter: env DATA_SOURCE_NAME="%s" postgres_exporter`, dbutil.PostgresDSN("postgres", os.Getenv))
+	postgresExporterLine := fmt.Sprintf(`postgres_exporter: env DATA_SOURCE_NAME="%s" postgres_exporter --log.level=%s`, dbutil.PostgresDSN("postgres", os.Getenv), os.Getenv("SRC_LOG_LEVEL"))
 
 	procfile := []string{
 		nginx,
@@ -138,7 +138,6 @@ func Main() {
 		`symbols: symbols`,
 		`lsif-server: node /lsif/out/server/server.js`,
 		`lsif-worker: node /lsif/out/worker/worker.js`,
-		`management-console: management-console`,
 		`searcher: searcher`,
 		`replacer: replacer`,
 		`github-proxy: github-proxy`,

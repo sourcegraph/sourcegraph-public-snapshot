@@ -10,7 +10,7 @@ Survey responses are also always sent to Sourcegraph.com.
 
 ## Restart feedback survey
 
-By default, users are only presented with the feedback survey once. Site admins may restart the feedback survey for all users (regardless of whether they have already responded). To restart the feedback survey, use the [critical configuration's `htmlBodyBottom` property](../admin/config/critical_config.md#reference):
+By default, users are only presented with the feedback survey once. Site admins may restart the feedback survey for all users (regardless of whether they have already responded). To restart the feedback survey, use the [site configuration's `htmlBodyBottom` property](../admin/config/site_config.md#reference):
 
 ```json
 {

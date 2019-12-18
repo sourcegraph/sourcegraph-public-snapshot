@@ -11,6 +11,7 @@ import { readEnvBoolean, retry } from './e2e-test-utils'
 import * as path from 'path'
 import { escapeRegExp } from 'lodash'
 import { readFile } from 'mz/fs'
+import { Settings } from '../settings/settings'
 
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.
@@ -235,24 +236,39 @@ export class Driver {
         config: string
         ensureRepos?: string[]
     }): Promise<void> {
-        await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services')
-        await this.page.waitFor('.e2e-filtered-connection')
-        await this.page.waitForSelector('.e2e-filtered-connection__loader', { hidden: true })
+        // Use the graphQL API to query external services on the instance.
+        const { externalServices } = dataOrThrowErrors(
+            await this.makeGraphQLRequest<IQuery>({
+                request: gql`
+                    query ExternalServices {
+                        externalServices(first: 1) {
+                            totalCount
+                        }
+                    }
+                `,
+                variables: {},
+            })
+        )
+        // Delete existing external services if there are any.
+        if (externalServices.totalCount === 0) {
+            await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services')
+            await this.page.waitFor('.e2e-filtered-connection')
+            await this.page.waitForSelector('.e2e-filtered-connection__loader', { hidden: true })
 
-        // Matches buttons for deleting external services named ${displayName}.
-        const deleteButtonSelector = `[data-e2e-external-service-name="${displayName}"] .e2e-delete-external-service-button`
-        if (await this.page.$(deleteButtonSelector)) {
-            await Promise.all([this.acceptNextDialog(), this.page.click(deleteButtonSelector)])
+            // Matches buttons for deleting external services named ${displayName}.
+            const deleteButtonSelector = `[data-e2e-external-service-name="${displayName}"] .e2e-delete-external-service-button`
+            if (await this.page.$(deleteButtonSelector)) {
+                await Promise.all([this.acceptNextDialog(), this.page.click(deleteButtonSelector)])
+            }
         }
 
-        await (await this.page.waitForSelector('.e2e-goto-add-external-service-page', { visible: true })).click()
-
+        // Navigate to the add external service page.
+        await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services/new')
         await (
             await this.page.waitForSelector(`[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`, {
                 visible: true,
             })
         ).click()
-
         await this.replaceText({
             selector: '#e2e-external-service-form-display-name',
             newText: displayName,
@@ -413,18 +429,18 @@ export class Driver {
     }
 
     public async resetUserSettings(): Promise<void> {
+        return this.setUserSettings({})
+    }
+
+    public async setUserSettings<S extends Settings>(settings: S): Promise<void> {
         const currentSettingsResponse = await this.makeGraphQLRequest<IQuery>({
             request: gql`
                 query UserSettings {
                     currentUser {
                         id
-                        settingsCascade {
-                            subjects {
-                                latestSettings {
-                                    id
-                                    contents
-                                }
-                            }
+                        latestSettings {
+                            id
+                            contents
                         }
                     }
                 }
@@ -433,33 +449,29 @@ export class Driver {
         })
 
         const { currentUser } = dataOrThrowErrors(currentSettingsResponse)
+        if (!currentUser) {
+            throw new Error('no currentUser')
+        }
 
-        if (currentUser?.settingsCascade) {
-            const emptySettings = '{}'
-            const [{ latestSettings }] = currentUser.settingsCascade.subjects.slice(-1)
-
-            if (latestSettings && latestSettings.contents !== emptySettings) {
-                const updateConfigResponse = await this.makeGraphQLRequest<IMutation>({
-                    request: gql`
-                        mutation OverwriteSettings($subject: ID!, $lastID: Int, $contents: String!) {
-                            settingsMutation(input: { subject: $subject, lastID: $lastID }) {
-                                overwriteSettings(contents: $contents) {
-                                    empty {
-                                        alwaysNil
-                                    }
-                                }
+        const updateConfigResponse = await this.makeGraphQLRequest<IMutation>({
+            request: gql`
+                mutation OverwriteSettings($subject: ID!, $lastID: Int, $contents: String!) {
+                    settingsMutation(input: { subject: $subject, lastID: $lastID }) {
+                        overwriteSettings(contents: $contents) {
+                            empty {
+                                alwaysNil
                             }
                         }
-                    `,
-                    variables: {
-                        contents: emptySettings,
-                        subject: currentUser.id,
-                        lastID: latestSettings.id,
-                    },
-                })
-                dataOrThrowErrors(updateConfigResponse)
-            }
-        }
+                    }
+                }
+            `,
+            variables: {
+                contents: JSON.stringify(settings),
+                subject: currentUser.id,
+                lastID: currentUser.latestSettings ? currentUser.latestSettings.id : null,
+            },
+        })
+        dataOrThrowErrors(updateConfigResponse)
     }
 
     /**

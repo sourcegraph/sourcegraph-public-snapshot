@@ -17,13 +17,5 @@ build_frontend_enterprise() {
 }
 export -f build_frontend_enterprise
 
-build_management_console() {
-    echo "--- pre- build management-console"
-    ./cmd/management-console/pre-build.sh
-}
-export -f build_management_console
-
-# We run the the management-console's pre-build script in parallel because it invokes expensive
-# yarn/node commands
-echo "--- (enterprise) pre-build frontend and management console in parallel"
-parallel_run {} ::: build_frontend_enterprise build_management_console
+echo "--- (enterprise) pre-build frontend in parallel"
+parallel_run {} ::: build_frontend_enterprise

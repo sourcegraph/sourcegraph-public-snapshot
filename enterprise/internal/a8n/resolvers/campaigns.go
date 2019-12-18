@@ -92,12 +92,7 @@ func (r *campaignResolver) Author(ctx context.Context) (*graphqlbackend.UserReso
 }
 
 func (r *campaignResolver) URL(ctx context.Context) (string, error) {
-	// TODO(tsenart): Query for namespace only once
-	ns, err := r.Namespace(ctx)
-	if err != nil {
-		return "", err
-	}
-	return path.Join(ns.URL(), "campaigns", string(r.ID())), nil
+	return path.Join("/campaigns", string(r.ID())), nil
 }
 
 func (r *campaignResolver) Namespace(ctx context.Context) (n graphqlbackend.NamespaceResolver, err error) {

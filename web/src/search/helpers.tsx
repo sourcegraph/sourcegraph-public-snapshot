@@ -5,13 +5,9 @@ import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { eventLogger } from '../tracking/eventLogger'
 import { SearchType } from './results/SearchResults'
 import { SearchFilterSuggestions } from './searchFilterSuggestions'
-import {
-    Suggestion,
-    SuggestionTypes,
-    FiltersSuggestionTypes,
-    isolatedFuzzySearchFilters,
-    filterAliases,
-} from './input/Suggestion'
+import { Suggestion, FiltersSuggestionTypes, isolatedFuzzySearchFilters, filterAliases } from './input/Suggestion'
+import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/util'
+import { SuggestionTypes } from '../../../shared/src/search/suggestions/util'
 
 /**
  * @param activation If set, records the DidSearch activation event for the new user activation
@@ -19,21 +15,24 @@ import {
  */
 export function submitSearch(
     history: H.History,
-    query: string,
+    navbarQuery: string,
     source: 'home' | 'nav' | 'repo' | 'tree' | 'filter' | 'type',
     patternType: GQL.SearchPatternType,
-    activation?: ActivationProps['activation']
+    activation?: ActivationProps['activation'],
+    filtersQuery?: FiltersToTypeAndValue
 ): void {
+    const searchQueryParam = buildSearchURLQuery(navbarQuery, patternType, filtersQuery)
+
     // Go to search results page
-    const path = '/search?' + buildSearchURLQuery(query, patternType)
+    const path = '/search?' + searchQueryParam
     eventLogger.log('SearchSubmitted', {
         code_search: {
-            pattern: query,
-            query,
+            pattern: navbarQuery,
+            query: navbarQuery,
             source,
         },
     })
-    history.push(path, { ...history.location.state, query })
+    history.push(path, { ...history.location.state, query: navbarQuery })
     if (activation) {
         activation.update({ DidSearch: true })
     }
@@ -366,3 +365,20 @@ export const formatQueryForFuzzySearch = (queryState: QueryState): string => {
 
     return firstPart.substring(0, filterIndex) + formattedFilterAndValue + lastPart
 }
+
+/**
+ * Formats a query for fetching suggestions in interactive mode.
+ *
+ * This is a modified version of  formatQueryForFuzzySearch, which accounts for interactive search
+ * mode, where we don't have and don't require a cursor position since we don't require splitting
+ * queries to add suggestion values.
+ *
+ * If the resolved filter is an isolated one, we will ignore the rest of the query, and return only
+ * the resolved filter and value. Otherwise, we return the entire query.
+ *
+ * */
+export const formatInteractiveQueryForFuzzySearch = (
+    fullQuery: string,
+    filterType: SuggestionTypes,
+    value: string = ''
+): string => (isolatedFuzzySearchFilters.includes(filterType) ? filterType + ':' + value : fullQuery)
