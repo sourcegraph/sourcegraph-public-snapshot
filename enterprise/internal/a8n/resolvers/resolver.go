@@ -685,5 +685,38 @@ func (r *Resolver) PublishChangesetPlan(ctx context.Context, args *graphqlbacken
 		return nil, errors.Wrap(err, "checking if user is admin")
 	}
 
-	return nil, errors.New("TODO: not implemented yet")
+	campaignJobID, err := unmarshalCampaignJobID(args.ChangesetPlan)
+	if err != nil {
+		return nil, err
+	}
+
+	job, err := r.store.GetCampaignJob(ctx, ee.GetCampaignJobOpts{ID: campaignJobID})
+	if err != nil {
+		return nil, err
+	}
+
+	campaign, err := r.store.GetCampaign(ctx, ee.GetCampaignOpts{CampaignPlanID: job.CampaignPlanID})
+	if err != nil {
+		return nil, err
+	}
+
+	changesetJob := &a8n.ChangesetJob{
+		CampaignID:    campaign.ID,
+		CampaignJobID: job.ID,
+	}
+	err = r.store.CreateChangesetJob(ctx, changesetJob)
+	if err != nil {
+		return nil, err
+	}
+
+	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
+	go func() {
+		ctx := trace.ContextWithTrace(context.Background(), tr)
+		err := svc.RunChangesetJob(ctx, campaign, changesetJob)
+		if err != nil {
+			log15.Error("RunChangesetJobs", "err", err)
+		}
+	}()
+
+	return &graphqlbackend.EmptyResponse{}, nil
 }

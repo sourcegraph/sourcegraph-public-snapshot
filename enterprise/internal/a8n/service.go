@@ -220,7 +220,7 @@ func (s *Service) RunChangesetJobs(ctx context.Context, c *a8n.Campaign) error {
 
 	errs := &multierror.Error{}
 	for _, job := range jobs {
-		err := s.runChangesetJob(ctx, c, job)
+		err := s.RunChangesetJob(ctx, c, job)
 		if err != nil {
 			err = errors.Wrapf(err, "ChangesetJob %d", job.ID)
 			errs = multierror.Append(errs, err)
@@ -230,12 +230,12 @@ func (s *Service) RunChangesetJobs(ctx context.Context, c *a8n.Campaign) error {
 	return errs.ErrorOrNil()
 }
 
-func (s *Service) runChangesetJob(
+func (s *Service) RunChangesetJob(
 	ctx context.Context,
 	c *a8n.Campaign,
 	job *a8n.ChangesetJob,
 ) (err error) {
-	tr, ctx := trace.New(ctx, "service.runChangeSetJob", fmt.Sprintf("job_id: %d", job.ID))
+	tr, ctx := trace.New(ctx, "service.RunChangeSetJob", fmt.Sprintf("job_id: %d", job.ID))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()

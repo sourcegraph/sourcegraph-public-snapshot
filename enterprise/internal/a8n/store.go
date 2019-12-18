@@ -1042,7 +1042,8 @@ func countCampaignsQuery(opts *CountCampaignsOpts) *sqlf.Query {
 
 // GetCampaignOpts captures the query options needed for getting a Campaign
 type GetCampaignOpts struct {
-	ID int64
+	ID             int64
+	CampaignPlanID int64
 }
 
 // GetCampaign gets a campaign matching the given options.
@@ -1088,6 +1089,10 @@ func getCampaignQuery(opts *GetCampaignOpts) *sqlf.Query {
 	var preds []*sqlf.Query
 	if opts.ID != 0 {
 		preds = append(preds, sqlf.Sprintf("id = %s", opts.ID))
+	}
+
+	if opts.CampaignPlanID != 0 {
+		preds = append(preds, sqlf.Sprintf("campaign_plan_id = %s", opts.CampaignPlanID))
 	}
 
 	if len(preds) == 0 {
