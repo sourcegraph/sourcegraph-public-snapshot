@@ -25,7 +25,7 @@ We recommend installing the [Sourcegraph Bitbucket Server plugin](https://github
 
 This involves adding a new add-on to your Bitbucket Server instance and see the [bitbucket-server-plugin](https://github.com/sourcegraph/bitbucket-server-plugin) repository for installation instructions and configuration settings.
 
-> NOTE: For the Bitbucket Server plugin to communicate with the Sourcegraph instance, the Sourcegraph site configuration must be updated to add the Bitbucket Server URL to the [`corsOrigin` property](../config/site_config.md)
+> NOTE: For the Bitbucket Server plugin to communicate with the Sourcegraph instance, the Sourcegraph site configuration must be updated to add the Bitbucket Server URL to the [`corsOrigin` property](../admin/config/site_config.md)
 
 ```json
 {
