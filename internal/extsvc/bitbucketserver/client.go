@@ -541,6 +541,17 @@ func (c *Client) Repos(ctx context.Context, pageToken *PageToken, searchQueries 
 	return repos, next, err
 }
 
+func (c *Client) LabeledRepos(ctx context.Context, pageToken *PageToken, label string) ([]*Repo, *PageToken, error) {
+	u := fmt.Sprintf("rest/api/1.0/labels/%s/labeled", label)
+	qry := url.Values{
+		"REPOSITORY": []string{""},
+	}
+
+	var repos []*Repo
+	next, err := c.page(ctx, u, qry, pageToken, &repos)
+	return repos, next, err
+}
+
 // RepoIDs fetches a list of repositories that the user token has permission for.
 // Permission: ["admin", "read", "write"]
 func (c *Client) RepoIDs(ctx context.Context, permission string) ([]uint32, error) {
@@ -1042,6 +1053,16 @@ func IsNotFound(err error) bool {
 	return false
 }
 
+// IsNoSuchLabel reports whether err is a Bitbucket Server API "No Such Label"
+// error.
+func IsNoSuchLabel(err error) bool {
+	switch e := errors.Cause(err).(type) {
+	case *httpError:
+		return e.NoSuchLabelException()
+	}
+	return false
+}
+
 // IsDuplicatePullRequest reports whether err is a Bitbucket Server API
 // "Duplicate Pull Request" error.
 func IsDuplicatePullRequest(err error) bool {
@@ -1083,7 +1104,14 @@ func (e *httpError) DuplicatePullRequest() bool {
 	return strings.Contains(string(e.Body), bitbucketDuplicatePRException)
 }
 
-const bitbucketDuplicatePRException = "com.atlassian.bitbucket.pull.DuplicatePullRequestException"
+func (e *httpError) NoSuchLabelException() bool {
+	return strings.Contains(string(e.Body), bitbucketNoSuchLabelException)
+}
+
+const (
+	bitbucketDuplicatePRException = "com.atlassian.bitbucket.pull.DuplicatePullRequestException"
+	bitbucketNoSuchLabelException = "com.atlassian.bitbucket.label.NoSuchLabelException"
+)
 
 func (e *httpError) ExtractExistingPullRequest() (*PullRequest, error) {
 	var dest struct {
