@@ -39,7 +39,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 						Description:    "All the Javascripts are belong to us",
 						AuthorID:       23,
 						ChangesetIDs:   []int64{int64(i) + 1},
-						CampaignPlanID: 42,
+						CampaignPlanID: 42 + int64(i),
 						ClosedAt:       now,
 						PublishedAt:    now,
 					}
@@ -238,6 +238,20 @@ func testStore(db *sql.DB) func(*testing.T) {
 				t.Run("ByID", func(t *testing.T) {
 					want := campaigns[0]
 					opts := GetCampaignOpts{ID: want.ID}
+
+					have, err := s.GetCampaign(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
+					}
+				})
+
+				t.Run("ByCampaignPlanID", func(t *testing.T) {
+					want := campaigns[0]
+					opts := GetCampaignOpts{CampaignPlanID: want.CampaignPlanID}
 
 					have, err := s.GetCampaign(ctx, opts)
 					if err != nil {
