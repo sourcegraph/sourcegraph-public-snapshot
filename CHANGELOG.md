@@ -18,6 +18,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - The experimental search pagination API no longer times out when large repositories are encountered. [#6384](https://github.com/sourcegraph/sourcegraph/issues/6384)
+- We resolve relative symbolic links from the directory of the symlink, rather than the root of the repository. [#6034](https://github.com/sourcegraph/sourcegraph/issues/6034)
 
 ### Removed
 
