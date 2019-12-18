@@ -4,10 +4,20 @@ groups:
       - record: alert_count
         labels:
           service_name: symbols
-          level: critical
-        expr: 0
+          level: warning
+          name: symbols_store_fetch_failing
+          description: 'symbols: more than 5 store fetch fails over 5m'
+        expr: >-
+          clamp_max(clamp_min(floor(
+          (increase(symbols_store_fetch_failed[5m]) / 5) OR on() vector(0)
+          ), 0), 1)
       - record: alert_count
         labels:
           service_name: symbols
           level: warning
-        expr: 0
+          name: symbols_store_fetch_queue_oversized
+          description: 'symbols: store fetch queue size exceeding 25'
+        expr: >-
+          clamp_max(clamp_min(floor(
+          (symbols_store_fetch_queue_size) OR on() vector(0)
+          ), 0), 1)
