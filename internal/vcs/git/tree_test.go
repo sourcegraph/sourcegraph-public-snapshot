@@ -28,13 +28,15 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 
+	symlinks := []string{"link1", "dir1/link2"}
+
 	repo := MakeGitRepository(t, gitCommands...)
-	commitID := ComputeCommitHash(repo.URL, true)
+	commitID := api.CommitID(ComputeCommitHash(repo.URL, true))
 
 	ctx := context.Background()
 
 	// file1 should be a file.
-	file1Info, err := git.Stat(ctx, repo, api.CommitID(commitID), "file1")
+	file1Info, err := git.Stat(ctx, repo, commitID, "file1")
 	if err != nil {
 		t.Fatalf("fs.Stat(file1): %s", err)
 	}
@@ -42,68 +44,62 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 		t.Errorf("file1 Stat !IsRegular (mode: %o)", file1Info.Mode())
 	}
 
-	checkSymlinkFileInfo := func(link os.FileInfo) {
+	checkSymlinkFileInfo := func(name string, link os.FileInfo) {
 		t.Helper()
 		if link.Mode()&os.ModeSymlink == 0 {
 			t.Errorf("link mode is not symlink (mode: %o)", link.Mode())
 		}
-		if want := "link1"; link.Name() != want {
-			t.Errorf("got link.Name() == %q, want %q", link.Name(), want)
+		if link.Name() != name {
+			t.Errorf("got link.Name() == %q, want %q", link.Name(), name)
 		}
 	}
 
-	// link1 should be a link.
-	link1Linfo, err := git.Lstat(ctx, repo, api.CommitID(commitID), "link1")
-	if err != nil {
-		t.Fatalf("fs.Lstat(link1): %s", err)
-	}
-	if runtime.GOOS != "windows" {
-		// TODO(alexsaveliev) make it work on Windows too
-		checkSymlinkFileInfo(link1Linfo)
+	// Check symlinks are links
+	for _, symlink := range symlinks {
+		fi, err := git.Lstat(ctx, repo, commitID, symlink)
+		if err != nil {
+			t.Fatalf("fs.Lstat(%s): %s", symlink, err)
+		}
+		if runtime.GOOS != "windows" {
+			// TODO(alexsaveliev) make it work on Windows too
+			checkSymlinkFileInfo(symlink, fi)
+		}
 	}
 
 	// Also check the FileInfo returned by ReadDir to ensure it's
 	// consistent with the FileInfo returned by Lstat.
-	entries, err := git.ReadDir(ctx, repo, api.CommitID(commitID), ".", false)
+	entries, err := git.ReadDir(ctx, repo, commitID, ".", false)
 	if err != nil {
 		t.Fatalf("fs.ReadDir(.): %s", err)
 	}
-	if got, want := len(entries), 3; got != want {
-		t.Fatalf("got len(entries) == %d, want %d", got, want)
+	found := false
+	for _, entry := range entries {
+		if entry.Name() == "link1" {
+			found = true
+			if runtime.GOOS != "windows" {
+				checkSymlinkFileInfo("link1", entry)
+			}
+		}
 	}
-	if runtime.GOOS != "windows" {
-		// TODO(alexsaveliev) make it work on Windows too
-		checkSymlinkFileInfo(entries[2])
-	}
-
-	// link1 stat should follow the link to file1.
-	link1Info, err := git.Stat(ctx, repo, api.CommitID(commitID), "link1")
-	if err != nil {
-		t.Fatalf("fs.Stat(link1): %s", err)
-	}
-	if !link1Info.Mode().IsRegular() {
-		t.Errorf("link1 Stat !IsRegular (mode: %o)", link1Info.Mode())
-	}
-	if link1Info.Name() != "link1" {
-		t.Errorf("got link1 Name %q, want %q", link1Info.Name(), "link1")
-	}
-	if link1Info.Size() != 0 {
-		t.Errorf("got link1 Size %d, want %d", link1Info.Size(), 0)
+	if !found {
+		t.Fatal("readdir did not return link1")
 	}
 
-	// link2 stat should follow the link to file1.
-	link2Info, err := git.Stat(ctx, repo, api.CommitID(commitID), "dir1/link2")
-	if err != nil {
-		t.Fatalf("fs.Stat(link2): %s", err)
-	}
-	if !link2Info.Mode().IsRegular() {
-		t.Errorf("link2 Stat !IsRegular (mode: %o)", link2Info.Mode())
-	}
-	if link2Info.Name() != "dir1/link2" {
-		t.Errorf("got link2 Name %q, want %q", link2Info.Name(), "dir1/link2")
-	}
-	if link2Info.Size() != 0 {
-		t.Errorf("got link2 Size %d, want %d", link2Info.Size(), 0)
+	// links stat should follow the link to file1.
+	for _, symlink := range symlinks {
+		fi, err := git.Stat(ctx, repo, commitID, symlink)
+		if err != nil {
+			t.Fatalf("fs.Stat(%s): %s", symlink, err)
+		}
+		if !fi.Mode().IsRegular() {
+			t.Errorf("%s Stat !IsRegular (mode: %o)", symlink, fi.Mode())
+		}
+		if fi.Name() != symlink {
+			t.Errorf("got Name %q, want %q", fi.Name(), symlink)
+		}
+		if fi.Size() != 0 {
+			t.Errorf("got %s Size %d, want %d", symlink, fi.Size(), 0)
+		}
 	}
 }
 
