@@ -184,7 +184,6 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		campaignJobs := make([]*a8n.CampaignJob, 0, len(rs))
 		for _, repo := range rs {
 			campaignJob := &a8n.CampaignJob{
 				CampaignPlanID: testPlan.ID,
@@ -199,7 +198,6 @@ func TestService(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			campaignJobs = append(campaignJobs, campaignJob)
 		}
 
 		campaign := &a8n.Campaign{
