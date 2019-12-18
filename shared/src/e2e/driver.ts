@@ -6,7 +6,7 @@ import puppeteer, { PageEventObj, Page, Serializable, LaunchOptions, PageFnOptio
 import { Key } from 'ts-key-enum'
 import * as util from 'util'
 import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
-import { IMutation, IQuery, ExternalServiceKind, ISettingsCascade, SettingsSubject, ISettings } from '../graphql/schema'
+import { IMutation, IQuery, ExternalServiceKind } from '../graphql/schema'
 import { readEnvBoolean, retry } from './e2e-test-utils'
 import * as path from 'path'
 import { escapeRegExp } from 'lodash'
