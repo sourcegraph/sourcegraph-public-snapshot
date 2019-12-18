@@ -19,7 +19,6 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
 import { Suggestion, SuggestionItem, createSuggestion, fuzzySearchFilters } from './Suggestion'
 import RegexpToggle from './RegexpToggle'
-import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 import { PatternTypeProps } from '..'
 import Downshift from 'downshift'
 import { searchFilterSuggestions } from '../searchFilterSuggestions'
@@ -427,7 +426,6 @@ export class QueryInput extends React.Component<Props, State> {
                                 )}
                                 <RegexpToggle
                                     {...this.props}
-                                    toggled={this.props.patternType === SearchPatternType.regexp}
                                     navbarSearchQuery={this.props.value.query}
                                     filtersInQuery={this.props.filterQuery}
                                 />

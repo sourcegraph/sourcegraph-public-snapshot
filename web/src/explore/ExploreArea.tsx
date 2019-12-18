@@ -14,7 +14,7 @@ import { ThemeProps } from '../../../shared/src/theme'
 export interface ExploreAreaSectionContext
     extends ExtensionsControllerProps,
         ThemeProps,
-        Omit<PatternTypeProps, 'togglePatternType'> {
+        Omit<PatternTypeProps, 'setPatternType'> {
     /** The currently authenticated user. */
     authenticatedUser: GQL.IUser | null
 

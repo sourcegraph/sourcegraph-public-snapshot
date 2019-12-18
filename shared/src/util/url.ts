@@ -562,7 +562,7 @@ export function buildSearchURLQuery(
 
     const patternTypeInQuery = parsePatternTypeFromQuery(query)
     if (patternTypeInQuery) {
-        const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal)\b/i
+        const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal|structural)\b/i
         const newQuery = query.replace(patternTypeRegexp, '')
         searchParams.set('q', newQuery)
         searchParams.set('patternType', patternTypeInQuery.toLowerCase())
@@ -599,7 +599,7 @@ export function interactiveBuildSearchURLQuery(filtersInQuery: FiltersToTypeAndV
 }
 
 function parsePatternTypeFromQuery(query: string): SearchPatternType | undefined {
-    const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal)\b/i
+    const patternTypeRegexp = /\bpatterntype:(?<type>regexp|literal|structural)\b/i
     const matches = query.match(patternTypeRegexp)
     if (matches?.groups?.type) {
         return matches.groups.type as SearchPatternType

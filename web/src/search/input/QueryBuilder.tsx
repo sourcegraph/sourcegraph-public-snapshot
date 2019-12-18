@@ -5,7 +5,7 @@ import { QueryBuilderInputRow } from './QueryBuilderInputRow'
 import { PatternTypeProps } from '..'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 
-interface Props extends Omit<PatternTypeProps, 'togglePatternType'> {
+interface Props extends Omit<PatternTypeProps, 'setPatternType'> {
     /**
      * Called when there is a change to the query synthesized from this
      * component's fields.
