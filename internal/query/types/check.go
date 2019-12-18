@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
+	"github.com/sourcegraph/sourcegraph/internal/query/syntax"
 )
 
 // TypeError describes an error in query typechecking.

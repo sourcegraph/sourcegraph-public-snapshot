@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/search"
 )
 
