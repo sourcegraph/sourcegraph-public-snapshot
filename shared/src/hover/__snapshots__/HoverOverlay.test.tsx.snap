@@ -13,6 +13,9 @@ exports[`HoverOverlay actions and hover empty 1`] = `
   }
 >
   <div
+    className="hover-overlay__badge-row"
+  />
+  <div
     className="hover-overlay__contents"
   />
 </div>
@@ -30,6 +33,9 @@ exports[`HoverOverlay actions and hover error 1`] = `
     }
   }
 >
+  <div
+    className="hover-overlay__badge-row"
+  />
   <div
     className="hover-overlay__contents"
   >
@@ -54,6 +60,9 @@ exports[`HoverOverlay actions and hover loading 1`] = `
     }
   }
 >
+  <div
+    className="hover-overlay__badge-row"
+  />
   <div
     className="hover-overlay__contents"
   >
@@ -80,6 +89,9 @@ exports[`HoverOverlay actions and hover present 1`] = `
     }
   }
 >
+  <div
+    className="hover-overlay__badge-row"
+  />
   <div
     className="hover-overlay__contents"
   >
@@ -152,6 +164,9 @@ exports[`HoverOverlay actions empty 1`] = `
   }
 >
   <div
+    className="hover-overlay__badge-row"
+  />
+  <div
     className="hover-overlay__contents"
   />
 </div>
@@ -171,6 +186,9 @@ exports[`HoverOverlay actions error, hover present 1`] = `
     }
   }
 >
+  <div
+    className="hover-overlay__badge-row"
+  />
   <div
     className="hover-overlay__contents"
   >
@@ -200,6 +218,9 @@ exports[`HoverOverlay actions loading 1`] = `
   }
 >
   <div
+    className="hover-overlay__badge-row"
+  />
+  <div
     className="hover-overlay__contents"
   />
 </div>
@@ -217,6 +238,9 @@ exports[`HoverOverlay actions present 1`] = `
     }
   }
 >
+  <div
+    className="hover-overlay__badge-row"
+  />
   <div
     className="hover-overlay__contents"
   />
@@ -277,6 +301,9 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
     }
   }
 >
+  <div
+    className="hover-overlay__badge-row"
+  />
   <div
     className="hover-overlay__contents"
   >
@@ -344,6 +371,9 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
     }
   }
 >
+  <div
+    className="hover-overlay__badge-row"
+  />
   <div
     className="hover-overlay__contents"
   >
@@ -449,6 +479,9 @@ exports[`HoverOverlay hover error 1`] = `
   }
 >
   <div
+    className="hover-overlay__badge-row"
+  />
+  <div
     className="hover-overlay__contents"
   >
     <div
@@ -472,6 +505,9 @@ exports[`HoverOverlay hover error, actions present 1`] = `
     }
   }
 >
+  <div
+    className="hover-overlay__badge-row"
+  />
   <div
     className="hover-overlay__contents"
   >
@@ -538,6 +574,9 @@ exports[`HoverOverlay hover loading 1`] = `
   }
 >
   <div
+    className="hover-overlay__badge-row"
+  />
+  <div
     className="hover-overlay__contents"
   >
     <div
@@ -563,6 +602,9 @@ exports[`HoverOverlay hover present 1`] = `
     }
   }
 >
+  <div
+    className="hover-overlay__badge-row"
+  />
   <div
     className="hover-overlay__contents"
   >
@@ -592,6 +634,9 @@ exports[`HoverOverlay hover present, actions loading 1`] = `
   }
 >
   <div
+    className="hover-overlay__badge-row"
+  />
+  <div
     className="hover-overlay__contents"
   >
     <div
@@ -619,6 +664,9 @@ exports[`HoverOverlay multiple hovers present 1`] = `
     }
   }
 >
+  <div
+    className="hover-overlay__badge-row"
+  />
   <div
     className="hover-overlay__contents"
   >

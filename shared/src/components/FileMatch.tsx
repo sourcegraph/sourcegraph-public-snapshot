@@ -8,6 +8,7 @@ import { FetchFileCtx } from './CodeExcerpt'
 import { FileMatchChildren } from './FileMatchChildren'
 import { RepoFileLink } from './RepoFileLink'
 import { Props as ResultContainerProps, ResultContainer } from './ResultContainer'
+import { BadgeDecorationAttachmentRenderOptions } from 'sourcegraph'
 
 const SUBSET_COUNT_KEY = 'fileMatchSubsetCount'
 
@@ -17,7 +18,9 @@ export type IFileMatch = Partial<Pick<GQL.IFileMatch, 'symbols' | 'limitHit'>> &
     lineMatches: ILineMatch[]
 }
 
-export type ILineMatch = Pick<GQL.ILineMatch, 'preview' | 'lineNumber' | 'offsetAndLengths' | 'limitHit'>
+export type ILineMatch = Pick<GQL.ILineMatch, 'preview' | 'lineNumber' | 'offsetAndLengths' | 'limitHit'> & {
+    badge?: BadgeDecorationAttachmentRenderOptions
+}
 
 export interface IMatchItem {
     highlightRanges: {
@@ -26,6 +29,7 @@ export interface IMatchItem {
     }[]
     preview: string
     line: number
+    badge?: BadgeDecorationAttachmentRenderOptions
 }
 
 interface Props extends SettingsCascadeProps {
@@ -89,6 +93,7 @@ export class FileMatch extends React.PureComponent<Props> {
             })),
             preview: m.preview,
             line: m.lineNumber,
+            badge: m.badge,
         }))
 
         const title = (

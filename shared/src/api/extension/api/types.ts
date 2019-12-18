@@ -12,27 +12,31 @@ export function toPosition(position: clientType.Position): Position {
 }
 
 /**
- * Converts from an instance of {@link Location} to the plain object {@link clientType.Location}.
+ * Converts from an instance of a badged {@link Location} to the plain object {@link clientType.Location}.
  *
  * @internal
  */
-export function fromLocation(location: sourcegraph.Location): clientType.Location {
+export function fromLocation(
+    location: sourcegraph.Badged<sourcegraph.Location>
+): clientType.Badged<clientType.Location> {
     return {
         uri: location.uri.toString(),
         range: fromRange(location.range),
+        badge: location.badge,
     }
 }
 
 /**
- * Converts from an instance of {@link Hover} to the plain object {@link clientType.Hover}.
+ * Converts from an instance of a badged {@link Hover} to the plain object {@link clientType.Hover}.
  *
  * @internal
  */
-export function fromHover(hover: sourcegraph.Hover): clientType.Hover {
+export function fromHover(hover: sourcegraph.Badged<sourcegraph.Hover>): clientType.Badged<clientType.Hover> {
     return {
         contents: hover.contents,
         __backcompatContents: hover.__backcompatContents,
         range: fromRange(hover.range),
+        badge: hover.badge,
     }
 }
 

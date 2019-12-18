@@ -1,6 +1,6 @@
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
-import { Hover as PlainHover, Range } from '@sourcegraph/extension-api-types'
-import { Hover, MarkupContent } from 'sourcegraph'
+import { Badged, Hover as PlainHover, Range } from '@sourcegraph/extension-api-types'
+import { Hover, MarkupContent, BadgeDecorationAttachmentRenderOptions } from 'sourcegraph'
 
 /** A hover that is merged from multiple Hover results and normalized. */
 export interface HoverMerged {
@@ -10,12 +10,15 @@ export interface HoverMerged {
     contents: MarkupContent[]
 
     range?: Range
+
+    badges?: BadgeDecorationAttachmentRenderOptions[]
 }
 
 /** Create a merged hover from the given individual hovers. */
-export function fromHoverMerged(values: (Hover | PlainHover | null | undefined)[]): HoverMerged | null {
+export function fromHoverMerged(values: (Badged<Hover> | Badged<PlainHover> | null | undefined)[]): HoverMerged | null {
     const contents: HoverMerged['contents'] = []
     let range: Range | undefined
+    const badges: BadgeDecorationAttachmentRenderOptions[] = []
     for (const result of values) {
         if (result) {
             if (result.contents && result.contents.value) {
@@ -46,9 +49,16 @@ export function fromHoverMerged(values: (Hover | PlainHover | null | undefined)[
             if (result.range && !range) {
                 range = result.range
             }
+            if (result.badge) {
+                badges.push(result.badge)
+            }
         }
     }
-    return contents.length === 0 ? null : range ? { contents, range } : { contents }
+    const merged: HoverMerged | null = contents.length === 0 ? null : range ? { contents, range } : { contents }
+    if (merged && badges.length > 0) {
+        merged.badges = badges
+    }
+    return merged
 }
 
 function toMarkdownCodeBlock(language: string, value: string): string {

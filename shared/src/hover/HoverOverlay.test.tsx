@@ -28,6 +28,7 @@ describe('HoverOverlay', () => {
         showCloseButton: false,
         hoveredToken: { repoName: 'r', commitID: 'c', rev: 'v', filePath: 'f', line: 1, character: 2 },
         overlayPosition: { left: 0, top: 0 },
+        isLightTheme: false,
     }
 
     test('actions and hover undefined', () => {

@@ -1,3 +1,4 @@
+export * from './badged'
 export * from './hover'
 export * from './location'
 export * from './textDocument'

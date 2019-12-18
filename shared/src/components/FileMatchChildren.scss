@@ -21,24 +21,34 @@
         &:not(:first-child) {
             border-top: 1px solid var(--border-color);
         }
-    }
 
-    &__code {
-        border-bottom: solid 1px var(--border-color);
-        font-size: 12px;
-        padding: 0.5rem 1.25rem;
-        margin-bottom: 0;
-        > code {
-            display: block;
-            > a {
-                color: inherit;
+        &-code-wrapper {
+            display: flex;
+            border-bottom: solid 1px var(--border-color);
+            font-size: 12px;
+            padding: 0.5rem 1.25rem;
+            margin-bottom: 0;
+        }
+
+        &-code-excerpt {
+            > code {
+                display: block;
+                > a {
+                    color: inherit;
+                }
+                &::before {
+                    content: attr(data-line);
+                    opacity: 0.65;
+                    padding-right: 0.325rem;
+                    display: inline-block;
+                }
             }
-            &::before {
-                content: attr(data-line);
-                opacity: 0.65;
-                padding-right: 0.325rem;
-                display: inline-block;
-            }
+        }
+
+        &-badge-row {
+            margin-left: auto;
+            text-align: right;
+            display: flex;
         }
     }
 }

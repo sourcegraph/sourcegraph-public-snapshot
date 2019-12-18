@@ -13,6 +13,8 @@ import { highlightCodeSafe, renderMarkdown } from '../util/markdown'
 import { sanitizeClass } from '../util/strings'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../util/url'
 import { toNativeEvent } from './helpers'
+import { BadgeDecorationAttachment } from '../components/BadgeDecorationAttachment'
+import { ThemeProps } from '../theme'
 
 const LOADING: 'loading' = 'loading'
 
@@ -63,7 +65,8 @@ export interface HoverOverlayProps<A extends string>
     extends GenericHoverOverlayProps<HoverContext, HoverData<A>, ActionItemAction>,
         ActionItemComponentProps,
         HoverOverlayClassProps,
-        TelemetryProps {
+        TelemetryProps,
+        ThemeProps {
     /** A ref callback to get the root overlay element. Use this to calculate the position. */
     hoverRef?: React.Ref<HTMLDivElement>
 
@@ -114,6 +117,8 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
         if (!hoverOrError && (!actionsOrError || isErrorLike(actionsOrError))) {
             return null
         }
+        const badges =
+            (hoverOrError && hoverOrError !== LOADING && !isErrorLike(hoverOrError) && hoverOrError.badges) || []
         return (
             <div
                 // needed for dynamic styling
@@ -134,15 +139,26 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                 className={classNames('hover-overlay', className)}
                 ref={hoverRef}
             >
-                {showCloseButton && (
-                    <button
-                        type="button"
-                        className={classNames('hover-overlay__close-button', this.props.closeButtonClassName)}
-                        onClick={onCloseButtonClick ? transformMouseEvent(onCloseButtonClick) : undefined}
-                    >
-                        <CloseIcon className="icon-inline" />
-                    </button>
-                )}
+                <div className="hover-overlay__badge-row">
+                    {badges.map(b => (
+                        <BadgeDecorationAttachment
+                            key={`badge:${b.icon}:${b.hoverMessage}:${b.linkURL}`}
+                            attachment={b}
+                            isLightTheme={this.props.isLightTheme}
+                        />
+                    ))}
+
+                    {showCloseButton && (
+                        <button
+                            type="button"
+                            className={classNames('hover-overlay__close-button', this.props.closeButtonClassName)}
+                            onClick={onCloseButtonClick ? transformMouseEvent(onCloseButtonClick) : undefined}
+                        >
+                            <CloseIcon className="icon-inline" />
+                        </button>
+                    )}
+                </div>
+
                 <div className="hover-overlay__contents">
                     {hoverOrError === LOADING ? (
                         <div className="hover-overlay__row hover-overlay__loader-row">
