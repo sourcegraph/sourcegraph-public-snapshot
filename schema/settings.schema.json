@@ -6,6 +6,21 @@
   "allowComments": true,
   "type": "object",
   "properties": {
+    "experimentalFeatures": {
+      "title": "SettingsExperimentalFeatures",
+      "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "splitSearchModes": {
+          "description": "Enables toggling between the current omni search mode, and experimental interactive search mode.",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": true }
+        }
+      },
+      "group": "Experimental"
+    },
     "search.savedQueries": {
       "description": "DEPRECATED: Saved search queries",
       "type": "array",

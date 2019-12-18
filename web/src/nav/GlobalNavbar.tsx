@@ -126,7 +126,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                     </>
                 ) : (
                     <>
-                        {this.props.interactiveSearchMode ? (
+                        {this.props.splitSearchModes && this.props.interactiveSearchMode ? (
                             !this.state.authRequired && (
                                 <InteractiveModeInput
                                     {...this.props}

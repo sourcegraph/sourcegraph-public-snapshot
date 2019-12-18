@@ -95,7 +95,7 @@ export class SearchPage extends React.Component<Props, State> {
                 <img className="search-page__logo" src={logoUrl} />
                 <div className="search search-page__container">
                     <div className="d-flex flex-row">
-                        {this.props.interactiveSearchMode ? (
+                        {this.props.splitSearchModes && this.props.interactiveSearchMode ? (
                             <InteractiveModeInput
                                 {...this.props}
                                 navbarSearchState={this.state.userQueryState}
@@ -119,7 +119,7 @@ export class SearchPage extends React.Component<Props, State> {
                                             autoFocus="cursor-at-end"
                                             hasGlobalQueryBehavior={true}
                                             patternType={this.props.patternType}
-                                            togglePatternType={this.props.togglePatternType}
+                                            setPatternType={this.props.setPatternType}
                                             withSearchModeToggle={this.props.splitSearchModes}
                                         />
                                         <SearchButton />

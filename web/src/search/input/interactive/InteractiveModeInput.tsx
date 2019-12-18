@@ -20,7 +20,7 @@ import { ActivationProps } from '../../../../../shared/src/components/activation
 import { FiltersToTypeAndValue } from '../../../../../shared/src/search/interactive/util'
 import { SuggestionTypes, suggestionTypeKeys } from '../../../../../shared/src/search/suggestions/util'
 import { QueryInput } from '../QueryInput'
-import { parseSearchURLQuery, InteractiveSearchProps } from '../..'
+import { parseSearchURLQuery, InteractiveSearchProps, PatternTypeProps } from '../..'
 import { SearchModeToggle } from './SearchModeToggle'
 
 interface InteractiveModeProps
@@ -32,13 +32,12 @@ interface InteractiveModeProps
         ThemePreferenceProps,
         EventLoggerProps,
         ActivationProps,
+        PatternTypeProps,
         Pick<InteractiveSearchProps, 'filtersInQuery' | 'onFiltersInQueryChange' | 'toggleSearchMode'> {
     location: H.Location
     history: H.History
     navbarSearchState: QueryState
     onNavbarQueryChange: (userQuery: QueryState) => void
-    patternType: GQL.SearchPatternType
-    togglePatternType: () => void
 
     // For NavLinks
     authRequired?: boolean
@@ -211,7 +210,7 @@ export default class InteractiveModeInput extends React.Component<InteractiveMod
                                     hasGlobalQueryBehavior={true}
                                     onChange={this.props.onNavbarQueryChange}
                                     patternType={this.props.patternType}
-                                    togglePatternType={this.props.togglePatternType}
+                                    setPatternType={this.props.setPatternType}
                                     autoFocus={true}
                                     filterQuery={this.props.filtersInQuery}
                                     withoutSuggestions={true}

@@ -347,10 +347,10 @@ func (c *credentials) generateDiff(ctx context.Context, repo api.RepoName, commi
 	return strings.Join(diffs, "\n"), description.String(), nil
 }
 
-func tmpfileDiff(filename, a, b string) (string, error) {
-	dir, err := ioutil.TempDir("", fmt.Sprintf("diffing-%s", filename))
+func tmpfileDiff(path, a, b string) (string, error) {
+	dir, err := ioutil.TempDir("", fmt.Sprintf("diffing-%s", filepath.Base(path)))
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "creating temp dir failed")
 	}
 	defer os.RemoveAll(dir)
 
@@ -375,8 +375,8 @@ func tmpfileDiff(filename, a, b string) (string, error) {
 	cmd := exec.Command(
 		"diff",
 		"-u",
-		"--label", filename,
-		"--label", filename,
+		"--label", path,
+		"--label", path,
 		fileA,
 		fileB,
 	)

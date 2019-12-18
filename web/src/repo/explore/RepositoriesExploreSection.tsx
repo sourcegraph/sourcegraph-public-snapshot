@@ -23,10 +23,7 @@ interface State {
 /**
  * An explore section that shows a few repositories and a link to all.
  */
-export class RepositoriesExploreSection extends React.PureComponent<
-    Omit<PatternTypeProps, 'togglePatternType'>,
-    State
-> {
+export class RepositoriesExploreSection extends React.PureComponent<Omit<PatternTypeProps, 'setPatternType'>, State> {
     private static QUERY_REPOSITORIES_ARGS: { first: number } & Pick<GQL.IRepositoriesOnQueryArguments, 'names'> = {
         // Show sample repositories on Sourcegraph.com.
         names: window.context.sourcegraphDotComMode
