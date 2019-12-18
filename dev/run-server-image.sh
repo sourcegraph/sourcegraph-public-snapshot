@@ -30,7 +30,7 @@ echo "starting server..."
 docker run "$@" \
  --publish 7080:7080 \
  --rm \
- -e SRC_LOG_LEVEL=dbug \
+ -e SRC_LOG_LEVEL=debug \
  -e DEBUG=t \
  --volume $DATA/config:/etc/sourcegraph \
  --volume $DATA/data:/var/opt/sourcegraph \
