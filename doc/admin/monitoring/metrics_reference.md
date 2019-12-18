@@ -4,7 +4,7 @@
 
 Sourcegraph's metrics include a single high-level metric `alert_count` which indicates the number of `level=critical` and `level=warning` alerts each service has fired over time for each Sourcegraph service. This is the same metric presented on the **Overview** monitoring dashboard:
 
-![Overview monitoring dashboard screenshot](TODO)
+![Overview monitoring dashboard screenshot](https://user-images.githubusercontent.com/3173176/71050700-21912400-2103-11ea-86fb-cf6d2dbd3d0a.png)
 
 ### `alert_count`
 
