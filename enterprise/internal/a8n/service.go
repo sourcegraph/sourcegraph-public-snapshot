@@ -230,6 +230,8 @@ func (s *Service) RunChangesetJobs(ctx context.Context, c *a8n.Campaign) error {
 	return errs.ErrorOrNil()
 }
 
+// RunChangesetJob will run the given ChangesetJob for the given campaign. It
+// is idempotent and if the job has already been run it will not be rerun.
 func (s *Service) RunChangesetJob(
 	ctx context.Context,
 	c *a8n.Campaign,
@@ -593,6 +595,38 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*a8n.Changeset) 
 	// SyncChangesetsWithSources does) our burndown chart will be outdated
 	// until the next run of a8n.Syncer.
 	return syncer.SyncChangesetsWithSources(ctx, bySource)
+}
+
+// CreateChangesetJob creates a ChangesetJob for the CampaignJob with the given
+// ID. The CampaignJob has to belong to a CampaignPlan that was attached to a
+// Campaign.
+// It returns the newly created ChangesetJob and its Campaign, which can then
+// be passed to RunChangesetJob.
+func (s *Service) CreateChangesetJobForCampaignJob(ctx context.Context, id int64) (_ *a8n.ChangesetJob, _ *a8n.Campaign, err error) {
+	traceTitle := fmt.Sprintf("campaignJob: %d", id)
+	tr, ctx := trace.New(ctx, "service.CreateChangesetJobForCampaignJob", traceTitle)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	job, err := s.store.GetCampaignJob(ctx, GetCampaignJobOpts{ID: id})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	campaign, err := s.store.GetCampaign(ctx, GetCampaignOpts{CampaignPlanID: job.CampaignPlanID})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	changesetJob := &a8n.ChangesetJob{CampaignID: campaign.ID, CampaignJobID: job.ID}
+	err = s.store.CreateChangesetJob(ctx, changesetJob)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return changesetJob, campaign, nil
 }
 
 func selectChangesets(cs []*a8n.Changeset, predicate func(*a8n.Changeset) bool) []*a8n.Changeset {
