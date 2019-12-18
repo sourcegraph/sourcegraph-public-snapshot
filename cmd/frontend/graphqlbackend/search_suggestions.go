@@ -14,10 +14,10 @@ import (
 	"github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/search"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -172,7 +172,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			return nil, err
 		}
 
-		inventory, err := backend.Repos.GetInventory(ctx, repo, commitID)
+		inventory, err := backend.Repos.GetInventory(ctx, repo, commitID, false)
 		if err != nil {
 			return nil, err
 		}

@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gituri"
+	"github.com/sourcegraph/sourcegraph/internal/search/search"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 )
 
@@ -59,7 +60,7 @@ func computeSymbols(ctx context.Context, commit *GitCommitResolver, query *strin
 	if includePatterns != nil {
 		includePatternsSlice = *includePatterns
 	}
-	searchArgs := protocol.SearchArgs{
+	searchArgs := search.SymbolsParameters{
 		CommitID:        api.CommitID(commit.oid),
 		First:           limitOrDefault(first) + 1, // add 1 so we can determine PageInfo.hasNextPage
 		Repo:            commit.repo.repo.Name,

@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/search/search"
 	symbolsclient "github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 )
@@ -102,47 +103,47 @@ func TestService(t *testing.T) {
 	y := protocol.Symbol{Name: "y", Path: "a.js"}
 
 	tests := map[string]struct {
-		args protocol.SearchArgs
+		args search.SymbolsParameters
 		want protocol.SearchResult
 	}{
 		"simple": {
-			args: protocol.SearchArgs{First: 10},
+			args: search.SymbolsParameters{First: 10},
 			want: protocol.SearchResult{Symbols: []protocol.Symbol{x, y}},
 		},
 		"onematch": {
-			args: protocol.SearchArgs{Query: "x", First: 10},
+			args: search.SymbolsParameters{Query: "x", First: 10},
 			want: protocol.SearchResult{Symbols: []protocol.Symbol{x}},
 		},
 		"nomatches": {
-			args: protocol.SearchArgs{Query: "foo", First: 10},
+			args: search.SymbolsParameters{Query: "foo", First: 10},
 			want: protocol.SearchResult{},
 		},
 		"caseinsensitiveexactmatch": {
-			args: protocol.SearchArgs{Query: "^X$", First: 10},
+			args: search.SymbolsParameters{Query: "^X$", First: 10},
 			want: protocol.SearchResult{Symbols: []protocol.Symbol{x}},
 		},
 		"casesensitiveexactmatch": {
-			args: protocol.SearchArgs{Query: "^x$", IsCaseSensitive: true, First: 10},
+			args: search.SymbolsParameters{Query: "^x$", IsCaseSensitive: true, First: 10},
 			want: protocol.SearchResult{Symbols: []protocol.Symbol{x}},
 		},
 		"casesensitivenoexactmatch": {
-			args: protocol.SearchArgs{Query: "^X$", IsCaseSensitive: true, First: 10},
+			args: search.SymbolsParameters{Query: "^X$", IsCaseSensitive: true, First: 10},
 			want: protocol.SearchResult{},
 		},
 		"caseinsensitiveexactpathmatch": {
-			args: protocol.SearchArgs{IncludePatterns: []string{"^A.js$"}, First: 10},
+			args: search.SymbolsParameters{IncludePatterns: []string{"^A.js$"}, First: 10},
 			want: protocol.SearchResult{Symbols: []protocol.Symbol{x, y}},
 		},
 		"casesensitiveexactpathmatch": {
-			args: protocol.SearchArgs{IncludePatterns: []string{"^a.js$"}, IsCaseSensitive: true, First: 10},
+			args: search.SymbolsParameters{IncludePatterns: []string{"^a.js$"}, IsCaseSensitive: true, First: 10},
 			want: protocol.SearchResult{Symbols: []protocol.Symbol{x, y}},
 		},
 		"casesensitivenoexactpathmatch": {
-			args: protocol.SearchArgs{IncludePatterns: []string{"^A.js$"}, IsCaseSensitive: true, First: 10},
+			args: search.SymbolsParameters{IncludePatterns: []string{"^A.js$"}, IsCaseSensitive: true, First: 10},
 			want: protocol.SearchResult{},
 		},
 		"exclude": {
-			args: protocol.SearchArgs{ExcludePattern: "a.js", IsCaseSensitive: true, First: 10},
+			args: search.SymbolsParameters{ExcludePattern: "a.js", IsCaseSensitive: true, First: 10},
 			want: protocol.SearchResult{},
 		},
 	}

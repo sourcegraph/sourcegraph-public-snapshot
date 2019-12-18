@@ -28,12 +28,12 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -582,6 +582,12 @@ func roundStr(s string) string {
 type searchResultsStats struct {
 	JApproximateResultCount string
 	JSparkline              []int32
+
+	sr *searchResolver
+
+	once   sync.Once
+	srs    *SearchResultsResolver
+	srsErr error
 }
 
 func (srs *searchResultsStats) ApproximateResultCount() string { return srs.JApproximateResultCount }
@@ -621,6 +627,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		if err := json.Unmarshal(jsonRes, &stats); err != nil {
 			return nil, err
 		}
+		stats.sr = r
 		return stats, nil
 	}
 
@@ -664,6 +671,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 	stats = &searchResultsStats{
 		JApproximateResultCount: v.ApproximateResultCount(),
 		JSparkline:              sparkline,
+		sr:                      r,
 	}
 
 	// Store in the cache if we got non-zero results. If we got zero results,
@@ -869,11 +877,17 @@ func alertOnSearchLimit(resultTypes []string, args *search.Args) ([]string, *sea
 			resultType := resultTypes[0]
 			switch resultType {
 			case "commit", "diff":
+				if _, afterPresent := args.Query.Fields["after"]; afterPresent {
+					break
+				}
+				if _, beforePresent := args.Query.Fields["before"]; beforePresent {
+					break
+				}
 				resultTypes = []string{}
 				alert = &searchAlert{
 					prometheusType: "exceeded_diff_commit_search_limit",
 					title:          fmt.Sprintf("Too many matching repositories for %s search to handle", resultType),
-					description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(resultType), repoLimit),
+					description:    fmt.Sprintf(`%s search can currently only handle searching over %d repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`, strings.Title(resultType), repoLimit),
 				}
 			}
 		}

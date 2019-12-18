@@ -178,7 +178,7 @@ func (r *RepositoryResolver) Language(ctx context.Context) string {
 		return ""
 	}
 
-	inventory, err := backend.Repos.GetInventory(ctx, r.repo, commitID)
+	inventory, err := backend.Repos.GetInventory(ctx, r.repo, commitID, false)
 	if err != nil {
 		return ""
 	}

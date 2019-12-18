@@ -44,11 +44,18 @@ export const SiteAdminLsifUploadPage: FunctionComponent<Props> = ({
                 <>
                     <div className="mt-3 mb-1">
                         <h2 className="mb-0">
-                            Upload for {uploadOrError.projectRoot.commit.repository.name}@
-                            {uploadOrError.projectRoot.commit.abbreviatedOID}
-                            {uploadOrError.projectRoot.path === ''
-                                ? ''
-                                : ` rooted at ${uploadOrError.projectRoot.path}`}
+                            Upload for{' '}
+                            {uploadOrError.projectRoot
+                                ? lsifUploadDescription(
+                                      uploadOrError.projectRoot.commit.repository.name,
+                                      uploadOrError.projectRoot.commit.abbreviatedOID,
+                                      uploadOrError.projectRoot.path
+                                  )
+                                : lsifUploadDescription(
+                                      uploadOrError.inputRepoName,
+                                      uploadOrError.inputCommit.substring(0, 7),
+                                      uploadOrError.inputRoot
+                                  )}
                         </h2>
                     </div>
 
@@ -76,27 +83,39 @@ export const SiteAdminLsifUploadPage: FunctionComponent<Props> = ({
                             <tr>
                                 <td>Repository</td>
                                 <td>
-                                    <Link to={uploadOrError.projectRoot.commit.repository.url}>
-                                        {uploadOrError.projectRoot.commit.repository.name}
-                                    </Link>
+                                    {uploadOrError.projectRoot ? (
+                                        <Link to={uploadOrError.projectRoot.commit.repository.url}>
+                                            {uploadOrError.projectRoot.commit.repository.name}
+                                        </Link>
+                                    ) : (
+                                        uploadOrError.inputRepoName
+                                    )}
                                 </td>
                             </tr>
 
                             <tr>
                                 <td>Commit</td>
                                 <td>
-                                    <Link to={uploadOrError.projectRoot.commit.url}>
-                                        <code>{uploadOrError.projectRoot.commit.oid}</code>
-                                    </Link>
+                                    {uploadOrError.projectRoot ? (
+                                        <Link to={uploadOrError.projectRoot.commit.url}>
+                                            <code>{uploadOrError.projectRoot.commit.oid}</code>
+                                        </Link>
+                                    ) : (
+                                        uploadOrError.inputCommit
+                                    )}
                                 </td>
                             </tr>
 
                             <tr>
                                 <td>Root</td>
                                 <td>
-                                    <Link to={uploadOrError.projectRoot.url}>
-                                        <strong>{uploadOrError.projectRoot.path || '/'}</strong>
-                                    </Link>
+                                    {uploadOrError.projectRoot ? (
+                                        <Link to={uploadOrError.projectRoot.url}>
+                                            <strong>{uploadOrError.projectRoot.path || '/'}</strong>
+                                        </Link>
+                                    ) : (
+                                        uploadOrError.inputRoot || '/'
+                                    )}
                                 </td>
                             </tr>
 
@@ -139,4 +158,8 @@ export const SiteAdminLsifUploadPage: FunctionComponent<Props> = ({
             )}
         </div>
     )
+}
+
+export function lsifUploadDescription(repoName: string, commit: string, root: string): string {
+    return `${repoName}@${commit}${root === '' ? '' : ` rooted at ${root}`}`
 }

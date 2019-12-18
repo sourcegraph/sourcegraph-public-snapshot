@@ -54,6 +54,9 @@ export function fetchLsifUploads({
                         failure {
                             summary
                         }
+                        inputRepoName
+                        inputCommit
+                        inputRoot
                         uploadedAt
                         startedAt
                         finishedAt
@@ -98,6 +101,9 @@ export function fetchLsifUpload({ id }: { id: string }): Observable<GQL.ILSIFUpl
                             path
                             url
                         }
+                        inputRepoName
+                        inputCommit
+                        inputRoot
                         state
                         failure {
                             summary
