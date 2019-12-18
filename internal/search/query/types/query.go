@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
+	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
 )
 
 // A Query is the typechecked representation of a search query.

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/types"
+	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
+	"github.com/sourcegraph/sourcegraph/internal/search/query/types"
 )
 
 type didYouMeanQuotedResolver struct {
