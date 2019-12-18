@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/RoaringBitmap/roaring"
 	"github.com/gomodule/oauth1/oauth"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -538,6 +539,27 @@ func (c *Client) Repos(ctx context.Context, pageToken *PageToken, searchQueries 
 	var repos []*Repo
 	next, err := c.page(ctx, "rest/api/1.0/repos", qry, pageToken, &repos)
 	return repos, next, err
+}
+
+// RepoIDs fetches a list of repositories that the user token has permission for.
+// Permission: ["admin", "read", "write"]
+func (c *Client) RepoIDs(ctx context.Context, permission string) ([]uint32, error) {
+	u := fmt.Sprintf("rest/sourcegraph-admin/1.0/permissions/repositories?permission=%s", permission)
+	req, err := http.NewRequest("GET", u, nil)
+	if err != nil {
+		return nil, err
+	}
+	var resp []byte
+	err = c.do(ctx, req, &resp)
+	if err != nil {
+		return nil, err
+	}
+
+	bitmap := roaring.New()
+	if err := bitmap.UnmarshalBinary(resp); err != nil {
+		return nil, err
+	}
+	return bitmap.ToArray(), nil
 }
 
 func (c *Client) RecentRepos(ctx context.Context, pageToken *PageToken) ([]*Repo, *PageToken, error) {
