@@ -4075,7 +4075,16 @@ type LSIFDump implements Node {
     id: ID!
 
     # The project for which this dump provides code intelligence.
-    projectRoot: GitTree!
+    projectRoot: GitTree
+
+    # The original repository name supplied at upload time.
+    inputRepoName: String!
+
+    # The original 40-character commit commit supplied at upload time.
+    inputCommit: String!
+
+    # The original root supplied at upload time.
+    inputRoot: String!
 
     # Whether or not this dump provides intelligence for the tip of the default branch. Find reference queries
     # will return symbols from remote repositories only when this property is true. This property is updated
@@ -4158,7 +4167,16 @@ type LSIFUpload implements Node {
     id: ID!
 
     # The project for which this upload provides code intelligence.
-    projectRoot: GitTree!
+    projectRoot: GitTree
+
+    # The original repository name supplied at upload time.
+    inputRepoName: String!
+
+    # The original 40-character commit commit supplied at upload time.
+    inputCommit: String!
+
+    # The original root supplied at upload time.
+    inputRoot: String!
 
     # The upload's current state.
     state: LSIFUploadState!
