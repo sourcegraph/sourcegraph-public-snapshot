@@ -7,13 +7,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-type SearchTypeParameters interface {
-	SearchTypeInputValue()
+type TypeParameters interface {
+	typeParametersValue()
 }
 
-func (c CommitParameters) SearchTypeParametersValue()  {}
-func (d DiffParameters) SearchTypeParametersValue()    {}
-func (s SymbolsParameters) SearchTypeParametersValue() {}
+func (c CommitParameters) typeParametersValue()  {}
+func (d DiffParameters) typeParametersValue()    {}
+func (s SymbolsParameters) typeParametersValue() {}
 
 type CommitParameters struct {
 	RepoRevs           *RepositoryRevisions
