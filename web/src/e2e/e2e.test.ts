@@ -1385,7 +1385,7 @@ describe('e2e test suite', () => {
         })
 
         test('page', async () => {
-            await driver.page.goto(`${sourcegraphBaseUrl}/stats?q=count%3A10000+ab`)
+            await driver.page.goto(`${sourcegraphBaseUrl}/stats?q=count%3A10000+abc`)
 
             // Ensure the global navbar hides the search input (to avoid confusion with the one on
             // the stats page).
@@ -1402,16 +1402,16 @@ describe('e2e test suite', () => {
                 })
 
             // Check for a Go result (the sample repositories have Go files).
-            await driver.page.waitForSelector('a[href*="ab+lang:go"]')
-            assert.strictEqual(await queryInputValue(), 'count:10000 ab')
+            await driver.page.waitForSelector('a[href*="abc+lang:go"]')
+            assert.strictEqual(await queryInputValue(), 'count:10000 abc')
             await percySnapshot(driver.page, 'Search stats')
 
             // Update the query and rerun the computation.
-            await driver.page.type('.e2e-stats-query', 'c')
-            assert.strictEqual(await queryInputValue(), 'count:10000 abc')
+            await driver.page.type('.e2e-stats-query', 'd')
+            assert.strictEqual(await queryInputValue(), 'count:10000 abcd')
             await driver.page.click('.e2e-stats-query-update')
-            await driver.page.waitForSelector('a[href*="abc+lang:go"]')
-            assert.ok(driver.page.url().endsWith('/stats?q=count%3A10000+abc'))
+            await driver.page.waitForSelector('a[href*="abcd+lang:go"]')
+            assert.ok(driver.page.url().endsWith('/stats?q=count%3A10000+abcd'))
         })
     })
 
