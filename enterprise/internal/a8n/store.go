@@ -37,6 +37,9 @@ func NewStoreWithClock(db dbutil.DB, clock func() time.Time) *Store {
 	return &Store{db: db, now: clock}
 }
 
+// Clock returns the clock used by the Store.
+func (s *Store) Clock() func() time.Time { return s.now }
+
 // Transact returns a Store whose methods operate within the context of a transaction.
 // This method will return an error if the underlying DB cannot be interface upgraded
 // to a TxBeginner.

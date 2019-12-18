@@ -24,9 +24,7 @@ import (
 
 // NewService returns a Service.
 func NewService(store *Store, git GitserverClient, repoResolveRevision repoResolveRevision, cf *httpcli.Factory) *Service {
-	return NewServiceWithClock(store, git, repoResolveRevision, cf, func() time.Time {
-		return time.Now().UTC().Truncate(time.Microsecond)
-	})
+	return NewServiceWithClock(store, git, repoResolveRevision, cf, store.Clock())
 }
 
 // NewServiceWithClock returns a Service the given clock used
