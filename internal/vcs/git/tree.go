@@ -84,7 +84,9 @@ func Stat(ctx context.Context, repo gitserver.Repo, commit api.CommitID, path st
 		if err != nil {
 			return nil, err
 		}
-		fi2, err := Lstat(ctx, repo, commit, string(b))
+		// Resolve relative links from the directory path is in
+		symlink := filepath.Join(filepath.Dir(path), string(b))
+		fi2, err := Lstat(ctx, repo, commit, symlink)
 		if err != nil {
 			return nil, err
 		}
