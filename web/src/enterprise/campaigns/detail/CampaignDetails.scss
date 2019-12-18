@@ -24,7 +24,10 @@
         right: 0;
         > .card {
             max-width: 50vw;
+            // TODO: find a more general solution
+            /* stylelint-disable */
             width: 300px;
+            /* stylelint-enable */
         }
     }
 }
