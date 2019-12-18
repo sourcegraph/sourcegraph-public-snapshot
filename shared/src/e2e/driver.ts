@@ -236,24 +236,39 @@ export class Driver {
         config: string
         ensureRepos?: string[]
     }): Promise<void> {
-        await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services')
-        await this.page.waitFor('.e2e-filtered-connection')
-        await this.page.waitForSelector('.e2e-filtered-connection__loader', { hidden: true })
+        // Use the graphQL API to query external services on the instance.
+        const { externalServices } = dataOrThrowErrors(
+            await this.makeGraphQLRequest<IQuery>({
+                request: gql`
+                    query ExternalServices {
+                        externalServices(first: 1) {
+                            totalCount
+                        }
+                    }
+                `,
+                variables: {},
+            })
+        )
+        // Delete existing external services if there are any.
+        if (externalServices.totalCount === 0) {
+            await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services')
+            await this.page.waitFor('.e2e-filtered-connection')
+            await this.page.waitForSelector('.e2e-filtered-connection__loader', { hidden: true })
 
-        // Matches buttons for deleting external services named ${displayName}.
-        const deleteButtonSelector = `[data-e2e-external-service-name="${displayName}"] .e2e-delete-external-service-button`
-        if (await this.page.$(deleteButtonSelector)) {
-            await Promise.all([this.acceptNextDialog(), this.page.click(deleteButtonSelector)])
+            // Matches buttons for deleting external services named ${displayName}.
+            const deleteButtonSelector = `[data-e2e-external-service-name="${displayName}"] .e2e-delete-external-service-button`
+            if (await this.page.$(deleteButtonSelector)) {
+                await Promise.all([this.acceptNextDialog(), this.page.click(deleteButtonSelector)])
+            }
         }
 
-        await (await this.page.waitForSelector('.e2e-goto-add-external-service-page', { visible: true })).click()
-
+        // Navigate to the add external service page.
+        await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services/new')
         await (
             await this.page.waitForSelector(`[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`, {
                 visible: true,
             })
         ).click()
-
         await this.replaceText({
             selector: '#e2e-external-service-form-display-name',
             newText: displayName,
