@@ -542,8 +542,9 @@ func (c *Client) Repos(ctx context.Context, pageToken *PageToken, searchQueries 
 }
 
 // RepoIDs fetches a list of repositories that the user token has permission for.
+// NOTE: This requires the installation of the Bitbucket Server Sourcegraph plugin.
 // Permission: ["admin", "read", "write"]
-func (c *Client) RepoIDs(ctx context.Context, permission string) ([]uint32, error) {
+func (c *Client) RepoIDs(ctx context.Context, permission string) (*roaring.Bitmap, error) {
 	u := fmt.Sprintf("rest/sourcegraph-admin/1.0/permissions/repositories?permission=%s", permission)
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
@@ -556,10 +557,8 @@ func (c *Client) RepoIDs(ctx context.Context, permission string) ([]uint32, erro
 	}
 
 	bitmap := roaring.New()
-	if err := bitmap.UnmarshalBinary(resp); err != nil {
-		return nil, err
-	}
-	return bitmap.ToArray(), nil
+	err = bitmap.UnmarshalBinary(resp)
+	return bitmap, err
 }
 
 func (c *Client) RecentRepos(ctx context.Context, pageToken *PageToken) ([]*Repo, *PageToken, error) {

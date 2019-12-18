@@ -59,7 +59,7 @@ const DefaultHardTTL = 3 * 24 * time.Hour
 // authenticated user has permissions for, as well as the code host associated
 // with those objects.
 type PermissionsUpdateFunc func(context.Context) (
-	ids []uint32,
+	bitmap *roaring.Bitmap,
 	codeHost *extsvc.CodeHost,
 	err error,
 )
@@ -270,10 +270,10 @@ AND external_id IN (SELECT jsonb_array_elements_text(%s))
 ORDER BY id ASC
 `
 
-func (s *store) loadRepoIDs(ctx context.Context, c *extsvc.CodeHost, externalIDs []uint32) (ids *roaring.Bitmap, err error) {
+func (s *store) loadRepoIDs(ctx context.Context, c *extsvc.CodeHost, externalIDs *roaring.Bitmap) (ids *roaring.Bitmap, err error) {
 	ctx, save := s.observe(ctx, "loadRepoIDs", "")
 	defer func() {
-		fs := []otlog.Field{otlog.Int("externalIDs.count", len(externalIDs))}
+		fs := []otlog.Field{otlog.Uint64("externalIDs.count", externalIDs.GetCardinality())}
 		if ids != nil {
 			fs = append(fs, otlog.Uint64("repoIDs.count", ids.GetCardinality()))
 		}
@@ -281,7 +281,7 @@ func (s *store) loadRepoIDs(ctx context.Context, c *extsvc.CodeHost, externalIDs
 	}()
 
 	var q *sqlf.Query
-	if q, err = loadRepoIDsQuery(c, externalIDs); err != nil {
+	if q, err = loadRepoIDsQuery(c, externalIDs.ToArray()); err != nil {
 		return nil, err
 	}
 
@@ -291,7 +291,7 @@ func (s *store) loadRepoIDs(ctx context.Context, c *extsvc.CodeHost, externalIDs
 		return nil, err
 	}
 
-	ns := make([]uint32, 0, len(externalIDs))
+	ns := make([]uint32, 0, externalIDs.GetCardinality())
 	for rows.Next() {
 		var id uint32
 		if err = rows.Scan(&id); err != nil {
@@ -388,7 +388,7 @@ func (s *store) update(ctx context.Context, p *authz.UserPermissions, update Per
 
 	// Slow cache update operation, talks to the code host.
 	var (
-		externalIDs []uint32
+		externalIDs *roaring.Bitmap
 		c           *extsvc.CodeHost
 	)
 
