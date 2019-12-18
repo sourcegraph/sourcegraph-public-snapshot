@@ -190,6 +190,17 @@ func triggerE2E(c Config) func(*bk.Pipeline) {
 	// hardFail if we publish docker images
 	hardFail := c.branch == "master" || c.isMasterDryRun || c.isRenovateBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
 
+	env := copyEnv(
+		"BUILDKITE_PULL_REQUEST",
+		"BUILDKITE_PULL_REQUEST_BASE_BRANCH",
+		"BUILDKITE_PULL_REQUEST_REPO",
+
+		"COMMIT_SHA",
+		"DATE",
+	)
+	env["VERSION"] = c.version
+	env["TAG"] = candiateImageTag(c)
+
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddTrigger(":chromium:",
 			bk.Trigger("sourcegraph-e2e"),
@@ -198,10 +209,7 @@ func triggerE2E(c Config) func(*bk.Pipeline) {
 				Message: os.Getenv("BUILDKITE_MESSAGE"),
 				Commit:  c.commit,
 				Branch:  c.branch,
-				Env: copyEnv(
-					"BUILDKITE_PULL_REQUEST",
-					"BUILDKITE_PULL_REQUEST_BASE_BRANCH",
-					"BUILDKITE_PULL_REQUEST_REPO"),
+				Env:     env,
 			}))
 	}
 }
@@ -313,9 +321,10 @@ func addCanidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 			getBuildSteps()...,
 		)
 
+		tag := candiateImageTag(c)
 		cmds = append(cmds,
-			bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:candidate_%s", baseImage, c.version, gcrImage, c.commit)),
-			bk.Cmd(fmt.Sprintf("docker push %s:candidate_%s", gcrImage, c.commit)),
+			bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:%s", baseImage, c.version, gcrImage, tag)),
+			bk.Cmd(fmt.Sprintf("docker push %s:%s", gcrImage, tag)),
 		)
 
 		pipeline.AddStep(":docker: :construction:", cmds...)
@@ -335,7 +344,7 @@ func addFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline)
 
 		gcrImage := fmt.Sprintf("us.gcr.io/sourcegraph-dev/%s", strings.TrimPrefix(baseImage, "sourcegraph/"))
 
-		candidateImage := fmt.Sprintf("%s:candidate_%s", gcrImage, c.commit)
+		candidateImage := fmt.Sprintf("%s:%s", gcrImage, candiateImageTag(c))
 		cmds = append(cmds,
 			bk.Cmd(fmt.Sprintf("docker pull %s", candidateImage)),
 			bk.Cmd(fmt.Sprintf("docker tag %s %s:%s", candidateImage, baseImage, c.version)),
@@ -367,4 +376,9 @@ func addFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline)
 
 		pipeline.AddStep(":docker: :white_check_mark:", cmds...)
 	}
+}
+
+func candiateImageTag(c Config) string {
+	buildNumber := os.Getenv("BUILDKITE_BUILD_NUMBER")
+	return fmt.Sprintf("%s_%s_candidate", c.commit, buildNumber)
 }
