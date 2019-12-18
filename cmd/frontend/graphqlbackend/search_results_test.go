@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
+	searchquerytypes "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/types"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
@@ -1102,6 +1103,7 @@ func Test_commitAndDiffSearchLimits(t *testing.T) {
 		name                 string
 		resultTypes          []string
 		numRepoRevs          int
+		fields               map[string][]*searchquerytypes.Value
 		wantResultTypes      []string
 		wantAlertDescription string
 	}{
@@ -1110,20 +1112,36 @@ func Test_commitAndDiffSearchLimits(t *testing.T) {
 			resultTypes:          []string{"diff"},
 			numRepoRevs:          51,
 			wantResultTypes:      []string{}, // diff is removed from the resultTypes
-			wantAlertDescription: `Diff search can currently only handle searching over 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
+			wantAlertDescription: `Diff search can currently only handle searching over 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
 		},
 		{
 			name:                 "commit_search_warns_on_repos_greater_than_search_limit",
 			resultTypes:          []string{"commit"},
 			numRepoRevs:          51,
 			wantResultTypes:      []string{}, // diff is removed from the resultTypes
-			wantAlertDescription: `Commit search can currently only handle searching over 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
+			wantAlertDescription: `Commit search can currently only handle searching over 50 repositories at a time. Try using the "repo:" filter to narrow down which repositories to search, or using 'after:"1 week ago"'. Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/6826`,
 		},
 		{
 			name:                 "no_warning_when_commit_search_within_search_limit",
 			resultTypes:          []string{"commit"},
 			numRepoRevs:          50,
 			wantResultTypes:      []string{"commit"}, // commit is preserved in resultTypes
+			wantAlertDescription: "",
+		},
+		{
+			name:                 "no_search_limit_on_queries_including_after_filter",
+			fields:               map[string][]*searchquerytypes.Value{"after": nil},
+			resultTypes:          []string{"file"},
+			numRepoRevs:          200,
+			wantResultTypes:      []string{"file"},
+			wantAlertDescription: "",
+		},
+		{
+			name:                 "no_search_limit_on_queries_including_before_filter",
+			fields:               map[string][]*searchquerytypes.Value{"before": nil},
+			resultTypes:          []string{"file"},
+			numRepoRevs:          200,
+			wantResultTypes:      []string{"file"},
 			wantAlertDescription: "",
 		},
 		{
@@ -1150,7 +1168,14 @@ func Test_commitAndDiffSearchLimits(t *testing.T) {
 			}
 		}
 
-		haveResultTypes, alert := alertOnSearchLimit(test.resultTypes, &search.Args{Repos: repoRevs})
+		haveResultTypes, alert := alertOnSearchLimit(test.resultTypes, &search.Args{
+			Repos: repoRevs,
+			Query: &query.Query{
+				Query: &searchquerytypes.Query{
+					Fields: test.fields,
+				},
+			},
+		})
 
 		haveAlertDescription := ""
 		if alert != nil {
