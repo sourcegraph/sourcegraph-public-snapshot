@@ -5,7 +5,7 @@ import (
 	"regexp/syntax"
 
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	"github.com/sourcegraph/sourcegraph/internal/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 )
 

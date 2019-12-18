@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/query"
-	"github.com/sourcegraph/sourcegraph/internal/query/syntax"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
 )
 
 func TestSearchPatternForSuggestion(t *testing.T) {
