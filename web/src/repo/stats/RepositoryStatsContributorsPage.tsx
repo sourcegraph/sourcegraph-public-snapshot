@@ -26,7 +26,7 @@ interface QuerySpec {
     path: string | null
 }
 
-interface RepositoryContributorNodeProps extends QuerySpec, Omit<PatternTypeProps, 'togglePatternType'> {
+interface RepositoryContributorNodeProps extends QuerySpec, Omit<PatternTypeProps, 'setPatternType'> {
     node: GQL.IRepositoryContributor
     repoName: string
 }
@@ -157,7 +157,7 @@ const queryRepositoryContributors = memoizeObservable(
 interface Props
     extends RepositoryStatsAreaPageProps,
         RouteComponentProps<{}>,
-        Omit<PatternTypeProps, 'togglePatternType'> {}
+        Omit<PatternTypeProps, 'setPatternType'> {}
 
 class FilteredContributorsConnection extends FilteredConnection<
     GQL.IRepositoryContributor,

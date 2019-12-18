@@ -1,6 +1,6 @@
 # User authentication (SSO)
 
-> NOTE: User authentication is part of the [**critical configuration**](../config/critical_config.md), which means it must be edited from the [management console](../management_console.md).
+> NOTE: In versions before v3.11, user authentication was part of the [**critical configuration**](../config/critical_config.md), which meant it must be edited from the [management console](../management_console.md). It is now in the [site configuration](../config/site_config.md).
 
 Sourcegraph supports the following ways for users to sign in:
 

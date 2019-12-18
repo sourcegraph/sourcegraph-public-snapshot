@@ -17,7 +17,9 @@ import (
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/google/go-cmp/cmp"
 	graphql "github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/errors"
+	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+	"github.com/pkg/errors"
+	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -368,8 +370,8 @@ func TestCampaigns(t *testing.T) {
 		Changesets []Changeset
 	}
 
-	graphqlGithubRepoID := string(marshalRepositoryID(api.RepoID(githubRepo.ID)))
-	graphqlBBSRepoID := string(marshalRepositoryID(api.RepoID(bbsRepo.ID)))
+	graphqlGithubRepoID := string(graphqlbackend.MarshalRepositoryID(api.RepoID(githubRepo.ID)))
+	graphqlBBSRepoID := string(graphqlbackend.MarshalRepositoryID(api.RepoID(bbsRepo.ID)))
 
 	in := fmt.Sprintf(
 		`[{repository: %q, externalID: %q}, {repository: %q, externalID: %q}]`,
@@ -850,25 +852,278 @@ func TestChangesetCountsOverTime(t *testing.T) {
 	}
 }
 
-const testDiff = `diff --git a/README.md b/README.md
+const testDiff = `diff README.md README.md
 index 671e50a..851b23a 100644
---- a/README.md
-+++ b/README.md
-@@ -1,3 +1,3 @@
+--- README.md
++++ README.md
+@@ -1,2 +1,2 @@
  # README
- 
 -This file is hosted at example.com and is a test file.
 +This file is hosted at sourcegraph.com and is a test file.
-diff --git a/urls.txt b/urls.txt
+diff --git urls.txt urls.txt
 index 6f8b5d9..17400bc 100644
---- a/urls.txt
-+++ b/urls.txt
+--- urls.txt
++++ urls.txt
 @@ -1,3 +1,3 @@
  another-url.com
 -example.com
 +sourcegraph.com
  never-touch-the-mouse.com
 `
+
+// wantFileDiffs is the parsed representation of testDiff.
+var wantFileDiffs = FileDiffs{
+	RawDiff:  testDiff,
+	DiffStat: DiffStat{Changed: 2},
+	Nodes: []FileDiff{
+		{
+			OldPath: "README.md",
+			NewPath: "README.md",
+			OldFile: File{Name: "README.md"},
+			Hunks: []FileDiffHunk{
+				{
+					Body:     " # README\n-This file is hosted at example.com and is a test file.\n+This file is hosted at sourcegraph.com and is a test file.\n",
+					OldRange: DiffRange{StartLine: 1, Lines: 2},
+					NewRange: DiffRange{StartLine: 1, Lines: 2},
+				},
+			},
+			Stat: DiffStat{Changed: 1},
+		},
+		{
+			OldPath: "urls.txt",
+			NewPath: "urls.txt",
+			OldFile: File{Name: "urls.txt"},
+			Hunks: []FileDiffHunk{
+				{
+					Body:     " another-url.com\n-example.com\n+sourcegraph.com\n never-touch-the-mouse.com\n",
+					OldRange: DiffRange{StartLine: 1, Lines: 3},
+					NewRange: DiffRange{StartLine: 1, Lines: 3},
+				},
+			},
+			Stat: DiffStat{Changed: 1},
+		},
+	},
+}
+
+type DiffRange struct{ StartLine, Lines int }
+
+type FileDiffHunk struct {
+	Body, Section      string
+	OldNoNewlineAt     bool
+	OldRange, NewRange DiffRange
+}
+
+type DiffStat struct{ Added, Deleted, Changed int }
+
+type File struct {
+	Name string
+	// Ignoring other fields of File2, since that would require gitserver
+}
+
+type FileDiff struct {
+	OldPath, NewPath string
+	Hunks            []FileDiffHunk
+	Stat             DiffStat
+	OldFile          File
+}
+
+type FileDiffs struct {
+	RawDiff  string
+	DiffStat DiffStat
+	Nodes    []FileDiff
+}
+
+type ChangesetPlan struct {
+	Repository struct{ Name, URL string }
+	Diff       struct {
+		FileDiffs FileDiffs
+	}
+}
+
+type Status struct {
+	CompletedCount int
+	PendingCount   int
+	State          string
+	Errors         []string
+}
+
+type CampaignPlan struct {
+	ID           string
+	CampaignType string `json:"type"`
+	Arguments    string
+	Status       Status
+	Changesets   struct {
+		Nodes []ChangesetPlan
+	}
+}
+
+func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
+	ctx := backend.WithAuthzBypass(context.Background())
+
+	t.Run("invalid patch", func(t *testing.T) {
+		args := graphqlbackend.CreateCampaignPlanFromPatchesArgs{
+			Patches: []graphqlbackend.CampaignPlanPatch{
+				{
+					Repository:   graphqlbackend.MarshalRepositoryID(1),
+					BaseRevision: "master",
+					Patch:        "!!! this is not a valid unified diff !!!\n--- x\n+++ y\n@@ 1,1 2,2\na",
+				},
+			},
+		}
+
+		_, err := (&Resolver{}).CreateCampaignPlanFromPatches(ctx, args)
+		if err == nil {
+			t.Fatal("want error")
+		}
+		if _, ok := errors.Cause(err).(*diff.ParseError); !ok {
+			t.Fatalf("got error %q (%T), want a diff ParseError", err, errors.Cause(err))
+		}
+	})
+
+	t.Run("integration", func(t *testing.T) {
+		if testing.Short() {
+			t.Skip()
+		}
+
+		dbtesting.SetupGlobalTestDB(t)
+		rcache.SetupForTest(t)
+
+		now := time.Now().UTC().Truncate(time.Microsecond)
+		clock := func() time.Time {
+			return now.UTC().Truncate(time.Microsecond)
+		}
+
+		// For testing purposes they all share the same rev, across repos
+		testingRev := api.CommitID("24f7ca7c1190835519e261d7eefa09df55ceea4f")
+
+		backend.Mocks.Repos.ResolveRev = func(_ context.Context, _ *types.Repo, _ string) (api.CommitID, error) {
+			return testingRev, nil
+		}
+		defer func() { backend.Mocks.Repos.ResolveRev = nil }()
+
+		backend.Mocks.Repos.GetCommit = func(_ context.Context, _ *types.Repo, _ api.CommitID) (*git.Commit, error) {
+			return &git.Commit{ID: testingRev}, nil
+		}
+		defer func() { backend.Mocks.Repos.GetCommit = nil }()
+
+		reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+		repo := &repos.Repo{
+			Name:    fmt.Sprintf("github.com/sourcegraph/sourcegraph"),
+			Enabled: true,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "external-id",
+				ServiceType: "github",
+				ServiceID:   "https://github.com/",
+			},
+			Sources: map[string]*repos.SourceInfo{
+				"extsvc:github:4": {
+					ID:       "extsvc:github:4",
+					CloneURL: "https://secrettoken@github.com/sourcegraph/sourcegraph",
+				},
+			},
+		}
+		if err := reposStore.UpsertRepos(ctx, repo); err != nil {
+			t.Fatal(err)
+		}
+
+		store := ee.NewStoreWithClock(dbconn.Global, clock)
+
+		sr := &Resolver{store: store}
+		s, err := graphqlbackend.NewSchema(sr, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var response struct{ CreateCampaignPlanFromPatches CampaignPlan }
+
+		mustExec(ctx, t, s, nil, &response, fmt.Sprintf(`
+      mutation {
+        createCampaignPlanFromPatches(patches: [{repository: %q, baseRevision: "master", patch: %q}]) {
+          ... on CampaignPlan {
+            id
+            type
+            arguments
+            status {
+              completedCount
+              pendingCount
+              state
+              errors
+            }
+            changesets(first: %d) {
+              nodes {
+                repository {
+                  name
+                }
+				diff {
+                  fileDiffs {
+                    rawDiff
+                    diffStat {
+                      added
+                      deleted
+                      changed
+                    }
+                    nodes {
+                      oldPath
+                      newPath
+                      hunks {
+                        body
+                        section
+                        newRange { startLine, lines }
+                        oldRange { startLine, lines }
+                        oldNoNewlineAt
+                      }
+                      stat {
+                        added
+                        deleted
+                        changed
+                      }
+                      oldFile {
+                        name
+                        externalURLs {
+                          serviceType
+                          url
+                        }
+                      }
+                    }
+                  }
+                }
+			  }
+            }
+          }
+        }
+      }
+	`, graphqlbackend.MarshalRepositoryID(api.RepoID(repo.ID)), testDiff, 1))
+
+		result := response.CreateCampaignPlanFromPatches
+		if have, want := result.CampaignType, "patch"; have != want {
+			t.Fatalf("have CampaignType %q, want %q", have, want)
+		}
+
+		if have, want := result.Arguments, ""; have != want {
+			t.Fatalf("have Arguments %q, want %q", have, want)
+		}
+
+		wantStatus := Status{
+			State:          "COMPLETED",
+			CompletedCount: 1,
+			Errors:         []string{},
+		}
+
+		if diff := cmp.Diff(result.Status, wantStatus); diff != "" {
+			t.Fatalf("wrong Status. diff=%s", diff)
+		}
+
+		wantChangesets := []ChangesetPlan{
+			{
+				Repository: struct{ Name, URL string }{Name: repo.Name},
+				Diff:       struct{ FileDiffs FileDiffs }{FileDiffs: wantFileDiffs},
+			},
+		}
+		if !cmp.Equal(result.Changesets.Nodes, wantChangesets) {
+			t.Error("wrong changesets", cmp.Diff(result.Changesets.Nodes, wantChangesets))
+		}
+	})
+}
 
 func TestCampaignPlanResolver(t *testing.T) {
 	if testing.Short() {
@@ -953,58 +1208,6 @@ func TestCampaignPlanResolver(t *testing.T) {
 			t.Fatal(err)
 		}
 		jobs = append(jobs, job)
-	}
-
-	type DiffRange struct{ StartLine, Lines int }
-
-	type FileDiffHunk struct {
-		Body, Section      string
-		OldNoNewlineAt     bool
-		OldRange, NewRange DiffRange
-	}
-
-	type DiffStat struct{ Added, Deleted, Changed int }
-
-	type File struct {
-		Name string
-		// Ignoring other fields of File2, since that would require gitserver
-	}
-
-	type FileDiff struct {
-		OldPath, NewPath string
-		Hunks            []FileDiffHunk
-		Stat             DiffStat
-		OldFile          File
-	}
-
-	type FileDiffs struct {
-		RawDiff  string
-		DiffStat DiffStat
-		Nodes    []FileDiff
-	}
-
-	type ChangesetPlan struct {
-		Repository struct{ Name, URL string }
-		Diff       struct {
-			FileDiffs FileDiffs
-		}
-	}
-
-	type Status struct {
-		CompletedCount int
-		PendingCount   int
-		State          string
-		Errors         []string
-	}
-
-	type CampaignPlan struct {
-		ID           string
-		CampaignType string `json:"type"`
-		Arguments    string
-		Status       Status
-		Changesets   struct {
-			Nodes []ChangesetPlan
-		}
 	}
 
 	type Response struct {
@@ -1112,38 +1315,6 @@ func TestCampaignPlanResolver(t *testing.T) {
 			t.Fatalf("wrong DiffStat.Changed %d, want=%d", have, want)
 		}
 
-		wantFileDiffs := FileDiffs{
-			RawDiff:  testDiff,
-			DiffStat: DiffStat{Changed: 2},
-			Nodes: []FileDiff{
-				{
-					OldPath: "a/README.md",
-					NewPath: "b/README.md",
-					OldFile: File{Name: "README.md"},
-					Hunks: []FileDiffHunk{
-						{
-							Body:     " # README\n \n-This file is hosted at example.com and is a test file.\n+This file is hosted at sourcegraph.com and is a test file.\n",
-							OldRange: DiffRange{StartLine: 1, Lines: 3},
-							NewRange: DiffRange{StartLine: 1, Lines: 3},
-						},
-					},
-					Stat: DiffStat{Changed: 1},
-				},
-				{
-					OldPath: "a/urls.txt",
-					NewPath: "b/urls.txt",
-					OldFile: File{Name: "urls.txt"},
-					Hunks: []FileDiffHunk{
-						{
-							Body:     " another-url.com\n-example.com\n+sourcegraph.com\n never-touch-the-mouse.com\n",
-							OldRange: DiffRange{StartLine: 1, Lines: 3},
-							NewRange: DiffRange{StartLine: 1, Lines: 3},
-						},
-					},
-					Stat: DiffStat{Changed: 1},
-				},
-			},
-		}
 		haveFileDiffs := changesetPlan.Diff.FileDiffs
 		if !reflect.DeepEqual(haveFileDiffs, wantFileDiffs) {
 			t.Fatal(cmp.Diff(haveFileDiffs, wantFileDiffs))
@@ -1172,7 +1343,7 @@ func exec(
 	in map[string]interface{},
 	out interface{},
 	query string,
-) []*errors.QueryError {
+) []*gqlerrors.QueryError {
 	t.Helper()
 
 	query = strings.Replace(query, "\t", "  ", -1)

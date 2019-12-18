@@ -30,6 +30,9 @@ export function fetchLsifDumps({
                                     path
                                     url
                                 }
+                                inputRepoName
+                                inputCommit
+                                inputRoot
                                 processedAt
                             }
 
@@ -80,6 +83,9 @@ export function fetchLsifUploads({
                             path
                             url
                         }
+                        inputRepoName
+                        inputCommit
+                        inputRoot
                         state
                         uploadedAt
                         startedAt

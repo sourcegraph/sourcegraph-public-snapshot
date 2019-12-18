@@ -3,6 +3,7 @@ package conf
 
 import (
 	"context"
+	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -11,7 +12,9 @@ import (
 
 	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // Unified represents the overall global Sourcegraph configuration from various
@@ -23,7 +26,6 @@ import (
 //
 type Unified struct {
 	schema.SiteConfiguration
-	Critical           schema.CriticalConfiguration
 	ServiceConnections conftypes.ServiceConnections
 }
 
@@ -162,9 +164,93 @@ func InitConfigurationServerFrontendOnly(source ConfigurationSource) *Server {
 
 	go defaultClient.continuouslyUpdate(nil)
 	close(configurationServerFrontendOnlyInitialized)
+
+	startSiteConfigEscapeHatchWorker(source)
 	return server
 }
 
 // FormatOptions is the default format options that should be used for jsonx
 // edit computation.
 var FormatOptions = jsonx.FormatOptions{InsertSpaces: true, TabSize: 2, EOL: "\n"}
+
+var siteConfigEscapeHatchPath = env.Get("SITE_CONFIG_ESCAPE_HATCH_PATH", "/site-config.json", "Path where the site-config.json escape-hatch file will be written.")
+
+// startSiteConfigEscapeHatchWorker handles ensuring that edits to the ephemeral on-disk
+// site-config.json file are propagated to the persistent DB and vice-versa. This acts as
+// an escape hatch such that if a site admin configures their instance in a way that they
+// cannot access the UI (for example by configuring auth in a way that locks them out)
+// they can simply edit this file in any of the frontend containers to undo the change.
+func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
+	var (
+		ctx                                        = context.Background()
+		lastKnownFileContents, lastKnownDBContents string
+	)
+	go func() {
+		// First, ensure we populate the file with what is currently in the DB.
+		for {
+			config, err := c.Read(ctx)
+			if err != nil {
+				log15.Error("config: failed to read config from database, trying again in 1s", "error", err)
+				time.Sleep(1 * time.Second)
+				continue
+			}
+			if err := ioutil.WriteFile(siteConfigEscapeHatchPath, []byte(config.Site), 0644); err != nil {
+				log15.Error("config: failed to write site config file, trying again in 1s", "error", err)
+				time.Sleep(1 * time.Second)
+				continue
+			}
+			lastKnownDBContents = config.Site
+			lastKnownFileContents = config.Site
+			break
+		}
+
+		// Watch for changes to the file AND the database.
+		for {
+			// If the file changes from what we last wrote, an admin made an edit to the file and
+			// we should propagate it to the database for them.
+			newFileContents, err := ioutil.ReadFile(siteConfigEscapeHatchPath)
+			if err != nil {
+				log15.Error("config: failed to read site config from disk, trying again in 1s", "path", siteConfigEscapeHatchPath)
+				time.Sleep(1 * time.Second)
+				continue
+			}
+			if string(newFileContents) != lastKnownFileContents {
+				log15.Info("config: detected site config file edit, saving edit to database", "path", siteConfigEscapeHatchPath)
+				config, err := c.Read(ctx)
+				if err != nil {
+					log15.Error("config: failed to save edit to database, trying again in 1s (read error)", "error", err)
+					time.Sleep(1 * time.Second)
+					continue
+				}
+				config.Site = string(newFileContents)
+				err = c.Write(ctx, config)
+				if err != nil {
+					log15.Error("config: failed to save edit to database, trying again in 1s (write error)", "error", err)
+					time.Sleep(1 * time.Second)
+					continue
+				}
+				lastKnownFileContents = config.Site
+				continue
+			}
+
+			// If the database changes from what we last remember, an admin made an edit to the
+			// database (e.g. through the web UI or by editing the file of another frontend
+			// process), and we should propagate it to the file on disk.
+			newDBConfig, err := c.Read(ctx)
+			if err != nil {
+				log15.Error("config: failed to read config from database(2), trying again in 1s (read error)", "error", err)
+				time.Sleep(1 * time.Second)
+				continue
+			}
+			if newDBConfig.Site != lastKnownDBContents {
+				if err := ioutil.WriteFile(siteConfigEscapeHatchPath, []byte(newDBConfig.Site), 0644); err != nil {
+					log15.Error("config: failed to write site config file, trying again in 1s", "error", err)
+					time.Sleep(1 * time.Second)
+					continue
+				}
+				lastKnownFileContents = newDBConfig.Site
+			}
+			time.Sleep(1 * time.Second)
+		}
+	}()
+}

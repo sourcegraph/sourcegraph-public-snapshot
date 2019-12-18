@@ -54,6 +54,15 @@ type Mutation {
         # the query will return anyway, so the caller must check the result's CampaignPlan.status.
         wait: Boolean = false
     ): CampaignPlan!
+    # Create a campaign plan from patches (in unified diff format) that are computed by the caller.
+    #
+    # To create the campaign, call createCampaign with the returned CampaignPlan.id in the
+    # CreateCampaignInput.plan field.
+    createCampaignPlanFromPatches(
+        # A list of patches (diffs) to apply to repositories (in new branches) when a campaign is
+        # created from this campaign plan.
+        patches: [CampaignPlanPatch!]!
+    ): CampaignPlan!
     # Cancel a campaign plan that is being generated.
     # Cancellation expresses a desinterest in the campaign plan and is best-effort.
     # It may not be relied upon.
@@ -391,9 +400,6 @@ type Mutation {
     requestTrial(email: String!): EmptyResponse
     # Manages the extension registry.
     extensionRegistry: ExtensionRegistryMutation!
-    # Clears the management console plaintext password forever. Only site
-    # admins can perform this action.
-    clearManagementConsolePlaintextPassword: EmptyResponse
     # Mutations that are only used on Sourcegraph.com.
     #
     # FOR INTERNAL USE ONLY.
@@ -444,6 +450,22 @@ input CampaignPlanSpecification {
     # Schema for comby:
     # { scopeQuery: string, matchTemplate: string, rewriteTemplate: string }
     arguments: JSONCString!
+}
+
+# A patch to apply to a repository (in a new branch) when a campaign is created from the parent
+# campaign plan.
+input CampaignPlanPatch {
+    # The repository that this patch is applied to.
+    repository: ID!
+
+    # The base revision in the repository that this patch is applied to.
+    baseRevision: String!
+
+    # The patch (in unified diff format) to apply.
+    #
+    # The filenames must not be prefixed (e.g., with 'a/' and 'b/'). Tip: use 'git diff --no-prefix'
+    # to omit the prefix.
+    patch: String!
 }
 
 # Input arguments for creating a campaign.
@@ -627,6 +649,7 @@ enum ChangesetState {
     OPEN
     CLOSED
     MERGED
+    DELETED
 }
 
 # The state of a Changeset Review
@@ -1431,15 +1454,32 @@ type SearchResults {
     # Repositories that were actually searched. Excludes repositories that would have been searched but were not
     # because a timeout or error occurred while performing the search, or because the result limit was already
     # reached.
+    #
+    # In paginated search requests, this represents the set of repositories searched for the
+    # individual paginated request / input cursor and not the global set of repositories that
+    # would be searched if further requests were made.
     repositoriesSearched: [Repository!]!
     # Indexed repositories searched. This is a subset of repositoriesSearched.
     indexedRepositoriesSearched: [Repository!]!
     # Repositories that are busy cloning onto gitserver.
+    #
+    # In paginated search requests, some repositories may be cloning. These are reported here
+    # and you may choose to retry the paginated request with the same cursor after they have
+    # cloned OR you may simply continue making further paginated requests and choose to skip
+    # the cloning repositories.
     cloning: [Repository!]!
     # Repositories or commits that do not exist.
+    #
+    # In paginated search requests, some repositories may be missing (e.g. if Sourcegraph is
+    # aware of them but is temporarily unable to serve them). These are reported here and you
+    # may choose to retry the paginated request with the same cursor and they may no longer be
+    # missing OR you may simply continue making further paginated requests and choose to skip
+    # the missing repositories.
     missing: [Repository!]!
     # Repositories or commits which we did not manage to search in time. Trying
     # again usually will work.
+    #
+    # In paginated search requests, this field is not relevant.
     timedout: [Repository!]!
     # True if indexed search is enabled but was not available during this search.
     indexUnavailable: Boolean!
@@ -1461,6 +1501,11 @@ type SearchResultsStats {
     approximateResultCount: String!
     # The sparkline.
     sparkline: [Int!]!
+
+    # Statistics about the languages represented in the search results.
+    #
+    # Known issue: The LanguageStatistics.totalBytes field values are incorrect in the result.
+    languages: [LanguageStatistics!]!
 }
 
 # A search filter.
@@ -3513,20 +3558,6 @@ type Site implements SettingsSubject {
         # Months of history.
         months: Int
     ): SiteUsageStatistics!
-    # Information about this site's management console.
-    #
-    # Only site admins may retrieve this information.
-    managementConsoleState: ManagementConsoleState!
-}
-
-# Information about this site's management console.
-#
-# Only site admins may retrieve this information.
-type ManagementConsoleState {
-    # The plaintext password of the management console, which is automatically
-    # generated. This can only be retrieved until the admin clears it, after
-    # which it is impossible to retrieve.
-    plaintextPassword: String
 }
 
 # The configuration for a site.
@@ -4051,7 +4082,16 @@ type LSIFDump implements Node {
     id: ID!
 
     # The project for which this dump provides code intelligence.
-    projectRoot: GitTree!
+    projectRoot: GitTree
+
+    # The original repository name supplied at upload time.
+    inputRepoName: String!
+
+    # The original 40-character commit commit supplied at upload time.
+    inputCommit: String!
+
+    # The original root supplied at upload time.
+    inputRoot: String!
 
     # Whether or not this dump provides intelligence for the tip of the default branch. Find reference queries
     # will return symbols from remote repositories only when this property is true. This property is updated
@@ -4134,7 +4174,16 @@ type LSIFUpload implements Node {
     id: ID!
 
     # The project for which this upload provides code intelligence.
-    projectRoot: GitTree!
+    projectRoot: GitTree
+
+    # The original repository name supplied at upload time.
+    inputRepoName: String!
+
+    # The original 40-character commit commit supplied at upload time.
+    inputCommit: String!
+
+    # The original root supplied at upload time.
+    inputRoot: String!
 
     # The upload's current state.
     state: LSIFUploadState!

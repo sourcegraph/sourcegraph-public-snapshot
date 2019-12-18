@@ -3,11 +3,13 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
+	"log"
 	"strconv"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+	"github.com/graph-gophers/graphql-go/introspection"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/graph-gophers/graphql-go/trace"
 	"github.com/prometheus/client_golang/prometheus"
@@ -17,6 +19,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -33,6 +37,43 @@ func init() {
 
 type prometheusTracer struct {
 	trace.OpenTracingTracer
+}
+
+func (prometheusTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]interface{}, varTypes map[string]*introspection.Type) (context.Context, trace.TraceQueryFinishFunc) {
+	traceCtx, finish := trace.OpenTracingTracer{}.TraceQuery(ctx, queryString, operationName, variables, varTypes)
+
+	// Note: We don't care about the error here, we just extract the username if
+	// we get a non-nil user object.
+	currentUser, _ := CurrentUser(ctx)
+	var currentUserName string
+	if currentUser != nil {
+		currentUserName = currentUser.Username()
+	}
+
+	// Requests made by our JS frontend and other internal things will have a concrete name attached to the
+	// request which allows us to (softly) differentiate it from end-user API requests. For example,
+	// /.api/graphql?Foobar where Foobar is the name of the request we make. If there is not a request name,
+	// then it is an interesting query to log in the event it is harmful and a site admin needs to identify
+	// it and the user issuing it.
+	requestName := sgtrace.GraphQLRequestName(ctx)
+	lvl := log15.Debug
+	if requestName == "unknown" {
+		lvl = log15.Info
+	}
+	lvl("serving GraphQL request", "name", requestName, "user", currentUserName)
+	if requestName == "unknown" {
+		log.Printf(`logging complete query for unnamed GraphQL request above name=%s user=%s:
+QUERY
+-----
+%s
+
+VARIABLES
+---------
+%v
+
+`, requestName, currentUserName, queryString, variables)
+	}
+	return traceCtx, finish
 }
 
 func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldName string, trivial bool, args map[string]interface{}) (context.Context, trace.TraceFieldFinishFunc) {

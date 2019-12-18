@@ -8,8 +8,8 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/types"
+	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
+	"github.com/sourcegraph/sourcegraph/internal/search/query/types"
 )
 
 type didYouMeanQuotedResolver struct {
@@ -25,6 +25,7 @@ func (r *didYouMeanQuotedResolver) Results(context.Context) (*SearchResultsResol
 		case *rxsyntax.Error:
 			srr := &SearchResultsResolver{
 				alert: &searchAlert{
+					prometheusType:  "regex_syntax_error",
 					title:           capFirst(e.Error()),
 					description:     "Quoting the query may help if you want a literal match instead of a regular expression match.",
 					proposedQueries: sqds,
@@ -37,6 +38,7 @@ func (r *didYouMeanQuotedResolver) Results(context.Context) (*SearchResultsResol
 	case *syntax.ParseError:
 		srr := &SearchResultsResolver{
 			alert: &searchAlert{
+				prometheusType:  "parse_syntax_error",
 				title:           capFirst(e.Msg),
 				description:     "Quoting the query may help if you want a literal match.",
 				proposedQueries: sqds,

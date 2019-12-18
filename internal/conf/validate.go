@@ -61,14 +61,6 @@ type Problem struct {
 	description string
 }
 
-// NewCriticalProblem creates a new critical config problem with given message.
-func NewCriticalProblem(msg string) *Problem {
-	return &Problem{
-		kind:        problemCritical,
-		description: msg,
-	}
-}
-
 // NewSiteProblem creates a new site config problem with given message.
 func NewSiteProblem(msg string) *Problem {
 	return &Problem{
@@ -117,11 +109,6 @@ func newProblems(kind problemKind, messages ...string) Problems {
 		}
 	}
 	return problems
-}
-
-// NewCriticalProblems converts a list of messages into critical config problems.
-func NewCriticalProblems(messages ...string) Problems {
-	return newProblems(problemCritical, messages...)
 }
 
 // NewSiteProblems converts a list of messages into site config problems.
@@ -180,12 +167,6 @@ func (ps Problems) ExternalService() (problems Problems) {
 // Validate validates the configuration against the JSON Schema and other
 // custom validation checks.
 func Validate(input conftypes.RawUnified) (problems Problems, err error) {
-	criticalProblems, err := doValidate(input.Critical, schema.CriticalSchemaJSON)
-	if err != nil {
-		return nil, err
-	}
-	problems = append(problems, NewCriticalProblems(criticalProblems...)...)
-
 	siteProblems, err := doValidate(input.Site, schema.SiteSchemaJSON)
 	if err != nil {
 		return nil, err
@@ -282,8 +263,6 @@ func (f jsonLoaderFactory) New(source string) gojsonschema.JSONLoader {
 		return gojsonschema.NewStringLoader(schema.SettingsSchemaJSON)
 	case "site.schema.json":
 		return gojsonschema.NewStringLoader(schema.SiteSchemaJSON)
-	case "critical.schema.json":
-		return gojsonschema.NewStringLoader(schema.CriticalSchemaJSON)
 	}
 	return nil
 }

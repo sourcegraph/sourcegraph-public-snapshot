@@ -14,11 +14,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
 func (r *schemaResolver) Repositories(args *struct {
@@ -360,7 +360,7 @@ func (r *schemaResolver) DeleteRepository(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	id, err := unmarshalRepositoryID(args.Repository)
+	id, err := UnmarshalRepositoryID(args.Repository)
 	if err != nil {
 		return nil, err
 	}

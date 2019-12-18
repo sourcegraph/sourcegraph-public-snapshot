@@ -958,7 +958,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 				"authorization": { "identityProvider": { "type": "oauth" } }
 			}
 			`,
-			assert: includes("Did not find authentication provider matching \"https://gitlab.foo.bar\". Check the [management console](https://docs.sourcegraph.com/admin/management_console) to verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for https://gitlab.foo.bar."),
+			assert: includes("Did not find authentication provider matching \"https://gitlab.foo.bar\". Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for https://gitlab.foo.bar."),
 		},
 		{
 			kind: "GITLAB",
@@ -972,7 +972,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			ps: []schema.AuthProviders{
 				{Gitlab: &schema.GitLabAuthProvider{Url: "https://gitlab.foo.bar"}},
 			},
-			assert: excludes("Did not find authentication provider matching \"https://gitlab.foo.bar\". Check the [management console](https://docs.sourcegraph.com/admin/management_console) to verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for https://gitlab.foo.bar."),
+			assert: excludes("Did not find authentication provider matching \"https://gitlab.foo.bar\". Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for https://gitlab.foo.bar."),
 		},
 		{
 			kind: "GITLAB",
@@ -990,7 +990,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 				}
 			}
 			`,
-			assert: includes("Did not find authentication provider matching type bar and configID foo. Check the [management console](https://docs.sourcegraph.com/admin/management_console) to verify that an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) matches the type and configID."),
+			assert: includes("Did not find authentication provider matching type bar and configID foo. Check the [**site configuration**](/site-admin/configuration) to verify that an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) matches the type and configID."),
 		},
 		{
 			kind: "GITLAB",
@@ -1016,7 +1016,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 					},
 				},
 			},
-			assert: excludes("Did not find authentication provider matching type bar and configID foo. Check the [management console](https://docs.sourcegraph.com/admin/management_console) to verify that an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) matches the type and configID."),
+			assert: excludes("Did not find authentication provider matching type bar and configID foo. Check the [**site configuration**](/site-admin/configuration) to verify that an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) matches the type and configID."),
 		},
 		{
 			kind: "GITLAB",
@@ -1042,7 +1042,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 					},
 				},
 			},
-			assert: excludes("Did not find authentication provider matching type bar and configID foo. Check the [management console](https://docs.sourcegraph.com/admin/management_console) to verify that an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) matches the type and configID."),
+			assert: excludes("Did not find authentication provider matching type bar and configID foo. Check the [**site configuration**](/site-admin/configuration) to verify that an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) matches the type and configID."),
 		},
 		{
 			kind: "GITLAB",
@@ -1232,7 +1232,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		t.Run(tc.kind+"/"+tc.desc, func(t *testing.T) {
 			var have []string
 			if tc.ps == nil {
-				tc.ps = conf.Get().Critical.AuthProviders
+				tc.ps = conf.Get().AuthProviders
 			}
 
 			s := NewExternalServicesStore()

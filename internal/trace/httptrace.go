@@ -30,6 +30,7 @@ const (
 	routeNameKey key = iota
 	userKey
 	requestErrorCauseKey
+	graphQLRequestNameKey
 )
 
 var metricLabels = []string{"route", "method", "code", "repo"}
@@ -63,20 +64,36 @@ func init() {
 
 	go func() {
 		conf.Watch(func() {
-			if conf.Get().Critical.Log == nil {
+			if conf.Get().Log == nil {
 				return
 			}
 
-			if conf.Get().Critical.Log.Sentry == nil {
+			if conf.Get().Log.Sentry == nil {
 				return
 			}
 
 			// An empty dsn value is ignored: not an error.
-			if err := raven.SetDSN(conf.Get().Critical.Log.Sentry.Dsn); err != nil {
+			if err := raven.SetDSN(conf.Get().Log.Sentry.Dsn); err != nil {
 				log15.Error("sentry.dsn", "error", err)
 			}
 		})
 	}()
+}
+
+// GraphQLRequestName returns the GraphQL request name for a request context. For example,
+// a request to /.api/graphql?Foobar would have the name `Foobar`. If the request had no
+// name, or the context is not a GraphQL request, "unknown" is returned.
+func GraphQLRequestName(ctx context.Context) string {
+	v := ctx.Value(graphQLRequestNameKey)
+	if v == nil {
+		return "unknown"
+	}
+	return v.(string)
+}
+
+// WithGraphQLRequestName sets the GraphQL request name in the context.
+func WithGraphQLRequestName(ctx context.Context, name string) context.Context {
+	return context.WithValue(ctx, graphQLRequestNameKey, name)
 }
 
 // Middleware captures and exports metrics to Prometheus, etc.

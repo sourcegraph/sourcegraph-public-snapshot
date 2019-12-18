@@ -35,16 +35,16 @@ const cookieName = "sgs"
 
 func init() {
 	conf.ContributeValidator(func(c conf.Unified) (problems conf.Problems) {
-		if c.Critical.AuthSessionExpiry == "" {
+		if c.AuthSessionExpiry == "" {
 			return nil
 		}
 
-		d, err := time.ParseDuration(c.Critical.AuthSessionExpiry)
+		d, err := time.ParseDuration(c.AuthSessionExpiry)
 		if err != nil {
-			return conf.NewCriticalProblems("auth.sessionExpiry does not conform to the Go time.Duration format (https://golang.org/pkg/time/#ParseDuration). The default of 90 days will be used.")
+			return conf.NewSiteProblems("auth.sessionExpiry does not conform to the Go time.Duration format (https://golang.org/pkg/time/#ParseDuration). The default of 90 days will be used.")
 		}
 		if d == 0 {
-			return conf.NewCriticalProblems("auth.sessionExpiry should be greater than zero. The default of 90 days will be used.")
+			return conf.NewSiteProblems("auth.sessionExpiry should be greater than zero. The default of 90 days will be used.")
 		}
 		return nil
 	})
@@ -204,7 +204,7 @@ func SetActor(w http.ResponseWriter, r *http.Request, actor *actor.Actor, expiry
 	var value *sessionInfo
 	if actor != nil {
 		if expiryPeriod == 0 {
-			if cfgExpiry, err := time.ParseDuration(conf.Get().Critical.AuthSessionExpiry); err == nil {
+			if cfgExpiry, err := time.ParseDuration(conf.Get().AuthSessionExpiry); err == nil {
 				expiryPeriod = cfgExpiry
 			} else { // if there is no valid session duration, fall back to the default one
 				expiryPeriod = defaultExpiryPeriod

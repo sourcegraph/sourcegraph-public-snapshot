@@ -17,6 +17,7 @@ import {
     FilteredConnectionFilter,
 } from '../../components/FilteredConnection'
 import { ErrorAlert } from '../../components/alerts'
+import { lsifUploadDescription } from './SiteAdminLsifUploadPage'
 
 interface LsifUploadNodeProps {
     node: GQL.ILSIFUpload
@@ -28,8 +29,17 @@ const LsifUploadNode: FunctionComponent<LsifUploadNodeProps> = ({ node }) => (
             <div className="lsif-upload__meta">
                 <div className="lsif-upload__meta-root">
                     <Link to={`/site-admin/lsif-uploads/${node.id}`}>
-                        {node.projectRoot.commit.repository.name}@<code>{node.projectRoot.commit.abbreviatedOID}</code>
-                        {node.projectRoot.path === '' ? '' : ` rooted at ${node.projectRoot.path}`}
+                        {node.projectRoot
+                            ? lsifUploadDescription(
+                                  node.projectRoot.commit.repository.name,
+                                  node.projectRoot.commit.abbreviatedOID,
+                                  node.projectRoot.path
+                              )
+                            : lsifUploadDescription(
+                                  node.inputRepoName,
+                                  node.inputCommit.substring(0, 7),
+                                  node.inputRoot
+                              )}
                     </Link>
                 </div>
             </div>

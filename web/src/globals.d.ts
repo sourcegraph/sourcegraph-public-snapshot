@@ -73,9 +73,9 @@ interface SourcegraphContext
     emailEnabled: boolean
 
     /**
-     * A subset of the critical configuration. Not all fields are set.
+     * A subset of the site configuration. Not all fields are set.
      */
-    critical: {
+    site: {
         'auth.public': boolean
         'update.channel': string
     }
