@@ -20,18 +20,12 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 
 	gitCommands := []string{
 		"touch file1",
+		"mkdir dir1",
 		"ln -s file1 link1",
-		"touch --date=2006-01-02T15:04:05Z file1 link1 || touch -t " + Times[0] + " file1 link1",
-		"git add link1 file1",
+		"ln -s ../file1 dir1/link2",
+		"touch --date=2006-01-02T15:04:05Z file1 link1 dir1/link2 || touch -t " + Times[0] + " file1 link1 dir1/link2",
+		"git add link1 file1 dir1/link2",
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-	}
-
-	var gitCommitID api.CommitID
-
-	if runtime.GOOS == "windows" {
-		gitCommitID = ""
-	} else {
-		gitCommitID = "85d3a39020cf28af4b887552fcab9e31a49f2ced"
 	}
 
 	tests := map[string]struct {
@@ -39,8 +33,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 		commitID api.CommitID
 	}{
 		"git cmd": {
-			repo:     MakeGitRepository(t, gitCommands...),
-			commitID: gitCommitID,
+			repo: MakeGitRepository(t, gitCommands...),
 		},
 	}
 	for label, test := range tests {
@@ -64,6 +57,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 		}
 
 		checkSymlinkFileInfo := func(label string, link os.FileInfo) {
+			t.Helper()
 			if link.Mode()&os.ModeSymlink == 0 {
 				t.Errorf("%s: link mode is not symlink (mode: %o)", label, link.Mode())
 			}
@@ -90,13 +84,13 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 			t.Errorf("%s: fs.ReadDir(.): %s", label, err)
 			continue
 		}
-		if got, want := len(entries), 2; got != want {
+		if got, want := len(entries), 3; got != want {
 			t.Errorf("%s: got len(entries) == %d, want %d", label, got, want)
 			continue
 		}
 		if runtime.GOOS != "windows" {
 			// TODO(alexsaveliev) make it work on Windows too
-			checkSymlinkFileInfo(label+" (ReadDir)", entries[1])
+			checkSymlinkFileInfo(label+" (ReadDir)", entries[2])
 		}
 
 		// link1 stat should follow the link to file1.
@@ -113,6 +107,22 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 		}
 		if link1Info.Size() != 0 {
 			t.Errorf("%s: got link1 Size %d, want %d", label, link1Info.Size(), 0)
+		}
+
+		// link2 stat should follow the link to file1.
+		link2Info, err := git.Stat(ctx, test.repo, api.CommitID(commitID), "dir1/link2")
+		if err != nil {
+			t.Errorf("%s: fs.Stat(link2): %s", label, err)
+			continue
+		}
+		if !link2Info.Mode().IsRegular() {
+			t.Errorf("%s: link2 Stat !IsRegular (mode: %o)", label, link2Info.Mode())
+		}
+		if link2Info.Name() != "dir1/link2" {
+			t.Errorf("%s: got link2 Name %q, want %q", label, link2Info.Name(), "dir1/link2")
+		}
+		if link2Info.Size() != 0 {
+			t.Errorf("%s: got link2 Size %d, want %d", label, link2Info.Size(), 0)
 		}
 	}
 }
