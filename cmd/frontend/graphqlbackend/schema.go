@@ -99,8 +99,12 @@ type Mutation {
     # update according to the progress of turning the changesetPlans into
     # changesets.
     publishCampaign(campaign: ID!): Campaign!
-    # Creates a Changeset on the codehost.
-    publishChangesetPlan(changeset: ID!): Changeset!
+    # Creates an ExternalChangeset on the codehost asynchronously.
+    # The ChangesetPlan has to belong to a CampaignPlan that has been attached
+    # to a Campaign. Otherwise an error is returned.
+    # Since this is an asynchronous operation, the Campaign.status field can be
+    # used to keep track of progress.
+    publishChangesetPlan(changesetPlan: ID!): EmptyResponse!
 
     # Updates the user profile information for the user with the given ID.
     #
