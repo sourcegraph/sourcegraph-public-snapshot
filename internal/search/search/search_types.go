@@ -3,6 +3,7 @@ package search
 import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -10,8 +11,9 @@ type SearchTypeParameters interface {
 	SearchTypeInputValue()
 }
 
-func (c CommitParameters) SearchTypeParametersValue() {}
-func (d DiffParameters) SearchTypeParametersValue()   {}
+func (c CommitParameters) SearchTypeParametersValue()  {}
+func (d DiffParameters) SearchTypeParametersValue()    {}
+func (s SymbolsParameters) SearchTypeParametersValue() {}
 
 type CommitParameters struct {
 	RepoRevs           *RepositoryRevisions
@@ -26,3 +28,5 @@ type DiffParameters struct {
 	Repo    gitserver.Repo
 	Options git.RawLogDiffSearchOptions
 }
+
+type SymbolsParameters protocol.SearchArgs
