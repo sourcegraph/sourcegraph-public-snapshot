@@ -1,6 +1,5 @@
 import * as H from 'history'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
@@ -20,6 +19,7 @@ import { QueryState } from '../search/helpers'
 import InteractiveModeInput from '../search/input/interactive/InteractiveModeInput'
 import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/util'
 import { SearchModeToggle } from '../search/input/interactive/SearchModeToggle'
+import { Link } from '../../../shared/src/components/Link'
 
 interface Props
     extends SettingsCascadeProps,
@@ -41,6 +41,12 @@ interface Props
     showCampaigns: boolean
 
     /**
+     * Whether to hide the global search input. Use this when the page has a search input that would
+     * conflict with or be confusing with the global search input.
+     */
+    hideGlobalSearchInput: boolean
+
+    /**
      * Whether to use the low-profile form of the navbar, which has no border or background. Used on the search
      * homepage.
      */
@@ -50,6 +56,9 @@ interface Props
     splitSearchModes: boolean
     interactiveSearchMode: boolean
     toggleSearchMode: (event: React.MouseEvent<HTMLAnchorElement>) => void
+
+    /** For testing only. Used because reactstrap's Popover is incompatible with react-test-renderer. */
+    hideNavLinks: boolean
 }
 
 interface State {
@@ -99,7 +108,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
         let logoSrc = '/.assets/img/sourcegraph-mark.svg'
         let logoLinkClassName = 'global-navbar__logo-link global-navbar__logo-animated'
 
-        const { branding } = window.context
+        const branding = window.context ? window.context.branding : null
         if (branding) {
             if (this.props.isLightTheme) {
                 if (branding.light && branding.light.symbol) {
@@ -114,15 +123,31 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
         }
 
         const logo = <img className="global-navbar__logo" src={logoSrc} />
+        const logoLink = this.state.authRequired ? (
+            <div className={logoLinkClassName}>{logo}</div>
+        ) : (
+            <Link to="/search" className={logoLinkClassName}>
+                {logo}
+            </Link>
+        )
 
         return (
             <div className={`global-navbar ${this.props.lowProfile ? '' : 'global-navbar--bg border-bottom'} py-1`}>
                 {this.props.lowProfile ? (
                     <>
                         <div className="flex-1" />
-                        {!this.state.authRequired && (
+                        {!this.state.authRequired && !this.props.hideNavLinks && (
                             <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />
                         )}
+                    </>
+                ) : this.props.hideGlobalSearchInput ? (
+                    <>
+                        {logoLink}
+                        <div className="nav-item flex-1">
+                            <Link to="/search" className="nav-link">
+                                Search
+                            </Link>
+                        </div>
                     </>
                 ) : (
                     <>
@@ -137,13 +162,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                             )
                         ) : (
                             <>
-                                {this.state.authRequired ? (
-                                    <div className={logoLinkClassName}>{logo}</div>
-                                ) : (
-                                    <Link to="/search" className={logoLinkClassName}>
-                                        {logo}
-                                    </Link>
-                                )}
+                                {logoLink}
                                 {!this.state.authRequired && (
                                     <div className="global-navbar__search-box-container d-none d-sm-flex flex-row">
                                         {this.props.splitSearchModes && (
@@ -159,7 +178,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                         />
                                     </div>
                                 )}
-                                {!this.state.authRequired && (
+                                {!this.state.authRequired && !this.props.hideNavLinks && (
                                     <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />
                                 )}
                             </>

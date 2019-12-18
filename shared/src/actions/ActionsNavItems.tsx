@@ -1,7 +1,7 @@
 import * as React from 'react'
-import { Subject, Subscription } from 'rxjs'
+import { Subject, Subscription, combineLatest } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
-import { ContributionScope } from '../api/client/context/context'
+import { ContributionScope, Context } from '../api/client/context/context'
 import { getContributedActionItems } from '../contributions/contributions'
 import { TelemetryProps } from '../telemetry/telemetryService'
 import { ActionItem, ActionItemProps } from './ActionItem'
@@ -53,12 +53,17 @@ export class ActionsNavItems extends React.PureComponent<ActionsNavItemsProps, A
     public state: ActionsState = {}
 
     private scopeChanges = new Subject<ContributionScope | undefined>()
+    private extraContextChanges = new Subject<Context<any> | undefined>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            this.scopeChanges
-                .pipe(switchMap(scope => this.props.extensionsController.services.contribution.getContributions(scope)))
+            combineLatest([this.scopeChanges, this.extraContextChanges])
+                .pipe(
+                    switchMap(([scope, extraContext]) =>
+                        this.props.extensionsController.services.contribution.getContributions(scope, extraContext)
+                    )
+                )
                 .subscribe(contributions => this.setState({ contributions }))
         )
         this.scopeChanges.next(this.props.scope)
@@ -67,6 +72,9 @@ export class ActionsNavItems extends React.PureComponent<ActionsNavItemsProps, A
     public componentDidUpdate(prevProps: ActionsProps): void {
         if (prevProps.scope !== this.props.scope) {
             this.scopeChanges.next(this.props.scope)
+        }
+        if (prevProps.extraContext !== this.props.extraContext) {
+            this.extraContextChanges.next(this.props.extraContext)
         }
     }
 
