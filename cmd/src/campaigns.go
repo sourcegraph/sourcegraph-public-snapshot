@@ -33,6 +33,7 @@ Use "src campaigns [command] -h" for more information about a command.
 	// Register the command.
 	commands = append(commands, &command{
 		flagSet: flagSet,
+		aliases: []string{"campaign"},
 		handler: handler,
 		usageFunc: func() {
 			fmt.Println(usage)
