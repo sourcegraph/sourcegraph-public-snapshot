@@ -6,11 +6,13 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"fmt"
+	"net/url"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
@@ -62,6 +64,14 @@ func (r *campaignPlanResolver) Changesets(
 			OnlyWithDiff:   true,
 		},
 	}
+}
+
+func (r *campaignPlanResolver) PreviewURL() string {
+	u := globals.ExternalURL().ResolveReference(&url.URL{Path: "/campaigns/new"})
+	q := url.Values{}
+	q.Set("plan", string(r.ID()))
+	u.RawQuery = q.Encode()
+	return u.String()
 }
 
 type campaignJobsConnectionResolver struct {

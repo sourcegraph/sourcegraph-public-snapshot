@@ -511,6 +511,9 @@ type CampaignPlan implements Node {
 
     # The changesets that will be created by the campaign.
     changesets(first: Int): ChangesetPlanConnection!
+
+    # The URL where the plan can be previewed and a campaign can be created from it.
+    previewURL: String!
 }
 
 # A paginated list of repository diffs committed to git.
