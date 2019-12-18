@@ -15,153 +15,35 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1576611675157,
+  "iteration": 1554922150434,
   "links": [],
   "panels": [
     {
-      "content": "<div style=\"text-align: left;\">\n  <img src=\"https://storage.googleapis.com/sourcegraph-assets/sourcegraph-logo-light.png\" style=\"height:30px; margin:0.5rem\"></img>\n  <div style=\"margin-left: 1rem; margin-top: 0.5rem; font-size: 20px;\"><span style=\"color: #8e8e8e\">Gitserver:</span> Stores, manages, and operates Git repositories. <a style=\"font-size: 15px\" target=\"_blank\" href=\"https://docs.sourcegraph.com/dev/architecture\">(⧉ architecture diagram)</a></span>\n</div>",
-      "datasource": null,
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "fill": 1,
       "gridPos": {
-        "h": 3,
-        "w": 24,
+        "h": 7,
+        "w": 12,
         "x": 0,
         "y": 0
       },
       "id": 2,
-      "mode": "html",
-      "options": {},
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "",
-      "type": "text"
-    },
-    {
-      "cacheTimeout": null,
-      "columns": [],
-      "datasource": null,
-      "description": "",
-      "fontSize": "100%",
-      "gridPos": {
-        "h": 5,
-        "w": 9,
-        "x": 0,
-        "y": 3
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
       },
-      "id": 9,
+      "lines": true,
+      "linewidth": 1,
       "links": [],
-      "options": {},
-      "pageSize": null,
-      "pluginVersion": "6.4.4",
-      "showHeader": true,
-      "sort": {
-        "col": null,
-        "desc": false
-      },
-      "styles": [
-        {
-          "alias": "",
-          "colorMode": null,
-          "colors": ["rgba(245, 54, 54, 0.9)", "rgba(237, 129, 40, 0.89)", "rgba(50, 172, 45, 0.97)"],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "Time",
-          "thresholds": [],
-          "type": "hidden",
-          "unit": "short"
-        },
-        {
-          "alias": "firing?",
-          "colorMode": "row",
-          "colors": ["rgba(50, 172, 45, 0.97)", "rgba(237, 129, 40, 0.89)", "rgba(245, 54, 54, 0.9)"],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "Value",
-          "thresholds": ["0.99999", "1"],
-          "type": "string",
-          "unit": "short",
-          "valueMaps": [
-            {
-              "text": "false",
-              "value": "0"
-            },
-            {
-              "text": "true",
-              "value": "1"
-            }
-          ]
-        },
-        {
-          "alias": "",
-          "colorMode": null,
-          "colors": ["rgba(245, 54, 54, 0.9)", "rgba(237, 129, 40, 0.89)", "rgba(50, 172, 45, 0.97)"],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "level",
-          "thresholds": [],
-          "type": "hidden",
-          "unit": "short"
-        },
-        {
-          "alias": "level",
-          "colorMode": null,
-          "colors": ["rgba(245, 54, 54, 0.9)", "rgba(237, 129, 40, 0.89)", "rgba(50, 172, 45, 0.97)"],
-          "dateFormat": "YYYY-MM-DD HH:mm:ss",
-          "decimals": 2,
-          "mappingType": 1,
-          "pattern": "_01_level",
-          "thresholds": [],
-          "type": "number",
-          "unit": "short"
-        }
-      ],
-      "targets": [
-        {
-          "expr": "label_replace(sum(alert_count{service_name=\"gitserver\",name!=\"\",level=~\"$alert_level\"}) by (level,description), \"_01_level\", \"$1\", \"level\", \"(.*)\")",
-          "format": "table",
-          "instant": true,
-          "legendFormat": "",
-          "refId": "A"
-        }
-      ],
-      "timeFrom": null,
-      "timeShift": null,
-      "title": "Alerts defined",
-      "transform": "table",
-      "type": "table"
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 5,
-        "w": 15,
-        "x": 9,
-        "y": 3
-      },
-      "id": 7,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
       "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
       "pointradius": 2,
       "points": false,
@@ -172,8 +54,10 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum by (service_name,level,name)(alert_count{service_name=\"gitserver\",name!=\"\",level=~\"$alert_level\"} >= 1)",
-          "legendFormat": "{{level}}: {{name}}",
+          "expr": "histogram_quantile($percentile, sum(rate(src_gitserver_exec_duration_seconds_bucket{cmd=~\"$command\", instance=~\"$gitserver\"}[10m])) by (le, cmd))",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "{{cmd}}",
           "refId": "A"
         }
       ],
@@ -181,7 +65,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Alerts firing",
+      "title": "P$percentile by Command [rate-10m]",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -197,12 +81,11 @@
       },
       "yaxes": [
         {
-          "decimals": 0,
-          "format": "short",
+          "format": "s",
           "label": null,
           "logBase": 1,
-          "max": "1",
-          "min": "0",
+          "max": null,
+          "min": null,
           "show": true
         },
         {
@@ -224,16 +107,98 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": null,
       "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
-        "h": 5,
-        "w": 9,
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 4,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "links": [],
+      "nullPointMode": "null",
+      "percentage": false,
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "expr": "sum(rate(src_gitserver_exec_duration_seconds_count{status=~\"[0-9]+\",cmd=~\"$command\",instance=~\"$gitserver\"}[10m])) by (cmd)",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "{{cmd}}",
+          "refId": "A"
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "QPS by Command [rate-10m]",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "fill": 1,
+      "gridPos": {
+        "h": 4,
+        "w": 24,
         "x": 0,
-        "y": 8
+        "y": 7
       },
-      "id": 11,
+      "id": 10,
       "legend": {
         "avg": false,
         "current": false,
@@ -245,10 +210,8 @@
       },
       "lines": true,
       "linewidth": 1,
+      "links": [],
       "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
       "pointradius": 2,
       "points": false,
@@ -259,7 +222,9 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "src_gitserver_disk_space_available",
+          "expr": "min(src_gitserver_disk_space_available{instance=~\"$gitserver\"}) BY (instance) / 1000 / 1000 / 1000",
+          "format": "time_series",
+          "intervalFactor": 1,
           "legendFormat": "{{instance}}",
           "refId": "A"
         }
@@ -268,7 +233,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Available disk space",
+      "title": "Disk Space Remaining",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -284,11 +249,11 @@
       },
       "yaxes": [
         {
-          "format": "decbytes",
+          "format": "gbytes",
           "label": null,
           "logBase": 1,
           "max": null,
-          "min": "0",
+          "min": null,
           "show": true
         },
         {
@@ -310,190 +275,14 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": null,
       "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
-        "h": 5,
-        "w": 7,
-        "x": 9,
-        "y": 8
-      },
-      "id": 15,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
-      "percentage": false,
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "src_gitserver_clone_queue",
-          "legendFormat": "{{instance}}",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "# of repositories needing to be cloned",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "decimals": 1,
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": "0",
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 5,
-        "w": 8,
-        "x": 16,
-        "y": 8
-      },
-      "id": 17,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
-      "percentage": false,
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "src_gitserver_lsremote_queue",
-          "legendFormat": "{{instance}}",
-          "refId": "A"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "# repositories needing needing code-host existence check",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "decimals": 1,
-          "format": "short",
-          "label": "",
-          "logBase": 1,
-          "max": null,
-          "min": "0",
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 5,
-        "w": 9,
+        "h": 8,
+        "w": 12,
         "x": 0,
-        "y": 13
+        "y": 11
       },
-      "id": 13,
+      "id": 6,
       "legend": {
         "avg": false,
         "current": false,
@@ -505,10 +294,8 @@
       },
       "lines": true,
       "linewidth": 1,
+      "links": [],
       "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
       "pointradius": 2,
       "points": false,
@@ -519,8 +306,10 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "increase(src_frontend_internal_request_duration_seconds_count{job=\"gitserver\",code!~\"2..\"}[5m]) / 5",
-          "legendFormat": "{{instance}} -> {{category}}",
+          "expr": "sum by (instance)(src_gitserver_exec_running{instance=~\"$gitserver\"})",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "{{instance}}",
           "refId": "A"
         }
       ],
@@ -528,7 +317,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "non-200 responses from the frontend-internal API over 5m",
+      "title": "Total Running Commands",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -544,12 +333,11 @@
       },
       "yaxes": [
         {
-          "decimals": 1,
           "format": "short",
           "label": null,
           "logBase": 1,
           "max": null,
-          "min": "0",
+          "min": null,
           "show": true
         },
         {
@@ -571,16 +359,14 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": null,
       "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
-        "h": 5,
-        "w": 7,
-        "x": 9,
-        "y": 13
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 11
       },
-      "id": 19,
+      "id": 8,
       "legend": {
         "avg": false,
         "current": false,
@@ -592,10 +378,8 @@
       },
       "lines": true,
       "linewidth": 1,
+      "links": [],
       "nullPointMode": "null",
-      "options": {
-        "dataLinks": []
-      },
       "percentage": false,
       "pointradius": 2,
       "points": false,
@@ -606,8 +390,10 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "src_gitserver_echo_duration_seconds",
-          "legendFormat": "{{instance}}",
+          "expr": "sum by (status, cmd)(rate(src_gitserver_exec_duration_seconds_count{instance=~\"$gitserver\"}[10m]))",
+          "format": "time_series",
+          "intervalFactor": 1,
+          "legendFormat": "{{cmd}}: {{status}}",
           "refId": "A"
         }
       ],
@@ -615,7 +401,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Echo command execution duration",
+      "title": "QPS by Exit Status Code",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -653,41 +439,96 @@
       }
     }
   ],
-  "schemaVersion": 20,
+  "refresh": "5s",
+  "schemaVersion": 18,
   "style": "dark",
   "tags": [],
   "templating": {
     "list": [
       {
-        "allValue": ".*",
+        "allValue": null,
         "current": {
-          "tags": [],
           "text": "All",
-          "value": "$__all"
+          "value": ["$__all"]
         },
+        "datasource": "Prometheus",
+        "definition": "label_values(src_gitserver_exec_duration_seconds_bucket, instance)",
         "hide": 0,
         "includeAll": true,
-        "label": "Filter alert level",
+        "label": null,
+        "multi": true,
+        "name": "gitserver",
+        "options": [],
+        "query": "label_values(src_gitserver_exec_duration_seconds_bucket, instance)",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": null,
+        "current": {
+          "text": "All",
+          "value": ["$__all"]
+        },
+        "datasource": "Prometheus",
+        "definition": "label_values(src_gitserver_exec_duration_seconds_bucket, cmd)",
+        "hide": 0,
+        "includeAll": true,
+        "label": null,
+        "multi": true,
+        "name": "command",
+        "options": [],
+        "query": "label_values(src_gitserver_exec_duration_seconds_bucket, cmd)",
+        "refresh": 2,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": null,
+        "current": {
+          "text": ".90",
+          "value": ".90"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "label": null,
         "multi": false,
-        "name": "alert_level",
+        "name": "percentile",
         "options": [
           {
             "selected": true,
-            "text": "All",
-            "value": "$__all"
+            "text": ".90",
+            "value": ".90"
           },
           {
             "selected": false,
-            "text": "critical",
-            "value": "critical"
+            "text": ".95",
+            "value": ".95"
           },
           {
             "selected": false,
-            "text": "warning",
-            "value": "warning"
+            "text": ".98",
+            "value": ".98"
+          },
+          {
+            "selected": false,
+            "text": ".99",
+            "value": ".99"
           }
         ],
-        "query": "critical,warning",
+        "query": ".90, .95, .98, .99",
         "skipUrlSync": false,
         "type": "custom"
       }
@@ -698,10 +539,11 @@
     "to": "now"
   },
   "timepicker": {
-    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"]
+    "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"],
+    "time_options": ["5m", "15m", "1h", "6h", "12h", "24h", "2d", "7d", "30d"]
   },
   "timezone": "utc",
   "title": "Gitserver",
-  "uid": "gitserver",
+  "uid": "_r6vamgWk",
   "version": 1
 }

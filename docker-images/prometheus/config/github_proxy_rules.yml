@@ -1,0 +1,13 @@
+groups:
+  - name: github-proxy
+    rules:
+      - record: alert_count
+        labels:
+          service_name: github-proxy
+          level: critical
+        expr: 0
+      - record: alert_count
+        labels:
+          service_name: github-proxy
+          level: warning
+        expr: 0

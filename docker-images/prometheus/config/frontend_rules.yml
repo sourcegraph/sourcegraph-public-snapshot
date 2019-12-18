@@ -1,42 +1,48 @@
 groups:
-- name: frontend.rules
-  rules:
-  # Duration (5m)
-  - record: task:src_http_request_duration_seconds_bucket:rate5m
-    expr: rate(src_http_request_duration_seconds_bucket{instance=~"sourcegraph-.*"}[5m])
-  - record: route:src_http_request_duration_seconds_bucket:rate5m
-    expr: sum by(route, ns, le) (task:src_http_request_duration_seconds_bucket:rate5m)
-  - record: job:src_http_request_duration_seconds_bucket:rate5m
-    expr: sum by(ns, le) (task:src_http_request_duration_seconds_bucket:rate5m)
-  - record: prod:src_http_request_duration_seconds_bucket:rate5m
-    expr: sum by(le) (task:src_http_request_duration_seconds_bucket:rate5m)
-  # Counts (5m)
-  - record: task:src_http_request_count:rate5m
-    expr: rate(src_http_request_duration_seconds_count{instance=~"sourcegraph-.*"}[5m])
-  - record: route:src_http_request_count:rate5m
-    expr: sum by(route, code, ns) (task:src_http_request_count:rate5m)
-  - record: job:src_http_request_count:rate5m
-    expr: sum by(code, ns) (task:src_http_request_count:rate5m)
-  - record: prod:src_http_request_count:rate5m
-    expr: sum by(code) (task:src_http_request_count:rate5m)
-  # Duration (30m)
-  - record: task:src_http_request_duration_seconds_bucket:rate30m
-    expr: rate(src_http_request_duration_seconds_bucket{instance=~"sourcegraph-.*"}[30m])
-  - record: route:src_http_request_duration_seconds_bucket:rate30m
-    expr: sum by(route, ns, le) (task:src_http_request_duration_seconds_bucket:rate30m)
-  - record: job:src_http_request_duration_seconds_bucket:rate30m
-    expr: sum by(ns, le) (task:src_http_request_duration_seconds_bucket:rate30m)
-  - record: prod:src_http_request_duration_seconds_bucket:rate30m
-    expr: sum by(le) (task:src_http_request_duration_seconds_bucket:rate30m)
-  # Counts (30m)
-  - record: task:src_http_request_count:rate30m
-    expr: rate(src_http_request_duration_seconds_count{instance=~"sourcegraph-.*"}[30m])
-  - record: route:src_http_request_count:rate30m
-    expr: sum by(route, code, ns) (task:src_http_request_count:rate30m)
-  - record: job:src_http_request_count:rate30m
-    expr: sum by(code, ns) (task:src_http_request_count:rate30m)
-  - record: prod:src_http_request_count:rate30m
-    expr: sum by(code) (task:src_http_request_count:rate30m)
-  # Perf targets are over a day
-  - record: prod:src_http_request_duration_seconds_bucket:rate1d
-    expr: sum by(route, le) (rate(src_http_request_duration_seconds_bucket{instance=~"sourcegraph-.*"}[1d]))
+  - name: frontend
+    rules:
+      # Warn if there are 5+ search errors, timeouts, or partial-timeouts over 5m.
+      - record: alert_count
+        labels:
+          service_name: frontend
+          level: warning
+          name: search_error_response_high
+          description: 'frontend: 5+ search error responses over 5m'
+        expr: >-
+          clamp_max(clamp_min(floor(
+          (increase(src_graphql_search_response{status="error"}[5m]) / 5) OR on() vector(0)
+          ), 0), 1)
+
+      - record: alert_count
+        labels:
+          service_name: frontend
+          level: warning
+          name: search_timeout_response_high
+          description: 'frontend: 5+ search full-timeout responses over 5m'
+        expr: >-
+          clamp_max(clamp_min(floor(
+          (increase(src_graphql_search_response{status="timeout"}[5m]) / 5) OR on() vector(0)
+          ), 0), 1)
+
+      - record: alert_count
+        labels:
+          service_name: frontend
+          level: warning
+          name: search_partial_timeout_response_high
+          description: 'frontend: 5+ search partial-timeout responses over 5m'
+        expr: >-
+          clamp_max(clamp_min(floor(
+          (increase(src_graphql_search_response{status="partial_timeout"}[5m]) / 5) OR on() vector(0)
+          ), 0), 1)
+
+      # Warning if 25+ requests to our internal API are failing over 5m.
+      - record: alert_count
+        labels:
+          service_name: frontend
+          level: warning
+          name: frontend_internal_errors
+          description: 'frontend: 25+ non-200 responses from the frontend-internal API over 5m'
+        expr: >-
+          clamp_max(clamp_min(floor(
+          increase(src_frontend_internal_request_duration_seconds_count{code!~"2.."}[5m]) / 25
+          ), 0), 1)

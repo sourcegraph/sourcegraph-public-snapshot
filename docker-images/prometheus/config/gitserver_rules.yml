@@ -1,11 +1,84 @@
 groups:
   - name: gitserver
     rules:
+      # Gitserver rules
       - record: gitserver_disk_free_percent
-        expr: sum(src_gitserver_disk_space_available) / sum(src_gitserver_disk_space_total)
-      - record: gitserver_error_rate10m_percent
-        expr: sum(rate(src_gitserver_request_duration_seconds_count{code=~"5.."}[10m])) / sum(rate(src_gitserver_request_duration_seconds_count[10m]))
-      - record: gitserver_deadline_exceeded_rate10m_percent
-        expr: sum(rate(src_gitserver_client_deadline_exceeded[10m]))/ sum(rate(src_gitserver_request_duration_seconds_count[10m]))
-      - record: gitserver_health_warning
-        expr: clamp_max(clamp_min((gitserver_error_rate10m_percent or vector(0)) - 0.2, 0) / 0.8 + clamp_min((gitserver_deadline_exceeded_rate10m_percent or vector(0)) - 0.2, 0) / 0.8 + clamp_min(0.3 - gitserver_disk_free_percent, 0) / 0.3 + clamp_min(avg(go_memstats_gc_cpu_fraction{job="gitserver"}) - 0.01, 0) / 0.99, 1)
+        expr: src_gitserver_disk_space_available / src_gitserver_disk_space_total
+      - record: gitserver_disk_used_percent
+        expr: 1 - gitserver_disk_free_percent
+
+      # Disk space alert
+      #
+      # Example: gitserver_disk_used_percent is 0.8, indicating 80% of the disk is used.
+      # We add 0.2 such that the resulting number would floor to 1.0 (alerting) in this
+      # case and 0.0 (not alerting) otherwise.
+      - record: alert_count
+        labels:
+          service_name: gitserver
+          level: warning
+          name: low_disk_space
+          description: 'gitserver: less than 20% free disk space remaining'
+        expr: >-
+          clamp_max(clamp_min(floor(
+          gitserver_disk_used_percent + 0.2
+          ), 0), 1)
+
+      - record: alert_count
+        labels:
+          service_name: gitserver
+          level: critical
+          name: low_disk_space
+          description: 'gitserver: less than 5% free disk space remaining'
+        expr: >-
+          clamp_max(clamp_min(floor(
+          gitserver_disk_used_percent + 0.05
+          ), 0), 1)
+
+      # Warning if fetching configuration from frontend is failing.
+      - record: alert_count
+        labels:
+          service_name: gitserver
+          level: warning
+          name: frontend_internal_errors
+          description: 'gitserver: 5+ non-200 responses from the frontend-internal API over 5m'
+        expr: >-
+          clamp_max(clamp_min(floor(
+          increase(src_frontend_internal_request_duration_seconds_count{job="gitserver",code!~"2.."}[5m]) / 5
+          ), 0), 1)
+
+      # Clone queue should generally not exceed 25 repositories (except during onboarding,
+      # which is why we use a warning and not a critical alert)
+      - record: alert_count
+        labels:
+          service_name: gitserver
+          level: warning
+          name: large_clone_queue
+          description: 'gitserver: more than 25+ repositories need cloning'
+        expr: >-
+          clamp_max(clamp_min(floor(
+          src_gitserver_clone_queue / 25
+          ), 0), 1)
+
+      # Similar to the clone queue, we warn on the lsremote queue.
+      - record: alert_count
+        labels:
+          service_name: gitserver
+          level: warning
+          name: large_lsremote_queue
+          description: 'gitserver: more than 25+ repositories needing code-host existence check'
+        expr: >-
+          clamp_max(clamp_min(floor(
+          src_gitserver_lsremote_queue / 25
+          ), 0), 1)
+
+      # Echo duration should never exceed 2s.
+      - record: alert_count
+        labels:
+          service_name: gitserver
+          level: critical
+          name: echo_duration_slow
+          description: 'gitserver: echo command execution duration exceeding 2s'
+        expr: >-
+          clamp_max(clamp_min(floor(
+          src_gitserver_echo_duration_seconds / 2
+          ), 0), 1)
