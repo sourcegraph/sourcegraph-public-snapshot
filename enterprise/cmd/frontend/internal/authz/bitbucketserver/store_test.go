@@ -28,15 +28,17 @@ func BenchmarkStore(b *testing.B) {
 	db, cleanup := dbtest.NewDB(b, *dsn)
 	defer cleanup()
 
-	ids := roaring.New()
-	ids.Flip(0, 30001)
+	ids := make([]uint32, 30000)
+	for i := range ids {
+		ids[i] = uint32(i)
+	}
 
 	c := extsvc.CodeHost{
 		ServiceID:   "https://bitbucketserver.example.com",
 		ServiceType: bitbucketserver.ServiceType,
 	}
 
-	update := func(context.Context) (*roaring.Bitmap, *extsvc.CodeHost, error) {
+	update := func(context.Context) ([]uint32, *extsvc.CodeHost, error) {
 		return ids, &c, nil
 	}
 
@@ -123,10 +125,9 @@ func testStore(db *sql.DB) func(*testing.T) {
 		s := newStore(db, ttl, hardTTL, clock)
 		s.updates = make(chan *iauthz.UserPermissions)
 
-		ids := roaring.New()
-		ids.Flip(1, 4)
+		ids := []uint32{1, 2, 3}
 		e := error(nil)
-		update := func(context.Context) (*roaring.Bitmap, *extsvc.CodeHost, error) {
+		update := func(context.Context) ([]uint32, *extsvc.CodeHost, error) {
 			return ids, &codeHost, e
 		}
 
@@ -158,12 +159,12 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 			ps, err := load(s)
 			equal(t, "err", err, &StalePermissionsError{UserPermissions: ps})
-			equal(t, "ids", array(ps.IDs), array(ids))
+			equal(t, "ids", array(ps.IDs), ids)
 		}
 
 		<-s.updates
 
-		ids.Flip(4, 7)
+		ids = append(ids, 4, 5, 6)
 
 		{
 			// Source of truth changed (i.e. ids variable), but
@@ -171,7 +172,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 			// version is returned and no background update is started.
 			ps, err := load(s)
 			equal(t, "err", err, nil)
-			equal(t, "ids", array(ps.IDs), ids.ToArray()[:3])
+			equal(t, "ids", array(ps.IDs), ids[:3])
 		}
 
 		{
@@ -180,7 +181,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 			atomic.AddInt64(&now, int64(ttl))
 			ps, err := load(s)
 			equal(t, "err", err, nil)
-			equal(t, "ids", array(ps.IDs), ids.ToArray()[:3])
+			equal(t, "ids", array(ps.IDs), ids[:3])
 		}
 
 		// Wait for background update.
@@ -190,10 +191,10 @@ func testStore(db *sql.DB) func(*testing.T) {
 			// Update is done, so we now have fresh permissions returned.
 			ps, err := load(s)
 			equal(t, "err", err, nil)
-			equal(t, "ids", array(ps.IDs), array(ids))
+			equal(t, "ids", array(ps.IDs), ids)
 		}
 
-		ids.Add(7)
+		ids = append(ids, 7)
 
 		{
 			// Cache expired, and source of truth changed. Here we test
@@ -201,7 +202,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 			atomic.AddInt64(&now, int64(2*ttl))
 
 			delay := make(chan struct{})
-			update = func(context.Context) (*roaring.Bitmap, *extsvc.CodeHost, error) {
+			update = func(context.Context) ([]uint32, *extsvc.CodeHost, error) {
 				<-delay
 				return ids, &codeHost, e
 			}
@@ -231,7 +232,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 			for _, r := range results {
 				equal(t, fmt.Sprintf("%d.err", r.id), r.err, nil)
-				equal(t, fmt.Sprintf("%d.ids", r.id), array(r.ps.IDs), ids.ToArray()[:6])
+				equal(t, fmt.Sprintf("%d.ids", r.id), array(r.ps.IDs), ids[:6])
 			}
 
 			close(delay)
@@ -243,7 +244,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 				select {
 				case p := <-updates:
 					calls++
-					equal(t, "updated.ids", array(p.IDs), array(ids))
+					equal(t, "updated.ids", array(p.IDs), ids)
 				case <-timeout:
 					break wait
 				}

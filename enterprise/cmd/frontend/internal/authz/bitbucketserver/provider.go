@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/RoaringBitmap/roaring"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
@@ -138,21 +137,21 @@ func (p *Provider) UpdatePermissions(ctx context.Context, u *types.User) error {
 // see.
 func (p *Provider) update(userName string) PermissionsUpdateFunc {
 	if conf.BitbucketServerFastPerm() {
-		return func(ctx context.Context) (*roaring.Bitmap, *extsvc.CodeHost, error) {
+		return func(ctx context.Context) ([]uint32, *extsvc.CodeHost, error) {
 			ids, err := p.repoIDs(ctx, userName)
 			return ids, p.codeHost, err
 		}
 	}
 
-	return func(ctx context.Context) (*roaring.Bitmap, *extsvc.CodeHost, error) {
+	return func(ctx context.Context) ([]uint32, *extsvc.CodeHost, error) {
 		visible, err := p.repos(ctx, userName)
 		if err != nil && err != errNoResults {
 			return nil, p.codeHost, err
 		}
 
-		ids := roaring.New()
+		ids := make([]uint32, 0, len(visible))
 		for _, r := range visible {
-			ids.Add(uint32(r.ID))
+			ids = append(ids, uint32(r.ID))
 		}
 
 		return ids, p.codeHost, nil
@@ -233,7 +232,7 @@ func (p *Provider) repos(ctx context.Context, username string) (all []*bitbucket
 	return all, err
 }
 
-func (p *Provider) repoIDs(ctx context.Context, username string) (ids *roaring.Bitmap, err error) {
+func (p *Provider) repoIDs(ctx context.Context, username string) (ids []uint32, err error) {
 	c, err := p.client.Sudo(username)
 	if err != nil {
 		return nil, err
