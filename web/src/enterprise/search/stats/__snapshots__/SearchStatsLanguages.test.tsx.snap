@@ -133,7 +133,7 @@ exports[`SearchStatsLanguages renders 1`] = `
         className="recharts-responsive-container"
         style={
           Object {
-            "height": "100%",
+            "height": 600,
             "maxHeight": undefined,
             "minHeight": undefined,
             "minWidth": undefined,

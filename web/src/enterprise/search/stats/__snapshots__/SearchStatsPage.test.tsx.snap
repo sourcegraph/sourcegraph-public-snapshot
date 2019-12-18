@@ -22,6 +22,12 @@ exports[`SearchStatsPage limitHit 1`] = `
         />
       </svg>
        Code statistics
+       
+      <small
+        className="badge badge-secondary ml-2"
+      >
+        Experimental
+      </small>
     </h2>
   </header>
   <form
@@ -84,6 +90,12 @@ exports[`SearchStatsPage renders 1`] = `
         />
       </svg>
        Code statistics
+       
+      <small
+        className="badge badge-secondary ml-2"
+      >
+        Experimental
+      </small>
     </h2>
   </header>
   <form
@@ -243,7 +255,7 @@ exports[`SearchStatsPage renders 1`] = `
           className="recharts-responsive-container"
           style={
             Object {
-              "height": "100%",
+              "height": 600,
               "maxHeight": undefined,
               "minHeight": undefined,
               "minWidth": undefined,
