@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/types"
+	"github.com/sourcegraph/sourcegraph/internal/search/query/types"
 )
 
 func TestQuery_IsCaseSensitive(t *testing.T) {
