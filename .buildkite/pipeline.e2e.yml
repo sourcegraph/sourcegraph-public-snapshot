@@ -4,7 +4,7 @@ env:
   ENTERPRISE: "1"
   FORCE_COLOR: "1"
   GO111MODULE: "on"
-  IMAGE: us.gcr.io/sourcegraph-dev/server:e2e_$BUILDKITE_COMMIT
+  IMAGE: us.gcr.io/sourcegraph-dev/server:$TAG
 
 steps:
 - command:
@@ -15,7 +15,6 @@ steps:
   - popd
   - docker push "$IMAGE"
   env:
-    VERSION: $BUILDKITE_BUILD_NUMBER
     PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
   label: ':docker:'
 
