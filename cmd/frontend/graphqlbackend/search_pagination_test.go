@@ -12,7 +12,7 @@ import (
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/search/search"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
 func TestSearchPagination_unmarshalSearchCursor(t *testing.T) {

@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/query"
 	"github.com/sourcegraph/sourcegraph/internal/query/syntax"
-	"github.com/sourcegraph/sourcegraph/internal/search/search"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
 type searchAlert struct {

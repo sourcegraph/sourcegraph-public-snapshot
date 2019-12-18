@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/search/search"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
 func (r *schemaResolver) Repositories(args *struct {

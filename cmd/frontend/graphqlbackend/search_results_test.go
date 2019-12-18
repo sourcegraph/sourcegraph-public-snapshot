@@ -26,7 +26,7 @@ import (
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/query"
 	searchquerytypes "github.com/sourcegraph/sourcegraph/internal/query/types"
-	"github.com/sourcegraph/sourcegraph/internal/search/search"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
 func TestSearchResults(t *testing.T) {

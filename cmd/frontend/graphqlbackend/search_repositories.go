@@ -9,7 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/search"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
 var mockSearchRepositories func(args *search.Args) ([]SearchResultResolver, *searchResultsCommon, error)
