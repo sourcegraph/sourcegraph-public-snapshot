@@ -64,8 +64,7 @@ func (r *campaignPlanResolver) Changesets(
 	args *graphqlutil.ConnectionArgs,
 ) graphqlbackend.ChangesetPlansConnectionResolver {
 	return &campaignJobsConnectionResolver{
-		store:        r.store,
-		campaignPlan: r.campaignPlan,
+		store: r.store,
 		opts: ee.ListCampaignJobsOpts{
 			CampaignPlanID: r.campaignPlan.ID,
 			Limit:          int(args.GetFirst()),
@@ -76,9 +75,12 @@ func (r *campaignPlanResolver) Changesets(
 }
 
 type campaignJobsConnectionResolver struct {
-	store        *ee.Store
-	campaignPlan *a8n.CampaignPlan
-	opts         ee.ListCampaignJobsOpts
+	store *ee.Store
+	opts  ee.ListCampaignJobsOpts
+
+	// when a campaign doesn't have a CampaignPlan we set this so we don't
+	// query the database for non-existent CampaignJobs
+	empty bool
 
 	// cache results because they are used by multiple fields
 	once      sync.Once
@@ -89,6 +91,10 @@ type campaignJobsConnectionResolver struct {
 }
 
 func (r *campaignJobsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ChangesetPlanResolver, error) {
+	if r.empty {
+		return []graphqlbackend.ChangesetPlanResolver{}, nil
+	}
+
 	jobs, reposByID, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
@@ -134,14 +140,24 @@ func (r *campaignJobsConnectionResolver) compute(ctx context.Context) ([]*a8n.Ca
 }
 
 func (r *campaignJobsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	opts := ee.CountCampaignJobsOpts{CampaignPlanID: r.campaignPlan.ID}
-	opts.OnlyFinished = r.opts.OnlyFinished
-	opts.OnlyWithDiff = r.opts.OnlyWithDiff
+	if r.empty {
+		return 0, nil
+	}
+
+	opts := ee.CountCampaignJobsOpts{
+		CampaignPlanID: r.opts.CampaignPlanID,
+		OnlyFinished:   r.opts.OnlyFinished,
+		OnlyWithDiff:   r.opts.OnlyWithDiff,
+	}
 	count, err := r.store.CountCampaignJobs(ctx, opts)
 	return int32(count), err
 }
 
 func (r *campaignJobsConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	if r.empty {
+		return graphqlutil.HasNextPage(false), nil
+	}
+
 	_, _, next, err := r.compute(ctx)
 	if err != nil {
 		return nil, err

@@ -143,21 +143,21 @@ func (r *campaignResolver) ChangesetPlans(
 	ctx context.Context,
 	args *graphqlutil.ConnectionArgs,
 ) graphqlbackend.ChangesetPlansConnectionResolver {
-	if r.Campaign.CampaignPlanID == 0 {
-		return nil
-	}
-
 	resolver := &campaignJobsConnectionResolver{
 		store: r.store,
-		// TODO(a8n): Does campaignJobsConnectionResolver need the campaignPlan?
-		campaignPlan: nil,
 		opts: ee.ListCampaignJobsOpts{
 			CampaignPlanID: r.Campaign.CampaignPlanID,
 			Limit:          int(args.GetFirst()),
 			OnlyFinished:   true,
 			OnlyWithDiff:   true,
+			// TODO: Only without ChangesetJob and Changeset
 		},
 	}
+
+	if r.Campaign.CampaignPlanID == 0 {
+		resolver.empty = true
+	}
+
 	return resolver
 }
 
