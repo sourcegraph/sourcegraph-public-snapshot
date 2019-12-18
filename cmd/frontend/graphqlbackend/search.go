@@ -164,7 +164,7 @@ func detectSearchType(version string, patternType *string, input string) (Search
 	// The patterntype field is Singular, but not enforced since we do not
 	// properly parse the input. The regex extraction, takes the left-most
 	// "patterntype:value" match.
-	var patternTypeRegex = lazyregexp.New(`patterntype:([a-zA-Z"']+)`)
+	var patternTypeRegex = lazyregexp.New(`(?i)patterntype:([a-zA-Z"']+)`)
 	patternFromField := patternTypeRegex.FindStringSubmatch(input)
 	if len(patternFromField) > 1 {
 		extracted := patternFromField[1]
