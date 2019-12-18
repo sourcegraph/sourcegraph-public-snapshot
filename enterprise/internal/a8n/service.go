@@ -140,10 +140,13 @@ func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []a
 	return plan, nil
 }
 
-// CreateCampaign creates the Campaign. When a CampaignPlanID is set, it also
-// creates one ChangesetJob for each CampaignJob belonging to the respective
-// CampaignPlan, together with the Campaign in a transaction.
-func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign) error {
+// CreateCampaign creates the Campaign. When a CampaignPlanID is set on the
+// Campaign and the Campaign is not created as a draft, it calls
+// CreateChangesetJobs inside the same transaction in which it creates the
+// Campaign.
+// When draft is true it also does not set the PublishedAt field on the
+// Campaign.
+func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign, draft bool) error {
 	var err error
 	tr, ctx := trace.New(ctx, "Service.CreateCampaign", fmt.Sprintf("Name: %q", c.Name))
 	defer func() {
@@ -156,15 +159,25 @@ func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign) error {
 	}
 	defer tx.Done(&err)
 
+	c.CreatedAt = s.clock()
+	c.UpdatedAt = c.CreatedAt
+	if !draft {
+		c.PublishedAt = c.CreatedAt
+	}
+
 	if err := tx.CreateCampaign(ctx, c); err != nil {
 		return err
 	}
 
-	if c.CampaignPlanID == 0 {
+	if c.CampaignPlanID == 0 || draft {
 		return nil
 	}
 
-	jobs, _, err := tx.ListCampaignJobs(ctx, ListCampaignJobsOpts{
+	return s.createChangesetJobsWithStore(ctx, tx, c)
+}
+
+func (s *Service) createChangesetJobsWithStore(ctx context.Context, store *Store, c *a8n.Campaign) error {
+	jobs, _, err := store.ListCampaignJobs(ctx, ListCampaignJobsOpts{
 		CampaignPlanID: c.CampaignPlanID,
 		Limit:          -1,
 		OnlyFinished:   true,
@@ -179,7 +192,7 @@ func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign) error {
 			CampaignID:    c.ID,
 			CampaignJobID: job.ID,
 		}
-		err = tx.CreateChangesetJob(ctx, changesetJob)
+		err = store.CreateChangesetJob(ctx, changesetJob)
 		if err != nil {
 			return err
 		}
@@ -473,11 +486,13 @@ func (s *Service) PublishCampaign(ctx context.Context, id int64) (campaign *a8n.
 		return campaign, nil
 	}
 
-	campaign.PublishedAt = time.Now().UTC()
+	campaign.PublishedAt = s.clock()
 
-	// TODO(a8n): Implement creation of ChangesetJobs and running them
+	if err = tx.UpdateCampaign(ctx, campaign); err != nil {
+		return campaign, err
+	}
 
-	return campaign, nil
+	return campaign, s.createChangesetJobsWithStore(ctx, tx, campaign)
 }
 
 // DeleteCampaign deletes the Campaign with the given ID if it hasn't been

@@ -151,9 +151,13 @@ func TestService(t *testing.T) {
 
 		cf := httpcli.NewHTTPClientFactory()
 		svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
-		err = svc.CreateCampaign(ctx, campaign)
+		err = svc.CreateCampaign(ctx, campaign, false)
 		if err != nil {
 			t.Fatal(err)
+		}
+
+		if campaign.PublishedAt.IsZero() {
+			t.Fatalf("PublishedAt is zero")
 		}
 
 		_, err = store.GetCampaign(ctx, GetCampaignOpts{ID: campaign.ID})
@@ -170,6 +174,68 @@ func TestService(t *testing.T) {
 
 		if len(haveJobs) != len(campaignJobs) {
 			t.Errorf("wrong number of ChangesetJobs: %d. want=%d", len(haveJobs), len(campaignJobs))
+		}
+	})
+
+	t.Run("CreateCampaignAsDraft", func(t *testing.T) {
+		testPlan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
+		err = store.CreateCampaignPlan(ctx, testPlan)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		campaignJobs := make([]*a8n.CampaignJob, 0, len(rs))
+		for _, repo := range rs {
+			campaignJob := &a8n.CampaignJob{
+				CampaignPlanID: testPlan.ID,
+				RepoID:         int32(repo.ID),
+				Rev:            "deadbeef",
+				BaseRef:        "refs/heads/master",
+				Diff:           "cool diff",
+				StartedAt:      now,
+				FinishedAt:     now,
+			}
+			err := store.CreateCampaignJob(ctx, campaignJob)
+			if err != nil {
+				t.Fatal(err)
+			}
+			campaignJobs = append(campaignJobs, campaignJob)
+		}
+
+		campaign := &a8n.Campaign{
+			Name:            "Testing Campaign",
+			Description:     "Testing Campaign",
+			AuthorID:        u.ID,
+			NamespaceUserID: u.ID,
+			CampaignPlanID:  testPlan.ID,
+		}
+		gitClient := &dummyGitserverClient{response: "testresponse", responseErr: nil}
+
+		cf := httpcli.NewHTTPClientFactory()
+		svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
+		err = svc.CreateCampaign(ctx, campaign, true)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !campaign.PublishedAt.IsZero() {
+			t.Fatalf("PublishedAt is not zero")
+		}
+
+		_, err = store.GetCampaign(ctx, GetCampaignOpts{ID: campaign.ID})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		haveJobs, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
+			CampaignID: campaign.ID,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(haveJobs) != 0 {
+			t.Errorf("wrong number of ChangesetJobs: %d. want=%d", len(haveJobs), 0)
 		}
 	})
 }

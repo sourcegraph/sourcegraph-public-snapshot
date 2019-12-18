@@ -213,6 +213,11 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		campaign.CampaignPlanID = planID
 	}
 
+	var draft bool
+	if args.Input.Draft != nil {
+		draft = *args.Input.Draft
+	}
+
 	switch relay.UnmarshalKind(args.Input.Namespace) {
 	case "User":
 		err = relay.UnmarshalSpec(args.Input.Namespace, &campaign.NamespaceUserID)
@@ -227,18 +232,20 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 	}
 
 	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
-	err = svc.CreateCampaign(ctx, campaign)
+	err = svc.CreateCampaign(ctx, campaign, draft)
 	if err != nil {
 		return nil, err
 	}
 
-	go func() {
-		ctx := trace.ContextWithTrace(context.Background(), tr)
-		err := svc.RunChangesetJobs(ctx, campaign)
-		if err != nil {
-			log15.Error("RunChangesetJobs", "err", err)
-		}
-	}()
+	if !draft {
+		go func() {
+			ctx := trace.ContextWithTrace(context.Background(), tr)
+			err := svc.RunChangesetJobs(ctx, campaign)
+			if err != nil {
+				log15.Error("RunChangesetJobs", "err", err)
+			}
+		}()
+	}
 
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
@@ -650,11 +657,18 @@ func (r *Resolver) PublishCampaign(ctx context.Context, args *graphqlbackend.Pub
 	}
 
 	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
-
 	campaign, err := svc.PublishCampaign(ctx, campaignID)
 	if err != nil {
 		return nil, errors.Wrap(err, "closing campaign")
 	}
+
+	go func() {
+		ctx := trace.ContextWithTrace(context.Background(), tr)
+		err := svc.RunChangesetJobs(ctx, campaign)
+		if err != nil {
+			log15.Error("RunChangesetJobs", "err", err)
+		}
+	}()
 
 	return &campaignResolver{store: r.store, Campaign: campaign}, errors.New("TODO: not implemented yet")
 }
