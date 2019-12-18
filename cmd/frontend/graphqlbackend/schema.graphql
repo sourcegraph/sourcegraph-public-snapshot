@@ -624,18 +624,18 @@ type Campaign implements Node {
     # The date and time when the campaign was closed.
     closedAt: DateTime
 
-    # Whether the Campaign is in draft mode or not. Default is false.
-    draft: Boolean!
-
     # The date and time when the Campaign changed from draft mode to published.
-    # Default value is the same as createdAt in case the Campaign was never in
-    # draft mode
+    # If the Campaign has not been published yet (is still in draft mode) this
+    # is null.
+    # If the Campaign was never in draft mode the value is the same as createdAt.
     publishedAt: DateTime
 
-    # The changesets that will be created on the code host when marking the
-    # Campaign as ready.
+    # The changesets that will be created on the code host when publishing the
+    # Campaign.
     # When publishing a Campaign, the number of nodes in changesets will
-    # increase with each increment of Completed in the Campaign.status.
+    # increase with each decrease in changesetPlans. The Completed count in the
+    # Campaign.status increments with every ChangesetPlan turned into an
+    # ExternalChangeset.
     changesetPlans(first: Int): ChangesetPlanConnection!
 }
 
