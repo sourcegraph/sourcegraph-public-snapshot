@@ -955,6 +955,7 @@ type CampaignPlan struct {
 	Changesets   struct {
 		Nodes []ChangesetPlan
 	}
+	PreviewURL string
 }
 
 func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
@@ -1089,6 +1090,7 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
                 }
 			  }
             }
+            previewURL
           }
         }
       }
@@ -1121,6 +1123,10 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 		}
 		if !cmp.Equal(result.Changesets.Nodes, wantChangesets) {
 			t.Error("wrong changesets", cmp.Diff(result.Changesets.Nodes, wantChangesets))
+		}
+
+		if have, want := result.PreviewURL, "http://example.com/campaigns/new?plan=Q2FtcGFpZ25QbGFuOjE%3D"; have != want {
+			t.Fatalf("have PreviewURL %q, want %q", have, want)
 		}
 	})
 }
