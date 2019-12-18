@@ -1449,7 +1449,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					want: &a8n.BackgroundProcessStatus{
 						ProcessState:  a8n.BackgroundProcessStateCompleted,
 						Total:         2,
-						Completed:     1,
+						Completed:     2,
 						Pending:       0,
 						ProcessErrors: nil,
 					},
@@ -1485,7 +1485,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					want: &a8n.BackgroundProcessStatus{
 						ProcessState:  a8n.BackgroundProcessStateProcessing,
 						Total:         6,
-						Completed:     3,
+						Completed:     4,
 						Pending:       2,
 						ProcessErrors: []string{"error1", "error2"},
 					},
