@@ -4,10 +4,10 @@ groups:
       - record: alert_count
         labels:
           service_name: searcher
-          level: critical
-        expr: 0
-      - record: alert_count
-        labels:
-          service_name: searcher
           level: warning
-        expr: 0
+          name: searcher_request_errors
+          description: 'searcher: 5+ unindexed search request errors over 5m'
+        expr: >-
+          clamp_max(clamp_min(floor(
+          (sum by (instance)(increase(searcher_service_request_total{code=~"2.."}[5m]))) OR on() vector(0)
+          ), 0), 1)
