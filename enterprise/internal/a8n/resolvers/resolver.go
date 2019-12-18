@@ -77,6 +77,25 @@ func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlback
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
 
+func (r *Resolver) ChangesetPlanByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetPlanResolver, error) {
+	// 🚨 SECURITY: Only site admins may access changesets for now.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	campaignJobID, err := unmarshalCampaignJobID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	job, err := r.store.GetCampaignJob(ctx, ee.GetCampaignJobOpts{ID: campaignJobID})
+	if err != nil {
+		return nil, err
+	}
+
+	return &campaignJobResolver{job: job}, nil
+}
+
 func (r *Resolver) CampaignPlanByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignPlanResolver, error) {
 	// 🚨 SECURITY: Only site admins may access campaign plans for now.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
@@ -611,4 +630,46 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 	}
 
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
+}
+
+func (r *Resolver) PublishCampaign(ctx context.Context, args *graphqlbackend.PublishCampaignArgs) (_ graphqlbackend.CampaignResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.PublishCampaign", fmt.Sprintf("Campaign: %q", args.Campaign))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// 🚨 SECURITY: Only site admins may update campaigns for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, errors.Wrap(err, "checking if user is admin")
+	}
+
+	campaignID, err := unmarshalCampaignID(args.Campaign)
+	if err != nil {
+		return nil, errors.Wrap(err, "unmarshaling campaign id")
+	}
+
+	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
+
+	campaign, err := svc.PublishCampaign(ctx, campaignID)
+	if err != nil {
+		return nil, errors.Wrap(err, "closing campaign")
+	}
+
+	return &campaignResolver{store: r.store, Campaign: campaign}, errors.New("TODO: not implemented yet")
+}
+
+func (r *Resolver) PublishChangesetPlan(ctx context.Context, args *graphqlbackend.PublishChangesetPlanArgs) (_ *graphqlbackend.EmptyResponse, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.PublishChangesetPlan", fmt.Sprintf("ChangesetPlan: %q", args.ChangesetPlan))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// 🚨 SECURITY: Only site admins may update campaigns for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, errors.Wrap(err, "checking if user is admin")
+	}
+
+	return nil, errors.New("TODO: not implemented yet")
 }

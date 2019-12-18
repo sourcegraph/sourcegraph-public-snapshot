@@ -446,6 +446,40 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 	return campaign, nil
 }
 
+// PublishCampaign publishes the Campaign with the given ID if it has not been
+// published yet by turning the CampaignJobs attached to the CampaignPlan of
+// the Campaign into ChangesetJobs and running them.
+func (s *Service) PublishCampaign(ctx context.Context, id int64) (campaign *a8n.Campaign, err error) {
+	traceTitle := fmt.Sprintf("campaign: %d", id)
+	tr, ctx := trace.New(ctx, "service.PublishCampaign", traceTitle)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	defer tx.Done(&err)
+
+	campaign, err = tx.GetCampaign(ctx, GetCampaignOpts{ID: id})
+	if err != nil {
+		return nil, errors.Wrap(err, "getting campaign")
+	}
+
+	// TODO(a8n): Implement this
+
+	// if !campaign.PublishedAt.IsZero() {
+	// 	return campaign, nil
+	// }
+	//
+	// campaign.PublishedAt = time.Now().UTC()
+
+	return campaign, nil
+}
+
 // DeleteCampaign deletes the Campaign with the given ID if it hasn't been
 // deleted yet. If closeChangesets is true, the changesets associated with the
 // Campaign will be closed on the codehosts.

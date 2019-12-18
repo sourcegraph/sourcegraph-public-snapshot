@@ -120,6 +120,15 @@ func (r *campaignResolver) ClosedAt() *graphqlbackend.DateTime {
 	return &graphqlbackend.DateTime{Time: r.Campaign.ClosedAt}
 }
 
+func (r *campaignResolver) PublishedAt() *graphqlbackend.DateTime {
+	return nil
+	// TODO(a8n): Implement this
+	// if r.Campaign.PublishedAt.IsZero() {
+	// 	return nil
+	// }
+	// return &graphqlbackend.DateTime{Time: r.Campaign.PublishedAt}
+}
+
 func (r *campaignResolver) Changesets(ctx context.Context, args struct {
 	graphqlutil.ConnectionArgs
 }) graphqlbackend.ExternalChangesetsConnectionResolver {
@@ -130,6 +139,28 @@ func (r *campaignResolver) Changesets(ctx context.Context, args struct {
 			Limit:      int(args.ConnectionArgs.GetFirst()),
 		},
 	}
+}
+
+func (r *campaignResolver) ChangesetPlans(
+	ctx context.Context,
+	args *graphqlutil.ConnectionArgs,
+) graphqlbackend.ChangesetPlansConnectionResolver {
+	if r.Campaign.CampaignPlanID == 0 {
+		return nil
+	}
+
+	resolver := &campaignJobsConnectionResolver{
+		store: r.store,
+		// TODO(a8n): Does campaignJobsConnectionResolver need the campaignPlan?
+		campaignPlan: nil,
+		opts: ee.ListCampaignJobsOpts{
+			CampaignPlanID: r.Campaign.CampaignPlanID,
+			Limit:          int(args.GetFirst()),
+			OnlyFinished:   true,
+			OnlyWithDiff:   true,
+		},
+	}
+	return resolver
 }
 
 func (r *campaignResolver) ChangesetCountsOverTime(

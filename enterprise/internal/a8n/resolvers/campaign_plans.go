@@ -30,6 +30,17 @@ func unmarshalCampaignPlanID(id graphql.ID) (campaignPlanID int64, err error) {
 	return
 }
 
+const campaignJobIDKind = "ChangesetPlan"
+
+func marshalCampaignJobID(id int64) graphql.ID {
+	return relay.MarshalID(campaignJobIDKind, id)
+}
+
+func unmarshalCampaignJobID(id graphql.ID) (cid int64, err error) {
+	err = relay.UnmarshalSpec(id, &cid)
+	return
+}
+
 type campaignPlanResolver struct {
 	store        *ee.Store
 	campaignPlan *a8n.CampaignPlan
@@ -163,6 +174,10 @@ func (r *campaignJobResolver) computeRepoCommit(ctx context.Context) (*graphqlba
 		r.commit, r.err = r.repo.Commit(ctx, args)
 	})
 	return r.repo, r.commit, r.err
+}
+
+func (r *campaignJobResolver) ID() graphql.ID {
+	return marshalCampaignJobID(r.job.ID)
 }
 
 func (r *campaignJobResolver) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
