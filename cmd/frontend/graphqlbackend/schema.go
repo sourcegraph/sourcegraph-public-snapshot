@@ -1494,6 +1494,11 @@ type SearchResultsStats {
     approximateResultCount: String!
     # The sparkline.
     sparkline: [Int!]!
+
+    # Statistics about the languages represented in the search results.
+    #
+    # Known issue: The LanguageStatistics.totalBytes field values are incorrect in the result.
+    languages: [LanguageStatistics!]!
 }
 
 # A search filter.

@@ -296,6 +296,10 @@ function setDiagnosticsOptions(m: typeof monaco, jsonSchema: any): void {
                 uri: 'settings.schema.json#',
                 schema: settingsSchema,
             },
+            {
+                uri: 'settings.schema.json',
+                schema: settingsSchema,
+            },
         ],
     })
 }

@@ -1,8 +1,8 @@
 import H from 'history'
 import * as React from 'react'
-import { Subject, Subscription } from 'rxjs'
+import { Subject, Subscription, combineLatest } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
-import { ContributionScope } from '../api/client/context/context'
+import { ContributionScope, Context } from '../api/client/context/context'
 import { ContributableMenu } from '../api/protocol'
 import { getContributedActionItems } from '../contributions/contributions'
 import { ExtensionsControllerProps } from '../extensions/controller'
@@ -16,6 +16,7 @@ export interface ActionsProps
         PlatformContextProps<'forceUpdateTooltip'> {
     menu: ContributableMenu
     scope?: ContributionScope
+    extraContext?: Context<any>
     listClass?: string
     location: H.Location
 }
@@ -38,12 +39,17 @@ export class ActionsContainer extends React.PureComponent<Props, ActionsState> {
     public state: ActionsState = {}
 
     private scopeChanges = new Subject<ContributionScope | undefined>()
+    private extraContextChanges = new Subject<Context<any> | undefined>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            this.scopeChanges
-                .pipe(switchMap(scope => this.props.extensionsController.services.contribution.getContributions(scope)))
+            combineLatest([this.scopeChanges, this.extraContextChanges])
+                .pipe(
+                    switchMap(([scope, extraContext]) =>
+                        this.props.extensionsController.services.contribution.getContributions(scope, extraContext)
+                    )
+                )
                 .subscribe(contributions => this.setState({ contributions }))
         )
         this.scopeChanges.next(this.props.scope)
@@ -52,6 +58,9 @@ export class ActionsContainer extends React.PureComponent<Props, ActionsState> {
     public componentDidUpdate(prevProps: Props): void {
         if (prevProps.scope !== this.props.scope) {
             this.scopeChanges.next(this.props.scope)
+        }
+        if (prevProps.extraContext !== this.props.extraContext) {
+            this.extraContextChanges.next(this.props.extraContext)
         }
     }
 

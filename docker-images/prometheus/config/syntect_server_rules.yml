@@ -1,0 +1,23 @@
+groups:
+  - name: syntect-server
+    rules:
+      - record: alert_count
+        labels:
+          service_name: syntect-server
+          level: warning
+          name: syntax_highlighting_errors
+          description: 'syntect-server: 5+ syntax highlighting errors (panic/error/timeout) over 5m'
+        expr: >-
+          clamp_max(clamp_min(floor(
+          (increase(src_syntax_highlighting_requests{status=~"panic|error|timeout"}[5m]) / 5) OR on() vector(0)
+          ), 0), 1)
+      - record: alert_count
+        labels:
+          service_name: syntect-server
+          level: warning
+          name: syntax_highlighting_worker_timeout
+          description: 'syntect-server: more than 1 syntax highlighter worker timeout over 5m'
+        expr: >-
+          clamp_max(clamp_min(floor(
+          (increase(src_syntax_highlighting_requests{status="hss_worker_timeout"}[5m]) / 1) OR on() vector(0)
+          ), 0), 1)
