@@ -121,12 +121,10 @@ func (r *campaignResolver) ClosedAt() *graphqlbackend.DateTime {
 }
 
 func (r *campaignResolver) PublishedAt() *graphqlbackend.DateTime {
-	return nil
-	// TODO(a8n): Implement this
-	// if r.Campaign.PublishedAt.IsZero() {
-	// 	return nil
-	// }
-	// return &graphqlbackend.DateTime{Time: r.Campaign.PublishedAt}
+	if r.Campaign.PublishedAt.IsZero() {
+		return nil
+	}
+	return &graphqlbackend.DateTime{Time: r.Campaign.PublishedAt}
 }
 
 func (r *campaignResolver) Changesets(ctx context.Context, args struct {

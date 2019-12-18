@@ -469,13 +469,13 @@ func (s *Service) PublishCampaign(ctx context.Context, id int64) (campaign *a8n.
 		return nil, errors.Wrap(err, "getting campaign")
 	}
 
-	// TODO(a8n): Implement this
+	if !campaign.PublishedAt.IsZero() {
+		return campaign, nil
+	}
 
-	// if !campaign.PublishedAt.IsZero() {
-	// 	return campaign, nil
-	// }
-	//
-	// campaign.PublishedAt = time.Now().UTC()
+	campaign.PublishedAt = time.Now().UTC()
+
+	// TODO(a8n): Implement creation of ChangesetJobs and running them
 
 	return campaign, nil
 }
