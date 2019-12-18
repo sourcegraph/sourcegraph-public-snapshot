@@ -53,7 +53,7 @@ docker exec -it $CONTAINER -- vi /site-config.json
 #### Kubernetes cluster instances
 
 ```sh
-kubectl exec -it $FRONTEND_POD -- sh -c 'apk add --no-cache nano && cat /site-config.json'
+kubectl exec -it $FRONTEND_POD -- sh -c 'apk add --no-cache nano && nano /site-config.json'
 ```
 
 Or if you prefer using a Vim editor:
