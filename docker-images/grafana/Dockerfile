@@ -25,7 +25,7 @@ LABEL com.sourcegraph.grafana.version=6.4.2
 
 # hadolint ignore=DL3020
 ADD --chown=grafana:grafana config /sg_config_grafana
-ADD home.json /usr/share/grafana/public/dashboards/home.json
+COPY home.json /usr/share/grafana/public/dashboards/home.json
 
 COPY --from=builder /dashboards/*.json /sg_config_grafana/provisioning/dashboards/sourcegraph_internal/
 
