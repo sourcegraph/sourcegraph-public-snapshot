@@ -4,10 +4,10 @@ groups:
       - record: alert_count
         labels:
           service_name: replacer
-          level: critical
-        expr: 0
-      - record: alert_count
-        labels:
-          service_name: replacer
           level: warning
-        expr: 0
+          name: frontend_internal_errors
+          description: 'replacer: 5+ non-200 responses from the frontend-internal API over 5m'
+        expr: >-
+          clamp_max(clamp_min(floor(
+          increase(src_frontend_internal_request_duration_seconds_count{job="replacer",code!~"2.."}[5m]) / 5
+          ), 0), 1)
