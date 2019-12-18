@@ -250,7 +250,7 @@ export class Driver {
             })
         )
         // Delete existing external services if there are any.
-        if (externalServices.totalCount === 0) {
+        if (externalServices.totalCount !== 0) {
             await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services')
             await this.page.waitFor('.e2e-filtered-connection')
             await this.page.waitForSelector('.e2e-filtered-connection__loader', { hidden: true })
