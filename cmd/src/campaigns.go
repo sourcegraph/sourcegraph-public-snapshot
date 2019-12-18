@@ -19,7 +19,7 @@ Usage:
 The commands are:
 
 	list              lists campaigns
-	add-changesets    add changesets of a given repository to a campaign
+	add-changesets    adds changesets of a given repository to a campaign
 
 Use "src campaigns [command] -h" for more information about a command.
 `
