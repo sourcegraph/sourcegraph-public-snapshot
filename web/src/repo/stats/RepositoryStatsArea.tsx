@@ -22,7 +22,7 @@ const NotFoundPage: React.FunctionComponent = () => (
 interface Props
     extends RouteComponentProps<{}>,
         RepoHeaderContributionsLifecycleProps,
-        Omit<PatternTypeProps, 'togglePatternType'> {
+        Omit<PatternTypeProps, 'setPatternType'> {
     repo: GQL.IRepository
 }
 

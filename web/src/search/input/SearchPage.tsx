@@ -119,7 +119,7 @@ export class SearchPage extends React.Component<Props, State> {
                                             autoFocus="cursor-at-end"
                                             hasGlobalQueryBehavior={true}
                                             patternType={this.props.patternType}
-                                            togglePatternType={this.props.togglePatternType}
+                                            setPatternType={this.props.setPatternType}
                                             withSearchModeToggle={this.props.splitSearchModes}
                                         />
                                         <SearchButton />

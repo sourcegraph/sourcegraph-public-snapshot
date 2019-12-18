@@ -10,7 +10,7 @@ import { ThemeProps } from '../../../shared/src/theme'
 export interface NamespaceAreaContext
     extends ExtensionsControllerProps,
         ThemeProps,
-        Omit<PatternTypeProps, 'togglePatternType'> {
+        Omit<PatternTypeProps, 'setPatternType'> {
     namespace: Pick<GQL.Namespace, '__typename' | 'id' | 'url'>
 
     authenticatedUser: GQL.IUser | null
