@@ -629,6 +629,8 @@ type Campaign implements Node {
 
     # The changesets that will be created on the code host when publishing the
     # Campaign.
+    # If the Campaign is a "manual" campaign and doesn't have a CampaignPlan
+    # attached, there won't be any nodes returned by this connection
     # When publishing a Campaign, the number of nodes in changesets will
     # increase with each decrease in changesetPlans. The Completed count in the
     # Campaign.status increments with every ChangesetPlan turned into an
