@@ -52,6 +52,33 @@ func limitOrDefault(first *int32) int {
 	return int(*first)
 }
 
+func indexedSymbols(commit *GitCommitResolver) bool {
+	z := search.Indexed()
+	if !z.Enabled() {
+		return false
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	set, err := z.ListAll(ctx)
+	if err != nil {
+		return false
+	}
+
+	repo, ok := set[string(commit.repo.repo.Name)]
+	if !ok || !repo.HasSymbols {
+		return false
+	}
+
+	for _, branch := range repo.Branches {
+		if branch.Version == string(commit.oid) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, queryString *string, first *int32, includePatterns *[]string) (res []*symbolResolver, err error) {
 	raw := *queryString
 	if raw == "" {
@@ -128,8 +155,7 @@ func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, queryStr
 }
 
 func computeSymbols(ctx context.Context, commit *GitCommitResolver, query *string, first *int32, includePatterns *[]string) (res []*symbolResolver, err error) {
-	client := search.Indexed()
-	if client.Enabled() && client.Indexed(commit) {
+	if indexedSymbols(commit) {
 		return searchZoektSymbols(ctx, commit, query, first, includePatterns)
 	}
 
