@@ -135,24 +135,28 @@ func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, queryStr
 	baseURI, err := gituri.Parse("git://" + string(commit.repo.repo.Name) + "?" + string(commit.oid))
 	for _, file := range resp.Files {
 		for _, l := range file.LineMatches {
-			if !l.FileName {
-				for _, m := range l.LineFragments {
-					if m.SymbolInfo != nil {
-						res = append(res, toSymbolResolver(
-							protocol.Symbol{
-								Name:       m.SymbolInfo.Sym,
-								Kind:       m.SymbolInfo.Kind,
-								Parent:     m.SymbolInfo.Parent,
-								ParentKind: m.SymbolInfo.ParentKind,
-								Path:       file.FileName,
-								Line:       l.LineNumber,
-							},
-							baseURI,
-							strings.ToLower(file.Language),
-							commit,
-						))
-					}
+			if l.FileName {
+				continue
+			}
+
+			for _, m := range l.LineFragments {
+				if m.SymbolInfo == nil {
+					continue
 				}
+
+				res = append(res, toSymbolResolver(
+					protocol.Symbol{
+						Name:       m.SymbolInfo.Sym,
+						Kind:       m.SymbolInfo.Kind,
+						Parent:     m.SymbolInfo.Parent,
+						ParentKind: m.SymbolInfo.ParentKind,
+						Path:       file.FileName,
+						Line:       l.LineNumber,
+					},
+					baseURI,
+					strings.ToLower(file.Language),
+					commit,
+				))
 			}
 		}
 	}
