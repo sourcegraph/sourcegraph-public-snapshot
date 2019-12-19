@@ -1690,6 +1690,9 @@ type CountCampaignJobsOpts struct {
 	CampaignPlanID int64
 	OnlyFinished   bool
 	OnlyWithDiff   bool
+
+	// See the explanation for this parameter in ListCampaignJobsOpts
+	OnlyUnpublishedInCampaign int64
 }
 
 // CountCampaignJobs returns the number of code mods in the database.
@@ -1720,6 +1723,10 @@ func countCampaignJobsQuery(opts *CountCampaignJobsOpts) *sqlf.Query {
 
 	if opts.OnlyWithDiff {
 		preds = append(preds, sqlf.Sprintf("diff != ''"))
+	}
+
+	if opts.OnlyUnpublishedInCampaign != 0 {
+		preds = append(preds, onlyUnpublishedInCampaignQuery(opts.OnlyUnpublishedInCampaign))
 	}
 
 	if len(preds) == 0 {
@@ -1794,6 +1801,11 @@ type ListCampaignJobsOpts struct {
 	Limit          int
 	OnlyFinished   bool
 	OnlyWithDiff   bool
+
+	// If this is set to a Campaign ID only the CampaignJobs are returned that
+	// are _not_ associated with a successfully completed ChangesetJob (meaning
+	// that a Changeset on the codehost was created) for the given Campaign.
+	OnlyUnpublishedInCampaign int64
 }
 
 // ListCampaignJobs lists CampaignJobs with the given filters.
@@ -1865,10 +1877,31 @@ func listCampaignJobsQuery(opts *ListCampaignJobsOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("diff != ''"))
 	}
 
+	if opts.OnlyUnpublishedInCampaign != 0 {
+		preds = append(preds, onlyUnpublishedInCampaignQuery(opts.OnlyUnpublishedInCampaign))
+	}
+
 	return sqlf.Sprintf(
 		listCampaignJobsQueryFmtstr+limitClause,
 		sqlf.Join(preds, "\n AND "),
 	)
+}
+
+var onlyUnpublishedInCampaignQueryFmtstr = `
+NOT EXISTS (
+  SELECT *
+  FROM changeset_jobs
+  WHERE
+    campaign_job_id = campaign_jobs.id
+  AND
+    campaign_id = %s
+  AND
+    changeset_id IS NOT NULL
+)
+`
+
+func onlyUnpublishedInCampaignQuery(campaignID int64) *sqlf.Query {
+	return sqlf.Sprintf(onlyUnpublishedInCampaignQueryFmtstr, campaignID)
 }
 
 // CreateChangesetJob creates the given ChangesetJob.

@@ -147,18 +147,16 @@ func (r *campaignResolver) ChangesetPlans(
 		return &emptyChangesetPlansConnectionsResolver{}
 	}
 
-	resolver := &campaignJobsConnectionResolver{
+	return &campaignJobsConnectionResolver{
 		store: r.store,
 		opts: ee.ListCampaignJobsOpts{
-			CampaignPlanID: r.Campaign.CampaignPlanID,
-			Limit:          int(args.GetFirst()),
-			OnlyFinished:   true,
-			OnlyWithDiff:   true,
-			// TODO: Only without ChangesetJob and Changeset
+			CampaignPlanID:            r.Campaign.CampaignPlanID,
+			Limit:                     int(args.GetFirst()),
+			OnlyFinished:              true,
+			OnlyWithDiff:              true,
+			OnlyUnpublishedInCampaign: r.Campaign.ID,
 		},
 	}
-
-	return resolver
 }
 
 func (r *campaignResolver) ChangesetCountsOverTime(

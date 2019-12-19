@@ -1352,6 +1352,77 @@ func testStore(db *sql.DB) func(*testing.T) {
 				}
 			})
 
+			t.Run("Listing and Counting OnlyUnpublishedInCampaign", func(t *testing.T) {
+				campaignID := int64(999)
+				changesetJob := &a8n.ChangesetJob{
+					CampaignJobID: campaignJobs[0].ID,
+					CampaignID:    campaignID,
+					ChangesetID:   789,
+					StartedAt:     now,
+					FinishedAt:    now,
+				}
+				err := s.CreateChangesetJob(ctx, changesetJob)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				listOpts := ListCampaignJobsOpts{OnlyUnpublishedInCampaign: campaignID}
+				countOpts := CountCampaignJobsOpts{OnlyUnpublishedInCampaign: campaignID}
+
+				have, _, err := s.ListCampaignJobs(ctx, listOpts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				have, want := have, campaignJobs[1:] // Except campaignJobs[0]
+				if len(have) != len(want) {
+					t.Fatalf("listed %d campaignJobs, want: %d", len(have), len(want))
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
+				}
+
+				count, err := s.CountCampaignJobs(ctx, countOpts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if int(count) != len(want) {
+					t.Errorf("jobs counted: %d", count)
+				}
+
+				// Update ChangesetJob so condition does not apply
+				changesetJob.ChangesetID = 0
+				err = s.UpdateChangesetJob(ctx, changesetJob)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				have, _, err = s.ListCampaignJobs(ctx, listOpts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				have, want = have, campaignJobs // All CampaignJobs
+				if len(have) != len(want) {
+					t.Fatalf("listed %d campaignJobs, want: %d", len(have), len(want))
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
+				}
+
+				count, err = s.CountCampaignJobs(ctx, countOpts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if int(count) != len(want) {
+					t.Errorf("jobs counted: %d", count)
+				}
+			})
+
 			t.Run("Update", func(t *testing.T) {
 				for _, c := range campaignJobs {
 					now = now.Add(time.Second)
