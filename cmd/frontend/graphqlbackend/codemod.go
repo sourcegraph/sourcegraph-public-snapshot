@@ -144,7 +144,7 @@ func validateQuery(q *query.Query) (*args, error) {
 }
 
 // Calls the codemod backend replacer service for a set of repository revisions.
-func performCodemod(ctx context.Context, args *search.Args) ([]SearchResultResolver, *searchResultsCommon, error) {
+func performCodemod(ctx context.Context, args *search.TextParameters) ([]SearchResultResolver, *searchResultsCommon, error) {
 	cmodArgs, err := validateQuery(args.Query)
 	if err != nil {
 		return nil, nil, err
