@@ -1691,7 +1691,9 @@ type CountCampaignJobsOpts struct {
 	OnlyFinished   bool
 	OnlyWithDiff   bool
 
-	// See the explanation for this parameter in ListCampaignJobsOpts
+	// If this is set to a Campaign ID only the CampaignJobs are returned that
+	// are _not_ associated with a successfully completed ChangesetJob (meaning
+	// that a Changeset on the codehost was created) for the given Campaign.
 	OnlyUnpublishedInCampaign int64
 }
 
