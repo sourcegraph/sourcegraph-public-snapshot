@@ -670,7 +670,7 @@ func (r *Resolver) PublishCampaign(ctx context.Context, args *graphqlbackend.Pub
 		}
 	}()
 
-	return &campaignResolver{store: r.store, Campaign: campaign}, errors.New("TODO: not implemented yet")
+	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
 
 func (r *Resolver) PublishChangesetPlan(ctx context.Context, args *graphqlbackend.PublishChangesetPlanArgs) (_ *graphqlbackend.EmptyResponse, err error) {
