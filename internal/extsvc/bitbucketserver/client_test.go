@@ -299,10 +299,36 @@ func TestClient_Users(t *testing.T) {
 	}
 }
 
+func TestClient_LabeledRepos(t *testing.T) {
+	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
+	if instanceURL == "" {
+		instanceURL = "https://bitbucket.sgdev.org"
+	}
+
+	cli, save := NewTestClient(t, "LabeledRepos", *update)
+	defer save()
+
+	// We have archived label on bitbucket.sgdev.org with a repo in it.
+	repos, _, err := cli.LabeledRepos(context.Background(), nil, "archived")
+	if err != nil {
+		t.Fatal("archived label should not fail on bitbucket.sgdev.org", err)
+	}
+	checkGolden(t, "LabeledRepos-archived", repos)
+
+	// This label shouldn't exist. Check we get back the correct error
+	_, _, err = cli.LabeledRepos(context.Background(), nil, "doesnotexist")
+	if err == nil {
+		t.Fatal("expected doesnotexist label to fail")
+	}
+	if !IsNoSuchLabel(err) {
+		t.Fatalf("expected NoSuchLabel error, got %v", err)
+	}
+}
+
 func TestClient_LoadPullRequest(t *testing.T) {
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
-		instanceURL = "http://127.0.0.1:7990"
+		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
 	cli, save := NewTestClient(t, "PullRequests", *update)
@@ -395,7 +421,7 @@ func TestClient_LoadPullRequest(t *testing.T) {
 func TestClient_CreatePullRequest(t *testing.T) {
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
-		instanceURL = "http://127.0.0.1:7990"
+		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
 	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
@@ -538,7 +564,7 @@ func TestClient_CreatePullRequest(t *testing.T) {
 func TestClient_DeclinePullRequest(t *testing.T) {
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
-		instanceURL = "http://127.0.0.1:7990"
+		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
 	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
@@ -622,7 +648,7 @@ func TestClient_DeclinePullRequest(t *testing.T) {
 func TestClient_LoadPullRequestActivities(t *testing.T) {
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
-		instanceURL = "http://127.0.0.1:7990"
+		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
 	cli, save := NewTestClient(t, "PullRequestActivities", *update)

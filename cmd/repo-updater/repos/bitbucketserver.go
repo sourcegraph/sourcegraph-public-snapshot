@@ -204,7 +204,7 @@ func (s BitbucketServerSource) ExternalServices() ExternalServices {
 	return ExternalServices{s.svc}
 }
 
-func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo) *Repo {
+func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo, isArchived bool) *Repo {
 	host, err := url.Parse(s.config.Url)
 	if err != nil {
 		// This should never happen
@@ -273,6 +273,7 @@ func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo) *Repo {
 		},
 		Description: repo.Name,
 		Fork:        repo.Origin != nil,
+		Archived:    isArchived,
 		Enabled:     true,
 		Sources: map[string]*SourceInfo{
 			urn: {
@@ -305,6 +306,16 @@ func (s *BitbucketServerSource) excludes(r *bitbucketserver.Repo) bool {
 }
 
 func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan SourceResult) {
+	// "archived" label is a convention used at some customers for indicating
+	// a repository is archived (like github's archived state). This is not
+	// returned in the normal repository listing endpoints, so we need to
+	// fetch it seperately.
+	archived, err := s.listAllLabeledRepos(ctx, "archived")
+	if err != nil {
+		results <- SourceResult{Source: s, Err: errors.Wrap(err, "failed to list repos with archived label")}
+		return
+	}
+
 	type batch struct {
 		repos []*bitbucketserver.Repo
 		err   error
@@ -384,10 +395,33 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 
 		for _, repo := range r.repos {
 			if !seen[repo.ID] && !s.excludes(repo) {
-				results <- SourceResult{Source: s, Repo: s.makeRepo(repo)}
+				_, isArchived := archived[repo.ID]
+				results <- SourceResult{Source: s, Repo: s.makeRepo(repo, isArchived)}
 				seen[repo.ID] = true
 			}
 		}
 
 	}
+}
+
+func (s *BitbucketServerSource) listAllLabeledRepos(ctx context.Context, label string) (map[int]struct{}, error) {
+	ids := map[int]struct{}{}
+	next := &bitbucketserver.PageToken{Limit: 1000}
+	for next.HasMore() {
+		repos, page, err := s.client.LabeledRepos(ctx, next, label)
+		if err != nil {
+			if bitbucketserver.IsNoSuchLabel(err) {
+				// treat as empty
+				return ids, nil
+			}
+			return nil, err
+		}
+
+		for _, r := range repos {
+			ids[r.ID] = struct{}{}
+		}
+
+		next = page
+	}
+	return ids, nil
 }
