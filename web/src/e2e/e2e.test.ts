@@ -14,6 +14,7 @@ import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { getConfig } from '../../../shared/src/e2e/config'
 import * as assert from 'assert'
 import { asError } from '../../../shared/src/util/errors'
+import { Settings } from '../schema/settings.schema'
 
 const { gitHubToken, sourcegraphBaseUrl } = getConfig('gitHubToken', 'sourcegraphBaseUrl')
 
@@ -1370,6 +1371,50 @@ describe('e2e test suite', () => {
         })
     })
 
+    describe('Search statistics', () => {
+        beforeEach(async () => {
+            await driver.setUserSettings<Settings>({ experimentalFeatures: { searchStats: true } })
+        })
+        afterEach(async () => {
+            await driver.resetUserSettings()
+        })
+
+        test('button on search results page', async () => {
+            await driver.page.goto(`${sourcegraphBaseUrl}/search?q=abc`)
+            await driver.page.waitForSelector('a[href="/stats?q=abc"]')
+        })
+
+        test('page', async () => {
+            await driver.page.goto(`${sourcegraphBaseUrl}/stats?q=count%3A10000+abc`)
+
+            // Ensure the global navbar hides the search input (to avoid confusion with the one on
+            // the stats page).
+            await driver.page.waitForSelector('.global-navbar a.nav-link[href="/search"]')
+            assert.strictEqual(
+                await driver.page.evaluate(() => document.querySelectorAll('.e2e-query-input').length),
+                0
+            )
+
+            const queryInputValue = () =>
+                driver.page.evaluate(() => {
+                    const input = document.querySelector<HTMLInputElement>('.e2e-stats-query')
+                    return input ? input.value : null
+                })
+
+            // Check for a Go result (the sample repositories have Go files).
+            await driver.page.waitForSelector('a[href*="abc+lang:go"]')
+            assert.strictEqual(await queryInputValue(), 'count:10000 abc')
+            await percySnapshot(driver.page, 'Search stats')
+
+            // Update the query and rerun the computation.
+            await driver.page.type('.e2e-stats-query', 'd')
+            assert.strictEqual(await queryInputValue(), 'count:10000 abcd')
+            await driver.page.click('.e2e-stats-query-update')
+            await driver.page.waitForSelector('a[href*="abcd+lang:go"]')
+            assert.ok(driver.page.url().endsWith('/stats?q=count%3A10000+abcd'))
+        })
+    })
+
     describe('Campaigns', () => {
         let previousExperimentalFeatures: any
         beforeAll(async () => {
@@ -1486,12 +1531,22 @@ describe('e2e test suite', () => {
 
     describe('Interactive search mode (feature flagged)', () => {
         let previousExperimentalFeatures: any
+
         beforeAll(async () => {
-            await driver.setConfig(['experimentalFeatures'], prev => {
-                previousExperimentalFeatures = prev?.value
-                return { splitSearchModes: 'enabled' }
+            await driver.page.goto(sourcegraphBaseUrl + '/site-admin/global-settings')
+            await driver.page.waitForSelector('.e2e-settings-file .monaco-editor')
+
+            await driver.replaceText({
+                selector: '.e2e-settings-file .monaco-editor',
+                newText: JSON.stringify({
+                    experimentalFeatures: {
+                        splitSearchModes: true,
+                    },
+                }),
+                selectMethod: 'keyboard',
             })
 
+            await driver.page.click('.e2e-settings-file .e2e-save-toolbar-save')
             // wait for configuration to be applied
             await retry(
                 async () => {

@@ -2,6 +2,8 @@ import React from 'react'
 import { Redirect } from 'react-router'
 import { LayoutRouteProps, routes } from '../routes'
 import { lazyComponent } from '../util/lazyComponent'
+import { isErrorLike } from '../../../shared/src/util/errors'
+import { Settings } from '../schema/settings.schema'
 
 export const enterpriseRoutes: readonly LayoutRouteProps<{}>[] = [
     {
@@ -24,6 +26,17 @@ export const enterpriseRoutes: readonly LayoutRouteProps<{}>[] = [
         path: '/campaigns',
         render: lazyComponent(() => import('./campaigns/global/GlobalCampaignsArea'), 'GlobalCampaignsArea'),
         condition: props => props.showCampaigns,
+    },
+    {
+        path: '/stats',
+        render: lazyComponent(() => import('./search/stats/SearchStatsPage'), 'SearchStatsPage'),
+        condition: ({ settingsCascade }) => {
+            if (settingsCascade.final === null || isErrorLike(settingsCascade.final)) {
+                return false
+            }
+            const settings: Settings = settingsCascade.final
+            return Boolean(settings.experimentalFeatures?.searchStats)
+        },
     },
     ...routes,
 ]

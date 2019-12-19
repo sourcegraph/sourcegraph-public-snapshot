@@ -18,7 +18,7 @@ import { QueryBuilder } from './QueryBuilder'
 import { QueryInput } from './QueryInput'
 import { SearchButton } from './SearchButton'
 import { ISearchScope, SearchFilterChips } from './SearchFilterChips'
-import InteractiveModeInput from './interactive/InteractiveModeInput'
+import { InteractiveModeInput } from './interactive/InteractiveModeInput'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
@@ -95,7 +95,7 @@ export class SearchPage extends React.Component<Props, State> {
                 <img className="search-page__logo" src={logoUrl} />
                 <div className="search search-page__container">
                     <div className="d-flex flex-row">
-                        {this.props.interactiveSearchMode ? (
+                        {this.props.splitSearchModes && this.props.interactiveSearchMode ? (
                             <InteractiveModeInput
                                 {...this.props}
                                 navbarSearchState={this.state.userQueryState}
@@ -119,7 +119,7 @@ export class SearchPage extends React.Component<Props, State> {
                                             autoFocus="cursor-at-end"
                                             hasGlobalQueryBehavior={true}
                                             patternType={this.props.patternType}
-                                            togglePatternType={this.props.togglePatternType}
+                                            setPatternType={this.props.setPatternType}
                                             withSearchModeToggle={this.props.splitSearchModes}
                                         />
                                         <SearchButton />

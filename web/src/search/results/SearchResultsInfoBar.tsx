@@ -161,6 +161,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                 <ul className="search-results-info-bar__row-right nav align-items-center justify-content-end">
                     <ActionsNavItems
                         {...props}
+                        extraContext={{ searchQuery: props.query }}
                         menu={ContributableMenu.SearchResultsToolbar}
                         wrapInList={false}
                         showLoadingSpinnerDuringExecution={true}

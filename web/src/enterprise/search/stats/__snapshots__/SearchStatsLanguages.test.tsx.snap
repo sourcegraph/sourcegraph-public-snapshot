@@ -1,0 +1,159 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`SearchStatsLanguages renders 1`] = `
+<div
+  className="card mb-3"
+>
+  <h4
+    className="card-header"
+  >
+    Languages
+  </h4>
+  <div
+    className="d-flex"
+  >
+    <div
+      className="flex-0 border-right"
+    >
+      <table
+        className="search-stats-page__table table mb-0 border-top-0"
+      >
+        <thead>
+          <tr
+            className="small"
+          >
+            <th
+              className="border-top-0"
+            >
+              <span
+                className="sr-only"
+              >
+                Language
+              </span>
+            </th>
+            <th
+              className="border-top-0"
+            >
+              Lines
+            </th>
+            <th
+              className="border-top-0"
+            >
+              <span
+                className="sr-only"
+              >
+                Percent
+              </span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <a
+                href="/search?q=abc+lang:a&patternType=literal"
+                onClick={[Function]}
+              >
+                A
+              </a>
+            </td>
+            <td>
+              100
+            </td>
+            <td>
+              50%
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a
+                href="/search?q=abc+lang:b&patternType=literal"
+                onClick={[Function]}
+              >
+                B
+              </a>
+            </td>
+            <td>
+              50
+            </td>
+            <td>
+              25%
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a
+                href="/search?q=abc+lang:c&patternType=literal"
+                onClick={[Function]}
+              >
+                C
+              </a>
+            </td>
+            <td>
+              10
+            </td>
+            <td>
+              5%
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a
+                href="/search?q=abc+lang:d&patternType=literal"
+                onClick={[Function]}
+              >
+                D
+              </a>
+            </td>
+            <td>
+              5
+            </td>
+            <td>
+              3%
+            </td>
+          </tr>
+          <tr>
+            <td>
+              Unknown
+            </td>
+            <td>
+              35
+            </td>
+            <td>
+              18%
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div
+      className="flex-1 mx-4"
+    >
+      <div
+        className="recharts-responsive-container"
+        style={
+          Object {
+            "height": 600,
+            "maxHeight": undefined,
+            "minHeight": undefined,
+            "minWidth": undefined,
+            "width": "100%",
+          }
+        }
+      >
+        <div
+          style={
+            Object {
+              "display": "none",
+              "height": 0,
+              "position": "absolute",
+              "visibility": "hidden",
+              "width": 0,
+            }
+          }
+        />
+      </div>
+    </div>
+  </div>
+</div>
+`;

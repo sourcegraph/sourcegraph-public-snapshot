@@ -2,32 +2,24 @@ package backend
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/url"
-	"os"
-	"strconv"
 	"time"
 
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // ErrRepoSeeOther indicates that the repo does not exist on this server but might exist on an external Sourcegraph
@@ -158,13 +150,7 @@ func (s *repos) ListDefault(ctx context.Context) (repos []*types.Repo, err error
 	return db.DefaultRepos.List(ctx)
 }
 
-// Feature flag for enhanced (but much slower) language detection that uses file contents, not just
-// filenames. Enabled by default.
-var useEnhancedLanguageDetection, _ = strconv.ParseBool(env.Get("USE_ENHANCED_LANGUAGE_DETECTION", "true", "Enable more accurate but slower language detection that uses file contents"))
-
-var inventoryCache = rcache.New(fmt.Sprintf("inv:v2:enhanced_%v", useEnhancedLanguageDetection))
-
-func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *inventory.Inventory, err error) {
+func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID, forceEnhancedLanguageDetection bool) (res *inventory.Inventory, err error) {
 	if Mocks.Repos.GetInventory != nil {
 		return Mocks.Repos.GetInventory(ctx, repo, commitID)
 	}
@@ -176,65 +162,26 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
 	defer cancel()
 
-	if !git.IsAbsoluteRevision(string(commitID)) {
-		return nil, errors.Errorf("non-absolute CommitID for Repos.GetInventory: %v", commitID)
-	}
-
 	cachedRepo, err := CachedGitRepo(ctx, repo)
 	if err != nil {
 		return nil, err
 	}
+
+	invCtx, err := InventoryContext(*cachedRepo, commitID, forceEnhancedLanguageDetection)
+	if err != nil {
+		return nil, err
+	}
+
 	root, err := git.Stat(ctx, *cachedRepo, commitID, "")
 	if err != nil {
 		return nil, err
 	}
 
-	cacheKey := func(tree os.FileInfo) string {
-		// Cache based on the OID of the Git tree. Compared to per-blob caching, this creates many
-		// fewer cache entries, which means fewer stores, fewer lookups, and less cache storage
-		// overhead. Compared to per-commit caching, this yields a higher cache hit rate because
-		// most trees are unchanged across commits.
-		return tree.Sys().(git.ObjectInfo).OID().String()
-	}
-	invCtx := inventory.Context{
-		ReadTree: func(ctx context.Context, path string) ([]os.FileInfo, error) {
-			// TODO: As a perf optimization, we could read multiple levels of the Git tree at once
-			// to avoid sequential tree traversal calls.
-			return git.ReadDir(ctx, *cachedRepo, commitID, path, false)
-		},
-		NewFileReader: func(ctx context.Context, path string) (io.ReadCloser, error) {
-			return git.NewFileReader(ctx, *cachedRepo, commitID, path)
-		},
-		CacheGet: func(tree os.FileInfo) (inventory.Inventory, bool) {
-			if b, ok := inventoryCache.Get(cacheKey(tree)); ok {
-				var inv inventory.Inventory
-				if err := json.Unmarshal(b, &inv); err != nil {
-					log15.Warn("Repos.GetInventory failed to unmarshal cached JSON inventory", "repo", repo.Name, "commitID", commitID, "tree", tree.Name(), "err", err)
-					return inventory.Inventory{}, false
-				}
-				return inv, true
-			}
-			return inventory.Inventory{}, false
-		},
-		CacheSet: func(tree os.FileInfo, inv inventory.Inventory) {
-			b, err := json.Marshal(&inv)
-			if err != nil {
-				log15.Warn("Repos.GetInventory failed to marshal JSON inventory for cache", "repo", repo.Name, "commitID", commitID, "tree", tree.Name(), "err", err)
-				return
-			}
-			inventoryCache.Set(cacheKey(tree), b)
-		},
-	}
-
-	if !useEnhancedLanguageDetection {
-		// If USE_ENHANCED_LANGUAGE_DETECTION is disabled, do not read file contents to determine
-		// the language. This means we won't calculate the number of lines per language.
-		invCtx.NewFileReader = func(ctx context.Context, path string) (io.ReadCloser, error) {
-			return nil, nil
-		}
-	}
-
-	inv, err := invCtx.Tree(ctx, root)
+	// In computing the inventory, sub-tree inventories are cached based on the OID of the Git
+	// tree. Compared to per-blob caching, this creates many fewer cache entries, which means fewer
+	// stores, fewer lookups, and less cache storage overhead. Compared to per-commit caching, this
+	// yields a higher cache hit rate because most trees are unchanged across commits.
+	inv, err := invCtx.Entries(ctx, root)
 	if err != nil {
 		return nil, err
 	}

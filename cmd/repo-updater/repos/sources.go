@@ -89,6 +89,9 @@ type Source interface {
 
 // A ChangesetSource can load the latest state of a list of Changesets.
 type ChangesetSource interface {
+	// LoadChangesets loads the given Changesets from the sources and updates
+	// them. If a Changeset could not be found on the source, it's included in
+	// the returned slice.
 	LoadChangesets(context.Context, ...*Changeset) error
 	// CreateChangeset will create the Changeset on the source. If it already
 	// exists, *Changeset will be populated.
@@ -97,6 +100,28 @@ type ChangesetSource interface {
 	// means the appropriate final state on the codehost (e.g. "declined" on
 	// Bitbucket Server).
 	CloseChangeset(context.Context, *Changeset) error
+}
+
+// ChangesetsNotFoundError is returned by LoadChangesets if any of the passed
+// Changesets could not be found on the codehost.
+type ChangesetsNotFoundError struct {
+	Changesets []*Changeset
+}
+
+func (e ChangesetsNotFoundError) Error() string {
+	if len(e.Changesets) == 1 {
+		return fmt.Sprintf("Changeset with external ID %q not found", e.Changesets[0].Changeset.ExternalID)
+	}
+
+	items := make([]string, len(e.Changesets))
+	for i := range e.Changesets {
+		items[i] = fmt.Sprintf("* %q", e.Changesets[i].Changeset.ExternalID)
+	}
+
+	return fmt.Sprintf(
+		"Changesets with the following external IDs could not be found:\n\t%s\n\n",
+		strings.Join(items, "\n\t"),
+	)
 }
 
 // A SourceResult is sent by a Source over a channel for each repository it

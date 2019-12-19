@@ -40,7 +40,7 @@ import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { parseBrowserRepoURL } from './util/url'
-import LiteralSearchToast from './marketing/LiteralSearchToast'
+import { LiteralSearchToast } from './marketing/LiteralSearchToast'
 import { SurveyToast } from './marketing/SurveyToast'
 import { ThemeProps } from '../../shared/src/theme'
 import { ThemePreferenceProps } from './theme'
@@ -116,6 +116,8 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const needsSiteInit = window.context.showOnboarding
     const isSiteInit = props.location.pathname === '/site-admin/init'
 
+    const hideGlobalSearchInput: GlobalNavbar['props']['hideGlobalSearchInput'] = props.location.pathname === '/stats'
+
     useScrollToLocationHash(props.location)
     // Remove trailing slash (which is never valid in any of our URLs).
     if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
@@ -137,7 +139,14 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
             )}
             {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}
             {!isSiteInit && <LiteralSearchToast isSourcegraphDotCom={props.isSourcegraphDotCom} />}
-            {!isSiteInit && <GlobalNavbar {...props} lowProfile={isSearchHomepage} />}
+            {!isSiteInit && (
+                <GlobalNavbar
+                    {...props}
+                    lowProfile={isSearchHomepage}
+                    hideGlobalSearchInput={hideGlobalSearchInput}
+                    hideNavLinks={false}
+                />
+            )}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
             <ErrorBoundary location={props.location}>
                 <Suspense fallback={<LoadingSpinner className="icon-inline m-2" />}>

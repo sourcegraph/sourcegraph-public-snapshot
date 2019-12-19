@@ -112,7 +112,7 @@ describe('SearchResultsList', () => {
         platformContext: { forceUpdateTooltip: sinon.spy() },
         telemetryService: NOOP_TELEMETRY_SERVICE,
         patternType: GQL.SearchPatternType.regexp,
-        togglePatternType: sinon.spy(),
+        setPatternType: sinon.spy(),
 
         interactiveSearchMode: false,
         filtersInQuery: {},

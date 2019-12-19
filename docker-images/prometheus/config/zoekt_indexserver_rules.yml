@@ -1,0 +1,23 @@
+groups:
+  - name: zoekt-indexserver
+    rules:
+      - record: alert_count
+        labels:
+          service_name: zoekt-indexserver
+          level: critical
+          name: resolve_revision_duration_slow
+          description: 'zoekt-indexserver: resolving revisions taking longer than 10s'
+        expr: >-
+          clamp_max(clamp_min(floor(
+          rate(resolve_revisions_seconds_sum[5m]) / 10
+          ), 0), 1)
+      - record: alert_count
+        labels:
+          service_name: zoekt-indexserver
+          level: warning
+          name: resolve_revision_duration_slow
+          description: 'zoekt-indexserver: resolving revisions taking longer than 1s'
+        expr: >-
+          clamp_max(clamp_min(floor(
+          rate(resolve_revisions_seconds_sum[5m]) / 1
+          ), 0), 1)

@@ -91,13 +91,13 @@ func initAuthz() {
 			log15.Error("Error reading license key for Sourcegraph subscription.", "err", err)
 			return []*graphqlbackend.Alert{{
 				TypeValue:    graphqlbackend.AlertTypeError,
-				MessageValue: "Error reading Sourcegraph license key. Check the logs for more information, or update the license key in the management console (https://docs.sourcegraph.com/admin/management_console).",
+				MessageValue: "Error reading Sourcegraph license key. Check the logs for more information, or update the license key in the [**site configuration**](/site-admin/configuration).",
 			}}
 		}
 		if info != nil && info.IsExpiredWithGracePeriod() {
 			return []*graphqlbackend.Alert{{
 				TypeValue:    graphqlbackend.AlertTypeError,
-				MessageValue: "Sourcegraph license expired! All non-admin users are locked out of Sourcegraph. Update the license key in the management console (https://docs.sourcegraph.com/admin/management_console) or downgrade to only using Sourcegraph Core features.",
+				MessageValue: "Sourcegraph license expired! All non-admin users are locked out of Sourcegraph. Update the license key in the [**site configuration**](/site-admin/configuration) or downgrade to only using Sourcegraph Core features.",
 			}}
 		}
 		return nil
@@ -117,11 +117,11 @@ func initAuthz() {
 			info, err := licensing.GetConfiguredProductLicenseInfo()
 			if err != nil {
 				log15.Error("Error reading license key for Sourcegraph subscription.", "err", err)
-				licensing.WriteSubscriptionErrorResponse(w, http.StatusInternalServerError, "Error reading Sourcegraph license key", "Site admins may check the logs for more information. Update the license key in the Sourcegraph management console (https://docs.sourcegraph.com/admin/management_console).")
+				licensing.WriteSubscriptionErrorResponse(w, http.StatusInternalServerError, "Error reading Sourcegraph license key", "Site admins may check the logs for more information. Update the license key in the [**site configuration**](/site-admin/configuration).")
 				return
 			}
 			if info != nil && info.IsExpiredWithGracePeriod() {
-				licensing.WriteSubscriptionErrorResponse(w, http.StatusForbidden, "Sourcegraph license expired", "To continue using Sourcegraph, a site admin must renew the Sourcegraph license (or downgrade to only using Sourcegraph Core features). Update the license key in the Sourcegraph management console.")
+				licensing.WriteSubscriptionErrorResponse(w, http.StatusForbidden, "Sourcegraph license expired", "To continue using Sourcegraph, a site admin must renew the Sourcegraph license (or downgrade to only using Sourcegraph Core features). Update the license key in the [**site configuration**](/site-admin/configuration).")
 				return
 			}
 

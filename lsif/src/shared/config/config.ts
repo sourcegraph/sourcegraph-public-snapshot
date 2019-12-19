@@ -110,12 +110,12 @@ async function loadConfiguration(): Promise<Configuration> {
     // Already parsed
     const serviceConnections = payload.ServiceConnections
     // Need to parse but must support comments + trailing commas
-    const critical = json5.parse(payload.Critical)
+    const site = json5.parse(payload.Site)
 
     return {
         gitServers: serviceConnections.gitServers,
         postgresDSN: serviceConnections.postgresDSN,
-        lightstepAccessToken: critical.lightstepAccessToken,
-        useJaeger: critical.useJaeger || false,
+        lightstepAccessToken: site.lightstepAccessToken,
+        useJaeger: site.useJaeger || false,
     }
 }

@@ -33,25 +33,25 @@ func init() {
 
 func parseConfig(cfg *conf.Unified) (ps map[schema.GitLabAuthProvider]providers.Provider, problems conf.Problems) {
 	ps = make(map[schema.GitLabAuthProvider]providers.Provider)
-	for _, pr := range cfg.Critical.AuthProviders {
+	for _, pr := range cfg.AuthProviders {
 		if pr.Gitlab == nil {
 			continue
 		}
 
-		if cfg.Critical.ExternalURL == "" {
-			problems = append(problems, conf.NewCriticalProblem("`externalURL` was empty and it is needed to determine the OAuth callback URL."))
+		if cfg.ExternalURL == "" {
+			problems = append(problems, conf.NewSiteProblem("`externalURL` was empty and it is needed to determine the OAuth callback URL."))
 			continue
 		}
-		externalURL, err := url.Parse(cfg.Critical.ExternalURL)
+		externalURL, err := url.Parse(cfg.ExternalURL)
 		if err != nil {
-			problems = append(problems, conf.NewCriticalProblem("Could not parse `externalURL`, which is needed to determine the OAuth callback URL."))
+			problems = append(problems, conf.NewSiteProblem("Could not parse `externalURL`, which is needed to determine the OAuth callback URL."))
 			continue
 		}
 		callbackURL := *externalURL
 		callbackURL.Path = "/.auth/gitlab/callback"
 
 		provider, providerMessages := parseProvider(callbackURL.String(), pr.Gitlab, pr)
-		problems = append(problems, conf.NewCriticalProblems(providerMessages...)...)
+		problems = append(problems, conf.NewSiteProblems(providerMessages...)...)
 		if provider != nil {
 			ps[*pr.Gitlab] = provider
 		}

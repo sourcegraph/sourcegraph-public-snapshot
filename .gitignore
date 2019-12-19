@@ -111,22 +111,6 @@ sourcegraph-webapp-*.tgz
 # Extensions
 /packages/sourcegraph-extension-api/dist
 
-# Management console
-cmd/management-console/web/package-lock.json
-cmd/management-console/assets/*.go
-!cmd/management-console/web/yarn.lock
-!cmd/management-console/assets/gen.go
-!cmd/management-console/assets/replace_hack.go
-!cmd/management-console/assets/assets.go
-cmd/management-console/assets/*.map
-cmd/management-console/assets/*.js
-cmd/management-console/assets/*.css
-cmd/management-console/assets/*.html
-cmd/management-console/assets/favicon.*.png
-cmd/management-console/web/src/favicon.png
-cmd/management-console/web/.cache
-cmd/management-console/assets/assets_vfsdata.go
-
 # Symbols service: PCRE extension to sqlite3
 libsqlite3-pcre.dylib
 libsqlite3-pcre.so

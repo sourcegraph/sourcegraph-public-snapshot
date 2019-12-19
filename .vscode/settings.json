@@ -8,7 +8,6 @@
     "browser/build": true,
     "**/coverage": true,
     "**/out": true,
-    "/cmd/management-console/assets/": true,
     "**/__fixtures__/**": true,
     "**/.cache": true,
   },
@@ -19,7 +18,7 @@
   "json.schemas": [
     {
       "fileMatch": ["dev/critical-config.json"],
-      "url": "/schema/critical.schema.json",
+      "url": "/schema/critical/critical.schema.json",
     },
     {
       "fileMatch": ["dev/site-config.json"],
@@ -61,10 +60,6 @@
     },
     {
       "directory": "web",
-      "changeProcessCWD": true,
-    },
-    {
-      "directory": "cmd/management-console/web",
       "changeProcessCWD": true,
     },
     {

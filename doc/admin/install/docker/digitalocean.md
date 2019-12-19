@@ -16,7 +16,7 @@ If you're just starting out, we recommend [installing Sourcegraph locally](index
 1. Run the Sourcegraph Docker image as a daemon:
 
    ```
-   docker run -d --publish 80:7080 --publish 443:7443 --publish 2633:2633 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.10.4
+   docker run -d --publish 80:7080 --publish 443:7443 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.10.4
    ```
 1. Navigate to the droplet's IP address to finish initializing Sourcegraph. If you have configured a
    DNS entry for the IP, configure `externalURL` to reflect that.
@@ -26,10 +26,7 @@ If you're just starting out, we recommend [installing Sourcegraph locally](index
 After initial setup, we recommend you do the following:
 
 * Restrict the accessibility of ports other than `80` and `443` via [Cloud
-  Firewalls](https://www.digitalocean.com/docs/networking/firewalls/quickstart/). In particular, you
-  should secure port `2633`, because this serves the Sourcegraph management console. We recommend
-  you use [SSH port forwarding](https://help.ubuntu.com/community/SSH/OpenSSH/PortForwarding) to
-  access the management console after restricting it.
+  Firewalls](https://www.digitalocean.com/docs/networking/firewalls/quickstart/).
 * Set up [TLS/SSL](../../nginx.md#nginx-ssl-https-configuration) in the NGINX configuration.
 
 ---

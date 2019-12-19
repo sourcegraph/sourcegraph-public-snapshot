@@ -44,6 +44,16 @@ type PreviewCampaignPlanArgs struct {
 	Wait bool
 }
 
+type CreateCampaignPlanFromPatchesArgs struct {
+	Patches []CampaignPlanPatch
+}
+
+type CampaignPlanPatch struct {
+	Repository   graphql.ID
+	BaseRevision string
+	Patch        string
+}
+
 type CancelCampaignPlanArgs struct {
 	Plan graphql.ID
 }
@@ -85,6 +95,7 @@ type A8NResolver interface {
 	AddChangesetsToCampaign(ctx context.Context, args *AddChangesetsToCampaignArgs) (CampaignResolver, error)
 
 	PreviewCampaignPlan(ctx context.Context, args PreviewCampaignPlanArgs) (CampaignPlanResolver, error)
+	CreateCampaignPlanFromPatches(ctx context.Context, args CreateCampaignPlanFromPatchesArgs) (CampaignPlanResolver, error)
 	CampaignPlanByID(ctx context.Context, id graphql.ID) (CampaignPlanResolver, error)
 	CancelCampaignPlan(ctx context.Context, args CancelCampaignPlanArgs) (*EmptyResponse, error)
 }
@@ -103,6 +114,13 @@ func (r *schemaResolver) PreviewCampaignPlan(ctx context.Context, args PreviewCa
 		return nil, a8nOnlyInEnterprise
 	}
 	return EnterpriseResolvers.a8nResolver.PreviewCampaignPlan(ctx, args)
+}
+
+func (r *schemaResolver) CreateCampaignPlanFromPatches(ctx context.Context, args CreateCampaignPlanFromPatchesArgs) (CampaignPlanResolver, error) {
+	if EnterpriseResolvers.a8nResolver == nil {
+		return nil, a8nOnlyInEnterprise
+	}
+	return EnterpriseResolvers.a8nResolver.CreateCampaignPlanFromPatches(ctx, args)
 }
 
 func (r *schemaResolver) CancelCampaignPlan(ctx context.Context, args CancelCampaignPlanArgs) (*EmptyResponse, error) {

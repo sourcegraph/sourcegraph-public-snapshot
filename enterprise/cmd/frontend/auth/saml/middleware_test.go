@@ -176,9 +176,7 @@ func TestMiddleware(t *testing.T) {
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
 			ExperimentalFeatures: &schema.ExperimentalFeatures{},
-		},
-		Critical: schema.CriticalConfiguration{
-			ExternalURL: "http://example.com",
+			ExternalURL:          "http://example.com",
 		},
 	})
 	defer conf.Mock(nil)

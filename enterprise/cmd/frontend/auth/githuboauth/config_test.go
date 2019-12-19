@@ -35,7 +35,7 @@ func Test_parseConfig(t *testing.T) {
 		},
 		{
 			name: "1 GitHub.com config",
-			args: args{cfg: &conf.Unified{Critical: schema.CriticalConfiguration{
+			args: args{cfg: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
 				AuthProviders: []schema.AuthProviders{{
 					Github: &schema.GitHubAuthProvider{
 						ClientID:     "my-client-id",
@@ -66,7 +66,7 @@ func Test_parseConfig(t *testing.T) {
 		},
 		{
 			name: "2 GitHub configs",
-			args: args{cfg: &conf.Unified{Critical: schema.CriticalConfiguration{
+			args: args{cfg: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
 				AuthProviders: []schema.AuthProviders{{
 					Github: &schema.GitHubAuthProvider{
 						ClientID:     "my-client-id",
