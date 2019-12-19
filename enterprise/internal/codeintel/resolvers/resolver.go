@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/client"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 type Resolver struct{}
@@ -27,7 +26,7 @@ func (r *Resolver) LSIFDumpByID(ctx context.Context, id graphql.ID) (graphqlback
 		return nil, err
 	}
 
-	repo, err := backend.Repos.GetByName(ctx, api.RepoName(repoName))
+	repositoryResolver, err := resolveRepository(ctx, repoName)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +42,7 @@ func (r *Resolver) LSIFDumpByID(ctx context.Context, id graphql.ID) (graphqlback
 		return nil, err
 	}
 
-	return &lsifDumpResolver{repo: repo, lsifDump: lsifDump}, nil
+	return &lsifDumpResolver{repositoryResolver: repositoryResolver, lsifDump: lsifDump}, nil
 }
 
 func (r *Resolver) DeleteLSIFDump(ctx context.Context, id graphql.ID) (*graphqlbackend.EmptyResponse, error) {
