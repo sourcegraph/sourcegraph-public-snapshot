@@ -302,7 +302,7 @@ func TestClient_Users(t *testing.T) {
 func TestClient_LabeledRepos(t *testing.T) {
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
-		instanceURL = "http://127.0.0.1:7990"
+		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
 	cli, save := NewTestClient(t, "LabeledRepos", *update)
@@ -328,7 +328,7 @@ func TestClient_LabeledRepos(t *testing.T) {
 func TestClient_LoadPullRequest(t *testing.T) {
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
-		instanceURL = "http://127.0.0.1:7990"
+		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
 	cli, save := NewTestClient(t, "PullRequests", *update)
@@ -421,7 +421,7 @@ func TestClient_LoadPullRequest(t *testing.T) {
 func TestClient_CreatePullRequest(t *testing.T) {
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
-		instanceURL = "http://127.0.0.1:7990"
+		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
 	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
@@ -564,7 +564,7 @@ func TestClient_CreatePullRequest(t *testing.T) {
 func TestClient_DeclinePullRequest(t *testing.T) {
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
-		instanceURL = "http://127.0.0.1:7990"
+		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
 	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
@@ -648,7 +648,7 @@ func TestClient_DeclinePullRequest(t *testing.T) {
 func TestClient_LoadPullRequestActivities(t *testing.T) {
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
-		instanceURL = "http://127.0.0.1:7990"
+		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
 	cli, save := NewTestClient(t, "PullRequestActivities", *update)
