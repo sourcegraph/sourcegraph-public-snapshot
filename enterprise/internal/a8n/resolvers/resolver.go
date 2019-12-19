@@ -691,10 +691,13 @@ func (r *Resolver) PublishChangesetPlan(ctx context.Context, args *graphqlbacken
 	}
 
 	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
-	// TODO(a8n): What if a ChangesetJob already exists? Return error?
 	changesetJob, campaign, err := svc.CreateChangesetJobForCampaignJob(ctx, campaignJobID)
 	if err != nil {
 		return nil, err
+	}
+
+	if changesetJob.SuccessfullyCompleted() {
+		return &graphqlbackend.EmptyResponse{}, nil
 	}
 
 	go func() {

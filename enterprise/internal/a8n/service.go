@@ -619,8 +619,25 @@ func (s *Service) CreateChangesetJobForCampaignJob(ctx context.Context, id int64
 		return nil, nil, err
 	}
 
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer tx.Done(&err)
+
+	existing, err := tx.GetChangesetJob(ctx, GetChangesetJobOpts{
+		CampaignID:    campaign.ID,
+		CampaignJobID: job.ID,
+	})
+	if existing != nil && err == nil {
+		return existing, campaign, nil
+	}
+	if err != nil && err != ErrNoResults {
+		return nil, nil, err
+	}
+
 	changesetJob := &a8n.ChangesetJob{CampaignID: campaign.ID, CampaignJobID: job.ID}
-	err = s.store.CreateChangesetJob(ctx, changesetJob)
+	err = tx.CreateChangesetJob(ctx, changesetJob)
 	if err != nil {
 		return nil, nil, err
 	}

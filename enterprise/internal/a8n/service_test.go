@@ -36,6 +36,9 @@ func TestService(t *testing.T) {
 		return now.UTC().Truncate(time.Microsecond)
 	}
 
+	gitClient := &dummyGitserverClient{response: "testresponse", responseErr: nil}
+	cf := httpcli.NewHTTPClientFactory()
+
 	u, err := db.Users.Create(ctx, db.NewUser{
 		Email:                 "thorsten@sourcegraph.com",
 		Username:              "thorsten",
@@ -147,9 +150,7 @@ func TestService(t *testing.T) {
 			NamespaceUserID: u.ID,
 			CampaignPlanID:  testPlan.ID,
 		}
-		gitClient := &dummyGitserverClient{response: "testresponse", responseErr: nil}
 
-		cf := httpcli.NewHTTPClientFactory()
 		svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
 		err = svc.CreateCampaign(ctx, campaign, false)
 		if err != nil {
@@ -207,9 +208,7 @@ func TestService(t *testing.T) {
 			NamespaceUserID: u.ID,
 			CampaignPlanID:  testPlan.ID,
 		}
-		gitClient := &dummyGitserverClient{response: "testresponse", responseErr: nil}
 
-		cf := httpcli.NewHTTPClientFactory()
 		svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
 		err = svc.CreateCampaign(ctx, campaign, true)
 		if err != nil {
@@ -234,6 +233,69 @@ func TestService(t *testing.T) {
 
 		if len(haveJobs) != 0 {
 			t.Errorf("wrong number of ChangesetJobs: %d. want=%d", len(haveJobs), 0)
+		}
+	})
+
+	t.Run("CreateChangesetJobForCampaignJob", func(t *testing.T) {
+		testPlan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
+		err = store.CreateCampaignPlan(ctx, testPlan)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		campaignJob := &a8n.CampaignJob{
+			CampaignPlanID: testPlan.ID,
+			RepoID:         int32(rs[0].ID),
+			Rev:            "deadbeef",
+			BaseRef:        "refs/heads/master",
+			Diff:           "cool diff",
+			StartedAt:      now,
+			FinishedAt:     now,
+		}
+		err := store.CreateCampaignJob(ctx, campaignJob)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		campaign := &a8n.Campaign{
+			Name:            "Testing Campaign",
+			Description:     "Testing Campaign",
+			AuthorID:        u.ID,
+			NamespaceUserID: u.ID,
+			CampaignPlanID:  testPlan.ID,
+		}
+
+		err = store.CreateCampaign(ctx, campaign)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
+		changesetJob, _, err := svc.CreateChangesetJobForCampaignJob(ctx, campaignJob.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		haveJob, err := store.GetChangesetJob(ctx, GetChangesetJobOpts{
+			CampaignID:    campaign.ID,
+			CampaignJobID: campaignJob.ID,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if changesetJob.ID != haveJob.ID {
+			t.Errorf("wrong changesetJob: %d. want=%d", changesetJob.ID, haveJob.ID)
+		}
+
+		// Try to create again, check that it's the same one
+		changesetJob2, _, err := svc.CreateChangesetJobForCampaignJob(ctx, campaignJob.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if changesetJob2.ID != haveJob.ID {
+			t.Errorf("wrong changesetJob: %d. want=%d", changesetJob2.ID, haveJob.ID)
 		}
 	})
 }
