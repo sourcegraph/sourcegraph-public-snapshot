@@ -3,7 +3,6 @@ package resolvers
 import (
 	"context"
 	"encoding/base64"
-	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -38,12 +37,10 @@ func (r *locationConnectionResolver) Nodes(ctx context.Context) ([]graphqlbacken
 	for _, location := range r.locations {
 		treeResolver, err := collectionResolver.resolve(ctx, location.Repository, location.Commit, location.Path)
 		if err != nil {
-			// TODO - multi error instead?
 			return nil, err
 		}
 
 		if treeResolver == nil {
-			fmt.Printf("No resolvable tree for location %s/%s/%s\n", location.Repository, location.Commit, location.Path)
 			continue
 		}
 
