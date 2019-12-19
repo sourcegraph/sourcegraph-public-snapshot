@@ -673,8 +673,8 @@ func (r *Resolver) PublishCampaign(ctx context.Context, args *graphqlbackend.Pub
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
 
-func (r *Resolver) PublishChangesetPlan(ctx context.Context, args *graphqlbackend.PublishChangesetPlanArgs) (_ *graphqlbackend.EmptyResponse, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.PublishChangesetPlan", fmt.Sprintf("ChangesetPlan: %q", args.ChangesetPlan))
+func (r *Resolver) PublishChangeset(ctx context.Context, args *graphqlbackend.PublishChangesetArgs) (_ *graphqlbackend.EmptyResponse, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.PublishChangeset", fmt.Sprintf("ChangesetPlan: %q", args.ChangesetPlan))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()

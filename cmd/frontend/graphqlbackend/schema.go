@@ -104,7 +104,7 @@ type Mutation {
     # to a Campaign. Otherwise an error is returned.
     # Since this is an asynchronous operation, the Campaign.status field can be
     # used to keep track of progress.
-    publishChangesetPlan(changesetPlan: ID!): EmptyResponse!
+    publishChangeset(changesetPlan: ID!): EmptyResponse!
 
     # Updates the user profile information for the user with the given ID.
     #

@@ -84,7 +84,7 @@ type PublishCampaignArgs struct {
 	Campaign graphql.ID
 }
 
-type PublishChangesetPlanArgs struct {
+type PublishChangesetArgs struct {
 	ChangesetPlan graphql.ID
 }
 
@@ -97,7 +97,7 @@ type A8NResolver interface {
 	RetryCampaign(ctx context.Context, args *RetryCampaignArgs) (CampaignResolver, error)
 	CloseCampaign(ctx context.Context, args *CloseCampaignArgs) (CampaignResolver, error)
 	PublishCampaign(ctx context.Context, args *PublishCampaignArgs) (CampaignResolver, error)
-	PublishChangesetPlan(ctx context.Context, args *PublishChangesetPlanArgs) (*EmptyResponse, error)
+	PublishChangeset(ctx context.Context, args *PublishChangesetArgs) (*EmptyResponse, error)
 
 	CreateChangesets(ctx context.Context, args *CreateChangesetsArgs) ([]ExternalChangesetResolver, error)
 	ChangesetByID(ctx context.Context, id graphql.ID) (ExternalChangesetResolver, error)
@@ -185,11 +185,11 @@ func (r *schemaResolver) PublishCampaign(ctx context.Context, args *PublishCampa
 	return EnterpriseResolvers.a8nResolver.PublishCampaign(ctx, args)
 }
 
-func (r *schemaResolver) PublishChangesetPlan(ctx context.Context, args *PublishChangesetPlanArgs) (*EmptyResponse, error) {
+func (r *schemaResolver) PublishChangeset(ctx context.Context, args *PublishChangesetArgs) (*EmptyResponse, error) {
 	if EnterpriseResolvers.a8nResolver == nil {
 		return nil, a8nOnlyInEnterprise
 	}
-	return EnterpriseResolvers.a8nResolver.PublishChangesetPlan(ctx, args)
+	return EnterpriseResolvers.a8nResolver.PublishChangeset(ctx, args)
 }
 
 func (r *schemaResolver) Campaigns(ctx context.Context, args *graphqlutil.ConnectionArgs) (CampaignsConnectionResolver, error) {
