@@ -128,6 +128,9 @@ func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, queryStr
 		TotalMaxImportantMatch: match * 25,
 		MaxDocDisplayCount:     match,
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	baseURI, err := gituri.Parse("git://" + string(commit.repo.repo.Name) + "?" + string(commit.oid))
 	for _, file := range resp.Files {
