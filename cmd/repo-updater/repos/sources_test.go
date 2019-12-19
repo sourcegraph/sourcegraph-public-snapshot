@@ -773,6 +773,45 @@ func TestSources_ListRepos(t *testing.T) {
 		})
 	}
 
+	{
+		svcs := ExternalServices{
+			{
+				Kind: "BITBUCKETSERVER",
+				Config: marshalJSON(t, &schema.BitbucketServerConnection{
+					Url:                   "https://bitbucket.sgdev.org",
+					Token:                 os.Getenv("BITBUCKET_SERVER_TOKEN"),
+					RepositoryPathPattern: "{repositorySlug}",
+					RepositoryQuery:       []string{"none"},
+					Repos:                 []string{"sour/vegeta", "PUBLIC/archived-repo"},
+				}),
+			},
+		}
+
+		testCases = append(testCases, testCase{
+			name: "bitbucketserver archived",
+			svcs: svcs,
+			assert: func(s *ExternalService) ReposAssertion {
+				return func(t testing.TB, rs Repos) {
+					t.Helper()
+
+					want := map[string]bool{
+						"vegeta":        false,
+						"archived-repo": true,
+					}
+					got := map[string]bool{}
+					for _, r := range rs {
+						got[r.Name] = r.Archived
+					}
+
+					if !reflect.DeepEqual(got, want) {
+						t.Error("mismatch archived state (-want +got):\n", cmp.Diff(want, got))
+					}
+				}
+			},
+			err: "<nil>",
+		})
+	}
+
 	for _, tc := range testCases {
 		tc := tc
 		for _, svc := range tc.svcs {
