@@ -33,7 +33,6 @@ func (r *GitTreeEntryResolver) Symbols(ctx context.Context, args *symbolsArgs) (
 
 func (r *GitCommitResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
 	symbols, err := computeSymbols(ctx, r, args.Query, args.First, args.IncludePatterns)
-	//symbols, err := searchZoektSymbols(ctx, r, args.Query, args.First, args.IncludePatterns)
 	if err != nil && len(symbols) == 0 {
 		return nil, err
 	}
