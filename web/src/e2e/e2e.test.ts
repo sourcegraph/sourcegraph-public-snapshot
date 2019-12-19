@@ -1623,7 +1623,6 @@ describe('e2e test suite', () => {
             await driver.page.goto(sourcegraphBaseUrl + '/search?repo=gorilla/mux&q=&patternType=literal')
             await driver.page.waitForSelector('.e2e-filter-input__delete-button', { visible: true })
             await driver.page.click('.e2e-filter-input__delete-button')
-            await driver.page.click('.e2e-search-button')
             await driver.assertWindowLocation('/search?q=&patternType=literal')
 
             // Test suggestions
