@@ -1404,7 +1404,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					t.Fatal(err)
 				}
 
-				have, want = have, campaignJobs // All CampaignJobs
+				want = campaignJobs // All CampaignJobs
 				if len(have) != len(want) {
 					t.Fatalf("listed %d campaignJobs, want: %d", len(have), len(want))
 				}
