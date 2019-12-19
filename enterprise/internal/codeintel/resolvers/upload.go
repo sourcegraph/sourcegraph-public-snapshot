@@ -25,10 +25,7 @@ func (r *lsifUploadResolver) ID() graphql.ID {
 }
 
 func (r *lsifUploadResolver) ProjectRoot(ctx context.Context) (*graphqlbackend.GitTreeEntryResolver, error) {
-	return resolvePath(ctx, r.lsifUpload.Repository,
-		r.lsifUpload.Commit,
-		r.lsifUpload.Root,
-	)
+	return resolvePath(ctx, r.lsifUpload.Repository, r.lsifUpload.Commit, r.lsifUpload.Root)
 }
 
 func (r *lsifUploadResolver) InputRepoName() string {
