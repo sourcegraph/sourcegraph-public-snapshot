@@ -122,7 +122,15 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
 
                         <div className="file-match-children__item-badge-row">
                             {item.badge && (
-                                <BadgeDecorationAttachment attachment={item.badge} isLightTheme={props.isLightTheme} />
+                                // This div is necessary: it has block display, where the badge row
+                                // has flex display and would cause the hover tooltip to be offset
+                                // in a weird way (centered in the code context, not on the icon).
+                                <div>
+                                    <BadgeDecorationAttachment
+                                        attachment={item.badge}
+                                        isLightTheme={props.isLightTheme}
+                                    />
+                                </div>
                             )}
                         </div>
                     </div>
