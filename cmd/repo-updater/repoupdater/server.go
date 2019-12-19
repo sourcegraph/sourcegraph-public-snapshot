@@ -372,12 +372,6 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 			respond(w, http.StatusInternalServerError, err)
 		}
 
-	case <-time.After(10 * time.Second):
-		respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{
-			ExternalService: req.ExternalService,
-			Error:           "warning: took longer than 10s to verify config against code host. Please monitor repo-updater logs.",
-		})
-
 	case <-ctx.Done():
 		// client is gone
 		return
