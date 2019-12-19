@@ -42,7 +42,7 @@ func resolveCommitFrom(ctx context.Context, repositoryResolver *graphqlbackend.R
 // returned unmodified.
 func resolvePath(ctx context.Context, repoName, commit, path string) (*graphqlbackend.GitTreeEntryResolver, error) {
 	commitResolver, err := resolveCommit(ctx, repoName, commit)
-	if err != nil || commitResolver == nil {
+	if err != nil {
 		return nil, err
 	}
 
@@ -50,8 +50,11 @@ func resolvePath(ctx context.Context, repoName, commit, path string) (*graphqlba
 }
 
 // resolvePath returns the GitTreeResolver for the given commit resolver, and path. If the
-// commit does not exist for the repository, a nil resolver is returned. Any other error is
-// returned unmodified.
+// commit resolver is nil, a nil resolver is returned. Any other error is returned unmodified.
 func resolvePathFrom(ctx context.Context, commitResolver *graphqlbackend.GitCommitResolver, path string) (*graphqlbackend.GitTreeEntryResolver, error) {
+	if commitResolver == nil {
+		return nil, nil
+	}
+
 	return graphqlbackend.NewGitTreeEntryResolver(commitResolver, graphqlbackend.CreateFileInfo(path, true)), nil
 }
