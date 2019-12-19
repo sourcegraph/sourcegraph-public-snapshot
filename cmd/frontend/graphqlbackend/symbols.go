@@ -3,9 +3,12 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
+	"regexp/syntax"
 	"strings"
 	"time"
 
+	"github.com/google/zoekt"
+	zoektquery "github.com/google/zoekt/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -30,6 +33,7 @@ func (r *GitTreeEntryResolver) Symbols(ctx context.Context, args *symbolsArgs) (
 
 func (r *GitCommitResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
 	symbols, err := computeSymbols(ctx, r, args.Query, args.First, args.IncludePatterns)
+	//symbols, err := searchZoektSymbols(ctx, r, args.Query, args.First, args.IncludePatterns)
 	if err != nil && len(symbols) == 0 {
 		return nil, err
 	}
@@ -48,7 +52,87 @@ func limitOrDefault(first *int32) int {
 	return int(*first)
 }
 
+func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, queryString *string, first *int32, includePatterns *[]string) (res []*symbolResolver, err error) {
+	raw := *queryString
+	if raw == "" {
+		raw = ".*"
+	}
+
+	expr, err := syntax.Parse(raw, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
+	if err != nil {
+		return
+	}
+
+	var query zoektquery.Q
+	if expr.Op == syntax.OpLiteral {
+		query = &zoektquery.Substring{
+			Pattern: string(expr.Rune),
+			Content: true,
+		}
+	} else {
+		query = &zoektquery.Regexp{
+			Regexp:  expr,
+			Content: true,
+		}
+	}
+
+	sym := &zoektquery.Symbol{Expr: query}
+	repo := &zoektquery.RepoSet{Set: map[string]bool{
+		string(commit.repo.repo.Name): true,
+	}}
+	ands := []zoektquery.Q{repo, sym}
+	for _, p := range *includePatterns {
+		q, err := fileRe(p, true)
+		if err != nil {
+			return nil, err
+		}
+		ands = append(ands, q)
+	}
+
+	final := zoektquery.Simplify(zoektquery.NewAnd(ands...))
+	match := limitOrDefault(first) + 1
+	resp, err := search.Indexed().Client.Search(ctx, final, &zoekt.SearchOptions{
+		MaxWallTime:            3 * time.Second,
+		ShardMaxMatchCount:     match * 25,
+		TotalMaxMatchCount:     match * 25,
+		ShardMaxImportantMatch: match * 25,
+		TotalMaxImportantMatch: match * 25,
+		MaxDocDisplayCount:     match,
+	})
+
+	baseURI, err := gituri.Parse("git://" + string(commit.repo.repo.Name) + "?" + string(commit.oid))
+	for _, file := range resp.Files {
+		for _, l := range file.LineMatches {
+			if !l.FileName {
+				for _, m := range l.LineFragments {
+					if m.SymbolInfo != nil {
+						res = append(res, toSymbolResolver(
+							protocol.Symbol{
+								Name:       m.SymbolInfo.Sym,
+								Kind:       m.SymbolInfo.Kind,
+								Parent:     m.SymbolInfo.Parent,
+								ParentKind: m.SymbolInfo.ParentKind,
+								Path:       file.FileName,
+								Line:       l.LineNumber,
+							},
+							baseURI,
+							strings.ToLower(file.Language),
+							commit,
+						))
+					}
+				}
+			}
+		}
+	}
+	return
+}
+
 func computeSymbols(ctx context.Context, commit *GitCommitResolver, query *string, first *int32, includePatterns *[]string) (res []*symbolResolver, err error) {
+	client := search.Indexed()
+	if client.Enabled() && client.Indexed(commit) {
+		return searchZoektSymbols(ctx, commit, query, first, includePatterns)
+	}
+
 	ctx, done := context.WithTimeout(ctx, 5*time.Second)
 	defer done()
 	defer func() {
@@ -60,6 +144,7 @@ func computeSymbols(ctx context.Context, commit *GitCommitResolver, query *strin
 	if includePatterns != nil {
 		includePatternsSlice = *includePatterns
 	}
+
 	searchArgs := search.SymbolsParameters{
 		CommitID:        api.CommitID(commit.oid),
 		First:           limitOrDefault(first) + 1, // add 1 so we can determine PageInfo.hasNextPage
