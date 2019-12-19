@@ -67,7 +67,7 @@ func indexedSymbols(commit *GitCommitResolver) bool {
 		return false
 	}
 
-	repo, ok := set[string(commit.repo.repo.Name)]
+	repo, ok := set[strings.ToLower(string(commit.repo.repo.Name))]
 	if !ok || !repo.HasSymbols {
 		return false
 	}
