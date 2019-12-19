@@ -176,10 +176,11 @@ func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign, draft boo
 
 func (s *Service) createChangesetJobsWithStore(ctx context.Context, store *Store, c *a8n.Campaign) error {
 	jobs, _, err := store.ListCampaignJobs(ctx, ListCampaignJobsOpts{
-		CampaignPlanID: c.CampaignPlanID,
-		Limit:          -1,
-		OnlyFinished:   true,
-		OnlyWithDiff:   true,
+		CampaignPlanID:            c.CampaignPlanID,
+		Limit:                     -1,
+		OnlyFinished:              true,
+		OnlyWithDiff:              true,
+		OnlyUnpublishedInCampaign: c.ID,
 	})
 	if err != nil {
 		return err
