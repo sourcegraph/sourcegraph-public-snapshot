@@ -1,6 +1,6 @@
 # Search examples
 
-Below are examples that search repositories on [Sourcegraph.com](https://sourcegraph.com/search), our open source code search solution for GitHub, but you can copy and adapt the following search queries for use on your company’s private instance.
+Below are examples that search repositories on [Sourcegraph.com](https://sourcegraph.com/search), our open source code search solution for GitHub and GitLab. You can copy and adapt the following search queries for use on your company’s private instance.
 
 > See [**search query syntax**](queries.md) reference.
 
