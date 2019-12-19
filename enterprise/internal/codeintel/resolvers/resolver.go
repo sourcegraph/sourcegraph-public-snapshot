@@ -211,6 +211,10 @@ func (r *Resolver) LSIF(ctx context.Context, args *graphqlbackend.LSIFQueryArgs)
 		return nil, err
 	}
 
+	if dump == nil {
+		return nil, nil
+	}
+
 	return &lsifQueryResolver{
 		repoName: args.RepoName,
 		commit:   args.Commit,
