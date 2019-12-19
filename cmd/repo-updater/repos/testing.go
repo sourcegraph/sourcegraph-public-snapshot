@@ -197,6 +197,9 @@ func (s FakeStore) GetRepoByName(ctx context.Context, name string) (*Repo, error
 	}
 
 	for _, r := range s.repoByID {
+		if r.IsDeleted() {
+			continue
+		}
 		if r.Name == name {
 			return r, nil
 		}
@@ -238,6 +241,10 @@ func (s FakeStore) ListRepos(ctx context.Context, args StoreListReposArgs) ([]*R
 			continue
 		}
 
+		if r.IsDeleted() {
+			continue
+		}
+
 		var preds []bool
 		if len(kinds) > 0 {
 			preds = append(preds, kinds[strings.ToLower(r.ExternalRepo.ServiceType)])
@@ -276,7 +283,9 @@ func (s FakeStore) ListAllRepoNames(ctx context.Context) ([]api.RepoName, error)
 
 	names := make([]api.RepoName, 0, len(s.repoByID))
 	for _, r := range s.repoByID {
-		names = append(names, api.RepoName(r.Name))
+		if !r.IsDeleted() {
+			names = append(names, api.RepoName(r.Name))
+		}
 	}
 
 	return names, nil
@@ -313,20 +322,16 @@ func (s *FakeStore) UpsertRepos(ctx context.Context, upserts ...*Repo) error {
 		s.repoByID = make(map[uint32]*Repo, len(upserts))
 	}
 
-	var deletes, updates, inserts []*Repo
+	var updates, inserts []*Repo
 	for _, r := range upserts {
-		switch {
-		case r.IsDeleted():
-			deletes = append(deletes, r)
-		case r.ID != 0:
+		if r.ID != 0 {
 			updates = append(updates, r)
-		default:
+		} else if r2, ok := s.byExternalID(r.ExternalRepo); ok {
+			r.ID = r2.ID
+			updates = append(updates, r)
+		} else {
 			inserts = append(inserts, r)
 		}
-	}
-
-	for _, r := range deletes {
-		delete(s.repoByID, r.ID)
 	}
 
 	for _, r := range updates {
@@ -334,7 +339,7 @@ func (s *FakeStore) UpsertRepos(ctx context.Context, upserts ...*Repo) error {
 		if repo == nil {
 			return errors.Errorf("upserting repo with non-existant ID: id=%v", r.ID)
 		}
-		repo.Update(r)
+		s.repoByID[r.ID] = r
 	}
 
 	for _, r := range inserts {
@@ -344,6 +349,15 @@ func (s *FakeStore) UpsertRepos(ctx context.Context, upserts ...*Repo) error {
 	}
 
 	return s.checkConstraints()
+}
+
+func (s *FakeStore) byExternalID(eid api.ExternalRepoSpec) (*Repo, bool) {
+	for _, r := range s.repoByID {
+		if r.ExternalRepo.IsSet() && r.ExternalRepo == eid {
+			return r, true
+		}
+	}
+	return nil, false
 }
 
 // checkConstraints ensures the FakeStore has not violated any constraints we
@@ -356,15 +370,18 @@ func (s *FakeStore) checkConstraints() error {
 	seenName := map[string]bool{}
 	seenExternalRepo := map[api.ExternalRepoSpec]bool{}
 	for _, r := range s.repoByID {
+		if r.ExternalRepo.IsSet() && seenExternalRepo[r.ExternalRepo] {
+			return errors.Errorf("duplicate external repo spec: %v", r.ExternalRepo)
+		}
+		seenExternalRepo[r.ExternalRepo] = true
+		if r.IsDeleted() {
+			continue
+		}
 		name := strings.ToLower(r.Name)
 		if seenName[name] {
 			return errors.Errorf("duplicate repo name: %s", name)
 		}
 		seenName[name] = true
-		if r.ExternalRepo.IsSet() && seenExternalRepo[r.ExternalRepo] {
-			return errors.Errorf("duplicate external repo spec: %v", r.ExternalRepo)
-		}
-		seenExternalRepo[r.ExternalRepo] = true
 	}
 	return nil
 }
