@@ -2013,6 +2013,25 @@ func testStore(db *sql.DB) func(*testing.T) {
 					}
 				})
 
+				t.Run("ByCampaignID", func(t *testing.T) {
+					if len(changesetJobs) == 0 {
+						t.Fatal("changesetJobs is empty")
+					}
+					// Use the last changesetJob, which we don't get by
+					// accident when selecting all with LIMIT 1
+					want := changesetJobs[2]
+					opts := GetChangesetJobOpts{CampaignID: want.CampaignID}
+
+					have, err := s.GetChangesetJob(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
+					}
+				})
+
 				t.Run("NoResults", func(t *testing.T) {
 					opts := GetChangesetJobOpts{ID: 0xdeadbeef}
 

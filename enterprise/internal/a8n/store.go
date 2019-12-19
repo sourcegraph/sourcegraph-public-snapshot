@@ -2075,6 +2075,7 @@ func countChangesetJobsQuery(opts *CountChangesetJobsOpts) *sqlf.Query {
 type GetChangesetJobOpts struct {
 	ID            int64
 	CampaignJobID int64
+	CampaignID    int64
 	ChangesetID   int64
 }
 
@@ -2118,6 +2119,10 @@ func getChangesetJobQuery(opts *GetChangesetJobOpts) *sqlf.Query {
 	var preds []*sqlf.Query
 	if opts.ID != 0 {
 		preds = append(preds, sqlf.Sprintf("id = %s", opts.ID))
+	}
+
+	if opts.CampaignID != 0 {
+		preds = append(preds, sqlf.Sprintf("campaign_id = %s", opts.CampaignID))
 	}
 
 	if opts.CampaignJobID != 0 {
