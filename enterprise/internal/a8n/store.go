@@ -1891,7 +1891,7 @@ func listCampaignJobsQuery(opts *ListCampaignJobsOpts) *sqlf.Query {
 
 var onlyUnpublishedInCampaignQueryFmtstr = `
 NOT EXISTS (
-  SELECT *
+  SELECT 1
   FROM changeset_jobs
   WHERE
     campaign_job_id = campaign_jobs.id
