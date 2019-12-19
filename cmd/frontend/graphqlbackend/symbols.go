@@ -51,6 +51,9 @@ func limitOrDefault(first *int32) int {
 	return int(*first)
 }
 
+// indexedSymbols checks to see if Zoekt has indexed
+// symbols information for a repository at a specific
+// commit.
 func indexedSymbols(commit *GitCommitResolver) bool {
 	z := search.Indexed()
 	if !z.Enabled() {
