@@ -49,6 +49,10 @@ export function createFileActionsToolbarMount(codeView: HTMLElement): HTMLElemen
         throw new Error('Could not find GitHub file actions with selector .file-actions')
     }
 
+    // Add a class to the .file-actions element, so that we can reliably match it in
+    // stylesheets without bleeding CSS to other code hosts (GitLab also uses .file-actions elements).
+    fileActions.classList.add('sg-github-file-actions')
+
     // Old GitHub Enterprise PR views have a "☑ show comments" text that we want to insert *after*
     const showCommentsElement = codeView.querySelector('.show-file-notes')
     if (showCommentsElement) {
