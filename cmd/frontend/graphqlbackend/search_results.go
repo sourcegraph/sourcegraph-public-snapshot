@@ -821,7 +821,7 @@ func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, cont
 	return ctx, cancel, nil
 }
 
-func (r *searchResolver) determineResultTypes(args search.Args, forceOnlyResultType string) (resultTypes []string, seenResultTypes map[string]struct{}) {
+func (r *searchResolver) determineResultTypes(args search.TextParameters, forceOnlyResultType string) (resultTypes []string, seenResultTypes map[string]struct{}) {
 	// Determine which types of results to return.
 	if forceOnlyResultType != "" {
 		resultTypes = []string{forceOnlyResultType}
@@ -869,7 +869,7 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 
 // Surface an alert if a query exceeds limits that we place on search. Currently limits
 // diff and commit searches where more than repoLimit repos need to be searched.
-func alertOnSearchLimit(resultTypes []string, args *search.Args) ([]string, *searchAlert) {
+func alertOnSearchLimit(resultTypes []string, args *search.TextParameters) ([]string, *searchAlert) {
 	var alert *searchAlert
 	repoLimit := 50
 	if len(args.Repos) > repoLimit {
@@ -959,7 +959,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	if err != nil {
 		return nil, err
 	}
-	args := search.Args{
+	args := search.TextParameters{
 		PatternInfo:     p,
 		Repos:           repos,
 		Query:           r.query,

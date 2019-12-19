@@ -749,7 +749,7 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 	if err != nil {
 		return nil, err
 	}
-	args := search.Args{
+	args := search.TextParameters{
 		PatternInfo:     p,
 		Repos:           repos,
 		Query:           r.query,

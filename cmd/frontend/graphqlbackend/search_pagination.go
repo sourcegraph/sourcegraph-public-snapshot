@@ -144,7 +144,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	if err != nil {
 		return nil, err
 	}
-	args := search.Args{
+	args := search.TextParameters{
 		PatternInfo:     p,
 		Repos:           repos,
 		Query:           r.query,
@@ -243,7 +243,7 @@ func repoIsLess(i, j *types.Repo) bool {
 //    top of the penalty we incur from the larger `count:` mentioned in point
 //    2 above (in the worst case scenario).
 //
-func paginatedSearchFilesInRepos(ctx context.Context, args *search.Args, pagination *searchPaginationInfo) (*searchCursor, []SearchResultResolver, *searchResultsCommon, error) {
+func paginatedSearchFilesInRepos(ctx context.Context, args *search.TextParameters, pagination *searchPaginationInfo) (*searchCursor, []SearchResultResolver, *searchResultsCommon, error) {
 	plan := &repoPaginationPlan{
 		pagination:          pagination,
 		repositories:        args.Repos,
