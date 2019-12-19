@@ -143,6 +143,10 @@ func (r *campaignResolver) ChangesetPlans(
 	ctx context.Context,
 	args *graphqlutil.ConnectionArgs,
 ) graphqlbackend.ChangesetPlansConnectionResolver {
+	if r.Campaign.CampaignPlanID == 0 {
+		return &emptyChangesetPlansConnectionsResolver{}
+	}
+
 	resolver := &campaignJobsConnectionResolver{
 		store: r.store,
 		opts: ee.ListCampaignJobsOpts{
@@ -152,10 +156,6 @@ func (r *campaignResolver) ChangesetPlans(
 			OnlyWithDiff:   true,
 			// TODO: Only without ChangesetJob and Changeset
 		},
-	}
-
-	if r.Campaign.CampaignPlanID == 0 {
-		resolver.empty = true
 	}
 
 	return resolver
@@ -270,4 +270,18 @@ func (r *changesetDiffsConnectionResolver) Nodes(ctx context.Context) ([]*graphq
 		}
 	}
 	return resolvers, nil
+}
+
+type emptyChangesetPlansConnectionsResolver struct{}
+
+func (r *emptyChangesetPlansConnectionsResolver) Nodes(ctx context.Context) ([]graphqlbackend.ChangesetPlanResolver, error) {
+	return []graphqlbackend.ChangesetPlanResolver{}, nil
+}
+
+func (r *emptyChangesetPlansConnectionsResolver) TotalCount(ctx context.Context) (int32, error) {
+	return 0, nil
+}
+
+func (r *emptyChangesetPlansConnectionsResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	return graphqlutil.HasNextPage(false), nil
 }

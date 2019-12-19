@@ -78,10 +78,6 @@ type campaignJobsConnectionResolver struct {
 	store *ee.Store
 	opts  ee.ListCampaignJobsOpts
 
-	// when a campaign doesn't have a CampaignPlan we set this so we don't
-	// query the database for non-existent CampaignJobs
-	empty bool
-
 	// cache results because they are used by multiple fields
 	once      sync.Once
 	jobs      []*a8n.CampaignJob
@@ -91,10 +87,6 @@ type campaignJobsConnectionResolver struct {
 }
 
 func (r *campaignJobsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ChangesetPlanResolver, error) {
-	if r.empty {
-		return []graphqlbackend.ChangesetPlanResolver{}, nil
-	}
-
 	jobs, reposByID, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
@@ -140,10 +132,6 @@ func (r *campaignJobsConnectionResolver) compute(ctx context.Context) ([]*a8n.Ca
 }
 
 func (r *campaignJobsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	if r.empty {
-		return 0, nil
-	}
-
 	opts := ee.CountCampaignJobsOpts{
 		CampaignPlanID: r.opts.CampaignPlanID,
 		OnlyFinished:   r.opts.OnlyFinished,
@@ -154,10 +142,6 @@ func (r *campaignJobsConnectionResolver) TotalCount(ctx context.Context) (int32,
 }
 
 func (r *campaignJobsConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	if r.empty {
-		return graphqlutil.HasNextPage(false), nil
-	}
-
 	_, _, next, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
