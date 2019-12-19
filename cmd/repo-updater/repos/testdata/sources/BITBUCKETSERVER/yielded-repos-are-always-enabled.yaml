@@ -7,11 +7,10 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://127.0.0.1:7990/rest/api/1.0/repos?limit=1000
+    url: https://bitbucket.sgdev.org/rest/api/1.0/labels/archived/labeled?REPOSITORY=&limit=1000
     method: GET
   response:
-    body: '{"size":4,"limit":1000,"isLastPage":true,"values":[{"slug":"private-repo","id":3,"name":"private-repo","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":false,"project":{"key":"PRIVATE","id":3,"name":"Private","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/PRIVATE"}]}},"public":false,"links":{"clone":[{"href":"ssh://git@127.0.0.1:7999/private/private-repo.git","name":"ssh"},{"href":"http://127.0.0.1:7990/scm/private/private-repo.git","name":"http"}],"self":[{"href":"http://127.0.0.1:7990/projects/PRIVATE/repos/private-repo/browse"}]}},{"slug":"public-repo","id":2,"name":"public-repo","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":false,"project":{"key":"PUBLIC","id":4,"name":"Public","public":true,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/PUBLIC"}]}},"public":false,"links":{"clone":[{"href":"http://127.0.0.1:7990/scm/public/public-repo.git","name":"http"},{"href":"ssh://git@127.0.0.1:7999/public/public-repo.git","name":"ssh"}],"self":[{"href":"http://127.0.0.1:7990/projects/PUBLIC/repos/public-repo/browse"}]}},{"slug":"secret-repo","id":1,"name":"secret-repo","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":false,"project":{"key":"SECRET","id":1,"name":"Secret","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/SECRET"}]}},"public":false,"links":{"clone":[{"href":"http://127.0.0.1:7990/scm/secret/secret-repo.git","name":"http"},{"href":"ssh://git@127.0.0.1:7999/secret/secret-repo.git","name":"ssh"}],"self":[{"href":"http://127.0.0.1:7990/projects/SECRET/repos/secret-repo/browse"}]}},{"slug":"super-secret-repo","id":4,"name":"super-secret-repo","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":false,"project":{"key":"SUPERSECRET","id":2,"name":"Super
-      Secret","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/SUPERSECRET"}]}},"public":false,"links":{"clone":[{"href":"ssh://git@127.0.0.1:7999/supersecret/super-secret-repo.git","name":"ssh"},{"href":"http://127.0.0.1:7990/scm/supersecret/super-secret-repo.git","name":"http"}],"self":[{"href":"http://127.0.0.1:7990/projects/SUPERSECRET/repos/super-secret-repo/browse"}]}}],"start":0}'
+    body: '{"size":1,"limit":1000,"isLastPage":true,"values":[{"slug":"archived-repo","id":10073,"name":"archived-repo","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"PUBLIC","id":4,"name":"Public","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/PUBLIC"}]}},"public":false,"labelableType":"REPOSITORY","links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/public/archived-repo.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/PUBLIC/repos/archived-repo/browse"}]}}],"start":0}'
     headers:
       Cache-Control:
       - private, no-cache
@@ -19,23 +18,64 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 13 Jun 2019 09:29:13 GMT
+      - Thu, 19 Dec 2019 12:30:51 GMT
       Pragma:
       - no-cache
+      Server:
+      - Caddy
       Vary:
-      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      - X-AUSERNAME,Accept-Encoding
       X-Arequestid:
-      - '@1HRJN8Nx569x49x0'
+      - '@1JRK3O7x750x576555x0'
       X-Asen:
-      - SEN-14109642
+      - SEN-11363689
       X-Asessionid:
-      - 1ncq8z6
+      - 6c4vt
       X-Auserid:
       - "1"
       X-Ausername:
-      - admin
+      - milton
       X-Content-Type-Options:
       - nosniff
-    status: '200 '
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/repos?limit=1000&name=vegeta
+    method: GET
+  response:
+    body: '{"size":1,"limit":1000,"isLastPage":true,"values":[{"slug":"vegeta","id":2,"name":"vegeta","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/vegeta.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/vegeta/browse"}]}}],"start":0}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Thu, 19 Dec 2019 12:30:52 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - X-AUSERNAME,Accept-Encoding
+      X-Arequestid:
+      - '@1JRK3O7x750x576556x0'
+      X-Asen:
+      - SEN-11363689
+      X-Asessionid:
+      - 1vlkz4o
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - milton
+      X-Content-Type-Options:
+      - nosniff
+    status: 200 OK
     code: 200
     duration: ""

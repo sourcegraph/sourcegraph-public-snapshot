@@ -466,6 +466,7 @@ func (s *Store) loadUserPendingPermissionsIDs(ctx context.Context, q *sqlf.Query
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var id uint32
@@ -475,8 +476,11 @@ func (s *Store) loadUserPendingPermissionsIDs(ctx context.Context, q *sqlf.Query
 
 		ids = append(ids, id)
 	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
 
-	return ids, rows.Close()
+	return ids, nil
 }
 
 func (s *Store) batchLoadUserPendingPermissions(ctx context.Context, q *sqlf.Query) (
@@ -496,6 +500,7 @@ func (s *Store) batchLoadUserPendingPermissions(ctx context.Context, q *sqlf.Que
 	if err != nil {
 		return nil, nil, err
 	}
+	defer rows.Close()
 
 	bindIDSet = make(map[int32]string)
 	loaded = make(map[int32]*roaring.Bitmap)
@@ -519,8 +524,11 @@ func (s *Store) batchLoadUserPendingPermissions(ctx context.Context, q *sqlf.Que
 		}
 		loaded[id] = bm
 	}
+	if err = rows.Err(); err != nil {
+		return nil, nil, err
+	}
 
-	return bindIDSet, loaded, rows.Close()
+	return bindIDSet, loaded, nil
 }
 
 func insertUserPendingPermissionsBatchQuery(
@@ -968,6 +976,7 @@ func (s *Store) batchLoadIDs(ctx context.Context, q *sqlf.Query) (map[int32]*roa
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	loaded := make(map[int32]*roaring.Bitmap)
 	for rows.Next() {
@@ -987,8 +996,7 @@ func (s *Store) batchLoadIDs(ctx context.Context, q *sqlf.Query) (map[int32]*roa
 		}
 		loaded[objID] = bm
 	}
-
-	if err = rows.Close(); err != nil {
+	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 

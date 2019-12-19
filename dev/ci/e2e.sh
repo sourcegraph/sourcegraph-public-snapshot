@@ -17,20 +17,12 @@ if curl --output /dev/null --silent --head --fail $URL; then
 fi
 
 # Switch the default Docker host to the dedicated e2e testing host
-BUILD_DOCKER_HOST="$DOCKER_HOST"
-BUILD_DOCKER_PASSWORD="$DOCKER_PASSWORD"
-BUILD_DOCKER_USERNAME="$DOCKER_USERNAME"
 export DOCKER_HOST="$E2E_DOCKER_HOST"
 export DOCKER_PASSWORD="$E2E_DOCKER_PASSWORD"
 export DOCKER_USERNAME="$E2E_DOCKER_USERNAME"
 
 echo "--- Copying $IMAGE to the dedicated e2e testing node..."
-env \
-    DOCKER_HOST="$BUILD_DOCKER_HOST" \
-    DOCKER_PASSWORD="$BUILD_DOCKER_PASSWORD" \
-    DOCKER_USERNAME="$BUILD_DOCKER_USERNAME" \
-    docker save "$IMAGE" \
-    | docker load
+docker pull $IMAGE
 echo "Copying $IMAGE to the dedicated e2e testing node... done"
 
 echo "--- Running a daemonized $IMAGE as the test subject..."

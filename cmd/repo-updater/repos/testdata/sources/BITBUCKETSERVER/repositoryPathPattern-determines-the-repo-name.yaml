@@ -7,10 +7,10 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://127.0.0.1:7990/rest/api/1.0/projects/org/repos/baz
+    url: https://bitbucket.sgdev.org/rest/api/1.0/labels/archived/labeled?REPOSITORY=&limit=1000
     method: GET
   response:
-    body: '{"slug":"baz","id":3,"name":"baz","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"ORG","id":1,"name":"Org","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/ORG"}]}},"public":false,"links":{"clone":[{"href":"http://127.0.0.1:7990/scm/org/baz.git","name":"http"},{"href":"ssh://git@127.0.0.1:7999/org/baz.git","name":"ssh"}],"self":[{"href":"http://127.0.0.1:7990/projects/ORG/repos/baz/browse"}]}}'
+    body: '{"size":1,"limit":1000,"isLastPage":true,"values":[{"slug":"archived-repo","id":10073,"name":"archived-repo","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"PUBLIC","id":4,"name":"Public","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/PUBLIC"}]}},"public":false,"labelableType":"REPOSITORY","links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/public/archived-repo.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/PUBLIC/repos/archived-repo/browse"}]}}],"start":0}'
     headers:
       Cache-Control:
       - private, no-cache
@@ -18,23 +18,64 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Fri, 03 May 2019 14:24:40 GMT
+      - Thu, 19 Dec 2019 12:31:02 GMT
       Pragma:
       - no-cache
+      Server:
+      - Caddy
       Vary:
-      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      - X-AUSERNAME,Accept-Encoding
       X-Arequestid:
-      - '@1L780SNx864x45x0'
+      - '@1JRK3O7x751x576576x0'
       X-Asen:
-      - SEN-L13362690
+      - SEN-11363689
       X-Asessionid:
-      - bz04u2
+      - asqdk0
       X-Auserid:
       - "1"
       X-Ausername:
-      - admin
+      - milton
       X-Content-Type-Options:
       - nosniff
-    status: '200 '
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/sour/repos/vegeta
+    method: GET
+  response:
+    body: '{"slug":"vegeta","id":2,"name":"vegeta","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/vegeta.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/vegeta/browse"}]}}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Thu, 19 Dec 2019 12:31:02 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - X-AUSERNAME,Accept-Encoding
+      X-Arequestid:
+      - '@1JRK3O7x751x576577x0'
+      X-Asen:
+      - SEN-11363689
+      X-Asessionid:
+      - 16krl0h
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - milton
+      X-Content-Type-Options:
+      - nosniff
+    status: 200 OK
     code: 200
     duration: ""

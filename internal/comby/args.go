@@ -37,8 +37,8 @@ func (args Args) String() string {
 	case DirPath:
 		s = append(s, "-directory", string(i))
 	default:
+		s = append(s, fmt.Sprintf("~comby mccombyface is sad and can't handle type %T~", i))
 		log15.Error("unrecognized input type: %T", i)
-		panic("unreachable")
 	}
 
 	return strings.Join(s, " ")

@@ -85,7 +85,7 @@ func TestSearchResults(t *testing.T) {
 		db.Mocks.Repos.MockGetByName(t, "repo", 1)
 		db.Mocks.Repos.MockGet(t, 1)
 
-		mockSearchFilesInRepos = func(args *search.Args) ([]*FileMatchResolver, *searchResultsCommon, error) {
+		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error) {
 			return nil, &searchResultsCommon{repos: []*types.Repo{{ID: 1, Name: "repo"}}}, nil
 		}
 		defer func() { mockSearchFilesInRepos = nil }()
@@ -121,14 +121,14 @@ func TestSearchResults(t *testing.T) {
 		db.Mocks.Repos.MockGet(t, 1)
 
 		calledSearchRepositories := false
-		mockSearchRepositories = func(args *search.Args) ([]SearchResultResolver, *searchResultsCommon, error) {
+		mockSearchRepositories = func(args *search.TextParameters) ([]SearchResultResolver, *searchResultsCommon, error) {
 			calledSearchRepositories = true
 			return nil, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchRepositories = nil }()
 
 		calledSearchSymbols := false
-		mockSearchSymbols = func(ctx context.Context, args *search.Args, limit int) (res []*FileMatchResolver, common *searchResultsCommon, err error) {
+		mockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *searchResultsCommon, err error) {
 			calledSearchSymbols = true
 			if want := `(foo\d).*?(bar\*)`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
@@ -139,7 +139,7 @@ func TestSearchResults(t *testing.T) {
 		defer func() { mockSearchSymbols = nil }()
 
 		calledSearchFilesInRepos := false
-		mockSearchFilesInRepos = func(args *search.Args) ([]*FileMatchResolver, *searchResultsCommon, error) {
+		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error) {
 			calledSearchFilesInRepos = true
 			if want := `(foo\d).*?(bar\*)`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
@@ -193,14 +193,14 @@ func TestSearchResults(t *testing.T) {
 		db.Mocks.Repos.MockGet(t, 1)
 
 		calledSearchRepositories := false
-		mockSearchRepositories = func(args *search.Args) ([]SearchResultResolver, *searchResultsCommon, error) {
+		mockSearchRepositories = func(args *search.TextParameters) ([]SearchResultResolver, *searchResultsCommon, error) {
 			calledSearchRepositories = true
 			return nil, &searchResultsCommon{}, nil
 		}
 		defer func() { mockSearchRepositories = nil }()
 
 		calledSearchSymbols := false
-		mockSearchSymbols = func(ctx context.Context, args *search.Args, limit int) (res []*FileMatchResolver, common *searchResultsCommon, err error) {
+		mockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *searchResultsCommon, err error) {
 			calledSearchSymbols = true
 			if want := `"foo\\d \"bar*\""`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
@@ -211,7 +211,7 @@ func TestSearchResults(t *testing.T) {
 		defer func() { mockSearchSymbols = nil }()
 
 		calledSearchFilesInRepos := false
-		mockSearchFilesInRepos = func(args *search.Args) ([]*FileMatchResolver, *searchResultsCommon, error) {
+		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error) {
 			calledSearchFilesInRepos = true
 			if want := `foo\\d "bar\*"`; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
@@ -1168,7 +1168,7 @@ func Test_commitAndDiffSearchLimits(t *testing.T) {
 			}
 		}
 
-		haveResultTypes, alert := alertOnSearchLimit(test.resultTypes, &search.Args{
+		haveResultTypes, alert := alertOnSearchLimit(test.resultTypes, &search.TextParameters{
 			Repos: repoRevs,
 			Query: &query.Query{
 				Query: &searchquerytypes.Query{

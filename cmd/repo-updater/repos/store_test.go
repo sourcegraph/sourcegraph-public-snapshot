@@ -827,15 +827,6 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 		})
 	}
 
-	{
-		stored := repositories.With(repos.Opt.RepoDeletedAt(now))
-		testCases = append(testCases, testCase{
-			name:   "excludes deleted repos",
-			stored: stored,
-			repos:  repos.Assert.ReposEqual(),
-		})
-	}
-
 	testCases = append(testCases, testCase{
 		name:   "returns repos in ascending order by id",
 		stored: mkRepos(7, repositories...),

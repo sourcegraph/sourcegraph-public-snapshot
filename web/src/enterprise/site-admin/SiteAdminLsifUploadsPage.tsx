@@ -131,7 +131,7 @@ export class SiteAdminLsifUploadsPage extends React.Component<Props, State> {
                     <div className="mb-3">
                         {this.state.statsOrError.processingCount} processing, {this.state.statsOrError.erroredCount}{' '}
                         errored, {this.state.statsOrError.completedCount} completed, and{' '}
-                        {this.state.statsOrError.queuedCount} queued scheduled
+                        {this.state.statsOrError.queuedCount} queued
                     </div>
                 )}
 
