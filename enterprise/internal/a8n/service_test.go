@@ -54,7 +54,7 @@ func TestService(t *testing.T) {
 	store := NewStoreWithClock(dbconn.Global, clock)
 
 	var rs []*repos.Repo
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 4; i++ {
 		rs = append(rs, testRepo(i, github.ServiceType))
 	}
 
@@ -350,10 +350,8 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// Create 2 new CampaignJobs, so that one will be closed
-		newCampaignJobs := make([]*a8n.CampaignJob, 2)
-		// TODO: Change this so we use 3 CampaignJobs but only 2/3 reference
-		// existing repos and 1/3 another repo
+		// Create 3 new CampaignJobs
+		newCampaignJobs := make([]*a8n.CampaignJob, 3)
 
 		// First one has same RepoID, same Rev, same BaseRef, same Diff
 		newCampaignJobs[0] = oldCampaignJobs[0].Clone()
@@ -364,6 +362,11 @@ func TestService(t *testing.T) {
 		newCampaignJobs[1].CampaignPlanID = newPlan.ID
 		newCampaignJobs[1].Diff = "different diff"
 
+		// Third one has new RepoID (we only created 3 CampaignJobs, but rs has
+		// 4 entries)
+		newCampaignJobs[2] = testCampaignJob(newPlan.ID, rs[len(rs)-1].ID, now)
+
+		// This one should be deleted
 		oldCampaignJobToBeDeleted := oldCampaignJobs[2]
 
 		for _, j := range newCampaignJobs {
@@ -430,6 +433,9 @@ func TestService(t *testing.T) {
 		if unmodified.FinishedAt != oldTime {
 			t.Fatalf("ChangesetJob FinishedAt changed. want=%v, have=%v", oldTime, unmodified.FinishedAt)
 		}
+		if unmodified.ChangesetID == 0 {
+			t.Fatalf("ChangesetJob does not have ChangesetID")
+		}
 
 		// CampaignJob has new diff, so ChangesetJob should be reset
 		modified, ok := newChangesetJobsByCampaignJobID[newCampaignJobs[1].ID]
@@ -442,6 +448,25 @@ func TestService(t *testing.T) {
 
 		if !modified.FinishedAt.IsZero() {
 			t.Fatalf("ChangesetJob FinishedAt not reset. have=%v", modified.FinishedAt)
+		}
+		if modified.ChangesetID == 0 {
+			t.Fatalf("ChangesetJob does not have ChangesetID")
+		}
+
+		// CampaignJob has no old counterpart, so new ChangesetJob was created
+		created, ok := newChangesetJobsByCampaignJobID[newCampaignJobs[2].ID]
+		if !ok {
+			t.Fatal("ChangesetJob not found")
+		}
+		if !created.StartedAt.IsZero() {
+			t.Fatalf("ChangesetJob StartedAt not reset. have=%v", modified.StartedAt)
+		}
+
+		if !created.FinishedAt.IsZero() {
+			t.Fatalf("ChangesetJob FinishedAt not reset. have=%v", modified.FinishedAt)
+		}
+		if created.ChangesetID != 0 {
+			t.Fatalf("ChangesetJob.ChangesetID is not 0")
 		}
 
 		// Check Changeset with RepoID == CampaignJobToBeDeleted.RepoID is
