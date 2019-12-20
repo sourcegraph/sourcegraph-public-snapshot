@@ -4,7 +4,7 @@ Structural search lets you match richer syntax patterns specifically in code
 and structured data formats like JSON. It can be awkward or difficult to match
 code blocks or nested expressions with regular expressions. To meet this
 challenge we've introduced a new and easier way to search code that operates
-more closely on the parse tree of the input. We use [Comby
+more closely on a program's parse tree. We use [Comby
 syntax](https://comby.dev/#match-syntax) for structural matching. Below you'll
 find examples and notes for this new search functionality.
 
@@ -19,7 +19,7 @@ fmt.Sprint(:[args])
 
 [See it live on Sourcegraph's code](https://sourcegraph.com/search?q=repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24++%27fmt.Sprintf%28%3A%5Bargs%5D%29%27+count%3A100&patternType=structural)
 
-The `:[args]` part is a a hole with a descriptive name `args` that matches
+The `:[args]` part is a hole with a descriptive name `args` that matches
 code.  The important part is that this pattern understands that the parentheses
 `(` `)` are balanced, and avoids character escaping and lookahead assertions
 that come up in regular expressions. Let's look at two interesting variants of matches in our codebase. Here is the first:
@@ -30,9 +30,9 @@ fmt.Sprintf("must be authenticated as an admin (%s)", isSiteAdminErr.Error())
 
 Note that to match this code we didn't have to do any special thinking about
 handling the parentheses `(%s)` that happen _inside_ the first string argument,
-or the parentheses that are nested inside and form part of `Error()`. Taking
-care to match the closing parentheses for the call could, in general, really
-complicate regular expressions.
+or the nested parentheses that form part of `Error()`. Taking care to match the
+closing parentheses for the call could, in general, really complicate regular
+expressions.
 
 Here is a second match:
 
@@ -64,22 +64,22 @@ following:
 
 - **Add `patterntype:structural`.** To activate structural search, add `patterntype:structural` to your query string. For example, `patterntype:structural 'fmt.Sprintf(:[args])'`
 
-- **The `lang` keyword is semantically significant.** Adding the `lang` [keyword](queries.md) informs the parser about language-specific syntax for comments, strings, and code. This makes structural search more accurate for that language. For example, `patterntype:structural 'fmt.Sprintf(:[args])' lang:go`. If omitted, we perform a best-effort to infer the language based on matching file extensions, or fallback to a generic structural matcher.
+- **The `lang` keyword is semantically significant.** Adding the `lang` [keyword](queries.md) informs the parser about language-specific syntax for comments, strings, and code. This makes structural search more accurate for that language. For example, `patterntype:structural 'fmt.Sprintf(:[args])' lang:go`. If `lang` is omitted, we perform a best-effort to infer the language based on matching file extensions, or fall back to a generic structural matcher.
 
 - **Extra large repos are unsupported**. Extra large repositories, like the Linux kernel, are currently restricted from being searched. This is a temporary restriction that we will lift soon.
 
-- **Unsupported query syntax keywords.** The `case` keyword does not change the behavior of structural search. Structural search patterns are _always_ case-sensitive.
+- **Unsupported query syntax keywords.** The `case` keyword does not change the behavior of structural search. Structural search patterns are always case-sensitive.
 
 - **Saved search are not supported.** It is not currently possible to save structural searches.
 
-- **Matching blocks in indentation-sensitive languages.** It's not currently possible to match blocks of code that are identation-sensitive. This is planned for future features.
+- **Matching blocks in indentation-sensitive languages.** It's not currently possible to match blocks of code that are identation-sensitive. This is a feature planned for future work.
 
 ### Syntax reference
 
-We summarize the syntax for structural matching (based on [Comby syntax](https://comby.dev/#match-syntax)).
+We summarize the syntax for structural matching, which is based on [Comby syntax](https://comby.dev/#match-syntax).
 
 - `:[hole]` matches zero or more characters (including whitespace, and across
-newlines) in a lazy fashion. When :[hole] is used inside delimiters, as in
+newlines) in a lazy fashion. When `:[hole]` is used inside delimiters, as in
 `{:[h1], :[h2]}` or `(:[h])`, those delimiters set a boundary for what the hole
 can match, and the hole will then only match patterns within those delimiters.
 Holes can be used outside of delimiters as well.
@@ -96,14 +96,14 @@ Find more details at [comby.dev](https://comby.dev).
 
 ### More examples
 
-Here are some more motivating examples for using structural search. 
+Here are some more motivating examples using structural search. 
 
 #### Example: Matching stringy data
 
 Taking our [original example](#example), let's modify the original pattern
-slightly to match only if the first (and only) argument is a string by adding
-double quotes. Adding string quotes communicates _structural context_ and
-changes how the hole behaves now: it will match the contents of a single string
+slightly to match only if the first (and only) argument is a string. We do this
+by adding string quotes. Adding quotes communicates _structural context_ and
+changes how the hole behaves: it will match the contents of a single string
 delimited `"`. It _won't_ match multiple strings like `"foo", "bar"`.
 
 ```go
@@ -124,13 +124,13 @@ cleaning up to do.
 
 #### Example: Matching function arguments contextually
 
-If we wanted to instead match on the first argument of `fmt.Sprintf` calls, we could write:
+If we wanted to instead match on the first argument of `fmt.Sprintf` calls with more than one argument, we could write:
 
 ```go
 fmt.Sprint(:[first], :[rest])
 ```
 
-This pattern would match all of the code leading up to the comma `,` in
+This pattern matches all of the code leading up to the comma `,` in
 `:[first]`. _All_ of the rest of the arguments match to `:[rest]`. Holes stop
 matching based on the first fragment of syntax that comes after it,
 similar to lazy regular expression matching. So, we could write:
@@ -141,7 +141,7 @@ fmt.Sprintf(:[first], :[second], :[rest])
 
 to match all functions with three or more arguments, matching the the first and second arguments based on the contextual position around the commas.
 
-#### Example: duplicate expressions
+#### Example: equivalent expressions
 
 Using the same identifier in multiple holes adds a constraint that both of the matched values must be syntactically equal. So, the pattern:
 
@@ -161,6 +161,6 @@ Structural search also works on structured data, like JSON. Patterns can declara
 "exclude": [:[items]]
 ```
 
-matches all parts of a JSON document that have a member `"exclude"` where the value is a list of items. 
+matches all parts of a JSON document that have a member `"exclude"`, where the value is a list of items. 
 
 [See it live on Sourcegraph's code](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24++%27%22exclude%22:+%5B:%5Bitems%5D%5D%27+lang:json&patternType=structural)
