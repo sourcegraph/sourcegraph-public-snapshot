@@ -2,26 +2,30 @@ import * as constants from '../../shared/constants'
 import * as fs from 'mz/fs'
 import * as path from 'path'
 import * as settings from '../settings'
-import { addTags, TracingContext } from '../../shared/tracing'
+import { addTags, TracingContext, logAndTraceCall } from '../../shared/tracing'
 import { Connection } from 'typeorm'
 import { convertLsif } from './importer'
 import { createSilentLogger } from '../../shared/logging'
 import { dbFilename } from '../../shared/paths'
-import { withLock } from '../../shared/locks/locks'
-import { XrepoDatabase } from '../../shared/xrepo/xrepo'
+import { withLock } from '../../shared/store/locks'
+import { DumpManager } from '../../shared/store/dumps'
+import { withInstrumentedTransaction } from '../../shared/database/postgres'
+import { DependencyManager } from '../../shared/store/dependencies'
 
 /**
  * Create a function that takes a repository, commit, and filename containing the gzipped
  * input of an LSIF dump and converts it to a SQLite database. This will also populate
- * the cross-repo database for this dump.
+ * Postgres with the dependency data from this dump.
  *
  * @param connection The Postgres connection.
- * @param xrepoDatabase The cross-repo database.
+ * @param dumpManager The dumps manager instance.
+ * @param dependencyManager The dependency manager instance.
  * @param fetchConfiguration A function that returns the current configuration.
  */
 export const convertUpload = async (
     connection: Connection,
-    xrepoDatabase: XrepoDatabase,
+    dumpManager: DumpManager,
+    dependencyManager: DependencyManager,
     fetchConfiguration: () => { gitServers: string[] },
     {
         repository,
@@ -33,17 +37,28 @@ export const convertUpload = async (
     ctx: TracingContext
 ): Promise<void> => {
     const { logger = createSilentLogger(), span } = addTags(ctx, { repository, commit, root })
-    await convertDatabase(xrepoDatabase, repository, commit, root, filename, uploadedAt, ctx)
-    await updateCommitsAndDumpsVisibleFromTip(xrepoDatabase, fetchConfiguration, repository, commit, { logger, span })
-    await purgeOldDumps(connection, xrepoDatabase, settings.STORAGE_ROOT, settings.DBS_DIR_MAXIMUM_SIZE_BYTES, ctx)
+    await convertDatabase(
+        connection,
+        dumpManager,
+        dependencyManager,
+        repository,
+        commit,
+        root,
+        filename,
+        uploadedAt,
+        ctx
+    )
+    await updateCommitsAndDumpsVisibleFromTip(dumpManager, fetchConfiguration, repository, commit, { logger, span })
+    await purgeOldDumps(connection, dumpManager, settings.STORAGE_ROOT, settings.DBS_DIR_MAXIMUM_SIZE_BYTES, ctx)
 }
 
 /**
- * Convert the LSIF dump input into a SQLite database, create an LSIF dump record in the
- * cross-repo database, and populate the cross-repo database with packages and reference
- * data.
+ * Convert the LSIF dump input into a SQLite database, create an LSIF dump record
+ * and populate the dependency tables with packages and reference data.
  *
- * @param xrepoDatabase The cross-repo database.
+ * @param connection The Postgres connection.
+ * @param dumpManager The dumps manager instance.
+ * @param dependencyManager The dependency manager instance.
  * @param repository The repository.
  * @param commit The commit.
  * @param root The root of the dump.
@@ -52,7 +67,9 @@ export const convertUpload = async (
  * @param ctx The tracing context.
  */
 async function convertDatabase(
-    xrepoDatabase: XrepoDatabase,
+    connection: Connection,
+    dumpManager: DumpManager,
+    dependencyManager: DependencyManager,
     repository: string,
     commit: string,
     root: string,
@@ -66,16 +83,15 @@ async function convertDatabase(
         // Create database in a temp path
         const { packages, references } = await convertLsif(filename, tempFile, { logger, span })
 
-        // Insert dump and add packages and references to the xrepo db
-        const dump = await xrepoDatabase.addPackagesAndReferences(
-            repository,
-            commit,
-            root,
-            uploadedAt,
-            packages,
-            references,
-            { logger, span }
-        )
+        // Insert dump and add packages and references to Postgres
+        const dump = await withInstrumentedTransaction(connection, async entityManager => {
+            const dumpRecord = await logAndTraceCall({ logger, span }, 'Inserting dump', () =>
+                dumpManager.insertDump(repository, commit, root, uploadedAt, entityManager)
+            )
+
+            await dependencyManager.addPackagesAndReferences(dump.id, packages, references, { logger, span })
+            return dumpRecord
+        })
 
         // Move the temp file where it can be found by the server
         await fs.rename(tempFile, dbFilename(settings.STORAGE_ROOT, dump.id, repository, commit))
@@ -99,14 +115,14 @@ async function convertDatabase(
  * of this repository. This will query for commits starting from both the current tip
  * of the repo and from the commit that was just processed.
  *
- * @param xrepoDatabase The cross-repo database.
+ * @param dumpManager The dumps manager instance.
  * @param fetchConfiguration A function that returns the current configuration.
  * @param repository The repository.
  * @param commit The commit.
  * @param ctx The tracing context.
  */
 async function updateCommitsAndDumpsVisibleFromTip(
-    xrepoDatabase: XrepoDatabase,
+    dumpManager: DumpManager,
     fetchConfiguration: () => { gitServers: string[] },
     repository: string,
     commit: string,
@@ -114,12 +130,12 @@ async function updateCommitsAndDumpsVisibleFromTip(
 ): Promise<void> {
     const gitserverUrls = fetchConfiguration().gitServers
 
-    const tipCommit = await xrepoDatabase.discoverTip({ repository, gitserverUrls, ctx })
+    const tipCommit = await dumpManager.discoverTip({ repository, gitserverUrls, ctx })
     if (tipCommit === undefined) {
         throw new Error('No tip commit available for repository')
     }
 
-    const commits = await xrepoDatabase.discoverCommits({
+    const commits = await dumpManager.discoverCommits({
         repository,
         commit,
         gitserverUrls,
@@ -133,7 +149,7 @@ async function updateCommitsAndDumpsVisibleFromTip(
         // updateDumpsVisibleFromTip call below, no dumps will be reachable from
         // the tip and all dumps will be invisible.
 
-        const tipCommits = await xrepoDatabase.discoverCommits({
+        const tipCommits = await dumpManager.discoverCommits({
             repository,
             commit: tipCommit,
             gitserverUrls,
@@ -148,8 +164,8 @@ async function updateCommitsAndDumpsVisibleFromTip(
         }
     }
 
-    await xrepoDatabase.updateCommits(repository, commits, ctx)
-    await xrepoDatabase.updateDumpsVisibleFromTip(repository, tipCommit, ctx)
+    await dumpManager.updateCommits(repository, commits, ctx)
+    await dumpManager.updateDumpsVisibleFromTip(repository, tipCommit, ctx)
 }
 
 /**
@@ -157,14 +173,14 @@ async function updateCommitsAndDumpsVisibleFromTip(
  * the given limit.
  *
  * @param connection The Postgres connection.
- * @param xrepoDatabase The cross-repo database.
+ * @param dumpManager The dumps manager instance.
  * @param storageRoot The path where SQLite databases are stored.
  * @param maximumSizeBytes The maximum number of bytes.
  * @param ctx The tracing context.
  */
 function purgeOldDumps(
     connection: Connection,
-    xrepoDatabase: XrepoDatabase,
+    dumpManager: DumpManager,
     storageRoot: string,
     maximumSizeBytes: number,
     { logger = createSilentLogger() }: TracingContext = {}
@@ -178,7 +194,7 @@ function purgeOldDumps(
 
         while (currentSizeBytes > maximumSizeBytes) {
             // While our current data usage is too big, find candidate dumps to delete
-            const dump = await xrepoDatabase.getOldestPrunableDump()
+            const dump = await dumpManager.getOldestPrunableDump()
             if (!dump) {
                 logger.warn(
                     'Unable to reduce disk usage of the DB directory because deleting any single dump would drop in-use code intel for a repository.',
@@ -199,7 +215,7 @@ function purgeOldDumps(
             currentSizeBytes -= await filesize(filename)
 
             // This delete cascades to the packages and references tables as well
-            await xrepoDatabase.deleteDump(dump)
+            await dumpManager.deleteDump(dump)
         }
     }
 

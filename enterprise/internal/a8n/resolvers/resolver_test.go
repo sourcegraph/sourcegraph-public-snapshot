@@ -131,6 +131,7 @@ func TestCampaigns(t *testing.T) {
 		Author      User
 		CreatedAt   string
 		UpdatedAt   string
+		PublishedAt string
 		Namespace   UserOrg
 	}
 
@@ -153,7 +154,7 @@ func TestCampaigns(t *testing.T) {
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 		fragment c on Campaign {
-			id, name, description, createdAt, updatedAt
+			id, name, description, createdAt, updatedAt, publishedAt
 			author    { ...u }
 			namespace {
 				... on User { ...u }
@@ -190,7 +191,7 @@ func TestCampaigns(t *testing.T) {
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 		fragment c on Campaign {
-			id, name, description, createdAt, updatedAt
+			id, name, description, createdAt, updatedAt, publishedAt
 			author    { ...u }
 			namespace {
 				... on User { ...u }
@@ -245,7 +246,7 @@ func TestCampaigns(t *testing.T) {
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 		fragment c on Campaign {
-			id, name, description, createdAt, updatedAt
+			id, name, description, createdAt, updatedAt, publishedAt
 			author    { ...u }
 			namespace {
 				... on User { ...u }
@@ -955,6 +956,7 @@ type CampaignPlan struct {
 	Changesets   struct {
 		Nodes []ChangesetPlan
 	}
+	PreviewURL string
 }
 
 func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
@@ -1089,6 +1091,7 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
                 }
 			  }
             }
+            previewURL
           }
         }
       }
@@ -1121,6 +1124,10 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 		}
 		if !cmp.Equal(result.Changesets.Nodes, wantChangesets) {
 			t.Error("wrong changesets", cmp.Diff(result.Changesets.Nodes, wantChangesets))
+		}
+
+		if have, want := result.PreviewURL, "http://example.com/campaigns/new?plan=Q2FtcGFpZ25QbGFuOjE%3D"; have != want {
+			t.Fatalf("have PreviewURL %q, want %q", have, want)
 		}
 	})
 }

@@ -1,8 +1,6 @@
 # Sourcegraph NGINX HTTP and HTTPS/SSL configuration
 
-> NOTE: This a Sourcegraph 3.0+ feature.
-
-In Sourcegraph 3.0+, [NGINX](https://www.nginx.com/resources/glossary/nginx/) acts as a [reverse proxy](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/) for the Sourcegraph front-end server, meaning NGINX proxies external HTTP (and [HTTPS](#nginx-ssl-https-configuration)) requests to the Sourcegraph front-end.
+In Sourcegraph, [NGINX](https://www.nginx.com/resources/glossary/nginx/) acts as a [reverse proxy](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/) for the Sourcegraph front-end server, meaning NGINX proxies external HTTP (and [HTTPS](#nginx-ssl-https-configuration)) requests to the Sourcegraph front-end.
 
 ![NGINX and Sourcegraph architecture](img/sourcegraph-nginx.svg)
 

@@ -1,6 +1,6 @@
 # Code search overview
 
-> See [**search query syntax**](queries.md) reference.
+> Reference the [**search query syntax**](queries.md) and see [search examples](examples.md) for inspiration.
 
 [A recently published research paper from Google](https://static.googleusercontent.com/media/research.google.com/en//pubs/archive/43835.pdf) and a [Google developer survey](https://docs.google.com/document/d/1LQxLk4E3lrb3fIsVKlANu_pUjnILteoWMMNiJQmqNVU/edit#heading=h.xxziwxixfqq3) showed that 98% of developers consider their Sourcegraph-like internal code search tool to be critical, and developers use it on average for 5.3 sessions each day, primarily to (in order of frequency):
 
@@ -14,6 +14,7 @@ Sourcegraph code search helps developers perform these tasks more quickly and ef
 Sourcegraph provides fast, advanced code search across multiple repositories. With Sourcegraph's code search, you can:
 
 - Use regular expressions and exact queries to perform full-text searches
+- Perform [language-aware structural search](#language-aware-structural-code-search) on code structure.
 - Search any branch and commit, with no indexing required
 - Search [commit diffs](#commit-diff-search) and [commit messages](#commit-message-search) to see how code has changed
 - Narrow your search by repository and file pattern
@@ -33,6 +34,10 @@ This document is for code search users. To get code search, [install Sourcegraph
 Sourcegraph code search performs full-text searches and supports both regular expression and exact queries. By default, Sourcegraph searches across all your repositories. Our search [query syntax](queries.md) allows for advanced queries, such as searching over any branch or commit, narrowing searches by programming language or file pattern, and more.
 
 See the [query syntax documentation](queries.md) for a comprehensive list of tokens.
+
+### Language-aware structural code search
+
+Sourcegraph supports advanced code search for specifically matching patterns inside code structures, like function parameters and loop bodies. See our [structural search documentation](structural.md) for a detailed explanation of this search mode.
 
 ### Commit diff search
 

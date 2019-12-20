@@ -810,6 +810,8 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 		tmp := GitDir(tmpPath)
 
 		cmd := exec.CommandContext(ctx, "git", "clone", "--mirror", "--progress", url, tmpPath)
+		// see issue #7322: skip LFS content in repositories with Git LFS configured
+		cmd.Env = append(cmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
 		log15.Info("cloning repo", "repo", repo, "tmp", tmpPath, "dst", dstPath)
 
 		pr, pw := io.Pipe()

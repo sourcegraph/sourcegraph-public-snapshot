@@ -275,6 +275,11 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 			return nil, a8nOnlyInEnterprise
 		}
 		return EnterpriseResolvers.a8nResolver.ChangesetByID(ctx, id)
+	case "ChangesetPlan":
+		if EnterpriseResolvers.a8nResolver == nil {
+			return nil, a8nOnlyInEnterprise
+		}
+		return EnterpriseResolvers.a8nResolver.ChangesetPlanByID(ctx, id)
 	case "DiscussionComment":
 		return discussionCommentByID(ctx, id)
 	case "DiscussionThread":

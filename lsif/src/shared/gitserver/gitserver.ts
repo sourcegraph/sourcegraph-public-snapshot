@@ -60,7 +60,7 @@ export function mod(sum: string, max: number): number {
  * is a map from commits to a set of parent commits. The set of parents may be empty.
  *
  * If the repository or commit is unknown by gitserver, then the the results will be
- * empty but no error will be thrown. Any other error type will b thrown without
+ * empty but no error will be thrown. Any other error type will be thrown without
  * modification.
  *
  * @param gitserverUrl The url of the gitserver for this repository.
@@ -109,6 +109,26 @@ export function flattenCommitParents(lines: string[]): Map<string, Set<string>> 
     }
 
     return commits
+}
+
+/**
+ * Get the current tip of the default branch of the given repository.
+ *
+ * @param gitserverUrl The url of the gitserver for this repository.
+ * @param repository The repository name.
+ * @param ctx The tracing context.
+ */
+export async function getHead(
+    gitserverUrl: string,
+    repository: string,
+    ctx: TracingContext = {}
+): Promise<string | undefined> {
+    const lines = await gitserverExecLines(gitserverUrl, repository, ['rev-parse', 'HEAD'], ctx)
+    if (lines.length === 0) {
+        return undefined
+    }
+
+    return lines[0]
 }
 
 /**

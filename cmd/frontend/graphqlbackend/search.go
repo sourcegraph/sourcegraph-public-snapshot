@@ -28,10 +28,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchquerytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
-	"github.com/sourcegraph/sourcegraph/internal/search/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -164,7 +164,7 @@ func detectSearchType(version string, patternType *string, input string) (Search
 	// The patterntype field is Singular, but not enforced since we do not
 	// properly parse the input. The regex extraction, takes the left-most
 	// "patterntype:value" match.
-	var patternTypeRegex = lazyregexp.New(`patterntype:([a-zA-Z"']+)`)
+	var patternTypeRegex = lazyregexp.New(`(?i)patterntype:([a-zA-Z"']+)`)
 	patternFromField := patternTypeRegex.FindStringSubmatch(input)
 	if len(patternFromField) > 1 {
 		extracted := patternFromField[1]
@@ -749,7 +749,7 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 	if err != nil {
 		return nil, err
 	}
-	args := search.Args{
+	args := search.TextParameters{
 		PatternInfo:     p,
 		Repos:           repos,
 		Query:           r.query,

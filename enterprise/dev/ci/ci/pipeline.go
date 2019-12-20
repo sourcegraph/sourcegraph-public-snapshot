@@ -36,7 +36,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case c.patchNoTest:
 		// If this is a no-test branch, then run only the Docker build. No tests are run.
 		app := c.branch[27:]
-		pipelineOperations = append(pipelineOperations, addDockerImage(c, app, false))
+		pipelineOperations = append(pipelineOperations,
+			addCanidateDockerImage(c, app),
+			addFinalDockerImage(c, app, false),
+		)
 
 	case c.isBextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
@@ -85,9 +88,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addSharedTests,
 			addPostgresBackcompat,
 			addDockerfileLint,
+			addDockerImages(c, false),
 			wait,
 			addCodeCov,
-			addDockerImages(c),
+			addDockerImages(c, true),
 		}
 	}
 

@@ -1,4 +1,4 @@
-import * as xrepoModels from '../models/xrepo'
+import * as pgModels from '../models/pg'
 import pRetry, { AbortError } from 'p-retry'
 import { Brackets, Connection, EntityManager } from 'typeorm'
 import { FORMAT_TEXT_MAP, Span, Tracer } from 'opentracing'
@@ -11,9 +11,9 @@ import { Logger } from 'winston'
  * behaviors to enqueue uploads and dequeue them for the worker to convert
  * in a transactional manner.
  */
-export class UploadsManager {
+export class UploadManager {
     /**
-     * Create a new `UploadsManager` backed by the given database connection.
+     * Create a new `UploadManager` backed by the given database connection.
      *
      * @param connection The Postgres connection.
      */
@@ -47,7 +47,7 @@ export class UploadsManager {
         entityManager: EntityManager = this.connection.createEntityManager()
     ): Promise<number> {
         return entityManager
-            .getRepository(xrepoModels.LsifUpload)
+            .getRepository(pgModels.LsifUpload)
             .createQueryBuilder()
             .select()
             .where({ state })
@@ -63,14 +63,14 @@ export class UploadsManager {
      * @param offset The number of uploads to skip.
      */
     public async getUploads(
-        state: xrepoModels.LsifUploadState,
+        state: pgModels.LsifUploadState,
         query: string,
         limit: number,
         offset: number
-    ): Promise<{ uploads: xrepoModels.LsifUpload[]; totalCount: number }> {
+    ): Promise<{ uploads: pgModels.LsifUpload[]; totalCount: number }> {
         const [uploads, totalCount] = await instrumentQuery(() => {
             let queryBuilder = this.connection
-                .getRepository(xrepoModels.LsifUpload)
+                .getRepository(pgModels.LsifUpload)
                 .createQueryBuilder('upload')
                 .where({ state })
                 .orderBy('uploaded_at', 'DESC')
@@ -100,8 +100,8 @@ export class UploadsManager {
      *
      * @param id The upload identifier.
      */
-    public getUpload(id: number): Promise<xrepoModels.LsifUpload | undefined> {
-        return instrumentQuery(() => this.connection.getRepository(xrepoModels.LsifUpload).findOne({ id }))
+    public getUpload(id: number): Promise<pgModels.LsifUpload | undefined> {
+        return instrumentQuery(() => this.connection.getRepository(pgModels.LsifUpload).findOne({ id }))
     }
 
     /**
@@ -127,7 +127,7 @@ export class UploadsManager {
             (
                 await instrumentQuery(() =>
                     this.connection
-                        .getRepository(xrepoModels.LsifUpload)
+                        .getRepository(pgModels.LsifUpload)
                         .createQueryBuilder()
                         .delete()
                         .where("uploaded_at < now() - (:maxAge * interval '1 second')", { maxAge })
@@ -186,13 +186,13 @@ export class UploadsManager {
         },
         tracer?: Tracer,
         span?: Span
-    ): Promise<xrepoModels.LsifUpload> {
+    ): Promise<pgModels.LsifUpload> {
         const tracing = {}
         if (tracer && span) {
             tracer.inject(span, FORMAT_TEXT_MAP, tracing)
         }
 
-        const upload = new xrepoModels.LsifUpload()
+        const upload = new pgModels.LsifUpload()
         upload.repository = repository
         upload.commit = commit
         upload.root = root
@@ -224,7 +224,7 @@ export class UploadsManager {
 
         const checkUploadState = async (): Promise<void> => {
             const upload = await instrumentQuery(() =>
-                this.connection.getRepository(xrepoModels.LsifUpload).findOneOrFail({ id: uploadId })
+                this.connection.getRepository(pgModels.LsifUpload).findOneOrFail({ id: uploadId })
             )
 
             if (upload.state === 'errored') {
@@ -269,7 +269,7 @@ export class UploadsManager {
      * @param logger The logger instance.
      */
     public async dequeueAndConvert(
-        convert: (upload: xrepoModels.LsifUpload) => Promise<void>,
+        convert: (upload: pgModels.LsifUpload) => Promise<void>,
         logger: Logger
     ): Promise<boolean> {
         // First, we select the next oldest upload with a state of `queued` and set
@@ -301,10 +301,10 @@ export class UploadsManager {
             }
 
             // Transform locked result into upload entity
-            const repo = entityManager.getRepository(xrepoModels.LsifUpload)
-            const meta = repo.manager.connection.getMetadata(xrepoModels.LsifUpload)
+            const repo = entityManager.getRepository(pgModels.LsifUpload)
+            const meta = repo.manager.connection.getMetadata(pgModels.LsifUpload)
             const transformer = new PlainObjectToDatabaseEntityTransformer(repo.manager)
-            const upload = (await transformer.transform(results[0], meta)) as xrepoModels.LsifUpload
+            const upload = (await transformer.transform(results[0], meta)) as pgModels.LsifUpload
 
             let state = 'completed'
             let failureSummary: string | null = null

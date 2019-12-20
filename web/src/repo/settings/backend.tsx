@@ -46,7 +46,7 @@ export function fetchRepository(name: string): Observable<GQL.IRepository> {
         { name }
     ).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.repository) {
+            if (!data || !data.repository || !data.repository.externalServices) {
                 throw createAggregateError(errors)
             }
             return data.repository

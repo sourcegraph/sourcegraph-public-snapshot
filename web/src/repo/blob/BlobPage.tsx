@@ -32,6 +32,7 @@ import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { Blob } from './Blob'
 import { BlobPanel } from './panel/BlobPanel'
+import { GoToRawAction } from './GoToRawAction'
 import { RenderedFile } from './RenderedFile'
 import { ThemeProps } from '../../../../shared/src/theme'
 
@@ -247,6 +248,19 @@ export class BlobPage extends React.PureComponent<Props, State> {
                         repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                     />
                 )}
+                <RepoHeaderContributionPortal
+                    position="right"
+                    priority={30}
+                    element={
+                        <GoToRawAction
+                            key="raw-action"
+                            repoName={this.props.repoName}
+                            rev={this.props.rev}
+                            filePath={this.props.filePath}
+                        />
+                    }
+                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
+                />
             </>
         )
 

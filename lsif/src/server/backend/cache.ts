@@ -1,4 +1,4 @@
-import * as dumpModels from '../../shared/models/dump'
+import * as sqliteModels from '../../shared/models/sqlite'
 import * as metrics from '../metrics'
 import promClient from 'prom-client'
 import Yallist from 'yallist'
@@ -399,7 +399,7 @@ class EncodedJsonCache<K, V> extends GenericCache<K, EncodedJsonCacheValue<V>> {
  * A cache of deserialized `DocumentData` values indexed by a string containing
  * the database path and the path of the document.
  */
-export class DocumentCache extends EncodedJsonCache<string, dumpModels.DocumentData> {
+export class DocumentCache extends EncodedJsonCache<string, sqliteModels.DocumentData> {
     /**
      * Create a new `DocumentCache` with the given maximum (soft) size for
      * all items in the cache.
@@ -418,7 +418,7 @@ export class DocumentCache extends EncodedJsonCache<string, dumpModels.DocumentD
  * A cache of deserialized `ResultChunkData` values indexed by a string containing
  * the database path and the chunk index.
  */
-export class ResultChunkCache extends EncodedJsonCache<string, dumpModels.ResultChunkData> {
+export class ResultChunkCache extends EncodedJsonCache<string, sqliteModels.ResultChunkData> {
     /**
      * Create a new `ResultChunkCache` with the given maximum (soft) size for
      * all items in the cache.

@@ -64,7 +64,7 @@ func TestBitbucketServerSource_MakeRepo(t *testing.T) {
 
 			var got []*Repo
 			for _, r := range repos {
-				got = append(got, s.makeRepo(r))
+				got = append(got, s.makeRepo(r, false))
 			}
 			actual, err := json.MarshalIndent(got, "", "  ")
 			if err != nil {

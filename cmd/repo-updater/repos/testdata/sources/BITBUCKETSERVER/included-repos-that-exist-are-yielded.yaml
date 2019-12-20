@@ -7,10 +7,10 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://127.0.0.1:7990/rest/api/1.0/projects/Org/repos/foO
+    url: https://bitbucket.sgdev.org/rest/api/1.0/labels/archived/labeled?REPOSITORY=&limit=1000
     method: GET
   response:
-    body: '{"slug":"foo","id":1,"name":"foo","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"ORG","id":1,"name":"Org","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/ORG"}]}},"public":false,"links":{"clone":[{"href":"http://127.0.0.1:7990/scm/org/foo.git","name":"http"},{"href":"ssh://git@127.0.0.1:7999/org/foo.git","name":"ssh"}],"self":[{"href":"http://127.0.0.1:7990/projects/ORG/repos/foo/browse"}]}}'
+    body: '{"size":1,"limit":1000,"isLastPage":true,"values":[{"slug":"archived-repo","id":10073,"name":"archived-repo","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"PUBLIC","id":4,"name":"Public","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/PUBLIC"}]}},"public":false,"labelableType":"REPOSITORY","links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/public/archived-repo.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/PUBLIC/repos/archived-repo/browse"}]}}],"start":0}'
     headers:
       Cache-Control:
       - private, no-cache
@@ -18,24 +18,26 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Fri, 03 May 2019 14:24:40 GMT
+      - Thu, 19 Dec 2019 12:31:01 GMT
       Pragma:
       - no-cache
+      Server:
+      - Caddy
       Vary:
-      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      - X-AUSERNAME,Accept-Encoding
       X-Arequestid:
-      - '@1L780SNx864x42x0'
+      - '@1JRK3O7x751x576573x0'
       X-Asen:
-      - SEN-L13362690
+      - SEN-11363689
       X-Asessionid:
-      - 7ho48f
+      - 13qjdmd
       X-Auserid:
       - "1"
       X-Ausername:
-      - admin
+      - milton
       X-Content-Type-Options:
       - nosniff
-    status: '200 '
+    status: 200 OK
     code: 200
     duration: ""
 - request:
@@ -44,10 +46,10 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://127.0.0.1:7990/rest/api/1.0/projects/org/repos/baz
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/sour/repos/sourcegraph
     method: GET
   response:
-    body: '{"slug":"baz","id":3,"name":"baz","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"ORG","id":1,"name":"Org","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/ORG"}]}},"public":false,"links":{"clone":[{"href":"http://127.0.0.1:7990/scm/org/baz.git","name":"http"},{"href":"ssh://git@127.0.0.1:7999/org/baz.git","name":"ssh"}],"self":[{"href":"http://127.0.0.1:7990/projects/ORG/repos/baz/browse"}]}}'
+    body: '{"slug":"sourcegraph","id":10067,"name":"sourcegraph","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/sourcegraph.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/sourcegraph/browse"}]}}'
     headers:
       Cache-Control:
       - private, no-cache
@@ -55,24 +57,26 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Fri, 03 May 2019 14:24:40 GMT
+      - Thu, 19 Dec 2019 12:31:01 GMT
       Pragma:
       - no-cache
+      Server:
+      - Caddy
       Vary:
-      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      - X-AUSERNAME,Accept-Encoding
       X-Arequestid:
-      - '@1L780SNx864x43x0'
+      - '@1JRK3O7x751x576574x0'
       X-Asen:
-      - SEN-L13362690
+      - SEN-11363689
       X-Asessionid:
-      - 1p2nayc
+      - y7xcvl
       X-Auserid:
       - "1"
       X-Ausername:
-      - admin
+      - milton
       X-Content-Type-Options:
       - nosniff
-    status: '200 '
+    status: 200 OK
     code: 200
     duration: ""
 - request:
@@ -81,10 +85,10 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://127.0.0.1:7990/rest/api/1.0/projects/ORG/repos/bar
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/Sour/repos/vegetA
     method: GET
   response:
-    body: '{"slug":"bar","id":2,"name":"bar","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"ORG","id":1,"name":"Org","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/ORG"}]}},"public":false,"links":{"clone":[{"href":"http://127.0.0.1:7990/scm/org/bar.git","name":"http"},{"href":"ssh://git@127.0.0.1:7999/org/bar.git","name":"ssh"}],"self":[{"href":"http://127.0.0.1:7990/projects/ORG/repos/bar/browse"}]}}'
+    body: '{"slug":"vegeta","id":2,"name":"vegeta","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/vegeta.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/vegeta/browse"}]}}'
     headers:
       Cache-Control:
       - private, no-cache
@@ -92,23 +96,25 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Fri, 03 May 2019 14:24:40 GMT
+      - Thu, 19 Dec 2019 12:31:02 GMT
       Pragma:
       - no-cache
+      Server:
+      - Caddy
       Vary:
-      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      - X-AUSERNAME,Accept-Encoding
       X-Arequestid:
-      - '@1L780SNx864x44x0'
+      - '@1JRK3O7x751x576575x0'
       X-Asen:
-      - SEN-L13362690
+      - SEN-11363689
       X-Asessionid:
-      - 9794x9
+      - 1cktmsq
       X-Auserid:
       - "1"
       X-Ausername:
-      - admin
+      - milton
       X-Content-Type-Options:
       - nosniff
-    status: '200 '
+    status: 200 OK
     code: 200
     duration: ""
