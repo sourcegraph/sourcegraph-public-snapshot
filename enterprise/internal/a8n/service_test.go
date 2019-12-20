@@ -321,12 +321,27 @@ func TestService(t *testing.T) {
 				ExternalServiceType: "github",
 				ExternalID:          fmt.Sprintf("ext-id-%d", changesetJob.ID),
 			}
+
+			err = store.CreateChangesets(ctx, changeset)
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			oldChangesets = append(oldChangesets, changeset)
+
+			changesetJob.ChangesetID = changeset.ID
+			changesetJob.StartedAt = now
+			changesetJob.FinishedAt = now
+
+			err := store.UpdateChangesetJob(ctx, changesetJob)
+			if err != nil {
+				t.Fatal(err)
+			}
 		}
-		err = store.CreateChangesets(ctx, oldChangesets...)
-		if err != nil {
-			t.Fatal(err)
-		}
+
+		// Advance clock
+		oldTime := now
+		now = now.Add(5 * time.Second)
 
 		// Creating new CampaignPlan
 		newPlan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
@@ -337,6 +352,8 @@ func TestService(t *testing.T) {
 
 		// Create 2 new CampaignJobs, so that one will be closed
 		newCampaignJobs := make([]*a8n.CampaignJob, 2)
+		// TODO: Change this so we use 3 CampaignJobs but only 2/3 reference
+		// existing repos and 1/3 another repo
 
 		// First one has same RepoID, same Rev, same BaseRef, same Diff
 		newCampaignJobs[0] = oldCampaignJobs[0].Clone()
@@ -346,6 +363,8 @@ func TestService(t *testing.T) {
 		newCampaignJobs[1] = oldCampaignJobs[1].Clone()
 		newCampaignJobs[1].CampaignPlanID = newPlan.ID
 		newCampaignJobs[1].Diff = "different diff"
+
+		oldCampaignJobToBeDeleted := oldCampaignJobs[2]
 
 		for _, j := range newCampaignJobs {
 			err := store.CreateCampaignJob(ctx, j)
@@ -374,6 +393,61 @@ func TestService(t *testing.T) {
 		if updatedCampaign.Description != newDescription {
 			t.Fatalf("campaign description not updated. want=%q, have=%q", newDescription, updatedCampaign.Description)
 		}
+
+		if updatedCampaign.CampaignPlanID != newPlan.ID {
+			t.Fatalf("campaign CampaignPlanID not updated. want=%q, have=%q", newPlan.ID, updatedCampaign.CampaignPlanID)
+		}
+
+		// Check that we now have 2 instead of 3 ChangesetJobs
+		newChangesetJobs, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
+			CampaignID: campaign.ID,
+			Limit:      -1,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(newChangesetJobs) != len(newCampaignJobs) {
+			t.Fatalf("wrong number of new ChangesetJobs. want=%d, have=%d", len(newCampaignJobs), len(newChangesetJobs))
+		}
+
+		newChangesetJobsByCampaignJobID := make(map[int64]*a8n.ChangesetJob)
+		for _, j := range newChangesetJobs {
+			if j.ID == oldCampaignJobToBeDeleted.ID {
+				t.Errorf("ChangesetJob should have been deleted")
+			}
+			newChangesetJobsByCampaignJobID[j.CampaignJobID] = j
+		}
+
+		// CampaignJob has same diff, so ChangesetJob should not be reset
+		unmodified, ok := newChangesetJobsByCampaignJobID[newCampaignJobs[0].ID]
+		if !ok {
+			t.Fatal("ChangesetJob not found")
+		}
+		if unmodified.StartedAt != oldTime {
+			t.Fatalf("ChangesetJob StartedAt changed. want=%v, have=%v", oldTime, unmodified.StartedAt)
+		}
+
+		if unmodified.FinishedAt != oldTime {
+			t.Fatalf("ChangesetJob FinishedAt changed. want=%v, have=%v", oldTime, unmodified.FinishedAt)
+		}
+
+		// CampaignJob has new diff, so ChangesetJob should be reset
+		modified, ok := newChangesetJobsByCampaignJobID[newCampaignJobs[1].ID]
+		if !ok {
+			t.Fatal("ChangesetJob not found")
+		}
+		if !modified.StartedAt.IsZero() {
+			t.Fatalf("ChangesetJob StartedAt not reset. have=%v", modified.StartedAt)
+		}
+
+		if !modified.FinishedAt.IsZero() {
+			t.Fatalf("ChangesetJob FinishedAt not reset. have=%v", modified.FinishedAt)
+		}
+
+		// TODO: check that Changeset with RepoID ==
+		// oldCampaignJobToBeDeleted.RepoID is detached from campaign and
+		// closed on Codehost (which we can't here without mocking a lot of
+		// things, so we might need to do that somewhere else)
 	})
 }
 

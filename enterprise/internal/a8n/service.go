@@ -710,55 +710,180 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		campaign.Description = *args.Description
 	}
 
-	if err = tx.UpdateCampaign(ctx, campaign); err != nil {
-		return campaign, err
-	}
-
 	// TODO: If the name and description change, we also need to update the
 	// changesets on the codehost
 
-	// TODO: Update the campaign.PlanID if it's set in args.Plan
-	//
-	// if the campaign.PlanID is different to the previous one, we need to
-	// do the full update.
+	// If the campaign.PlanID is different to the previous one, we need to
+	// do the full update. Otherwise, we're done.
+	if args.Plan == nil || (args.Plan != nil && campaign.CampaignPlanID == *args.Plan) {
+		err = tx.UpdateCampaign(ctx, campaign)
+		return campaign, err
+	}
 
-	// First:
+	previousPlanID := campaign.CampaignPlanID
+	campaign.CampaignPlanID = *args.Plan
+	err = tx.UpdateCampaign(ctx, campaign)
+	if err != nil {
+		return nil, err
+	}
+
+	// Preparation for "full update":
 	// - List current ChangesetJobs of Campaign
-	// - List current CampaignJobs attached to ChangesetJobs
+	currentChangesetJobs, _, err := tx.ListChangesetJobs(ctx, ListChangesetJobsOpts{
+		CampaignID: campaign.ID,
+		Limit:      -1,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "listing changesets jobs")
+	}
+
+	// - List current CampaignJobs attached to ChangesetJobs (we need
+	// OnlyFinished and OnlyWithDiff because we don't create ChangesetJobs for
+	// others)
+	currentCampaignJobs, _, err := tx.ListCampaignJobs(ctx, ListCampaignJobsOpts{
+		CampaignPlanID: previousPlanID,
+		Limit:          -1,
+		OnlyFinished:   true,
+		OnlyWithDiff:   true,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "listing campaign jobs")
+	}
+	currentCampaignJobsByID := make(map[int64]*a8n.CampaignJob, len(currentCampaignJobs))
+	for _, j := range currentCampaignJobs {
+		currentCampaignJobsByID[j.ID] = j
+	}
+	currentChangesetJobsByRepoID := make(map[int32]*a8n.ChangesetJob, len(currentChangesetJobs))
+	for _, j := range currentChangesetJobs {
+		campaignJob, ok := currentCampaignJobsByID[j.CampaignJobID]
+		if !ok {
+			return nil, fmt.Errorf("CampaignJob with ID %d cannot be found for changeset %d", j.CampaignJobID, j.ID)
+		}
+		currentChangesetJobsByRepoID[campaignJob.RepoID] = j
+	}
+
 	// - List new CampaignJobs attached to new CampaignPlanID
+	newCampaignJobs, _, err := tx.ListCampaignJobs(ctx, ListCampaignJobsOpts{
+		CampaignPlanID: campaign.CampaignPlanID,
+		Limit:          -1,
+		OnlyFinished:   true,
+		OnlyWithDiff:   true,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "listing new campaign jobs")
+	}
+	newCampaignJobsByRepoID := make(map[int32]*a8n.CampaignJob, len(newCampaignJobs))
+	for _, j := range newCampaignJobs {
+		newCampaignJobsByRepoID[j.RepoID] = j
+	}
 
 	// Then: determine which current ChangesetJobs we want to keep and which
 	// ones we want to delete.
 	// We can find out which ones we want to keep by looking at the RepoID of
 	// their CampaignJobs.
+	var (
+		toKeep                     []*a8n.ChangesetJob
+		toDelete                   []*a8n.ChangesetJob
+		changesetsToCloseAndDetach []int64
 
-	// Case (a): we _don't_ have a matching _new_ CampaignJob.
-	// We delete the ChangesetJob and Changeset.
-	// That means we need to
-	// - delete the ChangesetJob
-	// - detach the Changeset from the Campaign
-	// - close it on the codehost
+		attachedCampaignJobsByID = make(map[int64]*a8n.CampaignJob)
+	)
 
-	// Case (b): we have a matching _new_ CampaignJob.
-	// We keep the ChangesetJob around, but need to rewire it. And, if the diff
-	// is different, we need to _update_ the existing Changeset (on the codehost).
-	// We need to:
-	// - change the ChangesetJobs.CampaignJobID.
-	// - if the newCampaignJob.Diff != oldCampaignJob.Diff we need to update the Changeset on the codehost
-	// - to do that, we _reset_ the ChangesetJob (set error = '', started_at = NULL, finished_at = NULL)
+	for repoID, currentChangesetJob := range currentChangesetJobsByRepoID {
+		currentCampaignJob, _ := currentCampaignJobsByID[currentChangesetJob.CampaignJobID]
+
+		newCampaignJob, ok := newCampaignJobsByRepoID[repoID]
+		// Case (a): we _don't_ have a matching _new_ CampaignJob.
+		// We delete the ChangesetJob and Changeset.
+		// That means we need to
+		// - delete the ChangesetJob
+		// - detach the Changeset from the Campaign
+		// - close it on the codehost
+		if !ok {
+			toDelete = append(toDelete, currentChangesetJob)
+			changesetsToCloseAndDetach = append(changesetsToCloseAndDetach, currentChangesetJob.ChangesetID)
+			continue
+		}
+
+		// Case (b): we have a matching _new_ CampaignJob.
+		//
+		// We keep the ChangesetJob around, but need to rewire it. And, if the diff
+		// is different, we need to _update_ the existing Changeset (on the codehost).
+		//
+		// Change the ChangesetJobs.CampaignJobID.
+		currentChangesetJob.CampaignJobID = newCampaignJob.ID
+		attachedCampaignJobsByID[newCampaignJob.ID] = newCampaignJob
+
+		// If the newCampaignJob.Diff != oldCampaignJob.Diff we need to
+		// update the Changeset on the codehost...
+		if newCampaignJob.Diff != currentCampaignJob.Diff {
+			// ... to do that, we _reset_ the ChangesetJob (set error = '',
+			// started_at = NULL, finished_at = NULL)
+			currentChangesetJob.Error = ""
+			currentChangesetJob.StartedAt = time.Time{}
+			currentChangesetJob.FinishedAt = time.Time{}
+		}
+		toKeep = append(toKeep, currentChangesetJob)
+	}
 
 	// And if we have CampaignJobs that don't have an existing ChangesetJob
 	// we need to create new ChangesetJobs for those.
-	//
+	var toCreate []*a8n.ChangesetJob
+	for _, j := range newCampaignJobs {
+		if _, ok := attachedCampaignJobsByID[j.ID]; !ok {
+			toCreate = append(toCreate, &a8n.ChangesetJob{
+				CampaignID:    campaign.ID,
+				CampaignJobID: j.ID,
+			})
+		}
+	}
+
 	// The end state should be that
 	// - ChangesetJobs that don't have matching CampaignJob are deleted
-	// - Changesets belonging to deleted ChangesetJobs are closed on codehost
+	for _, j := range toDelete {
+		err := tx.DeleteChangesetJob(ctx, j.ID)
+		if err != nil {
+			return nil, err
+		}
+	}
+	// - Changesets belonging to deleted ChangesetJobs are detached from Campaign
+	// - TODO: Changesets belonging to deleted ChangesetJobs are closed on codehost
+	changesets, _, err := tx.ListChangesets(ctx, ListChangesetsOpts{IDs: changesetsToCloseAndDetach})
+	if err != nil {
+		return nil, errors.Wrap(err, "listing changesets to close and detach")
+	}
+	for _, c := range changesets {
+		c.RemoveCampaignID(campaign.ID)
+		campaign.RemoveChangesetID(c.ID)
+	}
+	err = tx.UpdateChangesets(ctx, changesets...)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.UpdateCampaign(ctx, campaign)
+	if err != nil {
+		return nil, err
+	}
+
 	// - ChangesetJobs that have a matching new CampaignJob with the same diff
 	// are rewired and left as is
 	// - ChangesetJobs that have a matching new CampaignJob with _new_ diff are
 	// rewired and reset
+	for _, c := range toKeep {
+		err := tx.UpdateChangesetJob(ctx, c)
+		if err != nil {
+			return nil, err
+		}
+	}
 	// - New CampaignJobs with no matching ChangesetJob get a new ChangesetJob
-	//
+	for _, c := range toCreate {
+		err := tx.CreateChangesetJob(ctx, c)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	// The caller can then call `RunChangesetJobs`, which should load the
 	// new and the rewired-and-reset ChangesetJobs and run them, which will
 	// either create a Changeset on the codehost or update it.
