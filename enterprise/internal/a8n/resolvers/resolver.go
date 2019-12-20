@@ -250,7 +250,13 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
 
-func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.UpdateCampaignArgs) (graphqlbackend.CampaignResolver, error) {
+func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.UpdateCampaignArgs) (_ graphqlbackend.CampaignResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.UpdateCampaign", fmt.Sprintf("Campaign: %q", args.Input.ID))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	// 🚨 SECURITY: Only site admins may update campaigns for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -283,6 +289,18 @@ func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.Upda
 	campaign, err := svc.UpdateCampaign(ctx, updateArgs)
 	if err != nil {
 		return nil, err
+	}
+
+	// TODO(a8n): Even though RunChangesetJobs is idempotent, we should
+	// probably only run this when the CampaignPlanID actually changed.
+	if args.Input.Plan != nil {
+		go func() {
+			ctx := trace.ContextWithTrace(context.Background(), tr)
+			err := svc.RunChangesetJobs(ctx, campaign)
+			if err != nil {
+				log15.Error("RunChangesetJobs", "err", err)
+			}
+		}()
 	}
 
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
