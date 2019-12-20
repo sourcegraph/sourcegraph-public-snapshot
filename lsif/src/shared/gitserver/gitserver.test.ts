@@ -1,5 +1,5 @@
 import nock from 'nock'
-import { flattenCommitParents, getCommitsNear, hashmod, gitserverExecLines } from './commits'
+import { flattenCommitParents, getCommitsNear, hashmod, gitserverExecLines } from './gitserver'
 
 describe('getCommitsNear', () => {
     it('should parse response from gitserver', async () => {

@@ -37,6 +37,9 @@ func NewStoreWithClock(db dbutil.DB, clock func() time.Time) *Store {
 	return &Store{db: db, now: clock}
 }
 
+// Clock returns the clock used by the Store.
+func (s *Store) Clock() func() time.Time { return s.now }
+
 // Transact returns a Store whose methods operate within the context of a transaction.
 // This method will return an error if the underlying DB cannot be interface upgraded
 // to a TxBeginner.
@@ -844,9 +847,10 @@ INSERT INTO campaigns (
   updated_at,
   changeset_ids,
   campaign_plan_id,
-  closed_at
+  closed_at,
+  published_at
 )
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING
   id,
   name,
@@ -858,7 +862,8 @@ RETURNING
   updated_at,
   changeset_ids,
   campaign_plan_id,
-  closed_at
+  closed_at,
+  published_at
 `
 
 func (s *Store) createCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
@@ -887,6 +892,7 @@ func (s *Store) createCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
 		changesetIDs,
 		nullInt64Column(c.CampaignPlanID),
 		nullTimeColumn(c.ClosedAt),
+		nullTimeColumn(c.PublishedAt),
 	), nil
 }
 
@@ -943,8 +949,9 @@ SET (
   updated_at,
   changeset_ids,
   campaign_plan_id,
-  closed_at
-) = (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+  closed_at,
+  published_at
+) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   id,
@@ -957,7 +964,8 @@ RETURNING
   updated_at,
   changeset_ids,
   campaign_plan_id,
-  closed_at
+  closed_at,
+  published_at
 `
 
 func (s *Store) updateCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
@@ -979,6 +987,7 @@ func (s *Store) updateCampaignQuery(c *a8n.Campaign) (*sqlf.Query, error) {
 		changesetIDs,
 		nullInt64Column(c.CampaignPlanID),
 		nullTimeColumn(c.ClosedAt),
+		nullTimeColumn(c.PublishedAt),
 		c.ID,
 	), nil
 }
@@ -1036,7 +1045,8 @@ func countCampaignsQuery(opts *CountCampaignsOpts) *sqlf.Query {
 
 // GetCampaignOpts captures the query options needed for getting a Campaign
 type GetCampaignOpts struct {
-	ID int64
+	ID             int64
+	CampaignPlanID int64
 }
 
 // GetCampaign gets a campaign matching the given options.
@@ -1071,7 +1081,8 @@ SELECT
   updated_at,
   changeset_ids,
   campaign_plan_id,
-  closed_at
+  closed_at,
+  published_at
 FROM campaigns
 WHERE %s
 LIMIT 1
@@ -1081,6 +1092,10 @@ func getCampaignQuery(opts *GetCampaignOpts) *sqlf.Query {
 	var preds []*sqlf.Query
 	if opts.ID != 0 {
 		preds = append(preds, sqlf.Sprintf("id = %s", opts.ID))
+	}
+
+	if opts.CampaignPlanID != 0 {
+		preds = append(preds, sqlf.Sprintf("campaign_plan_id = %s", opts.CampaignPlanID))
 	}
 
 	if len(preds) == 0 {
@@ -1133,7 +1148,8 @@ SELECT
   updated_at,
   changeset_ids,
   campaign_plan_id,
-  closed_at
+  closed_at,
+  published_at
 FROM campaigns
 WHERE %s
 ORDER BY id ASC
@@ -1674,6 +1690,11 @@ type CountCampaignJobsOpts struct {
 	CampaignPlanID int64
 	OnlyFinished   bool
 	OnlyWithDiff   bool
+
+	// If this is set to a Campaign ID only the CampaignJobs are returned that
+	// are _not_ associated with a successfully completed ChangesetJob (meaning
+	// that a Changeset on the codehost was created) for the given Campaign.
+	OnlyUnpublishedInCampaign int64
 }
 
 // CountCampaignJobs returns the number of code mods in the database.
@@ -1704,6 +1725,10 @@ func countCampaignJobsQuery(opts *CountCampaignJobsOpts) *sqlf.Query {
 
 	if opts.OnlyWithDiff {
 		preds = append(preds, sqlf.Sprintf("diff != ''"))
+	}
+
+	if opts.OnlyUnpublishedInCampaign != 0 {
+		preds = append(preds, onlyUnpublishedInCampaignQuery(opts.OnlyUnpublishedInCampaign))
 	}
 
 	if len(preds) == 0 {
@@ -1778,6 +1803,11 @@ type ListCampaignJobsOpts struct {
 	Limit          int
 	OnlyFinished   bool
 	OnlyWithDiff   bool
+
+	// If this is set to a Campaign ID only the CampaignJobs are returned that
+	// are _not_ associated with a successfully completed ChangesetJob (meaning
+	// that a Changeset on the codehost was created) for the given Campaign.
+	OnlyUnpublishedInCampaign int64
 }
 
 // ListCampaignJobs lists CampaignJobs with the given filters.
@@ -1849,10 +1879,31 @@ func listCampaignJobsQuery(opts *ListCampaignJobsOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("diff != ''"))
 	}
 
+	if opts.OnlyUnpublishedInCampaign != 0 {
+		preds = append(preds, onlyUnpublishedInCampaignQuery(opts.OnlyUnpublishedInCampaign))
+	}
+
 	return sqlf.Sprintf(
 		listCampaignJobsQueryFmtstr+limitClause,
 		sqlf.Join(preds, "\n AND "),
 	)
+}
+
+var onlyUnpublishedInCampaignQueryFmtstr = `
+NOT EXISTS (
+  SELECT 1
+  FROM changeset_jobs
+  WHERE
+    campaign_job_id = campaign_jobs.id
+  AND
+    campaign_id = %s
+  AND
+    changeset_id IS NOT NULL
+)
+`
+
+func onlyUnpublishedInCampaignQuery(campaignID int64) *sqlf.Query {
+	return sqlf.Sprintf(onlyUnpublishedInCampaignQueryFmtstr, campaignID)
 }
 
 // CreateChangesetJob creates the given ChangesetJob.
@@ -2024,6 +2075,7 @@ func countChangesetJobsQuery(opts *CountChangesetJobsOpts) *sqlf.Query {
 type GetChangesetJobOpts struct {
 	ID            int64
 	CampaignJobID int64
+	CampaignID    int64
 	ChangesetID   int64
 }
 
@@ -2067,6 +2119,10 @@ func getChangesetJobQuery(opts *GetChangesetJobOpts) *sqlf.Query {
 	var preds []*sqlf.Query
 	if opts.ID != 0 {
 		preds = append(preds, sqlf.Sprintf("id = %s", opts.ID))
+	}
+
+	if opts.CampaignID != 0 {
+		preds = append(preds, sqlf.Sprintf("campaign_id = %s", opts.CampaignID))
 	}
 
 	if opts.CampaignJobID != 0 {
@@ -2294,6 +2350,7 @@ func scanCampaign(c *a8n.Campaign, s scanner) error {
 		&dbutil.JSONInt64Set{Set: &c.ChangesetIDs},
 		&dbutil.NullInt64{N: &c.CampaignPlanID},
 		&dbutil.NullTime{Time: &c.ClosedAt},
+		&dbutil.NullTime{Time: &c.PublishedAt},
 	)
 }
 

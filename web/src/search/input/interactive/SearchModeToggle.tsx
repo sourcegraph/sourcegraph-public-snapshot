@@ -1,62 +1,47 @@
-import * as React from 'react'
 import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import CursorTextIcon from 'mdi-react/CursorTextIcon'
 import ViewQuiltIcon from 'mdi-react/ViewQuiltIcon'
+import React, { useState, useCallback } from 'react'
 
 interface Props {
     interactiveSearchMode: boolean
     toggleSearchMode: (event: React.MouseEvent<HTMLAnchorElement>) => void
 }
 
-interface State {
-    isOpen: boolean
-}
+export const SearchModeToggle: React.FunctionComponent<Props> = props => {
+    const [isOpen, setIsOpen] = useState<boolean>(false)
+    const toggleIsOpen = useCallback(() => setIsOpen(!isOpen), [isOpen, setIsOpen])
 
-export class SearchModeToggle extends React.Component<Props, State> {
-    constructor(props: Props) {
-        super(props)
-
-        this.state = {
-            isOpen: false,
-        }
-    }
-    private toggleOpen = (): void => {
-        this.setState(state => ({
-            isOpen: !state.isOpen,
-        }))
-    }
-    public render(): JSX.Element {
-        return (
-            <Dropdown isOpen={this.state.isOpen} toggle={this.toggleOpen} className="search-mode-toggle">
-                <DropdownToggle
-                    caret={true}
-                    className="search-mode-toggle__button e2e-search-mode-toggle"
-                    data-tooltip="Toggle search mode"
-                    aria-label="Toggle search mode"
+    return (
+        <Dropdown isOpen={isOpen} toggle={toggleIsOpen} className="search-mode-toggle">
+            <DropdownToggle
+                caret={true}
+                className="search-mode-toggle__button e2e-search-mode-toggle"
+                data-tooltip="Toggle search mode"
+                aria-label="Toggle search mode"
+            >
+                {props.interactiveSearchMode ? (
+                    <ViewQuiltIcon className="icon-inline" size={8}></ViewQuiltIcon>
+                ) : (
+                    <CursorTextIcon className="icon-inline" size={8}></CursorTextIcon>
+                )}
+            </DropdownToggle>
+            <DropdownMenu>
+                <DropdownItem
+                    active={props.interactiveSearchMode}
+                    onClick={!props.interactiveSearchMode ? props.toggleSearchMode : undefined}
+                    className="e2e-search-mode-toggle__interactive-mode"
                 >
-                    {this.props.interactiveSearchMode ? (
-                        <ViewQuiltIcon className="icon-inline" size={8}></ViewQuiltIcon>
-                    ) : (
-                        <CursorTextIcon className="icon-inline" size={8}></CursorTextIcon>
-                    )}
-                </DropdownToggle>
-                <DropdownMenu>
-                    <DropdownItem
-                        active={this.props.interactiveSearchMode}
-                        onClick={!this.props.interactiveSearchMode ? this.props.toggleSearchMode : undefined}
-                        className="e2e-search-mode-toggle__interactive-mode"
-                    >
-                        Interactive mode
-                    </DropdownItem>
-                    <DropdownItem
-                        active={!this.props.interactiveSearchMode}
-                        onClick={this.props.interactiveSearchMode ? this.props.toggleSearchMode : undefined}
-                        className="e2e-search-mode-toggle__omni-mode"
-                    >
-                        Omni mode
-                    </DropdownItem>
-                </DropdownMenu>
-            </Dropdown>
-        )
-    }
+                    Interactive mode
+                </DropdownItem>
+                <DropdownItem
+                    active={!props.interactiveSearchMode}
+                    onClick={props.interactiveSearchMode ? props.toggleSearchMode : undefined}
+                    className="e2e-search-mode-toggle__omni-mode"
+                >
+                    Omni mode
+                </DropdownItem>
+            </DropdownMenu>
+        </Dropdown>
+    )
 }

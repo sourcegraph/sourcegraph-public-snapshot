@@ -6,11 +6,13 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"fmt"
+	"net/url"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
@@ -27,6 +29,17 @@ func marshalCampaignPlanID(id int64) graphql.ID {
 
 func unmarshalCampaignPlanID(id graphql.ID) (campaignPlanID int64, err error) {
 	err = relay.UnmarshalSpec(id, &campaignPlanID)
+	return
+}
+
+const campaignJobIDKind = "ChangesetPlan"
+
+func marshalCampaignJobID(id int64) graphql.ID {
+	return relay.MarshalID(campaignJobIDKind, id)
+}
+
+func unmarshalCampaignJobID(id graphql.ID) (cid int64, err error) {
+	err = relay.UnmarshalSpec(id, &cid)
 	return
 }
 
@@ -53,8 +66,7 @@ func (r *campaignPlanResolver) Changesets(
 	args *graphqlutil.ConnectionArgs,
 ) graphqlbackend.ChangesetPlansConnectionResolver {
 	return &campaignJobsConnectionResolver{
-		store:        r.store,
-		campaignPlan: r.campaignPlan,
+		store: r.store,
 		opts: ee.ListCampaignJobsOpts{
 			CampaignPlanID: r.campaignPlan.ID,
 			Limit:          int(args.GetFirst()),
@@ -64,10 +76,17 @@ func (r *campaignPlanResolver) Changesets(
 	}
 }
 
+func (r *campaignPlanResolver) PreviewURL() string {
+	u := globals.ExternalURL().ResolveReference(&url.URL{Path: "/campaigns/new"})
+	q := url.Values{}
+	q.Set("plan", string(r.ID()))
+	u.RawQuery = q.Encode()
+	return u.String()
+}
+
 type campaignJobsConnectionResolver struct {
-	store        *ee.Store
-	campaignPlan *a8n.CampaignPlan
-	opts         ee.ListCampaignJobsOpts
+	store *ee.Store
+	opts  ee.ListCampaignJobsOpts
 
 	// cache results because they are used by multiple fields
 	once      sync.Once
@@ -123,9 +142,12 @@ func (r *campaignJobsConnectionResolver) compute(ctx context.Context) ([]*a8n.Ca
 }
 
 func (r *campaignJobsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	opts := ee.CountCampaignJobsOpts{CampaignPlanID: r.campaignPlan.ID}
-	opts.OnlyFinished = r.opts.OnlyFinished
-	opts.OnlyWithDiff = r.opts.OnlyWithDiff
+	opts := ee.CountCampaignJobsOpts{
+		CampaignPlanID:            r.opts.CampaignPlanID,
+		OnlyFinished:              r.opts.OnlyFinished,
+		OnlyWithDiff:              r.opts.OnlyWithDiff,
+		OnlyUnpublishedInCampaign: r.opts.OnlyUnpublishedInCampaign,
+	}
 	count, err := r.store.CountCampaignJobs(ctx, opts)
 	return int32(count), err
 }
@@ -163,6 +185,10 @@ func (r *campaignJobResolver) computeRepoCommit(ctx context.Context) (*graphqlba
 		r.commit, r.err = r.repo.Commit(ctx, args)
 	})
 	return r.repo, r.commit, r.err
+}
+
+func (r *campaignJobResolver) ID() graphql.ID {
+	return marshalCampaignJobID(r.job.ID)
 }
 
 func (r *campaignJobResolver) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {

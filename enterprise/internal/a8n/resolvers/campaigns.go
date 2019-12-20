@@ -120,6 +120,13 @@ func (r *campaignResolver) ClosedAt() *graphqlbackend.DateTime {
 	return &graphqlbackend.DateTime{Time: r.Campaign.ClosedAt}
 }
 
+func (r *campaignResolver) PublishedAt() *graphqlbackend.DateTime {
+	if r.Campaign.PublishedAt.IsZero() {
+		return nil
+	}
+	return &graphqlbackend.DateTime{Time: r.Campaign.PublishedAt}
+}
+
 func (r *campaignResolver) Changesets(ctx context.Context, args struct {
 	graphqlutil.ConnectionArgs
 }) graphqlbackend.ExternalChangesetsConnectionResolver {
@@ -128,6 +135,26 @@ func (r *campaignResolver) Changesets(ctx context.Context, args struct {
 		opts: ee.ListChangesetsOpts{
 			CampaignID: r.Campaign.ID,
 			Limit:      int(args.ConnectionArgs.GetFirst()),
+		},
+	}
+}
+
+func (r *campaignResolver) ChangesetPlans(
+	ctx context.Context,
+	args *graphqlutil.ConnectionArgs,
+) graphqlbackend.ChangesetPlansConnectionResolver {
+	if r.Campaign.CampaignPlanID == 0 {
+		return &emptyChangesetPlansConnectionsResolver{}
+	}
+
+	return &campaignJobsConnectionResolver{
+		store: r.store,
+		opts: ee.ListCampaignJobsOpts{
+			CampaignPlanID:            r.Campaign.CampaignPlanID,
+			Limit:                     int(args.GetFirst()),
+			OnlyFinished:              true,
+			OnlyWithDiff:              true,
+			OnlyUnpublishedInCampaign: r.Campaign.ID,
 		},
 	}
 }
@@ -241,4 +268,18 @@ func (r *changesetDiffsConnectionResolver) Nodes(ctx context.Context) ([]*graphq
 		}
 	}
 	return resolvers, nil
+}
+
+type emptyChangesetPlansConnectionsResolver struct{}
+
+func (r *emptyChangesetPlansConnectionsResolver) Nodes(ctx context.Context) ([]graphqlbackend.ChangesetPlanResolver, error) {
+	return []graphqlbackend.ChangesetPlanResolver{}, nil
+}
+
+func (r *emptyChangesetPlansConnectionsResolver) TotalCount(ctx context.Context) (int32, error) {
+	return 0, nil
+}
+
+func (r *emptyChangesetPlansConnectionsResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	return graphqlutil.HasNextPage(false), nil
 }

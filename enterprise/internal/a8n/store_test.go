@@ -39,8 +39,9 @@ func testStore(db *sql.DB) func(*testing.T) {
 						Description:    "All the Javascripts are belong to us",
 						AuthorID:       23,
 						ChangesetIDs:   []int64{int64(i) + 1},
-						CampaignPlanID: 42,
+						CampaignPlanID: 42 + int64(i),
 						ClosedAt:       now,
+						PublishedAt:    now,
 					}
 
 					if i%2 == 0 {
@@ -170,6 +171,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					c.Description += "-updated"
 					c.AuthorID++
 					c.ClosedAt = c.ClosedAt.Add(5 * time.Second)
+					c.PublishedAt = c.PublishedAt.Add(5 * time.Second)
 
 					if c.NamespaceUserID != 0 {
 						c.NamespaceUserID++
@@ -236,6 +238,20 @@ func testStore(db *sql.DB) func(*testing.T) {
 				t.Run("ByID", func(t *testing.T) {
 					want := campaigns[0]
 					opts := GetCampaignOpts{ID: want.ID}
+
+					have, err := s.GetCampaign(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
+					}
+				})
+
+				t.Run("ByCampaignPlanID", func(t *testing.T) {
+					want := campaigns[0]
+					opts := GetCampaignOpts{CampaignPlanID: want.CampaignPlanID}
 
 					have, err := s.GetCampaign(ctx, opts)
 					if err != nil {
@@ -1336,6 +1352,77 @@ func testStore(db *sql.DB) func(*testing.T) {
 				}
 			})
 
+			t.Run("Listing and Counting OnlyUnpublishedInCampaign", func(t *testing.T) {
+				campaignID := int64(999)
+				changesetJob := &a8n.ChangesetJob{
+					CampaignJobID: campaignJobs[0].ID,
+					CampaignID:    campaignID,
+					ChangesetID:   789,
+					StartedAt:     now,
+					FinishedAt:    now,
+				}
+				err := s.CreateChangesetJob(ctx, changesetJob)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				listOpts := ListCampaignJobsOpts{OnlyUnpublishedInCampaign: campaignID}
+				countOpts := CountCampaignJobsOpts{OnlyUnpublishedInCampaign: campaignID}
+
+				have, _, err := s.ListCampaignJobs(ctx, listOpts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				have, want := have, campaignJobs[1:] // Except campaignJobs[0]
+				if len(have) != len(want) {
+					t.Fatalf("listed %d campaignJobs, want: %d", len(have), len(want))
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
+				}
+
+				count, err := s.CountCampaignJobs(ctx, countOpts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if int(count) != len(want) {
+					t.Errorf("jobs counted: %d", count)
+				}
+
+				// Update ChangesetJob so condition does not apply
+				changesetJob.ChangesetID = 0
+				err = s.UpdateChangesetJob(ctx, changesetJob)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				have, _, err = s.ListCampaignJobs(ctx, listOpts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				want = campaignJobs // All CampaignJobs
+				if len(have) != len(want) {
+					t.Fatalf("listed %d campaignJobs, want: %d", len(have), len(want))
+				}
+
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
+				}
+
+				count, err = s.CountCampaignJobs(ctx, countOpts)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if int(count) != len(want) {
+					t.Errorf("jobs counted: %d", count)
+				}
+			})
+
 			t.Run("Update", func(t *testing.T) {
 				for _, c := range campaignJobs {
 					now = now.Add(time.Second)
@@ -1915,6 +2002,25 @@ func testStore(db *sql.DB) func(*testing.T) {
 					}
 					want := changesetJobs[0]
 					opts := GetChangesetJobOpts{ChangesetID: want.ChangesetID}
+
+					have, err := s.GetChangesetJob(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
+					}
+				})
+
+				t.Run("ByCampaignID", func(t *testing.T) {
+					if len(changesetJobs) == 0 {
+						t.Fatal("changesetJobs is empty")
+					}
+					// Use the last changesetJob, which we don't get by
+					// accident when selecting all with LIMIT 1
+					want := changesetJobs[2]
+					opts := GetChangesetJobOpts{CampaignID: want.CampaignID}
 
 					have, err := s.GetChangesetJob(ctx, opts)
 					if err != nil {

@@ -3,9 +3,12 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
+	"regexp/syntax"
 	"strings"
 	"time"
 
+	"github.com/google/zoekt"
+	zoektquery "github.com/google/zoekt/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -48,7 +51,123 @@ func limitOrDefault(first *int32) int {
 	return int(*first)
 }
 
+// indexedSymbols checks to see if Zoekt has indexed
+// symbols information for a repository at a specific
+// commit.
+func indexedSymbols(repository, commit string) bool {
+	z := search.Indexed()
+	if !z.Enabled() {
+		return false
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	set, err := z.ListAll(ctx)
+	if err != nil {
+		return false
+	}
+
+	repo, ok := set[strings.ToLower(repository)]
+	if !ok || !repo.HasSymbols {
+		return false
+	}
+
+	for _, branch := range repo.Branches {
+		if branch.Version == commit {
+			return true
+		}
+	}
+
+	return false
+}
+
+func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, queryString *string, first *int32, includePatterns *[]string) (res []*symbolResolver, err error) {
+	raw := *queryString
+	if raw == "" {
+		raw = ".*"
+	}
+
+	expr, err := syntax.Parse(raw, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
+	if err != nil {
+		return
+	}
+
+	var query zoektquery.Q
+	if expr.Op == syntax.OpLiteral {
+		query = &zoektquery.Substring{
+			Pattern: string(expr.Rune),
+			Content: true,
+		}
+	} else {
+		query = &zoektquery.Regexp{
+			Regexp:  expr,
+			Content: true,
+		}
+	}
+
+	sym := &zoektquery.Symbol{Expr: query}
+	repo := &zoektquery.RepoSet{Set: map[string]bool{
+		string(commit.repo.repo.Name): true,
+	}}
+	ands := []zoektquery.Q{repo, sym}
+	for _, p := range *includePatterns {
+		q, err := fileRe(p, true)
+		if err != nil {
+			return nil, err
+		}
+		ands = append(ands, q)
+	}
+
+	final := zoektquery.Simplify(zoektquery.NewAnd(ands...))
+	match := limitOrDefault(first) + 1
+	resp, err := search.Indexed().Client.Search(ctx, final, &zoekt.SearchOptions{
+		MaxWallTime:            3 * time.Second,
+		ShardMaxMatchCount:     match * 25,
+		TotalMaxMatchCount:     match * 25,
+		ShardMaxImportantMatch: match * 25,
+		TotalMaxImportantMatch: match * 25,
+		MaxDocDisplayCount:     match,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	baseURI, err := gituri.Parse("git://" + string(commit.repo.repo.Name) + "?" + string(commit.oid))
+	for _, file := range resp.Files {
+		for _, l := range file.LineMatches {
+			if l.FileName {
+				continue
+			}
+
+			for _, m := range l.LineFragments {
+				if m.SymbolInfo == nil {
+					continue
+				}
+
+				res = append(res, toSymbolResolver(
+					protocol.Symbol{
+						Name:       m.SymbolInfo.Sym,
+						Kind:       m.SymbolInfo.Kind,
+						Parent:     m.SymbolInfo.Parent,
+						ParentKind: m.SymbolInfo.ParentKind,
+						Path:       file.FileName,
+						Line:       l.LineNumber,
+					},
+					baseURI,
+					strings.ToLower(file.Language),
+					commit,
+				))
+			}
+		}
+	}
+	return
+}
+
 func computeSymbols(ctx context.Context, commit *GitCommitResolver, query *string, first *int32, includePatterns *[]string) (res []*symbolResolver, err error) {
+	if indexedSymbols(string(commit.repo.repo.Name), string(commit.oid)) {
+		return searchZoektSymbols(ctx, commit, query, first, includePatterns)
+	}
+
 	ctx, done := context.WithTimeout(ctx, 5*time.Second)
 	defer done()
 	defer func() {
@@ -60,6 +179,7 @@ func computeSymbols(ctx context.Context, commit *GitCommitResolver, query *strin
 	if includePatterns != nil {
 		includePatternsSlice = *includePatterns
 	}
+
 	searchArgs := search.SymbolsParameters{
 		CommitID:        api.CommitID(commit.oid),
 		First:           limitOrDefault(first) + 1, // add 1 so we can determine PageInfo.hasNextPage

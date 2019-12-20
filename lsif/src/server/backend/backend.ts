@@ -1,14 +1,15 @@
-import * as dumpModels from '../../shared/models/dump'
+import * as sqliteModels from '../../shared/models/sqlite'
 import * as lsp from 'vscode-languageserver-protocol'
 import * as settings from '../settings'
-import * as xrepoModels from '../../shared/models/xrepo'
+import * as pgModels from '../../shared/models/pg'
 import { addTags, logSpan, TracingContext } from '../../shared/tracing'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { Database, sortMonikers, InternalLocation } from './database'
 import { dbFilename } from '../../shared/paths'
 import { isEqual, uniqWith } from 'lodash'
 import { mustGet } from '../../shared/maps'
-import { XrepoDatabase } from '../../shared/xrepo/xrepo'
+import { DumpManager } from '../../shared/store/dumps'
+import { DependencyManager } from '../../shared/store/dependencies'
 
 /**
  * Context describing the current request for paginated results.
@@ -106,17 +107,19 @@ export class Backend {
      * Create a new `Backend`.
      *
      * @param storageRoot The path where SQLite databases are stored.
-     * @param xrepoDatabase The cross-repo database.
+     * @param dumpManager The dumps manager instance.
+     * @param dependencyManager The dependency manager instance.
      * @param fetchConfiguration A function that returns the current configuration.
      */
     constructor(
         private storageRoot: string,
-        private xrepoDatabase: XrepoDatabase,
+        private dumpManager: DumpManager,
+        private dependencyManager: DependencyManager,
         private fetchConfiguration: () => { gitServers: string[] }
     ) {}
 
     /**
-     * Determine if data exists for a particular document in this database.
+     * Determine if data exists for a particular document.
      *
      * @param repository The repository name.
      * @param commit The commit.
@@ -130,7 +133,7 @@ export class Backend {
         path: string,
         dumpId?: number,
         ctx: TracingContext = {}
-    ): Promise<xrepoModels.LsifDump | undefined> {
+    ): Promise<pgModels.LsifDump | undefined> {
         const closestDatabaseAndDump = await this.loadClosestDatabase(repository, commit, path, dumpId, ctx)
         if (!closestDatabaseAndDump) {
             return undefined
@@ -140,8 +143,8 @@ export class Backend {
     }
 
     /**
-     * Return the location for the definition of the reference at the given position. Returns
-     * undefined if no dump can be loaded to answer this query.
+     * Return the location for the symbol at the given position. Returns undefined if no dump can
+     * be loaded to answer this query.
      *
      * @param repository The repository name.
      * @param commit The commit.
@@ -167,7 +170,7 @@ export class Backend {
     }
 
     /**
-     * Return a list of locations which reference the definition at the given position. Returns
+     * Return a list of locations which reference the symbol at the given position. Returns
      * undefined if no dump can be loaded to answer this query.
      *
      * @param repository The repository name.
@@ -191,8 +194,8 @@ export class Backend {
     }
 
     /**
-     * Return the hover content for the definition or reference at the given position. Returns
-     * undefined if no dump can be loaded to answer this query.
+     * Return the hover content for the symbol at the given position. Returns undefined if no dump can
+     * be loaded to answer this query.
      *
      * @param repository The repository name.
      * @param commit The commit.
@@ -249,7 +252,7 @@ export class Backend {
         position: lsp.Position,
         dumpId?: number,
         ctx: TracingContext = {}
-    ): Promise<{ dump: xrepoModels.LsifDump; locations: InternalLocation[] } | undefined> {
+    ): Promise<{ dump: pgModels.LsifDump; locations: InternalLocation[] } | undefined> {
         const closestDatabaseAndDump = await this.loadClosestDatabase(repository, commit, path, dumpId, ctx)
         if (!closestDatabaseAndDump) {
             if (ctx.logger) {
@@ -287,13 +290,13 @@ export class Backend {
 
             for (const moniker of monikers) {
                 if (moniker.kind === 'import') {
-                    // This symbol was imported from another database. See if we have xrepo
-                    // definition for it.
+                    // This symbol was imported from another database. See if we have
+                    // an remote definition for it.
 
                     const remoteDefinitions = await this.lookupMoniker(
                         document,
                         moniker,
-                        dumpModels.DefinitionModel,
+                        sqliteModels.DefinitionModel,
                         ctx
                     )
                     if (remoteDefinitions.length > 0) {
@@ -304,7 +307,7 @@ export class Backend {
                     // table of our own database in case there was a definition that wasn't properly
                     // attached to a result set but did have the correct monikers attached.
 
-                    const monikerResults = await database.monikerResults(dumpModels.DefinitionModel, moniker, ctx)
+                    const monikerResults = await database.monikerResults(sqliteModels.DefinitionModel, moniker, ctx)
                     const localDefinitions = monikerResults.map(loc => locationFromDatabase(dump.root, loc))
                     if (localDefinitions.length > 0) {
                         return { dump, locations: localDefinitions }
@@ -324,10 +327,10 @@ export class Backend {
         dumpId?: number,
         ctx: TracingContext = {}
     ): Promise<
-        { dump: xrepoModels.LsifDump; locations: InternalLocation[]; cursor?: ReferencePaginationCursor } | undefined
+        { dump: pgModels.LsifDump; locations: InternalLocation[]; cursor?: ReferencePaginationCursor } | undefined
     > {
         if (paginationContext.cursor) {
-            const dump = await this.xrepoDatabase.getDumpById(paginationContext.cursor.dumpId)
+            const dump = await this.dumpManager.getDumpById(paginationContext.cursor.dumpId)
             if (dump === undefined) {
                 return undefined
             }
@@ -385,18 +388,23 @@ export class Backend {
             // in the LSIF data.
 
             for (const moniker of monikers) {
-                const monikerResults = await database.monikerResults(dumpModels.ReferenceModel, moniker, ctx)
+                const monikerResults = await database.monikerResults(sqliteModels.ReferenceModel, moniker, ctx)
                 locations = locations.concat(monikerResults.map(loc => locationFromDatabase(dump.root, loc)))
             }
 
-            // Next, we perform an xrepo search for uses of each nonlocal moniker. We stop processing after
-            // the first moniker for which we received results. As we process monikers in an order that
-            // considers moniker schemes, the first one to get results should be the most desirable.
+            // Next, we perform a remote search for uses of each nonlocal moniker. We stop processing
+            // after the first moniker for which we received results. As we process monikers in an order
+            // that considers moniker schemes, the first one to get results should be the most desirable.
 
             for (const moniker of monikers) {
                 if (moniker.kind === 'import') {
                     // Get locations in the defining package
-                    const monikerLocations = await this.lookupMoniker(document, moniker, dumpModels.ReferenceModel, ctx)
+                    const monikerLocations = await this.lookupMoniker(
+                        document,
+                        moniker,
+                        sqliteModels.ReferenceModel,
+                        ctx
+                    )
                     locations = locations.concat(monikerLocations)
                 }
 
@@ -450,10 +458,10 @@ export class Backend {
      * @param ctx The tracing context.
      */
     private lookupPackageInformation(
-        document: dumpModels.DocumentData,
-        moniker: dumpModels.MonikerData,
+        document: sqliteModels.DocumentData,
+        moniker: sqliteModels.MonikerData,
         ctx: TracingContext = {}
-    ): dumpModels.PackageInformationData | undefined {
+    ): sqliteModels.PackageInformationData | undefined {
         if (!moniker.packageInformationId) {
             return undefined
         }
@@ -473,9 +481,9 @@ export class Backend {
 
     /**
      * Find the locations attached to the target moniker outside of the current database. If
-     * the moniker has attached package information, then the cross-repo database is queried
-     * for the target package. That database is opened, and its definitions table is queried
-     * for the target moniker.
+     * the moniker has attached package information, then Postgres is queried for the target
+     * package. That database is opened, and its definitions table is queried for the target
+     * moniker.
      *
      * @param document The document containing the definition.
      * @param moniker The target moniker.
@@ -483,9 +491,9 @@ export class Backend {
      * @param ctx The tracing context.
      */
     private async lookupMoniker(
-        document: dumpModels.DocumentData,
-        moniker: dumpModels.MonikerData,
-        model: typeof dumpModels.DefinitionModel | typeof dumpModels.ReferenceModel,
+        document: sqliteModels.DocumentData,
+        moniker: sqliteModels.MonikerData,
+        model: typeof sqliteModels.DefinitionModel | typeof sqliteModels.ReferenceModel,
         ctx: TracingContext = {}
     ): Promise<InternalLocation[]> {
         const packageInformation = this.lookupPackageInformation(document, moniker, ctx)
@@ -493,7 +501,7 @@ export class Backend {
             return []
         }
 
-        const packageEntity = await this.xrepoDatabase.getPackage(
+        const packageEntity = await this.dependencyManager.getPackage(
             moniker.scheme,
             packageInformation.name,
             packageInformation.version
@@ -557,7 +565,7 @@ export class Backend {
                 } else {
                     // Determine if there are any valid remote dumps we will open if
                     // we move onto a next page.
-                    const { totalCount: remoteTotalCount } = await this.xrepoDatabase.getReferences({
+                    const { totalCount: remoteTotalCount } = await this.dependencyManager.getReferences({
                         repository,
                         scheme: moniker.scheme,
                         name: packageInformation.name,
@@ -613,9 +621,9 @@ export class Backend {
 
     /**
      * Find the references of the target moniker outside of the current repository. If the moniker
-     * has attached package information, then the cross-repo database is queried for the packages
-     * that require this particular moniker identifier. These dumps are opened, and their
-     * references tables are queried for the target moniker.
+     * has attached package information, then Postgres is queried for the packages that require
+     * this particular moniker identifier. These dumps are opened, and their references tables are
+     * queried for the target moniker.
      *
      * @param dumpId The ID of the dump for which this database answers queries.
      * @param repository The repository for which this database answers queries.
@@ -626,15 +634,15 @@ export class Backend {
      * @param ctx The tracing context.
      */
     private async remoteReferences(
-        dumpId: xrepoModels.DumpId,
+        dumpId: pgModels.DumpId,
         repository: string,
-        moniker: Pick<dumpModels.MonikerData, 'scheme' | 'identifier'>,
-        packageInformation: Pick<dumpModels.PackageInformationData, 'name' | 'version'>,
+        moniker: Pick<sqliteModels.MonikerData, 'scheme' | 'identifier'>,
+        packageInformation: Pick<sqliteModels.PackageInformationData, 'name' | 'version'>,
         limit: number,
         offset: number,
         ctx: TracingContext = {}
     ): Promise<{ locations: InternalLocation[]; totalCount: number; newOffset: number }> {
-        const { references, totalCount, newOffset } = await this.xrepoDatabase.getReferences({
+        const { references, totalCount, newOffset } = await this.dependencyManager.getReferences({
             repository,
             scheme: moniker.scheme,
             identifier: moniker.identifier,
@@ -651,7 +659,7 @@ export class Backend {
 
     /**
      * Find the references of the target moniker outside of the current dump but within a dump of
-     * the same repository. If the moniker has attached package information, then the cross-repo
+     * the same repository. If the moniker has attached package information, then the dependency
      * database is queried for the packages that require this particular moniker identifier. These
      * dumps are opened, and their references tables are queried for the target moniker.
      *
@@ -665,16 +673,16 @@ export class Backend {
      * @param ctx The tracing context.
      */
     private async sameRepositoryRemoteReferences(
-        dumpId: xrepoModels.DumpId,
+        dumpId: pgModels.DumpId,
         repository: string,
         commit: string,
-        moniker: Pick<dumpModels.MonikerData, 'scheme' | 'identifier'>,
-        packageInformation: Pick<dumpModels.PackageInformationData, 'name' | 'version'>,
+        moniker: Pick<sqliteModels.MonikerData, 'scheme' | 'identifier'>,
+        packageInformation: Pick<sqliteModels.PackageInformationData, 'name' | 'version'>,
         limit: number,
         offset: number,
         ctx: TracingContext = {}
     ): Promise<{ locations: InternalLocation[]; totalCount: number; newOffset: number }> {
-        const { references, totalCount, newOffset } = await this.xrepoDatabase.getSameRepoRemoteReferences({
+        const { references, totalCount, newOffset } = await this.dependencyManager.getSameRepoRemoteReferences({
             repository,
             commit,
             scheme: moniker.scheme,
@@ -699,9 +707,9 @@ export class Backend {
      * @param ctx The tracing context.
      */
     private async locationsFromRemoteReferences(
-        dumpId: xrepoModels.DumpId,
-        moniker: Pick<dumpModels.MonikerData, 'scheme' | 'identifier'>,
-        dumps: xrepoModels.LsifDump[],
+        dumpId: pgModels.DumpId,
+        moniker: Pick<sqliteModels.MonikerData, 'scheme' | 'identifier'>,
+        dumps: pgModels.LsifDump[],
         ctx: TracingContext = {}
     ): Promise<InternalLocation[]> {
         logSpan(ctx, 'package_references', {
@@ -717,7 +725,7 @@ export class Backend {
             }
 
             const references = (
-                await this.createDatabase(dump).monikerResults(dumpModels.ReferenceModel, moniker, ctx)
+                await this.createDatabase(dump).monikerResults(sqliteModels.ReferenceModel, moniker, ctx)
             ).map(loc => locationFromDatabase(dump.root, loc))
             locations = locations.concat(references)
         }
@@ -745,13 +753,13 @@ export class Backend {
         file: string,
         dumpId?: number,
         ctx: TracingContext = {}
-    ): Promise<{ database: Database; dump: xrepoModels.LsifDump; ctx: TracingContext } | undefined> {
+    ): Promise<{ database: Database; dump: pgModels.LsifDump; ctx: TracingContext } | undefined> {
         // Determine the closest commit that we actually have LSIF data for. If the commit is
         // not tracked, then commit data is requested from gitserver and insert the ancestors
         // data for this commit.
         const dump = await (dumpId
-            ? this.xrepoDatabase.getDumpById(dumpId)
-            : this.xrepoDatabase.findClosestDump(repository, commit, file, ctx, this.fetchConfiguration().gitServers))
+            ? this.dumpManager.getDumpById(dumpId)
+            : this.dumpManager.findClosestDump(repository, commit, file, ctx, this.fetchConfiguration().gitServers))
 
         if (dump) {
             return { database: this.createDatabase(dump), dump, ctx: addTags(ctx, { closestCommit: dump.commit }) }
@@ -765,7 +773,7 @@ export class Backend {
      *
      * @param dump The dump.
      */
-    private createDatabase(dump: xrepoModels.LsifDump): Database {
+    private createDatabase(dump: pgModels.LsifDump): Database {
         return new Database(
             this.connectionCache,
             this.documentCache,

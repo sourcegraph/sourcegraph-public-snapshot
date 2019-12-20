@@ -18,7 +18,7 @@ describe('Backend', () => {
     beforeAll(async () => {
         await ctx.init()
 
-        if (!ctx.xrepoDatabase) {
+        if (!ctx.dumpManager || !ctx.dependencyManager) {
             return
         }
 
@@ -67,7 +67,7 @@ describe('Backend', () => {
             )
         )
 
-        await ctx.xrepoDatabase.updateCommits(
+        await ctx.dumpManager.updateCommits(
             repository,
             new Map<string, Set<string>>(
                 Array.from({ length: MAX_TRAVERSAL_LIMIT * 2 + 1 }, (_, i) => [

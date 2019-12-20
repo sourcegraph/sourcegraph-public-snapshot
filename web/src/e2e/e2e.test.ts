@@ -1593,46 +1593,44 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector('.e2e-add-filter-button-repo')
             await driver.page.click('.e2e-add-filter-button-repo')
 
-            // Wait for a repo filter chip to be added. The key for the first repo filter added (during a fresh React lifecycle) will be `repo-0`
-            await driver.page.waitForSelector('.e2e-filter-input-repo-0')
-            await driver.page.waitForSelector('.e2e-filter-input__input-field-repo-0')
-
+            // FilterInput is autofocused
+            await driver.page.waitForSelector('.filter-input')
             // Search for repo:gorilla in the repo filter chip input
             await driver.page.keyboard.type('gorilla')
             await driver.page.keyboard.press('Enter')
             await driver.assertWindowLocation('/search?repo=gorilla&q=&patternType=literal')
 
             // Edit the filter
-            await driver.page.waitForSelector('.e2e-filter-input-repo-0')
-            await driver.page.click('.e2e-filter-input-repo-0')
-            await driver.page.waitForSelector('.e2e-filter-input__input-field-repo-0')
+            await driver.page.waitForSelector('.filter-input')
+            await driver.page.click('.filter-input')
+            await driver.page.waitForSelector('.filter-input__input-field')
             await driver.page.keyboard.type('/mux')
             // Press enter to lock in filter
             await driver.page.keyboard.press('Enter')
             // The main query input should be autofocused, so hit enter again to submit
             await driver.assertWindowLocation('/search?repo=gorilla/mux&q=&patternType=literal')
 
-            // Add a file filter
+            // Add a file filter from search results page
             await driver.page.waitForSelector('.e2e-add-filter-button-file', { visible: true })
             await driver.page.click('.e2e-add-filter-button-file')
-            await driver.page.waitForSelector('.e2e-filter-input__input-field-file-1', { visible: true })
+            await driver.page.waitForSelector('.filter-input__input-field', { visible: true })
             await driver.page.keyboard.type('README')
             await driver.page.keyboard.press('Enter')
             await driver.page.keyboard.press('Enter')
             await driver.assertWindowLocation('/search?repo=gorilla/mux&file=README&q=&patternType=literal')
 
-            // Delete file filter
-            await driver.page.waitForSelector('.e2e-filter-input__delete-button-file-1', { visible: true })
-            await driver.page.click('.e2e-filter-input__delete-button-file-1')
-            await driver.page.click('.search-button')
-            await driver.assertWindowLocation('/search?repo=gorilla/mux&q=&patternType=literal')
+            // Delete filter
+            await driver.page.goto(sourcegraphBaseUrl + '/search?repo=gorilla/mux&q=&patternType=literal')
+            await driver.page.waitForSelector('.e2e-filter-input__delete-button', { visible: true })
+            await driver.page.click('.e2e-filter-input__delete-button')
+            await driver.assertWindowLocation('/search?q=&patternType=literal')
 
             // Test suggestions
             await driver.page.goto(sourcegraphBaseUrl + '/search')
             await driver.page.waitForSelector('.e2e-add-filter-button-repo', { visible: true })
             await driver.page.click('.e2e-add-filter-button-repo')
-            await driver.page.waitForSelector('.e2e-filter-input-repo-0')
-            await driver.page.waitForSelector('.e2e-filter-input__input-field-repo-0')
+            await driver.page.waitForSelector('.filter-input', { visible: true })
+            await driver.page.waitForSelector('.filter-input__input-field')
             await driver.page.keyboard.type('gorilla')
             await driver.page.waitForSelector('.e2e-filter-input__suggestions')
             await driver.page.waitForSelector('.e2e-suggestion-item')
@@ -1642,16 +1640,16 @@ describe('e2e test suite', () => {
             await driver.assertWindowLocation('/search?repo=%5Egithub%5C.com/gorilla/mux%24&q=&patternType=literal')
 
             // Test cancelling editing an input with escape key
-            await driver.page.click('.e2e-filter-input__button-text-repo-0')
-            await driver.page.waitForSelector('.e2e-filter-input__input-field-repo-0')
+            await driver.page.click('.filter-input__button-text')
+            await driver.page.waitForSelector('.filter-input__input-field')
             await driver.page.keyboard.type('/mux')
             await driver.page.keyboard.press('Escape')
             await driver.page.click('.e2e-search-button')
             await driver.assertWindowLocation('/search?repo=%5Egithub%5C.com/gorilla/mux%24&q=&patternType=literal')
 
             // Test cancelling editing an input by clicking outside close button
-            await driver.page.click('.e2e-filter-input__button-text-repo-0')
-            await driver.page.waitForSelector('.e2e-filter-input__input-field-repo-0')
+            await driver.page.click('.filter-input__button-text')
+            await driver.page.waitForSelector('.filter-input__input-field')
             await driver.page.keyboard.type('/mux')
             await driver.page.click('.e2e-search-button')
             await driver.assertWindowLocation('/search?repo=%5Egithub%5C.com/gorilla/mux%24&q=&patternType=literal')
