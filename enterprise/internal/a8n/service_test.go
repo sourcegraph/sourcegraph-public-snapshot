@@ -444,10 +444,34 @@ func TestService(t *testing.T) {
 			t.Fatalf("ChangesetJob FinishedAt not reset. have=%v", modified.FinishedAt)
 		}
 
-		// TODO: check that Changeset with RepoID ==
-		// oldCampaignJobToBeDeleted.RepoID is detached from campaign and
-		// closed on Codehost (which we can't here without mocking a lot of
-		// things, so we might need to do that somewhere else)
+		// Check Changeset with RepoID == CampaignJobToBeDeleted.RepoID is
+		// detached from campaign
+		var oldChangesetToBeDetached *a8n.Changeset
+		for _, c := range oldChangesets {
+			if c.RepoID == oldCampaignJobToBeDeleted.RepoID {
+				oldChangesetToBeDetached = c
+				break
+			}
+		}
+		if oldChangesetToBeDetached == nil {
+			t.Fatalf("could not find old changeset to be detached")
+		}
+		changeset, err := store.GetChangeset(ctx, GetChangesetOpts{ID: oldChangesetToBeDetached.ID})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(changeset.CampaignIDs) != 0 {
+			t.Fatalf("old changeset still attached to campaign")
+		}
+		for _, changesetID := range campaign.ChangesetIDs {
+			if changesetID == changeset.ID {
+				t.Fatalf("old changeset still attached to campaign")
+			}
+		}
+
+		// TODO: Check that it's closed on Codehost (which we can't here
+		// without mocking a lot of things, so we might need to do that
+		// somewhere else)
 	})
 }
 

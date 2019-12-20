@@ -712,6 +712,7 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 
 	// TODO: If the name and description change, we also need to update the
 	// changesets on the codehost
+	//
 
 	// If the campaign.PlanID is different to the previous one, we need to
 	// do the full update. Otherwise, we're done.
@@ -824,6 +825,13 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 			currentChangesetJob.FinishedAt = time.Time{}
 		}
 		toKeep = append(toKeep, currentChangesetJob)
+
+		// TODO: We also need to check whether the Rev/BaseRef changed
+		// Along with Campaign.{Name,Description} we can probably do that in
+		// `RunChangesetJob`:
+		// if the Changeset on the codehost already exist, we check whether its
+		// Title/Description/BaseRef differ from what we have and if so, we
+		// update it
 	}
 
 	// And if we have CampaignJobs that don't have an existing ChangesetJob
