@@ -470,68 +470,76 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                     >
                                         Edit
                                     </button>
-                                    {campaign && campaign.__typename === 'Campaign' && !campaign.closedAt && (
-                                        <details className="campaign-details__details">
-                                            <summary>
-                                                <span className="btn btn-secondary mr-1 dropdown-toggle">Close</span>
-                                            </summary>
-                                            <div className="position-absolute campaign-details__details-menu">
-                                                <div className="card mt-1">
-                                                    <div className="card-body">
-                                                        <p>
-                                                            <b>You are about to close this campaign</b>
-                                                        </p>
-                                                        <div className="form-group">
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={closeChangesets}
-                                                                onChange={onCloseChangesetsToggle}
-                                                            />{' '}
-                                                            Close changesets on codehosts
-                                                        </div>
-                                                        <button
-                                                            type="button"
-                                                            disabled={mode === 'deleting' || mode === 'closing'}
-                                                            className="btn btn-secondary mr-1"
-                                                            onClick={onClose}
-                                                        >
+                                    {campaign && campaign.__typename === 'Campaign' && (
+                                        <>
+                                            {!campaign.closedAt && (
+                                                <details className="campaign-details__details">
+                                                    <summary>
+                                                        <span className="btn btn-secondary mr-1 dropdown-toggle">
                                                             Close
-                                                        </button>
+                                                        </span>
+                                                    </summary>
+                                                    <div className="position-absolute campaign-details__details-menu">
+                                                        <div className="card mt-1">
+                                                            <div className="card-body">
+                                                                <p>
+                                                                    Close campaign <b>{campaign.name}</b>?
+                                                                </p>
+                                                                <div className="form-group">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={closeChangesets}
+                                                                        onChange={onCloseChangesetsToggle}
+                                                                    />{' '}
+                                                                    Close all {campaign.changesets.totalCount}{' '}
+                                                                    changesets on codehosts
+                                                                </div>
+                                                                <button
+                                                                    type="button"
+                                                                    disabled={mode === 'deleting' || mode === 'closing'}
+                                                                    className="btn btn-secondary mr-1"
+                                                                    onClick={onClose}
+                                                                >
+                                                                    Close
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </details>
+                                            )}
+                                            <details className="campaign-details__details">
+                                                <summary>
+                                                    <span className="btn btn-danger dropdown-toggle">Delete</span>
+                                                </summary>
+                                                <div className="position-absolute campaign-details__details-menu">
+                                                    <div className="card mt-1">
+                                                        <div className="card-body">
+                                                            <p>
+                                                                Delete campaign <b>{campaign.name}</b>?
+                                                            </p>
+                                                            <div className="form-group">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={closeChangesets}
+                                                                    onChange={onCloseChangesetsToggle}
+                                                                />{' '}
+                                                                Close all {campaign.changesets.totalCount}{' '}
+                                                                    changesets on codehosts
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                disabled={mode === 'deleting' || mode === 'closing'}
+                                                                className="btn btn-danger mr-1"
+                                                                onClick={onDelete}
+                                                            >
+                                                                Delete
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </details>
+                                            </details>
+                                        </>
                                     )}
-                                    <details className="campaign-details__details">
-                                        <summary>
-                                            <span className="btn btn-danger dropdown-toggle">Delete</span>
-                                        </summary>
-                                        <div className="position-absolute campaign-details__details-menu">
-                                            <div className="card mt-1">
-                                                <div className="card-body">
-                                                    <p>
-                                                        <b>You are about to delete this campaign</b>
-                                                    </p>
-                                                    <div className="form-group">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={closeChangesets}
-                                                            onChange={onCloseChangesetsToggle}
-                                                        />{' '}
-                                                        Close changesets on codehosts
-                                                    </div>
-                                                    <button
-                                                        type="button"
-                                                        disabled={mode === 'deleting' || mode === 'closing'}
-                                                        className="btn btn-danger mr-1"
-                                                        onClick={onDelete}
-                                                    >
-                                                        Delete
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </details>
                                 </>
                             ))}
                     </span>
