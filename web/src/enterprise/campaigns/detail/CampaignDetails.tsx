@@ -523,8 +523,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                                                     checked={closeChangesets}
                                                                     onChange={onCloseChangesetsToggle}
                                                                 />{' '}
-                                                                Close all {campaign.changesets.totalCount}{' '}
-                                                                    changesets on codehosts
+                                                                Close all {campaign.changesets.totalCount} changesets on
+                                                                codehosts
                                                             </div>
                                                             <button
                                                                 type="button"
