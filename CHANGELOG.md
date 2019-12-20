@@ -17,6 +17,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Bitbucket Server repositories with the label `archived` can be excluded from search with `archived:no` [syntax](https://docs.sourcegraph.com/user/search/queries). [#5494](https://github.com/sourcegraph/sourcegraph/issues/5494)
 - Add button to download file in code view. [#5478](https://github.com/sourcegraph/sourcegraph/issues/5478)
 - The new `github.allowOrgs` site config setting enables admins to restrict GitHub logins to members of specific GitHub organizations. [#4195](https://github.com/sourcegraph/sourcegraph/issues/4195)
+- Skip LFS content when cloning git repositories. [#7322](https://github.com/sourcegraph/sourcegraph/issues/7322)
 
 ### Changed
 
