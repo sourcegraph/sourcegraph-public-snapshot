@@ -367,6 +367,8 @@ type ExternalIdentity struct {
 
 // GitHubAuthProvider description: Configures the GitHub (or GitHub Enterprise) OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitHub instance: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/. When a user signs into Sourcegraph or links their GitHub account to their existing Sourcegraph account, GitHub will prompt the user for the repo scope.
 type GitHubAuthProvider struct {
+	// AllowOrgs description: Restricts new logins to members of these GitHub organizations. Existing sessions won't be invalidated. Leave empty or unset for no org restrictions.
+	AllowOrgs []string `json:"allowOrgs,omitempty"`
 	// AllowSignup description: Allows new visitors to sign up for accounts via GitHub authentication. If false, users signing in via GitHub must have an existing Sourcegraph account, which will be linked to their GitHub identity after sign-in.
 	AllowSignup bool `json:"allowSignup,omitempty"`
 	// ClientID description: The Client ID of the GitHub OAuth app, accessible from https://github.com/settings/developers (or the same path on GitHub Enterprise).
