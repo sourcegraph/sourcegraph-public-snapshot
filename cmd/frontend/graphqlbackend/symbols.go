@@ -54,7 +54,7 @@ func limitOrDefault(first *int32) int {
 // indexedSymbols checks to see if Zoekt has indexed
 // symbols information for a repository at a specific
 // commit.
-func indexedSymbols(commit *GitCommitResolver) bool {
+func indexedSymbols(repository, commit string) bool {
 	z := search.Indexed()
 	if !z.Enabled() {
 		return false
@@ -67,13 +67,13 @@ func indexedSymbols(commit *GitCommitResolver) bool {
 		return false
 	}
 
-	repo, ok := set[strings.ToLower(string(commit.repo.repo.Name))]
+	repo, ok := set[strings.ToLower(repository)]
 	if !ok || !repo.HasSymbols {
 		return false
 	}
 
 	for _, branch := range repo.Branches {
-		if branch.Version == string(commit.oid) {
+		if branch.Version == commit {
 			return true
 		}
 	}
@@ -164,7 +164,7 @@ func searchZoektSymbols(ctx context.Context, commit *GitCommitResolver, queryStr
 }
 
 func computeSymbols(ctx context.Context, commit *GitCommitResolver, query *string, first *int32, includePatterns *[]string) (res []*symbolResolver, err error) {
-	if indexedSymbols(commit) {
+	if indexedSymbols(string(commit.repo.repo.Name), string(commit.oid)) {
 		return searchZoektSymbols(ctx, commit, query, first, includePatterns)
 	}
 
