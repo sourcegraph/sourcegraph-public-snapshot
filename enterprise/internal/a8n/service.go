@@ -714,6 +714,9 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		return campaign, err
 	}
 
+	// TODO: If the name and description change, we also need to update the
+	// changesets on the codehost
+
 	// TODO: Update the campaign.PlanID if it's set in args.Plan
 	//
 	// if the campaign.PlanID is different to the previous one, we need to
