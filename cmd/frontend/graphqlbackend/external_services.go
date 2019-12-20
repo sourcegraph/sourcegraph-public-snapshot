@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
@@ -103,6 +104,11 @@ func (*schemaResolver) UpdateExternalService(ctx context.Context, args *struct {
 
 // Eagerly trigger a repo-updater sync.
 func syncExternalService(ctx context.Context, svc *types.ExternalService) error {
+	// Only give 5s to validate external service sync. Usually if there is a
+	// problem it fails sooner.
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
 	_, err := repoupdater.DefaultClient.SyncExternalService(ctx, api.ExternalService{
 		ID:          svc.ID,
 		Kind:        svc.Kind,
@@ -112,7 +118,7 @@ func syncExternalService(ctx context.Context, svc *types.ExternalService) error 
 		UpdatedAt:   svc.UpdatedAt,
 		DeletedAt:   svc.DeletedAt,
 	})
-	if err != nil {
+	if err != nil && ctx.Err() == nil {
 		return err
 	}
 

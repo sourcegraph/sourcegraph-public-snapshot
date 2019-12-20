@@ -304,84 +304,69 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 
 	s.Syncer.TriggerSync()
 
-	errch := make(chan error, 1)
-	go func() {
-		if req.ExternalService.DeletedAt != nil {
-			// We don't need to check deleted services.
-			errch <- nil
-			return
-		}
-
-		src, err := repos.NewSource(&repos.ExternalService{
-			ID:          req.ExternalService.ID,
-			Kind:        req.ExternalService.Kind,
-			DisplayName: req.ExternalService.DisplayName,
-			Config:      req.ExternalService.Config,
-		}, httpcli.NewHTTPClientFactory())
-		if err != nil {
-			errch <- err
-			return
-		}
-
-		results := make(chan repos.SourceResult)
-
-		go func() {
-			src.ListRepos(ctx, results)
-			close(results)
-		}()
-
-		err = nil
-		for res := range results {
-			if res.Err != nil {
-				err = res.Err
-				// Send error to user before waiting for all results, but drain
-				// the rest of the results to not leak a blocked goroutine
-				go func() {
-					for res = range results {
-					}
-				}()
-				break
-			}
-		}
-
-		if err != nil && ctx.Err() != nil {
-			// ignore if we took too long
-			err = nil
-		}
-
-		errch <- err
-	}()
-
-	select {
-	case err := <-errch:
-		switch {
-		case err == nil:
-			log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
-			respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{
-				ExternalService: req.ExternalService,
-			})
-		case err == github.ErrIncompleteResults:
-			log15.Info("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
-			syncResult := &protocol.ExternalServiceSyncResult{
-				ExternalService: req.ExternalService,
-				Error:           err.Error(),
-			}
-			respond(w, http.StatusOK, syncResult)
-		default:
-			log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
-			respond(w, http.StatusInternalServerError, err)
-		}
-
-	case <-time.After(10 * time.Second):
-		respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{
+	err := externalServiceValidate(ctx, &req)
+	if err == github.ErrIncompleteResults {
+		log15.Info("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
+		syncResult := &protocol.ExternalServiceSyncResult{
 			ExternalService: req.ExternalService,
-			Error:           "warning: took longer than 10s to verify config against code host. Please monitor repo-updater logs.",
-		})
-
-	case <-ctx.Done():
+			Error:           err.Error(),
+		}
+		respond(w, http.StatusOK, syncResult)
+		return
+	} else if ctx.Err() != nil {
 		// client is gone
 		return
+	} else if err != nil {
+		log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
+		respond(w, http.StatusInternalServerError, err)
+		return
 	}
+
+	log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
+	respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{
+		ExternalService: req.ExternalService,
+	})
+}
+
+func externalServiceValidate(ctx context.Context, req *protocol.ExternalServiceSyncRequest) error {
+	if req.ExternalService.DeletedAt != nil {
+		// We don't need to check deleted services.
+		return nil
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	src, err := repos.NewSource(&repos.ExternalService{
+		ID:          req.ExternalService.ID,
+		Kind:        req.ExternalService.Kind,
+		DisplayName: req.ExternalService.DisplayName,
+		Config:      req.ExternalService.Config,
+	}, httpcli.NewHTTPClientFactory())
+	if err != nil {
+		return err
+	}
+
+	results := make(chan repos.SourceResult)
+
+	go func() {
+		src.ListRepos(ctx, results)
+		close(results)
+	}()
+
+	for res := range results {
+		if res.Err != nil {
+			// Send error to user before waiting for all results, but drain
+			// the rest of the results to not leak a blocked goroutine
+			go func() {
+				for range results {
+				}
+			}()
+			return res.Err
+		}
+	}
+
+	return nil
 }
 
 var mockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
