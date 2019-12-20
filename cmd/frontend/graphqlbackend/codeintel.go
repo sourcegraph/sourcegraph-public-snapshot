@@ -44,7 +44,7 @@ type LSIFUploadsQueryArgs struct {
 
 type LSIFDumpResolver interface {
 	ID() graphql.ID
-	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
+	ProjectRoot() *GitTreeEntryResolver
 	InputRepoName() string
 	InputCommit() string
 	InputRoot() string
@@ -69,7 +69,7 @@ type LSIFUploadStatsResolver interface {
 
 type LSIFUploadResolver interface {
 	ID() graphql.ID
-	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
+	ProjectRoot() *GitTreeEntryResolver
 	InputRepoName() string
 	InputCommit() string
 	InputRoot() string
@@ -92,7 +92,7 @@ type LSIFUploadConnectionResolver interface {
 }
 
 type LSIFQueryResolver interface {
-	Commit(ctx context.Context) (*GitCommitResolver, error)
+	Commit() *GitCommitResolver
 	Definitions(ctx context.Context, args *LSIFQueryPositionArgs) (LocationConnectionResolver, error)
 	References(ctx context.Context, args *LSIFPagedQueryPositionArgs) (LocationConnectionResolver, error)
 	Hover(ctx context.Context, args *LSIFQueryPositionArgs) (HoverResolver, error)

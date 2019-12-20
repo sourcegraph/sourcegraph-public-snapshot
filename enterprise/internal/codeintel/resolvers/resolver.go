@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/client"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 type Resolver struct{}
@@ -27,11 +26,6 @@ func (r *Resolver) LSIFDumpByID(ctx context.Context, id graphql.ID) (graphqlback
 		return nil, err
 	}
 
-	repo, err := backend.Repos.GetByName(ctx, api.RepoName(repoName))
-	if err != nil {
-		return nil, err
-	}
-
 	lsifDump, err := client.DefaultClient.GetDump(ctx, &struct {
 		RepoName string
 		DumpID   int64
@@ -43,7 +37,12 @@ func (r *Resolver) LSIFDumpByID(ctx context.Context, id graphql.ID) (graphqlback
 		return nil, err
 	}
 
-	return &lsifDumpResolver{repo: repo, lsifDump: lsifDump}, nil
+	projectRoot, err := newTreeResolver(lsifDump).resolvePath(ctx, lsifDump.Repository, lsifDump.Commit, lsifDump.Root)
+	if err != nil {
+		return nil, err
+	}
+
+	return &lsifDumpResolver{lsifDump: lsifDump, projectRoot: projectRoot}, nil
 }
 
 func (r *Resolver) DeleteLSIFDump(ctx context.Context, id graphql.ID) (*graphqlbackend.EmptyResponse, error) {
@@ -80,8 +79,13 @@ func (r *Resolver) DeleteLSIFDump(ctx context.Context, id graphql.ID) (*graphqlb
 // dependent on the limit, so we can overwrite this value if the user has changed its
 // value since making the last request.
 func (r *Resolver) LSIFDumps(ctx context.Context, args *graphqlbackend.LSIFRepositoryDumpsQueryArgs) (graphqlbackend.LSIFDumpConnectionResolver, error) {
+	repositoryResolver, err := graphqlbackend.RepositoryByID(ctx, args.RepositoryID)
+	if err != nil {
+		return nil, err
+	}
+
 	opt := LSIFDumpsListOptions{
-		RepositoryID:    args.RepositoryID,
+		RepositoryName:  repositoryResolver.Name(),
 		Query:           args.Query,
 		IsLatestForRepo: args.IsLatestForRepo,
 	}
@@ -119,7 +123,12 @@ func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (graphqlba
 		return nil, err
 	}
 
-	return &lsifUploadResolver{lsifUpload: lsifUpload}, nil
+	projectRoot, err := newTreeResolver(nil).resolvePath(ctx, lsifUpload.Repository, lsifUpload.Commit, lsifUpload.Root)
+	if err != nil {
+		return nil, err
+	}
+
+	return &lsifUploadResolver{lsifUpload: lsifUpload, projectRoot: projectRoot}, nil
 }
 
 func (r *Resolver) DeleteLSIFUpload(ctx context.Context, id graphql.ID) (*graphqlbackend.EmptyResponse, error) {
@@ -211,10 +220,24 @@ func (r *Resolver) LSIF(ctx context.Context, args *graphqlbackend.LSIFQueryArgs)
 		return nil, err
 	}
 
+	if dump == nil {
+		return nil, nil
+	}
+
+	commitResolver, err := newTreeResolver(dump).resolveCommit(ctx, args.RepoName, dump.Commit)
+	if err != nil {
+		return nil, err
+	}
+
+	if commitResolver == nil {
+		return nil, nil
+	}
+
 	return &lsifQueryResolver{
-		repoName: args.RepoName,
-		commit:   args.Commit,
-		path:     args.Path,
-		dump:     dump,
+		repoName:       args.RepoName,
+		commit:         args.Commit,
+		path:           args.Path,
+		dump:           dump,
+		commitResolver: commitResolver,
 	}, nil
 }

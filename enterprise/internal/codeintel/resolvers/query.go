@@ -4,32 +4,23 @@ import (
 	"context"
 	"encoding/base64"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/client"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/lsif"
 )
 
 type lsifQueryResolver struct {
-	repoName string
-	commit   graphqlbackend.GitObjectID
-	path     string
-	dump     *lsif.LSIFDump
+	repoName       string
+	commit         graphqlbackend.GitObjectID
+	path           string
+	dump           *lsif.LSIFDump
+	commitResolver *graphqlbackend.GitCommitResolver
 }
 
 var _ graphqlbackend.LSIFQueryResolver = &lsifQueryResolver{}
 
-func (r *lsifQueryResolver) Commit(ctx context.Context) (*graphqlbackend.GitCommitResolver, error) {
-	repo, err := backend.Repos.GetByName(ctx, api.RepoName(r.repoName))
-	if err != nil {
-		return nil, err
-	}
-
-	return graphqlbackend.NewRepositoryResolver(repo).Commit(
-		ctx,
-		&graphqlbackend.RepositoryCommitArgs{Rev: string(r.dump.Commit)},
-	)
+func (r *lsifQueryResolver) Commit() *graphqlbackend.GitCommitResolver {
+	return r.commitResolver
 }
 
 func (r *lsifQueryResolver) Definitions(ctx context.Context, args *graphqlbackend.LSIFQueryPositionArgs) (graphqlbackend.LocationConnectionResolver, error) {

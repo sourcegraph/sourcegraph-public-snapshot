@@ -8,16 +8,15 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/client"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/lsif"
 )
 
 type lsifUploadResolver struct {
-	lsifUpload *lsif.LSIFUpload
+	lsifUpload  *lsif.LSIFUpload
+	projectRoot *graphqlbackend.GitTreeEntryResolver
 }
 
 var _ graphqlbackend.LSIFUploadResolver = &lsifUploadResolver{}
@@ -26,23 +25,8 @@ func (r *lsifUploadResolver) ID() graphql.ID {
 	return marshalLSIFUploadGQLID(r.lsifUpload.ID)
 }
 
-func (r *lsifUploadResolver) ProjectRoot(ctx context.Context) (*graphqlbackend.GitTreeEntryResolver, error) {
-	repo, err := backend.Repos.GetByName(ctx, api.RepoName(r.lsifUpload.Repository))
-	if err != nil {
-		return nil, err
-	}
-
-	repoResolver := graphqlbackend.NewRepositoryResolver(repo)
-	commitResolver, err := repoResolver.Commit(ctx, &graphqlbackend.RepositoryCommitArgs{Rev: r.lsifUpload.Commit})
-	if err != nil {
-		return nil, err
-	}
-
-	if commitResolver == nil {
-		return nil, nil
-	}
-
-	return graphqlbackend.NewGitTreeEntryResolver(commitResolver, graphqlbackend.CreateFileInfo(r.lsifUpload.Root, true)), nil
+func (r *lsifUploadResolver) ProjectRoot() *graphqlbackend.GitTreeEntryResolver {
+	return r.projectRoot
 }
 
 func (r *lsifUploadResolver) InputRepoName() string {
@@ -129,10 +113,18 @@ func (r *lsifUploadConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 		return nil, err
 	}
 
+	collectionResolver := newRepositoryCollectionResolver()
+
 	var l []graphqlbackend.LSIFUploadResolver
 	for _, lsifUpload := range uploads {
+		projectRoot, err := collectionResolver.resolve(ctx, newTreeResolver(nil), lsifUpload.Repository, lsifUpload.Commit, lsifUpload.Root)
+		if err != nil {
+			return nil, err
+		}
+
 		l = append(l, &lsifUploadResolver{
-			lsifUpload: lsifUpload,
+			lsifUpload:  lsifUpload,
+			projectRoot: projectRoot,
 		})
 	}
 	return l, nil
