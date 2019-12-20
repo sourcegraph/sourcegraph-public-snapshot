@@ -6,8 +6,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/client"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/lsif"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 type treeResolver struct {
@@ -49,8 +51,28 @@ func (r *treeResolver) resolveCommitFrom(ctx context.Context, repositoryResolver
 		return nil, err
 	}
 
-	if commitResolver == nil && r.lsifDump != nil {
-		fmt.Printf("GOTTA REMOVE THIS GUY: %#v\n", r.lsifDump)
+	if commitResolver == nil {
+		if r.lsifDump != nil {
+			// If we failed to resolve the commit for this dump, then we have a dump that no longer
+			// refers to a commit known by gitserver. This is beyond useless to us: we cannot resolve
+			// a commit or a tree, we cannot navigate to it in the UI, and we will try to resolve the
+			// reference with an expensive remote fetch every time we encounter it in this package.
+			// Delete it now so that subsequent requests do not stumble upon it.
+
+			log15.Warn("Unable to resolve commit, deleting associated dump", "repo", repositoryResolver.Name(), "commit", commit)
+
+			if err := client.DefaultClient.DeleteDump(ctx, &struct {
+				RepoName string
+				DumpID   int64
+			}{
+				RepoName: repositoryResolver.Name(),
+				DumpID:   r.lsifDump.ID,
+			}); err != nil {
+				return nil, err
+			}
+		}
+
+		return nil, nil
 	}
 
 	return commitResolver, nil
