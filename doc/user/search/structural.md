@@ -58,7 +58,7 @@ Structural search behaves differently to plain text search in key ways. We are
 continually improving functionality of this new feature, so please note the
 following:
 
-- **Only indexed repos.** Structural search can currently only be performed on _indexed_ repositories. If you are an admin, you can see whether a repository is indexed by visiting `https://<sourcegraph-host>.com/repo-org/repo-name/-/settings/index`. Our service hosted on https://sourcegraph.com automatically indexes roughly the top 13,000 repositories by GitHub stars, so those can be structurally searched. Other repositories are currently unsupported.
+- **Only indexed repos.** Structural search can currently only be performed on _indexed_ repositories. See [configuration](#configuration) for more details if you host your own Sourcegraph installation. Our service hosted on https://sourcegraph.com automatically indexes roughly the top 13,000 repositories by GitHub stars, so those can be structurally searched. Other repositories are currently unsupported.
 
 - **Enclose patterns with quotes.** When entering the pattern in the browser search bar or `src-cli` command line, always enclose the pattern with quotes: `'fmt.Sprintf(:[args])'`. Quotes that are part of the pattern can be escaped with `\`.
 
@@ -164,3 +164,17 @@ Structural search also works on structured data, like JSON. Patterns can declara
 matches all parts of a JSON document that have a member `"exclude"`, where the value is a list of items. 
 
 [See it live on Sourcegraph's code](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24++%27%22exclude%22:+%5B:%5Bitems%5D%5D%27+lang:json&patternType=structural)
+
+### Configuration
+
+**Indexed repositories.** Structural search only works for indexed repositories. To see whether a repository on your instance is indexed, visit `https://<sourcegraph-host>.com/repo-org/repo-name/-/settings/index`. 
+
+**Disabling structural search.** Disable structural search on your instace by adding the following to the site configuration:
+
+```json
+{
+  "experimentalFeatures": {
+      "structuralSearch": "disabled"
+  }
+}
+```
