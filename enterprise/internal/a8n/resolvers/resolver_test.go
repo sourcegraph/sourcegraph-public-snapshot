@@ -131,6 +131,7 @@ func TestCampaigns(t *testing.T) {
 		Author      User
 		CreatedAt   string
 		UpdatedAt   string
+		PublishedAt string
 		Namespace   UserOrg
 	}
 
@@ -153,7 +154,7 @@ func TestCampaigns(t *testing.T) {
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 		fragment c on Campaign {
-			id, name, description, createdAt, updatedAt
+			id, name, description, createdAt, updatedAt, publishedAt
 			author    { ...u }
 			namespace {
 				... on User { ...u }
@@ -190,7 +191,7 @@ func TestCampaigns(t *testing.T) {
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 		fragment c on Campaign {
-			id, name, description, createdAt, updatedAt
+			id, name, description, createdAt, updatedAt, publishedAt
 			author    { ...u }
 			namespace {
 				... on User { ...u }
@@ -245,7 +246,7 @@ func TestCampaigns(t *testing.T) {
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 		fragment c on Campaign {
-			id, name, description, createdAt, updatedAt
+			id, name, description, createdAt, updatedAt, publishedAt
 			author    { ...u }
 			namespace {
 				... on User { ...u }
