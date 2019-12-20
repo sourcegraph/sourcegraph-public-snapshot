@@ -271,6 +271,14 @@ func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.Upda
 		updateArgs.Description = args.Input.Description
 	}
 
+	if args.Input.Plan != nil {
+		campaignPlanID, err := unmarshalCampaignPlanID(*args.Input.Plan)
+		if err != nil {
+			return nil, err
+		}
+		updateArgs.Plan = &campaignPlanID
+	}
+
 	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
 	campaign, err := svc.UpdateCampaign(ctx, updateArgs)
 	if err != nil {
