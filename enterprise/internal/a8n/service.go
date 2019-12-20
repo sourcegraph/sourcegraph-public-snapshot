@@ -674,6 +674,95 @@ func (s *Service) CreateChangesetJobForCampaignJob(ctx context.Context, id int64
 	return changesetJob, campaign, nil
 }
 
+type UpdateCampaignArgs struct {
+	Campaign    int64
+	Name        *string
+	Description *string
+	Plan        *int64
+}
+
+// UpdateCampaign updates the Campaign with the given arguments.
+func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (campaign *a8n.Campaign, err error) {
+	traceTitle := fmt.Sprintf("campaign: %d", args.Campaign)
+	tr, ctx := trace.New(ctx, "service.UpdateCampaign", traceTitle)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	defer tx.Done(&err)
+
+	campaign, err = tx.GetCampaign(ctx, GetCampaignOpts{ID: args.Campaign})
+	if err != nil {
+		return nil, errors.Wrap(err, "getting campaign")
+	}
+
+	if args.Name != nil {
+		campaign.Name = *args.Name
+	}
+
+	if args.Description != nil {
+		campaign.Description = *args.Description
+	}
+
+	if err = tx.UpdateCampaign(ctx, campaign); err != nil {
+		return campaign, err
+	}
+
+	// TODO: Update the campaign.PlanID if it's set in args.Plan
+	//
+	// if the campaign.PlanID is different to the previous one, we need to
+	// do the full update.
+
+	// First:
+	// - List current ChangesetJobs of Campaign
+	// - List current CampaignJobs attached to ChangesetJobs
+	// - List new CampaignJobs attached to new CampaignPlanID
+
+	// Then: determine which current ChangesetJobs we want to keep and which
+	// ones we want to delete.
+	// We can find out which ones we want to keep by looking at the RepoID of
+	// their CampaignJobs.
+
+	// Case (a): we _don't_ have a matching _new_ CampaignJob.
+	// We delete the ChangesetJob and Changeset.
+	// That means we need to
+	// - delete the ChangesetJob
+	// - detach the Changeset from the Campaign
+	// - close it on the codehost
+
+	// Case (b): we have a matching _new_ CampaignJob.
+	// We keep the ChangesetJob around, but need to rewire it. And, if the diff
+	// is different, we need to _update_ the existing Changeset (on the codehost).
+	// We need to:
+	// - change the ChangesetJobs.CampaignJobID.
+	// - if the newCampaignJob.Diff != oldCampaignJob.Diff we need to update the Changeset on the codehost
+	// - to do that, we _reset_ the ChangesetJob (set error = '', started_at = NULL, finished_at = NULL)
+
+	// And if we have CampaignJobs that don't have an existing ChangesetJob
+	// we need to create new ChangesetJobs for those.
+	//
+	// The end state should be that
+	// - ChangesetJobs that don't have matching CampaignJob are deleted
+	// - Changesets belonging to deleted ChangesetJobs are closed on codehost
+	// - ChangesetJobs that have a matching new CampaignJob with the same diff
+	// are rewired and left as is
+	// - ChangesetJobs that have a matching new CampaignJob with _new_ diff are
+	// rewired and reset
+	// - New CampaignJobs with no matching ChangesetJob get a new ChangesetJob
+	//
+	// The caller can then call `RunChangesetJobs`, which should load the
+	// new and the rewired-and-reset ChangesetJobs and run them, which will
+	// either create a Changeset on the codehost or update it.
+
+	return campaign, nil
+}
+
 func selectChangesets(cs []*a8n.Changeset, predicate func(*a8n.Changeset) bool) []*a8n.Changeset {
 	i := 0
 	for _, c := range cs {

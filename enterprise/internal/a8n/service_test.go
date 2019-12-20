@@ -3,6 +3,7 @@ package a8n
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"testing"
 	"time"
 
@@ -260,6 +261,118 @@ func TestService(t *testing.T) {
 
 		if changesetJob2.ID != haveJob.ID {
 			t.Errorf("wrong changesetJob: %d. want=%d", changesetJob2.ID, haveJob.ID)
+		}
+	})
+
+	t.Run("UpdateCampaignWithNewCampaignPlan", func(t *testing.T) {
+		oldPlan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
+		err = store.CreateCampaignPlan(ctx, oldPlan)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Create 3 CampaignJobs
+		oldCampaignJobs := make([]*a8n.CampaignJob, 0, 3)
+		oldCampaignJobsByID := make(map[int64]*a8n.CampaignJob)
+		for _, repo := range rs[:3] {
+			campaignJob := testCampaignJob(oldPlan.ID, repo.ID, now)
+			err := store.CreateCampaignJob(ctx, campaignJob)
+			if err != nil {
+				t.Fatal(err)
+			}
+			oldCampaignJobs = append(oldCampaignJobs, campaignJob)
+			oldCampaignJobsByID[campaignJob.ID] = campaignJob
+		}
+
+		campaign := testCampaign(u.ID, oldPlan.ID)
+
+		svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
+		// This creates the Campaign and 3 ChangesetJobs
+		err = svc.CreateCampaign(ctx, campaign, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		oldChangesetJobs, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
+			CampaignID: campaign.ID,
+			Limit:      -1,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Sanity check
+		if len(oldChangesetJobs) != len(oldCampaignJobs) {
+			t.Fatalf("wrong number of changeset jobs. want=%d, have=%d", len(oldCampaignJobs), len(oldChangesetJobs))
+		}
+
+		// Now we do what RunChangesetJobs would do, expect that we don't
+		// actually create pull requests on the code host
+		oldChangesets := make([]*a8n.Changeset, 0, len(oldCampaignJobs))
+		for _, changesetJob := range oldChangesetJobs {
+			campaignJob, ok := oldCampaignJobsByID[changesetJob.CampaignJobID]
+			if !ok {
+				t.Fatal("no CampaignJob found for ChangesetJob")
+			}
+
+			changeset := &a8n.Changeset{
+				RepoID:              campaignJob.RepoID,
+				CampaignIDs:         []int64{changesetJob.CampaignID},
+				ExternalServiceType: "github",
+				ExternalID:          fmt.Sprintf("ext-id-%d", changesetJob.ID),
+			}
+			oldChangesets = append(oldChangesets, changeset)
+		}
+		err = store.CreateChangesets(ctx, oldChangesets...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Creating new CampaignPlan
+		newPlan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
+		err = store.CreateCampaignPlan(ctx, newPlan)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Create 2 new CampaignJobs, so that one will be closed
+		newCampaignJobs := make([]*a8n.CampaignJob, 2)
+
+		// First one has same RepoID, same Rev, same BaseRef, same Diff
+		newCampaignJobs[0] = oldCampaignJobs[0].Clone()
+		newCampaignJobs[0].CampaignPlanID = newPlan.ID
+
+		// Second one has same RepoID, same Rev, same BaseRef, but different Diff
+		newCampaignJobs[1] = oldCampaignJobs[1].Clone()
+		newCampaignJobs[1].CampaignPlanID = newPlan.ID
+		newCampaignJobs[1].Diff = "different diff"
+
+		for _, j := range newCampaignJobs {
+			err := store.CreateCampaignJob(ctx, j)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		// Now we update the Campaign to use the new plan
+		newName := "new name"
+		newDescription := "new description"
+		args := UpdateCampaignArgs{
+			Campaign:    campaign.ID,
+			Name:        &newName,
+			Description: &newDescription,
+			Plan:        &newPlan.ID,
+		}
+		updatedCampaign, err := svc.UpdateCampaign(ctx, args)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if updatedCampaign.Name != newName {
+			t.Fatalf("campaign name not updated. want=%q, have=%q", newName, updatedCampaign.Name)
+		}
+		if updatedCampaign.Description != newDescription {
+			t.Fatalf("campaign description not updated. want=%q, have=%q", newDescription, updatedCampaign.Description)
 		}
 	})
 }

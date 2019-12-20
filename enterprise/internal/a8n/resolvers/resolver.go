@@ -261,27 +261,19 @@ func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.Upda
 		return nil, err
 	}
 
-	tx, err := r.store.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	defer tx.Done(&err)
-
-	campaign, err := tx.GetCampaign(ctx, ee.GetCampaignOpts{ID: campaignID})
-	if err != nil {
-		return nil, err
-	}
+	updateArgs := ee.UpdateCampaignArgs{Campaign: campaignID}
 
 	if args.Input.Name != nil {
-		campaign.Name = *args.Input.Name
+		updateArgs.Name = args.Input.Name
 	}
 
 	if args.Input.Description != nil {
-		campaign.Description = *args.Input.Description
+		updateArgs.Description = args.Input.Description
 	}
 
-	if err := tx.UpdateCampaign(ctx, campaign); err != nil {
+	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
+	campaign, err := svc.UpdateCampaign(ctx, updateArgs)
+	if err != nil {
 		return nil, err
 	}
 
