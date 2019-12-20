@@ -22,6 +22,7 @@ import { SuggestionTypes, suggestionTypeKeys } from '../../../../../shared/src/s
 import { QueryInput } from '../QueryInput'
 import { parseSearchURLQuery, InteractiveSearchProps, PatternTypeProps } from '../..'
 import { SearchModeToggle } from './SearchModeToggle'
+import { uniqueId } from 'lodash'
 
 interface InteractiveModeProps
     extends SettingsCascadeProps,
@@ -60,12 +61,8 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
         for (const t of suggestionTypeKeys) {
             const itemsOfType = searchParams.getAll(t)
             itemsOfType.map((item, i) => {
-                filtersInQuery[`${t}-${i}`] = { type: t, value: item, editable: false }
+                filtersInQuery[uniqueId(t)] = { type: t, value: item, editable: false }
             })
-        }
-
-        this.state = {
-            numFiltersAdded: Object.keys(filtersInQuery).length,
         }
 
         this.props.onFiltersInQueryChange(filtersInQuery)
@@ -73,14 +70,9 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
 
     /**
      * Adds a new filter to the top-level filtersInQuery state field.
-     * We use the filter name and the number of values added as the key.
-     * Keys must begin with the filter name, as defined in `SuggestionTypes`.
-     * We use this to identify filter values when building
-     * the search URL in {@link interactiveBuildSearchURLQuery}.
      */
     private addNewFilter = (filterType: SuggestionTypes): void => {
-        const filterKey = `${filterType}-${this.state.numFiltersAdded}`
-        this.setState(state => ({ numFiltersAdded: state.numFiltersAdded + 1 }))
+        const filterKey = uniqueId(filterType)
         this.props.onFiltersInQueryChange({
             ...this.props.filtersInQuery,
             [filterKey]: { type: filterType, value: '', editable: true },

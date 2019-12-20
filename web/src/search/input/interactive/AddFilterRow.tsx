@@ -21,33 +21,25 @@ export enum DefaultFilterTypes {
 /**
  * The row containing the buttons to add new filters in interactive mode.
  * */
-export const AddFilterRow: React.FunctionComponent<RowProps> = ({ isHomepage, onAddNewFilter }) => (
-    <div className={`add-filter-row ${isHomepage ? 'add-filter-row--homepage' : ''} e2e-add-filter-row`}>
-        {Object.keys(DefaultFilterTypes).map(filterType => (
-            <AddFilterButton key={filterType} onAddNewFilter={onAddNewFilter} type={filterType as SuggestionTypes} />
-        ))}
-    </div>
-)
+export const AddFilterRow: React.FunctionComponent<RowProps> = ({ isHomepage, onAddNewFilter }) => {
+    const buildOnAddFilterHandler = (filterType: SuggestionTypes) => (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.preventDefault()
 
-interface AddFilterButtonProps {
-    type: SuggestionTypes
-    onAddNewFilter: (filter: SuggestionTypes) => void
-}
-
-class AddFilterButton extends React.Component<AddFilterButtonProps> {
-    private onAddNewFilter = (): void => {
-        this.props.onAddNewFilter(this.props.type)
+        onAddNewFilter(filterType)
     }
 
-    public render(): JSX.Element | null {
-        return (
-            <button
-                type="button"
-                className={`add-filter-row__button btn btn-outline-primary e2e-add-filter-button-${this.props.type}`}
-                onClick={this.onAddNewFilter}
-            >
-                + {startCase(this.props.type)} filter
-            </button>
-        )
-    }
+    return (
+        <div className={`add-filter-row ${isHomepage ? 'add-filter-row--homepage' : ''} e2e-add-filter-row`}>
+            {Object.keys(DefaultFilterTypes).map(filterType => (
+                <button
+                    key={filterType}
+                    type="button"
+                    className={`add-filter-row__button btn btn-outline-primary e2e-add-filter-button-${filterType}`}
+                    onClick={buildOnAddFilterHandler(filterType as SuggestionTypes)}
+                >
+                    + {startCase(filterType)} filter
+                </button>
+            ))}
+        </div>
+    )
 }
