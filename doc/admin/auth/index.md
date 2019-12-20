@@ -103,8 +103,7 @@ Set `allowSignup` to `true` to enable anyone with a GitHub account to sign up wi
 GitHub only if an account with the same verified email already exists. If none exists, a site admin
 must create one explicitly.
 
-The `allowOrgs` fields restricts logins to memebers of the specified GitHub organizations. Existing user
-sessions are **not invalidated**. Only new logins after this setting is changed are affected.
+The `allowOrgs` fields restricts logins to members of the specified GitHub organizations. Existing user sessions are **not invalidated**. Only new logins after this setting is changed are affected.
 
 Once you've configured GitHub as a sign-on provider, you may also want to [add GitHub repositories to Sourcegraph](../external_service/github.md#repository-syncing).
 
