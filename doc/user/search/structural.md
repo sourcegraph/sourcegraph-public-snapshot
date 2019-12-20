@@ -58,7 +58,7 @@ Structural search behaves differently to plain text search in key ways. We are
 continually improving functionality of this new feature, so please note the
 following:
 
-- **Only indexed repos.** Structural search can currently only be performed on _indexed_ repositories. See [configuration](#configuration) for more details if you host your own Sourcegraph installation. Our service hosted on https://sourcegraph.com automatically indexes roughly the top 13,000 repositories by GitHub stars, so those can be structurally searched. Other repositories are currently unsupported.
+- **Only indexed repos.** Structural search can currently only be performed on _indexed_ repositories. See [configuration](#configuration) for more details if you host your own Sourcegraph installation. Our service hosted at [sourcegraph.com](https://sourcegraph.com/search) indexes approximately 10,000 of the most popular repositories on GitHub. Other repositories are currently unsupported.
 
 - **Enclose patterns with quotes.** When entering the pattern in the browser search bar or `src-cli` command line, always enclose the pattern with quotes: `'fmt.Sprintf(:[args])'`. Quotes that are part of the pattern can be escaped with `\`.
 
