@@ -3,7 +3,7 @@ import * as fs from 'mz/fs'
 import * as metrics from './metrics'
 import * as path from 'path'
 import * as settings from './settings'
-import * as xrepoModels from '../shared/models/xrepo'
+import * as pgModels from '../shared/models/pg'
 import express from 'express'
 import promClient from 'prom-client'
 import { Backend } from './backend/backend'
@@ -22,9 +22,10 @@ import { logger as loggingMiddleware } from 'express-winston'
 import { Logger } from 'winston'
 import { metricsMiddleware } from './middleware/metrics'
 import { startTasks } from './tasks/runner'
-import { UploadsManager } from '../shared/uploads/uploads'
+import { UploadManager } from '../shared/store/uploads'
 import { waitForConfiguration } from '../shared/config/config'
-import { XrepoDatabase } from '../shared/xrepo/xrepo'
+import { DumpManager } from '../shared/store/dumps'
+import { DependencyManager } from '../shared/store/dependencies'
 
 /**
  * Runs the HTTP server that accepts LSIF dump uploads and responds to LSIF requests.
@@ -54,16 +55,17 @@ async function main(logger: Logger): Promise<void> {
 
     // Create database connection and entity wrapper classes
     const connection = await createPostgresConnection(fetchConfiguration(), logger)
-    const xrepoDatabase = new XrepoDatabase(connection, settings.STORAGE_ROOT)
-    const backend = new Backend(settings.STORAGE_ROOT, xrepoDatabase, fetchConfiguration)
-    const uploadsManager = new UploadsManager(connection)
+    const dumpManager = new DumpManager(connection, settings.STORAGE_ROOT)
+    const uploadManager = new UploadManager(connection)
+    const dependencyManager = new DependencyManager(connection)
+    const backend = new Backend(settings.STORAGE_ROOT, dumpManager, dependencyManager, fetchConfiguration)
 
     // Temporary migrations
     await moveDatabaseFilesToSubdir() // TODO - remove after 3.12
     await ensureFilenamesAreIDs(connection) // TODO - remove after 3.10
 
     // Start background tasks
-    startTasks(connection, uploadsManager, logger)
+    startTasks(connection, uploadManager, logger)
 
     const app = express()
 
@@ -84,9 +86,9 @@ async function main(logger: Logger): Promise<void> {
 
     // Register endpoints
     app.use(createMetaRouter())
-    app.use(createDumpRouter(xrepoDatabase))
-    app.use(createUploadRouter(uploadsManager))
-    app.use(createLsifRouter(backend, uploadsManager, logger, tracer))
+    app.use(createDumpRouter(dumpManager))
+    app.use(createUploadRouter(uploadManager))
+    app.use(createLsifRouter(backend, uploadManager, logger, tracer))
 
     // Error handler must be registered last
     app.use(errorHandler(logger))
@@ -119,7 +121,7 @@ async function ensureFilenamesAreIDs(db: Connection): Promise<void> {
         return
     }
 
-    for (const dump of await db.getRepository(xrepoModels.LsifDump).find()) {
+    for (const dump of await db.getRepository(pgModels.LsifDump).find()) {
         const oldFile = dbFilenameOld(settings.STORAGE_ROOT, dump.repository, dump.commit)
         const newFile = dbFilename(settings.STORAGE_ROOT, dump.id, dump.repository, dump.commit)
         if (!(await fs.exists(oldFile))) {

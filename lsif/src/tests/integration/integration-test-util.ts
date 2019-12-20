@@ -11,9 +11,10 @@ import { convertLsif } from '../../worker/conversion/importer'
 import { dbFilename, ensureDirectory } from '../../shared/paths'
 import { lsp } from 'lsif-protocol'
 import { userInfo } from 'os'
-import { XrepoDatabase } from '../../shared/xrepo/xrepo'
 import { internalLocationToLocation } from '../../server/routes/lsif'
 import { InternalLocation } from '../../server/backend/database'
+import { DumpManager } from '../../shared/store/dumps'
+import { DependencyManager } from '../../shared/store/dependencies'
 
 /**
  * Create a temporary directory with a subdirectory for dbs.
@@ -40,7 +41,7 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
     const port = parseInt(process.env.PGPORT || '5432', 10)
     const username = process.env.PGUSER || userInfo().username || 'postgres'
     const password = process.env.PGPASSWORD || ''
-    const database = `sourcegraph-test-lsif-xrepo-${suffix}`
+    const database = `sourcegraph-test-lsif-${suffix}`
 
     // Determine the path of the migrate script. This will cover the case
     // where `yarn test` is run from within the root or from the lsif directory.
@@ -75,7 +76,7 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
     // for the test. It is necessary to close the database first, otherwise we
     // get failures during the after hooks:
     //
-    // dropdb: database removal failed: ERROR:  database "sourcegraph-test-lsif-xrepo-5033c9e8" is being accessed by other users
+    // dropdb: database removal failed: ERROR:  database "sourcegraph-test-lsif-5033c9e8" is being accessed by other users
 
     let connection: Connection
     const cleanup = async (): Promise<void> => {
@@ -126,9 +127,10 @@ export async function truncatePostgresTables(connection: Connection): Promise<vo
 /**
  * Mock an upload of the given file. This will create a SQLite database in the
  * given storage root and will insert dump, package, and reference data into
- * the given cross-repository database.
+ * the given Postgres database.
  *
- * @param xrepoDatabase The cross-repository database.
+ * @param dumpManager The dumps manager instance.
+ * @param dependencyManager The dependency manager instance.
  * @param storageRoot The temporary storage root.
  * @param repository The repository name.
  * @param commit The commit.
@@ -137,7 +139,8 @@ export async function truncatePostgresTables(connection: Connection): Promise<vo
  * @param updateCommits Whether not to update commits.
  */
 export async function convertTestData(
-    xrepoDatabase: XrepoDatabase,
+    dumpManager: DumpManager,
+    dependencyManager: DependencyManager,
     storageRoot: string,
     repository: string,
     commit: string,
@@ -151,29 +154,23 @@ export async function convertTestData(
 
     const tmp = path.join(storageRoot, constants.TEMP_DIR, uuid.v4())
     const { packages, references } = await convertLsif(fullFilename, tmp)
-    const dump = await xrepoDatabase.addPackagesAndReferences(
-        repository,
-        commit,
-        root,
-        new Date(),
-        packages,
-        references
-    )
+    const dump = await dumpManager.insertDump(repository, commit, root, new Date())
+    await dependencyManager.addPackagesAndReferences(dump.id, packages, references)
     await fs.rename(tmp, dbFilename(storageRoot, dump.id, repository, commit))
 
     if (updateCommits) {
-        await xrepoDatabase.updateCommits(
+        await dumpManager.updateCommits(
             repository,
             new Map<string, Set<string>>([[commit, new Set<string>()]])
         )
-        await xrepoDatabase.updateDumpsVisibleFromTip(repository, commit)
+        await dumpManager.updateDumpsVisibleFromTip(repository, commit)
     }
 }
 
 /**
  * A wrapper around tests for the Backend class. This abstracts a lot
  * of the common setup and teardown around creating a temporary Postgres
- * database, a storage root, across-repository database instance, and a
+ * database, a storage root, a dump manager, a dependency manager, and a
  * backend instance.
  */
 export class BackendTestContext {
@@ -183,9 +180,14 @@ export class BackendTestContext {
     public backend?: Backend
 
     /**
-     * The cross-repository database instance.
+     * The dumps manager instance.
      */
-    public xrepoDatabase?: XrepoDatabase
+    public dumpManager?: DumpManager
+
+    /**
+     * The dependency manager instance.
+     */
+    public dependencyManager?: DependencyManager
 
     /**
      * A temporary directory.
@@ -198,25 +200,28 @@ export class BackendTestContext {
     private cleanup?: () => Promise<void>
 
     /**
-     * Create a backend and a cross-repository database. This will create
-     * temporary resources (database and temporary directory) that should
-     * be cleaned up via the `teardown` method.
+     * Create a backend, a dump manager, and a dependency manager instance.
+     * This will create temporary resources (database and temporary directory)
+     * that should be cleaned up via the `teardown` method.
      *
-     * The backend and cross-repository database values can be referenced
-     * by the public fields of this class.
+     * The backend and data manager instances can be referenced by the public
+     * fields of this class.
      */
     public async init(): Promise<void> {
         this.storageRoot = await createStorageRoot()
         const { connection, cleanup } = await createCleanPostgresDatabase()
         this.cleanup = cleanup
-        this.xrepoDatabase = new XrepoDatabase(connection, this.storageRoot)
-        this.backend = new Backend(this.storageRoot, this.xrepoDatabase, () => ({ gitServers: [] }))
+        this.dumpManager = new DumpManager(connection, this.storageRoot)
+        this.dependencyManager = new DependencyManager(connection)
+        this.backend = new Backend(this.storageRoot, this.dumpManager, this.dependencyManager, () => ({
+            gitServers: [],
+        }))
     }
 
     /**
      * Mock an upload of the given file. This will create a SQLite database in the
      * given storage root and will insert dump, package, and reference data into
-     * the given cross-repository database.
+     * the given Postgres database.
      *
      * @param repository The repository name.
      * @param commit The commit.
@@ -231,11 +236,20 @@ export class BackendTestContext {
         filename: string,
         updateCommits: boolean = true
     ): Promise<void> {
-        if (!this.xrepoDatabase || !this.storageRoot) {
+        if (!this.dumpManager || !this.dependencyManager || !this.storageRoot) {
             return Promise.resolve()
         }
 
-        return convertTestData(this.xrepoDatabase, this.storageRoot, repository, commit, root, filename, updateCommits)
+        return convertTestData(
+            this.dumpManager,
+            this.dependencyManager,
+            this.storageRoot,
+            repository,
+            commit,
+            root,
+            filename,
+            updateCommits
+        )
     }
 
     /**

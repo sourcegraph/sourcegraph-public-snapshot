@@ -18,7 +18,7 @@ import { promisify } from 'util'
 import { Span, Tracer } from 'opentracing'
 import { wrap } from 'async-middleware'
 import { extractLimitOffset } from '../pagination/limit-offset'
-import { UploadsManager } from '../../shared/uploads/uploads'
+import { UploadManager } from '../../shared/store/uploads'
 import { InternalLocation } from '../backend/database'
 
 const pipeline = promisify(_pipeline)
@@ -27,13 +27,13 @@ const pipeline = promisify(_pipeline)
  * Create a router containing the LSIF upload and query endpoints.
  *
  * @param backend The backend instance.
- * @param uploadsManager The uploads manager instance.
+ * @param uploadManager The uploads manager instance.
  * @param logger The logger instance.
  * @param tracer The tracer instance.
  */
 export function createLsifRouter(
     backend: Backend,
-    uploadsManager: UploadsManager,
+    uploadManager: UploadManager,
     logger: Logger,
     tracer: Tracer | undefined
 ): express.Router {
@@ -94,12 +94,12 @@ export function createLsifRouter(
                 await logAndTraceCall(ctx, 'Uploading dump', () => pipeline(req, output))
 
                 // Add upload record
-                const upload = await uploadsManager.enqueue({ repository, commit, root, filename }, tracer, ctx.span)
+                const upload = await uploadManager.enqueue({ repository, commit, root, filename }, tracer, ctx.span)
 
                 if (blocking) {
                     logger.debug('Blocking on upload conversion', { repository, commit, root })
 
-                    if (await uploadsManager.waitForUploadToConvert(upload.id, maxWait)) {
+                    if (await uploadManager.waitForUploadToConvert(upload.id, maxWait)) {
                         // Upload converted successfully while blocked, send success
                         res.status(200).send({ id: upload.id })
                         return

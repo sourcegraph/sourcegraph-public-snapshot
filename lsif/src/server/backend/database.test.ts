@@ -1,4 +1,4 @@
-import * as dumpModels from '../../shared/models/dump'
+import * as sqliteModels from '../../shared/models/sqlite'
 import { comparePosition, findRanges, mapRangesToInternalLocations } from './database'
 
 describe('findRanges', () => {
@@ -8,35 +8,35 @@ describe('findRanges', () => {
             startCharacter: 3,
             endLine: 0,
             endCharacter: 5,
-            monikerIds: new Set<dumpModels.MonikerId>(),
+            monikerIds: new Set<sqliteModels.MonikerId>(),
         }
         const range2 = {
             startLine: 1,
             startCharacter: 3,
             endLine: 1,
             endCharacter: 5,
-            monikerIds: new Set<dumpModels.MonikerId>(),
+            monikerIds: new Set<sqliteModels.MonikerId>(),
         }
         const range3 = {
             startLine: 2,
             startCharacter: 3,
             endLine: 2,
             endCharacter: 5,
-            monikerIds: new Set<dumpModels.MonikerId>(),
+            monikerIds: new Set<sqliteModels.MonikerId>(),
         }
         const range4 = {
             startLine: 3,
             startCharacter: 3,
             endLine: 3,
             endCharacter: 5,
-            monikerIds: new Set<dumpModels.MonikerId>(),
+            monikerIds: new Set<sqliteModels.MonikerId>(),
         }
         const range5 = {
             startLine: 4,
             startCharacter: 3,
             endLine: 4,
             endCharacter: 5,
-            monikerIds: new Set<dumpModels.MonikerId>(),
+            monikerIds: new Set<sqliteModels.MonikerId>(),
         }
 
         expect(findRanges([range1, range2, range3, range4, range5], { line: 0, character: 4 })).toEqual([range1])
@@ -52,35 +52,35 @@ describe('findRanges', () => {
             startCharacter: 3,
             endLine: 4,
             endCharacter: 5,
-            monikerIds: new Set<dumpModels.MonikerId>(),
+            monikerIds: new Set<sqliteModels.MonikerId>(),
         }
         const range2 = {
             startLine: 1,
             startCharacter: 3,
             endLine: 3,
             endCharacter: 5,
-            monikerIds: new Set<dumpModels.MonikerId>(),
+            monikerIds: new Set<sqliteModels.MonikerId>(),
         }
         const range3 = {
             startLine: 2,
             startCharacter: 3,
             endLine: 2,
             endCharacter: 5,
-            monikerIds: new Set<dumpModels.MonikerId>(),
+            monikerIds: new Set<sqliteModels.MonikerId>(),
         }
         const range4 = {
             startLine: 5,
             startCharacter: 3,
             endLine: 5,
             endCharacter: 5,
-            monikerIds: new Set<dumpModels.MonikerId>(),
+            monikerIds: new Set<sqliteModels.MonikerId>(),
         }
         const range5 = {
             startLine: 6,
             startCharacter: 3,
             endLine: 6,
             endCharacter: 5,
-            monikerIds: new Set<dumpModels.MonikerId>(),
+            monikerIds: new Set<sqliteModels.MonikerId>(),
         }
 
         expect(findRanges([range1, range2, range3, range4, range5], { line: 2, character: 4 })).toEqual([
@@ -98,7 +98,7 @@ describe('comparePosition', () => {
             startCharacter: 11,
             endLine: 5,
             endCharacter: 13,
-            monikerIds: new Set<dumpModels.MonikerId>(),
+            monikerIds: new Set<sqliteModels.MonikerId>(),
         }
 
         expect(comparePosition(range, { line: 5, character: 11 })).toEqual(0)
@@ -123,27 +123,27 @@ describe('mapRangesToInternalLocations', () => {
             processedAt: new Date(),
         }
 
-        const ranges = new Map<dumpModels.RangeId, dumpModels.RangeData>()
+        const ranges = new Map<sqliteModels.RangeId, sqliteModels.RangeData>()
         ranges.set(1, {
             startLine: 1,
             startCharacter: 1,
             endLine: 1,
             endCharacter: 2,
-            monikerIds: new Set<dumpModels.MonikerId>(),
+            monikerIds: new Set<sqliteModels.MonikerId>(),
         })
         ranges.set(2, {
             startLine: 3,
             startCharacter: 1,
             endLine: 3,
             endCharacter: 2,
-            monikerIds: new Set<dumpModels.MonikerId>(),
+            monikerIds: new Set<sqliteModels.MonikerId>(),
         })
         ranges.set(4, {
             startLine: 2,
             startCharacter: 1,
             endLine: 2,
             endCharacter: 2,
-            monikerIds: new Set<dumpModels.MonikerId>(),
+            monikerIds: new Set<sqliteModels.MonikerId>(),
         })
 
         const path = 'src/position.ts'

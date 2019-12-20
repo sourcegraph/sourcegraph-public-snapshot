@@ -1,5 +1,5 @@
 import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from 'typeorm'
-import { EncodedBloomFilter } from '../xrepo/bloom-filter'
+import { EncodedBloomFilter } from '../datastructures/bloom-filter'
 import { MAX_POSTGRES_BATCH_SIZE } from '../constants'
 
 /**
@@ -8,10 +8,10 @@ import { MAX_POSTGRES_BATCH_SIZE } from '../constants'
 export type LsifUploadState = 'queued' | 'completed' | 'errored' | 'processing'
 
 /**
- * An entity within the cross-repo database. This entity carries the data necessary
- * to convert an LSIF upload out-of-band, and hold metadata about the conversion
- * process once it completes (or fails). These entities are not meant to exist
- * indefinitely and are removed from the table based on their age.
+ * An entity within Postgres. This entity carries the data necessary to convert an
+ * LSIF upload out-of-band, and hold metadata about the conversion process once it
+ * completes (or fails). These entities are not meant to exist indefinitely and are
+ * removed from the table based on their age.
  */
 @Entity({ name: 'lsif_uploads' })
 export class LsifUpload {
@@ -97,8 +97,8 @@ export class LsifUpload {
 }
 
 /**
- * An entity within the cross-repo database. This tracks commit parentage and branch
- * heads for all known repositories.
+ * An entity within Postgres. This tracks commit parentage and branch heads for all
+ * known repositories.
  */
 @Entity({ name: 'lsif_commits' })
 export class Commit {
@@ -140,8 +140,8 @@ export class Commit {
 export type DumpId = number
 
 /**
- * An entity within the cross-repo database. A row with a repository and commit
- * indicates that there exists LSIF data for that pair.
+ * An entity within Postgres. A row with a repository and commit indicates that
+ * there exists LSIF data for that pair.
  */
 @Entity({ name: 'lsif_dumps' })
 export class LsifDump {
@@ -241,8 +241,8 @@ class Package {
 }
 
 /**
- * An entity within the cross-repo database. This maps a given repository and commit
- * pair to the package that it provides to other projects.
+ * An entity within Postgres. This maps a given repository and commit pair to the package
+ * that it provides to other projects.
  */
 @Entity({ name: 'lsif_packages' })
 export class PackageModel extends Package {
@@ -253,8 +253,8 @@ export class PackageModel extends Package {
 }
 
 /**
- * An entity within the cross-repo database. This lists the dependencies of a given
- * repository and commit pair to support find global reference operations.
+ * An entity within Postgres. This lists the dependencies of a given repository and commit
+ * pair to support find global reference operations.
  */
 @Entity({ name: 'lsif_references' })
 export class ReferenceModel extends Package {
@@ -274,6 +274,6 @@ export class ReferenceModel extends Package {
 }
 
 /**
- * The entities composing the cross-repository database models.
+ * The entities composing the Postgres database models.
  */
 export const entities = [LsifUpload, Commit, LsifDump, PackageModel, ReferenceModel]

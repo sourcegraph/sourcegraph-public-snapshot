@@ -12,12 +12,13 @@ import { instrument } from '../shared/metrics'
 import { Logger } from 'winston'
 import { startMetricsServer } from './server'
 import { waitForConfiguration } from '../shared/config/config'
-import { XrepoDatabase } from '../shared/xrepo/xrepo'
-import { UploadsManager } from '../shared/uploads/uploads'
-import * as xrepoModels from '../shared/models/xrepo'
+import { UploadManager } from '../shared/store/uploads'
+import * as pgModels from '../shared/models/pg'
 import { convertUpload } from './conversion/conversion'
 import { pick } from 'lodash'
 import AsyncPolling from 'async-polling'
+import { DumpManager } from '../shared/store/dumps'
+import { DependencyManager } from '../shared/store/dependencies'
 
 /**
  * Runs the worker that converts LSIF uploads.
@@ -42,13 +43,14 @@ async function main(logger: Logger): Promise<void> {
 
     // Create database connection and entity wrapper classes
     const connection = await createPostgresConnection(fetchConfiguration(), logger)
-    const xrepoDatabase = new XrepoDatabase(connection, settings.STORAGE_ROOT)
-    const uploadsManager = new UploadsManager(connection)
+    const dumpManager = new DumpManager(connection, settings.STORAGE_ROOT)
+    const uploadManager = new UploadManager(connection)
+    const dependencyManager = new DependencyManager(connection)
 
     // Start metrics server
     startMetricsServer(logger)
 
-    const convert = async (upload: xrepoModels.LsifUpload): Promise<void> => {
+    const convert = async (upload: pgModels.LsifUpload): Promise<void> => {
         logger.debug('Selected upload to convert', { uploadId: upload.id })
 
         let span: Span | undefined
@@ -69,7 +71,7 @@ async function main(logger: Logger): Promise<void> {
             metrics.uploadConversionDurationErrorsCounter,
             (): Promise<void> =>
                 logAndTraceCall(ctx, 'Converting upload', (ctx: TracingContext) =>
-                    convertUpload(connection, xrepoDatabase, fetchConfiguration, upload, ctx)
+                    convertUpload(connection, dumpManager, dependencyManager, fetchConfiguration, upload, ctx)
                 )
         )
     }
@@ -77,7 +79,7 @@ async function main(logger: Logger): Promise<void> {
     logger.debug('Worker polling database for unconverted uploads')
 
     AsyncPolling(async end => {
-        while (await uploadsManager.dequeueAndConvert(convert, logger)) {
+        while (await uploadManager.dequeueAndConvert(convert, logger)) {
             // Immediately poll again if we converted an upload
         }
 
