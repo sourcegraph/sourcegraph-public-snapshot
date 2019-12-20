@@ -184,7 +184,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         return unblockHistoryRef.current
     }, [campaignID, history])
 
-    const previewCampaignPlans = useMemo(() => new Subject<GQL.ICampaignPlanSpecification>(), [])
+    const previewCampaignPlans = useMemo(() => new Subject<GQL.ICampaignPlanSpecification | GQL.ID>(), [])
     const nextPreviewCampaignPlan = useCallback(previewCampaignPlans.next.bind(previewCampaignPlans), [
         previewCampaignPlans,
     ])
@@ -199,32 +199,40 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         setCampaign(undefined)
                     }),
                     switchMap(plan =>
-                        previewCampaignPlan(plan, false).pipe(
-                            tap(() => {
-                                setIsLoadingPreview(false)
-                            }),
-                            catchError(error => {
-                                setAlertError(asError(error))
-                                setIsLoadingPreview(false)
-                                return []
-                            }),
-                            switchMap(previewPlan =>
-                                merge(
-                                    of(previewPlan),
-                                    timer(0, 2000).pipe(
-                                        concatMap(() => fetchCampaignPlanById(previewPlan.id)),
-                                        takeWhile(isDefined),
-                                        takeWhile(plan => plan.status.state === 'PROCESSING', true)
-                                    )
-                                )
-                            )
-                        )
+                        typeof plan === 'string'
+                            ? fetchCampaignPlanById(plan)
+                            : previewCampaignPlan(plan, false).pipe(
+                                  tap(() => {
+                                      setIsLoadingPreview(false)
+                                  }),
+                                  catchError(error => {
+                                      setAlertError(asError(error))
+                                      setIsLoadingPreview(false)
+                                      return []
+                                  }),
+                                  switchMap(previewPlan =>
+                                      merge(
+                                          of(previewPlan),
+                                          timer(0, 2000).pipe(
+                                              concatMap(() => fetchCampaignPlanById(previewPlan.id)),
+                                              takeWhile(isDefined),
+                                              takeWhile(plan => plan.status.state === 'PROCESSING', true)
+                                          )
+                                      )
+                                  )
+                              )
                     ),
                     tap(setCampaign)
                 ),
             [previewCampaignPlans]
         )
     )
+    const planID: GQL.ID | null = new URLSearchParams(location.search).get('plan')
+    useEffect(() => {
+        if (planID) {
+            nextPreviewCampaignPlan(planID)
+        }
+    }, [nextPreviewCampaignPlan, planID])
 
     if (campaign === undefined && campaignID) {
         return <LoadingSpinner className="icon-inline mx-auto my-4" />
@@ -479,57 +487,59 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         </small>
                     </p>
                 )}
-                <div className="container-fluid my-3">
-                    <div className="row campaign-details__property-row">
-                        <h3 className="mr-3 mb-0 campaign-details__property-label">Type</h3>
-                        <div className="flex-grow-1 form-group mb-0">
-                            {!(campaign && campaign.__typename === 'Campaign') ? (
-                                <>
-                                    {' '}
-                                    <select
-                                        className="form-control w-auto d-inline-block e2e-campaign-type"
-                                        placeholder="Select campaign type"
-                                        onChange={onChangeType}
-                                        value={type}
-                                    >
-                                        {(Object.keys(typeLabels) as CampaignType[]).map((typeName, i) => (
-                                            <option value={typeName || ''} key={i}>
-                                                {typeLabels[typeName]}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {type === 'comby' && (
-                                        <small className="ml-1">
-                                            <a
-                                                rel="noopener noreferrer"
-                                                target="_blank"
-                                                href="https://comby.dev/#match-syntax"
-                                            >
-                                                Learn about comby syntax
-                                            </a>
-                                        </small>
-                                    )}
-                                </>
-                            ) : (
-                                <p className="mb-0">{typeLabels[type || '']}</p>
-                            )}
+                {planID === null && (
+                    <div className="container-fluid my-3">
+                        <div className="row campaign-details__property-row">
+                            <h3 className="mr-3 mb-0 campaign-details__property-label">Type</h3>
+                            <div className="flex-grow-1 form-group mb-0">
+                                {!(campaign && campaign.__typename === 'Campaign') ? (
+                                    <>
+                                        {' '}
+                                        <select
+                                            className="form-control w-auto d-inline-block e2e-campaign-type"
+                                            placeholder="Select campaign type"
+                                            onChange={onChangeType}
+                                            value={type}
+                                        >
+                                            {(Object.keys(typeLabels) as CampaignType[]).map((typeName, i) => (
+                                                <option value={typeName || ''} key={i}>
+                                                    {typeLabels[typeName]}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        {type === 'comby' && (
+                                            <small className="ml-1">
+                                                <a
+                                                    rel="noopener noreferrer"
+                                                    target="_blank"
+                                                    href="https://comby.dev/#match-syntax"
+                                                >
+                                                    Learn about comby syntax
+                                                </a>
+                                            </small>
+                                        )}
+                                    </>
+                                ) : (
+                                    <p className="mb-0">{typeLabels[type || '']}</p>
+                                )}
+                            </div>
                         </div>
+                        {type && (
+                            <div className="row mt-3">
+                                <h3 className="mr-3 mb-0 flex-grow-0 campaign-details__property-label">Arguments</h3>
+                                <MonacoSettingsEditor
+                                    className="flex-grow-1 e2e-campaign-arguments"
+                                    isLightTheme={isLightTheme}
+                                    value={campaignPlanArguments}
+                                    jsonSchema={type ? jsonSchemaByType[type] : undefined}
+                                    height={110}
+                                    onChange={onChangeArguments}
+                                    readOnly={!!(campaign && campaign.__typename === 'Campaign')}
+                                ></MonacoSettingsEditor>
+                            </div>
+                        )}
                     </div>
-                    {type && (
-                        <div className="row mt-3">
-                            <h3 className="mr-3 mb-0 flex-grow-0 campaign-details__property-label">Arguments</h3>
-                            <MonacoSettingsEditor
-                                className="flex-grow-1 e2e-campaign-arguments"
-                                isLightTheme={isLightTheme}
-                                value={campaignPlanArguments}
-                                jsonSchema={type ? jsonSchemaByType[type] : undefined}
-                                height={110}
-                                onChange={onChangeArguments}
-                                readOnly={!!(campaign && campaign.__typename === 'Campaign')}
-                            ></MonacoSettingsEditor>
-                        </div>
-                    )}
-                </div>
+                )}
                 {(!campaign || (campaign && campaign.__typename === 'CampaignPlan')) && mode === 'editing' && (
                     <>
                         {type !== undefined && (
