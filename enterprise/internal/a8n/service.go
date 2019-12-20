@@ -825,12 +825,12 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		}
 		toKeep = append(toKeep, currentChangesetJob)
 
-		// TODO: We also need to check whether the Rev/BaseRef changed
-		// Along with Campaign.{Name,Description} we can probably do that in
-		// `RunChangesetJob`:
-		// if the Changeset on the codehost already exist, we check whether its
-		// Title/Description/BaseRef differ from what we have and if so, we
-		// update it
+		// TODO: We also need to check whether the
+		// CampaignJob.{Rev,BaseRef,Description} changed.
+		// Along with Campaign.{Name,Description} we can probably do
+		// that in `RunChangesetJob`: if the Changeset on the codehost already
+		// exist, we check whether its Title/Description/BaseRef differ from
+		// what we have and if so, we update it
 	}
 
 	// And if we have CampaignJobs that don't have an existing ChangesetJob
