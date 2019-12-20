@@ -791,8 +791,7 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	)
 
 	for repoID, currentChangesetJob := range currentChangesetJobsByRepoID {
-		currentCampaignJob, _ := currentCampaignJobsByID[currentChangesetJob.CampaignJobID]
-
+		currentCampaignJob := currentCampaignJobsByID[currentChangesetJob.CampaignJobID]
 		newCampaignJob, ok := newCampaignJobsByRepoID[repoID]
 		// Case (a): we _don't_ have a matching _new_ CampaignJob.
 		// We delete the ChangesetJob and Changeset.
