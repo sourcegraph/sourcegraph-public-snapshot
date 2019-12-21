@@ -8,6 +8,14 @@ exports[`CampaignBurndownChart renders an alert when data for less than 2 days i
 </div>
 `;
 
+exports[`CampaignBurndownChart renders an alert when no datapoints are in a set of more than 1 day of data 1`] = `
+<div
+  className="alert alert-info"
+>
+  Burndown chart will be shown when data is available.
+</div>
+`;
+
 exports[`CampaignBurndownChart renders the chart 1`] = `
 <div
   className="recharts-responsive-container"
@@ -107,74 +115,6 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
                 x={65}
               >
                 November 13
-              </tspan>
-            </text>
-          </g>
-          <g
-            className="recharts-layer recharts-cartesian-axis-tick"
-          >
-            <line
-              className="recharts-cartesian-axis-tick-line"
-              fill="none"
-              height={30}
-              stroke="var(--text-muted)"
-              width={430}
-              x={65}
-              x1={189.4212962962963}
-              x2={189.4212962962963}
-              y={265}
-              y1={271}
-              y2={265}
-            />
-            <text
-              className="recharts-text recharts-cartesian-axis-tick-value"
-              fill="var(--text-muted)"
-              height={30}
-              stroke="none"
-              textAnchor="middle"
-              width={430}
-              x={189.4212962962963}
-              y={273}
-            >
-              <tspan
-                dy="0.71em"
-                x={189.4212962962963}
-              >
-                November 13
-              </tspan>
-            </text>
-          </g>
-          <g
-            className="recharts-layer recharts-cartesian-axis-tick"
-          >
-            <line
-              className="recharts-cartesian-axis-tick-line"
-              fill="none"
-              height={30}
-              stroke="var(--text-muted)"
-              width={430}
-              x={65}
-              x1={313.8425925925926}
-              x2={313.8425925925926}
-              y={265}
-              y1={271}
-              y2={265}
-            />
-            <text
-              className="recharts-text recharts-cartesian-axis-tick-value"
-              fill="var(--text-muted)"
-              height={30}
-              stroke="none"
-              textAnchor="middle"
-              width={430}
-              x={313.8425925925926}
-              y={273}
-            >
-              <tspan
-                dy="0.71em"
-                x={313.8425925925926}
-              >
-                November 14
               </tspan>
             </text>
           </g>
@@ -380,7 +320,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
         >
           <path
             className="recharts-curve recharts-area-area"
-            d="M65,236.11111111111111L280,236.11111111111111L280,236.11111111111111L495,236.11111111111111L495,265L280,265L280,265L65,265Z"
+            d="M65,236.11111111111111L65,236.11111111111111L495,236.11111111111111L495,265L65,265L65,265Z"
             fill="var(--warning)"
             fillOpacity={0.6}
             height={260}
@@ -390,7 +330,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
           />
           <path
             className="recharts-curve recharts-area-curve"
-            d="M65,236.11111111111111L280,236.11111111111111L280,236.11111111111111L495,236.11111111111111"
+            d="M65,236.11111111111111L65,236.11111111111111L495,236.11111111111111"
             fill="none"
             fillOpacity={0.6}
             height={260}
@@ -409,7 +349,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
         >
           <path
             className="recharts-curve recharts-area-area"
-            d="M65,207.22222222222223L280,207.22222222222223L280,207.22222222222223L495,207.22222222222223L495,236.11111111111111L280,236.11111111111111L280,236.11111111111111L65,236.11111111111111Z"
+            d="M65,207.22222222222223L65,207.22222222222223L495,207.22222222222223L495,236.11111111111111L65,236.11111111111111L65,236.11111111111111Z"
             fill="var(--danger)"
             fillOpacity={0.6}
             height={260}
@@ -419,7 +359,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
           />
           <path
             className="recharts-curve recharts-area-curve"
-            d="M65,207.22222222222223L280,207.22222222222223L280,207.22222222222223L495,207.22222222222223"
+            d="M65,207.22222222222223L65,207.22222222222223L495,207.22222222222223"
             fill="none"
             fillOpacity={0.6}
             height={260}
@@ -438,7 +378,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
         >
           <path
             className="recharts-curve recharts-area-area"
-            d="M65,178.33333333333334L280,178.33333333333334L280,178.33333333333334L495,178.33333333333334L495,207.22222222222223L280,207.22222222222223L280,207.22222222222223L65,207.22222222222223Z"
+            d="M65,178.33333333333334L65,178.33333333333334L495,178.33333333333334L495,207.22222222222223L65,207.22222222222223L65,207.22222222222223Z"
             fill="var(--success)"
             fillOpacity={0.6}
             height={260}
@@ -448,7 +388,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
           />
           <path
             className="recharts-curve recharts-area-curve"
-            d="M65,178.33333333333334L280,178.33333333333334L280,178.33333333333334L495,178.33333333333334"
+            d="M65,178.33333333333334L65,178.33333333333334L495,178.33333333333334"
             fill="none"
             fillOpacity={0.6}
             height={260}
@@ -467,7 +407,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
         >
           <path
             className="recharts-curve recharts-area-area"
-            d="M65,149.44444444444446L280,149.44444444444446L280,149.44444444444446L495,149.44444444444446L495,178.33333333333334L280,178.33333333333334L280,178.33333333333334L65,178.33333333333334Z"
+            d="M65,149.44444444444446L65,149.44444444444446L495,149.44444444444446L495,178.33333333333334L65,178.33333333333334L65,178.33333333333334Z"
             fill="var(--secondary)"
             fillOpacity={0.6}
             height={260}
@@ -477,7 +417,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
           />
           <path
             className="recharts-curve recharts-area-curve"
-            d="M65,149.44444444444446L280,149.44444444444446L280,149.44444444444446L495,149.44444444444446"
+            d="M65,149.44444444444446L65,149.44444444444446L495,149.44444444444446"
             fill="none"
             fillOpacity={0.6}
             height={260}
@@ -496,7 +436,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
         >
           <path
             className="recharts-curve recharts-area-area"
-            d="M65,120.55555555555554L280,120.55555555555554L280,5L495,5L495,149.44444444444446L280,149.44444444444446L280,149.44444444444446L65,149.44444444444446Z"
+            d="M65,120.55555555555554L65,5L495,5L495,149.44444444444446L65,149.44444444444446L65,149.44444444444446Z"
             fill="var(--merged)"
             fillOpacity={0.6}
             height={260}
@@ -506,7 +446,7 @@ exports[`CampaignBurndownChart renders the chart 1`] = `
           />
           <path
             className="recharts-curve recharts-area-curve"
-            d="M65,120.55555555555554L280,120.55555555555554L280,5L495,5"
+            d="M65,120.55555555555554L65,5L495,5"
             fill="none"
             fillOpacity={0.6}
             height={260}
