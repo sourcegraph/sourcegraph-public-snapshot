@@ -82,3 +82,5 @@ All configuration is now complete. Let's test that it works.
 1.  Visit `https://sourcegraph.example.com`. (If you are already authenticated from before configuring the SAML auth provider, sign out of Sourcegraph.)
 1.  When prompted to sign into ADFS, provide the `alice` credentials and continue.
 1.  Confirm that you are authenticated to Sourcegraph as `alice`.
+
+Confirm there are no error messages in the `sourcegraph/server` Docker container logs (or the `sourcegraph-frontend` pod logs, if Sourcegraph is deployed to a Kubernetes cluster). The most likely error message indicating a problem is `Error prefetching SAML service provider metadata`. See [SAML troubleshooting](/admin/auth/saml#saml-troubleshooting) for more tips.

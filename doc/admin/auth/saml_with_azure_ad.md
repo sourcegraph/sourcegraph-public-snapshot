@@ -19,16 +19,17 @@
 1. Ensure `externalURL` in [site config](../config/site_config.md) is set to the base URL (no trailing slash) you used in the Azure AD application configuration.
 1. Add an entry to `auth.providers` with type `saml` and `identityProviderMetadataURL` set to the "App Federation Metadata Url" you recorded in the previous section. Here is an example of what your site configuration should look like:
 
-   ```
+```json
+{
+ // ...
+ "externalURL": "https://sourcegraph.example.com",
+ "auth.providers": [
    {
-    // ...
-    "externalURL": "https://sourcegraph.example.com",
-    "auth.providers": [
-      {
-        "type": "saml",
-        "identityProviderMetadataURL": "https://login.microsoftonline.com/7d2a00ed-73e8-4920-bbfa-ef68effe2d1e/federationmetadata/2007-06/federationmetadata.xml?appid=eff20ae4-145b-4bd3-ff3f-21edab43fe99"
-      }
-    ]
+     "type": "saml",
+     "identityProviderMetadataURL": "https://login.microsoftonline.com/7d2a00ed-73e8-4920-bbfa-ef68effe2d1e/federationmetadata/2007-06/federationmetadata.xml?appid=eff20ae4-145b-4bd3-ff3f-21edab43fe99"
    }
-   ```
-1. Confirm there are no error messages in the `sourcegraph/server` Docker container logs (or the `sourcegraph-frontend` pod logs, if Sourcegraph is deployed to a Kubernetes cluster). The most likely error message indicating a problem is `Error prefetching SAML service provider metadata.`.
+ ]
+}
+```
+
+Confirm there are no error messages in the `sourcegraph/server` Docker container logs (or the `sourcegraph-frontend` pod logs, if Sourcegraph is deployed to a Kubernetes cluster). The most likely error message indicating a problem is `Error prefetching SAML service provider metadata`. See [SAML troubleshooting](/admin/auth/saml#saml-troubleshooting) for more tips.
