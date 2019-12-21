@@ -7,6 +7,7 @@ import { Timestamp } from '../../../../components/time/Timestamp'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
 import { ProductLicenseValidity } from '../../../dotcom/productSubscriptions/ProductLicenseValidity'
 import { ProductLicenseInfoDescription } from '../../../productSubscription/ProductLicenseInfoDescription'
+import { ProductLicenseTags } from '../../../productSubscription/ProductLicenseTags'
 
 export const siteAdminProductLicenseFragment = gql`
     fragment ProductLicenseFields on ProductLicense {
@@ -89,12 +90,7 @@ export class SiteAdminProductLicenseNode extends React.PureComponent<SiteAdminPr
                 </div>
                 {this.props.node.info && this.props.node.info.tags.length > 0 && (
                     <div>
-                        Tags:{' '}
-                        {this.props.node.info.tags.map(tag => (
-                            <div className="mr-1 badge badge-secondary" key={tag}>
-                                {tag}
-                            </div>
-                        ))}
+                        Tags: <ProductLicenseTags tags={this.props.node.info.tags} />
                     </div>
                 )}
                 <CopyableText text={this.props.node.licenseKey} className="mt-2 d-block" />
