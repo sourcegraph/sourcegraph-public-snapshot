@@ -8,7 +8,7 @@ Sourcegraph supports the following ways for users to sign in:
 - [GitHub OAuth](#github)
 - [GitLab OAuth](#gitlab)
 - [OpenID Connect](#openid-connect) (including [Google accounts on G Suite](#g-suite-google-accounts))
-- [SAML](/admin/auth/saml)
+- [SAML](saml/index.md)
 - [HTTP authentication proxies](#http-authentication-proxies)
 
 The authentication provider is configured in the [`auth.providers`](../config/critical_config.md#authentication-providers) critical configuration option.
