@@ -1,7 +1,6 @@
 # Configuring SAML with Okta
 
-
-## 1. Add an unlisted (non-gallery) application to your Azure AD organization
+## 1. Add a SAML application in Okta
 
 1. Navigate to the "Classic UI" in the Okta Admin site. In the upper left-hand corner, it should say "Classic UI". If it says "Developer Console", click it and select "Classic UI". ![Okta Developer Console: Classic UI](https://user-images.githubusercontent.com/1646931/71300638-7a52fd80-234b-11ea-90cf-960820d4d5f2.png)
 1. Go to the Applications tab. Click "Add Application" and then "Create New App". Select "Web" as the choice of Platform and "SAML 2.0" as the Sign on method. Then click "Create". ![Add application](https://user-images.githubusercontent.com/1646931/71300683-02390780-234c-11ea-8cbb-7c9987d3b472.png)
