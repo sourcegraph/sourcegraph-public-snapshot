@@ -84,10 +84,10 @@ type dbSubscriptionsListOptions struct {
 func (o dbSubscriptionsListOptions) sqlConditions() []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if o.UserID != 0 {
-		conds = append(conds, sqlf.Sprintf("user_id=%d", o.UserID))
+		conds = append(conds, sqlf.Sprintf("product_subscriptions.user_id=%d", o.UserID))
 	}
 	if !o.IncludeArchived {
-		conds = append(conds, sqlf.Sprintf("archived_at IS NULL"))
+		conds = append(conds, sqlf.Sprintf("product_subscriptions.archived_at IS NULL"))
 	}
 	if o.Query != "" {
 		conds = append(conds, sqlf.Sprintf("(users.username LIKE %s) OR (primary_emails.primary_email LIKE %s)", "%"+o.Query+"%", "%"+o.Query+"%"))
