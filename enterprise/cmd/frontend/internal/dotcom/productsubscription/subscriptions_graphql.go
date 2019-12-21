@@ -464,7 +464,7 @@ func (ProductSubscriptionLicensingResolver) ProductSubscriptions(ctx context.Con
 
 	if args.Query != nil {
 		// 🚨 SECURITY: Only site admins may query or view license for all users, or for any other user.
-		// Note this check is currently repetative with the check above. However, it is duplicated here to
+		// Note this check is currently repetitive with the check above. However, it is duplicated here to
 		// ensure it remains in effect if the code path above chagnes.
 		if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 			return nil, err
