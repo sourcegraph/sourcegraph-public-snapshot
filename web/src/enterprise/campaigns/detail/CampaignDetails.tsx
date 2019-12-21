@@ -21,6 +21,7 @@ import {
     fetchCampaignPlanById,
     CampaignType,
     retryCampaign,
+    closeCampaign,
 } from './backend'
 import { useError, useObservable } from '../../../util/useObservable'
 import { asError } from '../../../../../shared/src/util/errors'
@@ -43,6 +44,8 @@ import { FileDiffTab } from './FileDiffTab'
 import combyJsonSchema from '../../../../../schema/campaign-types/comby.schema.json'
 import credentialsJsonSchema from '../../../../../schema/campaign-types/credentials.schema.json'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
+import classNames from 'classnames'
+import WarningIcon from 'mdi-react/WarningIcon'
 
 interface Props extends ThemeProps {
     /**
@@ -96,6 +99,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     const [type, setType] = useState<CampaignType>()
     const [campaignPlanArguments, setCampaignPlanArguments] = useState<string>()
     const [namespace, setNamespace] = useState<GQL.ID>()
+
+    const [closeChangesets, setCloseChangesets] = useState<boolean>(false)
 
     const [namespaces, setNamespaces] = useState<GQL.Namespace[]>()
     const getNamespace = useCallback((): GQL.ID | undefined => namespace || namespaces?.[0].id, [namespace, namespaces])
@@ -169,7 +174,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         [campaignID]
     )
 
-    const [mode, setMode] = useState<'viewing' | 'editing' | 'saving' | 'deleting'>(campaignID ? 'viewing' : 'editing')
+    const [mode, setMode] = useState<'viewing' | 'editing' | 'saving' | 'deleting' | 'closing'>(
+        campaignID ? 'viewing' : 'editing'
+    )
 
     // To report errors from saving or deleting
     const [alertError, setAlertError] = useState<Error>()
@@ -308,6 +315,22 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         setAlertError(undefined)
     }
 
+    const onClose: React.MouseEventHandler = async event => {
+        event.preventDefault()
+        if (!confirm('Are you sure you want to close the campaign?')) {
+            return
+        }
+        setMode('closing')
+        try {
+            await closeCampaign(campaign!.id, closeChangesets)
+            campaignUpdates.next()
+        } catch (err) {
+            setAlertError(asError(err))
+        } finally {
+            setMode('viewing')
+        }
+    }
+
     const onDelete: React.MouseEventHandler = async event => {
         event.preventDefault()
         if (!confirm('Are you sure you want to delete the campaign?')) {
@@ -315,11 +338,12 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         }
         setMode('deleting')
         try {
-            await deleteCampaign(campaign!.id)
+            await deleteCampaign(campaign!.id, closeChangesets)
             history.push('/campaigns')
         } catch (err) {
-            setMode('viewing')
             setAlertError(asError(err))
+        } finally {
+            setMode('viewing')
         }
     }
 
@@ -331,6 +355,10 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         } catch (err) {
             setAlertError(asError(err))
         }
+    }
+
+    const onCloseChangesetsToggle: React.ChangeEventHandler = (event: React.ChangeEvent) => {
+        setCloseChangesets((event.target as HTMLInputElement).checked)
     }
 
     const author = campaign && campaign.__typename === 'Campaign' ? campaign.author : authenticatedUser
@@ -367,48 +395,61 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     return (
         <>
             <PageTitle title={campaign && campaign.__typename === 'Campaign' ? campaign.name : 'New Campaign'} />
-            <Form onSubmit={onSubmit} onReset={onCancel} className="e2e-campaign-form">
-                <h2 className="d-flex">
-                    <CampaignsIcon className="icon-inline mr-2" />
-                    <span>
-                        <Link to="/campaigns">Campaigns</Link>
-                    </span>
-                    <span className="text-muted d-inline-block mx-2">/</span>
-                    {/* The namespace of a campaign can only be set on creation */}
-                    {campaign && campaign.__typename === 'Campaign' ? (
-                        <span>{campaign.namespace.namespaceName}</span>
-                    ) : (
-                        <select
-                            disabled={!namespaces}
-                            id="new-campaign-page__namespace"
-                            className="form-control w-auto"
-                            required={true}
-                            value={getNamespace()}
-                            onChange={event => setNamespace(event.target.value)}
-                        >
-                            {namespaces?.map(namespace => (
-                                <option value={namespace.id} key={namespace.id}>
-                                    {namespace.namespaceName}
-                                </option>
-                            ))}
-                        </select>
-                    )}
-                    <span className="text-muted d-inline-block mx-2">/</span>
-                    {mode === 'editing' || mode === 'saving' ? (
-                        <input
-                            className="form-control w-auto d-inline-block e2e-campaign-title"
-                            value={name}
-                            onChange={event => setName(event.target.value)}
-                            placeholder="Campaign title"
-                            disabled={mode === 'saving'}
-                            autoFocus={true}
-                            required={true}
+            <Form onSubmit={onSubmit} onReset={onCancel} className="e2e-campaign-form position-relative">
+                <div className="d-flex mb-2">
+                    <h2 className="m-0">
+                        <CampaignsIcon
+                            className={classNames(
+                                'icon-inline mr-2',
+                                campaign && campaign.__typename === 'Campaign' && !campaign.closedAt
+                                    ? 'text-success'
+                                    : campaignID
+                                    ? 'text-danger'
+                                    : 'text-muted'
+                            )}
                         />
-                    ) : (
-                        <span>{campaign && campaign.__typename === 'Campaign' && campaign.name}</span>
-                    )}
+                        <span>
+                            <Link to="/campaigns">Campaigns</Link>
+                        </span>
+                        <span className="text-muted d-inline-block mx-2">/</span>
+                        {/* The namespace of a campaign can only be set on creation */}
+                        {campaign && campaign.__typename === 'Campaign' ? (
+                            <span>{campaign.namespace.namespaceName}</span>
+                        ) : (
+                            <select
+                                disabled={!namespaces}
+                                id="new-campaign-page__namespace"
+                                className="form-control w-auto d-inline-block"
+                                required={true}
+                                value={getNamespace()}
+                                onChange={event => setNamespace(event.target.value)}
+                            >
+                                {namespaces?.map(namespace => (
+                                    <option value={namespace.id} key={namespace.id}>
+                                        {namespace.namespaceName}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+                        <span className="text-muted d-inline-block mx-2">/</span>
+                        {mode === 'editing' || mode === 'saving' ? (
+                            <input
+                                className="form-control w-auto d-inline-block e2e-campaign-title"
+                                value={name}
+                                onChange={event => setName(event.target.value)}
+                                placeholder="Campaign title"
+                                disabled={mode === 'saving'}
+                                autoFocus={true}
+                                required={true}
+                            />
+                        ) : (
+                            <span>{campaign && campaign.__typename === 'Campaign' && campaign.name}</span>
+                        )}
+                    </h2>
                     <span className="flex-grow-1 d-flex justify-content-end align-items-center">
-                        {(mode === 'saving' || mode === 'deleting') && <LoadingSpinner className="mr-2" />}
+                        {(mode === 'saving' || mode === 'deleting' || mode === 'closing') && (
+                            <LoadingSpinner className="mr-2" />
+                        )}
                         {campaignID &&
                             (mode === 'editing' || mode === 'saving' ? (
                                 <>
@@ -425,22 +466,84 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                         type="button"
                                         className="btn btn-secondary mr-1"
                                         onClick={onEdit}
-                                        disabled={mode === 'deleting'}
+                                        disabled={mode === 'deleting' || mode === 'closing'}
                                     >
                                         Edit
                                     </button>
-                                    <button
-                                        type="button"
-                                        className="btn btn-danger"
-                                        onClick={onDelete}
-                                        disabled={mode === 'deleting'}
-                                    >
-                                        Delete
-                                    </button>
+                                    {campaign && campaign.__typename === 'Campaign' && (
+                                        <>
+                                            {!campaign.closedAt && (
+                                                <details className="campaign-details__details">
+                                                    <summary>
+                                                        <span className="btn btn-secondary mr-1 dropdown-toggle">
+                                                            Close
+                                                        </span>
+                                                    </summary>
+                                                    <div className="position-absolute campaign-details__details-menu">
+                                                        <div className="card mt-1">
+                                                            <div className="card-body">
+                                                                <p>
+                                                                    Close campaign <b>{campaign.name}</b>?
+                                                                </p>
+                                                                <div className="form-group">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={closeChangesets}
+                                                                        onChange={onCloseChangesetsToggle}
+                                                                    />{' '}
+                                                                    Close all {campaign.changesets.totalCount}{' '}
+                                                                    changesets on codehosts
+                                                                </div>
+                                                                <button
+                                                                    type="button"
+                                                                    disabled={mode === 'deleting' || mode === 'closing'}
+                                                                    className="btn btn-secondary mr-1"
+                                                                    onClick={onClose}
+                                                                >
+                                                                    Close
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </details>
+                                            )}
+                                            <details className="campaign-details__details">
+                                                <summary>
+                                                    <span className="btn btn-danger dropdown-toggle">Delete</span>
+                                                </summary>
+                                                <div className="position-absolute campaign-details__details-menu">
+                                                    <div className="card mt-1">
+                                                        <div className="card-body">
+                                                            <p>
+                                                                Delete campaign <b>{campaign.name}</b>?
+                                                            </p>
+                                                            <div className="form-group">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={closeChangesets}
+                                                                    onChange={onCloseChangesetsToggle}
+                                                                />{' '}
+                                                                Close all {campaign.changesets.totalCount} changesets on
+                                                                codehosts
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                disabled={mode === 'deleting' || mode === 'closing'}
+                                                                className="btn btn-danger mr-1"
+                                                                onClick={onDelete}
+                                                            >
+                                                                Delete
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </details>
+                                        </>
+                                    )}
                                 </>
                             ))}
                     </span>
-                </h2>
+                </div>
                 {alertError && <ErrorAlert error={alertError} />}
                 <div className="card">
                     <div className="card-header">
@@ -574,16 +677,25 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             </span>
                         </div>
                     )}
-                    {type && status.state !== 'PROCESSING' && (
+                    {campaign && campaign.__typename === 'Campaign' && campaign.closedAt ? (
                         <div className="d-flex my-3">
-                            {status.state === 'COMPLETED' && (
-                                <CheckCircleIcon className="icon-inline text-success mr-1 e2e-preview-success" />
-                            )}
-                            {status.state === 'ERRORED' && <AlertCircleIcon className="icon-inline text-danger mr-1" />}{' '}
-                            {/* Status asserts on campaign being set, this will never be null */}
-                            {campaign!.__typename === 'Campaign' ? 'Creation' : 'Preview'}{' '}
-                            {status.state.toLocaleLowerCase()}
+                            <WarningIcon className="icon-inline text-warning mr-1" /> Campaign is closed
                         </div>
+                    ) : (
+                        type &&
+                        status.state !== 'PROCESSING' && (
+                            <div className="d-flex my-3">
+                                {status.state === 'COMPLETED' && (
+                                    <CheckCircleIcon className="icon-inline text-success mr-1 e2e-preview-success" />
+                                )}
+                                {status.state === 'ERRORED' && (
+                                    <AlertCircleIcon className="icon-inline text-danger mr-1" />
+                                )}{' '}
+                                {/* Status asserts on campaign being set, this will never be null */}
+                                {campaign!.__typename === 'Campaign' ? 'Creation' : 'Preview'}{' '}
+                                {status.state.toLocaleLowerCase()}
+                            </div>
+                        )
                     )}
                     {status.errors.map((error, i) => (
                         <ErrorAlert error={error} className="mt-3" key={i} />

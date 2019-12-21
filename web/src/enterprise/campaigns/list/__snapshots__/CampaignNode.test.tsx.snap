@@ -8,7 +8,7 @@ exports[`CampaignNode renders a campaign node 1`] = `
     className="d-flex"
   >
     <svg
-      className="mdi-icon icon-inline mr-2 flex-shrink-0"
+      className="mdi-icon icon-inline mr-2 flex-shrink-0 text-success"
       fill="currentColor"
       height={24}
       viewBox="0 0 24 24"
