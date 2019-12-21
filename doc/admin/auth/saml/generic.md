@@ -12,7 +12,7 @@ Your identity provider should provide documentation on how to register a new SAM
 * [Auth0](https://auth0.com/docs/protocols/saml/saml-idp-generic)
 * [Ping Identity](https://learning.getpostman.com/docs/postman-enterprise/sso/saml-ping/)
 * [Salesforce Identity](https://help.salesforce.com/articleView?id=identity_provider_enable.htm)
-* We have vendor-specific instructions for [Okta](/admin/auth/saml_with_okta), [Azure AD](/admin/auth/saml_with_azure_ad), and [Microsoft ADFS](/admin/auth/saml_with_microsoft_adfs)
+* We have vendor-specific instructions for [Okta](/admin/auth/saml/okta), [Azure AD](/admin/auth/saml/azure_ad), and [Microsoft ADFS](/admin/auth/saml/microsoft_adfs)
 
 If you do not see your identity provider in the list above or otherwise have trouble with SAML configuration, please reach out to [support@sourcegraph.com](mailto:support@sourcegraph.com?subject=SAML%20help&body=I%20am%20trying%20to%20configure%20Sourcegraph%20with%20SAML%20authenticatio
 n%20with%20%3Cfill%20in%20your%20auth%20provider%3E%2C%20but%20am%20running%

@@ -2,14 +2,14 @@
 
 Select your SAML identity provider for setup instructions:
 
-- [Okta](/admin/auth/saml_with_okta)
-- [Azure Active Directory (Azure AD)](/admin/auth/saml_with_azure_ad)
-- [Microsoft Active Directory Federation Services (ADFS)](/admin/auth/saml_with_microsoft_adfs)
-- [Auth0](/admin/auth/saml_generic)
-- [OneLogin](/admin/auth/saml_generic)
-- [Ping Identity](/admin/auth/saml_generic)
-- [Salesforce Identity](/admin/auth/saml_generic)
-- [Other](/admin/auth/saml_generic)
+- [Okta](/admin/auth/saml/okta)
+- [Azure Active Directory (Azure AD)](/admin/auth/saml/azure_ad)
+- [Microsoft Active Directory Federation Services (ADFS)](/admin/auth/saml/microsoft_adfs)
+- [Auth0](/admin/auth/saml/generic)
+- [OneLogin](/admin/auth/saml/generic)
+- [Ping Identity](/admin/auth/saml/generic)
+- [Salesforce Identity](/admin/auth/saml/generic)
+- [Other](/admin/auth/saml/generic)
 
 For advanced SAML configuration options, see the [`saml` auth provider documentation](../config/critical_config.md#saml).
 
