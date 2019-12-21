@@ -28,7 +28,7 @@ var update = flag.Bool("update", false, "update testdata")
 func TestProvider_Validate(t *testing.T) {
 	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
 	if instanceURL == "" {
-		instanceURL = "http://127.0.0.1:7990"
+		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
 	for _, tc := range []struct {
