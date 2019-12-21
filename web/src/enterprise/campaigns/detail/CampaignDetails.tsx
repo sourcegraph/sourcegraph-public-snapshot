@@ -22,6 +22,7 @@ import {
     CampaignType,
     retryCampaign,
     closeCampaign,
+    queryChangesetPlans,
 } from './backend'
 import { useError, useObservable } from '../../../util/useObservable'
 import { asError } from '../../../../../shared/src/util/errors'
@@ -40,12 +41,11 @@ import { switchMap, tap, catchError, takeWhile, concatMap, repeatWhen, delay } f
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { TabsWithLocalStorageViewStatePersistence } from '../../../../../shared/src/components/Tabs'
 import { isDefined } from '../../../../../shared/src/util/types'
-import { FileDiffTab } from './FileDiffTab'
 import combyJsonSchema from '../../../../../schema/campaign-types/comby.schema.json'
 import credentialsJsonSchema from '../../../../../schema/campaign-types/credentials.schema.json'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import classNames from 'classnames'
-import WarningIcon from 'mdi-react/WarningIcon'
+import { CampaignStatus } from './CampaignStatus'
+import { FileDiffTabNode, FileDiffTabNodeProps } from './FileDiffTabNode'
 
 interface Props extends ThemeProps {
     /**
@@ -170,8 +170,11 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     }, [campaignID, triggerError, nextChangesetUpdate, campaignUpdates])
 
     const queryChangesetsConnection = useCallback(
-        (args: FilteredConnectionQueryArgs) => queryChangesets(campaignID!, args),
-        [campaignID]
+        (args: FilteredConnectionQueryArgs) =>
+            campaign && campaign.__typename === 'CampaignPlan'
+                ? queryChangesetPlans(campaign.id, args)
+                : queryChangesets(campaignID!, args),
+        [campaign, campaignID]
     )
 
     const [mode, setMode] = useState<'viewing' | 'editing' | 'saving' | 'deleting' | 'closing'>(
@@ -229,17 +232,58 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                   )
                               )
                     ),
-                    tap(setCampaign)
+                    tap(campaign => {
+                        setCampaign(campaign)
+                        if (campaign && campaign.changesets.totalCount <= 15) {
+                            nextChangesetUpdate()
+                        }
+                    })
                 ),
-            [previewCampaignPlans]
+            [previewCampaignPlans, nextChangesetUpdate]
         )
     )
+
     const planID: GQL.ID | null = new URLSearchParams(location.search).get('plan')
     useEffect(() => {
         if (planID) {
             nextPreviewCampaignPlan(planID)
         }
     }, [nextPreviewCampaignPlan, planID])
+
+    const calculateDiff = useMemo(
+        () => (field: 'added' | 'deleted'): number => {
+            const nodes: (GQL.IExternalChangeset | GQL.IChangesetPlan)[] | undefined = campaign?.changesets.nodes
+            if (!nodes) {
+                return 0
+            }
+            return nodes.reduce(
+                (prev, next) =>
+                    prev + (next.diff ? next.diff.fileDiffs.diffStat[field] + next.diff.fileDiffs.diffStat.changed : 0),
+                0
+            )
+        },
+        [campaign]
+    )
+
+    const totalAdditions = useMemo(() => calculateDiff('added'), [calculateDiff])
+    const totalDeletions = useMemo(() => calculateDiff('deleted'), [calculateDiff])
+
+    // Tracks if a refresh of the campaignPlan is required before the campaign can be created
+    const previewRefreshNeeded = useMemo(() => {
+        const status = campaign
+            ? campaign.__typename === 'CampaignPlan'
+                ? campaign.status
+                : campaign.changesetCreationStatus
+            : null
+        const currentSpec =
+            campaign && campaign.__typename === 'CampaignPlan' ? parseJSONC(campaign.arguments) : undefined
+
+        return (
+            !currentSpec ||
+            (campaignPlanArguments && !isEqual(currentSpec, parseJSONC(campaignPlanArguments))) ||
+            (status && status.state !== 'COMPLETED')
+        )
+    }, [campaign, campaignPlanArguments])
 
     if (campaign === undefined && campaignID) {
         return <LoadingSpinner className="icon-inline mx-auto my-4" />
@@ -362,35 +406,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     }
 
     const author = campaign && campaign.__typename === 'Campaign' ? campaign.author : authenticatedUser
-
-    const nodes: (GQL.IExternalChangeset | GQL.IChangesetPlan)[] | undefined = campaign?.changesets.nodes
-
-    const calculateDiff = (field: 'added' | 'deleted'): number => {
-        if (!nodes) {
-            return 0
-        }
-        return nodes.reduce(
-            (prev, next) =>
-                prev + (next.diff ? next.diff.fileDiffs.diffStat[field] + next.diff.fileDiffs.diffStat.changed : 0),
-            0
-        )
-    }
-
-    const totalAdditions = calculateDiff('added')
-    const totalDeletions = calculateDiff('deleted')
-
-    const status = campaign
-        ? campaign.__typename === 'CampaignPlan'
-            ? campaign.status
-            : campaign.changesetCreationStatus
-        : null
-
-    const currentSpec = campaign && campaign.__typename === 'CampaignPlan' ? parseJSONC(campaign.arguments) : undefined
-    // Tracks if a refresh of the campaignPlan is required before the campaign can be created
-    const previewRefreshNeeded =
-        !currentSpec ||
-        (campaignPlanArguments && !isEqual(currentSpec, parseJSONC(campaignPlanArguments))) ||
-        (status && status.state !== 'COMPLETED')
 
     return (
         <>
@@ -667,92 +682,54 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 )}
             </Form>
 
-            {status && (
-                <>
-                    {status.state === 'PROCESSING' && (
-                        <div className="d-flex mt-3 e2e-preview-loading">
-                            <LoadingSpinner className="icon-inline" />{' '}
-                            <span data-tooltip="Computing changesets">
-                                {status.completedCount} / {status.pendingCount + status.completedCount}
-                            </span>
-                        </div>
-                    )}
-                    {campaign && campaign.__typename === 'Campaign' && campaign.closedAt ? (
-                        <div className="d-flex my-3">
-                            <WarningIcon className="icon-inline text-warning mr-1" /> Campaign is closed
-                        </div>
-                    ) : (
-                        type &&
-                        status.state !== 'PROCESSING' && (
-                            <div className="d-flex my-3">
-                                {status.state === 'COMPLETED' && (
-                                    <CheckCircleIcon className="icon-inline text-success mr-1 e2e-preview-success" />
-                                )}
-                                {status.state === 'ERRORED' && (
-                                    <AlertCircleIcon className="icon-inline text-danger mr-1" />
-                                )}{' '}
-                                {/* Status asserts on campaign being set, this will never be null */}
-                                {campaign!.__typename === 'Campaign' ? 'Creation' : 'Preview'}{' '}
-                                {status.state.toLocaleLowerCase()}
-                            </div>
-                        )
-                    )}
-                    {status.errors.map((error, i) => (
-                        <ErrorAlert error={error} className="mt-3" key={i} />
-                    ))}
-                    {status.state === 'ERRORED' && campaign?.__typename === 'Campaign' && (
-                        <button type="button" className="btn btn-primary mb-2" onClick={onRetry}>
-                            Retry failed jobs
-                        </button>
-                    )}
-                </>
-            )}
-
-            {campaign && campaign.__typename === 'Campaign' && (
-                <>
-                    <h3>Progress</h3>
-                    <CampaignBurndownChart
-                        changesetCountsOverTime={campaign.changesetCountsOverTime}
-                        history={history}
-                    />
-                    {/* only campaigns that have no plan can add changesets manually */}
-                    {!campaign.plan && <AddChangesetForm campaignID={campaign.id} onAdd={nextChangesetUpdate} />}
-                </>
-            )}
             {/* is already created or a preview is available */}
             {campaign && (
                 <>
-                    <TabsWithLocalStorageViewStatePersistence
-                        storageKey="campaignTab"
-                        className="mt-3"
-                        tabs={[
-                            {
-                                id: 'diff',
-                                label: (
-                                    <span className="e2e-campaign-diff-tab">
-                                        Diff <span className="text-success">+{totalAdditions}</span>{' '}
-                                        <span className="text-danger">-{totalDeletions}</span>
-                                    </span>
-                                ),
-                            },
-                            {
-                                id: 'changesets',
-                                label: (
-                                    <span className="e2e-campaign-changesets-tab">
-                                        Changesets{' '}
-                                        {campaign && (
-                                            <span className="badge badge-secondary badge-pill">
-                                                {campaign.changesets.totalCount}
-                                            </span>
-                                        )}
-                                    </span>
-                                ),
-                            },
-                        ]}
-                        tabClassName="tab-bar__tab--h5like"
-                    >
-                        <div className="list-group mt-3" key="changesets">
-                            {campaign && campaign.__typename === 'Campaign' && (
+                    {type && <CampaignStatus campaign={campaign} onRetry={onRetry} />}
+                    {campaign.__typename === 'Campaign' && (
+                        <>
+                            <h3>Progress</h3>
+                            <CampaignBurndownChart
+                                changesetCountsOverTime={campaign.changesetCountsOverTime}
+                                history={history}
+                            />
+                            {/* only campaigns that have no plan can add changesets manually */}
+                            {!campaign.plan && (
+                                <AddChangesetForm campaignID={campaign.id} onAdd={nextChangesetUpdate} />
+                            )}
+                        </>
+                    )}
+                    {campaign.changesets.totalCount > 0 && (
+                        <TabsWithLocalStorageViewStatePersistence
+                            storageKey="campaignTab"
+                            className="mt-3"
+                            tabs={[
+                                {
+                                    id: 'diff',
+                                    label: (
+                                        <span className="e2e-campaign-diff-tab">
+                                            Diff <span className="text-success">+{totalAdditions}</span>{' '}
+                                            <span className="text-danger">-{totalDeletions}</span>
+                                        </span>
+                                    ),
+                                },
+                                {
+                                    id: 'changesets',
+                                    label: (
+                                        <span className="e2e-campaign-changesets-tab">
+                                            Changesets{' '}
+                                            {campaign && (
+                                                <span className="badge badge-secondary badge-pill">
+                                                    {campaign.changesets.totalCount}
+                                                </span>
+                                            )}
+                                        </span>
+                                    ),
+                                },
+                            ]}
+                            tabClassName="tab-bar__tab--h5like"
+                        >
+                            <div className="list-group mt-3" key="changesets">
                                 <FilteredConnection<
                                     GQL.IExternalChangeset | GQL.IChangesetPlan,
                                     Omit<ChangesetNodeProps, 'node'>
@@ -768,32 +745,35 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                     pluralNoun="changesets"
                                     history={history}
                                     location={location}
+                                    useURLQuery={false}
                                 />
-                            )}
-                            {campaign &&
-                                campaign.__typename === 'CampaignPlan' &&
-                                campaign.changesets.nodes.map((changeset, i) => (
-                                    <ChangesetNode
-                                        node={changeset}
-                                        isLightTheme={isLightTheme}
-                                        key={i}
-                                        location={location}
-                                        history={history}
-                                    ></ChangesetNode>
-                                ))}
-                        </div>
-                        <div className="mt-3" key="diff">
-                            {nodes && (
-                                <FileDiffTab
-                                    nodes={nodes}
-                                    persistLines={campaign.__typename === 'Campaign'}
+                            </div>
+                            <div className="mt-3" key="diff">
+                                <FilteredConnection<
+                                    GQL.IExternalChangeset | GQL.IChangesetPlan,
+                                    Omit<FileDiffTabNodeProps, 'node'>
+                                >
+                                    className="mt-2"
+                                    updates={changesetUpdates}
+                                    nodeComponent={FileDiffTabNode}
+                                    nodeComponentProps={{
+                                        persistLines: campaign.__typename === 'Campaign',
+                                        isLightTheme,
+                                        history,
+                                        location,
+                                    }}
+                                    queryConnection={queryChangesetsConnection}
+                                    hideSearch={true}
+                                    defaultFirst={15}
+                                    noun="changeset"
+                                    pluralNoun="changesets"
                                     history={history}
                                     location={location}
-                                    isLightTheme={isLightTheme}
-                                ></FileDiffTab>
-                            )}
-                        </div>
-                    </TabsWithLocalStorageViewStatePersistence>
+                                    useURLQuery={false}
+                                />
+                            </div>
+                        </TabsWithLocalStorageViewStatePersistence>
+                    )}
                 </>
             )}
         </>
