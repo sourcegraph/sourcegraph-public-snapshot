@@ -78,17 +78,17 @@ func (l *eventLogs) GetAll(ctx context.Context) ([]*types.Event, error) {
 
 // GetByUserID gets all event logs by a given user in descending order of timestamp.
 func (l *eventLogs) GetByUserID(ctx context.Context, userID int32) ([]*types.Event, error) {
-	return l.getBySQL(ctx, sqlf.Sprintf("WHERE user_id=%d ORDER BY timestamp DESC", userID))
+	return l.getBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d ORDER BY timestamp DESC", userID))
 }
 
 // CountByUserIDAndEventName gets a count of events logged by a given user and with a given event name.
 func (l *eventLogs) CountByUserIDAndEventName(ctx context.Context, userID int32, name string) (int, error) {
-	return l.countBySQL(ctx, sqlf.Sprintf("WHERE user_id=%d AND name = %s", userID, name))
+	return l.countBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d AND name = %s", userID, name))
 }
 
 // CountByUserIDAndEventNamePrefix gets a count of events logged by a given user and with a given event name prefix.
 func (l *eventLogs) CountByUserIDAndEventNamePrefix(ctx context.Context, userID int32, namePrefix string) (int, error) {
-	return l.countBySQL(ctx, sqlf.Sprintf("WHERE user_id=%d AND name LIKE %s", userID, namePrefix+"%"))
+	return l.countBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d AND name LIKE %s", userID, namePrefix+"%"))
 }
 
 // CountByUserIDAndEventNames gets a count of events logged by a given user that match a list of given event names.
@@ -97,7 +97,7 @@ func (l *eventLogs) CountByUserIDAndEventNames(ctx context.Context, userID int32
 	for _, v := range names {
 		items = append(items, sqlf.Sprintf("%s", v))
 	}
-	return l.countBySQL(ctx, sqlf.Sprintf("WHERE user_id=%d AND name IN (%s)", userID, sqlf.Join(items, ",")))
+	return l.countBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d AND name IN (%s)", userID, sqlf.Join(items, ",")))
 }
 
 // countBySQL gets a count of event logs.
@@ -111,12 +111,12 @@ func (*eventLogs) countBySQL(ctx context.Context, querySuffix *sqlf.Query) (int,
 
 // MaxTimestampByUserID gets the max timestamp among event logs for a given user.
 func (l *eventLogs) MaxTimestampByUserID(ctx context.Context, userID int32) (*time.Time, error) {
-	return l.maxTimestampBySQL(ctx, sqlf.Sprintf("WHERE user_id=%d", userID))
+	return l.maxTimestampBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d", userID))
 }
 
 // MaxTimestampByUserIDAndSource gets the max timestamp among event logs for a given user and event source.
 func (l *eventLogs) MaxTimestampByUserIDAndSource(ctx context.Context, userID int32, source string) (*time.Time, error) {
-	return l.maxTimestampBySQL(ctx, sqlf.Sprintf("WHERE user_id=%d AND source=%s", userID, source))
+	return l.maxTimestampBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d AND source = %s", userID, source))
 }
 
 // maxTimestampBySQL gets the max timestamp among event logs.
@@ -180,9 +180,9 @@ func (l *eventLogs) CountUniquesPerPeriod(ctx context.Context, periodType Unique
 	return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
 }
 
-func (l *eventLogs) countUniquesPerPeriodBySQL(ctx context.Context, interval, period *sqlf.Query, startDate time.Time, endDate time.Time, conds []*sqlf.Query) ([]UsageValue, error) {
+func (l *eventLogs) countUniquesPerPeriodBySQL(ctx context.Context, interval, period *sqlf.Query, startDate, endDate time.Time, conds []*sqlf.Query) ([]UsageValue, error) {
 	allPeriods := sqlf.Sprintf("SELECT generate_series((%s)::timestamp, (%s)::timestamp,  (%s)::interval) AS period", startDate, endDate, sqlf.Sprintf("'1 %s'", interval))
-	usersByPeriod := sqlf.Sprintf(`SELECT (%s) AS period, COUNT(DISTINCT CASE WHEN user_id=0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END) AS count
+	usersByPeriod := sqlf.Sprintf(`SELECT (%s) AS period, COUNT(DISTINCT CASE WHEN user_id = 0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END) AS count
 		FROM event_logs
 		WHERE (%s)
 		GROUP BY period`, period, sqlf.Join(conds, ") AND ("))
@@ -214,39 +214,47 @@ func (l *eventLogs) countUniquesPerPeriodBySQL(ctx context.Context, interval, pe
 }
 
 // CountUniquesAll provides a count of unique active users in a given time span.
-func (l *eventLogs) CountUniquesAll(ctx context.Context, startDate time.Time, endDate time.Time) (int, error) {
-	return l.countUniquesBySQL(ctx, sqlf.Sprintf("WHERE DATE(TIMEZONE('UTC'::text, timestamp)) >= %s AND DATE(TIMEZONE('UTC'::text, timestamp)) <= %s", startDate, endDate))
+func (l *eventLogs) CountUniquesAll(ctx context.Context, startDate, endDate time.Time) (int, error) {
+	return l.countUniquesBySQL(ctx, startDate, endDate, nil)
 }
 
 // CountUniquesByEventNamePrefix provides a count of unique active users in a given time span that logged an event with a given prefix.
-func (l *eventLogs) CountUniquesByEventNamePrefix(ctx context.Context, startDate time.Time, endDate time.Time, namePrefix string) (int, error) {
-	return l.countUniquesBySQL(ctx, sqlf.Sprintf("WHERE DATE(TIMEZONE('UTC'::text, timestamp)) >= %s AND DATE(TIMEZONE('UTC'::text, timestamp)) <= %s AND name LIKE %s ", startDate, endDate, namePrefix+"%"))
+func (l *eventLogs) CountUniquesByEventNamePrefix(ctx context.Context, startDate, endDate time.Time, namePrefix string) (int, error) {
+	return l.countUniquesBySQL(ctx, startDate, endDate, sqlf.Sprintf("AND name LIKE %s ", namePrefix+"%"))
 }
 
 // CountUniquesByEventName provides a count of unique active users in a given time span that logged a given event.
-func (l *eventLogs) CountUniquesByEventName(ctx context.Context, startDate time.Time, endDate time.Time, name string) (int, error) {
-	return l.countUniquesBySQL(ctx, sqlf.Sprintf("WHERE DATE(TIMEZONE('UTC'::text, timestamp)) >= %s AND DATE(TIMEZONE('UTC'::text, timestamp)) <= %s AND name = %s", startDate, endDate, name))
+func (l *eventLogs) CountUniquesByEventName(ctx context.Context, startDate, endDate time.Time, name string) (int, error) {
+	return l.countUniquesBySQL(ctx, startDate, endDate, sqlf.Sprintf("AND name = %s", name))
 }
 
 // CountUniquesByEventNames provides a count of unique active users in a given time span that logged any event that matches a list of given event names
-func (l *eventLogs) CountUniquesByEventNames(ctx context.Context, startDate time.Time, endDate time.Time, names []string) (int, error) {
+func (l *eventLogs) CountUniquesByEventNames(ctx context.Context, startDate, endDate time.Time, names []string) (int, error) {
 	items := []*sqlf.Query{}
 	for _, v := range names {
 		items = append(items, sqlf.Sprintf("%s", v))
 	}
-	return l.countUniquesBySQL(ctx, sqlf.Sprintf("WHERE DATE(TIMEZONE('UTC'::text, timestamp)) >= %s AND DATE(TIMEZONE('UTC'::text, timestamp)) <= %s AND name IN (%s)", startDate, endDate, sqlf.Join(items, ",")))
+	return l.countUniquesBySQL(ctx, startDate, endDate, sqlf.Sprintf("AND name IN (%s)", sqlf.Join(items, ",")))
 }
 
-func (*eventLogs) countUniquesBySQL(ctx context.Context, querySuffix *sqlf.Query) (int, error) {
-	q := sqlf.Sprintf("SELECT COUNT(DISTINCT CASE WHEN user_id=0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END) FROM event_logs %s", querySuffix)
+func (*eventLogs) countUniquesBySQL(ctx context.Context, startDate, endDate time.Time, querySuffix *sqlf.Query) (int, error) {
+	if querySuffix == nil {
+		querySuffix = sqlf.Sprintf("")
+	}
+	q := sqlf.Sprintf(`SELECT COUNT(DISTINCT CASE WHEN user_id = 0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END)
+		FROM event_logs
+		WHERE (DATE(TIMEZONE('UTC'::text, timestamp)) >= %s) AND (DATE(TIMEZONE('UTC'::text, timestamp)) <= %s) %s`, startDate, endDate, querySuffix)
 	r := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	var count int
 	err := r.Scan(&count)
 	return count, err
 }
 
-func (l *eventLogs) ListUniquesAll(ctx context.Context, startDate time.Time, endDate time.Time) ([]int32, error) {
-	rows, err := dbconn.Global.QueryContext(ctx, "SELECT user_id FROM event_logs WHERE user_id > 0 AND DATE(TIMEZONE('UTC'::text, timestamp)) >= $1 AND DATE(TIMEZONE('UTC'::text, timestamp)) <= $2 GROUP BY user_id", startDate, endDate)
+func (l *eventLogs) ListUniquesAll(ctx context.Context, startDate, endDate time.Time) ([]int32, error) {
+	rows, err := dbconn.Global.QueryContext(ctx, `SELECT user_id
+		FROM event_logs
+		WHERE user_id > 0 AND DATE(TIMEZONE('UTC'::text, timestamp)) >= $1 AND DATE(TIMEZONE('UTC'::text, timestamp)) <= $2
+		GROUP BY user_id`, startDate, endDate)
 	if err != nil {
 		return nil, err
 	}
