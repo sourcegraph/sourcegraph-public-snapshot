@@ -1,4 +1,4 @@
-package usagestats
+package usagestatsdeprecated
 
 // Usage data is stored in four categories of redis data structures.
 // Each key is prefixed by the value below.
