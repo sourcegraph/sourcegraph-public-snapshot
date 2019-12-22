@@ -321,7 +321,7 @@ Referenced by:
  source            | text                     | not null
  argument          | text                     | not null
  version           | text                     | not null
- timestamp         | timestamp with time zone | not null default now()
+ timestamp         | timestamp with time zone | not null
 Indexes:
     "event_logs_pkey" PRIMARY KEY, btree (id)
     "event_logs_name" btree (name)
