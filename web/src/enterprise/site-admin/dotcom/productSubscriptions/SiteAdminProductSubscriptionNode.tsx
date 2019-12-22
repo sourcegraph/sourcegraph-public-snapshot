@@ -90,7 +90,7 @@ export class SiteAdminProductSubscriptionNode extends React.PureComponent<SiteAd
                     <ProductSubscriptionLabel productSubscription={this.props.node} className="mr-3" />
                 </td>
                 <td className="text-nowrap">
-                    {this.props.node.activeLicense && this.props.node.activeLicense.info ? (
+                    {this.props.node.activeLicense?.info ? (
                         <Timestamp date={this.props.node.activeLicense.info.expiresAt} />
                     ) : (
                         <span className="text-muted font-italic">None</span>
