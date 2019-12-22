@@ -469,6 +469,26 @@ func TestService(t *testing.T) {
 			t.Fatalf("ChangesetJob.ChangesetID is not 0")
 		}
 
+		// Check that Changesets attached to unmodified and updated
+		// ChangesetJob are still attached to Campaign
+		changesets, _, err := store.ListChangesets(ctx, ListChangesetsOpts{
+			IDs: []int64{
+				unmodified.ChangesetID,
+				modified.ChangesetID,
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(changesets) != 2 {
+			t.Fatalf("wrong number of changesets. want=%d, have=%d", 2, len(changesets))
+		}
+		for _, c := range changesets {
+			if len(c.CampaignIDs) != 1 || c.CampaignIDs[0] != campaign.ID {
+				t.Fatalf("changeset has wrong CampaignIDs. want=[%d], have=%v", campaign.ID, c.CampaignIDs)
+			}
+		}
+
 		// Check Changeset with RepoID == CampaignJobToBeDeleted.RepoID is
 		// detached from campaign
 		var oldChangesetToBeDetached *a8n.Changeset

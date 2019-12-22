@@ -791,7 +791,11 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	)
 
 	for repoID, currentChangesetJob := range currentChangesetJobsByRepoID {
-		currentCampaignJob := currentCampaignJobsByID[currentChangesetJob.CampaignJobID]
+		currentCampaignJob, ok := currentCampaignJobsByID[currentChangesetJob.CampaignJobID]
+		if !ok {
+			return nil, fmt.Errorf("could not find campaign job with id %d", currentChangesetJob.CampaignJobID)
+		}
+
 		newCampaignJob, ok := newCampaignJobsByRepoID[repoID]
 		// Case (a): we _don't_ have a matching _new_ CampaignJob.
 		// We delete the ChangesetJob and Changeset.
@@ -855,17 +859,19 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	}
 	// - Changesets belonging to deleted ChangesetJobs are detached from Campaign
 	// - TODO: Changesets belonging to deleted ChangesetJobs are closed on codehost
-	changesets, _, err := tx.ListChangesets(ctx, ListChangesetsOpts{IDs: changesetsToCloseAndDetach})
-	if err != nil {
-		return nil, errors.Wrap(err, "listing changesets to close and detach")
-	}
-	for _, c := range changesets {
-		c.RemoveCampaignID(campaign.ID)
-		campaign.RemoveChangesetID(c.ID)
-	}
-	err = tx.UpdateChangesets(ctx, changesets...)
-	if err != nil {
-		return nil, err
+	if len(changesetsToCloseAndDetach) > 0 {
+		changesets, _, err := tx.ListChangesets(ctx, ListChangesetsOpts{IDs: changesetsToCloseAndDetach})
+		if err != nil {
+			return nil, errors.Wrap(err, "listing changesets to close and detach")
+		}
+		for _, c := range changesets {
+			c.RemoveCampaignID(campaign.ID)
+			campaign.RemoveChangesetID(c.ID)
+		}
+		err = tx.UpdateChangesets(ctx, changesets...)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	err = tx.UpdateCampaign(ctx, campaign)
