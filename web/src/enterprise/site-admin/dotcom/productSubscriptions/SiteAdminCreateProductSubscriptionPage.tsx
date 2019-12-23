@@ -159,6 +159,9 @@ function queryAccounts(args: { first?: number; query?: string }): Observable<GQL
                         }
                     }
                     totalCount
+                    pageInfo {
+                        hasNextPage
+                    }
                 }
             }
         `,
