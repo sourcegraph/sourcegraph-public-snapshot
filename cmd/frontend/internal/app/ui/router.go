@@ -61,7 +61,6 @@ const (
 	routeRegistry       = "registry"
 	routeExtensions     = "extensions"
 	routeHelp           = "help"
-	routeExplore        = "explore"
 	routeSnippets       = "snippets"
 	routeSubscriptions  = "subscriptions"
 	routeStats          = "stats"
@@ -123,7 +122,6 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/registry").Methods("GET").Name(routeRegistry)
 	r.PathPrefix("/extensions").Methods("GET").Name(routeExtensions)
 	r.PathPrefix("/help").Methods("GET").Name(routeHelp)
-	r.PathPrefix("/explore").Methods("GET").Name(routeExplore)
 	r.PathPrefix("/snippets").Methods("GET").Name(routeSnippets)
 	r.PathPrefix("/subscriptions").Methods("GET").Name(routeSubscriptions)
 	r.PathPrefix("/stats").Methods("GET").Name(routeStats)
@@ -202,7 +200,6 @@ func initRouter() {
 	router.Get(routeSurveyScore).Handler(handler(serveBrandedPageString("Survey")))
 	router.Get(routeRegistry).Handler(handler(serveBrandedPageString("Registry")))
 	router.Get(routeExtensions).Handler(handler(serveBrandedPageString("Extensions")))
-	router.Get(routeExplore).Handler(handler(serveBrandedPageString("Explore")))
 	router.Get(routeHelp).HandlerFunc(serveHelp)
 	router.Get(routeSnippets).Handler(handler(serveBrandedPageString("Snippets")))
 	router.Get(routeSubscriptions).Handler(handler(serveBrandedPageString("Subscriptions")))

@@ -119,11 +119,6 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         forceNarrowWidth: true,
     },
     {
-        path: '/explore',
-        render: lazyComponent(() => import('./explore/ExploreArea'), 'ExploreArea'),
-        exact: true,
-    },
-    {
         path: '/discussions',
         render: lazyComponent(() => import('./discussions/DiscussionsPage'), 'DiscussionsPage'),
         exact: true,
