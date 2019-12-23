@@ -29,7 +29,6 @@ import (
 
 const (
 	routeHome           = "home"
-	routeStart          = "start"
 	routeSearch         = "search"
 	routeSearchBadge    = "search-badge"
 	routeRepo           = "repo"
@@ -63,7 +62,6 @@ const (
 	routeExtensions     = "extensions"
 	routeHelp           = "help"
 	routeExplore        = "explore"
-	routeWelcome        = "welcome"
 	routeSnippets       = "snippets"
 	routeSubscriptions  = "subscriptions"
 	routeStats          = "stats"
@@ -108,8 +106,6 @@ func newRouter() *mux.Router {
 	// Top-level routes.
 	r.Path("/").Methods("GET").Name(routeHome)
 	r.PathPrefix("/threads").Methods("GET").Name(routeThreads)
-	r.Path("/start").Methods("GET").Name(routeStart)
-	r.PathPrefix("/welcome").Methods("GET").Name(routeWelcome)
 	r.Path("/search").Methods("GET").Name(routeSearch)
 	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge)
 	r.Path("/sign-in").Methods("GET").Name(uirouter.RouteSignIn)
@@ -188,8 +184,6 @@ func initRouter() {
 	router := newRouter()
 	uirouter.Router = router // make accessible to other packages
 	router.Get(routeHome).Handler(handler(serveHome))
-	router.Get(routeStart).Handler(staticRedirectHandler("https://about.sourcegraph.com/", http.StatusMovedPermanently))
-	router.Get(routeWelcome).Handler(staticRedirectHandler("https://about.sourcegraph.com/", http.StatusMovedPermanently))
 	router.Get(routeThreads).Handler(handler(serveBrandedPageString("Threads")))
 	router.Get(routeCampaigns).Handler(handler(serveBrandedPageString("Campaigns")))
 	router.Get(uirouter.RouteSignIn).Handler(handler(serveSignIn))
