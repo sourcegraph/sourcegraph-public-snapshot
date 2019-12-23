@@ -318,7 +318,7 @@ type SettingsSubject = Pick<GQL.SettingsSubject, 'settingsURL' | '__typename'> &
 /**
  * All configuration and settings in one place.
  */
-export interface AllConfig {
+interface AllConfig {
     site: GQL.ISiteConfiguration
     externalServices: Partial<Record<GQL.ExternalServiceKind, ExternalServiceConfig>>
     settings: {

@@ -6,7 +6,7 @@ export interface IconProps {
     'data-tooltip'?: string
 }
 
-export function sizeProps(props: IconProps): { width: number; height: number; viewBox: string } {
+function sizeProps(props: IconProps): { width: number; height: number; viewBox: string } {
     const defaultSize = 24
     const size = props.size || defaultSize
     return {
