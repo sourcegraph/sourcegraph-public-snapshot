@@ -481,7 +481,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 	// if there are no indexed repos and this is a structural search
 	// query, there will be no results. Raise a friendly alert.
 	if len(zoektRepos) == 0 && args.PatternInfo.IsStructuralPat {
-		return nil, nil, fmt.Errorf("No indexed repositories for structural search")
+		return nil, nil, errors.New("no indexed repositories for structural search")
 	}
 
 	common.repos = make([]*types.Repo, len(args.Repos))
