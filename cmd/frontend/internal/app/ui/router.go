@@ -33,7 +33,6 @@ const (
 	routeSearch         = "search"
 	routeSearchBadge    = "search-badge"
 	routeSearchSearches = "search-searches"
-	routeOpen           = "open"
 	routeRepo           = "repo"
 	routeRepoSettings   = "repo-settings"
 	routeRepoCommit     = "repo-commit"
@@ -121,7 +120,6 @@ func newRouter() *mux.Router {
 	r.Path("/search").Methods("GET").Name(routeSearch)
 	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge)
 	r.Path("/search/searches").Methods("GET").Name(routeSearchSearches)
-	r.Path("/open").Methods("GET").Name(routeOpen)
 	r.Path("/sign-in").Methods("GET").Name(uirouter.RouteSignIn)
 	r.Path("/sign-up").Methods("GET").Name(uirouter.RouteSignUp)
 	r.PathPrefix("/campaigns").Methods("GET").Name(routeCampaigns)
