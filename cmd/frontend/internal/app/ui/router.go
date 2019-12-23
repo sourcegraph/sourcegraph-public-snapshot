@@ -76,8 +76,6 @@ const (
 	routeLegacyOldRouteDefLanding      = "page.def.landing.old"
 	routeLegacyRepoLanding             = "page.repo.landing"
 	routeLegacyDefRedirectToDefLanding = "page.def.redirect"
-	routeLegacyEditorAuth              = "legacy.editor-auth"
-	routeLegacyEditorAuth2             = "legacy.editor-auth2"
 )
 
 // aboutRedirects contains map entries, each of which indicates that
@@ -107,8 +105,6 @@ var mockServeRepo func(w http.ResponseWriter, r *http.Request)
 func newRouter() *mux.Router {
 	r := mux.NewRouter()
 	r.StrictSlash(true)
-
-	r.Path("/settings/editor-auth").Methods("GET").Name(routeLegacyEditorAuth2)
 
 	// Top-level routes.
 	r.Path("/").Methods("GET").Name(routeHome)
@@ -144,7 +140,6 @@ func newRouter() *mux.Router {
 	// Legacy redirects
 	r.Path("/login").Methods("GET").Name(routeLegacyLogin)
 	r.Path("/careers").Methods("GET").Name(routeLegacyCareers)
-	r.Path("/editor-auth").Methods("GET").Name(routeLegacyEditorAuth)
 
 	// repo
 	repoRevPath := "/" + routevar.Repo + routevar.RepoRevSuffix
