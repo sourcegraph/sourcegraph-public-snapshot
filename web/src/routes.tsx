@@ -76,12 +76,6 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         forceNarrowWidth: true,
     },
     {
-        path: '/open',
-        render: lazyComponent(() => import('./open/OpenPage'), 'OpenPage'),
-        exact: true,
-        forceNarrowWidth: true,
-    },
-    {
         path: '/sign-in',
         render: lazyComponent(() => import('./auth/SignInPage'), 'SignInPage'),
         exact: true,
