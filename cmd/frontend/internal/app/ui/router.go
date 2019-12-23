@@ -212,7 +212,7 @@ func initRouter() {
 	router.Get(routeSiteAdmin).Handler(handler(serveBrandedPageString("Admin")))
 	router.Get(uirouter.RoutePasswordReset).Handler(handler(serveBrandedPageString("Reset password")))
 	router.Get(routeDiscussions).Handler(handler(serveBrandedPageString("Discussions")))
-	router.Get(routeAPIConsole).Handler(handler(serveBrandedPageString("API explorer")))
+	router.Get(routeAPIConsole).Handler(handler(serveBrandedPageString("API console")))
 	router.Get(routeRepoSettings).Handler(handler(serveBrandedPageString("Repository settings")))
 	router.Get(routeRepoCommit).Handler(handler(serveBrandedPageString("Commit")))
 	router.Get(routeRepoBranches).Handler(handler(serveBrandedPageString("Branches")))
