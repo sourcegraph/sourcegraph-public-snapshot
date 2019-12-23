@@ -32,7 +32,6 @@ const (
 	routeStart          = "start"
 	routeSearch         = "search"
 	routeSearchBadge    = "search-badge"
-	routeSearchSearches = "search-searches"
 	routeRepo           = "repo"
 	routeRepoSettings   = "repo-settings"
 	routeRepoCommit     = "repo-commit"
@@ -79,7 +78,6 @@ const (
 	routeLegacyDefRedirectToDefLanding = "page.def.redirect"
 	routeLegacyEditorAuth              = "legacy.editor-auth"
 	routeLegacyEditorAuth2             = "legacy.editor-auth2"
-	routeLegacySearchQueries           = "search-queries"
 )
 
 // aboutRedirects contains map entries, each of which indicates that
@@ -119,7 +117,6 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/welcome").Methods("GET").Name(routeWelcome)
 	r.Path("/search").Methods("GET").Name(routeSearch)
 	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge)
-	r.Path("/search/searches").Methods("GET").Name(routeSearchSearches)
 	r.Path("/sign-in").Methods("GET").Name(uirouter.RouteSignIn)
 	r.Path("/sign-up").Methods("GET").Name(uirouter.RouteSignUp)
 	r.PathPrefix("/campaigns").Methods("GET").Name(routeCampaigns)
@@ -148,7 +145,6 @@ func newRouter() *mux.Router {
 	r.Path("/login").Methods("GET").Name(routeLegacyLogin)
 	r.Path("/careers").Methods("GET").Name(routeLegacyCareers)
 	r.Path("/editor-auth").Methods("GET").Name(routeLegacyEditorAuth)
-	r.Path("/search/queries").Methods("GET").Name(routeLegacySearchQueries)
 
 	// repo
 	repoRevPath := "/" + routevar.Repo + routevar.RepoRevSuffix
@@ -245,7 +241,6 @@ func initRouter() {
 		router.Get(routeLegacyDefLanding).Handler(handler(serveDefLanding))
 		router.Get(routeLegacyRepoLanding).Handler(handler(serveRepoLanding))
 	}
-	router.Get(routeLegacySearchQueries).Handler(staticRedirectHandler("/search/searches", http.StatusMovedPermanently))
 
 	// search
 	router.Get(routeSearch).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
@@ -259,11 +254,6 @@ func initRouter() {
 
 	// search badge
 	router.Get(routeSearchBadge).Handler(searchBadgeHandler)
-
-	// Saved searches
-	router.Get(routeSearchSearches).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
-		return brandNameSubtitle("Saved searches")
-	})))
 
 	if envvar.SourcegraphDotComMode() {
 		// about subdomain

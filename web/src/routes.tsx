@@ -67,15 +67,6 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         exact: true,
     },
     {
-        path: '/search/searches',
-        render: lazyComponent(
-            () => import('./savedSearches/RedirectToUserSavedSearches'),
-            'RedirectToUserSavedSearches'
-        ),
-        exact: true,
-        forceNarrowWidth: true,
-    },
-    {
         path: '/sign-in',
         render: lazyComponent(() => import('./auth/SignInPage'), 'SignInPage'),
         exact: true,
