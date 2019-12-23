@@ -8,7 +8,7 @@ import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 import { createDriverForTest, Driver, percySnapshot } from '../../../shared/src/e2e/driver'
 import got from 'got'
 import { gql } from '../../../shared/src/graphql/graphql'
-import { random } from 'lodash'
+import { random, sortBy } from 'lodash'
 import MockDate from 'mockdate'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { getConfig } from '../../../shared/src/e2e/config'
@@ -721,8 +721,8 @@ describe('e2e test suite', () => {
                         )
                     )
 
-                    expect(symbolNames).toEqual(symbolTest.symbolNames)
-                    expect(symbolTypes).toEqual(symbolTest.symbolTypes)
+                    expect(sortBy(symbolNames)).toEqual(sortBy(symbolTest.symbolNames))
+                    expect(sortBy(symbolTypes)).toEqual(sortBy(symbolTest.symbolTypes))
                 })
             }
 
