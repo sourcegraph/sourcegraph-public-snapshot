@@ -25,6 +25,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Search scope pages (`/search/scope/:id`) were removed.
 - User-defined search scopes are no longer shown below the search bar on the homepage. Use the [`quicklinks`](https://docs.sourcegraph.com/user/quick_links) setting instead to display links there.
+- The explore page (`/explore`) was removed.
 
 ## 3.20.1
 
