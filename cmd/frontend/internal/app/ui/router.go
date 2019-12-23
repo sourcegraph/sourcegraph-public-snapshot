@@ -40,7 +40,6 @@ const (
 	routeRepoTags       = "repo-tags"
 	routeRepoCompare    = "repo-compare"
 	routeRepoStats      = "repo-stats"
-	routeRepoGraph      = "repo-graph"
 	routeCampaigns      = "campaigns"
 	routeThreads        = "threads"
 	routeTree           = "tree"
@@ -150,7 +149,6 @@ func newRouter() *mux.Router {
 	repoRev.Path("/tree{Path:.*}").Methods("GET").Name(routeTree)
 
 	repoRev.PathPrefix("/commits").Methods("GET").Name(routeRepoCommits)
-	repoRev.PathPrefix("/graph").Methods("GET").Name(routeRepoGraph)
 
 	// blob
 	repoRev.Path("/blob{Path:.*}").Methods("GET").Name(routeBlob)
@@ -209,7 +207,6 @@ func initRouter() {
 	router.Get(routeRepoTags).Handler(handler(serveBrandedPageString("Tags")))
 	router.Get(routeRepoCompare).Handler(handler(serveBrandedPageString("Compare")))
 	router.Get(routeRepoStats).Handler(handler(serveBrandedPageString("Stats")))
-	router.Get(routeRepoGraph).Handler(handler(serveBrandedPageString("Repository graph")))
 	router.Get(routeSearchScope).Handler(handler(serveBrandedPageString("Search scope")))
 	router.Get(routeSurvey).Handler(handler(serveBrandedPageString("Survey")))
 	router.Get(routeSurveyScore).Handler(handler(serveBrandedPageString("Survey")))
