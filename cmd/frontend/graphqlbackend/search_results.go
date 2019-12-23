@@ -917,7 +917,7 @@ func alertOnError(multiErr *multierror.Error) (newMultiErr *multierror.Error, al
 			} else if strings.Contains(err.Error(), "No indexed repositories for structural search") {
 				var msg string
 				if envvar.SourcegraphDotComMode() {
-					msg = "The good news is you can index any repository you like in a self-install. It takes less than 5 minutes to set up: https://docs.sourcegraph.com/"
+					msg = "The good news is you can index any repository you like in a self-install. It takes less than 5 minutes to set up: https://docs.sourcegraph.com/#quickstart"
 				} else {
 					msg = "Learn more about managing indexed repositories in our documentation: https://docs.sourcegraph.com/admin/search#indexed-search."
 				}
