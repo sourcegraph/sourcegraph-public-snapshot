@@ -1379,13 +1379,19 @@ describe('e2e test suite', () => {
             await driver.resetUserSettings()
         })
 
+        // This is a substring that appears in the sourcegraph/go-vcs repository, which is present
+        // in the external service added for the e2e test. It is OK if it starts to appear in other
+        // repositories (such as sourcegraph/sourcegraph now that it's mentioned here); the test
+        // just checks that it is found in at least 1 Go file.
+        const uniqueString = '055e4ae3a'
+
         test('button on search results page', async () => {
-            await driver.page.goto(`${sourcegraphBaseUrl}/search?q=abc`)
-            await driver.page.waitForSelector('a[href="/stats?q=abc"]')
+            await driver.page.goto(`${sourcegraphBaseUrl}/search?q=${uniqueString}`)
+            await driver.page.waitForSelector(`a[href="/stats?q=${uniqueString}"]`)
         })
 
-        test.skip('page', async () => {
-            await driver.page.goto(`${sourcegraphBaseUrl}/stats?q=count%3A10000+abc`)
+        test('page', async () => {
+            await driver.page.goto(`${sourcegraphBaseUrl}/stats?q=${uniqueString}`)
 
             // Ensure the global navbar hides the search input (to avoid confusion with the one on
             // the stats page).
@@ -1402,16 +1408,17 @@ describe('e2e test suite', () => {
                 })
 
             // Check for a Go result (the sample repositories have Go files).
-            await driver.page.waitForSelector('a[href*="abc+lang:go"]')
-            assert.strictEqual(await queryInputValue(), 'count:10000 abc')
+            await driver.page.waitForSelector(`a[href*="${uniqueString}+lang:go"]`)
+            assert.strictEqual(await queryInputValue(), uniqueString)
             await percySnapshot(driver.page, 'Search stats')
 
             // Update the query and rerun the computation.
-            await driver.page.type('.e2e-stats-query', 'd')
-            assert.strictEqual(await queryInputValue(), 'count:10000 abcd')
+            await driver.page.type('.e2e-stats-query', 'e') // the uniqueString is followed by an e in go-vcs
+            const wantQuery = `${uniqueString}e`
+            assert.strictEqual(await queryInputValue(), wantQuery)
             await driver.page.click('.e2e-stats-query-update')
-            await driver.page.waitForSelector('a[href*="abcd+lang:go"]')
-            assert.ok(driver.page.url().endsWith('/stats?q=count%3A10000+abcd'))
+            await driver.page.waitForSelector(`a[href*="${wantQuery}+lang:go"]`)
+            assert.ok(driver.page.url().endsWith(`/stats?q=${wantQuery}`))
         })
     })
 
