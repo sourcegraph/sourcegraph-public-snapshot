@@ -107,6 +107,7 @@ Other tips:
 					name
 					path
 					url
+					content
 					commit {
 						oid
 					}
@@ -419,6 +420,31 @@ type highlight struct {
 	length    int // the 1-indexed length of the highlight, in characters.
 }
 
+// applyHighlightsForFile expects highlight information that is
+// relative to the whole file, and can add lines of context around the
+// highlighted range. It makes no assumptions about the preview field in
+// LineMatches (the preview field is not used).
+func applyHighlightsForFile(fileContent string, highlights []highlight) string {
+	var result []rune
+	start := ansiColors["search-match"]
+	end := ansiColors["nc"]
+	lines := strings.Split(fileContent, "\n")
+	for _, highlight := range highlights {
+		line := lines[highlight.line]
+		for characterIndex, character := range []rune(line + "\n") {
+			if characterIndex == highlight.character {
+				result = append(result, []rune(start)...)
+			} else if characterIndex == highlight.character+highlight.length {
+				result = append(result, []rune(end)...)
+			}
+			result = append(result, character)
+		}
+	}
+	return string(result)
+}
+
+// applyHighlights expects highlight information that applies relative to lines in
+// the input string, where the input string corresponds to the preview field in LineMatches.
 func applyHighlights(input string, highlights []highlight, start, end string) string {
 	var result []rune
 	lines := strings.Split(input, "\n")
@@ -440,6 +466,27 @@ func applyHighlights(input string, highlights []highlight, start, end string) st
 	return string(result)
 }
 
+// convertMatchToHighlights converts a FileMatch m to a highlight data type.
+// When isPreview is true, it is assumed that the result to highlight is only on
+// one line, and the offets are relative to this line. When isPreview is false,
+// the lineNumber from the FileMatch data is used, which is relative to the file
+// content.
+func convertMatchToHighlights(m map[string]interface{}, isPreview bool) (highlights []highlight) {
+	var line int
+	for _, offsetAndLength := range m["offsetAndLengths"].([]interface{}) {
+		ol := offsetAndLength.([]interface{})
+		offset := int(ol[0].(float64))
+		length := int(ol[1].(float64))
+		if isPreview {
+			line = 1
+		} else {
+			line = int(m["lineNumber"].(float64))
+		}
+		highlights = append(highlights, highlight{line: line, character: offset, length: length})
+	}
+	return highlights
+}
+
 var searchTemplateFuncs = map[string]interface{}{
 	"searchSequentialLineNumber": func(lineMatches []interface{}, index int) bool {
 		prevIndex := index - 1
@@ -450,17 +497,18 @@ var searchTemplateFuncs = map[string]interface{}{
 		lineNumber := lineMatches[index].(map[string]interface{})["lineNumber"]
 		return prevLineNumber.(float64) == lineNumber.(float64)-1
 	},
-	"searchHighlightMatch": func(match interface{}) string {
+	"searchHighlightMatch": func(content, query, match interface{}) string {
 		m := match.(map[string]interface{})
-		preview := m["preview"].(string)
+		q := query.(string)
 		var highlights []highlight
-		for _, offsetAndLength := range m["offsetAndLengths"].([]interface{}) {
-			ol := offsetAndLength.([]interface{})
-			offset := int(ol[0].(float64))
-			length := int(ol[1].(float64))
-			highlights = append(highlights, highlight{line: 1, character: offset, length: length})
+		if strings.Contains(q, "patterntype:structural") {
+			highlights = convertMatchToHighlights(m, false)
+			return applyHighlightsForFile(content.(string), highlights)
+		} else {
+			preview := m["preview"].(string)
+			highlights = convertMatchToHighlights(m, true)
+			return applyHighlights(preview, highlights, ansiColors["search-match"], ansiColors["nc"])
 		}
-		return applyHighlights(preview, highlights, ansiColors["search-match"], ansiColors["nc"])
 	},
 	"searchHighlightPreview": func(preview interface{}) string {
 		return searchHighlightPreview(preview, "", "")
@@ -549,12 +597,13 @@ const searchResultsTemplate = `{{- /* ignore this line for template formatting s
 
 			{{- /* Line matches */ -}}
 			{{- $lineMatches := .lineMatches -}}
+			{{- $content := .file.content -}}
 			{{- range $index, $match := $lineMatches -}}
 				{{- if not (searchSequentialLineNumber $lineMatches $index) -}}
 					{{- color "search-border"}}{{"  ------------------------------------------------------------------------------\n"}}{{color "nc"}}
 				{{- end -}}
 				{{- "  "}}{{color "search-line-numbers"}}{{pad (addFloat $match.lineNumber 1) 6 " "}}{{color "nc" -}}
-				{{- color "search-border"}}{{" |  "}}{{color "nc"}}{{searchHighlightMatch $match}}
+				{{- color "search-border"}}{{" |  "}}{{color "nc"}}{{searchHighlightMatch $content $.Query $match}}
 			{{- end -}}
 		{{- end -}}
 
