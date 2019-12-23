@@ -1384,7 +1384,7 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector('a[href="/stats?q=abc"]')
         })
 
-        test('page', async () => {
+        test.skip('page', async () => {
             await driver.page.goto(`${sourcegraphBaseUrl}/stats?q=count%3A10000+abc`)
 
             // Ensure the global navbar hides the search input (to avoid confusion with the one on
@@ -1502,7 +1502,7 @@ describe('e2e test suite', () => {
             expect(generatedChangesetCount).toEqual(changesetCount)
             await percySnapshot(driver.page, snapshotName + ' changesets tab')
         }
-        test('Create campaign preview for comby campaign type', async () => {
+        test.skip('Create campaign preview for comby campaign type', async () => {
             await createCampaignPreview({
                 specification: JSON.stringify({
                     matchTemplate: 'file',
@@ -1515,7 +1515,7 @@ describe('e2e test suite', () => {
                 campaignType: 'comby',
             })
         })
-        test('Create campaign preview for credentials campaign type', async () => {
+        test.skip('Create campaign preview for credentials campaign type', async () => {
             await createCampaignPreview({
                 specification: JSON.stringify({
                     matchers: [{ type: 'npm' }],
