@@ -19,8 +19,8 @@ const typeToProse: Record<Exclude<SearchType, null>, string> = {
     diff: 'Diffs',
     commit: 'Commits',
     symbol: 'Symbols',
-    repo: 'Repos',
-    path: 'Files',
+    repo: 'Repositories',
+    path: 'Filenames',
 }
 
 export const SearchResultTabHeader: React.FunctionComponent<Props> = ({
