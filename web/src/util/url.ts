@@ -1,32 +1,17 @@
 import { Position, Range } from '@sourcegraph/extension-api-types'
 import {
-    AbsoluteRepoFile,
     encodeRepoRev,
     LineOrPositionOrRange,
     lprToRange,
     ParsedRepoURI,
     parseHash,
-    PositionSpec,
-    RenderModeSpec,
     RepoFile,
     toPositionHashComponent,
-    toPositionOrRangeHash,
-    toViewStateHashComponent,
-    ViewStateSpec,
 } from '../../../shared/src/util/url'
 
 export function toTreeURL(ctx: RepoFile): string {
     const rev = ctx.commitID || ctx.rev || ''
     return `/${encodeRepoRev(ctx.repoName, rev)}/-/tree/${ctx.filePath}`
-}
-
-export function toAbsoluteBlobURL(
-    ctx: AbsoluteRepoFile & Partial<PositionSpec> & Partial<ViewStateSpec> & Partial<RenderModeSpec>
-): string {
-    const rev = ctx.commitID ? ctx.commitID : ctx.rev
-    return `/${encodeRepoRev(ctx.repoName, rev)}/-/blob/${ctx.filePath}${toPositionOrRangeHash(
-        ctx
-    )}${toViewStateHashComponent(ctx.viewState)}`
 }
 
 /**
@@ -64,7 +49,7 @@ function formatLineOrPositionOrRange(lpr: LineOrPositionOrRange): string {
  * @param href The URL whose revision should be replaced.
  */
 export function replaceRevisionInURL(href: string, newRev: string): string {
-    const parsed = parseBrowserRepoURL(window.location.href)
+    const parsed = parseBrowserRepoURL(href)
     const repoRev = `/${encodeRepoRev(parsed.repoName, parsed.rev)}`
 
     const u = new URL(window.location.href)
@@ -161,16 +146,5 @@ export function parseRepoRev(repoRev: string): ParsedRepoRev {
         repoName: decodeURIComponent(repo),
         rev: rev && decodeURIComponent(rev),
         rawRev: rev,
-    }
-}
-
-/**
- * Correctly handle use of meta/ctrl/alt keys during onClick events that open new pages
- */
-export function openFromJS(path: string, event?: MouseEvent): void {
-    if (event && (event.metaKey || event.altKey || event.ctrlKey || event.button === 1)) {
-        window.open(path, '_blank')
-    } else {
-        window.location.href = path
     }
 }

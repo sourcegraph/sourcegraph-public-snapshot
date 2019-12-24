@@ -13,7 +13,7 @@ interface RowProps {
     onAddNewFilter: (filter: SuggestionTypes) => void
 }
 
-export enum DefaultFilterTypes {
+enum DefaultFilterTypes {
     repo = 'repo',
     file = 'file',
 }
