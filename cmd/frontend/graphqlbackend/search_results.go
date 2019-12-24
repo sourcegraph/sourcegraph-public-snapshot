@@ -914,7 +914,7 @@ func alertOnError(multiErr *multierror.Error) (newMultiErr *multierror.Error, al
 					title:          "Structural search needs more memory",
 					description:    "Running your structural search may require more memory. If you are running the query on many repositories, try reducing the number of repositories with the `repo:` filter.",
 				}
-			} else if strings.Contains(err.Error(), "No indexed repositories for structural search") {
+			} else if strings.Contains(err.Error(), "no indexed repositories for structural search") {
 				var msg string
 				if envvar.SourcegraphDotComMode() {
 					msg = "The good news is you can index any repository you like in a self-install. It takes less than 5 minutes to set up: https://docs.sourcegraph.com/#quickstart"
