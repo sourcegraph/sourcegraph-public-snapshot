@@ -54,7 +54,7 @@ const GitLabSchemaJSON = `{
           "name": {
             "description": "The name of a GitLab project (\"group/name\") to mirror.",
             "type": "string",
-            "pattern": "^[\\w-]+/[\\w.-]+$"
+            "pattern": "^[\\w-]+(/[\\w.-]+)+$"
           },
           "id": {
             "description": "The ID of a GitLab project (as returned by the GitLab instance's API) to mirror.",
