@@ -8,6 +8,7 @@ import { catchError, debounceTime } from 'rxjs/operators'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { eventLogger } from '../tracking/eventLogger'
 import { ErrorAlert } from '../components/alerts'
+import { PageTitle } from '../components/PageTitle'
 
 const defaultQuery = `# Type queries here, with completion, validation, and hovers.
 #
@@ -121,6 +122,7 @@ export class APIConsole extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className="api-console">
+                <PageTitle title="API console" />
                 {this.state.graphiqlOrError === undefined ? (
                     <span className="api-console__loader">
                         <LoadingSpinner className="icon-inline" /> Loading…
