@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { startCase } from 'lodash'
 import { SuggestionTypes } from '../../../../../shared/src/search/suggestions/util'
+import { AddFilterDropdown } from './AddFilterDropdown'
 
 interface RowProps {
     /**
@@ -40,6 +41,7 @@ export const AddFilterRow: React.FunctionComponent<RowProps> = ({ isHomepage, on
                     + {startCase(filterType)} filter
                 </button>
             ))}
+            <AddFilterDropdown onAddNewFilter={onAddNewFilter}/>
         </div>
     )
 }
