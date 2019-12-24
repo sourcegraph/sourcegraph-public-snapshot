@@ -29,11 +29,8 @@ import (
 
 const (
 	routeHome           = "home"
-	routeStart          = "start"
 	routeSearch         = "search"
 	routeSearchBadge    = "search-badge"
-	routeSearchSearches = "search-searches"
-	routeOpen           = "open"
 	routeRepo           = "repo"
 	routeRepoSettings   = "repo-settings"
 	routeRepoCommit     = "repo-commit"
@@ -42,7 +39,6 @@ const (
 	routeRepoTags       = "repo-tags"
 	routeRepoCompare    = "repo-compare"
 	routeRepoStats      = "repo-stats"
-	routeRepoGraph      = "repo-graph"
 	routeCampaigns      = "campaigns"
 	routeThreads        = "threads"
 	routeTree           = "tree"
@@ -66,7 +62,6 @@ const (
 	routeExtensions     = "extensions"
 	routeHelp           = "help"
 	routeExplore        = "explore"
-	routeWelcome        = "welcome"
 	routeSnippets       = "snippets"
 	routeSubscriptions  = "subscriptions"
 	routeStats          = "stats"
@@ -78,26 +73,19 @@ const (
 	routeLegacyOldRouteDefLanding      = "page.def.landing.old"
 	routeLegacyRepoLanding             = "page.repo.landing"
 	routeLegacyDefRedirectToDefLanding = "page.def.redirect"
-	routeLegacyEditorAuth              = "legacy.editor-auth"
-	routeLegacyEditorAuth2             = "legacy.editor-auth2"
-	routeLegacySearchQueries           = "search-queries"
 )
 
 // aboutRedirects contains map entries, each of which indicates that
 // sourcegraph.com/$KEY should redirect to about.sourcegraph.com/$VALUE.
 var aboutRedirects = map[string]string{
-	"about":      "about",
-	"plan":       "plan",
-	"contact":    "contact",
-	"docs":       "docs",
-	"enterprise": "enterprise",
-	"pricing":    "pricing",
-	"privacy":    "privacy",
-	"security":   "security",
-	"terms":      "terms",
-	"jobs":       "jobs",
-	"beta":       "beta",
-	"server":     "products/server",
+	"about":    "about",
+	"plan":     "plan",
+	"contact":  "contact",
+	"pricing":  "pricing",
+	"privacy":  "privacy",
+	"security": "security",
+	"terms":    "terms",
+	"jobs":     "jobs",
 }
 
 // Router returns the router that serves pages for our web app.
@@ -111,17 +99,11 @@ func newRouter() *mux.Router {
 	r := mux.NewRouter()
 	r.StrictSlash(true)
 
-	r.Path("/settings/editor-auth").Methods("GET").Name(routeLegacyEditorAuth2)
-
 	// Top-level routes.
 	r.Path("/").Methods("GET").Name(routeHome)
 	r.PathPrefix("/threads").Methods("GET").Name(routeThreads)
-	r.Path("/start").Methods("GET").Name(routeStart)
-	r.PathPrefix("/welcome").Methods("GET").Name(routeWelcome)
 	r.Path("/search").Methods("GET").Name(routeSearch)
 	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge)
-	r.Path("/search/searches").Methods("GET").Name(routeSearchSearches)
-	r.Path("/open").Methods("GET").Name(routeOpen)
 	r.Path("/sign-in").Methods("GET").Name(uirouter.RouteSignIn)
 	r.Path("/sign-up").Methods("GET").Name(uirouter.RouteSignUp)
 	r.PathPrefix("/campaigns").Methods("GET").Name(routeCampaigns)
@@ -149,8 +131,6 @@ func newRouter() *mux.Router {
 	// Legacy redirects
 	r.Path("/login").Methods("GET").Name(routeLegacyLogin)
 	r.Path("/careers").Methods("GET").Name(routeLegacyCareers)
-	r.Path("/editor-auth").Methods("GET").Name(routeLegacyEditorAuth)
-	r.Path("/search/queries").Methods("GET").Name(routeLegacySearchQueries)
 
 	// repo
 	repoRevPath := "/" + routevar.Repo + routevar.RepoRevSuffix
@@ -161,7 +141,6 @@ func newRouter() *mux.Router {
 	repoRev.Path("/tree{Path:.*}").Methods("GET").Name(routeTree)
 
 	repoRev.PathPrefix("/commits").Methods("GET").Name(routeRepoCommits)
-	repoRev.PathPrefix("/graph").Methods("GET").Name(routeRepoGraph)
 
 	// blob
 	repoRev.Path("/blob{Path:.*}").Methods("GET").Name(routeBlob)
@@ -201,8 +180,6 @@ func initRouter() {
 	router := newRouter()
 	uirouter.Router = router // make accessible to other packages
 	router.Get(routeHome).Handler(handler(serveHome))
-	router.Get(routeStart).Handler(staticRedirectHandler("https://about.sourcegraph.com/", http.StatusMovedPermanently))
-	router.Get(routeWelcome).Handler(staticRedirectHandler("https://about.sourcegraph.com/", http.StatusMovedPermanently))
 	router.Get(routeThreads).Handler(handler(serveBrandedPageString("Threads")))
 	router.Get(routeCampaigns).Handler(handler(serveBrandedPageString("Campaigns")))
 	router.Get(uirouter.RouteSignIn).Handler(handler(serveSignIn))
@@ -220,7 +197,6 @@ func initRouter() {
 	router.Get(routeRepoTags).Handler(handler(serveBrandedPageString("Tags")))
 	router.Get(routeRepoCompare).Handler(handler(serveBrandedPageString("Compare")))
 	router.Get(routeRepoStats).Handler(handler(serveBrandedPageString("Stats")))
-	router.Get(routeRepoGraph).Handler(handler(serveBrandedPageString("Repository graph")))
 	router.Get(routeSearchScope).Handler(handler(serveBrandedPageString("Search scope")))
 	router.Get(routeSurvey).Handler(handler(serveBrandedPageString("Survey")))
 	router.Get(routeSurveyScore).Handler(handler(serveBrandedPageString("Survey")))
@@ -247,7 +223,6 @@ func initRouter() {
 		router.Get(routeLegacyDefLanding).Handler(handler(serveDefLanding))
 		router.Get(routeLegacyRepoLanding).Handler(handler(serveRepoLanding))
 	}
-	router.Get(routeLegacySearchQueries).Handler(staticRedirectHandler("/search/searches", http.StatusMovedPermanently))
 
 	// search
 	router.Get(routeSearch).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
@@ -261,11 +236,6 @@ func initRouter() {
 
 	// search badge
 	router.Get(routeSearchBadge).Handler(searchBadgeHandler)
-
-	// Saved searches
-	router.Get(routeSearchSearches).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
-		return brandNameSubtitle("Saved searches")
-	})))
 
 	if envvar.SourcegraphDotComMode() {
 		// about subdomain

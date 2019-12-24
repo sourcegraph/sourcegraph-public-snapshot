@@ -154,7 +154,7 @@ export const toggleSearchFilterAndReplaceSampleRepogroup = (query: string, searc
     return newQuery
 }
 
-export const isValidFilter = (filter: string = ''): filter is FiltersSuggestionTypes =>
+const isValidFilter = (filter: string = ''): filter is FiltersSuggestionTypes =>
     Object.prototype.hasOwnProperty.call(SuggestionTypes, filter) ||
     Object.prototype.hasOwnProperty.call(filterAliases, filter)
 
@@ -194,7 +194,7 @@ const resolveFilterType = (filter: string = ''): FiltersSuggestionTypes | null =
  * If a filter value is being typed, try to get its filter and value.
  * E.g: ("|" is the cursor): "lang:go repo:test|" => "repo:test"
  */
-export const getFilterAndValueBeforeCursor = (queryState: QueryState): FilterAndValueMatch => {
+const getFilterAndValueBeforeCursor = (queryState: QueryState): FilterAndValueMatch => {
     const { firstPart } = splitStringAtPosition(queryState.query, queryState.cursorPosition)
     // get string before ":" char until a space is found or start of string
     const match = firstPart.match(/([^\s:]+)?(:(\S?)+)?$/) || []
@@ -263,7 +263,7 @@ export interface QueryState {
  * "l:go yes" => true
  * "l:go archived:" => false
  */
-export const isTypingWordAndNotFilterValue = (value: string): boolean => Boolean(value.match(/\s+([^:]?)+$/))
+const isTypingWordAndNotFilterValue = (value: string): boolean => Boolean(value.match(/\s+([^:]?)+$/))
 
 /**
  * Adds suggestions value to search query where cursor was positioned.

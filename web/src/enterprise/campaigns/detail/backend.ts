@@ -182,18 +182,6 @@ export function previewCampaignPlan(
     )
 }
 
-export async function cancelCampaignPlan(plan: ID): Promise<void> {
-    const result = await mutateGraphQL(
-        gql`
-            mutation CancelCampaignPlan($id: ID!) {
-                cancelCampaignPlan(id: $id)
-            }
-        `,
-        { id: plan }
-    ).toPromise()
-    dataOrThrowErrors(result)
-}
-
 export async function retryCampaign(campaignID: ID): Promise<void> {
     const result = await mutateGraphQL(
         gql`

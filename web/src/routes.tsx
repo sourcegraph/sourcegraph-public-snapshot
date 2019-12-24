@@ -9,7 +9,7 @@ const SearchResults = lazyComponent(() => import('./search/results/SearchResults
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
 
-export interface LayoutRouteComponentProps<Params extends { [K in keyof Params]?: string }>
+interface LayoutRouteComponentProps<Params extends { [K in keyof Params]?: string }>
     extends RouteComponentProps<Params>,
         Omit<LayoutProps, 'match'> {}
 
@@ -29,14 +29,6 @@ export interface LayoutRouteProps<Params extends { [K in keyof Params]?: string 
      * Whether or not to force the width of the page to be narrow.
      */
     forceNarrowWidth?: boolean
-}
-
-/**
- * Holds properties for repository+ routes.
- */
-export const repoRevRoute: LayoutRouteProps<{ repoRevAndRest: string }> = {
-    path: '/:repoRevAndRest+',
-    render: lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer'),
 }
 
 /**
@@ -65,21 +57,6 @@ export const routes: readonly LayoutRouteProps<any>[] = [
                 <SearchPage {...props} />
             ),
         exact: true,
-    },
-    {
-        path: '/search/searches',
-        render: lazyComponent(
-            () => import('./savedSearches/RedirectToUserSavedSearches'),
-            'RedirectToUserSavedSearches'
-        ),
-        exact: true,
-        forceNarrowWidth: true,
-    },
-    {
-        path: '/open',
-        render: lazyComponent(() => import('./open/OpenPage'), 'OpenPage'),
-        exact: true,
-        forceNarrowWidth: true,
     },
     {
         path: '/sign-in',
@@ -179,5 +156,8 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         path: '/snippets',
         render: lazyComponent(() => import('./snippets/SnippetsPage'), 'SnippetsPage'),
     },
-    repoRevRoute,
+    {
+        path: '/:repoRevAndRest+',
+        render: lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer'),
+    },
 ]
