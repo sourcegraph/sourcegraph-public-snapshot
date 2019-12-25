@@ -16,7 +16,7 @@
     }
     &:not(&--empty) &__spacer,
     &:not(&--empty) &__end-fragment-other-element {
-        border-bottom-color: $color-border;
+        border-bottom-color: var(--color-border);
     }
 
     &__spacer,
@@ -32,7 +32,7 @@
             flex: 1;
         }
 
-        border-bottom-color: $color-bg-3;
+        border-bottom-color: var(--color-border);
 
         &,
         &:hover {
@@ -40,10 +40,10 @@
         }
         &:hover {
             opacity: 1;
-            border-bottom-color: $color-border-hover;
+            border-bottom-color: var(--link-hover-color);
         }
         &--active {
-            border-bottom-color: $color-border-active !important; // override .btn-link:focus
+            border-bottom-color: var(--link-active-color) !important; // override .btn-link:focus
         }
 
         &--h5like {
@@ -51,34 +51,15 @@
             font-size: 12px;
             letter-spacing: 1px;
             text-transform: uppercase;
-            color: $color-text !important;
+            color: var(--body-color) !important;
         }
+    }
+
+    &__close-button:hover {
+        color: var(--link-color) !important;
     }
 
     &__spacer {
         flex: 1;
-    }
-}
-
-.theme-light {
-    .tabbed-sections-navbar {
-        &__tab,
-        &:not(.tabbed-sections-navbar--empty) .tabbed-sections-navbar__spacer,
-        &:not(.tabbed-sections-navbar--empty) .tabbed-sections-navbar__end-fragment-other-element {
-            border-bottom-color: $color-light-border;
-        }
-        &__tab {
-            &--active {
-                border-bottom-color: $primary;
-            }
-            &--h5like {
-                color: $color-light-text-1 !important;
-            }
-        }
-        &__close-button {
-            &:hover {
-                color: $color-light-text-5;
-            }
-        }
     }
 }
