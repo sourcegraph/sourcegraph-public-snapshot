@@ -1,5 +1,14 @@
 # Search query syntax
 
+<style>
+tr td:nth-child(3) {
+  min-width: 250px;
+}
+tr td:nth-child(3) code {
+  word-break: break-all;
+}
+</style>
+
 Search queries can consist of just words, and you'll see results where those words appear in order, in all files across all repositories. Many queries will also use keywords. Keywords help to filter searches, define the type of search, and more. This page is a comprehensive list of keywords available for code search.
 
 As of version 3.9.0, by default, searches are interpreted literally instead of as regexp. Site admins and users can change their instance and personal default behavior by changing the `search.defaultPatternType` setting to "literal" or "regexp". To toggle regexp search, you can click the dot-star icon in the search input, or use the `patterntype:` keyword in your search.
