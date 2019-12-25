@@ -33,7 +33,7 @@ export interface ISearchScope {
     value: string
 }
 
-export class SearchFilterChips extends React.PureComponent<Props> {
+export class SearchScopes extends React.PureComponent<Props> {
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
@@ -58,7 +58,7 @@ export class SearchFilterChips extends React.PureComponent<Props> {
         const scopes = this.getScopes()
 
         return (
-            <div className="search-filter-chips">
+            <div className="search-scopes">
                 {/* Filtering out empty strings because old configurations have "All repositories" with empty value, which is useless with new chips design. */}
                 {scopes
                     .filter(scope => scope.value !== '')
@@ -72,15 +72,15 @@ export class SearchFilterChips extends React.PureComponent<Props> {
                         />
                     ))}
                 {this.props.authenticatedUser && (
-                    <div className="search-filter-chips__edit">
+                    <div className="search-scopes__edit">
                         <NavLink
-                            className="search-filter-chips__add-edit"
+                            className="search-scopes__add-edit"
                             to="/settings"
                             data-tooltip={scopes.length > 0 ? 'Edit search scopes' : undefined}
                         >
-                            <small className="search-filter-chips__center">
+                            <small className="search-scopes__center">
                                 {scopes.length === 0 ? (
-                                    <span className="search-filter-chips__add-scopes">
+                                    <span className="search-scopes__add-scopes">
                                         Add search scopes for quick filtering
                                     </span>
                                 ) : (

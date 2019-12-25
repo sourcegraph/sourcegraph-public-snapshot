@@ -17,7 +17,7 @@ import { QuickLinks } from '../QuickLinks'
 import { QueryBuilder } from './QueryBuilder'
 import { QueryInput } from './QueryInput'
 import { SearchButton } from './SearchButton'
-import { ISearchScope, SearchFilterChips } from './SearchFilterChips'
+import { ISearchScope, SearchScopes } from './SearchScopes'
 import { InteractiveModeInput } from './interactive/InteractiveModeInput'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
@@ -127,7 +127,7 @@ export class SearchPage extends React.Component<Props, State> {
                                     {hasScopes ? (
                                         <>
                                             <div className="search-page__input-sub-container">
-                                                <SearchFilterChips
+                                                <SearchScopes
                                                     location={this.props.location}
                                                     history={this.props.history}
                                                     query={this.state.userQueryState.query}
@@ -159,7 +159,7 @@ export class SearchPage extends React.Component<Props, State> {
                                                 className="search-page__input-sub-container"
                                             />
                                             <div className="search-page__input-sub-container">
-                                                <SearchFilterChips
+                                                <SearchScopes
                                                     location={this.props.location}
                                                     history={this.props.history}
                                                     query={this.state.userQueryState.query}
