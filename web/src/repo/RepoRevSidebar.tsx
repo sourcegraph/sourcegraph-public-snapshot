@@ -6,8 +6,6 @@ import { filter } from 'rxjs/operators'
 import { FormatListBulletedIcon } from '../../../shared/src/components/icons'
 import { Resizable } from '../../../shared/src/components/Resizable'
 import {
-    Spacer,
-    Tab,
     TabBorderClassName,
     TabbedSectionsWithLocalStorageViewStatePersistence,
 } from '../../../shared/src/components/sections/tabbed/TabbedSections'
@@ -17,6 +15,8 @@ import { AbsoluteRepoFile } from '../../../shared/src/util/url'
 import { eventLogger } from '../tracking/eventLogger'
 import { Tree } from '../tree/Tree'
 import { RepoRevSidebarSymbols } from './RepoRevSidebarSymbols'
+import { Section } from '../../../shared/src/components/sections/Sections'
+import { Spacer } from '../../../shared/src/components/sections/tabbed/TabbedSectionsNavbar'
 
 type SidebarTabID = 'files' | 'symbols' | 'history'
 
@@ -40,7 +40,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
     private static LAST_TAB_STORAGE_KEY = 'repo-rev-sidebar-last-tab'
     private static HIDDEN_STORAGE_KEY = 'repo-rev-sidebar-hidden'
 
-    private static TABS: Tab<SidebarTabID>[] = [
+    private static TABS: Section<SidebarTabID>[] = [
         { id: 'files', label: 'Files' },
         { id: 'symbols', label: 'Symbols' },
     ]
@@ -91,9 +91,9 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                 defaultSize={256 /* px */}
                 element={
                     <TabbedSectionsWithLocalStorageViewStatePersistence
-                        tabs={RepoRevSidebar.TABS}
+                        sections={RepoRevSidebar.TABS}
                         storageKey={RepoRevSidebar.LAST_TAB_STORAGE_KEY}
-                        tabBarEndFragment={
+                        navbarEndFragment={
                             <>
                                 <Spacer />
                                 <button
@@ -110,8 +110,8 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                         className={`repo-rev-sidebar ${this.props.className} ${
                             this.state.showSidebar ? `repo-rev-sidebar--open ${this.props.className}--open` : ''
                         } e2e-repo-rev-sidebar`}
-                        tabClassName="tab-bar__tab--h5like"
-                        onSelectTab={this.onSelectTab}
+                        navbarItemClassName="tabbed-sections-navbar__tab--h5like"
+                        onSelectNavbarItem={this.onSelectTab}
                     >
                         <Tree
                             key="files"

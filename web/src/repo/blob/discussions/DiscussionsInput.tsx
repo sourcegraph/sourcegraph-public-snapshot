@@ -10,17 +10,17 @@ import { COMMENT_URI_SCHEME } from '../../../../../shared/src/api/client/types/t
 import { EditorTextField } from '../../../../../shared/src/components/editorTextField/EditorTextField'
 import { Markdown } from '../../../../../shared/src/components/Markdown'
 import {
-    Spacer,
-    TabBorderClassName,
     TabbedSectionsWithLocalStorageViewStatePersistence,
+    TabBorderClassName,
 } from '../../../../../shared/src/components/sections/tabbed/TabbedSections'
+import { Spacer } from '../../../../../shared/src/components/sections/tabbed/TabbedSectionsNavbar'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { asError } from '../../../../../shared/src/util/errors'
+import { ErrorAlert } from '../../../components/alerts'
 import { Form } from '../../../components/Form'
 import { WebEditorCompletionWidget } from '../../../components/shared'
 import { renderMarkdown } from '../../../discussions/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { ErrorAlert } from '../../../components/alerts'
 
 /**
  * How & whether or not to render a title input field.
@@ -276,19 +276,19 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                 )}
                 {/* TODO(slimsag:discussions): local storage persistence is not ideal here. */}
                 <TabbedSectionsWithLocalStorageViewStatePersistence
-                    tabs={[
+                    sections={[
                         { id: 'write', label: 'Write' },
                         { id: 'preview', label: 'Preview' },
                     ]}
                     storageKey="discussions-input-last-tab"
-                    tabBarEndFragment={
+                    navbarEndFragment={
                         <>
                             <Spacer />
                             <small className={TabBorderClassName}>Markdown supported.</small>
                         </>
                     }
-                    tabClassName="tab-bar__tab--h5like"
-                    onSelectTab={this.nextTabChange}
+                    navbarItemClassName="tabbed-sections-navbar__tab--h5like"
+                    onSelectNavbarItem={this.nextTabChange}
                 >
                     <div key="write">
                         {this.textAreaRef.current && (

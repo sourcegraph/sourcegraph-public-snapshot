@@ -2,7 +2,8 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
-import { Tab, TabbedSectionsWithLocalStorageViewStatePersistence } from '../../../shared/src/components/sections/tabbed/TabbedSections'
+import { Section } from '../../../shared/src/components/sections/Sections'
+import { TabbedSectionsWithLocalStorageViewStatePersistence } from '../../../shared/src/components/sections/tabbed/TabbedSections'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
@@ -266,7 +267,7 @@ class FilteredUserSurveyResponseConnection extends FilteredConnection<GQL.IUser,
  */
 export class SiteAdminSurveyResponsesPage extends React.Component<Props, State> {
     public state: State = {}
-    private static TABS: Tab<surveyResultsDisplays>[] = [
+    private static TABS: Section<surveyResultsDisplays>[] = [
         { id: 'chronological', label: 'Chronological feed' },
         { id: 'by-user', label: 'Sort by user' },
     ]
@@ -294,9 +295,9 @@ export class SiteAdminSurveyResponsesPage extends React.Component<Props, State> 
                 <h3>Responses</h3>
 
                 <TabbedSectionsWithLocalStorageViewStatePersistence
-                    tabs={SiteAdminSurveyResponsesPage.TABS}
+                    sections={SiteAdminSurveyResponsesPage.TABS}
                     storageKey={SiteAdminSurveyResponsesPage.LAST_TAB_STORAGE_KEY}
-                    tabClassName="tab-bar__tab--h5like"
+                    navbarItemClassName="tabbed-sections-navbar__tab--h5like"
                 >
                     <FilteredSurveyResponseConnection
                         key="chronological"

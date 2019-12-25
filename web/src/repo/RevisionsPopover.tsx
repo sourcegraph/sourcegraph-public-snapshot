@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { CircleChevronLeftIcon } from '../../../shared/src/components/icons'
-import { TabbedSectionsWithLocalStorageViewStatePersistence } from '../../../shared/src/components/sections/tabbed/TabbedSections'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
@@ -14,6 +13,7 @@ import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/F
 import { eventLogger } from '../tracking/eventLogger'
 import { replaceRevisionInURL } from '../util/url'
 import { GitRefNode, queryGitRefs } from './GitRef'
+import { TabbedSectionsWithLocalStorageViewStatePersistence } from '../../../shared/src/components/sections/tabbed/TabbedSections'
 
 const fetchRepositoryCommits = memoizeObservable(
     (args: { repo: GQL.ID; rev?: string; first?: number; query?: string }): Observable<GQL.IGitCommitConnection> =>
@@ -188,7 +188,7 @@ export class RevisionsPopover extends React.PureComponent<Props> {
         return (
             <div className="revisions-popover connection-popover">
                 <TabbedSectionsWithLocalStorageViewStatePersistence
-                    tabs={RevisionsPopover.TABS}
+                    sections={RevisionsPopover.TABS}
                     storageKey={RevisionsPopover.LAST_TAB_STORAGE_KEY}
                     className="revisions-popover__tabs"
                 >

@@ -3,20 +3,22 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 import { Observable, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { ActionsNavItems } from '../actions/ActionsNavItems'
 import { PanelViewWithComponent, ViewProviderRegistrationOptions } from '../api/client/services/view'
 import { ContributableMenu, ContributableViewContainer } from '../api/protocol/contribution'
-import { ExtensionsControllerProps } from '../extensions/controller'
-import { ActionsNavItems } from '../actions/ActionsNavItems'
 import { ActivationProps } from '../components/activation/Activation'
 import { FetchFileCtx } from '../components/CodeExcerpt'
 import { Resizable } from '../components/Resizable'
-import { Spacer, Tab, TabbedSectionsWithURLViewStatePersistence } from '../components/sections/tabbed/TabbedSections'
+import { Section } from '../components/sections/Sections'
+import { TabbedSectionsWithURLViewStatePersistence } from '../components/sections/tabbed/TabbedSections'
+import { Spacer } from '../components/sections/tabbed/TabbedSectionsNavbar'
+import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 import { SettingsCascadeProps } from '../settings/settings'
 import { TelemetryProps } from '../telemetry/telemetryService'
+import { ThemeProps } from '../theme'
 import { EmptyPanelView } from './views/EmptyPanelView'
 import { PanelView } from './views/PanelView'
-import { ThemeProps } from '../theme'
 
 interface Props
     extends ExtensionsControllerProps,
@@ -39,7 +41,7 @@ interface State {
 /**
  * A tab and corresponding content to display in the panel.
  */
-interface PanelItem extends Tab<string> {
+interface PanelItem extends Section<string> {
     /**
      * Controls the relative order of panel items. The items are laid out from highest priority (at the beginning)
      * to lowest priority (at the end). The default is 0.
@@ -104,14 +106,14 @@ export class Panel extends React.PureComponent<Props, State> {
             <div className="panel">
                 {hasTabs ? (
                     <TabbedSectionsWithURLViewStatePersistence
-                        tabs={items}
-                        tabBarEndFragment={
+                        sections={items}
+                        navbarEndFragment={
                             <>
                                 <Spacer />
                                 <button
                                     type="button"
                                     onClick={this.onDismiss}
-                                    className="btn btn-icon tab-bar__end-fragment-other-element"
+                                    className="btn btn-icon tabbed-sections-navbar__end-fragment-other-element"
                                     data-tooltip="Close"
                                 >
                                     <CloseIcon className="icon-inline" />
@@ -140,7 +142,7 @@ export class Panel extends React.PureComponent<Props, State> {
                             />
                         }
                         className="panel__tabs"
-                        tabClassName="tab-bar__tab--h5like"
+                        navbarItemClassName="tabbed-sections-navbar__tab--h5like"
                         location={this.props.location}
                     >
                         {items?.map(({ id, element }) => React.cloneElement(element, { key: id }))}
@@ -153,7 +155,7 @@ export class Panel extends React.PureComponent<Props, State> {
     }
 
     private onDismiss = (): void =>
-        this.props.history.push(TabbedSectionsWithURLViewStatePersistence.urlForTabID(this.props.location, null))
+        this.props.history.push(TabbedSectionsWithURLViewStatePersistence.urlForSectionID(this.props.location, null))
 }
 
 function byPriority(a: { priority: number }, b: { priority: number }): number {

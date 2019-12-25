@@ -1,0 +1,10 @@
+.tabbed-sections {
+    display: flex;
+    flex-direction: column;
+
+    &__toolbar {
+        flex: 0 0 auto;
+        display: flex;
+        overflow-x: auto;
+    }
+}

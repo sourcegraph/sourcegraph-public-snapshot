@@ -1,132 +1,38 @@
-import * as H from 'history'
-import * as React from 'react'
-import { parseHash } from '../../../util/url'
+import React from 'react'
+import H from 'history'
+import { Section, SectionsProps, SectionsWithPersistenceProps } from '../Sections'
+import { TabbedSectionsNavbar } from './TabbedSectionsNavbar'
 import { Link } from '../../Link'
+import { parseHash } from '../../../util/url'
 
-/**
- * Describes a tab.
- *
- * @template ID The type that includes all possible tab IDs (typically a union of string constants).
- */
-export interface Tab<ID extends string> {
-    id: ID
-    label: React.ReactFragment
-
+export interface TabbedSectionsProps {
     /**
-     * Whether the tab is hidden in the tab bar.
+     * A fragment to display at the end of the navbar. If specified, the navbar items will not flex
+     * grow to fill the main axis.
      */
-    hidden?: boolean
-}
-
-/**
- * Properties for the tab bar.
- *
- * @template ID The type that includes all possible tab IDs (typically a union of string constants).
- * @template T The type that describes a tab.
- */
-interface TabBarProps<ID extends string, T extends Tab<ID>> {
-    /** All tabs. */
-    tabs: T[]
-
-    /** The currently active tab. */
-    activeTab: ID | undefined
-
-    /** A fragment to render at the end of the tab bar. */
-    endFragment?: React.ReactFragment
-
-    /** The component used to render the tab (in the tab bar, not the active tab's content area). */
-    tabComponent: React.ComponentType<{ tab: T; className: string }>
-
-    tabClassName?: string
-}
-
-/**
- * A horizontal bar that displays tab titles, which the user can click to switch to the tab.
- *
- * @template ID The type that includes all possible tab IDs (typically a union of string constants).
- * @template T The type that describes a tab.
- */
-class TabBar<ID extends string, T extends Tab<ID>> extends React.PureComponent<TabBarProps<ID, T>> {
-    public render(): JSX.Element | null {
-        return (
-            <div className={`tab-bar ${this.props.tabs.length === 0 ? 'tab-bar--empty' : ''}`}>
-                {this.props.tabs
-                    .filter(({ hidden }) => !hidden)
-                    .map((tab, i) => (
-                        <this.props.tabComponent
-                            key={tab.id}
-                            tab={tab}
-                            className={`btn btn-link btn-sm tab-bar__tab ${!this.props.endFragment &&
-                                'tab-bar__tab--flex-grow'} tab-bar__tab--${
-                                this.props.activeTab !== undefined && this.props.activeTab === tab.id
-                                    ? 'active'
-                                    : 'inactive'
-                            } ${this.props.tabClassName || ''}`}
-                        />
-                    ))}
-                {this.props.endFragment}
-            </div>
-        )
-    }
-}
-
-/**
- * An element to pass to Tab's tabBarEndFragment prop to fill all width between the tabs (on the left) and the
- * other tabBarEndFragment elements (on the right).
- */
-export const Spacer: () => JSX.Element = () => <span className="tab-bar__spacer" />
-
-/**
- * Properties for the TabbedSections components and its wrappers.
- *
- * @template ID The type that includes all possible tab IDs (typically a union of string constants).
- * @template T The type that describes a tab.
- */
-interface TabbedSectionsProps<ID extends string, T extends Tab<ID>> {
-    /** All tabs. */
-    tabs: T[]
+    navbarEndFragment?: React.ReactFragment
 
     /**
-     * A fragment to display at the end of the tab bar. If specified, the tabs will not flex grow to fill the
-     * width.
-     */
-    tabBarEndFragment?: React.ReactFragment
-
-    /**
-     * A fragment to display underneath the tab bar.
+     * A fragment to display underneath the sections.
      */
     toolbarFragment?: React.ReactFragment
-
-    children: React.ReactFragment
-
-    id?: string
-    className?: string
-    tabClassName?: string
-
-    /** Optional handler when a tab is selected */
-    onSelectTab?: (tab: ID) => void
 }
 
 /**
- * The class name to use for other elements injected via tabBarEndFragment that should have a bottom border.
+ * The class name to use for other elements injected via navbarEndFragment that should have a bottom
+ * border.
  */
-export const TabBorderClassName = 'tab-bar__end-fragment-other-element'
+export const TabBorderClassName = 'tabbed-sections-navbar__end-fragment-other-element'
 
 /**
- * A tabbed sections UI component, with a tab bar for switching between tabs and a content view that
- * renders the active tab's contents.
+ * A UI component with a navbar for switching between sections and a content view that renders the
+ * active section's contents.
  *
  * Callers should use one of the TabbedSectionsWithXyzViewStatePersistence components to handle view
  * state persistence.
  */
-class TabbedSections<ID extends string, T extends Tab<ID>> extends React.PureComponent<
-    TabbedSectionsProps<ID, T> & {
-        /** The currently active tab. */
-        activeTab: ID | undefined
-
-        /** The component used to render the tab (in the tab bar, not the active tab's content area). */
-        tabComponent: React.ComponentType<{ tab: T; className: string }>
-    }
+class TabbedSections<ID extends string, T extends Section<ID>> extends React.PureComponent<
+    SectionsProps<ID, T> & TabbedSectionsProps
 > {
     public render(): JSX.Element | null {
         let children: React.ReactElement<{ key: ID }>[] | undefined
@@ -138,124 +44,129 @@ class TabbedSections<ID extends string, T extends Tab<ID>> extends React.PureCom
 
         return (
             <div id={this.props.id} className={`tabbed-sections ${this.props.className || ''}`}>
-                <TabBar
-                    tabs={this.props.tabs}
-                    activeTab={this.props.activeTab}
-                    endFragment={this.props.tabBarEndFragment}
-                    tabClassName={this.props.tabClassName}
-                    tabComponent={this.props.tabComponent}
+                <TabbedSectionsNavbar
+                    sections={this.props.sections}
+                    activeSection={this.props.activeSection}
+                    navbarEndFragment={this.props.navbarEndFragment}
+                    navbarItemClassName={this.props.navbarItemClassName}
+                    navbarItemComponent={this.props.navbarItemComponent}
                 />
                 {this.props.toolbarFragment && (
                     <div className="tabbed-sections__toolbar small">{this.props.toolbarFragment}</div>
                 )}
-                {children?.find(c => c && c.key === this.props.activeTab)}
+                {children?.find(c => c && c.key === this.props.activeSection)}
             </div>
         )
     }
 }
 
 /**
- * A wrapper for TabbedSections that persists view state (the currently active tab) in localStorage.
+ * A wrapper for TabbedSections that persists view state (the currently active section) in
+ * localStorage.
  */
 export class TabbedSectionsWithLocalStorageViewStatePersistence<
     ID extends string,
-    T extends Tab<ID>
+    T extends Section<ID>
 > extends React.PureComponent<
-    TabbedSectionsProps<ID, T> & {
+    SectionsWithPersistenceProps<ID, T> & {
         /**
          * A key unique to this UI element that is used for persisting the view state.
          */
         storageKey: string
-    },
-    { activeTab: ID | undefined }
+    } & TabbedSectionsProps,
+    { activeSection: ID | undefined }
 > {
-    constructor(props: TabbedSectionsProps<ID, T> & { storageKey: string }) {
+    constructor(props: SectionsProps<ID, T> & { storageKey: string }) {
         super(props)
         this.state = {
-            activeTab: TabbedSectionsWithLocalStorageViewStatePersistence.readFromLocalStorage(
+            activeSection: TabbedSectionsWithLocalStorageViewStatePersistence.readFromLocalStorage(
                 this.props.storageKey,
-                this.props.tabs
+                this.props.sections
             ),
         }
     }
 
-    private static readFromLocalStorage<ID extends string, T extends Tab<ID>>(
+    private static readFromLocalStorage<ID extends string, T extends Section<ID>>(
         storageKey: string,
-        tabs: T[]
+        sections: T[]
     ): ID | undefined {
-        const lastTabID = localStorage.getItem(storageKey)
-        if (lastTabID !== null && tabs.find(tab => tab.id === lastTabID)) {
-            return lastTabID as ID
+        const lastSectionID = localStorage.getItem(storageKey)
+        if (lastSectionID !== null && sections.find(s => s.id === lastSectionID)) {
+            return lastSectionID as ID
         }
-        if (tabs.length === 0) {
+        if (sections.length === 0) {
             return undefined
         }
-        return tabs[0].id // default
+        return sections[0].id // default
     }
 
-    private static saveToLocalStorage<ID extends string>(storageKey: string, lastTabID: ID): void {
-        localStorage.setItem(storageKey, lastTabID)
+    private static saveToLocalStorage<ID extends string>(storageKey: string, lastSectionID: ID): void {
+        localStorage.setItem(storageKey, lastSectionID)
     }
 
     public render(): JSX.Element | null {
         return (
             <TabbedSections
                 {...this.props}
-                onSelectTab={this.onSelectTab}
-                activeTab={this.state.activeTab}
-                tabComponent={this.renderTab}
+                onSelectNavbarItem={this.onSelectSection}
+                activeSection={this.state.activeSection}
+                navbarItemComponent={this.renderNavbarItem}
             />
         )
     }
 
-    private onSelectTab = (tab: ID): void => {
-        if (this.props.onSelectTab) {
-            this.props.onSelectTab(tab)
+    private onSelectSection = (section: ID): void => {
+        if (this.props.onSelectNavbarItem) {
+            this.props.onSelectNavbarItem(section)
         }
-        this.setState({ activeTab: tab }, () =>
-            TabbedSectionsWithLocalStorageViewStatePersistence.saveToLocalStorage(this.props.storageKey, tab)
+        this.setState({ activeSection: section }, () =>
+            TabbedSectionsWithLocalStorageViewStatePersistence.saveToLocalStorage(this.props.storageKey, section)
         )
     }
 
-    private renderTab = ({ tab, className }: { tab: T; className: string }): JSX.Element => (
-        <button type="button" className={className} data-e2e-tab={tab.id} onClick={() => this.onSelectTab(tab.id)}>
-            {tab.label}
+    private renderNavbarItem = ({ section, className }: { section: T; className: string }): JSX.Element => (
+        <button
+            type="button"
+            className={className}
+            data-e2e-section={section.id}
+            onClick={() => this.onSelectSection(section.id)}
+        >
+            {section.label}
         </button>
     )
 }
 
-interface TabbedSectionsWithURLViewStatePersistenceProps<ID extends string, T extends Tab<ID>>
-    extends TabbedSectionsProps<ID, T> {
-    location: H.Location
-}
-
 /**
- * A wrapper for TabbedSections that persists view state (the currently active tab) in the current
- * page's URL.
+ * A wrapper for TabbedSections that persists view state (the currently active section) in the
+ * current page's URL.
  *
- * URL whose fragment (hash) ends with "$x" are considered to have active tab "x" (where "x" is the
- * tab's ID).
+ * URL whose fragment (hash) ends with "$x" are considered to have active section "x" (where "x" is
+ * the section's ID).
  */
 export class TabbedSectionsWithURLViewStatePersistence<
     ID extends string,
-    T extends Tab<ID>
-> extends React.PureComponent<TabbedSectionsWithURLViewStatePersistenceProps<ID, T>, { activeTab: ID | undefined }> {
-    constructor(props: TabbedSectionsWithURLViewStatePersistenceProps<ID, T>) {
+    T extends Section<ID>
+> extends React.PureComponent<
+    SectionsWithPersistenceProps<ID, T> & { location: H.Location } & TabbedSectionsProps,
+    { activeSection: ID | undefined }
+> {
+    constructor(props: SectionsWithPersistenceProps<ID, T> & { location: H.Location }) {
         super(props)
         this.state = {
-            activeTab: TabbedSectionsWithURLViewStatePersistence.readFromURL(props.location, props.tabs),
+            activeSection: TabbedSectionsWithURLViewStatePersistence.readFromURL(props.location, props.sections),
         }
     }
 
     /**
-     * Returns the URL hash (which can be used as a relative URL) that specifies the given tab. If the URL hash
-     * already contains a tab ID, it replaces it; otherwise it appends it to the current URL fragment. If the tabID
-     * argument is null, then the tab ID is removed from the URL.
+     * Returns the URL hash (which can be used as a relative URL) that specifies the given section.
+     * If the URL hash already contains a section ID, it replaces it; otherwise it appends it to the
+     * current URL fragment. If the sectionID argument is null, then the section ID is removed from
+     * the URL.
      */
-    public static urlForTabID(location: H.Location, tabID: string | null): H.LocationDescriptorObject {
+    public static urlForSectionID(location: H.Location, sectionID: string | null): H.LocationDescriptorObject {
         const hash = new URLSearchParams(location.hash.slice('#'.length))
-        if (tabID) {
-            hash.set('tab', tabID)
+        if (sectionID) {
+            hash.set('tab', sectionID)
         } else {
             hash.delete('tab')
 
@@ -276,46 +187,58 @@ export class TabbedSectionsWithURLViewStatePersistence<
         }
     }
 
-    public static readFromURL<ID extends string, T extends Tab<ID>>(location: H.Location, tabs: T[]): ID | undefined {
-        const urlTabID = parseHash(location.hash).viewState
-        if (urlTabID) {
-            for (const tab of tabs) {
-                if (tab.id === urlTabID) {
-                    return tab.id
+    public static readFromURL<ID extends string, T extends Section<ID>>(
+        location: H.Location,
+        sections: T[]
+    ): ID | undefined {
+        const urlSectionID = parseHash(location.hash).viewState
+        if (urlSectionID) {
+            for (const section of sections) {
+                if (section.id === urlSectionID) {
+                    return section.id
                 }
             }
         }
-        if (tabs.length === 0) {
+        if (sections.length === 0) {
             return undefined
         }
-        return tabs[0].id // default
+        return sections[0].id // default
     }
 
-    public componentDidUpdate(prevProps: TabbedSectionsWithURLViewStatePersistenceProps<ID, T>): void {
-        if (prevProps.location !== this.props.location || prevProps.tabs !== this.props.tabs) {
+    public componentDidUpdate(prevProps: SectionsWithPersistenceProps<ID, T> & { location: H.Location }): void {
+        if (prevProps.location !== this.props.location || prevProps.sections !== this.props.sections) {
             // eslint-disable-next-line react/no-did-update-set-state
             this.setState({
-                activeTab: TabbedSectionsWithURLViewStatePersistence.readFromURL(this.props.location, this.props.tabs),
+                activeSection: TabbedSectionsWithURLViewStatePersistence.readFromURL(
+                    this.props.location,
+                    this.props.sections
+                ),
             })
         }
     }
 
     public render(): JSX.Element | null {
-        return <TabbedSections {...this.props} activeTab={this.state.activeTab} tabComponent={this.renderTab} />
+        return (
+            <TabbedSections
+                {...this.props}
+                activeSection={this.state.activeSection}
+                navbarItemComponent={this.renderNavbarItem}
+            />
+        )
     }
 
-    private renderTab = ({ tab, className }: { tab: T; className: string }): JSX.Element => (
+    private renderNavbarItem = ({ section, className }: { section: T; className: string }): JSX.Element => (
         /* eslint-disable react/jsx-no-bind */
         <Link
             className={className}
-            to={TabbedSectionsWithURLViewStatePersistence.urlForTabID(this.props.location, tab.id)}
+            to={TabbedSectionsWithURLViewStatePersistence.urlForSectionID(this.props.location, section.id)}
             onClick={() => {
-                if (this.props.onSelectTab) {
-                    this.props.onSelectTab(tab.id)
+                if (this.props.onSelectNavbarItem) {
+                    this.props.onSelectNavbarItem(section.id)
                 }
             }}
         >
-            {tab.label}
+            {section.label}
         </Link>
         /* eslint:enable react/jsx-no-bind */
     )

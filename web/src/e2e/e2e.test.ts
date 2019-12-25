@@ -703,7 +703,7 @@ describe('e2e test suite', () => {
                 test(symbolTest.name, async () => {
                     await driver.page.goto(sourcegraphBaseUrl + symbolTest.filePath)
 
-                    await (await driver.page.waitForSelector('[data-e2e-tab="symbols"]')).click()
+                    await (await driver.page.waitForSelector('[data-e2e-section="symbols"]')).click()
 
                     await driver.page.waitForSelector('.e2e-symbol-name', { visible: true })
 
@@ -759,7 +759,7 @@ describe('e2e test suite', () => {
 
                     await driver.page.goto(repoBaseURL + navigationTest.filePath)
 
-                    await (await driver.page.waitForSelector('[data-e2e-tab="symbols"]')).click()
+                    await (await driver.page.waitForSelector('[data-e2e-section="symbols"]')).click()
 
                     await driver.page.waitForSelector('.e2e-symbol-name', { visible: true })
 
@@ -792,8 +792,8 @@ describe('e2e test suite', () => {
             for (const { name, filePath, index, line } of highlightSymbolTests) {
                 test(name, async () => {
                     await driver.page.goto(sourcegraphBaseUrl + filePath)
-                    await driver.page.waitForSelector('[data-e2e-tab="symbols"]')
-                    await driver.page.click('[data-e2e-tab="symbols"]')
+                    await driver.page.waitForSelector('[data-e2e-section="symbols"]')
+                    await driver.page.click('[data-e2e-section="symbols"]')
                     await driver.page.waitForSelector('.e2e-symbol-name', { visible: true })
                     await driver.page.click(`.filtered-connection__nodes li:nth-child(${index + 1}) a`)
 
@@ -909,7 +909,7 @@ describe('e2e test suite', () => {
                 await driver.page.waitForSelector('#repo-rev-popover', { visible: true })
                 await driver.page.click('#repo-rev-popover')
                 // Click "Tags" tab
-                await driver.page.click('.revisions-popover .tab-bar__tab:nth-child(2)')
+                await driver.page.click('.revisions-popover .tabbed-sections-navbar__tab:nth-child(2)')
                 await driver.page.waitForSelector('a.git-ref-node[href*="0.5.0"]', { visible: true })
                 await driver.page.click('a.git-ref-node[href*="0.5.0"]')
                 await driver.assertWindowLocation('/github.com/sourcegraph/go-diff@v0.5.0/-/blob/diff/diff.go')
