@@ -37,6 +37,8 @@
     }
 
     &__tab {
+        white-space: nowrap;
+
         &--flex-grow {
             flex: 1;
         }
