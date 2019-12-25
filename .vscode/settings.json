@@ -55,6 +55,7 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": true,
   },
+  "eslint.options": { "cache": true },
   "eslint.workingDirectories": [
     {
       "directory": "dev/release",
