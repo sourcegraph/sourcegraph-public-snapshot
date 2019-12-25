@@ -25,8 +25,8 @@ export interface SectionsProps<ID extends string, T extends Section<ID>> {
     /** All sections. */
     sections: T[]
 
-    /** The currently active section. */
-    activeSection: ID | undefined
+    /** The currently visible section. */
+    visibleSection: ID | undefined
 
     /**
      * The component used to render a section's navbar item.
@@ -47,4 +47,4 @@ export interface SectionsProps<ID extends string, T extends Section<ID>> {
  * Properties for Sections components that provide their own state persistence.
  */
 export interface SectionsWithPersistenceProps<ID extends string, T extends Section<ID>>
-    extends Omit<SectionsProps<ID, T>, 'activeSection' | 'navbarItemComponent'> {}
+    extends Omit<SectionsProps<ID, T>, 'visibleSection' | 'navbarItemComponent'> {}

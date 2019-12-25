@@ -46,7 +46,7 @@ class TabbedSections<ID extends string, T extends Section<ID>> extends React.Pur
             <div id={this.props.id} className={`tabbed-sections ${this.props.className || ''}`}>
                 <TabbedSectionsNavbar
                     sections={this.props.sections}
-                    activeSection={this.props.activeSection}
+                    visibleSection={this.props.visibleSection}
                     navbarEndFragment={this.props.navbarEndFragment}
                     navbarItemClassName={this.props.navbarItemClassName}
                     navbarItemComponent={this.props.navbarItemComponent}
@@ -54,7 +54,7 @@ class TabbedSections<ID extends string, T extends Section<ID>> extends React.Pur
                 {this.props.toolbarFragment && (
                     <div className="tabbed-sections__toolbar small">{this.props.toolbarFragment}</div>
                 )}
-                {children?.find(c => c && c.key === this.props.activeSection)}
+                {children?.find(c => c && c.key === this.props.visibleSection)}
             </div>
         )
     }
@@ -74,12 +74,12 @@ export class TabbedSectionsWithLocalStorageViewStatePersistence<
          */
         storageKey: string
     } & TabbedSectionsProps,
-    { activeSection: ID | undefined }
+    { visibleSection: ID | undefined }
 > {
     constructor(props: SectionsProps<ID, T> & { storageKey: string }) {
         super(props)
         this.state = {
-            activeSection: TabbedSectionsWithLocalStorageViewStatePersistence.readFromLocalStorage(
+            visibleSection: TabbedSectionsWithLocalStorageViewStatePersistence.readFromLocalStorage(
                 this.props.storageKey,
                 this.props.sections
             ),
@@ -109,7 +109,7 @@ export class TabbedSectionsWithLocalStorageViewStatePersistence<
             <TabbedSections
                 {...this.props}
                 onSelectNavbarItem={this.onSelectSection}
-                activeSection={this.state.activeSection}
+                visibleSection={this.state.visibleSection}
                 navbarItemComponent={this.renderNavbarItem}
             />
         )
@@ -119,7 +119,7 @@ export class TabbedSectionsWithLocalStorageViewStatePersistence<
         if (this.props.onSelectNavbarItem) {
             this.props.onSelectNavbarItem(section)
         }
-        this.setState({ activeSection: section }, () =>
+        this.setState({ visibleSection: section }, () =>
             TabbedSectionsWithLocalStorageViewStatePersistence.saveToLocalStorage(this.props.storageKey, section)
         )
     }
@@ -148,12 +148,12 @@ export class TabbedSectionsWithURLViewStatePersistence<
     T extends Section<ID>
 > extends React.PureComponent<
     SectionsWithPersistenceProps<ID, T> & { location: H.Location } & TabbedSectionsProps,
-    { activeSection: ID | undefined }
+    { visibleSection: ID | undefined }
 > {
     constructor(props: SectionsWithPersistenceProps<ID, T> & { location: H.Location }) {
         super(props)
         this.state = {
-            activeSection: TabbedSectionsWithURLViewStatePersistence.readFromURL(props.location, props.sections),
+            visibleSection: TabbedSectionsWithURLViewStatePersistence.readFromURL(props.location, props.sections),
         }
     }
 
@@ -209,7 +209,7 @@ export class TabbedSectionsWithURLViewStatePersistence<
         if (prevProps.location !== this.props.location || prevProps.sections !== this.props.sections) {
             // eslint-disable-next-line react/no-did-update-set-state
             this.setState({
-                activeSection: TabbedSectionsWithURLViewStatePersistence.readFromURL(
+                visibleSection: TabbedSectionsWithURLViewStatePersistence.readFromURL(
                     this.props.location,
                     this.props.sections
                 ),
@@ -221,7 +221,7 @@ export class TabbedSectionsWithURLViewStatePersistence<
         return (
             <TabbedSections
                 {...this.props}
-                activeSection={this.state.activeSection}
+                visibleSection={this.state.visibleSection}
                 navbarItemComponent={this.renderNavbarItem}
             />
         )
