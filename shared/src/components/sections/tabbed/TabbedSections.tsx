@@ -108,7 +108,6 @@ export class TabbedSectionsWithLocalStorageViewStatePersistence<
         return (
             <TabbedSections
                 {...this.props}
-                onSelectNavbarItem={this.onSelectSection}
                 visibleSections={this.state.visibleSection === undefined ? undefined : [this.state.visibleSection]}
                 navbarItemComponent={this.renderNavbarItem}
             />

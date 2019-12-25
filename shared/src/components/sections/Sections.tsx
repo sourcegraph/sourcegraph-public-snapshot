@@ -38,13 +38,13 @@ export interface SectionsProps<ID extends string, T extends Section<ID>> {
     id?: string
     className?: string
     navbarItemClassName?: string
-
-    /** Optional handler when a navbar item is selected */
-    onSelectNavbarItem?: (section: ID) => void
 }
 
 /**
  * Properties for Sections components that provide their own state persistence.
  */
 export interface SectionsWithPersistenceProps<ID extends string, T extends Section<ID>>
-    extends Omit<SectionsProps<ID, T>, 'visibleSections' | 'navbarItemComponent'> {}
+    extends Omit<SectionsProps<ID, T>, 'visibleSections' | 'navbarItemComponent'> {
+    /** Optional handler when a navbar item is selected. */
+    onSelectNavbarItem?: (section: ID) => void
+}

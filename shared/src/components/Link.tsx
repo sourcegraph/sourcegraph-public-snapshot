@@ -27,11 +27,13 @@ export type LinkProps = { to: string | H.LocationDescriptor<any> } & Pick<
  */
 export let Link: React.ComponentType<LinkProps>
 
+const NoLink: React.FunctionComponent = () => {
+    throw new Error('No Link component set. You must call setLinkComponent to set the Link component to use.')
+}
+
 if (process.env.NODE_ENV !== 'production') {
     // Fail with helpful message if setLinkComponent has not been called when the <Link> component is used.
-    Link = () => {
-        throw new Error('No Link component set. You must call setLinkComponent to set the Link component to use.')
-    }
+    Link = NoLink
 }
 
 /**
@@ -40,8 +42,8 @@ if (process.env.NODE_ENV !== 'production') {
  * @see Link
  * @see AnchorLink
  */
-export function setLinkComponent(component: typeof Link): void {
-    Link = component
+export function setLinkComponent(component: typeof Link | null): void {
+    Link = component || NoLink
 }
 
 /**
