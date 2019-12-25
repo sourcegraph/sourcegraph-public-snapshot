@@ -46,7 +46,7 @@ class TabbedSections<ID extends string, T extends Section<ID>> extends React.Pur
             <div id={this.props.id} className={`tabbed-sections ${this.props.className || ''}`}>
                 <TabbedSectionsNavbar
                     sections={this.props.sections}
-                    visibleSection={this.props.visibleSection}
+                    visibleSections={this.props.visibleSections}
                     navbarEndFragment={this.props.navbarEndFragment}
                     navbarItemClassName={this.props.navbarItemClassName}
                     navbarItemComponent={this.props.navbarItemComponent}
@@ -54,7 +54,7 @@ class TabbedSections<ID extends string, T extends Section<ID>> extends React.Pur
                 {this.props.toolbarFragment && (
                     <div className="tabbed-sections__toolbar small">{this.props.toolbarFragment}</div>
                 )}
-                {children?.find(c => c && c.key === this.props.visibleSection)}
+                {children?.find(c => c && this.props.visibleSections?.includes(c.key as ID))}
             </div>
         )
     }
@@ -109,7 +109,7 @@ export class TabbedSectionsWithLocalStorageViewStatePersistence<
             <TabbedSections
                 {...this.props}
                 onSelectNavbarItem={this.onSelectSection}
-                visibleSection={this.state.visibleSection}
+                visibleSections={this.state.visibleSection === undefined ? undefined : [this.state.visibleSection]}
                 navbarItemComponent={this.renderNavbarItem}
             />
         )
@@ -221,7 +221,7 @@ export class TabbedSectionsWithURLViewStatePersistence<
         return (
             <TabbedSections
                 {...this.props}
-                visibleSection={this.state.visibleSection}
+                visibleSections={this.state.visibleSection === undefined ? undefined : [this.state.visibleSection]}
                 navbarItemComponent={this.renderNavbarItem}
             />
         )

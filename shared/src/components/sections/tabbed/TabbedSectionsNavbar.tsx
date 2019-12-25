@@ -9,7 +9,7 @@ import { TabbedSectionsProps } from './TabbedSections'
  * @template T The type that describes a tab.
  */
 interface Props<ID extends string, T extends Section<ID>>
-    extends Pick<SectionsProps<ID, T>, 'sections' | 'visibleSection' | 'navbarItemComponent' | 'navbarItemClassName'>,
+    extends Pick<SectionsProps<ID, T>, 'sections' | 'visibleSections' | 'navbarItemComponent' | 'navbarItemClassName'>,
         TabbedSectionsProps {}
 
 /**
@@ -35,9 +35,7 @@ export class TabbedSectionsNavbar<ID extends string, T extends Section<ID>> exte
                             className={`btn btn-link btn-sm tabbed-sections-navbar__tab ${!this.props
                                 .navbarEndFragment &&
                                 'tabbed-sections-navbar__tab--flex-grow'} tabbed-sections-navbar__tab--${
-                                this.props.visibleSection !== undefined && this.props.visibleSection === section.id
-                                    ? 'active'
-                                    : 'inactive'
+                                this.props.visibleSections?.includes(section.id) ? 'active' : 'inactive'
                             } ${this.props.navbarItemClassName || ''}`}
                         />
                     ))}
