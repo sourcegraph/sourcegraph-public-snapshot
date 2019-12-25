@@ -17,7 +17,7 @@ import { QuickLinks } from '../QuickLinks'
 import { QueryBuilder } from './QueryBuilder'
 import { QueryInput } from './QueryInput'
 import { SearchButton } from './SearchButton'
-import { ISearchScope, SearchScopes } from './SearchScopes'
+import { SearchScopes } from './SearchScopes'
 import { InteractiveModeInput } from './interactive/InteractiveModeInput'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
@@ -87,7 +87,10 @@ export class SearchPage extends React.Component<Props, State> {
                 logoUrl = branding.dark.logo
             }
         }
-        const hasScopes = this.getScopes().length > 0
+        const hasScopes =
+            isSettingsValid<Settings>(this.props.settingsCascade) &&
+            Array.isArray(this.props.settingsCascade.final['search.scopes']) &&
+            this.props.settingsCascade.final['search.scopes'].length > 0
         const quickLinks = this.getQuickLinks()
         return (
             <div className="search-page">
@@ -128,12 +131,10 @@ export class SearchPage extends React.Component<Props, State> {
                                         <>
                                             <div className="search-page__input-sub-container">
                                                 <SearchScopes
-                                                    location={this.props.location}
                                                     history={this.props.history}
                                                     query={this.state.userQueryState.query}
                                                     authenticatedUser={this.props.authenticatedUser}
                                                     settingsCascade={this.props.settingsCascade}
-                                                    isSourcegraphDotCom={this.props.isSourcegraphDotCom}
                                                     patternType={this.props.patternType}
                                                 />
                                             </div>
@@ -160,12 +161,10 @@ export class SearchPage extends React.Component<Props, State> {
                                             />
                                             <div className="search-page__input-sub-container">
                                                 <SearchScopes
-                                                    location={this.props.location}
                                                     history={this.props.history}
                                                     query={this.state.userQueryState.query}
                                                     authenticatedUser={this.props.authenticatedUser}
                                                     settingsCascade={this.props.settingsCascade}
-                                                    isSourcegraphDotCom={this.props.isSourcegraphDotCom}
                                                     patternType={this.props.patternType}
                                                 />
                                             </div>
@@ -205,14 +204,6 @@ export class SearchPage extends React.Component<Props, State> {
             return `${limitString(this.state.userQueryState.query, 25, true)}`
         }
         return undefined
-    }
-
-    private getScopes(): ISearchScope[] {
-        return (
-            (isSettingsValid<Settings>(this.props.settingsCascade) &&
-                this.props.settingsCascade.final['search.scopes']) ||
-            []
-        )
     }
 
     private getQuickLinks(): QuickLink[] {
