@@ -87,10 +87,6 @@ export class SearchPage extends React.Component<Props, State> {
                 logoUrl = branding.dark.logo
             }
         }
-        const hasScopes =
-            isSettingsValid<Settings>(this.props.settingsCascade) &&
-            Array.isArray(this.props.settingsCascade.final['search.scopes']) &&
-            this.props.settingsCascade.final['search.scopes'].length > 0
         const quickLinks = this.getQuickLinks()
         return (
             <div className="search-page">
@@ -127,49 +123,21 @@ export class SearchPage extends React.Component<Props, State> {
                                         />
                                         <SearchButton />
                                     </div>
-                                    {hasScopes ? (
-                                        <>
-                                            <div className="search-page__input-sub-container">
-                                                <SearchScopes
-                                                    history={this.props.history}
-                                                    query={this.state.userQueryState.query}
-                                                    authenticatedUser={this.props.authenticatedUser}
-                                                    settingsCascade={this.props.settingsCascade}
-                                                    patternType={this.props.patternType}
-                                                />
-                                            </div>
-                                            <QuickLinks
-                                                quickLinks={quickLinks}
-                                                className="search-page__input-sub-container"
-                                            />
-                                            <QueryBuilder
-                                                onFieldsQueryChange={this.onBuilderQueryChange}
-                                                isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                                patternType={this.props.patternType}
-                                            />
-                                        </>
-                                    ) : (
-                                        <>
-                                            <QueryBuilder
-                                                onFieldsQueryChange={this.onBuilderQueryChange}
-                                                isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                                patternType={this.props.patternType}
-                                            />
-                                            <QuickLinks
-                                                quickLinks={quickLinks}
-                                                className="search-page__input-sub-container"
-                                            />
-                                            <div className="search-page__input-sub-container">
-                                                <SearchScopes
-                                                    history={this.props.history}
-                                                    query={this.state.userQueryState.query}
-                                                    authenticatedUser={this.props.authenticatedUser}
-                                                    settingsCascade={this.props.settingsCascade}
-                                                    patternType={this.props.patternType}
-                                                />
-                                            </div>
-                                        </>
-                                    )}
+                                    <div className="search-page__input-sub-container">
+                                        <SearchScopes
+                                            history={this.props.history}
+                                            query={this.state.userQueryState.query}
+                                            authenticatedUser={this.props.authenticatedUser}
+                                            settingsCascade={this.props.settingsCascade}
+                                            patternType={this.props.patternType}
+                                        />
+                                    </div>
+                                    <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />
+                                    <QueryBuilder
+                                        onFieldsQueryChange={this.onBuilderQueryChange}
+                                        isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                                        patternType={this.props.patternType}
+                                    />
                                     <Notices
                                         className="my-3"
                                         location="home"
