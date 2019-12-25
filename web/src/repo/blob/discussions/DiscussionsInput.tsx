@@ -12,8 +12,8 @@ import { Markdown } from '../../../../../shared/src/components/Markdown'
 import {
     Spacer,
     TabBorderClassName,
-    TabsWithLocalStorageViewStatePersistence,
-} from '../../../../../shared/src/components/Tabs'
+    TabbedSectionsWithLocalStorageViewStatePersistence,
+} from '../../../../../shared/src/components/sections/tabbed/TabbedSections'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { asError } from '../../../../../shared/src/util/errors'
 import { Form } from '../../../components/Form'
@@ -275,7 +275,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                     />
                 )}
                 {/* TODO(slimsag:discussions): local storage persistence is not ideal here. */}
-                <TabsWithLocalStorageViewStatePersistence
+                <TabbedSectionsWithLocalStorageViewStatePersistence
                     tabs={[
                         { id: 'write', label: 'Write' },
                         { id: 'preview', label: 'Preview' },
@@ -314,7 +314,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                         {previewLoading && <LoadingSpinner className="icon-inline" />}
                         {!previewLoading && previewHTML && <Markdown dangerousInnerHTML={previewHTML} />}
                     </div>
-                </TabsWithLocalStorageViewStatePersistence>
+                </TabbedSectionsWithLocalStorageViewStatePersistence>
                 <div className="discussions-input__row">
                     <button
                         type="submit"

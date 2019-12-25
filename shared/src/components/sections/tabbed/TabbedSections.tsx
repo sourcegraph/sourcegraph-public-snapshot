@@ -1,7 +1,7 @@
 import * as H from 'history'
 import * as React from 'react'
-import { parseHash } from '../util/url'
-import { Link } from './Link'
+import { parseHash } from '../../../util/url'
+import { Link } from '../../Link'
 
 /**
  * Describes a tab.
@@ -77,12 +77,12 @@ class TabBar<ID extends string, T extends Tab<ID>> extends React.PureComponent<T
 export const Spacer: () => JSX.Element = () => <span className="tab-bar__spacer" />
 
 /**
- * Properties for the Tabs components and its wrappers.
+ * Properties for the TabbedSections components and its wrappers.
  *
  * @template ID The type that includes all possible tab IDs (typically a union of string constants).
  * @template T The type that describes a tab.
  */
-interface TabsProps<ID extends string, T extends Tab<ID>> {
+interface TabbedSectionsProps<ID extends string, T extends Tab<ID>> {
     /** All tabs. */
     tabs: T[]
 
@@ -113,13 +113,14 @@ interface TabsProps<ID extends string, T extends Tab<ID>> {
 export const TabBorderClassName = 'tab-bar__end-fragment-other-element'
 
 /**
- * A tabbed UI component, with a tab bar for switching between tabs and a content view that renders the active
- * tab's contents.
+ * A tabbed sections UI component, with a tab bar for switching between tabs and a content view that
+ * renders the active tab's contents.
  *
- * Callers should use one of the TabsWithXyzViewStatePersistence components to handle view state persistence.
+ * Callers should use one of the TabbedSectionsWithXyzViewStatePersistence components to handle view
+ * state persistence.
  */
-class Tabs<ID extends string, T extends Tab<ID>> extends React.PureComponent<
-    TabsProps<ID, T> & {
+class TabbedSections<ID extends string, T extends Tab<ID>> extends React.PureComponent<
+    TabbedSectionsProps<ID, T> & {
         /** The currently active tab. */
         activeTab: ID | undefined
 
@@ -136,7 +137,7 @@ class Tabs<ID extends string, T extends Tab<ID>> extends React.PureComponent<
         }
 
         return (
-            <div id={this.props.id} className={`tabs ${this.props.className || ''}`}>
+            <div id={this.props.id} className={`tabbed-sections ${this.props.className || ''}`}>
                 <TabBar
                     tabs={this.props.tabs}
                     activeTab={this.props.activeTab}
@@ -144,7 +145,9 @@ class Tabs<ID extends string, T extends Tab<ID>> extends React.PureComponent<
                     tabClassName={this.props.tabClassName}
                     tabComponent={this.props.tabComponent}
                 />
-                {this.props.toolbarFragment && <div className="tabs__toolbar small">{this.props.toolbarFragment}</div>}
+                {this.props.toolbarFragment && (
+                    <div className="tabbed-sections__toolbar small">{this.props.toolbarFragment}</div>
+                )}
                 {children?.find(c => c && c.key === this.props.activeTab)}
             </div>
         )
@@ -152,10 +155,13 @@ class Tabs<ID extends string, T extends Tab<ID>> extends React.PureComponent<
 }
 
 /**
- * A wrapper for Tabs that persists view state (the currently active tab) in localStorage.
+ * A wrapper for TabbedSections that persists view state (the currently active tab) in localStorage.
  */
-export class TabsWithLocalStorageViewStatePersistence<ID extends string, T extends Tab<ID>> extends React.PureComponent<
-    TabsProps<ID, T> & {
+export class TabbedSectionsWithLocalStorageViewStatePersistence<
+    ID extends string,
+    T extends Tab<ID>
+> extends React.PureComponent<
+    TabbedSectionsProps<ID, T> & {
         /**
          * A key unique to this UI element that is used for persisting the view state.
          */
@@ -163,10 +169,10 @@ export class TabsWithLocalStorageViewStatePersistence<ID extends string, T exten
     },
     { activeTab: ID | undefined }
 > {
-    constructor(props: TabsProps<ID, T> & { storageKey: string }) {
+    constructor(props: TabbedSectionsProps<ID, T> & { storageKey: string }) {
         super(props)
         this.state = {
-            activeTab: TabsWithLocalStorageViewStatePersistence.readFromLocalStorage(
+            activeTab: TabbedSectionsWithLocalStorageViewStatePersistence.readFromLocalStorage(
                 this.props.storageKey,
                 this.props.tabs
             ),
@@ -193,7 +199,7 @@ export class TabsWithLocalStorageViewStatePersistence<ID extends string, T exten
 
     public render(): JSX.Element | null {
         return (
-            <Tabs
+            <TabbedSections
                 {...this.props}
                 onSelectTab={this.onSelectTab}
                 activeTab={this.state.activeTab}
@@ -207,7 +213,7 @@ export class TabsWithLocalStorageViewStatePersistence<ID extends string, T exten
             this.props.onSelectTab(tab)
         }
         this.setState({ activeTab: tab }, () =>
-            TabsWithLocalStorageViewStatePersistence.saveToLocalStorage(this.props.storageKey, tab)
+            TabbedSectionsWithLocalStorageViewStatePersistence.saveToLocalStorage(this.props.storageKey, tab)
         )
     }
 
@@ -218,23 +224,26 @@ export class TabsWithLocalStorageViewStatePersistence<ID extends string, T exten
     )
 }
 
-interface TabsWithURLViewStatePersistenceProps<ID extends string, T extends Tab<ID>> extends TabsProps<ID, T> {
+interface TabbedSectionsWithURLViewStatePersistenceProps<ID extends string, T extends Tab<ID>>
+    extends TabbedSectionsProps<ID, T> {
     location: H.Location
 }
 
 /**
- * A wrapper for Tabs that persists view state (the currently active tab) in the current page's URL.
+ * A wrapper for TabbedSections that persists view state (the currently active tab) in the current
+ * page's URL.
  *
- * URL whose fragment (hash) ends with "$x" are considered to have active tab "x" (where "x" is the tab's ID).
+ * URL whose fragment (hash) ends with "$x" are considered to have active tab "x" (where "x" is the
+ * tab's ID).
  */
-export class TabsWithURLViewStatePersistence<ID extends string, T extends Tab<ID>> extends React.PureComponent<
-    TabsWithURLViewStatePersistenceProps<ID, T>,
-    { activeTab: ID | undefined }
-> {
-    constructor(props: TabsWithURLViewStatePersistenceProps<ID, T>) {
+export class TabbedSectionsWithURLViewStatePersistence<
+    ID extends string,
+    T extends Tab<ID>
+> extends React.PureComponent<TabbedSectionsWithURLViewStatePersistenceProps<ID, T>, { activeTab: ID | undefined }> {
+    constructor(props: TabbedSectionsWithURLViewStatePersistenceProps<ID, T>) {
         super(props)
         this.state = {
-            activeTab: TabsWithURLViewStatePersistence.readFromURL(props.location, props.tabs),
+            activeTab: TabbedSectionsWithURLViewStatePersistence.readFromURL(props.location, props.tabs),
         }
     }
 
@@ -282,24 +291,24 @@ export class TabsWithURLViewStatePersistence<ID extends string, T extends Tab<ID
         return tabs[0].id // default
     }
 
-    public componentDidUpdate(prevProps: TabsWithURLViewStatePersistenceProps<ID, T>): void {
+    public componentDidUpdate(prevProps: TabbedSectionsWithURLViewStatePersistenceProps<ID, T>): void {
         if (prevProps.location !== this.props.location || prevProps.tabs !== this.props.tabs) {
             // eslint-disable-next-line react/no-did-update-set-state
             this.setState({
-                activeTab: TabsWithURLViewStatePersistence.readFromURL(this.props.location, this.props.tabs),
+                activeTab: TabbedSectionsWithURLViewStatePersistence.readFromURL(this.props.location, this.props.tabs),
             })
         }
     }
 
     public render(): JSX.Element | null {
-        return <Tabs {...this.props} activeTab={this.state.activeTab} tabComponent={this.renderTab} />
+        return <TabbedSections {...this.props} activeTab={this.state.activeTab} tabComponent={this.renderTab} />
     }
 
     private renderTab = ({ tab, className }: { tab: T; className: string }): JSX.Element => (
         /* eslint-disable react/jsx-no-bind */
         <Link
             className={className}
-            to={TabsWithURLViewStatePersistence.urlForTabID(this.props.location, tab.id)}
+            to={TabbedSectionsWithURLViewStatePersistence.urlForTabID(this.props.location, tab.id)}
             onClick={() => {
                 if (this.props.onSelectTab) {
                     this.props.onSelectTab(tab.id)

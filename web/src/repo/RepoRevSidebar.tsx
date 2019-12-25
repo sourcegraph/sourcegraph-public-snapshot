@@ -9,8 +9,8 @@ import {
     Spacer,
     Tab,
     TabBorderClassName,
-    TabsWithLocalStorageViewStatePersistence,
-} from '../../../shared/src/components/Tabs'
+    TabbedSectionsWithLocalStorageViewStatePersistence,
+} from '../../../shared/src/components/sections/tabbed/TabbedSections'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { AbsoluteRepoFile } from '../../../shared/src/util/url'
@@ -90,7 +90,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                 storageKey={STORAGE_KEY}
                 defaultSize={256 /* px */}
                 element={
-                    <TabsWithLocalStorageViewStatePersistence
+                    <TabbedSectionsWithLocalStorageViewStatePersistence
                         tabs={RepoRevSidebar.TABS}
                         storageKey={RepoRevSidebar.LAST_TAB_STORAGE_KEY}
                         tabBarEndFragment={
@@ -133,7 +133,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                             history={this.props.history}
                             location={this.props.location}
                         />
-                    </TabsWithLocalStorageViewStatePersistence>
+                    </TabbedSectionsWithLocalStorageViewStatePersistence>
                 }
             />
         )

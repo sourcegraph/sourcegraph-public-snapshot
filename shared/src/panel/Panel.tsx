@@ -10,7 +10,7 @@ import { ActionsNavItems } from '../actions/ActionsNavItems'
 import { ActivationProps } from '../components/activation/Activation'
 import { FetchFileCtx } from '../components/CodeExcerpt'
 import { Resizable } from '../components/Resizable'
-import { Spacer, Tab, TabsWithURLViewStatePersistence } from '../components/Tabs'
+import { Spacer, Tab, TabbedSectionsWithURLViewStatePersistence } from '../components/sections/tabbed/TabbedSections'
 import { PlatformContextProps } from '../platform/context'
 import { SettingsCascadeProps } from '../settings/settings'
 import { TelemetryProps } from '../telemetry/telemetryService'
@@ -97,13 +97,13 @@ export class Panel extends React.PureComponent<Props, State> {
             : []
 
         const hasTabs = items.length > 0
-        const activePanelViewID = TabsWithURLViewStatePersistence.readFromURL(this.props.location, items)
+        const activePanelViewID = TabbedSectionsWithURLViewStatePersistence.readFromURL(this.props.location, items)
         const activePanelView = items.find(item => item.id === activePanelViewID)
 
         return (
             <div className="panel">
                 {hasTabs ? (
-                    <TabsWithURLViewStatePersistence
+                    <TabbedSectionsWithURLViewStatePersistence
                         tabs={items}
                         tabBarEndFragment={
                             <>
@@ -144,7 +144,7 @@ export class Panel extends React.PureComponent<Props, State> {
                         location={this.props.location}
                     >
                         {items?.map(({ id, element }) => React.cloneElement(element, { key: id }))}
-                    </TabsWithURLViewStatePersistence>
+                    </TabbedSectionsWithURLViewStatePersistence>
                 ) : (
                     <EmptyPanelView />
                 )}
@@ -153,7 +153,7 @@ export class Panel extends React.PureComponent<Props, State> {
     }
 
     private onDismiss = (): void =>
-        this.props.history.push(TabsWithURLViewStatePersistence.urlForTabID(this.props.location, null))
+        this.props.history.push(TabbedSectionsWithURLViewStatePersistence.urlForTabID(this.props.location, null))
 }
 
 function byPriority(a: { priority: number }, b: { priority: number }): number {

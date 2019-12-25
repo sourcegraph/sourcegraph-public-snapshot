@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { CircleChevronLeftIcon } from '../../../shared/src/components/icons'
-import { TabsWithLocalStorageViewStatePersistence } from '../../../shared/src/components/Tabs'
+import { TabbedSectionsWithLocalStorageViewStatePersistence } from '../../../shared/src/components/sections/tabbed/TabbedSections'
 import { gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../shared/src/util/errors'
@@ -187,7 +187,7 @@ export class RevisionsPopover extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         return (
             <div className="revisions-popover connection-popover">
-                <TabsWithLocalStorageViewStatePersistence
+                <TabbedSectionsWithLocalStorageViewStatePersistence
                     tabs={RevisionsPopover.TABS}
                     storageKey={RevisionsPopover.LAST_TAB_STORAGE_KEY}
                     className="revisions-popover__tabs"
@@ -243,7 +243,7 @@ export class RevisionsPopover extends React.PureComponent<Props> {
                             />
                         )
                     )}
-                </TabsWithLocalStorageViewStatePersistence>
+                </TabbedSectionsWithLocalStorageViewStatePersistence>
             </div>
         )
     }

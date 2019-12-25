@@ -2,7 +2,7 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
-import { Tab, TabsWithLocalStorageViewStatePersistence } from '../../../shared/src/components/Tabs'
+import { Tab, TabbedSectionsWithLocalStorageViewStatePersistence } from '../../../shared/src/components/sections/tabbed/TabbedSections'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
@@ -293,7 +293,7 @@ export class SiteAdminSurveyResponsesPage extends React.Component<Props, State> 
 
                 <h3>Responses</h3>
 
-                <TabsWithLocalStorageViewStatePersistence
+                <TabbedSectionsWithLocalStorageViewStatePersistence
                     tabs={SiteAdminSurveyResponsesPage.TABS}
                     storageKey={SiteAdminSurveyResponsesPage.LAST_TAB_STORAGE_KEY}
                     tabClassName="tab-bar__tab--h5like"
@@ -323,7 +323,7 @@ export class SiteAdminSurveyResponsesPage extends React.Component<Props, State> 
                         history={this.props.history}
                         location={this.props.location}
                     />
-                </TabsWithLocalStorageViewStatePersistence>
+                </TabbedSectionsWithLocalStorageViewStatePersistence>
             </div>
         )
     }

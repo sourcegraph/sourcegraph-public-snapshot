@@ -1,8 +1,8 @@
 import React, { useMemo, useCallback } from 'react'
+import { TabbedSectionsWithLocalStorageViewStatePersistence } from '../../../../../shared/src/components/sections/tabbed/TabbedSections'
 import H from 'history'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { ThemeProps } from '../../../../../shared/src/theme'
-import { TabsWithLocalStorageViewStatePersistence } from '../../../../../shared/src/components/Tabs'
 import { CampaignDiffs } from './diffs/CampaignDiffs'
 import { CampaignChangesets } from './changesets/CampaignChangesets'
 import { queryChangesets, queryChangesetPlans } from './backend'
@@ -62,7 +62,7 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
     const totalDeletions = useMemo(() => sumDiffStat(changesets, 'deleted'), [changesets])
 
     return (
-        <TabsWithLocalStorageViewStatePersistence
+        <TabbedSectionsWithLocalStorageViewStatePersistence
             storageKey="campaignTab"
             className={className}
             tabs={[
@@ -111,6 +111,6 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
                 className="mt-3"
                 isLightTheme={isLightTheme}
             />
-        </TabsWithLocalStorageViewStatePersistence>
+        </TabbedSectionsWithLocalStorageViewStatePersistence>
     )
 }
