@@ -12,7 +12,7 @@ Putting together a comprehensive GraphQL search query can be difficult. For this
 export SRC_ENDPOINT=https://sourcegraph.com
 export SRC_ACCESS_TOKEN=secret
 
-src search -json 'repogroup:sample error'
+src search -json 'repo:pallets/flask error'
 ```
 
 You can then consume the JSON output directly, add `--get-curl` to get a `curl` execution line, and more. See [the `src` CLI tool](https://github.com/sourcegraph/src-cli) for more details.
