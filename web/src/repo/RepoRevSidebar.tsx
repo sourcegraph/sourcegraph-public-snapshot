@@ -6,6 +6,7 @@ import { filter } from 'rxjs/operators'
 import { FormatListBulletedIcon } from '../../../shared/src/components/icons'
 import { Resizable } from '../../../shared/src/components/Resizable'
 import {
+    Spacer,
     TabBorderClassName,
     TabbedSectionsWithLocalStorageViewStatePersistence,
 } from '../../../shared/src/components/sections/tabbed/TabbedSections'
@@ -16,7 +17,6 @@ import { eventLogger } from '../tracking/eventLogger'
 import { Tree } from '../tree/Tree'
 import { RepoRevSidebarSymbols } from './RepoRevSidebarSymbols'
 import { Section } from '../../../shared/src/components/sections/Sections'
-import { Spacer } from '../../../shared/src/components/sections/tabbed/TabbedSectionsNavbar'
 
 type SidebarTabID = 'files' | 'symbols' | 'history'
 
@@ -99,7 +99,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                                 <button
                                     type="button"
                                     onClick={this.onSidebarToggle}
-                                    className={`btn btn-icon tabbed-sections-navbar__close-button ${TabBorderClassName}`}
+                                    className={`btn btn-icon tabbed-sections__navbar-close-button ${TabBorderClassName}`}
                                     title="Close sidebar (Alt+S/Opt+S)"
                                 >
                                     <CloseIcon className="icon-inline" />
@@ -110,7 +110,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                         className={`repo-rev-sidebar ${this.props.className} ${
                             this.state.showSidebar ? `repo-rev-sidebar--open ${this.props.className}--open` : ''
                         } e2e-repo-rev-sidebar`}
-                        navbarItemClassName="tabbed-sections-navbar__tab--h5like"
+                        navbarItemClassName="tabbed-sections__navbar-tab--h5like"
                         onSelectNavbarItem={this.onSelectTab}
                     >
                         <Tree

@@ -28,11 +28,6 @@ export interface SectionsProps<ID extends string, T extends Section<ID>> {
     /** The currently visible section(s). */
     visibleSections: readonly ID[] | undefined
 
-    /**
-     * The component used to render a section's navbar item.
-     */
-    navbarItemComponent: React.ComponentType<{ section: T; className: string }>
-
     children: React.ReactFragment
 
     id?: string
@@ -44,7 +39,7 @@ export interface SectionsProps<ID extends string, T extends Section<ID>> {
  * Properties for Sections components that provide their own state persistence.
  */
 export interface SectionsWithPersistenceProps<ID extends string, T extends Section<ID>>
-    extends Omit<SectionsProps<ID, T>, 'visibleSections' | 'navbarItemComponent'> {
+    extends Omit<SectionsProps<ID, T>, 'visibleSections'> {
     /** Optional handler when a navbar item is selected. */
     onSelectNavbarItem?: (section: ID) => void
 }

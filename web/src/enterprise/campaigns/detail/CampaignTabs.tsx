@@ -65,7 +65,7 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
         <TabbedSectionsWithLocalStorageViewStatePersistence
             storageKey="campaignTab"
             className={className}
-            tabs={[
+            sections={[
                 {
                     id: 'diff',
                     label: (
@@ -88,7 +88,7 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
                     ),
                 },
             ]}
-            tabClassName="tab-bar__tab--h5like"
+            navbarItemClassName="tabbed-sections__navbar-tab--h5like"
         >
             <CampaignChangesets
                 key="changesets"

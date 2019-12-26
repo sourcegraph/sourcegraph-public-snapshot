@@ -297,7 +297,7 @@ export class SiteAdminSurveyResponsesPage extends React.Component<Props, State> 
                 <TabbedSectionsWithLocalStorageViewStatePersistence
                     sections={SiteAdminSurveyResponsesPage.TABS}
                     storageKey={SiteAdminSurveyResponsesPage.LAST_TAB_STORAGE_KEY}
-                    navbarItemClassName="tabbed-sections-navbar__tab--h5like"
+                    navbarItemClassName="tabbed-sections__navbar-tab--h5like"
                 >
                     <FilteredSurveyResponseConnection
                         key="chronological"

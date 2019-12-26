@@ -10,10 +10,10 @@ import { COMMENT_URI_SCHEME } from '../../../../../shared/src/api/client/types/t
 import { EditorTextField } from '../../../../../shared/src/components/editorTextField/EditorTextField'
 import { Markdown } from '../../../../../shared/src/components/Markdown'
 import {
+    Spacer,
     TabbedSectionsWithLocalStorageViewStatePersistence,
     TabBorderClassName,
 } from '../../../../../shared/src/components/sections/tabbed/TabbedSections'
-import { Spacer } from '../../../../../shared/src/components/sections/tabbed/TabbedSectionsNavbar'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { asError } from '../../../../../shared/src/util/errors'
 import { ErrorAlert } from '../../../components/alerts'
@@ -287,7 +287,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                             <small className={TabBorderClassName}>Markdown supported.</small>
                         </>
                     }
-                    navbarItemClassName="tabbed-sections-navbar__tab--h5like"
+                    navbarItemClassName="tabbed-sections__navbar-tab--h5like"
                     onSelectNavbarItem={this.nextTabChange}
                 >
                     <div key="write">

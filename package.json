@@ -254,6 +254,7 @@
     "react-router-dom": "^5.1.2",
     "react-stripe-elements": "^6.0.1",
     "react-textarea-autosize": "^7.1.2",
+    "react-use-localstorage": "^3.4.1",
     "react-visibility-sensor": "^5.1.1",
     "reactstrap": "^8.2.0",
     "recharts": "^1.8.5",

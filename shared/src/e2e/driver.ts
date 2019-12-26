@@ -353,7 +353,7 @@ export class Driver {
     public async assertNonemptyLocalRefs(): Promise<void> {
         // verify active group is references
         await this.page.waitForXPath(
-            "//*[contains(@class, 'panel__tabs')]//*[contains(@class, 'tabbed-sections-navbar__tab--active') and contains(text(), 'References')]"
+            "//*[contains(@class, 'panel__tabs')]//*[contains(@class, 'tabbed-sections__navbar-tab--active') and contains(text(), 'References')]"
         )
         // verify there are some references
         await this.page.waitForSelector('.panel__tabs-content .file-match-children__item', { visible: true })
@@ -362,7 +362,7 @@ export class Driver {
     public async assertNonemptyExternalRefs(): Promise<void> {
         // verify active group is references
         await this.page.waitForXPath(
-            "//*[contains(@class, 'panel__tabs')]//*[contains(@class, 'tabbed-sections-navbar__tab--active') and contains(text(), 'References')]"
+            "//*[contains(@class, 'panel__tabs')]//*[contains(@class, 'tabbed-sections__navbar-tab--active') and contains(text(), 'References')]"
         )
         // verify there are some references
         await this.page.waitForSelector('.panel__tabs-content .hierarchical-locations-view__item', { visible: true })

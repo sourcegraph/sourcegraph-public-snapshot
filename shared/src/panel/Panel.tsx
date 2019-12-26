@@ -10,8 +10,12 @@ import { ActivationProps } from '../components/activation/Activation'
 import { FetchFileCtx } from '../components/CodeExcerpt'
 import { Resizable } from '../components/Resizable'
 import { Section } from '../components/sections/Sections'
-import { TabbedSectionsWithURLViewStatePersistence } from '../components/sections/tabbed/TabbedSections'
-import { Spacer } from '../components/sections/tabbed/TabbedSectionsNavbar'
+import {
+    TabbedSectionsWithURLViewStatePersistence,
+    Spacer,
+    currentSectionForTabbedSectionsWithURLViewStatePersistence,
+    urlForSectionForTabbedSectionsWithURLViewStatePersistence,
+} from '../components/sections/tabbed/TabbedSections'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 import { SettingsCascadeProps } from '../settings/settings'
@@ -99,7 +103,7 @@ export class Panel extends React.PureComponent<Props, State> {
             : []
 
         const hasTabs = items.length > 0
-        const activePanelViewID = TabbedSectionsWithURLViewStatePersistence.readFromURL(this.props.location, items)
+        const activePanelViewID = currentSectionForTabbedSectionsWithURLViewStatePersistence(items, this.props.location)
         const activePanelView = items.find(item => item.id === activePanelViewID)
 
         return (
@@ -113,7 +117,7 @@ export class Panel extends React.PureComponent<Props, State> {
                                 <button
                                     type="button"
                                     onClick={this.onDismiss}
-                                    className="btn btn-icon tabbed-sections-navbar__close-button tabbed-sections-navbar__end-fragment-other-element"
+                                    className="btn btn-icon tabbed-sections__navbar-close-button tabbed-sections__navbar-end-fragment-other-element"
                                     data-tooltip="Close"
                                 >
                                     <CloseIcon className="icon-inline" />
@@ -142,7 +146,7 @@ export class Panel extends React.PureComponent<Props, State> {
                             />
                         }
                         className="panel__tabs"
-                        navbarItemClassName="tabbed-sections-navbar__tab--h5like"
+                        navbarItemClassName="tabbed-sections__navbar-tab--h5like"
                         location={this.props.location}
                     >
                         {items?.map(({ id, element }) => React.cloneElement(element, { key: id }))}
@@ -155,7 +159,7 @@ export class Panel extends React.PureComponent<Props, State> {
     }
 
     private onDismiss = (): void =>
-        this.props.history.push(TabbedSectionsWithURLViewStatePersistence.urlForSectionID(this.props.location, null))
+        this.props.history.push(urlForSectionForTabbedSectionsWithURLViewStatePersistence(null, this.props.location))
 }
 
 function byPriority(a: { priority: number }, b: { priority: number }): number {
