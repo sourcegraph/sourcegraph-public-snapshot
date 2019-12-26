@@ -5,7 +5,7 @@ import { QueryBuilderInputRow } from './QueryBuilderInputRow'
 import { PatternTypeProps } from '..'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 
- export interface QueryBuilderProps extends Pick<PatternTypeProps, 'patternType'> {
+export interface QueryBuilderProps extends Pick<PatternTypeProps, 'patternType'> {
     /**
      * Called when there is a change to the query synthesized from this
      * component's fields.

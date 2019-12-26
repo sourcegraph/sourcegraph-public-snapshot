@@ -22,7 +22,7 @@ import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcut
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SearchModeToggle } from './interactive/SearchModeToggle'
-import { QueryBuilderExpandCollapseLink } from '../queryBuilder/QueryBuilderExpandCollapseButton'
+import { Link } from '../../../../shared/src/components/Link'
 
 interface Props
     extends SettingsCascadeProps,
@@ -124,6 +124,11 @@ export class SearchPage extends React.Component<Props, State> {
                                         <SearchButton />
                                     </div>
                                     <div className="search-page__input-sub-container">
+                                        {!this.props.splitSearchModes && (
+                                            <Link className="btn btn-link btn-sm pl-0" to="/search/query-builder">
+                                                Query builder
+                                            </Link>
+                                        )}
                                         <SearchScopes
                                             history={this.props.history}
                                             query={this.state.userQueryState.query}
@@ -133,12 +138,6 @@ export class SearchPage extends React.Component<Props, State> {
                                         />
                                     </div>
                                     <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />
-                                    <QueryBuilderExpandCollapseLink
-                                        onFieldsQueryChange={this.onBuilderQueryChange}
-                                        isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                        patternType={this.props.patternType}
-                                        buttonClassName="pl-0"
-                                    />
                                     <Notices
                                         className="my-3"
                                         location="home"
@@ -155,10 +154,6 @@ export class SearchPage extends React.Component<Props, State> {
 
     private onUserQueryChange = (userQueryState: QueryState): void => {
         this.setState({ userQueryState })
-    }
-
-    private onBuilderQueryChange = (builderQuery: string): void => {
-        this.setState({ builderQuery })
     }
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {

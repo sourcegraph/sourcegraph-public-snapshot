@@ -116,7 +116,8 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const needsSiteInit = window.context.showOnboarding
     const isSiteInit = props.location.pathname === '/site-admin/init'
 
-    const hideGlobalSearchInput: GlobalNavbar['props']['hideGlobalSearchInput'] = props.location.pathname === '/stats'
+    const hideGlobalSearchInput: GlobalNavbar['props']['hideGlobalSearchInput'] =
+        props.location.pathname === '/stats' || props.location.pathname === '/search/query-builder'
 
     useScrollToLocationHash(props.location)
     // Remove trailing slash (which is never valid in any of our URLs).

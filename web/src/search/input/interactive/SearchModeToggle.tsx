@@ -2,6 +2,7 @@ import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap
 import CursorTextIcon from 'mdi-react/CursorTextIcon'
 import ViewQuiltIcon from 'mdi-react/ViewQuiltIcon'
 import React, { useState, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 
 interface Props {
     interactiveSearchMode: boolean
@@ -40,6 +41,9 @@ export const SearchModeToggle: React.FunctionComponent<Props> = props => {
                     className="e2e-search-mode-toggle__omni-mode"
                 >
                     Omni mode
+                </DropdownItem>
+                <DropdownItem tag={Link} to="/search/query-builder">
+                    Query builder&hellip;
                 </DropdownItem>
             </DropdownMenu>
         </Dropdown>

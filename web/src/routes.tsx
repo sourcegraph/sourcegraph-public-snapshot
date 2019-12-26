@@ -59,6 +59,11 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         exact: true,
     },
     {
+        path: '/search/query-builder',
+        render: lazyComponent(() => import('./search/queryBuilder/QueryBuilderPage'), 'QueryBuilderPage'),
+        exact: true,
+    },
+    {
         path: '/sign-in',
         render: lazyComponent(() => import('./auth/SignInPage'), 'SignInPage'),
         exact: true,

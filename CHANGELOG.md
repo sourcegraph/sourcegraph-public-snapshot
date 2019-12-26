@@ -21,6 +21,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - The "Files" tab in the search results page has been renamed to "Filenames" for clarity.
+- The search query builder now lives on its own page at `/search/query-builder`. The home search page has a link to it.
 
 ### Fixed
 
