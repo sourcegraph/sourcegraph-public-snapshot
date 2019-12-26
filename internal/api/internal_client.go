@@ -318,8 +318,8 @@ func (c *internalClient) ExternalServicesList(ctx context.Context, opts External
 	return extsvcs, c.postInternal(ctx, "external-services/list", &opts, &extsvcs)
 }
 
-func (c *internalClient) LogTelemetry(ctx context.Context, env string, reqBody interface{}) error {
-	return c.postInternal(ctx, "telemetry/log/v1/"+env, reqBody, nil)
+func (c *internalClient) LogTelemetry(ctx context.Context, reqBody interface{}) error {
+	return c.postInternal(ctx, "telemetry", reqBody, nil)
 }
 
 // postInternal sends an HTTP post request to the internal route.
