@@ -1,6 +1,6 @@
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import * as React from 'react'
-import { InfoDropdown } from './InfoDropdown'
+import { InfoDropdown } from '../input/InfoDropdown'
 import { QueryBuilderInputRow } from './QueryBuilderInputRow'
 import { PatternTypeProps } from '..'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'

@@ -3,7 +3,7 @@ import React from 'react'
 import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { renderMarkdown } from '../../../../shared/src/util/markdown'
 import { pluralize } from '../../../../shared/src/util/strings'
-import { QueryFieldExamples } from './QueryBuilderInputRow'
+import { QueryFieldExamples } from '../queryBuilder/QueryBuilderInputRow'
 
 interface Props {
     title: string
