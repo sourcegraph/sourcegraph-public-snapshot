@@ -5,7 +5,7 @@ import { QueryBuilderInputRow } from './QueryBuilderInputRow'
 import { PatternTypeProps } from '..'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 
-interface Props extends Omit<PatternTypeProps, 'setPatternType'> {
+ export interface QueryBuilderProps extends Pick<PatternTypeProps, 'patternType'> {
     /**
      * Called when there is a change to the query synthesized from this
      * component's fields.
@@ -31,7 +31,6 @@ interface QueryFields {
 }
 
 export interface QueryBuilderState {
-    showQueryBuilder: boolean
     /**
      * The query constructed from the values in the input fields.
      */
@@ -40,15 +39,13 @@ export interface QueryBuilderState {
     fields: QueryFields
 }
 
-const QUERY_BUILDER_KEY = 'query-builder-open'
 /**
  * The individual input fields for the various elements of the search query syntax.
  */
-export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
-    constructor(props: Props) {
+export class QueryBuilder extends React.Component<QueryBuilderProps, QueryBuilderState> {
+    constructor(props: QueryBuilderProps) {
         super(props)
         this.state = {
-            showQueryBuilder: localStorage.getItem(QUERY_BUILDER_KEY) === 'true',
             builderQuery: '',
             typeOfSearch: 'code',
             fields: {
@@ -134,257 +131,240 @@ export class QueryBuilder extends React.Component<Props, QueryBuilderState> {
     public render(): JSX.Element | null {
         const docsURLPrefix = this.props.isSourcegraphDotCom ? 'https://docs.sourcegraph.com' : '/help'
         return (
-            <>
-                <div className="query-builder__toggle">
-                    <a href="" onClick={this.toggleShowQueryBuilder} data-testid="test-query-builder-toggle">
-                        {this.state.showQueryBuilder ? 'Hide' : 'Use'} search query builder
+            <div className="query-builder">
+                <div className="query-builder__header">
+                    <h3 className="query-builder__header-input">Match:</h3>
+                </div>
+                <div className="query-builder__section query-builder__section--blue">
+                    <div className="query-builder__row">
+                        <label className="query-builder__row-label" htmlFor="query-builder__type">
+                            Type:
+                        </label>
+                        <div className="query-builder__row-input">
+                            <select
+                                id="query-builder__type"
+                                className="form-control query-builder__input"
+                                onChange={this.onTypeChange}
+                                value={this.state.typeOfSearch}
+                            >
+                                <option value="code" defaultChecked={true}>
+                                    Code (default)
+                                </option>
+                                <option value="diff">Commit diffs</option>
+                                <option value="commit">Commit messages</option>
+                                <option value="symbol">Symbols</option>
+                            </select>
+                        </div>
+                        <InfoDropdown
+                            title="Type"
+                            markdown="Search code (file contents), diffs (added/changed/removed lines in commits), commit messages, or symbols."
+                        />
+                    </div>
+                    {(this.state.typeOfSearch === 'commit' || this.state.typeOfSearch === 'diff') && (
+                        <>
+                            <QueryBuilderInputRow
+                                onInputChange={this.fieldsChanged}
+                                placeholder="alice"
+                                title="Author"
+                                description='Only include commits whose author matches. Your query is matched against a string of the form "Author Name <name@example.com>".'
+                                isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                                shortName="author"
+                                examples={[
+                                    { description: 'Search for commits authored by alice', value: 'alice' },
+                                    {
+                                        description: 'Search for commits by author email domain',
+                                        value: '@example.com',
+                                    },
+                                ]}
+                            />
+                            <QueryBuilderInputRow
+                                onInputChange={this.fieldsChanged}
+                                placeholder="1 year ago"
+                                title="Before"
+                                description="Only include commits made before a specified date."
+                                isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                                shortName="before"
+                                examples={[
+                                    {
+                                        description: 'Search for commits older than 3 months',
+                                        value: '3 months ago',
+                                    },
+                                    {
+                                        description: 'Search for commits before a specific date',
+                                        value: '2019 Feb 20',
+                                    },
+                                ]}
+                            />
+                            <QueryBuilderInputRow
+                                onInputChange={this.fieldsChanged}
+                                placeholder="6 months ago"
+                                title="After"
+                                description="Only include commits made after a specified date."
+                                isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                                shortName="after"
+                                examples={[
+                                    {
+                                        description: 'Search for commits less than 5 days old',
+                                        value: '5 days ago',
+                                    },
+                                    {
+                                        description: 'Search for commits after a specific date',
+                                        value: '2019 Feb 20',
+                                    },
+                                ]}
+                            />
+                            <QueryBuilderInputRow
+                                onInputChange={this.fieldsChanged}
+                                placeholder="fix: typo"
+                                title="Message"
+                                description="Only include commits whose commit message matches."
+                                isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                                shortName="message"
+                                examples={[
+                                    {
+                                        description: 'Search for commits whose message includes "fix: typo"',
+                                        value: 'fix: typo',
+                                    },
+                                    {
+                                        description: 'Search for commits whose message includes "middleware"',
+                                        value: 'middleware',
+                                    },
+                                ]}
+                            />
+                        </>
+                    )}
+                    <hr className="my-3" />
+                    <QueryBuilderInputRow
+                        onInputChange={this.fieldsChanged}
+                        placeholder="(read|write)File"
+                        title="Patterns"
+                        isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                        shortName="patterns"
+                        description="Match lines against this regexp. Supports full regular expressions (using the standard [RE2 syntax](https://github.com/google/re2/wiki/Syntax)). A space matches anything until the next query term; use `\s` to match only whitespace."
+                        examples={[
+                            {
+                                description: 'Search for `readFile` or `writeFile`',
+                                value: '(read|write)File',
+                            },
+                            {
+                                description: 'Search for lines that start with `package` and end with `test`',
+                                value: '^package test$',
+                            },
+                            {
+                                description:
+                                    'Search for the standalone word `set` (using the regexp special character \\b for word boundary)',
+                                value: '\\bset\\b',
+                            },
+                        ]}
+                    />
+                    <QueryBuilderInputRow
+                        onInputChange={this.fieldsChanged}
+                        placeholder="open("
+                        title="Exact string"
+                        isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                        shortName="exactMatch"
+                        description="Match lines containing this exact string. Punctuation and special characters will be matched literally."
+                        examples={[{ description: 'Search for `open(`', value: 'open(' }]}
+                    />
+                    <div className="query-builder__row">
+                        <label className="query-builder__row-label" htmlFor="query-builder-case">
+                            Case sensitive:
+                        </label>
+                        <div className="query-builder__row-input">
+                            <select
+                                id="query-builder-case"
+                                className="form-control query-builder__input"
+                                onChange={this.onCaseChange}
+                            >
+                                <option value="no" defaultChecked={true}>
+                                    No
+                                </option>
+                                <option value="yes">Yes</option>
+                            </select>
+                        </div>
+                        <InfoDropdown
+                            title="Case sensitive"
+                            markdown="Perform a case sensitive query. Matches are case insensitive by default."
+                        />
+                    </div>
+                </div>
+                <div className="query-builder__header">
+                    <h3 className="query-builder__header-input">Search scope:</h3>
+                </div>
+                <div className="query-builder__section query-builder__section--purple">
+                    <QueryBuilderInputRow
+                        onInputChange={this.fieldsChanged}
+                        placeholder="myorg/myrepo"
+                        dotComPlaceholder="github.com/myorg/"
+                        title="Repositories"
+                        isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                        shortName="repo"
+                        description={`Specify the repositories to search in. ${
+                            this.props.isSourcegraphDotCom ? '' : 'By default, all repositories are searched.'
+                        } Supports regexp. To exclude repositories, use the \`-repo:\` keyword in the main search bar.\n\nAdd \`@mybranch\` to the end to search a non-default branch (or any other Git revspec).`}
+                        examples={[
+                            {
+                                description: 'Search in repositories named `gorilla/mux` or `gorilla/pat`',
+                                value: 'gorilla/(mux|pat)$',
+                            },
+                            {
+                                description: 'Search in all repositories in a GitHub organization',
+                                value: 'github.com/kubernetes/',
+                            },
+                            {
+                                description: 'Search in a GitHub repository on a specific branch (other than master)',
+                                value: 'github.com/kubernetes/kubernetes@release-0.4',
+                            },
+                        ]}
+                    />
+                    <QueryBuilderInputRow
+                        onInputChange={this.fieldsChanged}
+                        placeholder="docs/"
+                        title="File paths"
+                        isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                        shortName="file"
+                        description="Only include results from matching file paths. Supports regexp. To exclude files, use the `-file:` keyword in the main search bar."
+                        examples={[
+                            {
+                                description: 'Search in files whose full path contains `internal`',
+                                value: 'internal',
+                            },
+                            {
+                                description: 'Search in the top-level directory `docs`',
+                                value: '^docs/',
+                            },
+                        ]}
+                    />
+                    <QueryBuilderInputRow
+                        onInputChange={this.fieldsChanged}
+                        placeholder="typescript"
+                        title="Language"
+                        isSourcegraphDotCom={this.props.isSourcegraphDotCom}
+                        shortName="language"
+                        description="Only include results from files in the specified programming language. To exclude languages, use the \`-lang:\` keyword in the main search bar."
+                        examples={[
+                            {
+                                description: 'Search in JavaScript files',
+                                value: 'javascript',
+                            },
+                            {
+                                description: 'Search in Go files',
+                                value: 'go',
+                            },
+                            {
+                                description: 'Search in Markdown documents',
+                                value: 'markdown',
+                            },
+                        ]}
+                    />
+                </div>
+                <div className="query-builder__docs-link">
+                    <a target="blank" href={`${docsURLPrefix}/user/search/queries`}>
+                        View all search options in docs <ExternalLinkIcon className="icon-inline small" />
                     </a>
                 </div>
-
-                {this.state.showQueryBuilder && (
-                    <div className="query-builder">
-                        <div className="query-builder__header">
-                            <h3 className="query-builder__header-input">Match:</h3>
-                        </div>
-                        <div className="query-builder__section query-builder__section--blue">
-                            <div className="query-builder__row">
-                                <label className="query-builder__row-label" htmlFor="query-builder__type">
-                                    Type:
-                                </label>
-                                <div className="query-builder__row-input">
-                                    <select
-                                        id="query-builder__type"
-                                        className="form-control query-builder__input"
-                                        onChange={this.onTypeChange}
-                                        value={this.state.typeOfSearch}
-                                    >
-                                        <option value="code" defaultChecked={true}>
-                                            Code (default)
-                                        </option>
-                                        <option value="diff">Commit diffs</option>
-                                        <option value="commit">Commit messages</option>
-                                        <option value="symbol">Symbols</option>
-                                    </select>
-                                </div>
-                                <InfoDropdown
-                                    title="Type"
-                                    markdown="Search code (file contents), diffs (added/changed/removed lines in commits), commit messages, or symbols."
-                                />
-                            </div>
-                            {(this.state.typeOfSearch === 'commit' || this.state.typeOfSearch === 'diff') && (
-                                <>
-                                    <QueryBuilderInputRow
-                                        onInputChange={this.fieldsChanged}
-                                        placeholder="alice"
-                                        title="Author"
-                                        description='Only include commits whose author matches. Your query is matched against a string of the form "Author Name <name@example.com>".'
-                                        isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                                        shortName="author"
-                                        examples={[
-                                            { description: 'Search for commits authored by alice', value: 'alice' },
-                                            {
-                                                description: 'Search for commits by author email domain',
-                                                value: '@example.com',
-                                            },
-                                        ]}
-                                    />
-                                    <QueryBuilderInputRow
-                                        onInputChange={this.fieldsChanged}
-                                        placeholder="1 year ago"
-                                        title="Before"
-                                        description="Only include commits made before a specified date."
-                                        isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                                        shortName="before"
-                                        examples={[
-                                            {
-                                                description: 'Search for commits older than 3 months',
-                                                value: '3 months ago',
-                                            },
-                                            {
-                                                description: 'Search for commits before a specific date',
-                                                value: '2019 Feb 20',
-                                            },
-                                        ]}
-                                    />
-                                    <QueryBuilderInputRow
-                                        onInputChange={this.fieldsChanged}
-                                        placeholder="6 months ago"
-                                        title="After"
-                                        description="Only include commits made after a specified date."
-                                        isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                                        shortName="after"
-                                        examples={[
-                                            {
-                                                description: 'Search for commits less than 5 days old',
-                                                value: '5 days ago',
-                                            },
-                                            {
-                                                description: 'Search for commits after a specific date',
-                                                value: '2019 Feb 20',
-                                            },
-                                        ]}
-                                    />
-                                    <QueryBuilderInputRow
-                                        onInputChange={this.fieldsChanged}
-                                        placeholder="fix: typo"
-                                        title="Message"
-                                        description="Only include commits whose commit message matches."
-                                        isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                                        shortName="message"
-                                        examples={[
-                                            {
-                                                description: 'Search for commits whose message includes "fix: typo"',
-                                                value: 'fix: typo',
-                                            },
-                                            {
-                                                description: 'Search for commits whose message includes "middleware"',
-                                                value: 'middleware',
-                                            },
-                                        ]}
-                                    />
-                                </>
-                            )}
-                            <hr className="my-3" />
-                            <QueryBuilderInputRow
-                                onInputChange={this.fieldsChanged}
-                                placeholder="(read|write)File"
-                                title="Patterns"
-                                isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                                shortName="patterns"
-                                description="Match lines against this regexp. Supports full regular expressions (using the standard [RE2 syntax](https://github.com/google/re2/wiki/Syntax)). A space matches anything until the next query term; use `\s` to match only whitespace."
-                                examples={[
-                                    {
-                                        description: 'Search for `readFile` or `writeFile`',
-                                        value: '(read|write)File',
-                                    },
-                                    {
-                                        description: 'Search for lines that start with `package` and end with `test`',
-                                        value: '^package test$',
-                                    },
-                                    {
-                                        description:
-                                            'Search for the standalone word `set` (using the regexp special character \\b for word boundary)',
-                                        value: '\\bset\\b',
-                                    },
-                                ]}
-                            />
-                            <QueryBuilderInputRow
-                                onInputChange={this.fieldsChanged}
-                                placeholder="open("
-                                title="Exact string"
-                                isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                                shortName="exactMatch"
-                                description="Match lines containing this exact string. Punctuation and special characters will be matched literally."
-                                examples={[{ description: 'Search for `open(`', value: 'open(' }]}
-                            />
-                            <div className="query-builder__row">
-                                <label className="query-builder__row-label" htmlFor="query-builder-case">
-                                    Case sensitive:
-                                </label>
-                                <div className="query-builder__row-input">
-                                    <select
-                                        id="query-builder-case"
-                                        className="form-control query-builder__input"
-                                        onChange={this.onCaseChange}
-                                    >
-                                        <option value="no" defaultChecked={true}>
-                                            No
-                                        </option>
-                                        <option value="yes">Yes</option>
-                                    </select>
-                                </div>
-                                <InfoDropdown
-                                    title="Case sensitive"
-                                    markdown="Perform a case sensitive query. Matches are case insensitive by default."
-                                />
-                            </div>
-                        </div>
-                        <div className="query-builder__header">
-                            <h3 className="query-builder__header-input">Search scope:</h3>
-                        </div>
-                        <div className="query-builder__section query-builder__section--purple">
-                            <QueryBuilderInputRow
-                                onInputChange={this.fieldsChanged}
-                                placeholder="myorg/myrepo"
-                                dotComPlaceholder="github.com/myorg/"
-                                title="Repositories"
-                                isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                                shortName="repo"
-                                description={`Specify the repositories to search in. ${
-                                    this.props.isSourcegraphDotCom ? '' : 'By default, all repositories are searched.'
-                                } Supports regexp. To exclude repositories, use the \`-repo:\` keyword in the main search bar.\n\nAdd \`@mybranch\` to the end to search a non-default branch (or any other Git revspec).`}
-                                examples={[
-                                    {
-                                        description: 'Search in repositories named `gorilla/mux` or `gorilla/pat`',
-                                        value: 'gorilla/(mux|pat)$',
-                                    },
-                                    {
-                                        description: 'Search in all repositories in a GitHub organization',
-                                        value: 'github.com/kubernetes/',
-                                    },
-                                    {
-                                        description:
-                                            'Search in a GitHub repository on a specific branch (other than master)',
-                                        value: 'github.com/kubernetes/kubernetes@release-0.4',
-                                    },
-                                ]}
-                            />
-                            <QueryBuilderInputRow
-                                onInputChange={this.fieldsChanged}
-                                placeholder="docs/"
-                                title="File paths"
-                                isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                                shortName="file"
-                                description="Only include results from matching file paths. Supports regexp. To exclude files, use the `-file:` keyword in the main search bar."
-                                examples={[
-                                    {
-                                        description: 'Search in files whose full path contains `internal`',
-                                        value: 'internal',
-                                    },
-                                    {
-                                        description: 'Search in the top-level directory `docs`',
-                                        value: '^docs/',
-                                    },
-                                ]}
-                            />
-                            <QueryBuilderInputRow
-                                onInputChange={this.fieldsChanged}
-                                placeholder="typescript"
-                                title="Language"
-                                isSourcegraphDotCom={this.props.isSourcegraphDotCom}
-                                shortName="language"
-                                description="Only include results from files in the specified programming language. To exclude languages, use the \`-lang:\` keyword in the main search bar."
-                                examples={[
-                                    {
-                                        description: 'Search in JavaScript files',
-                                        value: 'javascript',
-                                    },
-                                    {
-                                        description: 'Search in Go files',
-                                        value: 'go',
-                                    },
-                                    {
-                                        description: 'Search in Markdown documents',
-                                        value: 'markdown',
-                                    },
-                                ]}
-                            />
-                        </div>
-                        <div className="query-builder__docs-link">
-                            <a target="blank" href={`${docsURLPrefix}/user/search/queries`}>
-                                View all search options in docs <ExternalLinkIcon className="icon-inline small" />
-                            </a>
-                        </div>
-                    </div>
-                )}
-            </>
+            </div>
         )
-    }
-
-    private toggleShowQueryBuilder = (e: React.MouseEvent<HTMLAnchorElement>): void => {
-        e.preventDefault()
-        localStorage.setItem(QUERY_BUILDER_KEY, (!this.state.showQueryBuilder).toString())
-        this.setState(prevState => ({ showQueryBuilder: !prevState.showQueryBuilder }))
     }
 
     private onCaseChange = (event: React.ChangeEvent<HTMLSelectElement>): void => {

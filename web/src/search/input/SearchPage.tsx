@@ -14,7 +14,6 @@ import { ThemePreferenceProps } from '../../theme'
 import { limitString } from '../../util'
 import { submitSearch, QueryState } from '../helpers'
 import { QuickLinks } from '../QuickLinks'
-import { QueryBuilder } from '../queryBuilder/QueryBuilder'
 import { QueryInput } from './QueryInput'
 import { SearchButton } from './SearchButton'
 import { SearchScopes } from './SearchScopes'
@@ -23,6 +22,7 @@ import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcut
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SearchModeToggle } from './interactive/SearchModeToggle'
+import { QueryBuilderExpandCollapseLink } from '../queryBuilder/QueryBuilderExpandCollapseButton'
 
 interface Props
     extends SettingsCascadeProps,
@@ -133,10 +133,11 @@ export class SearchPage extends React.Component<Props, State> {
                                         />
                                     </div>
                                     <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />
-                                    <QueryBuilder
+                                    <QueryBuilderExpandCollapseLink
                                         onFieldsQueryChange={this.onBuilderQueryChange}
                                         isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                                         patternType={this.props.patternType}
+                                        buttonClassName="pl-0"
                                     />
                                     <Notices
                                         className="my-3"
