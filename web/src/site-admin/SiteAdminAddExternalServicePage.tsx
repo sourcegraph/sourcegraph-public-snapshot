@@ -12,13 +12,12 @@ import { PageTitle } from '../components/PageTitle'
 import { refreshSiteFlags } from '../site/backend'
 import { ThemeProps } from '../../../shared/src/theme'
 import { ExternalServiceCard } from '../components/ExternalServiceCard'
-import { ExternalServiceVariant, getExternalService } from './externalServices'
 import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
+import { ExternalServiceKindMetadata } from './externalServices'
 
 interface Props extends ThemeProps {
     history: H.History
-    kind: GQL.ExternalServiceKind
-    variant?: ExternalServiceVariant
+    externalService: ExternalServiceKindMetadata
     eventLogger: {
         logViewEvent: (event: 'AddExternalService') => void
         log: (event: 'AddExternalServiceFailed' | 'AddExternalServiceSucceeded', eventProperties?: any) => void
@@ -51,11 +50,10 @@ interface State {
 export class SiteAdminAddExternalServicePage extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
-        const serviceKindMetadata = getExternalService(this.props.kind, this.props.variant)
         this.state = {
             loading: false,
-            displayName: serviceKindMetadata.defaultDisplayName,
-            config: serviceKindMetadata.defaultConfig,
+            displayName: props.externalService.defaultDisplayName,
+            config: props.externalService.defaultConfig,
         }
     }
 
@@ -98,7 +96,6 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
     }
 
     public render(): JSX.Element | null {
-        const kindMetadata = getExternalService(this.props.kind, this.props.variant)
         const createdExternalService = this.state.externalService
         return (
             <div className="add-external-service-page mt-3">
@@ -108,8 +105,7 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                     <div>
                         <div className="mb-3">
                             <ExternalServiceCard
-                                {...kindMetadata}
-                                kind={this.props.kind}
+                                {...this.props.externalService}
                                 title={createdExternalService.displayName}
                                 shortDescription="Update this external service configuration to manage repository mirroring."
                                 to={`/site-admin/external-services/${createdExternalService.id}`}
@@ -123,15 +119,15 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                 ) : (
                     <div>
                         <div className="mb-3">
-                            <ExternalServiceCard {...kindMetadata} kind={this.props.kind} />
+                            <ExternalServiceCard {...this.props.externalService} />
                         </div>
-                        <div className="mb-4">{kindMetadata.longDescription}</div>
+                        <div className="mb-4">{this.props.externalService.longDescription}</div>
                         <SiteAdminExternalServiceForm
                             {...this.props}
                             error={this.state.error}
                             input={this.getExternalServiceInput()}
-                            editorActions={kindMetadata.editorActions}
-                            jsonSchema={kindMetadata.jsonSchema}
+                            editorActions={this.props.externalService.editorActions}
+                            jsonSchema={this.props.externalService.jsonSchema}
                             mode="create"
                             onSubmit={this.onSubmit}
                             onChange={this.onChange}
@@ -147,7 +143,7 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
         return {
             displayName: this.state.displayName,
             config: this.state.config,
-            kind: this.props.kind,
+            kind: this.props.externalService.kind,
         }
     }
 
@@ -166,7 +162,7 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
     }
 }
 
-function addExternalService(
+export function addExternalService(
     input: GQL.IAddExternalServiceInput,
     eventLogger: Pick<Props['eventLogger'], 'log'>
 ): Observable<GQL.IExternalService> {

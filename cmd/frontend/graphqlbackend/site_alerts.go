@@ -61,13 +61,6 @@ func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
 }
 
 func init() {
-	conf.ContributeWarning(func(c conf.Unified) (problems conf.Problems) {
-		if c.ExternalURL == "" {
-			problems = append(problems, conf.NewSiteProblem("`externalURL` is required to be set for many features of Sourcegraph to work correctly."))
-		}
-		return problems
-	})
-
 	// Warn about invalid site configuration.
 	AlertFuncs = append(AlertFuncs, func(args AlertFuncArgs) []*Alert {
 		// 🚨 SECURITY: Only the site admin cares about this. Leaking a boolean wouldn't be a
