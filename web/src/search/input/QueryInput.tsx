@@ -150,6 +150,14 @@ export class QueryInput extends React.Component<Props, State> {
         this.subscriptions.add(this.inputValues.subscribe(queryState => this.props.onChange(queryState)))
 
         if (!this.props.withoutSuggestions) {
+            // Show suggestions on input change.
+            this.subscriptions.add(
+                this.inputValues.subscribe(() => {
+                    if (!this.state.showSuggestions) {
+                        this.setState({ showSuggestions: true })
+                    }
+                })
+            )
             // Trigger suggestions.
             // This is set on componentDidUpdate so the data flow can be easier to manage, making it
             // only depend on props.value updates, and not both from props.value and this.inputValues
@@ -262,10 +270,7 @@ export class QueryInput extends React.Component<Props, State> {
                     )
                     .subscribe(
                         state => {
-                            this.setState({
-                                ...state,
-                                showSuggestions: true,
-                            })
+                            this.setState(state)
                         },
                         err => {
                             console.error(err)
@@ -352,6 +357,7 @@ export class QueryInput extends React.Component<Props, State> {
             !this.props.withoutSuggestions &&
             this.state.showSuggestions &&
             (this.state.suggestions.values.length > 0 || this.state.loadingSuggestions)
+
         // If last typed word is not a filter type,
         // suggestions should show url label and redirect on select.
         const showUrlLabel = isFuzzyWordSearch({
