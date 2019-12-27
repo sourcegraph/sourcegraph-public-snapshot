@@ -1,0 +1,42 @@
+.welcome-page-left {
+    display: flex;
+    align-items: left;
+    justify-content: left;
+    flex-direction: column;
+    flex: 1 1 auto;
+
+    color: $color-light-text-1;
+
+    code {
+        color: #9c0008;
+    }
+
+    ol {
+        line-height: 1.75em;
+    }
+
+    &__back-button {
+        display: inline-block;
+        margin-bottom: 1em;
+    }
+
+    &__content {
+        width: 50%;
+        max-width: 750px;
+        margin-top: 10rem;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    &__add-code-host-content {
+        width: 50%;
+        max-width: 750px;
+        margin-top: 7rem;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    &__content-header {
+        margin-bottom: 1em;
+    }
+}

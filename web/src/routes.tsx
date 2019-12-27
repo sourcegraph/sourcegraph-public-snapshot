@@ -3,6 +3,8 @@ import { Redirect, RouteComponentProps } from 'react-router'
 import { LayoutProps } from './Layout'
 import { parseSearchURLQuery } from './search'
 import { lazyComponent } from './util/lazyComponent'
+import { eventLogger } from './tracking/eventLogger'
+import { WelcomeAddReposPage } from './onboarding/AddReposPage'
 
 const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
 const SearchResults = lazyComponent(() => import('./search/results/SearchResults'), 'SearchResults')
@@ -97,6 +99,16 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         exact: true,
         render: lazyComponent(() => import('./site-admin/SiteInitPage'), 'SiteInitPage'),
         forceNarrowWidth: false,
+    },
+    {
+        path: '/onboard/guide',
+        exact: true,
+        render: lazyComponent(() => import('./onboarding/WelcomePage'), 'WelcomePage3'),
+    },
+    {
+        path: '/onboard/choose-code-host',
+        exact: true,
+        render: (props: any) => <WelcomeAddReposPage {...props} eventLogger={eventLogger} />,
     },
     {
         path: '/site-admin',

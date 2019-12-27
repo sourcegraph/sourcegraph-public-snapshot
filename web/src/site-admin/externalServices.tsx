@@ -1,6 +1,5 @@
 import { Edit, FormattingOptions, JSONPath } from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
-import { flatMap, map } from 'lodash'
 import AmazonIcon from 'mdi-react/AmazonIcon'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
@@ -21,9 +20,12 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { EditorAction } from './configHelpers.js'
 
 /**
- * Metadata associated with a given external service.
+ * Metadata associated with adding a given external service.
+ * TODO: rename to AddExternalServiceOptions
  */
 export interface ExternalServiceKindMetadata {
+    kind: GQL.ExternalServiceKind
+
     /**
      * Title to show in the external service "button"
      */
@@ -37,7 +39,7 @@ export interface ExternalServiceKindMetadata {
     /**
      * A short description that will appear in the external service "button" under the title
      */
-    shortDescription: string
+    shortDescription?: string
 
     /**
      * A long description that will appear on the add / edit page
@@ -68,7 +70,7 @@ export interface ExternalServiceKindMetadata {
 const defaultFormattingOptions: FormattingOptions = {
     eol: '\n',
     insertSpaces: true,
-    tabSize: 2,
+    tabSize: 4,
 }
 
 /**
@@ -100,8 +102,9 @@ const editorActionComments = {
     //    (https://docs.sourcegraph.com/admin/repo/permissions#sudo-access-token).`,
 }
 
-const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
-    title: 'GitHub repositories',
+const GITHUB_DOTCOM: ExternalServiceKindMetadata = {
+    kind: GQL.ExternalServiceKind.GITHUB,
+    title: 'GitHub.com repositories',
     icon: GithubCircleIcon,
     jsonSchema: githubSchemaJSON,
     editorActions: [
@@ -138,7 +141,7 @@ const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
             run: config => {
                 const value = { name: '<owner>/<repository>' }
                 const edits = setProperty(config, ['exclude', -1], value, defaultFormattingOptions)
-                return { edits, selectText: '{"name": "<owner>/<repository>"}' }
+                return { edits, selectText: '<owner>/<repository>' }
             },
         },
         {
@@ -226,655 +229,1170 @@ const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
   // ]
 }`,
 }
+const GITHUB_ENTERPRISE: ExternalServiceKindMetadata = {
+    ...GITHUB_DOTCOM,
+    title: 'GitHub Enterprise repositories',
+    shortDescription: 'Add GitHub Enterprise repositories',
+    defaultDisplayName: 'GitHub Enterprise',
+    defaultConfig: `// Use Ctrl+Space for completion, and hover over JSON properties for documentation.
+    // GitHub external service docs: https://docs.sourcegraph.com/admin/external_service/github
+    {
+      // GitHub Enterprise URL
+      "url": "https://github.example.com",
 
-const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServiceKindMetadata> = {
-    [GQL.ExternalServiceKind.GITHUB]: GITHUB_EXTERNAL_SERVICE,
-    [GQL.ExternalServiceKind.AWSCODECOMMIT]: {
-        title: 'AWS CodeCommit repositories',
-        icon: AmazonIcon,
-        shortDescription: 'Add AWS CodeCommit repositories.',
-        jsonSchema: awsCodeCommitSchemaJSON,
-        defaultDisplayName: 'AWS CodeCommit',
-        defaultConfig: `// Use Ctrl+Space for completion, and hover over JSON properties for documentation.
+      // token: GitHub API access token.
+      // Visit https://[github-enterprise-url]/settings/tokens/new?scopes=repo&description=Sourcegraph to create a token
+      // with access to public and private repositories
+      "token": "<access token>",
+
+      // SELECTING REPOSITORIES
+      //
+      // There are 3 fields used to select repositories for searching and code intel:
+      //  - repositoryQuery (required)
+      //  - repos
+      //  - exclude
+      //
+
+      // repositoryQuery: List of strings, either a special keyword, e.g. "affiliated", or
+      // GitHub search qualifiers, e.g. "archived:false"
+      //
+      // For getting started, use either:
+      //  - "org:<name>" // (e.g. "org:sourcegraph") all repositories belonging to the organization
+      // or
+      //  - "affiliated" // all repositories affiliated (accessible) by the token's owner
+      //
+      // Additional query strings can be added to refine results:
+      //  - "archived:false fork:no created:>=2016" // use of multiple search qualifiers
+      //  - "user:docker repo:kubernetes/kubernetes" // fetch repositories outside of the user/org account
+      //
+      // See https://help.github.com/en/articles/searching-for-repositories for the list of search qualifiers.
+      "repositoryQuery": [
+      //   "org:name"
+      ],
+
+      // repos: Explicit list of repositories to select
+      // "repos": [
+      //   "<owner>/<repository>"
+      // ],
+
+      // exclude: Repositories to exclude (overrides repositories from repositoryQuery and repos)
+      // "exclude": [
+      //   {
+      //   "name": "<owner>/<repository>"
+      //   }
+      // ]
+    }`,
+}
+const AWS_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
+    kind: GQL.ExternalServiceKind.AWSCODECOMMIT,
+    title: 'AWS CodeCommit repositories',
+    icon: AmazonIcon,
+    shortDescription: 'Add AWS CodeCommit repositories.',
+    jsonSchema: awsCodeCommitSchemaJSON,
+    defaultDisplayName: 'AWS CodeCommit',
+    defaultConfig: `// Use Ctrl+Space for completion, and hover over JSON properties for documentation.
 // AWS CodeCommit external service docs: https://docs.sourcegraph.com/admin/external_service/aws_codecommit#configuration
 {
-  "accessKeyID": "<access key id>",
-  "secretAccessKey": "<secret access key>",
-  "region": "<region>",
+"accessKeyID": "<access key id>",
+"secretAccessKey": "<secret access key>",
+"region": "<region>",
 
-  // Git credentials for cloning an AWS CodeCommit repository over https
-  // See IAM Code Commit auth docs: https://docs.aws.amazon.com/codecommit/latest/userguide/setting-up-gc.html
-  "gitCredentials": {
-    "username": "<username>",
-    "password": "<password>"
-  },
+// Git credentials for cloning an AWS CodeCommit repository over https
+// See IAM Code Commit auth docs: https://docs.aws.amazon.com/codecommit/latest/userguide/setting-up-gc.html
+"gitCredentials": {
+"username": "<username>",
+"password": "<password>"
+},
 
-  // Repositories to exclude by name ({"name": "git-codecommit.us-west-1.amazonaws.com/repo-name"})
-  // or by ARN ({"id": "arn:aws:codecommit:us-west-1:999999999999:name"})
-  // "exclude": [
-  //   {
-  //     "name": "mono-repo"
-  //   }
-  // ]
+// Repositories to exclude by name ({"name": "git-codecommit.us-west-1.amazonaws.com/repo-name"})
+// or by ARN ({"id": "arn:aws:codecommit:us-west-1:999999999999:name"})
+// "exclude": [
+//   {
+//     "name": "mono-repo"
+//   }
+// ]
 }`,
-        editorActions: [
-            {
-                id: 'setAccessKeyID',
-                label: 'Set access key ID',
-                run: config => {
-                    const value = '<access key id>'
-                    const edits = setProperty(config, ['accessKeyID'], value, defaultFormattingOptions)
-                    return { edits, selectText: value }
-                },
+    editorActions: [
+        {
+            id: 'setAccessKeyID',
+            label: 'Set access key ID',
+            run: config => {
+                const value = '<access key id>'
+                const edits = setProperty(config, ['accessKeyID'], value, defaultFormattingOptions)
+                return { edits, selectText: value }
             },
-            {
-                id: 'setSecretAccessKey',
-                label: 'Set secret access key',
-                run: config => {
-                    const value = '<secret access key>'
-                    const edits = setProperty(config, ['secretAccessKey'], value, defaultFormattingOptions)
-                    return { edits, selectText: value }
-                },
+        },
+        {
+            id: 'setSecretAccessKey',
+            label: 'Set secret access key',
+            run: config => {
+                const value = '<secret access key>'
+                const edits = setProperty(config, ['secretAccessKey'], value, defaultFormattingOptions)
+                return { edits, selectText: value }
             },
-            {
-                id: 'setRegion',
-                label: 'Set region',
-                run: config => {
-                    const value = '<region>'
-                    const edits = setProperty(config, ['region'], value, defaultFormattingOptions)
-                    return { edits, selectText: value }
-                },
+        },
+        {
+            id: 'setRegion',
+            label: 'Set region',
+            run: config => {
+                const value = '<region>'
+                const edits = setProperty(config, ['region'], value, defaultFormattingOptions)
+                return { edits, selectText: value }
             },
-            {
-                id: 'excludeRepo',
-                label: 'Exclude a repository',
-                run: config => {
-                    const value = { name: '<owner>/<repository>' }
-                    const edits = setProperty(config, ['exclude', -1], value, defaultFormattingOptions)
-                    return { edits, selectText: '{"name": "<owner>/<repository>"}' }
-                },
+        },
+        {
+            id: 'setGitCredentials',
+            label: 'Set Git credentials',
+            run: config => {
+                const value = {
+                    username: '<username>',
+                    password: '<password>',
+                }
+                const edits = setProperty(config, ['gitCredentials'], value, defaultFormattingOptions)
+                return { edits, selectText: '<username>' }
             },
-        ],
-    },
-    [GQL.ExternalServiceKind.BITBUCKETCLOUD]: {
-        title: 'Bitbucket.org repositories',
-        icon: BitbucketIcon,
-        shortDescription: 'Add Bitbucket Cloud repositories.',
-        jsonSchema: bitbucketCloudSchemaJSON,
-        defaultDisplayName: 'Bitbucket Cloud',
-        defaultConfig: `// Use Ctrl+Space for completion, and hover over JSON properties for documentation.
+        },
+        {
+            id: 'excludeRepo',
+            label: 'Exclude a repository',
+            run: config => {
+                const value = { name: '<owner>/<repository>' }
+                const edits = setProperty(config, ['exclude', -1], value, defaultFormattingOptions)
+                return { edits, selectText: '<owner>/<repository>' }
+            },
+        },
+    ],
+}
+const BITBUCKET_CLOUD_SERVICE: ExternalServiceKindMetadata = {
+    kind: GQL.ExternalServiceKind.BITBUCKETCLOUD,
+    title: 'Bitbucket.org repositories',
+    icon: BitbucketIcon,
+    shortDescription: 'Add Bitbucket Cloud repositories.',
+    jsonSchema: bitbucketCloudSchemaJSON,
+    defaultDisplayName: 'Bitbucket Cloud',
+    defaultConfig: `// Use Ctrl+Space for completion, and hover over JSON properties for documentation.
 // Bitbucket Cloud external service docs: https://docs.sourcegraph.com/admin/external_service/bitbucket_cloud#configuration
 {
-  "url": "https://bitbucket.org",
+"url": "https://bitbucket.org",
 
-  // The username the app password belongs to
-  "username": "<username>",
+// The username the app password belongs to
+"username": "<username>",
 
-  // An app password (https://confluence.atlassian.com/bitbucket/app-passwords-828781300.html) with read scope over the repositories and teams to be added to Sourcegraph
-  "appPassword": "<app password>",
+// An app password (https://confluence.atlassian.com/bitbucket/app-passwords-828781300.html) with read scope over the repositories and teams to be added to Sourcegraph
+"appPassword": "<app password>",
 
-  // teams: List of teams whose repositories should be selected
-  // "teams": [
-  //   "<team name>"
-  // ],
+// teams: List of teams whose repositories should be selected
+// "teams": [
+//   "<team name>"
+// ],
 }`,
-        editorActions: [
-            {
-                id: 'setAppPassword',
-                label: 'Set app password',
-                run: config => {
-                    const value = '<app password>'
-                    const edits = setProperty(config, ['appPassword'], value, defaultFormattingOptions)
-                    return { edits, selectText: value }
-                },
+    editorActions: [
+        {
+            id: 'setAppPassword',
+            label: 'Set app password',
+            run: config => {
+                const value = '<app password>'
+                const edits = setProperty(config, ['appPassword'], value, defaultFormattingOptions)
+                return { edits, selectText: value }
             },
-        ],
-    },
-    [GQL.ExternalServiceKind.BITBUCKETSERVER]: {
-        title: 'Bitbucket Server repositories',
-        icon: BitbucketIcon,
-        shortDescription: 'Add Bitbucket Server repositories.',
-        jsonSchema: bitbucketServerSchemaJSON,
-        defaultDisplayName: 'Bitbucket Server',
-        defaultConfig: `// Use Ctrl+Space for completion, and hover over JSON properties for documentation.
+        },
+    ],
+}
+const BITBUCKET_SERVER_SERVICE: ExternalServiceKindMetadata = {
+    kind: GQL.ExternalServiceKind.BITBUCKETSERVER,
+    title: 'Bitbucket Server repositories',
+    icon: BitbucketIcon,
+    shortDescription: 'Add Bitbucket Server repositories.',
+    jsonSchema: bitbucketServerSchemaJSON,
+    defaultDisplayName: 'Bitbucket Server',
+    defaultConfig: `// Use Ctrl+Space for completion, and hover over JSON properties for documentation.
 // Bitbucket Server external service docs: https://docs.sourcegraph.com/admin/external_service/bitbucket_server#configuration
 {
-  "url": "https://bitbucket.example.com",
+"url": "https://bitbucket.example.com",
 
-  // Create a personal access token with read scope at
-  // https://<bitbucket-hostname>/plugins/servlet/access-tokens/add
-  "token": "<access token>",
+// Create a personal access token with read scope at
+// https://<bitbucket-hostname>/plugins/servlet/access-tokens/add
+"token": "<access token>",
 
-  // The username the token belongs to
-  "username": "<username>",
+// The username the token belongs to
+"username": "<username>",
 
-  // SELECTING REPOSITORIES
-  //
-  // There are 3 fields used to select repositories for searching and code intel:
-  //  - repositoryQuery (required)
-  //  - repos
-  //  - exclude
+// SELECTING REPOSITORIES
+//
+// There are 3 fields used to select repositories for searching and code intel:
+//  - repositoryQuery (required)
+//  - repos
+//  - exclude
 
-  // repositoryQuery: List of strings: a special keyword "none" (which disables querying),
-  // "all" (which selects all repositories visible to the given token), or any repository
-  // search query parameters (e.g "?name=<repo name>&projectname=<project>&visibility=private")
-  // See the list of parameters at: https://docs.atlassian.com/bitbucket-server/rest/6.1.2/bitbucket-rest.html#idp355
-  "repositoryQuery": [],
+// repositoryQuery: List of strings: a special keyword "none" (which disables querying),
+// "all" (which selects all repositories visible to the given token), or any repository
+// search query parameters (e.g "?name=<repo name>&projectname=<project>&visibility=private")
+// See the list of parameters at: https://docs.atlassian.com/bitbucket-server/rest/6.1.2/bitbucket-rest.html#idp355
+"repositoryQuery": [],
 
-  // repos: Explicit list of repositories to select
-  // "repos": [
-  //   "<project/<repository>"
-  // ],
+// repos: Explicit list of repositories to select
+// "repos": [
+//   "<project/<repository>"
+// ],
 
-  // exclude: Repositories to exclude (overrides repositories from repositoryQuery and repos)
-  // "exclude": [
-  //   {
-  //     "name": "<project/<repository>"
-  //   }
-  // ]
+// exclude: Repositories to exclude (overrides repositories from repositoryQuery and repos)
+// "exclude": [
+//   {
+//     "name": "<project/<repository>"
+//   }
+// ]
 }`,
-        editorActions: [
-            {
-                id: 'setURL',
-                label: 'Set Bitbucket Server URL',
-                run: config => {
-                    const value = 'https://bitbucket.example.com'
-                    const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
-                    return { edits, selectText: value }
-                },
+    editorActions: [
+        {
+            id: 'setURL',
+            label: 'Set Bitbucket Server URL',
+            run: config => {
+                const value = 'https://bitbucket.example.com'
+                const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
+                return { edits, selectText: value }
             },
-            {
-                id: 'setPersonalAccessToken',
-                label: 'Set access token',
-                run: config => {
-                    const value = '<access token>'
-                    const edits = setProperty(config, ['token'], value, defaultFormattingOptions)
-                    return { edits, selectText: value }
-                },
+        },
+        {
+            id: 'setPersonalAccessToken',
+            label: 'Set access token',
+            run: config => {
+                const value = '<access token>'
+                const edits = setProperty(config, ['token'], value, defaultFormattingOptions)
+                return { edits, selectText: value }
             },
-            {
-                id: 'addProjectRepos',
-                label: 'Add project repositories',
-                run: config => {
-                    const value = '?projectname=<project>'
-                    const edits = setProperty(config, ['repositoryQuery', -1], value, defaultFormattingOptions)
-                    return { edits, selectText: '<project>' }
-                },
+        },
+        {
+            id: 'addProjectRepos',
+            label: 'Add project repositories',
+            run: config => {
+                const value = '?projectname=<project>'
+                const edits = setProperty(config, ['repositoryQuery', -1], value, defaultFormattingOptions)
+                return { edits, selectText: '<project>' }
             },
-            {
-                id: 'addRepo',
-                label: 'Add a repository',
-                run: config => {
-                    const value = '<project/<repository>'
-                    const edits = setProperty(config, ['repos', -1], value, defaultFormattingOptions)
-                    return { edits, selectText: '<project/<repository>' }
-                },
+        },
+        {
+            id: 'addRepo',
+            label: 'Add a repository',
+            run: config => {
+                const value = '<project/<repository>'
+                const edits = setProperty(config, ['repos', -1], value, defaultFormattingOptions)
+                return { edits, selectText: '<project/<repository>' }
             },
-            {
-                id: 'excludeRepo',
-                label: 'Exclude a repository',
-                run: config => {
-                    const value = { name: '<project/<repository>' }
-                    const edits = setProperty(config, ['exclude', -1], value, defaultFormattingOptions)
-                    return { edits, selectText: '{"name": "<project/<repository>"}' }
-                },
+        },
+        {
+            id: 'excludeRepo',
+            label: 'Exclude a repository',
+            run: config => {
+                const value = { name: '<project/<repository>' }
+                const edits = setProperty(config, ['exclude', -1], value, defaultFormattingOptions)
+                return { edits, selectText: '{"name": "<project/<repository>"}' }
             },
-            {
-                id: 'setSelfSignedCert',
-                label: 'Set internal or self-signed certificate',
-                run: config => {
-                    const value = '<certificate>'
-                    const edits = setProperty(config, ['certificate'], value, defaultFormattingOptions)
-                    return { edits, selectText: value }
-                },
+        },
+        {
+            id: 'setSelfSignedCert',
+            label: 'Set internal or self-signed certificate',
+            run: config => {
+                const value = '<certificate>'
+                const edits = setProperty(config, ['certificate'], value, defaultFormattingOptions)
+                return { edits, selectText: value }
             },
-            {
-                id: 'enablePermissions',
-                label: 'Enforce permissions',
-                run: config => {
-                    const value = {
-                        COMMENT_SENTINEL: true,
-                        identityProvider: { type: 'username' },
-                        oauth: {
-                            consumerKey: '<consumer key>',
-                            signingKey: '<signing key>',
-                        },
-                        ttl: '3h',
-                        hardTTL: '72h',
-                    }
-                    const comment =
-                        '// Follow setup instructions in https://docs.sourcegraph.com/admin/repo/permissions#bitbucket_server'
-                    const edit = editWithComment(config, ['authorization'], value, comment)
-                    return { edits: [edit], selectText: comment }
-                },
+        },
+        {
+            id: 'enablePermissions',
+            label: 'Enforce permissions',
+            run: config => {
+                const value = {
+                    COMMENT_SENTINEL: true,
+                    identityProvider: { type: 'username' },
+                    oauth: {
+                        consumerKey: '<consumer key>',
+                        signingKey: '<signing key>',
+                    },
+                    ttl: '3h',
+                    hardTTL: '72h',
+                }
+                const comment =
+                    '// Follow setup instructions in https://docs.sourcegraph.com/admin/repo/permissions#bitbucket_server'
+                const edit = editWithComment(config, ['authorization'], value, comment)
+                return { edits: [edit], selectText: comment }
             },
-        ],
-    },
-    [GQL.ExternalServiceKind.GITLAB]: {
-        title: 'GitLab projects',
-        icon: GitLabIcon,
-        shortDescription: 'Add GitLab projects.',
-        jsonSchema: gitlabSchemaJSON,
-        defaultDisplayName: 'GitLab',
-        defaultConfig: `// Use Ctrl+Space for completion, and hover over JSON properties for documentation.
+        },
+    ],
+}
+const GITLAB_SERVICE: ExternalServiceKindMetadata = {
+    kind: GQL.ExternalServiceKind.GITLAB,
+    title: 'GitLab projects',
+    icon: GitLabIcon,
+    shortDescription: 'Add GitLab projects.',
+    jsonSchema: gitlabSchemaJSON,
+    defaultDisplayName: 'GitLab',
+    defaultConfig: `// Use Ctrl+Space for completion, and hover over JSON properties for documentation.
 // GitLab external service docs: https://docs.sourcegraph.com/admin/external_service/gitlab#configuration
 {
-  "url": "https://example.gitlab.com",
+"url": "https://example.gitlab.com",
 
-  // Create a personal access token with api scope at https://[your-gitlab-hostname]/profile/personal_access_tokens
-  "token": "<access token>",
+// Create a personal access token with api scope at https://[your-gitlab-hostname]/profile/personal_access_tokens
+"token": "<access token>",
 
-  // SELECTING REPOSITORIES
-  //
-  // There are 3 fields used to select repositories for searching and code intel:
-  //  - projectQuery (required)
-  //  - projects
-  //  - exclude
+// SELECTING REPOSITORIES
+//
+// There are 3 fields used to select repositories for searching and code intel:
+//  - projectQuery (required)
+//  - projects
+//  - exclude
 
-  // List of strings, either a special keyword "none" (which disables querying), search query parameters
-  // such as "?search=sourcegraph", and "?visibility=private".
-  //
-  // For getting started, use the "Quick configure" buttons above the editor to build an initial set of
-  // of queries.
-  "projectQuery": [
-  //   "?archived=no\u0026visibility=private" // set this to "none" to disable querying
-  ],
+// List of strings, either a special keyword "none" (which disables querying), search query parameters
+// such as "?search=sourcegraph", and "?visibility=private".
+//
+// For getting started, use the "Quick configure" buttons above the editor to build an initial set of
+// of queries.
+"projectQuery": [
+//   "?archived=no\u0026visibility=private" // set this to "none" to disable querying
+],
 
-  // projects: Project repositories to select.  Supports name: {"name": "group/name"}, or ID: {"id": 42})
-  // "projects": [
-  //   { "name": "<group>/<name>" },
-  //   { "id": <id> }
-  // ],
+// projects: Project repositories to select.  Supports name: {"name": "group/name"}, or ID: {"id": 42})
+// "projects": [
+//   { "name": "<group>/<name>" },
+//   { "id": <id> }
+// ],
 
-  // exclude: Project repositories to exclude.  Supports name: {"name": "group/name"}, or ID: {"id": 42})
-  // "exclude": [
-  //   { "name": "<group>/<name>" },
-  //   { "id": <id> }
-  // ]
+// exclude: Project repositories to exclude.  Supports name: {"name": "group/name"}, or ID: {"id": 42})
+// "exclude": [
+//   { "name": "<group>/<name>" },
+//   { "id": <id> }
+// ]
 }`,
-        editorActions: [
-            {
-                id: 'setURL',
-                label: 'Set GitLab URL',
-                run: config => {
-                    const value = 'https://gitlab.example.com'
-                    const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
-                    return { edits, selectText: value }
-                },
+    editorActions: [
+        {
+            id: 'setURL',
+            label: 'Set GitLab URL',
+            run: config => {
+                const value = 'https://gitlab.example.com'
+                const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
+                return { edits, selectText: value }
             },
-            {
-                id: 'setPersonalAccessToken',
-                label: 'Set access token',
-                run: config => {
-                    const value = '<access token>'
-                    const edits = setProperty(config, ['token'], value, defaultFormattingOptions)
-                    return { edits, selectText: value }
-                },
+        },
+        {
+            id: 'setPersonalAccessToken',
+            label: 'Set access token',
+            run: config => {
+                const value = '<access token>'
+                const edits = setProperty(config, ['token'], value, defaultFormattingOptions)
+                return { edits, selectText: value }
             },
-            {
-                id: 'setSelfSignedCert',
-                label: 'Set internal or self-signed certificate',
-                run: config => {
-                    const value = '<certificate>'
-                    const edits = setProperty(config, ['certificate'], value, defaultFormattingOptions)
-                    return { edits, selectText: value }
-                },
+        },
+        {
+            id: 'setSelfSignedCert',
+            label: 'Set internal or self-signed certificate',
+            run: config => {
+                const value = '<certificate>'
+                const edits = setProperty(config, ['certificate'], value, defaultFormattingOptions)
+                return { edits, selectText: value }
             },
-            {
-                id: 'syncInternalProjects',
-                label: 'Sync internal projects',
-                run: config => {
-                    const value = '?visibility=internal'
-                    const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
-                    return { edits, selectText: value }
-                },
+        },
+        {
+            id: 'syncInternalProjects',
+            label: 'Sync internal projects',
+            run: config => {
+                const value = '?visibility=internal'
+                const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
+                return { edits, selectText: value }
             },
-            {
-                id: 'syncPrivateProjects',
-                label: 'Sync private projects',
-                run: config => {
-                    const value = '?visibility=private'
-                    const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
-                    return { edits, selectText: value }
-                },
+        },
+        {
+            id: 'syncPrivateProjects',
+            label: 'Sync private projects',
+            run: config => {
+                const value = '?visibility=private'
+                const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
+                return { edits, selectText: value }
             },
-            {
-                id: 'syncPublicProjects',
-                label: 'Sync public projects',
-                run: config => {
-                    const value = '?visibility=public'
-                    const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
-                    return { edits, selectText: value }
-                },
+        },
+        {
+            id: 'syncPublicProjects',
+            label: 'Sync public projects',
+            run: config => {
+                const value = '?visibility=public'
+                const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
+                return { edits, selectText: value }
             },
-            {
-                id: 'syncGroupProjects',
-                label: 'Sync group projects',
-                run: config => {
-                    const value = 'groups/<group ID>/projects'
-                    const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
-                    return { edits, selectText: '<group ID>' }
-                },
+        },
+        {
+            id: 'syncGroupProjects',
+            label: 'Sync group projects',
+            run: config => {
+                const value = 'groups/<group ID>/projects'
+                const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
+                return { edits, selectText: '<group ID>' }
             },
-            {
-                id: 'syncMembershipProjects',
-                label: 'Sync all projects the access token user is a member of',
-                run: config => {
-                    const value = '?membership=true'
-                    const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
-                    return { edits, selectText: value }
-                },
+        },
+        {
+            id: 'syncMembershipProjects',
+            label: 'Sync all projects the access token user is a member of',
+            run: config => {
+                const value = '?membership=true'
+                const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
+                return { edits, selectText: value }
             },
-            {
-                id: 'syncProjectsMatchingSearch',
-                label: 'Sync projects matching search',
-                run: config => ({
-                    edits: setProperty(
-                        config,
-                        ['projectQuery', -1],
-                        '?search=<search query>',
-                        defaultFormattingOptions
-                    ),
-                    selectText: '<search query>',
-                }),
-            },
-            {
-                id: 'enforcePermissionsOAuth',
-                label: 'Enforce permissions (OAuth)',
-                run: config => {
-                    const value = {
-                        identityProvider: {
-                            COMMENT_SENTINEL: true,
-                            type: 'oauth',
-                        },
-                    }
-                    const comment = editorActionComments.enforcePermissionsOAuth
-                    const edit = editWithComment(config, ['authorization'], value, comment)
-                    return { edits: [edit], selectText: comment }
-                },
-            },
-            {
-                id: 'enforcePermissionsSSO',
-                label: 'Enforce permissions (SSO)',
-                run: config => {
-                    const value = {
+        },
+        {
+            id: 'syncProjectsMatchingSearch',
+            label: 'Sync projects matching search',
+            run: config => ({
+                edits: setProperty(config, ['projectQuery', -1], '?search=<search query>', defaultFormattingOptions),
+                selectText: '<search query>',
+            }),
+        },
+        {
+            id: 'enforcePermissionsOAuth',
+            label: 'Enforce permissions (OAuth)',
+            run: config => {
+                const value = {
+                    identityProvider: {
                         COMMENT_SENTINEL: true,
-                        identityProvider: {
-                            type: 'external',
-                            authProviderID: '<configID field of the auth provider>',
-                            authProviderType: '<type field of the auth provider>',
-                            gitlabProvider:
-                                '<name that identifies the auth provider to GitLab (hover over "gitlabProvider" for docs)>',
-                        },
-                    }
-                    const comment = editorActionComments.enforcePermissionsSSO
-                    const edit = editWithComment(config, ['authorization'], value, comment)
-                    return { edits: [edit], selectText: comment }
-                },
-            },
-            {
-                id: 'addProject',
-                label: 'Add a project',
-                run: config => {
-                    const value = { name: '<group>/<project>' }
-                    const edits = setProperty(config, ['projects', -1], value, defaultFormattingOptions)
-                    return { edits, selectText: '{"name": "<group>/<project>"}' }
-                },
-            },
-            {
-                id: 'excludeProject',
-                label: 'Exclude a project',
-                run: config => {
-                    const value = { name: '<group>/<project>' }
-                    const edits = setProperty(config, ['exclude', -1], value, defaultFormattingOptions)
-                    return { edits, selectText: '{"name": "<group>/<project>"}' }
-                },
-            },
-        ],
-    },
-    [GQL.ExternalServiceKind.GITOLITE]: {
-        title: 'Gitolite repositories',
-        icon: GitIcon,
-        shortDescription: 'Add Gitolite repositories.',
-        jsonSchema: gitoliteSchemaJSON,
-        defaultDisplayName: 'Gitolite',
-        defaultConfig: `{
-  // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
-  // Configuration options are documented here:
-  // https://docs.sourcegraph.com/admin/external_service/gitolite#configuration
-
-  "prefix": "gitolite.example.com/",
-  "host": "git@gitolite.example.com"
-}`,
-        editorActions: [
-            {
-                id: 'setPrefix',
-                label: 'Set prefix',
-                run: config => {
-                    const value = 'gitolite.example.com/'
-                    const edits = setProperty(config, ['prefix'], value, defaultFormattingOptions)
-                    return { edits, selectText: value }
-                },
-            },
-            {
-                id: 'setHost',
-                label: 'Set host',
-                run: config => {
-                    const value = 'git@gitolite.example.com'
-                    const edits = setProperty(config, ['host'], value, defaultFormattingOptions)
-                    return { edits, selectText: value }
-                },
-            },
-        ],
-    },
-    [GQL.ExternalServiceKind.PHABRICATOR]: {
-        title: 'Phabricator connection',
-        icon: PhabricatorIcon,
-        shortDescription:
-            'Associate Phabricator repositories with existing repositories on Sourcegraph. Mirroring is not supported.',
-        jsonSchema: phabricatorSchemaJSON,
-        defaultDisplayName: 'Phabricator',
-        defaultConfig: `{
-  // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
-  // Configuration options are documented here:
-  // https://docs.sourcegraph.com/admin/external_service/phabricator#configuration
-
-  "url": "https://phabricator.example.com",
-  "token": "",
-  "repos": []
-}`,
-        editorActions: [
-            {
-                id: 'setPhabricatorURL',
-                label: 'Set Phabricator URL',
-                run: config => {
-                    const value = 'https://phabricator.example.com'
-                    const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
-                    return { edits, selectText: value }
-                },
-            },
-            {
-                id: 'setAccessToken',
-                label: 'Set Phabricator access token',
-                run: config => {
-                    const value = '<Phabricator access token>'
-                    const edits = setProperty(config, ['token'], value, defaultFormattingOptions)
-                    return { edits, selectText: value }
-                },
-            },
-            {
-                id: 'addRepository',
-                label: 'Add a repository',
-                run: config => {
-                    const value = {
-                        callsign: '<Phabricator repository callsign>',
-                        path: '<Sourcegraph repository full name>',
-                    }
-                    const edits = setProperty(config, ['repos', -1], value, defaultFormattingOptions)
-                    return { edits, selectText: '<Phabricator repository callsign>' }
-                },
-            },
-        ],
-    },
-    [GQL.ExternalServiceKind.OTHER]: {
-        title: 'Single Git repositories',
-        icon: GitIcon,
-        shortDescription: 'Add single Git repositories by clone URL.',
-        jsonSchema: otherExternalServiceSchemaJSON,
-        defaultDisplayName: 'Git repositories',
-        defaultConfig: `{
-  // Use Ctrl+Space for completion, and hover over JSON properties for documentation.
-  // Configuration options are documented here:
-  // https://docs.sourcegraph.com/admin/external_service/other#configuration
-
-  // Supported URL schemes are: http, https, git and ssh
-  "url": "https://my-other-githost.example.com",
-
-  // Repository clone paths may be relative to the url (preferred) or absolute.
-  "repos": []
-}`,
-        editorActions: [
-            {
-                id: 'setURL',
-                label: 'Set Git host URL',
-                run: config => {
-                    const value = 'https://my-other-githost.example.com'
-                    const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
-                    return { edits, selectText: value }
-                },
-            },
-            {
-                id: 'addRepo',
-                label: 'Add a repository',
-                run: config => {
-                    const value = 'path/to/repository'
-                    const edits = setProperty(config, ['repos', -1], value, defaultFormattingOptions)
-                    return { edits, selectText: value }
-                },
-            },
-        ],
-    },
-}
-
-/**
- * Some external services have variants that should be presented in the UI in a different way
- * but are not fundamentally different from one another. This type defines the allowed variant
- * values.
- */
-export type ExternalServiceVariant = 'dotcom' | 'enterprise'
-
-export function isExternalServiceVariant(s: string): s is ExternalServiceVariant {
-    return s === 'dotcom' || s === 'enterprise'
-}
-
-export interface AddExternalServiceMetadata extends ExternalServiceKindMetadata {
-    kind: GQL.ExternalServiceKind
-    variant?: ExternalServiceVariant
-}
-
-/**
- * We want to have more than one "add" option for some external services (e.g., GitHub.com vs. GitHub Enterprise).
- * These patches define the overrides that should be applied to certain external services.
- */
-const externalServiceAddVariants: Partial<Record<
-    GQL.ExternalServiceKind,
-    Partial<Record<ExternalServiceVariant, Partial<ExternalServiceKindMetadata>>>
->> = {
-    [GQL.ExternalServiceKind.GITHUB]: {
-        dotcom: {
-            title: 'GitHub.com repositories',
-            shortDescription: 'Add GitHub.com repositories.',
-            editorActions: GITHUB_EXTERNAL_SERVICE.editorActions || [],
-        },
-        enterprise: {
-            title: 'GitHub Enterprise repositories',
-            shortDescription: 'Add GitHub Enterprise repositories.',
-            defaultDisplayName: 'GitHub Enterprise',
-            defaultConfig: `// Use Ctrl+Space for completion, and hover over JSON properties for documentation.
-// GitHub external service docs: https://docs.sourcegraph.com/admin/external_service/github
-{
-  // GitHub Enterprise URL
-  "url": "https://github.example.com",
-
-  // token: GitHub API access token.
-  // Visit https://[github-enterprise-url]/settings/tokens/new?scopes=repo&description=Sourcegraph to create a token
-  // with access to public and private repositories
-  "token": "<access token>",
-
-  // SELECTING REPOSITORIES
-  //
-  // There are 3 fields used to select repositories for searching and code intel:
-  //  - repositoryQuery (required)
-  //  - repos
-  //  - exclude
-  //
-
-  // repositoryQuery: List of strings, either a special keyword, e.g. "affiliated", or
-  // GitHub search qualifiers, e.g. "archived:false"
-  //
-  // For getting started, use either:
-  //  - "org:<name>" // (e.g. "org:sourcegraph") all repositories belonging to the organization
-  // or
-  //  - "affiliated" // all repositories affiliated (accessible) by the token's owner
-  //
-  // Additional query strings can be added to refine results:
-  //  - "archived:false fork:no created:>=2016" // use of multiple search qualifiers
-  //  - "user:docker repo:kubernetes/kubernetes" // fetch repositories outside of the user/org account
-  //
-  // See https://help.github.com/en/articles/searching-for-repositories for the list of search qualifiers.
-  "repositoryQuery": [
-  //   "org:name"
-  ],
-
-  // repos: Explicit list of repositories to select
-  // "repos": [
-  //   "<owner>/<repository>"
-  // ],
-
-  // exclude: Repositories to exclude (overrides repositories from repositoryQuery and repos)
-  // "exclude": [
-  //   {
-  //   "name": "<owner>/<repository>"
-  //   }
-  // ]
-}`,
-        },
-    },
-}
-
-export const ALL_EXTERNAL_SERVICE_ADD_VARIANTS: AddExternalServiceMetadata[] = flatMap(
-    map(ALL_EXTERNAL_SERVICES, (service: ExternalServiceKindMetadata, kindString: string):
-        | AddExternalServiceMetadata
-        | AddExternalServiceMetadata[] => {
-        const kind = kindString as GQL.ExternalServiceKind
-        if (externalServiceAddVariants[kind]) {
-            const patches = externalServiceAddVariants[kind]
-            return map(patches, (patch, variantString) => {
-                const variant = variantString as ExternalServiceVariant
-                return {
-                    ...service,
-                    kind,
-                    variant,
-                    ...patch,
+                        type: 'oauth',
+                    },
                 }
-            })
-        }
-        return {
-            ...service,
-            kind,
-        }
-    })
-)
+                const comment = editorActionComments.enforcePermissionsOAuth
+                const edit = editWithComment(config, ['authorization'], value, comment)
+                return { edits: [edit], selectText: comment }
+            },
+        },
+        {
+            id: 'enforcePermissionsSSO',
+            label: 'Enforce permissions (SSO)',
+            run: config => {
+                const value = {
+                    COMMENT_SENTINEL: true,
+                    identityProvider: {
+                        type: 'external',
+                        authProviderID: '<configID field of the auth provider>',
+                        authProviderType: '<type field of the auth provider>',
+                        gitlabProvider:
+                            '<name that identifies the auth provider to GitLab (hover over "gitlabProvider" for docs)>',
+                    },
+                }
+                const comment = editorActionComments.enforcePermissionsSSO
+                const edit = editWithComment(config, ['authorization'], value, comment)
+                return { edits: [edit], selectText: comment }
+            },
+        },
+        {
+            id: 'addProject',
+            label: 'Add a project',
+            run: config => {
+                const value = { name: '<group>/<project>' }
+                const edits = setProperty(config, ['projects', -1], value, defaultFormattingOptions)
+                return { edits, selectText: '{"name": "<group>/<project>"}' }
+            },
+        },
+        {
+            id: 'excludeProject',
+            label: 'Exclude a project',
+            run: config => {
+                const value = { name: '<group>/<project>' }
+                const edits = setProperty(config, ['exclude', -1], value, defaultFormattingOptions)
+                return { edits, selectText: '{"name": "<group>/<project>"}' }
+            },
+        },
+    ],
+}
+const GITOLITE_SERVICE: ExternalServiceKindMetadata = {
+    kind: GQL.ExternalServiceKind.GITOLITE,
+    title: 'Gitolite repositories',
+    icon: GitIcon,
+    shortDescription: 'Add Gitolite repositories.',
+    jsonSchema: gitoliteSchemaJSON,
+    defaultDisplayName: 'Gitolite',
+    defaultConfig: `{
+// Use Ctrl+Space for completion, and hover over JSON properties for documentation.
+// Configuration options are documented here:
+// https://docs.sourcegraph.com/admin/external_service/gitolite#configuration
 
-export function getExternalService(
-    kind: GQL.ExternalServiceKind,
-    variantForAdd?: ExternalServiceVariant
-): ExternalServiceKindMetadata {
-    const foundVariants = ALL_EXTERNAL_SERVICE_ADD_VARIANTS.filter(
-        serviceVariant => serviceVariant.kind === kind && serviceVariant.variant === variantForAdd
-    )
-    if (foundVariants.length > 0) {
-        return foundVariants[0]
+"prefix": "gitolite.example.com/",
+"host": "git@gitolite.example.com"
+}`,
+    editorActions: [
+        {
+            id: 'setHost',
+            label: 'Set host',
+            run: config => {
+                const value = 'git@gitolite.example.com'
+                const edits = setProperty(config, ['host'], value, defaultFormattingOptions)
+                return { edits, selectText: value }
+            },
+        },
+        {
+            id: 'setPrefix',
+            label: 'Set prefix',
+            run: config => {
+                const value = 'gitolite.example.com/'
+                const edits = setProperty(config, ['prefix'], value, defaultFormattingOptions)
+                return { edits, selectText: value }
+            },
+        },
+    ],
+}
+const PHABRICATOR_SERVICE: ExternalServiceKindMetadata = {
+    kind: GQL.ExternalServiceKind.PHABRICATOR,
+    title: 'Phabricator connection',
+    icon: PhabricatorIcon,
+    shortDescription:
+        'Associate Phabricator repositories with existing repositories on Sourcegraph. Mirroring is not supported.',
+    jsonSchema: phabricatorSchemaJSON,
+    defaultDisplayName: 'Phabricator',
+    defaultConfig: `{
+// Use Ctrl+Space for completion, and hover over JSON properties for documentation.
+// Configuration options are documented here:
+// https://docs.sourcegraph.com/admin/external_service/phabricator#configuration
+
+"url": "https://phabricator.example.com",
+"token": "",
+"repos": []
+}`,
+    editorActions: [
+        {
+            id: 'setPhabricatorURL',
+            label: 'Set Phabricator URL',
+            run: config => {
+                const value = 'https://phabricator.example.com'
+                const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
+                return { edits, selectText: value }
+            },
+        },
+        {
+            id: 'setAccessToken',
+            label: 'Set Phabricator access token',
+            run: config => {
+                const value = '<Phabricator access token>'
+                const edits = setProperty(config, ['token'], value, defaultFormattingOptions)
+                return { edits, selectText: value }
+            },
+        },
+        {
+            id: 'addRepository',
+            label: 'Add a repository',
+            run: config => {
+                const value = {
+                    callsign: '<Phabricator repository callsign>',
+                    path: '<Sourcegraph repository full name>',
+                }
+                const edits = setProperty(config, ['repos', -1], value, defaultFormattingOptions)
+                return { edits, selectText: '<Phabricator repository callsign>' }
+            },
+        },
+    ],
+}
+const OTHER_SERVICE: ExternalServiceKindMetadata = {
+    kind: GQL.ExternalServiceKind.OTHER,
+    title: 'Single Git repositories',
+    icon: GitIcon,
+    shortDescription: 'Add single Git repositories by clone URL.',
+    jsonSchema: otherExternalServiceSchemaJSON,
+    defaultDisplayName: 'Git repositories',
+    defaultConfig: `{
+// Use Ctrl+Space for completion, and hover over JSON properties for documentation.
+// Configuration options are documented here:
+// https://docs.sourcegraph.com/admin/external_service/other#configuration
+
+// Supported URL schemes are: http, https, git and ssh
+"url": "https://git.example.com",
+
+// Repository clone paths may be relative to the url (preferred) or absolute.
+"repos": []
+}`,
+    editorActions: [
+        {
+            id: 'setURL',
+            label: 'Set Git host URL',
+            run: config => {
+                const value = 'https://git.example.com'
+                const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
+                return { edits, selectText: value }
+            },
+        },
+        {
+            id: 'addRepo',
+            label: 'Add a repository',
+            run: config => {
+                const value = 'path/to/repository'
+                const edits = setProperty(config, ['repos', -1], value, defaultFormattingOptions)
+                return { edits, selectText: value }
+            },
+        },
+    ],
+}
+const EZ_GITHUB_DOTCOM = {
+    ...GITHUB_DOTCOM,
+    shortDescription: undefined,
+    longDescription: (
+        <div>
+            <ol>
+                <li>
+                    Create a GitHub access token (
+                    <a
+                        href="https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        instructions
+                    </a>
+                    ) with{' '}
+                    <b>
+                        <code>repo</code>
+                    </b>{' '}
+                    scope, and set it to be the value of the <code>token</code> field in the configuration below.
+                </li>
+                <li>
+                    Specify the list of GitHub organizations whose repositories Sourcegraph should index in the{' '}
+                    <code>organizations</code> field.
+                    <br />
+                    Sourcegraph also supports other ways of selecting repositories:
+                    <ul>
+                        <li>
+                            <code>repositoryQuery</code>: specify a list of GitHub search queries. Use "affiliated" to
+                            specify all repositories associated with the access token.
+                        </li>
+                        <li>
+                            <code>repos</code>: list individual repositories by name.
+                        </li>
+                    </ul>
+                </li>
+            </ol>
+            <p>
+                See{' '}
+                <a
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    href="https://docs.sourcegraph.com/admin/external_service/github#configuration"
+                >
+                    the docs for more advanced options
+                </a>
+                .
+            </p>
+        </div>
+    ),
+    editorActions: [
+        {
+            id: 'setAccessToken',
+            label: 'Set access token',
+            run: (config: string) => {
+                const value = '<access token>'
+                const edits = setProperty(config, ['token'], value, defaultFormattingOptions)
+                return { edits, selectText: '<access token>' }
+            },
+        },
+        {
+            id: 'addOrgRepo',
+            label: 'Add repositories in an organization',
+            run: (config: string) => {
+                const value = '<organization name>'
+                const edits = setProperty(config, ['orgs', -1], value, defaultFormattingOptions)
+                return { edits, selectText: '<organization name>' }
+            },
+        },
+        {
+            id: 'addSearchQueryRepos',
+            label: 'Add repositories matching a search query',
+            run: (config: string) => {
+                const value = '<search query>'
+                const edits = setProperty(config, ['repositoryQuery', -1], value, defaultFormattingOptions)
+                return { edits, selectText: '<search query>' }
+            },
+        },
+        {
+            id: 'addAffiliatedRepos',
+            label: 'Add repositories affiliated with token',
+            run: (config: string) => {
+                const value = 'affiliated'
+                const edits = setProperty(config, ['repositoryQuery', -1], value, defaultFormattingOptions)
+                return { edits, selectText: 'affiliated' }
+            },
+        },
+    ],
+    title: 'GitHub.com',
+    defaultConfig: `{
+  "url": "https://github.com",
+  "token": "<access token>",
+  "orgs": [
+    "<organization name>"
+  ]
+}`,
+}
+const EZ_GITHUB_ENTERPRISE = {
+    ...EZ_GITHUB_DOTCOM,
+    title: 'GitHub Enterprise',
+    defaultConfig: `{
+  "url": "https://github.example.com",
+  "token": "<access token>",
+  "orgs": [
+    "<organization name>"
+  ]
+}`,
+}
+const EZ_GITLAB_DOTCOM: ExternalServiceKindMetadata = {
+    ...GITLAB_SERVICE,
+    shortDescription: undefined,
+    longDescription: (
+        <div>
+            <ol>
+                <li>
+                    Create a GitLab access token (
+                    <a
+                        href="https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html#creating-a-personal-access-token"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        instructions
+                    </a>
+                    ) with{' '}
+                    <b>
+                        <code>repo</code>
+                    </b>{' '}
+                    scope, and set it to be the value of the <code>token</code> field in the configuration below.
+                </li>
+                <li>
+                    Specify which projects on GitLab should be cloned with the <code>projectQuery</code> field, which
+                    contains a list of strings specifying REST API calls to GitLab that return a list of projects.
+                    <ul>
+                        <li>
+                            Use <code>projects?membership=true&archived=no</code> to select all unarchived projects of
+                            which the token's user is a member.
+                        </li>
+                        <li>
+                            Use <code>groups/&lt;mygroup&gt;/projects</code> to select all projects in a group.
+                        </li>
+                        <li>
+                            Alternatively, list individual projects by name or ID with the <code>projects</code> field.
+                        </li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+    ),
+    editorActions: [
+        {
+            id: 'setAccessToken',
+            label: 'Set access token',
+            run: (config: string) => {
+                const value = '<access token>'
+                const edits = setProperty(config, ['token'], value, defaultFormattingOptions)
+                return { edits, selectText: value }
+            },
+        },
+        {
+            id: 'addGroupProjects',
+            label: 'Add projects in a group',
+            run: (config: string) => {
+                const value = 'groups/<my group>/projects'
+                const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
+                return { edits, selectText: '<my group>' }
+            },
+        },
+        {
+            id: 'addMemberProjects',
+            label: "Add projects that have the token's user as member",
+            run: (config: string) => {
+                const value = 'projects?membership=true&archived=no'
+                const edits = setProperty(config, ['projectQuery', -1], value, defaultFormattingOptions)
+                return { edits, selectText: value }
+            },
+        },
+        {
+            id: 'addIndividualProjectByName',
+            label: 'Add single project by name',
+            run: (config: string) => {
+                const value = { name: '<group>/<name>' }
+                const edits = setProperty(config, ['projects', -1], value, defaultFormattingOptions)
+                return { edits, selectText: '<group>/<name>' }
+            },
+        },
+        {
+            id: 'addIndividualProjectByID',
+            label: 'Add single project by ID',
+            run: (config: string) => {
+                const value = { id: 123 }
+                const edits = setProperty(config, ['projects', -1], value, defaultFormattingOptions)
+                return { edits, selectText: '123' }
+            },
+        },
+    ],
+    title: 'GitLab.com',
+    defaultConfig: `{
+  "url": "https://gitlab.com",
+  "token": "<access token>",
+  "projectQuery": [
+    "projects?membership=true&archived=no"
+  ]
+}`,
+}
+
+const EZ_GITLAB_SELFMANAGED = {
+    ...EZ_GITLAB_DOTCOM,
+    title: 'GitLab Self-Managed',
+}
+
+const EZ_BITBUCKET_DOTORG: ExternalServiceKindMetadata = {
+    ...BITBUCKET_CLOUD_SERVICE,
+    shortDescription: undefined,
+    longDescription: (
+        <div>
+            <ol>
+                <li>
+                    Create a Bitbucket app password (
+                    <a
+                        href="https://confluence.atlassian.com/bitbucket/app-passwords-828781300.html"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        instructions
+                    </a>
+                    ) with{' '}
+                    <b>
+                        <code>read</code>
+                    </b>{' '}
+                    scope over your repositories and teams. Set it to be the value of the <code>appPassword</code> field
+                    in the configuration below.
+                </li>
+                <li>
+                    Set the <code>username</code> field to be the username corresponding to <code>appPassword</code>.
+                </li>
+                <li>
+                    Set the <code>teams</code> field to be the list of teams whose repositories Sourcegraph should
+                    index.
+                </li>
+            </ol>
+        </div>
+    ),
+    editorActions: [
+        {
+            id: 'setAppPassword',
+            label: 'Set app password',
+            run: config => {
+                const value = '<app password>'
+                const edits = setProperty(config, ['appPassword'], value, defaultFormattingOptions)
+                return { edits, selectText: value }
+            },
+        },
+        {
+            id: 'setUsername',
+            label: 'Set username',
+            run: config => {
+                const value = '<username to which the app password belongs>'
+                const edits = setProperty(config, ['username'], value, defaultFormattingOptions)
+                return { edits, selectText: value }
+            },
+        },
+        {
+            id: 'addTeamRepositories',
+            label: 'Add repositories belonging to team',
+            run: config => {
+                const value = '<team>'
+                const edits = setProperty(config, ['teams', -1], value, defaultFormattingOptions)
+                return { edits, selectText: value }
+            },
+        },
+    ],
+    title: 'Bitbucket.org',
+    defaultConfig: `{
+    "url": "https://bitbucket.org",
+    "appPassword": "<app password>",
+    "username": "<username to which the app password belongs>",
+    "teams": [
+    ]
+}`,
+}
+
+const EZ_BITBUCKET_SERVER: ExternalServiceKindMetadata = {
+    ...BITBUCKET_SERVER_SERVICE,
+    title: 'Bitbucket Server',
+    shortDescription: undefined,
+    longDescription: (
+        <div>
+            <ol>
+                <li>
+                    In the configuration below, set <code>url</code> to the URL of Bitbucket Server.
+                </li>
+                <li>
+                    Create a personal access token (
+                    <a
+                        href="https://confluence.atlassian.com/bitbucketserver/personal-access-tokens-939515499.html"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        instructions
+                    </a>
+                    ) with <code>read</code> scope.
+                </li>
+                <li>
+                    Set <code>username</code> to the user that created the personal access token.
+                </li>
+                <li>
+                    Specify which repositories Sourcegraph should clone using the following fields.
+                    <ul>
+                        <li>
+                            <code>repositoryQuery</code>: a list of strings that are one of the following:
+                            <ul>
+                                <li>
+                                    <code>"all"</code> selects all repositories visible to the token
+                                </li>
+                                <li>
+                                    A query string like{' '}
+                                    <code>"{'?name=<repo name>&projectname=<project>&visibility=private'}"</code> that
+                                    specifies search query parameters. See{' '}
+                                    <a
+                                        href="https://docs.atlassian.com/bitbucket-server/rest/6.1.2/bitbucket-rest.html#idp355"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        the full list of parameters
+                                    </a>
+                                    .
+                                </li>
+                                <li>
+                                    <code>"none"</code> selects no repositories (should only be used if you are listing
+                                    repositories one-by-one)
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            <code>repos</code>: a list of single repositories
+                        </li>
+                        <li>
+                            <code>exclude</code>: a list of repositories or repository name patterns to exclude
+                        </li>
+                        <li>
+                            <code>excludePersonalRepositories</code>: if true, excludes personal repositories from being
+                            indexed
+                        </li>
+                    </ul>
+                </li>
+            </ol>
+            <p>
+                See{' '}
+                <a
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    href="https://docs.sourcegraph.com/admin/external_service/bitbucket_server#configuration"
+                >
+                    the docs for more advanced options
+                </a>
+                .
+            </p>
+        </div>
+    ),
+    defaultConfig: `{
+    "url": "https://bitbucket.example.com",
+    "token": "<access token>",
+    "username": "<username that created access token>",
+    "repositoryQuery": [
+        "all"
+    ]
+}`,
+    editorActions: [
+        {
+            id: 'setURL',
+            label: 'Set Bitbucket Server URL',
+            run: config => {
+                const value = 'https://bitbucket.example.com'
+                const edits = setProperty(config, ['url'], value, defaultFormattingOptions)
+                return { edits, selectText: value }
+            },
+        },
+        {
+            id: 'setPersonalAccessToken',
+            label: 'Set access token',
+            run: config => {
+                const value = '<access token>'
+                const edits = setProperty(config, ['token'], value, defaultFormattingOptions)
+                return { edits, selectText: value }
+            },
+        },
+        {
+            id: 'setUsername',
+            label: 'Set username',
+            run: config => {
+                const value = '<username that created access token>'
+                const edits = setProperty(config, ['username'], value, defaultFormattingOptions)
+                return { edits, selectText: value }
+            },
+        },
+        {
+            id: 'addProjectRepos',
+            label: 'Add repositories in a project',
+            run: config => {
+                const value = '?projectname=<project>'
+                const edits = setProperty(config, ['repositoryQuery', -1], value, defaultFormattingOptions)
+                return { edits, selectText: '<project>' }
+            },
+        },
+        {
+            id: 'addRepo',
+            label: 'Add individual repository',
+            run: config => {
+                const value = '<project/<repository>'
+                const edits = setProperty(config, ['repos', -1], value, defaultFormattingOptions)
+                return { edits, selectText: '<project/<repository>' }
+            },
+        },
+        {
+            id: 'setSelfSignedCert',
+            label: 'Set internal or self-signed certificate',
+            run: config => {
+                const value = '<certificate>'
+                const edits = setProperty(config, ['certificate'], value, defaultFormattingOptions)
+                return { edits, selectText: value }
+            },
+        },
+    ],
+}
+
+const EZ_AWS_CODECOMMIT = {
+    ...AWS_EXTERNAL_SERVICE,
+    shortDescription: undefined,
+    longDescription: (
+        <div>
+            <ol>
+                <li>
+                    Obtain your AWS Secret Access Key and key ID:
+                    <ul>
+                        <li>Log in to your AWS Management Console.</li>
+                        <li>Click your username in the upper right corner of the page.</li>
+                        <li>Click on "My Security Credentials".</li>
+                        <li>Scroll to the section, "Access keys for CLI, SDK, & API access".</li>
+                        <li>
+                            Use an existing key ID if you still have access to its Secret Access Key. Otherwise, click
+                            "Create access key" to create a new key. Record the Secret Access Key and key ID in a safe
+                            place.
+                        </li>
+                        <li>
+                            Set <code>accessKeyID</code> and <code>secretAccessKey</code> in the configuration below to
+                            the access key ID and Secret Access Key.
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    Set the region to your AWS region. The region (e.g., <code>us-west-2</code>) should be visible in
+                    the URL when you visit AWS CodeCommit. You can visit AWS CodeCommit by logging into AWS, clicking on
+                    "Services" in the top navbar, and clicking on "CodeCommit".
+                </li>
+                <li>
+                    Create Git credentials for AWS CodeCommit (
+                    <a
+                        href="https://docs.aws.amazon.com/codecommit/latest/userguide/setting-up-gc.html#setting-up-gc-iam"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        instructions
+                    </a>
+                    ) and set these in the <code>gitCredentials</code> field.
+                </li>
+                <li>
+                    You can optionally exclude repositories using the <code>exclude</code> field.
+                </li>
+            </ol>
+        </div>
+    ),
+    defaultConfig: `{
+    "accessKeyID": "<access key id>",
+    "secretAccessKey": "<secret access key>",
+    "region": "<region>",
+    "gitCredentials": {
+        "username": "<username>",
+        "password": "<password>"
     }
-    return ALL_EXTERNAL_SERVICES[kind]
+}`,
+}
+
+const EZ_GITOLITE = {
+    ...GITOLITE_SERVICE,
+    title: 'Gitolite',
+    shortDescription: undefined,
+    longDescription: (
+        <div>
+            <ol>
+                <li>
+                    In the configuration below, set <code>host</code> to be the username and host of the Gitolite
+                    server.
+                </li>
+                <li>
+                    Set the <code>prefix</code> field to the prefix you desire for the repository names on Sourcegraph.
+                    This is typically the hostname of the Gitolite server.
+                </li>
+            </ol>
+            <p>
+                See{' '}
+                <a
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    href="https://docs.sourcegraph.com/admin/external_service/gitolite#configuration"
+                >
+                    the docs for more advanced options
+                </a>
+                .
+            </p>
+        </div>
+    ),
+    defaultConfig: `{
+    "host": "git@gitolite.example.com",
+    "prefix": "gitolite.example.com/"
+}`,
+}
+
+const EZ_GIT = {
+    ...OTHER_SERVICE,
+    title: 'Generic Git host',
+    shortDescription: undefined,
+    longDescription: (
+        <div>
+            <ol>
+                <li>
+                    In the configuration below, set <code>url</code> to be the URL of your Git host.
+                </li>
+                <li>
+                    Add the paths of the repositories you wish to index to the <code>repos</code> field. These will be
+                    appended to the host URL to obtain the repository clone URLs.
+                </li>
+            </ol>
+        </div>
+    ),
+    defaultConfig: `{
+    "url": "https://git.example.com",
+    "repos": []
+}`,
+}
+
+export const onboardingExternalServices: Record<string, ExternalServiceKindMetadata> = {
+    github: EZ_GITHUB_DOTCOM,
+    ghe: EZ_GITHUB_ENTERPRISE,
+    gitlabcom: EZ_GITLAB_DOTCOM,
+    gitlab: EZ_GITLAB_SELFMANAGED,
+    bitbucket: EZ_BITBUCKET_DOTORG,
+    bitbucketserver: EZ_BITBUCKET_SERVER,
+    aws_codecommit: EZ_AWS_CODECOMMIT,
+    gitolite: EZ_GITOLITE,
+    git: EZ_GIT,
+}
+
+export const externalServices: Record<string, ExternalServiceKindMetadata> = {
+    github: GITHUB_DOTCOM,
+    ghe: GITHUB_ENTERPRISE,
+    bitbucket: BITBUCKET_CLOUD_SERVICE,
+    bitbucketserver: BITBUCKET_SERVER_SERVICE,
+    gitlab: GITLAB_SERVICE,
+    gitolite: GITOLITE_SERVICE,
+    phabricator: PHABRICATOR_SERVICE,
+    git: OTHER_SERVICE,
+    aws: AWS_EXTERNAL_SERVICE,
+}
+
+export const defaultExternalServices: Record<GQL.ExternalServiceKind, ExternalServiceKindMetadata> = {
+    [GQL.ExternalServiceKind.GITHUB]: GITHUB_DOTCOM,
+    [GQL.ExternalServiceKind.BITBUCKETCLOUD]: BITBUCKET_CLOUD_SERVICE,
+    [GQL.ExternalServiceKind.BITBUCKETSERVER]: BITBUCKET_SERVER_SERVICE,
+    [GQL.ExternalServiceKind.GITLAB]: GITLAB_SERVICE,
+    [GQL.ExternalServiceKind.GITOLITE]: GITOLITE_SERVICE,
+    [GQL.ExternalServiceKind.PHABRICATOR]: PHABRICATOR_SERVICE,
+    [GQL.ExternalServiceKind.OTHER]: OTHER_SERVICE,
+    [GQL.ExternalServiceKind.AWSCODECOMMIT]: AWS_EXTERNAL_SERVICE,
 }

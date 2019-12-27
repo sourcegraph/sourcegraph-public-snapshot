@@ -1,19 +1,18 @@
 import * as H from 'history'
-import React from 'react'
-import { Observable, Subject, Subscription } from 'rxjs'
-import { catchError, map, switchMap, tap } from 'rxjs/operators'
-import { Markdown } from '../../../shared/src/components/Markdown'
-import { gql } from '../../../shared/src/graphql/graphql'
-import * as GQL from '../../../shared/src/graphql/schema'
-import { createAggregateError } from '../../../shared/src/util/errors'
-import { renderMarkdown } from '../../../shared/src/util/markdown'
-import { mutateGraphQL } from '../backend/graphql'
+import * as React from 'react'
+import { Link } from '../../../shared/src/components/Link'
+import { ExternalServiceCard } from '../components/ExternalServiceCard'
+import { ExternalServiceKindMetadata } from '../site-admin/externalServices'
 import { PageTitle } from '../components/PageTitle'
+import { SiteAdminExternalServiceForm } from '../site-admin/SiteAdminExternalServiceForm'
+import * as GQL from '../../../shared/src/graphql/schema'
+import { Subject, Subscription } from 'rxjs'
+import { switchMap, catchError, tap } from 'rxjs/operators'
+import { addExternalService } from '../site-admin/SiteAdminAddExternalServicePage'
 import { refreshSiteFlags } from '../site/backend'
 import { ThemeProps } from '../../../shared/src/theme'
-import { ExternalServiceCard } from '../components/ExternalServiceCard'
-import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
-import { ExternalServiceKindMetadata } from './externalServices'
+import { Markdown } from '../../../shared/src/components/Markdown'
+import { renderMarkdown } from '../../../shared/src/util/markdown'
 
 interface Props extends ThemeProps {
     history: H.History
@@ -23,9 +22,7 @@ interface Props extends ThemeProps {
         log: (event: 'AddExternalServiceFailed' | 'AddExternalServiceSucceeded', eventProperties?: any) => void
     }
 }
-
 interface State {
-    displayName: string
     config: string
 
     /**
@@ -44,15 +41,11 @@ interface State {
     externalService?: GQL.IExternalService
 }
 
-/**
- * Page for adding a single external service
- */
-export class SiteAdminAddExternalServicePage extends React.Component<Props, State> {
+export class WelcomeAddExternalServicePage extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
         this.state = {
             loading: false,
-            displayName: props.externalService.defaultDisplayName,
             config: props.externalService.defaultConfig,
         }
     }
@@ -85,7 +78,7 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                         // tslint:disable-next-line: rxjs-no-nested-subscribe
                         refreshSiteFlags().subscribe({ error: err => console.error(err) })
                         this.setState({ loading: false })
-                        this.props.history.push('/site-admin/external-services')
+                        this.props.history.push('/explore')
                     }
                 })
         )
@@ -98,29 +91,23 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
     public render(): JSX.Element | null {
         const createdExternalService = this.state.externalService
         return (
-            <div className="add-external-service-page mt-3">
-                <PageTitle title="Add external service" />
-                <h1>Add external service</h1>
-                {createdExternalService?.warning ? (
+            <div className="welcome-page-left">
+                <div className="welcome-page-left__add-code-host-content mb-5">
+                    <PageTitle title="Onboarding" />
                     <div>
-                        <div className="mb-3">
-                            <ExternalServiceCard
-                                {...this.props.externalService}
-                                title={createdExternalService.displayName}
-                                shortDescription="Update this external service configuration to manage repository mirroring."
-                                to={`/site-admin/external-services/${createdExternalService.id}`}
-                            />
-                        </div>
-                        <div className="alert alert-warning">
-                            <h4>Warning</h4>
-                            <Markdown dangerousInnerHTML={renderMarkdown(createdExternalService.warning)} />
-                        </div>
-                    </div>
-                ) : (
-                    <div>
+                        <Link className="welcome-page-left__back-button" to="/onboard/choose-code-host">
+                            &lt; Back
+                        </Link>
                         <div className="mb-3">
                             <ExternalServiceCard {...this.props.externalService} />
                         </div>
+                        {createdExternalService?.warning && (
+                            <div className="alert alert-warning">
+                                <h4>Warning</h4>
+                                <Markdown dangerousInnerHTML={renderMarkdown(createdExternalService.warning)} />
+                            </div>
+                        )}
+                        <h3>Follow these instructions to finish adding code to Sourcegraph:</h3>
                         <div className="mb-4">{this.props.externalService.longDescription}</div>
                         <SiteAdminExternalServiceForm
                             {...this.props}
@@ -129,27 +116,29 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                             editorActions={this.props.externalService.editorActions}
                             jsonSchema={this.props.externalService.jsonSchema}
                             mode="create"
+                            submitName="Next"
                             onSubmit={this.onSubmit}
                             onChange={this.onChange}
                             loading={this.state.loading}
+                            hideDisplayNameField={true}
                         />
                     </div>
-                )}
+                </div>
             </div>
         )
     }
 
     private getExternalServiceInput(): GQL.IAddExternalServiceInput {
         return {
-            displayName: this.state.displayName,
+            displayName: this.props.externalService.defaultDisplayName,
             config: this.state.config,
             kind: this.props.externalService.kind,
+            requireValidation: true,
         }
     }
 
     private onChange = (input: GQL.IAddExternalServiceInput): void => {
         this.setState({
-            displayName: input.displayName,
             config: input.config,
         })
     }
@@ -160,36 +149,4 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
         }
         this.submits.next(this.getExternalServiceInput())
     }
-}
-
-export function addExternalService(
-    input: GQL.IAddExternalServiceInput,
-    eventLogger: Pick<Props['eventLogger'], 'log'>
-): Observable<GQL.IExternalService> {
-    return mutateGraphQL(
-        gql`
-            mutation addExternalService($input: AddExternalServiceInput!) {
-                addExternalService(input: $input) {
-                    id
-                    kind
-                    displayName
-                    warning
-                }
-            }
-        `,
-        { input }
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.addExternalService || (errors && errors.length > 0)) {
-                eventLogger.log('AddExternalServiceFailed')
-                throw createAggregateError(errors)
-            }
-            eventLogger.log('AddExternalServiceSucceeded', {
-                externalService: {
-                    kind: data.addExternalService.kind,
-                },
-            })
-            return data.addExternalService
-        })
-    )
 }

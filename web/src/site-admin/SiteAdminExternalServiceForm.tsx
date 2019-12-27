@@ -16,6 +16,8 @@ interface Props extends Pick<ExternalServiceKindMetadata, 'jsonSchema' | 'editor
     warning?: string
     mode: 'edit' | 'create'
     loading: boolean
+    hideDisplayNameField?: boolean
+    submitName?: string
     onSubmit: (event?: React.FormEvent<HTMLFormElement>) => void
     onChange: (change: GQL.IAddExternalServiceInput) => void
 }
@@ -34,24 +36,26 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                         <ErrorMessage error={this.props.warning} />
                     </div>
                 )}
-                <div className="form-group">
-                    <label className="font-weight-bold" htmlFor="e2e-external-service-form-display-name">
-                        Display name:
-                    </label>
-                    <input
-                        id="e2e-external-service-form-display-name"
-                        type="text"
-                        className="form-control"
-                        required={true}
-                        autoCorrect="off"
-                        autoComplete="off"
-                        autoFocus={true}
-                        spellCheck={false}
-                        value={this.props.input.displayName}
-                        onChange={this.onDisplayNameChange}
-                        disabled={this.props.loading}
-                    />
-                </div>
+                {this.props.hideDisplayNameField || (
+                    <div className="form-group">
+                        <label className="font-weight-bold" htmlFor="e2e-external-service-form-display-name">
+                            Display name:
+                        </label>
+                        <input
+                            id="e2e-external-service-form-display-name"
+                            type="text"
+                            className="form-control"
+                            required={true}
+                            autoCorrect="off"
+                            autoComplete="off"
+                            autoFocus={true}
+                            spellCheck={false}
+                            value={this.props.input.displayName}
+                            onChange={this.onDisplayNameChange}
+                            disabled={this.props.loading}
+                        />
+                    </div>
+                )}
 
                 <div className="form-group">
                     <DynamicallyImportedMonacoSettingsEditor
@@ -82,7 +86,8 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                     disabled={this.props.loading}
                 >
                     {this.props.loading && <LoadingSpinner className="icon-inline" />}
-                    {this.props.mode === 'edit' ? 'Update external service' : 'Add external service'}
+                    {this.props.submitName ??
+                        (this.props.mode === 'edit' ? 'Update external service' : 'Add external service')}
                 </button>
             </Form>
         )

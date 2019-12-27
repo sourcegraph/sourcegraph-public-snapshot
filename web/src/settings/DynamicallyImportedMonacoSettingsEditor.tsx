@@ -86,7 +86,7 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
                 {this.props.actions && (
                     <div className="site-admin-configuration-page__action-groups">
                         <div className="site-admin-configuration-page__action-groups">
-                            <div className="site-admin-configuration-page__action-group-header">Quick configure:</div>
+                            <div className="site-admin-configuration-page__action-group-header">Quick edit:</div>
                             <div className="site-admin-configuration-page__actions">
                                 {this.props.actions.map(({ id, label }) => (
                                     <button
