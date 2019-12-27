@@ -66,6 +66,8 @@ const (
 	routeSubscriptions  = "subscriptions"
 	routeStats          = "stats"
 
+	routeSearchQueryBuilder = "search.query-builder"
+
 	// Legacy redirects
 	routeLegacyLogin                   = "login"
 	routeLegacyCareers                 = "careers"
@@ -104,6 +106,7 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/threads").Methods("GET").Name(routeThreads)
 	r.Path("/search").Methods("GET").Name(routeSearch)
 	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge)
+	r.Path("/search/query-builder").Methods("GET").Name(routeSearchQueryBuilder)
 	r.Path("/sign-in").Methods("GET").Name(uirouter.RouteSignIn)
 	r.Path("/sign-up").Methods("GET").Name(uirouter.RouteSignUp)
 	r.PathPrefix("/campaigns").Methods("GET").Name(routeCampaigns)
@@ -213,6 +216,7 @@ func initRouter() {
 	router.Get(routeUser).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
 		return brandNameSubtitle(mux.Vars(r)["username"])
 	})))
+	router.Get(routeSearchQueryBuilder).Handler(handler(serveBrandedPageString("Query builder")))
 
 	// Legacy redirects
 	if envvar.SourcegraphDotComMode() {

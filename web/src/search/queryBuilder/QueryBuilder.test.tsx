@@ -1,5 +1,5 @@
-import * as React from 'react'
-import { cleanup, fireEvent, getByDisplayValue, getByTestId, queryByTestId, render, wait } from '@testing-library/react'
+import React from 'react'
+import { cleanup, fireEvent, getByDisplayValue, queryByTestId, render, wait } from '@testing-library/react'
 import sinon from 'sinon'
 import { QueryBuilder } from './QueryBuilder'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
@@ -10,7 +10,6 @@ describe('QueryBuilder', () => {
     let onChange: sinon.SinonSpy<[string], void>
     let container: HTMLElement
     beforeEach(() => {
-        localStorage.clear()
         onChange = sinon.spy((query: string) => {})
         ;({ container } = render(
             <QueryBuilder
@@ -19,9 +18,6 @@ describe('QueryBuilder', () => {
                 patternType={SearchPatternType.regexp}
             />
         ))
-
-        const toggle = getByTestId(container, 'test-query-builder-toggle')
-        fireEvent.click(toggle)
     })
 
     it('fires the onFieldsQueryChange prop handler with the `repo:` filter when updating the "Repository" field', () => {
@@ -155,7 +151,6 @@ describe('QueryBuilder in literal mode', () => {
     let onChange: sinon.SinonSpy<[string], void>
     let container: HTMLElement
     beforeEach(() => {
-        localStorage.clear()
         onChange = sinon.spy((query: string) => {})
         ;({ container } = render(
             <QueryBuilder
@@ -164,9 +159,6 @@ describe('QueryBuilder in literal mode', () => {
                 patternType={SearchPatternType.literal}
             />
         ))
-
-        const toggle = getByTestId(container, 'test-query-builder-toggle')
-        fireEvent.click(toggle)
     })
 
     it('in literal mode, fires the onFieldsQueryChange prop handler with a single-word term not wrapped in double quotes when updating the "Exact match"', () => {

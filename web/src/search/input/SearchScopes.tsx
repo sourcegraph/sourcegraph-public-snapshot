@@ -47,7 +47,7 @@ export const SearchScopes: React.FunctionComponent<Props> = ({
     )
 
     return (
-        <div className="search-scopes">
+        <>
             {scopes
                 .filter(scope => scope.value !== '') // clicking on empty scope would not trigger search
                 .map((scope, i) => (
@@ -72,6 +72,6 @@ export const SearchScopes: React.FunctionComponent<Props> = ({
                     </NavLink>
                 </div>
             )}
-        </div>
+        </>
     )
 }

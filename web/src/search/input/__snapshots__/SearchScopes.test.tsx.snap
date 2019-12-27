@@ -2,35 +2,29 @@
 
 exports[`SearchScopes empty 1`] = `
 <div
-  className="search-scopes"
+  className="search-scopes__edit"
 >
-  <div
-    className="search-scopes__edit"
+  <a
+    aria-current={null}
+    className="search-scopes__add-edit"
+    href="/settings"
+    onClick={[Function]}
   >
-    <a
-      aria-current={null}
-      className="search-scopes__add-edit"
-      href="/settings"
-      onClick={[Function]}
+    <small
+      className="search-scopes__center"
     >
-      <small
-        className="search-scopes__center"
+      <span
+        className="search-scopes__add-scopes"
       >
-        <span
-          className="search-scopes__add-scopes"
-        >
-          Add search scopes for quick filtering
-        </span>
-      </small>
-    </a>
-  </div>
+        Add search scopes for quick filtering
+      </span>
+    </small>
+  </a>
 </div>
 `;
 
 exports[`SearchScopes with scopes 1`] = `
-<div
-  className="search-scopes"
->
+Array [
   <button
     className="btn btn-sm text-nowrap filter-chip "
     data-testid="filter-chip"
@@ -43,7 +37,7 @@ exports[`SearchScopes with scopes 1`] = `
     <div>
       n
     </div>
-  </button>
+  </button>,
   <div
     className="search-scopes__edit"
   >
@@ -59,6 +53,6 @@ exports[`SearchScopes with scopes 1`] = `
         Edit
       </small>
     </a>
-  </div>
-</div>
+  </div>,
+]
 `;

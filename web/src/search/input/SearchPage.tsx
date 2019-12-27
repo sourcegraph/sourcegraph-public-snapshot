@@ -14,7 +14,6 @@ import { ThemePreferenceProps } from '../../theme'
 import { limitString } from '../../util'
 import { submitSearch, QueryState } from '../helpers'
 import { QuickLinks } from '../QuickLinks'
-import { QueryBuilder } from './QueryBuilder'
 import { QueryInput } from './QueryInput'
 import { SearchButton } from './SearchButton'
 import { SearchScopes } from './SearchScopes'
@@ -23,6 +22,7 @@ import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcut
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SearchModeToggle } from './interactive/SearchModeToggle'
+import { Link } from '../../../../shared/src/components/Link'
 
 interface Props
     extends SettingsCascadeProps,
@@ -87,10 +87,6 @@ export class SearchPage extends React.Component<Props, State> {
                 logoUrl = branding.dark.logo
             }
         }
-        const hasScopes =
-            isSettingsValid<Settings>(this.props.settingsCascade) &&
-            Array.isArray(this.props.settingsCascade.final['search.scopes']) &&
-            this.props.settingsCascade.final['search.scopes'].length > 0
         const quickLinks = this.getQuickLinks()
         return (
             <div className="search-page">
@@ -127,49 +123,21 @@ export class SearchPage extends React.Component<Props, State> {
                                         />
                                         <SearchButton />
                                     </div>
-                                    {hasScopes ? (
-                                        <>
-                                            <div className="search-page__input-sub-container">
-                                                <SearchScopes
-                                                    history={this.props.history}
-                                                    query={this.state.userQueryState.query}
-                                                    authenticatedUser={this.props.authenticatedUser}
-                                                    settingsCascade={this.props.settingsCascade}
-                                                    patternType={this.props.patternType}
-                                                />
-                                            </div>
-                                            <QuickLinks
-                                                quickLinks={quickLinks}
-                                                className="search-page__input-sub-container"
-                                            />
-                                            <QueryBuilder
-                                                onFieldsQueryChange={this.onBuilderQueryChange}
-                                                isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                                patternType={this.props.patternType}
-                                            />
-                                        </>
-                                    ) : (
-                                        <>
-                                            <QueryBuilder
-                                                onFieldsQueryChange={this.onBuilderQueryChange}
-                                                isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                                patternType={this.props.patternType}
-                                            />
-                                            <QuickLinks
-                                                quickLinks={quickLinks}
-                                                className="search-page__input-sub-container"
-                                            />
-                                            <div className="search-page__input-sub-container">
-                                                <SearchScopes
-                                                    history={this.props.history}
-                                                    query={this.state.userQueryState.query}
-                                                    authenticatedUser={this.props.authenticatedUser}
-                                                    settingsCascade={this.props.settingsCascade}
-                                                    patternType={this.props.patternType}
-                                                />
-                                            </div>
-                                        </>
-                                    )}
+                                    <div className="search-page__input-sub-container">
+                                        {!this.props.splitSearchModes && (
+                                            <Link className="btn btn-link btn-sm pl-0" to="/search/query-builder">
+                                                Query builder
+                                            </Link>
+                                        )}
+                                        <SearchScopes
+                                            history={this.props.history}
+                                            query={this.state.userQueryState.query}
+                                            authenticatedUser={this.props.authenticatedUser}
+                                            settingsCascade={this.props.settingsCascade}
+                                            patternType={this.props.patternType}
+                                        />
+                                    </div>
+                                    <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />
                                     <Notices
                                         className="my-3"
                                         location="home"
@@ -186,10 +154,6 @@ export class SearchPage extends React.Component<Props, State> {
 
     private onUserQueryChange = (userQueryState: QueryState): void => {
         this.setState({ userQueryState })
-    }
-
-    private onBuilderQueryChange = (builderQuery: string): void => {
-        this.setState({ builderQuery })
     }
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
