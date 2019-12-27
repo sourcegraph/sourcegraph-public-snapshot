@@ -175,7 +175,7 @@ func TestSearchSuggestions(t *testing.T) {
 			defer mu.Unlock()
 			calledResolveRepoGroups = true
 			return map[string][]*types.Repo{
-				"sample": {
+				"baz": {
 					&types.Repo{Name: "foo-repo1"},
 					&types.Repo{Name: "repo3"},
 				},
@@ -183,7 +183,7 @@ func TestSearchSuggestions(t *testing.T) {
 		}
 		defer func() { mockResolveRepoGroups = nil }()
 		for _, v := range searchVersions {
-			testSuggestions(t, "repogroup:sample foo", v, []string{"repo:foo-repo1", "file:dir/foo-repo3-file-name-match", "file:dir/foo-repo1-file-name-match", "file:dir/file-content-match"})
+			testSuggestions(t, "repogroup:baz foo", v, []string{"repo:foo-repo1", "file:dir/foo-repo3-file-name-match", "file:dir/foo-repo1-file-name-match", "file:dir/file-content-match"})
 			if !calledReposListReposInGroup {
 				t.Error("!calledReposListReposInGroup")
 			}

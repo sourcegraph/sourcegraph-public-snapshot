@@ -48,8 +48,6 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook http.Handle
 
 	m.Get(apirouter.RepoRefresh).Handler(trace.TraceRoute(handler(serveRepoRefresh)))
 
-	m.Get(apirouter.Telemetry).Handler(trace.TraceRoute(telemetryHandler))
-
 	if githubWebhook != nil {
 		m.Get(apirouter.GitHubWebhooks).Handler(trace.TraceRoute(githubWebhook))
 	}

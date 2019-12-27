@@ -17,7 +17,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/src-d/enry/v2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
@@ -272,46 +271,7 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*types.Repo, error) {
 		groups[name] = repos
 	}
 
-	if envvar.SourcegraphDotComMode() {
-		sampleRepos, err := getSampleRepos(ctx)
-		if err != nil {
-			return nil, err
-		}
-		groups["sample"] = sampleRepos
-	}
-
 	return groups, nil
-}
-
-var (
-	sampleReposMu sync.Mutex
-	sampleRepos   []*types.Repo
-)
-
-func getSampleRepos(ctx context.Context) ([]*types.Repo, error) {
-	sampleReposMu.Lock()
-	defer sampleReposMu.Unlock()
-	if sampleRepos == nil {
-		sampleRepoPaths := []api.RepoName{
-			"github.com/sourcegraph/jsonrpc2",
-			"github.com/sourcegraph/javascript-typescript-langserver",
-			"github.com/gorilla/mux",
-			"github.com/gorilla/schema",
-			"github.com/golang/lint",
-			"github.com/golang/oauth2",
-			"github.com/pallets/flask",
-		}
-		repos := make([]*types.Repo, len(sampleRepoPaths))
-		for i, path := range sampleRepoPaths {
-			repo, err := backend.Repos.GetByName(ctx, path)
-			if err != nil {
-				return nil, fmt.Errorf("get %q: %s", path, err)
-			}
-			repos[i] = repo
-		}
-		sampleRepos = repos
-	}
-	return sampleRepos, nil
 }
 
 // resolveRepositories calls doResolveRepositories, caching the result for the common

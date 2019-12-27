@@ -120,7 +120,7 @@ export class UserSubscriptionsNewProductSubscriptionPage extends React.Component
  *
  * Inverse of {@link productSubscriptionInputForLocationHash}.
  */
-export function parseProductSubscriptionInputFromLocation(location: H.Location): GQL.IProductSubscriptionInput | null {
+function parseProductSubscriptionInputFromLocation(location: H.Location): GQL.IProductSubscriptionInput | null {
     if (location.hash) {
         const params = new URLSearchParams(location.hash.slice('#'.length))
         const billingPlanID = params.get('plan')

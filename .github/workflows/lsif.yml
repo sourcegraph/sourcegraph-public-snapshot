@@ -14,7 +14,6 @@ jobs:
           verbose: "true"
       - name: Upload LSIF data
         uses: sourcegraph/lsif-upload-action@master
-        continue-on-error: true
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           file: cmd/dump.lsif

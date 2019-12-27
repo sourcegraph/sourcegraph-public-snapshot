@@ -9,7 +9,7 @@ const SearchResults = lazyComponent(() => import('./search/results/SearchResults
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
 
-export interface LayoutRouteComponentProps<Params extends { [K in keyof Params]?: string }>
+interface LayoutRouteComponentProps<Params extends { [K in keyof Params]?: string }>
     extends RouteComponentProps<Params>,
         Omit<LayoutProps, 'match'> {}
 
@@ -29,14 +29,6 @@ export interface LayoutRouteProps<Params extends { [K in keyof Params]?: string 
      * Whether or not to force the width of the page to be narrow.
      */
     forceNarrowWidth?: boolean
-}
-
-/**
- * Holds properties for repository+ routes.
- */
-export const repoRevRoute: LayoutRouteProps<{ repoRevAndRest: string }> = {
-    path: '/:repoRevAndRest+',
-    render: lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer'),
 }
 
 /**
@@ -65,21 +57,6 @@ export const routes: readonly LayoutRouteProps<any>[] = [
                 <SearchPage {...props} />
             ),
         exact: true,
-    },
-    {
-        path: '/search/searches',
-        render: lazyComponent(
-            () => import('./savedSearches/RedirectToUserSavedSearches'),
-            'RedirectToUserSavedSearches'
-        ),
-        exact: true,
-        forceNarrowWidth: true,
-    },
-    {
-        path: '/open',
-        render: lazyComponent(() => import('./open/OpenPage'), 'OpenPage'),
-        exact: true,
-        forceNarrowWidth: true,
     },
     {
         path: '/sign-in',
@@ -171,11 +148,6 @@ export const routes: readonly LayoutRouteProps<any>[] = [
             // Force a hard reload so that we delegate to the HTTP handler for /help, which handles
             // redirecting /help to https://docs.sourcegraph.com. That logic is not duplicated in
             // the web app because that would add complexity with no user benefit.
-            //
-            // TODO(sqs): This currently has a bug in dev mode where you can't go back to the app
-            // after following the redirect. This will be fixed when we run docsite on
-            // http://localhost:5080 in Procfile because then the redirect will be cross-domain and
-            // won't reuse the same history stack.
             window.location.reload()
             return null
         },
@@ -184,5 +156,8 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         path: '/snippets',
         render: lazyComponent(() => import('./snippets/SnippetsPage'), 'SnippetsPage'),
     },
-    repoRevRoute,
+    {
+        path: '/:repoRevAndRest+',
+        render: lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer'),
+    },
 ]

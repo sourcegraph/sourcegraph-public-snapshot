@@ -1,26 +1,23 @@
 package eventlogger
 
 import (
-	"encoding/json"
-	"strconv"
 	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/version"
 
-	"github.com/google/uuid"
 	"golang.org/x/net/context"
 )
 
-var backendEventsTrackingSiteID = "SourcegraphBackend"
+// TelemetryRequest represents a request to log telemetry.
+type TelemetryRequest struct {
+	UserID    int32
+	EventName string
+	Argument  string
+}
 
-// defaultLogger is a singleton for event logging from the backend
-var defaultLogger = new()
-
-// LogEvent sends a payload representing an event to the api/telemetry endpoint. This
-// endpoint only functions on Sourcegraph.com, not on self-hosted instances.
+// LogEvent sends a payload representing an event to the api/telemetry endpoint.
 //
 // This method should be invoked after the frontend service has started. It is
 // safe to not do so (it will just log an error), but logging the actual event
@@ -28,85 +25,25 @@ var defaultLogger = new()
 // to wait for the frontend to start.
 //
 // Note: This does not block since it creates a new goroutine.
-func LogEvent(userID int32, userEmail, eventLabel string, eventProperties json.RawMessage) {
+func LogEvent(userID int32, name, argument string) {
 	go func() {
-		err := defaultLogger.logEvent(userID, userEmail, eventLabel, eventProperties)
+		err := logEvent(userID, name, argument)
 		if err != nil {
-			log15.Warn("eventlogger.LogEvent failed", "event", eventLabel, "error", err)
+			log15.Warn("eventlogger.LogEvent failed", "event", name, "error", err)
 		}
 	}()
 }
 
-// eventLogger represents a connection to a remote URL for sending
-// event logs, with environment and user context
-type eventLogger struct {
-	env string
-}
-
-// new returns a new EventLogger client
-func new() *eventLogger {
-	environment := "production"
-	if version.Version() == "dev" {
-		environment = "development"
-	}
-	return &eventLogger{
-		env: environment,
-	}
-}
-
-// newPayload generates a new Payload struct for a provided event
-// in the context of the EventLogger client
-func (logger *eventLogger) newPayload(userEmail string, event *Event) *Payload {
-	userInfo := &UserInfo{
-		DomainUserID: "sourcegraph-backend-anonymous",
-	}
-	if userEmail != "" {
-		userInfo = &UserInfo{
-			DomainUserID: uuid.New().String(),
-			Email:        userEmail,
-		}
-	}
-	return &Payload{
-		DeviceInfo: &DeviceInfo{
-			Platform:         "Web",
-			TrackerNamespace: "sg",
-		},
-		Events: []*Event{
-			event,
-		},
-		Header: &Header{
-			SiteID: backendEventsTrackingSiteID,
-			Env:    logger.env,
-		},
-		BatchInfo: &BatchInfo{
-			BatchID:     uuid.New().String(),
-			TotalEvents: 1,
-			ServerTime:  strconv.FormatInt(int64(time.Now().UTC().Unix()*1000), 10),
-		},
-		UserInfo: userInfo,
-	}
-}
-
 // logEvent sends a payload representing some user event to the InternalClient telemetry API
-func (logger *eventLogger) logEvent(userID int32, userEmail string, eventLabel string, eventProperties json.RawMessage) error {
-	event := &Event{
-		Type:            eventLabel,
-		EventID:         uuid.New().String(),
-		ClientTimestamp: time.Now().UTC().Unix() * 1000,
-		Context: &Context{
-			EventLabel: eventLabel,
-			Backend:    eventProperties,
-		},
-	}
-	payload := logger.newPayload(userEmail, event)
+func logEvent(userID int32, name, argument string) error {
 	reqBody := &TelemetryRequest{
-		UserID:     userID,
-		EventLabel: eventLabel,
-		Payload:    payload,
+		UserID:    userID,
+		EventName: name,
+		Argument:  argument,
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	return api.InternalClient.LogTelemetry(ctx, logger.env, reqBody)
+	return api.InternalClient.LogTelemetry(ctx, reqBody)
 }

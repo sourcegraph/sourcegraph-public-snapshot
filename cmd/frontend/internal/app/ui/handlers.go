@@ -253,15 +253,6 @@ func serveSignIn(w http.ResponseWriter, r *http.Request) error {
 	}
 	common.Title = brandNameSubtitle("Sign in")
 
-	// If we are being redirected to another page after sign in, it means the
-	// user attempted to access something without authorization. Reflect this
-	// in the status code. This is useful when users curl / code which
-	// interacts with the Sourcegraph endpoints. Specifically this is a common
-	// issue facing extension developers interacting with the raw API.
-	if r.URL.Query().Get("returnTo") != "" {
-		w.WriteHeader(http.StatusUnauthorized)
-	}
-
 	return renderTemplate(w, "app.html", common)
 }
 
