@@ -68,7 +68,7 @@ export class SiteInitPage extends React.Component<Props> {
                 submitTrialRequest(args.email)
             }
 
-            window.location.replace('/site-admin')
+            window.location.replace('/onboard')
             return Promise.resolve()
         })
 }

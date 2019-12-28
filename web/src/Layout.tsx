@@ -116,8 +116,8 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const needsSiteInit = window.context.showOnboarding
     const isSiteInit =
         props.location.pathname === '/site-admin/init' ||
-        props.location.pathname === '/onboard' ||
-        props.location.pathname.startsWith('/onboard/')
+        (props.location.pathname !== '/onboard/guide' &&
+            (props.location.pathname === '/onboard' || props.location.pathname.startsWith('/onboard/')))
 
     const hideGlobalSearchInput: GlobalNavbar['props']['hideGlobalSearchInput'] =
         props.location.pathname === '/stats' || props.location.pathname === '/search/query-builder'

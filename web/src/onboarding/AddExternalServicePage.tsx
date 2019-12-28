@@ -92,12 +92,18 @@ export class WelcomeAddExternalServicePage extends React.Component<Props, State>
         const createdExternalService = this.state.externalService
         return (
             <div className="welcome-page-left">
+                <div className="welcome-page-left__buttons">
+                    <Link className="btn btn-secondary welcome-page-left__back-button" to="/onboard/choose-code-host">
+                        &lt; Back
+                    </Link>
+                    &nbsp;
+                    <Link className="btn btn-secondary welcome-page-left__back-button" to="/onboard/guide">
+                        Skip &gt;
+                    </Link>
+                </div>
                 <div className="welcome-page-left__add-code-host-content mb-5">
                     <PageTitle title="Onboarding" />
                     <div>
-                        <Link className="welcome-page-left__back-button" to="/onboard/choose-code-host">
-                            &lt; Back
-                        </Link>
                         <div className="mb-3">
                             <ExternalServiceCard {...this.props.externalService} />
                         </div>

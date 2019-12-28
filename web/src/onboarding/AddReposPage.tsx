@@ -4,6 +4,7 @@ import { ExternalServiceCard } from '../components/ExternalServiceCard'
 import { onboardingExternalServices } from '../site-admin/externalServices'
 import { map } from 'lodash'
 import { WelcomeAddExternalServicePage } from './AddExternalServicePage'
+import { Link } from '../../../shared/src/components/Link'
 
 interface WelcomeAddReposPageProps {
     history: H.History
@@ -36,6 +37,11 @@ export class WelcomeAddReposPage extends React.Component<WelcomeAddReposPageProp
 
         return (
             <div className="welcome-page-left">
+                <div className="welcome-page-left__buttons">
+                    <Link className="btn btn-secondary welcome-page-left__back-button" to="/onboard/guide">
+                        Skip &gt;
+                    </Link>
+                </div>
                 <div className="welcome-page-left__content">
                     <h2 className="welcome-page-left__content-header">
                         Where are the repositories you&rsquo;d like Sourcegraph to index?

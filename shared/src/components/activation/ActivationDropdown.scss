@@ -34,4 +34,7 @@
 
 .activation-dropdown-header {
     white-space: normal;
+    &:hover {
+        text-decoration: none;
+    }
 }

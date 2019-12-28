@@ -8,6 +8,7 @@ import { concat, of, Subject, Subscription } from 'rxjs'
 import { concatMap, delay, filter, map, pairwise, startWith, tap } from 'rxjs/operators'
 import { Activation, percentageDone } from './Activation'
 import { ActivationChecklistItem } from './ActivationChecklist'
+import { Link } from '../Link'
 
 interface Props {
     history: H.History
@@ -100,7 +101,7 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
                             ...confettiConfig,
                         }}
                     />
-                    Setup
+                    Get started
                     <Confetti
                         active={this.state.animate}
                         config={{
@@ -117,12 +118,10 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
                     </span>
                 </DropdownToggle>
                 <DropdownMenu className="activation-dropdown" right={true}>
-                    <div className="dropdown-item-text activation-dropdown-header">
-                        <h3 className="mb-1">Get started with Sourcegraph</h3>
-                        <p className="mb-0">
-                            Welcome to Sourcegraph! Complete the steps below to finish setting up your instance.
-                        </p>
-                    </div>
+                    <Link to="/onboard/guide" className="dropdown-item-text activation-dropdown-header">
+                        <h3>Welcome to Sourcegraph</h3>
+                        <p className="mb-1">Complete the steps below to finish onboarding!</p>
+                    </Link>
                     <DropdownItem divider={true} />
                     {this.props.activation && this.props.activation.completed ? (
                         this.props.activation.steps.map(step => (

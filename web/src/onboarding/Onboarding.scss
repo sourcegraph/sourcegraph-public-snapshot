@@ -21,22 +21,46 @@
     }
 
     &__content {
-        width: 50%;
+        width: 75%;
         max-width: 750px;
-        margin-top: 10rem;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    &__content-2 {
+        width: 75%;
+        max-width: 500px;
+        margin-top: 6rem;
         margin-left: auto;
         margin-right: auto;
     }
 
     &__add-code-host-content {
-        width: 50%;
+        width: 75%;
         max-width: 750px;
-        margin-top: 7rem;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    &__buttons {
+        width: 75%;
+        max-width: 750px;
+        margin-top: 2rem;
         margin-left: auto;
         margin-right: auto;
     }
 
     &__content-header {
         margin-bottom: 1em;
+    }
+
+    &__hang-right {
+        text-align: right;
+    }
+
+    .list-group-item {
+        border: 0;
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
     }
 }

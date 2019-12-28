@@ -101,14 +101,19 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         forceNarrowWidth: false,
     },
     {
-        path: '/onboard/guide',
+        path: '/onboard',
         exact: true,
-        render: lazyComponent(() => import('./onboarding/WelcomePage'), 'WelcomePage3'),
+        render: () => <Redirect to="/onboard/choose-code-host" />,
     },
     {
         path: '/onboard/choose-code-host',
         exact: true,
         render: (props: any) => <WelcomeAddReposPage {...props} eventLogger={eventLogger} />,
+    },
+    {
+        path: '/onboard/guide',
+        exact: true,
+        render: lazyComponent(() => import('./onboarding/OnboardingPage'), 'OnboardingPage'),
     },
     {
         path: '/site-admin',
@@ -129,7 +134,10 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: '/explore',
-        render: lazyComponent(() => import('./explore/ExploreArea'), 'ExploreArea'),
+        render: lazyComponent(() => {
+            console.log('# HERE')
+            return import('./explore/ExploreArea')
+        }, 'ExploreArea'),
         exact: true,
     },
     {
