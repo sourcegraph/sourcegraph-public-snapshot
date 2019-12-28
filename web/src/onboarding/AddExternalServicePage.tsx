@@ -13,8 +13,9 @@ import { refreshSiteFlags } from '../site/backend'
 import { ThemeProps } from '../../../shared/src/theme'
 import { Markdown } from '../../../shared/src/components/Markdown'
 import { renderMarkdown } from '../../../shared/src/util/markdown'
+import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 
-interface Props extends ThemeProps {
+interface Props extends ThemeProps, ActivationProps {
     history: H.History
     externalService: ExternalServiceKindMetadata
     eventLogger: {
@@ -78,7 +79,10 @@ export class WelcomeAddExternalServicePage extends React.Component<Props, State>
                         // tslint:disable-next-line: rxjs-no-nested-subscribe
                         refreshSiteFlags().subscribe({ error: err => console.error(err) })
                         this.setState({ loading: false })
-                        this.props.history.push('/explore')
+                        if (this.props.activation) {
+                            this.props.activation.update({ ConnectedCodeHost: true })
+                        }
+                        this.props.history.push('/onboard/guide')
                     }
                 })
         )

@@ -70,7 +70,7 @@ export interface ExternalServiceKindMetadata {
 const defaultFormattingOptions: FormattingOptions = {
     eol: '\n',
     insertSpaces: true,
-    tabSize: 4,
+    tabSize: 2,
 }
 
 /**
@@ -844,11 +844,11 @@ const EZ_GITHUB_DOTCOM = {
                     scope, and set it to be the value of the <code>token</code> field in the configuration below.
                 </li>
                 <li>
-                    Specify the list of GitHub organizations whose repositories Sourcegraph should index in the{' '}
-                    <code>organizations</code> field.
-                    <br />
-                    Sourcegraph also supports other ways of selecting repositories:
+                    Specify which repositories Sourcegraph should index using one of the following fields:
                     <ul>
+                        <li>
+                            <code>organizations</code>: specify a list of GitHub organizations.
+                        </li>
                         <li>
                             <code>repositoryQuery</code>: specify a list of GitHub search queries. Use "affiliated" to
                             specify all repositories associated with the access token.
@@ -915,7 +915,6 @@ const EZ_GITHUB_DOTCOM = {
   "url": "https://github.com",
   "token": "<access token>",
   "orgs": [
-    "<organization name>"
   ]
 }`,
 }
@@ -1095,11 +1094,11 @@ const EZ_BITBUCKET_DOTORG: ExternalServiceKindMetadata = {
     ],
     title: 'Bitbucket.org',
     defaultConfig: `{
-    "url": "https://bitbucket.org",
-    "appPassword": "<app password>",
-    "username": "<username to which the app password belongs>",
-    "teams": [
-    ]
+  "url": "https://bitbucket.org",
+  "appPassword": "<app password>",
+  "username": "<username to which the app password belongs>",
+  "teams": [
+  ]
 }`,
 }
 
@@ -1182,12 +1181,12 @@ const EZ_BITBUCKET_SERVER: ExternalServiceKindMetadata = {
         </div>
     ),
     defaultConfig: `{
-    "url": "https://bitbucket.example.com",
-    "token": "<access token>",
-    "username": "<username that created access token>",
-    "repositoryQuery": [
-        "all"
-    ]
+  "url": "https://bitbucket.example.com",
+  "token": "<access token>",
+  "username": "<username that created access token>",
+  "repositoryQuery": [
+    "all"
+  ]
 }`,
     editorActions: [
         {
@@ -1294,13 +1293,13 @@ const EZ_AWS_CODECOMMIT = {
         </div>
     ),
     defaultConfig: `{
-    "accessKeyID": "<access key id>",
-    "secretAccessKey": "<secret access key>",
-    "region": "<region>",
-    "gitCredentials": {
-        "username": "<username>",
-        "password": "<password>"
-    }
+  "accessKeyID": "<access key id>",
+  "secretAccessKey": "<secret access key>",
+  "region": "<region>",
+  "gitCredentials": {
+    "username": "<username>",
+    "password": "<password>"
+  }
 }`,
 }
 
@@ -1334,8 +1333,8 @@ const EZ_GITOLITE = {
         </div>
     ),
     defaultConfig: `{
-    "host": "git@gitolite.example.com",
-    "prefix": "gitolite.example.com/"
+  "host": "git@gitolite.example.com",
+  "prefix": "gitolite.example.com/"
 }`,
 }
 
@@ -1357,8 +1356,8 @@ const EZ_GIT = {
         </div>
     ),
     defaultConfig: `{
-    "url": "https://git.example.com",
-    "repos": []
+  "url": "https://git.example.com",
+  "repos": []
 }`,
 }
 
