@@ -9,20 +9,24 @@ import * as GQL from '../../../shared/src/graphql/schema'
  */
 export const PersonLink: React.FunctionComponent<{
     /**
-     * The Sourcegraph user, or if there is no user account associated with this person, then the
-     * person's display name (as a string).
+     * The person to link to. If there is no user account associated with this person, then the
+     * person's display name is shown.
      */
-    user: Pick<GQL.IUser, 'displayName' | 'username' | 'url'> | string
+    person: Pick<GQL.IPerson, 'displayName'> & { user: Pick<GQL.IUser, 'username' | 'displayName' | 'url'> | null }
 
     className?: string
 
     /** A class name applied when there is an associated user account. */
     userClassName?: string
-}> = ({ user, className = '', userClassName = '' }) =>
-    typeof user === 'string' ? (
-        <span className={className}>{user}</span>
-    ) : (
-        <Link to={user.url} className={`${className} ${userClassName}`} title={user.displayName || ''}>
-            {user.username}
+}> = ({ person, className = '', userClassName = '' }) =>
+    person.user ? (
+        <Link
+            to={person.user.url}
+            className={`${className} ${userClassName}`}
+            title={person.user.displayName || person.displayName}
+        >
+            {person.user.username}
         </Link>
+    ) : (
+        <span className={className}>{person.displayName}</span>
     )

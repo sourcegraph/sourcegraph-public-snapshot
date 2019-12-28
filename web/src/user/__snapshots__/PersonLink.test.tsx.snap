@@ -13,7 +13,7 @@ exports[`PersonLink with user account 1`] = `
   className="a b"
   href="/u"
   onClick={[Function]}
-  title="Alice"
+  title="Alice Smith"
 >
   alice
 </a>

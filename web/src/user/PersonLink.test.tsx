@@ -5,7 +5,11 @@ import { PersonLink } from './PersonLink'
 
 describe('PersonLink', () => {
     test('no user account', () =>
-        expect(renderer.create(<PersonLink user="alice" className="a" userClassName="b" />).toJSON()).toMatchSnapshot())
+        expect(
+            renderer
+                .create(<PersonLink person={{ displayName: 'alice', user: null }} className="a" userClassName="b" />)
+                .toJSON()
+        ).toMatchSnapshot())
 
     test('with user account', () =>
         expect(
@@ -13,7 +17,10 @@ describe('PersonLink', () => {
                 .create(
                     <MemoryRouter>
                         <PersonLink
-                            user={{ displayName: 'Alice', username: 'alice', url: 'u' }}
+                            person={{
+                                displayName: 'Alice',
+                                user: { username: 'alice', displayName: 'Alice Smith', url: 'u' },
+                            }}
                             className="a"
                             userClassName="b"
                         />
