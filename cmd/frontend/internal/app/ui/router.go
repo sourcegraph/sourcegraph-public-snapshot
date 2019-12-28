@@ -29,6 +29,7 @@ import (
 
 const (
 	routeHome           = "home"
+	routeOnboarding     = "onboarding"
 	routeSearch         = "search"
 	routeSearchBadge    = "search-badge"
 	routeRepo           = "repo"
@@ -103,6 +104,7 @@ func newRouter() *mux.Router {
 
 	// Top-level routes.
 	r.Path("/").Methods("GET").Name(routeHome)
+	r.PathPrefix("/onboard").Methods("GET").Name(routeOnboarding)
 	r.PathPrefix("/threads").Methods("GET").Name(routeThreads)
 	r.Path("/search").Methods("GET").Name(routeSearch)
 	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge)
@@ -210,6 +212,8 @@ func initRouter() {
 	router.Get(routeSnippets).Handler(handler(serveBrandedPageString("Snippets")))
 	router.Get(routeSubscriptions).Handler(handler(serveBrandedPageString("Subscriptions")))
 	router.Get(routeStats).Handler(handler(serveBrandedPageString("Stats")))
+
+	router.Get(routeOnboarding).Handler(handler(serveBrandedPageString("Onboarding")))
 
 	router.Get(routeUserSettings).Handler(handler(serveBrandedPageString("User settings")))
 	router.Get(routeUserRedirect).Handler(handler(serveBrandedPageString("User")))
