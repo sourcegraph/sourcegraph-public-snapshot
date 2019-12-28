@@ -130,6 +130,9 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
         ) : (
             <div className={logoLinkClassName}>{logo}</div>
         )
+        const navLinks = !this.state.authRequired && !this.props.hideNavLinks && (
+            <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />
+        )
 
         return (
             <div className={`global-navbar ${this.props.lowProfile ? '' : 'global-navbar--bg border-bottom'} py-1`}>
@@ -148,6 +151,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                 Search
                             </Link>
                         </div>
+                        {navLinks}
                     </>
                 ) : (
                     <>
@@ -178,9 +182,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                         />
                                     </div>
                                 )}
-                                {!this.state.authRequired && !this.props.hideNavLinks && (
-                                    <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />
-                                )}
+                                {navLinks}
                             </>
                         )}
                     </>
