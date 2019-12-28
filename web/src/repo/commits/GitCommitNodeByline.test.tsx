@@ -1,8 +1,8 @@
 import React from 'react'
 import renderer from 'react-test-renderer'
-import { GitCommitNodeByline, Signature } from './GitCommitNodeByline'
+import { GitCommitNodeByline } from './GitCommitNodeByline'
 
-const FIXTURE_SIGNATURE_1: Signature = {
+const FIXTURE_SIGNATURE_1 = {
     date: '1990-01-01',
     person: {
         name: 'Alice Zhao',
@@ -13,7 +13,7 @@ const FIXTURE_SIGNATURE_1: Signature = {
     },
 }
 
-const FIXTURE_SIGNATURE_2: Signature = {
+const FIXTURE_SIGNATURE_2 = {
     date: '1991-01-01',
     person: {
         name: 'Bob Yang',
@@ -22,6 +22,8 @@ const FIXTURE_SIGNATURE_2: Signature = {
         avatarURL: 'http://example.com/bob.png',
         user: {
             username: 'bYang',
+            displayName: 'Bob Yang',
+            url: 'https://example.com/bobyang',
         },
     },
 }
@@ -73,6 +75,8 @@ describe('GitCommitNodeByline', () => {
                                 avatarURL: 'http://example.com/github.png',
                                 user: {
                                     username: 'gitUserName',
+                                    displayName: 'Alice',
+                                    url: 'https://example.com',
                                 },
                             },
                         }}

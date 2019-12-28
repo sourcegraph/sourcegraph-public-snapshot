@@ -1,32 +1,40 @@
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import * as GQL from '../../../shared/src/graphql/schema'
+import { LinkOrSpan } from '../../../shared/src/components/LinkOrSpan'
+
+interface Person extends Pick<GQL.IPerson, 'email' | 'displayName'> {
+    user: Pick<GQL.IUser, 'username' | 'displayName' | 'url'> | null
+}
 
 /**
- * A person's name, with a link to their Sourcegraph user profile if an associated user is found. It
- * is intended to be used to display the a value of the GraphQL type Person, which represents a
- * person that may or may not have an associated user account on Sourcegraph.
+ * Formats a person name to: "username (Display Name)" or "Display Name"
+ */
+export const formatPersonName = ({ user, displayName }: GQL.IPerson | Person): string =>
+    user ? user.username : displayName
+
+/**
+ * A person's name, with a link to their Sourcegraph user profile if an associated user account is
+ * found.
  */
 export const PersonLink: React.FunctionComponent<{
-    /**
-     * The person to link to. If there is no user account associated with this person, then the
-     * person's display name is shown.
-     */
-    person: Pick<GQL.IPerson, 'displayName'> & { user: Pick<GQL.IUser, 'username' | 'displayName' | 'url'> | null }
+    /** The person to link to. */
+    person: GQL.IPerson | Person
 
+    /** A class name that is always applied. */
     className?: string
 
     /** A class name applied when there is an associated user account. */
     userClassName?: string
-}> = ({ person, className = '', userClassName = '' }) =>
-    person.user ? (
-        <Link
-            to={person.user.url}
-            className={`${className} ${userClassName}`}
-            title={person.user.displayName || person.displayName}
-        >
-            {person.user.username}
-        </Link>
-    ) : (
-        <span className={className}>{person.displayName}</span>
-    )
+}> = ({ person, className = '', userClassName = '' }) => (
+    <LinkOrSpan
+        to={person.user?.url}
+        className={`${className} ${person.user ? userClassName : ''}`}
+        data-tooltip={
+            person.user && (person.user.displayName || person.displayName)
+                ? `${person.user.displayName || person.displayName} <${person.email}>`
+                : person.email
+        }
+    >
+        {formatPersonName(person)}
+    </LinkOrSpan>
+)

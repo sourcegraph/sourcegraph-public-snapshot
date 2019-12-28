@@ -7,7 +7,13 @@ describe('PersonLink', () => {
     test('no user account', () =>
         expect(
             renderer
-                .create(<PersonLink person={{ displayName: 'alice', user: null }} className="a" userClassName="b" />)
+                .create(
+                    <PersonLink
+                        person={{ displayName: 'alice', email: 'alice@example.com', user: null }}
+                        className="a"
+                        userClassName="b"
+                    />
+                )
                 .toJSON()
         ).toMatchSnapshot())
 
@@ -19,6 +25,7 @@ describe('PersonLink', () => {
                         <PersonLink
                             person={{
                                 displayName: 'Alice',
+                                email: 'alice@example.com',
                                 user: { username: 'alice', displayName: 'Alice Smith', url: 'u' },
                             }}
                             className="a"
