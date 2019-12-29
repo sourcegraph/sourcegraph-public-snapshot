@@ -2,7 +2,8 @@
 
 exports[`PersonLink no user account 1`] = `
 <span
-  className="a"
+  className="a "
+  data-tooltip="alice@example.com"
 >
   alice
 </span>
@@ -11,9 +12,8 @@ exports[`PersonLink no user account 1`] = `
 exports[`PersonLink with user account 1`] = `
 <a
   className="a b"
-  href="/u"
-  onClick={[Function]}
-  title="Alice"
+  data-tooltip="Alice Smith <alice@example.com>"
+  href="u"
 >
   alice
 </a>
