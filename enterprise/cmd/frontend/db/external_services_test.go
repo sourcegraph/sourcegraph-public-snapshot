@@ -878,7 +878,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			kind:   "GITLAB",
 			desc:   "invalid projects item name",
 			config: `{"projects": [{"name": "bar"}]}`,
-			assert: includes(`projects.0.name: Does not match pattern '^[\w-]+/[\w.-]+$'`),
+			assert: includes(`projects.0.name: Does not match pattern '^[\w-]+(/[\w.-]+)+$'`),
 		},
 		{
 			kind:   "GITLAB",
