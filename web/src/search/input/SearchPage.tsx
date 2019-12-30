@@ -30,9 +30,10 @@ import { ExtensionsControllerProps } from '../../../../shared/src/extensions/con
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SearchModeToggle } from './interactive/SearchModeToggle'
 import { Link } from '../../../../shared/src/components/Link'
+import { HomeSections, isHomeSectionsEnabled } from '../../home/HomeSections'
 
 interface Props
-    extends SettingsCascadeProps,
+    extends SettingsCascadeProps<Settings>,
         ThemeProps,
         ThemePreferenceProps,
         ActivationProps,
@@ -159,11 +160,18 @@ export class SearchPage extends React.Component<Props, State> {
                                         />
                                     </div>
                                     <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />
-                                    <Notices
-                                        className="my-3"
-                                        location="home"
-                                        settingsCascade={this.props.settingsCascade}
-                                    />
+                                    {isHomeSectionsEnabled(this.props.settingsCascade) ? (
+                                        <>
+                                            <br className="mt-3" />
+                                            <HomeSections settingsCascade={this.props.settingsCascade} />
+                                        </>
+                                    ) : (
+                                        <Notices
+                                            className="my-3"
+                                            location="home"
+                                            settingsCascade={this.props.settingsCascade}
+                                        />
+                                    )}
                                 </Form>
                             </>
                         )}

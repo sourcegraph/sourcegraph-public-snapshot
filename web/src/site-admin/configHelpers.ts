@@ -22,6 +22,16 @@ const addSearchScopeToSettings: ConfigInsertionFunction = config => {
     return { edits, selectText: '<name>' }
 }
 
+const addRepositoryGroupToSettings: ConfigInsertionFunction = config => {
+    const name = prompt('Name of new repository group:')
+    if (name === null) {
+        return { edits: [] }
+    }
+
+    const edits = setProperty(config, ['search.repositoryGroups', name], [], defaultFormattingOptions)
+    return { edits }
+}
+
 const addQuickLinkToSettings: ConfigInsertionFunction = config => {
     const value: { name: string; url: string } = {
         name: '<human-readable name>',
@@ -44,5 +54,6 @@ export const settingsActions: EditorAction[] = [
         run: setSearchContextLines,
     },
     { id: 'sourcegraph.settings.searchScopes', label: 'Add search scope', run: addSearchScopeToSettings },
+    { id: 'sourcegraph.settings.addRepositoryGroup', label: 'Add repository group', run: addRepositoryGroupToSettings },
     { id: 'sourcegraph.settings.quickLinks', label: 'Add quick link', run: addQuickLinkToSettings },
 ]

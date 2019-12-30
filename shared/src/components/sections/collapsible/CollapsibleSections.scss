@@ -1,0 +1,11 @@
+.collapsible-sections {
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+
+    &__section-header {
+        white-space: nowrap;
+        padding-left: 0;
+        display: block;
+    }
+}
