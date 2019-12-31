@@ -42,7 +42,6 @@ func TestGetLang_language(t *testing.T) {
 			TotalBytes: 2,
 			TotalLines: 1,
 		}},
-
 		// Ensure that .tsx and .jsx are considered as valid extensions for TypeScript and JavaScript,
 		// respectively.
 		"override tsx": {file: fi{"a.tsx", "xx"}, want: Lang{
