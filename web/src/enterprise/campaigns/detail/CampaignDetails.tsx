@@ -384,7 +384,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
     return (
         <>
-            <PageTitle title={campaign && campaign.__typename === 'Campaign' ? campaign.name : 'New Campaign'} />
+            <PageTitle title={campaign && campaign.__typename === 'Campaign' ? campaign.name : 'New campaign'} />
             <Form onSubmit={onSubmit} onReset={onCancel} className="e2e-campaign-form position-relative">
                 <div className="d-flex mb-2">
                     <h2 className="m-0">
