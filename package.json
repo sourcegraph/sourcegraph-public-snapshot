@@ -241,7 +241,7 @@
     "mdi-react": "^5.5.0",
     "minimatch": "^3.0.4",
     "monaco-editor": "^0.18.1",
-    "open-color": "^1.6.3",
+    "open-color": "^1.7.0",
     "pretty-bytes": "^5.3.0",
     "react": "^16.12.0",
     "react-circular-progressbar": "^1.0.0",
