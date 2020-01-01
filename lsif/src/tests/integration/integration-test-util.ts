@@ -84,7 +84,7 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
             await connection.close()
         }
 
-        await child_process.exec(dropCommand, { env }).then(() => {})
+        await child_process.exec(dropCommand, { env }).then(() => undefined)
     }
 
     // Try to create database

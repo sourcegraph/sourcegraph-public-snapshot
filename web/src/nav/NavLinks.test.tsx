@@ -48,7 +48,9 @@ describe('NavLinks', () => {
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     const USER = { username: 'u' } as GQL.IUser
     const history = H.createMemoryHistory({ keyLength: 0 })
-    const NOOP_TOGGLE_MODE = (): void => {}
+    const NOOP_TOGGLE_MODE = (): void => {
+        /* noop */
+    }
     const commonProps = {
         extensionsController: NOOP_EXTENSIONS_CONTROLLER,
         platformContext: NOOP_PLATFORM_CONTEXT,

@@ -51,7 +51,9 @@ export async function waitForConfiguration(logger: Logger): Promise<() => Config
 
             oldConfiguration = configuration
             resolve()
-        }).catch(() => {})
+        }).catch(() => {
+            /* noop */
+        })
     })
 
     // This value is guaranteed to be set by the resolution of the promise above
