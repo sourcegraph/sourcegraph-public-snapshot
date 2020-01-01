@@ -144,3 +144,570 @@ exports[`CampaignDetails creation form 1`] = `
   </Form>
 </React.Fragment>
 `;
+
+exports[`CampaignDetails editing existing 1`] = `
+Array [
+  <form
+    className="e2e-campaign-form position-relative "
+    onInvalid={[Function]}
+    onReset={[Function]}
+    onSubmit={[Function]}
+  >
+    <div
+      className="d-flex mb-2"
+    >
+      <h2
+        className="m-0"
+      >
+        <svg
+          className="mdi-icon icon-inline mr-2 text-success"
+          fill="currentColor"
+          height={24}
+          viewBox="0 0 24 24"
+          width={24}
+        >
+          <path
+            d="M3,3H5V13H9V7H13V11H17V15H21V21H3V3Z"
+          />
+        </svg>
+        <span>
+          <a
+            href="/campaigns"
+          >
+            Campaigns
+          </a>
+        </span>
+        <span
+          className="text-muted d-inline-block mx-2"
+        >
+          /
+        </span>
+        <span>
+          alice
+        </span>
+        <span
+          className="text-muted d-inline-block mx-2"
+        >
+          /
+        </span>
+        <CampaignTitleField
+          className="w-auto d-inline-block e2e-campaign-title"
+          disabled={false}
+          onChange={[Function]}
+        />
+      </h2>
+      <span
+        className="flex-grow-1 d-flex justify-content-end align-items-center"
+      >
+        <button
+          className="btn btn-primary mr-1"
+          disabled={false}
+          type="submit"
+        >
+          Save
+        </button>
+        <button
+          className="btn btn-secondary"
+          disabled={false}
+          type="reset"
+        >
+          Cancel
+        </button>
+      </span>
+    </div>
+    <div
+      className="card"
+    >
+      <div
+        className="card-header"
+      >
+        <strong>
+           
+          alice
+        </strong>
+         
+        started 
+        <span
+          className="timestamp"
+          data-tooltip="2020-01-01"
+        >
+          in almost 14 years
+        </span>
+      </div>
+      <CampaignDescriptionField
+        disabled={false}
+        onChange={[Function]}
+        value="d"
+      />
+    </div>
+    <p
+      className="ml-1 mb-0"
+    >
+      <small>
+        <a
+          href="/help/user/markdown"
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          Markdown supported
+        </a>
+      </small>
+    </p>
+    <div
+      className="container-fluid my-3"
+    >
+      <div
+        className="row campaign-details__property-row"
+      >
+        <h3
+          className="mr-3 mb-0 campaign-details__property-label"
+        >
+          Type
+        </h3>
+        <div
+          className="flex-grow-1 form-group mb-0"
+        >
+          <p
+            className="mb-0"
+          >
+            Comby search and replace
+          </p>
+        </div>
+      </div>
+      <div
+        className="row mt-3"
+      >
+        <h3
+          className="mr-3 mb-0 flex-grow-0 campaign-details__property-label"
+        >
+          Arguments
+        </h3>
+        <MonacoSettingsEditor
+          className="flex-grow-1 e2e-campaign-arguments"
+          height={110}
+          isLightTheme={true}
+          jsonSchema={
+            Object {
+              "$id": "comby-spec.json#",
+              "$schema": "http://json-schema.org/draft-07/schema#",
+              "additionalProperties": false,
+              "description": "Schema for comby options",
+              "properties": Object {
+                "matchTemplate": Object {
+                  "description": "See https://comby.dev/#match-syntax for syntax",
+                  "minLength": 1,
+                  "type": "string",
+                },
+                "rewriteTemplate": Object {
+                  "description": "See https://comby.dev/#match-syntax for syntax",
+                  "minLength": 1,
+                  "type": "string",
+                },
+                "scopeQuery": Object {
+                  "description": "Define a scope to narrow down repositories affected by this change. Only GitHub and Bitbucket Server are supported.",
+                  "minLength": 1,
+                  "type": "string",
+                },
+              },
+              "required": Array [
+                "scopeQuery",
+                "matchTemplate",
+                "rewriteTemplate",
+              ],
+              "type": "object",
+            }
+          }
+          onChange={[Function]}
+          readOnly={true}
+          value="{}"
+        />
+      </div>
+    </div>
+  </form>,
+  <h3>
+    Progress
+  </h3>,
+  <div
+    className="alert alert-info"
+  >
+    Burndown chart will be shown when there is more than 1 day of data.
+  </div>,
+  <div
+    className="tabs mt-3"
+  >
+    <div
+      className="tab-bar "
+    >
+      <button
+        className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--active tab-bar__tab--h5like"
+        data-e2e-tab="diff"
+        onClick={[Function]}
+        type="button"
+      >
+        <span
+          className="e2e-campaign-diff-tab"
+        >
+          Diff 
+          <span
+            className="text-success"
+          >
+            +
+            0
+          </span>
+           
+          <span
+            className="text-danger"
+          >
+            -
+            0
+          </span>
+        </span>
+      </button>
+      <button
+        className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
+        data-e2e-tab="changesets"
+        onClick={[Function]}
+        type="button"
+      >
+        <span
+          className="e2e-campaign-changesets-tab"
+        >
+          Changesets
+           
+          <span
+            className="badge badge-secondary badge-pill"
+          />
+        </span>
+      </button>
+    </div>
+    <div
+      className="mt-3"
+    />
+  </div>,
+]
+`;
+
+exports[`CampaignDetails viewing existing 1`] = `
+Array [
+  <form
+    className="e2e-campaign-form position-relative "
+    onInvalid={[Function]}
+    onReset={[Function]}
+    onSubmit={[Function]}
+  >
+    <div
+      className="d-flex mb-2"
+    >
+      <h2
+        className="m-0"
+      >
+        <svg
+          className="mdi-icon icon-inline mr-2 text-success"
+          fill="currentColor"
+          height={24}
+          viewBox="0 0 24 24"
+          width={24}
+        >
+          <path
+            d="M3,3H5V13H9V7H13V11H17V15H21V21H3V3Z"
+          />
+        </svg>
+        <span>
+          <a
+            href="/campaigns"
+          >
+            Campaigns
+          </a>
+        </span>
+        <span
+          className="text-muted d-inline-block mx-2"
+        >
+          /
+        </span>
+        <span>
+          alice
+        </span>
+        <span
+          className="text-muted d-inline-block mx-2"
+        >
+          /
+        </span>
+        <span />
+      </h2>
+      <span
+        className="flex-grow-1 d-flex justify-content-end align-items-center"
+      >
+        <button
+          className="btn btn-secondary mr-1"
+          disabled={false}
+          id="e2e-campaign-edit"
+          onClick={[Function]}
+          type="button"
+        >
+          Edit
+        </button>
+        <details
+          className="campaign-details__details"
+        >
+          <summary>
+            <span
+              className="btn btn-secondary mr-1 dropdown-toggle"
+            >
+              Close
+            </span>
+          </summary>
+          <div
+            className="position-absolute campaign-details__details-menu"
+          >
+            <div
+              className="card mt-1"
+            >
+              <div
+                className="card-body"
+              >
+                <p>
+                  Close campaign 
+                  <b />
+                  ?
+                </p>
+                <div
+                  className="form-group"
+                >
+                  <input
+                    checked={false}
+                    onChange={[Function]}
+                    type="checkbox"
+                  />
+                   
+                  Close all 
+                   
+                  changesets on codehosts
+                </div>
+                <button
+                  className="btn btn-secondary mr-1"
+                  disabled={false}
+                  onClick={[Function]}
+                  type="button"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </details>
+        <details
+          className="campaign-details__details"
+        >
+          <summary>
+            <span
+              className="btn btn-danger dropdown-toggle"
+            >
+              Delete
+            </span>
+          </summary>
+          <div
+            className="position-absolute campaign-details__details-menu"
+          >
+            <div
+              className="card mt-1"
+            >
+              <div
+                className="card-body"
+              >
+                <p>
+                  Delete campaign 
+                  <b />
+                  ?
+                </p>
+                <div
+                  className="form-group"
+                >
+                  <input
+                    checked={false}
+                    onChange={[Function]}
+                    type="checkbox"
+                  />
+                   
+                  Close all 
+                   changesets on codehosts
+                </div>
+                <button
+                  className="btn btn-danger mr-1"
+                  disabled={false}
+                  onClick={[Function]}
+                  type="button"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </details>
+      </span>
+    </div>
+    <div
+      className="card"
+    >
+      <div
+        className="card-header"
+      >
+        <strong>
+           
+          alice
+        </strong>
+         
+        started 
+        <span
+          className="timestamp"
+          data-tooltip="2020-01-01"
+        >
+          in almost 14 years
+        </span>
+      </div>
+      <div
+        className="card-body"
+      >
+        <div
+          className="markdown"
+          dangerouslySetInnerHTML={
+            Object {
+              "__html": "<p>d</p>
+",
+            }
+          }
+        />
+      </div>
+    </div>
+    <div
+      className="container-fluid my-3"
+    >
+      <div
+        className="row campaign-details__property-row"
+      >
+        <h3
+          className="mr-3 mb-0 campaign-details__property-label"
+        >
+          Type
+        </h3>
+        <div
+          className="flex-grow-1 form-group mb-0"
+        >
+          <p
+            className="mb-0"
+          >
+            Comby search and replace
+          </p>
+        </div>
+      </div>
+      <div
+        className="row mt-3"
+      >
+        <h3
+          className="mr-3 mb-0 flex-grow-0 campaign-details__property-label"
+        >
+          Arguments
+        </h3>
+        <MonacoSettingsEditor
+          className="flex-grow-1 e2e-campaign-arguments"
+          height={110}
+          isLightTheme={true}
+          jsonSchema={
+            Object {
+              "$id": "comby-spec.json#",
+              "$schema": "http://json-schema.org/draft-07/schema#",
+              "additionalProperties": false,
+              "description": "Schema for comby options",
+              "properties": Object {
+                "matchTemplate": Object {
+                  "description": "See https://comby.dev/#match-syntax for syntax",
+                  "minLength": 1,
+                  "type": "string",
+                },
+                "rewriteTemplate": Object {
+                  "description": "See https://comby.dev/#match-syntax for syntax",
+                  "minLength": 1,
+                  "type": "string",
+                },
+                "scopeQuery": Object {
+                  "description": "Define a scope to narrow down repositories affected by this change. Only GitHub and Bitbucket Server are supported.",
+                  "minLength": 1,
+                  "type": "string",
+                },
+              },
+              "required": Array [
+                "scopeQuery",
+                "matchTemplate",
+                "rewriteTemplate",
+              ],
+              "type": "object",
+            }
+          }
+          onChange={[Function]}
+          readOnly={true}
+          value="{}"
+        />
+      </div>
+    </div>
+  </form>,
+  <h3>
+    Progress
+  </h3>,
+  <div
+    className="alert alert-info"
+  >
+    Burndown chart will be shown when there is more than 1 day of data.
+  </div>,
+  <div
+    className="tabs mt-3"
+  >
+    <div
+      className="tab-bar "
+    >
+      <button
+        className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--active tab-bar__tab--h5like"
+        data-e2e-tab="diff"
+        onClick={[Function]}
+        type="button"
+      >
+        <span
+          className="e2e-campaign-diff-tab"
+        >
+          Diff 
+          <span
+            className="text-success"
+          >
+            +
+            0
+          </span>
+           
+          <span
+            className="text-danger"
+          >
+            -
+            0
+          </span>
+        </span>
+      </button>
+      <button
+        className="btn btn-link btn-sm tab-bar__tab tab-bar__tab--flex-grow tab-bar__tab--inactive tab-bar__tab--h5like"
+        data-e2e-tab="changesets"
+        onClick={[Function]}
+        type="button"
+      >
+        <span
+          className="e2e-campaign-changesets-tab"
+        >
+          Changesets
+           
+          <span
+            className="badge badge-secondary badge-pill"
+          />
+        </span>
+      </button>
+    </div>
+    <div
+      className="mt-3"
+    />
+  </div>,
+]
+`;

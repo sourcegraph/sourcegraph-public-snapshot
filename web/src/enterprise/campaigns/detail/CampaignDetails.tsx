@@ -58,6 +58,9 @@ interface Props extends ThemeProps {
     authenticatedUser: Pick<GQL.IUser, 'username' | 'avatarURL'>
     history: H.History
     location: H.Location
+
+    /** For testing only. */
+    _fetchCampaignById?: typeof fetchCampaignById
 }
 
 const jsonSchemaByType: { [K in CampaignType]: any } = {
@@ -92,6 +95,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     location,
     authenticatedUser,
     isLightTheme,
+    _fetchCampaignById = fetchCampaignById,
 }) => {
     // State for the form in editing mode
     const [name, setName] = useState<string>('')
@@ -122,7 +126,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     () =>
                         new Observable<GQL.ICampaign | null>(observer => {
                             let currentCampaign: GQL.ICampaign | null
-                            const subscription = fetchCampaignById(campaignID)
+                            const subscription = _fetchCampaignById(campaignID)
                                 .pipe(
                                     tap(campaign => {
                                         currentCampaign = campaign
@@ -155,7 +159,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 error: triggerError,
             })
         return () => subscription.unsubscribe()
-    }, [campaignID, triggerError, nextChangesetUpdate, campaignUpdates])
+    }, [campaignID, triggerError, nextChangesetUpdate, campaignUpdates, _fetchCampaignById])
 
     const queryChangesetsConnection = useCallback(
         (args: FilteredConnectionQueryArgs) => queryChangesets(campaignID!, args),
@@ -441,6 +445,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                 <>
                                     <button
                                         type="button"
+                                        id="e2e-campaign-edit"
                                         className="btn btn-secondary mr-1"
                                         onClick={onEdit}
                                         disabled={mode === 'deleting' || mode === 'closing'}
