@@ -25,7 +25,9 @@ describe('useObservable()', () => {
     })
 
     it('should return undefined if the Observable did not emit anything yet', () => {
-        const subscribe = sinon.spy((_subscriber: Subscriber<number>) => {})
+        const subscribe = sinon.spy((_subscriber: Subscriber<number>) => {
+            /* noop */
+        })
         const { result } = renderHook(() => useObservable(useMemo(() => new Observable<number>(subscribe), [])))
         expect(result.current).toBe(undefined)
         sinon.assert.calledOnce(subscribe)
@@ -50,7 +52,9 @@ describe('useObservable()', () => {
     it('should subscribe if component rerenders and observable changed', () => {
         const subscribe = sinon.spy((subscriber: Subscriber<number>) => {
             subscriber.next(1)
-            return sinon.spy(() => {})
+            return sinon.spy(() => {
+                /* noop */
+            })
         })
         let dep = 'dep'
         const { result, rerender } = renderHook(() =>
@@ -71,7 +75,9 @@ describe('useObservable()', () => {
     it('should not subscribe if component rerenders and observable did not change', () => {
         const subscribe = sinon.spy((subscriber: Subscriber<number>) => {
             subscriber.next(1)
-            return sinon.spy(() => {})
+            return sinon.spy(() => {
+                /* noop */
+            })
         })
         const { result, rerender } = renderHook(() =>
             useObservable(useMemo(() => new Observable<number>(subscribe), []))
@@ -88,7 +94,9 @@ describe('useObservable()', () => {
     it('should unsubscribe when the component unmounts', () => {
         const subscribe = sinon.spy((subscriber: Subscriber<number>) => {
             subscriber.next(1)
-            return sinon.spy(() => {})
+            return sinon.spy(() => {
+                /* noop */
+            })
         })
         const { result, unmount } = renderHook(() =>
             useObservable(useMemo(() => new Observable<number>(subscribe), []))

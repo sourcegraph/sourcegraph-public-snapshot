@@ -10,7 +10,9 @@ describe('QueryBuilder', () => {
     let onChange: sinon.SinonSpy<[string], void>
     let container: HTMLElement
     beforeEach(() => {
-        onChange = sinon.spy((query: string) => {})
+        onChange = sinon.spy((query: string) => {
+            /* noop */
+        })
         ;({ container } = render(
             <QueryBuilder
                 onFieldsQueryChange={onChange}
@@ -151,7 +153,9 @@ describe('QueryBuilder in literal mode', () => {
     let onChange: sinon.SinonSpy<[string], void>
     let container: HTMLElement
     beforeEach(() => {
-        onChange = sinon.spy((query: string) => {})
+        onChange = sinon.spy((query: string) => {
+            /* noop */
+        })
         ;({ container } = render(
             <QueryBuilder
                 onFieldsQueryChange={onChange}
