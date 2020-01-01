@@ -12554,10 +12554,10 @@ monaco-editor-webpack-plugin@^1.8.1:
   dependencies:
     loader-utils "^1.2.3"
 
-monaco-editor@^0.18.1:
-  version "0.18.1"
-  resolved "https://registry.npmjs.org/monaco-editor/-/monaco-editor-0.18.1.tgz#ced7c305a23109875feeaf395a504b91f6358cfc"
-  integrity sha512-fmL+RFZ2Hrezy+X/5ZczQW51LUmvzfcqOurnkCIRFTyjdVjzR7JvENzI6+VKBJzJdPh6EYL4RoWl92b2Hrk9fw==
+monaco-editor@^0.19.0:
+  version "0.19.0"
+  resolved "https://registry.npmjs.org/monaco-editor/-/monaco-editor-0.19.0.tgz#c6e774210f3b292ff739e96f45a1cc78bf5ac2e7"
+  integrity sha512-ida++HI/s9V8ma8yYS9CAS0UJEFwW1gbt9G6oviEdv/aHhFd/kV3sXrINqC63TVdKzOZdKjPRRCOPJJ80zvLbw==
 
 move-concurrently@^1.0.1:
   version "1.0.1"
