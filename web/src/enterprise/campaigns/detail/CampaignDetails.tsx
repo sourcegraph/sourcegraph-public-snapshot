@@ -47,6 +47,7 @@ import classNames from 'classnames'
 import WarningIcon from 'mdi-react/WarningIcon'
 import { CampaignNamespaceField } from './form/CampaignNamespaceField'
 import { CampaignTitleField } from './form/CampaignTitleField'
+import { CampaignDescriptionField } from './form/CampaignDescriptionField'
 
 interface Props extends ThemeProps {
     /**
@@ -536,12 +537,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         )}
                     </div>
                     {mode === 'editing' || mode === 'saving' ? (
-                        <textarea
-                            className="form-control"
+                        <CampaignDescriptionField
                             value={description}
-                            onChange={event => setDescription(event.target.value)}
-                            placeholder="Describe the purpose of this campaign, link to relevant internal documentation, etc."
-                            rows={8}
+                            onChange={setDescription}
                             disabled={mode === 'saving'}
                         />
                     ) : (
