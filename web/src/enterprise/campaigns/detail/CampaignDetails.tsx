@@ -30,7 +30,6 @@ import { CampaignBurndownChart } from './BurndownChart'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 import { AddChangesetForm } from './AddChangesetForm'
 import { Subject, of, timer, merge, Observable } from 'rxjs'
-import { MonacoSettingsEditor } from '../../../settings/MonacoSettingsEditor'
 import { renderMarkdown } from '../../../../../shared/src/util/markdown'
 import { ErrorAlert } from '../../../components/alerts'
 import { Markdown } from '../../../../../shared/src/components/Markdown'
@@ -40,8 +39,6 @@ import { ThemeProps } from '../../../../../shared/src/theme'
 import { TabsWithLocalStorageViewStatePersistence } from '../../../../../shared/src/components/Tabs'
 import { isDefined } from '../../../../../shared/src/util/types'
 import { FileDiffTab } from './FileDiffTab'
-import combyJsonSchema from '../../../../../schema/campaign-types/comby.schema.json'
-import credentialsJsonSchema from '../../../../../schema/campaign-types/credentials.schema.json'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import classNames from 'classnames'
 import WarningIcon from 'mdi-react/WarningIcon'
@@ -49,6 +46,7 @@ import { CampaignNamespaceField } from './form/CampaignNamespaceField'
 import { CampaignTitleField } from './form/CampaignTitleField'
 import { CampaignDescriptionField } from './form/CampaignDescriptionField'
 import { CloseDeleteCampaignPrompt } from './form/CloseDeleteCampaignPrompt'
+import { CampaignPlanSpecificationFields } from './form/CampaignPlanSpecificationFields'
 
 interface Props extends ThemeProps {
     /**
@@ -64,11 +62,6 @@ interface Props extends ThemeProps {
     _fetchCampaignById?: typeof fetchCampaignById
 }
 
-const jsonSchemaByType: { [K in CampaignType]: any } = {
-    comby: combyJsonSchema,
-    credentials: credentialsJsonSchema,
-}
-
 const defaultInputByType: { [K in CampaignType]: string } = {
     comby: `{
     "scopeQuery": "repo:github.com/foo/bar",
@@ -79,12 +72,6 @@ const defaultInputByType: { [K in CampaignType]: string } = {
     "scopeQuery": "repo:github.com/foo/bar",
     "matchers": [{ "type": "npm" }]
 }`,
-}
-
-const typeLabels: Record<CampaignType | '', string> = {
-    '': 'Manual',
-    comby: 'Comby search and replace',
-    credentials: 'Find leaked credentials',
 }
 
 /**
@@ -266,15 +253,14 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         }
     }
 
-    const onChangeArguments = (newText: string | undefined): void => {
+    const onArgumentsChange = (newText: string | undefined): void => {
         if (newText === undefined) {
             return
         }
         setCampaignPlanArguments(newText)
     }
 
-    const onChangeType = (event: React.ChangeEvent<HTMLSelectElement>): void => {
-        const newType = (event.target.value as CampaignType) || undefined
+    const onTypeChange = (newType: CampaignType): void => {
         const parsedContent = campaignPlanArguments && parseJSONC(campaignPlanArguments)
         if ((newType && !parsedContent) || (type && isEqual(parsedContent, parseJSONC(defaultInputByType[type])))) {
             setCampaignPlanArguments(defaultInputByType[newType])
@@ -537,57 +523,15 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     </p>
                 )}
                 {planID === null && (
-                    <div className="container-fluid my-3">
-                        <div className="row campaign-details__property-row">
-                            <h3 className="mr-3 mb-0 campaign-details__property-label">Type</h3>
-                            <div className="flex-grow-1 form-group mb-0">
-                                {!(campaign && campaign.__typename === 'Campaign') ? (
-                                    <>
-                                        {' '}
-                                        <select
-                                            className="form-control w-auto d-inline-block e2e-campaign-type"
-                                            placeholder="Select campaign type"
-                                            onChange={onChangeType}
-                                            value={type}
-                                        >
-                                            {(Object.keys(typeLabels) as CampaignType[]).map((typeName, i) => (
-                                                <option value={typeName || ''} key={i}>
-                                                    {typeLabels[typeName]}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        {type === 'comby' && (
-                                            <small className="ml-1">
-                                                <a
-                                                    rel="noopener noreferrer"
-                                                    target="_blank"
-                                                    href="https://comby.dev/#match-syntax"
-                                                >
-                                                    Learn about comby syntax
-                                                </a>
-                                            </small>
-                                        )}
-                                    </>
-                                ) : (
-                                    <p className="mb-0">{typeLabels[type || '']}</p>
-                                )}
-                            </div>
-                        </div>
-                        {type && (
-                            <div className="row mt-3">
-                                <h3 className="mr-3 mb-0 flex-grow-0 campaign-details__property-label">Arguments</h3>
-                                <MonacoSettingsEditor
-                                    className="flex-grow-1 e2e-campaign-arguments"
-                                    isLightTheme={isLightTheme}
-                                    value={campaignPlanArguments}
-                                    jsonSchema={type ? jsonSchemaByType[type] : undefined}
-                                    height={110}
-                                    onChange={onChangeArguments}
-                                    readOnly={!!(campaign && campaign.__typename === 'Campaign')}
-                                />
-                            </div>
-                        )}
-                    </div>
+                    <CampaignPlanSpecificationFields
+                        type={type}
+                        onTypeChange={onTypeChange}
+                        argumentsJSONC={campaignPlanArguments}
+                        onArgumentsJSONCChange={onArgumentsChange}
+                        readOnly={Boolean(campaign && campaign.__typename === 'Campaign')}
+                        className="container-fluid my-3"
+                        isLightTheme={isLightTheme}
+                    />
                 )}
                 {(!campaign || (campaign && campaign.__typename === 'CampaignPlan')) && mode === 'editing' && (
                     <>

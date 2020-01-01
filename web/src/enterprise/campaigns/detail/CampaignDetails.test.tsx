@@ -6,7 +6,9 @@ import * as H from 'history'
 import { createRenderer } from 'react-test-renderer/shallow'
 import { of } from 'rxjs'
 
-jest.mock('../../../settings/MonacoSettingsEditor', () => ({ MonacoSettingsEditor: 'MonacoSettingsEditor' }))
+jest.mock('./form/CampaignPlanSpecificationFields', () => ({
+    CampaignPlanSpecificationFields: 'CampaignPlanSpecificationFields',
+}))
 jest.mock('./form/CampaignNamespaceField', () => ({ CampaignNamespaceField: 'CampaignNamespaceField' }))
 jest.mock('./form/CampaignTitleField', () => ({ CampaignTitleField: 'CampaignTitleField' }))
 jest.mock('./form/CampaignDescriptionField', () => ({ CampaignDescriptionField: 'CampaignDescriptionField' }))

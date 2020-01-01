@@ -91,47 +91,13 @@ exports[`CampaignDetails creation form 1`] = `
         </a>
       </small>
     </p>
-    <div
+    <CampaignPlanSpecificationFields
       className="container-fluid my-3"
-    >
-      <div
-        className="row campaign-details__property-row"
-      >
-        <h3
-          className="mr-3 mb-0 campaign-details__property-label"
-        >
-          Type
-        </h3>
-        <div
-          className="flex-grow-1 form-group mb-0"
-        >
-          <React.Fragment>
-             
-            <select
-              className="form-control w-auto d-inline-block e2e-campaign-type"
-              onChange={[Function]}
-              placeholder="Select campaign type"
-            >
-              <option
-                value=""
-              >
-                Manual
-              </option>
-              <option
-                value="comby"
-              >
-                Comby search and replace
-              </option>
-              <option
-                value="credentials"
-              >
-                Find leaked credentials
-              </option>
-            </select>
-          </React.Fragment>
-        </div>
-      </div>
-    </div>
+      isLightTheme={true}
+      onArgumentsJSONCChange={[Function]}
+      onTypeChange={[Function]}
+      readOnly={false}
+    />
     <React.Fragment>
       <button
         className="btn btn-primary"
@@ -253,76 +219,15 @@ Array [
         </a>
       </small>
     </p>
-    <div
+    <CampaignPlanSpecificationFields
+      argumentsJSONC="{}"
       className="container-fluid my-3"
-    >
-      <div
-        className="row campaign-details__property-row"
-      >
-        <h3
-          className="mr-3 mb-0 campaign-details__property-label"
-        >
-          Type
-        </h3>
-        <div
-          className="flex-grow-1 form-group mb-0"
-        >
-          <p
-            className="mb-0"
-          >
-            Comby search and replace
-          </p>
-        </div>
-      </div>
-      <div
-        className="row mt-3"
-      >
-        <h3
-          className="mr-3 mb-0 flex-grow-0 campaign-details__property-label"
-        >
-          Arguments
-        </h3>
-        <MonacoSettingsEditor
-          className="flex-grow-1 e2e-campaign-arguments"
-          height={110}
-          isLightTheme={true}
-          jsonSchema={
-            Object {
-              "$id": "comby-spec.json#",
-              "$schema": "http://json-schema.org/draft-07/schema#",
-              "additionalProperties": false,
-              "description": "Schema for comby options",
-              "properties": Object {
-                "matchTemplate": Object {
-                  "description": "See https://comby.dev/#match-syntax for syntax",
-                  "minLength": 1,
-                  "type": "string",
-                },
-                "rewriteTemplate": Object {
-                  "description": "See https://comby.dev/#match-syntax for syntax",
-                  "minLength": 1,
-                  "type": "string",
-                },
-                "scopeQuery": Object {
-                  "description": "Define a scope to narrow down repositories affected by this change. Only GitHub and Bitbucket Server are supported.",
-                  "minLength": 1,
-                  "type": "string",
-                },
-              },
-              "required": Array [
-                "scopeQuery",
-                "matchTemplate",
-                "rewriteTemplate",
-              ],
-              "type": "object",
-            }
-          }
-          onChange={[Function]}
-          readOnly={true}
-          value="{}"
-        />
-      </div>
-    </div>
+      isLightTheme={true}
+      onArgumentsJSONCChange={[Function]}
+      onTypeChange={[Function]}
+      readOnly={true}
+      type="comby"
+    />
   </form>,
   <h3>
     Progress
@@ -585,76 +490,15 @@ Array [
         />
       </div>
     </div>
-    <div
+    <CampaignPlanSpecificationFields
+      argumentsJSONC="{}"
       className="container-fluid my-3"
-    >
-      <div
-        className="row campaign-details__property-row"
-      >
-        <h3
-          className="mr-3 mb-0 campaign-details__property-label"
-        >
-          Type
-        </h3>
-        <div
-          className="flex-grow-1 form-group mb-0"
-        >
-          <p
-            className="mb-0"
-          >
-            Comby search and replace
-          </p>
-        </div>
-      </div>
-      <div
-        className="row mt-3"
-      >
-        <h3
-          className="mr-3 mb-0 flex-grow-0 campaign-details__property-label"
-        >
-          Arguments
-        </h3>
-        <MonacoSettingsEditor
-          className="flex-grow-1 e2e-campaign-arguments"
-          height={110}
-          isLightTheme={true}
-          jsonSchema={
-            Object {
-              "$id": "comby-spec.json#",
-              "$schema": "http://json-schema.org/draft-07/schema#",
-              "additionalProperties": false,
-              "description": "Schema for comby options",
-              "properties": Object {
-                "matchTemplate": Object {
-                  "description": "See https://comby.dev/#match-syntax for syntax",
-                  "minLength": 1,
-                  "type": "string",
-                },
-                "rewriteTemplate": Object {
-                  "description": "See https://comby.dev/#match-syntax for syntax",
-                  "minLength": 1,
-                  "type": "string",
-                },
-                "scopeQuery": Object {
-                  "description": "Define a scope to narrow down repositories affected by this change. Only GitHub and Bitbucket Server are supported.",
-                  "minLength": 1,
-                  "type": "string",
-                },
-              },
-              "required": Array [
-                "scopeQuery",
-                "matchTemplate",
-                "rewriteTemplate",
-              ],
-              "type": "object",
-            }
-          }
-          onChange={[Function]}
-          readOnly={true}
-          value="{}"
-        />
-      </div>
-    </div>
+      isLightTheme={true}
+      onArgumentsJSONCChange={[Function]}
+      onTypeChange={[Function]}
+      readOnly={true}
+      type="comby"
+    />
   </form>,
   <h3>
     Progress
