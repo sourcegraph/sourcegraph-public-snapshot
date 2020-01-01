@@ -125,7 +125,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                                 () =>
                                                     !!currentCampaign &&
                                                     !!currentCampaign.changesetCreationStatus &&
-                                                    currentCampaign.changesetCreationStatus.state === 'PROCESSING'
+                                                    currentCampaign.changesetCreationStatus.state ===
+                                                        GQL.BackgroundProcessState.PROCESSING
                                             ),
                                             delay(2000)
                                         )
@@ -202,7 +203,10 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                           timer(0, 2000).pipe(
                                               concatMap(() => fetchCampaignPlanById(previewPlan.id)),
                                               takeWhile(isDefined),
-                                              takeWhile(plan => plan.status.state === 'PROCESSING', true)
+                                              takeWhile(
+                                                  plan => plan.status.state === GQL.BackgroundProcessState.PROCESSING,
+                                                  true
+                                              )
                                           )
                                       )
                                   )
@@ -361,7 +365,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     const previewRefreshNeeded =
         !currentSpec ||
         (campaignPlanArguments && !isEqual(currentSpec, parseJSONC(campaignPlanArguments))) ||
-        (status && status.state !== 'COMPLETED')
+        (status && status.state !== GQL.BackgroundProcessState.COMPLETED)
 
     return (
         <>
