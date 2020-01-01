@@ -173,7 +173,7 @@
     "mini-css-extract-plugin": "^0.8.0",
     "mkdirp-promise": "^5.0.1",
     "mockdate": "^2.0.5",
-    "monaco-editor-webpack-plugin": "^1.7.0",
+    "monaco-editor-webpack-plugin": "^1.8.1",
     "mz": "^2.7.0",
     "node-fetch": "^2.6.0",
     "node-sass": "^4.13.0",
