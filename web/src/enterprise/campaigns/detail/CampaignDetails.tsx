@@ -26,7 +26,6 @@ import {
 import { useError, useObservable } from '../../../util/useObservable'
 import { asError } from '../../../../../shared/src/util/errors'
 import * as H from 'history'
-import { queryNamespaces } from '../../namespaces/backend'
 import { CampaignBurndownChart } from './BurndownChart'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 import { AddChangesetForm } from './AddChangesetForm'
@@ -46,6 +45,7 @@ import credentialsJsonSchema from '../../../../../schema/campaign-types/credenti
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import classNames from 'classnames'
 import WarningIcon from 'mdi-react/WarningIcon'
+import { CampaignNamespaceField } from './form/CampaignNamespaceField'
 
 interface Props extends ThemeProps {
     /**
@@ -102,20 +102,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
     const [closeChangesets, setCloseChangesets] = useState<boolean>(false)
 
-    const [namespaces, setNamespaces] = useState<GQL.Namespace[]>()
-    const getNamespace = useCallback((): GQL.ID | undefined => namespace || namespaces?.[0].id, [namespace, namespaces])
-
     // For errors during fetching
     const triggerError = useError()
-
-    useEffect(() => {
-        if (campaignID) {
-            // Namespace cannot be edited
-            return
-        }
-        const subscription = queryNamespaces().subscribe({ next: setNamespaces, error: triggerError })
-        return () => subscription.unsubscribe()
-    }, [campaignID, triggerError])
 
     const campaignUpdates = useMemo(() => new Subject<void>(), [])
 
@@ -259,7 +247,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 const createdCampaign = await createCampaign({
                     name,
                     description,
-                    namespace: getNamespace()!,
+                    namespace: namespace!,
                     plan: campaign && campaign.__typename === 'CampaignPlan' ? campaign.id : undefined,
                 })
                 unblockHistoryRef.current()
@@ -416,20 +404,12 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         {campaign && campaign.__typename === 'Campaign' ? (
                             <span>{campaign.namespace.namespaceName}</span>
                         ) : (
-                            <select
-                                disabled={!namespaces}
+                            <CampaignNamespaceField
                                 id="new-campaign-page__namespace"
-                                className="form-control w-auto d-inline-block"
-                                required={true}
-                                value={getNamespace()}
-                                onChange={event => setNamespace(event.target.value)}
-                            >
-                                {namespaces?.map(namespace => (
-                                    <option value={namespace.id} key={namespace.id}>
-                                        {namespace.namespaceName}
-                                    </option>
-                                ))}
-                            </select>
+                                className="w-auto d-inline-block"
+                                value={namespace}
+                                onChange={setNamespace}
+                            />
                         )}
                         <span className="text-muted d-inline-block mx-2">/</span>
                         {mode === 'editing' || mode === 'saving' ? (
