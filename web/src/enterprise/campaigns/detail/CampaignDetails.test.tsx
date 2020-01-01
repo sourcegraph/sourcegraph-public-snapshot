@@ -12,6 +12,8 @@ jest.mock('./form/CampaignPlanSpecificationFields', () => ({
 jest.mock('./form/CampaignNamespaceField', () => ({ CampaignNamespaceField: 'CampaignNamespaceField' }))
 jest.mock('./form/CampaignTitleField', () => ({ CampaignTitleField: 'CampaignTitleField' }))
 jest.mock('./form/CampaignDescriptionField', () => ({ CampaignDescriptionField: 'CampaignDescriptionField' }))
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+jest.mock('./CampaignStatus', () => ({ CampaignStatus: (props: any) => `CampaignStatus(state=${props.status.state})` }))
 
 const history = H.createMemoryHistory()
 
@@ -47,6 +49,13 @@ describe('CampaignDetails', () => {
                     plan: { type: 'comby', arguments: '{}' },
                     changesets: { nodes: [] as GQL.IExternalChangeset[], totalCount: 2 },
                     changesetCountsOverTime: [] as GQL.IChangesetCounts[],
+                    changesetCreationStatus: {
+                        __typename: 'BackgroundProcessStatus',
+                        completedCount: 3,
+                        pendingCount: 3,
+                        errors: ['a'],
+                        state: GQL.BackgroundProcessState.PROCESSING,
+                    },
                     createdAt: '2020-01-01',
                     updatedAt: '2020-01-01',
                 } as GQL.ICampaign)

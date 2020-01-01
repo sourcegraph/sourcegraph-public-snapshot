@@ -39,14 +39,13 @@ import { ThemeProps } from '../../../../../shared/src/theme'
 import { TabsWithLocalStorageViewStatePersistence } from '../../../../../shared/src/components/Tabs'
 import { isDefined } from '../../../../../shared/src/util/types'
 import { FileDiffTab } from './FileDiffTab'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import classNames from 'classnames'
-import WarningIcon from 'mdi-react/WarningIcon'
 import { CampaignNamespaceField } from './form/CampaignNamespaceField'
 import { CampaignTitleField } from './form/CampaignTitleField'
 import { CampaignDescriptionField } from './form/CampaignDescriptionField'
 import { CloseDeleteCampaignPrompt } from './form/CloseDeleteCampaignPrompt'
 import { CampaignPlanSpecificationFields } from './form/CampaignPlanSpecificationFields'
+import { CampaignStatus } from './CampaignStatus'
 
 interface Props extends ThemeProps {
     /**
@@ -324,8 +323,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         }
     }
 
-    const onRetry: React.MouseEventHandler = async event => {
-        event.preventDefault()
+    const onRetry = async (): Promise<void> => {
         try {
             await retryCampaign(campaign!.id)
             campaignUpdates.next()
@@ -557,46 +555,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 )}
             </Form>
 
-            {status && (
-                <>
-                    {status.state === 'PROCESSING' && (
-                        <div className="d-flex mt-3 e2e-preview-loading">
-                            <LoadingSpinner className="icon-inline" />{' '}
-                            <span data-tooltip="Computing changesets">
-                                {status.completedCount} / {status.pendingCount + status.completedCount}
-                            </span>
-                        </div>
-                    )}
-                    {campaign && campaign.__typename === 'Campaign' && campaign.closedAt ? (
-                        <div className="d-flex my-3">
-                            <WarningIcon className="icon-inline text-warning mr-1" /> Campaign is closed
-                        </div>
-                    ) : (
-                        type &&
-                        status.state !== 'PROCESSING' && (
-                            <div className="d-flex my-3">
-                                {status.state === 'COMPLETED' && (
-                                    <CheckCircleIcon className="icon-inline text-success mr-1 e2e-preview-success" />
-                                )}
-                                {status.state === 'ERRORED' && (
-                                    <AlertCircleIcon className="icon-inline text-danger mr-1" />
-                                )}{' '}
-                                {/* Status asserts on campaign being set, this will never be null */}
-                                {campaign!.__typename === 'Campaign' ? 'Creation' : 'Preview'}{' '}
-                                {status.state.toLocaleLowerCase()}
-                            </div>
-                        )
-                    )}
-                    {status.errors.map((error, i) => (
-                        <ErrorAlert error={error} className="mt-3" key={i} />
-                    ))}
-                    {status.state === 'ERRORED' && campaign?.__typename === 'Campaign' && (
-                        <button type="button" className="btn btn-primary mb-2" onClick={onRetry}>
-                            Retry failed jobs
-                        </button>
-                    )}
-                </>
-            )}
+            {/* Status asserts on campaign being set, so `campaign` will never be null. */}
+            {status && <CampaignStatus campaign={campaign!} status={status} onRetry={onRetry} />}
 
             {campaign && campaign.__typename === 'Campaign' && (
                 <>

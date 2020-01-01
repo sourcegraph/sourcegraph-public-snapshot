@@ -229,6 +229,7 @@ Array [
       type="comby"
     />
   </form>,
+  "CampaignStatus(state=PROCESSING)",
   <h3>
     Progress
   </h3>,
@@ -500,6 +501,7 @@ Array [
       type="comby"
     />
   </form>,
+  "CampaignStatus(state=PROCESSING)",
   <h3>
     Progress
   </h3>,
