@@ -1,0 +1,146 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`CampaignDetails creation form 1`] = `
+<React.Fragment>
+  <PageTitle
+    title="New campaign"
+  />
+  <Form
+    className="e2e-campaign-form position-relative"
+    onReset={[Function]}
+    onSubmit={[Function]}
+  >
+    <div
+      className="d-flex mb-2"
+    >
+      <h2
+        className="m-0"
+      >
+        <Memo(ChartHistogramIcon)
+          className="icon-inline mr-2 text-muted"
+        />
+        <span>
+          <AnchorLink
+            to="/campaigns"
+          >
+            Campaigns
+          </AnchorLink>
+        </span>
+        <span
+          className="text-muted d-inline-block mx-2"
+        >
+          /
+        </span>
+        <CampaignNamespaceField
+          className="w-auto d-inline-block"
+          id="new-campaign-page__namespace"
+          onChange={[Function]}
+        />
+        <span
+          className="text-muted d-inline-block mx-2"
+        >
+          /
+        </span>
+        <CampaignTitleField
+          className="w-auto d-inline-block e2e-campaign-title"
+          disabled={false}
+          onChange={[Function]}
+          value=""
+        />
+      </h2>
+      <span
+        className="flex-grow-1 d-flex justify-content-end align-items-center"
+      />
+    </div>
+    <div
+      className="card"
+    >
+      <div
+        className="card-header"
+      >
+        <strong>
+          <UserAvatar
+            className="icon-inline"
+            user={
+              Object {
+                "avatarURL": null,
+                "username": "alice",
+              }
+            }
+          />
+           
+          alice
+        </strong>
+      </div>
+      <CampaignDescriptionField
+        disabled={false}
+        onChange={[Function]}
+        value=""
+      />
+    </div>
+    <p
+      className="ml-1 mb-0"
+    >
+      <small>
+        <a
+          href="/help/user/markdown"
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          Markdown supported
+        </a>
+      </small>
+    </p>
+    <div
+      className="container-fluid my-3"
+    >
+      <div
+        className="row campaign-details__property-row"
+      >
+        <h3
+          className="mr-3 mb-0 campaign-details__property-label"
+        >
+          Type
+        </h3>
+        <div
+          className="flex-grow-1 form-group mb-0"
+        >
+          <React.Fragment>
+             
+            <select
+              className="form-control w-auto d-inline-block e2e-campaign-type"
+              onChange={[Function]}
+              placeholder="Select campaign type"
+            >
+              <option
+                value=""
+              >
+                Manual
+              </option>
+              <option
+                value="comby"
+              >
+                Comby search and replace
+              </option>
+              <option
+                value="credentials"
+              >
+                Find leaked credentials
+              </option>
+            </select>
+          </React.Fragment>
+        </div>
+      </div>
+    </div>
+    <React.Fragment>
+      <button
+        className="btn btn-primary"
+        disabled={false}
+        type="submit"
+      >
+        Create
+      </button>
+    </React.Fragment>
+  </Form>
+</React.Fragment>
+`;

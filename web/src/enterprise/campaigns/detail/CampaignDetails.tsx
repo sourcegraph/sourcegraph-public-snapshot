@@ -55,10 +55,9 @@ interface Props extends ThemeProps {
      * If not given, will display a creation form.
      */
     campaignID?: GQL.ID
-    authenticatedUser: GQL.IUser
+    authenticatedUser: Pick<GQL.IUser, 'username' | 'avatarURL'>
     history: H.History
     location: H.Location
-    isSourcegraphDotCom: boolean
 }
 
 const jsonSchemaByType: { [K in CampaignType]: any } = {
@@ -93,7 +92,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     location,
     authenticatedUser,
     isLightTheme,
-    isSourcegraphDotCom,
 }) => {
     // State for the form in editing mode
     const [name, setName] = useState<string>('')
@@ -554,13 +552,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 {mode === 'editing' && (
                     <p className="ml-1 mb-0">
                         <small>
-                            <a
-                                rel="noopener noreferrer"
-                                target="_blank"
-                                href={
-                                    (isSourcegraphDotCom ? 'https://docs.sourcegraph.com' : '/help') + '/user/markdown'
-                                }
-                            >
+                            <a rel="noopener noreferrer" target="_blank" href="/help/user/markdown">
                                 Markdown supported
                             </a>
                         </small>
@@ -614,7 +606,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                     height={110}
                                     onChange={onChangeArguments}
                                     readOnly={!!(campaign && campaign.__typename === 'Campaign')}
-                                ></MonacoSettingsEditor>
+                                />
                             </div>
                         )}
                     </div>
