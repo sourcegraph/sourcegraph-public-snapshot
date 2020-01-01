@@ -48,6 +48,7 @@ import WarningIcon from 'mdi-react/WarningIcon'
 import { CampaignNamespaceField } from './form/CampaignNamespaceField'
 import { CampaignTitleField } from './form/CampaignTitleField'
 import { CampaignDescriptionField } from './form/CampaignDescriptionField'
+import { CloseDeleteCampaignPrompt } from './form/CloseDeleteCampaignPrompt'
 
 interface Props extends ThemeProps {
     /**
@@ -307,8 +308,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         setAlertError(undefined)
     }
 
-    const onClose: React.MouseEventHandler = async event => {
-        event.preventDefault()
+    const onClose = async (): Promise<void> => {
         if (!confirm('Are you sure you want to close the campaign?')) {
             return
         }
@@ -323,8 +323,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         }
     }
 
-    const onDelete: React.MouseEventHandler = async event => {
-        event.preventDefault()
+    const onDelete = async (): Promise<void> => {
         if (!confirm('Are you sure you want to delete the campaign?')) {
             return
         }
@@ -347,10 +346,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         } catch (err) {
             setAlertError(asError(err))
         }
-    }
-
-    const onCloseChangesetsToggle: React.ChangeEventHandler = (event: React.ChangeEvent) => {
-        setCloseChangesets((event.target as HTMLInputElement).checked)
     }
 
     const author = campaign && campaign.__typename === 'Campaign' ? campaign.author : authenticatedUser
@@ -461,64 +456,42 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                                             Close
                                                         </span>
                                                     </summary>
-                                                    <div className="position-absolute campaign-details__details-menu">
-                                                        <div className="card mt-1">
-                                                            <div className="card-body">
-                                                                <p>
-                                                                    Close campaign <b>{campaign.name}</b>?
-                                                                </p>
-                                                                <div className="form-group">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        checked={closeChangesets}
-                                                                        onChange={onCloseChangesetsToggle}
-                                                                    />{' '}
-                                                                    Close all {campaign.changesets.totalCount}{' '}
-                                                                    changesets on codehosts
-                                                                </div>
-                                                                <button
-                                                                    type="button"
-                                                                    disabled={mode === 'deleting' || mode === 'closing'}
-                                                                    className="btn btn-secondary mr-1"
-                                                                    onClick={onClose}
-                                                                >
-                                                                    Close
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
+                                                    <CloseDeleteCampaignPrompt
+                                                        message={
+                                                            <p>
+                                                                Close campaign <b>{campaign.name}</b>?
+                                                            </p>
+                                                        }
+                                                        changesetsCount={campaign.changesets.totalCount}
+                                                        closeChangesets={closeChangesets}
+                                                        onCloseChangesetsToggle={setCloseChangesets}
+                                                        buttonText="Close"
+                                                        onButtonClick={onClose}
+                                                        buttonClassName="btn-secondary"
+                                                        buttonDisabled={mode === 'deleting' || mode === 'closing'}
+                                                        className="position-absolute campaign-details__details-menu"
+                                                    />
                                                 </details>
                                             )}
                                             <details className="campaign-details__details">
                                                 <summary>
                                                     <span className="btn btn-danger dropdown-toggle">Delete</span>
                                                 </summary>
-                                                <div className="position-absolute campaign-details__details-menu">
-                                                    <div className="card mt-1">
-                                                        <div className="card-body">
-                                                            <p>
-                                                                Delete campaign <b>{campaign.name}</b>?
-                                                            </p>
-                                                            <div className="form-group">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={closeChangesets}
-                                                                    onChange={onCloseChangesetsToggle}
-                                                                />{' '}
-                                                                Close all {campaign.changesets.totalCount} changesets on
-                                                                codehosts
-                                                            </div>
-                                                            <button
-                                                                type="button"
-                                                                disabled={mode === 'deleting' || mode === 'closing'}
-                                                                className="btn btn-danger mr-1"
-                                                                onClick={onDelete}
-                                                            >
-                                                                Delete
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                                <CloseDeleteCampaignPrompt
+                                                    message={
+                                                        <p>
+                                                            Delete campaign <b>{campaign.name}</b>?
+                                                        </p>
+                                                    }
+                                                    changesetsCount={campaign.changesets.totalCount}
+                                                    closeChangesets={closeChangesets}
+                                                    onCloseChangesetsToggle={setCloseChangesets}
+                                                    buttonText="Delete"
+                                                    onButtonClick={onDelete}
+                                                    buttonClassName="btn-danger"
+                                                    buttonDisabled={mode === 'deleting' || mode === 'closing'}
+                                                    className="position-absolute campaign-details__details-menu"
+                                                />
                                             </details>
                                         </>
                                     )}

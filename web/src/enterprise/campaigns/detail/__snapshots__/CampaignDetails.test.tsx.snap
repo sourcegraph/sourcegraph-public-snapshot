@@ -376,7 +376,9 @@ Array [
            
           <span
             className="badge badge-secondary badge-pill"
-          />
+          >
+            2
+          </span>
         </span>
       </button>
     </div>
@@ -480,11 +482,13 @@ Array [
                   />
                    
                   Close all 
+                  2
                    
-                  changesets on codehosts
+                  changesets
+                   changesets on code hosts
                 </div>
                 <button
-                  className="btn btn-secondary mr-1"
+                  className="btn mr-1 btn-secondary"
                   disabled={false}
                   onClick={[Function]}
                   type="button"
@@ -529,10 +533,13 @@ Array [
                   />
                    
                   Close all 
-                   changesets on codehosts
+                  2
+                   
+                  changesets
+                   changesets on code hosts
                 </div>
                 <button
-                  className="btn btn-danger mr-1"
+                  className="btn mr-1 btn-danger"
                   disabled={false}
                   onClick={[Function]}
                   type="button"
@@ -701,7 +708,9 @@ Array [
            
           <span
             className="badge badge-secondary badge-pill"
-          />
+          >
+            2
+          </span>
         </span>
       </button>
     </div>

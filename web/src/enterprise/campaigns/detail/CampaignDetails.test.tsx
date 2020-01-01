@@ -43,7 +43,7 @@ describe('CampaignDetails', () => {
                     namespace: { namespaceName: 'alice' },
                     author: { username: 'alice' },
                     plan: { type: 'comby', arguments: '{}' },
-                    changesets: { nodes: [] as GQL.IExternalChangeset[] },
+                    changesets: { nodes: [] as GQL.IExternalChangeset[], totalCount: 2 },
                     changesetCountsOverTime: [] as GQL.IChangesetCounts[],
                     createdAt: '2020-01-01',
                     updatedAt: '2020-01-01',
