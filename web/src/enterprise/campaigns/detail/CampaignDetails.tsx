@@ -46,6 +46,7 @@ import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import classNames from 'classnames'
 import WarningIcon from 'mdi-react/WarningIcon'
 import { CampaignNamespaceField } from './form/CampaignNamespaceField'
+import { CampaignTitleField } from './form/CampaignTitleField'
 
 interface Props extends ThemeProps {
     /**
@@ -413,14 +414,11 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         )}
                         <span className="text-muted d-inline-block mx-2">/</span>
                         {mode === 'editing' || mode === 'saving' ? (
-                            <input
-                                className="form-control w-auto d-inline-block e2e-campaign-title"
+                            <CampaignTitleField
+                                className="w-auto d-inline-block e2e-campaign-title"
                                 value={name}
-                                onChange={event => setName(event.target.value)}
-                                placeholder="Campaign title"
+                                onChange={setName}
                                 disabled={mode === 'saving'}
-                                autoFocus={true}
-                                required={true}
                             />
                         ) : (
                             <span>{campaign && campaign.__typename === 'Campaign' && campaign.name}</span>
