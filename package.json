@@ -205,7 +205,7 @@
     "utc-version": "^2.0.1",
     "web-ext": "npm:@sourcegraph/web-ext@^3.0.0-fork.1",
     "webpack": "^4.41.2",
-    "webpack-dev-server": "^3.9.0",
+    "webpack-dev-server": "^3.10.1",
     "worker-loader": "^2.0.0",
     "yarn-deduplicate": "^1.1.1"
   },
