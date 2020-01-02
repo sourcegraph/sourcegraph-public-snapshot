@@ -43,7 +43,11 @@ import classNames from 'classnames'
 import { CampaignTitleField } from './form/CampaignTitleField'
 import { CampaignDescriptionField } from './form/CampaignDescriptionField'
 import { CloseDeleteCampaignPrompt } from './form/CloseDeleteCampaignPrompt'
-import { CampaignPlanSpecificationFields } from './form/CampaignPlanSpecificationFields'
+import {
+    CampaignPlanSpecificationFields,
+    CampaignPlanSpecificationFormData,
+    MANUAL_CAMPAIGN_TYPE,
+} from './form/CampaignPlanSpecificationFields'
 import { CampaignStatus } from './CampaignStatus'
 
 interface Props extends ThemeProps {
@@ -60,18 +64,6 @@ interface Props extends ThemeProps {
     _fetchCampaignById?: typeof fetchCampaignById
 }
 
-const defaultInputByType: { [K in CampaignType]: string } = {
-    comby: `{
-    "scopeQuery": "repo:github.com/foo/bar",
-    "matchTemplate": "",
-    "rewriteTemplate": ""
-}`,
-    credentials: `{
-    "scopeQuery": "repo:github.com/foo/bar",
-    "matchers": [{ "type": "npm" }]
-}`,
-}
-
 /**
  * The area for a single campaign.
  */
@@ -86,8 +78,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     // State for the form in editing mode
     const [name, setName] = useState<string>('')
     const [description, setDescription] = useState<string>('')
-    const [type, setType] = useState<CampaignType>()
-    const [campaignPlanArguments, setCampaignPlanArguments] = useState<string>()
+
+    const [campaignPlanSpec, setCampaignPlanSpec] = useState<CampaignPlanSpecificationFormData>()
 
     const [closeChangesets, setCloseChangesets] = useState<boolean>(false)
 
@@ -138,8 +130,10 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             .subscribe({
                 next: fetchedCampaign => {
                     setCampaign(fetchedCampaign)
-                    setType(fetchedCampaign?.plan?.type as CampaignType | undefined)
-                    setCampaignPlanArguments(fetchedCampaign?.plan ? fetchedCampaign.plan.arguments : null)
+                    setCampaignPlanSpec({
+                        type: fetchedCampaign?.plan?.type as CampaignType,
+                        arguments: fetchedCampaign?.plan ? fetchedCampaign.plan.arguments : null,
+                    })
                     nextChangesetUpdate()
                 },
                 error: triggerError,
@@ -254,22 +248,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         }
     }
 
-    const onArgumentsChange = (newText: string | undefined): void => {
-        if (newText === undefined) {
-            return
-        }
-        setCampaignPlanArguments(newText)
-    }
-
-    const onTypeChange = (newType: CampaignType): void => {
-        const parsedContent = campaignPlanArguments && parseJSONC(campaignPlanArguments)
-        if ((newType && !parsedContent) || (type && isEqual(parsedContent, parseJSONC(defaultInputByType[type])))) {
-            setCampaignPlanArguments(defaultInputByType[newType])
-        }
-        setType(newType)
-        setCampaign(undefined)
-    }
-
     const discardChangesMessage = 'Do you want to discard your changes?'
 
     const onEdit: React.MouseEventHandler = event => {
@@ -280,8 +258,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             setName(name)
             setDescription(description)
             setMode('editing')
-            setType(plan?.type as CampaignType | undefined)
-            setCampaignPlanArguments(plan ? plan.arguments : '')
+            setCampaignPlanSpec({ type: plan?.type as CampaignType, arguments: plan?.arguments || '' })
         }
     }
 
@@ -362,7 +339,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     // Tracks if a refresh of the campaignPlan is required before the campaign can be created
     const previewRefreshNeeded =
         !currentSpec ||
-        (campaignPlanArguments && !isEqual(currentSpec, parseJSONC(campaignPlanArguments))) ||
+        (campaignPlanSpec?.arguments && !isEqual(currentSpec, parseJSONC(campaignPlanSpec.arguments))) ||
         (status && status.state !== GQL.BackgroundProcessState.COMPLETED)
 
     return (
@@ -507,12 +484,10 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         </small>
                     </p>
                 )}
-                {planID === null && (
+                {planID === null && (campaignID === undefined || campaignPlanSpec !== undefined) && (
                     <CampaignPlanSpecificationFields
-                        type={type}
-                        onTypeChange={onTypeChange}
-                        argumentsJSONC={campaignPlanArguments}
-                        onArgumentsJSONCChange={onArgumentsChange}
+                        value={campaignPlanSpec}
+                        onChange={setCampaignPlanSpec}
                         readOnly={Boolean(campaign && campaign.__typename === 'Campaign')}
                         className="container-fluid my-3"
                         isLightTheme={isLightTheme}
@@ -520,12 +495,12 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 )}
                 {(!campaign || (campaign && campaign.__typename === 'CampaignPlan')) && mode === 'editing' && (
                     <>
-                        {type !== undefined && (
+                        {campaignPlanSpec !== undefined && campaignPlanSpec.type !== MANUAL_CAMPAIGN_TYPE && (
                             <button
                                 type="button"
                                 className="btn btn-primary mr-1 e2e-preview-campaign"
                                 disabled={!previewRefreshNeeded}
-                                onClick={() => nextPreviewCampaignPlan({ type, arguments: campaignPlanArguments })}
+                                onClick={() => nextPreviewCampaignPlan(campaignPlanSpec)}
                             >
                                 {isLoadingPreview && <LoadingSpinner className="icon-inline mr-1" />}
                                 Preview changes
@@ -534,7 +509,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         <button
                             type="submit"
                             className="btn btn-primary"
-                            disabled={(type !== undefined && previewRefreshNeeded) || mode !== 'editing'}
+                            disabled={previewRefreshNeeded || mode !== 'editing'}
                         >
                             Create
                         </button>

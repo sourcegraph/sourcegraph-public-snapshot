@@ -67,14 +67,13 @@ exports[`CampaignDetails creation form 1`] = `
     <CampaignPlanSpecificationFields
       className="container-fluid my-3"
       isLightTheme={true}
-      onArgumentsJSONCChange={[Function]}
-      onTypeChange={[Function]}
+      onChange={[Function]}
       readOnly={false}
     />
     <React.Fragment>
       <button
         className="btn btn-primary"
-        disabled={false}
+        disabled={true}
         type="submit"
       >
         Create
@@ -177,13 +176,16 @@ Array [
       </small>
     </p>
     <CampaignPlanSpecificationFields
-      argumentsJSONC="{}"
       className="container-fluid my-3"
       isLightTheme={true}
-      onArgumentsJSONCChange={[Function]}
-      onTypeChange={[Function]}
+      onChange={[Function]}
       readOnly={true}
-      type="comby"
+      value={
+        Object {
+          "arguments": "{}",
+          "type": "comby",
+        }
+      }
     />
   </form>,
   "CampaignStatus(state=PROCESSING)",
@@ -433,13 +435,16 @@ Array [
       </div>
     </div>
     <CampaignPlanSpecificationFields
-      argumentsJSONC="{}"
       className="container-fluid my-3"
       isLightTheme={true}
-      onArgumentsJSONCChange={[Function]}
-      onTypeChange={[Function]}
+      onChange={[Function]}
       readOnly={true}
-      type="comby"
+      value={
+        Object {
+          "arguments": "{}",
+          "type": "comby",
+        }
+      }
     />
   </form>,
   "CampaignStatus(state=PROCESSING)",
