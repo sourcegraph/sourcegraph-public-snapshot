@@ -475,17 +475,14 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 </div>
                 {alertError && <ErrorAlert error={alertError} />}
                 <div className="card">
-                    <div className="card-header">
-                        <strong>
-                            <UserAvatar user={author} className="icon-inline" /> {author.username}
-                        </strong>
-                        {campaign && campaign.__typename === 'Campaign' && (
-                            <>
-                                {' '}
-                                started <Timestamp date={campaign.createdAt} />
-                            </>
-                        )}
-                    </div>
+                    {campaign && campaign.__typename === 'Campaign' && (
+                        <div className="card-header">
+                            <strong>
+                                <UserAvatar user={author} className="icon-inline" /> {author.username}
+                            </strong>{' '}
+                            started <Timestamp date={campaign.createdAt} />
+                        </div>
+                    )}
                     {mode === 'editing' || mode === 'saving' ? (
                         <CampaignDescriptionField
                             value={description}

@@ -45,24 +45,6 @@ exports[`CampaignDetails creation form 1`] = `
     <div
       className="card"
     >
-      <div
-        className="card-header"
-      >
-        <strong>
-          <UserAvatar
-            className="icon-inline"
-            user={
-              Object {
-                "avatarURL": null,
-                "id": "a",
-                "username": "alice",
-              }
-            }
-          />
-           
-          alice
-        </strong>
-      </div>
       <CampaignDescriptionField
         disabled={false}
         onChange={[Function]}
