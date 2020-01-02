@@ -40,7 +40,6 @@ import { TabsWithLocalStorageViewStatePersistence } from '../../../../../shared/
 import { isDefined } from '../../../../../shared/src/util/types'
 import { FileDiffTab } from './FileDiffTab'
 import classNames from 'classnames'
-import { CampaignNamespaceField } from './form/CampaignNamespaceField'
 import { CampaignTitleField } from './form/CampaignTitleField'
 import { CampaignDescriptionField } from './form/CampaignDescriptionField'
 import { CloseDeleteCampaignPrompt } from './form/CloseDeleteCampaignPrompt'
@@ -53,7 +52,7 @@ interface Props extends ThemeProps {
      * If not given, will display a creation form.
      */
     campaignID?: GQL.ID
-    authenticatedUser: Pick<GQL.IUser, 'username' | 'avatarURL'>
+    authenticatedUser: Pick<GQL.IUser, 'id' | 'username' | 'avatarURL'>
     history: H.History
     location: H.Location
 
@@ -89,7 +88,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     const [description, setDescription] = useState<string>('')
     const [type, setType] = useState<CampaignType>()
     const [campaignPlanArguments, setCampaignPlanArguments] = useState<string>()
-    const [namespace, setNamespace] = useState<GQL.ID>()
 
     const [closeChangesets, setCloseChangesets] = useState<boolean>(false)
 
@@ -242,7 +240,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 const createdCampaign = await createCampaign({
                     name,
                     description,
-                    namespace: namespace!,
+                    namespace: authenticatedUser.id,
                     plan: campaign && campaign.__typename === 'CampaignPlan' ? campaign.id : undefined,
                 })
                 unblockHistoryRef.current()
@@ -386,18 +384,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         <span>
                             <Link to="/campaigns">Campaigns</Link>
                         </span>
-                        <span className="text-muted d-inline-block mx-2">/</span>
-                        {/* The namespace of a campaign can only be set on creation */}
-                        {campaign && campaign.__typename === 'Campaign' ? (
-                            <span>{campaign.namespace.namespaceName}</span>
-                        ) : (
-                            <CampaignNamespaceField
-                                id="new-campaign-page__namespace"
-                                className="w-auto d-inline-block"
-                                value={namespace}
-                                onChange={setNamespace}
-                            />
-                        )}
                         <span className="text-muted d-inline-block mx-2">/</span>
                         {mode === 'editing' || mode === 'saving' ? (
                             <CampaignTitleField

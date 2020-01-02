@@ -31,16 +31,6 @@ exports[`CampaignDetails creation form 1`] = `
         >
           /
         </span>
-        <CampaignNamespaceField
-          className="w-auto d-inline-block"
-          id="new-campaign-page__namespace"
-          onChange={[Function]}
-        />
-        <span
-          className="text-muted d-inline-block mx-2"
-        >
-          /
-        </span>
         <CampaignTitleField
           className="w-auto d-inline-block e2e-campaign-title"
           disabled={false}
@@ -64,6 +54,7 @@ exports[`CampaignDetails creation form 1`] = `
             user={
               Object {
                 "avatarURL": null,
+                "id": "a",
                 "username": "alice",
               }
             }
@@ -134,14 +125,6 @@ Array [
           >
             Campaigns
           </a>
-        </span>
-        <span
-          className="text-muted d-inline-block mx-2"
-        >
-          /
-        </span>
-        <span>
-          alice
         </span>
         <span
           className="text-muted d-inline-block mx-2"
@@ -310,14 +293,6 @@ Array [
           >
             Campaigns
           </a>
-        </span>
-        <span
-          className="text-muted d-inline-block mx-2"
-        >
-          /
-        </span>
-        <span>
-          alice
         </span>
         <span
           className="text-muted d-inline-block mx-2"

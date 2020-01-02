@@ -19,10 +19,6 @@ export type CampaignType = 'comby' | 'credentials'
 const campaignFragment = gql`
     fragment CampaignFields on Campaign {
         id
-        namespace {
-            id
-            namespaceName
-        }
         author {
             username
             avatarURL
