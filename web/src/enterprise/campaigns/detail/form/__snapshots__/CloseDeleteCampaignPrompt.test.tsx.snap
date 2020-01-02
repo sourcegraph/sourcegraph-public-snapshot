@@ -26,7 +26,7 @@ exports[`CloseDeleteCampaignPrompt renders 1`] = `
         2
          
         changesets
-         changesets on code hosts
+         on code hosts
       </div>
       <button
         className="btn mr-1 btn-danger"

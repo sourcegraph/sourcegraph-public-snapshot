@@ -41,7 +41,7 @@ export const CloseDeleteCampaignPrompt: React.FunctionComponent<Props> = ({
                         checked={closeChangesets}
                         onChange={e => onCloseChangesetsToggle(e.target.checked)}
                     />{' '}
-                    Close all {changesetsCount} {pluralize('changeset', changesetsCount)} changesets on code hosts
+                    Close all {changesetsCount} {pluralize('changeset', changesetsCount)} on code hosts
                 </div>
                 <button
                     type="button"
