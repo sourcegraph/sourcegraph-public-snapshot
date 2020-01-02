@@ -1,8 +1,8 @@
 import * as React from 'react'
-import { Elements, injectStripe, StripeProvider } from 'react-stripe-elements'
+import { Elements, injectStripe, StripeProvider, ReactStripeElements } from 'react-stripe-elements'
 import { billingPublishableKey } from '../productSubscriptions/features'
 
-type Props<P> = P & { component: React.ComponentType<P> }
+type Props<P> = P & { component: React.ComponentType<P & ReactStripeElements.InjectedStripeProps> }
 
 interface State<P> {
     injectedComponent: React.ComponentType<P>
