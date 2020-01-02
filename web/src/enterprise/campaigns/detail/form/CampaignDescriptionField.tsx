@@ -21,7 +21,7 @@ export const CampaignDescriptionField: React.FunctionComponent<Props> = ({
         className={`form-control ${className}`}
         value={value}
         onChange={event => onChange(event.target.value)}
-        placeholder="Describe the purpose of this campaign, link to relevant internal documentation, etc."
+        placeholder="Description (purpose of campaign, instructions for reviewers, links to relevant internal documentation, etc.)"
         rows={8}
         disabled={disabled}
     />
