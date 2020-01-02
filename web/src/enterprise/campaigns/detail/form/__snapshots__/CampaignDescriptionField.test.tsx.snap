@@ -5,7 +5,12 @@ exports[`CampaignDescriptionField renders 1`] = `
   className="form-control "
   onChange={[Function]}
   placeholder="Description (purpose of campaign, instructions for reviewers, links to relevant internal documentation, etc.)"
-  rows={8}
+  style={
+    Object {
+      "height": 0,
+    }
+  }
+  type="text"
   value="a"
 />
 `;
