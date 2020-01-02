@@ -417,7 +417,6 @@ SELECT
 FROM changesets
 WHERE %s
 ORDER BY id ASC
-LIMIT %s
 `
 
 const defaultListLimit = 50
@@ -427,6 +426,11 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 		opts.Limit = defaultListLimit
 	}
 	opts.Limit++
+
+	var limitClause string
+	if opts.Limit > 0 {
+		limitClause = fmt.Sprintf("LIMIT %d", opts.Limit)
+	}
 
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("id >= %s", opts.Cursor),
@@ -451,9 +455,8 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf(
-		listChangesetsQueryFmtstr,
+		listChangesetsQueryFmtstr+limitClause,
 		sqlf.Join(preds, "\n AND "),
-		opts.Limit,
 	)
 }
 

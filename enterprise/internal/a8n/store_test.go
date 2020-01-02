@@ -524,6 +524,18 @@ func testStore(db *sql.DB) func(*testing.T) {
 						t.Fatalf("have %d changesets. want 0", len(have))
 					}
 				}
+
+				// Limit of -1 should return all ChangeSets
+				{
+					have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{Limit: -1})
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if len(have) != 3 {
+						t.Fatalf("have %d changesets. want 3", len(have))
+					}
+				}
 			})
 
 			t.Run("Get", func(t *testing.T) {
