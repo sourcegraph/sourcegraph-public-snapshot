@@ -330,12 +330,11 @@ func (c *credentials) generateDiff(ctx context.Context, repo api.RepoName, commi
 		}
 		newContent := npmTokenRegexpMultiline.ReplaceAllStringFunc(content, func(old string) string {
 			// Don't replace right hand side if it is an environment variable
-			idx := strings.Index(old, "=")
-			if idx == -1 {
+			submatches := npmTokenRegexp.FindAllStringSubmatch(old, -1)
+			if len(submatches) != 1 && len(submatches[0]) != 3 {
 				return old
 			}
-			left := old[:idx+1]
-			right := old[idx+1:]
+			left, right := submatches[0][1], submatches[0][2]
 			if npmEnvironmentVariableRegexp.MatchString(right) {
 				return old
 			}
