@@ -1845,10 +1845,10 @@ express-opentracing@^0.1.1:
   dependencies:
     opentracing "^0.14.0"
 
-express-validator@^6.3.0:
-  version "6.3.0"
-  resolved "https://registry.npmjs.org/express-validator/-/express-validator-6.3.0.tgz#db40dca4228c8cd6524b929ead1876520aee3dee"
-  integrity sha512-qzKJaUg6BrcRBeZH+QNq2G8/QrLOuaozWKFeeod1oVcMcdauDiTxgbvQeWkhCSlS9V37mx/CVaXKvpRBjR0IeQ==
+express-validator@^6.3.1:
+  version "6.3.1"
+  resolved "https://registry.npmjs.org/express-validator/-/express-validator-6.3.1.tgz#5ad6ca3ce6141f33638608d006d26c217500f375"
+  integrity sha512-YQHQKP/zlUTN6d38uWwXgK3At5phK6R24pOB/ImWisMUz/U/1AC3ZXMgiZYhtH4ViYJ6UAiV0/nj8s1Qs3kmvw==
   dependencies:
     lodash "^4.17.15"
     validator "^11.1.0"
