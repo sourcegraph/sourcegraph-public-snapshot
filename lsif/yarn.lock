@@ -1843,10 +1843,10 @@ express-validator@^6.3.1:
     lodash "^4.17.15"
     validator "^11.1.0"
 
-express-winston@^4.0.1:
-  version "4.0.1"
-  resolved "https://registry.npmjs.org/express-winston/-/express-winston-4.0.1.tgz#98c74d099b9a7fdeedc56eb839c223968bc33990"
-  integrity sha512-HQZ/d2UPuZIr/PNiLOHX+CF2Q9srfBy1GDK7yIJ+MvX6MU49ggM25XynSNmC5RRPlD2ju3Zic+mCTQtixP1gzQ==
+express-winston@^4.0.2:
+  version "4.0.2"
+  resolved "https://registry.npmjs.org/express-winston/-/express-winston-4.0.2.tgz#07bf9e0139259a9f7207b17077d307c2b2d678e7"
+  integrity sha512-Dt2VRkIekVZQT4F8CiKsFm7dWhD7Hx32vyO62p9TIcOb9AdZ58HiX21b+2P2qrxTsOzYYA2N3mXu2vj+RTq8cQ==
   dependencies:
     chalk "^2.4.1"
     lodash "^4.17.10"
