@@ -268,7 +268,7 @@ type credentialsArgs struct {
 
 var npmTokenRegexp = regexp.MustCompile(`((?:^|:)_(?:auth|authToken|password)\s*=\s*)(.+)$`)
 var npmTokenRegexpMultiline = regexp.MustCompile(`(?m)((?:^|:)_(?:auth|authToken|password)\s*=\s*)(.+)$`)
-var npmEnvironmentVariable = regexp.MustCompile(`\${.+}$`)
+var npmEnvironmentVariableRegexp = regexp.MustCompile(`\${.+}$`)
 
 type credentials struct {
 	args credentialsArgs
@@ -323,7 +323,7 @@ func (c *credentials) generateDiff(ctx context.Context, repo api.RepoName, commi
 		submatches := npmTokenRegexpMultiline.FindAllStringSubmatch(content, -1)
 		for _, match := range submatches {
 			token := match[len(match)-1]
-			if npmEnvironmentVariable.MatchString(token) {
+			if npmEnvironmentVariableRegexp.MatchString(token) {
 				continue
 			}
 			tokens = append(tokens, token)
@@ -336,7 +336,7 @@ func (c *credentials) generateDiff(ctx context.Context, repo api.RepoName, commi
 			}
 			left := old[:idx+1]
 			right := old[idx+1:]
-			if npmEnvironmentVariable.MatchString(right) {
+			if npmEnvironmentVariableRegexp.MatchString(right) {
 				return old
 			}
 			return left + c.args.Matchers[0].ReplaceWith
