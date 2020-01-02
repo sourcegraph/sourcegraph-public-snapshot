@@ -268,7 +268,7 @@ type credentialsArgs struct {
 
 var npmTokenRegexp = regexp.MustCompile(`((?:^|:)_(?:auth|authToken|password)\s*=\s*)(.+)$`)
 var npmTokenRegexpMultiline = regexp.MustCompile(`(?m)((?:^|:)_(?:auth|authToken|password)\s*=\s*)(.+)$`)
-var npmEnvironmentVariable = regexp.MustCompile(`\${(.+)}$`)
+var npmEnvironmentVariable = regexp.MustCompile(`\${.+}$`)
 
 type credentials struct {
 	args credentialsArgs
