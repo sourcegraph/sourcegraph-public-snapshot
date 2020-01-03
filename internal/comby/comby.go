@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/pkg/errors"
 
@@ -64,36 +65,7 @@ func rawArgs(args Args) (rawArgs []string) {
 	return rawArgs
 }
 
-func PipeTo(ctx context.Context, args Args, w io.Writer) (err error) {
-	if !exists() {
-		log15.Error("comby is not installed (it could not be found on the PATH)")
-		return errors.New("comby is not installed")
-	}
-
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	rawArgs := rawArgs(args)
-	log15.Info("running comby", "args", args.String())
-
-	cmd := exec.CommandContext(ctx, combyPath, rawArgs...)
-
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		log15.Error("could not connect to comby command stdout", "error", err.Error())
-		return errors.Wrap(err, "failed to connect to comby command stdout")
-	}
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		log15.Error("could not connect to comby command stderr", "error", err.Error())
-		return errors.Wrap(err, "failed to connect to comby command stderr")
-	}
-
-	if err := cmd.Start(); err != nil {
-		log15.Error("failed to start comby command", "error", err.Error())
-		return errors.Wrap(err, "failed to start comby command")
-	}
-
+func waitForCompletion(cmd *exec.Cmd, stdout, stderr io.ReadCloser, w io.Writer) (err error) {
 	// Read stderr in goroutine so we don't potentially block reading stdout
 	stderrMsgC := make(chan []byte, 1)
 	go func() {
@@ -117,6 +89,56 @@ func PipeTo(ctx context.Context, args Args, w io.Writer) (err error) {
 		}
 		log15.Error("failed to wait for executing comby command", "error", string(err.(*exec.ExitError).Stderr))
 		return errors.Wrap(err, "failed to wait for executing comby command")
+	}
+	return nil
+}
+
+func PipeTo(ctx context.Context, args Args, w io.Writer) (err error) {
+	if !exists() {
+		log15.Error("comby is not installed (it could not be found on the PATH)")
+		return errors.New("comby is not installed")
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	rawArgs := rawArgs(args)
+	log15.Info("running comby", "args", args.String())
+
+	cmd := exec.Command(combyPath, rawArgs...)
+	// ensure forked child processes are killed
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		log15.Error("could not connect to comby command stdout", "error", err.Error())
+		return errors.Wrap(err, "failed to connect to comby command stdout")
+	}
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		log15.Error("could not connect to comby command stderr", "error", err.Error())
+		return errors.Wrap(err, "failed to connect to comby command stderr")
+	}
+
+	if err := cmd.Start(); err != nil {
+		log15.Error("failed to start comby command", "error", err.Error())
+		return errors.Wrap(err, "failed to start comby command")
+	}
+
+	errorC := make(chan error, 1)
+	go func() {
+		err := waitForCompletion(cmd, stdout, stderr, w)
+		errorC <- err
+	}()
+
+	select {
+	case <-ctx.Done():
+		log15.Error("comby context deadline reached")
+		syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+	case err := <-errorC:
+		if err != nil {
+			return errors.Wrap(err, "failed to wait for executing comby command")
+		}
 	}
 
 	return nil
