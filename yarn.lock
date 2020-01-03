@@ -1761,8 +1761,7 @@
   integrity sha512-Te7F1RQJLBH4C8wQ2xz0nPC2vpe13F80V+Yv+c3GySOoh4DcLNN4P5u51Kh4aZPqeS5DJ7CKvHyX2SM/1EBXNg==
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "0.0.0"
-  uid ""
+  version "2.0.0"
 
 "@sourcegraph/prettierrc@^3.0.1":
   version "3.0.1"
@@ -2867,10 +2866,10 @@
     "@types/history" "*"
     "@types/react" "*"
 
-"@types/react-stripe-elements@6.0.1":
-  version "6.0.1"
-  resolved "https://registry.npmjs.org/@types/react-stripe-elements/-/react-stripe-elements-6.0.1.tgz#10282c987f1e5e52787c1f394385ee378a92a220"
-  integrity sha512-pwwdzATD3aG5BzDsZvXXeMSXn8dTm/N0Oe5Nkys7+uUKpLC15k9ZsiMVnxDSF5z+hjw5HC0rROIJwmgUU5/Plg==
+"@types/react-stripe-elements@6.0.2":
+  version "6.0.2"
+  resolved "https://registry.npmjs.org/@types/react-stripe-elements/-/react-stripe-elements-6.0.2.tgz#ce26e08369116613144d6da52874c59f0b656f2d"
+  integrity sha512-PohNK1cGMcAZapaDsSwOVu7+WfM1BPEXThADZzGrcrPP0/74BmdyNr3Nood4XqK7tD/D/mOpkzPMFq4ZNEeRuQ==
   dependencies:
     "@types/react" "*"
     "@types/stripe-v3" "*"
@@ -17643,8 +17642,7 @@ source-map@^0.7.3:
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "0.0.0"
-  uid ""
+  version "23.0.1"
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
