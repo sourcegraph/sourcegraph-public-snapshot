@@ -6,6 +6,3 @@ curl -X POST http://localhost:9090/-/reload
 ```
 
 to your running Prometheus in your dev Sourcegraph instance and it will reload the configs with your changes.
-
-
- 
