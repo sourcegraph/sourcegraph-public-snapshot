@@ -4,6 +4,8 @@ import renderer from 'react-test-renderer'
 import { FileDiffTab } from './FileDiffTab'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 
+jest.mock('mdi-react/SourcePullIcon', () => 'SourcePullIcon')
+
 describe('FileDiffTab', () => {
     test('renders the form', () => {
         const history = H.createMemoryHistory({ keyLength: 0 })

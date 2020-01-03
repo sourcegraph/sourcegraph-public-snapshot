@@ -5,6 +5,8 @@ import { createBarrier } from '../api/integration-test/testHelpers'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import { ActionItem } from './ActionItem'
 
+jest.mock('mdi-react/OpenInNewIcon', () => 'OpenInNewIcon')
+
 describe('ActionItem', () => {
     const NOOP_EXTENSIONS_CONTROLLER = { executeCommand: () => Promise.resolve(undefined) }
     const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => undefined }

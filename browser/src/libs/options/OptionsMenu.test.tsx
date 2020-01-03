@@ -7,7 +7,9 @@ import sinon from 'sinon'
 import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
 import { OptionsMenu, OptionsMenuProps } from './OptionsMenu'
 
-describe('ServerURLForm', () => {
+jest.mock('mdi-react/SettingsOutlineIcon', () => 'SettingsOutlineIcon')
+
+describe('OptionsMenu', () => {
     afterAll(cleanup)
 
     const stubs: OptionsMenuProps = {
