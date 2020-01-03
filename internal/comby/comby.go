@@ -133,7 +133,10 @@ func PipeTo(ctx context.Context, args Args, w io.Writer) (err error) {
 	select {
 	case <-ctx.Done():
 		log15.Error("comby context deadline reached")
-		syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+		err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+		if err != nil {
+			return errors.Wrap(err, "error killing comby command")
+		}
 	case err := <-errorC:
 		if err != nil {
 			return errors.Wrap(err, "failed to wait for executing comby command")
