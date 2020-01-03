@@ -33,7 +33,6 @@ import { Markdown } from '../../../../../shared/src/components/Markdown'
 import { Link } from '../../../../../shared/src/components/Link'
 import { switchMap, tap, catchError, takeWhile, concatMap, repeatWhen, delay } from 'rxjs/operators'
 import { ThemeProps } from '../../../../../shared/src/theme'
-import { TabsWithLocalStorageViewStatePersistence } from '../../../../../shared/src/components/Tabs'
 import { isDefined } from '../../../../../shared/src/util/types'
 import classNames from 'classnames'
 import { CampaignTitleField } from './form/CampaignTitleField'
@@ -45,8 +44,7 @@ import {
     MANUAL_CAMPAIGN_TYPE,
 } from './form/CampaignPlanSpecificationFields'
 import { CampaignStatus } from './CampaignStatus'
-import { CampaignChangesets } from './changesets/CampaignChangesets'
-import { CampaignDiffs } from './diffs/CampaignDiffs'
+import { CampaignTabs } from './CampaignTabs'
 
 interface Props extends ThemeProps {
     /**
@@ -306,21 +304,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
     const author = campaign && campaign.__typename === 'Campaign' ? campaign.author : authenticatedUser
 
-    const calculateDiff = (field: 'added' | 'deleted'): number => {
-        const nodes: (GQL.IExternalChangeset | GQL.IChangesetPlan)[] | undefined = campaign?.changesets.nodes
-        if (!nodes) {
-            return 0
-        }
-        return nodes.reduce(
-            (prev, next) =>
-                prev + (next.diff ? next.diff.fileDiffs.diffStat[field] + next.diff.fileDiffs.diffStat.changed : 0),
-            0
-        )
-    }
-
-    const totalAdditions = calculateDiff('added')
-    const totalDeletions = calculateDiff('deleted')
-
     const status = campaign
         ? campaign.__typename === 'CampaignPlan'
             ? campaign.status
@@ -525,55 +508,14 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             )}
             {/* is already created or a preview is available */}
             {campaign && (
-                <>
-                    <TabsWithLocalStorageViewStatePersistence
-                        storageKey="campaignTab"
-                        className="mt-3"
-                        tabs={[
-                            {
-                                id: 'diff',
-                                label: (
-                                    <span className="e2e-campaign-diff-tab">
-                                        Diff <span className="text-success">+{totalAdditions}</span>{' '}
-                                        <span className="text-danger">-{totalDeletions}</span>
-                                    </span>
-                                ),
-                            },
-                            {
-                                id: 'changesets',
-                                label: (
-                                    <span className="e2e-campaign-changesets-tab">
-                                        Changesets{' '}
-                                        {campaign && (
-                                            <span className="badge badge-secondary badge-pill">
-                                                {campaign.changesets.totalCount}
-                                            </span>
-                                        )}
-                                    </span>
-                                ),
-                            },
-                        ]}
-                        tabClassName="tab-bar__tab--h5like"
-                    >
-                        <CampaignChangesets
-                            key="changesets"
-                            changesets={campaign.changesets}
-                            history={history}
-                            location={location}
-                            className="mt-3"
-                            isLightTheme={isLightTheme}
-                        />
-                        <CampaignDiffs
-                            key="diff"
-                            changesets={campaign.changesets}
-                            persistLines={campaign.__typename === 'Campaign'}
-                            history={history}
-                            location={location}
-                            className="mt-3"
-                            isLightTheme={isLightTheme}
-                        />
-                    </TabsWithLocalStorageViewStatePersistence>
-                </>
+                <CampaignTabs
+                    changesets={campaign.changesets}
+                    persistLines={campaign.__typename === 'Campaign'}
+                    history={history}
+                    location={location}
+                    className="mt-3"
+                    isLightTheme={isLightTheme}
+                />
             )}
         </>
     )

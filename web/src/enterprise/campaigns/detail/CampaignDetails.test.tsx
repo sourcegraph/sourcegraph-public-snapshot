@@ -6,7 +6,6 @@ import * as H from 'history'
 import { createRenderer } from 'react-test-renderer/shallow'
 import { of } from 'rxjs'
 
-jest.mock('./changesets/CampaignChangesets', () => ({ CampaignChangesets: 'CampaignChangesets' }))
 jest.mock('./form/CampaignPlanSpecificationFields', () => ({
     CampaignPlanSpecificationFields: 'CampaignPlanSpecificationFields',
 }))
@@ -14,6 +13,7 @@ jest.mock('./form/CampaignTitleField', () => ({ CampaignTitleField: 'CampaignTit
 jest.mock('./form/CampaignDescriptionField', () => ({ CampaignDescriptionField: 'CampaignDescriptionField' }))
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 jest.mock('./CampaignStatus', () => ({ CampaignStatus: (props: any) => `CampaignStatus(state=${props.status.state})` }))
+jest.mock('./CampaignTabs', () => ({ CampaignTabs: 'CampaignTabs' }))
 jest.mock('../icons', () => ({ CampaignsIcon: 'CampaignsIcon' }))
 
 const history = H.createMemoryHistory()

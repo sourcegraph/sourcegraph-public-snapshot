@@ -1,0 +1,195 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`CampaignTabs renders 1`] = `
+<TabsWithLocalStorageViewStatePersistence
+  className=""
+  storageKey="campaignTab"
+  tabClassName="tab-bar__tab--h5like"
+  tabs={
+    Array [
+      Object {
+        "id": "diff",
+        "label": <span
+          className="e2e-campaign-diff-tab"
+        >
+          Diff 
+          <span
+            className="text-success"
+          >
+            +
+            3
+          </span>
+           
+          <span
+            className="text-danger"
+          >
+            -
+            5
+          </span>
+        </span>,
+      },
+      Object {
+        "id": "changesets",
+        "label": <span
+          className="e2e-campaign-changesets-tab"
+        >
+          Changesets 
+          <span
+            className="badge badge-secondary badge-pill"
+          >
+            1
+          </span>
+        </span>,
+      },
+    ]
+  }
+>
+  <CampaignChangesets
+    changesets={
+      Object {
+        "nodes": Array [
+          Object {
+            "__typename": "ChangesetPlan",
+            "diff": Object {
+              "__typename": "PreviewRepositoryComparison",
+              "fileDiffs": Object {
+                "__typename": "PreviewFileDiffConnection",
+                "diffStat": Object {
+                  "__typename": "DiffStat",
+                  "added": 1,
+                  "changed": 2,
+                  "deleted": 3,
+                },
+                "nodes": Array [],
+              },
+            },
+            "id": "0",
+            "repository": Object {
+              "name": "sourcegraph/sourcegraph",
+              "url": "github.com/sourcegraph/sourcegraph",
+            },
+          },
+        ],
+        "totalCount": 1,
+      }
+    }
+    className="mt-3"
+    history={
+      Object {
+        "action": "POP",
+        "block": [Function],
+        "canGo": [Function],
+        "createHref": [Function],
+        "entries": Array [
+          Object {
+            "hash": "",
+            "key": undefined,
+            "pathname": "/",
+            "search": "",
+            "state": undefined,
+          },
+        ],
+        "go": [Function],
+        "goBack": [Function],
+        "goForward": [Function],
+        "index": 0,
+        "length": 1,
+        "listen": [Function],
+        "location": Object {
+          "hash": "",
+          "key": undefined,
+          "pathname": "/",
+          "search": "",
+          "state": undefined,
+        },
+        "push": [Function],
+        "replace": [Function],
+      }
+    }
+    isLightTheme={true}
+    location={
+      Object {
+        "hash": "",
+        "key": undefined,
+        "pathname": "/",
+        "search": "",
+        "state": undefined,
+      }
+    }
+  />
+  <CampaignDiffs
+    changesets={
+      Object {
+        "nodes": Array [
+          Object {
+            "__typename": "ChangesetPlan",
+            "diff": Object {
+              "__typename": "PreviewRepositoryComparison",
+              "fileDiffs": Object {
+                "__typename": "PreviewFileDiffConnection",
+                "diffStat": Object {
+                  "__typename": "DiffStat",
+                  "added": 1,
+                  "changed": 2,
+                  "deleted": 3,
+                },
+                "nodes": Array [],
+              },
+            },
+            "id": "0",
+            "repository": Object {
+              "name": "sourcegraph/sourcegraph",
+              "url": "github.com/sourcegraph/sourcegraph",
+            },
+          },
+        ],
+        "totalCount": 1,
+      }
+    }
+    className="mt-3"
+    history={
+      Object {
+        "action": "POP",
+        "block": [Function],
+        "canGo": [Function],
+        "createHref": [Function],
+        "entries": Array [
+          Object {
+            "hash": "",
+            "key": undefined,
+            "pathname": "/",
+            "search": "",
+            "state": undefined,
+          },
+        ],
+        "go": [Function],
+        "goBack": [Function],
+        "goForward": [Function],
+        "index": 0,
+        "length": 1,
+        "listen": [Function],
+        "location": Object {
+          "hash": "",
+          "key": undefined,
+          "pathname": "/",
+          "search": "",
+          "state": undefined,
+        },
+        "push": [Function],
+        "replace": [Function],
+      }
+    }
+    isLightTheme={true}
+    location={
+      Object {
+        "hash": "",
+        "key": undefined,
+        "pathname": "/",
+        "search": "",
+        "state": undefined,
+      }
+    }
+    persistLines={true}
+  />
+</TabsWithLocalStorageViewStatePersistence>
+`;
