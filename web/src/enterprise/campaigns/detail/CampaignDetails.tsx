@@ -8,7 +8,6 @@ import { PageTitle } from '../../../components/PageTitle'
 import { UserAvatar } from '../../../user/UserAvatar'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { CampaignsIcon } from '../icons'
-import { ChangesetNode, ChangesetNodeProps } from './changesets/ChangesetNode'
 import { isEqual, noop } from 'lodash'
 import { Form } from '../../../components/Form'
 import {
@@ -16,7 +15,6 @@ import {
     updateCampaign,
     deleteCampaign,
     createCampaign,
-    queryChangesets,
     previewCampaignPlan,
     fetchCampaignPlanById,
     CampaignType,
@@ -27,7 +25,6 @@ import { useError, useObservable } from '../../../util/useObservable'
 import { asError } from '../../../../../shared/src/util/errors'
 import * as H from 'history'
 import { CampaignBurndownChart } from './BurndownChart'
-import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 import { AddChangesetForm } from './AddChangesetForm'
 import { Subject, of, timer, merge, Observable } from 'rxjs'
 import { renderMarkdown } from '../../../../../shared/src/util/markdown'
@@ -49,6 +46,7 @@ import {
     MANUAL_CAMPAIGN_TYPE,
 } from './form/CampaignPlanSpecificationFields'
 import { CampaignStatus } from './CampaignStatus'
+import { CampaignChangesets } from './changesets/CampaignChangesets'
 
 interface Props extends ThemeProps {
     /**
@@ -140,11 +138,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             })
         return () => subscription.unsubscribe()
     }, [campaignID, triggerError, nextChangesetUpdate, campaignUpdates, _fetchCampaignById])
-
-    const queryChangesetsConnection = useCallback(
-        (args: FilteredConnectionQueryArgs) => queryChangesets(campaignID!, args),
-        [campaignID]
-    )
 
     const [mode, setMode] = useState<'viewing' | 'editing' | 'saving' | 'deleting' | 'closing'>(
         campaignID ? 'viewing' : 'editing'
@@ -563,37 +556,14 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         ]}
                         tabClassName="tab-bar__tab--h5like"
                     >
-                        <div className="list-group mt-3" key="changesets">
-                            {campaign && campaign.__typename === 'Campaign' && (
-                                <FilteredConnection<
-                                    GQL.IExternalChangeset | GQL.IChangesetPlan,
-                                    Omit<ChangesetNodeProps, 'node'>
-                                >
-                                    className="mt-2"
-                                    updates={changesetUpdates}
-                                    nodeComponent={ChangesetNode}
-                                    nodeComponentProps={{ isLightTheme, history, location }}
-                                    queryConnection={queryChangesetsConnection}
-                                    hideSearch={true}
-                                    defaultFirst={15}
-                                    noun="changeset"
-                                    pluralNoun="changesets"
-                                    history={history}
-                                    location={location}
-                                />
-                            )}
-                            {campaign &&
-                                campaign.__typename === 'CampaignPlan' &&
-                                campaign.changesets.nodes.map((changeset, i) => (
-                                    <ChangesetNode
-                                        node={changeset}
-                                        isLightTheme={isLightTheme}
-                                        key={i}
-                                        location={location}
-                                        history={history}
-                                    ></ChangesetNode>
-                                ))}
-                        </div>
+                        <CampaignChangesets
+                            key="changesets"
+                            changesets={campaign.changesets}
+                            history={history}
+                            location={location}
+                            className="mt-3"
+                            isLightTheme={isLightTheme}
+                        />
                         <div className="mt-3" key="diff">
                             {nodes && (
                                 <FileDiffTab
