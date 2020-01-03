@@ -88,7 +88,7 @@ var lockNamespace = int32(fnv1.HashString32("a8n"))
 
 // TryAcquireAdvisoryLock will attempt to acquire an advisory lock using key
 // and is non blocking. If a lock is acquired, "true, nil" will be returned.
-// It must be called from within a transaction or "false, NoTransactionErr" is returned
+// It must be called from within a transaction or "false, NoTransactionError" is returned
 func (s *Store) TryAcquireAdvisoryLock(ctx context.Context, key string) (bool, error) {
 	_, ok := s.db.(dbutil.Tx)
 	if !ok {
