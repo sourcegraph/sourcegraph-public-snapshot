@@ -248,6 +248,22 @@ func (s *Service) RunChangesetJob(
 		return nil
 	}
 
+	// We start a transaction here so that we can grab a lock
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Done(&err)
+
+	lockKey := fmt.Sprintf("RunChangesetJob: %d", job.ID)
+	acquired, err := tx.TryAcquireAdvisoryLock(ctx, lockKey)
+	if err != nil {
+		return errors.Wrap(err, "acquiring lock")
+	}
+	if !acquired {
+		return errors.New("could not acquire lock")
+	}
+
 	defer func() {
 		if err != nil {
 			job.Error = err.Error()
@@ -382,12 +398,6 @@ func (s *Service) RunChangesetJob(
 	if err != nil {
 		return errors.Wrap(err, "creating changeset")
 	}
-
-	tx, err := s.store.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer tx.Done(&err)
 
 	if err = tx.CreateChangesets(ctx, cs.Changeset); err != nil {
 		if _, ok := err.(AlreadyExistError); !ok {
