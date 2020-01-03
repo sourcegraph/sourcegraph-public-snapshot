@@ -65,7 +65,7 @@
     "copyfiles": "^2.1.1",
     "eslint-plugin-import": "^2.19.1",
     "jest": "^24.9.0",
-    "nock": "^11.7.0",
+    "nock": "^11.7.1",
     "sinon": "^8.0.2",
     "source-map-support": "^0.5.16",
     "tsc-watch": "^4.0.0",
