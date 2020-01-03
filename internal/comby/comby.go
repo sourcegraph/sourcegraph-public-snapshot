@@ -139,7 +139,12 @@ func PipeTo(ctx context.Context, args Args, w io.Writer) (err error) {
 		}
 	case err := <-errorC:
 		if err != nil {
-			return errors.Wrap(err, "failed to wait for executing comby command")
+			err = errors.Wrap(err, "failed to wait for executing comby command")
+			errKill := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+			if errKill != nil {
+				return errors.Wrap(errKill, "error killing comby command")
+			}
+			return err
 		}
 	}
 
