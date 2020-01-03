@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`FileDiffTab renders the form 1`] = `
+exports[`FileDiffTab renders 1`] = `
 <div>
   <h3>
     <SourcePullIcon

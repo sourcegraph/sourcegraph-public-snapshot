@@ -6,6 +6,7 @@ import * as H from 'history'
 import { createRenderer } from 'react-test-renderer/shallow'
 import { of } from 'rxjs'
 
+jest.mock('./changesets/CampaignChangesets', () => ({ CampaignChangesets: 'CampaignChangesets' }))
 jest.mock('./form/CampaignPlanSpecificationFields', () => ({
     CampaignPlanSpecificationFields: 'CampaignPlanSpecificationFields',
 }))

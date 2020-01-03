@@ -35,7 +35,6 @@ import { switchMap, tap, catchError, takeWhile, concatMap, repeatWhen, delay } f
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { TabsWithLocalStorageViewStatePersistence } from '../../../../../shared/src/components/Tabs'
 import { isDefined } from '../../../../../shared/src/util/types'
-import { FileDiffTab } from './FileDiffTab'
 import classNames from 'classnames'
 import { CampaignTitleField } from './form/CampaignTitleField'
 import { CampaignDescriptionField } from './form/CampaignDescriptionField'
@@ -47,6 +46,7 @@ import {
 } from './form/CampaignPlanSpecificationFields'
 import { CampaignStatus } from './CampaignStatus'
 import { CampaignChangesets } from './changesets/CampaignChangesets'
+import { CampaignDiffs } from './diffs/CampaignDiffs'
 
 interface Props extends ThemeProps {
     /**
@@ -306,9 +306,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
     const author = campaign && campaign.__typename === 'Campaign' ? campaign.author : authenticatedUser
 
-    const nodes: (GQL.IExternalChangeset | GQL.IChangesetPlan)[] | undefined = campaign?.changesets.nodes
-
     const calculateDiff = (field: 'added' | 'deleted'): number => {
+        const nodes: (GQL.IExternalChangeset | GQL.IChangesetPlan)[] | undefined = campaign?.changesets.nodes
         if (!nodes) {
             return 0
         }
@@ -564,17 +563,15 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             className="mt-3"
                             isLightTheme={isLightTheme}
                         />
-                        <div className="mt-3" key="diff">
-                            {nodes && (
-                                <FileDiffTab
-                                    nodes={nodes}
-                                    persistLines={campaign.__typename === 'Campaign'}
-                                    history={history}
-                                    location={location}
-                                    isLightTheme={isLightTheme}
-                                ></FileDiffTab>
-                            )}
-                        </div>
+                        <CampaignDiffs
+                            key="diff"
+                            changesets={campaign.changesets}
+                            persistLines={campaign.__typename === 'Campaign'}
+                            history={history}
+                            location={location}
+                            className="mt-3"
+                            isLightTheme={isLightTheme}
+                        />
                     </TabsWithLocalStorageViewStatePersistence>
                 </>
             )}

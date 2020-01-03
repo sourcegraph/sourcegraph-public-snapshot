@@ -2,12 +2,12 @@ import * as H from 'history'
 import React from 'react'
 import renderer from 'react-test-renderer'
 import { FileDiffTab } from './FileDiffTab'
-import * as GQL from '../../../../../shared/src/graphql/schema'
+import * as GQL from '../../../../../../shared/src/graphql/schema'
 
 jest.mock('mdi-react/SourcePullIcon', () => 'SourcePullIcon')
 
 describe('FileDiffTab', () => {
-    test('renders the form', () => {
+    test('renders', () => {
         const history = H.createMemoryHistory({ keyLength: 0 })
         const location = H.createLocation('/campaigns/new')
         expect(
