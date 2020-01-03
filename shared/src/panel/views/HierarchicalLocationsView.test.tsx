@@ -17,6 +17,8 @@ import { Controller } from '../../extensions/controller'
 import { SettingsCascadeOrError } from '../../settings/settings'
 import { HierarchicalLocationsView, HierarchicalLocationsViewProps } from './HierarchicalLocationsView'
 
+jest.mock('mdi-react/SourceRepositoryIcon', () => 'SourceRepositoryIcon')
+
 describe('<HierarchicalLocationsView />', () => {
     const getProps = () => {
         const services = {

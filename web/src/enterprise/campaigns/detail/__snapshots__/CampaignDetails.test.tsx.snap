@@ -16,7 +16,7 @@ exports[`CampaignDetails creation form 1`] = `
       <h2
         className="m-0"
       >
-        <Memo(ChartHistogramIcon)
+        <CampaignsIcon
           className="icon-inline mr-2 text-muted"
         />
         <span>
@@ -125,17 +125,9 @@ Array [
       <h2
         className="m-0"
       >
-        <svg
-          className="mdi-icon icon-inline mr-2 text-success"
-          fill="currentColor"
-          height={24}
-          viewBox="0 0 24 24"
-          width={24}
-        >
-          <path
-            d="M3,3H5V13H9V7H13V11H17V15H21V21H3V3Z"
-          />
-        </svg>
+        <CampaignsIcon
+          className="icon-inline mr-2 text-success"
+        />
         <span>
           <a
             href="/campaigns"
@@ -309,17 +301,9 @@ Array [
       <h2
         className="m-0"
       >
-        <svg
-          className="mdi-icon icon-inline mr-2 text-success"
-          fill="currentColor"
-          height={24}
-          viewBox="0 0 24 24"
-          width={24}
-        >
-          <path
-            d="M3,3H5V13H9V7H13V11H17V15H21V21H3V3Z"
-          />
-        </svg>
+        <CampaignsIcon
+          className="icon-inline mr-2 text-success"
+        />
         <span>
           <a
             href="/campaigns"

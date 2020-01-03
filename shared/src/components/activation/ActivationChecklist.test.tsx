@@ -3,6 +3,9 @@ import React from 'react'
 import renderer from 'react-test-renderer'
 import { ActivationChecklist } from './ActivationChecklist'
 
+jest.mock('mdi-react/CheckboxBlankCircleIcon', () => 'CheckboxBlankCircleIcon')
+jest.mock('mdi-react/CheckIcon', () => 'CheckIcon')
+
 describe('ActivationChecklist', () => {
     const history = H.createMemoryHistory({ keyLength: 0 })
     test('render loading', () => {
