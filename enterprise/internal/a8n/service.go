@@ -248,6 +248,21 @@ func (s *Service) RunChangesetJob(
 		return nil
 	}
 
+	defer func() {
+		if err != nil {
+			job.Error = err.Error()
+		}
+		job.FinishedAt = s.clock()
+
+		if e := s.store.UpdateChangesetJob(ctx, job); e != nil {
+			if err == nil {
+				err = e
+			} else {
+				err = multierror.Append(err, e)
+			}
+		}
+	}()
+
 	// We start a transaction here so that we can grab a lock
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
@@ -263,21 +278,6 @@ func (s *Service) RunChangesetJob(
 	if !acquired {
 		return errors.New("could not acquire lock")
 	}
-
-	defer func() {
-		if err != nil {
-			job.Error = err.Error()
-		}
-		job.FinishedAt = s.clock()
-
-		if e := s.store.UpdateChangesetJob(ctx, job); e != nil {
-			if err == nil {
-				err = e
-			} else {
-				err = multierror.Append(err, e)
-			}
-		}
-	}()
 
 	job.StartedAt = s.clock()
 
