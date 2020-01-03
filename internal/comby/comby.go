@@ -106,7 +106,7 @@ func PipeTo(ctx context.Context, args Args, w io.Writer) (err error) {
 	log15.Info("running comby", "args", args.String())
 
 	cmd := exec.Command(combyPath, rawArgs...)
-	// ensure forked child processes are killed
+	// Ensure forked child processes are killed
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
 	stdout, err := cmd.StdoutPipe()
@@ -127,8 +127,7 @@ func PipeTo(ctx context.Context, args Args, w io.Writer) (err error) {
 
 	errorC := make(chan error, 1)
 	go func() {
-		err := waitForCompletion(cmd, stdout, stderr, w)
-		errorC <- err
+		errorC <- waitForCompletion(cmd, stdout, stderr, w)
 	}()
 
 	select {
