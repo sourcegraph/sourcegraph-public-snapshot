@@ -223,7 +223,7 @@ describe('SearchResultsList', () => {
         const showMore = sinon.spy()
         const props = {
             ...defaultProps,
-            resultsOrError: mockResults({ resultCount: 31, limitHit: true }),
+            resultsOrError: mockResults({ resultCount: 2, limitHit: true }),
             onShowMoreResultsClick: showMore,
         }
         const { container, rerender } = render(
@@ -246,7 +246,7 @@ describe('SearchResultsList', () => {
             <BrowserRouter>
                 <SearchResultsList
                     {...defaultProps}
-                    resultsOrError={mockResults({ resultCount: 1001, limitHit: false })}
+                    resultsOrError={mockResults({ resultCount: 4, limitHit: false })}
                 />
             </BrowserRouter>
         )
