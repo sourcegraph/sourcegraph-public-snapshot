@@ -87,49 +87,49 @@ export const CampaignPlanSpecificationFields: React.FunctionComponent<Props> = (
 
     return (
         <div className={className}>
-            <div className="row campaign-details__property-row">
-                <h3 className="mr-3 mb-0 campaign-details__property-label">Type</h3>
-                <div className="flex-grow-1 form-group mb-0">
-                    {!readOnly ? (
-                        <>
-                            <select
-                                className="form-control w-auto d-inline-block e2e-campaign-type"
-                                placeholder="Select campaign type"
-                                onChange={e => onTypeChange(e.currentTarget.value as CampaignType)}
-                                value={value.type}
-                            >
-                                {(Object.keys(typeLabels) as CampaignType[]).map(typeName => (
-                                    <option value={typeName || ''} key={typeName}>
-                                        {typeLabels[typeName]}
-                                    </option>
-                                ))}
-                            </select>
-                            {value.type === 'comby' && (
-                                <small className="ml-1">
-                                    <a rel="noopener noreferrer" target="_blank" href="https://comby.dev/#match-syntax">
-                                        Learn about comby syntax
-                                    </a>
-                                </small>
-                            )}
-                        </>
-                    ) : (
-                        <p className="mb-0">{typeLabels[value.type || '']}</p>
-                    )}
-                </div>
+            <div className="flex-grow-1 form-group mb-0">
+                {!readOnly ? (
+                    <>
+                        <label htmlFor="campaign-plan-specification-fields__type" className="font-weight-bold d-block">
+                            Plan
+                        </label>
+                        <select
+                            id="campaign-plan-specification-fields__type"
+                            className="form-control w-auto d-inline-block e2e-campaign-type"
+                            placeholder="Select campaign type"
+                            onChange={e => onTypeChange(e.currentTarget.value as CampaignType)}
+                            value={value.type}
+                        >
+                            {(Object.keys(typeLabels) as CampaignType[]).map(typeName => (
+                                <option value={typeName || ''} key={typeName}>
+                                    {typeLabels[typeName]}
+                                </option>
+                            ))}
+                        </select>
+                        {value.type === 'comby' ? (
+                            <small className="ml-2">
+                                <a rel="noopener noreferrer" target="_blank" href="https://comby.dev/#match-syntax">
+                                    Learn about comby syntax
+                                </a>
+                            </small>
+                        ) : (
+                            undefined
+                        )}
+                    </>
+                ) : (
+                    <p className="mb-0">{typeLabels[value.type || '']}</p>
+                )}
             </div>
             {value.type !== MANUAL_CAMPAIGN_TYPE && (
-                <div className="row mt-3">
-                    <h3 className="mr-3 mb-0 flex-grow-0 campaign-details__property-label">Arguments</h3>
-                    <MonacoSettingsEditor
-                        className="flex-grow-1 e2e-campaign-arguments"
-                        isLightTheme={isLightTheme}
-                        value={value.arguments}
-                        jsonSchema={value.type ? jsonSchemaByType[value.type] : undefined}
-                        height={110}
-                        onChange={onArgumentsChange}
-                        readOnly={readOnly}
-                    />
-                </div>
+                <MonacoSettingsEditor
+                    className="flex-grow-1 mt-2 e2e-campaign-arguments"
+                    isLightTheme={isLightTheme}
+                    value={value.arguments}
+                    jsonSchema={value.type ? jsonSchemaByType[value.type] : undefined}
+                    height={110}
+                    onChange={onArgumentsChange}
+                    readOnly={readOnly}
+                />
             )}
         </div>
     )
