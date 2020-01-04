@@ -42,9 +42,9 @@ export interface ExternalServiceKindMetadata {
     shortDescription?: string
 
     /**
-     * A long description that will appear on the add / edit page
+     * Instructions that will appear on the add / edit page
      */
-    longDescription?: JSX.Element | string
+    instructions?: JSX.Element | string
 
     /**
      * The JSON schema of the external service configuration
@@ -167,7 +167,7 @@ const GITHUB_DOTCOM: ExternalServiceKindMetadata = {
         },
     ],
     shortDescription: 'Add GitHub.com repositories',
-    longDescription: (
+    instructions: (
         <span>
             Configure by using the <strong>Quick configure</strong> buttons, or manually edit the JSON configuration.{' '}
             <Link target="_blank" to="/help/admin/external_service/github#configuration">
@@ -825,7 +825,7 @@ const OTHER_SERVICE: ExternalServiceKindMetadata = {
 const EZ_GITHUB_DOTCOM = {
     ...GITHUB_DOTCOM,
     shortDescription: undefined,
-    longDescription: (
+    instructions: (
         <div>
             <ol>
                 <li>
@@ -932,7 +932,7 @@ const EZ_GITHUB_ENTERPRISE = {
 const EZ_GITLAB_DOTCOM: ExternalServiceKindMetadata = {
     ...GITLAB_SERVICE,
     shortDescription: undefined,
-    longDescription: (
+    instructions: (
         <div>
             <ol>
                 <li>
@@ -1034,7 +1034,7 @@ const EZ_GITLAB_SELFMANAGED = {
 const EZ_BITBUCKET_DOTORG: ExternalServiceKindMetadata = {
     ...BITBUCKET_CLOUD_SERVICE,
     shortDescription: undefined,
-    longDescription: (
+    instructions: (
         <div>
             <ol>
                 <li>
@@ -1106,7 +1106,7 @@ const EZ_BITBUCKET_SERVER: ExternalServiceKindMetadata = {
     ...BITBUCKET_SERVER_SERVICE,
     title: 'Bitbucket Server',
     shortDescription: undefined,
-    longDescription: (
+    instructions: (
         <div>
             <ol>
                 <li>
@@ -1249,7 +1249,7 @@ const EZ_BITBUCKET_SERVER: ExternalServiceKindMetadata = {
 const EZ_AWS_CODECOMMIT = {
     ...AWS_EXTERNAL_SERVICE,
     shortDescription: undefined,
-    longDescription: (
+    instructions: (
         <div>
             <ol>
                 <li>
@@ -1307,7 +1307,7 @@ const EZ_GITOLITE = {
     ...GITOLITE_SERVICE,
     title: 'Gitolite',
     shortDescription: undefined,
-    longDescription: (
+    instructions: (
         <div>
             <ol>
                 <li>
@@ -1342,7 +1342,7 @@ const EZ_GIT = {
     ...OTHER_SERVICE,
     title: 'Generic Git host',
     shortDescription: undefined,
-    longDescription: (
+    instructions: (
         <div>
             <ol>
                 <li>
@@ -1383,6 +1383,10 @@ export const externalServices: Record<string, ExternalServiceKindMetadata> = {
     phabricator: PHABRICATOR_SERVICE,
     git: OTHER_SERVICE,
     aws: AWS_EXTERNAL_SERVICE,
+}
+
+export const nonCodeHostExternalServices: Record<string, ExternalServiceKindMetadata> = {
+    phabricator: PHABRICATOR_SERVICE,
 }
 
 export const defaultExternalServices: Record<GQL.ExternalServiceKind, ExternalServiceKindMetadata> = {

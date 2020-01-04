@@ -3,7 +3,7 @@ import React from 'react'
 import { PageTitle } from '../components/PageTitle'
 import { ThemeProps } from '../../../shared/src/theme'
 import { ExternalServiceCard } from '../components/ExternalServiceCard'
-import { externalServices } from './externalServices'
+import { onboardingExternalServices, nonCodeHostExternalServices } from './externalServices'
 import { SiteAdminAddExternalServicePage } from './SiteAdminAddExternalServicePage'
 import { map } from 'lodash'
 
@@ -29,17 +29,24 @@ export class SiteAdminAddExternalServicesPage extends React.Component<Props> {
     public render(): JSX.Element | null {
         const id = this.getExternalServiceID()
         if (id) {
-            const externalService = externalServices[id]
+            const externalService = onboardingExternalServices[id]
             if (externalService) {
                 return <SiteAdminAddExternalServicePage {...this.props} externalService={externalService} />
             }
         }
         return (
             <div className="add-external-services-page mt-3">
-                <PageTitle title="Choose an external service type to add" />
-                <h1>Add external service</h1>
-                <p>Choose an external service to add to Sourcegraph.</p>
-                {map(externalServices, (externalService, id) => (
+                <PageTitle title="Add repositories" />
+                <h1>Add repositories</h1>
+                <p>Where would you like to add repositories from?</p>
+                {map(onboardingExternalServices, (externalService, id) => (
+                    <div className="add-external-services-page__card" key={id}>
+                        <ExternalServiceCard to={getAddURL(id)} {...externalService} />
+                    </div>
+                ))}
+                <br />
+                <h2>Other connections</h2>
+                {map(nonCodeHostExternalServices, (externalService, id) => (
                     <div className="add-external-services-page__card" key={id}>
                         <ExternalServiceCard to={getAddURL(id)} {...externalService} />
                     </div>

@@ -18,7 +18,7 @@ export const primaryGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/configuration',
         },
         {
-            label: 'External services',
+            label: 'Add repositories',
             to: '/site-admin/external-services',
         },
         {
