@@ -1,0 +1,25 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`CampaignStatusBadge closed 1`] = `
+<span
+  className="campaign-status-badge badge badge-danger"
+>
+  <Memo(ImageAutoAdjustIcon)
+    className="icon-inline mr-1"
+  />
+   
+  Closed
+</span>
+`;
+
+exports[`CampaignStatusBadge open 1`] = `
+<span
+  className="campaign-status-badge badge badge-success"
+>
+  <Memo(ImageAutoAdjustIcon)
+    className="icon-inline mr-1"
+  />
+   
+  Open
+</span>
+`;

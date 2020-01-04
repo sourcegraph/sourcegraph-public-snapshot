@@ -6,79 +6,42 @@ exports[`CampaignDetails creation form 1`] = `
     title="New campaign"
   />
   <Form
-    className="e2e-campaign-form position-relative"
+    className="e2e-campaign-form"
     onReset={[Function]}
     onSubmit={[Function]}
   >
-    <div
-      className="d-flex mb-2"
+    <nav
+      aria-label="breadcrumb"
+      className="mb-2"
     >
-      <h2
-        className="m-0"
+      <ol
+        className="breadcrumb"
       >
-        <CampaignsIcon
-          className="icon-inline mr-2 text-muted"
-        />
-        <span>
+        <li
+          className="breadcrumb-item"
+        >
           <AnchorLink
+            className="text-decoration-none"
             to="/campaigns"
           >
             Campaigns
           </AnchorLink>
-        </span>
-        <span
-          className="text-muted d-inline-block mx-2"
+        </li>
+        <li
+          aria-current="page"
+          className="breadcrumb-item active"
         >
-          /
-        </span>
-        <CampaignTitleField
-          className="w-auto d-inline-block e2e-campaign-title"
-          disabled={false}
-          onChange={[Function]}
-          value=""
-        />
-      </h2>
+          New
+        </li>
+      </ol>
+    </nav>
+    <header
+      className="d-flex mb-2"
+    >
       <span
         className="flex-grow-1 d-flex justify-content-end align-items-center"
       />
-    </div>
-    <div
-      className="card"
-    >
-      <CampaignDescriptionField
-        disabled={false}
-        onChange={[Function]}
-        value=""
-      />
-    </div>
-    <p
-      className="ml-1 mb-0"
-    >
-      <small>
-        <a
-          href="/help/user/markdown"
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          Markdown supported
-        </a>
-      </small>
-    </p>
-    <CampaignPlanSpecificationFields
-      className="container-fluid my-3"
-      isLightTheme={true}
-      onChange={[Function]}
-      readOnly={false}
-    />
-    <React.Fragment>
-      <button
-        className="btn btn-primary"
-        disabled={true}
-        type="submit"
-      >
-        Create
-      </button>
-    </React.Fragment>
+    </header>
   </Form>
 </React.Fragment>
 `;
@@ -86,57 +49,76 @@ exports[`CampaignDetails creation form 1`] = `
 exports[`CampaignDetails editing existing 1`] = `
 Array [
   <form
-    className="e2e-campaign-form position-relative "
+    className="e2e-campaign-form "
     onInvalid={[Function]}
     onReset={[Function]}
     onSubmit={[Function]}
   >
-    <div
-      className="d-flex mb-2"
+    <nav
+      aria-label="breadcrumb"
+      className="mb-2"
     >
-      <h2
-        className="m-0"
+      <ol
+        className="breadcrumb"
       >
-        <CampaignsIcon
-          className="icon-inline mr-2 text-success"
-        />
-        <span>
+        <li
+          className="breadcrumb-item"
+        >
           <a
+            className="text-decoration-none"
             href="/campaigns"
           >
             Campaigns
           </a>
-        </span>
-        <span
-          className="text-muted d-inline-block mx-2"
+        </li>
+        <li
+          aria-current="page"
+          className="breadcrumb-item active"
         >
-          /
-        </span>
-        <CampaignTitleField
-          className="w-auto d-inline-block e2e-campaign-title"
-          disabled={false}
-          onChange={[Function]}
-        />
-      </h2>
+          New
+        </li>
+      </ol>
+    </nav>
+    <header
+      className="d-flex mb-2"
+    >
+      <h2
+        className="m-0"
+      />
       <span
         className="flex-grow-1 d-flex justify-content-end align-items-center"
+      />
+    </header>
+    <header
+      className="d-flex align-items-center mb-2"
+    >
+      <span
+        className="campaign-status-badge badge mr-2 badge-success"
       >
-        <button
-          className="btn btn-primary mr-1"
-          disabled={false}
-          type="submit"
-        >
-          Save
-        </button>
-        <button
-          className="btn btn-secondary"
-          disabled={false}
-          type="reset"
-        >
-          Cancel
-        </button>
+        <CampaignsIcon
+          className="icon-inline mr-1"
+        />
+         
+        Open
       </span>
-    </div>
+      <div
+        className="flex-grow-1"
+      />
+      <button
+        className="btn btn-primary mr-1"
+        disabled={false}
+        type="submit"
+      >
+        Save
+      </button>
+      <button
+        className="btn btn-secondary"
+        disabled={false}
+        type="reset"
+      >
+        Cancel
+      </button>
+    </header>
     <div
       className="card"
     >
@@ -156,37 +138,20 @@ Array [
           in almost 14 years
         </span>
       </div>
-      <CampaignDescriptionField
-        disabled={false}
-        onChange={[Function]}
-        value="d"
-      />
+      <div
+        className="card-body"
+      >
+        <div
+          className="markdown"
+          dangerouslySetInnerHTML={
+            Object {
+              "__html": "<p>d</p>
+",
+            }
+          }
+        />
+      </div>
     </div>
-    <p
-      className="ml-1 mb-0"
-    >
-      <small>
-        <a
-          href="/help/user/markdown"
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          Markdown supported
-        </a>
-      </small>
-    </p>
-    <CampaignPlanSpecificationFields
-      className="container-fluid my-3"
-      isLightTheme={true}
-      onChange={[Function]}
-      readOnly={true}
-      value={
-        Object {
-          "arguments": "{}",
-          "type": "comby",
-        }
-      }
-    />
   </form>,
   "CampaignStatus(state=PROCESSING)",
   <h3>
@@ -255,150 +220,173 @@ Array [
 exports[`CampaignDetails viewing existing 1`] = `
 Array [
   <form
-    className="e2e-campaign-form position-relative "
+    className="e2e-campaign-form "
     onInvalid={[Function]}
     onReset={[Function]}
     onSubmit={[Function]}
   >
-    <div
-      className="d-flex mb-2"
+    <nav
+      aria-label="breadcrumb"
+      className="mb-2"
     >
-      <h2
-        className="m-0"
+      <ol
+        className="breadcrumb"
       >
-        <CampaignsIcon
-          className="icon-inline mr-2 text-success"
-        />
-        <span>
+        <li
+          className="breadcrumb-item"
+        >
           <a
+            className="text-decoration-none"
             href="/campaigns"
           >
             Campaigns
           </a>
-        </span>
-        <span
-          className="text-muted d-inline-block mx-2"
+        </li>
+        <li
+          aria-current="page"
+          className="breadcrumb-item active"
         >
-          /
-        </span>
-        <span />
-      </h2>
+          New
+        </li>
+      </ol>
+    </nav>
+    <header
+      className="d-flex mb-2"
+    >
+      <h2
+        className="m-0"
+      />
       <span
         className="flex-grow-1 d-flex justify-content-end align-items-center"
+      />
+    </header>
+    <header
+      className="d-flex align-items-center mb-2"
+    >
+      <span
+        className="campaign-status-badge badge mr-2 badge-success"
       >
-        <button
-          className="btn btn-secondary mr-1"
-          disabled={false}
-          id="e2e-campaign-edit"
-          onClick={[Function]}
-          type="button"
-        >
-          Edit
-        </button>
-        <details
-          className="campaign-details__details"
-        >
-          <summary>
-            <span
-              className="btn btn-secondary mr-1 dropdown-toggle"
-            >
-              Close
-            </span>
-          </summary>
-          <div
-            className="position-absolute campaign-details__details-menu"
-          >
-            <div
-              className="card mt-1"
-            >
-              <div
-                className="card-body"
-              >
-                <p>
-                  Close campaign 
-                  <b />
-                  ?
-                </p>
-                <div
-                  className="form-group"
-                >
-                  <input
-                    checked={false}
-                    onChange={[Function]}
-                    type="checkbox"
-                  />
-                   
-                  Close all 
-                  2
-                   
-                  changesets
-                   on code hosts
-                </div>
-                <button
-                  className="btn mr-1 btn-secondary"
-                  disabled={false}
-                  onClick={[Function]}
-                  type="button"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </details>
-        <details
-          className="campaign-details__details"
-        >
-          <summary>
-            <span
-              className="btn btn-danger dropdown-toggle"
-            >
-              Delete
-            </span>
-          </summary>
-          <div
-            className="position-absolute campaign-details__details-menu"
-          >
-            <div
-              className="card mt-1"
-            >
-              <div
-                className="card-body"
-              >
-                <p>
-                  Delete campaign 
-                  <b />
-                  ?
-                </p>
-                <div
-                  className="form-group"
-                >
-                  <input
-                    checked={false}
-                    onChange={[Function]}
-                    type="checkbox"
-                  />
-                   
-                  Close all 
-                  2
-                   
-                  changesets
-                   on code hosts
-                </div>
-                <button
-                  className="btn mr-1 btn-danger"
-                  disabled={false}
-                  onClick={[Function]}
-                  type="button"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        </details>
+        <CampaignsIcon
+          className="icon-inline mr-1"
+        />
+         
+        Open
       </span>
-    </div>
+      <div
+        className="flex-grow-1"
+      />
+      <button
+        className="btn btn-secondary mr-1"
+        disabled={false}
+        id="e2e-campaign-edit"
+        onClick={[Function]}
+        type="button"
+      >
+        Edit
+      </button>
+      <details
+        className="campaign-details__details"
+      >
+        <summary>
+          <span
+            className="btn btn-secondary mr-1 dropdown-toggle"
+          >
+            Close
+          </span>
+        </summary>
+        <div
+          className="position-absolute campaign-details__details-menu"
+        >
+          <div
+            className="card mt-1"
+          >
+            <div
+              className="card-body"
+            >
+              <p>
+                Close campaign 
+                <b />
+                ?
+              </p>
+              <div
+                className="form-group"
+              >
+                <input
+                  checked={false}
+                  onChange={[Function]}
+                  type="checkbox"
+                />
+                 
+                Close all 
+                2
+                 
+                changesets
+                 on code hosts
+              </div>
+              <button
+                className="btn mr-1 btn-secondary"
+                disabled={false}
+                onClick={[Function]}
+                type="button"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </details>
+      <details
+        className="campaign-details__details"
+      >
+        <summary>
+          <span
+            className="btn btn-danger dropdown-toggle"
+          >
+            Delete
+          </span>
+        </summary>
+        <div
+          className="position-absolute campaign-details__details-menu"
+        >
+          <div
+            className="card mt-1"
+          >
+            <div
+              className="card-body"
+            >
+              <p>
+                Delete campaign 
+                <b />
+                ?
+              </p>
+              <div
+                className="form-group"
+              >
+                <input
+                  checked={false}
+                  onChange={[Function]}
+                  type="checkbox"
+                />
+                 
+                Close all 
+                2
+                 
+                changesets
+                 on code hosts
+              </div>
+              <button
+                className="btn mr-1 btn-danger"
+                disabled={false}
+                onClick={[Function]}
+                type="button"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      </details>
+    </header>
     <div
       className="card"
     >
@@ -432,18 +420,6 @@ Array [
         />
       </div>
     </div>
-    <CampaignPlanSpecificationFields
-      className="container-fluid my-3"
-      isLightTheme={true}
-      onChange={[Function]}
-      readOnly={true}
-      value={
-        Object {
-          "arguments": "{}",
-          "type": "comby",
-        }
-      }
-    />
   </form>,
   "CampaignStatus(state=PROCESSING)",
   <h3>

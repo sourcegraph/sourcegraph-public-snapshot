@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback } from 'react'
 import combyJsonSchema from '../../../../../../schema/campaign-types/comby.schema.json'
 import credentialsJsonSchema from '../../../../../../schema/campaign-types/credentials.schema.json'
 import { ThemeProps } from '../../../../../../shared/src/theme'
@@ -25,7 +25,7 @@ export interface CampaignPlanSpecificationFormData {
 }
 
 interface Props extends ThemeProps {
-    value: CampaignPlanSpecificationFormData | undefined
+    value: CampaignPlanSpecificationFormData
     onChange: (newValue: CampaignPlanSpecificationFormData) => void
 
     readOnly?: boolean
@@ -46,34 +46,31 @@ const typeLabels: Record<CampaignType | typeof MANUAL_CAMPAIGN_TYPE, string> = {
 
 const defaultInputByType: { [K in CampaignType]: string } = {
     comby: `{
-    "scopeQuery": "repo:github.com/foo/bar",
-    "matchTemplate": "",
-    "rewriteTemplate": ""
-}`,
+    "scopeQuery": "repo:go-diff",
+    "matchTemplate": "Parse",
+    "rewriteTemplate": "Foo"
+}`, // //////////// TODO!(sqs)
     credentials: `{
     "scopeQuery": "repo:github.com/foo/bar",
     "matchers": [{ "type": "npm" }]
 }`,
 }
 
+export const DEFAULT_CAMPAIGN_PLAN_SPECIFICATION_FORM_DATA: CampaignPlanSpecificationFormData = {
+    type: 'comby',
+    arguments: defaultInputByType.comby,
+}
+
 /**
  * Fields for selecting the type and arguments for the campaign plan specification.
  */
 export const CampaignPlanSpecificationFields: React.FunctionComponent<Props> = ({
-    value: rawValue,
+    value,
     onChange,
     readOnly,
     className,
     isLightTheme,
 }) => {
-    const value: CampaignPlanSpecificationFormData =
-        rawValue !== undefined ? rawValue : { type: 'comby', arguments: defaultInputByType.comby }
-    useEffect(() => {
-        if (rawValue === undefined) {
-            onChange(value)
-        }
-    }, [onChange, rawValue, value])
-
     const onTypeChange = useCallback(
         (type: CampaignType | typeof MANUAL_CAMPAIGN_TYPE): void => {
             onChange({ type, arguments: type === MANUAL_CAMPAIGN_TYPE ? '' : defaultInputByType[type] })
@@ -112,6 +109,10 @@ export const CampaignPlanSpecificationFields: React.FunctionComponent<Props> = (
                                     Learn about comby syntax
                                 </a>
                             </small>
+                        ) : value.type === MANUAL_CAMPAIGN_TYPE ? (
+                            <small className="ml-2 text-muted">
+                                You can add existing changesets on your code host to the campaign after creating it
+                            </small>
                         ) : (
                             undefined
                         )}
@@ -120,17 +121,27 @@ export const CampaignPlanSpecificationFields: React.FunctionComponent<Props> = (
                     <p className="mb-0">{typeLabels[value.type || '']}</p>
                 )}
             </div>
-            {value.type !== MANUAL_CAMPAIGN_TYPE && (
-                <MonacoSettingsEditor
-                    className="flex-grow-1 mt-2 e2e-campaign-arguments"
-                    isLightTheme={isLightTheme}
-                    value={value.arguments}
-                    jsonSchema={value.type ? jsonSchemaByType[value.type] : undefined}
-                    height={110}
-                    onChange={onArgumentsChange}
-                    readOnly={readOnly}
-                />
-            )}
+            {value.type !== MANUAL_CAMPAIGN_TYPE &&
+                (USE_SIMPLE_TEXTAREA_FOR_CAMPAIGN_PLAN_SPEC ? (
+                    <TextareaAutosize
+                        className="form-control flex-grow-1 mt-2 e2e-campaign-arguments"
+                        value={value.arguments}
+                        // eslint-disable-next-line react/jsx-no-bind
+                        onChange={event => onArgumentsChange(event.currentTarget.value)}
+                        readOnly={readOnly}
+                        minRows={4}
+                    />
+                ) : (
+                    <MonacoSettingsEditor
+                        className="flex-grow-1 mt-2 e2e-campaign-arguments"
+                        isLightTheme={isLightTheme}
+                        value={value.arguments}
+                        jsonSchema={value.type ? jsonSchemaByType[value.type] : undefined}
+                        height={110}
+                        onChange={onArgumentsChange}
+                        readOnly={readOnly}
+                    />
+                ))}
         </div>
     )
 }

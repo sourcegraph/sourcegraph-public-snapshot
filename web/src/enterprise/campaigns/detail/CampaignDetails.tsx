@@ -7,7 +7,6 @@ import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import { UserAvatar } from '../../../user/UserAvatar'
 import { Timestamp } from '../../../components/time/Timestamp'
-import { CampaignsIcon } from '../icons'
 import { isEqual, noop } from 'lodash'
 import { Form } from '../../../components/Form'
 import {
@@ -34,16 +33,11 @@ import { Link } from '../../../../../shared/src/components/Link'
 import { switchMap, tap, catchError, takeWhile, concatMap, repeatWhen, delay } from 'rxjs/operators'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { isDefined } from '../../../../../shared/src/util/types'
-import classNames from 'classnames'
-import { CampaignTitleField } from './form/CampaignTitleField'
-import { CampaignDescriptionField } from './form/CampaignDescriptionField'
+import { CampaignStatusBadge } from '../common/CampaignStatusBadge'
 import { CloseDeleteCampaignPrompt } from './form/CloseDeleteCampaignPrompt'
-import {
-    CampaignPlanSpecificationFields,
-    CampaignPlanSpecificationFormData,
-    MANUAL_CAMPAIGN_TYPE,
-} from './form/CampaignPlanSpecificationFields'
 import { CampaignStatus } from './CampaignStatus'
+import { MANUAL_CAMPAIGN_TYPE, CampaignPlanSpecificationFormData } from './form/CampaignPlanSpecificationFields'
+import { isExistingPlanID } from './new/NewCampaignForm'
 import { CampaignTabs } from './CampaignTabs'
 
 interface Props extends ThemeProps {
@@ -154,59 +148,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         return unblockHistoryRef.current
     }, [campaignID, history])
 
-    const previewCampaignPlans = useMemo(() => new Subject<GQL.ICampaignPlanSpecification | GQL.ID>(), [])
-    const nextPreviewCampaignPlan = useCallback(previewCampaignPlans.next.bind(previewCampaignPlans), [
-        previewCampaignPlans,
-    ])
-    const [isLoadingPreview, setIsLoadingPreview] = useState<boolean>(false)
-    useObservable(
-        useMemo(
-            () =>
-                previewCampaignPlans.pipe(
-                    tap(() => {
-                        setAlertError(undefined)
-                        setIsLoadingPreview(true)
-                        setCampaign(undefined)
-                    }),
-                    switchMap(plan =>
-                        typeof plan === 'string'
-                            ? fetchCampaignPlanById(plan)
-                            : previewCampaignPlan(plan, false).pipe(
-                                  tap(() => {
-                                      setIsLoadingPreview(false)
-                                  }),
-                                  catchError(error => {
-                                      setAlertError(asError(error))
-                                      setIsLoadingPreview(false)
-                                      return []
-                                  }),
-                                  switchMap(previewPlan =>
-                                      merge(
-                                          of(previewPlan),
-                                          timer(0, 2000).pipe(
-                                              concatMap(() => fetchCampaignPlanById(previewPlan.id)),
-                                              takeWhile(isDefined),
-                                              takeWhile(
-                                                  plan => plan.status.state === GQL.BackgroundProcessState.PROCESSING,
-                                                  true
-                                              )
-                                          )
-                                      )
-                                  )
-                              )
-                    ),
-                    tap(setCampaign)
-                ),
-            [previewCampaignPlans]
-        )
-    )
-    const planID: GQL.ID | null = new URLSearchParams(location.search).get('plan')
-    useEffect(() => {
-        if (planID) {
-            nextPreviewCampaignPlan(planID)
-        }
-    }, [nextPreviewCampaignPlan, planID])
-
     if (campaign === undefined && campaignID) {
         return <LoadingSpinner className="icon-inline mx-auto my-4" />
     }
@@ -310,48 +251,34 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             : campaign.changesetCreationStatus
         : null
 
-    const currentSpec = campaign && campaign.__typename === 'CampaignPlan' ? parseJSONC(campaign.arguments) : undefined
-    // Tracks if a refresh of the campaignPlan is required before the campaign can be created
-    const previewRefreshNeeded =
-        !currentSpec ||
-        (campaignPlanSpec?.arguments && !isEqual(currentSpec, parseJSONC(campaignPlanSpec.arguments))) ||
-        (status && status.state !== GQL.BackgroundProcessState.COMPLETED)
-
     return (
         <>
             <PageTitle title={campaign && campaign.__typename === 'Campaign' ? campaign.name : 'New campaign'} />
-            <Form onSubmit={onSubmit} onReset={onCancel} className="e2e-campaign-form position-relative">
-                <div className="d-flex mb-2">
-                    <h2 className="m-0">
-                        <CampaignsIcon
-                            className={classNames(
-                                'icon-inline mr-2',
-                                campaign && campaign.__typename === 'Campaign' && !campaign.closedAt
-                                    ? 'text-success'
-                                    : campaignID
-                                    ? 'text-danger'
-                                    : 'text-muted'
-                            )}
-                        />
-                        <span>
-                            <Link to="/campaigns">Campaigns</Link>
-                        </span>
-                        <span className="text-muted d-inline-block mx-2">/</span>
-                        {mode === 'editing' || mode === 'saving' ? (
-                            <CampaignTitleField
-                                className="w-auto d-inline-block e2e-campaign-title"
-                                value={name}
-                                onChange={setName}
-                                disabled={mode === 'saving'}
-                            />
-                        ) : (
-                            <span>{campaign && campaign.__typename === 'Campaign' && campaign.name}</span>
-                        )}
-                    </h2>
+            <Form onSubmit={onSubmit} onReset={onCancel} className="e2e-campaign-form">
+                <nav className="mb-2" aria-label="breadcrumb">
+                    <ol className="breadcrumb">
+                        <li className="breadcrumb-item">
+                            <Link to="/campaigns" className="text-decoration-none">
+                                Campaigns
+                            </Link>
+                        </li>
+                        <li className="breadcrumb-item active" aria-current="page">
+                            New
+                        </li>
+                    </ol>
+                </nav>
+                <header className="d-flex mb-2">
+                    {campaign && campaign.__typename === 'Campaign' && <h2 className="m-0">{campaign.name}</h2>}
                     <span className="flex-grow-1 d-flex justify-content-end align-items-center">
                         {(mode === 'saving' || mode === 'deleting' || mode === 'closing') && (
                             <LoadingSpinner className="mr-2" />
                         )}
+                    </span>
+                </header>
+                {campaign && campaign.__typename === 'Campaign' && (
+                    <header className="d-flex align-items-center mb-2">
+                        <CampaignStatusBadge campaign={campaign} className="mr-2" />
+                        <div className="flex-grow-1" />
                         {campaignID &&
                             (mode === 'editing' || mode === 'saving' ? (
                                 <>
@@ -423,72 +350,21 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                     )}
                                 </>
                             ))}
-                    </span>
-                </div>
+                    </header>
+                )}
                 {alertError && <ErrorAlert error={alertError} />}
-                <div className="card">
-                    {campaign && campaign.__typename === 'Campaign' && (
+                {campaign && campaign.__typename === 'Campaign' && (
+                    <div className="card">
                         <div className="card-header">
                             <strong>
                                 <UserAvatar user={author} className="icon-inline" /> {author.username}
                             </strong>{' '}
                             started <Timestamp date={campaign.createdAt} />
                         </div>
-                    )}
-                    {mode === 'editing' || mode === 'saving' ? (
-                        <CampaignDescriptionField
-                            value={description}
-                            onChange={setDescription}
-                            disabled={mode === 'saving'}
-                        />
-                    ) : (
-                        campaign &&
-                        campaign.__typename === 'Campaign' && (
-                            <div className="card-body">
-                                <Markdown dangerousInnerHTML={renderMarkdown(campaign.description)}></Markdown>
-                            </div>
-                        )
-                    )}
-                </div>
-                {mode === 'editing' && (
-                    <p className="ml-1 mb-0">
-                        <small>
-                            <a rel="noopener noreferrer" target="_blank" href="/help/user/markdown">
-                                Markdown supported
-                            </a>
-                        </small>
-                    </p>
-                )}
-                {planID === null && (campaignID === undefined || campaignPlanSpec !== undefined) && (
-                    <CampaignPlanSpecificationFields
-                        value={campaignPlanSpec}
-                        onChange={setCampaignPlanSpec}
-                        readOnly={Boolean(campaign && campaign.__typename === 'Campaign')}
-                        className="container-fluid my-3"
-                        isLightTheme={isLightTheme}
-                    />
-                )}
-                {(!campaign || (campaign && campaign.__typename === 'CampaignPlan')) && mode === 'editing' && (
-                    <>
-                        {campaignPlanSpec !== undefined && campaignPlanSpec.type !== MANUAL_CAMPAIGN_TYPE && (
-                            <button
-                                type="button"
-                                className="btn btn-primary mr-1 e2e-preview-campaign"
-                                disabled={!previewRefreshNeeded}
-                                onClick={() => nextPreviewCampaignPlan(campaignPlanSpec)}
-                            >
-                                {isLoadingPreview && <LoadingSpinner className="icon-inline mr-1" />}
-                                Preview changes
-                            </button>
-                        )}
-                        <button
-                            type="submit"
-                            className="btn btn-primary"
-                            disabled={previewRefreshNeeded || mode !== 'editing'}
-                        >
-                            Create
-                        </button>
-                    </>
+                        <div className="card-body">
+                            <Markdown dangerousInnerHTML={renderMarkdown(campaign.description)}></Markdown>
+                        </div>
+                    </div>
                 )}
             </Form>
 

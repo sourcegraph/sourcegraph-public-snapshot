@@ -1,8 +1,6 @@
 import React from 'react'
-import sinon from 'sinon'
 import { CampaignPlanSpecificationFields, MANUAL_CAMPAIGN_TYPE } from './CampaignPlanSpecificationFields'
 import { createRenderer } from 'react-test-renderer/shallow'
-import renderer, { act } from 'react-test-renderer'
 
 jest.mock('../../../../settings/MonacoSettingsEditor', () => ({ MonacoSettingsEditor: 'MonacoSettingsEditor' }))
 
@@ -12,19 +10,6 @@ const PROPS = {
 }
 
 describe('CampaignPlanSpecificationFields', () => {
-    test('has initial value and calls onChange', () => {
-        const onChange = sinon.spy()
-        const component = renderer.create(
-            <CampaignPlanSpecificationFields {...PROPS} value={undefined} onChange={onChange} />
-        )
-        act(() => undefined) // eslint-disable-line @typescript-eslint/no-floating-promises
-        expect(component).toMatchSnapshot()
-
-        expect(onChange.calledOnce).toBe(true)
-        expect(onChange.firstCall.args[0].type).toBe('comby')
-        expect(onChange.firstCall.args[0].arguments).toMatch(/scopeQuery/)
-    })
-
     describe('manual type', () => {
         test('editable', () =>
             expect(

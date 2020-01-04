@@ -5,6 +5,7 @@ import { CampaignDetails } from '../detail/CampaignDetails'
 import { IUser } from '../../../../../shared/src/graphql/schema'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { ThemeProps } from '../../../../../shared/src/theme'
+import { NewCampaignPage } from '../detail/new/NewCampaignPage'
 
 interface Props extends RouteComponentProps<{}>, ThemeProps {
     authenticatedUser: IUser
@@ -21,7 +22,7 @@ export const GlobalCampaignsArea = withAuthenticatedUser<Props>(({ match, ...out
             <Route render={props => <GlobalCampaignListPage {...props} />} path={match.url} exact={true} />
             <Route
                 path={`${match.url}/new`}
-                render={props => <CampaignDetails {...outerProps} {...props} />}
+                render={props => <NewCampaignPage {...outerProps} {...props} />}
                 exact={true}
             />
             <Route

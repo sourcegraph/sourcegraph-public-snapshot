@@ -1,0 +1,6 @@
+.campaign-status-badge {
+    font-size: unset; // override .badge's smaller font-size
+
+    display: flex;
+    align-items: center;
+}
