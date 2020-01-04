@@ -4,8 +4,14 @@ import credentialsJsonSchema from '../../../../../../schema/campaign-types/crede
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import { MonacoSettingsEditor } from '../../../../settings/MonacoSettingsEditor'
 import { CampaignType } from '../backend.js'
+import TextareaAutosize from 'react-textarea-autosize'
 
 export const MANUAL_CAMPAIGN_TYPE = 'manual' as const
+
+/**
+ * A feature flag for dev to speed up the reload cycle when the full Monaco editor is not needed.
+ */
+const USE_SIMPLE_TEXTAREA_FOR_CAMPAIGN_PLAN_SPEC = localStorage.getItem('useSimpleTextareaForCampaignPlanSpec')
 
 /**
  * Data represented in {@link CampaignPlanSpecificationFields}.
