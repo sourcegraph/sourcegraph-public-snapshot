@@ -6,7 +6,6 @@ import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
 import GitIcon from 'mdi-react/GitIcon'
 import GitLabIcon from 'mdi-react/GitlabIcon'
 import React from 'react'
-import { Link } from 'react-router-dom'
 import awsCodeCommitSchemaJSON from '../../../schema/aws_codecommit.schema.json'
 import bitbucketCloudSchemaJSON from '../../../schema/bitbucket_cloud.schema.json'
 import bitbucketServerSchemaJSON from '../../../schema/bitbucket_server.schema.json'
@@ -104,14 +103,14 @@ const editorActionComments = {
 
 const GITHUB_DOTCOM: ExternalServiceKindMetadata = {
     kind: GQL.ExternalServiceKind.GITHUB,
-    title: 'GitHub.com repositories',
+    title: 'GitHub.com',
     icon: GithubCircleIcon,
     jsonSchema: githubSchemaJSON,
     editorActions: [
         {
             id: 'setAccessToken',
             label: 'Set access token',
-            run: config => {
+            run: (config: string) => {
                 const value = '<access token>'
                 const edits = setProperty(config, ['token'], value, defaultFormattingOptions)
                 return { edits, selectText: '<access token>' }
@@ -119,16 +118,34 @@ const GITHUB_DOTCOM: ExternalServiceKindMetadata = {
         },
         {
             id: 'addOrgRepo',
-            label: 'Add organization repositories',
-            run: config => {
+            label: 'Add repositories in an organization',
+            run: (config: string) => {
                 const value = '<organization name>'
                 const edits = setProperty(config, ['orgs', -1], value, defaultFormattingOptions)
                 return { edits, selectText: '<organization name>' }
             },
         },
         {
+            id: 'addSearchQueryRepos',
+            label: 'Add repositories matching a search query',
+            run: (config: string) => {
+                const value = '<search query>'
+                const edits = setProperty(config, ['repositoryQuery', -1], value, defaultFormattingOptions)
+                return { edits, selectText: '<search query>' }
+            },
+        },
+        {
+            id: 'addAffiliatedRepos',
+            label: 'Add repositories affiliated with token',
+            run: (config: string) => {
+                const value = 'affiliated'
+                const edits = setProperty(config, ['repositoryQuery', -1], value, defaultFormattingOptions)
+                return { edits, selectText: 'affiliated' }
+            },
+        },
+        {
             id: 'addRepo',
-            label: 'Add a repository',
+            label: 'Add a single repository',
             run: config => {
                 const value = '<owner>/<repository>'
                 const edits = setProperty(config, ['repos', -1], value, defaultFormattingOptions)
@@ -145,15 +162,6 @@ const GITHUB_DOTCOM: ExternalServiceKindMetadata = {
             },
         },
         {
-            id: 'addSearchQueryRepos',
-            label: 'Add repositories matching search query',
-            run: config => {
-                const value = '<search query>'
-                const edits = setProperty(config, ['repositoryQuery', -1], value, defaultFormattingOptions)
-                return { edits, selectText: '<search query>' }
-            },
-        },
-        {
             id: 'enablePermissions',
             label: 'Enforce permissions',
             run: config => {
@@ -166,122 +174,112 @@ const GITHUB_DOTCOM: ExternalServiceKindMetadata = {
             },
         },
     ],
-    shortDescription: 'Add GitHub.com repositories',
     instructions: (
-        <span>
-            Configure by using the <strong>Quick configure</strong> buttons, or manually edit the JSON configuration.{' '}
-            <Link target="_blank" to="/help/admin/external_service/github#configuration">
-                Read the docs
-            </Link>{' '}
-            for more info about each field.
-        </span>
+        <div>
+            <ol>
+                <li>
+                    Create a GitHub access token (
+                    <a
+                        href="https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        instructions
+                    </a>
+                    ) with <b>repo</b> scope, and set it to be the value of the <code>token</code> field in the
+                    configuration below.
+                </li>
+                <li>
+                    Specify which repositories Sourcegraph should index using one of the following fields:
+                    <ul>
+                        <li>
+                            <code>organizations</code>: specify a list of GitHub organizations.
+                        </li>
+                        <li>
+                            <code>repositoryQuery</code>: specify a list of GitHub search queries. Use "affiliated" to
+                            specify all repositories associated with the access token.
+                        </li>
+                        <li>
+                            <code>repos</code>: list individual repositories by name.
+                        </li>
+                    </ul>
+                </li>
+            </ol>
+            <p>
+                See{' '}
+                <a
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    href="https://docs.sourcegraph.com/admin/external_service/github#configuration"
+                >
+                    the docs for more advanced options
+                </a>{' '}
+                or try out one of the buttons below.
+            </p>
+        </div>
     ),
     defaultDisplayName: 'GitHub',
-    defaultConfig: `// Use Ctrl+Space for completion, and hover over JSON properties for documentation.
-// GitHub external service docs: https://docs.sourcegraph.com/admin/external_service/github
-{
+    defaultConfig: `{
   "url": "https://github.com",
-
-  // token: GitHub API access token. Visit https://github.com/settings/tokens/new?scopes=repo&description=Sourcegraph
-  // to create a token with access to public and private repositories
   "token": "<access token>",
-
-  // SELECTING REPOSITORIES
-  //
-  // There are 4 fields used to select repositories for searching and code intel:
-  //  - repositoryQuery (required)
-  //  - orgs
-  //  - repos
-  //  - exclude
-
-  // repositoryQuery: List of strings, either a special keyword ("none" or "affiliated"), or
-  // GitHub search qualifiers, e.g. "archived:false"
-  //
-  // For getting started, use either:
-  //  - "org:<name>" // (e.g. "org:sourcegraph") all repositories belonging to the organization
-  // or
-  //  - "affiliated" // all repositories affiliated (accessible) by the token's owner
-  //
-  // Additional query strings can be added to refine results:
-  //  - "archived:false fork:no created:>=2016" // use of multiple search qualifiers
-  //  - "user:docker repo:kubernetes/kubernetes" // fetch repositories outside of the user/org account
-  //
-  // See https://help.github.com/en/articles/searching-for-repositories for the list of search qualifiers.
-  "repositoryQuery": [
-  // "org:<name>" // set this to "none" to disable querying
-  ],
-
-  // orgs: List of organizations whose repositories should be selected
-  // "orgs": [
-  //   "<org name>"
-  // ],
-
-  // repos: Explicit list of repositories to select
-  // "repos": [
-  //   "<owner>/<repository>"
-  // ],
-
-  // exclude: Repositories to exclude (overrides repositories from repositoryQuery, orgs, and repos)
-  // "exclude": [
-  //   {
-  //     "name": "<owner>/<repository>"
-  //   }
-  // ]
+  "orgs": []
 }`,
 }
 const GITHUB_ENTERPRISE: ExternalServiceKindMetadata = {
     ...GITHUB_DOTCOM,
-    title: 'GitHub Enterprise repositories',
-    shortDescription: 'Add GitHub Enterprise repositories',
-    defaultDisplayName: 'GitHub Enterprise',
-    defaultConfig: `// Use Ctrl+Space for completion, and hover over JSON properties for documentation.
-    // GitHub external service docs: https://docs.sourcegraph.com/admin/external_service/github
-    {
-      // GitHub Enterprise URL
-      "url": "https://github.example.com",
-
-      // token: GitHub API access token.
-      // Visit https://[github-enterprise-url]/settings/tokens/new?scopes=repo&description=Sourcegraph to create a token
-      // with access to public and private repositories
-      "token": "<access token>",
-
-      // SELECTING REPOSITORIES
-      //
-      // There are 3 fields used to select repositories for searching and code intel:
-      //  - repositoryQuery (required)
-      //  - repos
-      //  - exclude
-      //
-
-      // repositoryQuery: List of strings, either a special keyword, e.g. "affiliated", or
-      // GitHub search qualifiers, e.g. "archived:false"
-      //
-      // For getting started, use either:
-      //  - "org:<name>" // (e.g. "org:sourcegraph") all repositories belonging to the organization
-      // or
-      //  - "affiliated" // all repositories affiliated (accessible) by the token's owner
-      //
-      // Additional query strings can be added to refine results:
-      //  - "archived:false fork:no created:>=2016" // use of multiple search qualifiers
-      //  - "user:docker repo:kubernetes/kubernetes" // fetch repositories outside of the user/org account
-      //
-      // See https://help.github.com/en/articles/searching-for-repositories for the list of search qualifiers.
-      "repositoryQuery": [
-      //   "org:name"
-      ],
-
-      // repos: Explicit list of repositories to select
-      // "repos": [
-      //   "<owner>/<repository>"
-      // ],
-
-      // exclude: Repositories to exclude (overrides repositories from repositoryQuery and repos)
-      // "exclude": [
-      //   {
-      //   "name": "<owner>/<repository>"
-      //   }
-      // ]
-    }`,
+    title: 'GitHub Enterprise',
+    defaultConfig: `{
+  "url": "https://github.example.com",
+  "token": "<access token>",
+  "orgs": []
+}`,
+    instructions: (
+        <div>
+            <ol>
+                <li>
+                    Set <code>url</code> to be the URL of GitHub Enterprise.
+                </li>
+                <li>
+                    Create a GitHub access token (
+                    <a
+                        href="https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        instructions
+                    </a>
+                    ) with <b>repo</b> scope, and set it to be the value of the <code>token</code> field in the
+                    configuration below.
+                </li>
+                <li>
+                    Specify which repositories Sourcegraph should index using one of the following fields:
+                    <ul>
+                        <li>
+                            <code>organizations</code>: specify a list of GitHub organizations.
+                        </li>
+                        <li>
+                            <code>repositoryQuery</code>: specify a list of GitHub search queries. Use "affiliated" to
+                            specify all repositories associated with the access token.
+                        </li>
+                        <li>
+                            <code>repos</code>: list individual repositories by name.
+                        </li>
+                    </ul>
+                </li>
+            </ol>
+            <p>
+                See{' '}
+                <a
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    href="https://docs.sourcegraph.com/admin/external_service/github#configuration"
+                >
+                    the docs for more advanced options
+                </a>{' '}
+                or try out one of the buttons below.
+            </p>
+        </div>
+    ),
 }
 const AWS_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
     kind: GQL.ExternalServiceKind.AWSCODECOMMIT,
@@ -822,113 +820,7 @@ const OTHER_SERVICE: ExternalServiceKindMetadata = {
         },
     ],
 }
-const EZ_GITHUB_DOTCOM = {
-    ...GITHUB_DOTCOM,
-    shortDescription: undefined,
-    instructions: (
-        <div>
-            <ol>
-                <li>
-                    Create a GitHub access token (
-                    <a
-                        href="https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        instructions
-                    </a>
-                    ) with{' '}
-                    <b>
-                        <code>repo</code>
-                    </b>{' '}
-                    scope, and set it to be the value of the <code>token</code> field in the configuration below.
-                </li>
-                <li>
-                    Specify which repositories Sourcegraph should index using one of the following fields:
-                    <ul>
-                        <li>
-                            <code>organizations</code>: specify a list of GitHub organizations.
-                        </li>
-                        <li>
-                            <code>repositoryQuery</code>: specify a list of GitHub search queries. Use "affiliated" to
-                            specify all repositories associated with the access token.
-                        </li>
-                        <li>
-                            <code>repos</code>: list individual repositories by name.
-                        </li>
-                    </ul>
-                </li>
-            </ol>
-            <p>
-                See{' '}
-                <a
-                    rel="noopener noreferrer"
-                    target="_blank"
-                    href="https://docs.sourcegraph.com/admin/external_service/github#configuration"
-                >
-                    the docs for more advanced options
-                </a>
-                .
-            </p>
-        </div>
-    ),
-    editorActions: [
-        {
-            id: 'setAccessToken',
-            label: 'Set access token',
-            run: (config: string) => {
-                const value = '<access token>'
-                const edits = setProperty(config, ['token'], value, defaultFormattingOptions)
-                return { edits, selectText: '<access token>' }
-            },
-        },
-        {
-            id: 'addOrgRepo',
-            label: 'Add repositories in an organization',
-            run: (config: string) => {
-                const value = '<organization name>'
-                const edits = setProperty(config, ['orgs', -1], value, defaultFormattingOptions)
-                return { edits, selectText: '<organization name>' }
-            },
-        },
-        {
-            id: 'addSearchQueryRepos',
-            label: 'Add repositories matching a search query',
-            run: (config: string) => {
-                const value = '<search query>'
-                const edits = setProperty(config, ['repositoryQuery', -1], value, defaultFormattingOptions)
-                return { edits, selectText: '<search query>' }
-            },
-        },
-        {
-            id: 'addAffiliatedRepos',
-            label: 'Add repositories affiliated with token',
-            run: (config: string) => {
-                const value = 'affiliated'
-                const edits = setProperty(config, ['repositoryQuery', -1], value, defaultFormattingOptions)
-                return { edits, selectText: 'affiliated' }
-            },
-        },
-    ],
-    title: 'GitHub.com',
-    defaultConfig: `{
-  "url": "https://github.com",
-  "token": "<access token>",
-  "orgs": [
-  ]
-}`,
-}
-const EZ_GITHUB_ENTERPRISE = {
-    ...EZ_GITHUB_DOTCOM,
-    title: 'GitHub Enterprise',
-    defaultConfig: `{
-  "url": "https://github.example.com",
-  "token": "<access token>",
-  "orgs": [
-    "<organization name>"
-  ]
-}`,
-}
+
 const EZ_GITLAB_DOTCOM: ExternalServiceKindMetadata = {
     ...GITLAB_SERVICE,
     shortDescription: undefined,
@@ -1176,7 +1068,6 @@ const EZ_BITBUCKET_SERVER: ExternalServiceKindMetadata = {
                 >
                     the docs for more advanced options
                 </a>
-                .
             </p>
         </div>
     ),
@@ -1362,8 +1253,8 @@ const EZ_GIT = {
 }
 
 export const onboardingExternalServices: Record<string, ExternalServiceKindMetadata> = {
-    github: EZ_GITHUB_DOTCOM,
-    ghe: EZ_GITHUB_ENTERPRISE,
+    github: GITHUB_DOTCOM,
+    ghe: GITHUB_ENTERPRISE,
     gitlabcom: EZ_GITLAB_DOTCOM,
     gitlab: EZ_GITLAB_SELFMANAGED,
     bitbucket: EZ_BITBUCKET_DOTORG,
