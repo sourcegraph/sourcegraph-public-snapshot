@@ -1164,6 +1164,45 @@ describe('e2e test suite', () => {
             })
         })
 
+        describe('multiple revisions per repository', () => {
+            let previousExperimentalFeatures: any
+            beforeAll(async () => {
+                await driver.setConfig(['experimentalFeatures'], prev => {
+                    previousExperimentalFeatures = prev?.value
+                    return { searchMultipleRevisionsPerRepository: true }
+                })
+                // Wait for configuration to be applied.
+                await new Promise(resolve => setTimeout(resolve, 3000))
+            })
+            afterAll(async () => {
+                await driver.setConfig(['experimentalFeatures'], () => previousExperimentalFeatures)
+            })
+
+            test('searches', async () => {
+                await driver.page.goto(
+                    sourcegraphBaseUrl +
+                        '/search?q=repo:sourcegraph/go-diff%24%40master:print-options+func+NewHunksReader&patternType=regexp'
+                )
+                await driver.page.waitForSelector('.e2e-search-results-stats', { visible: true })
+                await retry(async () => {
+                    const label = await driver.page.evaluate(
+                        () => document.querySelector('.e2e-search-results-stats')!.textContent || ''
+                    )
+                    expect(label.includes('results')).toEqual(true)
+                })
+
+                const fileMatchHrefs = (
+                    await driver.page.$$eval('.e2e-file-match-children-item', as =>
+                        as.map(a => (a as HTMLAnchorElement).pathname)
+                    )
+                ).sort()
+                expect(fileMatchHrefs).toEqual([
+                    '/github.com/sourcegraph/go-diff@master/-/blob/diff/parse.go',
+                    '/github.com/sourcegraph/go-diff@print-options/-/blob/diff/parse.go',
+                ])
+            })
+        })
+
         test('accepts query for sourcegraph/jsonrpc2', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/search')
 

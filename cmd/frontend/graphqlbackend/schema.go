@@ -2815,6 +2815,9 @@ type FileMatch {
     file: GitBlob!
     # The repository containing the file match.
     repository: Repository!
+    # The revspec of the revision that contains this match. If no revspec was given (such as when no
+    # repository filter or revspec is specified in the search query), it is null.
+    revSpec: GitRevSpec
     # The resource.
     resource: String! @deprecated(reason: "use the file field instead")
     # The symbols found in this file that match the query.
