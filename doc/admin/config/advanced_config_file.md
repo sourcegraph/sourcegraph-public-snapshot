@@ -18,7 +18,7 @@ Loading configuration in this manner has two significant drawbacks:
 
 ## Critical configuration (management console)
 
-> NOTE: Sourcegraph 3.11 removed the management console, so all critical configuration is now stored in site configuration. See the [migration Sourcegraph v3.11+ migration notes](../migration/3_11.md) for more information.
+> NOTE: Sourcegraph 3.11 removed the management console, so all critical configuration settings are now located in the site configuration. See the [migration Sourcegraph v3.11+ migration notes](../migration/3_11.md) for more information.
 
 ## Site configuration
 
