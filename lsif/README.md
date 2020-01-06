@@ -13,4 +13,4 @@ This project is split into two parts, both written in TypeScript. These parts ar
 - Usage documentation is provided on [Sourcegraph.com](https://docs.sourcegraph.com/user/code_intelligence/lsif).
 - API endpoint documentation is provided in [api.md](./docs/api.md).
 - Database configuration and migrations are described in [database.md](./docs/database.md).
-- Data models are described in [datamodel.md](./docs/datamodel.md) and [datamodel.xrepo.md](./docs/datamodel.xrepo.md).
+- Data models are described in [datamodel.md](./docs/datamodel.md) and [datamodel.pg.md](./docs/datamodel.pg.md).

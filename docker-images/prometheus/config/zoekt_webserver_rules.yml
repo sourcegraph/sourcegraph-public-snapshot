@@ -1,0 +1,14 @@
+groups:
+  - name: zoekt-webserver
+    rules:
+      # Warning if 5+ search requests to zoekt are failing over 5m.
+      - record: alert_count
+        labels:
+          service_name: zoekt-webserver
+          level: warning
+          name: zoekt_search_requests_failing
+          description: 'zoekt-webserver: 5+ non-200 indexed search responses over 5m'
+        expr: >-
+          clamp_max(clamp_min(floor(
+          (increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m]) / 5) OR on() vector(0)
+          ), 0), 1)

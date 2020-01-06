@@ -29,7 +29,7 @@ func WatchExternalURL(defaultURL *url.URL) {
 
 	conf.Watch(func() {
 		after := defaultURL
-		if val := conf.Get().Critical.ExternalURL; val != "" {
+		if val := conf.Get().ExternalURL; val != "" {
 			var err error
 			if after, err = url.Parse(val); err != nil {
 				log15.Error("globals.ExternalURL", "value", val, "error", err)

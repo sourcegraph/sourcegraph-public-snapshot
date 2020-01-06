@@ -220,7 +220,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
             authenticatedUser: this.props.authenticatedUser,
             settingsCascade: this.props.settingsCascade,
             patternType: this.props.patternType,
-            togglePatternType: this.props.togglePatternType,
+            setPatternType: this.props.setPatternType,
             repoSettingsAreaRoutes: this.props.repoSettingsAreaRoutes,
             repoSettingsSidebarItems: this.props.repoSettingsSidebarItems,
         }

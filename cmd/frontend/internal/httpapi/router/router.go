@@ -42,7 +42,6 @@ const (
 	ReposList              = "internal.repos.list"
 	ReposIndex             = "internal.repos.index"
 	ReposListEnabled       = "internal.repos.list-enabled"
-	ReposUpdateMetadata    = "internal.repos.update-metadata"
 	Configuration          = "internal.configuration"
 	SearchConfiguration    = "internal.search-configuration"
 	ExternalServiceConfigs = "internal.external-services.configs"
@@ -60,7 +59,6 @@ func New(base *mux.Router) *mux.Router {
 
 	addRegistryRoute(base)
 	addGraphQLRoute(base)
-	addTelemetryRoute(base)
 	base.Path("/github-webhooks").Methods("POST").Name(GitHubWebhooks)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
 	base.Path("/lsif/{rest:.*}").Methods("GET", "POST").Name(LSIF)
@@ -109,23 +107,18 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/repos/list").Methods("POST").Name(ReposList)
 	base.Path("/repos/index").Methods("POST").Name(ReposIndex)
 	base.Path("/repos/list-enabled").Methods("POST").Name(ReposListEnabled)
-	base.Path("/repos/update-metadata").Methods("POST").Name(ReposUpdateMetadata)
 	base.Path("/repos/{RepoName:.*}").Methods("POST").Name(ReposGetByName)
 	base.Path("/configuration").Methods("POST").Name(Configuration)
 	base.Path("/search/configuration").Methods("GET").Name(SearchConfiguration)
+	base.Path("/telemetry").Methods("POST").Name(Telemetry)
 	addRegistryRoute(base)
 	addGraphQLRoute(base)
-	addTelemetryRoute(base)
 
 	return base
 }
 
 func addRegistryRoute(m *mux.Router) {
 	m.PathPrefix("/registry").Methods("GET").Name(Registry)
-}
-
-func addTelemetryRoute(m *mux.Router) {
-	m.Path("/telemetry/{TelemetryPath:.*}").Methods("POST").Name(Telemetry)
 }
 
 func addGraphQLRoute(m *mux.Router) {

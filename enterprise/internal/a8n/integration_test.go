@@ -20,5 +20,8 @@ func TestIntegration(t *testing.T) {
 	defer cleanup()
 
 	t.Run("Store", testStore(db))
+	// This needs to be in its own test because testStore above wraps everything in a transaction
+	// which means we are always able to acquire a lock
+	t.Run("StoreLocking", testStoreLocking(db))
 	t.Run("GitHubWebhook", testGitHubWebhook(db))
 }

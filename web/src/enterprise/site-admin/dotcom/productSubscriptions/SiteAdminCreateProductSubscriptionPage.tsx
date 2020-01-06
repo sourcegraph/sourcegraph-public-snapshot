@@ -158,6 +158,10 @@ function queryAccounts(args: { first?: number; query?: string }): Observable<GQL
                             isPrimary
                         }
                     }
+                    totalCount
+                    pageInfo {
+                        hasNextPage
+                    }
                 }
             }
         `,

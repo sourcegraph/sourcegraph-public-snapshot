@@ -20,7 +20,7 @@ const fetchActivationStatus = (isSiteAdmin: boolean): Observable<ActivationCompl
     queryGraphQL(
         isSiteAdmin
             ? gql`
-                  query {
+                  query ActivationStatus {
                       externalServices {
                           totalCount
                       }
@@ -43,7 +43,7 @@ const fetchActivationStatus = (isSiteAdmin: boolean): Observable<ActivationCompl
                   }
               `
             : gql`
-                  query {
+                  query ActivationStatus {
                       currentUser {
                           usageStatistics {
                               searchQueries

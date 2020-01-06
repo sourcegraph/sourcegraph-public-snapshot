@@ -138,7 +138,6 @@ func Main() {
 		`symbols: symbols`,
 		`lsif-server: node /lsif/out/server/server.js`,
 		`lsif-worker: node /lsif/out/worker/worker.js`,
-		`management-console: management-console`,
 		`searcher: searcher`,
 		`replacer: replacer`,
 		`github-proxy: github-proxy`,

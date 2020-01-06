@@ -86,7 +86,7 @@ interface State {
  */
 // eslint-disable-next-line @typescript-eslint/class-name-casing
 class _ProductSubscriptionForm extends React.Component<Props & ReactStripeElements.InjectedStripeProps, State> {
-    constructor(props: Props) {
+    constructor(props: Props & ReactStripeElements.InjectedStripeProps) {
         super(props)
 
         this.state = {

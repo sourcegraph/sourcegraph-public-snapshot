@@ -53,7 +53,6 @@
       }
     ],
     "permissions": [
-      "cookies",
       "storage",
       "activeTab",
       "contextMenus",
@@ -73,13 +72,6 @@
         "js": ["js/inject.bundle.js"]
       }
     ],
-    "permissions": [
-      "cookies",
-      "activeTab",
-      "storage",
-      "contextMenus",
-      "https://github.com/*",
-      "https://sourcegraph.com/*"
-    ]
+    "permissions": ["activeTab", "storage", "contextMenus", "https://github.com/*", "https://sourcegraph.com/*"]
   }
 }

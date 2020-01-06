@@ -33,13 +33,6 @@ type RepoCreateOrUpdateRequest struct {
 	Archived bool `json:"archived"`
 }
 
-type ReposUpdateMetadataRequest struct {
-	RepoName    `json:"repo"`
-	Description string `json:"description"`
-	Fork        bool   `json:"fork"`
-	Archived    bool   `json:"Archived"`
-}
-
 type PhabricatorRepoCreateRequest struct {
 	RepoName `json:"repo"`
 	Callsign string `json:"callsign"`

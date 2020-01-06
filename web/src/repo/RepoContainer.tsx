@@ -246,7 +246,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             onDidUpdateExternalLinks: this.onDidUpdateExternalLinks,
             onDidUpdateRepository: this.onDidUpdateRepository,
             patternType: this.props.patternType,
-            togglePatternType: this.props.togglePatternType,
+            setPatternType: this.props.setPatternType,
             repoSettingsAreaRoutes: this.props.repoSettingsAreaRoutes,
             repoSettingsSidebarItems: this.props.repoSettingsSidebarItems,
         }

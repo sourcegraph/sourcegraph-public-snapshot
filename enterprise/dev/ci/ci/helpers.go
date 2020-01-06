@@ -31,6 +31,7 @@ type Config struct {
 	patch               bool
 	patchNoTest         bool
 	isQuick             bool
+	isMasterDryRun      bool
 }
 
 func ComputeConfig() Config {
@@ -59,6 +60,8 @@ func ComputeConfig() Config {
 		version = version + "_patch"
 	}
 
+	isMasterDryRun := strings.HasPrefix(branch, "master-dry-run/")
+
 	isQuick := strings.HasPrefix(branch, "quick/")
 
 	var mustIncludeCommits []string
@@ -82,6 +85,7 @@ func ComputeConfig() Config {
 		patch:               patch,
 		patchNoTest:         patchNoTest,
 		isQuick:             isQuick,
+		isMasterDryRun:      isMasterDryRun,
 	}
 }
 

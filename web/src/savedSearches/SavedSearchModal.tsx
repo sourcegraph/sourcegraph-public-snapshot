@@ -4,7 +4,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { Form } from '../components/Form'
 import { PatternTypeProps } from '../search'
 
-interface Props extends Omit<PatternTypeProps, 'togglePatternType'> {
+interface Props extends Omit<PatternTypeProps, 'setPatternType'> {
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null

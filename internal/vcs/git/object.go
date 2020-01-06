@@ -29,6 +29,10 @@ const (
 
 // GetObject looks up a Git object and returns information about it.
 func GetObject(ctx context.Context, repo gitserver.Repo, objectName string) (oid OID, objectType ObjectType, err error) {
+	if Mocks.GetObject != nil {
+		return Mocks.GetObject(objectName)
+	}
+
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: GetObject")
 	span.SetTag("objectName", objectName)
 	defer span.Finish()

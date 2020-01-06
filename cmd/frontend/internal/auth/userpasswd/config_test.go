@@ -13,7 +13,7 @@ func TestValidateCustom(t *testing.T) {
 		wantProblems conf.Problems
 	}{
 		"single": {
-			input: conf.Unified{Critical: schema.CriticalConfiguration{
+			input: conf.Unified{SiteConfiguration: schema.SiteConfiguration{
 				AuthProviders: []schema.AuthProviders{
 					{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}},
 				},
@@ -21,13 +21,13 @@ func TestValidateCustom(t *testing.T) {
 			wantProblems: nil,
 		},
 		"multiple": {
-			input: conf.Unified{Critical: schema.CriticalConfiguration{
+			input: conf.Unified{SiteConfiguration: schema.SiteConfiguration{
 				AuthProviders: []schema.AuthProviders{
 					{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}},
 					{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}},
 				},
 			}},
-			wantProblems: conf.NewCriticalProblems("at most 1"),
+			wantProblems: conf.NewSiteProblems("at most 1"),
 		},
 	}
 	for name, test := range tests {

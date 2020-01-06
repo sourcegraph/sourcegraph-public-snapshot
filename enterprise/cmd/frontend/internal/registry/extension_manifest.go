@@ -66,7 +66,7 @@ func getExtensionManifestWithBundleURL(ctx context.Context, extensionID string, 
 var nonLettersDigits = lazyregexp.New(`[^a-zA-Z0-9-]`)
 
 func makeExtensionBundleURL(registryExtensionReleaseID int64, timestamp int64, extensionIDHint string) (string, error) {
-	u, err := url.Parse(conf.Get().Critical.ExternalURL)
+	u, err := url.Parse(conf.Get().ExternalURL)
 	if err != nil {
 		return "", err
 	}

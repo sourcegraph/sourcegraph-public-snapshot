@@ -20,8 +20,9 @@ import { ActivationProps } from '../../../../../shared/src/components/activation
 import { FiltersToTypeAndValue } from '../../../../../shared/src/search/interactive/util'
 import { SuggestionTypes, suggestionTypeKeys } from '../../../../../shared/src/search/suggestions/util'
 import { QueryInput } from '../QueryInput'
-import { parseSearchURLQuery, InteractiveSearchProps } from '../..'
+import { parseSearchURLQuery, InteractiveSearchProps, PatternTypeProps } from '../..'
 import { SearchModeToggle } from './SearchModeToggle'
+import { uniqueId } from 'lodash'
 
 interface InteractiveModeProps
     extends SettingsCascadeProps,
@@ -32,13 +33,12 @@ interface InteractiveModeProps
         ThemePreferenceProps,
         EventLoggerProps,
         ActivationProps,
+        PatternTypeProps,
         Pick<InteractiveSearchProps, 'filtersInQuery' | 'onFiltersInQueryChange' | 'toggleSearchMode'> {
     location: H.Location
     history: H.History
     navbarSearchState: QueryState
     onNavbarQueryChange: (userQuery: QueryState) => void
-    patternType: GQL.SearchPatternType
-    togglePatternType: () => void
 
     // For NavLinks
     authRequired?: boolean
@@ -52,7 +52,7 @@ interface InteractiveModeState {
     numFiltersAdded: number
 }
 
-export default class InteractiveModeInput extends React.Component<InteractiveModeProps, InteractiveModeState> {
+export class InteractiveModeInput extends React.Component<InteractiveModeProps, InteractiveModeState> {
     constructor(props: InteractiveModeProps) {
         super(props)
 
@@ -61,12 +61,8 @@ export default class InteractiveModeInput extends React.Component<InteractiveMod
         for (const t of suggestionTypeKeys) {
             const itemsOfType = searchParams.getAll(t)
             itemsOfType.map((item, i) => {
-                filtersInQuery[`${t}-${i}`] = { type: t, value: item, editable: false }
+                filtersInQuery[uniqueId(t)] = { type: t, value: item, editable: false }
             })
-        }
-
-        this.state = {
-            numFiltersAdded: Object.keys(filtersInQuery).length,
         }
 
         this.props.onFiltersInQueryChange(filtersInQuery)
@@ -74,14 +70,9 @@ export default class InteractiveModeInput extends React.Component<InteractiveMod
 
     /**
      * Adds a new filter to the top-level filtersInQuery state field.
-     * We use the filter name and the number of values added as the key.
-     * Keys must begin with the filter name, as defined in `SuggestionTypes`.
-     * We use this to identify filter values when building
-     * the search URL in {@link interactiveBuildSearchURLQuery}.
      */
     private addNewFilter = (filterType: SuggestionTypes): void => {
-        const filterKey = `${filterType}-${this.state.numFiltersAdded}`
-        this.setState(state => ({ numFiltersAdded: state.numFiltersAdded + 1 }))
+        const filterKey = uniqueId(filterType)
         this.props.onFiltersInQueryChange({
             ...this.props.filtersInQuery,
             [filterKey]: { type: filterType, value: '', editable: true },
@@ -211,7 +202,7 @@ export default class InteractiveModeInput extends React.Component<InteractiveMod
                                     hasGlobalQueryBehavior={true}
                                     onChange={this.props.onNavbarQueryChange}
                                     patternType={this.props.patternType}
-                                    togglePatternType={this.props.togglePatternType}
+                                    setPatternType={this.props.setPatternType}
                                     autoFocus={true}
                                     filterQuery={this.props.filtersInQuery}
                                     withoutSuggestions={true}

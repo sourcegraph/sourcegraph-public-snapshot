@@ -18,6 +18,7 @@ export const queryCampaigns = ({ first }: FilteredConnectionQueryArgs): Observab
                         name
                         description
                         url
+                        closedAt
                     }
                     totalCount
                 }

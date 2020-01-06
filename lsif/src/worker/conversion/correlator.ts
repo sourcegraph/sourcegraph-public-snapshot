@@ -1,4 +1,4 @@
-import * as dumpModels from '../../shared/models/dump'
+import * as sqliteModels from '../../shared/models/sqlite'
 import * as lsif from 'lsif-protocol'
 import RelateUrl from 'relateurl'
 import { createSilentLogger } from '../../shared/logging'
@@ -23,22 +23,22 @@ export interface ResultSetData {
     /**
      * The identifier of the definition result attached to this result set.
      */
-    definitionResultId?: dumpModels.DefinitionResultId
+    definitionResultId?: sqliteModels.DefinitionResultId
 
     /**
      * The identifier of the reference result attached to this result set.
      */
-    referenceResultId?: dumpModels.ReferenceResultId
+    referenceResultId?: sqliteModels.ReferenceResultId
 
     /**
      * The identifier of the hover result attached to this result set.
      */
-    hoverResultId?: dumpModels.HoverResultId
+    hoverResultId?: sqliteModels.HoverResultId
 
     /**
      * The set of moniker identifiers directly attached to this result set.
      */
-    monikerIds: Set<dumpModels.MonikerId>
+    monikerIds: Set<sqliteModels.MonikerId>
 }
 
 /**
@@ -61,39 +61,45 @@ export class Correlator {
     public projectRoot?: URL
 
     // Vertex data
-    public documentPaths = new Map<dumpModels.DocumentId, string>()
-    public rangeData = new Map<lsif.RangeId, dumpModels.RangeData>()
+    public documentPaths = new Map<sqliteModels.DocumentId, string>()
+    public rangeData = new Map<lsif.RangeId, sqliteModels.RangeData>()
     public resultSetData = new Map<ResultSetId, ResultSetData>()
-    public hoverData = new Map<dumpModels.HoverResultId, string>()
-    public monikerData = new Map<dumpModels.MonikerId, dumpModels.MonikerData>()
-    public packageInformationData = new Map<dumpModels.PackageInformationId, dumpModels.PackageInformationData>()
+    public hoverData = new Map<sqliteModels.HoverResultId, string>()
+    public monikerData = new Map<sqliteModels.MonikerId, sqliteModels.MonikerData>()
+    public packageInformationData = new Map<sqliteModels.PackageInformationId, sqliteModels.PackageInformationData>()
     public unsupportedVertexes = new Set<lsif.Id>()
 
     // Edge data
     public nextData = new Map<lsif.RangeId | ResultSetId, ResultSetId>()
-    public containsData = new Map<dumpModels.DocumentId, Set<lsif.RangeId>>()
-    public definitionData = new Map<dumpModels.DefinitionResultId, DefaultMap<dumpModels.DocumentId, lsif.RangeId[]>>()
-    public referenceData = new Map<dumpModels.ReferenceResultId, DefaultMap<dumpModels.DocumentId, lsif.RangeId[]>>()
+    public containsData = new Map<sqliteModels.DocumentId, Set<lsif.RangeId>>()
+    public definitionData = new Map<
+        sqliteModels.DefinitionResultId,
+        DefaultMap<sqliteModels.DocumentId, lsif.RangeId[]>
+    >()
+    public referenceData = new Map<
+        sqliteModels.ReferenceResultId,
+        DefaultMap<sqliteModels.DocumentId, lsif.RangeId[]>
+    >()
 
     /**
      * A disjoint set of monikers linked by `nextMoniker` edges.
      */
-    public linkedMonikers = new DisjointSet<dumpModels.MonikerId>()
+    public linkedMonikers = new DisjointSet<sqliteModels.MonikerId>()
 
     /**
      * A disjoint set of reference results linked by `item` edges.
      */
-    public linkedReferenceResults = new DisjointSet<dumpModels.ReferenceResultId>()
+    public linkedReferenceResults = new DisjointSet<sqliteModels.ReferenceResultId>()
 
     /**
      * The set of exported moniker identifiers that have package information attached.
      */
-    public importedMonikers = new Set<dumpModels.MonikerId>()
+    public importedMonikers = new Set<sqliteModels.MonikerId>()
 
     /**
      * The set of exported moniker identifiers that have package information attached.
      */
-    public exportedMonikers = new Set<dumpModels.MonikerId>()
+    public exportedMonikers = new Set<sqliteModels.MonikerId>()
 
     private logger: Logger
 
@@ -139,25 +145,25 @@ export class Correlator {
                         startCharacter: element.start.character,
                         endLine: element.end.line,
                         endCharacter: element.end.character,
-                        monikerIds: new Set<dumpModels.MonikerId>(),
+                        monikerIds: new Set<sqliteModels.MonikerId>(),
                     })
                     break
 
                 case lsif.VertexLabels.resultSet:
-                    this.resultSetData.set(element.id, { monikerIds: new Set<dumpModels.MonikerId>() })
+                    this.resultSetData.set(element.id, { monikerIds: new Set<sqliteModels.MonikerId>() })
                     break
 
                 case lsif.VertexLabels.definitionResult:
                     this.definitionData.set(
                         element.id,
-                        new DefaultMap<dumpModels.DocumentId, lsif.RangeId[]>(() => [])
+                        new DefaultMap<sqliteModels.DocumentId, lsif.RangeId[]>(() => [])
                     )
                     break
 
                 case lsif.VertexLabels.referenceResult:
                     this.referenceData.set(
                         element.id,
-                        new DefaultMap<dumpModels.DocumentId, lsif.RangeId[]>(() => [])
+                        new DefaultMap<sqliteModels.DocumentId, lsif.RangeId[]>(() => [])
                     )
                     break
 
@@ -321,7 +327,7 @@ export class Correlator {
      * @param edge The moniker edge.
      */
     private handleMonikerEdge(edge: lsif.moniker): void {
-        const source = mustGetFromEither<lsif.RangeId, dumpModels.RangeData, ResultSetId, ResultSetData>(
+        const source = mustGetFromEither<lsif.RangeId, sqliteModels.RangeData, ResultSetId, ResultSetData>(
             this.rangeData,
             this.resultSetData,
             edge.outV,
@@ -329,7 +335,7 @@ export class Correlator {
         )
 
         mustGet(this.monikerData, edge.inV, 'moniker')
-        source.monikerIds = new Set<dumpModels.MonikerId>([edge.inV])
+        source.monikerIds = new Set<sqliteModels.MonikerId>([edge.inV])
     }
 
     /**
@@ -339,7 +345,7 @@ export class Correlator {
      * @param edge The next edge.
      */
     private handleNextEdge(edge: lsif.next): void {
-        mustGetFromEither<lsif.RangeId, dumpModels.RangeData, ResultSetId, ResultSetData>(
+        mustGetFromEither<lsif.RangeId, sqliteModels.RangeData, ResultSetId, ResultSetData>(
             this.rangeData,
             this.resultSetData,
             edge.outV,
@@ -390,7 +396,7 @@ export class Correlator {
      * @param edge The textDocument/definition edge.
      */
     private handleDefinitionEdge(edge: lsif.textDocument_definition): void {
-        const outV = mustGetFromEither<lsif.RangeId, dumpModels.RangeData, ResultSetId, ResultSetData>(
+        const outV = mustGetFromEither<lsif.RangeId, sqliteModels.RangeData, ResultSetId, ResultSetData>(
             this.rangeData,
             this.resultSetData,
             edge.outV,
@@ -408,7 +414,7 @@ export class Correlator {
      * @param edge The textDocument/references edge.
      */
     private handleReferenceEdge(edge: lsif.textDocument_references): void {
-        const outV = mustGetFromEither<lsif.RangeId, dumpModels.RangeData, ResultSetId, ResultSetData>(
+        const outV = mustGetFromEither<lsif.RangeId, sqliteModels.RangeData, ResultSetId, ResultSetData>(
             this.rangeData,
             this.resultSetData,
             edge.outV,
@@ -426,7 +432,7 @@ export class Correlator {
      * @param edge The textDocument/hover edge.
      */
     private handleHoverEdge(edge: lsif.textDocument_hover): void {
-        const outV = mustGetFromEither<lsif.RangeId, dumpModels.RangeData, ResultSetId, ResultSetData>(
+        const outV = mustGetFromEither<lsif.RangeId, sqliteModels.RangeData, ResultSetId, ResultSetData>(
             this.rangeData,
             this.resultSetData,
             edge.outV,

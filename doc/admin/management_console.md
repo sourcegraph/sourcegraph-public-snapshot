@@ -1,5 +1,7 @@
 # Management console
 
+> NOTE: In Sourcegraph v3.11 the management console and critical configuration were removed and all properties moved into the site configuration. See the [migration notes for Sourcegraph v3.11+](migration/3_11.md) for more information.
+
 The management console is a separate service used to edit Sourcegraph's [critical configuration](config/critical_config.md).
 
 Critical configuration includes things like authentication providers, the external URL, and the license key. This configuration is separate from the regular [site configuration](config/site_config.md), because an error here could make Sourcegraph inaccessible, except through the management console.
@@ -13,7 +15,7 @@ The management console is built-in to the same Docker image and published on por
 ```
 $ docker ps
 CONTAINER ID        IMAGE                              PORTS
-394ff36a8c3c        sourcegraph/server:3.10.4           0.0.0.0:2633->2633/tcp, 0.0.0.0:7080->7080/tcp
+394ff36a8c3c        sourcegraph/server:3.11.0           0.0.0.0:2633->2633/tcp, 0.0.0.0:7080->7080/tcp
 ```
 
 Usually, you can access it through the public internet via https://my.server.ip:2633, or https://localhost:2633 when testing locally.
@@ -68,7 +70,7 @@ UPDATE global_state SET mgmt_password_plaintext='', mgmt_password_bcrypt='';
 
 When you next visit sourcegraph.example.com/site-admin, a new password will be generated and presented to you.
 
-#### (Option 2) If you _don't_ have access Sourcegraph
+#### (Option 2) If you _don't_ have access to Sourcegraph
 
 First, determine what your new password will be. If your management console is exposed to the public internet, it is important that this be a **very** long and random password (e.g. 128 characters in length). For this example, we will use `abc123`.
 

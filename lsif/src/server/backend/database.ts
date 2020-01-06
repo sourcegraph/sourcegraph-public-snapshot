@@ -1,8 +1,8 @@
 import * as cache from './cache'
-import * as dumpModels from '../../shared/models/dump'
+import * as sqliteModels from '../../shared/models/sqlite'
 import * as lsp from 'vscode-languageserver-protocol'
 import * as metrics from '../metrics'
-import * as xrepoModels from '../../shared/models/xrepo'
+import * as pgModels from '../../shared/models/pg'
 import { Connection } from 'typeorm'
 import { DefaultMap } from '../../shared/datastructures/default-map'
 import { gunzipJSON } from '../../shared/encoding/json'
@@ -16,7 +16,7 @@ import { mustGet } from '../../shared/maps'
  * A location with the dump that contains it.
  */
 export interface InternalLocation {
-    dump: xrepoModels.LsifDump
+    dump: pgModels.LsifDump
     path: string
     range: lsp.Range
 }
@@ -32,8 +32,9 @@ export class Database {
     private static numResultChunks = new Map<string, number>()
 
     /**
-     * Create a new `Database` with the given cross-repo database instance and the
-     * filename of the database that contains data for a particular repository/commit.
+     * Create a new `Database` with the given caches, the dump record, and the
+     * SQLite file on disk that contains data for a particular repository and
+     * commit.
      *
      * @param connectionCache The cache of SQLite connections.
      * @param documentCache The cache of loaded documents.
@@ -45,7 +46,7 @@ export class Database {
         private connectionCache: cache.ConnectionCache,
         private documentCache: cache.DocumentCache,
         private resultChunkCache: cache.ResultChunkCache,
-        private dump: xrepoModels.LsifDump,
+        private dump: pgModels.LsifDump,
         private databasePath: string
     ) {}
 
@@ -64,7 +65,7 @@ export class Database {
     }
 
     /**
-     * Return the locations for the definitions of the reference at the given position.
+     * Return the locations for the symbol at the given position.
      *
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
@@ -106,7 +107,7 @@ export class Database {
     }
 
     /**
-     * Return a list of locations which reference the definition at the given position.
+     * Return a list of locations which reference the symbol at the given position.
      *
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
@@ -142,7 +143,7 @@ export class Database {
     }
 
     /**
-     * Return the hover content for the definition or reference at the given position.
+     * Return the hover content for the symbol at the given position.
      *
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
@@ -179,6 +180,65 @@ export class Database {
         })
     }
 
+    /**
+     * Return a parsed document that describes the given path as well as the ranges
+     * from that document that contains the given position. If multiple ranges are
+     * returned, then the inner-most ranges will occur before the outer-most ranges.
+     *
+     * @param path The path of the document.
+     * @param position The user's hover position.
+     * @param ctx The tracing context.
+     */
+    public getRangeByPosition(
+        path: string,
+        position: lsp.Position,
+        ctx: TracingContext
+    ): Promise<{ document: sqliteModels.DocumentData | undefined; ranges: sqliteModels.RangeData[] }> {
+        return this.logAndTraceCall(ctx, 'Fetching range by position', async ctx => {
+            const document = await this.getDocumentByPath(path)
+            if (!document) {
+                return { document: undefined, ranges: [] }
+            }
+
+            const ranges = findRanges(document.ranges.values(), position)
+            this.logSpan(ctx, 'matching_ranges', { ranges: cleanRanges(ranges) })
+            return { document, ranges }
+        })
+    }
+
+    /**
+     * Query the definitions or references table of `db` for items that match the given moniker.
+     * Convert each result into an `InternalLocation`. The `pathTransformer` function is invoked
+     * on each result item to modify the resulting locations.
+     *
+     * @param model The constructor for the model type.
+     * @param moniker The target moniker.
+     * @param ctx The tracing context.
+     */
+    public monikerResults(
+        model: typeof sqliteModels.DefinitionModel | typeof sqliteModels.ReferenceModel,
+        moniker: Pick<sqliteModels.MonikerData, 'scheme' | 'identifier'>,
+        ctx: TracingContext
+    ): Promise<InternalLocation[]> {
+        return this.logAndTraceCall(ctx, 'Fetching moniker results', async ctx => {
+            const results = await this.withConnection(connection =>
+                connection.getRepository<sqliteModels.DefinitionModel | sqliteModels.ReferenceModel>(model).find({
+                    where: {
+                        scheme: moniker.scheme,
+                        identifier: moniker.identifier,
+                    },
+                })
+            )
+
+            this.logSpan(ctx, 'symbol_results', { moniker, symbol: results })
+            return results.map(result => ({
+                dump: this.dump,
+                path: result.documentPath,
+                range: createRange(result),
+            }))
+        })
+    }
+
     //
     // Helper Functions
 
@@ -195,11 +255,11 @@ export class Database {
      */
     private async convertRangesToInternalLocations(
         path: string,
-        document: dumpModels.DocumentData,
-        resultData: dumpModels.DocumentPathRangeId[]
+        document: sqliteModels.DocumentData,
+        resultData: sqliteModels.DocumentPathRangeId[]
     ): Promise<InternalLocation[]> {
         // Group by document path so we only have to load each document once
-        const groupedResults = new DefaultMap<string, Set<dumpModels.RangeId>>(() => new Set())
+        const groupedResults = new DefaultMap<string, Set<sqliteModels.RangeId>>(() => new Set())
 
         for (const { documentPath, rangeId } of resultData) {
             groupedResults.getOrDefault(documentPath).add(rangeId)
@@ -227,53 +287,20 @@ export class Database {
     }
 
     /**
-     * Query the definitions or references table of `db` for items that match the given moniker.
-     * Convert each result into an `InternalLocation`. The `pathTransformer` function is invoked
-     * on each result item to modify the resulting locations.
-     *
-     * @param model The constructor for the model type.
-     * @param moniker The target moniker.
-     * @param ctx The tracing context.
-     */
-    public monikerResults(
-        model: typeof dumpModels.DefinitionModel | typeof dumpModels.ReferenceModel,
-        moniker: Pick<dumpModels.MonikerData, 'scheme' | 'identifier'>,
-        ctx: TracingContext
-    ): Promise<InternalLocation[]> {
-        return this.logAndTraceCall(ctx, 'Fetching moniker results', async ctx => {
-            const results = await this.withConnection(connection =>
-                connection.getRepository<dumpModels.DefinitionModel | dumpModels.ReferenceModel>(model).find({
-                    where: {
-                        scheme: moniker.scheme,
-                        identifier: moniker.identifier,
-                    },
-                })
-            )
-
-            this.logSpan(ctx, 'symbol_results', { moniker, symbol: results })
-            return results.map(result => ({
-                dump: this.dump,
-                path: result.documentPath,
-                range: createRange(result),
-            }))
-        })
-    }
-
-    /**
      * Return a parsed document that describes the given path. The result of this
      * method is cached across all database instances.
      *
      * @param path The path of the document.
      */
-    private async getDocumentByPath(path: string): Promise<dumpModels.DocumentData | undefined> {
-        const factory = async (): Promise<cache.EncodedJsonCacheValue<dumpModels.DocumentData>> => {
+    private async getDocumentByPath(path: string): Promise<sqliteModels.DocumentData | undefined> {
+        const factory = async (): Promise<cache.EncodedJsonCacheValue<sqliteModels.DocumentData>> => {
             const document = await this.withConnection(connection =>
-                connection.getRepository(dumpModels.DocumentModel).findOneOrFail(path)
+                connection.getRepository(sqliteModels.DocumentModel).findOneOrFail(path)
             )
 
             return {
                 size: document.data.length,
-                data: await gunzipJSON<dumpModels.DocumentData>(document.data),
+                data: await gunzipJSON<sqliteModels.DocumentData>(document.data),
             }
         }
 
@@ -291,39 +318,15 @@ export class Database {
     }
 
     /**
-     * Return a parsed document that describes the given path as well as the ranges
-     * from that document that contains the given position. If multiple ranges are
-     * returned, then the inner-most ranges will occur before the outer-most ranges.
-     *
-     * @param path The path of the document.
-     * @param position The user's hover position.
-     * @param ctx The tracing context.
-     */
-    public getRangeByPosition(
-        path: string,
-        position: lsp.Position,
-        ctx: TracingContext
-    ): Promise<{ document: dumpModels.DocumentData | undefined; ranges: dumpModels.RangeData[] }> {
-        return this.logAndTraceCall(ctx, 'Fetching range by position', async ctx => {
-            const document = await this.getDocumentByPath(path)
-            if (!document) {
-                return { document: undefined, ranges: [] }
-            }
-
-            const ranges = findRanges(document.ranges.values(), position)
-            this.logSpan(ctx, 'matching_ranges', { ranges: cleanRanges(ranges) })
-            return { document, ranges }
-        })
-    }
-
-    /**
      * Convert a list of ranges with document ids into a list of ranges with
      * document paths by looking into the result chunks table and parsing the
      * data associated with the given identifier.
      *
      * @param id The identifier of the definition or reference result.
      */
-    private async getResultById(id: dumpModels.DefinitionReferenceResultId): Promise<dumpModels.DocumentPathRangeId[]> {
+    private async getResultById(
+        id: sqliteModels.DefinitionReferenceResultId
+    ): Promise<sqliteModels.DocumentPathRangeId[]> {
         const { documentPaths, documentIdRangeIds } = await this.getResultChunkByResultId(id)
         const ranges = mustGet(documentIdRangeIds, id, 'documentIdRangeId')
 
@@ -339,19 +342,19 @@ export class Database {
      * @param id An identifier contained in the result chunk.
      */
     private async getResultChunkByResultId(
-        id: dumpModels.DefinitionReferenceResultId
-    ): Promise<dumpModels.ResultChunkData> {
+        id: sqliteModels.DefinitionReferenceResultId
+    ): Promise<sqliteModels.ResultChunkData> {
         // Find the result chunk index this id belongs to
         const index = hashKey(id, await this.getNumResultChunks())
 
-        const factory = async (): Promise<cache.EncodedJsonCacheValue<dumpModels.ResultChunkData>> => {
+        const factory = async (): Promise<cache.EncodedJsonCacheValue<sqliteModels.ResultChunkData>> => {
             const resultChunk = await this.withConnection(connection =>
-                connection.getRepository(dumpModels.ResultChunkModel).findOneOrFail(index)
+                connection.getRepository(sqliteModels.ResultChunkModel).findOneOrFail(index)
             )
 
             return {
                 size: resultChunk.data.length,
-                data: await gunzipJSON<dumpModels.ResultChunkData>(resultChunk.data),
+                data: await gunzipJSON<sqliteModels.ResultChunkData>(resultChunk.data),
             }
         }
 
@@ -371,7 +374,7 @@ export class Database {
 
         // Not in the shared map, need to query it
         const meta = await this.withConnection(connection =>
-            connection.getRepository(dumpModels.MetaModel).findOneOrFail(1)
+            connection.getRepository(sqliteModels.MetaModel).findOneOrFail(1)
         )
         Database.numResultChunks.set(this.databasePath, meta.numResultChunks)
         return meta.numResultChunks
@@ -384,7 +387,7 @@ export class Database {
      * @param callback The function invoke with the SQLite connection.
      */
     private withConnection<T>(callback: (connection: Connection) => Promise<T>): Promise<T> {
-        return this.connectionCache.withConnection(this.databasePath, dumpModels.entities, connection =>
+        return this.connectionCache.withConnection(this.databasePath, sqliteModels.entities, connection =>
             instrument(metrics.databaseQueryDurationHistogram, metrics.databaseQueryErrorsCounter, () =>
                 callback(connection)
             )
@@ -422,7 +425,7 @@ export class Database {
  * @param ranges The set of possible ranges.
  * @param position The user's hover position.
  */
-export function findRanges(ranges: Iterable<dumpModels.RangeData>, position: lsp.Position): dumpModels.RangeData[] {
+export function findRanges(ranges: Iterable<sqliteModels.RangeData>, position: lsp.Position): sqliteModels.RangeData[] {
     const filtered = []
     for (const range of ranges) {
         if (comparePosition(range, position) === 0) {
@@ -447,7 +450,7 @@ export function findRanges(ranges: Iterable<dumpModels.RangeData>, position: lsp
  * @param range The range.
  * @param position The position.
  */
-export function comparePosition(range: dumpModels.RangeData, position: lsp.Position): number {
+export function comparePosition(range: sqliteModels.RangeData, position: lsp.Position): number {
     if (position.line < range.startLine) {
         return +1
     }
@@ -476,7 +479,7 @@ export function comparePosition(range: dumpModels.RangeData, position: lsp.Posit
  *
  * @param monikers The list of monikers.
  */
-export function sortMonikers(monikers: dumpModels.MonikerData[]): dumpModels.MonikerData[] {
+export function sortMonikers(monikers: sqliteModels.MonikerData[]): sqliteModels.MonikerData[] {
     const monikerKindPreferences = ['import', 'local', 'export']
     const monikerSchemePreferences = ['npm', 'tsc']
 
@@ -515,10 +518,10 @@ function createRange(result: {
  * @param ids The set of range identifiers for each resulting location.
  */
 export function mapRangesToInternalLocations(
-    dump: xrepoModels.LsifDump,
-    ranges: Map<dumpModels.RangeId, dumpModels.RangeData>,
+    dump: pgModels.LsifDump,
+    ranges: Map<sqliteModels.RangeId, sqliteModels.RangeData>,
     uri: string,
-    ids: Set<dumpModels.RangeId>
+    ids: Set<sqliteModels.RangeId>
 ): InternalLocation[] {
     const locations = []
     for (const id of ids) {
@@ -538,8 +541,8 @@ export function mapRangesToInternalLocations(
  * @param ranges The ranges to clean.
  */
 function cleanRanges(
-    ranges: dumpModels.RangeData[]
-): (Omit<dumpModels.RangeData, 'monikerIds'> & { monikerIds: dumpModels.MonikerId[] })[] {
+    ranges: sqliteModels.RangeData[]
+): (Omit<sqliteModels.RangeData, 'monikerIds'> & { monikerIds: sqliteModels.MonikerId[] })[] {
     // We need to array-ize sets otherwise we get a "0 key" object
     return ranges.map(r => ({ ...r, monikerIds: Array.from(r.monikerIds) }))
 }

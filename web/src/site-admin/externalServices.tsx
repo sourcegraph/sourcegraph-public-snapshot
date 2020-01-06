@@ -84,8 +84,8 @@ function editWithComment(config: string, path: JSONPath, value: any, comment: st
 
 const editorActionComments = {
     enablePermissions:
-        '// Prerequisite: you must configure GitHub as an OAuth auth provider in the critical site config (https://docs.sourcegraph.com/admin/auth#github). Otherwise, access to all repositories will be disallowed.',
-    enforcePermissionsOAuth: `// Prerequisite: you must first update the critical site configuration to
+        '// Prerequisite: you must configure GitHub as an OAuth auth provider in the site config (https://docs.sourcegraph.com/admin/auth#github). Otherwise, access to all repositories will be disallowed.',
+    enforcePermissionsOAuth: `// Prerequisite: you must first update the site configuration to
     // include GitLab OAuth as an auth provider.
     // See https://docs.sourcegraph.com/admin/auth#gitlab for instructions.`,
     enforcePermissionsSSO: `// Prerequisite: You will need a sudo-level access token. If you can configure
@@ -94,13 +94,13 @@ const editorActionComments = {
     //
     // 1. Ensure the personal access token in this config has admin privileges
     //    (https://docs.gitlab.com/ee/api/#sudo).
-    // 2. Update the critical site configuration in the management console to
-    //    include the SSO auth provider for GitLab (https://docs.sourcegraph.com/admin/auth).
+    // 2. Update the site configuration to include the SSO auth provider for GitLab
+    //    (https://docs.sourcegraph.com/admin/auth).
     // 3. Update the fields below to match the properties of this auth provider
     //    (https://docs.sourcegraph.com/admin/repo/permissions#sudo-access-token).`,
 }
 
-export const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
+const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
     title: 'GitHub repositories',
     icon: GithubCircleIcon,
     jsonSchema: githubSchemaJSON,
@@ -227,7 +227,7 @@ export const GITHUB_EXTERNAL_SERVICE: ExternalServiceKindMetadata = {
 }`,
 }
 
-export const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServiceKindMetadata> = {
+const ALL_EXTERNAL_SERVICES: Record<GQL.ExternalServiceKind, ExternalServiceKindMetadata> = {
     [GQL.ExternalServiceKind.GITHUB]: GITHUB_EXTERNAL_SERVICE,
     [GQL.ExternalServiceKind.AWSCODECOMMIT]: {
         title: 'AWS CodeCommit repositories',

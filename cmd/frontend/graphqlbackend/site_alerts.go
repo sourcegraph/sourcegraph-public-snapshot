@@ -62,8 +62,8 @@ func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
 
 func init() {
 	conf.ContributeWarning(func(c conf.Unified) (problems conf.Problems) {
-		if c.Critical.ExternalURL == "" {
-			problems = append(problems, conf.NewCriticalProblem("`externalURL` is required to be set for many features of Sourcegraph to work correctly."))
+		if c.ExternalURL == "" {
+			problems = append(problems, conf.NewSiteProblem("`externalURL` is required to be set for many features of Sourcegraph to work correctly."))
 		}
 		return problems
 	})
@@ -82,7 +82,7 @@ func init() {
 			return []*Alert{
 				{
 					TypeValue:    AlertTypeError,
-					MessageValue: `Update [**site configuration**](/site-admin/configuration) or [**critical configuration**](/help/admin/management_console) to resolve problems: ` + err.Error(),
+					MessageValue: `Update [**site configuration**](/site-admin/configuration) to resolve problems: ` + err.Error(),
 				},
 			}
 		}

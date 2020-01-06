@@ -24,7 +24,7 @@ export class SiteAdminPingsPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const pingsEnabled = window.context.critical['update.channel'] === 'release'
+        const pingsEnabled = window.context.site['update.channel'] === 'release'
 
         return (
             <div className="site-admin-pings-page">

@@ -130,31 +130,7 @@ export function toggleSearchType(query: string, searchType: SearchType): string 
 export const isSearchResults = (val: any): val is GQL.ISearchResults =>
     val && typeof val === 'object' && val.__typename === 'SearchResults'
 
-/**
- * Toggles the given search scope by adding it or removing it from the current string, and removes `repogroup:sample`
- * from the query if it exists in the query, and the search scope being added contains a `repogroup:` filter.
- *
- * @param query the current user query
- * @param searchFilter the search scope (sub query) or dynamic filter to toggle (add/remove from the current user query)
- * @returns The new query
- */
-export const toggleSearchFilterAndReplaceSampleRepogroup = (query: string, searchFilter: string): string => {
-    const newQuery = toggleSearchFilter(query, searchFilter)
-    // RegExp to replace `repogroup:sample` without removing leading whitespace.
-    const replaceSampleRepogroupRegexp = /(\b|^)repogroup:sample(\s|$)/
-    // RegExp to match `repogroup:sample` in any part of a query.
-    const matchSampleRepogroupRegexp = /(\s*|^)repogroup:sample(\s*|$)/
-    if (
-        /\brepogroup:/.test(searchFilter) &&
-        matchSampleRepogroupRegexp.test(newQuery) &&
-        !matchSampleRepogroupRegexp.test(searchFilter)
-    ) {
-        return newQuery.replace(replaceSampleRepogroupRegexp, '')
-    }
-    return newQuery
-}
-
-export const isValidFilter = (filter: string = ''): filter is FiltersSuggestionTypes =>
+const isValidFilter = (filter: string = ''): filter is FiltersSuggestionTypes =>
     Object.prototype.hasOwnProperty.call(SuggestionTypes, filter) ||
     Object.prototype.hasOwnProperty.call(filterAliases, filter)
 
@@ -194,7 +170,7 @@ const resolveFilterType = (filter: string = ''): FiltersSuggestionTypes | null =
  * If a filter value is being typed, try to get its filter and value.
  * E.g: ("|" is the cursor): "lang:go repo:test|" => "repo:test"
  */
-export const getFilterAndValueBeforeCursor = (queryState: QueryState): FilterAndValueMatch => {
+const getFilterAndValueBeforeCursor = (queryState: QueryState): FilterAndValueMatch => {
     const { firstPart } = splitStringAtPosition(queryState.query, queryState.cursorPosition)
     // get string before ":" char until a space is found or start of string
     const match = firstPart.match(/([^\s:]+)?(:(\S?)+)?$/) || []
@@ -263,7 +239,7 @@ export interface QueryState {
  * "l:go yes" => true
  * "l:go archived:" => false
  */
-export const isTypingWordAndNotFilterValue = (value: string): boolean => Boolean(value.match(/\s+([^:]?)+$/))
+const isTypingWordAndNotFilterValue = (value: string): boolean => Boolean(value.match(/\s+([^:]?)+$/))
 
 /**
  * Adds suggestions value to search query where cursor was positioned.

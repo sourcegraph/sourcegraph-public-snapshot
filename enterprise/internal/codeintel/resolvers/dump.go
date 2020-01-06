@@ -10,14 +10,13 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/client"
 	"github.com/sourcegraph/sourcegraph/internal/lsif"
 )
 
 type lsifDumpResolver struct {
-	repo     *types.Repo
-	lsifDump *lsif.LSIFDump
+	repositoryResolver *graphqlbackend.RepositoryResolver
+	lsifDump           *lsif.LSIFDump
 }
 
 var _ graphqlbackend.LSIFDumpResolver = &lsifDumpResolver{}
@@ -27,13 +26,19 @@ func (r *lsifDumpResolver) ID() graphql.ID {
 }
 
 func (r *lsifDumpResolver) ProjectRoot(ctx context.Context) (*graphqlbackend.GitTreeEntryResolver, error) {
-	repoResolver := graphqlbackend.NewRepositoryResolver(r.repo)
-	commitResolver, err := repoResolver.Commit(ctx, &graphqlbackend.RepositoryCommitArgs{Rev: r.lsifDump.Commit})
-	if err != nil {
-		return nil, err
-	}
+	return resolvePath(ctx, r.lsifDump.Repository, r.lsifDump.Commit, r.lsifDump.Root)
+}
 
-	return graphqlbackend.NewGitTreeEntryResolver(commitResolver, graphqlbackend.CreateFileInfo(r.lsifDump.Root, true)), nil
+func (r *lsifDumpResolver) InputRepoName() string {
+	return r.lsifDump.Repository
+}
+
+func (r *lsifDumpResolver) InputCommit() string {
+	return r.lsifDump.Commit
+}
+
+func (r *lsifDumpResolver) InputRoot() string {
+	return r.lsifDump.Root
 }
 
 func (r *lsifDumpResolver) IsLatestForRepo() bool {
@@ -60,18 +65,18 @@ type lsifDumpConnectionResolver struct {
 	opt LSIFDumpsListOptions
 
 	// cache results because they are used by multiple fields
-	once       sync.Once
-	dumps      []*lsif.LSIFDump
-	repo       *graphqlbackend.RepositoryResolver
-	totalCount int
-	nextURL    string
-	err        error
+	once               sync.Once
+	dumps              []*lsif.LSIFDump
+	repositoryResolver *graphqlbackend.RepositoryResolver
+	totalCount         int
+	nextURL            string
+	err                error
 }
 
 var _ graphqlbackend.LSIFDumpConnectionResolver = &lsifDumpConnectionResolver{}
 
 func (r *lsifDumpConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.LSIFDumpResolver, error) {
-	dumps, repo, _, _, err := r.compute(ctx)
+	dumps, repositoryResolver, _, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -79,8 +84,8 @@ func (r *lsifDumpConnectionResolver) Nodes(ctx context.Context) ([]graphqlbacken
 	var l []graphqlbackend.LSIFDumpResolver
 	for _, lsifDump := range dumps {
 		l = append(l, &lsifDumpResolver{
-			repo:     repo.Type(),
-			lsifDump: lsifDump,
+			repositoryResolver: repositoryResolver,
+			lsifDump:           lsifDump,
 		})
 	}
 	return l, nil
@@ -106,7 +111,7 @@ func (r *lsifDumpConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil
 
 func (r *lsifDumpConnectionResolver) compute(ctx context.Context) ([]*lsif.LSIFDump, *graphqlbackend.RepositoryResolver, int, string, error) {
 	r.once.Do(func() {
-		r.repo, r.err = graphqlbackend.RepositoryByID(ctx, r.opt.RepositoryID)
+		r.repositoryResolver, r.err = graphqlbackend.RepositoryByID(ctx, r.opt.RepositoryID)
 		if r.err != nil {
 			return
 		}
@@ -118,7 +123,7 @@ func (r *lsifDumpConnectionResolver) compute(ctx context.Context) ([]*lsif.LSIFD
 			Limit           *int32
 			Cursor          *string
 		}{
-			RepoName:        r.repo.Name(),
+			RepoName:        r.repositoryResolver.Name(),
 			Query:           r.opt.Query,
 			IsLatestForRepo: r.opt.IsLatestForRepo,
 			Limit:           r.opt.Limit,
@@ -126,7 +131,7 @@ func (r *lsifDumpConnectionResolver) compute(ctx context.Context) ([]*lsif.LSIFD
 		})
 	})
 
-	return r.dumps, r.repo, r.totalCount, r.nextURL, r.err
+	return r.dumps, r.repositoryResolver, r.totalCount, r.nextURL, r.err
 }
 
 type lsifDumpIDPayload struct {

@@ -92,7 +92,7 @@ func AllowAnonymousRequest(req *http.Request) bool {
 		return true
 	}
 
-	if strings.HasPrefix(req.URL.Path, "/.assets/") || strings.HasPrefix(req.URL.Path, "/.api/telemetry/log/v1/") {
+	if strings.HasPrefix(req.URL.Path, "/.assets/") {
 		return true
 	}
 

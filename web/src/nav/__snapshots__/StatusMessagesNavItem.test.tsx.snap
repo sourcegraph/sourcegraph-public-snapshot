@@ -12,18 +12,10 @@ exports[`StatusMessagesNavItem no messages 1`] = `
     href="#"
     onClick={[Function]}
   >
-    <svg
-      className="mdi-icon icon-inline"
+    <CloudCheckIcon
+      className="icon-inline"
       data-tooltip="Repositories up to date"
-      fill="currentColor"
-      height={24}
-      viewBox="0 0 24 24"
-      width={24}
-    >
-      <path
-        d="M10,17L6.5,13.5L7.91,12.08L10,14.17L15.18,9L16.59,10.41M19.35,10.03C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.03C2.34,8.36 0,10.9 0,14C0,17.31 2.69,20 6,20H19C21.76,20 24,17.76 24,15C24,12.36 21.95,10.22 19.35,10.03Z"
-      />
-    </svg>
+    />
   </a>
   <div
     aria-hidden={true}
@@ -38,17 +30,9 @@ exports[`StatusMessagesNavItem no messages 1`] = `
       className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-success"
     >
       <h4>
-        <svg
-          className="mdi-icon icon-inline mr-1"
-          fill="currentColor"
-          height={24}
-          viewBox="0 0 24 24"
-          width={24}
-        >
-          <path
-            d="M10,17L6.5,13.5L7.91,12.08L10,14.17L15.18,9L16.59,10.41M19.35,10.03C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.03C2.34,8.36 0,10.9 0,14C0,17.31 2.69,20 6,20H19C21.76,20 24,17.76 24,15C24,12.36 21.95,10.22 19.35,10.03Z"
-          />
-        </svg>
+        <CloudCheckIcon
+          className="icon-inline mr-1"
+        />
         Repositories up to date
       </h4>
       <p>
@@ -71,18 +55,10 @@ exports[`StatusMessagesNavItem one CloningProgress message as non-site admin 1`]
     href="#"
     onClick={[Function]}
   >
-    <svg
-      className="mdi-icon icon-inline"
+    <CloudSyncIcon
+      className="icon-inline"
       data-tooltip="Cloning repositories..."
-      fill="currentColor"
-      height={24}
-      viewBox="0 0 24 24"
-      width={24}
-    >
-      <path
-        d="M12,4C15.64,4 18.67,6.59 19.35,10.04C21.95,10.22 24,12.36 24,15C24,17.76 21.76,20 19,20H6C2.69,20 0,17.31 0,14C0,10.91 2.34,8.36 5.35,8.04C6.6,5.64 9.11,4 12,4M7.5,9.69C6.06,11.5 6.2,14.06 7.82,15.68C8.66,16.5 9.81,17 11,17V18.86L13.83,16.04L11,13.21V15C10.34,15 9.7,14.74 9.23,14.27C8.39,13.43 8.26,12.11 8.92,11.12L7.5,9.69M9.17,8.97L10.62,10.42L12,11.79V10C12.66,10 13.3,10.26 13.77,10.73C14.61,11.57 14.74,12.89 14.08,13.88L15.5,15.31C16.94,13.5 16.8,10.94 15.18,9.32C14.34,8.5 13.19,8 12,8V6.14L9.17,8.97Z"
-      />
-    </svg>
+    />
   </a>
   <div
     aria-hidden={true}
@@ -97,17 +73,9 @@ exports[`StatusMessagesNavItem one CloningProgress message as non-site admin 1`]
       className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-progress"
     >
       <h4>
-        <svg
-          className="mdi-icon icon-inline mr-1"
-          fill="currentColor"
-          height={24}
-          viewBox="0 0 24 24"
-          width={24}
-        >
-          <path
-            d="M12,4C15.64,4 18.67,6.59 19.35,10.04C21.95,10.22 24,12.36 24,15C24,17.76 21.76,20 19,20H6C2.69,20 0,17.31 0,14C0,10.91 2.34,8.36 5.35,8.04C6.6,5.64 9.11,4 12,4M7.5,9.69C6.06,11.5 6.2,14.06 7.82,15.68C8.66,16.5 9.81,17 11,17V18.86L13.83,16.04L11,13.21V15C10.34,15 9.7,14.74 9.23,14.27C8.39,13.43 8.26,12.11 8.92,11.12L7.5,9.69M9.17,8.97L10.62,10.42L12,11.79V10C12.66,10 13.3,10.26 13.77,10.73C14.61,11.57 14.74,12.89 14.08,13.88L15.5,15.31C16.94,13.5 16.8,10.94 15.18,9.32C14.34,8.5 13.19,8 12,8V6.14L9.17,8.97Z"
-          />
-        </svg>
+        <CloudSyncIcon
+          className="icon-inline mr-1"
+        />
         Repositories cloning
       </h4>
       <p>
@@ -130,18 +98,10 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
     href="#"
     onClick={[Function]}
   >
-    <svg
-      className="mdi-icon icon-inline"
+    <CloudSyncIcon
+      className="icon-inline"
       data-tooltip="Cloning repositories..."
-      fill="currentColor"
-      height={24}
-      viewBox="0 0 24 24"
-      width={24}
-    >
-      <path
-        d="M12,4C15.64,4 18.67,6.59 19.35,10.04C21.95,10.22 24,12.36 24,15C24,17.76 21.76,20 19,20H6C2.69,20 0,17.31 0,14C0,10.91 2.34,8.36 5.35,8.04C6.6,5.64 9.11,4 12,4M7.5,9.69C6.06,11.5 6.2,14.06 7.82,15.68C8.66,16.5 9.81,17 11,17V18.86L13.83,16.04L11,13.21V15C10.34,15 9.7,14.74 9.23,14.27C8.39,13.43 8.26,12.11 8.92,11.12L7.5,9.69M9.17,8.97L10.62,10.42L12,11.79V10C12.66,10 13.3,10.26 13.77,10.73C14.61,11.57 14.74,12.89 14.08,13.88L15.5,15.31C16.94,13.5 16.8,10.94 15.18,9.32C14.34,8.5 13.19,8 12,8V6.14L9.17,8.97Z"
-      />
-    </svg>
+    />
   </a>
   <div
     aria-hidden={true}
@@ -156,17 +116,9 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
       className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-progress"
     >
       <h4>
-        <svg
-          className="mdi-icon icon-inline mr-1"
-          fill="currentColor"
-          height={24}
-          viewBox="0 0 24 24"
-          width={24}
-        >
-          <path
-            d="M12,4C15.64,4 18.67,6.59 19.35,10.04C21.95,10.22 24,12.36 24,15C24,17.76 21.76,20 19,20H6C2.69,20 0,17.31 0,14C0,10.91 2.34,8.36 5.35,8.04C6.6,5.64 9.11,4 12,4M7.5,9.69C6.06,11.5 6.2,14.06 7.82,15.68C8.66,16.5 9.81,17 11,17V18.86L13.83,16.04L11,13.21V15C10.34,15 9.7,14.74 9.23,14.27C8.39,13.43 8.26,12.11 8.92,11.12L7.5,9.69M9.17,8.97L10.62,10.42L12,11.79V10C12.66,10 13.3,10.26 13.77,10.73C14.61,11.57 14.74,12.89 14.08,13.88L15.5,15.31C16.94,13.5 16.8,10.94 15.18,9.32C14.34,8.5 13.19,8 12,8V6.14L9.17,8.97Z"
-          />
-        </svg>
+        <CloudSyncIcon
+          className="icon-inline mr-1"
+        />
         Repositories cloning
       </h4>
       <p>
@@ -199,18 +151,10 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site 
     href="#"
     onClick={[Function]}
   >
-    <svg
-      className="mdi-icon icon-inline"
+    <CloudAlertIcon
+      className="icon-inline"
       data-tooltip="Syncing repositories failed!"
-      fill="currentColor"
-      height={24}
-      viewBox="0 0 24 24"
-      width={24}
-    >
-      <path
-        d="M19,20H6C2.71,20 0,17.29 0,14C0,10.9 2.34,8.36 5.35,8.03C6.6,5.64 9.11,4 12,4C15.64,4 18.67,6.59 19.35,10.03C21.95,10.22 24,12.36 24,15C24,17.74 21.74,20 19,20M11,15V17H13V15H11M11,13H13V8H11V13Z"
-      />
-    </svg>
+    />
   </a>
   <div
     aria-hidden={true}
@@ -225,17 +169,9 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site 
       className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-warning"
     >
       <h4>
-        <svg
-          className="mdi-icon icon-inline mr-1"
-          fill="currentColor"
-          height={24}
-          viewBox="0 0 24 24"
-          width={24}
-        >
-          <path
-            d="M19,20H6C2.71,20 0,17.29 0,14C0,10.9 2.34,8.36 5.35,8.03C6.6,5.64 9.11,4 12,4C15.64,4 18.67,6.59 19.35,10.03C21.95,10.22 24,12.36 24,15C24,17.74 21.74,20 19,20M11,15V17H13V15H11M11,13H13V8H11V13Z"
-          />
-        </svg>
+        <CloudAlertIcon
+          className="icon-inline mr-1"
+        />
         Syncing external service "GitHub.com" failed:
       </h4>
       <p>
@@ -258,18 +194,10 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admi
     href="#"
     onClick={[Function]}
   >
-    <svg
-      className="mdi-icon icon-inline"
+    <CloudAlertIcon
+      className="icon-inline"
       data-tooltip="Syncing repositories failed!"
-      fill="currentColor"
-      height={24}
-      viewBox="0 0 24 24"
-      width={24}
-    >
-      <path
-        d="M19,20H6C2.71,20 0,17.29 0,14C0,10.9 2.34,8.36 5.35,8.03C6.6,5.64 9.11,4 12,4C15.64,4 18.67,6.59 19.35,10.03C21.95,10.22 24,12.36 24,15C24,17.74 21.74,20 19,20M11,15V17H13V15H11M11,13H13V8H11V13Z"
-      />
-    </svg>
+    />
   </a>
   <div
     aria-hidden={true}
@@ -284,17 +212,9 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admi
       className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-warning"
     >
       <h4>
-        <svg
-          className="mdi-icon icon-inline mr-1"
-          fill="currentColor"
-          height={24}
-          viewBox="0 0 24 24"
-          width={24}
-        >
-          <path
-            d="M19,20H6C2.71,20 0,17.29 0,14C0,10.9 2.34,8.36 5.35,8.03C6.6,5.64 9.11,4 12,4C15.64,4 18.67,6.59 19.35,10.03C21.95,10.22 24,12.36 24,15C24,17.74 21.74,20 19,20M11,15V17H13V15H11M11,13H13V8H11V13Z"
-          />
-        </svg>
+        <CloudAlertIcon
+          className="icon-inline mr-1"
+        />
         Syncing external service "GitHub.com" failed:
       </h4>
       <p>
@@ -327,18 +247,10 @@ exports[`StatusMessagesNavItem one SyncError message as non-site admin 1`] = `
     href="#"
     onClick={[Function]}
   >
-    <svg
-      className="mdi-icon icon-inline"
+    <CloudCheckIcon
+      className="icon-inline"
       data-tooltip="Repositories up to date"
-      fill="currentColor"
-      height={24}
-      viewBox="0 0 24 24"
-      width={24}
-    >
-      <path
-        d="M10,17L6.5,13.5L7.91,12.08L10,14.17L15.18,9L16.59,10.41M19.35,10.03C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.03C2.34,8.36 0,10.9 0,14C0,17.31 2.69,20 6,20H19C21.76,20 24,17.76 24,15C24,12.36 21.95,10.22 19.35,10.03Z"
-      />
-    </svg>
+    />
   </a>
   <div
     aria-hidden={true}
@@ -353,17 +265,9 @@ exports[`StatusMessagesNavItem one SyncError message as non-site admin 1`] = `
       className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-warning"
     >
       <h4>
-        <svg
-          className="mdi-icon icon-inline mr-1"
-          fill="currentColor"
-          height={24}
-          viewBox="0 0 24 24"
-          width={24}
-        >
-          <path
-            d="M19,20H6C2.71,20 0,17.29 0,14C0,10.9 2.34,8.36 5.35,8.03C6.6,5.64 9.11,4 12,4C15.64,4 18.67,6.59 19.35,10.03C21.95,10.22 24,12.36 24,15C24,17.74 21.74,20 19,20M11,15V17H13V15H11M11,13H13V8H11V13Z"
-          />
-        </svg>
+        <CloudAlertIcon
+          className="icon-inline mr-1"
+        />
         Syncing repositories failed:
       </h4>
       <p>
@@ -386,18 +290,10 @@ exports[`StatusMessagesNavItem one SyncError message as site admin 1`] = `
     href="#"
     onClick={[Function]}
   >
-    <svg
-      className="mdi-icon icon-inline"
+    <CloudCheckIcon
+      className="icon-inline"
       data-tooltip="Repositories up to date"
-      fill="currentColor"
-      height={24}
-      viewBox="0 0 24 24"
-      width={24}
-    >
-      <path
-        d="M10,17L6.5,13.5L7.91,12.08L10,14.17L15.18,9L16.59,10.41M19.35,10.03C18.67,6.59 15.64,4 12,4C9.11,4 6.6,5.64 5.35,8.03C2.34,8.36 0,10.9 0,14C0,17.31 2.69,20 6,20H19C21.76,20 24,17.76 24,15C24,12.36 21.95,10.22 19.35,10.03Z"
-      />
-    </svg>
+    />
   </a>
   <div
     aria-hidden={true}
@@ -412,17 +308,9 @@ exports[`StatusMessagesNavItem one SyncError message as site admin 1`] = `
       className="status-messages-nav-item__entry mb-3 status-messages-nav-item__entry--border-warning"
     >
       <h4>
-        <svg
-          className="mdi-icon icon-inline mr-1"
-          fill="currentColor"
-          height={24}
-          viewBox="0 0 24 24"
-          width={24}
-        >
-          <path
-            d="M19,20H6C2.71,20 0,17.29 0,14C0,10.9 2.34,8.36 5.35,8.03C6.6,5.64 9.11,4 12,4C15.64,4 18.67,6.59 19.35,10.03C21.95,10.22 24,12.36 24,15C24,17.74 21.74,20 19,20M11,15V17H13V15H11M11,13H13V8H11V13Z"
-          />
-        </svg>
+        <CloudAlertIcon
+          className="icon-inline mr-1"
+        />
         Syncing repositories failed:
       </h4>
       <p>

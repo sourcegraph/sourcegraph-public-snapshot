@@ -21,14 +21,14 @@ import (
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
+	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -194,6 +194,7 @@ func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.
 		"ExcludePattern":  []string{p.ExcludePattern},
 		"IncludePatterns": p.IncludePatterns,
 		"FetchTimeout":    []string{fetchTimeout.String()},
+		"Languages":       p.Languages,
 		"CombyRule":       []string{p.CombyRule},
 	}
 	if deadline, ok := ctx.Deadline(); ok {
@@ -440,10 +441,10 @@ func fileMatchURI(name api.RepoName, ref, path string) string {
 	return b.String()
 }
 
-var mockSearchFilesInRepos func(args *search.Args) ([]*FileMatchResolver, *searchResultsCommon, error)
+var mockSearchFilesInRepos func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error)
 
 // searchFilesInRepos searches a set of repos for a pattern.
-func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*FileMatchResolver, common *searchResultsCommon, err error) {
+func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res []*FileMatchResolver, common *searchResultsCommon, err error) {
 	if mockSearchFilesInRepos != nil {
 		return mockSearchFilesInRepos(args)
 	}
@@ -475,6 +476,12 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*FileMatc
 			common.indexUnavailable = true
 			err = nil
 		}
+	}
+
+	// if there are no indexed repos and this is a structural search
+	// query, there will be no results. Raise a friendly alert.
+	if len(zoektRepos) == 0 && args.PatternInfo.IsStructuralPat {
+		return nil, nil, errors.New("no indexed repositories for structural search")
 	}
 
 	common.repos = make([]*types.Repo, len(args.Repos))
@@ -605,8 +612,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*FileMatc
 				if v, ok := searcherReposFilteredFiles[string(repoRev.Repo.Name)]; ok {
 					patternCopy := *args.PatternInfo
 					args.PatternInfo = &patternCopy
-					includePatternsCopy := make([]string, len(args.PatternInfo.IncludePatterns))
-					copy(includePatternsCopy, args.PatternInfo.IncludePatterns)
+					includePatternsCopy := []string{}
 					args.PatternInfo.IncludePatterns = append(includePatternsCopy, v...)
 				}
 			}

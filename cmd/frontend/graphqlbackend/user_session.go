@@ -19,7 +19,7 @@ func (r *UserResolver) Session(ctx context.Context) (*sessionResolver, error) {
 	var sr sessionResolver
 	if actor.FromSessionCookie {
 		// The http-header auth provider is the only auth provider that a user can't sign out from.
-		for _, p := range conf.Get().Critical.AuthProviders {
+		for _, p := range conf.Get().AuthProviders {
 			if p.HttpHeader == nil {
 				sr.canSignOut = true
 				break

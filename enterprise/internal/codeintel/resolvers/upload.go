@@ -8,11 +8,9 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/client"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/lsif"
 )
 
@@ -27,18 +25,19 @@ func (r *lsifUploadResolver) ID() graphql.ID {
 }
 
 func (r *lsifUploadResolver) ProjectRoot(ctx context.Context) (*graphqlbackend.GitTreeEntryResolver, error) {
-	repo, err := backend.Repos.GetByName(ctx, api.RepoName(r.lsifUpload.Repository))
-	if err != nil {
-		return nil, err
-	}
+	return resolvePath(ctx, r.lsifUpload.Repository, r.lsifUpload.Commit, r.lsifUpload.Root)
+}
 
-	repoResolver := graphqlbackend.NewRepositoryResolver(repo)
-	commitResolver, err := repoResolver.Commit(ctx, &graphqlbackend.RepositoryCommitArgs{Rev: r.lsifUpload.Commit})
-	if err != nil {
-		return nil, err
-	}
+func (r *lsifUploadResolver) InputRepoName() string {
+	return r.lsifUpload.Repository
+}
 
-	return graphqlbackend.NewGitTreeEntryResolver(commitResolver, graphqlbackend.CreateFileInfo(r.lsifUpload.Root, true)), nil
+func (r *lsifUploadResolver) InputCommit() string {
+	return r.lsifUpload.Commit
+}
+
+func (r *lsifUploadResolver) InputRoot() string {
+	return r.lsifUpload.Root
 }
 
 func (r *lsifUploadResolver) State() string {

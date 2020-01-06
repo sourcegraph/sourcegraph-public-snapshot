@@ -8,7 +8,6 @@
     "browser/build": true,
     "**/coverage": true,
     "**/out": true,
-    "/cmd/management-console/assets/": true,
     "**/__fixtures__/**": true,
     "**/.cache": true,
   },
@@ -19,7 +18,7 @@
   "json.schemas": [
     {
       "fileMatch": ["dev/critical-config.json"],
-      "url": "/schema/critical.schema.json",
+      "url": "/schema/critical/critical.schema.json",
     },
     {
       "fileMatch": ["dev/site-config.json"],
@@ -41,19 +40,11 @@
   "typescript.tsdk": "node_modules/typescript/lib",
   "eslint.packageManager": "yarn",
   "eslint.lintTask.enable": false,
-  "eslint.autoFixOnSave": true,
-  "eslint.validate": [
-    "javascript",
-    "javascriptreact",
-    {
-      "language": "typescript",
-      "autoFix": true,
-    },
-    {
-      "language": "typescriptreact",
-      "autoFix": true,
-    },
-  ],
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true,
+  },
+  "eslint.options": { "cache": true },
   "eslint.workingDirectories": [
     {
       "directory": "dev/release",
@@ -61,10 +52,6 @@
     },
     {
       "directory": "web",
-      "changeProcessCWD": true,
-    },
-    {
-      "directory": "cmd/management-console/web",
       "changeProcessCWD": true,
     },
     {

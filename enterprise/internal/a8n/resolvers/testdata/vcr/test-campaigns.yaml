@@ -7,13 +7,14 @@ interactions:
     headers:
       Accept:
       - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
+      - application/vnd.github.machine-man-preview+json
       Content-Type:
       - application/json; charset=utf-8
     url: https://api.github.com/repos/sourcegraph/sourcegraph
     method: GET
   response:
-    body: '{"id":41288708,"node_id":"MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==","name":"sourcegraph","full_name":"sourcegraph/sourcegraph","private":false,"owner":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","avatar_url":"https://avatars0.githubusercontent.com/u/3979584?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph","html_url":"https://github.com/sourcegraph","followers_url":"https://api.github.com/users/sourcegraph/followers","following_url":"https://api.github.com/users/sourcegraph/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph/orgs","repos_url":"https://api.github.com/users/sourcegraph/repos","events_url":"https://api.github.com/users/sourcegraph/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph/received_events","type":"Organization","site_admin":false},"html_url":"https://github.com/sourcegraph/sourcegraph","description":"Code
-      search and navigation tool (self-hosted)","fork":false,"url":"https://api.github.com/repos/sourcegraph/sourcegraph","forks_url":"https://api.github.com/repos/sourcegraph/sourcegraph/forks","keys_url":"https://api.github.com/repos/sourcegraph/sourcegraph/keys{/key_id}","collaborators_url":"https://api.github.com/repos/sourcegraph/sourcegraph/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/sourcegraph/sourcegraph/teams","hooks_url":"https://api.github.com/repos/sourcegraph/sourcegraph/hooks","issue_events_url":"https://api.github.com/repos/sourcegraph/sourcegraph/issues/events{/number}","events_url":"https://api.github.com/repos/sourcegraph/sourcegraph/events","assignees_url":"https://api.github.com/repos/sourcegraph/sourcegraph/assignees{/user}","branches_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches{/branch}","tags_url":"https://api.github.com/repos/sourcegraph/sourcegraph/tags","blobs_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/refs{/sha}","trees_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/trees{/sha}","statuses_url":"https://api.github.com/repos/sourcegraph/sourcegraph/statuses/{sha}","languages_url":"https://api.github.com/repos/sourcegraph/sourcegraph/languages","stargazers_url":"https://api.github.com/repos/sourcegraph/sourcegraph/stargazers","contributors_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contributors","subscribers_url":"https://api.github.com/repos/sourcegraph/sourcegraph/subscribers","subscription_url":"https://api.github.com/repos/sourcegraph/sourcegraph/subscription","commits_url":"https://api.github.com/repos/sourcegraph/sourcegraph/commits{/sha}","git_commits_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/commits{/sha}","comments_url":"https://api.github.com/repos/sourcegraph/sourcegraph/comments{/number}","issue_comment_url":"https://api.github.com/repos/sourcegraph/sourcegraph/issues/comments{/number}","contents_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contents/{+path}","compare_url":"https://api.github.com/repos/sourcegraph/sourcegraph/compare/{base}...{head}","merges_url":"https://api.github.com/repos/sourcegraph/sourcegraph/merges","archive_url":"https://api.github.com/repos/sourcegraph/sourcegraph/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/sourcegraph/sourcegraph/downloads","issues_url":"https://api.github.com/repos/sourcegraph/sourcegraph/issues{/number}","pulls_url":"https://api.github.com/repos/sourcegraph/sourcegraph/pulls{/number}","milestones_url":"https://api.github.com/repos/sourcegraph/sourcegraph/milestones{/number}","notifications_url":"https://api.github.com/repos/sourcegraph/sourcegraph/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/sourcegraph/sourcegraph/labels{/name}","releases_url":"https://api.github.com/repos/sourcegraph/sourcegraph/releases{/id}","deployments_url":"https://api.github.com/repos/sourcegraph/sourcegraph/deployments","created_at":"2015-08-24T07:27:28Z","updated_at":"2019-11-12T11:26:25Z","pushed_at":"2019-11-12T13:20:53Z","git_url":"git://github.com/sourcegraph/sourcegraph.git","ssh_url":"git@github.com:sourcegraph/sourcegraph.git","clone_url":"https://github.com/sourcegraph/sourcegraph.git","svn_url":"https://github.com/sourcegraph/sourcegraph","homepage":"https://sourcegraph.com","size":329204,"stargazers_count":2823,"watchers_count":2823,"language":"Go","has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":false,"has_pages":false,"forks_count":243,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":1032,"license":{"key":"other","name":"Other","spdx_id":"NOASSERTION","url":null,"node_id":"MDc6TGljZW5zZTA="},"topics":["code-intelligence","code-search","open-source","repo-type-main","sourcegraph"],"forks":243,"open_issues":1032,"watchers":2823,"default_branch":"master","permissions":{"admin":true,"push":true,"pull":true},"allow_squash_merge":true,"allow_merge_commit":false,"allow_rebase_merge":true,"organization":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","avatar_url":"https://avatars0.githubusercontent.com/u/3979584?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph","html_url":"https://github.com/sourcegraph","followers_url":"https://api.github.com/users/sourcegraph/followers","following_url":"https://api.github.com/users/sourcegraph/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph/orgs","repos_url":"https://api.github.com/users/sourcegraph/repos","events_url":"https://api.github.com/users/sourcegraph/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph/received_events","type":"Organization","site_admin":false},"network_count":243,"subscribers_count":70}'
+    body: '{"id":41288708,"node_id":"MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==","name":"sourcegraph","full_name":"sourcegraph/sourcegraph","private":false,"owner":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","avatar_url":"https://avatars0.githubusercontent.com/u/3979584?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph","html_url":"https://github.com/sourcegraph","followers_url":"https://api.github.com/users/sourcegraph/followers","following_url":"https://api.github.com/users/sourcegraph/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph/orgs","repos_url":"https://api.github.com/users/sourcegraph/repos","events_url":"https://api.github.com/users/sourcegraph/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph/received_events","type":"Organization","site_admin":false},"html_url":"https://github.com/sourcegraph/sourcegraph","description":"Universal
+      code search and navigation tool (self-hosted)","fork":false,"url":"https://api.github.com/repos/sourcegraph/sourcegraph","forks_url":"https://api.github.com/repos/sourcegraph/sourcegraph/forks","keys_url":"https://api.github.com/repos/sourcegraph/sourcegraph/keys{/key_id}","collaborators_url":"https://api.github.com/repos/sourcegraph/sourcegraph/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/sourcegraph/sourcegraph/teams","hooks_url":"https://api.github.com/repos/sourcegraph/sourcegraph/hooks","issue_events_url":"https://api.github.com/repos/sourcegraph/sourcegraph/issues/events{/number}","events_url":"https://api.github.com/repos/sourcegraph/sourcegraph/events","assignees_url":"https://api.github.com/repos/sourcegraph/sourcegraph/assignees{/user}","branches_url":"https://api.github.com/repos/sourcegraph/sourcegraph/branches{/branch}","tags_url":"https://api.github.com/repos/sourcegraph/sourcegraph/tags","blobs_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/refs{/sha}","trees_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/trees{/sha}","statuses_url":"https://api.github.com/repos/sourcegraph/sourcegraph/statuses/{sha}","languages_url":"https://api.github.com/repos/sourcegraph/sourcegraph/languages","stargazers_url":"https://api.github.com/repos/sourcegraph/sourcegraph/stargazers","contributors_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contributors","subscribers_url":"https://api.github.com/repos/sourcegraph/sourcegraph/subscribers","subscription_url":"https://api.github.com/repos/sourcegraph/sourcegraph/subscription","commits_url":"https://api.github.com/repos/sourcegraph/sourcegraph/commits{/sha}","git_commits_url":"https://api.github.com/repos/sourcegraph/sourcegraph/git/commits{/sha}","comments_url":"https://api.github.com/repos/sourcegraph/sourcegraph/comments{/number}","issue_comment_url":"https://api.github.com/repos/sourcegraph/sourcegraph/issues/comments{/number}","contents_url":"https://api.github.com/repos/sourcegraph/sourcegraph/contents/{+path}","compare_url":"https://api.github.com/repos/sourcegraph/sourcegraph/compare/{base}...{head}","merges_url":"https://api.github.com/repos/sourcegraph/sourcegraph/merges","archive_url":"https://api.github.com/repos/sourcegraph/sourcegraph/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/sourcegraph/sourcegraph/downloads","issues_url":"https://api.github.com/repos/sourcegraph/sourcegraph/issues{/number}","pulls_url":"https://api.github.com/repos/sourcegraph/sourcegraph/pulls{/number}","milestones_url":"https://api.github.com/repos/sourcegraph/sourcegraph/milestones{/number}","notifications_url":"https://api.github.com/repos/sourcegraph/sourcegraph/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/sourcegraph/sourcegraph/labels{/name}","releases_url":"https://api.github.com/repos/sourcegraph/sourcegraph/releases{/id}","deployments_url":"https://api.github.com/repos/sourcegraph/sourcegraph/deployments","created_at":"2015-08-24T07:27:28Z","updated_at":"2019-12-19T12:19:11Z","pushed_at":"2019-12-19T12:21:10Z","git_url":"git://github.com/sourcegraph/sourcegraph.git","ssh_url":"git@github.com:sourcegraph/sourcegraph.git","clone_url":"https://github.com/sourcegraph/sourcegraph.git","svn_url":"https://github.com/sourcegraph/sourcegraph","homepage":"https://sourcegraph.com","size":342500,"stargazers_count":2977,"watchers_count":2977,"language":"Go","has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":false,"has_pages":false,"forks_count":263,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":1026,"license":{"key":"other","name":"Other","spdx_id":"NOASSERTION","url":null,"node_id":"MDc6TGljZW5zZTA="},"topics":["code-intelligence","code-search","open-source","repo-type-main","sourcegraph"],"forks":263,"open_issues":1026,"watchers":2977,"default_branch":"master","permissions":{"admin":true,"push":true,"pull":true},"temp_clone_token":"","allow_squash_merge":true,"allow_merge_commit":false,"allow_rebase_merge":true,"organization":{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","avatar_url":"https://avatars0.githubusercontent.com/u/3979584?v=4","gravatar_id":"","url":"https://api.github.com/users/sourcegraph","html_url":"https://github.com/sourcegraph","followers_url":"https://api.github.com/users/sourcegraph/followers","following_url":"https://api.github.com/users/sourcegraph/following{/other_user}","gists_url":"https://api.github.com/users/sourcegraph/gists{/gist_id}","starred_url":"https://api.github.com/users/sourcegraph/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/sourcegraph/subscriptions","organizations_url":"https://api.github.com/users/sourcegraph/orgs","repos_url":"https://api.github.com/users/sourcegraph/repos","events_url":"https://api.github.com/users/sourcegraph/events{/privacy}","received_events_url":"https://api.github.com/users/sourcegraph/received_events","type":"Organization","site_admin":false},"network_count":263,"subscribers_count":74}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -28,11 +29,11 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 12 Nov 2019 13:41:21 GMT
+      - Thu, 19 Dec 2019 12:33:45 GMT
       Etag:
-      - W/"49f595f925f7f1841aa7e7af52889803"
+      - W/"20a3f6d860d83b910b5a7d3216574b44"
       Last-Modified:
-      - Tue, 12 Nov 2019 11:26:25 GMT
+      - Thu, 19 Dec 2019 12:19:11 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -51,19 +52,59 @@ interactions:
       X-Frame-Options:
       - deny
       X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; format=json
+      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; format=json,
+        github.machine-man-preview; format=json
       X-Github-Request-Id:
-      - DA76:BBF8:572F07A:67E781B:5DCAB680
+      - B164:223D2:135259F:170F89D:5DFB6E28
       X-Oauth-Scopes:
-      - public_repo
+      - admin:org_hook, admin:repo_hook, repo
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4999"
+      - "4996"
       X-Ratelimit-Reset:
-      - "1573569681"
+      - "1576760444"
       X-Xss-Protection:
       - 1; mode=block
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/labels/archived/labeled?REPOSITORY=&limit=1000
+    method: GET
+  response:
+    body: '{"size":1,"limit":1000,"isLastPage":true,"values":[{"slug":"archived-repo","id":10073,"name":"archived-repo","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"PUBLIC","id":4,"name":"Public","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/PUBLIC"}]}},"public":false,"labelableType":"REPOSITORY","links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/public/archived-repo.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/PUBLIC/repos/archived-repo/browse"}]}}],"start":0}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Thu, 19 Dec 2019 12:33:45 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - X-AUSERNAME,Accept-Encoding
+      X-Arequestid:
+      - '@1JRK3O7x753x576811x0'
+      X-Asen:
+      - SEN-11363689
+      X-Asessionid:
+      - tn4xau
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - milton
+      X-Content-Type-Options:
+      - nosniff
     status: 200 OK
     code: 200
     duration: ""
@@ -84,7 +125,7 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Tue, 12 Nov 2019 13:41:21 GMT
+      - Thu, 19 Dec 2019 12:33:45 GMT
       Pragma:
       - no-cache
       Server:
@@ -92,120 +133,11 @@ interactions:
       Vary:
       - X-AUSERNAME,Accept-Encoding
       X-Arequestid:
-      - '@1IK17DGx821x2447519x0'
+      - '@1JRK3O7x753x576812x0'
       X-Asen:
-      - SEN-L13789548
+      - SEN-11363689
       X-Asessionid:
-      - sho3mz
-      X-Auserid:
-      - "1"
-      X-Ausername:
-      - milton
-      X-Content-Type-Options:
-      - nosniff
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/vegeta/pull-requests/2
-    method: GET
-  response:
-    body: '{"id":2,"version":5,"title":"Release testing pr","description":"* Remove
-      dump.go\r\n* make make make","state":"MERGED","open":false,"closed":true,"createdDate":1563286307998,"updatedDate":1572432617016,"closedDate":1572432617016,"fromRef":{"id":"refs/heads/release-testing-pr","displayId":"release-testing-pr","latestCommit":"1f63e719a65cad47a0a272d3d6eef05f4da427bb","repository":{"slug":"vegeta","id":2,"name":"vegeta","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/vegeta.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/vegeta/browse"}]}}},"toRef":{"id":"refs/heads/master","displayId":"master","latestCommit":"13613ac741e0f14f179e552ca428401ca83fe28a","repository":{"slug":"vegeta","id":2,"name":"vegeta","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/vegeta.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/vegeta/browse"}]}}},"locked":false,"author":{"user":{"name":"milton","emailAddress":"dev@sourcegraph.com","id":1,"displayName":"milton
-      woof","active":true,"slug":"milton","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/milton"}]}},"role":"AUTHOR","approved":false,"status":"UNAPPROVED"},"reviewers":[{"user":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
-      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"lastReviewedCommit":"1f63e719a65cad47a0a272d3d6eef05f4da427bb","role":"REVIEWER","approved":false,"status":"UNAPPROVED"}],"participants":[],"links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/vegeta/pull-requests/2"}]}}'
-    headers:
-      Cache-Control:
-      - private, no-cache
-      - no-cache, no-transform
-      Content-Type:
-      - application/json;charset=UTF-8
-      Date:
-      - Tue, 12 Nov 2019 13:41:21 GMT
-      Pragma:
-      - no-cache
-      Server:
-      - Caddy
-      Vary:
-      - X-AUSERNAME,Accept-Encoding
-      X-Arequestid:
-      - '@1IK17DGx821x2447521x0'
-      X-Asen:
-      - SEN-L13789548
-      X-Asessionid:
-      - jikec3
-      X-Auserid:
-      - "1"
-      X-Ausername:
-      - milton
-      X-Content-Type-Options:
-      - nosniff
-    status: 200 OK
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/vegeta/pull-requests/2/activities?limit=1000
-    method: GET
-  response:
-    body: '{"size":9,"limit":500,"isLastPage":true,"values":[{"id":87,"createdDate":1572432617016,"user":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
-      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"action":"MERGED","commit":{"id":"be4d84e9c4b0a15e59c5f52900e6d55c7525b8d3","displayId":"be4d84e9c4b","author":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
-      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"authorTimestamp":1572432617000,"committer":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
-      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"committerTimestamp":1572432617000,"message":"Merge
-      pull request #2 in SOUR/vegeta from release-testing-pr to master\n\n* commit
-      ''1f63e719a65cad47a0a272d3d6eef05f4da427bb'':\n  make make make\n  Remove dump.go","parents":[{"id":"13613ac741e0f14f179e552ca428401ca83fe28a","displayId":"13613ac741e","author":{"name":"Tomás
-      Senart","emailAddress":"tomas@sourcegraph.com"},"authorTimestamp":1572431324000,"committer":{"name":"Tomás
-      Senart","emailAddress":"tomas@sourcegraph.com"},"committerTimestamp":1572431324000,"message":"Merge
-      pull request #4 in SOUR/vegeta from encode-comment to master\n\n* commit ''db6f6959b162f5501f43898e1d44c03de5de6202'':\n  Encode
-      comment is fun!","parents":[{"id":"0f5577eaf11a136541b8c667273b6bc5eba51a8b","displayId":"0f5577eaf11"},{"id":"db6f6959b162f5501f43898e1d44c03de5de6202","displayId":"db6f6959b16"}]},{"id":"1f63e719a65cad47a0a272d3d6eef05f4da427bb","displayId":"1f63e719a65","author":{"name":"Tomás
-      Senart","emailAddress":"tsenart@gmail.com"},"authorTimestamp":1563286282000,"committer":{"name":"Tomás
-      Senart","emailAddress":"tsenart@gmail.com"},"committerTimestamp":1563286282000,"message":"make
-      make make","parents":[{"id":"7b71906bf3b3ec81a4d013b7f59ceb34b3c4105b","displayId":"7b71906bf3b"}]}]}},{"id":85,"createdDate":1572432552916,"user":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
-      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"action":"COMMENTED","commentAction":"ADDED","comment":{"properties":{"repositoryId":2},"id":8,"version":0,"text":"Comment.","author":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
-      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"createdDate":1572432552916,"updatedDate":1572432552916,"comments":[{"properties":{"repositoryId":2},"id":9,"version":0,"text":"Reply.","author":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
-      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"createdDate":1572432558954,"updatedDate":1572432558954,"comments":[],"tasks":[{"anchor":{"properties":{"repositoryId":2},"id":9,"version":0,"text":"Reply.","author":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
-      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"createdDate":1572432558954,"updatedDate":1572432558954,"permittedOperations":{"editable":false,"deletable":false},"type":"COMMENT"},"author":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
-      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"createdDate":1572432564000,"id":4,"text":"Task","state":"RESOLVED","permittedOperations":{"deletable":false,"editable":false,"transitionable":true}}],"permittedOperations":{"editable":false,"deletable":false}}],"tasks":[{"anchor":{"properties":{"repositoryId":2},"id":8,"version":0,"text":"Comment.","author":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
-      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"createdDate":1572432552916,"updatedDate":1572432552916,"permittedOperations":{"editable":false,"deletable":false},"type":"COMMENT"},"author":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
-      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"createdDate":1572432578000,"id":5,"text":"Another
-      task.","state":"OPEN","permittedOperations":{"deletable":true,"editable":true,"transitionable":true}}],"permittedOperations":{"editable":false,"deletable":false}}},{"id":77,"createdDate":1572430034930,"user":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
-      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"action":"REOPENED"},{"id":76,"createdDate":1572429831834,"user":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
-      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"action":"DECLINED"},{"id":75,"createdDate":1572429777823,"user":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
-      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"action":"UNAPPROVED"},{"id":74,"createdDate":1572429738565,"user":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
-      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"action":"APPROVED"},{"id":73,"createdDate":1572429681822,"user":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
-      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"action":"REVIEWED"},{"id":72,"createdDate":1572429656637,"user":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
-      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"action":"UPDATED","addedReviewers":[{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
-      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}}],"removedReviewers":[]},{"id":44,"createdDate":1563286308065,"user":{"name":"milton","emailAddress":"dev@sourcegraph.com","id":1,"displayName":"milton
-      woof","active":true,"slug":"milton","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/milton"}]}},"action":"OPENED"}],"start":0}'
-    headers:
-      Cache-Control:
-      - private, no-cache
-      - no-cache, no-transform
-      Content-Type:
-      - application/json;charset=UTF-8
-      Date:
-      - Tue, 12 Nov 2019 13:41:21 GMT
-      Pragma:
-      - no-cache
-      Server:
-      - Caddy
-      Vary:
-      - X-AUSERNAME,Accept-Encoding
-      X-Arequestid:
-      - '@1IK17DGx821x2447524x0'
-      X-Asen:
-      - SEN-L13789548
-      X-Asessionid:
-      - 1rpnd9z
+      - 15614a7
       X-Auserid:
       - "1"
       X-Ausername:
@@ -337,7 +269,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 12 Nov 2019 13:41:22 GMT
+      - Thu, 19 Dec 2019 12:33:47 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -357,17 +289,126 @@ interactions:
       X-Github-Media-Type:
       - github.v4; format=json
       X-Github-Request-Id:
-      - DA7C:3A597:7645F94:8C702B8:5DCAB682
+      - 9141:3BB22:1D15120:22E67EC:5DFB6E2A
       X-Oauth-Scopes:
-      - public_repo
+      - admin:org_hook, admin:repo_hook, repo
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4900"
+      - "4997"
       X-Ratelimit-Reset:
-      - "1573569682"
+      - "1576762426"
       X-Xss-Protection:
       - 1; mode=block
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/vegeta/pull-requests/2
+    method: GET
+  response:
+    body: '{"id":2,"version":5,"title":"Release testing pr","description":"* Remove
+      dump.go\r\n* make make make","state":"MERGED","open":false,"closed":true,"createdDate":1563286307998,"updatedDate":1572432617016,"closedDate":1572432617016,"fromRef":{"id":"refs/heads/release-testing-pr","displayId":"release-testing-pr","latestCommit":"1f63e719a65cad47a0a272d3d6eef05f4da427bb","repository":{"slug":"vegeta","id":2,"name":"vegeta","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/vegeta.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/vegeta/browse"}]}}},"toRef":{"id":"refs/heads/master","displayId":"master","latestCommit":"13613ac741e0f14f179e552ca428401ca83fe28a","repository":{"slug":"vegeta","id":2,"name":"vegeta","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/vegeta.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/vegeta/browse"}]}}},"locked":false,"author":{"user":{"name":"milton","emailAddress":"dev@sourcegraph.com","id":1,"displayName":"milton
+      woof","active":true,"slug":"milton","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/milton"}]}},"role":"AUTHOR","approved":false,"status":"UNAPPROVED"},"reviewers":[{"user":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
+      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"lastReviewedCommit":"1f63e719a65cad47a0a272d3d6eef05f4da427bb","role":"REVIEWER","approved":false,"status":"UNAPPROVED"}],"participants":[],"links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/vegeta/pull-requests/2"}]}}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Thu, 19 Dec 2019 12:33:47 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - X-AUSERNAME,Accept-Encoding
+      X-Arequestid:
+      - '@1JRK3O7x753x576814x0'
+      X-Asen:
+      - SEN-11363689
+      X-Asessionid:
+      - 1q536hm
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - milton
+      X-Content-Type-Options:
+      - nosniff
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/vegeta/pull-requests/2/activities?limit=1000
+    method: GET
+  response:
+    body: '{"size":9,"limit":500,"isLastPage":true,"values":[{"id":87,"createdDate":1572432617016,"user":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
+      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"action":"MERGED","commit":{"id":"be4d84e9c4b0a15e59c5f52900e6d55c7525b8d3","displayId":"be4d84e9c4b","author":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
+      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"authorTimestamp":1572432617000,"committer":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
+      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"committerTimestamp":1572432617000,"message":"Merge
+      pull request #2 in SOUR/vegeta from release-testing-pr to master\n\n* commit
+      ''1f63e719a65cad47a0a272d3d6eef05f4da427bb'':\n  make make make\n  Remove dump.go","parents":[{"id":"13613ac741e0f14f179e552ca428401ca83fe28a","displayId":"13613ac741e","author":{"name":"Tomás
+      Senart","emailAddress":"tomas@sourcegraph.com"},"authorTimestamp":1572431324000,"committer":{"name":"Tomás
+      Senart","emailAddress":"tomas@sourcegraph.com"},"committerTimestamp":1572431324000,"message":"Merge
+      pull request #4 in SOUR/vegeta from encode-comment to master\n\n* commit ''db6f6959b162f5501f43898e1d44c03de5de6202'':\n  Encode
+      comment is fun!","parents":[{"id":"0f5577eaf11a136541b8c667273b6bc5eba51a8b","displayId":"0f5577eaf11"},{"id":"db6f6959b162f5501f43898e1d44c03de5de6202","displayId":"db6f6959b16"}]},{"id":"1f63e719a65cad47a0a272d3d6eef05f4da427bb","displayId":"1f63e719a65","author":{"name":"Tomás
+      Senart","emailAddress":"tsenart@gmail.com"},"authorTimestamp":1563286282000,"committer":{"name":"Tomás
+      Senart","emailAddress":"tsenart@gmail.com"},"committerTimestamp":1563286282000,"message":"make
+      make make","parents":[{"id":"7b71906bf3b3ec81a4d013b7f59ceb34b3c4105b","displayId":"7b71906bf3b"}]}]}},{"id":85,"createdDate":1572432552916,"user":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
+      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"action":"COMMENTED","commentAction":"ADDED","comment":{"properties":{"repositoryId":2},"id":8,"version":0,"text":"Comment.","author":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
+      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"createdDate":1572432552916,"updatedDate":1572432552916,"comments":[{"properties":{"repositoryId":2},"id":9,"version":0,"text":"Reply.","author":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
+      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"createdDate":1572432558954,"updatedDate":1572432558954,"comments":[],"tasks":[{"anchor":{"properties":{"repositoryId":2},"id":9,"version":0,"text":"Reply.","author":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
+      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"createdDate":1572432558954,"updatedDate":1572432558954,"permittedOperations":{"editable":false,"deletable":false},"type":"COMMENT"},"author":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
+      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"createdDate":1572432564000,"id":4,"text":"Task","state":"RESOLVED","permittedOperations":{"deletable":false,"editable":false,"transitionable":true}}],"permittedOperations":{"editable":false,"deletable":false}}],"tasks":[{"anchor":{"properties":{"repositoryId":2},"id":8,"version":0,"text":"Comment.","author":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
+      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"createdDate":1572432552916,"updatedDate":1572432552916,"permittedOperations":{"editable":false,"deletable":false},"type":"COMMENT"},"author":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
+      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"createdDate":1572432578000,"id":5,"text":"Another
+      task.","state":"OPEN","permittedOperations":{"deletable":true,"editable":true,"transitionable":true}}],"permittedOperations":{"editable":false,"deletable":false}}},{"id":77,"createdDate":1572430034930,"user":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
+      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"action":"REOPENED"},{"id":76,"createdDate":1572429831834,"user":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
+      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"action":"DECLINED"},{"id":75,"createdDate":1572429777823,"user":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
+      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"action":"UNAPPROVED"},{"id":74,"createdDate":1572429738565,"user":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
+      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"action":"APPROVED"},{"id":73,"createdDate":1572429681822,"user":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
+      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"action":"REVIEWED"},{"id":72,"createdDate":1572429656637,"user":{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
+      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}},"action":"UPDATED","addedReviewers":[{"name":"tomas","emailAddress":"tomas@sourcegraph.com","id":3,"displayName":"Tomás
+      Senart","active":true,"slug":"tomas","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/tomas"}]}}],"removedReviewers":[]},{"id":44,"createdDate":1563286308065,"user":{"name":"milton","emailAddress":"dev@sourcegraph.com","id":1,"displayName":"milton
+      woof","active":true,"slug":"milton","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/milton"}]}},"action":"OPENED"}],"start":0}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Thu, 19 Dec 2019 12:33:47 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - X-AUSERNAME,Accept-Encoding
+      X-Arequestid:
+      - '@1JRK3O7x753x576815x0'
+      X-Asen:
+      - SEN-11363689
+      X-Asessionid:
+      - 1939zpb
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - milton
+      X-Content-Type-Options:
+      - nosniff
     status: 200 OK
     code: 200
     duration: ""

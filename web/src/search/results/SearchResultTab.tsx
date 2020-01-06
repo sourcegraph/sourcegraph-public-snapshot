@@ -8,7 +8,7 @@ import { constant } from 'lodash'
 import { PatternTypeProps } from '..'
 import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
 
-interface Props extends Omit<PatternTypeProps, 'togglePatternType'> {
+interface Props extends Omit<PatternTypeProps, 'setPatternType'> {
     location: H.Location
     type: SearchType
     query: string
@@ -19,8 +19,8 @@ const typeToProse: Record<Exclude<SearchType, null>, string> = {
     diff: 'Diffs',
     commit: 'Commits',
     symbol: 'Symbols',
-    repo: 'Repos',
-    path: 'Files',
+    repo: 'Repositories',
+    path: 'Filenames',
 }
 
 export const SearchResultTabHeader: React.FunctionComponent<Props> = ({
