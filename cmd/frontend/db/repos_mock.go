@@ -14,7 +14,6 @@ type MockRepos struct {
 	GetByName func(ctx context.Context, repo api.RepoName) (*types.Repo, error)
 	List      func(v0 context.Context, v1 ReposListOptions) ([]*types.Repo, error)
 	Count     func(ctx context.Context, opt ReposListOptions) (int, error)
-	Upsert    func(api.InsertRepoOp) error
 }
 
 func (s *MockRepos) MockGet(t *testing.T, wantRepo api.RepoID) (called *bool) {

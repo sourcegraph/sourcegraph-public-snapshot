@@ -245,15 +245,6 @@ func (c *internalClient) SendEmail(ctx context.Context, message txtypes.Message)
 	return c.postInternal(ctx, "send-email", &message, nil)
 }
 
-func (c *internalClient) ReposCreateIfNotExists(ctx context.Context, op RepoCreateOrUpdateRequest) (*Repo, error) {
-	var repo Repo
-	err := c.postInternal(ctx, "repos/create-if-not-exists", op, &repo)
-	if err != nil {
-		return nil, err
-	}
-	return &repo, nil
-}
-
 // ReposListEnabled returns a list of all enabled repository names.
 func (c *internalClient) ReposListEnabled(ctx context.Context) ([]RepoName, error) {
 	var names []RepoName
