@@ -126,10 +126,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                                 // has flex display and would cause the hover tooltip to be offset
                                 // in a weird way (centered in the code context, not on the icon).
                                 <div>
-                                    <BadgeAttachment
-                                        attachment={item.badge}
-                                        isLightTheme={props.isLightTheme}
-                                    />
+                                    <BadgeAttachment attachment={item.badge} isLightTheme={props.isLightTheme} />
                                 </div>
                             )}
                         </div>
