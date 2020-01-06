@@ -20,7 +20,7 @@ func (t TextParameters) typeParametersValue()    {}
 
 type CommitParameters struct {
 	RepoRevs           *RepositoryRevisions
-	Info               *PatternInfo
+	PatternInfo        *PatternInfo
 	Query              *query.Query
 	Diff               bool
 	TextSearchOptions  git.TextSearchOptions
