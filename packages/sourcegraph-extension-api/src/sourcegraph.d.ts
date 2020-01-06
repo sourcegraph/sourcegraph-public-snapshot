@@ -925,9 +925,9 @@ declare module 'sourcegraph' {
     }
 
     /**
-     * A style for {@link BadgeDecorationAttachmentRenderOptions}.
+     * A style for {@link BadgeAttachmentRenderOptions}.
      */
-    export interface ThemableBadgeDecorationAttachmentStyle {
+    export interface ThemableBadgeAttachmentStyle {
         /** The icon (a base64-encoded PNG icon) to display next to the wrapped value. */
         icon?: string
 
@@ -938,8 +938,8 @@ declare module 'sourcegraph' {
         color?: string
     }
 
-    /** A decoration attachment adds content to a hover tooltip or result in a locations panel. */
-    export interface BadgeDecorationAttachmentRenderOptions extends ThemableBadgeDecorationAttachmentStyle {
+    /** An attachment adds content to a hover tooltip or result in a locations panel. */
+    export interface BadgeAttachmentRenderOptions extends ThemableBadgeAttachmentStyle {
         /** Tooltip text to display when hovering over the attachment. */
         hoverMessage?: string
 
@@ -947,10 +947,10 @@ declare module 'sourcegraph' {
         linkURL?: string
 
         /** Overwrite style for light themes. */
-        light?: ThemableBadgeDecorationAttachmentStyle
+        light?: ThemableBadgeAttachmentStyle
 
         /** Overwrite style for dark themes. */
-        dark?: ThemableBadgeDecorationAttachmentStyle
+        dark?: ThemableBadgeAttachmentStyle
     }
 
     /**
@@ -958,7 +958,7 @@ declare module 'sourcegraph' {
      * context to enable displaying badges next to the wrapped result value in the UI.
      */
     type Badged<T extends {}> = T & {
-        badge?: BadgeDecorationAttachmentRenderOptions
+        badge?: BadgeAttachmentRenderOptions
     }
 
     /**

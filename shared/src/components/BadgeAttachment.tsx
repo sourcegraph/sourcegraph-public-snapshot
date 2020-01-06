@@ -1,14 +1,14 @@
 import * as React from 'react'
-import { BadgeDecorationAttachmentRenderOptions } from 'sourcegraph'
-import { badgeDecorationAttachmentStyleForTheme } from '../api/client/services/decoration'
+import { BadgeAttachmentRenderOptions } from 'sourcegraph'
+import { badgeAttachmentStyleForTheme } from '../api/client/services/decoration'
 import { LinkOrSpan } from './LinkOrSpan'
 import { isEncodedImage } from '../util/icon'
 
-export const BadgeDecorationAttachment: React.FunctionComponent<{
-    attachment: BadgeDecorationAttachmentRenderOptions
+export const BadgeAttachment: React.FunctionComponent<{
+    attachment: BadgeAttachmentRenderOptions
     isLightTheme: boolean
 }> = ({ attachment, isLightTheme }) => {
-    const style = badgeDecorationAttachmentStyleForTheme(attachment, isLightTheme)
+    const style = badgeAttachmentStyleForTheme(attachment, isLightTheme)
 
     return (
         <LinkOrSpan

@@ -5,8 +5,8 @@ import {
     DecorationAttachmentRenderOptions,
     ThemableDecorationAttachmentStyle,
     ThemableDecorationStyle,
-    BadgeDecorationAttachmentRenderOptions,
-    ThemableBadgeDecorationAttachmentStyle,
+    BadgeAttachmentRenderOptions,
+    ThemableBadgeAttachmentStyle,
 } from 'sourcegraph'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { TextDocumentIdentifier } from '../types/textDocument'
@@ -71,10 +71,10 @@ export function decorationAttachmentStyleForTheme(
 /**
  * Resolves the actual styles to use for the badge attachment based on the current theme.
  */
-export function badgeDecorationAttachmentStyleForTheme(
-    attachment: BadgeDecorationAttachmentRenderOptions,
+export function badgeAttachmentStyleForTheme(
+    attachment: BadgeAttachmentRenderOptions,
     isLightTheme: boolean
-): ThemableBadgeDecorationAttachmentStyle {
+): ThemableBadgeAttachmentStyle {
     const overrides = isLightTheme ? attachment.light : attachment.dark
     // Discard non-ThemableDecorationAttachmentStyle properties so they aren't included in result.
     const { hoverMessage, linkURL, light, dark, ...base } = attachment

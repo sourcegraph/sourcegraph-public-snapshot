@@ -11,7 +11,7 @@ import { CodeExcerpt2 } from './CodeExcerpt2'
 import { IFileMatch, IMatchItem } from './FileMatch'
 import { mergeContext } from './FileMatchContext'
 import { Link } from './Link'
-import { BadgeDecorationAttachment } from './BadgeDecorationAttachment'
+import { BadgeAttachment } from './BadgeAttachment'
 
 interface FileMatchProps extends SettingsCascadeProps, ThemeProps {
     location: H.Location
@@ -126,7 +126,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                                 // has flex display and would cause the hover tooltip to be offset
                                 // in a weird way (centered in the code context, not on the icon).
                                 <div>
-                                    <BadgeDecorationAttachment
+                                    <BadgeAttachment
                                         attachment={item.badge}
                                         isLightTheme={props.isLightTheme}
                                     />

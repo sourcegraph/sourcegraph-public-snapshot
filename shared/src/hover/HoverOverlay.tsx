@@ -13,7 +13,7 @@ import { highlightCodeSafe, renderMarkdown } from '../util/markdown'
 import { sanitizeClass } from '../util/strings'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../util/url'
 import { toNativeEvent } from './helpers'
-import { BadgeDecorationAttachment } from '../components/BadgeDecorationAttachment'
+import { BadgeAttachment } from '../components/BadgeAttachment'
 import { ThemeProps } from '../theme'
 
 const LOADING: 'loading' = 'loading'
@@ -141,7 +141,7 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
             >
                 <div className="hover-overlay__badge-row">
                     {badges.map(b => (
-                        <BadgeDecorationAttachment
+                        <BadgeAttachment
                             key={`badge:${b.icon}:${b.hoverMessage}:${b.linkURL}`}
                             attachment={b}
                             isLightTheme={this.props.isLightTheme}
