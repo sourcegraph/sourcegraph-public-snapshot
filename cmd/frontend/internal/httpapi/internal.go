@@ -35,36 +35,6 @@ func serveReposGetByName(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func serveReposCreateIfNotExists(w http.ResponseWriter, r *http.Request) error {
-	var repo api.RepoCreateOrUpdateRequest
-	err := json.NewDecoder(r.Body).Decode(&repo)
-	if err != nil {
-		return err
-	}
-	err = backend.Repos.Upsert(r.Context(), api.InsertRepoOp{
-		Name:         repo.RepoName,
-		Description:  repo.Description,
-		Fork:         repo.Fork,
-		Archived:     repo.Archived,
-		Enabled:      repo.Enabled,
-		ExternalRepo: repo.ExternalRepo,
-	})
-	if err != nil {
-		return err
-	}
-	sgRepo, err := backend.Repos.GetByName(r.Context(), repo.RepoName)
-	if err != nil {
-		return err
-	}
-	data, err := json.Marshal(sgRepo)
-	if err != nil {
-		return err
-	}
-	w.WriteHeader(http.StatusOK)
-	w.Write(data)
-	return nil
-}
-
 func servePhabricatorRepoCreate(w http.ResponseWriter, r *http.Request) error {
 	var repo api.PhabricatorRepoCreateRequest
 	err := json.NewDecoder(r.Body).Decode(&repo)

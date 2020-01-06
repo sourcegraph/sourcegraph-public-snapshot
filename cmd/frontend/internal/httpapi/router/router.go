@@ -35,7 +35,6 @@ const (
 	GitResolveRevision     = "internal.git.resolve-revision"
 	GitTar                 = "internal.git.tar"
 	PhabricatorRepoCreate  = "internal.phabricator.repo.create"
-	ReposCreateIfNotExists = "internal.repos.create-if-not-exists"
 	ReposGetByName         = "internal.repos.get-by-name"
 	ReposInventoryUncached = "internal.repos.inventory-uncached"
 	ReposInventory         = "internal.repos.inventory"
@@ -101,7 +100,6 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/phabricator/repo-create").Methods("POST").Name(PhabricatorRepoCreate)
 	base.Path("/external-services/configs").Methods("POST").Name(ExternalServiceConfigs)
 	base.Path("/external-services/list").Methods("POST").Name(ExternalServicesList)
-	base.Path("/repos/create-if-not-exists").Methods("POST").Name(ReposCreateIfNotExists)
 	base.Path("/repos/inventory-uncached").Methods("POST").Name(ReposInventoryUncached)
 	base.Path("/repos/inventory").Methods("POST").Name(ReposInventory)
 	base.Path("/repos/list").Methods("POST").Name(ReposList)
