@@ -299,6 +299,22 @@ func TestClient_ClosePullRequest(t *testing.T) {
 	}
 }
 
+func TestClient_GetAuthenticatedUserOrgs(t *testing.T) {
+	cli, save := newClient(t, "GetAuthenticatedUserOrgs")
+	defer save()
+
+	ctx := context.Background()
+	orgs, err := cli.GetAuthenticatedUserOrgs(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assertGolden(t,
+		"testdata/golden/GetAuthenticatedUserOrgs",
+		update("GetAuthenticatedUserOrgs"),
+		orgs,
+	)
+}
 func assertGolden(t testing.TB, path string, update bool, want interface{}) {
 	t.Helper()
 

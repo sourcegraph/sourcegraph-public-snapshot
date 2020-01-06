@@ -45,7 +45,7 @@ export function fromHover(hover: sourcegraph.Badged<sourcegraph.Hover>): clientT
  *
  * @internal
  */
-export function fromRange(range: Range | sourcegraph.Range | undefined): clientType.Range | undefined {
+function fromRange(range: Range | sourcegraph.Range | undefined): clientType.Range | undefined {
     if (!range) {
         return undefined
     }

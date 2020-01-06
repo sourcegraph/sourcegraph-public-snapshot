@@ -441,10 +441,10 @@ func fileMatchURI(name api.RepoName, ref, path string) string {
 	return b.String()
 }
 
-var mockSearchFilesInRepos func(args *search.Args) ([]*FileMatchResolver, *searchResultsCommon, error)
+var mockSearchFilesInRepos func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error)
 
 // searchFilesInRepos searches a set of repos for a pattern.
-func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*FileMatchResolver, common *searchResultsCommon, err error) {
+func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res []*FileMatchResolver, common *searchResultsCommon, err error) {
 	if mockSearchFilesInRepos != nil {
 		return mockSearchFilesInRepos(args)
 	}
@@ -476,6 +476,12 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*FileMatc
 			common.indexUnavailable = true
 			err = nil
 		}
+	}
+
+	// if there are no indexed repos and this is a structural search
+	// query, there will be no results. Raise a friendly alert.
+	if len(zoektRepos) == 0 && args.PatternInfo.IsStructuralPat {
+		return nil, nil, errors.New("no indexed repositories for structural search")
 	}
 
 	common.repos = make([]*types.Repo, len(args.Repos))

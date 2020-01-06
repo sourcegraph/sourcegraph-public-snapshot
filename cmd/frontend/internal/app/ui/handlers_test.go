@@ -43,9 +43,6 @@ func TestRedirects(t *testing.T) {
 		t.Run("root", func(t *testing.T) {
 			check(t, "/", http.StatusTemporaryRedirect, "https://about.sourcegraph.com")
 		})
-		t.Run("welcome", func(t *testing.T) {
-			check(t, "/welcome", http.StatusMovedPermanently, "https://about.sourcegraph.com/")
-		})
 	})
 	t.Run("non-Sourcegraph.com", func(t *testing.T) {
 		orig := envvar.SourcegraphDotComMode()
@@ -53,9 +50,6 @@ func TestRedirects(t *testing.T) {
 		defer envvar.MockSourcegraphDotComMode(orig) // reset
 		t.Run("root", func(t *testing.T) {
 			check(t, "/", http.StatusTemporaryRedirect, "/search")
-		})
-		t.Run("welcome", func(t *testing.T) {
-			check(t, "/welcome", http.StatusMovedPermanently, "https://about.sourcegraph.com/")
 		})
 	})
 }

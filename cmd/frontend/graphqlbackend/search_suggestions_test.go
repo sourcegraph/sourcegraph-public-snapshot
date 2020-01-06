@@ -43,7 +43,7 @@ func TestSearchSuggestions(t *testing.T) {
 		}
 	}
 
-	mockSearchSymbols = func(ctx context.Context, args *search.Args, limit int) (res []*FileMatchResolver, common *searchResultsCommon, err error) {
+	mockSearchSymbols = func(ctx context.Context, args *search.TextParameters, limit int) (res []*FileMatchResolver, common *searchResultsCommon, err error) {
 		// TODO test symbol suggestions
 		return nil, nil, nil
 	}
@@ -88,7 +88,7 @@ func TestSearchSuggestions(t *testing.T) {
 		defer git.ResetMocks()
 
 		calledSearchFilesInRepos := false
-		mockSearchFilesInRepos = func(args *search.Args) ([]*FileMatchResolver, *searchResultsCommon, error) {
+		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error) {
 			calledSearchFilesInRepos = true
 			if want := "foo"; args.PatternInfo.Pattern != want {
 				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
@@ -154,7 +154,7 @@ func TestSearchSuggestions(t *testing.T) {
 		backend.Mocks.Repos.MockResolveRev_NoCheck(t, api.CommitID("deadbeef"))
 
 		calledSearchFilesInRepos := false
-		mockSearchFilesInRepos = func(args *search.Args) ([]*FileMatchResolver, *searchResultsCommon, error) {
+		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledSearchFilesInRepos = true
@@ -175,7 +175,7 @@ func TestSearchSuggestions(t *testing.T) {
 			defer mu.Unlock()
 			calledResolveRepoGroups = true
 			return map[string][]*types.Repo{
-				"sample": {
+				"baz": {
 					&types.Repo{Name: "foo-repo1"},
 					&types.Repo{Name: "repo3"},
 				},
@@ -183,7 +183,7 @@ func TestSearchSuggestions(t *testing.T) {
 		}
 		defer func() { mockResolveRepoGroups = nil }()
 		for _, v := range searchVersions {
-			testSuggestions(t, "repogroup:sample foo", v, []string{"repo:foo-repo1", "file:dir/foo-repo3-file-name-match", "file:dir/foo-repo1-file-name-match", "file:dir/file-content-match"})
+			testSuggestions(t, "repogroup:baz foo", v, []string{"repo:foo-repo1", "file:dir/foo-repo3-file-name-match", "file:dir/foo-repo1-file-name-match", "file:dir/file-content-match"})
 			if !calledReposListReposInGroup {
 				t.Error("!calledReposListReposInGroup")
 			}
@@ -226,7 +226,7 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { mockShowLangSuggestions = nil }()
 
 		calledSearchFilesInRepos := false
-		mockSearchFilesInRepos = func(args *search.Args) ([]*FileMatchResolver, *searchResultsCommon, error) {
+		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledSearchFilesInRepos = true
@@ -323,7 +323,7 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { mockShowLangSuggestions = nil }()
 
 		calledSearchFilesInRepos := false
-		mockSearchFilesInRepos = func(args *search.Args) ([]*FileMatchResolver, *searchResultsCommon, error) {
+		mockSearchFilesInRepos = func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledSearchFilesInRepos = true

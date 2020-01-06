@@ -176,7 +176,9 @@ describe('EditorService', () => {
         })
 
         it('calls removeModel() when removing an editor', () => {
-            const removeModel = sinon.spy((uri: string) => {})
+            const removeModel = sinon.spy((uri: string) => {
+                /* noop */
+            })
             const editorService = createEditorService({
                 removeModel,
             })

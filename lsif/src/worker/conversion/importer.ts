@@ -1,4 +1,4 @@
-import * as dumpModels from '../../shared/models/dump'
+import * as sqliteModels from '../../shared/models/sqlite'
 import * as lsif from 'lsif-protocol'
 import { Correlator, ResultSetData, ResultSetId } from './correlator'
 import { createSqliteConnection } from '../../shared/database/sqlite'
@@ -10,7 +10,7 @@ import { hashKey } from '../../shared/models/hash'
 import { isEqual, uniqWith } from 'lodash'
 import { logAndTraceCall, TracingContext } from '../../shared/tracing'
 import { mustGet } from '../../shared/maps'
-import { Package, SymbolReferences } from '../../shared/xrepo/xrepo'
+import { Package, SymbolReferences } from '../../shared/store/dependencies'
 import { readEnvInt } from '../../shared/settings'
 import { readGzippedJsonElementsFromFile } from './input'
 import { TableInserter } from '../../shared/database/inserter'
@@ -45,7 +45,7 @@ const MAX_NUM_RESULT_CHUNKS = readEnvInt('MAX_NUM_RESULT_CHUNKS', 1000)
 
 /**
  * Populate a SQLite database with the given input stream. Returns the
- * data required to populate the cross-repo database.
+ * data required to populate the dependency tables in Postgres.
  *
  * @param path The filepath containing a gzipped compressed stream of JSON lines composing the LSIF dump.
  * @param database The filepath of the database to populate.
@@ -56,7 +56,7 @@ export async function convertLsif(
     database: string,
     ctx: TracingContext = {}
 ): Promise<{ packages: Package[]; references: SymbolReferences[] }> {
-    const connection = await createSqliteConnection(database, dumpModels.entities)
+    const connection = await createSqliteConnection(database, sqliteModels.entities)
 
     try {
         await connection.query('PRAGMA synchronous = OFF')
@@ -71,7 +71,7 @@ export async function convertLsif(
 /**
  * Correlate each vertex and edge together, then populate the provided entity manager
  * with the document, definition, and reference information. Returns the package and
- * external reference data needed to populate the cross-repo database.
+ * external reference data needed to populate the dependency tables in Postgres.
  *
  * @param entityManager A transactional SQLite entity manager.
  * @param path The filepath containing a gzipped compressed stream of JSON lines composing the LSIF dump.
@@ -109,8 +109,8 @@ export async function importLsif(
     // Insert metadata
     const metaInserter = new TableInserter(
         entityManager,
-        dumpModels.MetaModel,
-        dumpModels.MetaModel.BatchSize,
+        sqliteModels.MetaModel,
+        sqliteModels.MetaModel.BatchSize,
         inserterMetrics
     )
     await populateMetadataTable(correlator, metaInserter, numResultChunks)
@@ -120,8 +120,8 @@ export async function importLsif(
     await logAndTraceCall(ctx, 'Populating documents', async () => {
         const documentInserter = new TableInserter(
             entityManager,
-            dumpModels.DocumentModel,
-            dumpModels.DocumentModel.BatchSize,
+            sqliteModels.DocumentModel,
+            sqliteModels.DocumentModel.BatchSize,
             inserterMetrics
         )
         await populateDocumentsTable(correlator, documentInserter, canonicalReferenceResultIds)
@@ -132,8 +132,8 @@ export async function importLsif(
     await logAndTraceCall(ctx, 'Populating result chunks', async () => {
         const resultChunkInserter = new TableInserter(
             entityManager,
-            dumpModels.ResultChunkModel,
-            dumpModels.ResultChunkModel.BatchSize,
+            sqliteModels.ResultChunkModel,
+            sqliteModels.ResultChunkModel.BatchSize,
             inserterMetrics
         )
         await populateResultChunksTable(correlator, resultChunkInserter, numResultChunks)
@@ -144,14 +144,14 @@ export async function importLsif(
     await logAndTraceCall(ctx, 'Populating definitions and references', async () => {
         const definitionInserter = new TableInserter(
             entityManager,
-            dumpModels.DefinitionModel,
-            dumpModels.DefinitionModel.BatchSize,
+            sqliteModels.DefinitionModel,
+            sqliteModels.DefinitionModel.BatchSize,
             inserterMetrics
         )
         const referenceInserter = new TableInserter(
             entityManager,
-            dumpModels.ReferenceModel,
-            dumpModels.ReferenceModel.BatchSize,
+            sqliteModels.ReferenceModel,
+            sqliteModels.ReferenceModel.BatchSize,
             inserterMetrics
         )
         await populateDefinitionsAndReferencesTables(correlator, definitionInserter, referenceInserter)
@@ -159,7 +159,7 @@ export async function importLsif(
         await referenceInserter.flush()
     })
 
-    // Return data to populate cross-repo database
+    // Return data to populate dependency tables in Postgres
     return { packages: getPackages(correlator), references: getReferences(correlator) }
 }
 
@@ -172,8 +172,8 @@ export async function importLsif(
  */
 async function populateDocumentsTable(
     correlator: Correlator,
-    documentInserter: TableInserter<dumpModels.DocumentModel, new () => dumpModels.DocumentModel>,
-    canonicalReferenceResultIds: Map<dumpModels.ReferenceResultId, dumpModels.ReferenceResultId>
+    documentInserter: TableInserter<sqliteModels.DocumentModel, new () => sqliteModels.DocumentModel>,
+    canonicalReferenceResultIds: Map<sqliteModels.ReferenceResultId, sqliteModels.ReferenceResultId>
 ): Promise<void> {
     // Collapse result sets data into the ranges that can reach them. The
     // remainder of this function assumes that we can completely ignore
@@ -215,7 +215,7 @@ async function populateDocumentsTable(
  */
 async function populateResultChunksTable(
     correlator: Correlator,
-    resultChunkInserter: TableInserter<dumpModels.ResultChunkModel, new () => dumpModels.ResultChunkModel>,
+    resultChunkInserter: TableInserter<sqliteModels.ResultChunkModel, new () => sqliteModels.ResultChunkModel>,
     numResultChunks: number
 ): Promise<void> {
     // Create all the result chunks we'll be populating and inserting up-front. Data will
@@ -223,16 +223,16 @@ async function populateResultChunksTable(
     // and we don't want to create them lazily.
 
     const resultChunks = new Array(numResultChunks).fill(null).map(() => ({
-        paths: new Map<dumpModels.DocumentId, string>(),
-        documentIdRangeIds: new Map<dumpModels.DefinitionReferenceResultId, dumpModels.DocumentIdRangeId[]>(),
+        paths: new Map<sqliteModels.DocumentId, string>(),
+        documentIdRangeIds: new Map<sqliteModels.DefinitionReferenceResultId, sqliteModels.DocumentIdRangeId[]>(),
     }))
 
     const chunkResults = (
-        data: Map<dumpModels.DefinitionReferenceResultId, Map<dumpModels.DocumentId, lsif.RangeId[]>>
+        data: Map<sqliteModels.DefinitionReferenceResultId, Map<sqliteModels.DocumentId, lsif.RangeId[]>>
     ): void => {
         for (const [id, documentRanges] of data) {
             // Flatten map into list of ranges
-            let documentIdRangeIds: dumpModels.DocumentIdRangeId[] = []
+            let documentIdRangeIds: sqliteModels.DocumentIdRangeId[] = []
             for (const [documentId, rangeIds] of documentRanges) {
                 documentIdRangeIds = documentIdRangeIds.concat(rangeIds.map(rangeId => ({ documentId, rangeId })))
             }
@@ -277,8 +277,8 @@ async function populateResultChunksTable(
  */
 async function populateDefinitionsAndReferencesTables(
     correlator: Correlator,
-    definitionInserter: TableInserter<dumpModels.DefinitionModel, new () => dumpModels.DefinitionModel>,
-    referenceInserter: TableInserter<dumpModels.ReferenceModel, new () => dumpModels.ReferenceModel>
+    definitionInserter: TableInserter<sqliteModels.DefinitionModel, new () => sqliteModels.DefinitionModel>,
+    referenceInserter: TableInserter<sqliteModels.ReferenceModel, new () => sqliteModels.ReferenceModel>
 ): Promise<void> {
     // Determine the set of monikers that are attached to a definition or a
     // reference result. Correlating information in this way has two benefits:
@@ -286,8 +286,12 @@ async function populateDefinitionsAndReferencesTables(
     //   (2) it stop us from re-iterating over the range data of the entire
     //       LSIF dump, which is by far the largest proportion of data.
 
-    const definitionMonikers = new DefaultMap<dumpModels.DefinitionResultId, Set<dumpModels.MonikerId>>(() => new Set())
-    const referenceMonikers = new DefaultMap<dumpModels.ReferenceResultId, Set<dumpModels.MonikerId>>(() => new Set())
+    const definitionMonikers = new DefaultMap<sqliteModels.DefinitionResultId, Set<sqliteModels.MonikerId>>(
+        () => new Set()
+    )
+    const referenceMonikers = new DefaultMap<sqliteModels.ReferenceResultId, Set<sqliteModels.MonikerId>>(
+        () => new Set()
+    )
 
     for (const range of correlator.rangeData.values()) {
         if (range.monikerIds.size === 0) {
@@ -310,11 +314,11 @@ async function populateDefinitionsAndReferencesTables(
     }
 
     const insertMonikerRanges = async (
-        data: Map<dumpModels.DefinitionReferenceResultId, Map<dumpModels.DocumentId, lsif.RangeId[]>>,
-        monikers: Map<dumpModels.DefinitionReferenceResultId, Set<lsif.RangeId>>,
+        data: Map<sqliteModels.DefinitionReferenceResultId, Map<sqliteModels.DocumentId, lsif.RangeId[]>>,
+        monikers: Map<sqliteModels.DefinitionReferenceResultId, Set<lsif.RangeId>>,
         inserter: TableInserter<
-            dumpModels.DefinitionModel | dumpModels.ReferenceModel,
-            new () => dumpModels.DefinitionModel | dumpModels.ReferenceModel
+            sqliteModels.DefinitionModel | sqliteModels.ReferenceModel,
+            new () => sqliteModels.DefinitionModel | sqliteModels.ReferenceModel
         >
     ): Promise<void> => {
         for (const [id, documentRanges] of data) {
@@ -365,7 +369,7 @@ async function populateDefinitionsAndReferencesTables(
  */
 async function populateMetadataTable(
     correlator: Correlator,
-    metaInserter: TableInserter<dumpModels.MetaModel, new () => dumpModels.MetaModel>,
+    metaInserter: TableInserter<sqliteModels.MetaModel, new () => sqliteModels.MetaModel>,
     numResultChunks: number
 ): Promise<void> {
     await metaInserter.insert({
@@ -442,8 +446,8 @@ function getReferences(correlator: Correlator): SymbolReferences[] {
  */
 function canonicalizeReferenceResults(
     correlator: Correlator
-): Map<dumpModels.ReferenceResultId, dumpModels.ReferenceResultId> {
-    const canonicalReferenceResultIds = new Map<dumpModels.ReferenceResultId, dumpModels.ReferenceResultId>()
+): Map<sqliteModels.ReferenceResultId, sqliteModels.ReferenceResultId> {
+    const canonicalReferenceResultIds = new Map<sqliteModels.ReferenceResultId, sqliteModels.ReferenceResultId>()
 
     for (const referenceResultId of correlator.linkedReferenceResults.keys()) {
         // Don't re-process the same set of linked reference results
@@ -499,11 +503,11 @@ function canonicalizeReferenceResults(
  */
 function canonicalizeItem(
     correlator: Correlator,
-    canonicalReferenceResultIds: Map<dumpModels.ReferenceResultId, dumpModels.ReferenceResultId>,
+    canonicalReferenceResultIds: Map<sqliteModels.ReferenceResultId, sqliteModels.ReferenceResultId>,
     id: lsif.RangeId | ResultSetId,
-    item: dumpModels.RangeData | ResultSetData
+    item: sqliteModels.RangeData | ResultSetData
 ): void {
-    const monikers = new Set<dumpModels.MonikerId>()
+    const monikers = new Set<sqliteModels.MonikerId>()
     if (item.monikerIds.size > 0) {
         // Find arbitrary moniker attached to item
         const candidateMoniker = item.monikerIds.keys().next().value
@@ -569,18 +573,18 @@ function canonicalizeItem(
  */
 function gatherDocument(
     correlator: Correlator,
-    currentDocumentId: dumpModels.DocumentId,
+    currentDocumentId: sqliteModels.DocumentId,
     path: string
-): dumpModels.DocumentData {
+): sqliteModels.DocumentData {
     const document = {
         path,
-        ranges: new Map<lsif.RangeId, dumpModels.RangeData>(),
-        hoverResults: new Map<dumpModels.HoverResultId, string>(),
-        monikers: new Map<dumpModels.MonikerId, dumpModels.MonikerData>(),
-        packageInformation: new Map<dumpModels.PackageInformationId, dumpModels.PackageInformationData>(),
+        ranges: new Map<lsif.RangeId, sqliteModels.RangeData>(),
+        hoverResults: new Map<sqliteModels.HoverResultId, string>(),
+        monikers: new Map<sqliteModels.MonikerId, sqliteModels.MonikerData>(),
+        packageInformation: new Map<sqliteModels.PackageInformationId, sqliteModels.PackageInformationData>(),
     }
 
-    const addHover = (id: dumpModels.HoverResultId | undefined): void => {
+    const addHover = (id: sqliteModels.HoverResultId | undefined): void => {
         if (id === undefined || document.hoverResults.has(id)) {
             return
         }
@@ -590,7 +594,7 @@ function gatherDocument(
         document.hoverResults.set(id, data)
     }
 
-    const addPackageInformation = (id: dumpModels.PackageInformationId | undefined): void => {
+    const addPackageInformation = (id: sqliteModels.PackageInformationId | undefined): void => {
         if (id === undefined || document.packageInformation.has(id)) {
             return
         }
@@ -600,7 +604,7 @@ function gatherDocument(
         document.packageInformation.set(id, data)
     }
 
-    const addMoniker = (id: dumpModels.MonikerId | undefined): void => {
+    const addMoniker = (id: sqliteModels.MonikerId | undefined): void => {
         if (id === undefined || document.monikers.has(id)) {
             return
         }

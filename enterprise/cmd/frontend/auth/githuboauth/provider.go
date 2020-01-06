@@ -49,6 +49,7 @@ func parseProvider(p *schema.GitHubAuthProvider, sourceCfg schema.AuthProviders)
 				CodeHost:    codeHost,
 				clientID:    p.ClientID,
 				allowSignup: p.AllowSignup,
+				allowOrgs:   p.AllowOrgs,
 			}, sessionKey),
 			nil,
 		),

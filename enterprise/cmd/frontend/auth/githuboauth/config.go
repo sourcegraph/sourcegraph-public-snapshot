@@ -29,8 +29,12 @@ func init() {
 	}()
 }
 
-func parseConfig(cfg *conf.Unified) (ps map[schema.GitHubAuthProvider]providers.Provider, problems conf.Problems) {
-	ps = make(map[schema.GitHubAuthProvider]providers.Provider)
+type Provider struct {
+	*schema.GitHubAuthProvider
+	providers.Provider
+}
+
+func parseConfig(cfg *conf.Unified) (ps []Provider, problems conf.Problems) {
 	for _, pr := range cfg.AuthProviders {
 		if pr.Github == nil {
 			continue
@@ -39,7 +43,10 @@ func parseConfig(cfg *conf.Unified) (ps map[schema.GitHubAuthProvider]providers.
 		provider, providerProblems := parseProvider(pr.Github, pr)
 		problems = append(problems, conf.NewSiteProblems(providerProblems...)...)
 		if provider != nil {
-			ps[*pr.Github] = provider
+			ps = append(ps, Provider{
+				GitHubAuthProvider: pr.Github,
+				Provider:           provider,
+			})
 		}
 	}
 	return ps, problems

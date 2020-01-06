@@ -93,6 +93,18 @@ type Mutation {
         # on the codehost (e.g. "declined" on Bitbucket Server).
         closeChangesets: Boolean = false
     ): Campaign!
+    # Publishes the Campaign by turning its changesetPlans into changesets on
+    # the codehosts.
+    # The Campaign.draft field will be set to false and Campaign.status will
+    # update according to the progress of turning the changesetPlans into
+    # changesets.
+    publishCampaign(campaign: ID!): Campaign!
+    # Creates an ExternalChangeset on the codehost asynchronously.
+    # The ChangesetPlan has to belong to a CampaignPlan that has been attached
+    # to a Campaign. Otherwise an error is returned.
+    # Since this is an asynchronous operation, the Campaign.status field can be
+    # used to keep track of progress.
+    publishChangeset(changesetPlan: ID!): EmptyResponse!
 
     # Updates the user profile information for the user with the given ID.
     #
@@ -123,15 +135,6 @@ type Mutation {
     #
     # Only site admins may perform this mutation.
     setRepositoryEnabled(repository: ID!, enabled: Boolean!): EmptyResponse
-        @deprecated(reason: "update external service exclude setting.")
-    # DEPRECATED: All repositories are accessible or deleted. To prevent a
-    # repository from being accessed on Sourcegraph add it to the external
-    # service exclude configuration.
-    #
-    # Enables or disables all site repositories.
-    #
-    # Only site admins may perform this mutation.
-    setAllRepositoriesEnabled(enabled: Boolean!): EmptyResponse
         @deprecated(reason: "update external service exclude setting.")
     # Tests the connection to a mirror repository's original source repository. This is an
     # expensive and slow operation, so it should only be used for interactive diagnostics.
@@ -480,6 +483,11 @@ input CreateCampaignInput {
     # Will error if the plan is not completed yet.
     # Using a campaign plan for a campaign will retain it for the lifetime of the campaign and prevents it from being purged.
     plan: ID
+
+    # Whether or not to create the Campaign in draft mode. Default is false.
+    # When a Campaign is created in draft mode, its changesetPlans are not
+    # created on the codehost, but only when publishing the Campaign.
+    draft: Boolean
 }
 
 # Input arguments for updating a campaign.
@@ -511,6 +519,9 @@ type CampaignPlan implements Node {
 
     # The changesets that will be created by the campaign.
     changesets(first: Int): ChangesetPlanConnection!
+
+    # The URL where the plan can be previewed and a campaign can be created from it.
+    previewURL: String!
 }
 
 # A paginated list of repository diffs committed to git.
@@ -603,6 +614,22 @@ type Campaign implements Node {
 
     # The date and time when the campaign was closed.
     closedAt: DateTime
+
+    # The date and time when the Campaign changed from draft mode to published.
+    # If the Campaign has not been published yet (is still in draft mode) this
+    # is null.
+    # If the Campaign was never in draft mode the value is the same as createdAt.
+    publishedAt: DateTime
+
+    # The changesets that will be created on the code host when publishing the
+    # Campaign.
+    # If the Campaign is a "manual" campaign and doesn't have a CampaignPlan
+    # attached, there won't be any nodes returned by this connection
+    # When publishing a Campaign, the number of nodes in changesets will
+    # increase with each decrease in changesetPlans. The Completed count in the
+    # Campaign.status increments with every ChangesetPlan turned into an
+    # ExternalChangeset.
+    changesetPlans(first: Int): ChangesetPlanConnection!
 }
 
 # The counts of changesets in certain states at a specific point in time.
@@ -663,6 +690,9 @@ input CreateChangesetInput {
 
 # Preview of a changeset planned to be created.
 type ChangesetPlan {
+    # The id of the changeset plan.
+    id: ID!
+
     # The repository changed by the changeset.
     repository: Repository!
 
@@ -953,6 +983,7 @@ input MarkdownOptions {
 enum EventSource {
     WEB
     CODEHOSTINTEGRATION
+    BACKEND
 }
 
 # Input for Mutation.settingsMutation, which contains fields that all settings (global, organization, and user

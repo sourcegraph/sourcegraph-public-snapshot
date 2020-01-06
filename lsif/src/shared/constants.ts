@@ -25,7 +25,7 @@ export const MAX_POSTGRES_BATCH_SIZE = 5000
 export const MAX_TRAVERSAL_LIMIT = 100
 
 /**
- * A random integer specific to the xrepo database used to generate advisory lock ids.
+ * A random integer specific to the Postgres database used to generate advisory lock ids.
  */
 export const ADVISORY_LOCK_ID_SALT = 1688730858
 

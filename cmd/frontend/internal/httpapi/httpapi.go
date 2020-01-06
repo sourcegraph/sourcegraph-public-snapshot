@@ -48,8 +48,6 @@ func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook http.Handle
 
 	m.Get(apirouter.RepoRefresh).Handler(trace.TraceRoute(handler(serveRepoRefresh)))
 
-	m.Get(apirouter.Telemetry).Handler(trace.TraceRoute(telemetryHandler))
-
 	if githubWebhook != nil {
 		m.Get(apirouter.GitHubWebhooks).Handler(trace.TraceRoute(githubWebhook))
 	}
@@ -104,7 +102,6 @@ func NewInternalHandler(m *mux.Router, schema *graphql.Schema) http.Handler {
 	m.Get(apirouter.ExternalServicesList).Handler(trace.TraceRoute(handler(serveExternalServicesList)))
 	m.Get(apirouter.PhabricatorRepoCreate).Handler(trace.TraceRoute(handler(servePhabricatorRepoCreate)))
 	m.Get(apirouter.ReposCreateIfNotExists).Handler(trace.TraceRoute(handler(serveReposCreateIfNotExists)))
-	m.Get(apirouter.ReposUpdateMetadata).Handler(trace.TraceRoute(handler(serveReposUpdateMetadata)))
 	reposList := &reposListServer{
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 		Repos:                 backend.Repos,

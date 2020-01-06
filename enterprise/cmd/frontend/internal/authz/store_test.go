@@ -1033,45 +1033,71 @@ func testStoreDatabaseDeadlocks(db *sql.DB) func(t *testing.T) {
 
 		ctx := context.Background()
 
+		setRepoPermissions := func(ctx context.Context, t *testing.T) {
+			if err := s.SetRepoPermissions(ctx, &RepoPermissions{
+				RepoID:   1,
+				Perm:     authz.Read,
+				UserIDs:  bitmap(1),
+				Provider: ProviderSourcegraph,
+			}); err != nil {
+				t.Fatal(err)
+			}
+		}
+		setRepoPendingPermissions := func(ctx context.Context, t *testing.T) {
+			if err := s.SetRepoPendingPermissions(ctx, []string{"alice"}, &RepoPermissions{
+				RepoID:   1,
+				Perm:     authz.Read,
+				Provider: ProviderSourcegraph,
+			}); err != nil {
+				t.Fatal(err)
+			}
+		}
+		grantPendingPermissions := func(ctx context.Context, t *testing.T) {
+			if err := s.GrantPendingPermissions(ctx, 1, &UserPendingPermissions{
+				BindID: "alice",
+				Perm:   authz.Read,
+				Type:   PermRepos,
+			}); err != nil &&
+				!strings.Contains(err.Error(), `pq: duplicate key value violates unique constraint "user_permissions_perm_object_provider_unique"`) {
+				t.Fatal(err)
+			}
+		}
+
+		// Ensure we've run all permutations of ordering of the 3 calls to avoid nondeterminism in
+		// test coverage stats.
+		funcPerms := [][3]func(context.Context, *testing.T){
+			{setRepoPendingPermissions, grantPendingPermissions, setRepoPermissions},
+			{setRepoPendingPermissions, setRepoPermissions, grantPendingPermissions},
+			{setRepoPermissions, setRepoPendingPermissions, grantPendingPermissions},
+			{setRepoPermissions, grantPendingPermissions, setRepoPendingPermissions},
+			{grantPendingPermissions, setRepoPendingPermissions, setRepoPermissions},
+			{grantPendingPermissions, setRepoPermissions, setRepoPendingPermissions},
+		}
+		for _, funcs := range funcPerms {
+			for _, f := range funcs {
+				f(ctx, t)
+			}
+		}
+
 		const numOps = 50
 		var wg sync.WaitGroup
 		wg.Add(3)
 		go func() {
 			defer wg.Done()
 			for i := 0; i < numOps; i++ {
-				if err := s.SetRepoPermissions(ctx, &RepoPermissions{
-					RepoID:   1,
-					Perm:     authz.Read,
-					UserIDs:  bitmap(1),
-					Provider: ProviderSourcegraph,
-				}); err != nil {
-					t.Fatal(err)
-				}
+				setRepoPermissions(ctx, t)
 			}
 		}()
 		go func() {
 			defer wg.Done()
 			for i := 0; i < numOps; i++ {
-				if err := s.SetRepoPendingPermissions(ctx, []string{"alice"}, &RepoPermissions{
-					RepoID:   1,
-					Perm:     authz.Read,
-					Provider: ProviderSourcegraph,
-				}); err != nil {
-					t.Fatal(err)
-				}
+				setRepoPendingPermissions(ctx, t)
 			}
 		}()
 		go func() {
 			defer wg.Done()
 			for i := 0; i < numOps; i++ {
-				if err := s.GrantPendingPermissions(ctx, 1, &UserPendingPermissions{
-					BindID: "alice",
-					Perm:   authz.Read,
-					Type:   PermRepos,
-				}); err != nil &&
-					!strings.Contains(err.Error(), `pq: duplicate key value violates unique constraint "user_permissions_perm_object_provider_unique"`) {
-					t.Fatal(err)
-				}
+				grantPendingPermissions(ctx, t)
 			}
 		}()
 

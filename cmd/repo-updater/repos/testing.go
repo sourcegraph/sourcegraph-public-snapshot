@@ -394,7 +394,7 @@ var Assert = struct {
 			// Exclude auto-generated IDs from equality tests
 			have = append(Repos{}, have...).With(Opt.RepoID(0))
 			if !reflect.DeepEqual(have, want) {
-				t.Errorf("repos: %s", cmp.Diff(have, want))
+				t.Errorf("repos (-want +got): %s", cmp.Diff(want, have))
 			}
 		}
 	},
@@ -406,7 +406,7 @@ var Assert = struct {
 				return ord(want[i], want[j])
 			})
 			if !reflect.DeepEqual(have, want) {
-				t.Errorf("repos: %s", cmp.Diff(have, want))
+				t.Errorf("repos (-want +got): %s", cmp.Diff(want, have))
 			}
 		}
 	},
@@ -417,7 +417,7 @@ var Assert = struct {
 			// Exclude auto-generated IDs from equality tests
 			have = append(ExternalServices{}, have...).With(Opt.ExternalServiceID(0))
 			if !reflect.DeepEqual(have, want) {
-				t.Errorf("external services: %s", cmp.Diff(have, want))
+				t.Errorf("external services (-want +got): %s", cmp.Diff(want, have))
 			}
 		}
 	},
@@ -429,7 +429,7 @@ var Assert = struct {
 				return ord(want[i], want[j])
 			})
 			if !reflect.DeepEqual(have, want) {
-				t.Errorf("external services: %s", cmp.Diff(have, want))
+				t.Errorf("external services (-want +got): %s", cmp.Diff(want, have))
 			}
 		}
 	},

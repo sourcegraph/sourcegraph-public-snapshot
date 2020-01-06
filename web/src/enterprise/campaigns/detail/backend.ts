@@ -37,6 +37,7 @@ const campaignFragment = gql`
         description
         createdAt
         updatedAt
+        closedAt
         url
         __typename
         changesets {
@@ -181,18 +182,6 @@ export function previewCampaignPlan(
     )
 }
 
-export async function cancelCampaignPlan(plan: ID): Promise<void> {
-    const result = await mutateGraphQL(
-        gql`
-            mutation CancelCampaignPlan($id: ID!) {
-                cancelCampaignPlan(id: $id)
-            }
-        `,
-        { id: plan }
-    ).toPromise()
-    dataOrThrowErrors(result)
-}
-
 export async function retryCampaign(campaignID: ID): Promise<void> {
     const result = await mutateGraphQL(
         gql`
@@ -207,16 +196,30 @@ export async function retryCampaign(campaignID: ID): Promise<void> {
     dataOrThrowErrors(result)
 }
 
-export async function deleteCampaign(campaign: ID): Promise<void> {
+export async function closeCampaign(campaign: ID, closeChangesets = false): Promise<void> {
     const result = await mutateGraphQL(
         gql`
-            mutation DeleteCampaign($campaign: ID!) {
-                deleteCampaign(campaign: $campaign) {
+            mutation CloseCampaign($campaign: ID!, $closeChangesets: Boolean!) {
+                closeCampaign(campaign: $campaign, closeChangesets: $closeChangesets) {
+                    id
+                }
+            }
+        `,
+        { campaign, closeChangesets }
+    ).toPromise()
+    dataOrThrowErrors(result)
+}
+
+export async function deleteCampaign(campaign: ID, closeChangesets = false): Promise<void> {
+    const result = await mutateGraphQL(
+        gql`
+            mutation DeleteCampaign($campaign: ID!, $closeChangesets: Boolean!) {
+                deleteCampaign(campaign: $campaign, closeChangesets: $closeChangesets) {
                     alwaysNil
                 }
             }
         `,
-        { campaign }
+        { campaign, closeChangesets }
     ).toPromise()
     dataOrThrowErrors(result)
 }

@@ -9,6 +9,7 @@ Welcome to Sourcegraph! As a developer, you can use Sourcegraph to get help whil
   - [Editor extension](../integration/editor.md)
 - [Code search](search/index.md)
   - [Query syntax](search/queries.md): Supported query operators.
+  - [Search examples](search/examples.md)
   - Types of searches:
     - Cross-repository search
     - Full-text search (with regular expression support)

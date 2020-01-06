@@ -283,25 +283,10 @@ func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct 
 		return nil, err
 	}
 
-	// We only want to set the enabled state of a repo that isn't yet managed
-	// by the new syncer. Repo-updater returns the set of external services that
-	// were updated to exclude the given repo. If that set is empty, it means that
-	// the given repo isn't yet managed by the new syncer, so we proceed to update
-	// the enabled state regardless.
-	var done bool
 	if !args.Enabled {
-		resp, err := repoupdater.DefaultClient.ExcludeRepo(ctx, uint32(repo.repo.ID))
+		_, err := repoupdater.DefaultClient.ExcludeRepo(ctx, uint32(repo.repo.ID))
 		if err != nil {
 			return nil, errors.Wrapf(err, "repo-updater.exclude-repos")
-		}
-
-		// Have any external services been updated to exclude the given repo?
-		done = len(resp.ExternalServices) > 0
-	}
-
-	if !done {
-		if err = db.Repos.SetEnabled(ctx, repo.repo.ID, args.Enabled); err != nil {
-			return nil, err
 		}
 	}
 
@@ -316,38 +301,6 @@ func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct 
 		}
 	}
 
-	return &EmptyResponse{}, nil
-}
-
-func (r *schemaResolver) SetAllRepositoriesEnabled(ctx context.Context, args *struct {
-	Enabled bool
-}) (*EmptyResponse, error) {
-	// Only usable for self-hosted instances
-	if envvar.SourcegraphDotComMode() {
-		return nil, errors.New("Not available on sourcegraph.com")
-	}
-	// 🚨 SECURITY: Only site admins can enable/disable repositories, because it's a site-wide
-	// and semi-destructive action.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-
-	var listArgs db.ReposListOptions
-	if args.Enabled {
-		listArgs = db.ReposListOptions{Disabled: true}
-	} else {
-		listArgs = db.ReposListOptions{Enabled: true}
-	}
-	reposList, err := db.Repos.List(ctx, listArgs)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, repo := range reposList {
-		if err := db.Repos.SetEnabled(ctx, repo.ID, args.Enabled); err != nil {
-			return nil, err
-		}
-	}
 	return &EmptyResponse{}, nil
 }
 

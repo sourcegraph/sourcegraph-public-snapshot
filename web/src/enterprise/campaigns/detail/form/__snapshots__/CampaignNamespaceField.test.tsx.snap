@@ -1,0 +1,32 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`CampaignNamespaceField has initial value and calls onChange 1`] = `
+<select
+  className="form-control "
+  disabled={false}
+  onChange={[Function]}
+  required={true}
+  value="u0"
+>
+  <option
+    value="u0"
+  >
+    alice
+  </option>
+</select>
+`;
+
+exports[`CampaignNamespaceField loading 1`] = `
+<select
+  className="form-control "
+  disabled={true}
+  onChange={[Function]}
+  required={true}
+>
+  <option
+    disabled={true}
+  >
+    Loading...
+  </option>
+</select>
+`;

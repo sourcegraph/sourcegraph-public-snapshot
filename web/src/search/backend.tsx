@@ -139,29 +139,6 @@ export function search(
     )
 }
 
-export function fetchSearchResultStats(query: string): Observable<GQL.ISearchResultsStats> {
-    return queryGraphQL(
-        gql`
-            query SearchResultsStats($query: String!) {
-                search(query: $query) {
-                    stats {
-                        approximateResultCount
-                        sparkline
-                    }
-                }
-            }
-        `,
-        { query }
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.search || !data.search.stats) {
-                throw createAggregateError(errors)
-            }
-            return data.search.stats
-        })
-    )
-}
-
 export function fetchSuggestions(query: string): Observable<GQL.SearchSuggestion> {
     return queryGraphQL(
         gql`

@@ -38,6 +38,8 @@ const config = {
     path.join(__dirname, 'shared/dev/fetch'),
     path.join(__dirname, 'shared/dev/setLinkComponentForTest.ts'),
   ],
+  setupFilesAfterEnv: [require.resolve('core-js/stable'), require.resolve('regenerator-runtime/runtime')],
+  globalSetup: path.join(__dirname, 'shared/dev/jestGlobalSetup.js'),
 }
 
 module.exports = config

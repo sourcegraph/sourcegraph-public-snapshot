@@ -327,6 +327,7 @@ func Test_detectSearchType(t *testing.T) {
 		{"V2, override regex variant pattern type with double quotes", "V2", &typeLiteral, `patterntype:"regex"`, SearchTypeRegex},
 		{"V2, override regex variant pattern type with single quotes", "V2", &typeLiteral, `patterntype:'regex'`, SearchTypeRegex},
 		{"V1, override literal pattern type", "V1", &typeRegexp, "patterntype:literal", SearchTypeLiteral},
+		{"V1, override literal pattern type, with case-insensitive query", "V1", &typeRegexp, "pAtTErNTypE:literal", SearchTypeLiteral},
 	}
 
 	for _, test := range testCases {

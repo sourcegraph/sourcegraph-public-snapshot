@@ -1,0 +1,40 @@
+[
+  {
+   "slug": "archived-repo",
+   "id": 10073,
+   "name": "archived-repo",
+   "scmId": "git",
+   "state": "AVAILABLE",
+   "statusMessage": "Available",
+   "forkable": true,
+   "origin": null,
+   "project": {
+    "key": "PUBLIC",
+    "id": 4,
+    "name": "Public",
+    "public": false,
+    "type": "NORMAL",
+    "links": {
+     "self": [
+      {
+       "href": "https://bitbucket.sgdev.org/projects/PUBLIC"
+      }
+     ]
+    }
+   },
+   "public": false,
+   "links": {
+    "clone": [
+     {
+      "href": "https://bitbucket.sgdev.org/scm/public/archived-repo.git",
+      "name": "http"
+     }
+    ],
+    "self": [
+     {
+      "href": "https://bitbucket.sgdev.org/projects/PUBLIC/repos/archived-repo/browse"
+     }
+    ]
+   }
+  }
+ ]

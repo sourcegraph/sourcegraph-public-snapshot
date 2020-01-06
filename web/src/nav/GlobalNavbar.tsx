@@ -123,12 +123,15 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
         }
 
         const logo = <img className="global-navbar__logo" src={logoSrc} />
-        const logoLink = this.state.authRequired ? (
-            <div className={logoLinkClassName}>{logo}</div>
-        ) : (
+        const logoLink = !this.state.authRequired ? (
             <Link to="/search" className={logoLinkClassName}>
                 {logo}
             </Link>
+        ) : (
+            <div className={logoLinkClassName}>{logo}</div>
+        )
+        const navLinks = !this.state.authRequired && !this.props.hideNavLinks && (
+            <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />
         )
 
         return (
@@ -148,6 +151,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                 Search
                             </Link>
                         </div>
+                        {navLinks}
                     </>
                 ) : (
                     <>
@@ -178,9 +182,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                                         />
                                     </div>
                                 )}
-                                {!this.state.authRequired && !this.props.hideNavLinks && (
-                                    <NavLinks {...this.props} showDotComMarketing={showDotComMarketing} />
-                                )}
+                                {navLinks}
                             </>
                         )}
                     </>

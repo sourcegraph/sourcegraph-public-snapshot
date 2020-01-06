@@ -742,6 +742,15 @@ const SiteSchemaJSON = `{
           "description": "Allows new visitors to sign up for accounts via GitHub authentication. If false, users signing in via GitHub must have an existing Sourcegraph account, which will be linked to their GitHub identity after sign-in.",
           "default": false,
           "type": "boolean"
+        },
+        "allowOrgs": {
+          "description": "Restricts new logins to members of these GitHub organizations. Existing sessions won't be invalidated. Leave empty or unset for no org restrictions.",
+          "default": false,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       }
     },

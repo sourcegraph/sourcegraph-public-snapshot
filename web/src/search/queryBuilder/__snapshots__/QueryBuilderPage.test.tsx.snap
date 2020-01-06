@@ -1,0 +1,33 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`QueryBuilderPage simple 1`] = `
+<div
+  className="container mt-4"
+>
+  <PageTitle
+    title="Query builder"
+  />
+  <div
+    className="form form-inline mt-3"
+  >
+    <input
+      className="form-control flex-fill mr-2"
+      data-tooltip=""
+      placeholder="Use the fields below to build your query"
+      readOnly={true}
+      type="text"
+      value=""
+    />
+    <ForwardRef
+      className="btn btn-primary disabled"
+      to="/search?q=&patternType=literal"
+    >
+      Search
+    </ForwardRef>
+  </div>
+  <QueryBuilder
+    onFieldsQueryChange={[Function]}
+    patternType="literal"
+  />
+</div>
+`;

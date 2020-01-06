@@ -71,7 +71,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 					CommitID: wantCommitID,
 				},
 			},
-			want: []inventory.Lang{{Name: "Go", TotalBytes: 1, TotalLines: 3}},
+			want: []inventory.Lang{{Name: "Go", TotalBytes: 6, TotalLines: 3}},
 		},
 		"line matches in 1 file": {
 			results: []SearchResultResolver{
@@ -82,7 +82,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 					JLineMatches: []*lineMatch{{JLineNumber: 1}},
 				},
 			},
-			want: []inventory.Lang{{Name: "Go", TotalBytes: 1, TotalLines: 1}},
+			want: []inventory.Lang{{Name: "Go", TotalBytes: 6, TotalLines: 1}},
 		},
 		"line matches in 2 files": {
 			results: []SearchResultResolver{
@@ -99,7 +99,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 					JLineMatches: []*lineMatch{{JLineNumber: 1}},
 				},
 			},
-			want: []inventory.Lang{{Name: "Go", TotalBytes: 2, TotalLines: 3}},
+			want: []inventory.Lang{{Name: "Go", TotalBytes: 10, TotalLines: 3}},
 		},
 		"1 entire repo": {
 			results: []SearchResultResolver{
@@ -108,10 +108,10 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 				},
 			},
 			getFiles: []os.FileInfo{
-				fileInfo{path: "two.go", size: 1},
-				fileInfo{path: "three.go", size: 1},
+				fileInfo{path: "two.go"},
+				fileInfo{path: "three.go"},
 			},
-			want: []inventory.Lang{{Name: "Go", TotalBytes: 2, TotalLines: 5}},
+			want: []inventory.Lang{{Name: "Go", TotalBytes: 10, TotalLines: 5}},
 		},
 	}
 	for name, test := range tests {

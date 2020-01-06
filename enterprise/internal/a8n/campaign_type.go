@@ -268,6 +268,7 @@ type credentialsArgs struct {
 
 var npmTokenRegexp = regexp.MustCompile(`((?:^|:)_(?:auth|authToken|password)\s*=\s*)(.+)$`)
 var npmTokenRegexpMultiline = regexp.MustCompile(`(?m)((?:^|:)_(?:auth|authToken|password)\s*=\s*)(.+)$`)
+var npmEnvironmentVariableRegexp = regexp.MustCompile(`\${.+}$`)
 
 type credentials struct {
 	args credentialsArgs
@@ -305,7 +306,6 @@ func (c *credentials) generateDiff(ctx context.Context, repo api.RepoName, commi
 
 	diffs := []string{}
 	tokens := []string{}
-
 	for _, res := range resultsResolver.Results() {
 		fm, ok := res.ToFileMatch()
 		if !ok {
@@ -318,13 +318,28 @@ func (c *credentials) generateDiff(ctx context.Context, repo api.RepoName, commi
 			return "", "", err
 		}
 
+		// If the token is in the form ${ABC} we should not replace it as this is valid and indicates
+		// a value that should be read from the environment
 		submatches := npmTokenRegexpMultiline.FindAllStringSubmatch(content, -1)
 		for _, match := range submatches {
-			tokens = append(tokens, match[len(match)-1])
+			token := match[len(match)-1]
+			if npmEnvironmentVariableRegexp.MatchString(token) {
+				continue
+			}
+			tokens = append(tokens, token)
 		}
-
-		replacement := fmt.Sprintf("${1}%s", c.args.Matchers[0].ReplaceWith)
-		newContent := npmTokenRegexpMultiline.ReplaceAllString(content, replacement)
+		newContent := npmTokenRegexpMultiline.ReplaceAllStringFunc(content, func(old string) string {
+			// Don't replace right hand side if it is an environment variable
+			submatches := npmTokenRegexp.FindAllStringSubmatch(old, -1)
+			if len(submatches) != 1 && len(submatches[0]) != 3 {
+				return old
+			}
+			left, right := submatches[0][1], submatches[0][2]
+			if npmEnvironmentVariableRegexp.MatchString(right) {
+				return old
+			}
+			return left + c.args.Matchers[0].ReplaceWith
+		})
 
 		diff, err := tmpfileDiff(path, content, newContent)
 		if err != nil {

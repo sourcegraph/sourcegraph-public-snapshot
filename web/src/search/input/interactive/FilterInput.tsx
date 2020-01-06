@@ -393,7 +393,7 @@ export class FilterInput extends React.Component<Props, State> {
                         <button
                             type="button"
                             onClick={this.onClickDelete}
-                            className={`btn btn-icon icon-inline e2e-filter-input__delete-button-${this.props.mapKey}`}
+                            className="btn btn-icon icon-inline e2e-filter-input__delete-button"
                             aria-label="Delete filter"
                             data-tooltip="Delete filter"
                         >
