@@ -59,7 +59,7 @@ require (
 	github.com/gobwas/glob v0.2.3
 	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/golang-migrate/migrate/v4 v4.7.0
-	github.com/golang/gddo v0.0.0-20190904175337-72a348e765d2
+	github.com/golang/gddo v0.0.0-20191216155521-fbfc0f5e7810
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9
 	github.com/golangci/gocyclo v0.0.0-20180528144436-0a533e8fa43d // indirect
 	github.com/golangci/golangci-lint v1.21.0
