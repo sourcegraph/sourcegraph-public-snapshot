@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os/exec"
@@ -85,12 +86,21 @@ func waitForCompletion(cmd *exec.Cmd, stdout, stderr io.ReadCloser, w io.Writer)
 	if err := cmd.Wait(); err != nil {
 		if len(stderrMsg) > 0 {
 			log15.Error("failed to execute comby command", "error", string(stderrMsg))
-			return errors.Errorf("comby error: %s", stderrMsg)
+			msg := fmt.Sprintf("failed to wait for executing comby command: comby error: %s", stderrMsg)
+			return errors.Wrap(err, msg)
 		}
 		log15.Error("failed to wait for executing comby command", "error", string(err.(*exec.ExitError).Stderr))
 		return errors.Wrap(err, "failed to wait for executing comby command")
 	}
 	return nil
+}
+
+func kill(pid int) {
+	if pid == 0 {
+		return
+	}
+	// "no such process" error should be suppressed
+	_ = syscall.Kill(-pid, syscall.SIGKILL)
 }
 
 func PipeTo(ctx context.Context, args Args, w io.Writer) (err error) {
@@ -133,17 +143,11 @@ func PipeTo(ctx context.Context, args Args, w io.Writer) (err error) {
 	select {
 	case <-ctx.Done():
 		log15.Error("comby context deadline reached")
-		err := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
-		if err != nil {
-			return errors.Wrap(err, "error killing comby command")
-		}
+		kill(cmd.Process.Pid)
 	case err := <-errorC:
 		if err != nil {
 			err = errors.Wrap(err, "failed to wait for executing comby command")
-			errKill := syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
-			if errKill != nil {
-				return errors.Wrap(errKill, "error killing comby command")
-			}
+			kill(cmd.Process.Pid)
 			return err
 		}
 	}
