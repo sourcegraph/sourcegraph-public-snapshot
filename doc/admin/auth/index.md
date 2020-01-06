@@ -86,7 +86,8 @@ Then add the following lines to your critical configuration:
       "displayName": "GitHub",
       "clientID": "replace-with-the-oauth-client-id",
       "clientSecret": "replace-with-the-oauth-client-secret",
-      "allowSignup": false  // Set to true to enable anyone with a GitHub account to sign up without invitation
+      "allowSignup": false,  // Set to true to enable anyone with a GitHub account to sign up without invitation
+      "allowOrgs": ["your-org-name"] // Restrict logins to members of these orgs.
     }
   ]
 }
@@ -101,6 +102,8 @@ Set `allowSignup` to `true` to enable anyone with a GitHub account to sign up wi
 (typically done only for GitHub Enterprise). If `allowSignup` is `false`, a user can sign in through
 GitHub only if an account with the same verified email already exists. If none exists, a site admin
 must create one explicitly.
+
+The `allowOrgs` fields restricts logins to members of the specified GitHub organizations. Existing user sessions are **not invalidated**. Only new logins after this setting is changed are affected.
 
 Once you've configured GitHub as a sign-on provider, you may also want to [add GitHub repositories to Sourcegraph](../external_service/github.md#repository-syncing).
 
