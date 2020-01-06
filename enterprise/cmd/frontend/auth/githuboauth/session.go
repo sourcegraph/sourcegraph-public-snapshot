@@ -164,7 +164,7 @@ func (s *sessionIssuerHelper) verifyUserOrgs(ctx context.Context, ghClient *gith
 		return false
 	}
 
-	allowed := make(map[string]bool)
+	allowed := make(map[string]bool, len(s.allowOrgs))
 	for _, org := range s.allowOrgs {
 		allowed[org] = true
 	}
