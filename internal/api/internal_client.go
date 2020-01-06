@@ -273,15 +273,6 @@ func (c *internalClient) Configuration(ctx context.Context) (conftypes.RawUnifie
 	return cfg, err
 }
 
-func (c *internalClient) ReposUpdateMetadata(ctx context.Context, repo RepoName, description string, fork bool, archived bool) error {
-	return c.postInternal(ctx, "repos/update-metadata", ReposUpdateMetadataRequest{
-		RepoName:    repo,
-		Description: description,
-		Fork:        fork,
-		Archived:    archived,
-	}, nil)
-}
-
 func (c *internalClient) ReposGetByName(ctx context.Context, repoName RepoName) (*Repo, error) {
 	var repo Repo
 	err := c.postInternal(ctx, "repos/"+string(repoName), nil, &repo)
