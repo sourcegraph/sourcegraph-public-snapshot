@@ -55,7 +55,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 
 	// 🚨 SECURITY: Ensure that the user is part of one of the white listed orgs, if any.
 	if !s.verifyUserOrgs(ctx, ghClient) {
-		return nil, "Could not verify user is part of the allowed GitHub organizations.", errors.New("user not part of allowed orgs")
+		return nil, "Could not verify user is part of the allowed GitHub organizations.", errors.New("couldn't verify user is part of allowed GitHub organizations")
 	}
 
 	// Try every verified email in succession until the first that succeeds

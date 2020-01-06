@@ -64,6 +64,8 @@ type Org struct {
 
 var MockGetAuthenticatedUserOrgs func(ctx context.Context) ([]*Org, error)
 
+// GetAuthenticatedUserOrgs returns the first 100 organizations associated with the currently
+// authenticated user.
 func (c *Client) GetAuthenticatedUserOrgs(ctx context.Context) ([]*Org, error) {
 	if MockGetAuthenticatedUserOrgs != nil {
 		return MockGetAuthenticatedUserOrgs(ctx)
