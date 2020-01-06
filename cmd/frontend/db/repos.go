@@ -620,11 +620,6 @@ func (s *repos) UpdateLanguage(ctx context.Context, repo api.RepoID, language st
 	return err
 }
 
-func (s *repos) UpdateRepositoryMetadata(ctx context.Context, name api.RepoName, description string, fork bool, archived bool) error {
-	_, err := dbconn.Global.ExecContext(ctx, "UPDATE repo SET description=$1, fork=$2, archived=$3 WHERE name=$4 	AND (description <> $1 OR fork <> $2 OR archived <> $3)", description, fork, archived, name)
-	return err
-}
-
 const upsertSQL = `
 WITH upsert AS (
   UPDATE repo
