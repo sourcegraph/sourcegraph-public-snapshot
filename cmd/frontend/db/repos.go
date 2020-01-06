@@ -604,17 +604,6 @@ func allMatchingStrings(re *regexpsyntax.Regexp) (exact, contains, prefix, suffi
 	return nil, nil, nil, nil, nil
 }
 
-// Delete deletes the repository row from the repo table.
-func (s *repos) Delete(ctx context.Context, repo api.RepoID) error {
-	if Mocks.Repos.Delete != nil {
-		return Mocks.Repos.Delete(ctx, repo)
-	}
-
-	q := sqlf.Sprintf("DELETE FROM repo WHERE id=%d", repo)
-	_, err := dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	return err
-}
-
 const upsertSQL = `
 WITH upsert AS (
   UPDATE repo

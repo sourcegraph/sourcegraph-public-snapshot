@@ -76,33 +76,6 @@ func TestParseIncludePattern(t *testing.T) {
 	}
 }
 
-func TestRepos_Delete(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
-
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
-		t.Fatal(err)
-	}
-
-	rp, err := Repos.GetByName(ctx, "myrepo")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if err := Repos.Delete(ctx, rp.ID); err != nil {
-		t.Fatal(err)
-	}
-
-	rp2, err := Repos.Get(ctx, rp.ID)
-	if !errcode.IsNotFound(err) {
-		t.Errorf("expected repo not found, but got error %q with repo %v", err, rp2)
-	}
-}
-
 func TestRepos_Count(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

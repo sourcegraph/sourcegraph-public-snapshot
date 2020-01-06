@@ -304,25 +304,6 @@ func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct 
 	return &EmptyResponse{}, nil
 }
 
-func (r *schemaResolver) DeleteRepository(ctx context.Context, args *struct {
-	Repository graphql.ID
-}) (*EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins can delete repositories, because it's a site-wide
-	// and semi-destructive action.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-
-	id, err := UnmarshalRepositoryID(args.Repository)
-	if err != nil {
-		return nil, err
-	}
-	if err := db.Repos.Delete(ctx, id); err != nil {
-		return nil, err
-	}
-	return &EmptyResponse{}, nil
-}
-
 func repoNamesToStrings(repoNames []api.RepoName) []string {
 	strings := make([]string, len(repoNames))
 	for i, repoName := range repoNames {
