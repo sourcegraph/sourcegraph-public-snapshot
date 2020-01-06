@@ -65,18 +65,6 @@ func serveReposCreateIfNotExists(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func serveReposUpdateMetadata(w http.ResponseWriter, r *http.Request) error {
-	var repo api.ReposUpdateMetadataRequest
-	err := json.NewDecoder(r.Body).Decode(&repo)
-	if err != nil {
-		return err
-	}
-	if err := db.Repos.UpdateRepositoryMetadata(r.Context(), repo.RepoName, repo.Description, repo.Fork, repo.Archived); err != nil {
-		return errors.Wrap(err, "Repos.UpdateRepositoryMetadata failed")
-	}
-	return nil
-}
-
 func servePhabricatorRepoCreate(w http.ResponseWriter, r *http.Request) error {
 	var repo api.PhabricatorRepoCreateRequest
 	err := json.NewDecoder(r.Body).Decode(&repo)
