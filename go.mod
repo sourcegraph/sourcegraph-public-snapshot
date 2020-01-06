@@ -153,7 +153,7 @@ require (
 	github.com/sourcegraph/go-diff v0.5.1
 	github.com/sourcegraph/go-jsonschema v0.0.0-20191016093751-6a4f2b621f5d
 	github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible
-	github.com/sourcegraph/go-lsp v0.0.0-20181119182933-0c7d621186c1
+	github.com/sourcegraph/go-lsp v0.0.0-20191222043540-85905dfbfc99
 	github.com/sourcegraph/gosyntect v0.0.0-20191003053245-e91d603ba4eb
 	github.com/sourcegraph/jsonx v0.0.0-20190114210550-ba8cb36a8614
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
