@@ -415,7 +415,7 @@ func TestService(t *testing.T) {
 
 		newChangesetJobsByCampaignJobID := make(map[int64]*a8n.ChangesetJob)
 		for _, j := range newChangesetJobs {
-			if j.ID == oldCampaignJobToBeDeleted.ID {
+			if j.CampaignJobID == oldCampaignJobToBeDeleted.ID {
 				t.Errorf("ChangesetJob should have been deleted")
 			}
 			newChangesetJobsByCampaignJobID[j.CampaignJobID] = j
@@ -429,7 +429,6 @@ func TestService(t *testing.T) {
 		if unmodified.StartedAt != oldTime {
 			t.Fatalf("ChangesetJob StartedAt changed. want=%v, have=%v", oldTime, unmodified.StartedAt)
 		}
-
 		if unmodified.FinishedAt != oldTime {
 			t.Fatalf("ChangesetJob FinishedAt changed. want=%v, have=%v", oldTime, unmodified.FinishedAt)
 		}
@@ -445,7 +444,6 @@ func TestService(t *testing.T) {
 		if !modified.StartedAt.IsZero() {
 			t.Fatalf("ChangesetJob StartedAt not reset. have=%v", modified.StartedAt)
 		}
-
 		if !modified.FinishedAt.IsZero() {
 			t.Fatalf("ChangesetJob FinishedAt not reset. have=%v", modified.FinishedAt)
 		}
@@ -501,6 +499,7 @@ func TestService(t *testing.T) {
 		if oldChangesetToBeDetached == nil {
 			t.Fatalf("could not find old changeset to be detached")
 		}
+
 		changeset, err := store.GetChangeset(ctx, GetChangesetOpts{ID: oldChangesetToBeDetached.ID})
 		if err != nil {
 			t.Fatal(err)
