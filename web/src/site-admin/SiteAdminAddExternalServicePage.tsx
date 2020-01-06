@@ -13,11 +13,11 @@ import { refreshSiteFlags } from '../site/backend'
 import { ThemeProps } from '../../../shared/src/theme'
 import { ExternalServiceCard } from '../components/ExternalServiceCard'
 import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
-import { ExternalServiceKindMetadata } from './externalServices'
+import { AddExternalServiceOptions } from './externalServices'
 
 interface Props extends ThemeProps {
     history: H.History
-    externalService: ExternalServiceKindMetadata
+    externalService: AddExternalServiceOptions
     eventLogger: {
         logViewEvent: (event: 'AddExternalService') => void
         log: (event: 'AddExternalServiceFailed' | 'AddExternalServiceSucceeded', eventProperties?: any) => void

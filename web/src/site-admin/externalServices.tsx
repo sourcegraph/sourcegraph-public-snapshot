@@ -21,9 +21,8 @@ import { EditorAction } from './configHelpers.js'
 
 /**
  * Metadata associated with adding a given external service.
- * TODO: rename to AddExternalServiceOptions
  */
-export interface ExternalServiceKindMetadata {
+export interface AddExternalServiceOptions {
     kind: GQL.ExternalServiceKind
 
     /**
@@ -394,7 +393,7 @@ const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] =>
               ]
     )
 
-const GITHUB_DOTCOM: ExternalServiceKindMetadata = {
+const GITHUB_DOTCOM: AddExternalServiceOptions = {
     kind: GQL.ExternalServiceKind.GITHUB,
     title: 'GitHub.com',
     icon: GithubCircleIcon,
@@ -475,7 +474,7 @@ const GITHUB_DOTCOM: ExternalServiceKindMetadata = {
   "orgs": []
 }`,
 }
-const GITHUB_ENTERPRISE: ExternalServiceKindMetadata = {
+const GITHUB_ENTERPRISE: AddExternalServiceOptions = {
     ...GITHUB_DOTCOM,
     title: 'GitHub Enterprise',
     defaultConfig: `{
@@ -485,7 +484,7 @@ const GITHUB_ENTERPRISE: ExternalServiceKindMetadata = {
 }`,
     instructions: githubInstructions(true),
 }
-const AWS_CODE_COMMIT: ExternalServiceKindMetadata = {
+const AWS_CODE_COMMIT: AddExternalServiceOptions = {
     kind: GQL.ExternalServiceKind.AWSCODECOMMIT,
     title: 'AWS CodeCommit repositories',
     icon: AmazonIcon,
@@ -605,7 +604,7 @@ const AWS_CODE_COMMIT: ExternalServiceKindMetadata = {
         },
     ],
 }
-const BITBUCKET_CLOUD: ExternalServiceKindMetadata = {
+const BITBUCKET_CLOUD: AddExternalServiceOptions = {
     kind: GQL.ExternalServiceKind.BITBUCKETCLOUD,
     title: 'Bitbucket.org',
     icon: BitbucketIcon,
@@ -684,7 +683,7 @@ const BITBUCKET_CLOUD: ExternalServiceKindMetadata = {
         </div>
     ),
 }
-const BITBUCKET_SERVER: ExternalServiceKindMetadata = {
+const BITBUCKET_SERVER: AddExternalServiceOptions = {
     kind: GQL.ExternalServiceKind.BITBUCKETSERVER,
     title: 'Bitbucket Server',
     icon: BitbucketIcon,
@@ -838,7 +837,7 @@ const BITBUCKET_SERVER: ExternalServiceKindMetadata = {
         },
     ],
 }
-const GITLAB_DOTCOM: ExternalServiceKindMetadata = {
+const GITLAB_DOTCOM: AddExternalServiceOptions = {
     kind: GQL.ExternalServiceKind.GITLAB,
     title: 'GitLab.com',
     icon: GitLabIcon,
@@ -854,13 +853,13 @@ const GITLAB_DOTCOM: ExternalServiceKindMetadata = {
     editorActions: gitlabEditorActions(false),
     instructions: gitlabInstructions(false),
 }
-const GITLAB_SELF_MANAGED: ExternalServiceKindMetadata = {
+const GITLAB_SELF_MANAGED: AddExternalServiceOptions = {
     ...GITLAB_DOTCOM,
     title: 'GitLab Self-Managed',
     instructions: gitlabInstructions(true),
     editorActions: gitlabEditorActions(true),
 }
-const GITOLITE: ExternalServiceKindMetadata = {
+const GITOLITE: AddExternalServiceOptions = {
     kind: GQL.ExternalServiceKind.GITOLITE,
     title: 'Gitolite',
     icon: GitIcon,
@@ -916,7 +915,7 @@ const GITOLITE: ExternalServiceKindMetadata = {
         },
     ],
 }
-const PHABRICATOR_SERVICE: ExternalServiceKindMetadata = {
+const PHABRICATOR_SERVICE: AddExternalServiceOptions = {
     kind: GQL.ExternalServiceKind.PHABRICATOR,
     title: 'Phabricator connection',
     icon: PhabricatorIcon,
@@ -966,7 +965,7 @@ const PHABRICATOR_SERVICE: ExternalServiceKindMetadata = {
         },
     ],
 }
-const GENERIC_GIT: ExternalServiceKindMetadata = {
+const GENERIC_GIT: AddExternalServiceOptions = {
     kind: GQL.ExternalServiceKind.OTHER,
     title: 'Generic Git host',
     icon: GitIcon,
@@ -1022,7 +1021,7 @@ const GENERIC_GIT: ExternalServiceKindMetadata = {
     ],
 }
 
-export const codeHostExternalServices: Record<string, ExternalServiceKindMetadata> = {
+export const codeHostExternalServices: Record<string, AddExternalServiceOptions> = {
     github: GITHUB_DOTCOM,
     ghe: GITHUB_ENTERPRISE,
     gitlabcom: GITLAB_DOTCOM,
@@ -1034,7 +1033,7 @@ export const codeHostExternalServices: Record<string, ExternalServiceKindMetadat
     git: GENERIC_GIT,
 }
 
-export const nonCodeHostExternalServices: Record<string, ExternalServiceKindMetadata> = {
+export const nonCodeHostExternalServices: Record<string, AddExternalServiceOptions> = {
     phabricator: PHABRICATOR_SERVICE,
 }
 
@@ -1043,7 +1042,7 @@ export const allExternalServices = {
     ...nonCodeHostExternalServices,
 }
 
-export const defaultExternalServices: Record<GQL.ExternalServiceKind, ExternalServiceKindMetadata> = {
+export const defaultExternalServices: Record<GQL.ExternalServiceKind, AddExternalServiceOptions> = {
     [GQL.ExternalServiceKind.GITHUB]: GITHUB_DOTCOM,
     [GQL.ExternalServiceKind.BITBUCKETCLOUD]: BITBUCKET_CLOUD,
     [GQL.ExternalServiceKind.BITBUCKETSERVER]: BITBUCKET_SERVER,

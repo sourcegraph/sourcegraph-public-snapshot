@@ -5,10 +5,10 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { ErrorLike } from '../../../shared/src/util/errors'
 import { Form } from '../components/Form'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
-import { ExternalServiceKindMetadata } from './externalServices'
+import { AddExternalServiceOptions } from './externalServices'
 import { ErrorAlert, ErrorMessage } from '../components/alerts'
 
-interface Props extends Pick<ExternalServiceKindMetadata, 'jsonSchema' | 'editorActions'> {
+interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorActions'> {
     history: H.History
     input: GQL.IAddExternalServiceInput
     isLightTheme: boolean
