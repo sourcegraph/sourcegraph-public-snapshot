@@ -769,6 +769,7 @@ github.com/sourcegraph/go-jsonschema v0.0.0-20190205151546-7939fa138765 h1:bFHV2
 github.com/sourcegraph/go-jsonschema v0.0.0-20190205151546-7939fa138765/go.mod h1:6DfNy4BLIggAeittTJ8o9z/6d1ly+YujBTSnv03i7Bk=
 github.com/sourcegraph/go-jsonschema v0.0.0-20191016093751-6a4f2b621f5d h1:sEEZxQ9S6wAm39OIKZ+7yrYPkQMIRxVy+iGs0sGYWak=
 github.com/sourcegraph/go-jsonschema v0.0.0-20191016093751-6a4f2b621f5d/go.mod h1:SJwWIH9fe2RW2FouXEXM4Cm4ZczlewF2xNQAL2VaU1M=
+github.com/sourcegraph/go-jsonschema v0.0.0-20191222043427-cdbee60427af/go.mod h1:SJwWIH9fe2RW2FouXEXM4Cm4ZczlewF2xNQAL2VaU1M=
 github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible h1:EX1bSaIbVia2U/Pt/2Z62y8wJS4Z4iNiK5VCeUKuBx8=
 github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible/go.mod h1:bBMjfpzEHd6ijPRoQ7f+knFfw+e8R+W158/MsqAy77c=
 github.com/sourcegraph/go-lsp v0.0.0-20181119182933-0c7d621186c1 h1:O1d7nVzpGmP5pGAZBSlp9TSpjNwwI0xThxhPd9oVJuU=

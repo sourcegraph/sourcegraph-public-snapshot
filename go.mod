@@ -151,7 +151,7 @@ require (
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
 	github.com/sourcegraph/docsite v1.3.1-0.20191122075004-8df06ae22b02
 	github.com/sourcegraph/go-diff v0.5.1
-	github.com/sourcegraph/go-jsonschema v0.0.0-20191016093751-6a4f2b621f5d
+	github.com/sourcegraph/go-jsonschema v0.0.0-20191222043427-cdbee60427af
 	github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible
 	github.com/sourcegraph/go-lsp v0.0.0-20181119182933-0c7d621186c1
 	github.com/sourcegraph/gosyntect v0.0.0-20191003053245-e91d603ba4eb
