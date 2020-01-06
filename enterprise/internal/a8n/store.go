@@ -133,7 +133,7 @@ func lockQuery(key string) *sqlf.Query {
 }
 
 const lockQueryFmtStr = `
--- source: enterprise/internal/a8n/store/store.go:store.lock
+-- source: enterprise/internal/a8n/store/store.go:TryAcquireAdvisoryLock
 SELECT pg_try_advisory_xact_lock(%s, %s)
 `
 
