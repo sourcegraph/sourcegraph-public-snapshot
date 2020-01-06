@@ -3,7 +3,7 @@ import React from 'react'
 import { PageTitle } from '../components/PageTitle'
 import { ThemeProps } from '../../../shared/src/theme'
 import { ExternalServiceCard } from '../components/ExternalServiceCard'
-import { onboardingExternalServices, nonCodeHostExternalServices } from './externalServices'
+import { codeHostExternalServices, nonCodeHostExternalServices, allExternalServices } from './externalServices'
 import { SiteAdminAddExternalServicePage } from './SiteAdminAddExternalServicePage'
 import { map } from 'lodash'
 
@@ -29,7 +29,7 @@ export class SiteAdminAddExternalServicesPage extends React.Component<Props> {
     public render(): JSX.Element | null {
         const id = this.getExternalServiceID()
         if (id) {
-            const externalService = onboardingExternalServices[id]
+            const externalService = allExternalServices[id]
             if (externalService) {
                 return <SiteAdminAddExternalServicePage {...this.props} externalService={externalService} />
             }
@@ -37,15 +37,18 @@ export class SiteAdminAddExternalServicesPage extends React.Component<Props> {
         return (
             <div className="add-external-services-page mt-3">
                 <PageTitle title="Add repositories" />
-                <h1>Add repositories</h1>
-                <p>Where would you like to add repositories from?</p>
-                {map(onboardingExternalServices, (externalService, id) => (
+                <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
+                    <h2 className="mb-0">Add repositories</h2>
+                </div>
+                <p className="mt-2">Add repositories from one of these code hosts.</p>
+                {map(codeHostExternalServices, (externalService, id) => (
                     <div className="add-external-services-page__card" key={id}>
                         <ExternalServiceCard to={getAddURL(id)} {...externalService} />
                     </div>
                 ))}
                 <br />
                 <h2>Other connections</h2>
+                <p className="mt-2">Add connections to non-code-host services.</p>
                 {map(nonCodeHostExternalServices, (externalService, id) => (
                     <div className="add-external-services-page__card" key={id}>
                         <ExternalServiceCard to={getAddURL(id)} {...externalService} />
