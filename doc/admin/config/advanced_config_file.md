@@ -14,7 +14,7 @@ As of Sourcegraph v3.4+, this is possible for [site configuration](site_config.m
 Loading configuration in this manner has two significant drawbacks:
 
 1. You will no longer be able to save configuration edits through the web UI by default (you can use the web UI as scratch space, though).
-2. Sourcegraph sometimes performs automatic migrations of configuration when upgrading versions. This process will now be more manual for you (see below).
+1. Sourcegraph sometimes performs automatic migrations of configuration when upgrading versions. This process will now be more manual for you (see below).
 
 ## Critical configuration (management console)
 
