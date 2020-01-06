@@ -282,12 +282,6 @@ func addCanidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 		}
 
 		cmdDir := func() string {
-			cmdDirByApp := map[string]string{
-				"lsif-server": "lsif",
-			}
-			if cmdDir, ok := cmdDirByApp[app]; ok {
-				return cmdDir
-			}
 			if _, err := os.Stat(filepath.Join("enterprise/cmd", app)); err != nil {
 				fmt.Fprintf(os.Stderr, "github.com/sourcegraph/sourcegraph/enterprise/cmd/%s does not exist so building github.com/sourcegraph/sourcegraph/cmd/%s instead\n", app, app)
 				return "cmd/" + app
