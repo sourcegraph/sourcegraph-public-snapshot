@@ -58,3 +58,13 @@ type TextParameters struct {
 	Zoekt        *searchbackend.Zoekt
 	SearcherURLs *endpoint.Map
 }
+
+// TextParametersForCommitParameters is an intermediate type based on
+// TextParameters that encodes parameters exclusively for a commit search. The
+// commit search internals converts this type to CommitParameters. The
+// commitParameter type definitions will be merged in future.
+type TextParametersForCommitParameters struct {
+	PatternInfo *PatternInfo
+	Repos       []*RepositoryRevisions
+	Query       *query.Query
+}

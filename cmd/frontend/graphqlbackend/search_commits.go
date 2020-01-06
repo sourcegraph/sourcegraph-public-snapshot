@@ -500,10 +500,10 @@ func searchCommitDiffsInRepos(ctx context.Context, args *search.TextParameters) 
 	return commitSearchResultsToSearchResults(flattened), common, nil
 }
 
-var mockSearchCommitLogInRepos func(args *search.TextParameters) ([]SearchResultResolver, *searchResultsCommon, error)
+var mockSearchCommitLogInRepos func(args *search.TextParametersForCommitParameters) ([]SearchResultResolver, *searchResultsCommon, error)
 
 // searchCommitLogInRepos searches a set of repos for matching commits.
-func searchCommitLogInRepos(ctx context.Context, args *search.TextParameters) ([]SearchResultResolver, *searchResultsCommon, error) {
+func searchCommitLogInRepos(ctx context.Context, args *search.TextParametersForCommitParameters) ([]SearchResultResolver, *searchResultsCommon, error) {
 	if mockSearchCommitLogInRepos != nil {
 		return mockSearchCommitLogInRepos(args)
 	}
