@@ -615,22 +615,6 @@ func (s *repos) Delete(ctx context.Context, repo api.RepoID) error {
 	return err
 }
 
-func (s *repos) SetEnabled(ctx context.Context, id api.RepoID, enabled bool) error {
-	q := sqlf.Sprintf("UPDATE repo SET enabled=%t WHERE id=%d", enabled, id)
-	res, err := dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return err
-	}
-	rows, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
-		return &repoNotFoundErr{ID: id}
-	}
-	return nil
-}
-
 func (s *repos) UpdateLanguage(ctx context.Context, repo api.RepoID, language string) error {
 	_, err := dbconn.Global.ExecContext(ctx, "UPDATE repo SET language=$1 WHERE id=$2", language, repo)
 	return err
