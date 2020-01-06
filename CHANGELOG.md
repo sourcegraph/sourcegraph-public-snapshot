@@ -34,6 +34,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Removed
 
 - The deprecated GraphQL mutation `setAllRepositoriesEnabled` has been removed. [#7478](https://github.com/sourcegraph/sourcegraph/pull/7478)
+- The deprecated GraphQL mutation `deleteRepository` has been removed. [#7483](https://github.com/sourcegraph/sourcegraph/pull/7483)
 
 ## 3.11.0
 

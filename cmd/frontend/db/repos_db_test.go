@@ -7,11 +7,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
@@ -57,6 +59,14 @@ func mustCreate(ctx context.Context, t *testing.T, repos ...*types.Repo) []*type
 		createdRepos = append(createdRepos, repo)
 	}
 	return createdRepos
+}
+
+// Delete the repository row from the repo table. It exists for testing
+// purposes only. Repository mutations are managed by repo-updater.
+func (s *repos) Delete(ctx context.Context, repo api.RepoID) error {
+	q := sqlf.Sprintf("DELETE FROM repo WHERE id=%d", repo)
+	_, err := dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	return err
 }
 
 /*
