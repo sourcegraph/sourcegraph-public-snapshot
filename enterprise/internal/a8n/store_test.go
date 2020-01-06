@@ -2235,3 +2235,55 @@ func testStore(db *sql.DB) func(*testing.T) {
 		})
 	}
 }
+
+func testStoreLocking(db *sql.DB) func(*testing.T) {
+	return func(t *testing.T) {
+		now := time.Now().UTC().Truncate(time.Microsecond)
+		s := NewStoreWithClock(db, func() time.Time {
+			return now.UTC().Truncate(time.Microsecond)
+		})
+
+		testKey := "test-acquire"
+		s1, err := s.Transact(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer s1.Done(nil)
+
+		s2, err := s.Transact(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer s2.Done(nil)
+
+		// Get lock
+		ok, err := s1.TryAcquireAdvisoryLock(context.Background(), testKey)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !ok {
+			t.Fatalf("Could not acquire lock")
+		}
+
+		// Try and get acquired lock
+		ok, err = s2.TryAcquireAdvisoryLock(context.Background(), testKey)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if ok {
+			t.Fatal("Should not have acquired lock")
+		}
+
+		// Release lock
+		s1.Done(nil)
+
+		// Try and get released lock
+		ok, err = s2.TryAcquireAdvisoryLock(context.Background(), testKey)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !ok {
+			t.Fatal("Could not acquire lock")
+		}
+	}
+}

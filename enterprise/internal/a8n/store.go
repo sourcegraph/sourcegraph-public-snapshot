@@ -11,6 +11,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
+	"github.com/segmentio/fasthash/fnv1"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -80,6 +81,61 @@ func (s *Store) Done(errs ...*error) {
 		_ = tx.Commit()
 	}
 }
+
+var NoTransactionError = errors.New("Not in a transaction")
+
+var lockNamespace = int32(fnv1.HashString32("a8n"))
+
+// TryAcquireAdvisoryLock will attempt to acquire an advisory lock using key
+// and is non blocking. If a lock is acquired, "true, nil" will be returned.
+// It must be called from within a transaction or "false, NoTransactionError" is returned
+func (s *Store) TryAcquireAdvisoryLock(ctx context.Context, key string) (bool, error) {
+	_, ok := s.db.(dbutil.Tx)
+	if !ok {
+		return false, NoTransactionError
+	}
+	q := lockQuery(key)
+	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return false, err
+	}
+
+	if !rows.Next() {
+		return false, rows.Err()
+	}
+
+	locked := false
+	if err = rows.Scan(&locked); err != nil {
+		return false, err
+	}
+
+	if err = rows.Close(); err != nil {
+		return false, err
+	}
+
+	return locked, nil
+}
+
+func lockQuery(key string) *sqlf.Query {
+	// Postgres advisory lock ids are a global namespace within one database.
+	// It's very unlikely that another part of our application uses a lock
+	// namespace identically to this one. It's equally unlikely that there are
+	// lock id conflicts for different permissions, but if it'd happen, no safety
+	// guarantees would be violated, since those two different users would simply
+	// have to wait on the other's update to finish, using stale permissions until
+	// it would.
+	lockID := int32(fnv1.HashString32(key))
+	return sqlf.Sprintf(
+		lockQueryFmtStr,
+		lockNamespace,
+		lockID,
+	)
+}
+
+const lockQueryFmtStr = `
+-- source: enterprise/internal/a8n/store/store.go:TryAcquireAdvisoryLock
+SELECT pg_try_advisory_xact_lock(%s, %s)
+`
 
 // DB returns the underlying dbutil.DB that this Store was
 // instantiated with.

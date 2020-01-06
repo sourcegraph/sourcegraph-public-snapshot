@@ -256,20 +256,49 @@ func (s *Service) RunChangesetJob(
 		return nil
 	}
 
-	defer func() {
+	// We'll always run a final update but in the happy path it will run as
+	// part of a transaction in which case we don't want to run it again in
+	// the defer below
+	var changesetJobUpdated bool
+	runFinalUpdate := func(ctx context.Context, store *Store) {
 		if err != nil {
 			job.Error = err.Error()
 		}
 		job.FinishedAt = s.clock()
 
-		if e := s.store.UpdateChangesetJob(ctx, job); e != nil {
+		if e := store.UpdateChangesetJob(ctx, job); e != nil {
 			if err == nil {
 				err = e
 			} else {
 				err = multierror.Append(err, e)
 			}
 		}
+		changesetJobUpdated = true
+	}
+
+	defer func() {
+		if changesetJobUpdated {
+			// Don't run again
+			return
+		}
+		runFinalUpdate(ctx, s.store)
 	}()
+
+	// We start a transaction here so that we can grab a lock
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Done(&err)
+
+	lockKey := fmt.Sprintf("RunChangesetJob: %d", job.ID)
+	acquired, err := tx.TryAcquireAdvisoryLock(ctx, lockKey)
+	if err != nil {
+		return errors.Wrap(err, "acquiring lock")
+	}
+	if !acquired {
+		return errors.New("could not acquire lock")
+	}
 
 	job.StartedAt = s.clock()
 
@@ -391,12 +420,6 @@ func (s *Service) RunChangesetJob(
 		return errors.Wrap(err, "creating changeset")
 	}
 
-	tx, err := s.store.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer tx.Done(&err)
-
 	if err = tx.CreateChangesets(ctx, cs.Changeset); err != nil {
 		if _, ok := err.(AlreadyExistError); !ok {
 			return err
@@ -410,7 +433,8 @@ func (s *Service) RunChangesetJob(
 	}
 
 	job.ChangesetID = cs.Changeset.ID
-	return tx.UpdateChangesetJob(ctx, job)
+	runFinalUpdate(ctx, tx)
+	return
 }
 
 // CloseCampaign closes the Campaign with the given ID if it has not been closed yet.
