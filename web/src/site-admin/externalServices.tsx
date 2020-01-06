@@ -102,12 +102,20 @@ const editorActionComments = {
     //    (https://docs.sourcegraph.com/admin/repo/permissions#sudo-access-token).`,
 }
 
+const Field = (props: { children: React.ReactChildren | string | string[] }): JSX.Element => (
+    <code className="hljs-type">{props.children}</code>
+)
+
+const Value = (props: { children: React.ReactChildren | string | string[] }): JSX.Element => (
+    <code className="hljs-attr">{props.children}</code>
+)
+
 const githubInstructions = (isEnterprise: boolean): JSX.Element => (
     <div>
         <ol>
             {isEnterprise && (
                 <li>
-                    Set <code>url</code> to the URL of GitHub Enterprise.
+                    Set <Field>url</Field> to the URL of GitHub Enterprise.
                 </li>
             )}
             <li>
@@ -119,27 +127,27 @@ const githubInstructions = (isEnterprise: boolean): JSX.Element => (
                 >
                     instructions
                 </a>
-                ) with <b>repo</b> scope, and set it to be the value of the <code>token</code> field in the
+                ) with <b>repo</b> scope, and set it to be the value of the <Field>token</Field> field in the
                 configuration below.
             </li>
             <li>
                 Specify which repositories Sourcegraph should index using one of the following fields:
                 <ul>
                     <li>
-                        <code>organizations</code>: a list of GitHub organizations.
+                        <Field>organizations</Field>: a list of GitHub organizations.
                     </li>
                     <li>
-                        <code>repositoryQuery</code>: a list of GitHub search queries.
+                        <Field>repositoryQuery</Field>: a list of GitHub search queries.
                         <br />
                         For example,
-                        <code className="value">"org:sourcegraph created:&gt;2019-11-01"</code> selects all repositories
-                        in organization "sourcegraph" created after November 1, 2019.
+                        <Value>"org:sourcegraph created:&gt;2019-11-01"</Value> selects all repositories in organization
+                        "sourcegraph" created after November 1, 2019.
                         <br />
-                        You may also use <code className="value">"affiliated"</code> to select all repositories
-                        affiliated with the access token.
+                        You may also use <Value>"affiliated"</Value> to select all repositories affiliated with the
+                        access token.
                     </li>
                     <li>
-                        <code>repos</code>: a list of individual repositories.
+                        <Field>repos</Field>: a list of individual repositories.
                     </li>
                 </ul>
             </li>
@@ -163,7 +171,7 @@ const gitlabInstructions = (isSelfManaged: boolean): JSX.Element => (
         <ol>
             {isSelfManaged && (
                 <li>
-                    Set <code>url</code> to the URL of GitLab.
+                    Set <Field>url</Field> to the URL of GitLab.
                 </li>
             )}
             <li>
@@ -177,15 +185,15 @@ const gitlabInstructions = (isSelfManaged: boolean): JSX.Element => (
                 </a>
                 ) with{' '}
                 <b>
-                    <code>repo</code>
+                    <Field>repo</Field>
                 </b>{' '}
-                scope, and set it to be the value of the <code>token</code> field in the configuration below.
+                scope, and set it to be the value of the <Field>token</Field> field in the configuration below.
             </li>
             <li>
                 Use the following fields to select projects:
                 <ul>
                     <li>
-                        <code>projectQuery</code> is a list of calls to{' '}
+                        <Field>projectQuery</Field> is a list of calls to{' '}
                         <a
                             target="_blank"
                             rel="noopener noreferrer"
@@ -195,20 +203,19 @@ const gitlabInstructions = (isSelfManaged: boolean): JSX.Element => (
                         </a>{' '}
                         that return a list of projects.
                         <br />
-                        <code className="value">"groups/&lt;mygroup&gt;/projects"</code> selects all projects in a
-                        group.
+                        <Value>"groups/&lt;mygroup&gt;/projects"</Value> selects all projects in a group.
                         <br />
-                        <code className="value">"projects?membership=true&archived=no"</code> selects all unarchived
-                        projects of which the token's user is a member.
+                        <Value>"projects?membership=true&archived=no"</Value> selects all unarchived projects of which
+                        the token's user is a member.
                         <br />
-                        <code className="value">"search?scope=projects&search=my_search_query"</code> selects all
-                        projects matching a search query.
+                        <Value>"search?scope=projects&search=my_search_query"</Value> selects all projects matching a
+                        search query.
                     </li>
                     <li>
-                        <code>projects</code> is a list of individual projects.
+                        <Field>projects</Field> is a list of individual projects.
                     </li>
                     <li>
-                        <code>exclude</code> excludes individual projects.
+                        <Field>exclude</Field> excludes individual projects.
                     </li>
                 </ul>
             </li>
@@ -509,13 +516,13 @@ const AWS_CODE_COMMIT: ExternalServiceKindMetadata = {
                             place.
                         </li>
                         <li>
-                            Set <code>accessKeyID</code> and <code>secretAccessKey</code> in the configuration below to
-                            the access key ID and Secret Access Key.
+                            Set <Field>accessKeyID</Field> and <Field>secretAccessKey</Field> in the configuration below
+                            to the access key ID and Secret Access Key.
                         </li>
                     </ul>
                 </li>
                 <li>
-                    Set the region to your AWS region. The region (e.g., <code>us-west-2</code>) should be visible in
+                    Set the region to your AWS region. The region (e.g., <Value>us-west-2</Value>) should be visible in
                     the URL when you visit AWS CodeCommit. You can visit AWS CodeCommit by logging into AWS, clicking on
                     "Services" in the top navbar, and clicking on "CodeCommit".
                 </li>
@@ -528,10 +535,10 @@ const AWS_CODE_COMMIT: ExternalServiceKindMetadata = {
                     >
                         instructions
                     </a>
-                    ) and set these in the <code>gitCredentials</code> field.
+                    ) and set these in the <Field>gitCredentials</Field> field.
                 </li>
                 <li>
-                    You can optionally exclude repositories using the <code>exclude</code> field.
+                    You can optionally exclude repositories using the <Field>exclude</Field> field.
                 </li>
             </ol>
             <p>
@@ -651,18 +658,15 @@ const BITBUCKET_CLOUD: ExternalServiceKindMetadata = {
                     >
                         instructions
                     </a>
-                    ) with{' '}
-                    <b>
-                        <code>read</code>
-                    </b>{' '}
-                    scope over your repositories and teams. Set it to be the value of the <code>appPassword</code> field
-                    in the configuration below.
+                    ) with <b>read</b> scope over your repositories and teams. Set it to be the value of the{' '}
+                    <Field>appPassword</Field> field in the configuration below.
                 </li>
                 <li>
-                    Set the <code>username</code> field to be the username corresponding to <code>appPassword</code>.
+                    Set the <Field>username</Field> field to be the username corresponding to <Field>appPassword</Field>
+                    .
                 </li>
                 <li>
-                    Set the <code>teams</code> field to be the list of teams whose repositories Sourcegraph should
+                    Set the <Field>teams</Field> field to be the list of teams whose repositories Sourcegraph should
                     index.
                 </li>
             </ol>
@@ -698,7 +702,7 @@ const BITBUCKET_SERVER: ExternalServiceKindMetadata = {
         <div>
             <ol>
                 <li>
-                    In the configuration below, set <code>url</code> to the URL of Bitbucket Server.
+                    In the configuration below, set <Field>url</Field> to the URL of Bitbucket Server.
                 </li>
                 <li>
                     Create a personal access token (
@@ -709,23 +713,23 @@ const BITBUCKET_SERVER: ExternalServiceKindMetadata = {
                     >
                         instructions
                     </a>
-                    ) with <code>read</code> scope.
+                    ) with <Field>read</Field> scope.
                 </li>
                 <li>
-                    Set <code>username</code> to the user that created the personal access token.
+                    Set <Field>username</Field> to the user that created the personal access token.
                 </li>
                 <li>
                     Specify which repositories Sourcegraph should clone using the following fields.
                     <ul>
                         <li>
-                            <code>repositoryQuery</code>: a list of strings that are one of the following:
+                            <Field>repositoryQuery</Field>: a list of strings that are one of the following:
                             <ul>
                                 <li>
-                                    <code>"all"</code> selects all repositories visible to the token
+                                    <Value>"all"</Value> selects all repositories visible to the token
                                 </li>
                                 <li>
                                     A query string like{' '}
-                                    <code>"{'?name=<repo name>&projectname=<project>&visibility=private'}"</code> that
+                                    <Value>"{'?name=<repo name>&projectname=<project>&visibility=private'}"</Value> that
                                     specifies search query parameters. See{' '}
                                     <a
                                         href="https://docs.atlassian.com/bitbucket-server/rest/6.1.2/bitbucket-rest.html#idp355"
@@ -737,20 +741,20 @@ const BITBUCKET_SERVER: ExternalServiceKindMetadata = {
                                     .
                                 </li>
                                 <li>
-                                    <code>"none"</code> selects no repositories (should only be used if you are listing
-                                    repositories one-by-one)
+                                    <Value>"none"</Value> selects no repositories (should only be used if you are
+                                    listing repositories one-by-one)
                                 </li>
                             </ul>
                         </li>
                         <li>
-                            <code>repos</code>: a list of single repositories
+                            <Field>repos</Field>: a list of single repositories
                         </li>
                         <li>
-                            <code>exclude</code>: a list of repositories or repository name patterns to exclude
+                            <Field>exclude</Field>: a list of repositories or repository name patterns to exclude
                         </li>
                         <li>
-                            <code>excludePersonalRepositories</code>: if true, excludes personal repositories from being
-                            indexed
+                            <Field>excludePersonalRepositories</Field>: if true, excludes personal repositories from
+                            being indexed
                         </li>
                     </ul>
                 </li>
@@ -870,12 +874,12 @@ const GITOLITE: ExternalServiceKindMetadata = {
         <div>
             <ol>
                 <li>
-                    In the configuration below, set <code>host</code> to be the username and host of the Gitolite
+                    In the configuration below, set <Field>host</Field> to be the username and host of the Gitolite
                     server.
                 </li>
                 <li>
-                    Set the <code>prefix</code> field to the prefix you desire for the repository names on Sourcegraph.
-                    This is typically the hostname of the Gitolite server.
+                    Set the <Field>prefix</Field> field to the prefix you desire for the repository names on
+                    Sourcegraph. This is typically the hostname of the Gitolite server.
                 </li>
             </ol>
             <p>
@@ -976,10 +980,10 @@ const GENERIC_GIT: ExternalServiceKindMetadata = {
         <div>
             <ol>
                 <li>
-                    In the configuration below, set <code>url</code> to be the URL of your Git host.
+                    In the configuration below, set <Field>url</Field> to be the URL of your Git host.
                 </li>
                 <li>
-                    Add the paths of the repositories you wish to index to the <code>repos</code> field. These will be
+                    Add the paths of the repositories you wish to index to the <Field>repos</Field> field. These will be
                     appended to the host URL to obtain the repository clone URLs.
                 </li>
             </ol>
