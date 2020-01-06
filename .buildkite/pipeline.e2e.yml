@@ -27,9 +27,3 @@ steps:
   concurrency: 1
   concurrency_group: e2e
   label: ':chromium:'
-
-- wait
-
-- command: docker image rm -f "$IMAGE"
-  label: ':sparkles:'
-  soft_fail: true
