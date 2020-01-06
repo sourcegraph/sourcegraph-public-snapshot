@@ -7,24 +7,22 @@ export interface HoverMerged {
     /**
      * @todo Make this type *just* {@link MarkupContent} when all consumers are updated.
      */
-    contents: MarkupContent[]
+    contents: Badged<MarkupContent>[]
 
     range?: Range
-
-    badges?: BadgeAttachmentRenderOptions[]
 }
 
 /** Create a merged hover from the given individual hovers. */
 export function fromHoverMerged(values: (Badged<Hover> | Badged<PlainHover> | null | undefined)[]): HoverMerged | null {
     const contents: HoverMerged['contents'] = []
     let range: Range | undefined
-    const badges: BadgeAttachmentRenderOptions[] = []
     for (const result of values) {
         if (result) {
             if (result.contents && result.contents.value) {
                 contents.push({
                     value: result.contents.value,
                     kind: result.contents.kind || MarkupKind.PlainText,
+                    badge: result.badge,
                 })
             }
             const __backcompatContents = result.__backcompatContents
@@ -34,13 +32,14 @@ export function fromHoverMerged(values: (Badged<Hover> | Badged<PlainHover> | nu
                     : [__backcompatContents]) {
                     if (typeof content === 'string') {
                         if (content) {
-                            contents.push({ value: content, kind: MarkupKind.Markdown })
+                            contents.push({ value: content, kind: MarkupKind.Markdown, badge: result.badge })
                         }
                     } else if ('language' in content) {
                         if (content.language && content.value) {
                             contents.push({
                                 value: toMarkdownCodeBlock(content.language, content.value),
                                 kind: MarkupKind.Markdown,
+                                badge: result.badge,
                             })
                         }
                     }
@@ -49,16 +48,9 @@ export function fromHoverMerged(values: (Badged<Hover> | Badged<PlainHover> | nu
             if (result.range && !range) {
                 range = result.range
             }
-            if (result.badge) {
-                badges.push(result.badge)
-            }
         }
     }
-    const merged: HoverMerged | null = contents.length === 0 ? null : range ? { contents, range } : { contents }
-    if (merged && badges.length > 0) {
-        merged.badges = badges
-    }
-    return merged
+    return contents.length === 0 ? null : range ? { contents, range } : { contents }
 }
 
 function toMarkdownCodeBlock(language: string, value: string): string {

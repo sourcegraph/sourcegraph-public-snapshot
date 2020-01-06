@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { castArray, isEqual, upperFirst } from 'lodash'
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
-import { MarkupContent } from 'sourcegraph'
+import { MarkupContent, BadgeAttachmentRenderOptions } from 'sourcegraph'
 import { ActionItem, ActionItemAction, ActionItemComponentProps } from '../actions/ActionItem'
 import { HoverMerged } from '../api/client/types/hover'
 import { TelemetryProps } from '../telemetry/telemetryService'
@@ -117,8 +117,14 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
         if (!hoverOrError && (!actionsOrError || isErrorLike(actionsOrError))) {
             return null
         }
+
         const badges =
-            (hoverOrError && hoverOrError !== LOADING && !isErrorLike(hoverOrError) && hoverOrError.badges) || []
+            hoverOrError && hoverOrError !== LOADING && !isErrorLike(hoverOrError)
+                ? hoverOrError.contents
+                      .map(c => c.badge)
+                      .filter((b?: BadgeAttachmentRenderOptions): b is BadgeAttachmentRenderOptions => !!b)
+                : []
+
         return (
             <div
                 // needed for dynamic styling
