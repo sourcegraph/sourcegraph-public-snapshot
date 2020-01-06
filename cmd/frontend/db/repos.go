@@ -615,11 +615,6 @@ func (s *repos) Delete(ctx context.Context, repo api.RepoID) error {
 	return err
 }
 
-func (s *repos) UpdateLanguage(ctx context.Context, repo api.RepoID, language string) error {
-	_, err := dbconn.Global.ExecContext(ctx, "UPDATE repo SET language=$1 WHERE id=$2", language, repo)
-	return err
-}
-
 const upsertSQL = `
 WITH upsert AS (
   UPDATE repo
