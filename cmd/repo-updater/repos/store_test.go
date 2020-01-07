@@ -605,6 +605,10 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 
 			sort.Sort(want)
 
+			if noID := want.Filter(hasNoID); len(noID) > 0 {
+				t.Fatalf("UpsertRepos didn't assign an ID to all repos: %v", noID.Names())
+			}
+
 			have, err := tx.ListRepos(ctx, repos.StoreListReposArgs{
 				Kinds: kinds,
 			})
@@ -647,7 +651,49 @@ func testStoreUpsertRepos(store repos.Store) func(*testing.T) {
 			} else if diff := pretty.Compare(have, repos.Repos{}); diff != "" {
 				t.Errorf("ListRepos:\n%s", diff)
 			}
+
+			// Insert previously soft-deleted repos. Ensure we get back the same ID.
+			if err = tx.UpsertRepos(ctx, want.Clone().With(repos.Opt.RepoID(0))...); err != nil {
+				t.Errorf("UpsertRepos error: %s", err)
+			} else if have, err = tx.ListRepos(ctx, repos.StoreListReposArgs{}); err != nil {
+				t.Errorf("ListRepos error: %s", err)
+			} else if diff := pretty.Compare(have, want); diff != "" {
+				t.Errorf("ListRepos:\n%s", diff)
+			}
+
+			// Delete all again, then try insert repos with different external
+			// IDs but same name. Check we get new IDs.
+			for _, r := range want {
+				r.ID = 0
+				r.ExternalRepo.ID += "-different"
+			}
+			if err = tx.UpsertRepos(ctx, deleted...); err != nil {
+				t.Fatalf("UpsertRepos deleted error: %s", err)
+			} else if err = tx.UpsertRepos(ctx, want...); err != nil {
+				t.Fatalf("UpsertRepos want error: %s", err)
+			} else if have, err = tx.ListRepos(ctx, repos.StoreListReposArgs{}); err != nil {
+				t.Errorf("ListRepos error: %s", err)
+			} else if diff := pretty.Compare(have, want); diff != "" {
+				t.Errorf("ListRepos:\n%s", diff)
+			} else if sameIDs := want.Filter(hasID(deleted.IDs()...)); len(sameIDs) > 0 {
+				t.Errorf("ListRepos returned IDs of soft deleted repos: %v", sameIDs.Names())
+			}
 		}))
+	}
+}
+
+func hasNoID(r *repos.Repo) bool {
+	return r.ID <= 0
+}
+
+func hasID(ids ...uint32) func(r *repos.Repo) bool {
+	return func(r *repos.Repo) bool {
+		for _, id := range ids {
+			if r.ID == id {
+				return true
+			}
+		}
+		return false
 	}
 }
 
