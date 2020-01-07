@@ -24,6 +24,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - The "Files" tab in the search results page has been renamed to "Filenames" for clarity.
 - The search query builder now lives on its own page at `/search/query-builder`. The home search page has a link to it.
+- User passwords when using builtin auth are limited to 256 characters. Existing passwords longer than 256 characters will continue to work.
 
 ### Fixed
 
