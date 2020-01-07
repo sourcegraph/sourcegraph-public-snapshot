@@ -711,7 +711,7 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 		wantRepoSet []string
 	}{
 		{
-			name:    "returns filtered repoSet when repoHasFileFlag is in query",
+			name:    "one include",
 			include: []string{"1"},
 			searcher: repoURLsFakeSearcher{
 				"github.com/test/1": []string{"1.md"},
@@ -720,7 +720,7 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 			wantRepoSet: []string{"github.com/test/1"},
 		},
 		{
-			name:    "returns filtered repoSet when multiple repoHasFileFlags are in query",
+			name:    "two include",
 			include: []string{"1", "2"},
 			searcher: repoURLsFakeSearcher{
 				"github.com/test/1": []string{"1.md"},
@@ -730,7 +730,7 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 			wantRepoSet: []string{"github.com/test/2"},
 		},
 		{
-			name:    "returns filtered repoSet when negated repoHasFileFlag is in query",
+			name:    "exclude",
 			exclude: []string{"1"},
 			searcher: repoURLsFakeSearcher{
 				"github.com/test/1": []string{"1.md"},
@@ -739,7 +739,7 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 			wantRepoSet: []string{"github.com/test/2"},
 		},
 		{
-			name:    "returns a new repoSet that includes at most the repos from original repoSet",
+			name:    "subset of reposet",
 			include: []string{"1"},
 			searcher: repoURLsFakeSearcher{
 				"github.com/test/1": []string{"1.md"},
