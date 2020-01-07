@@ -23,7 +23,7 @@
 
 {{define "content"}}
     <div class="docs-content">
-        <div class="nav-sticky-wrapper content-nav-wrapper column large-2 medium-3 mobile-show">
+        <div class="nav-sticky-wrapper content-nav-wrapper column large-3 medium-4 mobile-show">
             <nav id="breadcrumbs-mobile" class="breadcrumbs large-hidden medium-hidden">
                 <input type="button" class="content-nav-mobile-state large-hidden medium-hidden" />
                 <span class="content-nav-mobile-button"></span>
@@ -105,22 +105,6 @@
                     <li class="content-nav-no-hover">
                         <a class="content-nav-section-header" href="/admin">Site admin documentation</a>
                         <ul class="content-nav-section-group">
-                            <li><a href="/admin/ssl_https_self_signed_cert_nginx">Adding SSL (HTTPS) to Sourcegraph with a self-signed certificate</a></li>
-                            <li><a href="/admin/extensions">Administration of Sourcegraph extensions and the extension registry</a></li>
-                            <li><a href="/admin/external_service">External services</a></li>
-                            <li class="content-nav-no-hover">
-                                <ul class="content-nav-section-subsection">
-                                    <li><a href="/admin/external_service/github">GitHub</a></li>
-                                    <li><a href="/admin/external_service/gitlab">GitLab</a></li>
-                                    <li><a href="/admin/external_service/bitbucket_cloud">Bitbucket Cloud</a></li>
-                                    <li><a href="/admin/external_service/bitbucket_server">Bitbucket Server</a></li>
-                                    <li><a href="/admin/external_service/phabricator">Phabricator</a></li>
-                                    <li><a href="/admin/external_service/gitolite">Gitolite</a></li>
-                                    <li><a href="/admin/external_service/aws_codecommit">AWS CodeCommit</a></li>
-                                    <li><a href="/admin/external_service/other">Other Git repository hosts</a></li>
-                                </ul>
-                            </li>
-                            <li><a href="/admin/federation">Federation</a></li>
                             <li><a href="/admin/install">Installing Sourcegraph</a></li>
                             <li class="content-nav-no-hover">
                                 <ul class="content-nav-section-subsection">
@@ -135,6 +119,28 @@
                                     <li><a href="/admin/install/cluster">Installing Sourcegraph on a cluster</a></li>
                                 </ul>
                             </li>
+                            <li><a href="/admin/config">Configuring Sourcegraph</a></li>
+                            <li class="content-nav-no-hover">
+                                <ul class="content-nav-section-subsection">
+                                    <li><a href="/admin/config/site_config">Site configuration</a></li>
+                                    <li><a href="/admin/url">Configuring the external URL</a></li>
+                                    <li><a href="/admin/search">Search configuration</a></li>
+                                </ul>
+                            </li>
+                            <li><a href="/admin/external_service">External services</a></li>
+                            <li class="content-nav-no-hover">
+                                <ul class="content-nav-section-subsection">
+                                    <li><a href="/admin/external_service/github">GitHub</a></li>
+                                    <li><a href="/admin/external_service/gitlab">GitLab</a></li>
+                                    <li><a href="/admin/external_service/bitbucket_cloud">Bitbucket Cloud</a></li>
+                                    <li><a href="/admin/external_service/bitbucket_server">Bitbucket Server</a></li>
+                                    <li><a href="/admin/external_service/phabricator">Phabricator</a></li>
+                                    <li><a href="/admin/external_service/gitolite">Gitolite</a></li>
+                                    <li><a href="/admin/external_service/aws_codecommit">AWS CodeCommit</a></li>
+                                    <li><a href="/admin/external_service/other">Other Git repository hosts</a></li>
+                                </ul>
+                            </li>
+                            <li><a href="/admin/federation">Federation</a></li>
                             <li><a href="/admin/migration">Migration guides</a></li>
                             <li class="content-nav-no-hover">
                                 <ul class="content-nav-section-subsection">
@@ -145,6 +151,7 @@
                             </li>
                             <li><a href="/admin/monitoring_and_tracing">Monitoring and tracing</a></li>
                             <li><a href="/admin/sourcegraph-nginx-mermaid">NGINX and Sourcegraph diagram</a></li>
+                            <li><a href="/admin/ssl_https_self_signed_cert_nginx">Adding SSL (HTTPS) to Sourcegraph with a self-signed certificate</a></li>
                             <li><a href="/admin/subscriptions">Paid subscriptions for Sourcegraph Enterprise</a></li>
                             <li><a href="/admin/pings">Pings</a></li>
                             <li><a href="/admin/repo">Repositories</a></li>
@@ -158,15 +165,7 @@
                                     <li><a href="/admin/repo/perforce">Using Perforce repositories with Sourcegraph</a></li>
                                 </ul>
                             </li>
-                            <li><a href="/admin/search">Search configuration</a></li>
                             <li><a href="/admin/tls_ssl">Securing a Sourcegraph instance with TLS/SSL</a></li>
-                            <li><a href="/admin/url">Setting the URL</a></li>
-                            <li><a href="/admin/config">Site configuration</a></li>
-                            <li class="content-nav-no-hover">
-                                <ul class="content-nav-section-subsection">
-                                    <li><a href="/admin/config/site_config">Site configuration</a></li>
-                                </ul>
-                            </li>
                             <li><a href="/admin/nginx">Sourcegraph NGINX HTTP and HTTPS/SSL configuration</a></li>
                             <li><a href="/admin/postgres">Upgrading PostgreSQL</a></li>
                             <li><a href="/admin/updates">Upgrading Sourcegraph</a></li>
@@ -178,6 +177,7 @@
                             </li>
                             <li><a href="/admin/user_data_deletion">User data deletion</a></li>
                             <li><a href="/admin/external_database">Using external databases with Sourcegraph</a></li>
+                            <li><a href="/admin/extensions">Sourcegraph extensions and the extension registry</a></li>
                             <li><a href="/admin/faq">Administration FAQ</a></li>
                             <li><a href="/admin/lfaq">Administration LFAQ</a></li>
                             <li><a href="/admin/troubleshooting">Administration troubleshooting</a></li>
@@ -310,11 +310,11 @@
             </div>
         </div>
         {{with .Content}}
-        <div class="page-nav column large-3 medium-3 small-12">
+        <div class="page-nav column large-2 medium-2 small-12">
             {{template "index" .}}
         </div>
         {{end}}
-        <section class="column large-7 large-push-2 medium-6 medium-push-3 small-12 docs-content-section">
+        <section class="column large-7 large-push-3 medium-6 medium-push-4 small-12 docs-content-section">
             {{/* Create breadcrumb nav*/}} {{with .Content}}
 
             <nav id="breadcrumbs" class="breadcrumbs small-hidden">
@@ -384,7 +384,7 @@
 {{end}}
 
 {{define "afterBody"}}
-    <script src="{{asset "docs.js"}}?13"></script>
+    <script src="{{asset "docs.js"}}?14"></script>
     {{with .Content}}
         <script>sgdocs.init(breadcrumbs = {{ .Breadcrumbs }});</script>
     {{else}}
