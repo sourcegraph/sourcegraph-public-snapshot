@@ -669,8 +669,11 @@ func (repoPaths repoURLsFakeSearcher) Search(ctx context.Context, q zoektquery.Q
 				}
 				return &zoektquery.Const{Value: false}
 
+			case *zoektquery.And:
+				return q
+
 			default:
-				errS = "unexpected query atom"
+				errS = "unexpected query atom: " + q.String()
 				return q
 			}
 		})
@@ -785,7 +788,7 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 				PathPatternsAreRegExps:       true,
 			}
 
-			gotRepoSet, err := createNewRepoSetWithRepoHasFileInputs(context.Background(), info, searcher, *repoSet)
+			gotRepoSet, err := createNewRepoSetWithRepoHasFileInputs(context.Background(), info, searcher, repoSet)
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -137,7 +137,7 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 
 	// If the query has a `repohasfile` or `-repohasfile` flag, we want to construct a new reposet based
 	// on the values passed in to the flag.
-	newRepoSet, err := createNewRepoSetWithRepoHasFileInputs(ctx, args.PatternInfo, args.Zoekt.Client, *repoSet)
+	newRepoSet, err := createNewRepoSetWithRepoHasFileInputs(ctx, args.PatternInfo, args.Zoekt.Client, repoSet)
 	if err != nil {
 		return nil, false, nil, err
 	}
@@ -261,9 +261,15 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 	return matches, limitHit, reposLimitHit, nil
 }
 
-// Returns a new repoSet which accounts for the `repohasfile` and `-repohasfile` flags that may have been passed in the query.
-func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.PatternInfo, searcher zoekt.Searcher, repoSet zoektquery.RepoSet) (*zoektquery.RepoSet, error) {
-	newRepoSet := repoSet.Set
+// createNewRepoSetWithRepoHasFileInputs mutates repoSet such that it accounts
+// for the `repohasfile` and `-repohasfile` flags that may have been passed in
+// the query. As a convenience it returns the mutated RepoSet.
+func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.PatternInfo, searcher zoekt.Searcher, repoSet *zoektquery.RepoSet) (*zoektquery.RepoSet, error) {
+	// Shortcut if we have no repos to search
+	if len(repoSet.Set) == 0 {
+		return repoSet, nil
+	}
+
 	flagIsInQuery := len(query.FilePatternsReposMustInclude) > 0
 	negatedFlagIsInQuery := len(query.FilePatternsReposMustExclude) > 0
 
@@ -283,37 +289,26 @@ func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.Pa
 	newSearchOpts.SetDefaults()
 
 	if flagIsInQuery {
-		// Set newRepoSet to an empty map if the `repohasflag` exists.
-		newRepoSet = make(map[string]bool)
+		for _, q := range filesToIncludeQueries {
+			// Shortcut if we have no repos to search
+			if len(repoSet.Set) == 0 {
+				return repoSet, nil
+			}
 
-		for i, q := range filesToIncludeQueries {
 			// Execute a new Zoekt search for each file passed in to a `repohasfile` flag.
-			includeResp, err := searcher.Search(ctx, q, &newSearchOpts)
+			includeResp, err := searcher.Search(ctx, zoektquery.NewAnd(repoSet, q), &newSearchOpts)
 			if err != nil {
 				return nil, errors.Wrapf(err, "searching for %v", q.String())
 			}
 
+			newRepoSet := make(map[string]bool, len(includeResp.RepoURLs))
 			for repoURL := range includeResp.RepoURLs {
-				if i == 0 {
-					// For the results from the first file query, add each repo that is in the result set to newRepoSet.
-					//
-					// Only add repoURLs that exist in the original repoSet, since
-					// repoSet is already filtered down to repositories that adhere to
-					// fit the `repo` filters in the query.
-					if repoSet.Set[repoURL] {
-						newRepoSet[repoURL] = true
-					}
-				} else {
-					// Then, for all following file queries, if there are repositories already existing in newRepoSet that do not appear in
-					// the result set for the current file query, remove them so that we only include repos that have at least
-					// one match for each `repohasfile` value in newRepoSet.
-					for existing := range newRepoSet {
-						if _, ok := includeResp.RepoURLs[existing]; !ok {
-							delete(newRepoSet, existing)
-						}
-					}
-				}
+				newRepoSet[repoURL] = true
 			}
+
+			// We want repoSet = repoSet intersect newRepoSet. but newRepoSet
+			// is a subset, so we can just set repoSet = newRepoSet.
+			repoSet.Set = newRepoSet
 		}
 	}
 
@@ -325,20 +320,25 @@ func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.Pa
 
 	if negatedFlagIsInQuery {
 		for _, q := range filesToExcludeQueries {
-			excludeResp, err := searcher.Search(ctx, q, &newSearchOpts)
+			// Shortcut if we have no repos to search
+			if len(repoSet.Set) == 0 {
+				return repoSet, nil
+			}
+
+			excludeResp, err := searcher.Search(ctx, zoektquery.NewAnd(repoSet, q), &newSearchOpts)
 			if err != nil {
 				return nil, err
 			}
 			for repoURL := range excludeResp.RepoURLs {
 				// For each repo that had a result in the exclude set, if it exists in the repoSet, set the value to false so we don't search over it.
-				if newRepoSet[repoURL] {
-					delete(newRepoSet, repoURL)
+				if repoSet.Set[repoURL] {
+					delete(repoSet.Set, repoURL)
 				}
 			}
 		}
 	}
 
-	return &zoektquery.RepoSet{Set: newRepoSet}, nil
+	return repoSet, nil
 }
 
 func noOpAnyChar(re *syntax.Regexp) {
