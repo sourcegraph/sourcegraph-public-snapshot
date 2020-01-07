@@ -118,8 +118,6 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
         if (!hoverOrError && (!actionsOrError || isErrorLike(actionsOrError))) {
             return null
         }
-
-
         return (
             <div
                 // needed for dynamic styling
@@ -149,7 +147,6 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                         <CloseIcon className="icon-inline" />
                     </button>
                 )}
-
                 <div className="hover-overlay__contents">
                     {hoverOrError === LOADING ? (
                         <div className="hover-overlay__row hover-overlay__loader-row">
