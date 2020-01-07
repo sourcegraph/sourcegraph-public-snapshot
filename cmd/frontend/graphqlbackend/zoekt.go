@@ -274,9 +274,11 @@ func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.Pa
 	}
 
 	newSearchOpts := zoekt.SearchOptions{
-		ShardMaxMatchCount: 1,
-		TotalMaxMatchCount: math.MaxInt32,
-		MaxDocDisplayCount: 0,
+		ShardMaxMatchCount:     1,
+		TotalMaxMatchCount:     math.MaxInt32,
+		ShardMaxImportantMatch: 1,
+		TotalMaxImportantMatch: math.MaxInt32,
+		MaxDocDisplayCount:     0,
 	}
 	newSearchOpts.SetDefaults()
 
