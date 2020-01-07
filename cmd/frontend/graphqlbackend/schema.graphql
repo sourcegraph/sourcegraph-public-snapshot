@@ -699,6 +699,10 @@ type ExternalChangeset implements Node {
     # The unique ID for the changeset.
     id: ID!
 
+    # The external ID that uniquely identifies this ExternalChangeset on the
+    # codehost. For example, on GitHub this is the PR number.
+    externalID: String!
+
     # The repository changed by this changeset.
     repository: Repository!
 

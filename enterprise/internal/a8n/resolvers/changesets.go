@@ -140,6 +140,10 @@ func (r *changesetResolver) ID() graphql.ID {
 	return marshalChangesetID(r.Changeset.ID)
 }
 
+func (r *changesetResolver) ExternalID() string {
+	return r.Changeset.ExternalID
+}
+
 func (r *changesetResolver) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
 	return r.computeRepo(ctx)
 }
