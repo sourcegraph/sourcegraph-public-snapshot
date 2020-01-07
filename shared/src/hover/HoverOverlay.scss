@@ -13,6 +13,9 @@
     transition: opacity $animation-duration ease-in-out;
 
     &__close-button {
+        position: absolute;
+        top: 0;
+        right: 0;
         padding: 0.25rem;
         border-radius: 0;
         background: transparent;
@@ -20,13 +23,9 @@
         border: none;
         opacity: 0;
         transition: opacity $animation-duration ease-in-out;
-        display: inline;
     }
     &:hover &__close-button {
         opacity: 1;
-    }
-    &__close-button:not(:only-child) {
-        opacity: 0.5;
     }
 
     &__row {
