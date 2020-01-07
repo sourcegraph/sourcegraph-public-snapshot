@@ -785,7 +785,7 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 				PathPatternsAreRegExps:       true,
 			}
 
-			gotRepoSet, err := createNewRepoSetWithRepoHasFileInputs(context.Background(), info, searcher, *repoSet)
+			gotRepoSet, err := createNewRepoSetWithRepoHasFileInputs(context.Background(), info, searcher, repoSet)
 			if err != nil {
 				t.Fatal(err)
 			}

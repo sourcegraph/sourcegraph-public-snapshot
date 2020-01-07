@@ -137,7 +137,7 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 
 	// If the query has a `repohasfile` or `-repohasfile` flag, we want to construct a new reposet based
 	// on the values passed in to the flag.
-	newRepoSet, err := createNewRepoSetWithRepoHasFileInputs(ctx, args.PatternInfo, args.Zoekt.Client, *repoSet)
+	newRepoSet, err := createNewRepoSetWithRepoHasFileInputs(ctx, args.PatternInfo, args.Zoekt.Client, repoSet)
 	if err != nil {
 		return nil, false, nil, err
 	}
@@ -262,7 +262,12 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 }
 
 // Returns a new repoSet which accounts for the `repohasfile` and `-repohasfile` flags that may have been passed in the query.
-func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.PatternInfo, searcher zoekt.Searcher, repoSet zoektquery.RepoSet) (*zoektquery.RepoSet, error) {
+func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.PatternInfo, searcher zoekt.Searcher, repoSet *zoektquery.RepoSet) (*zoektquery.RepoSet, error) {
+	// Shortcut if we have no repos to search
+	if len(repoSet.Set) == 0 {
+		return repoSet, nil
+	}
+
 	newRepoSet := repoSet.Set
 	flagIsInQuery := len(query.FilePatternsReposMustInclude) > 0
 	negatedFlagIsInQuery := len(query.FilePatternsReposMustExclude) > 0
@@ -286,7 +291,7 @@ func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.Pa
 
 		for i, q := range filesToIncludeQueries {
 			// Execute a new Zoekt search for each file passed in to a `repohasfile` flag.
-			includeResp, err := searcher.Search(ctx, q, &newSearchOpts)
+			includeResp, err := searcher.Search(ctx, zoektquery.NewAnd(repoSet, q), &newSearchOpts)
 			if err != nil {
 				return nil, errors.Wrapf(err, "searching for %v", q.String())
 			}
@@ -323,7 +328,12 @@ func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.Pa
 
 	if negatedFlagIsInQuery {
 		for _, q := range filesToExcludeQueries {
-			excludeResp, err := searcher.Search(ctx, q, &newSearchOpts)
+			// Can't make an empty set smaller
+			if len(newRepoSet) == 0 {
+				break
+			}
+
+			excludeResp, err := searcher.Search(ctx, zoektquery.NewAnd(&zoektquery.RepoSet{Set: newRepoSet}, q), &newSearchOpts)
 			if err != nil {
 				return nil, err
 			}
