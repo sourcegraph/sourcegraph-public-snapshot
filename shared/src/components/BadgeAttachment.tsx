@@ -15,8 +15,7 @@ export const BadgeAttachment: React.FunctionComponent<{
             className="badge-decoration-attachment"
             to={attachment.linkURL}
             data-tooltip={attachment.hoverMessage}
-            // Use target to open external URLs (or else react-router's Link will treat the URL as a URL path
-            // and navigation will fail).
+            // Use target to open external URLs
             target={attachment.linkURL && /^https?:\/\//.test(attachment.linkURL) ? '_blank' : undefined}
             // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
             rel="noreferrer noopener"
