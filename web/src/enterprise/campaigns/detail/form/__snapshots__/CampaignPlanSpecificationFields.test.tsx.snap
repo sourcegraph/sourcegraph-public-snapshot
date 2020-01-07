@@ -140,7 +140,6 @@ exports[`CampaignPlanSpecificationFields non-manual type editable 1`] = `
             },
             "rewriteTemplate": Object {
               "description": "See https://comby.dev/#match-syntax for syntax",
-              "minLength": 1,
               "type": "string",
             },
             "scopeQuery": Object {
@@ -210,7 +209,6 @@ exports[`CampaignPlanSpecificationFields non-manual type read-only 1`] = `
             },
             "rewriteTemplate": Object {
               "description": "See https://comby.dev/#match-syntax for syntax",
-              "minLength": 1,
               "type": "string",
             },
             "scopeQuery": Object {

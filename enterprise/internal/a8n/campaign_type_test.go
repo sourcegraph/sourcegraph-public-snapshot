@@ -36,6 +36,16 @@ func TestNewCampaignType_ArgsValidation(t *testing.T) {
 			},
 		},
 		{
+			name:         "valid comby with empty rewriteTemplate",
+			campaignType: "comby",
+			args:         `{"scopeQuery":"repo:github","matchTemplate":"foobar","rewriteTemplate":""}`,
+			wantArgs: combyArgs{
+				ScopeQuery:      "repo:github",
+				MatchTemplate:   "foobar",
+				RewriteTemplate: "",
+			},
+		},
+		{
 			name:         "invalid comby",
 			campaignType: "comby",
 			args:         `{"scopeQuery":""}`,
