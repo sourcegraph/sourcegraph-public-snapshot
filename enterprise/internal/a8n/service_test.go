@@ -307,13 +307,24 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 				return []*a8n.CampaignJob{job}
 			},
 			wantUnmodifiedChangesetJobs: func(changesetJobs []*a8n.ChangesetJob, newCampaignJobs []*a8n.CampaignJob) (jobs []*a8n.ChangesetJob) {
-				for _, j := range changesetJobs {
-					// CampaignJob has same diff, so ChangesetJob should not be reset
-					if j.CampaignJobID == newCampaignJobs[0].ID {
-						jobs = append(jobs, j)
-					}
-				}
-				return jobs
+				// We only have 1 ChangesetJob and that should be unmodified
+				return changesetJobs
+			},
+		},
+		{
+			name: "1 modified diff",
+			oldCampaignJobs: func(plan int64) []*a8n.CampaignJob {
+				return []*a8n.CampaignJob{testCampaignJob(plan, rs[0].ID, now)}
+			},
+			newCampaignJobs: func(plan int64, oldCampaignJobs []*a8n.CampaignJob) []*a8n.CampaignJob {
+				job := oldCampaignJobs[0].Clone()
+				job.CampaignPlanID = plan
+				job.Diff = "different diff"
+				return []*a8n.CampaignJob{job}
+			},
+			wantModifiedChangesetJobs: func(changesetJobs []*a8n.ChangesetJob, newCampaignJobs []*a8n.CampaignJob) (jobs []*a8n.ChangesetJob) {
+				// We only have 1 ChangesetJob and that should be modified
+				return changesetJobs
 			},
 		},
 		{
