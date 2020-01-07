@@ -1,7 +1,6 @@
 import * as sharedMetrics from '../database/metrics'
 import * as pgModels from '../models/pg'
 import { addrFor, getCommitsNear, getHead } from '../gitserver/gitserver'
-import { MAX_TRAVERSAL_LIMIT } from '../constants'
 import { Brackets, Connection, EntityManager } from 'typeorm'
 import { dbFilename, tryDeleteFile } from '../paths'
 import { logAndTraceCall, TracingContext } from '../tracing'
