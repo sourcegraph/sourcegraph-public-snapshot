@@ -14,7 +14,7 @@ exports[`withActivation user, admin 1`] = `
   "steps": [
     {
       "id": "ConnectedCodeHost",
-      "title": "Connect your code host",
+      "title": "Add repositories",
       "detail": "Configure Sourcegraph to talk to your code host and fetch a list of your repositories.",
       "link": {
         "to": "/site-admin/external-services"
@@ -36,11 +36,7 @@ exports[`withActivation user, admin 1`] = `
     {
       "id": "EnabledSharing",
       "title": "Configure SSO or share with teammates",
-      "detail": "Configure a single-sign on (SSO) provider or have at least one other teammate sign up.",
-      "link": {
-        "to": "https://docs.sourcegraph.com/admin/auth",
-        "target": "_blank"
-      }
+      "detail": "Configure a single-sign on (SSO) provider or have at least one other teammate sign up."
     }
   ]
 }
