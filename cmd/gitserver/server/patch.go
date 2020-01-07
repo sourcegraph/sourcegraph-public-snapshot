@@ -14,6 +14,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -53,6 +54,9 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}
 
 	ref := req.TargetRef
+	if req.Push {
+		ref = git.EnsureRefPrefix(ref)
+	}
 
 	// Ensure tmp directory exists
 	tmpRepoDir, err := s.tempDir("patch-repo-")
@@ -100,7 +104,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	cmd.Env = append(cmd.Env, tmpGitPathEnv, altObjectsEnv)
 
 	if out, err := run(cmd, "basing staging on base rev"); err != nil {
-		log15.Error("Failed to base the temporary repo on the base revision.", "ref", req.TargetRef, "base", req.BaseCommit, "output", string(out))
+		log15.Error("Failed to base the temporary repo on the base revision.", "ref", ref, "base", req.BaseCommit, "output", string(out))
 		return http.StatusInternalServerError, resp
 	}
 
@@ -111,7 +115,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	cmd.Stdin = strings.NewReader(req.Patch)
 
 	if out, err := run(cmd, "applying patch"); err != nil {
-		log15.Error("Failed to apply patch.", "ref", req.TargetRef, "output", string(out))
+		log15.Error("Failed to apply patch.", "ref", ref, "output", string(out))
 		return http.StatusInternalServerError, resp
 	}
 
@@ -142,7 +146,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}...)
 
 	if out, err := run(cmd, "commiting patch"); err != nil {
-		log15.Error("Failed to commit patch.", "ref", req.TargetRef, "output", out)
+		log15.Error("Failed to commit patch.", "ref", ref, "output", out)
 		return http.StatusInternalServerError, resp
 	}
 
@@ -186,32 +190,33 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		return http.StatusInternalServerError, resp
 	}
 
-	cmd = exec.CommandContext(ctx, "git", "update-ref", "--", req.TargetRef, cmtHash)
-	cmd.Dir = repoGitDir
-
-	if out, err = run(cmd, "creating ref"); err != nil {
-		log15.Error("Failed to create ref for commit.", "ref", req.TargetRef, "commit", cmtHash, "output", string(out))
-		return http.StatusInternalServerError, resp
-	}
-
 	if req.Push {
 		remoteURL, err := repoRemoteURL(ctx, GitDir(repoGitDir))
 		if err != nil {
-			log15.Error("Failed to get remote URL", "ref", req.TargetRef, "commit", cmtHash, "err", err)
+			log15.Error("Failed to get remote URL", "ref", ref, "commit", cmtHash, "err", err)
 			resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteURL"))
 			return http.StatusInternalServerError, resp
 		}
 
-		cmd = exec.CommandContext(ctx, "git", "push", "--force", remoteURL, fmt.Sprintf("%s:refs/heads/%s", req.TargetRef, req.TargetRef))
+		cmd = exec.CommandContext(ctx, "git", "push", "--force", remoteURL, fmt.Sprintf("%s:%s", cmtHash, ref))
 		cmd.Dir = repoGitDir
 
 		if out, err = run(cmd, "pushing ref"); err != nil {
-			log15.Error("Failed to push", "ref", req.TargetRef, "commit", cmtHash, "output", string(out))
+			log15.Error("Failed to push", "ref", ref, "commit", cmtHash, "output", string(out))
 			return http.StatusInternalServerError, resp
 		}
 	}
 
-	resp.Rev = "refs/" + ref
+	cmd = exec.CommandContext(ctx, "git", "update-ref", "--", ref, cmtHash)
+	cmd.Dir = repoGitDir
+
+	if out, err = run(cmd, "creating ref"); err != nil {
+		log15.Error("Failed to create ref for commit.", "ref", ref, "commit", cmtHash, "output", string(out))
+		return http.StatusInternalServerError, resp
+	}
+
+	resp.Rev = "refs/" + strings.TrimPrefix(ref, "refs/")
+
 	return http.StatusOK, resp
 }
 
