@@ -713,6 +713,17 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 		wantRepoSet []string
 	}{
 		{
+			name:        "all",
+			include:     []string{"md"},
+			repoSet:     allRepos,
+			wantRepoSet: allRepos,
+		},
+		{
+			name:    "none",
+			include: []string{"foo"},
+			repoSet: allRepos,
+		},
+		{
 			name:        "one include",
 			include:     []string{"1"},
 			repoSet:     allRepos,
@@ -725,16 +736,39 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 			wantRepoSet: []string{"github.com/test/2"},
 		},
 		{
+			name:        "include exclude",
+			include:     []string{"md"},
+			exclude:     []string{"1"},
+			repoSet:     allRepos,
+			wantRepoSet: []string{"github.com/test/2"},
+		},
+		{
 			name:        "exclude",
 			exclude:     []string{"1"},
 			repoSet:     allRepos,
 			wantRepoSet: []string{"github.com/test/2"},
 		},
 		{
+			name:    "exclude all",
+			exclude: []string{"md"},
+			repoSet: allRepos,
+		},
+		{
+			name:        "exclude none",
+			exclude:     []string{"foo"},
+			repoSet:     allRepos,
+			wantRepoSet: allRepos,
+		},
+		{
 			name:        "subset of reposet",
 			include:     []string{"md"},
 			repoSet:     []string{"github.com/test/1"},
 			wantRepoSet: []string{"github.com/test/1"},
+		},
+		{
+			name:    "exclude subset of reposet",
+			exclude: []string{"1"},
+			repoSet: []string{"github.com/test/1"},
 		},
 	}
 
