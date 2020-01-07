@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -85,6 +86,22 @@ func TestUsers_ValidUsernames(t *testing.T) {
 				t.Errorf("%q: got valid %v, want %v", test.name, valid, test.wantValid)
 			}
 		})
+	}
+}
+
+func TestUsers_LimitPasswordLength(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	longPassword := strings.Repeat("x", maxPasswordRunes+1)
+	expectedErr := "Passwords may not be more than 256 characters."
+
+	_, err := Users.Create(ctx, NewUser{Username: "test", Password: longPassword})
+	if pm := errcode.PresentationMessage(err); pm != expectedErr {
+		t.Fatalf("expected error %q; got %q", expectedErr, pm)
 	}
 }
 

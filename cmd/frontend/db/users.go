@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"time"
+	"unicode/utf8"
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
@@ -15,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -138,11 +140,27 @@ func (u *users) Create(ctx context.Context, info NewUser) (newUser *types.User, 
 	return u.create(ctx, tx, info)
 }
 
+// maxPasswordRunes is the maximum number of UTF-8 runes that a password can contain.
+// This safety limit is to protect us from a DDOS attack caused by hashing very large passwords on Sourcegraph.com.
+const maxPasswordRunes = 256
+
+// checkPasswordLength returns an error if the password is too long.
+func checkPasswordLength(pw string) error {
+	if utf8.RuneCountInString(pw) > maxPasswordRunes {
+		return errcode.NewPresentationError(fmt.Sprintf("Passwords may not be more than %d characters.", maxPasswordRunes))
+	}
+	return nil
+}
+
 // create is like Create, except it uses the provided DB transaction. It must execute in a
 // transaction because the post-user-creation hooks must run atomically with the user creation.
 func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *types.User, err error) {
 	if Mocks.Users.Create != nil {
 		return Mocks.Users.Create(ctx, info)
+	}
+
+	if err := checkPasswordLength(info.Password); err != nil {
+		return nil, err
 	}
 
 	if info.Email != "" && info.EmailVerificationCode == "" && !info.EmailIsVerified {
