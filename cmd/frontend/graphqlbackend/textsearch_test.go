@@ -699,52 +699,40 @@ func (repoURLsFakeSearcher) Close() {
 }
 
 func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
-	type args struct {
+	searcher := repoURLsFakeSearcher{
+		"github.com/test/1": []string{"1.md"},
+		"github.com/test/2": []string{"2.md"},
 	}
+	allRepos := []string{"github.com/test/1", "github.com/test/2"}
 
 	tests := []struct {
 		name        string
 		include     []string
 		exclude     []string
-		searcher    zoekt.Searcher
 		repoSet     []string
 		wantRepoSet []string
 	}{
 		{
-			name:    "one include",
-			include: []string{"1"},
-			searcher: repoURLsFakeSearcher{
-				"github.com/test/1": []string{"1.md"},
-			},
-			repoSet:     []string{"github.com/test/1", "github.com/test/2"},
+			name:        "one include",
+			include:     []string{"1"},
+			repoSet:     allRepos,
 			wantRepoSet: []string{"github.com/test/1"},
 		},
 		{
-			name:    "two include",
-			include: []string{"1", "2"},
-			searcher: repoURLsFakeSearcher{
-				"github.com/test/1": []string{"1.md"},
-				"github.com/test/2": []string{"1.md", "2.md"},
-			},
-			repoSet:     []string{"github.com/test/1", "github.com/test/2"},
+			name:        "two include",
+			include:     []string{"md", "2"},
+			repoSet:     allRepos,
 			wantRepoSet: []string{"github.com/test/2"},
 		},
 		{
-			name:    "exclude",
-			exclude: []string{"1"},
-			searcher: repoURLsFakeSearcher{
-				"github.com/test/1": []string{"1.md"},
-			},
-			repoSet:     []string{"github.com/test/1", "github.com/test/2"},
+			name:        "exclude",
+			exclude:     []string{"1"},
+			repoSet:     allRepos,
 			wantRepoSet: []string{"github.com/test/2"},
 		},
 		{
-			name:    "subset of reposet",
-			include: []string{"1"},
-			searcher: repoURLsFakeSearcher{
-				"github.com/test/1": []string{"1.md"},
-				"github.com/test/2": []string{"1.md"},
-			},
+			name:        "subset of reposet",
+			include:     []string{"md"},
 			repoSet:     []string{"github.com/test/1"},
 			wantRepoSet: []string{"github.com/test/1"},
 		},
@@ -763,7 +751,7 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 				PathPatternsAreRegExps:       true,
 			}
 
-			gotRepoSet, err := createNewRepoSetWithRepoHasFileInputs(context.Background(), info, tt.searcher, *repoSet)
+			gotRepoSet, err := createNewRepoSetWithRepoHasFileInputs(context.Background(), info, searcher, *repoSet)
 			if err != nil {
 				t.Fatal(err)
 			}
