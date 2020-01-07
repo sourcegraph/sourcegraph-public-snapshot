@@ -700,9 +700,10 @@ func (repoURLsFakeSearcher) Close() {
 
 func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 	type args struct {
-		queryPatternInfo *search.PatternInfo
-		searcher         zoekt.Searcher
-		repoSet          []string
+		include  []string
+		exclude  []string
+		searcher zoekt.Searcher
+		repoSet  []string
 	}
 
 	tests := []struct {
@@ -713,7 +714,7 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 		{
 			name: "returns filtered repoSet when repoHasFileFlag is in query",
 			args: args{
-				queryPatternInfo: &search.PatternInfo{FilePatternsReposMustInclude: []string{"1"}, PathPatternsAreRegExps: true},
+				include: []string{"1"},
 				searcher: repoURLsFakeSearcher{
 					"github.com/test/1": []string{"1.md"},
 				},
@@ -724,7 +725,7 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 		{
 			name: "returns filtered repoSet when multiple repoHasFileFlags are in query",
 			args: args{
-				queryPatternInfo: &search.PatternInfo{FilePatternsReposMustInclude: []string{"1", "2"}, PathPatternsAreRegExps: true},
+				include: []string{"1", "2"},
 				searcher: repoURLsFakeSearcher{
 					"github.com/test/1": []string{"1.md"},
 					"github.com/test/2": []string{"1.md", "2.md"},
@@ -736,7 +737,7 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 		{
 			name: "returns filtered repoSet when negated repoHasFileFlag is in query",
 			args: args{
-				queryPatternInfo: &search.PatternInfo{FilePatternsReposMustExclude: []string{"1"}, PathPatternsAreRegExps: true},
+				exclude: []string{"1"},
 				searcher: repoURLsFakeSearcher{
 					"github.com/test/1": []string{"1.md"},
 				},
@@ -747,7 +748,7 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 		{
 			name: "returns a new repoSet that includes at most the repos from original repoSet",
 			args: args{
-				queryPatternInfo: &search.PatternInfo{FilePatternsReposMustInclude: []string{"1"}, PathPatternsAreRegExps: true},
+				include: []string{"1"},
 				searcher: repoURLsFakeSearcher{
 					"github.com/test/1": []string{"1.md"},
 					"github.com/test/2": []string{"1.md"},
@@ -765,7 +766,13 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 				repoSet.Set[r] = true
 			}
 
-			gotRepoSet, err := createNewRepoSetWithRepoHasFileInputs(context.Background(), tt.args.queryPatternInfo, tt.args.searcher, *repoSet)
+			info := &search.PatternInfo{
+				FilePatternsReposMustInclude: tt.args.include,
+				FilePatternsReposMustExclude: tt.args.exclude,
+				PathPatternsAreRegExps:       true,
+			}
+
+			gotRepoSet, err := createNewRepoSetWithRepoHasFileInputs(context.Background(), info, tt.args.searcher, *repoSet)
 			if err != nil {
 				t.Fatal(err)
 			}
