@@ -16,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -23,6 +24,7 @@ import (
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestQueryToZoektQuery(t *testing.T) {
@@ -406,6 +408,64 @@ func TestSearchFilesInRepos(t *testing.T) {
 	_, _, err = searchFilesInRepos(context.Background(), args)
 	if !gitserver.IsRevisionNotFound(errors.Cause(err)) {
 		t.Fatalf("searching non-existent rev expected to fail with RevisionNotFoundError got: %v", err)
+	}
+}
+
+func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
+		repoName := repo.Name
+		switch repoName {
+		case "foo":
+			return []*FileMatchResolver{
+				{
+					uri: "git://" + string(repoName) + "?" + rev + "#" + "main.go",
+				},
+			}, false, nil
+		default:
+			panic("unexpected repo")
+		}
+	}
+	defer func() { mockSearchFilesInRepo = nil }()
+
+	trueVal := true
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+		ExperimentalFeatures: &schema.ExperimentalFeatures{SearchMultipleRevisionsPerRepository: &trueVal},
+	}})
+	defer conf.Mock(nil)
+
+	zoekt := &searchbackend.Zoekt{Client: &fakeSearcher{repos: &zoekt.RepoList{}}}
+
+	q, err := query.ParseAndCheck("foo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	args := &search.TextParameters{
+		PatternInfo: &search.PatternInfo{
+			FileMatchLimit: defaultMaxSearchResults,
+			Pattern:        "foo",
+		},
+		Repos:        makeRepositoryRevisions("foo@master:mybranch"),
+		Query:        q,
+		Zoekt:        zoekt,
+		SearcherURLs: endpoint.Static("test"),
+	}
+	results, _, err := searchFilesInRepos(context.Background(), args)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resultURIs := make([]string, len(results))
+	for i, result := range results {
+		resultURIs[i] = result.uri
+	}
+	sort.Strings(resultURIs)
+
+	wantResultURIs := []string{
+		"git://foo?master#main.go",
+		"git://foo?mybranch#main.go",
+	}
+	if !reflect.DeepEqual(resultURIs, wantResultURIs) {
+		t.Errorf("got %v, want %v", resultURIs, wantResultURIs)
 	}
 }
 
@@ -814,6 +874,7 @@ func Test_zoektIndexedRepos(t *testing.T) {
 		"foo/indexed-three@",
 		"foo/unindexed-one",
 		"foo/unindexed-two",
+		"foo/multi-rev@a:b",
 	)
 
 	zoektRepoList := &zoekt.RepoList{

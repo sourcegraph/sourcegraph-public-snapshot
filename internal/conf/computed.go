@@ -282,6 +282,11 @@ func StructuralSearchEnabled() bool {
 	return val == "enabled"
 }
 
+func SearchMultipleRevisionsPerRepository() bool {
+	x := ExperimentalFeatures()
+	return x.SearchMultipleRevisionsPerRepository != nil && *x.SearchMultipleRevisionsPerRepository
+}
+
 func ExperimentalFeatures() schema.ExperimentalFeatures {
 	val := Get().ExperimentalFeatures
 	if val == nil {
