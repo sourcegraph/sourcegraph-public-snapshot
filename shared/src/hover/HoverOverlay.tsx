@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { castArray, isEqual, upperFirst } from 'lodash'
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
-import { MarkupContent, BadgeAttachmentRenderOptions } from 'sourcegraph'
+import { MarkupContent, BadgeAttachmentRenderOptions, Badged } from 'sourcegraph'
 import { ActionItem, ActionItemAction, ActionItemComponentProps } from '../actions/ActionItem'
 import { HoverMerged } from '../api/client/types/hover'
 import { TelemetryProps } from '../telemetry/telemetryService'
@@ -119,10 +119,6 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
             return null
         }
 
-        const badges =
-            hoverOrError && hoverOrError !== LOADING && !isErrorLike(hoverOrError)
-                ? hoverOrError.contents.map(c => c.badge).filter(isDefined)
-                : []
 
         return (
             <div
@@ -144,25 +140,15 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                 className={classNames('hover-overlay', className)}
                 ref={hoverRef}
             >
-                <div className="hover-overlay__badge-row">
-                    {badges.map(b => (
-                        <BadgeAttachment
-                            key={`badge:${b.icon}:${b.hoverMessage}:${b.linkURL}`}
-                            attachment={b}
-                            isLightTheme={this.props.isLightTheme}
-                        />
-                    ))}
-
-                    {showCloseButton && (
-                        <button
-                            type="button"
-                            className={classNames('hover-overlay__close-button', this.props.closeButtonClassName)}
-                            onClick={onCloseButtonClick ? transformMouseEvent(onCloseButtonClick) : undefined}
-                        >
-                            <CloseIcon className="icon-inline" />
-                        </button>
-                    )}
-                </div>
+                {showCloseButton && (
+                    <button
+                        type="button"
+                        className={classNames('hover-overlay__close-button', this.props.closeButtonClassName)}
+                        onClick={onCloseButtonClick ? transformMouseEvent(onCloseButtonClick) : undefined}
+                    >
+                        <CloseIcon className="icon-inline" />
+                    </button>
+                )}
 
                 <div className="hover-overlay__contents">
                     {hoverOrError === LOADING ? (
@@ -181,7 +167,9 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                         </div>
                     ) : (
                         hoverOrError &&
-                        castArray<string | MarkupContent | { language: string; value: string }>(hoverOrError.contents)
+                        castArray<string | Badged<MarkupContent> | { language: string; value: string }>(
+                            hoverOrError.contents
+                        )
                             .map(value => (typeof value === 'string' ? { kind: 'markdown', value } : value))
                             .map((content, i) => {
                                 if ('kind' in content || !('language' in content)) {
@@ -191,8 +179,23 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                                                 <div
                                                     className="hover-overlay__content hover-overlay__row e2e-tooltip-content"
                                                     key={i}
-                                                    dangerouslySetInnerHTML={{ __html: renderMarkdown(content.value) }}
-                                                />
+                                                >
+                                                    {'badge' in content && content.badge && (
+                                                        <div className="hover-overlay__badge-row">
+                                                            <BadgeAttachment
+                                                                key={`badge:${content.badge.icon}:${content.badge.hoverMessage}:${content.badge.linkURL}`}
+                                                                attachment={content.badge}
+                                                                isLightTheme={this.props.isLightTheme}
+                                                            />
+                                                        </div>
+                                                    )}
+
+                                                    <div
+                                                        dangerouslySetInnerHTML={{
+                                                            __html: renderMarkdown(content.value),
+                                                        }}
+                                                    />
+                                                </div>
                                             )
                                         } catch (err) {
                                             return (

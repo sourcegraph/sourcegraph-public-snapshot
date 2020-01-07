@@ -12,14 +12,6 @@
     $animation-duration: 100ms;
     transition: opacity $animation-duration ease-in-out;
 
-    &__badge-row {
-        position: absolute;
-        top: 0;
-        right: 0;
-        width: 100%;
-        text-align: right;
-    }
-
     &__close-button {
         padding: 0.25rem;
         border-radius: 0;
@@ -66,6 +58,7 @@
         padding: 0.5rem;
         overflow-x: auto;
         word-wrap: normal;
+        position: relative;
 
         // Descendant selectors are needed here to style rendered markdown
         // stylelint-disable selector-max-compound-selectors
@@ -91,6 +84,14 @@
             white-space: pre;
         }
         // stylelint-enable selector-max-compound-selectors
+    }
+
+    &__badge-row {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 100%;
+        text-align: right;
     }
 
     &__actions {
