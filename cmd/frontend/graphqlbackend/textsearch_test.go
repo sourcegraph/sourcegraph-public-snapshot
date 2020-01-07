@@ -700,61 +700,52 @@ func (repoURLsFakeSearcher) Close() {
 
 func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 	type args struct {
-		include  []string
-		exclude  []string
-		searcher zoekt.Searcher
-		repoSet  []string
 	}
 
 	tests := []struct {
 		name        string
-		args        args
+		include     []string
+		exclude     []string
+		searcher    zoekt.Searcher
+		repoSet     []string
 		wantRepoSet []string
 	}{
 		{
-			name: "returns filtered repoSet when repoHasFileFlag is in query",
-			args: args{
-				include: []string{"1"},
-				searcher: repoURLsFakeSearcher{
-					"github.com/test/1": []string{"1.md"},
-				},
-				repoSet: []string{"github.com/test/1", "github.com/test/2"},
+			name:    "returns filtered repoSet when repoHasFileFlag is in query",
+			include: []string{"1"},
+			searcher: repoURLsFakeSearcher{
+				"github.com/test/1": []string{"1.md"},
 			},
+			repoSet:     []string{"github.com/test/1", "github.com/test/2"},
 			wantRepoSet: []string{"github.com/test/1"},
 		},
 		{
-			name: "returns filtered repoSet when multiple repoHasFileFlags are in query",
-			args: args{
-				include: []string{"1", "2"},
-				searcher: repoURLsFakeSearcher{
-					"github.com/test/1": []string{"1.md"},
-					"github.com/test/2": []string{"1.md", "2.md"},
-				},
-				repoSet: []string{"github.com/test/1", "github.com/test/2"},
+			name:    "returns filtered repoSet when multiple repoHasFileFlags are in query",
+			include: []string{"1", "2"},
+			searcher: repoURLsFakeSearcher{
+				"github.com/test/1": []string{"1.md"},
+				"github.com/test/2": []string{"1.md", "2.md"},
 			},
+			repoSet:     []string{"github.com/test/1", "github.com/test/2"},
 			wantRepoSet: []string{"github.com/test/2"},
 		},
 		{
-			name: "returns filtered repoSet when negated repoHasFileFlag is in query",
-			args: args{
-				exclude: []string{"1"},
-				searcher: repoURLsFakeSearcher{
-					"github.com/test/1": []string{"1.md"},
-				},
-				repoSet: []string{"github.com/test/1", "github.com/test/2"},
+			name:    "returns filtered repoSet when negated repoHasFileFlag is in query",
+			exclude: []string{"1"},
+			searcher: repoURLsFakeSearcher{
+				"github.com/test/1": []string{"1.md"},
 			},
+			repoSet:     []string{"github.com/test/1", "github.com/test/2"},
 			wantRepoSet: []string{"github.com/test/2"},
 		},
 		{
-			name: "returns a new repoSet that includes at most the repos from original repoSet",
-			args: args{
-				include: []string{"1"},
-				searcher: repoURLsFakeSearcher{
-					"github.com/test/1": []string{"1.md"},
-					"github.com/test/2": []string{"1.md"},
-				},
-				repoSet: []string{"github.com/test/1"},
+			name:    "returns a new repoSet that includes at most the repos from original repoSet",
+			include: []string{"1"},
+			searcher: repoURLsFakeSearcher{
+				"github.com/test/1": []string{"1.md"},
+				"github.com/test/2": []string{"1.md"},
 			},
+			repoSet:     []string{"github.com/test/1"},
 			wantRepoSet: []string{"github.com/test/1"},
 		},
 	}
@@ -762,17 +753,17 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			repoSet := &zoektquery.RepoSet{Set: map[string]bool{}}
-			for _, r := range tt.args.repoSet {
+			for _, r := range tt.repoSet {
 				repoSet.Set[r] = true
 			}
 
 			info := &search.PatternInfo{
-				FilePatternsReposMustInclude: tt.args.include,
-				FilePatternsReposMustExclude: tt.args.exclude,
+				FilePatternsReposMustInclude: tt.include,
+				FilePatternsReposMustExclude: tt.exclude,
 				PathPatternsAreRegExps:       true,
 			}
 
-			gotRepoSet, err := createNewRepoSetWithRepoHasFileInputs(context.Background(), info, tt.args.searcher, *repoSet)
+			gotRepoSet, err := createNewRepoSetWithRepoHasFileInputs(context.Background(), info, tt.searcher, *repoSet)
 			if err != nil {
 				t.Fatal(err)
 			}
