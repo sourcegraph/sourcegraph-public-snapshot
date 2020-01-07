@@ -118,7 +118,7 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                 ) : (
                     <PageTitle title="External service" />
                 )}
-                <h2>Update external service</h2>
+                <h2>Update synced repositories</h2>
                 {this.state.externalServiceOrError === LOADING && <LoadingSpinner className="icon-inline" />}
                 {isErrorLike(this.state.externalServiceOrError) && (
                     <ErrorAlert className="mb-3" error={this.state.externalServiceOrError} />

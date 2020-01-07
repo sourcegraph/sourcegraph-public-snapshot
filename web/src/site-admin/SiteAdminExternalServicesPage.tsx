@@ -202,7 +202,7 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, St
                         className="btn btn-primary e2e-goto-add-external-service-page"
                         to="/site-admin/external-services/new"
                     >
-                        <AddIcon className="icon-inline" /> Add external service
+                        <AddIcon className="icon-inline" /> Add repositories
                     </Link>
                 </div>
                 <p className="mt-2">Manage code host connections to sync repositories.</p>
