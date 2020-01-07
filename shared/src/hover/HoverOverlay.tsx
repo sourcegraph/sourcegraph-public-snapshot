@@ -172,10 +172,12 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                                 if ('kind' in content || !('language' in content)) {
                                     if (content.kind === 'markdown') {
                                         try {
+                                            // Offset first badge when the close button is shown to avoid conflict.
+                                            const offsetBadge = showCloseButton && i === 0
                                             return (
                                                 <div className="hover-overlay__row e2e-tooltip-badged-content" key={i} >
                                                     {'badge' in content && content.badge && (
-                                                        <div className="hover-overlay__badge-row e2e-badge">
+                                                        <div className={classNames("hover-overlay__badge-row", "e2e-badge", offsetBadge && "hover-overlay__badge-row--offset")}>
                                                             <BadgeAttachment
                                                                 key={`badge:${content.badge.icon}:${content.badge.hoverMessage}:${content.badge.linkURL}`}
                                                                 attachment={content.badge}
