@@ -261,6 +261,10 @@ func (s *Service) RunChangesetJob(
 	// the defer below
 	var changesetJobUpdated bool
 	runFinalUpdate := func(ctx context.Context, store *Store) {
+		if changesetJobUpdated {
+			// Don't run again
+			return
+		}
 		if err != nil {
 			job.Error = err.Error()
 		}
@@ -275,14 +279,7 @@ func (s *Service) RunChangesetJob(
 		}
 		changesetJobUpdated = true
 	}
-
-	defer func() {
-		if changesetJobUpdated {
-			// Don't run again
-			return
-		}
-		runFinalUpdate(ctx, s.store)
-	}()
+	defer runFinalUpdate(ctx, s.store)
 
 	// We start a transaction here so that we can grab a lock
 	tx, err := s.store.Transact(ctx)
