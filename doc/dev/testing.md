@@ -71,6 +71,8 @@ You can single-out one test with `test.only`:
 
 Alternatively, you can use `-t` to filter tests: `env ... test-e2e -t "some test name"`.
 
+Advanced: Set the env var `SKIP_EXTERNAL_SERVICE_SETUP=1` to skip the lengthy external service creation and repository cloning during a test run. This is useful when you are making frequent changes to (or troubleshooting) tests. For this to work, you must have the `e2e-test-github` external service already created from a previous test run (and note that restarting `frontend` will wipe it out, unless you've manually added it to your `dev-private` site config).
+
 ### Viewing e2e tests live in CI
 
 If CI appears stuck on e2e tests, you can view the screen in [VNC Viewer](https://www.realvnc.com/en/connect/download/viewer/) (free) by forwarding port 5900 to the pod. Find the pod name on the top right of the step in Buildkite:

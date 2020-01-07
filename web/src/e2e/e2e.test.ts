@@ -53,16 +53,18 @@ describe('e2e test suite', () => {
         ]
         await driver.ensureLoggedIn({ username: 'test', password: 'test', email: 'test@test.com' })
         await driver.resetUserSettings()
-        await driver.ensureHasExternalService({
-            kind: ExternalServiceKind.GITHUB,
-            displayName: 'e2e-test-github',
-            config: JSON.stringify({
-                url: 'https://github.com',
-                token: gitHubToken,
-                repos: repoSlugs,
-            }),
-            ensureRepos: repoSlugs.map(slug => `github.com/${slug}`),
-        })
+        if (!process.env.SKIP_EXTERNAL_SERVICE_SETUP) {
+            await driver.ensureHasExternalService({
+                kind: ExternalServiceKind.GITHUB,
+                displayName: 'e2e-test-github',
+                config: JSON.stringify({
+                    url: 'https://github.com',
+                    token: gitHubToken,
+                    repos: repoSlugs,
+                }),
+                ensureRepos: repoSlugs.map(slug => `github.com/${slug}`),
+            })
+        }
     }
 
     beforeAll(
