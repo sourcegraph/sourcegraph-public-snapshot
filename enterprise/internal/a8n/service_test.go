@@ -40,13 +40,7 @@ func TestService(t *testing.T) {
 	gitClient := &dummyGitserverClient{response: "testresponse", responseErr: nil}
 	cf := httpcli.NewHTTPClientFactory()
 
-	u, err := db.Users.Create(ctx, db.NewUser{
-		Email:                 "thorsten@sourcegraph.com",
-		Username:              "thorsten",
-		DisplayName:           "thorsten",
-		Password:              "1234",
-		EmailVerificationCode: "foobar",
-	})
+	u, err := db.Users.Create(ctx, testUser)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -277,18 +271,10 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 	gitClient := &dummyGitserverClient{response: "testresponse", responseErr: nil}
 	cf := httpcli.NewHTTPClientFactory()
 
-	u, err := db.Users.Create(ctx, db.NewUser{
-		Email:                 "thorsten@sourcegraph.com",
-		Username:              "thorsten",
-		DisplayName:           "thorsten",
-		Password:              "1234",
-		EmailVerificationCode: "foobar",
-	})
+	u, err := db.Users.Create(ctx, testUser)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	store := NewStoreWithClock(dbconn.Global, clock)
 
 	var rs []*repos.Repo
 	for i := 0; i < 4; i++ {
@@ -312,18 +298,13 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 	}{
 		{
 			name: "1 unmodified",
-			oldCampaignJobs: func(plan int64) (jobs []*a8n.CampaignJob) {
-				jobs = append(jobs, testCampaignJob(plan, rs[0].ID, now))
-				return jobs
+			oldCampaignJobs: func(plan int64) []*a8n.CampaignJob {
+				return []*a8n.CampaignJob{testCampaignJob(plan, rs[0].ID, now)}
 			},
 			newCampaignJobs: func(plan int64, oldCampaignJobs []*a8n.CampaignJob) []*a8n.CampaignJob {
-				newJobs := make([]*a8n.CampaignJob, 1)
-				newJobs[0] = oldCampaignJobs[0].Clone()
-				newJobs[0].CampaignPlanID = plan
-				return newJobs
-			},
-			wantCampaignJobsWithoutChangesetJob: func(oldCampaignJobs []*a8n.CampaignJob) []*a8n.CampaignJob {
-				return []*a8n.CampaignJob{}
+				job := oldCampaignJobs[0].Clone()
+				job.CampaignPlanID = plan
+				return []*a8n.CampaignJob{job}
 			},
 			wantUnmodifiedChangesetJobs: func(changesetJobs []*a8n.ChangesetJob, newCampaignJobs []*a8n.CampaignJob) (jobs []*a8n.ChangesetJob) {
 				for _, j := range changesetJobs {
@@ -332,12 +313,6 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 						jobs = append(jobs, j)
 					}
 				}
-				return jobs
-			},
-			wantModifiedChangesetJobs: func(changesetJobs []*a8n.ChangesetJob, newCampaignJobs []*a8n.CampaignJob) (jobs []*a8n.ChangesetJob) {
-				return jobs
-			},
-			wantCreatedChangesetJobs: func(changesetJobs []*a8n.ChangesetJob, newCampaignJobs []*a8n.CampaignJob) (jobs []*a8n.ChangesetJob) {
 				return jobs
 			},
 		},
@@ -404,6 +379,8 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			store := NewStoreWithClock(dbconn.Global, clock)
+
 			// Setup old CampaignPlan and CampaignJobs
 			oldPlan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
 			err = store.CreateCampaignPlan(ctx, oldPlan)
@@ -488,7 +465,10 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 				t.Fatalf("wrong number of new ChangesetJobs. want=%d, have=%d", len(newCampaignJobs), len(newChangesetJobs))
 			}
 
-			wantUnmodifiedChangesetJobs := tt.wantUnmodifiedChangesetJobs(newChangesetJobs, newCampaignJobs)
+			var wantUnmodifiedChangesetJobs []*a8n.ChangesetJob
+			if tt.wantUnmodifiedChangesetJobs != nil {
+				wantUnmodifiedChangesetJobs = tt.wantUnmodifiedChangesetJobs(newChangesetJobs, newCampaignJobs)
+			}
 			for _, j := range wantUnmodifiedChangesetJobs {
 				if j.StartedAt != oldTime {
 					t.Fatalf("ChangesetJob StartedAt changed. want=%v, have=%v", oldTime, j.StartedAt)
@@ -501,7 +481,10 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 				}
 			}
 
-			wantModifiedChangesetJobs := tt.wantModifiedChangesetJobs(newChangesetJobs, newCampaignJobs)
+			var wantModifiedChangesetJobs []*a8n.ChangesetJob
+			if tt.wantModifiedChangesetJobs != nil {
+				wantModifiedChangesetJobs = tt.wantModifiedChangesetJobs(newChangesetJobs, newCampaignJobs)
+			}
 			for _, j := range wantModifiedChangesetJobs {
 				if !j.StartedAt.IsZero() {
 					t.Fatalf("ChangesetJob StartedAt not reset. have=%v", j.StartedAt)
@@ -514,7 +497,10 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 				}
 			}
 
-			wantCreatedChangesetJobs := tt.wantCreatedChangesetJobs(newChangesetJobs, newCampaignJobs)
+			var wantCreatedChangesetJobs []*a8n.ChangesetJob
+			if tt.wantCreatedChangesetJobs != nil {
+				wantCreatedChangesetJobs = tt.wantCreatedChangesetJobs(newChangesetJobs, newCampaignJobs)
+			}
 			for _, j := range wantCreatedChangesetJobs {
 				if !j.StartedAt.IsZero() {
 					t.Fatalf("ChangesetJob StartedAt is set. have=%v", j.StartedAt)
@@ -549,7 +535,10 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 
 			// Check that Changesets with RepoID == campaignJobWithoutChangesetJob.RepoID
 			// are detached from Campaign.
-			detachedCampaignJobs := tt.wantCampaignJobsWithoutChangesetJob(oldCampaignJobs)
+			var detachedCampaignJobs []*a8n.CampaignJob
+			if tt.wantCampaignJobsWithoutChangesetJob != nil {
+				detachedCampaignJobs = tt.wantCampaignJobsWithoutChangesetJob(oldCampaignJobs)
+			}
 			if len(detachedCampaignJobs) == 0 {
 				return
 			}
@@ -633,6 +622,14 @@ func fakeRunChangesetJobs(
 		}
 	}
 	return cs
+}
+
+var testUser = db.NewUser{
+	Email:                 "thorsten@sourcegraph.com",
+	Username:              "thorsten",
+	DisplayName:           "thorsten",
+	Password:              "1234",
+	EmailVerificationCode: "foobar",
 }
 
 func testCampaignJob(plan int64, repo uint32, t time.Time) *a8n.CampaignJob {
