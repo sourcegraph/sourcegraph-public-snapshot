@@ -353,7 +353,7 @@ func (s *FakeStore) UpsertRepos(ctx context.Context, upserts ...*Repo) error {
 
 func (s *FakeStore) byExternalID(eid api.ExternalRepoSpec) (*Repo, bool) {
 	for _, r := range s.repoByID {
-		if r.ExternalRepo.IsSet() && r.ExternalRepo == eid {
+		if r.ExternalRepo == eid {
 			return r, true
 		}
 	}
@@ -370,7 +370,7 @@ func (s *FakeStore) checkConstraints() error {
 	seenName := map[string]bool{}
 	seenExternalRepo := map[api.ExternalRepoSpec]bool{}
 	for _, r := range s.repoByID {
-		if r.ExternalRepo.IsSet() && seenExternalRepo[r.ExternalRepo] {
+		if seenExternalRepo[r.ExternalRepo] {
 			return errors.Errorf("duplicate external repo spec: %v", r.ExternalRepo)
 		}
 		seenExternalRepo[r.ExternalRepo] = true
