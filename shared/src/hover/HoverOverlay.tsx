@@ -173,12 +173,9 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                                     if (content.kind === 'markdown') {
                                         try {
                                             return (
-                                                <div
-                                                    className="hover-overlay__content hover-overlay__row e2e-tooltip-content"
-                                                    key={i}
-                                                >
+                                                <div className="hover-overlay__row e2e-tooltip-badged-content" key={i} >
                                                     {'badge' in content && content.badge && (
-                                                        <div className="hover-overlay__badge-row">
+                                                        <div className="hover-overlay__badge-row e2e-badge">
                                                             <BadgeAttachment
                                                                 key={`badge:${content.badge.icon}:${content.badge.hoverMessage}:${content.badge.linkURL}`}
                                                                 attachment={content.badge}
@@ -187,7 +184,7 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                                                         </div>
                                                     )}
 
-                                                    <div
+                                                    <div className="hover-overlay__content e2e-tooltip-content"
                                                         dangerouslySetInnerHTML={{
                                                             __html: renderMarkdown(content.value),
                                                         }}

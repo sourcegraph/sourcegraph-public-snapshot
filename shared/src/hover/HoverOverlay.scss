@@ -29,6 +29,7 @@
     }
 
     &__row {
+        position: relative;
         display: block;
         margin: 0;
         &:not(:first-child) {
@@ -57,7 +58,6 @@
         padding: 0.5rem;
         overflow-x: auto;
         word-wrap: normal;
-        position: relative;
 
         // Descendant selectors are needed here to style rendered markdown
         // stylelint-disable selector-max-compound-selectors
