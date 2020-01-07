@@ -703,7 +703,7 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 		ctx                             context.Context
 		queryPatternInfo                *search.PatternInfo
 		searcher                        zoekt.Searcher
-		repoSet                         zoektquery.RepoSet
+		repoSet                         []string
 		repoHasFileFlagIsInQuery        bool
 		negatedRepoHasFileFlagIsInQuery bool
 	}
@@ -711,7 +711,7 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 	tests := []struct {
 		name        string
 		args        args
-		wantRepoSet *zoektquery.RepoSet
+		wantRepoSet []string
 	}{
 		{
 			name: "returns filtered repoSet when repoHasFileFlag is in query",
@@ -720,11 +720,11 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 				searcher: repoURLsFakeSearcher{
 					"github.com/test/1": []string{"1.md"},
 				},
-				repoSet:                         zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true, "github.com/test/2": true}},
+				repoSet:                         []string{"github.com/test/1", "github.com/test/2"},
 				repoHasFileFlagIsInQuery:        true,
 				negatedRepoHasFileFlagIsInQuery: false,
 			},
-			wantRepoSet: &zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true}},
+			wantRepoSet: []string{"github.com/test/1"},
 		},
 		{
 			name: "returns filtered repoSet when multiple repoHasFileFlags are in query",
@@ -734,11 +734,11 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 					"github.com/test/1": []string{"1.md"},
 					"github.com/test/2": []string{"1.md", "2.md"},
 				},
-				repoSet:                         zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true, "github.com/test/2": true}},
+				repoSet:                         []string{"github.com/test/1", "github.com/test/2"},
 				repoHasFileFlagIsInQuery:        true,
 				negatedRepoHasFileFlagIsInQuery: false,
 			},
-			wantRepoSet: &zoektquery.RepoSet{Set: map[string]bool{"github.com/test/2": true}},
+			wantRepoSet: []string{"github.com/test/2"},
 		},
 		{
 			name: "returns filtered repoSet when negated repoHasFileFlag is in query",
@@ -747,11 +747,11 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 				searcher: repoURLsFakeSearcher{
 					"github.com/test/1": []string{"1.md"},
 				},
-				repoSet:                         zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true, "github.com/test/2": true}},
+				repoSet:                         []string{"github.com/test/1", "github.com/test/2"},
 				repoHasFileFlagIsInQuery:        false,
 				negatedRepoHasFileFlagIsInQuery: true,
 			},
-			wantRepoSet: &zoektquery.RepoSet{Set: map[string]bool{"github.com/test/2": true}},
+			wantRepoSet: []string{"github.com/test/2"},
 		},
 		{
 			name: "returns a new repoSet that includes at most the repos from original repoSet",
@@ -761,22 +761,35 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 					"github.com/test/1": []string{"1.md"},
 					"github.com/test/2": []string{"1.md"},
 				},
-				repoSet:                         zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true}},
+				repoSet:                         []string{"github.com/test/1"},
 				repoHasFileFlagIsInQuery:        false,
 				negatedRepoHasFileFlagIsInQuery: true,
 			},
-			wantRepoSet: &zoektquery.RepoSet{Set: map[string]bool{"github.com/test/1": true}},
+			wantRepoSet: []string{"github.com/test/1"},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotRepoSet, err := createNewRepoSetWithRepoHasFileInputs(tt.args.ctx, tt.args.queryPatternInfo, tt.args.searcher, tt.args.repoSet)
+			repoSet := &zoektquery.RepoSet{Set: map[string]bool{}}
+			for _, r := range tt.args.repoSet {
+				repoSet.Set[r] = true
+			}
+
+			gotRepoSet, err := createNewRepoSetWithRepoHasFileInputs(tt.args.ctx, tt.args.queryPatternInfo, tt.args.searcher, *repoSet)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !reflect.DeepEqual(gotRepoSet, tt.wantRepoSet) {
-				t.Errorf("createNewRepoSetWithRepoHasFileInputs() gotRepoSet = %v, want %v", gotRepoSet, tt.wantRepoSet)
+
+			var got []string
+			for r := range gotRepoSet.Set {
+				got = append(got, r)
+			}
+
+			sort.Strings(got)
+			sort.Strings(tt.wantRepoSet)
+			if !cmp.Equal(tt.wantRepoSet, got) {
+				t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(tt.wantRepoSet, got))
 			}
 		})
 	}
