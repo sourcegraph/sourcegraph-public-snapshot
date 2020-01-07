@@ -288,14 +288,14 @@ func (t *Changeset) Body() (string, error) {
 
 // SetDeleted sets the internal state of a Changeset so that its State is
 // ChangesetStateDeleted.
-func (c *Changeset) SetDeleted() {
-	c.ExternalDeletedAt = time.Now().UTC().Truncate(time.Microsecond)
+func (t *Changeset) SetDeleted() {
+	t.ExternalDeletedAt = time.Now().UTC().Truncate(time.Microsecond)
 }
 
 // IsDeleted returns true when the Changeset's ExternalDeletedAt is a non-zero
 // timestamp.
-func (c *Changeset) IsDeleted() bool {
-	return !c.ExternalDeletedAt.IsZero()
+func (t *Changeset) IsDeleted() bool {
+	return !t.ExternalDeletedAt.IsZero()
 }
 
 // State of a Changeset.
