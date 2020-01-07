@@ -812,8 +812,6 @@ input AddExternalServiceInput {
     displayName: String!
     # The JSON configuration of the external service.
     config: String!
-    # Delete the service if validation fails
-    requireValidation: Boolean
 }
 
 # Fields to update for an existing external service.

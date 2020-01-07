@@ -19,17 +19,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var extsvcConfigAllowEdits, _ = strconv.ParseBool(env.Get("EXTSVC_CONFIG_ALLOW_EDITS", "false", "When EXTSVC_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
 
 func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 	Input *struct {
-		Kind              string
-		DisplayName       string
-		Config            string
-		RequireValidation *bool
+		Kind        string
+		DisplayName string
+		Config      string
 	}
 }) (*externalServiceResolver, error) {
 	// 🚨 SECURITY: Only site admins may add external services.
@@ -52,16 +50,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *struct {
 
 	res := &externalServiceResolver{externalService: externalService}
 	if err := syncExternalService(ctx, externalService); err != nil {
-		createdWarning := fmt.Sprintf("External service created, but we encountered a problem while validating it: %s", err)
-		notCreatedWarning := fmt.Sprintf("External service was not created, because we encountered a problem while validating it: %s", err)
-		if args.Input.RequireValidation == nil || !*args.Input.RequireValidation {
-			res.warning = createdWarning
-		} else if err := db.ExternalServices.Delete(ctx, externalService.ID); err != nil {
-			log15.Error("Failed to delete external service that failed validation", "id", externalService.ID, "err", err)
-			res.warning = createdWarning
-		} else {
-			res.warning = notCreatedWarning
-		}
+		res.warning = fmt.Sprintf("External service created, but we encountered a problem while validating the external service: %s", err)
 	}
 
 	return res, nil
