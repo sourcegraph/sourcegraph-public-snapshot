@@ -175,18 +175,24 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                                             // Offset first badge when the close button is shown to avoid conflict.
                                             const offsetBadge = showCloseButton && i === 0
                                             return (
-                                                <div className="hover-overlay__row e2e-tooltip-badged-content" key={i} >
+                                                <div className="hover-overlay__row e2e-tooltip-badged-content" key={i}>
                                                     {'badge' in content && content.badge && (
-                                                        <div className={classNames("hover-overlay__badge-row", "e2e-badge", offsetBadge && "hover-overlay__badge-row--offset")}>
+                                                        <div
+                                                            className={classNames(
+                                                                'hover-overlay__badge',
+                                                                'e2e-badge',
+                                                                offsetBadge && 'hover-overlay__badge--offset'
+                                                            )}
+                                                        >
                                                             <BadgeAttachment
-                                                                key={`badge:${content.badge.icon}:${content.badge.hoverMessage}:${content.badge.linkURL}`}
                                                                 attachment={content.badge}
                                                                 isLightTheme={this.props.isLightTheme}
                                                             />
                                                         </div>
                                                     )}
 
-                                                    <div className="hover-overlay__content e2e-tooltip-content"
+                                                    <div
+                                                        className="hover-overlay__content e2e-tooltip-content"
                                                         dangerouslySetInnerHTML={{
                                                             __html: renderMarkdown(content.value),
                                                         }}
