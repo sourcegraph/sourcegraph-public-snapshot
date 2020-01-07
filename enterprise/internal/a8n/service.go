@@ -327,7 +327,7 @@ func (s *Service) RunChangesetJob(
 			Message:     c.Name,
 			AuthorName:  "Sourcegraph Bot",
 			AuthorEmail: "automation@sourcegraph.com",
-			Date:        job.StartedAt,
+			Date:        job.CreatedAt,
 		},
 		// We use unified diffs, not git diffs, which means they're missing the
 		// `a/` and `/b` filename prefixes. `-p0` tells `git apply` to not
