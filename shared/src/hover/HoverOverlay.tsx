@@ -15,6 +15,7 @@ import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../util/url'
 import { toNativeEvent } from './helpers'
 import { BadgeAttachment } from '../components/BadgeAttachment'
 import { ThemeProps } from '../theme'
+import { isDefined } from '../util/types'
 
 const LOADING: 'loading' = 'loading'
 
@@ -120,9 +121,7 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
 
         const badges =
             hoverOrError && hoverOrError !== LOADING && !isErrorLike(hoverOrError)
-                ? hoverOrError.contents
-                      .map(c => c.badge)
-                      .filter((b?: BadgeAttachmentRenderOptions): b is BadgeAttachmentRenderOptions => !!b)
+                ? hoverOrError.contents.map(c => c.badge).filter(isDefined)
                 : []
 
         return (
