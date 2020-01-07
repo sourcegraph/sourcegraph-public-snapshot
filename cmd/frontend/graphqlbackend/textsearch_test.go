@@ -700,12 +700,9 @@ func (repoURLsFakeSearcher) Close() {
 
 func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 	type args struct {
-		ctx                             context.Context
-		queryPatternInfo                *search.PatternInfo
-		searcher                        zoekt.Searcher
-		repoSet                         []string
-		repoHasFileFlagIsInQuery        bool
-		negatedRepoHasFileFlagIsInQuery bool
+		queryPatternInfo *search.PatternInfo
+		searcher         zoekt.Searcher
+		repoSet          []string
 	}
 
 	tests := []struct {
@@ -720,9 +717,7 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 				searcher: repoURLsFakeSearcher{
 					"github.com/test/1": []string{"1.md"},
 				},
-				repoSet:                         []string{"github.com/test/1", "github.com/test/2"},
-				repoHasFileFlagIsInQuery:        true,
-				negatedRepoHasFileFlagIsInQuery: false,
+				repoSet: []string{"github.com/test/1", "github.com/test/2"},
 			},
 			wantRepoSet: []string{"github.com/test/1"},
 		},
@@ -734,9 +729,7 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 					"github.com/test/1": []string{"1.md"},
 					"github.com/test/2": []string{"1.md", "2.md"},
 				},
-				repoSet:                         []string{"github.com/test/1", "github.com/test/2"},
-				repoHasFileFlagIsInQuery:        true,
-				negatedRepoHasFileFlagIsInQuery: false,
+				repoSet: []string{"github.com/test/1", "github.com/test/2"},
 			},
 			wantRepoSet: []string{"github.com/test/2"},
 		},
@@ -747,9 +740,7 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 				searcher: repoURLsFakeSearcher{
 					"github.com/test/1": []string{"1.md"},
 				},
-				repoSet:                         []string{"github.com/test/1", "github.com/test/2"},
-				repoHasFileFlagIsInQuery:        false,
-				negatedRepoHasFileFlagIsInQuery: true,
+				repoSet: []string{"github.com/test/1", "github.com/test/2"},
 			},
 			wantRepoSet: []string{"github.com/test/2"},
 		},
@@ -761,9 +752,7 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 					"github.com/test/1": []string{"1.md"},
 					"github.com/test/2": []string{"1.md"},
 				},
-				repoSet:                         []string{"github.com/test/1"},
-				repoHasFileFlagIsInQuery:        false,
-				negatedRepoHasFileFlagIsInQuery: true,
+				repoSet: []string{"github.com/test/1"},
 			},
 			wantRepoSet: []string{"github.com/test/1"},
 		},
@@ -776,7 +765,7 @@ func Test_createNewRepoSetWithRepoHasFileInputs(t *testing.T) {
 				repoSet.Set[r] = true
 			}
 
-			gotRepoSet, err := createNewRepoSetWithRepoHasFileInputs(tt.args.ctx, tt.args.queryPatternInfo, tt.args.searcher, *repoSet)
+			gotRepoSet, err := createNewRepoSetWithRepoHasFileInputs(context.Background(), tt.args.queryPatternInfo, tt.args.searcher, *repoSet)
 			if err != nil {
 				t.Fatal(err)
 			}
