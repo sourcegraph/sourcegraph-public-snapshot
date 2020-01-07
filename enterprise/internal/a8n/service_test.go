@@ -328,6 +328,22 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			},
 		},
 		{
+			name: "1 modified rev",
+			oldCampaignJobs: func(plan int64) []*a8n.CampaignJob {
+				return []*a8n.CampaignJob{testCampaignJob(plan, rs[0].ID, now)}
+			},
+			newCampaignJobs: func(plan int64, oldCampaignJobs []*a8n.CampaignJob) []*a8n.CampaignJob {
+				job := oldCampaignJobs[0].Clone()
+				job.CampaignPlanID = plan
+				job.Rev = "deadbeef23"
+				return []*a8n.CampaignJob{job}
+			},
+			wantModifiedChangesetJobs: func(changesetJobs []*a8n.ChangesetJob, newCampaignJobs []*a8n.CampaignJob) (jobs []*a8n.ChangesetJob) {
+				// We only have 1 ChangesetJob and that should be modified
+				return changesetJobs
+			},
+		},
+		{
 			name: "1 unmodified, 1 modified, 1 new changeset",
 			oldCampaignJobs: func(plan int64) (jobs []*a8n.CampaignJob) {
 				for _, repo := range rs[:3] {
