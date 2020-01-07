@@ -84,36 +84,10 @@ exports[`HoverOverlay actions and hover present 1`] = `
     className="hover-overlay__contents"
   >
     <div
-      className="hover-overlay__row e2e-tooltip-content"
+      className="hover-overlay__row e2e-tooltip-badged-content"
     >
       <div
-        className="hover-overlay__content"
-        dangerouslySetInnerHTML={
-          Object {
-            "__html": "<p>v</p>
-",
-          }
-        }
-      />
-    </div>
-    <div
-      className="hover-overlay__row e2e-tooltip-content"
-    >
-      <div
-        className="hover-overlay__content"
-        dangerouslySetInnerHTML={
-          Object {
-            "__html": "<p>v</p>
-",
-          }
-        }
-      />
-    </div>
-    <div
-      className="hover-overlay__row e2e-tooltip-content"
-    >
-      <div
-        className="hover-overlay__content"
+        className="hover-overlay__content e2e-tooltip-content"
         dangerouslySetInnerHTML={
           Object {
             "__html": "<p>v</p>
@@ -205,36 +179,10 @@ exports[`HoverOverlay actions error, hover present 1`] = `
     className="hover-overlay__contents"
   >
     <div
-      className="hover-overlay__row e2e-tooltip-content"
+      className="hover-overlay__row e2e-tooltip-badged-content"
     >
       <div
-        className="hover-overlay__content"
-        dangerouslySetInnerHTML={
-          Object {
-            "__html": "<p>v</p>
-",
-          }
-        }
-      />
-    </div>
-    <div
-      className="hover-overlay__row e2e-tooltip-content"
-    >
-      <div
-        className="hover-overlay__content"
-        dangerouslySetInnerHTML={
-          Object {
-            "__html": "<p>v</p>
-",
-          }
-        }
-      />
-    </div>
-    <div
-      className="hover-overlay__row e2e-tooltip-content"
-    >
-      <div
-        className="hover-overlay__content"
+        className="hover-overlay__content e2e-tooltip-content"
         dangerouslySetInnerHTML={
           Object {
             "__html": "<p>v</p>
@@ -408,36 +356,10 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
     className="hover-overlay__contents"
   >
     <div
-      className="hover-overlay__row e2e-tooltip-content"
+      className="hover-overlay__row e2e-tooltip-badged-content"
     >
       <div
-        className="hover-overlay__content"
-        dangerouslySetInnerHTML={
-          Object {
-            "__html": "<p>v</p>
-",
-          }
-        }
-      />
-    </div>
-    <div
-      className="hover-overlay__row e2e-tooltip-content"
-    >
-      <div
-        className="hover-overlay__content"
-        dangerouslySetInnerHTML={
-          Object {
-            "__html": "<p>v</p>
-",
-          }
-        }
-      />
-    </div>
-    <div
-      className="hover-overlay__row e2e-tooltip-content"
-    >
-      <div
-        className="hover-overlay__content"
+        className="hover-overlay__content e2e-tooltip-content"
         dangerouslySetInnerHTML={
           Object {
             "__html": "<p>v</p>
@@ -657,36 +579,10 @@ exports[`HoverOverlay hover present 1`] = `
     className="hover-overlay__contents"
   >
     <div
-      className="hover-overlay__row e2e-tooltip-content"
+      className="hover-overlay__row e2e-tooltip-badged-content"
     >
       <div
-        className="hover-overlay__content"
-        dangerouslySetInnerHTML={
-          Object {
-            "__html": "<p>v</p>
-",
-          }
-        }
-      />
-    </div>
-    <div
-      className="hover-overlay__row e2e-tooltip-content"
-    >
-      <div
-        className="hover-overlay__content"
-        dangerouslySetInnerHTML={
-          Object {
-            "__html": "<p>v</p>
-",
-          }
-        }
-      />
-    </div>
-    <div
-      className="hover-overlay__row e2e-tooltip-content"
-    >
-      <div
-        className="hover-overlay__content"
+        className="hover-overlay__content e2e-tooltip-content"
         dangerouslySetInnerHTML={
           Object {
             "__html": "<p>v</p>
@@ -715,36 +611,10 @@ exports[`HoverOverlay hover present, actions loading 1`] = `
     className="hover-overlay__contents"
   >
     <div
-      className="hover-overlay__row e2e-tooltip-content"
+      className="hover-overlay__row e2e-tooltip-badged-content"
     >
       <div
-        className="hover-overlay__content"
-        dangerouslySetInnerHTML={
-          Object {
-            "__html": "<p>v</p>
-",
-          }
-        }
-      />
-    </div>
-    <div
-      className="hover-overlay__row e2e-tooltip-content"
-    >
-      <div
-        className="hover-overlay__content"
-        dangerouslySetInnerHTML={
-          Object {
-            "__html": "<p>v</p>
-",
-          }
-        }
-      />
-    </div>
-    <div
-      className="hover-overlay__row e2e-tooltip-content"
-    >
-      <div
-        className="hover-overlay__content"
+        className="hover-overlay__content e2e-tooltip-content"
         dangerouslySetInnerHTML={
           Object {
             "__html": "<p>v</p>
@@ -773,10 +643,10 @@ exports[`HoverOverlay multiple hovers present 1`] = `
     className="hover-overlay__contents"
   >
     <div
-      className="hover-overlay__row e2e-tooltip-content"
+      className="hover-overlay__row e2e-tooltip-badged-content"
     >
       <div
-        className="hover-overlay__content"
+        className="hover-overlay__content e2e-tooltip-content"
         dangerouslySetInnerHTML={
           Object {
             "__html": "<p>v</p>
@@ -786,26 +656,13 @@ exports[`HoverOverlay multiple hovers present 1`] = `
       />
     </div>
     <div
-      className="hover-overlay__row e2e-tooltip-content"
+      className="hover-overlay__row e2e-tooltip-badged-content"
     >
       <div
-        className="hover-overlay__content"
+        className="hover-overlay__content e2e-tooltip-content"
         dangerouslySetInnerHTML={
           Object {
-            "__html": "<p>v</p>
-",
-          }
-        }
-      />
-    </div>
-    <div
-      className="hover-overlay__row e2e-tooltip-content"
-    >
-      <div
-        className="hover-overlay__content"
-        dangerouslySetInnerHTML={
-          Object {
-            "__html": "<p>v</p>
+            "__html": "<p>v2</p>
 ",
           }
         }
