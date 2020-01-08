@@ -15,7 +15,7 @@ DELETE FROM repo WHERE ((external_service_type IS NULL) OR (external_service_id 
 -- then drop. If we did the other order we could accidently introduce
 -- duplicates.
 
-CREATE UNIQUE INDEX repo_external_unique_idx ON repo USING btree (external_service_type, external_service_id, external_id);
+CREATE UNIQUE INDEX IF NOT EXISTS repo_external_unique_idx ON repo USING btree (external_service_type, external_service_id, external_id);
 
 DROP INDEX IF EXISTS repo_external_service_unique_idx;
 
