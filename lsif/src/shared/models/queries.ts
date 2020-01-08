@@ -1,7 +1,7 @@
 import { MAX_TRAVERSAL_LIMIT } from '../constants'
 
 /**
- * Return a recursive CTE `lineage` that returns ancestors fo the commit for the given
+ * Return a recursive CTE `lineage` that returns ancestors of the commit for the given
  * repository. This assumes that the repo name is $1 and the commit is $2.
  */
 export function ancestorLineage(): string {
