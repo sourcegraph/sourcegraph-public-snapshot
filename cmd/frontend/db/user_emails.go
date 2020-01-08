@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
 )
@@ -147,6 +148,25 @@ func (*userEmails) SetVerified(ctx context.Context, userID int32, email string, 
 		return errors.New("user email not found")
 	}
 	return nil
+}
+
+// GetVerifiedEmails returns a list of verified emails from the candidate list. Some emails are excluded
+// from the results list because of unverified or simply don't exist.
+func (*userEmails) GetVerifiedEmails(ctx context.Context, emails ...string) ([]*UserEmail, error) {
+	if Mocks.UserEmails.GetVerifiedEmails != nil {
+		return Mocks.UserEmails.GetVerifiedEmails(ctx, emails...)
+	}
+
+	if len(emails) == 0 {
+		return []*UserEmail{}, nil
+	}
+
+	items := make([]*sqlf.Query, len(emails))
+	for i := range emails {
+		items[i] = sqlf.Sprintf("%s", emails[i])
+	}
+	q := sqlf.Sprintf("WHERE email IN (%s) AND verified_at IS NOT NULL", sqlf.Join(items, ","))
+	return (&userEmails{}).getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
 
 // getBySQL returns user emails matching the SQL query, if any exist.
