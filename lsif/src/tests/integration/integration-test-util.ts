@@ -3,6 +3,7 @@ import * as fs from 'mz/fs'
 import * as path from 'path'
 import * as uuid from 'uuid'
 import rmfr from 'rmfr'
+import * as pgModels from '../../shared/models/pg'
 import { Backend, ReferencePaginationCursor } from '../../server/backend/backend'
 import { child_process } from 'mz'
 import { Connection } from 'typeorm'
@@ -125,10 +126,47 @@ export async function truncatePostgresTables(connection: Connection): Promise<vo
 }
 
 /**
+ * Insert an upload entity and return the corresponding dump entity.
+ *
+ * @param connection The Postgres connection.
+ * @param dumpManager The dumps manager instance.
+ * @param repository The repository name.
+ * @param commit The commit.
+ * @param root The root of the dump.
+ */
+export async function insertDump(
+    connection: Connection,
+    dumpManager: DumpManager,
+    repository: string,
+    commit: string,
+    root: string
+): Promise<pgModels.LsifDump> {
+    await dumpManager.deleteOverlappingDumps(repository, commit, root, {})
+
+    const upload = new pgModels.LsifUpload()
+    upload.repository = repository
+    upload.commit = commit
+    upload.root = root
+    upload.filename = '<test>'
+    upload.uploadedAt = new Date()
+    upload.state = 'completed'
+    upload.tracingContext = '{}'
+    await connection.createEntityManager().save(upload)
+
+    const dump = new pgModels.LsifDump()
+    dump.id = upload.id
+    dump.repository = repository
+    dump.commit = commit
+    dump.root = root
+    return dump
+}
+
+/**
  * Mock an upload of the given file. This will create a SQLite database in the
  * given storage root and will insert dump, package, and reference data into
  * the given Postgres database.
  *
+ * @param connection The Postgres connection.
  * @param dumpManager The dumps manager instance.
  * @param dependencyManager The dependency manager instance.
  * @param storageRoot The temporary storage root.
@@ -139,6 +177,7 @@ export async function truncatePostgresTables(connection: Connection): Promise<vo
  * @param updateCommits Whether not to update commits.
  */
 export async function convertTestData(
+    connection: Connection,
     dumpManager: DumpManager,
     dependencyManager: DependencyManager,
     storageRoot: string,
@@ -154,7 +193,7 @@ export async function convertTestData(
 
     const tmp = path.join(storageRoot, constants.TEMP_DIR, uuid.v4())
     const { packages, references } = await convertLsif(fullFilename, tmp)
-    const dump = await dumpManager.insertDump(repository, commit, root, new Date())
+    const dump = await insertDump(connection, dumpManager, repository, commit, root)
     await dependencyManager.addPackagesAndReferences(dump.id, packages, references)
     await fs.rename(tmp, dbFilename(storageRoot, dump.id, repository, commit))
 
@@ -175,6 +214,21 @@ export async function convertTestData(
  */
 export class BackendTestContext {
     /**
+     * A temporary directory.
+     */
+    private storageRoot?: string
+
+    /**
+     * The Postgres connection
+     */
+    private connection?: Connection
+
+    /**
+     * A reference to a function that destroys the temporary database.
+     */
+    private cleanup?: () => Promise<void>
+
+    /**
      * The backend instance.
      */
     public backend?: Backend
@@ -190,16 +244,6 @@ export class BackendTestContext {
     public dependencyManager?: DependencyManager
 
     /**
-     * A temporary directory.
-     */
-    private storageRoot?: string
-
-    /**
-     * A reference to a function that destroys the temporary database.
-     */
-    private cleanup?: () => Promise<void>
-
-    /**
      * Create a backend, a dump manager, and a dependency manager instance.
      * This will create temporary resources (database and temporary directory)
      * that should be cleaned up via the `teardown` method.
@@ -210,6 +254,7 @@ export class BackendTestContext {
     public async init(): Promise<void> {
         this.storageRoot = await createStorageRoot()
         const { connection, cleanup } = await createCleanPostgresDatabase()
+        this.connection = connection
         this.cleanup = cleanup
         this.dumpManager = new DumpManager(connection, this.storageRoot)
         this.dependencyManager = new DependencyManager(connection)
@@ -236,11 +281,12 @@ export class BackendTestContext {
         filename: string,
         updateCommits: boolean = true
     ): Promise<void> {
-        if (!this.dumpManager || !this.dependencyManager || !this.storageRoot) {
+        if (!this.connection || !this.dumpManager || !this.dependencyManager || !this.storageRoot) {
             return Promise.resolve()
         }
 
         return convertTestData(
+            this.connection,
             this.dumpManager,
             this.dependencyManager,
             this.storageRoot,
