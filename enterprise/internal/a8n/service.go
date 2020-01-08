@@ -415,9 +415,30 @@ func (s *Service) RunChangesetJob(
 	// TODO: If we're updating the changeset, there's a race condition here.
 	// It's possible that `CreateChangeset` doesn't return the newest head ref
 	// commit yet, because the API of the codehost doesn't return it yet.
-	err = ccs.CreateChangeset(ctx, &cs)
+	err, exists := ccs.CreateChangeset(ctx, &cs)
 	if err != nil {
 		return errors.Wrap(err, "creating changeset")
+	}
+	// If the Changeset already exists and our source can update it, we try to update it
+	if exists {
+		fmt.Printf("changeset already exists")
+		outdated, err := isOutdated(&cs)
+		if err != nil {
+			return errors.Wrap(err, "could not determine whether changeset needs update")
+		}
+
+		if outdated {
+			fmt.Printf("changeset is outdated")
+			ucs, ok := src.(repos.UpdateChangesetSource)
+			if !ok {
+				return errors.Errorf("updating changesets on code host of repo %q is not implemented", repo.Name)
+			}
+
+			err := ucs.UpdateChangeset(ctx, &cs)
+			if err != nil {
+				return errors.Wrap(err, "updating changeset")
+			}
+		}
 	}
 
 	// We keep a clone because CreateChangesets might overwrite the changeset
@@ -933,4 +954,35 @@ func selectChangesets(cs []*a8n.Changeset, predicate func(*a8n.Changeset) bool) 
 	}
 
 	return cs[:i]
+}
+
+func isOutdated(c *repos.Changeset) (bool, error) {
+	currentTitle, err := c.Changeset.Title()
+	if err != nil {
+		return false, err
+	}
+
+	if currentTitle != c.Title {
+		return true, nil
+	}
+
+	currentBody, err := c.Changeset.Body()
+	if err != nil {
+		return false, err
+	}
+
+	if currentBody != c.Body {
+		return true, nil
+	}
+
+	currentBaseRef, err := c.Changeset.BaseRef()
+	if err != nil {
+		return false, err
+	}
+
+	if git.EnsureRefPrefix(currentBaseRef) != git.EnsureRefPrefix(c.BaseRef) {
+		return true, nil
+	}
+
+	return false, nil
 }

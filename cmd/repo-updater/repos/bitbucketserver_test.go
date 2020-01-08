@@ -324,9 +324,10 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name string
-		cs   *Changeset
-		err  string
+		name   string
+		cs     *Changeset
+		err    string
+		exists bool
 	}{
 		{
 			name: "abbreviated refs",
@@ -362,7 +363,8 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 			},
 			// CreateChangeset is idempotent so if the PR already exists
 			// it is not an error
-			err: "",
+			err:    "",
+			exists: true,
 		},
 	}
 
@@ -397,13 +399,17 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 
 			tc.err = strings.ReplaceAll(tc.err, "${INSTANCEURL}", instanceURL)
 
-			err = bbsSrc.CreateChangeset(ctx, tc.cs)
+			err, exists := bbsSrc.CreateChangeset(ctx, tc.cs)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
 
 			if err != nil {
 				return
+			}
+
+			if have, want := exists, tc.exists; have != want {
+				t.Errorf("exists:\nhave: %t\nwant: %t", have, want)
 			}
 
 			pr := tc.cs.Changeset.Metadata.(*bitbucketserver.PullRequest)

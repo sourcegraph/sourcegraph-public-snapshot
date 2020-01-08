@@ -42,9 +42,10 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name string
-		cs   *Changeset
-		err  string
+		name   string
+		cs     *Changeset
+		err    string
+		exists bool
 	}{
 		{
 			name: "success",
@@ -68,7 +69,8 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 				Changeset: &a8n.Changeset{},
 			},
 			// If PR already exists we'll just return it, no error
-			err: "",
+			err:    "",
+			exists: true,
 		},
 	}
 
@@ -106,13 +108,17 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 				tc.err = "<nil>"
 			}
 
-			err = githubSrc.CreateChangeset(ctx, tc.cs)
+			err, exists := githubSrc.CreateChangeset(ctx, tc.cs)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
 
 			if err != nil {
 				return
+			}
+
+			if have, want := exists, tc.exists; have != want {
+				t.Errorf("exists:\nhave: %t\nwant: %t", have, want)
 			}
 
 			pr, ok := tc.cs.Changeset.Metadata.(*github.PullRequest)

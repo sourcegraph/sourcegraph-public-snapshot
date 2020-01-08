@@ -94,12 +94,18 @@ type ChangesetSource interface {
 	// the returned slice.
 	LoadChangesets(context.Context, ...*Changeset) error
 	// CreateChangeset will create the Changeset on the source. If it already
-	// exists, *Changeset will be populated.
-	CreateChangeset(context.Context, *Changeset) error
+	// exists, *Changeset will be populated and the second return value will be
+	// true.
+	CreateChangeset(context.Context, *Changeset) (error, bool)
 	// CloseChangeset will close the Changeset on the source, where "close"
 	// means the appropriate final state on the codehost (e.g. "declined" on
 	// Bitbucket Server).
 	CloseChangeset(context.Context, *Changeset) error
+}
+
+// A UpdateChangesetSource can update Changesets.
+type UpdateChangesetSource interface {
+	UpdateChangeset(context.Context, *Changeset) error
 }
 
 // ChangesetsNotFoundError is returned by LoadChangesets if any of the passed

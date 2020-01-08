@@ -149,7 +149,8 @@ func (s GithubSource) ExternalServices() ExternalServices {
 }
 
 // CreateChangeset creates the given *Changeset in the code host.
-func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) error {
+func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) (error, bool) {
+	var exists bool
 	repo := c.Repo.Metadata.(*github.Repository)
 
 	pr, err := s.client.CreatePullRequest(ctx, &github.CreatePullRequestInput{
@@ -162,23 +163,24 @@ func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) error {
 
 	if err != nil {
 		if err != github.ErrPullRequestAlreadyExists {
-			return err
+			return err, exists
 		}
 		owner, name, err := github.SplitRepositoryNameWithOwner(repo.NameWithOwner)
 		if err != nil {
-			return errors.Wrap(err, "getting repo owner and name")
+			return errors.Wrap(err, "getting repo owner and name"), exists
 		}
 		pr, err = s.client.GetOpenPullRequestByRefs(ctx, owner, name, c.BaseRef, c.HeadRef)
 		if err != nil {
-			return errors.Wrap(err, "fetching existing PR")
+			return errors.Wrap(err, "fetching existing PR"), exists
 		}
+		exists = true
 	}
 
 	c.Changeset.Metadata = pr
 	c.Changeset.ExternalID = strconv.FormatInt(pr.Number, 10)
 	c.Changeset.ExternalServiceType = github.ServiceType
 
-	return nil
+	return nil, exists
 }
 
 // CloseChangeset closes the given *Changeset on the code host and updates the
@@ -223,6 +225,29 @@ func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) erro
 	for i := range cs {
 		cs[i].Changeset.Metadata = prs[i]
 	}
+
+	return nil
+}
+
+// UpdateChangeset updates the given *Changeset in the code host.
+func (s GithubSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
+	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
+	if !ok {
+		return errors.New("Changeset is not a GitHub pull request")
+	}
+
+	updated, err := s.client.UpdatePullRequest(ctx, &github.UpdatePullRequestInput{
+		PullRequestID: pr.ID,
+		Title:         c.Title,
+		Body:          c.Body,
+		BaseRefName:   git.AbbreviateRef(c.BaseRef),
+	})
+
+	if err != nil {
+		return err
+	}
+
+	c.Changeset.Metadata = updated
 
 	return nil
 }
