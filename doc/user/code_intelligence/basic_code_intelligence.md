@@ -16,7 +16,7 @@ Basic code intelligence also filters results by file extension and by imports at
 
 This is because basic code intelligence uses search-based heuristics, rather than parsing the code into an AST. You will see incorrect results more often for tokens with common names (such as `Get`) than for tokens with more unique names simply because those tokens appear more often in the search index.
 
-If you would like to have precise results where you are 100% confident that the definition or reference you are navigating to is for the symbol you hovered, we recommend utilizing [LSIF]((./lsif.md)) for precise code intelligence.
+If you would like to have precise results where you are 100% confident that the definition or reference you are navigating to is for the symbol you hovered, we recommend utilizing [LSIF](./lsif.md) for precise code intelligence.
 
 You may occasionally see results from basic code intelligence even when you have uploaded LSIF data. This can happen in the following scenarios:
 
