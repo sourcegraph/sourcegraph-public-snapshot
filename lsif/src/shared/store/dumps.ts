@@ -321,47 +321,37 @@ export class DumpManager {
     }
 
     /**
-     * Inserts the given repository and commit into the `lsif_dumps` table.
+     * Delete existing dumps from the same repo@commit that overlap with the current root
+     * (where the existing root is a prefix of the current root, or vice versa).
      *
      * @param repository The repository.
      * @param commit The commit.
      * @param root The root of all files that are in this dump.
-     * @param uploadedAt The time the dump was uploaded.
+     * @param ctx The tracing context.
      * @param entityManager The EntityManager to use as part of a transaction.
      */
-    public async insertDump(
+    public async deleteOverlappingDumps(
         repository: string,
         commit: string,
         root: string,
-        uploadedAt: Date = new Date(),
+        ctx: TracingContext = {},
         entityManager: EntityManager = this.connection.createEntityManager()
-    ): Promise<pgModels.LsifDump> {
-        // Get existing dumps from the same repo@commit that overlap with the current
-        // root (where the existing root is a prefix of the current root, or vice versa).
-
-        const dumps = await entityManager
-            .getRepository(pgModels.LsifDump)
-            .createQueryBuilder()
-            .select()
-            .where({ repository, commit })
-            .andWhere(
-                new Brackets(qb =>
-                    qb.where(":root LIKE (root || '%')", { root }).orWhere("root LIKE (:root || '%')", { root })
-                )
-            )
-            .getMany()
-
-        for (const dump of dumps) {
-            await this.deleteDump(dump, entityManager)
-        }
-
-        const dump = new pgModels.LsifDump()
-        dump.repository = repository
-        dump.commit = commit
-        dump.root = root
-        dump.uploadedAt = uploadedAt
-        await entityManager.save(dump)
-        return dump
+    ): Promise<void> {
+        return logAndTraceCall(ctx, 'Clearing overlapping dumps', () =>
+            instrumentQuery(async () => {
+                await entityManager
+                    .getRepository(pgModels.LsifUpload)
+                    .createQueryBuilder()
+                    .delete()
+                    .where({ repository, commit, state: 'completed' })
+                    .andWhere(
+                        new Brackets(qb =>
+                            qb.where(":root LIKE (root || '%')", { root }).orWhere("root LIKE (:root || '%')", { root })
+                        )
+                    )
+                    .execute()
+            })
+        )
     }
 
     /**

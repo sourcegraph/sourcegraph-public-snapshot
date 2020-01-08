@@ -14,11 +14,12 @@ import { startMetricsServer } from './server'
 import { waitForConfiguration } from '../shared/config/config'
 import { UploadManager } from '../shared/store/uploads'
 import * as pgModels from '../shared/models/pg'
-import { convertUpload } from './conversion/conversion'
+import { convertDatabase, postProcessConversion } from './conversion/conversion'
 import { pick } from 'lodash'
 import AsyncPolling from 'async-polling'
 import { DumpManager } from '../shared/store/dumps'
 import { DependencyManager } from '../shared/store/dependencies'
+import { EntityManager } from 'typeorm'
 
 /**
  * Runs the worker that converts LSIF uploads.
@@ -50,7 +51,11 @@ async function main(logger: Logger): Promise<void> {
     // Start metrics server
     startMetricsServer(logger)
 
-    const convert = async (upload: pgModels.LsifUpload): Promise<void> => {
+    const convert = async (
+        upload: pgModels.LsifUpload,
+        entityManager: EntityManager,
+        markComplete: () => Promise<void>
+    ): Promise<void> => {
         logger.debug('Selected upload to convert', { uploadId: upload.id })
 
         let span: Span | undefined
@@ -70,9 +75,21 @@ async function main(logger: Logger): Promise<void> {
             metrics.uploadConversionDurationHistogram,
             metrics.uploadConversionDurationErrorsCounter,
             (): Promise<void> =>
-                logAndTraceCall(ctx, 'Converting upload', (ctx: TracingContext) =>
-                    convertUpload(connection, dumpManager, dependencyManager, fetchConfiguration, upload, ctx)
-                )
+                logAndTraceCall(ctx, 'Converting upload', async (ctx: TracingContext) => {
+                    // Convert the database and populate the cross-dump package data
+                    await convertDatabase(entityManager, dumpManager, dependencyManager, upload, ctx)
+
+                    // TODO - handle deletion of db files that have no record in the database.
+
+                    // Update the conversion state after we've written the dump database file as the
+                    // post-process logic assumes that the processed upload is present in the dumps views.
+                    // The remainder of the task may still fail, in which case the entire transaction is
+                    // rolled back.
+                    await markComplete()
+
+                    // Update visible_at_tip and perform some housekeeping
+                    await postProcessConversion(entityManager, dumpManager, fetchConfiguration, upload, ctx)
+                })
         )
     }
 
