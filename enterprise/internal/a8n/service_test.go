@@ -289,6 +289,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 
 	tests := []struct {
 		name                                string
+		args                                func(campaignID, newPlanID int64) UpdateCampaignArgs
 		oldCampaignJobs                     func(currentPlanID int64) []*a8n.CampaignJob
 		newCampaignJobs                     func(newPlanID int64, oldCampaignJobs []*a8n.CampaignJob) []*a8n.CampaignJob
 		wantCampaignJobsWithoutChangesetJob func(oldCampaignJobs []*a8n.CampaignJob) []*a8n.CampaignJob
@@ -298,6 +299,9 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 	}{
 		{
 			name: "1 unmodified",
+			args: func(campaignID, planID int64) UpdateCampaignArgs {
+				return UpdateCampaignArgs{Campaign: campaignID, Plan: &planID}
+			},
 			oldCampaignJobs: func(plan int64) []*a8n.CampaignJob {
 				return []*a8n.CampaignJob{testCampaignJob(plan, rs[0].ID, now)}
 			},
@@ -312,7 +316,48 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			},
 		},
 		{
+			name: "1 unmodified, no new plan but name update",
+			args: func(campaignID, planID int64) UpdateCampaignArgs {
+				newName := "this is a new name"
+				return UpdateCampaignArgs{Campaign: campaignID, Name: &newName}
+			},
+			oldCampaignJobs: func(plan int64) []*a8n.CampaignJob {
+				return []*a8n.CampaignJob{testCampaignJob(plan, rs[0].ID, now)}
+			},
+			newCampaignJobs: func(plan int64, oldCampaignJobs []*a8n.CampaignJob) []*a8n.CampaignJob {
+				job := oldCampaignJobs[0].Clone()
+				job.CampaignPlanID = plan
+				return []*a8n.CampaignJob{job}
+			},
+			wantModifiedChangesetJobs: func(changesetJobs []*a8n.ChangesetJob, newCampaignJobs []*a8n.CampaignJob) (jobs []*a8n.ChangesetJob) {
+				// We only have 1 ChangesetJob and that should be modified
+				return changesetJobs
+			},
+		},
+		{
+			name: "1 unmodified, no new plan but description update",
+			args: func(campaignID, planID int64) UpdateCampaignArgs {
+				newDescription := "this is a new description"
+				return UpdateCampaignArgs{Campaign: campaignID, Description: &newDescription}
+			},
+			oldCampaignJobs: func(plan int64) []*a8n.CampaignJob {
+				return []*a8n.CampaignJob{testCampaignJob(plan, rs[0].ID, now)}
+			},
+			newCampaignJobs: func(plan int64, oldCampaignJobs []*a8n.CampaignJob) []*a8n.CampaignJob {
+				job := oldCampaignJobs[0].Clone()
+				job.CampaignPlanID = plan
+				return []*a8n.CampaignJob{job}
+			},
+			wantModifiedChangesetJobs: func(changesetJobs []*a8n.ChangesetJob, newCampaignJobs []*a8n.CampaignJob) (jobs []*a8n.ChangesetJob) {
+				// We only have 1 ChangesetJob and that should be modified
+				return changesetJobs
+			},
+		},
+		{
 			name: "1 modified diff",
+			args: func(campaignID, planID int64) UpdateCampaignArgs {
+				return UpdateCampaignArgs{Campaign: campaignID, Plan: &planID}
+			},
 			oldCampaignJobs: func(plan int64) []*a8n.CampaignJob {
 				return []*a8n.CampaignJob{testCampaignJob(plan, rs[0].ID, now)}
 			},
@@ -329,6 +374,9 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 		},
 		{
 			name: "1 modified rev",
+			args: func(campaignID, planID int64) UpdateCampaignArgs {
+				return UpdateCampaignArgs{Campaign: campaignID, Plan: &planID}
+			},
 			oldCampaignJobs: func(plan int64) []*a8n.CampaignJob {
 				return []*a8n.CampaignJob{testCampaignJob(plan, rs[0].ID, now)}
 			},
@@ -345,6 +393,9 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 		},
 		{
 			name: "1 unmodified, 1 modified, 1 new changeset",
+			args: func(campaignID, planID int64) UpdateCampaignArgs {
+				return UpdateCampaignArgs{Campaign: campaignID, Plan: &planID}
+			},
 			oldCampaignJobs: func(plan int64) (jobs []*a8n.CampaignJob) {
 				for _, repo := range rs[:3] {
 					jobs = append(jobs, testCampaignJob(plan, repo.ID, now))
@@ -457,27 +508,21 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			}
 
 			// Update the Campaign to use the new plan
-			newName := "new name"
-			newDescription := "new description"
-			args := UpdateCampaignArgs{
-				Campaign:    campaign.ID,
-				Name:        &newName,
-				Description: &newDescription,
-				Plan:        &newPlan.ID,
-			}
+			args := tt.args(campaign.ID, newPlan.ID)
+
 			updatedCampaign, err := svc.UpdateCampaign(ctx, args)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if updatedCampaign.Name != newName {
-				t.Fatalf("campaign name not updated. want=%q, have=%q", newName, updatedCampaign.Name)
+			if args.Name != nil && updatedCampaign.Name != *args.Name {
+				t.Fatalf("campaign name not updated. want=%q, have=%q", *args.Name, updatedCampaign.Name)
 			}
-			if updatedCampaign.Description != newDescription {
-				t.Fatalf("campaign description not updated. want=%q, have=%q", newDescription, updatedCampaign.Description)
+			if args.Description != nil && updatedCampaign.Description != *args.Description {
+				t.Fatalf("campaign description not updated. want=%q, have=%q", *args.Description, updatedCampaign.Description)
 			}
 
-			if updatedCampaign.CampaignPlanID != newPlan.ID {
+			if args.Plan != nil && updatedCampaign.CampaignPlanID != *args.Plan {
 				t.Fatalf("campaign CampaignPlanID not updated. want=%q, have=%q", newPlan.ID, updatedCampaign.CampaignPlanID)
 			}
 

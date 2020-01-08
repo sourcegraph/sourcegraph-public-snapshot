@@ -739,33 +739,26 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		return nil, errors.Wrap(err, "getting campaign")
 	}
 
-	if args.Name != nil {
+	var updateName bool
+	if args.Name != nil && campaign.Name != *args.Name {
 		campaign.Name = *args.Name
+		updateName = true
 	}
 
-	if args.Description != nil {
+	var updateDescription bool
+	if args.Description != nil && campaign.Description != *args.Description {
 		campaign.Description = *args.Description
+		updateDescription = true
 	}
 
-	// TODO: If the name and description change, we also need to update the
-	// changesets on the codehost
-	// Along with CampaignJob.{Rev,BaseRef,Description,Diff} we can probably do
-	// that in `RunChangesetJob`: if the Changeset on the codehost already
-	// exist, we check whether its Title/Description/BaseRef differ from
-	// what we have and if so, we update it
-
-	// If the campaign.PlanID is different to the previous one, we need to
-	// do the full update. Otherwise, we're done.
-	if args.Plan == nil || (args.Plan != nil && campaign.CampaignPlanID == *args.Plan) {
-		err = tx.UpdateCampaign(ctx, campaign)
-		return campaign, err
-	}
-
+	var updatePlanID bool
 	previousPlanID := campaign.CampaignPlanID
-	campaign.CampaignPlanID = *args.Plan
-	err = tx.UpdateCampaign(ctx, campaign)
-	if err != nil {
-		return nil, err
+	if args.Plan != nil && previousPlanID != *args.Plan {
+		campaign.CampaignPlanID = *args.Plan
+		updatePlanID = true
+	}
+	if !updateName && !updateDescription && !updatePlanID {
+		return campaign, nil
 	}
 
 	changesetJobs, _, err := tx.ListChangesetJobs(ctx, ListChangesetJobsOpts{
@@ -856,9 +849,10 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		currentChangesetJob.CampaignJobID = newCampaignJob.ID
 		attachedCampaignJobsByID[newCampaignJob.ID] = newCampaignJob
 
-		// If the CampaignJobs have different {Diff,Rev,BaseRef,Description} we
-		// need to update the Changeset on the codehost...
-		if campaignJobsDiffer(newCampaignJob, currentCampaignJob) {
+		// If the Name or Description have been changed or the CampaignJobs
+		// have different {Diff,Rev,BaseRef,Description} we need to update the
+		// Changeset on the codehost...
+		if updateName || updateDescription || campaignJobsDiffer(newCampaignJob, currentCampaignJob) {
 			// ... to do that, we _reset_ the ChangesetJob (set error = '',
 			// started_at = NULL, finished_at = NULL)
 			currentChangesetJob.Error = ""
