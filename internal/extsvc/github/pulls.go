@@ -397,7 +397,7 @@ func (c *Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestInp
 
 type UpdatePullRequestInput struct {
 	// The Node ID of the pull request.
-	PullRequestID string `json:"pullRequestID"`
+	PullRequestID string `json:"pullRequestId"`
 	// The name of the branch you want your changes pulled into. This should be
 	// an existing branch on the current repository.
 	BaseRefName string `json:"baseRefName"`
@@ -426,7 +426,7 @@ func (c *Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInp
 				Participants  struct{ Nodes []Actor }
 				TimelineItems struct{ Nodes []TimelineItem }
 			} `json:"pullRequest"`
-		} `json:"createPullRequest"`
+		} `json:"updatePullRequest"`
 	}
 
 	input := map[string]interface{}{"input": in}
