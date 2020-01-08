@@ -20,7 +20,7 @@ func (t TextParameters) typeParametersValue()    {}
 
 type CommitParameters struct {
 	RepoRevs           *RepositoryRevisions
-	PatternInfo        *PatternInfo
+	PatternInfo        *CommitPatternInfo
 	Query              *query.Query
 	Diff               bool
 	TextSearchOptions  git.TextSearchOptions
@@ -70,7 +70,7 @@ type SymbolsParameters struct {
 // to search for, as well as the hydrated list of repository revisions to
 // search. It defines behavior for text search on repository names, file names, and file content.
 type TextParameters struct {
-	PatternInfo *PatternInfo
+	PatternInfo *TextPatternInfo
 	Repos       []*RepositoryRevisions
 
 	// Query is the parsed query from the user. You should be using Pattern
@@ -96,7 +96,63 @@ type TextParameters struct {
 // commit search internals converts this type to CommitParameters. The
 // commitParameter type definitions will be merged in future.
 type TextParametersForCommitParameters struct {
-	PatternInfo *PatternInfo
+	PatternInfo *CommitPatternInfo
 	Repos       []*RepositoryRevisions
 	Query       *query.Query
+}
+
+// TextPatternInfo is the struct used by vscode pass on search queries. Keep it in
+// sync with pkg/searcher/protocol.PatternInfo.
+type TextPatternInfo struct {
+	Pattern         string
+	IsRegExp        bool
+	IsStructuralPat bool
+	CombyRule       string
+	IsWordMatch     bool
+	IsCaseSensitive bool
+	FileMatchLimit  int32
+
+	// We do not support IsMultiline
+	// IsMultiline     bool
+	IncludePatterns []string
+	ExcludePattern  string
+
+	FilePatternsReposMustInclude []string
+	FilePatternsReposMustExclude []string
+
+	PathPatternsAreRegExps       bool
+	PathPatternsAreCaseSensitive bool
+
+	PatternMatchesContent bool
+	PatternMatchesPath    bool
+
+	Languages []string
+}
+
+// CommitPatternInfo is the data type that describes the properties of
+// a pattern used for commit search.
+type CommitPatternInfo struct {
+	Pattern         string
+	IsRegExp        bool
+	IsStructuralPat bool
+	CombyRule       string
+	IsWordMatch     bool
+	IsCaseSensitive bool
+	FileMatchLimit  int32
+
+	// We do not support IsMultiline
+	// IsMultiline     bool
+	IncludePatterns []string
+	ExcludePattern  string
+
+	FilePatternsReposMustInclude []string
+	FilePatternsReposMustExclude []string
+
+	PathPatternsAreRegExps       bool
+	PathPatternsAreCaseSensitive bool
+
+	PatternMatchesContent bool
+	PatternMatchesPath    bool
+
+	Languages []string
 }
