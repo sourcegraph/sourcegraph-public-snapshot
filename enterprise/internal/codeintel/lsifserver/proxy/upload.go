@@ -55,7 +55,7 @@ func uploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *htt
 			return
 		}
 
-		payload, err := json.Marshal(map[string]string{"id": jobID})
+		payload, err := json.Marshal(map[string]int64{"id": jobID})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

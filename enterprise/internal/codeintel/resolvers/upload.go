@@ -177,11 +177,11 @@ func (r *lsifUploadStatsResolver) ErroredCount() int32    { return r.stats.Error
 func (r *lsifUploadStatsResolver) CompletedCount() int32  { return r.stats.CompletedCount }
 func (r *lsifUploadStatsResolver) QueuedCount() int32     { return r.stats.QueuedCount }
 
-func marshalLSIFUploadGQLID(lsifUploadID string) graphql.ID {
+func marshalLSIFUploadGQLID(lsifUploadID int64) graphql.ID {
 	return relay.MarshalID("LSIFUpload", lsifUploadID)
 }
 
-func unmarshalLSIFUploadGQLID(id graphql.ID) (lsifUploadID string, err error) {
+func unmarshalLSIFUploadGQLID(id graphql.ID) (lsifUploadID int64, err error) {
 	err = relay.UnmarshalSpec(id, &lsifUploadID)
 	return
 }

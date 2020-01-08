@@ -110,7 +110,7 @@ func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (graphqlba
 	}
 
 	lsifUpload, err := client.DefaultClient.GetUpload(ctx, &struct {
-		UploadID string
+		UploadID int64
 	}{
 		UploadID: uploadID,
 	})
@@ -133,7 +133,7 @@ func (r *Resolver) DeleteLSIFUpload(ctx context.Context, id graphql.ID) (*graphq
 	}
 
 	err = client.DefaultClient.DeleteUpload(ctx, &struct {
-		UploadID string
+		UploadID int64
 	}{
 		UploadID: uploadID,
 	})
