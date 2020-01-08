@@ -130,7 +130,8 @@ export class UploadManager {
                         .getRepository(pgModels.LsifUpload)
                         .createQueryBuilder()
                         .delete()
-                        .where("uploaded_at < now() - (:maxAge * interval '1 second')", { maxAge })
+                        .where("state != 'completed'")
+                        .andWhere("uploaded_at < now() - (:maxAge * interval '1 second')", { maxAge })
                         .execute()
                 )
             ).affected || 0
