@@ -188,7 +188,7 @@ func wait(pipeline *bk.Pipeline) {
 
 func triggerE2E(c Config) func(*bk.Pipeline) {
 	// hardFail if we publish docker images
-	hardFail := c.branch == "master" || c.isMasterDryRun || c.isRenovateBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
+	hardFail := c.branch == "master" || c.isMasterDryRun || c.isRenovateBranch || c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
 
 	env := copyEnv(
 		"BUILDKITE_PULL_REQUEST",
