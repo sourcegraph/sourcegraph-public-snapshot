@@ -314,7 +314,11 @@ func (s *Service) RunChangesetJob(
 	}
 	repo := rs[0]
 
-	headRefName := fmt.Sprintf("sourcegraph/%s-%d", git.HumanReadableBranchName(c.Name), c.CreatedAt.Unix())
+	// TODO: The "campaign" is just here so that updates don't create new
+	// branches and new changesets.
+	// We should probably persist the `headRefName` on `ChangesetJob` and keep
+	// it stable across retries and only set it the first time.
+	headRefName := fmt.Sprintf("sourcegraph/%s-%d", "campaign", c.CreatedAt.Unix())
 
 	_, err = s.git.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
 		Repo:       api.RepoName(repo.Name),
@@ -421,14 +425,12 @@ func (s *Service) RunChangesetJob(
 	}
 	// If the Changeset already exists and our source can update it, we try to update it
 	if exists {
-		fmt.Printf("changeset already exists")
 		outdated, err := isOutdated(&cs)
 		if err != nil {
 			return errors.Wrap(err, "could not determine whether changeset needs update")
 		}
 
 		if outdated {
-			fmt.Printf("changeset is outdated")
 			ucs, ok := src.(repos.UpdateChangesetSource)
 			if !ok {
 				return errors.Errorf("updating changesets on code host of repo %q is not implemented", repo.Name)
