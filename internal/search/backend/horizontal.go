@@ -49,7 +49,11 @@ func (s *HorizontalSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.
 	// During rebalancing a repository can appear on more than one replica.
 	dedupper := dedupper{}
 
-	var aggregate zoekt.SearchResult
+	aggregate := &zoekt.SearchResult{
+		RepoURLs:      map[string]string{},
+		LineFragments: map[string]string{},
+	}
+
 	for range clients {
 		r := <-results
 		if r.err != nil {
@@ -58,11 +62,20 @@ func (s *HorizontalSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.
 
 		aggregate.Files = append(aggregate.Files, dedupper.Dedup(r.sr.Files)...)
 		aggregate.Stats.Add(r.sr.Stats)
+
+		if len(r.sr.Files) > 0 {
+			for k, v := range r.sr.RepoURLs {
+				aggregate.RepoURLs[k] = v
+			}
+			for k, v := range r.sr.LineFragments {
+				aggregate.LineFragments[k] = v
+			}
+		}
 	}
 
 	aggregate.Duration = time.Since(start)
 
-	return &aggregate, nil
+	return aggregate, nil
 }
 
 // List aggregates list over every endpoint in Map.

@@ -94,6 +94,23 @@ export function search(
                                             name
                                             url
                                         }
+                                        revSpec {
+                                            __typename
+                                            ... on GitRef {
+                                                displayName
+                                                url
+                                            }
+                                            ... on GitRevSpecExpr {
+                                                expr
+                                                object { commit { url } }
+                                            }
+                                            ... on GitObject {
+                                                abbreviatedOID
+                                                commit {
+                                                    url
+                                                }
+                                            }
+                                        }
                                         limitHit
                                         symbols {
                                             name

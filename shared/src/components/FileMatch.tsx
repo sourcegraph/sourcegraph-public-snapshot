@@ -11,7 +11,7 @@ import { Props as ResultContainerProps, ResultContainer } from './ResultContaine
 
 const SUBSET_COUNT_KEY = 'fileMatchSubsetCount'
 
-export type IFileMatch = Partial<Pick<GQL.IFileMatch, 'symbols' | 'limitHit'>> & {
+export type IFileMatch = Partial<Pick<GQL.IFileMatch, 'revSpec' | 'symbols' | 'limitHit'>> & {
     file: Pick<GQL.IFile, 'path' | 'url'> & { commit: Pick<GQL.IGitCommit, 'oid'> }
     repository: Pick<GQL.IRepository, 'name' | 'url'>
     lineMatches: ILineMatch[]
@@ -91,13 +91,24 @@ export class FileMatch extends React.PureComponent<Props> {
             line: m.lineNumber,
         }))
 
+        const { repoAtRevURL, revDisplayName } =
+            result.revSpec?.__typename === 'GitRevSpecExpr' && result.revSpec.object?.commit
+                ? { repoAtRevURL: result.revSpec.object?.commit?.url, revDisplayName: result.revSpec.expr }
+                : result.revSpec?.__typename === 'GitRef'
+                ? { repoAtRevURL: result.revSpec.url, revDisplayName: result.revSpec.displayName }
+                : { repoAtRevURL: result.repository.url, revDisplayName: '' }
+
         const title = (
             <RepoFileLink
                 repoName={result.repository.name}
-                repoURL={result.repository.url}
+                repoURL={repoAtRevURL}
                 filePath={result.file.path}
                 fileURL={result.file.url}
-                repoDisplayName={this.props.repoDisplayName}
+                repoDisplayName={
+                    this.props.repoDisplayName
+                        ? `${this.props.repoDisplayName}${revDisplayName ? `@${revDisplayName}` : ''}`
+                        : undefined
+                }
             />
         )
 

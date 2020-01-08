@@ -67,7 +67,7 @@ func TestCampaigns(t *testing.T) {
 		httpFactory: cf,
 	}
 
-	s, err := graphqlbackend.NewSchema(sr, nil)
+	s, err := graphqlbackend.NewSchema(sr, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1031,7 +1031,7 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 		store := ee.NewStoreWithClock(dbconn.Global, clock)
 
 		sr := &Resolver{store: store}
-		s, err := graphqlbackend.NewSchema(sr, nil)
+		s, err := graphqlbackend.NewSchema(sr, nil, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1222,7 +1222,7 @@ func TestCampaignPlanResolver(t *testing.T) {
 	}
 
 	sr := &Resolver{store: store}
-	s, err := graphqlbackend.NewSchema(sr, nil)
+	s, err := graphqlbackend.NewSchema(sr, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

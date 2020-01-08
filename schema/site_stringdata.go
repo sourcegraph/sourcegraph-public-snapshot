@@ -89,6 +89,12 @@ const SiteSchemaJSON = `{
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
+        },
+        "searchMultipleRevisionsPerRepository": {
+          "description": "Enables searching multiple revisions of the same repository (using ` + "`" + `repo:myrepo@branch1:branch2` + "`" + `).",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": true }
         }
       },
       "group": "Experimental",
@@ -745,7 +751,7 @@ const SiteSchemaJSON = `{
         },
         "allowOrgs": {
           "description": "Restricts new logins to members of these GitHub organizations. Existing sessions won't be invalidated. Leave empty or unset for no org restrictions.",
-          "default": false,
+          "default": [],
           "type": "array",
           "items": {
             "type": "string",

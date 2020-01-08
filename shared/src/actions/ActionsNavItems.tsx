@@ -67,6 +67,7 @@ export class ActionsNavItems extends React.PureComponent<ActionsNavItemsProps, A
                 .subscribe(contributions => this.setState({ contributions }))
         )
         this.scopeChanges.next(this.props.scope)
+        this.extraContextChanges.next(this.props.extraContext)
     }
 
     public componentDidUpdate(prevProps: ActionsProps): void {

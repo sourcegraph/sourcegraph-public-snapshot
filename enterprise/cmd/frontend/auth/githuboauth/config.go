@@ -21,7 +21,7 @@ func init() {
 			} else {
 				newProvidersList := make([]providers.Provider, 0, len(newProviders))
 				for _, p := range newProviders {
-					newProvidersList = append(newProvidersList, p)
+					newProvidersList = append(newProvidersList, p.Provider)
 				}
 				providers.Update(pkgName, newProvidersList)
 			}

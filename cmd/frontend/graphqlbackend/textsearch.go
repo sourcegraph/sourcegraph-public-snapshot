@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
@@ -99,6 +100,15 @@ func (fm *FileMatchResolver) File() *GitTreeEntryResolver {
 
 func (fm *FileMatchResolver) Repository() *RepositoryResolver {
 	return &RepositoryResolver{repo: fm.Repo}
+}
+
+func (fm *FileMatchResolver) RevSpec() *gitRevSpec {
+	if fm.InputRev == nil || *fm.InputRev == "" {
+		return nil // default branch
+	}
+	return &gitRevSpec{
+		expr: &gitRevSpecExpr{expr: *fm.InputRev, repo: fm.Repository()},
+	}
 }
 
 func (fm *FileMatchResolver) Resource() string {
@@ -591,70 +601,79 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 			textSearchLimiter.SetLimit(len(eps) * 32)
 		}
 
-		for _, repoRev := range searcherRepos {
-			if len(repoRev.Revs) == 0 {
+	outer:
+		for _, repoAllRevs := range searcherRepos {
+			if len(repoAllRevs.Revs) == 0 {
 				continue
 			}
-			if len(repoRev.Revs) >= 2 {
+			if len(repoAllRevs.Revs) >= 2 && !conf.SearchMultipleRevisionsPerRepository() {
 				return errMultipleRevsNotSupported
 			}
 
-			// Only reason acquire can fail is if ctx is cancelled. So we can stop
-			// looping through searcherRepos.
-			limitCtx, limitDone, acquireErr := textSearchLimiter.Acquire(ctx)
-			if acquireErr != nil {
-				break
-			}
+			for _, rev := range repoAllRevs.Revs {
+				if rev.RefGlob != "" || rev.ExcludeRefGlob != "" {
+					return errors.New("searching multiple revisions in a repository using a glob (such as *refs/heads) is not supported; you must list all revspecs with colon separators (such as master:mybranch)")
+				}
 
-			args := *args
-			if args.PatternInfo.IsStructuralPat && searcherReposFilteredFiles != nil {
-				// Modify the search query to only run for the filtered files
-				if v, ok := searcherReposFilteredFiles[string(repoRev.Repo.Name)]; ok {
-					patternCopy := *args.PatternInfo
-					args.PatternInfo = &patternCopy
-					includePatternsCopy := []string{}
-					args.PatternInfo.IncludePatterns = append(includePatternsCopy, v...)
+				// Only reason acquire can fail is if ctx is cancelled. So we can stop
+				// looping through searcherRepos.
+				limitCtx, limitDone, acquireErr := textSearchLimiter.Acquire(ctx)
+				if acquireErr != nil {
+					break outer
 				}
-			}
 
-			wg.Add(1)
-			go func(ctx context.Context, done context.CancelFunc, repoRev *search.RepositoryRevisions) {
-				defer wg.Done()
-				defer done()
+				// Make a new repoRev for just the operation of searching this revspec.
+				repoRev := &search.RepositoryRevisions{Repo: repoAllRevs.Repo, Revs: []search.RevisionSpecifier{rev}}
 
-				rev := repoRev.RevSpecs()[0] // TODO(sqs): search multiple revs
-				matches, repoLimitHit, err := searchFilesInRepo(ctx, args.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), rev, args.PatternInfo, fetchTimeout)
-				if err != nil {
-					tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.Error(err), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
-					log15.Warn("searchFilesInRepo failed", "error", err, "repo", repoRev.Repo.Name)
-				}
-				mu.Lock()
-				defer mu.Unlock()
-				if ctx.Err() == nil {
-					common.searched = append(common.searched, repoRev.Repo)
-				}
-				if repoLimitHit {
-					// We did not return all results in this repository.
-					common.partial[repoRev.Repo.Name] = struct{}{}
-				}
-				// non-diff search reports timeout through err, so pass false for timedOut
-				if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, false, err); fatalErr != nil {
-					if ctx.Err() == context.Canceled {
-						// Our request has been canceled (either because another one of searcherRepos
-						// had a fatal error, or otherwise), so we can just ignore these results. We
-						// handle this here, not in handleRepoSearchResult, because different callers of
-						// handleRepoSearchResult (for different result types) currently all need to
-						// handle cancellations differently.
-						return
-					}
-					if searchErr == nil {
-						searchErr = errors.Wrapf(err, "failed to search %s", repoRev.String())
-						tr.LazyPrintf("cancel due to error: %v", searchErr)
-						cancel()
+				args := *args
+				if args.PatternInfo.IsStructuralPat && searcherReposFilteredFiles != nil {
+					// Modify the search query to only run for the filtered files
+					if v, ok := searcherReposFilteredFiles[string(repoRev.Repo.Name)]; ok {
+						patternCopy := *args.PatternInfo
+						args.PatternInfo = &patternCopy
+						includePatternsCopy := []string{}
+						args.PatternInfo.IncludePatterns = append(includePatternsCopy, v...)
 					}
 				}
-				addMatches(matches)
-			}(limitCtx, limitDone, repoRev) // ends the Go routine for a call to searcher for a repo
+
+				wg.Add(1)
+				go func(ctx context.Context, done context.CancelFunc) {
+					defer wg.Done()
+					defer done()
+
+					matches, repoLimitHit, err := searchFilesInRepo(ctx, args.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], args.PatternInfo, fetchTimeout)
+					if err != nil {
+						tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.Error(err), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
+						log15.Warn("searchFilesInRepo failed", "error", err, "repo", repoRev.Repo.Name)
+					}
+					mu.Lock()
+					defer mu.Unlock()
+					if ctx.Err() == nil {
+						common.searched = append(common.searched, repoRev.Repo)
+					}
+					if repoLimitHit {
+						// We did not return all results in this repository.
+						common.partial[repoRev.Repo.Name] = struct{}{}
+					}
+					// non-diff search reports timeout through err, so pass false for timedOut
+					if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, false, err); fatalErr != nil {
+						if ctx.Err() == context.Canceled {
+							// Our request has been canceled (either because another one of searcherRepos
+							// had a fatal error, or otherwise), so we can just ignore these results. We
+							// handle this here, not in handleRepoSearchResult, because different callers of
+							// handleRepoSearchResult (for different result types) currently all need to
+							// handle cancellations differently.
+							return
+						}
+						if searchErr == nil {
+							searchErr = errors.Wrapf(err, "failed to search %s", repoRev.String())
+							tr.LazyPrintf("cancel due to error: %v", searchErr)
+							cancel()
+						}
+					}
+					addMatches(matches)
+				}(limitCtx, limitDone) // ends the Go routine for a call to searcher for a repo
+			} // ends the for loop iterating over repo's revs
 		} // ends the for loop iterating over repos
 		return nil
 	} // ends callSearcherOverRepos
