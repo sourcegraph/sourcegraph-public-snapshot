@@ -575,6 +575,25 @@ func (u *users) GetByUsername(ctx context.Context, username string) (*types.User
 	return u.getOneBySQL(ctx, "WHERE username=$1 AND deleted_at IS NULL LIMIT 1", username)
 }
 
+// GetByUsernames returns a list of users by given usernames. The number of results list could be less
+// than the candidate list due to no user is associated with some usernames.
+func (u *users) GetByUsernames(ctx context.Context, usernames ...string) ([]*types.User, error) {
+	if Mocks.Users.GetByUsernames != nil {
+		return Mocks.Users.GetByUsernames(ctx, usernames...)
+	}
+
+	if len(usernames) == 0 {
+		return []*types.User{}, nil
+	}
+
+	items := make([]*sqlf.Query, len(usernames))
+	for i := range usernames {
+		items[i] = sqlf.Sprintf("%s", usernames[i])
+	}
+	q := sqlf.Sprintf("WHERE username IN (%s) AND deleted_at IS NULL ORDER BY id ASC", sqlf.Join(items, ","))
+	return u.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+}
+
 var ErrNoCurrentUser = errors.New("no current user")
 
 func (u *users) GetByCurrentAuthUser(ctx context.Context) (*types.User, error) {

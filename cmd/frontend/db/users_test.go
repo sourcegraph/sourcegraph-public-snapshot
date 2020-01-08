@@ -409,6 +409,47 @@ func TestUsers_GetByVerifiedEmail(t *testing.T) {
 	}
 }
 
+func TestUsers_GetByUsernames(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	newUsers := []NewUser{
+		{
+			Email:           "alice@example.com",
+			Username:        "alice",
+			EmailIsVerified: true,
+		},
+		{
+			Email:           "bob@example.com",
+			Username:        "bob",
+			EmailIsVerified: true,
+		},
+	}
+
+	for _, newUser := range newUsers {
+		_, err := Users.Create(ctx, newUser)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	users, err := Users.GetByUsernames(ctx, "alice", "bob", "cindy")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(users) != 2 {
+		t.Fatalf("got %d users, but want 2", len(users))
+	}
+	for i := range users {
+		if users[i].Username != newUsers[i].Username {
+			t.Errorf("got %s, but want %s", users[i].Username, newUsers[i].Username)
+		}
+	}
+}
+
 func TestUsers_Delete(t *testing.T) {
 	for name, hard := range map[string]bool{"": false, "_Hard": true} {
 		t.Run("TestUsers_Delete"+name, func(t *testing.T) {

@@ -85,9 +85,10 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 	}
 }
 
-func NewSchema(a8n A8NResolver, codeIntel CodeIntelResolver) (*graphql.Schema, error) {
+func NewSchema(a8n A8NResolver, codeIntel CodeIntelResolver, authz AuthzResolver) (*graphql.Schema, error) {
 	EnterpriseResolvers.a8nResolver = a8n
 	EnterpriseResolvers.codeIntelResolver = codeIntel
+	EnterpriseResolvers.authzResolver = authz
 
 	return graphql.ParseSchema(
 		Schema,
@@ -241,6 +242,7 @@ type schemaResolver struct{}
 var EnterpriseResolvers = struct {
 	a8nResolver       A8NResolver
 	codeIntelResolver CodeIntelResolver
+	authzResolver     AuthzResolver
 }{}
 
 // DEPRECATED
