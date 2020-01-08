@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/a8n"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
@@ -2232,6 +2233,33 @@ func testStore(db *sql.DB) func(*testing.T) {
 					}
 				}
 			})
+		})
+	}
+}
+
+func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
+	// TODO: Flesh out this test.
+	// Try and run from more than one goroutine to confirm locking
+	return func(t *testing.T) {
+		now := time.Now().UTC().Truncate(time.Microsecond)
+		s := NewStoreWithClock(db, func() time.Time {
+			return now.UTC().Truncate(time.Microsecond)
+		})
+		ctx := context.Background()
+
+		t.Run("GetPendingCampaignJobsWhenNoneAvailable", func(t *testing.T) {
+			ran := false
+			process := func(ctx context.Context, s *Store, job a8n.CampaignJob) error {
+				return errors.New("rollback")
+			}
+			ran, err := s.ProcessPendingCampaignJob(ctx, process)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if ran {
+				// We shouldn't have any pending jobs yet
+				t.Fatalf("process function should not have run")
+			}
 		})
 	}
 }

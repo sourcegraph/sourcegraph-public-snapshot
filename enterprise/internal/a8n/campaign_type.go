@@ -73,20 +73,16 @@ func NewCampaignType(campaignTypeName, args string, cf *httpcli.Factory) (Campai
 			httpClient:   cli,
 			fetchTimeout: defaultFetchTimeout,
 		}
-
 		if err := json.Unmarshal(normalizedArgs, &c.args); err != nil {
 			return nil, err
 		}
-
 		ct = c
 
 	case "credentials":
 		c := &credentials{newSearch: graphqlbackend.NewSearchImplementer}
-
 		if err := json.Unmarshal(normalizedArgs, &c.args); err != nil {
 			return nil, err
 		}
-
 		ct = c
 
 	case patchCampaignType:

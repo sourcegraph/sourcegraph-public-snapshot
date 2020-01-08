@@ -124,7 +124,7 @@ func TestRunner(t *testing.T) {
 			wantJobs:     wantNoJobs,
 		},
 		{
-			name:         "multi search results and successfull execution",
+			name:         "multi search results and successful execution",
 			search:       yieldRepos(rs...),
 			commitID:     yieldDefaultBranches(defaultBranches),
 			campaignType: &testCampaignType{diff: testDiff, description: testDescription},
@@ -245,9 +245,16 @@ func TestRunner(t *testing.T) {
 		},
 	}
 
+	doneChan := make(chan struct{})
+	defer func() {
+		close(doneChan)
+	}()
+	go ConsumePendingCampaignJobs(store, clock, doneChan)
+
 	for _, tc := range tests {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
+
 			if tc.runErr == "" {
 				tc.runErr = "<nil>"
 			}
@@ -259,8 +266,6 @@ func TestRunner(t *testing.T) {
 			if have, want := fmt.Sprint(err), tc.runErr; have != want {
 				t.Fatalf("have runner.Run error: %q\nwant error: %q", have, want)
 			}
-
-			waitRunner(t, runner)
 
 			if tc.wantPlan == nil && plan.ID == 0 {
 				return
@@ -320,7 +325,7 @@ index 851b23a..140f333 100644
 +++ b/README.md
 @@ -1,3 +1,4 @@
  # README
- 
+
 +Let's add a line here.
  This file is hostEd at sourcegraph.com and is a test file.
 `
