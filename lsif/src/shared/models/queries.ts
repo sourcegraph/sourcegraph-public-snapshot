@@ -18,7 +18,7 @@ export function ancestorLineage(): string {
  * Return a recursive CTE `lineage` that returns ancestors and descendants of the commit for
  * the given repository. This assumes that the repo name is $1 and the commit is $2. This
  * happens to evaluate in Postgres as a lazy generator, which allows us to pull the "next"
- * closest commit  in either direction from the source commit as needed.
+ * closest commit in either direction from the source commit as needed.
  */
 export function bidirectionalLineage(): string {
     return `
