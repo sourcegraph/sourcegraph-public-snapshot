@@ -385,31 +385,6 @@ Check constraints:
 
 ```
 
-# Table "public.lsif_dumps"
-```
-     Column     |           Type           |                        Modifiers                        
-----------------+--------------------------+---------------------------------------------------------
- id             | integer                  | not null default nextval('lsif_dumps_id_seq'::regclass)
- repository     | text                     | not null
- commit         | text                     | not null
- root           | text                     | not null default ''::text
- visible_at_tip | boolean                  | not null default false
- processed_at   | timestamp with time zone | not null default now()
- uploaded_at    | timestamp with time zone | not null
-Indexes:
-    "lsif_dumps_pkey" PRIMARY KEY, btree (id)
-    "lsif_dumps_repository_commit_root" UNIQUE CONSTRAINT, btree (repository, commit, root)
-    "lsif_dumps_uploaded_at" btree (uploaded_at)
-    "lsif_dumps_visible_repository_commit" btree (repository, commit) WHERE visible_at_tip
-Check constraints:
-    "lsif_dumps_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
-    "lsif_dumps_repository_check" CHECK (repository <> ''::text)
-Referenced by:
-    TABLE "lsif_packages" CONSTRAINT "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_dumps(id) ON DELETE CASCADE
-    TABLE "lsif_references" CONSTRAINT "lsif_references_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_dumps(id) ON DELETE CASCADE
-
-```
-
 # Table "public.lsif_packages"
 ```
  Column  |  Type   |                         Modifiers                          
@@ -423,7 +398,7 @@ Indexes:
     "lsif_packages_pkey" PRIMARY KEY, btree (id)
     "lsif_packages_package_unique" UNIQUE, btree (scheme, name, version)
 Foreign-key constraints:
-    "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_dumps(id) ON DELETE CASCADE
+    "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
 
 ```
 
@@ -441,30 +416,39 @@ Indexes:
     "lsif_references_pkey" PRIMARY KEY, btree (id)
     "lsif_references_package" btree (scheme, name, version)
 Foreign-key constraints:
-    "lsif_references_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_dumps(id) ON DELETE CASCADE
+    "lsif_references_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
 
 ```
 
 # Table "public.lsif_uploads"
 ```
-       Column       |           Type           |                         Modifiers                         
---------------------+--------------------------+-----------------------------------------------------------
- id                 | bigint                   | not null default nextval('lsif_uploads_id_seq'::regclass)
+       Column       |           Type           |                        Modifiers                        
+--------------------+--------------------------+---------------------------------------------------------
+ id                 | integer                  | not null default nextval('lsif_dumps_id_seq'::regclass)
  repository         | text                     | not null
  commit             | text                     | not null
- root               | text                     | not null
+ root               | text                     | not null default ''::text
+ visible_at_tip     | boolean                  | not null default false
+ uploaded_at        | timestamp with time zone | not null default now()
  filename           | text                     | not null
  state              | lsif_upload_state        | not null default 'queued'::lsif_upload_state
  failure_summary    | text                     | 
  failure_stacktrace | text                     | 
- uploaded_at        | timestamp with time zone | not null default now()
  started_at         | timestamp with time zone | 
  finished_at        | timestamp with time zone | 
  tracing_context    | text                     | not null
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
+    "lsif_uploads_repository_commit_root" UNIQUE, btree (repository, commit, root) WHERE state = 'completed'::lsif_upload_state
     "lsif_uploads_state" btree (state)
     "lsif_uploads_uploaded_at" btree (uploaded_at)
+    "lsif_uploads_visible_repository_commit" btree (repository, commit) WHERE visible_at_tip
+Check constraints:
+    "lsif_uploads_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
+    "lsif_uploads_repository_check" CHECK (repository <> ''::text)
+Referenced by:
+    TABLE "lsif_packages" CONSTRAINT "lsif_packages_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
+    TABLE "lsif_references" CONSTRAINT "lsif_references_dump_id_fkey" FOREIGN KEY (dump_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE
 
 ```
 
