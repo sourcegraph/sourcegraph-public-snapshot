@@ -174,9 +174,10 @@ func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign, draft boo
 	return s.createChangesetJobsWithStore(ctx, tx, c)
 }
 
-// ErrNoCampaignJobs is returned by CreateCampaign if a CampaignPlanID was
-// specified but the CampaignPlan does not have any (finished) CampaignJobs.
-var ErrNoCampaignJobs = errors.New("cannot create a Campaign without any changesets")
+// ErrNoCampaignJobs is returned by CreateCampaign or UpdateCampaign if a
+// CampaignPlanID was specified but the CampaignPlan does not have any
+// (finished) CampaignJobs.
+var ErrNoCampaignJobs = errors.New("cannot create or update a Campaign without any changesets")
 
 func (s *Service) createChangesetJobsWithStore(ctx context.Context, store *Store, c *a8n.Campaign) error {
 	jobs, _, err := store.ListCampaignJobs(ctx, ListCampaignJobsOpts{
@@ -806,6 +807,10 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	if err != nil {
 		return nil, errors.Wrap(err, "listing new campaign jobs")
 	}
+	if len(newCampaignJobs) == 0 {
+		return nil, ErrNoCampaignJobs
+	}
+
 	newCampaignJobsByRepoID := make(map[int32]*a8n.CampaignJob, len(newCampaignJobs))
 	for _, j := range newCampaignJobs {
 		newCampaignJobsByRepoID[j.RepoID] = j
