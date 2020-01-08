@@ -129,8 +129,8 @@ type TextPatternInfo struct {
 	Languages []string
 }
 
-// TextPatternInfo is the struct used by vscode pass on search queries. Keep it in
-// sync with pkg/searcher/protocol.PatternInfo.
+// CommitPatternInfo is the data type that describes the properties of
+// a pattern used for commit search.
 type CommitPatternInfo struct {
 	Pattern         string
 	IsRegExp        bool

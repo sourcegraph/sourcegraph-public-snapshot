@@ -1,4 +1,4 @@
-// Package search provides high level search structures and logic.
+// Validation logic for CommitPatternInfo
 package search
 
 import (
@@ -9,7 +9,6 @@ func (p *CommitPatternInfo) IsEmpty() bool {
 	return p.Pattern == "" && p.ExcludePattern == "" && len(p.IncludePatterns) == 0
 }
 
-// Validate returns a non-nil error if PatternInfo is not valid.
 func (p *CommitPatternInfo) Validate() error {
 	if p.IsRegExp {
 		if _, err := syntax.Parse(p.Pattern, syntax.Perl); err != nil {
