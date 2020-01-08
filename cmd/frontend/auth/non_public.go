@@ -111,6 +111,10 @@ func AllowAnonymousRequest(req *http.Request) bool {
 		return true
 	}
 
+	if strings.HasPrefix(req.URL.Path, "/.api/bitbucket-server-webhooks") {
+		return true
+	}
+
 	apiRouteName := matchedRouteName(req, router.Router())
 	if apiRouteName == router.UI {
 		// Test against UI router. (Some of its handlers inject private data into the title or meta tags.)
