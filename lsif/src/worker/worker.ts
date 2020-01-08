@@ -14,7 +14,7 @@ import { startMetricsServer } from './server'
 import { waitForConfiguration } from '../shared/config/config'
 import { UploadManager } from '../shared/store/uploads'
 import * as pgModels from '../shared/models/pg'
-import { convertDatabase, postProcessConversion } from './conversion/conversion'
+import { convertDatabase, updateCommitsAndDumpsVisibleFromTip } from './conversion/conversion'
 import { pick } from 'lodash'
 import AsyncPolling from 'async-polling'
 import { DumpManager } from '../shared/store/dumps'
@@ -79,16 +79,32 @@ async function main(logger: Logger): Promise<void> {
                     // Convert the database and populate the cross-dump package data
                     await convertDatabase(entityManager, dumpManager, dependencyManager, upload, ctx)
 
-                    // TODO - handle deletion of db files that have no record in the database.
+                    // Remove overlapping dumps that will cause a unique index error once this upload has
+                    // transitioned into the completed state. As this is done in a transaction, we do not
+                    // delete the files on disk right away. These files will be cleaned up by a worker in
+                    // a future cleanup task.
+                    await dumpManager.deleteOverlappingDumps(
+                        upload.repository,
+                        upload.commit,
+                        upload.root,
+                        { logger, span },
+                        entityManager
+                    )
 
                     // Update the conversion state after we've written the dump database file as the
-                    // post-process logic assumes that the processed upload is present in the dumps views.
-                    // The remainder of the task may still fail, in which case the entire transaction is
-                    // rolled back.
+                    // next step assumes that the processed upload is present in the dumps views. The
+                    // remainder of the task may still fail, in which case the entire transaction is
+                    // rolled back, so we don't want to commit yet.
                     await markComplete()
 
-                    // Update visible_at_tip and perform some housekeeping
-                    await postProcessConversion(entityManager, dumpManager, fetchConfiguration, upload, ctx)
+                    // Update visibility flag for this repository.
+                    await updateCommitsAndDumpsVisibleFromTip(
+                        entityManager,
+                        dumpManager,
+                        fetchConfiguration,
+                        upload,
+                        ctx
+                    )
                 })
         )
     }

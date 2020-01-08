@@ -35,16 +35,6 @@ export async function convertDatabase(
         // Create database in a temp path
         const { packages, references } = await convertLsif(upload.filename, tempFile, { logger, span })
 
-        // Remove overlapping dumps that will cause a unique index error once this upload has
-        // transitioned into the completed state.
-        await dumpManager.deleteOverlappingDumps(
-            upload.repository,
-            upload.commit,
-            upload.root,
-            { logger, span },
-            entityManager
-        )
-
         // Insert dump and add packages and references to Postgres
         await dependencyManager.addPackagesAndReferences(
             upload.id,
@@ -69,26 +59,6 @@ export async function convertDatabase(
     }
 
     await fs.unlink(upload.filename)
-}
-
-/**
- * Handle the actions that much occur after an upload record is marked as complete.
- *
- * @param entityManager The EntityManager to use as part of a transaction.
- * @param dumpManager The dumps manager instance.
- * @param fetchConfiguration A function that returns the current configuration.
- * @param upload The processed upload record.
- * @param ctx The tracing context.
- */
-export async function postProcessConversion(
-    entityManager: EntityManager,
-    dumpManager: DumpManager,
-    fetchConfiguration: () => { gitServers: string[] },
-    upload: pgModels.LsifUpload,
-    ctx: TracingContext
-): Promise<void> {
-    await updateCommitsAndDumpsVisibleFromTip(entityManager, dumpManager, fetchConfiguration, upload, ctx)
-    await purgeOldDumps(entityManager, dumpManager, settings.STORAGE_ROOT, settings.DBS_DIR_MAXIMUM_SIZE_BYTES, ctx)
 }
 
 /**
