@@ -23,7 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-func zoektResultCountFactor(numRepos int, query *search.PatternInfo) int {
+func zoektResultCountFactor(numRepos int, query *search.TextPatternInfo) int {
 	// If we're only searching a small number of repositories, return more comprehensive results. This is
 	// arbitrary.
 	k := 1
@@ -47,7 +47,7 @@ func zoektResultCountFactor(numRepos int, query *search.PatternInfo) int {
 	return k
 }
 
-func zoektSearchOpts(k int, query *search.PatternInfo) zoekt.SearchOptions {
+func zoektSearchOpts(k int, query *search.TextPatternInfo) zoekt.SearchOptions {
 	searchOpts := zoekt.SearchOptions{
 		MaxWallTime:            3 * time.Second,
 		ShardMaxMatchCount:     100 * k,
@@ -264,7 +264,7 @@ func zoektSearchHEAD(ctx context.Context, args *search.TextParameters, repos []*
 // createNewRepoSetWithRepoHasFileInputs mutates repoSet such that it accounts
 // for the `repohasfile` and `-repohasfile` flags that may have been passed in
 // the query. As a convenience it returns the mutated RepoSet.
-func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.PatternInfo, searcher zoekt.Searcher, repoSet *zoektquery.RepoSet) (*zoektquery.RepoSet, error) {
+func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.TextPatternInfo, searcher zoekt.Searcher, repoSet *zoektquery.RepoSet) (*zoektquery.RepoSet, error) {
 	// Shortcut if we have no repos to search
 	if len(repoSet.Set) == 0 {
 		return repoSet, nil
@@ -481,7 +481,7 @@ func StructuralPatToQuery(pattern string) (zoektquery.Q, error) {
 	}, nil
 }
 
-func queryToZoektQuery(query *search.PatternInfo, isSymbol bool) (zoektquery.Q, error) {
+func queryToZoektQuery(query *search.TextPatternInfo, isSymbol bool) (zoektquery.Q, error) {
 	var and []zoektquery.Q
 
 	var q zoektquery.Q
@@ -542,7 +542,7 @@ func queryToZoektQuery(query *search.PatternInfo, isSymbol bool) (zoektquery.Q, 
 // queryToZoektFileOnlyQueries constructs a list of Zoekt queries that search for a file pattern(s).
 // `listOfFilePaths` specifies which field on `query` should be the list of file patterns to look for.
 //  A separate zoekt query is created for each file path that should be searched.
-func queryToZoektFileOnlyQueries(query *search.PatternInfo, listOfFilePaths []string) ([]zoektquery.Q, error) {
+func queryToZoektFileOnlyQueries(query *search.TextPatternInfo, listOfFilePaths []string) ([]zoektquery.Q, error) {
 	var zoektQueries []zoektquery.Q
 	if !query.PathPatternsAreRegExps {
 		return nil, errors.New("zoekt only supports regex path patterns")
