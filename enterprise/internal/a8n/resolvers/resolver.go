@@ -291,17 +291,13 @@ func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.Upda
 		return nil, err
 	}
 
-	// TODO(a8n): Even though RunChangesetJobs is idempotent, we should
-	// probably only run this when the CampaignPlanID actually changed.
-	if args.Input.Plan != nil {
-		go func() {
-			ctx := trace.ContextWithTrace(context.Background(), tr)
-			err := svc.RunChangesetJobs(ctx, campaign)
-			if err != nil {
-				log15.Error("RunChangesetJobs", "err", err)
-			}
-		}()
-	}
+	go func() {
+		ctx := trace.ContextWithTrace(context.Background(), tr)
+		err := svc.RunChangesetJobs(ctx, campaign)
+		if err != nil {
+			log15.Error("RunChangesetJobs", "err", err)
+		}
+	}()
 
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
