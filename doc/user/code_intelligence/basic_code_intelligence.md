@@ -28,4 +28,4 @@ You may occasionally see results from basic code intelligence even when you have
 
 Basic code intelligence supports all of the most popular programming languages. Check out the [programming language extensions](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22).
 
-Are you using a language we don't support? [File a GitHub issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose) or [submit a PR](./todo_link_to_docs_for_adding_a_new_language).
+Are you using a language we don't support? [File a GitHub issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose) or [submit a PR](https://github.com/sourcegraph/sourcegraph-basic-code-intel#adding-a-new-sourcegraphsourcegraph-lang-extension).
