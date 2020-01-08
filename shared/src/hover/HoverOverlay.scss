@@ -29,6 +29,7 @@
     }
 
     &__row {
+        position: relative;
         display: block;
         margin: 0;
         &:not(:first-child) {
@@ -82,6 +83,17 @@
             white-space: pre;
         }
         // stylelint-enable selector-max-compound-selectors
+    }
+
+    &__badge {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 100%;
+        text-align: right;
+    }
+    &:hover &__badge--offset {
+        right: 1.5rem;
     }
 
     &__actions {
