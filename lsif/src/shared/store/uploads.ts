@@ -317,14 +317,17 @@ export class UploadManager {
             const transformer = new PlainObjectToDatabaseEntityTransformer(repo.manager)
             const upload = (await transformer.transform(results[0], meta)) as pgModels.LsifUpload
 
-
             try {
-                await convert(upload, entityManager, async (): Promise<void> => {
-                    await entityManager.query(
-                        "UPDATE lsif_uploads SET state = 'completed', finished_at = now() WHERE id = $1",
-                        [upload.id]
-                    )
-                })
+                await convert(
+                    upload,
+                    entityManager,
+                    async (): Promise<void> => {
+                        await entityManager.query(
+                            "UPDATE lsif_uploads SET state = 'completed', finished_at = now() WHERE id = $1",
+                            [upload.id]
+                        )
+                    }
+                )
             } catch (error) {
                 logger.error('Failed to convert upload', { error })
 
