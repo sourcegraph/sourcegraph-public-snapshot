@@ -57,8 +57,15 @@ func parseProvider(p *schema.GitHubAuthProvider, sourceCfg schema.AuthProviders)
 }
 
 func requestedScopes() []string {
-	if envvar.SourcegraphDotComMode() {
-		return []string{"user:email"}
+	scopes := []string{
+		"repo",
+		"user:email",
+		"read:org",
 	}
-	return []string{"repo", "user:email"}
+
+	if envvar.SourcegraphDotComMode() {
+		return scopes[1:]
+	}
+
+	return scopes
 }
