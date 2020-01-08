@@ -325,7 +325,6 @@ func testStore(db *sql.DB) func(*testing.T) {
 						CampaignIDs:         []int64{int64(i) + 1},
 						ExternalID:          fmt.Sprintf("foobar-%d", i),
 						ExternalServiceType: "github",
-						ExternalDeletedAt:   now,
 					}
 
 					changesets = append(changesets, th)
@@ -339,6 +338,10 @@ func testStore(db *sql.DB) func(*testing.T) {
 				for _, have := range changesets {
 					if have.ID == 0 {
 						t.Fatal("id should not be zero")
+					}
+
+					if have.IsDeleted() {
+						t.Fatal("changeset is deleted")
 					}
 
 					want := have.Clone()
@@ -520,8 +523,26 @@ func testStore(db *sql.DB) func(*testing.T) {
 						t.Fatal(err)
 					}
 
+					if len(have) != len(changesets) {
+						t.Fatalf("have 0 changesets. want %d", len(changesets))
+					}
+
+					for _, c := range changesets {
+						c.SetDeleted()
+						c.UpdatedAt = now
+					}
+
+					if err := s.UpdateChangesets(ctx, changesets...); err != nil {
+						t.Fatal(err)
+					}
+
+					have, _, err = s.ListChangesets(ctx, ListChangesetsOpts{WithoutDeleted: true})
+					if err != nil {
+						t.Fatal(err)
+					}
+
 					if len(have) != 0 {
-						t.Fatalf("have %d changesets. want 0", len(have))
+						t.Fatalf("have %d changesets. want 0", len(changesets))
 					}
 				}
 
@@ -590,7 +611,6 @@ func testStore(db *sql.DB) func(*testing.T) {
 				for _, c := range changesets {
 					c.Metadata = &bitbucketserver.PullRequest{ID: 1234}
 					c.ExternalServiceType = bitbucketserver.ServiceType
-					c.ExternalDeletedAt = c.ExternalDeletedAt.Add(time.Second)
 
 					if c.RepoID != 0 {
 						c.RepoID++
