@@ -187,3 +187,21 @@ export function withInstrumentedTransaction<T>(
 ): Promise<T> {
     return instrumentQuery(() => connection.transaction(callback))
 }
+
+/**
+ * Invokes the callback wrapped in instrumentQuery with the given entityManager, if  supplied,
+ * and runs the callback in a transaction with a fresh entityManager otherwise.
+ *
+ * @param connection The Postgres connection.
+ * @param entityManager The EntityManager to use as part of a transaction.
+ * @param callback The function invoke with the entity manager.
+ */
+export function instrumentQueryOrTransaction<T>(
+    connection: Connection,
+    entityManager: EntityManager | undefined,
+    callback: (connection: EntityManager) => Promise<T>
+): Promise<T> {
+    return entityManager
+        ? instrumentQuery(() => callback(entityManager))
+        : withInstrumentedTransaction(connection, callback)
+}
