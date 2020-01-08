@@ -1,6 +1,6 @@
 # Basic code intelligence
 
-Sourcegraph comes with out of the box code intelligence provided by search-based heuristics.
+Sourcegraph comes with built-in code intelligence provided by search-based heuristics.
 
 ## How does it work?
 
