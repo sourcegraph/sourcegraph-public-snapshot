@@ -65,54 +65,61 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
           <div
             className="file-match-children"
           >
-            <a
-              className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
-              href="/github.com/foo/bar/-/blob/undefined#L2:1"
-              onClick={[Function]}
+            <div
+              className="file-match-children__item-code-wrapper"
             >
-              <VisibilitySensor
-                offset={
-                  Object {
-                    "bottom": -500,
-                  }
-                }
-                onChange={[Function]}
-                partialVisibility={true}
+              <a
+                className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
+                href="/github.com/foo/bar/-/blob/undefined#L2:1"
+                onClick={[Function]}
               >
-                <code
-                  className="code-excerpt file-match-children__item-code-excerpt"
+                <VisibilitySensor
+                  offset={
+                    Object {
+                      "bottom": -500,
+                    }
+                  }
+                  onChange={[Function]}
+                  partialVisibility={true}
                 >
-                  <table>
-                    <tbody>
-                      <tr>
-                        <td
-                          className="line"
-                        >
-                          1
-                        </td>
-                        <td
-                          className="code"
-                        >
-                           
-                        </td>
-                      </tr>
-                      <tr>
-                        <td
-                          className="line"
-                        >
-                          2
-                        </td>
-                        <td
-                          className="code"
-                        >
-                           
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </code>
-              </VisibilitySensor>
-            </a>
+                  <code
+                    className="code-excerpt file-match-children__item-code-excerpt"
+                  >
+                    <table>
+                      <tbody>
+                        <tr>
+                          <td
+                            className="line"
+                          >
+                            1
+                          </td>
+                          <td
+                            className="code"
+                          >
+                             
+                          </td>
+                        </tr>
+                        <tr>
+                          <td
+                            className="line"
+                          >
+                            2
+                          </td>
+                          <td
+                            className="code"
+                          >
+                             
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </code>
+                </VisibilitySensor>
+              </a>
+              <div
+                className="file-match-children__item-badge-row"
+              />
+            </div>
           </div>
         </div>
       </VisibilitySensor>
@@ -254,78 +261,85 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
           <div
             className="file-match-children"
           >
-            <a
-              className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
-              href="/github.com/foo/bar/-/blob/file1.txt#L2:1"
-              onClick={[Function]}
+            <div
+              className="file-match-children__item-code-wrapper"
             >
-              <VisibilitySensor
-                offset={
-                  Object {
-                    "bottom": -500,
-                  }
-                }
-                onChange={[Function]}
-                partialVisibility={true}
+              <a
+                className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
+                href="/github.com/foo/bar/-/blob/file1.txt#L2:1"
+                onClick={[Function]}
               >
-                <code
-                  className="code-excerpt file-match-children__item-code-excerpt"
+                <VisibilitySensor
+                  offset={
+                    Object {
+                      "bottom": -500,
+                    }
+                  }
+                  onChange={[Function]}
+                  partialVisibility={true}
                 >
-                  <table>
-                    <tbody>
-                      <tr>
-                        <td
-                          className="line"
-                        >
-                          1
-                        </td>
-                        <td
-                          className="code"
-                        >
-                           
-                        </td>
-                      </tr>
-                      <tr>
-                        <td
-                          className="line"
-                        >
-                          2
-                        </td>
-                        <td
-                          className="code"
-                        >
-                           
-                        </td>
-                      </tr>
-                      <tr>
-                        <td
-                          className="line"
-                        >
-                          3
-                        </td>
-                        <td
-                          className="code"
-                        >
-                           
-                        </td>
-                      </tr>
-                      <tr>
-                        <td
-                          className="line"
-                        >
-                          4
-                        </td>
-                        <td
-                          className="code"
-                        >
-                           
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </code>
-              </VisibilitySensor>
-            </a>
+                  <code
+                    className="code-excerpt file-match-children__item-code-excerpt"
+                  >
+                    <table>
+                      <tbody>
+                        <tr>
+                          <td
+                            className="line"
+                          >
+                            1
+                          </td>
+                          <td
+                            className="code"
+                          >
+                             
+                          </td>
+                        </tr>
+                        <tr>
+                          <td
+                            className="line"
+                          >
+                            2
+                          </td>
+                          <td
+                            className="code"
+                          >
+                             
+                          </td>
+                        </tr>
+                        <tr>
+                          <td
+                            className="line"
+                          >
+                            3
+                          </td>
+                          <td
+                            className="code"
+                          >
+                             
+                          </td>
+                        </tr>
+                        <tr>
+                          <td
+                            className="line"
+                          >
+                            4
+                          </td>
+                          <td
+                            className="code"
+                          >
+                             
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </code>
+                </VisibilitySensor>
+              </a>
+              <div
+                className="file-match-children__item-badge-row"
+              />
+            </div>
           </div>
         </div>
       </VisibilitySensor>
@@ -399,54 +413,61 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
           <div
             className="file-match-children"
           >
-            <a
-              className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
-              href="/github.com/foo/bar/-/blob/undefined#L2:1"
-              onClick={[Function]}
+            <div
+              className="file-match-children__item-code-wrapper"
             >
-              <VisibilitySensor
-                offset={
-                  Object {
-                    "bottom": -500,
-                  }
-                }
-                onChange={[Function]}
-                partialVisibility={true}
+              <a
+                className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
+                href="/github.com/foo/bar/-/blob/undefined#L2:1"
+                onClick={[Function]}
               >
-                <code
-                  className="code-excerpt file-match-children__item-code-excerpt"
+                <VisibilitySensor
+                  offset={
+                    Object {
+                      "bottom": -500,
+                    }
+                  }
+                  onChange={[Function]}
+                  partialVisibility={true}
                 >
-                  <table>
-                    <tbody>
-                      <tr>
-                        <td
-                          className="line"
-                        >
-                          1
-                        </td>
-                        <td
-                          className="code"
-                        >
-                           
-                        </td>
-                      </tr>
-                      <tr>
-                        <td
-                          className="line"
-                        >
-                          2
-                        </td>
-                        <td
-                          className="code"
-                        >
-                           
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </code>
-              </VisibilitySensor>
-            </a>
+                  <code
+                    className="code-excerpt file-match-children__item-code-excerpt"
+                  >
+                    <table>
+                      <tbody>
+                        <tr>
+                          <td
+                            className="line"
+                          >
+                            1
+                          </td>
+                          <td
+                            className="code"
+                          >
+                             
+                          </td>
+                        </tr>
+                        <tr>
+                          <td
+                            className="line"
+                          >
+                            2
+                          </td>
+                          <td
+                            className="code"
+                          >
+                             
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </code>
+                </VisibilitySensor>
+              </a>
+              <div
+                className="file-match-children__item-badge-row"
+              />
+            </div>
           </div>
         </div>
       </VisibilitySensor>

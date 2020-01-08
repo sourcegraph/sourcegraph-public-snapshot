@@ -28,6 +28,7 @@ describe('HoverOverlay', () => {
         showCloseButton: false,
         hoveredToken: { repoName: 'r', commitID: 'c', rev: 'v', filePath: 'f', line: 1, character: 2 },
         overlayPosition: { left: 0, top: 0 },
+        isLightTheme: false,
     }
 
     test('actions and hover undefined', () => {
@@ -226,13 +227,30 @@ describe('HoverOverlay', () => {
             if (!contents) {
                 return null
             }
+
+            const grabContent = (c: any) => {
+                if (c.props && c.props.className && c.props.className.includes('hover-overlay__content')) {
+                    if (typeof c.props.children === 'string') {
+                        return c.props.children
+                    }
+                    return c.props.dangerouslySetInnerHTML.__html
+                }
+                return ''
+            }
+
             return castArray(contents.props.children)
                 .map(c => {
-                    if (c.props && c.props.className && c.props.className.includes('hover-overlay__content')) {
-                        if (typeof c.props.children === 'string') {
-                            return c.props.children
-                        }
-                        return c.props.dangerouslySetInnerHTML.__html
+                    // Grab un-badged content
+                    const content = grabContent(c)
+                    if (content !== '') {
+                        return content
+                    }
+                    // Grab badged content in the grand-child level
+                    if (c.props && c.props.className && c.props.className.includes('e2e-tooltip-badged-content')) {
+                        return castArray(c.props.children)
+                            .map(grabContent)
+                            .join('')
+                            .trim()
                     }
                     return ''
                 })

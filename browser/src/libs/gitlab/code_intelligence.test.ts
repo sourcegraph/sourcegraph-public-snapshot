@@ -69,7 +69,7 @@ describe('gitlab/code_intelligence', () => {
                     },
                 })
             ).toBe(
-                'https://gitlab.com/sourcegraph/sourcegraph/blob/master/browser/src/libs/code_intelligence/code_intelligence.tsx#L5:12'
+                'https://gitlab.com/sourcegraph/sourcegraph/blob/master/browser/src/libs/code_intelligence/code_intelligence.tsx#L5'
             )
         })
     })
