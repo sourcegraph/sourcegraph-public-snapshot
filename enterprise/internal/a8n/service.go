@@ -412,24 +412,40 @@ func (s *Service) RunChangesetJob(
 		return errors.Errorf("creating changesets on code host of repo %q is not implemented", repo.Name)
 	}
 
+	// TODO: If we're updating the changeset, there's a race condition here.
+	// It's possible that `CreateChangeset` doesn't return the newest head ref
+	// commit yet, because the API of the codehost doesn't return it yet.
 	err = ccs.CreateChangeset(ctx, &cs)
 	if err != nil {
 		return errors.Wrap(err, "creating changeset")
 	}
 
-	if err = tx.CreateChangesets(ctx, cs.Changeset); err != nil {
+	// We keep a clone because CreateChangesets might overwrite the changeset
+	// with outdated metadata.
+	clone := cs.Changeset.Clone()
+	if err = tx.CreateChangesets(ctx, clone); err != nil {
 		if _, ok := err.(AlreadyExistError); !ok {
 			return err
 		}
-		// Changeset already exists so continue
+
+		// Changeset already exists and the call to CreateChangesets overwrote
+		// the Metadata field with the metadata in the database that's possibly
+		// outdated.
+		// We restore the newest metadata returned by the
+		// `ccs.CreateChangesets` call above and then update the Changeset in
+		// the database.
+		clone.Metadata = cs.Changeset.Metadata
+		if err = tx.UpdateChangesets(ctx, clone); err != nil {
+			return err
+		}
 	}
 
-	c.ChangesetIDs = append(c.ChangesetIDs, cs.Changeset.ID)
+	c.ChangesetIDs = append(c.ChangesetIDs, clone.ID)
 	if err = tx.UpdateCampaign(ctx, c); err != nil {
 		return err
 	}
 
-	job.ChangesetID = cs.Changeset.ID
+	job.ChangesetID = clone.ID
 	runFinalUpdate(ctx, tx)
 	return
 }
