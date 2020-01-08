@@ -38,7 +38,7 @@ export function bidirectionalLineage(): string {
                 -- get next ancestors (multiple parents for merge commits)
                 SELECT c.*, 'A' FROM l_inner l JOIN lsif_commits c ON l.direction = 'A' AND c.repository = l.repository AND c."commit" = l.parent_commit
                 UNION
-                -- get next descendant
+                -- get next descendants
                 SELECT c.*, 'D' FROM l_inner l JOIN lsif_commits c ON l.direction = 'D' and c.repository = l.repository AND c.parent_commit = l."commit"
             ) subquery
         )
