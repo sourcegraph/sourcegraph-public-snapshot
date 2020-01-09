@@ -189,6 +189,14 @@ Array [
     />
   </form>,
   "CampaignStatus(state=PROCESSING)",
+  <h3>
+    Progress
+  </h3>,
+  <div
+    className="alert alert-info"
+  >
+    Burndown chart will be shown when there is more than 1 day of data.
+  </div>,
   <CampaignTabs
     campaign={
       Object {
@@ -462,6 +470,14 @@ Array [
     />
   </form>,
   "CampaignStatus(state=PROCESSING)",
+  <h3>
+    Progress
+  </h3>,
+  <div
+    className="alert alert-info"
+  >
+    Burndown chart will be shown when there is more than 1 day of data.
+  </div>,
   <CampaignTabs
     campaign={
       Object {

@@ -507,6 +507,18 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             {/* Status asserts on campaign being set, so `campaign` will never be null. */}
             {status && <CampaignStatus campaign={campaign!} status={status} onRetry={onRetry} />}
 
+            {campaign && campaign.__typename === 'Campaign' && (
+                <>
+                    <h3>Progress</h3>
+                    <CampaignBurndownChart
+                        changesetCountsOverTime={campaign.changesetCountsOverTime}
+                        history={history}
+                    />
+                    {/* only campaigns that have no plan can add changesets manually */}
+                    {!campaign.plan && <AddChangesetForm campaignID={campaign.id} onAdd={nextChangesetUpdate} />}
+                </>
+            )}
+
             {/* is already created or a preview is available */}
             {campaign && (
                 <CampaignTabs
