@@ -97,7 +97,6 @@ type TextParameters struct {
 type TextParametersForCommitParameters struct {
 	PatternInfo *CommitPatternInfo
 	Repos       []*RepositoryRevisions
-	Query       *query.Query
 }
 
 // TextPatternInfo is the struct used by vscode pass on search queries. Keep it in
