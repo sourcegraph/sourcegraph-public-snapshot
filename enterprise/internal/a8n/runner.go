@@ -35,7 +35,7 @@ var maxWorkers = env.Get("A8N_MAX_WORKERS", "8", "maximum number of repositories
 // repositories.
 var ErrTooManyResults = errors.New("search yielded too many results. You can narrow down results using `scopeQuery`")
 
-// A Runner executes a CampaignPlan by creating and running CampaignJobs
+// A Runner executes a CampaignPlan by creating and persisting CampaignJobs
 // according to the CampaignPlan's Arguments and CampaignType.
 type Runner struct {
 	store         *Store
