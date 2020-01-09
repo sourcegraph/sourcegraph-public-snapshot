@@ -83,14 +83,6 @@ func (r *commitSearchResultResolver) resultCount() int32 {
 	return 1
 }
 
-func searchCommitDiffsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, info *search.CommitPatternInfo) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
-	return searchCommitsInRepo(ctx, search.CommitParameters{
-		RepoRevs:    repoRevs,
-		PatternInfo: info,
-		Diff:        true,
-	})
-}
-
 func searchCommitLogInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, info *search.CommitPatternInfo) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
 	var terms []string
 	if info.Pattern != "" {
@@ -451,7 +443,12 @@ func searchCommitDiffsInRepos(ctx context.Context, args *search.TextParametersFo
 		wg.Add(1)
 		go func(repoRev *search.RepositoryRevisions) {
 			defer wg.Done()
-			results, repoLimitHit, repoTimedOut, searchErr := searchCommitDiffsInRepo(ctx, repoRev, args.PatternInfo)
+			commitParams := search.CommitParameters{
+				RepoRevs:    repoRev,
+				PatternInfo: args.PatternInfo,
+				Diff:        true,
+			}
+			results, repoLimitHit, repoTimedOut, searchErr := searchCommitsInRepo(ctx, commitParams)
 			if ctx.Err() == context.Canceled {
 				// Our request has been canceled (either because another one of args.repos had a
 				// fatal error, or otherwise), so we can just ignore these results.
