@@ -101,7 +101,7 @@ func (s *repos) GetByName(ctx context.Context, nameOrURI api.RepoName) (*types.R
 // GetByIDs returns a list of repositories by given IDs. The number of results list could be less
 // than the candidate list due to no repository is associated with some IDs.
 // 🚨 SECURITY: It is the caller's responsibility to ensure the current authenticated user
-// is the site admin because this method returns dall available ata from the database.
+// is the site admin because this method returns all available data from the database.
 func (s *repos) GetByIDs(ctx context.Context, ids ...api.RepoID) ([]*types.Repo, error) {
 	if Mocks.Repos.GetByIDs != nil {
 		return Mocks.Repos.GetByIDs(ctx, ids...)
@@ -161,7 +161,7 @@ func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types
 }
 
 // 🚨 SECURITY: It is the caller's responsibility to ensure the current authenticated user
-// is the site admin who could see all the repositories when enforcePermission=false.
+// is the site admin who is authorized to see the repositories returned even when enforcePermission=false.
 func (s *repos) getReposBySQL(ctx context.Context, enforcePermission, minimal bool, querySuffix *sqlf.Query) ([]*types.Repo, error) {
 	columns := getBySQLColumns
 	if minimal {
