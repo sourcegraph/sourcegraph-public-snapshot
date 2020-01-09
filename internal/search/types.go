@@ -134,25 +134,12 @@ type TextPatternInfo struct {
 type CommitPatternInfo struct {
 	Pattern         string
 	IsRegExp        bool
-	IsStructuralPat bool
-	CombyRule       string
-	IsWordMatch     bool
 	IsCaseSensitive bool
 	FileMatchLimit  int32
 
-	// We do not support IsMultiline
-	// IsMultiline     bool
 	IncludePatterns []string
 	ExcludePattern  string
 
-	FilePatternsReposMustInclude []string
-	FilePatternsReposMustExclude []string
-
 	PathPatternsAreRegExps       bool
 	PathPatternsAreCaseSensitive bool
-
-	PatternMatchesContent bool
-	PatternMatchesPath    bool
-
-	Languages []string
 }
