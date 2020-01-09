@@ -5,6 +5,8 @@ import (
 	"path"
 
 	"github.com/gorilla/mux"
+	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var srcCliDownloadsURL = "https://github.com/sourcegraph/src-cli/releases/download"
@@ -19,7 +21,7 @@ func srcCliVersionServe(w http.ResponseWriter, r *http.Request) error {
 	return writeJSON(w, &struct {
 		Version string `json:"version"`
 	}{
-		Version: SrcCliVersion,
+		Version: srcCliVerison(),
 	})
 }
 
@@ -30,9 +32,23 @@ func srcCliDownloadServe(w http.ResponseWriter, r *http.Request) error {
 		return nil
 	}
 
-	target := path.Join(srcCliDownloadsURL, SrcCliVersion, filename)
+	target := path.Join(srcCliDownloadsURL, srcCliVerison(), filename)
 	http.Redirect(w, r, target, http.StatusFound)
 	return nil
+}
+
+func srcCliVerison() string {
+	version, err := srccli.Version()
+	if err != nil {
+		// If we can't recommend a more specific version, just recommend the minimum version.
+		// This is always safe, but may not include some newer features released via patch.
+		// Use of the src-cli will warn users about an update once any transient error
+		// resolves.
+		log15.Warn("Failed to retrieve latest src-cli version", "err", err)
+		return srccli.MinimumVersion
+	}
+
+	return version
 }
 
 func isExpectedRelease(filename string) bool {
