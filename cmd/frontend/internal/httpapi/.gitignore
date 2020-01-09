@@ -1,0 +1,6 @@
+# This file should not be committed if it was auto-generated
+# (which should always be the case on the master branch). On
+# tag branches, we may commit this explicitly in order to pin
+# the sourcegraph release's recommended src-cli version to an 
+# outdated release of src-cli.
+src_cli_version.go
