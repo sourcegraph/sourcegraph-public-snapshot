@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`FileDiffTab renders 1`] = `
+exports[`CampaignDiffs renders 1`] = `
 <div>
   <div
     className="filtered-connection e2e-filtered-connection filtered-connection--noncompact mt-2"

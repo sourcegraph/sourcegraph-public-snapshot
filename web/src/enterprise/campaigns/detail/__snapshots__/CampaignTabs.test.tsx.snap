@@ -33,7 +33,8 @@ exports[`CampaignTabs renders 1`] = `
         "label": <span
           className="e2e-campaign-changesets-tab"
         >
-          Changesets 
+          Changesets
+           
           <span
             className="badge badge-secondary badge-pill"
           />
