@@ -64,7 +64,7 @@ func TestConsumePendingCampaignJobs(t *testing.T) {
 	plan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
 
 	runner := NewRunnerWithClock(store, campaignType, search, commitID, clock)
-	err = runner.Run(ctx, plan)
+	err = runner.Persist(ctx, plan)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -340,9 +340,9 @@ func TestRunner(t *testing.T) {
 			plan := testPlan.Clone()
 
 			runner := NewRunnerWithClock(store, tc.campaignType, tc.search, tc.commitID, clock)
-			err := runner.Run(ctx, plan)
+			err := runner.Persist(ctx, plan)
 			if have, want := fmt.Sprint(err), tc.runErr; have != want {
-				t.Fatalf("have runner.Run error: %q\nwant error: %q", have, want)
+				t.Fatalf("have runner.Persist error: %q\nwant error: %q", have, want)
 			}
 			// At this point the job has been created an added to the DB
 			// We need to fetch and pass it to runJob. In prod, this is done

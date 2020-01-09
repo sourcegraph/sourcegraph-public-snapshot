@@ -30,7 +30,7 @@ var maxRepositories = env.Get("A8N_MAX_REPOS", "200", "maximum number of reposit
 // executes CampaignJobs in parallel.
 var maxWorkers = env.Get("A8N_MAX_WORKERS", "8", "maximum number of repositories run campaigns over in parallel")
 
-// ErrTooManyResults is returned by the Runner's Run method when the
+// ErrTooManyResults is returned by the Runner's Persist method when the
 // CampaignType's searchQuery produced more than maxRepositories number of
 // repositories.
 var ErrTooManyResults = errors.New("search yielded too many results. You can narrow down results using `scopeQuery`")
@@ -113,18 +113,15 @@ func NewRunnerWithClock(store *Store, ct CampaignType, search repoSearch, defaul
 // The time after which a CampaignJob's execution times out
 const jobTimeout = 2 * time.Minute
 
-// Run executes the CampaignPlan by searching for relevant repositories using
-// the CampaignType specific searchQuery and then executing CampaignJobs for
-// each repository.
-// Before it starts executing CampaignJobs it persists the CampaignPlan and the
-// new CampaignJobs in a transaction.
+// Persist persists the CampaignPlan and associated CampaignJobs by searching for relevant repositories using
+// the CampaignType specific searchQuery.
 // What each CampaignJob then does in each repository depends on the
 // CampaignType set on CampaignPlan.
 // This is a non-blocking method that will possibly return before all
 // CampaignJobs are finished. CampaignJobs will be picked up by a background
 // process on one of our frontend instances.
-func (r *Runner) Run(ctx context.Context, plan *a8n.CampaignPlan) (err error) {
-	tr, ctx := trace.New(ctx, "Runner.Run", fmt.Sprintf("plan_id %d", plan.ID))
+func (r *Runner) Persist(ctx context.Context, plan *a8n.CampaignPlan) (err error) {
+	tr, ctx := trace.New(ctx, "Runner.Persist", fmt.Sprintf("plan_id %d", plan.ID))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
