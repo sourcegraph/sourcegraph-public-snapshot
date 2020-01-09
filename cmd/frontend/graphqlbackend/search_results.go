@@ -1135,9 +1135,19 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				patternInfo := search.CommitPatternInfo(*args.PatternInfo)
+				old := args.PatternInfo
+				patternInfo := &search.CommitPatternInfo{
+					Pattern:                      old.Pattern,
+					IsRegExp:                     old.IsRegExp,
+					IsCaseSensitive:              old.IsCaseSensitive,
+					FileMatchLimit:               old.FileMatchLimit,
+					IncludePatterns:              old.IncludePatterns,
+					ExcludePattern:               old.ExcludePattern,
+					PathPatternsAreRegExps:       old.PathPatternsAreRegExps,
+					PathPatternsAreCaseSensitive: p.PathPatternsAreCaseSensitive,
+				}
 				args := search.TextParametersForCommitParameters{
-					PatternInfo: &patternInfo,
+					PatternInfo: patternInfo,
 					Repos:       args.Repos,
 					Query:       args.Query,
 				}
@@ -1165,9 +1175,19 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			goroutine.Go(func() {
 				defer wg.Done()
 
-				patternInfo := search.CommitPatternInfo(*args.PatternInfo)
+				old := args.PatternInfo
+				patternInfo := &search.CommitPatternInfo{
+					Pattern:                      old.Pattern,
+					IsRegExp:                     old.IsRegExp,
+					IsCaseSensitive:              old.IsCaseSensitive,
+					FileMatchLimit:               old.FileMatchLimit,
+					IncludePatterns:              old.IncludePatterns,
+					ExcludePattern:               old.ExcludePattern,
+					PathPatternsAreRegExps:       old.PathPatternsAreRegExps,
+					PathPatternsAreCaseSensitive: old.PathPatternsAreCaseSensitive,
+				}
 				args := search.TextParametersForCommitParameters{
-					PatternInfo: &patternInfo,
+					PatternInfo: patternInfo,
 					Repos:       args.Repos,
 					Query:       args.Query,
 				}
