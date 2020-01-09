@@ -23,17 +23,16 @@ type repositoryConnectionResolver struct {
 	after *string
 
 	// cache results because they are used by multiple fields
-	once        sync.Once
-	repos       []*types.Repo
-	endCursor   string
-	hasNextPage bool
-	err         error
+	once     sync.Once
+	repos    []*types.Repo
+	pageInfo *graphqlutil.PageInfo
+	err      error
 }
 
 // 🚨 SECURITY: It is the caller's responsibility to ensure the current authenticated user
 // is the site admin because this method computes data from all available information in
 // the database.
-func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Repo, error) {
+func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Repo, *graphqlutil.PageInfo, error) {
 	r.once.Do(func() {
 		// Create the bitmap iterator and advance to the next value of r.after.
 		var afterID api.RepoID
@@ -59,10 +58,14 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			return
 		}
 
-		r.endCursor = string(graphqlbackend.MarshalRepositoryID(repoIDs[len(repoIDs)-1]))
-		r.hasNextPage = iter.HasNext()
+		if iter.HasNext() {
+			endCursor := string(graphqlbackend.MarshalRepositoryID(repoIDs[len(repoIDs)-1]))
+			r.pageInfo = graphqlutil.NextPageCursor(endCursor)
+		} else {
+			r.pageInfo = graphqlutil.HasNextPage(false)
+		}
 	})
-	return r.repos, r.err
+	return r.repos, r.pageInfo, r.err
 }
 
 func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*graphqlbackend.RepositoryResolver, error) {
@@ -71,7 +74,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*graphqlbac
 		return nil, err
 	}
 
-	repos, err := r.compute(ctx)
+	repos, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -98,13 +101,6 @@ func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 		return nil, err
 	}
 
-	_, err := r.compute(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if r.hasNextPage {
-		return graphqlutil.NextPageCursor(r.endCursor), nil
-	}
-	return graphqlutil.HasNextPage(false), nil
+	_, pageInfo, err := r.compute(ctx)
+	return pageInfo, err
 }
