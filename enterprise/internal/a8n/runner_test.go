@@ -30,6 +30,91 @@ type refAndTarget struct {
 	target string
 }
 
+func TestConsumePendingCampaignJobs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := backend.WithAuthzBypass(context.Background())
+	dbtesting.SetupGlobalTestDB(t)
+
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	clock := func() time.Time {
+		return now.UTC().Truncate(time.Microsecond)
+	}
+
+	store := NewStoreWithClock(dbconn.Global, clock)
+
+	defaultBranches := []refAndTarget{
+		{"refs/heads/master", "fc21c1a0a79047416c14642b3ca964faba9442e2"},
+	}
+
+	rs := []*repos.Repo{
+		testRepo(0, github.ServiceType),
+	}
+
+	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	err := reposStore.UpsertRepos(ctx, rs...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	campaignType := &testCampaignType{diff: testDiff, description: testDescription}
+	search := yieldRepos(rs...)
+	commitID := yieldDefaultBranches(defaultBranches)
+	plan := &a8n.CampaignPlan{CampaignType: "test", Arguments: `{}`}
+
+	runner := NewRunnerWithClock(store, campaignType, search, commitID, clock)
+	err = runner.Run(ctx, plan)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// At this point the job has been created an added to the DB
+	// We need to fetch and pass it to runJob. In prod, this is done
+	// in a background process
+	jobs, _, err := store.ListCampaignJobs(ctx, ListCampaignJobsOpts{
+		CampaignPlanID: plan.ID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(jobs) != 1 {
+		t.Fatalf("expected 1 job, got %d", len(jobs))
+	}
+	if !jobs[0].FinishedAt.IsZero() {
+		t.Fatalf("job should not be finished")
+	}
+
+	// Launch background worker
+	doneChan := make(chan struct{})
+	defer func() { close(doneChan) }()
+	go ConsumePendingCampaignJobs(store, clock, 100*time.Millisecond, doneChan)
+
+	// After some time the job should be finished
+	timeout := time.After(2 * time.Second)
+	ticker := time.NewTicker(100 * time.Millisecond)
+	for {
+		select {
+		case <-timeout:
+			t.Fatal("timed out")
+		case <-ticker.C:
+			jobs, _, err = store.ListCampaignJobs(ctx, ListCampaignJobsOpts{
+				CampaignPlanID: plan.ID,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(jobs) != 1 {
+				t.Fatalf("expected 1 job, got %d", len(jobs))
+			}
+			if !jobs[0].FinishedAt.IsZero() {
+				// Job has run
+				return
+			}
+		}
+	}
+}
+
 func TestRunner(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -42,7 +127,6 @@ func TestRunner(t *testing.T) {
 	clock := func() time.Time {
 		return now.UTC().Truncate(time.Microsecond)
 	}
-	t.Logf("clock() return %s", now)
 
 	store := NewStoreWithClock(dbconn.Global, clock)
 
@@ -249,7 +333,6 @@ func TestRunner(t *testing.T) {
 	for _, tc := range tests {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-
 			if tc.runErr == "" {
 				tc.runErr = "<nil>"
 			}

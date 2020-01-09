@@ -228,7 +228,7 @@ func (r *Runner) Wait() error {
 // ConsumePendingCampaignJobs should run in a background goroutine and is responsible for
 // finding pending campaign jobs and running them.
 // doneChan should be closed to terminate this function.
-func ConsumePendingCampaignJobs(s *Store, clock func() time.Time, doneChan chan struct{}) {
+func ConsumePendingCampaignJobs(s *Store, clock func() time.Time, backoffDuration time.Duration, doneChan chan struct{}) {
 	workerCount, err := strconv.Atoi(maxWorkers)
 	if err != nil {
 		log15.Error("Parsing max worker count, falling back to default of 8", "err", err)
@@ -239,14 +239,9 @@ func ConsumePendingCampaignJobs(s *Store, clock func() time.Time, doneChan chan 
 		return nil
 	}
 	workChan := make(chan struct{}, workerCount)
-	go func() {
-		for i := 0; i < workerCount; i++ {
-			// Fill workchan slowly so we don't overload the DB on startup
-			// when we have a large number of pending jobs
-			workChan <- struct{}{}
-			time.Sleep(1 * time.Second)
-		}
-	}()
+	for i := 0; i < workerCount; i++ {
+		workChan <- struct{}{}
+	}
 	for {
 		select {
 		case <-workChan:
@@ -258,7 +253,7 @@ func ConsumePendingCampaignJobs(s *Store, clock func() time.Time, doneChan chan 
 				}
 				if !didRun {
 					// No work available, backoff
-					time.Sleep(5 * time.Second)
+					time.Sleep(backoffDuration)
 				}
 			}()
 		case <-doneChan:

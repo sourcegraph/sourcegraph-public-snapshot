@@ -71,7 +71,7 @@ func main() {
 		Now:   clock,
 	}
 
-	go a8n.ConsumePendingCampaignJobs(a8nStore, clock, nil)
+	go a8n.ConsumePendingCampaignJobs(a8nStore, clock, 5*time.Second, nil)
 
 	shared.Main(githubWebhook)
 }
