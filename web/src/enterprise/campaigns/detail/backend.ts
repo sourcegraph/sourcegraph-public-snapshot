@@ -77,6 +77,7 @@ const campaignFragment = gql`
             openApproved
             openChangesRequested
             openPending
+            total
         }
     }
 
