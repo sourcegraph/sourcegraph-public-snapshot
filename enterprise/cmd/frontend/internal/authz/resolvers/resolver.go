@@ -100,7 +100,7 @@ func (*Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *gra
 		pendingBindIDs = append(pendingBindIDs, id)
 	}
 
-	// Note: We're not warpping these two operations in a transaction because PostgreSQL 9.6 (the minimal version
+	// Note: We're not wrapping these two operations in a transaction because PostgreSQL 9.6 (the minimal version
 	// we support) does not support nested transactions. Besides, these two operations will acquire row-level locks
 	// over 4 tables, which could greatly increase chances of causing deadlocks with other methods. Practically,
 	// the result of SetRepoPermissions is much more important because it takes effect immediately. If the call of
