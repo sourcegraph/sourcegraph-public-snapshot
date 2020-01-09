@@ -268,7 +268,7 @@ export class UploadManager {
      * will be set to "errored".
      *
      * The convert callback is invoked with the locked upload record and the entity manager
-     * that locked the record. The callback should use to operate within the same transaction.
+     * that locked the record. The callback should use it to operate in the same transaction.
      *
      * This method does NOT mark the upload as complete and the callback MUST be sure to call
      * the `markComplete` method on successful processing. Otherwise the record will block the
