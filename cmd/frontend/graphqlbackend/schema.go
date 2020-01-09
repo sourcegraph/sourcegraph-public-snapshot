@@ -1354,8 +1354,8 @@ type Query {
 
     # The repositories a user is authorized to access with the given permission.
     # This isn’t defined in the User type because we store permissions for users
-    # that don’t yet exist (i.e. late binding). Only "username" or "email" is
-    # required to identify a user according to site configuration "permissions.userMapping".
+    # that don’t yet exist (i.e. late binding). Only one of "username" or "email"
+    # is required to identify a user.
     authorizedUserRepositories(
         # The username.
         username: String
