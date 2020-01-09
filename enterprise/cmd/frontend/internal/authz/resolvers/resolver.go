@@ -156,10 +156,6 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 			Provider: iauthz.ProviderSourcegraph,
 		}
 		err = r.store.LoadUserPermissions(ctx, p)
-		if err != nil {
-			return nil, err
-		}
-
 		ids = p.IDs
 	} else {
 		p := &iauthz.UserPendingPermissions{
@@ -168,14 +164,13 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 			Type:   iauthz.PermRepos,
 		}
 		err = r.store.LoadUserPendingPermissions(ctx, p)
-		if err != nil {
-			return nil, err
-		}
-
 		ids = p.IDs
 	}
-	if ids.GetCardinality() == 0 {
-		return nil, iauthz.ErrNotFound
+	if err != nil && err != iauthz.ErrNotFound {
+		return nil, err
+	}
+	if ids == nil {
+		ids = roaring.NewBitmap()
 	}
 
 	return &repositoryConnectionResolver{
