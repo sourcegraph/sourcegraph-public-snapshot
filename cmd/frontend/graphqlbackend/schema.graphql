@@ -1358,6 +1358,21 @@ type Query {
         # 'LSIFUploadConnection.pageInfo.endCursor' that is returned.
         after: String
     ): LSIFUploadConnection!
+
+    # A user’s repository permissions. This isn’t defined in the User type
+    # because we store permissions for users that don’t yet exist (i.e. late binding).
+    authorizedUserRepositories(
+        # The username.
+        username: String
+        # One of the email addresses.
+        email: String
+        # Permission that the user has on this repository.
+        perm: RepositoryPermission = READ
+        # Number of repositories to return after the given cursor.
+        first: Int!
+        # Opaque pagination cursor.
+        after: String
+    ): RepositoryConnection!
 }
 
 # The version of the search syntax.
