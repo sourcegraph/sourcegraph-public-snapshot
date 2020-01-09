@@ -932,7 +932,7 @@ func testStoreListReposPagination(store repos.Store) func(*testing.T) {
 		Description: "The description",
 		Language:    "barlang",
 		Enabled:     true,
-		CreatedAt:   time.Now(),
+		CreatedAt:   time.Now().UTC(),
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "AAAAA==",
 			ServiceType: "github",

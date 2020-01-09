@@ -519,7 +519,7 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 		i := -1
 		_, _, err = scanAll(rows, func(sc scanner) (last, count int64, err error) {
 			i++
-			err = scanRepo(op.repos[i], sc)
+			err = sc.Scan(&(op.repos[i].ID))
 			return int64(op.repos[i].ID), 1, err
 		})
 
@@ -695,23 +695,7 @@ inserted AS (
   FROM batch
   RETURNING repo.*
 )
-SELECT
-  inserted.id,
-  inserted.name,
-  inserted.uri,
-  inserted.description,
-  inserted.language,
-  inserted.created_at,
-  inserted.updated_at,
-  inserted.deleted_at,
-  inserted.external_service_type,
-  inserted.external_service_id,
-  inserted.external_id,
-  inserted.enabled,
-  inserted.archived,
-  inserted.fork,
-  inserted.sources,
-  inserted.metadata
+SELECT inserted.id
 FROM inserted
 LEFT JOIN batch ON batch.name = inserted.name
 ORDER BY batch.ordinality
