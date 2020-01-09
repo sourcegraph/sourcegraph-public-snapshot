@@ -580,7 +580,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             </Form>
 
             {/* Status asserts on campaign being set, so `campaign` will never be null. */}
-            {status && (<CampaignStatus campaign={campaign!} status={status} onRetry={onRetry} />)}
+            {status && <CampaignStatus campaign={campaign!} status={status} onRetry={onRetry} />}
 
             {/* is already created or a preview is available */}
             {campaign && (
@@ -593,9 +593,11 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                 history={history}
                             />
                             {/* only campaigns that have no plan can add changesets manually */}
-                            {!campaign.plan && <AddChangesetForm campaignID={campaign.id} onAdd={nextChangesetUpdate} />}
+                            {!campaign.plan && (
+                                <AddChangesetForm campaignID={campaign.id} onAdd={nextChangesetUpdate} />
+                            )}
                         </>
-                    )} 
+                    )}
                     {campaign.changesets.totalCount > 0 && (
                         <TabsWithLocalStorageViewStatePersistence
                             storageKey="campaignTab"
