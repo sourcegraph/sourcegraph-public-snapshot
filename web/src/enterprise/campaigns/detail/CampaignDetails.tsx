@@ -484,7 +484,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         <button
                             type="submit"
                             className="btn btn-primary"
-                            disabled={previewRefreshNeeded || mode !== 'editing'}
+                            disabled={
+                                previewRefreshNeeded || mode !== 'editing' || campaign?.changesets.totalCount === 0
+                            }
                         >
                             Create
                         </button>
@@ -507,7 +509,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 </>
             )}
             {/* is already created or a preview is available */}
-            {campaign && (
+            {campaign && campaign.changesets.totalCount > 0 && (
                 <CampaignTabs
                     changesets={campaign.changesets}
                     persistLines={campaign.__typename === 'Campaign'}
