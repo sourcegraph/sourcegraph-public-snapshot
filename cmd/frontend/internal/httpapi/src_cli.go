@@ -1,8 +1,8 @@
 package httpapi
 
 import (
-	"fmt"
 	"net/http"
+	"path"
 
 	"github.com/gorilla/mux"
 )
@@ -22,7 +22,7 @@ func srcCliServe(w http.ResponseWriter, r *http.Request) error {
 		return nil
 	}
 
-	target := fmt.Sprintf("%s/%s/%s", srcCliDownloadsURL, SrcCliVersion, filename)
+	target := path.Join(srcCliDownloadsURL, SrcCliVersion, filename)
 	http.Redirect(w, r, target, http.StatusFound)
 	return nil
 }
