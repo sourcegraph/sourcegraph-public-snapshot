@@ -282,7 +282,19 @@ Array [
     </div>
     <div
       className="mt-3"
-    />
+    >
+      <div
+        className="filtered-connection e2e-filtered-connection filtered-connection--noncompact mt-2"
+      >
+        <span
+          className="filtered-connection__loader e2e-filtered-connection__loader"
+        >
+          <div
+            className="loading-spinner icon-inline"
+          />
+        </span>
+      </div>
+    </div>
   </div>,
 ]
 `;
@@ -546,7 +558,19 @@ Array [
     </div>
     <div
       className="mt-3"
-    />
+    >
+      <div
+        className="filtered-connection e2e-filtered-connection filtered-connection--noncompact mt-2"
+      >
+        <span
+          className="filtered-connection__loader e2e-filtered-connection__loader"
+        >
+          <div
+            className="loading-spinner icon-inline"
+          />
+        </span>
+      </div>
+    </div>
   </div>,
 ]
 `;
