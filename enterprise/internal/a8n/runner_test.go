@@ -42,6 +42,7 @@ func TestRunner(t *testing.T) {
 	clock := func() time.Time {
 		return now.UTC().Truncate(time.Microsecond)
 	}
+	t.Logf("clock() return %s", now)
 
 	store := NewStoreWithClock(dbconn.Global, clock)
 
@@ -245,12 +246,6 @@ func TestRunner(t *testing.T) {
 		},
 	}
 
-	doneChan := make(chan struct{})
-	defer func() {
-		close(doneChan)
-	}()
-	go ConsumePendingCampaignJobs(store, clock, doneChan)
-
 	for _, tc := range tests {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
@@ -265,6 +260,19 @@ func TestRunner(t *testing.T) {
 			err := runner.Run(ctx, plan)
 			if have, want := fmt.Sprint(err), tc.runErr; have != want {
 				t.Fatalf("have runner.Run error: %q\nwant error: %q", have, want)
+			}
+			// At this point the job has been created an added to the DB
+			// We need to fetch and pass it to runJob. In prod, this is done
+			// in a background process
+			haveJobs, _, err := store.ListCampaignJobs(ctx, ListCampaignJobsOpts{
+				CampaignPlanID: plan.ID,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			for i := range haveJobs {
+				runJob(ctx, clock, store, tc.campaignType, haveJobs[i])
 			}
 
 			if tc.wantPlan == nil && plan.ID == 0 {
@@ -282,13 +290,6 @@ func TestRunner(t *testing.T) {
 			planIgnore := cmpopts.IgnoreFields(a8n.CampaignPlan{}, "ID")
 			if diff := cmp.Diff(havePlan, tc.wantPlan, planIgnore); diff != "" {
 				t.Fatalf("CampaignPlan diff: %s", diff)
-			}
-
-			haveJobs, _, err := store.ListCampaignJobs(ctx, ListCampaignJobsOpts{
-				CampaignPlanID: plan.ID,
-			})
-			if err != nil {
-				t.Fatal(err)
 			}
 
 			sort.Slice(haveJobs, func(i, j int) bool {

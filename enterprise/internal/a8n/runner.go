@@ -268,7 +268,7 @@ func ConsumePendingCampaignJobs(s *Store, clock func() time.Time, doneChan chan 
 }
 
 // runJob runs the supplied job
-// if ct is nil, one will be created
+// if ct is nil, one will be created from the CampaignPlan
 func runJob(ctx context.Context, clock func() time.Time, store *Store, ct CampaignType, job *a8n.CampaignJob) {
 	var err error
 	tr, ctx := trace.New(ctx, "Runner.runJob", fmt.Sprintf("job_id %d", job.ID))
