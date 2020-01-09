@@ -30,9 +30,6 @@ var maxRepositories = env.Get("A8N_MAX_REPOS", "200", "maximum number of reposit
 // executes CampaignJobs in parallel.
 var maxWorkers = env.Get("A8N_MAX_WORKERS", "8", "maximum number of repositories run campaigns over in parallel")
 
-// maxCampaignJobDuration  defines the maximum duration allowed for a campaign job before it times out
-var maxCampaignJobDuration = env.Get("A8N_MAX_CAMPAIGN_JOB_DURATION", "5m", "maximum duration allowed for a campaign job before it times out")
-
 // ErrTooManyResults is returned by the Runner's Run method when the
 // CampaignType's searchQuery produced more than maxRepositories number of
 // repositories.
@@ -232,11 +229,6 @@ func (r *Runner) Wait() error {
 // finding pending campaign jobs and running them.
 // doneChan should be closed to terminate this function.
 func ConsumePendingCampaignJobs(s *Store, clock func() time.Time, doneChan chan struct{}) {
-	timeout, err := time.ParseDuration(maxCampaignJobDuration)
-	if err != nil {
-		log15.Error("Parsing max campaign duration, falling back to default of 5m", "err", err)
-		timeout = 5 * time.Minute
-	}
 	workerCount, err := strconv.Atoi(maxWorkers)
 	if err != nil {
 		log15.Error("Parsing max worker count, falling back to default of 8", "err", err)
@@ -260,9 +252,7 @@ func ConsumePendingCampaignJobs(s *Store, clock func() time.Time, doneChan chan 
 		case <-workChan:
 			go func() {
 				defer func() { workChan <- struct{}{} }()
-				ctx, cancel := context.WithTimeout(context.Background(), timeout)
-				defer cancel()
-				didRun, err := s.ProcessPendingCampaignJob(ctx, process)
+				didRun, err := s.ProcessPendingCampaignJob(context.Background(), process)
 				if err != nil {
 					log15.Error("Running campaign job", "err", err)
 				}
