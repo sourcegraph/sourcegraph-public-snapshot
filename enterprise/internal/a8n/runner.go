@@ -236,27 +236,27 @@ func RunCampaignJobs(s *Store, clock func() time.Time, backoffDuration time.Dura
 		runJob(ctx, clock, s, nil, &job)
 		return nil
 	}
-	workChan := make(chan struct{}, workerCount)
+	worker := func() {
+
+	}()
 	for i := 0; i < workerCount; i++ {
-		workChan <- struct{}{}
-	}
-	for {
-		select {
-		case <-workChan:
-			go func() {
-				defer func() { workChan <- struct{}{} }()
-				didRun, err := s.ProcessPendingCampaignJob(context.Background(), process)
-				if err != nil {
-					log15.Error("Running campaign job", "err", err)
+		go func() {
+			for {
+				select {
+				case <-doneChan:
+					return
+				default:
+					didRun, err := s.ProcessPendingCampaignJob(context.Background(), process)
+					if err != nil {
+						log15.Error("Running campaign job", "err", err)
+					}
+					if !didRun {
+						// No work available, backoff
+						time.Sleep(backoffDuration)
+					}
 				}
-				if !didRun {
-					// No work available, backoff
-					time.Sleep(backoffDuration)
-				}
-			}()
-		case <-doneChan:
-			return
-		}
+			}
+		}()
 	}
 }
 
