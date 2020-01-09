@@ -19,15 +19,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
-type Resolver struct{}
+type Resolver struct {
+	store *iauthz.Store
+}
 
 var _ graphqlbackend.AuthzResolver = &Resolver{}
 
 func NewResolver() graphqlbackend.AuthzResolver {
-	return &Resolver{}
+	return &Resolver{
+		store: iauthz.NewStore(dbconn.Global, time.Now),
+	}
 }
 
-func (*Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *graphqlbackend.RepoPermsArgs) (*graphqlbackend.EmptyResponse, error) {
+func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *graphqlbackend.RepoPermsArgs) (*graphqlbackend.EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins can mutate repository permissions.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -105,17 +109,16 @@ func (*Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *gra
 	// over 4 tables, which could greatly increase chances of causing deadlocks with other methods. Practically,
 	// the result of SetRepoPermissions is much more important because it takes effect immediately. If the call of
 	// the SetRepoPendingPermissions method failed, a retry from client won't hurt.
-	s := iauthz.NewStore(dbconn.Global, time.Now)
-	if err = s.SetRepoPermissions(ctx, p); err != nil {
+	if err = r.store.SetRepoPermissions(ctx, p); err != nil {
 		return nil, err
-	} else if err = s.SetRepoPendingPermissions(ctx, pendingBindIDs, p); err != nil {
+	} else if err = r.store.SetRepoPendingPermissions(ctx, pendingBindIDs, p); err != nil {
 		return nil, err
 	}
 
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-func (*Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphqlbackend.AuthorizedRepoArgs) (graphqlbackend.RepositoryConnectionResolver, error) {
+func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphqlbackend.AuthorizedRepoArgs) (graphqlbackend.RepositoryConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins can query repository permissions.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -126,9 +129,11 @@ func (*Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphqlba
 		return nil, errors.New("permissions user mapping is not enabled")
 	}
 
-	var err error
-	var bindID string
-	var user *types.User
+	var (
+		err    error
+		bindID string
+		user   *types.User
+	)
 	if args.Email != nil {
 		bindID = *args.Email
 		user, err = db.Users.GetByVerifiedEmail(ctx, *args.Email)
@@ -143,7 +148,6 @@ func (*Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphqlba
 	}
 
 	var ids *roaring.Bitmap
-	s := iauthz.NewStore(dbconn.Global, time.Now)
 	if user != nil {
 		p := &iauthz.UserPermissions{
 			UserID:   user.ID,
@@ -151,7 +155,7 @@ func (*Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphqlba
 			Type:     iauthz.PermRepos,
 			Provider: iauthz.ProviderSourcegraph,
 		}
-		err = s.LoadUserPermissions(ctx, p)
+		err = r.store.LoadUserPermissions(ctx, p)
 		if err != nil {
 			return nil, err
 		}
@@ -163,7 +167,7 @@ func (*Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphqlba
 			Perm:   authz.Read, // Note: We currently only support read for repository permissions.
 			Type:   iauthz.PermRepos,
 		}
-		err = s.LoadUserPendingPermissions(ctx, p)
+		err = r.store.LoadUserPendingPermissions(ctx, p)
 		if err != nil {
 			return nil, err
 		}
