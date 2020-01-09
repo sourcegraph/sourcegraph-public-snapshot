@@ -1149,6 +1149,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 				args := search.TextParametersForCommitParameters{
 					PatternInfo: patternInfo,
 					Repos:       args.Repos,
+					Query:       args.Query,
 				}
 				diffResults, diffCommon, err := searchCommitDiffsInRepos(ctx, &args)
 				// Timeouts are reported through searchResultsCommon so don't report an error for them
@@ -1188,6 +1189,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 				args := search.TextParametersForCommitParameters{
 					PatternInfo: patternInfo,
 					Repos:       args.Repos,
+					Query:       args.Query,
 				}
 				commitResults, commitCommon, err := searchCommitLogInRepos(ctx, &args)
 				// Timeouts are reported through searchResultsCommon so don't report an error for them
