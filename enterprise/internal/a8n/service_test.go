@@ -289,6 +289,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 
 	tests := []struct {
 		name                                string
+		draft                               bool
 		manualCampaign                      bool
 		args                                func(campaignID, newPlanID int64) UpdateCampaignArgs
 		oldCampaignJobs                     func(currentPlanID int64) []*a8n.CampaignJob
@@ -468,6 +469,36 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 				return jobs
 			},
 		},
+		{
+			name:  "draft campaign, 1 unmodified, 1 modified, 1 new changeset",
+			draft: true,
+			args: func(campaignID, planID int64) UpdateCampaignArgs {
+				return UpdateCampaignArgs{Campaign: campaignID, Plan: &planID}
+			},
+			oldCampaignJobs: func(plan int64) (jobs []*a8n.CampaignJob) {
+				for _, repo := range rs[:3] {
+					jobs = append(jobs, testCampaignJob(plan, repo.ID, now))
+				}
+				return jobs
+			},
+			newCampaignJobs: func(plan int64, oldCampaignJobs []*a8n.CampaignJob) []*a8n.CampaignJob {
+				newJobs := make([]*a8n.CampaignJob, 3)
+				// First one has same RepoID, same Rev, same BaseRef, same Diff
+				newJobs[0] = oldCampaignJobs[0].Clone()
+				newJobs[0].CampaignPlanID = plan
+
+				// Second one has same RepoID, same Rev, same BaseRef, but different Diff
+				newJobs[1] = oldCampaignJobs[1].Clone()
+				newJobs[1].CampaignPlanID = plan
+				newJobs[1].Diff = "different diff"
+
+				// Third one has new RepoID (we only created 3 CampaignJobs, but rs has
+				// 4 entries)
+				newJobs[2] = testCampaignJob(plan, rs[len(rs)-1].ID, now)
+
+				return newJobs
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -502,13 +533,13 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 				campaign = testCampaign(u.ID, plan.ID)
 			}
 
-			err = svc.CreateCampaign(ctx, campaign, false)
+			err = svc.CreateCampaign(ctx, campaign, tt.draft)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			var oldChangesets []*a8n.Changeset
-			if !tt.manualCampaign {
+			if !tt.draft && !tt.manualCampaign {
 				// Create Changesets and update ChangesetJobs to look like they ran
 				oldChangesets = fakeRunChangesetJobs(ctx, t, store, now, campaign, oldCampaignJobsByID)
 			}
@@ -556,6 +587,17 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+
+			// When a campaign is created as a draft, we don't create
+			// ChangesetJobs, which means we can return here after checking
+			// that we haven't created ChangesetJobs
+			if tt.draft {
+				if len(newChangesetJobs) != 0 {
+					t.Fatalf("changesetJobs created even though campaign is draft. have=%d", len(newChangesetJobs))
+				}
+				return
+			}
+
 			if len(newChangesetJobs) != len(newCampaignJobs) {
 				t.Fatalf("wrong number of new ChangesetJobs. want=%d, have=%d", len(newCampaignJobs), len(newChangesetJobs))
 			}

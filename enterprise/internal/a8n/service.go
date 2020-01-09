@@ -552,7 +552,7 @@ func (s *Service) PublishCampaign(ctx context.Context, id int64) (campaign *a8n.
 		return nil, errors.Wrap(err, "getting campaign")
 	}
 
-	if !campaign.PublishedAt.IsZero() {
+	if campaign.Published() {
 		return campaign, nil
 	}
 
@@ -762,6 +762,12 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	}
 	if !updateName && !updateDescription && !updatePlanID {
 		return campaign, nil
+	}
+
+	if !campaign.Published() {
+		// If the campaign hasn't been published yet, we can simply update the
+		// attributes because no ChangesetJobs have been created yet.
+		return campaign, tx.UpdateCampaign(ctx, campaign)
 	}
 
 	changesetJobs, _, err := tx.ListChangesetJobs(ctx, ListChangesetJobsOpts{
