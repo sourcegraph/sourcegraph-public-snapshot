@@ -68,10 +68,3 @@ export class PrivateRepoPublicSourcegraphComError extends Error {
 }
 
 export const ERAUTHREQUIRED = 'AuthRequiredError'
-export class AuthRequiredError extends Error {
-    public readonly name = ERAUTHREQUIRED
-    public readonly code = ERAUTHREQUIRED
-    constructor(url: string) {
-        super(`private mode requires authentication: ${url}`)
-    }
-}

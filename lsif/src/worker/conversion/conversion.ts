@@ -89,7 +89,13 @@ async function convertDatabase(
                 dumpManager.insertDump(repository, commit, root, uploadedAt, entityManager)
             )
 
-            await dependencyManager.addPackagesAndReferences(dump.id, packages, references, { logger, span })
+            await dependencyManager.addPackagesAndReferences(
+                dumpRecord.id,
+                packages,
+                references,
+                { logger, span },
+                entityManager
+            )
             return dumpRecord
         })
 

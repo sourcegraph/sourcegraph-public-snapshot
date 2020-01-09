@@ -6,7 +6,7 @@ import { take } from 'rxjs/operators'
 import { EndpointPair, isEndpointPair } from '../../platform/context'
 import { startExtensionHost } from './extensionHost'
 
-export interface InitMessage {
+interface InitMessage {
     endpoints: {
         proxy: MessagePort
         expose: MessagePort

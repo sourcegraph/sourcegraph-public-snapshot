@@ -163,8 +163,8 @@ func TestReposGetInventory(t *testing.T) {
 			useEnhancedLanguageDetection: false,
 			want: &inventory.Inventory{
 				Languages: []inventory.Lang{
-					{Name: "Go", TotalBytes: 12, TotalLines: 0},
-					{Name: "Limbo", TotalBytes: 24, TotalLines: 0}, // obviously incorrect, but this is how the pre-enhanced lang detection worked
+					{Name: "Go", TotalBytes: 0, TotalLines: 0},
+					{Name: "Limbo", TotalBytes: 0, TotalLines: 0}, // obviously incorrect, but this is how the pre-enhanced lang detection worked
 				},
 			},
 		},

@@ -389,7 +389,9 @@ class EncodedJsonCache<K, V> extends GenericCache<K, EncodedJsonCacheValue<V>> {
             max,
             v => v.size,
             // Let GC handle the cleanup of the object on cache eviction.
-            () => {},
+            () => {
+                /* noop */
+            },
             cacheMetrics
         )
     }

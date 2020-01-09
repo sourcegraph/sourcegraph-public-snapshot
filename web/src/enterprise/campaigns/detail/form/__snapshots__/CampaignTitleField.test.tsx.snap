@@ -1,0 +1,12 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`CampaignTitleField renders 1`] = `
+<input
+  autoFocus={true}
+  className="form-control "
+  onChange={[Function]}
+  placeholder="Campaign title"
+  required={true}
+  value="a"
+/>
+`;

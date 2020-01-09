@@ -125,6 +125,15 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		campaign := testCampaign(u.ID, plan.ID)
+		svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
+
+		// Without CampaignJobs it should fail
+		err = svc.CreateCampaign(ctx, campaign, false)
+		if err != ErrNoCampaignJobs {
+			t.Fatal("CreateCampaign did not produce expected error")
+		}
+
 		campaignJobs := make([]*a8n.CampaignJob, 0, len(rs))
 		for _, repo := range rs {
 			campaignJob := testCampaignJob(plan.ID, repo.ID, now)
@@ -135,9 +144,7 @@ func TestService(t *testing.T) {
 			campaignJobs = append(campaignJobs, campaignJob)
 		}
 
-		campaign := testCampaign(u.ID, plan.ID)
-
-		svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
+		// With CampaignJobs it should succeed
 		err = svc.CreateCampaign(ctx, campaign, false)
 		if err != nil {
 			t.Fatal(err)

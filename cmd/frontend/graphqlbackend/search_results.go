@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 
@@ -696,7 +697,7 @@ type getPatternInfoOptions struct {
 }
 
 // getPatternInfo gets the search pattern info for the query in the resolver.
-func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.PatternInfo, error) {
+func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.TextPatternInfo, error) {
 	var patternsToCombine []string
 	isRegExp := false
 	isStructuralPat := false
@@ -768,7 +769,7 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Pa
 
 	languages, _ := r.query.StringValues(query.FieldLang)
 
-	patternInfo := &search.PatternInfo{
+	patternInfo := &search.TextPatternInfo{
 		IsRegExp:                     isRegExp,
 		IsStructuralPat:              isStructuralPat,
 		IsCaseSensitive:              r.query.IsCaseSensitive(),
@@ -912,6 +913,18 @@ func alertOnError(multiErr *multierror.Error) (newMultiErr *multierror.Error, al
 					prometheusType: "structural_search_needs_more_memory",
 					title:          "Structural search needs more memory",
 					description:    "Running your structural search may require more memory. If you are running the query on many repositories, try reducing the number of repositories with the `repo:` filter.",
+				}
+			} else if strings.Contains(err.Error(), "no indexed repositories for structural search") {
+				var msg string
+				if envvar.SourcegraphDotComMode() {
+					msg = "The good news is you can index any repository you like in a self-install. It takes less than 5 minutes to set up: https://docs.sourcegraph.com/#quickstart"
+				} else {
+					msg = "Learn more about managing indexed repositories in our documentation: https://docs.sourcegraph.com/admin/search#indexed-search."
+				}
+				alert = &searchAlert{
+					prometheusType: "structural_search_on_zero_indexed_repos",
+					title:          "Unindexed repositories with structural search",
+					description:    fmt.Sprintf("Structural search currently only works on indexed repositories. Some of the repositories to search are not indexed, so we can't return results for them. %s", msg),
 				}
 			} else {
 				newMultiErr = multierror.Append(newMultiErr, err)
@@ -1122,6 +1135,22 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
+				old := args.PatternInfo
+				patternInfo := &search.CommitPatternInfo{
+					Pattern:                      old.Pattern,
+					IsRegExp:                     old.IsRegExp,
+					IsCaseSensitive:              old.IsCaseSensitive,
+					FileMatchLimit:               old.FileMatchLimit,
+					IncludePatterns:              old.IncludePatterns,
+					ExcludePattern:               old.ExcludePattern,
+					PathPatternsAreRegExps:       old.PathPatternsAreRegExps,
+					PathPatternsAreCaseSensitive: p.PathPatternsAreCaseSensitive,
+				}
+				args := search.TextParametersForCommitParameters{
+					PatternInfo: patternInfo,
+					Repos:       args.Repos,
+					Query:       args.Query,
+				}
 				diffResults, diffCommon, err := searchCommitDiffsInRepos(ctx, &args)
 				// Timeouts are reported through searchResultsCommon so don't report an error for them
 				if err != nil && !isContextError(ctx, err) {
@@ -1146,6 +1175,22 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			goroutine.Go(func() {
 				defer wg.Done()
 
+				old := args.PatternInfo
+				patternInfo := &search.CommitPatternInfo{
+					Pattern:                      old.Pattern,
+					IsRegExp:                     old.IsRegExp,
+					IsCaseSensitive:              old.IsCaseSensitive,
+					FileMatchLimit:               old.FileMatchLimit,
+					IncludePatterns:              old.IncludePatterns,
+					ExcludePattern:               old.ExcludePattern,
+					PathPatternsAreRegExps:       old.PathPatternsAreRegExps,
+					PathPatternsAreCaseSensitive: old.PathPatternsAreCaseSensitive,
+				}
+				args := search.TextParametersForCommitParameters{
+					PatternInfo: patternInfo,
+					Repos:       args.Repos,
+					Query:       args.Query,
+				}
 				commitResults, commitCommon, err := searchCommitLogInRepos(ctx, &args)
 				// Timeouts are reported through searchResultsCommon so don't report an error for them
 				if err != nil && !isContextError(ctx, err) {

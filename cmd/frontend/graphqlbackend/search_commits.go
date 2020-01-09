@@ -83,9 +83,9 @@ func (r *commitSearchResultResolver) resultCount() int32 {
 	return 1
 }
 
-var mockSearchCommitDiffsInRepo func(ctx context.Context, repoRevs *search.RepositoryRevisions, info *search.PatternInfo, query *query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
+var mockSearchCommitDiffsInRepo func(ctx context.Context, repoRevs *search.RepositoryRevisions, info *search.CommitPatternInfo, query *query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
 
-func searchCommitDiffsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, info *search.PatternInfo, query *query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
+func searchCommitDiffsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, info *search.CommitPatternInfo, query *query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
 	if mockSearchCommitDiffsInRepo != nil {
 		return mockSearchCommitDiffsInRepo(ctx, repoRevs, info, query)
 	}
@@ -97,16 +97,16 @@ func searchCommitDiffsInRepo(ctx context.Context, repoRevs *search.RepositoryRev
 	}
 	return searchCommitsInRepo(ctx, search.CommitParameters{
 		RepoRevs:          repoRevs,
-		Info:              info,
+		PatternInfo:       info,
 		Query:             query,
 		Diff:              true,
 		TextSearchOptions: textSearchOptions,
 	})
 }
 
-var mockSearchCommitLogInRepo func(ctx context.Context, repoRevs *search.RepositoryRevisions, info *search.PatternInfo, query *query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
+var mockSearchCommitLogInRepo func(ctx context.Context, repoRevs *search.RepositoryRevisions, info *search.CommitPatternInfo, query *query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
 
-func searchCommitLogInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, info *search.PatternInfo, query *query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
+func searchCommitLogInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, info *search.CommitPatternInfo, query *query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
 	if mockSearchCommitLogInRepo != nil {
 		return mockSearchCommitLogInRepo(ctx, repoRevs, info, query)
 	}
@@ -117,7 +117,7 @@ func searchCommitLogInRepo(ctx context.Context, repoRevs *search.RepositoryRevis
 	}
 	return searchCommitsInRepo(ctx, search.CommitParameters{
 		RepoRevs:           repoRevs,
-		Info:               info,
+		PatternInfo:        info,
 		Query:              query,
 		Diff:               false,
 		TextSearchOptions:  git.TextSearchOptions{},
@@ -126,7 +126,7 @@ func searchCommitLogInRepo(ctx context.Context, repoRevs *search.RepositoryRevis
 }
 
 func searchCommitsInRepo(ctx context.Context, op search.CommitParameters) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
-	tr, ctx := trace.New(ctx, "searchCommitsInRepo", fmt.Sprintf("repoRevs: %v, pattern %+v", op.RepoRevs, op.Info))
+	tr, ctx := trace.New(ctx, "searchCommitsInRepo", fmt.Sprintf("repoRevs: %v, pattern %+v", op.RepoRevs, op.PatternInfo))
 	defer func() {
 		tr.LazyPrintf("%d results, limitHit=%v, timedOut=%v", len(results), limitHit, timedOut)
 		tr.SetError(err)
@@ -134,7 +134,7 @@ func searchCommitsInRepo(ctx context.Context, op search.CommitParameters) (resul
 	}()
 
 	repo := op.RepoRevs.Repo
-	maxResults := int(op.Info.FileMatchLimit)
+	maxResults := int(op.PatternInfo.FileMatchLimit)
 
 	args := []string{
 		"--no-prefix",
@@ -145,7 +145,7 @@ func searchCommitsInRepo(ctx context.Context, op search.CommitParameters) (resul
 			"--unified=0",
 		)
 	}
-	if op.Info.IsRegExp {
+	if op.PatternInfo.IsRegExp {
 		args = append(args, "--extended-regexp")
 	}
 	if !op.Query.IsCaseSensitive() {
@@ -242,10 +242,10 @@ func searchCommitsInRepo(ctx context.Context, op search.CommitParameters) (resul
 		Options: git.RawLogDiffSearchOptions{
 			Query: op.TextSearchOptions,
 			Paths: git.PathOptions{
-				IncludePatterns: op.Info.IncludePatterns,
-				ExcludePattern:  op.Info.ExcludePattern,
-				IsCaseSensitive: op.Info.PathPatternsAreCaseSensitive,
-				IsRegExp:        op.Info.PathPatternsAreRegExps,
+				IncludePatterns: op.PatternInfo.IncludePatterns,
+				ExcludePattern:  op.PatternInfo.ExcludePattern,
+				IsCaseSensitive: op.PatternInfo.PathPatternsAreCaseSensitive,
+				IsRegExp:        op.PatternInfo.PathPatternsAreRegExps,
 			},
 			Diff:              op.Diff,
 			OnlyMatchingHunks: true,
@@ -435,10 +435,10 @@ func highlightMatches(pattern *regexp.Regexp, data []byte) *highlightedString {
 	return hls
 }
 
-var mockSearchCommitDiffsInRepos func(args *search.TextParameters) ([]SearchResultResolver, *searchResultsCommon, error)
+var mockSearchCommitDiffsInRepos func(args *search.TextParametersForCommitParameters) ([]SearchResultResolver, *searchResultsCommon, error)
 
 // searchCommitDiffsInRepos searches a set of repos for matching commit diffs.
-func searchCommitDiffsInRepos(ctx context.Context, args *search.TextParameters) ([]SearchResultResolver, *searchResultsCommon, error) {
+func searchCommitDiffsInRepos(ctx context.Context, args *search.TextParametersForCommitParameters) ([]SearchResultResolver, *searchResultsCommon, error) {
 	if mockSearchCommitDiffsInRepos != nil {
 		return mockSearchCommitDiffsInRepos(args)
 	}
@@ -500,10 +500,10 @@ func searchCommitDiffsInRepos(ctx context.Context, args *search.TextParameters) 
 	return commitSearchResultsToSearchResults(flattened), common, nil
 }
 
-var mockSearchCommitLogInRepos func(args *search.TextParameters) ([]SearchResultResolver, *searchResultsCommon, error)
+var mockSearchCommitLogInRepos func(args *search.TextParametersForCommitParameters) ([]SearchResultResolver, *searchResultsCommon, error)
 
 // searchCommitLogInRepos searches a set of repos for matching commits.
-func searchCommitLogInRepos(ctx context.Context, args *search.TextParameters) ([]SearchResultResolver, *searchResultsCommon, error) {
+func searchCommitLogInRepos(ctx context.Context, args *search.TextParametersForCommitParameters) ([]SearchResultResolver, *searchResultsCommon, error) {
 	if mockSearchCommitLogInRepos != nil {
 		return mockSearchCommitLogInRepos(args)
 	}

@@ -198,7 +198,7 @@ var lockNamespace = int32(fnv1.HashString32("perms"))
 func lockQuery(p *authz.UserPermissions) *sqlf.Query {
 	// Postgres advisory lock ids are a global namespace within one database.
 	// It's very unlikely that another part of our application uses a lock
-	// namespace identicaly to this one. It's equally unlikely that there are
+	// namespace identically to this one. It's equally unlikely that there are
 	// lock id conflicts for different permissions, but if it'd happen, no safety
 	// guarantees would be violated, since those two different users would simply
 	// have to wait on the other's update to finish, using stale permissions until

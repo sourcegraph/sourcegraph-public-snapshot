@@ -325,7 +325,6 @@ func testStore(db *sql.DB) func(*testing.T) {
 						CampaignIDs:         []int64{int64(i) + 1},
 						ExternalID:          fmt.Sprintf("foobar-%d", i),
 						ExternalServiceType: "github",
-						ExternalDeletedAt:   now,
 					}
 
 					changesets = append(changesets, th)
@@ -339,6 +338,10 @@ func testStore(db *sql.DB) func(*testing.T) {
 				for _, have := range changesets {
 					if have.ID == 0 {
 						t.Fatal("id should not be zero")
+					}
+
+					if have.IsDeleted() {
+						t.Fatal("changeset is deleted")
 					}
 
 					want := have.Clone()
@@ -520,8 +523,38 @@ func testStore(db *sql.DB) func(*testing.T) {
 						t.Fatal(err)
 					}
 
+					if len(have) != len(changesets) {
+						t.Fatalf("have 0 changesets. want %d", len(changesets))
+					}
+
+					for _, c := range changesets {
+						c.SetDeleted()
+						c.UpdatedAt = now
+					}
+
+					if err := s.UpdateChangesets(ctx, changesets...); err != nil {
+						t.Fatal(err)
+					}
+
+					have, _, err = s.ListChangesets(ctx, ListChangesetsOpts{WithoutDeleted: true})
+					if err != nil {
+						t.Fatal(err)
+					}
+
 					if len(have) != 0 {
-						t.Fatalf("have %d changesets. want 0", len(have))
+						t.Fatalf("have %d changesets. want 0", len(changesets))
+					}
+				}
+
+				// Limit of -1 should return all ChangeSets
+				{
+					have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{Limit: -1})
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if len(have) != 3 {
+						t.Fatalf("have %d changesets. want 3", len(have))
 					}
 				}
 			})
@@ -578,7 +611,6 @@ func testStore(db *sql.DB) func(*testing.T) {
 				for _, c := range changesets {
 					c.Metadata = &bitbucketserver.PullRequest{ID: 1234}
 					c.ExternalServiceType = bitbucketserver.ServiceType
-					c.ExternalDeletedAt = c.ExternalDeletedAt.Add(time.Second)
 
 					if c.RepoID != 0 {
 						c.RepoID++
@@ -2221,5 +2253,57 @@ func testStore(db *sql.DB) func(*testing.T) {
 				}
 			})
 		})
+	}
+}
+
+func testStoreLocking(db *sql.DB) func(*testing.T) {
+	return func(t *testing.T) {
+		now := time.Now().UTC().Truncate(time.Microsecond)
+		s := NewStoreWithClock(db, func() time.Time {
+			return now.UTC().Truncate(time.Microsecond)
+		})
+
+		testKey := "test-acquire"
+		s1, err := s.Transact(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer s1.Done(nil)
+
+		s2, err := s.Transact(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer s2.Done(nil)
+
+		// Get lock
+		ok, err := s1.TryAcquireAdvisoryLock(context.Background(), testKey)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !ok {
+			t.Fatalf("Could not acquire lock")
+		}
+
+		// Try and get acquired lock
+		ok, err = s2.TryAcquireAdvisoryLock(context.Background(), testKey)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if ok {
+			t.Fatal("Should not have acquired lock")
+		}
+
+		// Release lock
+		s1.Done(nil)
+
+		// Try and get released lock
+		ok, err = s2.TryAcquireAdvisoryLock(context.Background(), testKey)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !ok {
+			t.Fatal("Could not acquire lock")
+		}
 	}
 }

@@ -8,7 +8,7 @@ import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 import { createDriverForTest, Driver, percySnapshot } from '../../../shared/src/e2e/driver'
 import got from 'got'
 import { gql } from '../../../shared/src/graphql/graphql'
-import { random } from 'lodash'
+import { random, sortBy } from 'lodash'
 import MockDate from 'mockdate'
 import { ExternalServiceKind } from '../../../shared/src/graphql/schema'
 import { getConfig } from '../../../shared/src/e2e/config'
@@ -721,8 +721,8 @@ describe('e2e test suite', () => {
                         )
                     )
 
-                    expect(symbolNames).toEqual(symbolTest.symbolNames)
-                    expect(symbolTypes).toEqual(symbolTest.symbolTypes)
+                    expect(sortBy(symbolNames)).toEqual(sortBy(symbolTest.symbolNames))
+                    expect(sortBy(symbolTypes)).toEqual(sortBy(symbolTest.symbolTypes))
                 })
             }
 
@@ -738,6 +738,7 @@ describe('e2e test suite', () => {
                     repoPath: '/github.com/sourcegraph/java-langserver@03efbe9558acc532e88f5288b4e6cfa155c6f2dc',
                     filePath: '/tree/src/main/java/com/sourcegraph/common',
                     symbolPath: '/blob/src/main/java/com/sourcegraph/common/Config.java#L14:20-14:26',
+                    skip: true,
                 },
                 {
                     name:
@@ -745,17 +746,20 @@ describe('e2e test suite', () => {
                     repoPath: '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87',
                     filePath: '/tree/examples',
                     symbolPath: '/blob/examples/cmd/webapp-opentracing/main.go#L26:6-26:10',
+                    skip: true,
                 },
                 {
                     name: 'displays valid symbols at different file depths for Go (./sqltrace/sql.go)',
                     repoPath: '/github.com/sourcegraph/appdash@ebfcffb1b5c00031ce797183546746715a3cfe87',
                     filePath: '/tree/sqltrace',
                     symbolPath: '/blob/sqltrace/sql.go#L14:2-14:5',
+                    skip: true,
                 },
             ]
 
             for (const navigationTest of navigateToSymbolTests) {
-                test(navigationTest.name, async () => {
+                const testFunc = navigationTest.skip ? test.skip : test
+                testFunc(navigationTest.name, async () => {
                     const repoBaseURL = sourcegraphBaseUrl + navigationTest.repoPath + '/-'
 
                     await driver.page.goto(repoBaseURL + navigationTest.filePath)
@@ -1160,6 +1164,45 @@ describe('e2e test suite', () => {
             })
         })
 
+        describe('multiple revisions per repository', () => {
+            let previousExperimentalFeatures: any
+            beforeAll(async () => {
+                await driver.setConfig(['experimentalFeatures'], prev => {
+                    previousExperimentalFeatures = prev?.value
+                    return { searchMultipleRevisionsPerRepository: true }
+                })
+                // Wait for configuration to be applied.
+                await new Promise(resolve => setTimeout(resolve, 3000))
+            })
+            afterAll(async () => {
+                await driver.setConfig(['experimentalFeatures'], () => previousExperimentalFeatures)
+            })
+
+            test('searches', async () => {
+                await driver.page.goto(
+                    sourcegraphBaseUrl +
+                        '/search?q=repo:sourcegraph/go-diff%24%40master:print-options+func+NewHunksReader&patternType=regexp'
+                )
+                await driver.page.waitForSelector('.e2e-search-results-stats', { visible: true })
+                await retry(async () => {
+                    const label = await driver.page.evaluate(
+                        () => document.querySelector('.e2e-search-results-stats')!.textContent || ''
+                    )
+                    expect(label.includes('results')).toEqual(true)
+                })
+
+                const fileMatchHrefs = (
+                    await driver.page.$$eval('.e2e-file-match-children-item', as =>
+                        as.map(a => (a as HTMLAnchorElement).pathname)
+                    )
+                ).sort()
+                expect(fileMatchHrefs).toEqual([
+                    '/github.com/sourcegraph/go-diff@master/-/blob/diff/parse.go',
+                    '/github.com/sourcegraph/go-diff@print-options/-/blob/diff/parse.go',
+                ])
+            })
+        })
+
         test('accepts query for sourcegraph/jsonrpc2', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/search')
 
@@ -1243,7 +1286,7 @@ describe('e2e test suite', () => {
             )
 
             expect(tabs.length).toEqual(6)
-            expect(tabs).toStrictEqual(['Code', 'Diffs', 'Commits', 'Symbols', 'Repos', 'Files'])
+            expect(tabs).toStrictEqual(['Code', 'Diffs', 'Commits', 'Symbols', 'Repositories', 'Filenames'])
 
             const activeTab = await driver.page.evaluate(
                 () => document.querySelectorAll('.e2e-search-result-tab--active').length
@@ -1379,13 +1422,19 @@ describe('e2e test suite', () => {
             await driver.resetUserSettings()
         })
 
+        // This is a substring that appears in the sourcegraph/go-vcs repository, which is present
+        // in the external service added for the e2e test. It is OK if it starts to appear in other
+        // repositories (such as sourcegraph/sourcegraph now that it's mentioned here); the test
+        // just checks that it is found in at least 1 Go file.
+        const uniqueString = '055e4ae3a'
+
         test('button on search results page', async () => {
-            await driver.page.goto(`${sourcegraphBaseUrl}/search?q=abc`)
-            await driver.page.waitForSelector('a[href="/stats?q=abc"]')
+            await driver.page.goto(`${sourcegraphBaseUrl}/search?q=${uniqueString}`)
+            await driver.page.waitForSelector(`a[href="/stats?q=${uniqueString}"]`)
         })
 
         test('page', async () => {
-            await driver.page.goto(`${sourcegraphBaseUrl}/stats?q=count%3A10000+abc`)
+            await driver.page.goto(`${sourcegraphBaseUrl}/stats?q=${uniqueString}`)
 
             // Ensure the global navbar hides the search input (to avoid confusion with the one on
             // the stats page).
@@ -1402,16 +1451,17 @@ describe('e2e test suite', () => {
                 })
 
             // Check for a Go result (the sample repositories have Go files).
-            await driver.page.waitForSelector('a[href*="abc+lang:go"]')
-            assert.strictEqual(await queryInputValue(), 'count:10000 abc')
+            await driver.page.waitForSelector(`a[href*="${uniqueString}+lang:go"]`)
+            assert.strictEqual(await queryInputValue(), uniqueString)
             await percySnapshot(driver.page, 'Search stats')
 
             // Update the query and rerun the computation.
-            await driver.page.type('.e2e-stats-query', 'd')
-            assert.strictEqual(await queryInputValue(), 'count:10000 abcd')
+            await driver.page.type('.e2e-stats-query', 'e') // the uniqueString is followed by an e in go-vcs
+            const wantQuery = `${uniqueString}e`
+            assert.strictEqual(await queryInputValue(), wantQuery)
             await driver.page.click('.e2e-stats-query-update')
-            await driver.page.waitForSelector('a[href*="abcd+lang:go"]')
-            assert.ok(driver.page.url().endsWith('/stats?q=count%3A10000+abcd'))
+            await driver.page.waitForSelector(`a[href*="${wantQuery}+lang:go"]`)
+            assert.ok(driver.page.url().endsWith(`/stats?q=${wantQuery}`))
         })
     })
 
@@ -1502,7 +1552,7 @@ describe('e2e test suite', () => {
             expect(generatedChangesetCount).toEqual(changesetCount)
             await percySnapshot(driver.page, snapshotName + ' changesets tab')
         }
-        test('Create campaign preview for comby campaign type', async () => {
+        test.skip('Create campaign preview for comby campaign type', async () => {
             await createCampaignPreview({
                 specification: JSON.stringify({
                     matchTemplate: 'file',
@@ -1515,7 +1565,7 @@ describe('e2e test suite', () => {
                 campaignType: 'comby',
             })
         })
-        test('Create campaign preview for credentials campaign type', async () => {
+        test.skip('Create campaign preview for credentials campaign type', async () => {
             await createCampaignPreview({
                 specification: JSON.stringify({
                     matchers: [{ type: 'npm' }],

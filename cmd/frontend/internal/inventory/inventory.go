@@ -51,16 +51,13 @@ func getLang(ctx context.Context, file os.FileInfo, buf []byte, getFileReader fu
 		defer rc.Close()
 	}
 
-	lang := Lang{
-		TotalBytes: uint64(file.Size()),
-	}
-
+	var lang Lang
 	// In many cases, GetLanguageByFilename can detect the language conclusively just from the
 	// filename. If not, we pass a subset of the file contents for analysis.
 	matchedLang, safe := GetLanguageByFilename(file.Name())
 
 	// No content
-	if rc == nil || lang.TotalBytes == 0 {
+	if rc == nil {
 		lang.Name = matchedLang
 		return lang, nil
 	}
@@ -72,6 +69,7 @@ func getLang(ctx context.Context, file os.FileInfo, buf []byte, getFileReader fu
 			return lang, errors.Wrap(err, "reading initial file data")
 		}
 		matchedLang = enry.GetLanguage(file.Name(), buf[:n])
+		lang.TotalBytes += uint64(n)
 		lang.TotalLines += uint64(bytes.Count(buf[:n], newLine))
 		lang.Name = matchedLang
 		if err == io.ErrUnexpectedEOF {
@@ -85,22 +83,23 @@ func getLang(ctx context.Context, file os.FileInfo, buf []byte, getFileReader fu
 	}
 	lang.Name = matchedLang
 
-	count, err := countLines(rc, buf)
+	lineCount, byteCount, err := countLines(rc, buf)
 	if err != nil {
 		return lang, err
 	}
-	lang.TotalLines += uint64(count)
+	lang.TotalLines += uint64(lineCount)
+	lang.TotalBytes += uint64(byteCount)
 	return lang, nil
 }
 
 // countLines counts the number of lines in the supplied reader
 // it uses buf as a temporary buffer
-func countLines(r io.Reader, buf []byte) (int, error) {
+func countLines(r io.Reader, buf []byte) (lineCount int, byteCount int, err error) {
 	var trailingNewLine bool
-	var totalLines int
 	for {
 		n, err := r.Read(buf)
-		totalLines += bytes.Count(buf[:n], newLine)
+		lineCount += bytes.Count(buf[:n], newLine)
+		byteCount += n
 		// We need this check because the last read will often
 		// return (0, io.EOF) and we want to look at the last
 		// valid read to determine if there was a trailing newline
@@ -108,17 +107,17 @@ func countLines(r io.Reader, buf []byte) (int, error) {
 			trailingNewLine = bytes.HasSuffix(buf[:n], newLine)
 		}
 		if err == io.EOF {
-			if !trailingNewLine {
+			if !trailingNewLine && byteCount > 0 {
 				// Add final line
-				totalLines++
+				lineCount++
 			}
 			break
 		}
 		if err != nil {
-			return 0, errors.Wrap(err, "counting lines")
+			return 0, 0, errors.Wrap(err, "counting lines")
 		}
 	}
-	return totalLines, nil
+	return lineCount, byteCount, nil
 }
 
 // GetLanguageByFilename returns the guessed language for the named file (and safe == true if this

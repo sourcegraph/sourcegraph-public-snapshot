@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`CampaignDescriptionField renders 1`] = `
+<textarea
+  className="form-control "
+  onChange={[Function]}
+  placeholder="Describe the purpose of this campaign, link to relevant internal documentation, etc."
+  rows={8}
+  value="a"
+/>
+`;

@@ -16,14 +16,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { Settings } from '../../schema/settings.schema'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { EventLogger } from '../../tracking/eventLogger'
-import {
-    isSearchResults,
-    submitSearch,
-    toggleSearchFilter,
-    toggleSearchFilterAndReplaceSampleRepogroup,
-    getSearchTypeFromQuery,
-    QueryState,
-} from '../helpers'
+import { isSearchResults, submitSearch, toggleSearchFilter, getSearchTypeFromQuery, QueryState } from '../helpers'
 import { queryTelemetryData } from '../queryTelemetry'
 import { SearchResultsFilterBars, SearchScopeWithOptionalName } from './SearchResultsFilterBars'
 import { SearchResultsList } from './SearchResultsList'
@@ -334,9 +327,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             search_filter: { value },
         })
 
-        const newQuery = this.props.isSourcegraphDotCom
-            ? toggleSearchFilterAndReplaceSampleRepogroup(this.props.navbarSearchQueryState.query, value)
-            : toggleSearchFilter(this.props.navbarSearchQueryState.query, value)
+        const newQuery = toggleSearchFilter(this.props.navbarSearchQueryState.query, value)
 
         submitSearch(this.props.history, newQuery, 'filter', this.props.patternType)
     }

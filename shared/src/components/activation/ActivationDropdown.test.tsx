@@ -5,6 +5,9 @@ import { noop } from 'rxjs'
 import { Activation } from './Activation'
 import { ActivationDropdown } from './ActivationDropdown'
 
+jest.mock('mdi-react/CheckboxBlankCircleIcon', () => 'CheckboxBlankCircleIcon')
+jest.mock('mdi-react/CheckIcon', () => 'CheckIcon')
+
 describe('ActivationDropdown', () => {
     const baseActivation: Activation = {
         steps: [

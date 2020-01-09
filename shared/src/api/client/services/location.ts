@@ -81,8 +81,11 @@ export interface TextDocumentProviderIDRegistrationOptions extends TextDocumentR
  * The registry for text document location providers with a distinguishing ID (i.e., registered using
  * {@link TextDocumentProviderIDRegistrationOptions}).
  */
-export class TextDocumentLocationProviderIDRegistry extends DocumentFeatureProviderRegistry<
-    ProvideTextDocumentLocationSignature<TextDocumentPositionParams, Location>,
+export class TextDocumentLocationProviderIDRegistry<
+    P extends TextDocumentPositionParams = TextDocumentPositionParams,
+    L extends Location = Location
+> extends DocumentFeatureProviderRegistry<
+    ProvideTextDocumentLocationSignature<P, L>,
     TextDocumentProviderIDRegistrationOptions
 > {
     /**
@@ -94,7 +97,7 @@ export class TextDocumentLocationProviderIDRegistry extends DocumentFeatureProvi
     public providersForDocumentWithID(
         id: string,
         document: TextDocumentIdentifier
-    ): Observable<ProvideTextDocumentLocationSignature<TextDocumentPositionParams, Location>[]> {
+    ): Observable<ProvideTextDocumentLocationSignature<P, L>[]> {
         return this.providersForDocument(document, registrationOptions => registrationOptions.id === id)
     }
 
@@ -110,7 +113,7 @@ export class TextDocumentLocationProviderIDRegistry extends DocumentFeatureProvi
      *
      * @param id The provider ID.
      */
-    public getLocations(id: string, params: TextDocumentPositionParams): Observable<Observable<Location[] | null>> {
+    public getLocations(id: string, params: P): Observable<Observable<L[] | null>> {
         return getLocationsFromProviders(this.providersForDocumentWithID(id, params.textDocument), params)
     }
 }

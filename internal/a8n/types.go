@@ -232,25 +232,25 @@ type Changeset struct {
 }
 
 // Clone returns a clone of a Changeset.
-func (t *Changeset) Clone() *Changeset {
-	tt := *t
-	tt.CampaignIDs = t.CampaignIDs[:len(t.CampaignIDs):len(t.CampaignIDs)]
+func (c *Changeset) Clone() *Changeset {
+	tt := *c
+	tt.CampaignIDs = c.CampaignIDs[:len(c.CampaignIDs):len(c.CampaignIDs)]
 	return &tt
 }
 
 // RemoveCampaignID removes the given id from the Changesets CampaignIDs slice.
 // If the id is not in CampaignIDs calling this method doesn't have an effect.
-func (t *Changeset) RemoveCampaignID(id int64) {
-	for i := len(t.CampaignIDs) - 1; i >= 0; i-- {
-		if t.CampaignIDs[i] == id {
-			t.CampaignIDs = append(t.CampaignIDs[:i], t.CampaignIDs[i+1:]...)
+func (c *Changeset) RemoveCampaignID(id int64) {
+	for i := len(c.CampaignIDs) - 1; i >= 0; i-- {
+		if c.CampaignIDs[i] == id {
+			c.CampaignIDs = append(c.CampaignIDs[:i], c.CampaignIDs[i+1:]...)
 		}
 	}
 }
 
 // Title of the Changeset.
-func (t *Changeset) Title() (string, error) {
-	switch m := t.Metadata.(type) {
+func (c *Changeset) Title() (string, error) {
+	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
 		return m.Title, nil
 	case *bitbucketserver.PullRequest:
@@ -263,8 +263,8 @@ func (t *Changeset) Title() (string, error) {
 // ExternalCreatedAt is when the Changeset was created on the codehost. When it
 // cannot be determined when the changeset was created, a zero-value timestamp
 // is returned.
-func (t *Changeset) ExternalCreatedAt() time.Time {
-	switch m := t.Metadata.(type) {
+func (c *Changeset) ExternalCreatedAt() time.Time {
+	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
 		return m.CreatedAt
 	case *bitbucketserver.PullRequest:
@@ -275,8 +275,8 @@ func (t *Changeset) ExternalCreatedAt() time.Time {
 }
 
 // Body of the Changeset.
-func (t *Changeset) Body() (string, error) {
-	switch m := t.Metadata.(type) {
+func (c *Changeset) Body() (string, error) {
+	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
 		return m.Body, nil
 	case *bitbucketserver.PullRequest:
@@ -299,12 +299,12 @@ func (c *Changeset) IsDeleted() bool {
 }
 
 // State of a Changeset.
-func (t *Changeset) State() (s ChangesetState, err error) {
-	if !t.ExternalDeletedAt.IsZero() {
+func (c *Changeset) State() (s ChangesetState, err error) {
+	if !c.ExternalDeletedAt.IsZero() {
 		return ChangesetStateDeleted, nil
 	}
 
-	switch m := t.Metadata.(type) {
+	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
 		s = ChangesetState(m.State)
 	case *bitbucketserver.PullRequest:
@@ -325,8 +325,8 @@ func (t *Changeset) State() (s ChangesetState, err error) {
 }
 
 // URL of a Changeset.
-func (t *Changeset) URL() (s string, err error) {
-	switch m := t.Metadata.(type) {
+func (c *Changeset) URL() (s string, err error) {
+	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
 		return m.URL, nil
 	case *bitbucketserver.PullRequest:
@@ -341,10 +341,10 @@ func (t *Changeset) URL() (s string, err error) {
 }
 
 // ReviewState of a Changeset.
-func (t *Changeset) ReviewState() (s ChangesetReviewState, err error) {
+func (c *Changeset) ReviewState() (s ChangesetReviewState, err error) {
 	states := map[ChangesetReviewState]bool{}
 
-	switch m := t.Metadata.(type) {
+	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
 		for _, ti := range m.TimelineItems {
 			if r, ok := ti.Item.(*github.PullRequestReview); ok {
@@ -370,12 +370,12 @@ func (t *Changeset) ReviewState() (s ChangesetReviewState, err error) {
 }
 
 // Events returns the list of ChangesetEvents from the Changeset's metadata.
-func (t *Changeset) Events() (events []*ChangesetEvent) {
-	switch m := t.Metadata.(type) {
+func (c *Changeset) Events() (events []*ChangesetEvent) {
+	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
 		events = make([]*ChangesetEvent, 0, len(m.TimelineItems))
 		for _, ti := range m.TimelineItems {
-			ev := ChangesetEvent{ChangesetID: t.ID}
+			ev := ChangesetEvent{ChangesetID: c.ID}
 
 			switch e := ti.Item.(type) {
 			case *github.PullRequestReviewThread:
@@ -398,7 +398,7 @@ func (t *Changeset) Events() (events []*ChangesetEvent) {
 		events = make([]*ChangesetEvent, 0, len(m.Activities))
 		for _, a := range m.Activities {
 			events = append(events, &ChangesetEvent{
-				ChangesetID: t.ID,
+				ChangesetID: c.ID,
 				Key:         a.Key(),
 				Kind:        ChangesetEventKindFor(&a),
 				Metadata:    a,
@@ -411,8 +411,8 @@ func (t *Changeset) Events() (events []*ChangesetEvent) {
 // HeadRefOid returns the git ObjectID of the HEAD reference associated with
 // Changeset on the codehost. If the codehost doesn't include the ObjectID, an
 // empty string is returned.
-func (t *Changeset) HeadRefOid() (string, error) {
-	switch m := t.Metadata.(type) {
+func (c *Changeset) HeadRefOid() (string, error) {
+	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
 		return m.HeadRefOid, nil
 	case *bitbucketserver.PullRequest:
@@ -424,8 +424,8 @@ func (t *Changeset) HeadRefOid() (string, error) {
 
 // HeadRef returns the full ref (e.g. `refs/heads/my-branch`) of the
 // HEAD reference associated with the Changeset on the codehost.
-func (t *Changeset) HeadRef() (string, error) {
-	switch m := t.Metadata.(type) {
+func (c *Changeset) HeadRef() (string, error) {
+	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
 		return "refs/heads/" + m.HeadRefName, nil
 	case *bitbucketserver.PullRequest:
@@ -438,8 +438,8 @@ func (t *Changeset) HeadRef() (string, error) {
 // BaseRefOid returns the git ObjectID of the base reference associated with the
 // Changeset on the codehost. If the codehost doesn't include the ObjectID, an
 // empty string is returned.
-func (t *Changeset) BaseRefOid() (string, error) {
-	switch m := t.Metadata.(type) {
+func (c *Changeset) BaseRefOid() (string, error) {
+	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
 		return m.BaseRefOid, nil
 	case *bitbucketserver.PullRequest:
@@ -451,8 +451,8 @@ func (t *Changeset) BaseRefOid() (string, error) {
 
 // BaseRef returns the full ref (e.g. `refs/heads/my-branch`) of the base ref
 // associated with the Changeset on the codehost.
-func (t *Changeset) BaseRef() (string, error) {
-	switch m := t.Metadata.(type) {
+func (c *Changeset) BaseRef() (string, error) {
+	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
 		return "refs/heads/" + m.BaseRefName, nil
 	case *bitbucketserver.PullRequest:

@@ -1,5 +1,4 @@
 export const IS_CHROME = !!window.chrome
-export const IS_FIREFOX = window.navigator.userAgent.includes('Firefox')
 
 let lastDayActive = localStorage.getItem('last-day-active')
 export let daysActiveCount = parseInt(localStorage.getItem('days-active-count') || '', 10) || 0

@@ -117,7 +117,7 @@ func TestMiddleware(t *testing.T) {
 		if got, want := uredirect.Query().Get("client_id"), mockGitHubCom.Provider.CachedInfo().ClientID; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
-		if got, want := uredirect.Query().Get("scope"), "repo user:email"; got != want {
+		if got, want := uredirect.Query().Get("scope"), "repo user:email read:org"; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
 		if got, want := uredirect.Query().Get("response_type"), "code"; got != want {
@@ -150,7 +150,7 @@ func TestMiddleware(t *testing.T) {
 		if got, want := uredirect.Query().Get("client_id"), mockGHE.Provider.CachedInfo().ClientID; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
-		if got, want := uredirect.Query().Get("scope"), "repo user:email"; got != want {
+		if got, want := uredirect.Query().Get("scope"), "repo user:email read:org"; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
 		if got, want := uredirect.Query().Get("response_type"), "code"; got != want {
@@ -183,7 +183,7 @@ func TestMiddleware(t *testing.T) {
 		if got, want := uredirect.Query().Get("client_id"), mockGitHubCom.Provider.CachedInfo().ClientID; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
-		if got, want := uredirect.Query().Get("scope"), "repo user:email"; got != want {
+		if got, want := uredirect.Query().Get("scope"), "repo user:email read:org"; got != want {
 			t.Errorf("got %v, want %v", got, want)
 		}
 		if got, want := uredirect.Query().Get("response_type"), "code"; got != want {

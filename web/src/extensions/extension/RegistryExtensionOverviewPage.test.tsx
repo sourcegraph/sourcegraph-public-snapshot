@@ -4,6 +4,8 @@ import { MemoryRouter } from 'react-router'
 import renderer from 'react-test-renderer'
 import { RegistryExtensionOverviewPage } from './RegistryExtensionOverviewPage'
 
+jest.mock('mdi-react/GithubCircleIcon', () => 'GithubCircleIcon')
+
 describe('RegistryExtensionOverviewPage', () => {
     test('renders', () =>
         expect(

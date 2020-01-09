@@ -11,6 +11,7 @@ import { isExtensionAdded } from './extension'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
 import { ExtensionConfigurationState } from './ExtensionConfigurationState'
 import { WorkInProgressBadge } from './WorkInProgressBadge'
+import { isEncodedImage } from '../../../../shared/src/util/icon'
 
 interface ExtensionAreaHeaderProps extends ExtensionAreaRouteContext, RouteComponentProps<{}> {
     navItems: readonly ExtensionAreaHeaderNavItem[]
@@ -50,7 +51,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                 {manifest?.icon &&
                                     iconURL &&
                                     iconURL.protocol === 'data:' &&
-                                    /^data:image\/png(;base64)?,/.test(manifest.icon) && (
+                                    isEncodedImage(manifest.icon) && (
                                         <img className="extension-area-header__icon mr-2" src={manifest.icon} />
                                     )}
                                 <div>
