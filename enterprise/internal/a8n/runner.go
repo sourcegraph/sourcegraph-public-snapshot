@@ -226,10 +226,10 @@ func (r *Runner) Wait() error {
 	return nil
 }
 
-// ConsumePendingCampaignJobs should run in a background goroutine and is responsible for
+// RunCampaignJobs should run in a background goroutine and is responsible for
 // finding pending campaign jobs and running them.
 // doneChan should be closed to terminate this function.
-func ConsumePendingCampaignJobs(s *Store, clock func() time.Time, backoffDuration time.Duration, doneChan chan struct{}) {
+func RunCampaignJobs(s *Store, clock func() time.Time, backoffDuration time.Duration, doneChan chan struct{}) {
 	workerCount, err := strconv.Atoi(maxWorkers)
 	if err != nil {
 		log15.Error("Parsing max worker count, falling back to default of 8", "err", err)

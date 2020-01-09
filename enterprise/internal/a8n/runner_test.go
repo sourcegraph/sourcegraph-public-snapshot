@@ -88,7 +88,7 @@ func TestConsumePendingCampaignJobs(t *testing.T) {
 	// Launch background worker
 	doneChan := make(chan struct{})
 	defer func() { close(doneChan) }()
-	go ConsumePendingCampaignJobs(store, clock, 100*time.Millisecond, doneChan)
+	go RunCampaignJobs(store, clock, 100*time.Millisecond, doneChan)
 
 	// After some time the job should be finished
 	timeout := time.After(2 * time.Second)
