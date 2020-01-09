@@ -369,7 +369,7 @@ func listReposQuery(args StoreListReposArgs) paginatedQuery {
 	if len(args.ExternalRepos) > 0 {
 		er := make([]*sqlf.Query, 0, len(args.ExternalRepos))
 		for _, spec := range args.ExternalRepos {
-			er = append(er, sqlf.Sprintf("(external_id = NULLIF(BTRIM(%s), '') AND external_service_type = NULLIF(BTRIM(%s), '') AND external_service_id = NULLIF(BTRIM(%s), ''))", spec.ID, spec.ServiceType, spec.ServiceID))
+			er = append(er, sqlf.Sprintf("(external_id = %s AND external_service_type = %s AND external_service_id = %s)", spec.ID, spec.ServiceType, spec.ServiceID))
 		}
 		preds = append(preds, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n OR ")))
 	}
@@ -708,9 +708,9 @@ inserted AS (
     created_at,
     updated_at,
     deleted_at,
-    NULLIF(BTRIM(external_service_type), ''),
-    NULLIF(BTRIM(external_service_id), ''),
-    NULLIF(BTRIM(external_id), ''),
+    external_service_type,
+    external_service_id,
+    external_id,
     enabled,
     archived,
     fork,
