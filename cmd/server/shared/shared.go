@@ -15,8 +15,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
-
-	"github.com/sourcegraph/sourcegraph/cmd/server/internal/goreman"
+	"github.com/sourcegraph/sourcegraph/internal/goreman"
 )
 
 // FrontendInternalHost is the value of SRC_FRONTEND_INTERNAL.
@@ -128,7 +127,7 @@ func Main() {
 		log.Fatal("Failed to setup nginx:", err)
 	}
 
-	postgresExporterLine := fmt.Sprintf(`postgres_exporter: env DATA_SOURCE_NAME="%s" postgres_exporter --log.level=%s`, dbutil.PostgresDSN("postgres", os.Getenv), os.Getenv("SRC_LOG_LEVEL"))
+	postgresExporterLine := fmt.Sprintf(`postgres_exporter: env DATA_SOURCE_NAME="%s" postgres_exporter --log.level=%s`, dbutil.PostgresDSN("postgres", os.Getenv), convertLogLevel(os.Getenv("SRC_LOG_LEVEL")))
 
 	procfile := []string{
 		nginx,

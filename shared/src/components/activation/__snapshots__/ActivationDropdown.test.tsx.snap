@@ -112,17 +112,9 @@ exports[`ActivationDropdown render 0/2 completed 1`] = `
             >
               title1
             </span>
-            <svg
-              className="mdi-icon icon-inline text-muted"
-              fill="currentColor"
-              height={24}
-              viewBox="0 0 24 24"
-              width={24}
-            >
-              <path
-                d="M12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12C22,6.48 17.52,2 12,2Z"
-              />
-            </svg>
+            <CheckboxBlankCircleIcon
+              className="icon-inline text-muted"
+            />
           </div>
         </button>
       </div>
@@ -146,17 +138,9 @@ exports[`ActivationDropdown render 0/2 completed 1`] = `
             >
               title2
             </span>
-            <svg
-              className="mdi-icon icon-inline text-muted"
-              fill="currentColor"
-              height={24}
-              viewBox="0 0 24 24"
-              width={24}
-            >
-              <path
-                d="M12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12C22,6.48 17.52,2 12,2Z"
-              />
-            </svg>
+            <CheckboxBlankCircleIcon
+              className="icon-inline text-muted"
+            />
           </div>
         </a>
       </div>
@@ -277,17 +261,9 @@ exports[`ActivationDropdown render 1/2 completed 1`] = `
             >
               title1
             </span>
-            <svg
-              className="mdi-icon icon-inline text-success"
-              fill="currentColor"
-              height={24}
-              viewBox="0 0 24 24"
-              width={24}
-            >
-              <path
-                d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"
-              />
-            </svg>
+            <CheckIcon
+              className="icon-inline text-success"
+            />
           </div>
         </button>
       </div>
@@ -311,17 +287,9 @@ exports[`ActivationDropdown render 1/2 completed 1`] = `
             >
               title2
             </span>
-            <svg
-              className="mdi-icon icon-inline text-muted"
-              fill="currentColor"
-              height={24}
-              viewBox="0 0 24 24"
-              width={24}
-            >
-              <path
-                d="M12,2C6.48,2 2,6.48 2,12C2,17.52 6.48,22 12,22C17.52,22 22,17.52 22,12C22,6.48 17.52,2 12,2Z"
-              />
-            </svg>
+            <CheckboxBlankCircleIcon
+              className="icon-inline text-muted"
+            />
           </div>
         </a>
       </div>

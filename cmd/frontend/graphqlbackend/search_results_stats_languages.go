@@ -92,7 +92,6 @@ func searchResultsStatsLanguages(ctx context.Context, results []SearchResultReso
 				filesMap[key].fullEntries = append(filesMap[key].fullEntries, &fileInfo{
 					path:  fileMatch.JPath,
 					isDir: fileMatch.File().IsDirectory(),
-					size:  1, // fake size 1 to force reading of contents (if size == 0, no read occurs)
 				})
 			}
 		} else if repo, ok := res.ToRepository(); ok && !hasNonRepoMatches {
@@ -160,8 +159,7 @@ func searchResultsStatsLanguages(ctx context.Context, results []SearchResultReso
 			// by the number of matched lines in the file.
 			for partialFile, lines := range work.partialFiles {
 				inv, err := invCtx.Entries(ctx,
-					// Fake size 1 to force reading of contents (if size == 0, no read occurs).
-					fileInfo{path: partialFile, isDir: false, size: 1},
+					fileInfo{path: partialFile, isDir: false},
 				)
 				if err != nil {
 					run.Error(err)

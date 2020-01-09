@@ -174,6 +174,10 @@ func (s *Service) CreateCampaign(ctx context.Context, c *a8n.Campaign, draft boo
 	return s.createChangesetJobsWithStore(ctx, tx, c)
 }
 
+// ErrNoCampaignJobs is returned by CreateCampaign if a CampaignPlanID was
+// specified but the CampaignPlan does not have any (finished) CampaignJobs.
+var ErrNoCampaignJobs = errors.New("cannot create a Campaign without any changesets")
+
 func (s *Service) createChangesetJobsWithStore(ctx context.Context, store *Store, c *a8n.Campaign) error {
 	jobs, _, err := store.ListCampaignJobs(ctx, ListCampaignJobsOpts{
 		CampaignPlanID:            c.CampaignPlanID,
@@ -184,6 +188,10 @@ func (s *Service) createChangesetJobsWithStore(ctx context.Context, store *Store
 	})
 	if err != nil {
 		return err
+	}
+
+	if len(jobs) == 0 {
+		return ErrNoCampaignJobs
 	}
 
 	for _, job := range jobs {
@@ -248,20 +256,46 @@ func (s *Service) RunChangesetJob(
 		return nil
 	}
 
-	defer func() {
+	// We'll always run a final update but in the happy path it will run as
+	// part of a transaction in which case we don't want to run it again in
+	// the defer below
+	var changesetJobUpdated bool
+	runFinalUpdate := func(ctx context.Context, store *Store) {
+		if changesetJobUpdated {
+			// Don't run again
+			return
+		}
 		if err != nil {
 			job.Error = err.Error()
 		}
 		job.FinishedAt = s.clock()
 
-		if e := s.store.UpdateChangesetJob(ctx, job); e != nil {
+		if e := store.UpdateChangesetJob(ctx, job); e != nil {
 			if err == nil {
 				err = e
 			} else {
 				err = multierror.Append(err, e)
 			}
 		}
-	}()
+		changesetJobUpdated = true
+	}
+	defer runFinalUpdate(ctx, s.store)
+
+	// We start a transaction here so that we can grab a lock
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Done(&err)
+
+	lockKey := fmt.Sprintf("RunChangesetJob: %d", job.ID)
+	acquired, err := tx.TryAcquireAdvisoryLock(ctx, lockKey)
+	if err != nil {
+		return errors.Wrap(err, "acquiring lock")
+	}
+	if !acquired {
+		return errors.New("could not acquire lock")
+	}
 
 	job.StartedAt = s.clock()
 
@@ -293,7 +327,7 @@ func (s *Service) RunChangesetJob(
 			Message:     c.Name,
 			AuthorName:  "Sourcegraph Bot",
 			AuthorEmail: "automation@sourcegraph.com",
-			Date:        job.StartedAt,
+			Date:        job.CreatedAt,
 		},
 		// We use unified diffs, not git diffs, which means they're missing the
 		// `a/` and `/b` filename prefixes. `-p0` tells `git apply` to not
@@ -383,12 +417,6 @@ func (s *Service) RunChangesetJob(
 		return errors.Wrap(err, "creating changeset")
 	}
 
-	tx, err := s.store.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer tx.Done(&err)
-
 	if err = tx.CreateChangesets(ctx, cs.Changeset); err != nil {
 		if _, ok := err.(AlreadyExistError); !ok {
 			return err
@@ -402,7 +430,8 @@ func (s *Service) RunChangesetJob(
 	}
 
 	job.ChangesetID = cs.Changeset.ID
-	return tx.UpdateChangesetJob(ctx, job)
+	runFinalUpdate(ctx, tx)
+	return
 }
 
 // CloseCampaign closes the Campaign with the given ID if it has not been closed yet.

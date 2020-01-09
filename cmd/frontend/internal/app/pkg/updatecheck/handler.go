@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
 	"github.com/sourcegraph/sourcegraph/internal/hubspot"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub/pubsubutil"
@@ -28,12 +27,12 @@ var (
 	// non-cluster installations what the latest version is. The version here _must_ be
 	// available at https://hub.docker.com/r/sourcegraph/server/tags/ before
 	// landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("3.11.0")
+	latestReleaseDockerServerImageBuild = newBuild("3.11.2")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("3.11.0")
+	latestReleaseKubernetesBuild = newBuild("3.11.2")
 )
 
 func getLatestRelease(deployType string) build {
@@ -210,8 +209,6 @@ func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 		everFindRefs,
 		time.Now().UTC().Format(time.RFC3339),
 	)
-
-	eventlogger.LogEvent(0, "", "ServerUpdateCheck", json.RawMessage(message))
 
 	if pubsubutil.Enabled() {
 		err := pubsubutil.Publish(pubSubPingsTopicID, message)

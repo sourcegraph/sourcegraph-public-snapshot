@@ -28,6 +28,7 @@ func TestHorizontalSearcher(t *testing.T) {
 					Files: []zoekt.FileMatch{{
 						Repository: endpoint,
 					}},
+					RepoURLs: map[string]string{endpoint: endpoint},
 				},
 				listResult: &zoekt.RepoList{Repos: []*zoekt.RepoListEntry{&rle}},
 			}
@@ -79,6 +80,16 @@ func TestHorizontalSearcher(t *testing.T) {
 		}
 		sort.Strings(got)
 		want := []string(m)
+		if !cmp.Equal(want, got, cmpopts.EquateEmpty()) {
+			t.Errorf("search mismatch (-want +got):\n%s", cmp.Diff(want, got))
+		}
+
+		// repohasfile depends on RepoURLs aggregating
+		got = got[:0]
+		for repo := range sr.RepoURLs {
+			got = append(got, repo)
+		}
+		sort.Strings(got)
 		if !cmp.Equal(want, got, cmpopts.EquateEmpty()) {
 			t.Errorf("search mismatch (-want +got):\n%s", cmp.Diff(want, got))
 		}

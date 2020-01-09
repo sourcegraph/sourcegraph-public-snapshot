@@ -103,6 +103,10 @@ func (u *users) UpdatePassword(ctx context.Context, id int32, oldPassword, newPa
 		return errors.New("wrong old password")
 	}
 
+	if err := checkPasswordLength(newPassword); err != nil {
+		return err
+	}
+
 	passwd, err := hashPassword(newPassword)
 	if err != nil {
 		return err

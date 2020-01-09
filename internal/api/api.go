@@ -72,11 +72,6 @@ type ExternalRepoSpec struct {
 	ServiceID string
 }
 
-// IsSet returns true if all fields of the external repo spec are set.
-func (r ExternalRepoSpec) IsSet() bool {
-	return r.ID != "" && r.ServiceType != "" && r.ServiceID != ""
-}
-
 // Equal returns true if r is equal to s.
 func (r ExternalRepoSpec) Equal(s *ExternalRepoSpec) bool {
 	return r.ID == s.ID && r.ServiceType == s.ServiceType && r.ServiceID == s.ServiceID

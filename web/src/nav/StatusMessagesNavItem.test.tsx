@@ -4,6 +4,10 @@ import { of, queueScheduler, Observable } from 'rxjs'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 
+jest.mock('mdi-react/CloudAlertIcon', () => 'CloudAlertIcon')
+jest.mock('mdi-react/CloudCheckIcon', () => 'CloudCheckIcon')
+jest.mock('mdi-react/CloudSyncIcon', () => 'CloudSyncIcon')
+
 describe('StatusMessagesNavItem', () => {
     test('no messages', () => {
         const fetchMessages = (): Observable<GQL.StatusMessage[]> => of([])

@@ -251,6 +251,7 @@ type ExternalChangesetsConnectionResolver interface {
 
 type ExternalChangesetResolver interface {
 	ID() graphql.ID
+	ExternalID() string
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
 	Title() (string, error)

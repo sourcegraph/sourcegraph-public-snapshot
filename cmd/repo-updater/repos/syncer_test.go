@@ -256,19 +256,6 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				err: "<nil>",
 			},
 			testCase{
-				name:    "had name and got external_id",
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone())),
-				store:   s,
-				stored: repos.Repos{tc.repo.With(func(r *repos.Repo) {
-					r.ExternalRepo.ID = ""
-				})},
-				now: clock.Now,
-				diff: repos.Diff{Modified: repos.Repos{
-					tc.repo.With(repos.Opt.RepoModifiedAt(clock.Time(1))),
-				}},
-				err: "<nil>",
-			},
-			testCase{
 				name: "new repo sources",
 				sourcer: repos.NewFakeSourcer(nil,
 					repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone()),
@@ -841,35 +828,6 @@ func TestDiff(t *testing.T) {
 			}},
 		},
 		{
-			name: "duplicate with added external id is merged correctly",
-			store: repos.Repos{
-				{Name: "1", Description: "foo"},
-			},
-			source: repos.Repos{
-				{Name: "1", ExternalRepo: eid("1"), Description: "foo"},
-			},
-			diff: repos.Diff{Modified: repos.Repos{
-				{Name: "1", ExternalRepo: eid("1"), Description: "foo"},
-			}},
-		},
-		{
-			name: "no duplicate with added external id and changed name",
-			store: repos.Repos{
-				{Name: "1", Description: "foo"},
-			},
-			source: repos.Repos{
-				{Name: "2", ExternalRepo: eid("1"), Description: "foo"},
-			},
-			diff: repos.Diff{
-				Deleted: repos.Repos{
-					{Name: "1", Description: "foo"},
-				},
-				Added: repos.Repos{
-					{Name: "2", ExternalRepo: eid("1"), Description: "foo"},
-				},
-			},
-		},
-		{
 			name: "unmodified preserves stored repo",
 			store: repos.Repos{
 				{ExternalRepo: eid("1"), Description: "foo", UpdatedAt: now},
@@ -971,21 +929,6 @@ func TestDiff(t *testing.T) {
 			},
 		},
 		{
-			name: "conflict on case insensitive name no external",
-			store: repos.Repos{
-				{Name: "fOO"},
-			},
-			source: repos.Repos{
-				{Name: "fOO", ExternalRepo: eid("fOO")},
-				{Name: "Foo", ExternalRepo: eid("Foo")},
-			},
-			diff: repos.Diff{
-				Modified: repos.Repos{
-					{Name: "Foo", ExternalRepo: eid("Foo")},
-				},
-			},
-		},
-		{
 			name: "conflict on case insensitive name exists 1",
 			store: repos.Repos{
 				{Name: "foo", ExternalRepo: eid("1")},
@@ -1015,50 +958,6 @@ func TestDiff(t *testing.T) {
 			diff: repos.Diff{
 				Unmodified: repos.Repos{
 					{Name: "Foo", ExternalRepo: eid("2")},
-				},
-			},
-		},
-		{
-			name: "associate by name",
-			store: repos.Repos{
-				{Name: "foo"},
-				{Name: "baz"},
-			},
-			source: repos.Repos{
-				{Name: "foo", ExternalRepo: eid("1")},
-				{Name: "bar", ExternalRepo: eid("2")},
-			},
-			diff: repos.Diff{
-				Added: repos.Repos{
-					{Name: "bar", ExternalRepo: eid("2")},
-				},
-				Modified: repos.Repos{
-					{Name: "foo", ExternalRepo: eid("1")},
-				},
-				Deleted: repos.Repos{
-					{Name: "baz"},
-				},
-			},
-		},
-		{
-			name: "associate by name conflict",
-			store: repos.Repos{
-				{Name: "foo"},
-				{Name: "bar", ExternalRepo: eid("1")},
-			},
-			source: repos.Repos{
-				{Name: "foo", ExternalRepo: eid("1")},
-				{Name: "bar", ExternalRepo: eid("2")},
-			},
-			diff: repos.Diff{
-				Added: repos.Repos{
-					{Name: "bar", ExternalRepo: eid("2")},
-				},
-				Modified: repos.Repos{
-					{Name: "foo", ExternalRepo: eid("1")},
-				},
-				Deleted: repos.Repos{
-					{Name: "foo"},
 				},
 			},
 		},

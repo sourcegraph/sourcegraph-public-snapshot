@@ -101,7 +101,7 @@ export const EMPTY_SETTINGS_CASCADE: SettingsCascade = { final: {}, subjects: []
  *
  * @template S the settings type
  */
-export interface ConfiguredSubject<S extends Settings = Settings> {
+interface ConfiguredSubject<S extends Settings = Settings> {
     /** The subject. */
     subject: SettingsSubject
 

@@ -116,10 +116,6 @@ func (s *repos) Add(ctx context.Context, name api.RepoName) (err error) {
 	return err
 }
 
-func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
-	return db.Repos.Upsert(ctx, op)
-}
-
 func (s *repos) List(ctx context.Context, opt db.ReposListOptions) (repos []*types.Repo, err error) {
 	if Mocks.Repos.List != nil {
 		return Mocks.Repos.List(ctx, opt)

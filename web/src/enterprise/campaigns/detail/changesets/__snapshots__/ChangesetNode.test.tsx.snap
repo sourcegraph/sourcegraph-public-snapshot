@@ -13,18 +13,10 @@ exports[`ChangesetNode renders a changesetplan 1`] = `
       <div
         className="flex-shrink-0 flex-grow-0 my-1 mr-1"
       >
-        <svg
-          className="mdi-icon text-success"
+        <SourcePullIcon
+          className="text-success"
           data-tooltip="open"
-          fill="currentColor"
-          height={24}
-          viewBox="0 0 24 24"
-          width={24}
-        >
-          <path
-            d="M6,3C7.66,3 9,4.34 9,6C9,7.31 8.17,8.42 7,8.83V15.17C8.17,15.58 9,16.69 9,18C9,19.66 7.66,21 6,21C4.34,21 3,19.66 3,18C3,16.69 3.83,15.58 5,15.17V8.83C3.83,8.42 3,7.31 3,6C3,4.34 4.34,3 6,3M6,5C5.45,5 5,5.45 5,6C5,6.55 5.45,7 6,7C6.55,7 7,6.55 7,6C7,5.45 6.55,5 6,5M6,17C5.45,17 5,17.45 5,18C5,18.55 5.45,19 6,19C6.55,19 7,18.55 7,18C7,17.45 6.55,17 6,17M21,18C21,19.66 19.66,21 18,21C16.34,21 15,19.66 15,18C15,16.69 15.83,15.58 17,15.17V7H15V10.25L10.75,6L15,1.75V5H17C18.1,5 19,5.9 19,7V15.17C20.17,15.58 21,16.69 21,18M18,17C17.45,17 17,17.45 17,18C17,18.55 17.45,19 18,19C18.55,19 19,18.55 19,18C19,17.45 18.55,17 18,17Z"
-          />
-        </svg>
+        />
       </div>
       <div
         className="campaign-node__content flex-fill"
@@ -117,34 +109,18 @@ exports[`ChangesetNode renders an externalchangeset 1`] = `
           <div
             className="flex-shrink-0 flex-grow-0 my-1 mr-1"
           >
-            <svg
-              className="mdi-icon text-success"
+            <SourcePullIcon
+              className="text-success"
               data-tooltip="open"
-              fill="currentColor"
-              height={24}
-              viewBox="0 0 24 24"
-              width={24}
-            >
-              <path
-                d="M6,3C7.66,3 9,4.34 9,6C9,7.31 8.17,8.42 7,8.83V15.17C8.17,15.58 9,16.69 9,18C9,19.66 7.66,21 6,21C4.34,21 3,19.66 3,18C3,16.69 3.83,15.58 5,15.17V8.83C3.83,8.42 3,7.31 3,6C3,4.34 4.34,3 6,3M6,5C5.45,5 5,5.45 5,6C5,6.55 5.45,7 6,7C6.55,7 7,6.55 7,6C7,5.45 6.55,5 6,5M6,17C5.45,17 5,17.45 5,18C5,18.55 5.45,19 6,19C6.55,19 7,18.55 7,18C7,17.45 6.55,17 6,17M21,18C21,19.66 19.66,21 18,21C16.34,21 15,19.66 15,18C15,16.69 15.83,15.58 17,15.17V7H15V10.25L10.75,6L15,1.75V5H17C18.1,5 19,5.9 19,7V15.17C20.17,15.58 21,16.69 21,18M18,17C17.45,17 17,17.45 17,18C17,18.55 17.45,19 18,19C18.55,19 19,18.55 19,18C19,17.45 18.55,17 18,17Z"
-              />
-            </svg>
+            />
           </div>
           <div
             className="flex-shrink-0 flex-grow-0 ml-1 mr-3"
           >
-            <svg
-              className="mdi-icon text-warning"
+            <AccountQuestionIcon
+              className="text-warning"
               data-tooltip="pending review"
-              fill="currentColor"
-              height={24}
-              viewBox="0 0 24 24"
-              width={24}
-            >
-              <path
-                d="M13,8C13,10.21 11.21,12 9,12C6.79,12 5,10.21 5,8C5,5.79 6.79,4 9,4C11.21,4 13,5.79 13,8M17,18V20H1V18C1,15.79 4.58,14 9,14C13.42,14 17,15.79 17,18M20.5,14.5V16H19V14.5H20.5M18.5,9.5H17V9C17,7.34 18.34,6 20,6C21.66,6 23,7.34 23,9C23,9.97 22.5,10.88 21.71,11.41L21.41,11.6C20.84,12 20.5,12.61 20.5,13.3V13.5H19V13.3C19,12.11 19.6,11 20.59,10.35L20.88,10.16C21.27,9.9 21.5,9.47 21.5,9C21.5,8.17 20.83,7.5 20,7.5C19.17,7.5 18.5,8.17 18.5,9V9.5Z"
-              />
-            </svg>
+            />
           </div>
           <div
             className="campaign-node__content flex-fill"

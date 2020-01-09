@@ -184,7 +184,13 @@ func Main(githubWebhook http.Handler) error {
 		codeIntelResolver = graphqlbackend.NewCodeIntelResolver()
 	}
 
-	schema, err := graphqlbackend.NewSchema(a8nResolver, codeIntelResolver)
+	// graphqlbackend.AuthzResolver is set by enterprise frontend
+	var authzResolver graphqlbackend.AuthzResolver
+	if graphqlbackend.NewAuthzResolver != nil {
+		authzResolver = graphqlbackend.NewAuthzResolver()
+	}
+
+	schema, err := graphqlbackend.NewSchema(a8nResolver, codeIntelResolver, authzResolver)
 	if err != nil {
 		return err
 	}

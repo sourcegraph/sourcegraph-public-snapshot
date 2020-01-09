@@ -36,6 +36,16 @@ func TestNewCampaignType_ArgsValidation(t *testing.T) {
 			},
 		},
 		{
+			name:         "valid comby with empty rewriteTemplate",
+			campaignType: "comby",
+			args:         `{"scopeQuery":"repo:github","matchTemplate":"foobar","rewriteTemplate":""}`,
+			wantArgs: combyArgs{
+				ScopeQuery:      "repo:github",
+				MatchTemplate:   "foobar",
+				RewriteTemplate: "",
+			},
+		},
+		{
 			name:         "invalid comby",
 			campaignType: "comby",
 			args:         `{"scopeQuery":""}`,
@@ -298,16 +308,15 @@ _authToken=YET_ANOTHER_TOKEN_LEAKED
 --- .npmrc
 +++ .npmrc
 @@ -1,4 +1,4 @@
--//registry.npmjs.org/:_authToken=${NPM_TOKEN}
+ //registry.npmjs.org/:_authToken=${NPM_TOKEN}
 -//npm.fontawesome.com/:_authToken=12345678-2323-1111-1111-12345670B312
 -:_authToken=ANOTHER_TOKEN
 -_authToken=YET_ANOTHER_TOKEN_LEAKED
-+//registry.npmjs.org/:_authToken=
 +//npm.fontawesome.com/:_authToken=
 +:_authToken=
 +_authToken=
 `,
-			wantDescription: "Tokens found:\n\n- [ ] `${NPM_TOKEN}`\n- [ ] `12345678-2323-1111-1111-12345670B312`\n- [ ] `ANOTHER_TOKEN`\n- [ ] `YET_ANOTHER_TOKEN_LEAKED`\n",
+			wantDescription: "Tokens found:\n\n- [ ] `12345678-2323-1111-1111-12345670B312`\n- [ ] `ANOTHER_TOKEN`\n- [ ] `YET_ANOTHER_TOKEN_LEAKED`\n",
 		},
 		{
 			name: "single NPM token and replaceWith",

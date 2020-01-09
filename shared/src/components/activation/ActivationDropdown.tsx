@@ -76,8 +76,8 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
             dragFriction: 0.09,
             duration: animationDurationMillis,
             delay: 20,
-            width: '10px',
-            height: '10px',
+            width: 10,
+            height: 10,
             colors: ['#a864fd', '#29cdff', '#78ff44', '#ff718d', '#fdff6a'],
         }
         return (
