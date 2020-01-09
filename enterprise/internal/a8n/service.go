@@ -827,6 +827,13 @@ type campaignUpdateDiff struct {
 	Create []*a8n.ChangesetJob
 }
 
+// repoJobs is a triplet of jobs that are associated with the same repository.
+type repoJobs struct {
+	changesetJob   *a8n.ChangesetJob
+	campaignJob    *a8n.CampaignJob
+	newCampaignJob *a8n.CampaignJob
+}
+
 func computeCampaignUpdateDiff(
 	ctx context.Context,
 	tx *Store,
@@ -868,26 +875,6 @@ func computeCampaignUpdateDiff(
 		return nil, errors.Wrap(err, "listing campaign jobs")
 	}
 
-	type jobs struct {
-		changesetJob   *a8n.ChangesetJob
-		campaignJob    *a8n.CampaignJob
-		newCampaignJob *a8n.CampaignJob
-	}
-
-	jobsByRepoID := make(map[int32]*jobs, len(changesetJobs))
-
-	campaignJobsByID := make(map[int64]*a8n.CampaignJob, len(campaignJobs))
-	for _, j := range campaignJobs {
-		campaignJobsByID[j.ID] = j
-	}
-	for _, j := range changesetJobs {
-		campaignJob, ok := campaignJobsByID[j.CampaignJobID]
-		if !ok {
-			return nil, fmt.Errorf("CampaignJob with ID %d cannot be found for changeset %d", j.CampaignJobID, j.ID)
-		}
-		jobsByRepoID[campaignJob.RepoID] = &jobs{changesetJob: j, campaignJob: campaignJob}
-	}
-
 	newCampaignJobs, _, err := tx.ListCampaignJobs(ctx, ListCampaignJobsOpts{
 		CampaignPlanID: campaign.CampaignPlanID,
 		Limit:          -1,
@@ -906,6 +893,11 @@ func computeCampaignUpdateDiff(
 	// which ones we want to delete.
 	// We can find out which ones we want to keep by looking at the RepoID of
 	// their CampaignJobs.
+
+	jobsByRepoID, err := mergeByRepoID(changesetJobs, campaignJobs)
+	if err != nil {
+		return nil, err
+	}
 
 	for _, j := range newCampaignJobs {
 		if jobs, ok := jobsByRepoID[j.RepoID]; ok {
@@ -998,4 +990,23 @@ func isOutdated(c *repos.Changeset) (bool, error) {
 	}
 
 	return false, nil
+}
+
+func mergeByRepoID(chs []*a8n.ChangesetJob, cas []*a8n.CampaignJob) (map[int32]*repoJobs, error) {
+	jobs := make(map[int32]*repoJobs, len(chs))
+
+	byID := make(map[int64]*a8n.CampaignJob, len(cas))
+	for _, j := range cas {
+		byID[j.ID] = j
+	}
+
+	for _, j := range chs {
+		caj, ok := byID[j.CampaignJobID]
+		if !ok {
+			return nil, fmt.Errorf("CampaignJob with ID %d cannot be found for ChangesetJob %d", j.CampaignJobID, j.ID)
+		}
+		jobs[caj.RepoID] = &repoJobs{changesetJob: j, campaignJob: caj}
+	}
+
+	return jobs, nil
 }
