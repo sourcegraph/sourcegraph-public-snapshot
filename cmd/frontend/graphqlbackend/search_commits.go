@@ -83,13 +83,7 @@ func (r *commitSearchResultResolver) resultCount() int32 {
 	return 1
 }
 
-var mockSearchCommitDiffsInRepo func(ctx context.Context, repoRevs *search.RepositoryRevisions, info *search.CommitPatternInfo) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
-
 func searchCommitDiffsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, info *search.CommitPatternInfo) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
-	if mockSearchCommitDiffsInRepo != nil {
-		return mockSearchCommitDiffsInRepo(ctx, repoRevs, info)
-	}
-
 	return searchCommitsInRepo(ctx, search.CommitParameters{
 		RepoRevs:    repoRevs,
 		PatternInfo: info,
@@ -97,13 +91,7 @@ func searchCommitDiffsInRepo(ctx context.Context, repoRevs *search.RepositoryRev
 	})
 }
 
-var mockSearchCommitLogInRepo func(ctx context.Context, repoRevs *search.RepositoryRevisions, info *search.CommitPatternInfo) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
-
 func searchCommitLogInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, info *search.CommitPatternInfo) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
-	if mockSearchCommitLogInRepo != nil {
-		return mockSearchCommitLogInRepo(ctx, repoRevs, info)
-	}
-
 	var terms []string
 	if info.Pattern != "" {
 		terms = append(terms, info.Pattern)
