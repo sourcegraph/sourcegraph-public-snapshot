@@ -16,13 +16,7 @@ Basic code intelligence also filters results by file extension and by imports at
 
 This is because basic code intelligence uses search-based heuristics, rather than parsing the code into an AST. You will see incorrect results more often for tokens with common names (such as `Get`) than for tokens with more unique names simply because those tokens appear more often in the search index.
 
-If you would like to have precise results where you are 100% confident that the definition or reference you are navigating to is for the symbol you hovered, we recommend utilizing [LSIF](./lsif.md) for precise code intelligence.
-
-You may occasionally see results from basic code intelligence even when you have uploaded LSIF data. This can happen in the following scenarios:
-
-- The nearest commit that has LSIF data is too far away from your current commit. [The limit is 100 commits](https://github.com/sourcegraph/sourcegraph/blob/e7803474dbac8021e93ae2af930269045aece079/lsif/src/shared/constants.ts#L25) ahead/behind.
-- The current file doesn't exist in the nearest LSIF dump.
-- The _Find references_ panel will always include search-based results, but only after all of the precise results have been displayed. This ensures every symbol has code intelligence.
+If you would like to have precise results where you are 100% confident that the definition or reference you are navigating to is for the symbol you hovered, we recommend utilizing LSIF for precise code intelligence. Even with LSIF enabled, you may occasionally see results from basic code intelligence. These scenarios are described in more detail in the [LSIF docs](./lsif.md).
 
 ## What languages are supported?
 
