@@ -15,7 +15,15 @@ var whitelistedFilenames = []string{
 	"src_windows_amd64.exe",
 }
 
-func srcCliServe(w http.ResponseWriter, r *http.Request) error {
+func srcCliVersionServe(w http.ResponseWriter, r *http.Request) error {
+	return writeJSON(w, &struct {
+		Version string `json:"version"`
+	}{
+		Version: SrcCliVersion,
+	})
+}
+
+func srcCliDownloadServe(w http.ResponseWriter, r *http.Request) error {
 	filename := mux.Vars(r)["rest"]
 	if !isExpectedRelease(filename) {
 		http.NotFound(w, r)
