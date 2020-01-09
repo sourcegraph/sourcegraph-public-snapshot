@@ -6,12 +6,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/blang/semver"
+	"github.com/Masterminds/semver"
 )
 
 func TestHighestMatchingVersion(t *testing.T) {
 	minimum := semver.MustParse("1.2.3")
-	versions := []semver.Version{
+	versions := []*semver.Version{
 		semver.MustParse("1.1.4"),
 		semver.MustParse("1.2.2"),
 		semver.MustParse("1.2.3"),

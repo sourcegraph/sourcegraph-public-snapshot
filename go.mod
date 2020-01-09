@@ -8,6 +8,7 @@ require (
 	cloud.google.com/go/pubsub v1.1.0
 	cloud.google.com/go/storage v1.4.0 // indirect
 	github.com/DataDog/zstd v1.4.4 // indirect
+	github.com/Masterminds/semver v1.5.0
 	github.com/Microsoft/go-winio v0.4.14 // indirect
 	github.com/NYTimes/gziphandler v1.1.1
 	github.com/RoaringBitmap/roaring v0.4.21
@@ -15,7 +16,6 @@ require (
 	github.com/avelino/slugify v0.0.0-20180501145920-855f152bd774
 	github.com/aws/aws-sdk-go-v2 v0.18.0
 	github.com/beevik/etree v1.1.0
-	github.com/blang/semver v3.5.1+incompatible
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
 	github.com/bombsimon/wsl v1.2.8 // indirect
 	github.com/certifi/gocertifi v0.0.0-20191021191039-0944d244cd40 // indirect

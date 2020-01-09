@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"sort"
 
-	"github.com/blang/semver"
+	"github.com/Masterminds/semver"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/linkheader"
 )
@@ -24,7 +25,7 @@ const githubAPIReleasesEndpoint = "https://api.github.com/repos/sourcegraph/src-
 // us to recommend patch updates without having to release a sourcegraph instance with a bumped
 // constant.
 func Version() (string, error) {
-	minimumVersion, err := semver.Make(MinimumVersion)
+	minimumVersion, err := semver.NewVersion(MinimumVersion)
 	if err != nil {
 		return "", errors.Wrap(err, "non-semantic minimum src-cli version")
 	}
@@ -44,20 +45,15 @@ func Version() (string, error) {
 
 // highestMatchingVersion returns the highest version with the same major and
 // minor value as the given minimum version.
-func highestMatchingVersion(minimumVersion semver.Version, versions []semver.Version) (semver.Version, error) {
-	constraint := fmt.Sprintf(">=%d.%d.%d <%d.%d.0",
-		minimumVersion.Major, minimumVersion.Minor, minimumVersion.Patch,
-		minimumVersion.Major, minimumVersion.Minor+1,
-	)
-
-	checkRange, err := semver.ParseRange(constraint)
+func highestMatchingVersion(minimumVersion *semver.Version, versions []*semver.Version) (*semver.Version, error) {
+	constraint, err := semver.NewConstraint(fmt.Sprintf("~%d.%d.x", minimumVersion.Major(), minimumVersion.Minor()))
 	if err != nil {
-		return semver.Version{}, errors.Wrap(err, "invalid range")
+		return nil, errors.Wrap(err, "invalid range")
 	}
 
-	var matching []semver.Version
+	var matching semver.Collection
 	for _, version := range versions {
-		if checkRange(version) {
+		if constraint.Check(version) {
 			matching = append(matching, version)
 		}
 	}
@@ -66,14 +62,14 @@ func highestMatchingVersion(minimumVersion semver.Version, versions []semver.Ver
 		return minimumVersion, nil
 	}
 
-	semver.Sort(matching)
+	sort.Sort(matching)
 	return matching[len(matching)-1], nil
 }
 
 // releaseVersions requests the given URL and all subsequent pages of
 // releases. Returns the non-draft, non-prerelease items with a valid
 // semver tag.
-func releaseVersions(url string) ([]semver.Version, error) {
+func releaseVersions(url string) ([]*semver.Version, error) {
 	versions, nextURL, err := releaseVersionsPage(url)
 	if err != nil {
 		return nil, err
@@ -93,7 +89,7 @@ func releaseVersions(url string) ([]semver.Version, error) {
 // releaseVersionsPage requests the given URL and returns the non-draft,
 // non-prerelease items with a valid semver tag and the url for the next page
 // of results (if one exists).
-func releaseVersionsPage(url string) ([]semver.Version, string, error) {
+func releaseVersionsPage(url string) ([]*semver.Version, string, error) {
 	resp, err := http.DefaultClient.Get(url)
 	if err != nil {
 		return nil, "", err
@@ -110,13 +106,13 @@ func releaseVersionsPage(url string) ([]semver.Version, string, error) {
 		return nil, "", err
 	}
 
-	versions := []semver.Version{}
+	versions := []*semver.Version{}
 	for _, release := range releases {
 		if release.Draft || release.Prerelease {
 			continue
 		}
 
-		version, err := semver.Make(release.TagName)
+		version, err := semver.NewVersion(release.TagName)
 		if err != nil {
 			continue
 		}
