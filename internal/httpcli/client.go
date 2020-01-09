@@ -155,6 +155,19 @@ func ContextErrorMiddleware(cli Doer) Doer {
 // Common Opts
 //
 
+// ExternalTransportOpt returns an Opt that ensures the http.Client.Transport
+// can contact non-Sourcegraph services. For example Admins can configure
+// TLS/SSL settings.
+func ExternalTransportOpt(cli *http.Client) error {
+	tr, err := getTransportForMutation(cli)
+	if err != nil {
+		return errors.Wrap(err, "httpcli.ExternalTransportOpt")
+	}
+
+	cli.Transport = &externalTransport{base: tr}
+	return nil
+}
+
 // NewCertPoolOpt returns a Opt that sets the RootCAs pool of an http.Client's
 // transport.
 func NewCertPoolOpt(pool *x509.CertPool) Opt {
