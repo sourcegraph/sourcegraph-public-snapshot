@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
@@ -194,4 +195,15 @@ func structuralSearch(ctx context.Context, zipPath, pattern, rule string, langua
 		return nil, false, err
 	}
 	return matches, false, err
+}
+
+var requestTotalStructuralSearch = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "searcher",
+	Subsystem: "service",
+	Name:      "request_total_structural_search",
+	Help:      "Number of returned structural search requests.",
+}, []string{"code"})
+
+func init() {
+	prometheus.MustRegister(requestTotalStructuralSearch)
 }
