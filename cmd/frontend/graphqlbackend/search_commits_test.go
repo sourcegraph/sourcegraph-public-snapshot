@@ -57,11 +57,10 @@ func TestSearchCommitsInRepo(t *testing.T) {
 		Revs: []search.RevisionSpecifier{{RevSpec: "rev"}},
 	}
 	results, limitHit, timedOut, err := searchCommitsInRepo(ctx, search.CommitParameters{
-		RepoRevs:          repoRevs,
-		PatternInfo:       &search.CommitPatternInfo{Pattern: "p", FileMatchLimit: int32(defaultMaxSearchResults)},
-		Query:             query,
-		Diff:              true,
-		TextSearchOptions: git.TextSearchOptions{Pattern: "p"},
+		RepoRevs:    repoRevs,
+		PatternInfo: &search.CommitPatternInfo{Pattern: "p", FileMatchLimit: int32(defaultMaxSearchResults)},
+		Query:       query,
+		Diff:        true,
 	})
 	if err != nil {
 		t.Fatal(err)

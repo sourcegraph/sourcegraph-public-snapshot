@@ -23,7 +23,6 @@ type CommitParameters struct {
 	PatternInfo        *CommitPatternInfo
 	Query              *query.Query
 	Diff               bool
-	TextSearchOptions  git.TextSearchOptions
 	ExtraMessageValues []string
 }
 
