@@ -220,8 +220,9 @@ func (r *Runner) Wait() error {
 		return errors.New("not started")
 	}
 
-	r.wg.Wait()
-
+	// TODO: We could implement this by polling for the jobs created by the runner
+	// but now that work is done in the background it is not as easy.
+	// For now we just return immediately as a resolver function depends on this
 	return nil
 }
 
